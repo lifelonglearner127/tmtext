@@ -357,8 +357,13 @@ $config['rewrite_short_tags'] = FALSE;
 */
 $config['proxy_ips'] = '';
 
+$config['cmd_mask'] = '{1}';
+$config['cmd_path'] = '/opt/trillionmonkeys.com/tm';
+$config['attr_path'] = $config['cmd_path'].'/data';
 
-$config['attr_path'] = '/opt/trillionmonkeys.com/tm/data';
+$config['descCmd'] = 'java -cp dist/NLG.jar com.swta.ChartGenerator data/tiger/all.rules data/tiger/desc/{1}/attributes.dat data/tiger/desc/{1}/blacklist.dat';
+
+$config['product_title'] = array('manu','screensize', 'manu', 'model', 'is3d', 'isled', 'ishdtv');
 
 // allow the local environment to override the settings
 if (file_exists(APPPATH.'config/config.local.php')) {

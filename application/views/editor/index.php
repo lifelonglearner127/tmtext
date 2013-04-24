@@ -31,7 +31,7 @@ echo form_open('editor/search', array('id'=>'searchForm')); ?>
         <div class="search_part">
 
             <div class="search_field">
-                <input type="text" name="s" id="search" class="search_product" placeholder = 'Search (SKU, Model #, Manufacturer, or URL) from CSV, DB or ﬁles'/>
+                <input type="text" name="s" value="UN40ES6500" id="search" class="search_product" placeholder = 'Search (SKU, Model #, Manufacturer, or URL) from CSV, DB or ﬁles'/>
             </div>
 
             <button class="search_but">search</button>
@@ -63,6 +63,7 @@ echo form_open('editor/search', array('id'=>'searchForm')); ?>
 
             <div class="title_length">
                 <label>Chars: </label>
+                <span id="tc"></span>
                 <label> </label>
                 <label class="label1">of </label>
                 <input type="text" class="length"/>
@@ -80,13 +81,7 @@ echo form_open('editor/search', array('id'=>'searchForm')); ?>
             <div class="bottom_nav">
                 <div class="sequence">
                     <button class="new">new</button>
-                    <ul>
-                        <li><a href="" title="">&lt;</a></li>
-                        <li><a href="" title="">1</a></li>
-                        <li><a href="" title="">2</a></li>
-                        <li><a href="" title="">3</a></li>
-                        <li><a href="" title="">4</a></li>
-                        <li><a href="" title="">&gt;</a></li>
+                    <ul id="pagination">
                     </ul>
                 </div>
 
@@ -94,6 +89,7 @@ echo form_open('editor/search', array('id'=>'searchForm')); ?>
                     <button class="validate">validate</button>
                     <button class="save">save</button>
                     <label>Words: </label>
+                    <span id="wc"></span>
                     <label> </label>
                     <label class="label2">of </label>
                     <input type="text" class=""/>
