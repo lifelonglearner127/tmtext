@@ -152,7 +152,7 @@ class Editor extends MY_Controller {
 				}
 			}
 
-			$descCmd = str_replace($this->config->item('cmd_path'), $data['file_id'] ,$this->config->item('descCmd'));
+			$descCmd = str_replace($this->config->item('cmd_mask'), $data['file_id'] ,$this->config->item('descCmd'));
 			if($result = shell_exec('cd '.$this->config->item('cmd_path').'; '.$descCmd)) {
 				if (preg_match_all('/\(.*\)\: "(.*)"/i',$result,$matches) && isset($matches[1]) && count($matches[1])>0) {
 					$data['product_descriptions'] = $matches[1];
