@@ -45,10 +45,6 @@
 | the active record class
 */
 
-if (file_exists(APPPATH.'config/database.local.php'))
-{
-	@require APPPATH.'config/database.local.php';
-}
 
 
 
@@ -71,6 +67,11 @@ $db['default']['swap_pre'] = '';
 $db['default']['autoinit'] = TRUE;
 $db['default']['stricton'] = FALSE;
 
+
+if (file_exists(APPPATH.'config/database.local.php'))
+{
+	@require APPPATH.'config/database.local.php';
+}
 
 /* End of file database.php */
 /* Location: ./application/config/database.php */
