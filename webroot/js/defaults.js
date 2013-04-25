@@ -91,4 +91,13 @@ jQuery(document).ready(function($) {
 
 	});
 
+
+	$(document).ajaxStart(function(){
+		$('html').addClass('busy');
+	}).ajaxStop(function(){
+	    $('html').removeClass('busy');
+	});
+
 });
+
+

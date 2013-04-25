@@ -40,3 +40,6 @@ label.label2{margin-right:10px}
 }
 
 
+html.busy, html.busy * {
+  cursor: wait !important;
+}
