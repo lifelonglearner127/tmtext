@@ -6,7 +6,7 @@ class Editor extends MY_Controller {
  	{
   		parent::__construct();
 
-  		$this->load->library('ion_auth');
+  		//$this->load->library('ion_auth');
   		$this->load->library('form_validation');
 		//$this->config->set_item('item_name', 'item_value');
 		$this->data['title'] = 'Editor';
@@ -152,8 +152,8 @@ class Editor extends MY_Controller {
 				}
 			}
 
-			$descCmd = str_replace('', $data['file_id'] ,$this->config->item('descCmd'));
-			if($result = shell_exec('cd '.$this->config->item('cmd_path').'; ./'.$descCmd)) {
+			$descCmd = str_replace($this->config->item('cmd_path'), $data['file_id'] ,$this->config->item('descCmd'));
+			if($result = shell_exec('cd '.$this->config->item('cmd_path').'; '.$descCmd)) {
 				if (preg_match_all('/\(.*\)\: "(.*)"/i',$result,$matches) && isset($matches[1]) && count($matches[1])>0) {
 					$data['product_descriptions'] = $matches[1];
 				}
