@@ -8,7 +8,7 @@
 					<a href="<?php echo base_url();?>" class="logo_title">TrillionMonkeys</a>
 				</div>
 				<div class="pull-right">
-					<a href="/auth/logout" class="log_out">Log Out</a>
+					<a href="<?php echo base_url();?>auth/logout" class="log_out">Log Out</a>
 				</div>
 			</div>
 		</div>
