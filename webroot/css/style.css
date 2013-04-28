@@ -178,6 +178,7 @@ body{
 
 .chars_content{
 	float:right;
+	width:200px;
 }
 
 	.chars_content label{
@@ -264,4 +265,22 @@ html.busy, html.busy * {
 
 #items.uneditable-input {
 	white-space: normal;
+}
+
+#items_list li {
+	padding-bottom: 8px;
+	margin-left: -20px;
+}
+
+ul#items_list {
+	list-style-type: none;
+}
+
+.ml_40{
+	margin-left:40px;
+}
+
+.new_btn_fr{
+	float:right;
+	height:30px;
 }

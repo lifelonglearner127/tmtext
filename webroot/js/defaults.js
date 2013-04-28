@@ -35,10 +35,10 @@ function getPager() {
 }
 
 function clearEditorForm() {
-	$('.new_product').find('textarea[name="description"]').attr('disabled','disabled').val('');
-	$( ".auto_title #title" ).attr('disabled','disabled').val('');
+//	$('.new_product').find('textarea[name="description"]').attr('disabled','disabled').val('');
+//	$( ".auto_title #title" ).attr('disabled','disabled').val('');
 	$('#pagination').html('');
-	$( "#items" ).html('Product descriptions listing');
+	$( "#items" ).html('Original product descriptions');
 	$( "#attributes" ).html('Product attributes');
 	$('#wc').html('0');
 	$('#tc').html('0');

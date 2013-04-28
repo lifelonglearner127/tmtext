@@ -366,8 +366,12 @@ $config['descCmd'] = 'java -cp dist/NLG.jar com.swta.ChartGenerator data/tiger/a
 $config['product_title'] = array('manu','screensize', 'manu', 'model', 'is3d', 'isled', 'ishdtv');
 
 $config['attr_replace'] = array(
-	"@" => ' ',
-	"inch" => "\""
+	array(
+		"@inch" => "\""
+	),
+	array(
+		"@" => ' ',
+	)
 );
 
 // allow the local environment to override the settings

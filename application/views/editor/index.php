@@ -9,7 +9,7 @@ echo form_open('editor/search', array('id'=>'searchForm'));
 					</div>
 					<div class="row-fluid">
 		                <div class="span8 search_area uneditable-input" style="width: 597px; overflow : auto;" id="items">
-		                Product descriptions listing
+		                Original product descriptions
 		                </div>
 		            	<div class="span4 search_area uneditable-input" style="overflow : auto;" id="attributes">
 		                Product attributes
@@ -17,14 +17,14 @@ echo form_open('editor/search', array('id'=>'searchForm'));
 					</div>
 <?php //echo form_open('editor/save'); ?>
 					<div class="row-fluid auto_title">
-                		<input type="text" class="span12" id = 'title', disabled = 'disabled'/>
+                		<input type="text" class="span12" id = 'title'/>
 						<div class="chars_content title_length">
 							<input type="text" class="span3"/>
 							<label>Chars: <span id="tc">0</span> of </label>
 						</div>
 					</div>
 					<div class="row-fluid new_product">
-						<textarea class="span12 search_area" name='description' disabled='disabled'></textarea>
+						<textarea class="span12 search_area" name='description'></textarea>
 						<div class="pull-left">
 							<button class="btn new_btn btn-primary"><i class="icon-white icon-file"></i>&nbsp;New</button>
 							<div class="pagination">
@@ -32,12 +32,13 @@ echo form_open('editor/search', array('id'=>'searchForm'));
 			                    </ul>
 						    </div>
 						</div>
-						<button class="btn new_btn ml_120"><i class="icon-ok-sign"></i>&nbsp;Validate</button>
-						<button class="btn new_btn btn-danger ml_30"><i class="icon-white icon-ok"></i>&nbsp;Save</button>
 						<div class="chars_content">
 							<input type="text" class="span3"/>
 							<label>Words: <span id="wc">0</span> of </label>
 						</div>
+						<button class="btn new_btn_fr ml_40"><i class="icon-ok-sign"></i>&nbsp;Validate</button>
+						<button class="btn new_btn_fr btn-danger ml_30"><i class="icon-white icon-ok"></i>&nbsp;Save</button>
+
 					</div>
 <?php //echo form_close(); ?>
 

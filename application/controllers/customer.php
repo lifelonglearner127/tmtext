@@ -7,7 +7,7 @@ class Customer extends MY_Controller {
   		parent::__construct();
 
   		$this->load->library('form_validation');
-		$this->data['title'] = 'customer';
+		$this->data['title'] = 'Customer Setting';
 
  		if (!$this->ion_auth->logged_in())
 		{
