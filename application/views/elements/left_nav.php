@@ -8,7 +8,7 @@ $menu = array(
 <?php if (!empty($menu)) {?>
 <ul class="left_nav_content">
 <?php foreach ($menu as $item) {?>
-					<li<?php echo ($this->router->class==$item['controller']) ? " class=\"active\"":"";?>><a href="<?php echo base_url();?>/<?php echo $item['controller'];?>/"><?php echo $item['name'];?></a></li>
+					<li<?php echo ($this->router->class==$item['controller']) ? " class=\"active\"":"";?>><a href="<?php echo site_url($item['controller']);?>"><?php echo $item['name'];?></a></li>
 <?php } ?>
 				</ul>
 <?php } ?>
