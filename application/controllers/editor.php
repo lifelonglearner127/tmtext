@@ -53,15 +53,20 @@ class Editor extends MY_Controller {
 				foreach($objects as $name => $object){
 					if (!$object->isDir()) {
 						if (preg_match("/.*\.csv/i",$object->getFilename(),$matches)) {
+							$_rows = array();
 							if (($handle = fopen($name, "r")) !== FALSE) {
-	    						while (($row = fgetcsv($handle, null, ",", "\"")) !== FALSE) {
-	    							foreach ($row as $content) {
-	    								if (preg_match("/$s/i",$content,$matches)) {
-	    									$csv_rows[] = $row;
-	    								}
-	    							}
-	    						}
+								while (($row = fgets($handle)) !== false) {
+									if (preg_match("/$s/i",$row,$matches)) {
+										$_rows[] = $row;
+									}
+								}
 							}
+							fclose($handle);
+
+							foreach (array_keys(array_count_values($_rows)) as $row){
+								$csv_rows[] = str_getcsv($row, ",", "\"");
+							}
+							unset($_rows);
 						}
 					}
 				}
@@ -116,10 +121,10 @@ class Editor extends MY_Controller {
 
 			if ($path = realpath($attr_path)) {
 				$objects = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path), RecursiveIteratorIterator::SELF_FIRST);
-				foreach($objects as $name => $object){
+				foreach ($objects as $name => $object){
 					if (!$object->isDir()) {
 						if ($object->getFilename() == 'attributes.dat') {
-							if($content= file_get_contents($name)) {
+							if ($content= file_get_contents($name)) {
 								if (preg_match("/$s/i",$content,$matches)) {
 
 									$part = str_ireplace($attr_path, '', $object->getPath());
@@ -127,6 +132,7 @@ class Editor extends MY_Controller {
 										$data['file_id'] = $matches[1];
 									}
 
+									$content = str_replace(array_keys($this->config->item('attr_replace')), array_values($this->config->item('attr_replace')), $content);
 									$data['search_results'] = $content;
 
 									if (preg_match_all('/\s?(\S*)\s*(.*)/i', $content, $matches)) {
@@ -153,7 +159,8 @@ class Editor extends MY_Controller {
 			}
 
 			$descCmd = str_replace($this->config->item('cmd_mask'), $data['file_id'] ,$this->config->item('descCmd'));
-			if($result = shell_exec('cd '.$this->config->item('cmd_path').'; '.$descCmd)) {
+//			if($result = shell_exec('cd '.$this->config->item('cmd_path').'; '.$descCmd)) {
+			if($result = shell_exec('cd '.$this->config->item('cmd_path').'; ./'.$descCmd)) {
 				if (preg_match_all('/\(.*\)\: "(.*)"/i',$result,$matches) && isset($matches[1]) && count($matches[1])>0) {
 					$data['product_descriptions'] = $matches[1];
 				}

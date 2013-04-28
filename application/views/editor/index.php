@@ -1,3 +1,50 @@
+					<div class="row-fluid">
+<?php
+echo form_open('editor/attributes', array('id'=>'attributesForm')).form_close();
+echo form_open('editor/search', array('id'=>'searchForm'));
+?>
+						<input type="text" name="s" value="UN40ES6500" id="search" class="span11" placeholder="Search (SKU, Model #, Manufacturer, or URL) from CSV, DB or files"/>
+						<button type="submit" class="btn pull-right">Search</button>
+<?php echo form_close();?>
+					</div>
+					<div class="row-fluid">
+		                <div class="span8 search_area uneditable-input" style="width: 597px; overflow : auto;" id="items">
+		                Product descriptions listing
+		                </div>
+		            	<div class="span4 search_area uneditable-input" style="overflow : auto;" id="attributes">
+		                Product attributes
+		                </div>
+					</div>
+<?php //echo form_open('editor/save'); ?>
+					<div class="row-fluid auto_title">
+                		<input type="text" class="span12" id = 'title', disabled = 'disabled'/>
+						<div class="chars_content title_length">
+							<input type="text" class="span3"/>
+							<label>Chars: <span id="tc">0</span> of </label>
+						</div>
+					</div>
+					<div class="row-fluid new_product">
+						<textarea class="span12 search_area" name='description' disabled='disabled'></textarea>
+						<div class="pull-left">
+							<button class="btn new_btn btn-primary"><i class="icon-white icon-file"></i>&nbsp;New</button>
+							<div class="pagination">
+			                    <ul id="pagination">
+			                    </ul>
+						    </div>
+						</div>
+						<button class="btn new_btn ml_120"><i class="icon-ok-sign"></i>&nbsp;Validate</button>
+						<button class="btn new_btn btn-danger ml_30"><i class="icon-white icon-ok"></i>&nbsp;Save</button>
+						<div class="chars_content">
+							<input type="text" class="span3"/>
+							<label>Words: <span id="wc">0</span> of </label>
+						</div>
+					</div>
+<?php //echo form_close(); ?>
+
+
+
+
+<?php if(0) {?>
 	<!--Website Content Starts-->
 
 	<div class="wrapper">
@@ -143,3 +190,5 @@ echo form_open('editor/search')
 	.form_submit('form_save', 'Save')
 	.form_close();
 ?> //-->
+
+<?php } ?>

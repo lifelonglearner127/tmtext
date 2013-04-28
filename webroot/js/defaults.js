@@ -1,31 +1,51 @@
 var current_product = 0;
 var products = '';
 
-function getPager(){
+function saveCurrentProduct(text) {
+	products.each(function(index, e) {
+		if (index+1 === current_product) {
+			 $(e).html(text);
+			 return;
+		}
+	});
+}
+
+function getPager() {
 	var pager = '';
     if (products.length >1) {
     	products.each(function(index){
     		var i = index+1;
     		if (i == current_product) {
-    			pager += '<li>'+i+'</li>';
+    			pager += '<li><a href="#">'+i+'</a></li>';
     		} else if ((i < current_product && i>current_product-3) || (i > current_product && i<current_product+3)) {
     			pager += '<li><a href="#" data-page="'+i+'">'+i+'</a></li>';
     		}
     	});
 
     	if (current_product-3 > 0) {
-    		pager = '<li><a href="#" data-page="'+(current_product-1)+'">&lt;</a></li>'+pager;
+    		pager  = '<li><a href="#" data-page="1">&lt;&lt;</a></li>'
+    				+'<li><a href="#" data-page="'+(current_product-1)+'">&lt;</a></li>'+pager;
     	}
-    	if (current_product+3 < products.length) {
-    		pager += '<li><a href="#" data-page="'+(current_product+1)+'">&gt;</a></li>';
+    	if (current_product+3 <= products.length) {
+    		pager += '<li><a href="#" data-page="'+(current_product+1)+'">&gt;</a></li>'
+    				+'<li><a href="#" data-page="'+(products.length)+'">&gt;&gt;</a></li>';
     	}
     }
     return pager;
 }
 
-jQuery(document).ready(function($) {
+function clearEditorForm() {
+	$('.new_product').find('textarea[name="description"]').attr('disabled','disabled').val('');
+	$( ".auto_title #title" ).attr('disabled','disabled').val('');
+	$('#pagination').html('');
+	$( "#items" ).html('Product descriptions listing');
+	$( "#attributes" ).html('Product attributes');
+	$('#wc').html('0');
+	$('#tc').html('0');
+}
 
-	$('textarea[name="description"]').change(function() {
+jQuery(document).ready(function($) {
+	$('textarea[name="description"]').on('keyup change',function() {
 	 	var number = 0;
 	    var matches = $(this).val().match(/\b/g);
 	    if(matches) {
@@ -33,14 +53,18 @@ jQuery(document).ready(function($) {
 	    }
 	    $('#wc').html(number);
 
+	    saveCurrentProduct($(this).val());
 	});
 
-	$( ".auto_title #title" ).change(function() {
+	$( ".auto_title #title" ).on('keyup change',function() {
 		$('#tc').html($(this).val().length);
 	});
 
 	$("#searchForm").submit(function(event) {
 		event.preventDefault();
+
+		clearEditorForm();
+
 		var $form = $( this ),
 			term = $form.find( 'input[name="s"]' ).val(),
 		    url = $form.attr( 'action' );
@@ -68,9 +92,7 @@ jQuery(document).ready(function($) {
 			    current_product = 1;
 
 			    $('#pagination').html(getPager());
-
 		    });
-
 		});
 	});
 
@@ -91,13 +113,11 @@ jQuery(document).ready(function($) {
 
 	});
 
-
 	$(document).ajaxStart(function(){
 		$('html').addClass('busy');
 	}).ajaxStop(function(){
 	    $('html').removeClass('busy');
 	});
-
 });
-
-
+//var start = new Date().getMilliseconds();
+//console.log("Executed in " + (new Date().getMilliseconds() - start) + " milliseconds");

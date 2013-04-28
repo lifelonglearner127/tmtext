@@ -98,7 +98,8 @@ class Auth extends MY_Controller {
 				'type' => 'password',
 			);
 
-			$this->_render_page('auth/login', $this->data);
+			//$this->_render_page('auth/login', $this->data);
+			$this->render('login');
 		}
 	}
 
@@ -206,7 +207,7 @@ class Auth extends MY_Controller {
 			//set any errors and display the form
 			$this->data['message'] = (validation_errors()) ? validation_errors() : $this->session->flashdata('message');
 			//$this->_render_page('auth/forgot_password', $this->data);
-			$this->render();
+			$this->render('login');
 		}
 		else
 		{
