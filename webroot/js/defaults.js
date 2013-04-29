@@ -45,18 +45,31 @@ function clearEditorForm() {
 }
 
 jQuery(document).ready(function($) {
-	$('textarea[name="description"]').on('keyup change',function() {
+	$('textarea[name="description"]').on('keydown change',function() {
 	 	var number = 0;
 	    var matches = $(this).val().match(/\b/g);
 	    if(matches) {
 	        number = matches.length/2;
 	    }
-	    $('#wc').html(number);
 
+	    var _limit = $('input[name="description_length"]').val();
+
+	    if (number>_limit) {
+	    	var limited = $.trim($(this).val()).split(" ", _limit);
+			limited = limited.join(" ");
+			$(this).val(limited);
+	    }
+
+	    $('#wc').html(number);
 	    saveCurrentProduct($(this).val());
 	});
 
-	$( ".auto_title #title" ).on('keyup change',function() {
+	$( ".auto_title #title" ).on('keydown change',function() {
+		var _limit = $('input[name="title_length"]').val();
+		if($(this).val().length > _limit) {
+			var string = $(this).val();
+			$(this).val(string.substring(0, _limit));
+		}
 		$('#tc').html($(this).val().length);
 	});
 

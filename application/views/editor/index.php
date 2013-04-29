@@ -19,7 +19,7 @@ echo form_open('editor/search', array('id'=>'searchForm'));
 					<div class="row-fluid auto_title">
                 		<input type="text" class="span12" id = 'title'/>
 						<div class="chars_content title_length">
-							<input type="text" class="span3"/>
+							<input type="text" name="title_length" value="128" class="span3"/>
 							<label>Chars: <span id="tc">0</span> of </label>
 						</div>
 					</div>
@@ -33,7 +33,7 @@ echo form_open('editor/search', array('id'=>'searchForm'));
 						    </div>
 						</div>
 						<div class="chars_content">
-							<input type="text" class="span3"/>
+							<input type="text" name="description_length" value="150" class="span3"/>
 							<label>Words: <span id="wc">0</span> of </label>
 						</div>
 						<button class="btn new_btn_fr ml_15"><i class="icon-ok-sign"></i>&nbsp;Validate</button>
