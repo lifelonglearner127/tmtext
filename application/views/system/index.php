@@ -5,7 +5,7 @@
 				    		<div class="control-group">
 								<label class="control-label" for="java_generator"><?php echo $generator[0];?></label>
 								<div class="controls">
-									<?php echo form_checkbox($generator[1], 1, $generator[2], 'id="'.$generator[1].'"'.(($generator[1]=='python_generator')?' disabled':''));?>
+									<?php echo form_checkbox($generator[1], 1, $generator[2], 'id="'.$generator[1].'"'.(($generator[1]=='python_generator1')?' disabled':''));?>
 								</div>
 							</div>
 						<?php } ?>
