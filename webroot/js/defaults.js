@@ -73,6 +73,20 @@ jQuery(document).ready(function($) {
 
 		posting.done(function( data ) {
 		    $( "#items" ).html( $(data).find('#content') );
+		    $( "#items #items_list li" ).expander({
+		    	slicePoint: 150,
+		    	expandText: '[&hellip;]',
+		    	expandPrefix: ' ',
+		    	userCollapseText: '[^]',
+		    	expandEffect : 'show',
+		    	collapseEffect : 'hide',
+		    	expandSpeed: 0,
+		    	collapseSpeed: 0,
+		    	afterExpand: function() {
+		    		$(this).find('.details').css('display', 'inline');
+		    	}
+		    });
+
 		    url = $('#attributesForm').attr( 'action' );
 
 		    var attributes = $.post( url, { s: term } );
