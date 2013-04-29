@@ -10,6 +10,7 @@ class Editor extends MY_Controller {
   		$this->load->library('form_validation');
 		//$this->config->set_item('item_name', 'item_value');
 		$this->data['title'] = 'Editor';
+		$this->data['head'][] = '<script src="'.base_url().'js/jquery.expander.js"></script>';
 
  		if (!$this->ion_auth->logged_in())
 		{

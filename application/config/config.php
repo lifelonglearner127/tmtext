@@ -374,6 +374,11 @@ $config['attr_replace'] = array(
 	)
 );
 
+$config['generator'] = array(
+	array('Java Generator','java_generator', true),
+	array('Python Generator','python_generator', false)
+);
+
 // allow the local environment to override the settings
 if (file_exists(APPPATH.'config/config.local.php')) {
 	@require_once APPPATH.'config/config.local.php';
