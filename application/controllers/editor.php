@@ -17,6 +17,11 @@ class Editor extends MY_Controller {
 			//redirect them to the login page
 			redirect('auth/login', 'refresh');
 		}
+
+		if ($generators = $this->session->userdata('generators')) {
+			$this->config->set_item('generators',$generators);
+		}
+
  	}
 
 	public function index()
@@ -162,11 +167,25 @@ class Editor extends MY_Controller {
 				}
 			}
 
-			$descCmd = str_replace($this->config->item('cmd_mask'), $data['file_id'] ,$this->config->item('descCmd'));
+/*			$descCmd = str_replace($this->config->item('cmd_mask'), $data['file_id'] ,$this->config->item('descCmd'));
 //			if($result = shell_exec('cd '.$this->config->item('cmd_path').'; '.$descCmd)) {
 			if($result = shell_exec('cd '.$this->config->item('cmd_path').'; ./'.$descCmd)) {
 				if (preg_match_all('/\(.*\)\: "(.*)"/i',$result,$matches) && isset($matches[1]) && count($matches[1])>0) {
 					$data['product_descriptions'] = $matches[1];
+				}
+			}
+*/
+			$generators_cmd = $this->config->item('generators_cmd');
+			foreach ($this->config->item('generators') as $key => $generator) {
+				if ($generator[2] && $generator[1]=='java_generator') {
+					$descCmd = str_replace($this->config->item('cmd_mask'), $data['file_id'] ,$generators_cmd[$generator[1]]);
+					if ($result = shell_exec($descCmd)) {
+						if (preg_match_all('/\(.*\)\: "(.*)"/i',$result,$matches) && isset($matches[1]) && count($matches[1])>0) {
+							$data['product_descriptions'] = $matches[1];
+						}
+					}
+				} else if ($generator[2] && $generator[1]=='python_generator') {
+					$data['product_descriptions'] = array();
 				}
 			}
 

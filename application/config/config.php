@@ -361,7 +361,8 @@ $config['cmd_mask'] = '{1}';
 $config['cmd_path'] = '/opt/trillionmonkeys.com/tm';
 $config['attr_path'] = $config['cmd_path'].'/data';
 
-$config['descCmd'] = 'java -cp dist/NLG.jar com.swta.ChartGenerator data/tiger/all.rules data/tiger/desc/{1}/attributes.dat data/tiger/desc/{1}/blacklist.dat';
+$config['java_cmd'] = 'java -cp dist/NLG.jar com.swta.ChartGenerator data/tiger/all.rules data/tiger/desc/'.$config['cmd_mask'].'/attributes.dat data/tiger/desc/'.$config['cmd_mask'].'/blacklist.dat';
+$config['python_cmd'] = "python ML_script.py search\('".$config['cmd_mask']."'\)";
 
 $config['product_title'] = array('manu','screensize', 'manu', 'model', 'is3d', 'isled', 'ishdtv');
 
@@ -374,9 +375,14 @@ $config['attr_replace'] = array(
 	)
 );
 
-$config['generator'] = array(
+$config['generators'] = array(
 	array('Java Generator','java_generator', true),
 	array('Python Generator','python_generator', false)
+);
+
+$config['generators_cmd'] = array(
+	'java_generator' => 'cd '.$config['cmd_path'].'; '.$config['java_cmd'],
+	'python_generator' => 'cd '.$config['cmd_path'].'; '.$config['python_cmd']
 );
 
 // allow the local environment to override the settings

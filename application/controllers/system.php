@@ -6,8 +6,11 @@ class System extends MY_Controller {
  	{
   		parent::__construct();
 
-//  		$this->load->library('form_validation');
 		$this->data['title'] = 'System Setting';
+
+		if ($generators = $this->session->userdata('generators')) {
+			$this->config->set_item('generators',$generators);
+		}
 
  		if (!$this->ion_auth->logged_in())
 		{
@@ -19,5 +22,21 @@ class System extends MY_Controller {
 	public function index()
 	{
 		$this->render();
+	}
+
+	public function save()
+	{
+		if ($this->input->server('REQUEST_METHOD') === 'POST')
+		{
+			$generators = $this->config->item('generators');
+			foreach($generators as &$generator) {
+				$generator[2] = (bool) $this->input->post($generator[1]);
+
+			}
+
+			$this->session->set_userdata('generators', $generators);
+			//$this->config->set_item('generators', $generators);
+		}
+		redirect('system/index', 'refresh');
 	}
 }
