@@ -36,8 +36,8 @@ echo form_open('editor/search', array('id'=>'searchForm'));
 							<input type="text" class="span3"/>
 							<label>Words: <span id="wc">0</span> of </label>
 						</div>
-						<button class="btn new_btn_fr ml_40"><i class="icon-ok-sign"></i>&nbsp;Validate</button>
-						<button class="btn new_btn_fr btn-danger ml_30"><i class="icon-white icon-ok"></i>&nbsp;Save</button>
+						<button class="btn new_btn_fr ml_15"><i class="icon-ok-sign"></i>&nbsp;Validate</button>
+						<button class="btn new_btn_fr btn-danger ml_15"><i class="icon-white icon-ok"></i>&nbsp;Save</button>
 
 					</div>
 <?php //echo form_close(); ?>
