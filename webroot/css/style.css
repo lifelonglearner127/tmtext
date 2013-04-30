@@ -51,12 +51,12 @@ body{
 		color:#ffffff;
 		margin:5px 0;
 	}
-
+	
 .login_content{
 	width:100%;
 	float:left;
 	padding:20px 0 0 0;
-}
+}	
 
 .login_btn{
 	margin-left:30px;
@@ -73,7 +73,7 @@ body{
 	 -moz-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
 	      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
 	float:left;
-	width:100%;
+	width:100%;	
 	padding:10px 0;
 }
 
@@ -101,7 +101,7 @@ body{
 		color:#ffffff;
 		text-decoration:none;
 	}
-
+	
 /* Main Container Style */
 
 .main_container{
@@ -136,14 +136,14 @@ body{
 	.left_nav_content li:hover{
 		background:#c31233;
 	}
-
+	
 		.right_nav_content li a,
 		.left_nav_content li a{
 			padding:10px;
 			float:left;
 			color:#c31233;
-		}
-
+		}		
+		
 		.right_nav_content li.active a,
 		.right_nav_content li:hover a,
 		.left_nav_content li.active a,
@@ -157,7 +157,7 @@ body{
 	float:right;
 	margin:0 10px 0 0;
 	padding:0;
-}
+}	
 
 .main_content{
 	float:left;
@@ -170,30 +170,29 @@ body{
 	 -moz-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
 	      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
 	padding:2%;
-}
-
+}	
+	
 .search_area{
 	height:150px;
-}
+}	
 
 .chars_content{
 	float:right;
-	width:200px;
 }
 
 	.chars_content label{
 		float:right;
 		margin:5px 10px 0 0;
 	}
-
+	
 	.chars_content input{
 		float:right !important;
 		text-align:center;
 	}
-
+	
 .pagination{
 	margin:0 0 0 10px !important;
-	float:left;
+	float:left;	
 }
 
 .new_btn{
@@ -211,7 +210,7 @@ body{
 .title_max{
 	line-height: 27px;
     margin-bottom: 0;
-    margin-left: 60px;
+    margin-left: 70px;
 }
 
 #product_description{
@@ -238,12 +237,48 @@ body{
 		      border-radius: 4px;
 		background:#FBFBFB;
 	}
-
+	
+		.product_title_content li span{
+			float:left;
+			margin:5px;
+		}
+	
 		.product_title_content li a{
 			float:right;
 			margin:5px;
 		}
 
+.title_item_content{
+	float:right;
+	width:280px;
+}
+
+	.title_item_content textarea{
+		width:260px;
+		height:150px;
+	}
+
+.admin_system_content{
+	float:left;
+	width:100%;
+}
+
+	.admin_system_content p{
+		float:left;
+		width:150px;
+		margin-top:5px;
+	}
+
+	.admin_system_content input{
+		margin-left:0px;
+		width:250px;
+	}
+
+	.admin_system_content textarea{
+		margin:0;
+		width:250px;
+		height:100px;
+	}
 
 /* Margin Style  */
 
@@ -259,32 +294,18 @@ body{
 	margin-bottom:40px;
 }
 
-html.busy, html.busy * {
-  cursor: wait !important;
+.ml_20{
+	margin-left:20px;
 }
 
-#items.uneditable-input {
-	white-space: normal;
+.mt_40{
+	margin-top:40px !important;
 }
+	
+.ml_50{
+	margin-left:50px;
+}	
 
-#items_list li {
-	padding-bottom: 8px;
-	margin-left: -20px;
-}
-
-ul#items_list {
-	list-style-type: none;
-}
-
-.ml_40{
-	margin-left:40px;
-}
-
-.new_btn_fr{
-	float:right;
-	height:30px;
-}
-
-.ml_15{
-	margin-left: 15px;
+.mt_220{
+	margin-top:220px;
 }
