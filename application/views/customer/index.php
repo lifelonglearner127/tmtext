@@ -25,7 +25,7 @@
 								    <button type="submit" class="btn btn-danger"><i class="icon-white icon-ok"></i>&nbsp;Save</button>
 							    </div>
 						    </div>
-					    </form>
+					    </form>						
 					</div>
 					<div class="row-fluid">
 						<h3>Product Description Defaults:</h3>
@@ -34,32 +34,36 @@
 							    <label class="control-label" for="customer_name">Product Title:</label>
 							    <div class="controls">
 									<ul class="span12 product_title_content">
-										<li>Channels<a hef="#">x</a></li>
-										<li>Product Name<a hef="#">x</a></li>
-										<li>Type<a hef="#">x</a></li>
-										<li>Item<a hef="#">x</a></li>
-										<li>Specs<a hef="#">x</a></li>
+										<li><span>Channels</span><a hef="#">x</a></li>
+										<li><span>Product Name</span><a hef="#">x</a></li>
+										<li><span>Type</span><a hef="#">x</a></li>
+										<li><span>Item</span><a hef="#">x</a></li>
+										<li><span>Specs</span><a hef="#">x</a></li>
 									</ul>
 							    </div>
 						    </div>
 						    <div class="control-group">
 							    <label class="control-label" for="login">Title length:</label>
 							    <div class="controls">
-								    <input type="text" id="login" class="span4">
+								    <input type="text" id="login" class="span2">
 									<p class="title_max">characters max</p>
 							    </div>
 						    </div>
 						    <div class="control-group">
 							    <label class="control-label" for="password">Description length:</label>
 							    <div class="controls">
-								    <input type="text" id="login" class="span4">
+								    <input type="text" id="login" class="span2">
 									<p class="title_max">words max</p>
 							    </div>
 						    </div>
 						    <div class="control-group">
 							    <div class="controls">
 								    <button type="submit" class="btn btn-danger"><i class="icon-white icon-ok"></i>&nbsp;Save</button>
+								    <button type="submit" class="btn ml_20">Restore Default</button>
 							    </div>
 						    </div>
-					    </form>
+					    </form>	
+						<div class="title_item_content">
+							<textarea placeholder="Title Item List"></textarea>
+						</div>					
 					</div>
