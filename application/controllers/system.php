@@ -6,7 +6,7 @@ class System extends MY_Controller {
  	{
   		parent::__construct();
 
-		$this->data['title'] = 'System Setting';
+		$this->data['title'] = 'System Settings';
 
 		if ($generators = $this->session->userdata('generators')) {
 			$this->config->set_item('generators',$generators);

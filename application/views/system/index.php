@@ -1,5 +1,5 @@
 					<div class="row-fluid">
-						<h3>Descriptions Generator:</h3>
+						<h3>Description Generators:</h3>
 				    	<?php echo form_open("system/save", array("class"=>"form-horizontal", "id"=>"system_configure"));?>
 					    <?php foreach ($this->config->item('generators') as $key => $generator) {?>
 				    		<div class="control-group">

@@ -35,8 +35,8 @@ function getPager() {
 }
 
 function clearEditorForm() {
-//	$('.new_product').find('textarea[name="description"]').attr('disabled','disabled').val('');
-//	$( ".auto_title #title" ).attr('disabled','disabled').val('');
+	$('.new_product').find('textarea[name="description"]').val('');
+	$( ".auto_title #title" ).val('');
 	$('#pagination').html('');
 	$( "#items" ).html('Original product descriptions');
 	$( "#attributes" ).html('Product attributes');
