@@ -1,5 +1,6 @@
 					<h3>Original Descriptions:</h3>
 					<div class="row-fluid">
+<<<<<<< HEAD
 						<div class="span6 admin_system_content">
 							<p class="mt_40">CSV Directories:</p>
 							<textarea></textarea>
@@ -55,6 +56,18 @@
 									<p class="title_max">words max</p>
 							    </div>
 						    </div>
+=======
+						<h3>Descriptions Generator:</h3>
+				    	<?php echo form_open("system/save", array("class"=>"form-horizontal", "id"=>"system_configure"));?>
+					    <?php foreach ($this->config->item('generators') as $key => $generator) {?>
+				    		<div class="control-group">
+								<label class="control-label" for="java_generator"><?php echo $generator[0];?></label>
+								<div class="controls">
+									<?php echo form_checkbox($generator[1], 1, $generator[2], 'id="'.$generator[1].'"'.(($generator[1]=='python_generator1')?' disabled':''));?>
+								</div>
+							</div>
+						<?php } ?>
+>>>>>>> 71e0456e51a119210f084d8ceeae3e897860daca
 						    <div class="control-group">
 							    <div class="controls">
 								    <button type="submit" class="btn btn-danger"><i class="icon-white icon-ok"></i>&nbsp;Save</button>

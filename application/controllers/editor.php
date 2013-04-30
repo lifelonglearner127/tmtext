@@ -115,6 +115,8 @@ class Editor extends MY_Controller {
 
 	public function attributes()
 	{
+		$data['product_descriptions'] = array();
+
 		$this->form_validation->set_rules('s', 'Search', 'required|alpha_dash|xss_clean');
 
 		if ($this->form_validation->run() == true) {
@@ -181,11 +183,23 @@ class Editor extends MY_Controller {
 					$descCmd = str_replace($this->config->item('cmd_mask'), $data['file_id'] ,$generators_cmd[$generator[1]]);
 					if ($result = shell_exec($descCmd)) {
 						if (preg_match_all('/\(.*\)\: "(.*)"/i',$result,$matches) && isset($matches[1]) && count($matches[1])>0) {
-							$data['product_descriptions'] = $matches[1];
+							if( is_array($data['product_descriptions']) )
+								$data['product_descriptions'] = array_merge($data['product_descriptions'], $matches[1]);
+							else
+								$data['product_descriptions'] = $matches[1];
 						}
 					}
-				} else if ($generator[2] && $generator[1]=='python_generator') {
-					$data['product_descriptions'] = array();
+				}
+				if ($generator[2] && $generator[1]=='python_generator') {
+					$descCmd = str_replace($this->config->item('cmd_mask'), $s ,$generators_cmd[$generator[1]]);
+					if ($result = shell_exec($descCmd)) {
+						if (preg_match_all('/.*ELECTR_DESCRIPTION:\s*(.*)\s*-{5,}/',$result,$matches)) {
+							if( is_array($data['product_descriptions']) )
+								$data['product_descriptions'] = array_merge($data['product_descriptions'], $matches[1]);
+							else
+								$data['product_descriptions'] = $matches[1];
+						}
+					}
 				}
 			}
 
