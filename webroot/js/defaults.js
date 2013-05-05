@@ -1,6 +1,11 @@
 var current_product = 0;
 var products = '';
 
+function replaceAt(search, replace, subject, n) {
+	var s = subject.substring(n).replace(search, replace);
+    return subject.substring(0, n) +s;
+}
+
 function saveCurrentProduct(text) {
 	products.each(function(index, e) {
 		if (index+1 === current_product) {
@@ -45,6 +50,11 @@ function clearEditorForm() {
 }
 
 jQuery(document).ready(function($) {
+
+	$('.new_product #textarea').on('keyup change',function() {
+		$('textarea[name="description"]').val($(this).text()).trigger('change');
+	});
+
 	$('textarea[name="description"]').on('keydown change',function() {
 	 	var number = 0;
 	    var matches = $(this).val().match(/\b/g);
@@ -116,6 +126,11 @@ jQuery(document).ready(function($) {
 			    description.removeAttr('disabled');
 			    description.val(products.first().html());
 			    description.trigger('change');
+
+			    var descriptionDiv = $('.new_product #textarea');
+			    descriptionDiv.text(products.first().html())
+			    descriptionDiv.trigger('change');
+
 			    current_product = 1;
 
 			    $('#pagination').html(getPager());
@@ -128,11 +143,12 @@ jQuery(document).ready(function($) {
 		current_product = $(this).data('page');
 
 		var description = $('.new_product').find('textarea[name="description"]');
+		var descriptionDiv = $('.new_product #textarea');
 
 		products.each(function(index, e){
 			if (index+1 === current_product) {
-				 description.val($(e).html());
-				 description.trigger('change');
+				 description.val($(e).html()).trigger('change');
+				 descriptionDiv.html($(e).html()).trigger('change');
 				 $('#pagination').html(getPager());
 				 return;
 			}
@@ -145,6 +161,24 @@ jQuery(document).ready(function($) {
 	}).ajaxStop(function(){
 	    $('html').removeClass('busy');
 	});
+
+	$(document).on("click", "#validate", function(){
+		var description = $('.new_product').find('textarea[name="description"]').val();
+
+		var url = $(location).attr('href')+"/validate";
+
+		$.post(url, { description: description }, 'json')
+		.done(function(data) {
+			var d = [];
+			$.each(data, function(i, node) {
+				description = replaceAt(i, '<b>'+i+'</b>', description, node.offset);
+			});
+
+			$('.new_product #textarea').html(description).trigger('change');
+		});
+
+	});
+
 });
 //var start = new Date().getMilliseconds();
 //console.log("Executed in " + (new Date().getMilliseconds() - start) + " milliseconds");

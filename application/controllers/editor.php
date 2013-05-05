@@ -206,4 +206,20 @@ class Editor extends MY_Controller {
 			$this->load->view('editor/attributes',$data);
 		}
 	}
+
+	public function validate(){
+		$this->form_validation->set_rules('description', 'Description', 'required|xss_clean');
+
+		if ($this->form_validation->run() == true) {
+			$description = $this->input->post('description');
+
+			$this->load->library('hunspell');
+
+			$this->hunspell->check($description);
+
+			$this->output->set_content_type('application/json')
+    			->set_output(json_encode($this->hunspell->get()));
+
+		}
+	}
 }

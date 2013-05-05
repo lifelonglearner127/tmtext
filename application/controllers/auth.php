@@ -19,11 +19,13 @@ class Auth extends MY_Controller {
 
 		$this->lang->load('auth');
 		$this->load->helper('language');
+
 	}
 
 	//redirect if needed, otherwise display the user list
 	function index()
 	{
+		$this->data['title'] = 'Users Management';
 
 		if (!$this->ion_auth->logged_in())
 		{
