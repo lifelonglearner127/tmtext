@@ -1,6 +1,6 @@
 <div>
 	<div id="content">
-<?php echo nl2br($search_results); ?>
+<?php echo $search_results; ?>
 	</div>
 
 <?php echo $file_id; ?>

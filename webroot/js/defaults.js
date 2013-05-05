@@ -1,24 +1,36 @@
 var current_product = 0;
 var products = '';
+var attribs = '';
 
 function replaceAt(search, replace, subject, n) {
-	var s = subject.substring(n).replace(search, replace);
-    return subject.substring(0, n) +s;
+    return subject.substring(0, n) +subject.substring(n).replace(search, replace);
+//    return subject.substring(0, n) +"("+n+search+")"+subject.substring(n);
 }
 
 function saveCurrentProduct(text) {
-	products.each(function(index, e) {
+/*	products.each(function(index, e) {
 		if (index+1 === current_product) {
 			 $(e).html(text);
 			 return;
 		}
-	});
+	});*/
+
+	products[current_product-1] = text;
 }
 
 function getPager() {
 	var pager = '';
     if (products.length >1) {
-    	products.each(function(index){
+/*    	products.each(function(index){
+    		var i = index+1;
+    		if (i == current_product) {
+    			pager += '<li><a href="#">'+i+'</a></li>';
+    		} else if ((i < current_product && i>current_product-3) || (i > current_product && i<current_product+3)) {
+    			pager += '<li><a href="#" data-page="'+i+'">'+i+'</a></li>';
+    		}
+    	});*/
+
+    	$.each(products, function(index, node) {
     		var i = index+1;
     		if (i == current_product) {
     			pager += '<li><a href="#">'+i+'</a></li>';
@@ -26,6 +38,7 @@ function getPager() {
     			pager += '<li><a href="#" data-page="'+i+'">'+i+'</a></li>';
     		}
     	});
+
 
     	if (current_product-3 > 0) {
     		pager  = '<li><a href="#" data-page="1">&lt;&lt;</a></li>'
@@ -112,23 +125,29 @@ jQuery(document).ready(function($) {
 
 		    url = $('#attributesForm').attr( 'action' );
 
-		    var attributes = $.post( url, { s: term } );
+		    var attributes = $.post( url, { s: term }, 'json' );
 
 		    attributes.done(function( data ) {
-			    $( "#attributes" ).html( $(data).find('#content') );
+//			    $( "#attributes" ).html( $(data).find('#content') );
+			    $( "#attributes" ).html( data['search_results'] );
+ 			    attribs = data['attributes'];
 
 			    var title = $( ".auto_title #title" );
-			    title.val( $(data).find('#product_title').html() ).removeAttr('disabled').trigger('change');
+//			    title.val( $(data).find('#product_title').html() ).removeAttr('disabled').trigger('change');
+			    title.val( data['product_title'] ).trigger('change');
 
-			    products = $(data).find('#product_descriptions').find('li');
+//			    products = $(data).find('#product_descriptions').find('li');
+			    products = data['product_descriptions'];
 
 			    var description = $('.new_product').find('textarea[name="description"]');
 			    description.removeAttr('disabled');
-			    description.val(products.first().html());
+//			    description.val(products.first().html());
+			    description.val(products[0]);
 			    description.trigger('change');
 
 			    var descriptionDiv = $('.new_product #textarea');
-			    descriptionDiv.text(products.first().html())
+//			    descriptionDiv.text(products.first().html())
+			    descriptionDiv.text(products[0]);
 			    descriptionDiv.trigger('change');
 
 			    current_product = 1;
@@ -141,19 +160,26 @@ jQuery(document).ready(function($) {
 	$(document).on("click", "#pagination a", function(){
 		event.preventDefault();
 		current_product = $(this).data('page');
+		if ($(this).data('page')!==undefined) {
+			var description = $('.new_product').find('textarea[name="description"]');
+			var descriptionDiv = $('.new_product #textarea');
 
-		var description = $('.new_product').find('textarea[name="description"]');
-		var descriptionDiv = $('.new_product #textarea');
+	/*		products.each(function(index, e){
+				if (index+1 === current_product) {
+					 description.val($(e).html()).trigger('change');
+					 descriptionDiv.html($(e).html()).trigger('change');
+					 $('#pagination').html(getPager());
+					 return;
+				}
+			});*/
+			description.val(products[current_product-1]);
+			descriptionDiv.html(products[current_product-1]).trigger('change');
 
-		products.each(function(index, e){
-			if (index+1 === current_product) {
-				 description.val($(e).html()).trigger('change');
-				 descriptionDiv.html($(e).html()).trigger('change');
-				 $('#pagination').html(getPager());
-				 return;
-			}
-		});
+			 $('#pagination').html(getPager());
 
+	//		description.val(""+products[current_product-1]).trigger('change');
+	//		descriptionDiv.html(""+products[current_product-1]).trigger('change');
+		}
 	});
 
 	$(document).ajaxStart(function(){
@@ -170,8 +196,17 @@ jQuery(document).ready(function($) {
 		$.post(url, { description: description }, 'json')
 		.done(function(data) {
 			var d = [];
-			$.each(data, function(i, node) {
-				description = replaceAt(i, '<b>'+i+'</b>', description, node.offset);
+			$.each(data['spellcheck'], function(i, node) {
+				description = replaceAt(i, '<b>'+i+'</b>', description, parseInt(node.offset));
+			});
+
+			var textAttribs = data['attributes']['description']['attributes']['attribute'];
+			$.each(textAttribs, function(i,e){
+				if (attribs[e['@attributes']['tagName']] !== undefined) {
+					if (attribs[e['@attributes']['tagName']] !== e['@attributes']['value']) {
+						description = replaceAt(e['@attributes']['value'], '<i>'+e['@attributes']['value']+'</i>', description, e['@attributes']['startCharOrig']);
+					}
+				};
 			});
 
 			$('.new_product #textarea').html(description).trigger('change');
