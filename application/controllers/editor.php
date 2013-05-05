@@ -6,9 +6,7 @@ class Editor extends MY_Controller {
  	{
   		parent::__construct();
 
-  		//$this->load->library('ion_auth');
   		$this->load->library('form_validation');
-		//$this->config->set_item('item_name', 'item_value');
 		$this->data['title'] = 'Editor';
 		$this->data['head'][] = '<script src="'.base_url().'js/jquery.expander.js"></script>';
 
@@ -170,14 +168,6 @@ class Editor extends MY_Controller {
 				}
 			}
 
-/*			$descCmd = str_replace($this->config->item('cmd_mask'), $data['file_id'] ,$this->config->item('descCmd'));
-//			if($result = shell_exec('cd '.$this->config->item('cmd_path').'; '.$descCmd)) {
-			if($result = shell_exec('cd '.$this->config->item('cmd_path').'; ./'.$descCmd)) {
-				if (preg_match_all('/\(.*\)\: "(.*)"/i',$result,$matches) && isset($matches[1]) && count($matches[1])>0) {
-					$data['product_descriptions'] = $matches[1];
-				}
-			}
-*/
 			$generators_cmd = $this->config->item('generators_cmd');
 			foreach ($this->config->item('generators') as $key => $generator) {
 				if ($generator[2] && $generator[1]=='java_generator') {
@@ -203,7 +193,6 @@ class Editor extends MY_Controller {
 					}
 				}
 			}
-//			$this->load->view('editor/attributes',$data);
 			$this->output->set_content_type('application/json')
     			->set_output(json_encode($data));
 		}
