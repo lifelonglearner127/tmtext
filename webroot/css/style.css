@@ -308,11 +308,13 @@ body{
 			float:left;
 			margin:5px;
 			cursor:move;
+			padding-right:10px;
 		}
 
 		.gallery li a{
 			float:right;
-			margin:5px 5px 5px 0;
+			margin:5px 5px 5px -10px;
+			position:absolute;
 		}
 
 

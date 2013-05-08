@@ -6,44 +6,34 @@
 		var $gallery = $( "#gallery" ),
 			$trash = $( "#trash" );
 	
-		$gallery.sortable({
-			revert: true
-		});
-
-		$( "#draggable" ).draggable({
-			connectToSortable: "#sortable",
-			helper: "clone",
-			revert: "invalid"
-		});
-
-		$( "ul, li" ).disableSelection();
-
-		// let the gallery items be draggable
-		$( "li", $gallery ).draggable({
-			cancel: "a.ui-icon", // clicking an icon won't initiate dragging
-			revert: "invalid", // when not dropped, the item will revert back to its initial position
-			containment: "document",
-			helper: "clone",
-			cursor: "move"
-		});
-
 		// let the trash be droppable, accepting the gallery items
 		$trash.droppable({
 			accept: "#gallery > li",
 			activeClass: "ui-state-highlight",
 			drop: function( event, ui ) {
 				deleteImage( ui.draggable );
+				setTimeout (function(){
+					$("#trash .gallery li").draggable({
+						cancel: "a.ui-icon", // clicking an icon won't initiate dragging
+						revert: "invalid", // when not dropped, the item will revert back to its initial position
+						containment: "document",
+						helper: "clone",
+						cursor: "move"
+					});
+				
+					$gallery.droppable({
+						accept: "#trash .gallery li",
+						activeClass: "custom-state-active",
+						drop: function( event, ui ) {
+							recycleImage( ui.draggable );
+						}
+					});
+				},1000);
 			}
 		});
-
+		
 		// let the gallery be droppable as well, accepting items from the trash
-		$gallery.droppable({
-			accept: "#trash li",
-			activeClass: "custom-state-active",
-			drop: function( event, ui ) {
-				recycleImage( ui.draggable );
-			}
-		});
+		$gallery.sortable();
 
 		// image deletion function
 		var recycle_icon = "<a hef='#' class='ui-icon ui-icon-refresh'>x</a>";
@@ -130,7 +120,7 @@
 					    </form>						
 					</div>
 					<div class="row-fluid">
-						<div class="span8">
+						<div class="span9">
 							<h3>Product Description Defaults:</h3>
 						    <form class="form-horizontal" id="product_description">
 							    <div class="control-group">
@@ -167,7 +157,7 @@
 							    </div>
 						    </form>	
 						</div>
-						<div class="span4">
+						<div class="span3">
 							<div id="trash"></div>		
 						</div>			
 					</div>
