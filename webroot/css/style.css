@@ -394,3 +394,7 @@ ul#items_list, #attributes ul {
 .ml_0 {
 	margin-left: 0px !important;
 }
+
+div.uneditable-input {
+	color: #555; background-color:white; white-space: normal; overflow: auto;
+}

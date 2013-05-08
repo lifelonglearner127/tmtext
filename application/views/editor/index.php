@@ -24,7 +24,7 @@ echo form_open('editor/search', array('id'=>'searchForm'));
 						</div>
 					</div>
 					<div class="row-fluid new_product">
-						<div class="search_area uneditable-input" id="textarea" onClick="this.contentEditable='true';" style="color: #555; width: 98.5%; background-color:white; white-space: normal; overflow: auto;"></div>
+						<div class="search_area uneditable-input" id="textarea" onClick="this.contentEditable='true';" style="cursor: text; width: 98.5%;"></div>
 					</div>
 					<div class="row-fluid new_product">
 						<textarea class="span12 search_area" name='description' style="display:none"></textarea>
@@ -40,7 +40,7 @@ echo form_open('editor/search', array('id'=>'searchForm'));
 							<label>Words: <span id="wc">0</span> of </label>
 						</div>
 						<button id="validate" class="btn new_btn_fr ml_15"><i class="icon-ok-sign"></i>&nbsp;Validate</button>
-						<button class="btn new_btn_fr btn-danger ml_15"><i class="icon-white icon-ok"></i>&nbsp;Save</button>
+						<button id="save" class="btn new_btn_fr btn-danger ml_15"><i class="icon-white icon-ok"></i>&nbsp;Save</button>
 
 					</div>
 <?php //echo form_close(); ?>
