@@ -363,6 +363,8 @@ $config['attr_path'] = $config['cmd_path'].'/data';
 
 $config['java_cmd'] = 'java -cp dist/NLG.jar com.swta.ChartGenerator data/tiger/all.rules data/tiger/desc/'.$config['cmd_mask'].'/attributes.dat data/tiger/desc/'.$config['cmd_mask'].'/blacklist.dat';
 $config['python_cmd'] = "python ML_script.py search\('".$config['cmd_mask']."'\)";
+$config['tsv_cmd'] = "./scripts/tsv_single.pl '".$config['cmd_mask']."' tagRules/TVs.dat";
+$config['tsv_cmd'] = 'cd '.$config['cmd_path'].'; ./'.$config['tsv_cmd'];
 
 $config['product_title'] = array('manu','screensize', 'manu', 'model', 'is3d', 'isled', 'ishdtv');
 
@@ -372,6 +374,12 @@ $config['attr_replace'] = array(
 	),
 	array(
 		"@" => ' ',
+	)
+);
+
+$config['attr_replace_validate'] = array(
+	array(
+		" inch" => "\""
 	)
 );
 

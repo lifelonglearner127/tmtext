@@ -366,12 +366,17 @@ html.busy, html.busy * {
 	white-space: normal;
 }
 
-#items_list li {
+#items_list li{
 	padding-bottom: 8px;
 	margin-left: -20px;
 }
 
-ul#items_list {
+#attributes ul li  {
+	margin-left: -20px;
+}
+
+
+ul#items_list, #attributes ul {
 	list-style-type: none;
 }
 

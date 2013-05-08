@@ -6,9 +6,7 @@ class Editor extends MY_Controller {
  	{
   		parent::__construct();
 
-  		//$this->load->library('ion_auth');
   		$this->load->library('form_validation');
-		//$this->config->set_item('item_name', 'item_value');
 		$this->data['title'] = 'Editor';
 		$this->data['head'][] = '<script src="'.base_url().'js/jquery.expander.js"></script>';
 
@@ -144,22 +142,23 @@ class Editor extends MY_Controller {
 										$content = str_replace(array_keys($replacement), array_values($replacement), $content);
 									}
 
-									$data['search_results'] = $content;
+									$data['search_results'] = nl2br($content);
 
 									if (preg_match_all('/\s?(\S*)\s*(.*)/i', $content, $matches)) {
 										foreach($matches[1] as $i=>$v) {
 											if (!empty($v))
-											$attributes[strtolower($v)] = $matches[2][$i];
+											$attributes[strtoupper($v)] = $matches[2][$i];
 										}
 									}
 
 									if (!empty($attributes)) {
 										$title = array();
 										foreach ($this->config->item('product_title') as $v) {
-											if (isset($attributes[$v]))
-												$title[] = $attributes[$v];
+											if (isset($attributes[strtoupper($v)]))
+												$title[] = $attributes[strtoupper($v)	];
 										}
 										$data['product_title'] = implode(' ', $title);
+										$data['attributes'] = $attributes;
 									}
 									break;
 								}
@@ -169,14 +168,6 @@ class Editor extends MY_Controller {
 				}
 			}
 
-/*			$descCmd = str_replace($this->config->item('cmd_mask'), $data['file_id'] ,$this->config->item('descCmd'));
-//			if($result = shell_exec('cd '.$this->config->item('cmd_path').'; '.$descCmd)) {
-			if($result = shell_exec('cd '.$this->config->item('cmd_path').'; ./'.$descCmd)) {
-				if (preg_match_all('/\(.*\)\: "(.*)"/i',$result,$matches) && isset($matches[1]) && count($matches[1])>0) {
-					$data['product_descriptions'] = $matches[1];
-				}
-			}
-*/
 			$generators_cmd = $this->config->item('generators_cmd');
 			foreach ($this->config->item('generators') as $key => $generator) {
 				if ($generator[2] && $generator[1]=='java_generator') {
@@ -202,24 +193,37 @@ class Editor extends MY_Controller {
 					}
 				}
 			}
-
-			$this->load->view('editor/attributes',$data);
+			$this->output->set_content_type('application/json')
+    			->set_output(json_encode($data));
 		}
 	}
 
 	public function validate(){
 		$this->form_validation->set_rules('description', 'Description', 'required|xss_clean');
 
+		$output = array();
+
 		if ($this->form_validation->run() == true) {
-			$description = $this->input->post('description');
+			$description = str_replace("'","'\''",$this->input->post('description'));
 
 			$this->load->library('hunspell');
-
 			$this->hunspell->check($description);
 
-			$this->output->set_content_type('application/json')
-    			->set_output(json_encode($this->hunspell->get()));
+			$a = $this->hunspell->get();
+			$output['spellcheck'] = $a;
 
+    		$descCmd = str_replace($this->config->item('cmd_mask'), $description ,$this->config->item('tsv_cmd'));
+			if ($result = shell_exec($descCmd)) {
+				$output['attributes'] = json_decode(json_encode(simplexml_load_string($result)),1);
+				foreach($output['attributes']['description']['attributes']['attribute'] as &$attrib) {
+					foreach ($this->config->item('attr_replace_validate') as $replacement) {
+						$attrib['@attributes']['value'] = str_replace(array_keys($replacement), array_values($replacement), $attrib['@attributes']['value']);
+					}
+				}
+			}
 		}
+
+		$this->output->set_content_type('application/json')
+    			->set_output(json_encode($output));
 	}
 }
