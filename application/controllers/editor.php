@@ -29,6 +29,32 @@ class Editor extends MY_Controller {
 
 	public function save()
 	{
+		$this->load->model('searches_model');
+		$this->load->model('saved_description_model');
+
+		$this->ion_auth->get_user_id();
+
+		$this->form_validation->set_rules('attribs', 'Atributes', 'required|xss_clean');
+		$this->form_validation->set_rules('search', 'Search', 'required|alpha_dash|xss_clean');
+		$this->form_validation->set_rules('current', 'Current description', 'required|integer');
+		$this->form_validation->set_rules('title', 'Title', 'required|xss_clean');
+		$this->form_validation->set_rules('description', 'Description', 'required|xss_clean');
+		$this->form_validation->set_rules('search_id', 'Old id', 'integer');
+
+		if ($this->form_validation->run() === true) {
+			if (!($search_id = $this->input->post('search_id'))) {
+				$search_id = $this->searches_model->insert($this->input->post('search'), serialize($this->input->post('attribs')));
+			}
+			$data['saved_description_id'] = $this->saved_description_model->insert($this->input->post('title'), $this->input->post('description'), $search_id);
+			$data['search_id'] = $search_id;
+
+		} else {
+			$data['message'] = (validation_errors() ? validation_errors() : $this->session->flashdata('message'));
+		}
+
+
+		$this->output->set_content_type('application/json')
+    			->set_output(json_encode($data));
 
 	}
 
@@ -215,9 +241,11 @@ class Editor extends MY_Controller {
     		$descCmd = str_replace($this->config->item('cmd_mask'), $description ,$this->config->item('tsv_cmd'));
 			if ($result = shell_exec($descCmd)) {
 				$output['attributes'] = json_decode(json_encode(simplexml_load_string($result)),1);
-				foreach($output['attributes']['description']['attributes']['attribute'] as &$attrib) {
-					foreach ($this->config->item('attr_replace_validate') as $replacement) {
-						$attrib['@attributes']['value'] = str_replace(array_keys($replacement), array_values($replacement), $attrib['@attributes']['value']);
+				if (isset($output['attributes']['description']['attributes']['attribute'])) {
+					foreach($output['attributes']['description']['attributes']['attribute'] as &$attrib) {
+						foreach ($this->config->item('attr_replace_validate') as $replacement) {
+							$attrib['@attributes']['value'] = str_replace(array_keys($replacement), array_values($replacement), $attrib['@attributes']['value']);
+						}
 					}
 				}
 			}

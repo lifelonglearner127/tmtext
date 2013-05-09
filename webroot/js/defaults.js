@@ -164,26 +164,34 @@ jQuery(document).ready(function($) {
 	});
 
 	$(document).on("click", "#validate", function(){
+		var vbutton = $(this);
 		var description = $('.new_product').find('textarea[name="description"]').val();
-
 		var url =  $('#attributesForm').attr( 'action' ).replace('attributes', 'validate');
+
+		vbutton.html('<i class="icon-ok-sign"></i>&nbsp;Validating...');
 
 		$.post(url, { description: description }, 'json')
 		.done(function(data) {
 			var d = [];
-			$.each(data['spellcheck'], function(i, node) {
-				description = replaceAt(i, '<b>'+i+'</b>', description, parseInt(node.offset));
-			});
+			if (data['spellcheck'] !== undefined) {
+				$.each(data['spellcheck'], function(i, node) {
+					description = replaceAt(i, '<b>'+i+'</b>', description, parseInt(node.offset));
+				});
+			}
 
-			var textAttribs = data['attributes']['description']['attributes']['attribute'];
-			$.each(textAttribs, function(i,e){
-				if (attribs[e['@attributes']['tagName']] !== undefined) {
-					if (attribs[e['@attributes']['tagName']] !== e['@attributes']['value']) {
-						description = replaceAt(e['@attributes']['value'], '<i>'+e['@attributes']['value']+'</i>', description, e['@attributes']['startCharOrig']);
-					}
-				};
-			});
-
+			if (data['attributes'] !== undefined) {
+				var textAttribs = data['attributes']['description']['attributes']['attribute'];
+				if (textAttribs !== undefined ) {
+					$.each(textAttribs, function(i,e){
+						if (attribs[e['@attributes']['tagName']] !== undefined) {
+							if (attribs[e['@attributes']['tagName']] !== e['@attributes']['value']) {
+								description = replaceAt(e['@attributes']['value'], '<b>'+e['@attributes']['value']+'</b>', description, e['@attributes']['startCharOrig']);
+							}
+						};
+					});
+				}
+			}
+			vbutton.html('<i class="icon-ok-sign"></i>&nbsp;Validate');
 			$('.new_product #textarea').html(description).trigger('change');
 		});
 
@@ -203,6 +211,17 @@ jQuery(document).ready(function($) {
 	    $(this).css({'background':'#CAEAFF'});
 	});
 
+
+	$(document).on("click", "#save", function(){
+		var url =  $('#attributesForm').attr( 'action' ).replace('attributes', 'save');
+		var d = $('.new_product').find('textarea[name="description"]').val();
+		var t = $( ".auto_title #title" ).val();
+		var s = $("#searchForm").find( 'input[name="s"]' ).val();
+
+		$.post(url, { attribs: attribs , search: s , current: current_product, title: t, description: d }, 'json')
+		.done(function(data) {
+		 });
+	});
 
 });
 //var start = new Date().getMilliseconds();
