@@ -402,3 +402,11 @@ ul#items_list, #attributes ul {
 div.uneditable-input {
 	color: #555; background-color:white; white-space: normal; overflow: auto;
 }
+
+a.current_page {
+        font-weight: bold;
+}
+
+a.gray_out {
+        color:#DDDDDD;
+}

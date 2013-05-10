@@ -16,17 +16,20 @@ function getPager() {
     	$.each(products, function(index, node) {
     		var i = index+1;
     		if (i == current_product) {
-    			pager += '<li><a href="#">'+i+'</a></li>';
-    		} else if ((i < current_product && i>current_product-3) || (i > current_product && i<current_product+3)) {
+    			pager += '<li><a href="#" class="current_page">'+i+'</a></li>';
+    		} else if ((i < current_product && i>current_product) || (i > current_product && i<current_product+5)) {
     			pager += '<li><a href="#" data-page="'+i+'">'+i+'</a></li>';
     		}
     	});
 
 
-    	if (current_product-3 > 0) {
-    		pager  = '<li><a href="#" data-page="1">&lt;&lt;</a></li>'
-    				+'<li><a href="#" data-page="'+(current_product-1)+'">&lt;</a></li>'+pager;
-    	}
+    	if (current_product == 1) {
+                pager  = '<li><a href="#" class="gray_out">&lt;&lt;</a></li>'
+                        	+'<li><a href="#" class="gray_out">&lt;</a></li>'+pager;    	
+    	} else {
+                pager  = '<li><a href="#" data-page="1">&lt;&lt;</a></li>'
+                        	+'<li><a href="#" data-page="'+(current_product-1)+'">&lt;</a></li>'+pager;
+        }
     	if (current_product+3 <= products.length) {
     		pager += '<li><a href="#" data-page="'+(current_product+1)+'">&gt;</a></li>'
     				+'<li><a href="#" data-page="'+(products.length)+'">&gt;&gt;</a></li>';
@@ -142,9 +145,9 @@ jQuery(document).ready(function($) {
 		});
 	});
 
-	$(document).on("click", "#pagination a", function(){
-		event.preventDefault();
-		current_product = $(this).data('page');
+	$(document).on("click", "#pagination a", function(event){
+                event.preventDefault();
+                current_product = $(this).data('page');
 		if ($(this).data('page')!==undefined) {
 			var description = $('.new_product').find('textarea[name="description"]');
 			var descriptionDiv = $('.new_product #textarea');
