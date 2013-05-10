@@ -40,7 +40,7 @@ echo form_open('editor/search', array('id'=>'searchForm'));
 							<label>Words: <span id="wc">0</span> of </label>
 						</div>
 						<button id="validate" class="btn new_btn_fr ml_15"><i class="icon-ok-sign"></i>&nbsp;Validate</button>
-						<button id="save" class="btn new_btn_fr btn-danger ml_15"><i class="icon-white icon-ok"></i>&nbsp;Save</button>
+						<button id="save" class="btn new_btn_fr btn-success ml_15"><i class="icon-white icon-ok"></i>&nbsp;Save</button>
 
 					</div>
 <?php //echo form_close(); ?>

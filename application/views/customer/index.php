@@ -55,7 +55,7 @@
 						    </div>
 						    <div class="control-group">
 							    <div class="controls">
-								    <button type="submit" class="btn btn-danger"><i class="icon-white icon-ok"></i>&nbsp;Save</button>
+								    <button type="submit" class="btn btn-success"><i class="icon-white icon-ok"></i>&nbsp;Save</button>
 							    </div>
 						    </div>
 					    </form>						
@@ -92,7 +92,7 @@
 							    </div>
 							    <div class="control-group">
 								    <div class="controls">
-									    <button type="submit" class="btn btn-danger"><i class="icon-white icon-ok"></i>&nbsp;Save</button>
+									    <button type="submit" class="btn btn-success"><i class="icon-white icon-ok"></i>&nbsp;Save</button>
 									    <button type="submit" class="btn ml_20">Restore Default</button>
 								    </div>
 							    </div>

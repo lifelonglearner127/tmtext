@@ -80,7 +80,7 @@
 							    </div>
 							    <div class="control-group">
 								    <div class="controls">
-									    <button type="submit" class="btn btn-danger"><i class="icon-white icon-ok"></i>&nbsp;Save</button>
+									    <button type="submit" class="btn btn-success"><i class="icon-white icon-ok"></i>&nbsp;Save</button>
 									    <button type="submit" class="btn ml_20">Restore Default</button>
 									    <button type="submit" class="btn ml_50 btn-inverse">Delete</button>
 								    </div>
