@@ -231,7 +231,6 @@ jQuery(document).ready(function($) {
 	    $(this).css({'background':'#CAEAFF'});
 	});
 
-
 	$(document).on("click", "#save", function(){
 		var url =  $('#attributesForm').attr( 'action' ).replace('attributes', 'save');
 		var d = $('.new_product').find('textarea[name="description"]').val();
@@ -262,6 +261,76 @@ jQuery(document).ready(function($) {
 			console.log(rev);
 		 });
 	});
+
+    $(document).on("click", "#tageditor_content #items_list li span", function(){
+        $("#tageditor_content #items_list li").each(function(){
+            $(this).css({'background':'none'});
+        });
+        $("#tageditor_content #items_list li input").each(function(){
+            $(this).parent().html('<span>'+$(this).val()+'</span>');
+        });
+        $(this).parent().css({'background':'#CAEAFF'});
+        $(this).parent().html("<input type='text' name='tagRule[]'value='"+$(this).text()+"'>");
+    });
+
+    $(document).on("click", "#tageditor_content #items_list li input", function(){
+        $("#tageditor_content #items_list li").each(function(){
+            $(this).css({'background':'none'})
+        });
+        $(this).parent().css({'background':'#CAEAFF'});
+    });
+
+    $(document).on("focusout", "#tageditor_content #items_list li", function(){
+        $(this).parent().html('<span>'+$(this).val()+'</span>');
+    });
+
+    $(document).on("change", "select[name='filename']", function(){
+        $.post('admin_tag_editor/file_data', { filename: $("select[name='filename'] option:selected").text() })
+            .done(function(data) {
+            $('#tageditor_content #items').html(data);
+        });
+    });
+
+    $(document).on("click", "button#test", function(){
+        var regtext = $("#tageditor_content #items_list li input").val().split(',');
+        var querystr = regtext[0].slice(1).slice(0,-1);
+        if(querystr != undefined){
+            var result = $('#standart_description').html();
+            var reg = new RegExp(querystr, 'gi');
+            var final_str = result.replace(reg, function(str) {return '<span class="highlight">'+str+'</span>'});
+            $('#tageditor_description').html(final_str);
+        }
+        return false;
+    });
+
+    $(document).on("click", "button#save_data", function(){
+        var arr = new Array();
+        $('#tageditor_content #items_list li').each(function(){
+            if($(this).find('input').val()==undefined){
+               arr += $(this).text()+"\n";
+            } else {
+                arr += $(this).find('input').val()+"\n";
+            }
+        });
+        $.post('admin_tag_editor/save_file_data', { data: arr, filename: $("select[name='filename'] option:selected").text() })
+            .done(function(data) {
+        });
+        return false;
+    });
+
+    $(document).on("click", "#tageditor_description ul li", function(){
+        return false;
+    });
+
+    $(document).on("keypress", "#tageditor_content #items_list li input", function(e){
+        if(e.keyCode == 13){
+            return false;
+        }
+    });
+
+    $(document).on("focusout", "#tageditor_content #items_list li input", function(){
+        return false;
+    });
 
 });
 //var start = new Date().getMilliseconds();
