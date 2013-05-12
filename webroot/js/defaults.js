@@ -191,8 +191,21 @@ jQuery(document).ready(function($) {
 				if (textAttribs !== undefined ) {
 					$.each(textAttribs, function(i,e){
 						if (attribs[e['@attributes']['tagName']] !== undefined) {
-							if (attribs[e['@attributes']['tagName']] !== e['@attributes']['value']) {
-								description = replaceAt(e['@attributes']['value'], '<b>'+e['@attributes']['value']+'</b>', description, e['@attributes']['startCharOrig']);
+							var attrInDescription = '';
+							var _equal = false;
+
+							$.each(e['@attributes']['value'], function(idx, obj) {
+								if (description.indexOf(obj) > -1) {
+									attrInDescription = obj;
+								}
+
+								if (attribs[e['@attributes']['tagName']] == obj) {
+									_equal = true;
+								}
+							});
+
+							if (!_equal) {
+								description = replaceAt(attrInDescription, '<b>'+attrInDescription+'</b>', description, e['@attributes']['startCharOrig']);
 							}
 						};
 					});

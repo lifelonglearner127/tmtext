@@ -257,8 +257,13 @@ class Editor extends MY_Controller {
 				$output['attributes'] = json_decode(json_encode(simplexml_load_string($result)),1);
 				if (isset($output['attributes']['description']['attributes']['attribute'])) {
 					foreach($output['attributes']['description']['attributes']['attribute'] as &$attrib) {
+						$a = $attrib['@attributes']['value'];
+						$attrib['@attributes']['value'] = array();
+						$attrib['@attributes']['value'][] = $a;
 						foreach ($this->config->item('attr_replace_validate') as $replacement) {
-							$attrib['@attributes']['value'] = str_replace(array_keys($replacement), array_values($replacement), $attrib['@attributes']['value']);
+							if ( str_replace(array_keys($replacement), array_values($replacement), $a) != $a ) {
+								$attrib['@attributes']['value'][] = str_replace(array_keys($replacement), array_values($replacement), $a);
+							}
 						}
 					}
 				}
