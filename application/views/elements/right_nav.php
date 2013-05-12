@@ -3,6 +3,7 @@ $menu = array(
 	array('controller' => 'system', 'name' => 'System'),
 	array('controller' => 'admin_customer', 'name' => 'Customers'),
 	array('controller' => 'admin_editor', 'name' => 'Editors'),
+    array('controller' => 'admin_tag_editor', 'name' => 'Tag Editor'),
 );
 
 ?>
