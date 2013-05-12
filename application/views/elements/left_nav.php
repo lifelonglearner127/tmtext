@@ -1,6 +1,8 @@
 <?php
 $menu = array(
-	array('controller' => 'editor', 'name' => 'Editor'),
+	array('controller' => 'editor', 'name' => 'Create'),
+    array('controller' => 'validate', 'name' => 'Validate'),
+    array('controller' => 'measure', 'name' => 'Measure'),
 	array('controller' => 'customer', 'name' => 'Customer'),
 );
 
