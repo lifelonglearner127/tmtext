@@ -39,15 +39,29 @@ class Editor extends MY_Controller {
 		$this->form_validation->set_rules('current', 'Current description', 'required|integer');
 		$this->form_validation->set_rules('title', 'Title', 'required|xss_clean');
 		$this->form_validation->set_rules('description', 'Description', 'required|xss_clean');
-		$this->form_validation->set_rules('search_id', 'Old id', 'integer');
+		$this->form_validation->set_rules('search_id', 'Old search id', 'integer');
+		$this->form_validation->set_rules('parent_id', 'Old id', 'integer');
+		$this->form_validation->set_rules('revision', 'Revision', 'integer');
 
 		if ($this->form_validation->run() === true) {
 			if (!($search_id = $this->input->post('search_id'))) {
 				$search_id = $this->searches_model->insert($this->input->post('search'), serialize($this->input->post('attribs')));
 			}
-			$data['saved_description_id'] = $this->saved_description_model->insert($this->input->post('title'), $this->input->post('description'), $search_id);
-			$data['search_id'] = $search_id;
+			if (!($parent_id = $this->input->post('parent_id'))) {
+				$parent_id = 0;
+			}
+			if (!($revision = $this->input->post('revision'))) {
+				$revision = 1;
+			}
 
+			$data['saved_description_id'] = $this->saved_description_model->insert($this->input->post('title'), $this->input->post('description'), $revision,  $search_id, $parent_id);
+
+			if ($parent_id == 0) {
+				$parent_id = $data['saved_description_id'];
+			}
+			$data['parent_id'] = $parent_id;
+			$data['search_id'] = $search_id;
+			$data['revision'] = $revision;
 		} else {
 			$data['message'] = (validation_errors() ? validation_errors() : $this->session->flashdata('message'));
 		}

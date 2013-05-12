@@ -1,6 +1,8 @@
 var current_product = 0;
 var products = '';
 var attribs = '';
+var rev = [];
+var search_id = undefined;
 
 function replaceAt(search, replace, subject, n) {
     return subject.substring(0, n) +subject.substring(n).replace(search, replace);
@@ -25,7 +27,7 @@ function getPager() {
 
     	if (current_product == 1) {
                 pager  = '<li><a href="#" class="gray_out">&lt;&lt;</a></li>'
-                        	+'<li><a href="#" class="gray_out">&lt;</a></li>'+pager;    	
+                        	+'<li><a href="#" class="gray_out">&lt;</a></li>'+pager;
     	} else {
                 pager  = '<li><a href="#" data-page="1">&lt;&lt;</a></li>'
                         	+'<li><a href="#" data-page="'+(current_product-1)+'">&lt;</a></li>'+pager;
@@ -46,6 +48,8 @@ function clearEditorForm() {
 	$( "#attributes" ).html('Product attributes');
 	$('#wc').html('0');
 	$('#tc').html('0');
+	search_id = undefined;
+	rev = [];
 }
 
 jQuery(document).ready(function($) {
@@ -220,9 +224,29 @@ jQuery(document).ready(function($) {
 		var d = $('.new_product').find('textarea[name="description"]').val();
 		var t = $( ".auto_title #title" ).val();
 		var s = $("#searchForm").find( 'input[name="s"]' ).val();
+		var revision = 0;
+		var post = { attribs: attribs , search: s , current: current_product, title: t, description: d, search_id:search_id };
 
-		$.post(url, { attribs: attribs , search: s , current: current_product, title: t, description: d }, 'json')
+
+		if (search_id !== undefined) {
+			post.search_id = search_id;
+		}
+
+		if (rev[current_product-1] !== undefined ) {
+			var obj = rev[current_product-1];
+			post.revision = parseInt(obj.revision)+1;
+			post.parent_id = obj.parent_id;
+		}
+
+		$.post(url, post, 'json')
 		.done(function(data) {
+			search_id = data.search_id;
+			rev[current_product-1] = {
+					parent_id: data.parent_id,
+					revision: data.revision,
+			};
+
+			console.log(rev);
 		 });
 	});
 

@@ -72,7 +72,7 @@ INSERT INTO `users_groups` (`id`, `user_id`, `group_id`) VALUES
 
 CREATE TABLE IF NOT EXISTS `saved_descriptions` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `key` varchar(40) COLLATE utf8_unicode_ci NOT NULL,
+  `parent_id` int(10) unsigned NOT NULL DEFAULT '0',
   `title` varchar(250) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
   `description` text COLLATE utf8_unicode_ci NOT NULL,
   `revision` tinyint(4) NOT NULL DEFAULT '0',
