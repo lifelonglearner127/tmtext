@@ -8,6 +8,8 @@ class System extends MY_Controller {
 
 		$this->data['title'] = 'System Settings';
 
+		$this->load->library('form_validation');
+
 		if ($generators = $this->session->userdata('generators')) {
 			$this->config->set_item('generators',$generators);
 		}
@@ -26,8 +28,12 @@ class System extends MY_Controller {
 
 	public function save()
 	{
-		if ($this->input->server('REQUEST_METHOD') === 'POST')
-		{
+		$this->load->model('settings_model');
+
+		$this->form_validation->set_rules('settings[site_name]', 'Site name', 'required|xss_clean');
+		$this->form_validation->set_rules('settings[company_name]', 'Company name', 'required|xss_clean');
+
+		if ($this->form_validation->run() === true) {
 			$generators = $this->config->item('generators');
 			foreach($generators as &$generator) {
 				$generator[2] = (bool) $this->input->post($generator[1]);
@@ -35,7 +41,13 @@ class System extends MY_Controller {
 			}
 
 			$this->session->set_userdata('generators', $generators);
-			//$this->config->set_item('generators', $generators);
+
+			foreach ($this->input->post('settings') as $key=>$value) {
+				if (!$this->settings_model->update_system_value($key,$value)) {
+					$this->settings_model->create_system($key, $value, $key);
+				}
+			}
+
 		}
 		redirect('system/index', 'refresh');
 	}

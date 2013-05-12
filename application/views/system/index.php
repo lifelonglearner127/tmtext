@@ -1,22 +1,22 @@
 	<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
-	
+
 	<script>
 	$(function() {
 		// there's the gallery and the trash
 		var $gallery = $( "#gallery" ),
 			$trash = $( "#trash" );
-	
+
 		$( "#gallery, #trash" ).sortable({
 			connectWith: ".product_title_content",
 			revert: "invalid",
 			cursor: "move"
 		}).disableSelection();
-		
+
 		// resolve the icons behavior with event delegation
 		$( "ul.product_title_content > li > a" ).click(function( event ) {
 			var $item = $( this ),
 				$target = $( event.target );
-			
+
 			if($(this).closest("ul").attr('Id')=='gallery'){
 				$(this).closest("li").fadeOut(function(){
 					$(this).closest("li").appendTo("#trash").fadeIn();
@@ -29,8 +29,8 @@
 		});
 	});
 	</script>
-	
-	
+
+
 				<?php echo form_open("system/save", array("class"=>"form-horizontal", "id"=>"product_description"));?>
 					<h3>Original Descriptions:</h3>
 					<div class="row-fluid">
@@ -96,9 +96,8 @@
 						<div class="span3">
 							<ul id="trash" class="product_title_content trash">
 							</ul>
-						</div>	
+						</div>
 					</div>
-
 					<div class="row-fluid">
 						<h3>Description Generators:</h3>
 					    <?php foreach ($this->config->item('generators') as $key => $generator) {?>
@@ -109,11 +108,25 @@
 								</div>
 							</div>
 						<?php } ?>
-						    <div class="control-group">
-							    <div class="controls">
-								    <button type="submit" class="btn btn-success"><i class="icon-white icon-ok"></i>&nbsp;Save</button>
-								    <button type="submit" class="btn ml_20">Restore Default</button>
-							    </div>
-						    </div>
 					</div>
+					<h3>Website titles:</h3>
+					<div class="row-fluid">
+						<div class="span6 admin_system_content">
+							<p>Site name:</p>
+							<input type="text" name="settings[site_name]" value="<?php echo isset($settings['site_name'])? $settings['site_name']:'' ?>" id="site_name"/>
+							<div class="clear-fix"></div>
+							<p>Company name:</p>
+							<input type="text" name="settings[company_name]" value="<?php echo isset($settings['company_name'])? $settings['company_name']:'' ; ?>" id="company_name"/>
+						</div>
+					</div>
+					<div class="row-fluid">
+					    <div class="control-group">
+						    <div class="controls">
+							    <button type="submit" class="btn btn-success"><i class="icon-white icon-ok"></i>&nbsp;Save</button>
+							    <button type="submit" class="btn ml_20">Restore Default</button>
+						    </div>
+					    </div>
+					</div>
+
+
 				    <?php echo form_close();?>

@@ -36,6 +36,9 @@ class MY_Controller extends CI_Controller {
         $this->data['content'] = '';
         $this->data['css']     = '';
 
+        $this->load->model('settings_model');
+		$this->data['settings'] = $this->settings_model->get_system_settings();
+
     }
 
     protected function render($template='main') {
