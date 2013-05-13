@@ -5,7 +5,7 @@
 		<div class="row-fluid">
 			<div class="header_container">
 				<div class="pull-left">
-					<a href="<?php echo base_url();?>" class="logo_title">TrillionMonkeys</a>
+					<a href="<?php echo base_url();?>" class="logo_title"><?php echo isset($settings['site_name'])? $settings['site_name']:'' ?></a>
 				</div>
 				<div class="pull-right">
 					<a href="<?php echo site_url('auth/logout');?>" class="log_out">Log Out</a>
