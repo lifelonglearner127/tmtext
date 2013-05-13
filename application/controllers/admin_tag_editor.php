@@ -62,7 +62,7 @@ class Admin_Tag_Editor extends MY_Controller {
     public function get_product_description() {
         $row = 1;
         $description = array();
-        $file = $this->config->item('cmd_path').'/all.csv';
+        $file = $this->config->item('attr_path').'/tiger/all.csv';
         if (($handle = fopen($file, "r")) !== FALSE) {
             while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
                 $num = count($data);

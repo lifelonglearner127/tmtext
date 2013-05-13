@@ -365,6 +365,8 @@ $config['java_cmd'] = 'java -cp dist/NLG.jar com.swta.ChartGenerator data/tiger/
 $config['python_cmd'] = "python ML_script.py search\('".$config['cmd_mask']."'\)";
 $config['tsv_cmd'] = "./scripts/tsv_single.pl '".$config['cmd_mask']."' tagRules/TVs.dat";
 $config['tsv_cmd'] = 'cd '.$config['cmd_path'].'; ./'.$config['tsv_cmd'];
+$config['tag_rules_dir'] = $config['cmd_path'].'/tagRules';
+
 
 $config['product_title'] = array('manu','screensize', 'manu', 'model', 'is3d', 'isled', 'ishdtv');
 
