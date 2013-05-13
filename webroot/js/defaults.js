@@ -3,13 +3,14 @@ var products = '';
 var attribs = '';
 var rev = [];
 var search_id = undefined;
+var sentence = '';
 
 function replaceAt(search, replace, subject, n) {
     return subject.substring(0, n) +subject.substring(n).replace(search, replace);
 }
 
 function saveCurrentProduct(text) {
-	products[current_product-1] = text;
+    products[current_product-1] = text;
 }
 
 function getPager() {
@@ -52,10 +53,38 @@ function clearEditorForm() {
 	rev = [];
 }
 
+function moveSentence() {
+    // there's the desc and the trash
+    var $desc = $( "#desc" ),
+        $trash = $( "#trash" );
+
+    $( "#desc, #trash" ).sortable({
+        connectWith: ".desc",
+        revert: "invalid",
+        cursor: "move",
+    }).disableSelection();
+
+    // resolve the icons behavior with event delegation
+    $( "ul.desc_title > li > a" ).click(function( event ) {
+        var $item = $( this ),
+            $target = $( event.target );
+
+        if($(this).closest("ul").attr('Id')=='desc'){
+            $(this).closest("li").fadeOut(function(){
+                $(this).closest("li").appendTo("#trash").fadeIn();
+            });
+        }else if($(this).closest("ul").attr('Id')=='trash'){
+            $(this).closest("li").fadeOut(function(){
+                $(this).closest("li").appendTo("#desc").fadeIn();
+            });
+        }
+    });
+}
+
 jQuery(document).ready(function($) {
 
 	$('.new_product #textarea').on('keyup change',function() {
-		$('textarea[name="description"]').val($(this).text()).trigger('change');
+        $('textarea[name="description"]').val($('.new_product #textarea span').text()).trigger('change');
 	});
 
 	$('textarea[name="description"]').on('keydown change',function() {
@@ -72,9 +101,8 @@ jQuery(document).ready(function($) {
 			limited = limited.join(" ");
 			$(this).val(limited);
 	    }
-
 	    $('#wc').html(number);
-	    saveCurrentProduct($(this).val());
+        saveCurrentProduct($('.new_product #textarea span.current_product').text());
 	});
 
 	$( ".auto_title #title" ).on('keydown change',function() {
@@ -135,12 +163,17 @@ jQuery(document).ready(function($) {
 
 			    var description = $('.new_product').find('textarea[name="description"]');
 			    description.removeAttr('disabled');
-			    description.val(products[0]);
+			    description.val(products[0]);products
 			    description.trigger('change');
 
 			    var descriptionDiv = $('.new_product #textarea');
-			    descriptionDiv.text(products[0]);
+                fulltext = '<ul id="desc" class="desc_title desc"><li>' +
+                    '<span class="current_product">'+products[0]+'</span><a hef="#" class="ui-icon-trash">x</a></li></ul>';
+                descriptionDiv.html(fulltext);
+			    //descriptionDiv.text(products[0]);
 			    descriptionDiv.trigger('change');
+
+                moveSentence();
 
 			    current_product = 1;
 
@@ -152,12 +185,16 @@ jQuery(document).ready(function($) {
 	$(document).on("click", "#pagination a", function(event){
                 event.preventDefault();
                 current_product = $(this).data('page');
+
 		if ($(this).data('page')!==undefined) {
 			var description = $('.new_product').find('textarea[name="description"]');
 			var descriptionDiv = $('.new_product #textarea');
-
+            console.log(products[current_product-1]);
 			description.val(products[current_product-1]);
-			descriptionDiv.html(products[current_product-1]).trigger('change');
+            descriptionDiv.html('<ul id="desc" class="desc_title desc">'+sentence+' '+'<li><span class="current_product">'+
+                products[current_product-1]+'</span><a hef="#" class="ui-icon-trash">x</a></li>').trigger('change');
+            moveSentence();
+			//descriptionDiv.html(products[current_product-1]).trigger('change');
 
 			 $('#pagination').html(getPager());
 
@@ -233,7 +270,7 @@ jQuery(document).ready(function($) {
 
 	$(document).on("click", "#save", function(){
 		var url =  $('#attributesForm').attr( 'action' ).replace('attributes', 'save');
-		var d = $('.new_product').find('textarea[name="description"]').val();
+		var d = $('.new_product #textarea span').text();
 		var t = $( ".auto_title #title" ).val();
 		var s = $("#searchForm").find( 'input[name="s"]' ).val();
 		var revision = 0;
@@ -332,6 +369,9 @@ jQuery(document).ready(function($) {
         return false;
     });
 
+    $(document).on("click", "button#use", function(){
+        sentence = $('#textarea ul#desc').html().replace('current_product', '');
+    });
 });
 //var start = new Date().getMilliseconds();
 //console.log("Executed in " + (new Date().getMilliseconds() - start) + " milliseconds");
