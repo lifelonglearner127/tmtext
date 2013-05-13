@@ -9,12 +9,13 @@ echo form_open('editor/search', array('id'=>'searchForm'));
 <?php echo form_close();?>
 					</div>
 					<div class="row-fluid">
-		                <div class="span8 search_area uneditable-input" style="width: 597px; overflow : auto;" id="items">
+                        <div class="span5 search_area uneditable-input" style="overflow : auto;" id="attributes">
+                            Product attributes
+                        </div>
+		                <div class="span8 search_area uneditable-input" style="width: 515px; overflow : auto;" id="items">
 		                Original product descriptions
 		                </div>
-		            	<div class="span4 search_area uneditable-input" style="overflow : auto;" id="attributes">
-		                Product attributes
-		                </div>
+
 					</div>
 <?php //echo form_open('editor/save'); ?>
 					<div class="row-fluid auto_title">
@@ -44,7 +45,6 @@ echo form_open('editor/search', array('id'=>'searchForm'));
 						</div>
 						<button id="save" class="btn new_btn_fr btn-success ml_15"><i class="icon-white icon-ok"></i>&nbsp;Save</button>
                         <button id="validate" class="btn new_btn_fr ml_15"><i class="icon-ok-sign"></i>&nbsp;Validate</button>
-                        <button id="use" class="btn new_btn_fr ml_15"><i class="icon-ok-sign"></i>&nbsp;Use</button>
 
 					</div>
 <?php //echo form_close(); ?>
