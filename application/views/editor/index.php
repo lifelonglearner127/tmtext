@@ -1,3 +1,4 @@
+<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
 					<div class="row-fluid">
 <?php
 echo form_open('editor/attributes', array('id'=>'attributesForm')).form_close();
@@ -8,10 +9,10 @@ echo form_open('editor/search', array('id'=>'searchForm'));
 <?php echo form_close();?>
 					</div>
 					<div class="row-fluid">
-		                <div class="span8 search_area uneditable-input cursor_default" style="width: 597px; overflow : auto;" id="items">
+		                <div class="span8 search_area uneditable-input" style="width: 597px; overflow : auto;" id="items">
 		                Original product descriptions
 		                </div>
-		            	<div class="span4 search_area uneditable-input cursor_default" style="overflow : auto;" id="attributes">
+		            	<div class="span4 search_area uneditable-input" style="overflow : auto;" id="attributes">
 		                Product attributes
 		                </div>
 					</div>
@@ -25,6 +26,7 @@ echo form_open('editor/search', array('id'=>'searchForm'));
 					</div>
 					<div class="row-fluid new_product">
 						<div class="search_area uneditable-input" id="textarea" onClick="this.contentEditable='true';" style="cursor: text; width: 98.5%;"></div>
+                        <ul id="trash" class="desc_title trash" style="display:none"></ul>
 					</div>
 					<div class="row-fluid new_product">
 						<textarea class="span12 search_area" name='description' style="display:none"></textarea>
@@ -39,8 +41,9 @@ echo form_open('editor/search', array('id'=>'searchForm'));
 							<input type="text" name="description_length" value="150" class="span3"/>
 							<label>Words: <span id="wc">0</span> of </label>
 						</div>
-						<button id="validate" class="btn new_btn_fr ml_15"><i class="icon-ok-sign"></i>&nbsp;Validate</button>
 						<button id="save" class="btn new_btn_fr btn-success ml_15"><i class="icon-white icon-ok"></i>&nbsp;Save</button>
+                        <button id="validate" class="btn new_btn_fr ml_15"><i class="icon-ok-sign"></i>&nbsp;Validate</button>
+                        <button id="use" class="btn new_btn_fr ml_15"><i class="icon-ok-sign"></i>&nbsp;Use</button>
 
 					</div>
 <?php //echo form_close(); ?>
