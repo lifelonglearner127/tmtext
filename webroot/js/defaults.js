@@ -430,6 +430,7 @@ jQuery(document).ready(function($) {
                 $('#tageditor_description').html(final_str);
                 $('#tageditor_description').scrollTo( 'span#'+next, 500, { easing:'swing', queue:true, axis:'xy' } );
             }
+        }
         return false;
     });
 
