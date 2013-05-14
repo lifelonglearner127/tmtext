@@ -211,7 +211,8 @@ jQuery(document).ready(function($) {
 
 	$(document).on("click", "#validate", function(){
 		var vbutton = $(this);
-		var description = $('.new_product').find('textarea[name="description"]').val();
+		var description =  $('.new_product #textarea span').text();
+		//$('.new_product').find('textarea[name="description"]').val();
 		var url =  $('#attributesForm').attr( 'action' ).replace('attributes', 'validate');
 
 		vbutton.html('<i class="icon-ok-sign"></i>&nbsp;Validating...');
@@ -331,21 +332,24 @@ jQuery(document).ready(function($) {
     });
 
     $(document).on("click", "button#test", function(){
-        $('span.matches_found').empty();
-        var regtext = $("#tageditor_content #items_list li input").val().split(',');
-        var querystr = regtext[0].slice(1).slice(0,-1);
-        if(querystr != undefined && querystr != ''){
-            var result = $('#standart_description').html();
-            var reg = new RegExp(querystr, 'gi');
-            var n = 0;
-            var final_str = result.replace(reg, function(str) {
-                n++;
-                return '<span id="'+n+'" class="highlight">'+str+'</span>';
-            });
-            $('span.matches_found').html(n+' matches found');
-            $('#tageditor_description').html(final_str);
-            next=1;
-            $('#tageditor_description').scrollTo( 'span#'+next, 500, { easing:'swing', queue:true, axis:'xy' } );
+        if($("#tageditor_content #items_list li").find('input')!=''
+            && $("#tageditor_content #items_list li input").val()!=undefined && $("#tageditor_content #items_list li input").val()!=''){
+            $('span.matches_found').empty();
+            var regtext = $("#tageditor_content #items_list li input").val().split(',');
+            var querystr = regtext[0].slice(1).slice(0,-1);
+            if(querystr != undefined && querystr != ''){
+                var result = $('#standart_description').html();
+                var reg = new RegExp(querystr, 'gi');
+                var n = 0;
+                var final_str = result.replace(reg, function(str) {
+                    n++;
+                    return '<span id="'+n+'" class="highlight">'+str+'</span>';
+                });
+                $('span.matches_found').html(n+' matches found');
+                $('#tageditor_description').html(final_str);
+                next=1;
+                $('#tageditor_description').scrollTo( 'span#'+next, 500, { easing:'swing', queue:true, axis:'xy' } );
+            }
         }
         return false;
     });
@@ -413,17 +417,19 @@ jQuery(document).ready(function($) {
     }
 
     $(document).on("click", "#tageditor_content button#next", function(){
-        var regtext = $("#tageditor_content #items_list li input").val().split(',');
-        var querystr = regtext[0].slice(1).slice(0,-1);
-        if(querystr != undefined && querystr !=''){
-            var result = $('#standart_description').html();
-            var reg = new RegExp(querystr, 'g');
-            var n = 0;
-            next++;
-            final_str = pipe_replace(reg, result, next);
-            $('#tageditor_description').html(final_str);
-            $('#tageditor_description').scrollTo( 'span#'+next, 500, { easing:'swing', queue:true, axis:'xy' } );
-        }
+        if($("#tageditor_content #items_list li").find('input')!=''
+            && $("#tageditor_content #items_list li input").val()!=undefined && $("#tageditor_content #items_list li input").val()!=''){
+            var regtext = $("#tageditor_content #items_list li input").val().split(',');
+            var querystr = regtext[0].slice(1).slice(0,-1);
+            if(querystr != undefined && querystr !=''){
+                var result = $('#standart_description').html();
+                var reg = new RegExp(querystr, 'g');
+                var n = 0;
+                next++;
+                final_str = pipe_replace(reg, result, next);
+                $('#tageditor_description').html(final_str);
+                $('#tageditor_description').scrollTo( 'span#'+next, 500, { easing:'swing', queue:true, axis:'xy' } );
+            }
         return false;
     });
 
@@ -434,6 +440,10 @@ jQuery(document).ready(function($) {
 
     $(document).on("click", "button#use", function(){
         sentence = $('#textarea ul#desc').html().replace('current_product', '');
+        return false;
+    });
+
+    $(document).on("click", "button#undo", function(){
         return false;
     });
 });
