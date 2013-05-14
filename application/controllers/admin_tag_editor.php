@@ -86,4 +86,5 @@ class Admin_Tag_Editor extends MY_Controller {
             file_put_contents($path, $_POST['data']);
         }
     }
+
 }

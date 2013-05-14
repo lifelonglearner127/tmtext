@@ -4,6 +4,8 @@ var attribs = '';
 var rev = [];
 var search_id = undefined;
 var sentence = '';
+var next = 0;
+var actions = [];
 
 function replaceAt(search, replace, subject, n) {
     return subject.substring(0, n) +subject.substring(n).replace(search, replace);
@@ -366,6 +368,61 @@ jQuery(document).ready(function($) {
     });
 
     $(document).on("focusout", "#tageditor_content #items_list li input", function(){
+        return false;
+    });
+
+    $(document).on("click", "#tageditor_content button#new", function(){
+        $("#tageditor_content #items_list li").each(function(){
+            $(this).css({'background':'none'});
+        });
+        $("#tageditor_content #items_list li input").each(function(){
+            $(this).parent().html('<span>'+$(this).val()+'</span>');
+        });
+        $('#tageditor_content #items_list').append("<li><input type='text' name='tagRule[]'value=''></li>");
+        $('#tageditor_content #items_list li:last-child').css({'background':'#CAEAFF'});
+        $('#tageditor_content #items_list li:last-child input').focus();
+        return false;
+    });
+
+    $(document).on("click", "button#create", function(){
+        $('select[name="filename"]').append('<option selected="selected">'+$('input[name="new_file"]').val()+'</option>');
+        $('#tageditor_content #items_list').empty();
+        $("#tageditor_content button#new").trigger('click');
+        return false;
+    });
+
+
+
+
+    function pipe_replace(reg, str,n) {
+        m = 0;
+        return str.replace(reg, function (x) {
+            //was n++ should have been m++
+            m++;
+            if (n==m) {
+                return '<span class="highlight">'+x+'</span>';
+            } else {
+                return x;
+            }
+        });
+    }
+
+    $(document).on("click", "#tageditor_content button#next", function(){
+        var regtext = $("#tageditor_content #items_list li input").val().split(',');
+        var querystr = regtext[0].slice(1).slice(0,-1);
+        if(querystr != undefined){
+            var result = $('#standart_description').html();
+            var reg = new RegExp(querystr, 'g');
+            var n = 0;
+            next++;
+            final_str = pipe_replace(reg, result, next);
+            $('#tageditor_description').html(final_str);
+        }
+        return false;
+    });
+
+    $(document).on("click", "#tageditor_content button#delete", function(){
+        $("#tageditor_content #items_list li input").parent().remove();
         return false;
     });
 
