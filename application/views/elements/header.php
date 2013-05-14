@@ -20,7 +20,8 @@
 	<![endif]-->
 
 	<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
-	<script src="<?php echo base_url();?>js/defaults.js"></script>
+    <script src="<?php echo base_url();?>js/jquery.scrollTo-1.4.3.1.js"></script>
+    <script src="<?php echo base_url();?>js/defaults.js"></script>
 	<!-- script src="<?php echo base_url();?>js/main.js"></script-->
 <?php if (isset($js)){ ?>
 <script type='text/javascript'>

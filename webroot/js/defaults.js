@@ -331,13 +331,21 @@ jQuery(document).ready(function($) {
     });
 
     $(document).on("click", "button#test", function(){
+        $('span.matches_found').empty();
         var regtext = $("#tageditor_content #items_list li input").val().split(',');
         var querystr = regtext[0].slice(1).slice(0,-1);
-        if(querystr != undefined){
+        if(querystr != undefined && querystr != ''){
             var result = $('#standart_description').html();
             var reg = new RegExp(querystr, 'gi');
-            var final_str = result.replace(reg, function(str) {return '<span class="highlight">'+str+'</span>'});
+            var n = 0;
+            var final_str = result.replace(reg, function(str) {
+                n++;
+                return '<span id="'+n+'" class="highlight">'+str+'</span>';
+            });
+            $('span.matches_found').html(n+' matches found');
             $('#tageditor_description').html(final_str);
+            next=1;
+            $('#tageditor_description').scrollTo( 'span#'+next, 500, { easing:'swing', queue:true, axis:'xy' } );
         }
         return false;
     });
@@ -391,16 +399,13 @@ jQuery(document).ready(function($) {
         return false;
     });
 
-
-
-
     function pipe_replace(reg, str,n) {
         m = 0;
         return str.replace(reg, function (x) {
             //was n++ should have been m++
             m++;
             if (n==m) {
-                return '<span class="highlight">'+x+'</span>';
+                return '<span class="highlight" id="'+n+'">'+x+'</span>';
             } else {
                 return x;
             }
@@ -410,13 +415,14 @@ jQuery(document).ready(function($) {
     $(document).on("click", "#tageditor_content button#next", function(){
         var regtext = $("#tageditor_content #items_list li input").val().split(',');
         var querystr = regtext[0].slice(1).slice(0,-1);
-        if(querystr != undefined){
+        if(querystr != undefined && querystr !=''){
             var result = $('#standart_description').html();
             var reg = new RegExp(querystr, 'g');
             var n = 0;
             next++;
             final_str = pipe_replace(reg, result, next);
             $('#tageditor_description').html(final_str);
+            $('#tageditor_description').scrollTo( 'span#'+next, 500, { easing:'swing', queue:true, axis:'xy' } );
         }
         return false;
     });
@@ -428,6 +434,7 @@ jQuery(document).ready(function($) {
 
     $(document).on("click", "button#use", function(){
         sentence = $('#textarea ul#desc').html().replace('current_product', '');
+        return false;
     });
 });
 //var start = new Date().getMilliseconds();

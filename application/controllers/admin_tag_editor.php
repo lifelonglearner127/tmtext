@@ -8,7 +8,6 @@ class Admin_Tag_Editor extends MY_Controller {
 
         $this->load->library('form_validation');
         $this->data['title'] = 'Admin Tag Editor Setting';
-
         if (!$this->ion_auth->logged_in())
         {
             //redirect them to the login page

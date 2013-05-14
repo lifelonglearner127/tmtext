@@ -495,3 +495,10 @@ a.gray_out {
     border-radius: 4px 4px 4px 4px;
     width: 100%;
 }
+
+.matches_message {
+    clear: both;
+    display: block;
+    height: 35px;
+    padding-top: 7px;
+}
