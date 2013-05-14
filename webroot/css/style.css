@@ -346,37 +346,6 @@ body{
 			position:absolute;
 		}
 
-.desc{
-    list-style:none;
-    margin:0;
-    position:relative;
-    overflow: auto;
-}
-
-    .desc li{
-        float:left;
-        margin:5px;
-        cursor:pointer;
-        border:1px solid #CCCCCC;
-        -webkit-border-radius: 4px;
-        -moz-border-radius: 4px;
-        border-radius: 4px;
-        background:#FBFBFB;
-    }
-
-    .desc li span{
-        float:left;
-        margin:5px;
-        cursor:move;
-        padding-right:10px;
-    }
-
-    .desc li a{
-        float:right;
-        margin:5px 5px 5px -10px;
-        position:absolute;
-    }
-
 /* Margin Style  */
 
 .ml_120{
@@ -427,7 +396,7 @@ html.busy, html.busy * {
 
 #items_list li, #tageditor_description ul li{
 	padding-bottom: 8px;
-    margin-left: -20px;
+	margin-left: -20px;
 }
 
 #attributes ul li  {
@@ -490,8 +459,6 @@ a.gray_out {
     background: #CAEAFF;
 }
 
-.desc_title {
-    border: 1px solid #CCCCCC !important;
-    border-radius: 4px 4px 4px 4px;
-    width: 100%;
+.cursor_default{
+	cursor: default;
 }
