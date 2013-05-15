@@ -49,6 +49,11 @@ class Ion_auth
 	 **/
 	public $_cache_user_in_group;
 
+
+	protected $auth_rules = array();
+
+	protected $auth_db_rules = array();
+
 	/**
 	 * __construct
 	 *
@@ -513,6 +518,52 @@ class Ion_auth
 		 * if all, true
 		 */
 		return $check_all;
+	}
+
+ 	public function add_auth_rules($rules)
+	{
+    	$this->auth_rules = array_merge($this->auth_rules, $rules);
+    }
+
+    public function add_auth_db_rules($rules)
+	{
+    	$this->auth_db_rules = array_merge($this->auth_db_rules, $rules);
+    }
+
+    public function _allowed($method) {
+    	$_allowed = false;
+
+    	if (array_key_exists($method, $this->auth_rules)) {
+        	$_allowed = $this->auth_rules[$method];
+        }
+        return $_allowed;
+	}
+
+	public function current_user_allowed( $class, $method ) {
+		return $this->_db_allowed($this->get_user_id(),$class, $method);
+	}
+
+	public function _db_allowed( $user_id, $class, $method ) {
+		$_allowed = false;
+
+        foreach ($this->ion_auth_model->get_users_groups($user_id)->result() as $group) {
+			if ( isset($this->auth_db_rules[$group->id]) && $this->auth_db_rules[$group->id][$class][$method] ) {
+				$_allowed = true;
+			}
+		}
+		return $_allowed;
+	}
+
+	public function load_current_user_auth_rules() {
+		$this->load_user_auth_rules($this->get_user_id());
+	}
+
+	public function load_user_auth_rules( $user_id ){
+		foreach ($this->ion_auth_model->get_users_groups($user_id)->result() as $group) {
+			$this->add_auth_db_rules(
+				array($group->id => unserialize($this->ion_auth_model->_auth_rules($group->id)))
+			);
+		}
 	}
 
 }

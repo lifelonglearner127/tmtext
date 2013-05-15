@@ -11,12 +11,12 @@
 * Location: http://github.com/benedmunds/CodeIgniter-Ion-Auth
 *
 * Created:  10.01.2009
-* 
+*
 * Last Change: 3.22.13
 *
 * Changelog:
 * * 3-22-13 - Additional entropy added - 52aa456eef8b60ad6754b31fbdcc77bb
-* 
+*
 * Description:  Modified auth system based on redux_auth with extensive customization.  This is basically what Redux Auth 2 should be.
 * Original Author name has been kept but that does not mean that the method has not been modified.
 *
@@ -682,11 +682,11 @@ class Ion_auth_model extends CI_Model
 		if(function_exists("openssl_random_pseudo_bytes")) {
 			$activation_code_part = openssl_random_pseudo_bytes(128);
 		}
-		
+
 		for($i=0;$i<1024;$i++) {
 			$activation_code_part = sha1($activation_code_part . mt_rand() . microtime());
 		}
-		
+
 		$key = $this->hash_code($activation_code_part.$identity);
 
 		$this->forgotten_password_code = $key;
@@ -1772,16 +1772,16 @@ class Ion_auth_model extends CI_Model
 			{
 				$this->set_error('group_already_exists');
 				return FALSE;
-			}	
+			}
 
-			$data['name'] = $group_name;		
+			$data['name'] = $group_name;
 		}
-		
+
 
 		// IMPORTANT!! Third parameter was string type $description; this following code is to maintain backward compatibility
 		// New projects should work with 3rd param as array
 		if (is_string($additional_data)) $additional_data = array('description' => $additional_data);
-		
+
 
 		//filter out any data passed that doesnt have a matching column in the groups table
 		//and merge the set group data and the additional data
@@ -2071,4 +2071,16 @@ class Ion_auth_model extends CI_Model
 			return inet_pton($ip_address);
 		}
 	}
+
+	public function _auth_rules($group_id) {
+		$query = $this->db->select('auth_rules')
+                  ->where('id', $this->db->escape_str($group_id))
+                  ->limit(1)
+                  ->get($this->tables['groups']);
+
+		if ($query->num_rows() === 1) {
+			return $query->row()->auth_rules;
+		}
+	}
+
 }

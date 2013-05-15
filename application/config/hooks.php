@@ -10,6 +10,14 @@
 |
 */
 
+$hook['post_controller_constructor'] = array(
+	array(
+		'class' => 'Overrides',
+		'function' => '_is_allowed',
+		'filename' => 'overrides.php',
+		'filepath' => 'hooks'
+	)
+);
 
 
 /* End of file hooks.php */

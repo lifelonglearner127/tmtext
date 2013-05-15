@@ -10,12 +10,6 @@ class Editor extends MY_Controller {
 		$this->data['title'] = 'Editor';
 		$this->data['head'][] = '<script src="'.base_url().'js/jquery.expander.js"></script>';
 
- 		if (!$this->ion_auth->logged_in())
-		{
-			//redirect them to the login page
-			redirect('auth/login', 'refresh');
-		}
-
 		if ($generators = $this->session->userdata('generators')) {
 			$this->config->set_item('generators',$generators);
 		}

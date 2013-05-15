@@ -20,6 +20,11 @@ class Auth extends MY_Controller {
 		$this->lang->load('auth');
 		$this->load->helper('language');
 
+		$this->ion_auth->add_auth_rules(array(
+  			'login' => true,
+			'logout' => true,
+			'forgot_password' => true
+  		));
 	}
 
 	//redirect if needed, otherwise display the user list

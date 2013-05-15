@@ -8,11 +8,6 @@ class Settings extends MY_Controller {
 
 		$this->data['title'] = 'Settings';
 
- 		if (!$this->ion_auth->logged_in())
-		{
-			redirect('auth/login', 'refresh');
-		}
-
  	}
 
 	public function index()	{
