@@ -9,10 +9,10 @@ echo form_open('editor/search', array('id'=>'searchForm'));
 <?php echo form_close();?>
 					</div>
 					<div class="row-fluid">
-		                <div class="span8 search_area uneditable-input" style="width: 597px; overflow : auto;" id="items">
+		                <div class="span8 search_area uneditable-input cursor_default" style="width: 597px; overflow : auto;" id="items">
 		                Original product descriptions
 		                </div>
-		            	<div class="span4 search_area uneditable-input" style="overflow : auto;" id="attributes">
+		            	<div class="span4 search_area uneditable-input cursor_default" style="overflow : auto;" id="attributes">
 		                Product attributes
 		                </div>
 					</div>
