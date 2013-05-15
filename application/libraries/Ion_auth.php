@@ -547,7 +547,7 @@ class Ion_auth
 		$_allowed = false;
 
         foreach ($this->ion_auth_model->get_users_groups($user_id)->result() as $group) {
-			if ( isset($this->auth_db_rules[$group->id]) && $this->auth_db_rules[$group->id][$class][$method] ) {
+			if ( isset($this->auth_db_rules[$group->id]) && isset($this->auth_db_rules[$group->id][$class]) && $this->auth_db_rules[$group->id][$class][$method] ) {
 				$_allowed = true;
 			}
 		}
