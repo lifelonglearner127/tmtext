@@ -54,6 +54,6 @@
 						</div>
 						<button id="save" class="btn new_btn_fr btn-success ml_15"><i class="icon-white icon-ok"></i>&nbsp;Save</button>
                         <button id="validate" class="btn new_btn_fr ml_15"><i class="icon-ok-sign"></i>&nbsp;Validate</button>
-                        <button id="use" class="btn new_btn_fr ml_15"><i class="icon-ok-sign"></i>&nbsp;Use</button>
+                        <button id="use" class="btn new_btn_fr"><i class="icon-ok-sign"></i>&nbsp;Use</button>
                     </div>
 <?php //echo form_close(); ?>

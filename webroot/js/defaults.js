@@ -66,7 +66,7 @@ function moveSentence() {
         connectWith: ".desc",
         revert: "invalid",
         cursor: "move",
-    }).disableSelection();
+    });
 
     // resolve the icons behavior with event delegation
     $( "ul.desc_title > li > a" ).click(function( event ) {
@@ -235,7 +235,16 @@ jQuery(document).ready(function($) {
 
     $(document).on("click", "#validate", function(){
         var vbutton = $(this);
-        var description =  $('.new_product #textarea span').text();
+        //var description =  $('.new_product #textarea span').text();
+        var description = '';
+        $('.new_product #textarea li').each(function(){
+            if($(this).find('span').text()!='' && $(this).find('span').text()!=undefined){
+                description += $(this).find('span').text();
+            }
+            if($(this).find('input').val()!='' && $(this).find('input').val()!=undefined){
+                description += $(this).find('input').val();
+            }
+        });
         //$('.new_product').find('textarea[name="description"]').val();
         var url =  $('#attributesForm').attr( 'action' ).replace('attributes', 'validate');
 
@@ -297,7 +306,19 @@ jQuery(document).ready(function($) {
 
     $(document).on("click", "#save", function(){
         var url =  $('#attributesForm').attr( 'action' ).replace('attributes', 'save');
-        var d = $('.new_product #textarea span').text();
+        //var d = $('.new_product #textarea span').text();
+        var d = '';
+        $('.new_product #textarea li').each(function(){
+            if($(this).find('span').text()!='' && $(this).find('span').text()!=undefined){
+                d += $(this).find('span').text();
+            }
+            if($(this).find('input').val()!='' && $(this).find('input').val()!=undefined){
+                d += $(this).find('input').val();
+            }
+        });
+        if(d==''){
+            d = $('.new_product #textarea').text();
+        }
         var t = $( ".auto_title #title" ).val();
         var s = $("#searchForm").find( 'input[name="s"]' ).val();
         var revision = 0;
@@ -520,14 +541,31 @@ jQuery(document).ready(function($) {
     });
 
     $(document).on("click", ".left_nav_content li a, .right_nav_content li a", function(e){
-    	e.preventDefault();
-        var url = $(this).attr('href'); 
-       	var posting = $.post(url+"?ajax=true", function(data) {
-       		var response_data = eval('('+data+')');
-			$('.main_content').html(response_data.ajax_data);
-		});
-		$(".left_nav_content li, .right_nav_content li").removeClass('active');
-		$(this).parent('li').addClass('active');
+        e.preventDefault();
+        var url = $(this).attr('href');
+        var posting = $.post(url+"?ajax=true", function(data) {
+            var response_data = eval('('+data+')');
+            $('.main_content').html(response_data.ajax_data);
+        });
+        $(".left_nav_content li, .right_nav_content li").removeClass('active');
+        $(this).parent('li').addClass('active');
+    });
+
+    $(document).on("click", "#textarea #desc li span", function(){
+        var sentence_class = '';
+        if($(this).attr('class')=='current_product') {
+            sentence_class += 'current_product';
+        }
+        $("#textarea #desc li input").each(function(){
+            var sentence_class = '';
+            if($(this).attr('class')=='current_product') {
+                sentence_class += 'current_product';
+            }
+            $(this).parent().html('<span class="'+sentence_class+'">'+$(this).val()+'</span><a hef="#" class="ui-icon-trash">x</a>');
+        });
+        $(this).parent().html("<input type='text' class='"+sentence_class+"' name='sentences[]'value='"+$(this).text()+"' /><a hef='#' class='ui-icon-trash'>x</a>");
+        moveSentence();
+        return false;
     });
 });
 //var start = new Date().getMilliseconds();
