@@ -502,3 +502,8 @@ a.gray_out {
     height: 35px;
     padding-top: 7px;
 }
+
+#textarea #desc li input {
+    margin-bottom: 0px;
+    padding-right: 10px;
+}
