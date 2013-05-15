@@ -87,11 +87,11 @@ function moveSentence() {
 
 jQuery(document).ready(function($) {
 
-    $('.new_product #textarea').on('keyup change',function() {
+    $(document).on("keyup change", '.new_product #textarea', function() {
         $('textarea[name="description"]').val($('.new_product #textarea span').text()).trigger('change');
     });
 
-    $('textarea[name="description"]').on('keydown change',function() {
+    $(document).on("keydown change", 'textarea[name="description"]', function() {
         var number = 0;
         var matches = $(this).val().match(/\b/g);
         if(matches) {
@@ -109,7 +109,7 @@ jQuery(document).ready(function($) {
         saveCurrentProduct($('.new_product #textarea span.current_product').text());
     });
 
-    $( ".auto_title #title" ).on('keydown change',function() {
+    $(document).on("keydown change", ".auto_title #title", function() {
         var _limit = $('input[name="title_length"]').val();
         if($(this).val().length > _limit) {
             var string = $(this).val();
@@ -118,7 +118,7 @@ jQuery(document).ready(function($) {
         $('#tc').html($(this).val().length);
     });
 
-    $("#searchForm").submit(function(event) {
+    $(document).on("submit", "#searchForm", function(event) {
         event.preventDefault();
 
         clearEditorForm();
@@ -171,6 +171,7 @@ jQuery(document).ready(function($) {
                 description.trigger('change');
 
                 var descriptionDiv = $('.new_product #textarea');
+
                 fulltext = '<ul id="desc" class="desc_title desc"><li>' +
                     '<span class="current_product">'+products[0]+'</span><a hef="#" class="ui-icon-trash">x</a></li></ul>';
                 descriptionDiv.html(fulltext);
@@ -193,7 +194,6 @@ jQuery(document).ready(function($) {
         if ($(this).data('page')!==undefined) {
             var description = $('.new_product').find('textarea[name="description"]');
             var descriptionDiv = $('.new_product #textarea');
-            console.log(products[current_product-1]);
             description.val(products[current_product-1]);
             descriptionDiv.html('<ul id="desc" class="desc_title desc">'+sentence+' '+'<li><span class="current_product">'+
                 products[current_product-1]+'</span><a hef="#" class="ui-icon-trash">x</a></li>').trigger('change');
@@ -476,6 +476,21 @@ jQuery(document).ready(function($) {
         action = '';
         return false;
     });
+
+    $(document).on("click", ".left_nav_content li a, .right_nav_content li a", function(e){
+    	e.preventDefault();
+        var url = $(this).attr('href'); 
+       	var posting = $.post(url+"?ajax=true", function(data) {
+       		var response_data = eval('('+data+')');
+			$('.main_content').html(response_data.ajax_data);
+		});
+		$(".left_nav_content li, .right_nav_content li").removeClass('active');
+		$(this).parent('li').addClass('active');
+    });
+
+
+
+
 });
 //var start = new Date().getMilliseconds();
 //console.log("Executed in " + (new Date().getMilliseconds() - start) + " milliseconds");

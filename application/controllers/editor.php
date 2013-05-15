@@ -24,6 +24,10 @@ class Editor extends MY_Controller {
 
 	public function index()
 	{
+		$this->load->model('saved_description_model');
+		$lastSaved = $this->saved_description_model->getLastWithSearchesByUserId($this->ion_auth->get_user_id());
+		$this->data['lastSaved'] = $lastSaved;
+
 		$this->render();
 	}
 

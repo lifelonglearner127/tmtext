@@ -56,8 +56,11 @@ class MY_Controller extends CI_Controller {
         if (file_exists(APPPATH . 'views/' . $view_path)) {
             $this->data['content'] .= $this->load->view($view_path, $this->data, true);  //load the view
         }
-
-        $this->load->view("layouts/$template.tpl.php", $this->data);  //load the template
+        if($this->input->get("ajax", false)==true){
+            $this->load->view("layouts/ajax.tpl.php", $this->data);  //load the template
+        }else{
+            $this->load->view("layouts/$template.tpl.php", $this->data);  //load the template
+        }  
     }
 
     protected function add_title() {
