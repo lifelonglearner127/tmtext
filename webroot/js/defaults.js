@@ -85,6 +85,28 @@ function moveSentence() {
     });
 }
 
+function cursorEnd(){
+    var el = $("#tageditor_content #items_list li input:text").get(0);
+    var elemLen = el.value.length;
+    el.selectionStart = elemLen;
+    el.selectionEnd = elemLen;
+    el.focus();
+}
+
+function pipe_replace(reg, str,n) {
+    m = 0;
+    return str.replace(reg, function (x) {
+        //was n++ should have been m++
+        m++;
+        if (n==m) {
+            return '<span class="highlight" id="'+n+'">'+x+'</span>';
+        } else {
+            return x;
+        }
+    });
+}
+
+
 jQuery(document).ready(function($) {
 
     $('.new_product #textarea').on('keyup change',function() {
@@ -303,7 +325,7 @@ jQuery(document).ready(function($) {
                 console.log(rev);
             });
     });
-
+        
     $(document).on("click", "#tageditor_content #items_list li span", function(){
         action = 'edit_input';
         last_edition = $("#tageditor_content #items_list li input").val();
@@ -316,6 +338,7 @@ jQuery(document).ready(function($) {
         $(this).parent().css({'background':'#CAEAFF'});
         last_input = $(this).text();
         $(this).parent().html("<input type='text' name='tagRule[]'value='"+$(this).text()+"'>");
+        cursorEnd();
     });
 
     $(document).on("click", "#tageditor_content #items_list li input", function(){
@@ -383,10 +406,31 @@ jQuery(document).ready(function($) {
         if(e.keyCode == 13){
             return false;
         } else {
+            if(e.keyCode == 38){  
+                if($(this).parent().prev().length > 0) {
+                    $("#tageditor_content #items_list li").each(function(){
+                        $(this).css({'background':'none'});
+                    });
+                    $(this).parent().prev().css({'background':'#CAEAFF'});                
+                    $(this).parent().prev().html("<input type='text' name='tagRule[]' value='"+$(this).parent().prev().text()+"'>");                
+                    $(this).parent().html('<span>'+$(this).val()+'</span>');
+                }                                                                               
+            }
+            if(e.keyCode == 40){
+                if($(this).parent().next().length > 0) {
+                    $("#tageditor_content #items_list li").each(function(){
+                        $(this).css({'background':'none'});
+                    });
+                    $(this).parent().next().css({'background':'#CAEAFF'});                
+                    $(this).parent().next().html("<input type='text' name='tagRule[]' value='"+$(this).parent().next().text()+"'>");                                              
+                    $(this).parent().html('<span>'+$(this).val()+'</span>');
+                }
+            }
+            cursorEnd();   
             last_edition = $(this).val();
         }
     });
-
+    
     $(document).on("focusout", "#tageditor_content #items_list li input", function(){
         return false;
     });
@@ -405,25 +449,22 @@ jQuery(document).ready(function($) {
     });
 
     $(document).on("click", "button#create", function(){
-        $('select[name="filename"]').append('<option selected="selected">'+$('input[name="new_file"]').val()+'</option>');
-        $('#tageditor_content #items_list').empty();
-        $("#tageditor_content button#new").trigger('click');
+        if($('input[name="new_file"]').val() !='' ){
+            var cat_exist = 0;
+            $('select[name="filename"] option').each(function(){
+                 if($(this).text() == $('input[name="new_file"]').val()){
+                     cat_exist = 1;
+                 }
+            });
+            if(cat_exist == 0){
+                $('select[name="filename"]').append('<option selected="selected">'+$('input[name="new_file"]').val()+'</option>');
+                $('#tageditor_content #items_list').empty();
+                $("#tageditor_content button#new").trigger('click');
+            }            
+        }        
         return false;
     });
-
-    function pipe_replace(reg, str,n) {
-        m = 0;
-        return str.replace(reg, function (x) {
-            //was n++ should have been m++
-            m++;
-            if (n==m) {
-                return '<span class="highlight" id="'+n+'">'+x+'</span>';
-            } else {
-                return x;
-            }
-        });
-    }
-
+    
     $(document).on("click", "#tageditor_content button#next", function(){
         if($("#tageditor_content #items_list li").find('input')!=''
             && $("#tageditor_content #items_list li input").val()!=undefined && $("#tageditor_content #items_list li input").val()!=''){
@@ -462,7 +503,7 @@ jQuery(document).ready(function($) {
             $("#tageditor_content #items_list li").each(function(){
                 if($(this).find("span").text() == last_edition){
                     $(this).css({'background':'#CAEAFF'});
-                    $(this).html("<input type='text' name='tagRule[]'value='"+last_edition+"'>");
+                    $(this).html("<input type='text' name='tagRule[]'value='"+last_edition+"'>");                    
                 } else {
                     $(this).css({'background':'none'});
                     var str = $(this).find("span").text();
@@ -473,9 +514,10 @@ jQuery(document).ready(function($) {
                 }
             });
         }
+        cursorEnd();
         action = '';
         return false;
-    });
+    });    
 });
 //var start = new Date().getMilliseconds();
 //console.log("Executed in " + (new Date().getMilliseconds() - start) + " milliseconds");
