@@ -481,6 +481,11 @@ jQuery(document).ready(function($) {
                 $('select[name="filename"]').append('<option selected="selected">'+$('input[name="new_file"]').val()+'</option>');
                 $('#tageditor_content #items_list').empty();
                 $("#tageditor_content button#new").trigger('click');
+                var arr = new Array();
+                $.post('admin_tag_editor/save_file_data', { data: arr, filename: $('input[name="new_file"]').val() })
+                    .done(function(data) {
+                    });
+                return false;
             }            
         }        
         return false;
