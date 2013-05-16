@@ -572,6 +572,22 @@ jQuery(document).ready(function($) {
         moveSentence();
         return false;
     });
+
+    $("a#delete_category").fancybox({ });
+    $(document).on("click", "button#yes", function(){
+        $.post('admin_tag_editor/delete_file', { filename: $("select[name='filename'] option:selected").text() })
+            .done(function(data) {
+                $.fancybox.close();
+                $("select[name='filename'] option:selected").remove();
+                $("select[name='filename']").trigger('change');
+        });
+        return false;
+    });
+    $(document).on("click", "button#no", function(){
+        $.fancybox.close();
+        return false;
+    });
+
 });
 //var start = new Date().getMilliseconds();
 //console.log("Executed in " + (new Date().getMilliseconds() - start) + " milliseconds");

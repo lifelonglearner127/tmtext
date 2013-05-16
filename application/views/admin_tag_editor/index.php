@@ -5,7 +5,14 @@
         </div>
     </div>
 <div class="row-fluid">
-     <div class="span4"><?php echo form_dropdown('filename', $files ); ?></div>
+     <div class="span5" style="width: 327px;">
+         <?php echo form_dropdown('filename', $files ); ?>
+         <a href="#popup" id="delete_category" class="btn btn-danger ml_10 fancybox"><i class="icon-white icon-ok"></i>&nbsp;Delete</a>
+         <div id="popup">
+             <button id="yes" class="btn new_btn ml_15"><i class="icon-ok-sign"></i>&nbsp;Yes</button>
+             <button id="no" class="btn new_btn ml_15"><i class="icon-ok-sign"></i>&nbsp;No</button>
+         </div>
+     </div>
      <div class="span6 admin_tageditor_content">
         <p>New category:</p>
          <input type="text" name="new_file" class="span6" />       
@@ -50,3 +57,6 @@
     </div>
 </div>
 </form>
+
+
+

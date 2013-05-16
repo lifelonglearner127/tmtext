@@ -43,7 +43,7 @@ class Admin_Tag_Editor extends MY_Controller {
     public function file_data($filename = '')
     {
         if($filename == ''){
-            $filename = $_POST['filename'];
+            $filename = $this->input->post('filename');
         }
         $path = $this->config->item('tag_rules_dir').'/'.$filename.'.dat';
         $lines = explode("\n", file_get_contents($path));
@@ -63,7 +63,7 @@ class Admin_Tag_Editor extends MY_Controller {
         $description = array();
         $file = $this->config->item('attr_path').'/tiger/all.csv';
         if (($handle = fopen($file, "r")) !== FALSE) {
-            while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+            while (($data = fgetcsv($handle, 1000, ";")) !== FALSE) {
                 $num = count($data);
                 $row++;
                 for ($c=0; $c < $num; $c++) {
@@ -79,10 +79,17 @@ class Admin_Tag_Editor extends MY_Controller {
     }
 
     public function save_file_data() {
-        if(isset($_POST) && !empty($_POST)){
-            $filename = $_POST['filename'];
+        if($this->input->post('filename')!=''){
+            $filename = $this->input->post('filename');
             $path = $this->config->item('tag_rules_dir').'/'.$filename.'.dat';
-            file_put_contents($path, $_POST['data']);
+            file_put_contents($path, $this->input->post('data'));
+        }
+    }
+
+    public function delete_file() {
+        if($this->input->post('filename')!='') {
+            $path = $this->config->item('tag_rules_dir').'/'.$this->input->post('filename').'.dat';
+            unlink($path);
         }
     }
 
