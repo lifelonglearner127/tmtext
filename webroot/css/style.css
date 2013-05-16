@@ -506,6 +506,7 @@ a.gray_out {
 #textarea #desc li input {
     margin-bottom: 0px;
     padding-right: 10px;
+    width: 100%;
 }
 
 .cursor_default{

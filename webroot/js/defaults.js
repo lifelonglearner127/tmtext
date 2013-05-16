@@ -568,7 +568,40 @@ jQuery(document).ready(function($) {
             }
             $(this).parent().html('<span class="'+sentence_class+'">'+$(this).val()+'</span><a hef="#" class="ui-icon-trash">x</a>');
         });
-        $(this).parent().html("<input type='text' class='"+sentence_class+"' name='sentences[]'value='"+$(this).text()+"' /><a hef='#' class='ui-icon-trash'>x</a>");
+        var txt = $(this).text();
+        $(this).parent().html('<input type="text" class="'+sentence_class+'" name="sentences[]" value="'+txt+'" />' +
+            '<a hef="#" class="ui-icon-trash">x</a>');
+
+        var value = $("#textarea #desc li input").val();
+        var size  = value.length;
+        // playing css width
+        size = size*2.3;
+        $("#textarea #desc li input").css('width',size*3);
+        $("#textarea #desc li:has(input)").css('width',size*3);
+
+        var el = $("#textarea #desc li input:text").get(0);
+        var elemLen = el.value.length;
+        el.selectionStart = elemLen;
+        el.selectionEnd = elemLen;
+        el.focus();
+
+        moveSentence();
+        return false;
+    });
+
+    $(document).on("blur", "#textarea ul#desc li input", function() {
+        var sentence_class = '';
+        if($(this).attr('class')=='current_product') {
+            sentence_class += 'current_product';
+        }
+        $("#textarea #desc li input").each(function(){
+            var sentence_class = '';
+            if($(this).attr('class')=='current_product') {
+                sentence_class += 'current_product';
+            }
+            $(this).parent().html('<span class="'+sentence_class+'">'+$(this).val()+'</span><a hef="#" class="ui-icon-trash">x</a>');
+        });
+        $("#textarea #desc li").css('width','auto');
         moveSentence();
         return false;
     });
@@ -584,6 +617,7 @@ jQuery(document).ready(function($) {
         });
         return false;
     });
+
     $(document).on("click", "button#no", function(){
         $.fancybox.close();
         return false;
