@@ -573,7 +573,8 @@ jQuery(document).ready(function($) {
         return false;
     });
 
-    $("a#delete_category").fancybox({ });
+    $("a#delete_category").fancybox({ 'beforeShow': function(){ $('#category_name').text($("select[name='filename'] option:selected").text()); } });        
+
     $(document).on("click", "button#yes", function(){
         $.post('admin_tag_editor/delete_file', { filename: $("select[name='filename'] option:selected").text() })
             .done(function(data) {

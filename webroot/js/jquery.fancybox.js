@@ -1798,7 +1798,7 @@
 
 			if (!this.overlay) {
 				this.margin = D.height() > W.height() || $('body').css('overflow-y') === 'scroll' ? $('body').css('margin-right') : false;
-				this.el     = document.all && !document.querySelector ? $('html') : $('body');
+				this.el     = document.getElementsByTagName('html') && !document.querySelector ? $('html') : $('body');
 
 				this.create(opts);
 			}
@@ -1814,13 +1814,13 @@
 		},
 
 		beforeShow : function(opts, obj) {
-			if (obj.locked) {
-				this.el.addClass('fancybox-lock');
+			/*if (obj.locked) {
+				//this.el.addClass('fancybox-lock');
 
 				if (this.margin !== false) {
 					$('body').css('margin-right', getScalar( this.margin ) + obj.scrollbarWidth);
 				}
-			}
+			}*/
 
 			this.open(opts);
 		},

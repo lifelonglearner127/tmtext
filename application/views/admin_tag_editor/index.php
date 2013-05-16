@@ -9,6 +9,7 @@
          <?php echo form_dropdown('filename', $files ); ?>
          <a href="#popup" id="delete_category" class="btn btn-danger ml_10 fancybox"><i class="icon-white icon-ok"></i>&nbsp;Delete</a>
          <div id="popup">
+             <p>This will delete <span id="category_name"></span> category and all associated rules permanently. Are you sure you want to continue?</p>
              <button id="yes" class="btn new_btn ml_15"><i class="icon-ok-sign"></i>&nbsp;Yes</button>
              <button id="no" class="btn new_btn ml_15"><i class="icon-ok-sign"></i>&nbsp;No</button>
          </div>
