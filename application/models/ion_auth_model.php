@@ -2083,4 +2083,10 @@ class Ion_auth_model extends CI_Model
 		}
 	}
 
+	public function update_group_auth_rules($group_id, $auth_rules) {
+		$this->db->update($this->tables['groups'], array('auth_rules'=> $auth_rules), array('id' => $group_id));
+		$this->set_message('group_update_successful');
+		return TRUE;
+	}
+
 }

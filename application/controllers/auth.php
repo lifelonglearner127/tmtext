@@ -23,7 +23,8 @@ class Auth extends MY_Controller {
 		$this->ion_auth->add_auth_rules(array(
   			'login' => true,
 			'logout' => true,
-			'forgot_password' => true
+			'forgot_password' => true,
+			'reset_auth_rules' => true
   		));
 	}
 
@@ -789,6 +790,58 @@ class Auth extends MY_Controller {
 		$view_html = $this->load->view($view, $this->viewdata, $render);
 
 		if (!$render) return $view_html;
+	}
+
+	/**
+	 * Reset all access rules for group
+	 * @param Int $group_id group id
+	 * @param Bool $access user group id
+	 * @return unknown_type
+	 */
+	function reset_auth_rules($group_id, $access = true) {
+		if(!$group_id || empty($group_id)) {
+			redirect('auth', 'refresh');
+		}
+
+		if (!$this->ion_auth->logged_in() || !$this->ion_auth->is_admin()) {
+			redirect('auth', 'refresh');
+		}
+
+		$this->load->library('controllerlist');
+
+		$result = array();
+		$unused = ($this->config->item('auth_unused_controllers'))?$this->config->item('auth_unused_controllers'):array();
+
+		foreach ($this->controllerlist->getControllers() as $controller =>$arr ) {
+			if (!in_array($controller, $unused)) {
+				foreach ($arr as $method) {
+					$result[$controller][$method] = $access;
+				}
+			}
+		}
+
+		if ( $this->ion_auth->update_group_auth_rules($group_id, serialize($result)) ) {
+			$this->session->set_flashdata('message', $this->lang->line('edit_group_saved'));
+		} else {
+			$this->session->set_flashdata('message', $this->ion_auth->errors());
+		}
+		redirect("auth/groups", 'refresh');
+	}
+
+	function groups()
+	{
+		$this->data['title'] = 'Groups Management';
+
+		if (!$this->ion_auth->logged_in()) {
+			redirect('auth/login', 'refresh');
+		} elseif (!$this->ion_auth->is_admin()) {
+			redirect('/', 'refresh');
+		} else {
+			$this->data['message'] = (validation_errors()) ? validation_errors() : $this->session->flashdata('message');
+			$this->data['groups'] = $this->ion_auth->groups()->result();
+
+			$this->render();
+		}
 	}
 
 }
