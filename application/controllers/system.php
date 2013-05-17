@@ -32,6 +32,7 @@ class System extends MY_Controller {
 
 		$this->form_validation->set_rules('settings[site_name]', 'Site name', 'required|xss_clean');
 		$this->form_validation->set_rules('settings[company_name]', 'Company name', 'required|xss_clean');
+		$this->form_validation->set_rules('settings[tag_rules_dir]', 'tagRules', 'required|xss_clean'); // Shulgin I.L.
 
 		if ($this->form_validation->run() === true) {
 			$generators = $this->config->item('generators');
@@ -41,6 +42,7 @@ class System extends MY_Controller {
 			}
 
 			$this->session->set_userdata('generators', $generators);
+			die(var_dump($this->input->post('settings')));
 
 			foreach ($this->input->post('settings') as $key=>$value) {
 				if (!$this->settings_model->update_system_value($key,$value)) {

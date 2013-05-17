@@ -38,9 +38,13 @@
 							<p class="mt_40">CSV Directories:</p>
 							<textarea></textarea>
 						</div>
-						<div class="span6 admin_system_content">
+						<div class="span6 admin_system_content extra_up">
 							<p class="mt_40">Database:</p>
 							<input type="text" id="database" class="mt_30"/>
+						</div>
+						<div class="span6 admin_system_content">
+							<p class="mt_40">Tag Rules:</p>
+							<textarea type="text" class='tag_rules_settings' id="tar_rules" name="settings[tag_rules_dir]"></textarea>
 						</div>
 					</div>
 					<h3>Generator Paths:</h3>

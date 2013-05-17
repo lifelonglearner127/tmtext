@@ -264,9 +264,13 @@ body{
 	padding:2%;
 }
 
-.admin_system_content{
+.admin_system_content {
 	float:left;
 	width:100%;
+}
+
+.admin_system_content.extra_up {
+	margin-top: -32px;
 }
 
 	.admin_system_content p{
@@ -286,6 +290,10 @@ body{
 		width:240px;
 		height:100px;
 		float:left;
+	}
+
+	.admin_system_content textarea.tag_rules_settings {
+		width: 250px;
 	}
 
 .admin_tageditor_content{
@@ -396,7 +404,7 @@ body{
 }
 
 .mt_40{
-	margin-top:40px !important;
+	margin-top: 35px !important;
 }
 
 .ml_50{
