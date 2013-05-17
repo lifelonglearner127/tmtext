@@ -570,6 +570,8 @@ jQuery(document).ready(function($) {
         if($(this).hasClass('jq-editor')){
             $('.main_content_other').css('display', 'none');
             $('.main_content_editor').css('display', 'block');
+            $(".left_nav_content li, .right_nav_content li").removeClass('active');
+            $(this).parent('li').addClass('active');
         }else{
             var url = $(this).attr('href');
             var posting = $.post(url+"?ajax=true", function(data) {
