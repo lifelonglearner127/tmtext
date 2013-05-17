@@ -103,26 +103,39 @@ class Editor extends MY_Controller {
 
 			$csv_rows = array();
 
-			if ($path = realpath($attr_path)) {
-				$objects = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path), RecursiveIteratorIterator::SELF_FIRST);
-				foreach($objects as $name => $object){
-					if (!$object->isDir()) {
-						if (preg_match("/.*\.csv/i",$object->getFilename(),$matches)) {
-							$_rows = array();
-							if (($handle = fopen($name, "r")) !== FALSE) {
-								while (($row = fgets($handle)) !== false) {
-									if (preg_match("/$s/i",$row,$matches)) {
-										$_rows[] = $row;
+			// Search in files
+			if ( $this->system_settings['use_files'] ) {
+				if ($path = realpath($attr_path)) {
+					$objects = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path), RecursiveIteratorIterator::SELF_FIRST);
+					foreach($objects as $name => $object){
+						if (!$object->isDir()) {
+							if (preg_match("/.*\.csv/i",$object->getFilename(),$matches)) {
+								$_rows = array();
+								if (($handle = fopen($name, "r")) !== FALSE) {
+									while (($row = fgets($handle)) !== false) {
+										if (preg_match("/$s/i",$row,$matches)) {
+											$_rows[] = $row;
+										}
 									}
 								}
-							}
-							fclose($handle);
+								fclose($handle);
 
-							foreach (array_keys(array_count_values($_rows)) as $row){
-								$csv_rows[] = str_getcsv($row, ",", "\"");
+								foreach (array_keys(array_count_values($_rows)) as $row){
+									$csv_rows[] = str_getcsv($row, ",", "\"");
+								}
+								unset($_rows);
 							}
-							unset($_rows);
 						}
+					}
+				}
+			}
+
+			// Search in database
+			if ( $this->system_settings['use_database'] ) {
+				$this->load->model('imported_data_model');
+				if (( $_rows = $this->imported_data_model->findByData($s))!== false) {
+					foreach($_rows as $row) {
+						$csv_rows[] = str_getcsv($row['data'], ",", "\"");
 					}
 				}
 			}
@@ -245,7 +258,7 @@ class Editor extends MY_Controller {
 				}
 			}
 
-			if(!empty($this->exceptions)){
+			if(!empty($this->exceptions) && !empty($data['attributes'])){
 				foreach ($data['attributes'] as $key => $value) {
 					foreach ($this->exceptions as $exception) {
 						if($exception['attribute_name'] == $key AND $exception['attribute_value'] == $value){
@@ -253,7 +266,7 @@ class Editor extends MY_Controller {
 								foreach ($exception['exception_values'] as $exception_value) {
 									if (stristr($product_description, $exception_value)) {
 										unset($data['product_descriptions'][$pd_key]);
-									}	
+									}
 								}
 							}
 							sort($data['product_descriptions']);

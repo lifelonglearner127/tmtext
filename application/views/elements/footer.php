@@ -5,6 +5,7 @@
 			</p>
 			<p class="pull-right mb_40">
 				<small>Page rendered in <strong>{elapsed_time}</strong> seconds</small>
+				<small><?php $this->load->view('elements/version.php');?></small>
 			</p>
 		</div>
 	</div>

@@ -363,10 +363,10 @@ jQuery(document).ready(function($) {
                     revision: data.revision,
                 };
 
-                console.log(rev);
+                //console.log(rev);
             });
     });
-        
+
     $(document).on("click", "#tageditor_content #items_list li span", function(){
         action = 'edit_input';
         last_edition = $("#tageditor_content #items_list li input").val();
@@ -447,31 +447,31 @@ jQuery(document).ready(function($) {
         if(e.keyCode == 13){
             return false;
         } else {
-            if(e.keyCode == 38){  
+            if(e.keyCode == 38){
                 if($(this).parent().prev().length > 0) {
                     $("#tageditor_content #items_list li").each(function(){
                         $(this).css({'background':'none'});
                     });
-                    $(this).parent().prev().css({'background':'#CAEAFF'});                
-                    $(this).parent().prev().html("<input type='text' name='tagRule[]' value='"+$(this).parent().prev().text()+"'>");                
+                    $(this).parent().prev().css({'background':'#CAEAFF'});
+                    $(this).parent().prev().html("<input type='text' name='tagRule[]' value='"+$(this).parent().prev().text()+"'>");
                     $(this).parent().html('<span>'+$(this).val()+'</span>');
-                }                                                                               
+                }
             }
             if(e.keyCode == 40){
                 if($(this).parent().next().length > 0) {
                     $("#tageditor_content #items_list li").each(function(){
                         $(this).css({'background':'none'});
                     });
-                    $(this).parent().next().css({'background':'#CAEAFF'});                
-                    $(this).parent().next().html("<input type='text' name='tagRule[]' value='"+$(this).parent().next().text()+"'>");                                              
+                    $(this).parent().next().css({'background':'#CAEAFF'});
+                    $(this).parent().next().html("<input type='text' name='tagRule[]' value='"+$(this).parent().next().text()+"'>");
                     $(this).parent().html('<span>'+$(this).val()+'</span>');
                 }
             }
-            cursorEnd();   
+            cursorEnd();
             last_edition = $(this).val();
         }
     });
-    
+
     $(document).on("focusout", "#tageditor_content #items_list li input", function(){
         return false;
     });
@@ -506,11 +506,11 @@ jQuery(document).ready(function($) {
                     .done(function(data) {
                     });
                 return false;
-            }            
-        }        
+            }
+        }
         return false;
     });
-    
+
     $(document).on("click", "#tageditor_content button#next", function(){
         if($("#tageditor_content #items_list li").find('input')!=''
             && $("#tageditor_content #items_list li input").val()!=undefined && $("#tageditor_content #items_list li input").val()!=''){
@@ -549,7 +549,7 @@ jQuery(document).ready(function($) {
             $("#tageditor_content #items_list li").each(function(){
                 if($(this).find("span").text() == last_edition){
                     $(this).css({'background':'#CAEAFF'});
-                    $(this).html("<input type='text' name='tagRule[]'value='"+last_edition+"'>");                    
+                    $(this).html("<input type='text' name='tagRule[]'value='"+last_edition+"'>");
                 } else {
                     $(this).css({'background':'none'});
                     var str = $(this).find("span").text();
@@ -640,7 +640,7 @@ jQuery(document).ready(function($) {
         return false;
     });
 
-    $("a#delete_category").fancybox({ 'beforeShow': function(){ $('#category_name').text($("select[name='filename'] option:selected").text()); } });        
+    $("a#delete_category").fancybox({ 'beforeShow': function(){ $('#category_name').text($("select[name='filename'] option:selected").text()); } });
 
     $(document).on("click", "button#yes", function(){
         $.post('admin_tag_editor/delete_file', { filename: $("select[name='filename'] option:selected").text() })
@@ -654,6 +654,18 @@ jQuery(document).ready(function($) {
 
     $(document).on("click", "button#no", function(){
         $.fancybox.close();
+        return false;
+    });
+
+    $(document).on("click", "button#csv_import", function(event){
+    	event.preventDefault();
+
+    	var url = $(this).parents().find('form').attr( 'action' ).replace('save', 'csv_import');
+
+    	$.get(url, function(data) {
+    		$('#info').html(data.message);
+		}, 'json');
+
         return false;
     });
 

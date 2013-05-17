@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS `saved_descriptions` (
   `search_id` int(10) unsigned NOT NULL DEFAULT '0',
   `created` datetime NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `users_id` (`user_id`,`search_id`,`key`)
+  KEY `users_id` (`user_id`,`search_id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
 
 CREATE TABLE IF NOT EXISTS `searches` (
@@ -108,3 +108,21 @@ CREATE TABLE IF NOT EXISTS `setting_values` (
   `value` varchar(1000) COLLATE utf8_unicode_ci NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
+
+CREATE TABLE IF NOT EXISTS `imported_data` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `key` varchar(40) COLLATE utf8_unicode_ci NOT NULL,
+  `imported_data_attribute_id` int(11) unsigned DEFAULT NULL,
+  `data` text COLLATE utf8_unicode_ci NOT NULL,
+  `created` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `key` (`key`),
+  KEY `imported_data_attribute_id` (`imported_data_attribute_id`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `imported_data_attributes` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `attributes` text COLLATE utf8_unicode_ci NOT NULL,
+  `created` datetime NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;

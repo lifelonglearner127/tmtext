@@ -34,7 +34,7 @@ class Searches_model extends CI_Model {
         return $this->db->insert_id();
     }
 
-    function update($search, $attributes)
+    function update($id, $search, $attributes)
     {
         $this->search = $search;
         $this->attributes = $attributes;

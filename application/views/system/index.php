@@ -30,17 +30,35 @@
 	});
 	</script>
 
-
+				<div id="info"><?php echo $message;?></div>
 				<?php echo form_open("system/save", array("class"=>"form-horizontal", "id"=>"product_description"));?>
 					<h3>Original Descriptions:</h3>
 					<div class="row-fluid">
 						<div class="span6 admin_system_content">
 							<p class="mt_40">CSV Directories:</p>
-							<textarea></textarea>
+							<textarea name="settings[csv_directories]"><?php echo isset($settings['csv_directories'])? $settings['csv_directories']:'' ?></textarea>
 						</div>
-						<div class="span6 admin_system_content">
+						<!--<div class="span6 admin_system_content">
 							<p class="mt_40">Database:</p>
 							<input type="text" id="database" class="mt_30"/>
+						</div> -->
+						<div class="span6 admin_system_content">
+							<label class="control-label" for="use_files">Use Files</label>
+							<div class="controls">
+								<?php echo form_checkbox('settings[use_files]', 1, (isset($settings['use_files'])? $settings['use_files']:false), 'id="use_files"');?>
+							</div>
+							<label class="control-label" for="use_database">Use Database</label>
+							<div class="controls">
+								<?php echo form_checkbox('settings[use_database]', 1, (isset($settings['use_database'])? $settings['use_database']:false), 'id="use_database"');?>
+							</div>
+						</div>
+					</div>
+					<h3></h3>
+					<div class="row-fluid">
+						<div class="control-group">
+						    <div class="controls">
+						    	<button id="csv_import" class="btn btn-success"><i class="icon-white icon-ok"></i>&nbsp;Import</button>
+						    </div>
 						</div>
 					</div>
 					<h3>Generator Paths:</h3>

@@ -18,6 +18,7 @@ class MY_Controller extends CI_Controller {
     protected $previous_action_name;
     protected $save_previous_url = false;
     protected $page_title;
+    protected $system_settings;
 
     public function __construct() {
         parent::__construct();
@@ -37,8 +38,8 @@ class MY_Controller extends CI_Controller {
         $this->data['css']     = '';
 
         $this->load->model('settings_model');
-		$this->data['settings'] = $this->settings_model->get_system_settings();
-
+		$this->system_settings = $this->settings_model->get_system_settings();
+		$this->data['settings'] = $this->system_settings;
     }
 
     protected function render($template='main') {
@@ -60,7 +61,7 @@ class MY_Controller extends CI_Controller {
             $this->load->view("layouts/ajax.tpl.php", $this->data);  //load the template
         }else{
             $this->load->view("layouts/$template.tpl.php", $this->data);  //load the template
-        }  
+        }
     }
 
     protected function add_title() {
