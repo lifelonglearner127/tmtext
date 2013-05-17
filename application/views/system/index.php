@@ -31,7 +31,7 @@
 	</script>
 
 
-				<?php echo form_open("system/save", array("class"=>"form-horizontal", "id"=>"product_description"));?>
+				<?php echo form_open("system/save", array("class"=>"form-horizontal", "id"=>"system_save"));?>
 					<h3>Original Descriptions:</h3>
 					<div class="row-fluid">
 						<div class="span6 admin_system_content">

@@ -126,7 +126,18 @@ function changeTextareaVal(){
     $('textarea[name="description"]').val(val).trigger('change');
 }
 
+function wrapper(){
+    var editor = $('.main_content').find('.main_content_editor');
+    if (editor.length == 0) {
+       var cont = $('.main_content').html();
+       var contWithWrap = '<div class="main_content_other">'+cont+'</div><div class="main_content_editor"></div>';
+       $('.main_content').html(contWithWrap);
+    }   
+}
+
 jQuery(document).ready(function($) {
+
+    wrapper();
 
     $(document).on("keyup change", '.new_product #textarea', function() {
         changeTextareaVal();
@@ -567,7 +578,16 @@ jQuery(document).ready(function($) {
 
     $(document).on("click", ".left_nav_content li a, .right_nav_content li a", function(e){
         e.preventDefault();
+ 
         if($(this).hasClass('jq-editor')){
+            var editorCont = $('.main_content_editor').html();
+            if (editorCont.length == 0) {
+                var url = $(this).attr('href');
+                var posting = $.post(url+"?ajax=true", function(data) {
+                    var response_data = eval('('+data+')');
+                    $('.main_content_editor').html(response_data.ajax_data);
+                });
+            }
             $('.main_content_other').css('display', 'none');
             $('.main_content_editor').css('display', 'block');
             $(".left_nav_content li, .right_nav_content li").removeClass('active');
@@ -657,11 +677,11 @@ jQuery(document).ready(function($) {
         return false;
     });
 
-    $(document).on("submit", "#product_description", function(e){
+    $(document).on("submit", "#system_save", function(e){
         e.preventDefault();
-
         var url = $( this ).attr( 'action' );
         var posting = $.post(url+"?ajax=true", function(data) {
+                console.log(1);
                 var response_data = eval('('+data+')');
                 $('.main_content_other').html(response_data.ajax_data);
             });

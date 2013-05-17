@@ -10,7 +10,6 @@ class Editor extends MY_Controller {
 
   		$this->load->library('form_validation');
 		$this->data['title'] = 'Editor';
-		$this->data['head'][] = '<script src="'.base_url().'js/jquery.expander.js"></script>';
 
 		if ($generators = $this->session->userdata('generators')) {
 			$this->config->set_item('generators',$generators);
