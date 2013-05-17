@@ -82,6 +82,10 @@ function moveSentence() {
                 $(this).closest("li").appendTo("#desc").fadeIn();
             });
         }
+
+        setTimeout(function(){
+            changeTextareaVal();
+        },1000)
     });
 }
 
@@ -106,11 +110,26 @@ function pipe_replace(reg, str,n) {
     });
 }
 
+function changeTextareaVal(){
+    var val = '';
+    $('.new_product #textarea li').each(function(){
+        if($(this).find('span').text()!='' && $(this).find('span').text()!=undefined){
+            val += $(this).find('span').text();
+        }
+        if($(this).find('input').val()!='' && $(this).find('input').val()!=undefined){
+            val += $(this).find('input').val();
+        }
+    });
+    if(val==''){
+        val = $('.new_product #textarea').text();
+    }
+    $('textarea[name="description"]').val(val).trigger('change');
+}
 
 jQuery(document).ready(function($) {
 
     $(document).on("keyup change", '.new_product #textarea', function() {
-        $('textarea[name="description"]').val($('.new_product #textarea span').text()).trigger('change');
+        changeTextareaVal();
     });
 
     $(document).on("keydown change", 'textarea[name="description"]', function() {
@@ -189,7 +208,7 @@ jQuery(document).ready(function($) {
 
                 var description = $('.new_product').find('textarea[name="description"]');
                 description.removeAttr('disabled');
-                description.val(products[0]);products
+                description.val(products[0]);
                 description.trigger('change');
 
                 var descriptionDiv = $('.new_product #textarea');
@@ -286,6 +305,7 @@ jQuery(document).ready(function($) {
                 }
                 vbutton.html('<i class="icon-ok-sign"></i>&nbsp;Validate');
                 $('.new_product #textarea').html(description).trigger('change');
+                changeTextareaVal();
             });
 
     });
@@ -547,13 +567,22 @@ jQuery(document).ready(function($) {
 
     $(document).on("click", ".left_nav_content li a, .right_nav_content li a", function(e){
         e.preventDefault();
-        var url = $(this).attr('href');
-        var posting = $.post(url+"?ajax=true", function(data) {
-            var response_data = eval('('+data+')');
-            $('.main_content').html(response_data.ajax_data);
-        });
-        $(".left_nav_content li, .right_nav_content li").removeClass('active');
-        $(this).parent('li').addClass('active');
+        if($(this).hasClass('jq-editor')){
+            $('.main_content_other').css('display', 'none');
+            $('.main_content_editor').css('display', 'block');
+            $(".left_nav_content li, .right_nav_content li").removeClass('active');
+            $(this).parent('li').addClass('active');
+        }else{
+            var url = $(this).attr('href');
+            var posting = $.post(url+"?ajax=true", function(data) {
+                var response_data = eval('('+data+')');
+                $('.main_content_other').html(response_data.ajax_data);
+            });
+            $(".left_nav_content li, .right_nav_content li").removeClass('active');
+            $(this).parent('li').addClass('active');
+            $('.main_content_other').css('display', 'block');
+            $('.main_content_editor').css('display', 'none');
+        }
     });
 
     $(document).on("click", "#textarea #desc li span", function(){
@@ -589,6 +618,10 @@ jQuery(document).ready(function($) {
         return false;
     });
 
+    $(document).on("change", "#textarea ul#desc li input", function() {
+        changeTextareaVal();
+        return false;
+    });
     $(document).on("blur", "#textarea ul#desc li input", function() {
         var sentence_class = '';
         if($(this).attr('class')=='current_product') {
@@ -603,6 +636,7 @@ jQuery(document).ready(function($) {
         });
         $("#textarea #desc li").css('width','auto');
         moveSentence();
+        changeTextareaVal();
         return false;
     });
 

@@ -2,6 +2,8 @@
 
 class Editor extends MY_Controller {
 
+	public $exceptions = array();
+
 	function __construct()
  	{
   		parent::__construct();
@@ -14,14 +16,25 @@ class Editor extends MY_Controller {
 			$this->config->set_item('generators',$generators);
 		}
 
+		$this->exceptions[] = array(
+			'attribute_name' => 'MANU',
+			'attribute_value' => 'Samsung',
+			'exception_values' => array(
+				'Viewsonic',  'Sony', 'Dell'
+			)
+		);
+		$this->exceptions[] = array(
+			'attribute_name' => 'RESOLUTION',
+			'attribute_value' => '1080p',
+			'exception_values' => array(
+				'720p',  '1280p'
+			)
+		);
+
  	}
 
 	public function index()
 	{
-		$this->load->model('saved_description_model');
-		$lastSaved = $this->saved_description_model->getLastWithSearchesByUserId($this->ion_auth->get_user_id());
-		$this->data['lastSaved'] = $lastSaved;
-
 		$this->render();
 	}
 
@@ -231,6 +244,24 @@ class Editor extends MY_Controller {
 					}
 				}
 			}
+
+			if(!empty($this->exceptions)){
+				foreach ($data['attributes'] as $key => $value) {
+					foreach ($this->exceptions as $exception) {
+						if($exception['attribute_name'] == $key AND $exception['attribute_value'] == $value){
+							foreach ($data['product_descriptions'] as $pd_key => $product_description) {
+								foreach ($exception['exception_values'] as $exception_value) {
+									if (stristr($product_description, $exception_value)) {
+										unset($data['product_descriptions'][$pd_key]);
+									}	
+								}
+							}
+							sort($data['product_descriptions']);
+						}
+					}
+				}
+			}
+
 			$this->output->set_content_type('application/json')
     			->set_output(json_encode($data));
 		}
