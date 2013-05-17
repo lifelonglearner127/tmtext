@@ -547,7 +547,7 @@ class Ion_auth
 		$_allowed = false;
 
         foreach ($this->ion_auth_model->get_users_groups($user_id)->result() as $group) {
-			if ( isset($this->auth_db_rules[$group->id]) && isset($this->auth_db_rules[$group->id][$class]) && $this->auth_db_rules[$group->id][$class][$method] ) {
+			if ( isset($this->auth_db_rules[$group->name]) && isset($this->auth_db_rules[$group->name][$class]) && $this->auth_db_rules[$group->name][$class][$method] ) {
 				$_allowed = true;
 			}
 		}
@@ -561,7 +561,7 @@ class Ion_auth
 	public function load_user_auth_rules( $user_id ){
 		foreach ($this->ion_auth_model->get_users_groups($user_id)->result() as $group) {
 			$this->add_auth_db_rules(
-				array($group->id => unserialize($this->ion_auth_model->_auth_rules($group->id)))
+				array($group->name => unserialize($this->ion_auth_model->_auth_rules($group->id)))
 			);
 		}
 	}
