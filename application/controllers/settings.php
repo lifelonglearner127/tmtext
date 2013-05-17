@@ -31,7 +31,7 @@ class Settings extends MY_Controller {
 
 		$settings[] = $this->settings_model->get_system_settings();
 
-		var_dump($settings);
+		die(var_dump($settings));
 //		var_dump($this->config);
 
 	}

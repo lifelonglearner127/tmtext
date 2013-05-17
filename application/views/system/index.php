@@ -31,7 +31,7 @@
 	</script>
 
 				<div id="info"><?php echo $message;?></div>
-				<?php echo form_open("system/save", array("class"=>"form-horizontal", "id"=>"product_description"));?>
+				<?php echo form_open("system/save", array("class"=>"form-horizontal", "id"=>"system_save"));?>
 					<h3>Original Descriptions:</h3>
 					<div class="row-fluid">
 						<div class="span6 admin_system_content">
@@ -39,6 +39,7 @@
 							<textarea name="settings[csv_directories]"><?php echo isset($settings['csv_directories'])? $settings['csv_directories']:'' ?></textarea>
 						</div>
 						<!--<div class="span6 admin_system_content">
+						<div class="span6 admin_system_content extra_up">
 							<p class="mt_40">Database:</p>
 							<input type="text" id="database" class="mt_30"/>
 						</div> -->
@@ -59,6 +60,12 @@
 						    <div class="controls">
 						    	<button id="csv_import" class="btn btn-success"><i class="icon-white icon-ok"></i>&nbsp;Import</button>
 						    </div>
+						</div>
+					</div>
+					<div class="row-fluid">
+						<div class="span6 admin_system_content">
+							<p class="mt_40">Tag Rules:</p>
+							<textarea type="text" class='tag_rules_settings' id="tar_rules" name="settings[tag_rules_dir]"><?php echo isset($settings['tag_rules_dir'])? $settings['tag_rules_dir']:'' ?></textarea>
 						</div>
 					</div>
 					<h3>Generator Paths:</h3>

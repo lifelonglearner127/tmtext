@@ -29,6 +29,8 @@ class System extends MY_Controller {
 		$this->form_validation->set_rules('settings[site_name]', 'Site name', 'required|xss_clean');
 		$this->form_validation->set_rules('settings[company_name]', 'Company name', 'required|xss_clean');
 		$this->form_validation->set_rules('settings[csv_directories]', 'CSV Directories', 'required|xss_clean');
+		$this->form_validation->set_rules('settings[tag_rules_dir]', 'tagRules', 'required|xss_clean'); // Shulgin I.L.
+
 
 		if ($this->form_validation->run() === true) {
 			$generators = $this->config->item('generators');
@@ -53,7 +55,7 @@ class System extends MY_Controller {
 			$this->session->set_flashdata('message', (validation_errors()) ? validation_errors() : $this->session->flashdata('message'));
 
 		}
-		redirect('system/index', 'refresh');
+		redirect('system/index?ajax=true');
 	}
 
 	public function csv_import() {
