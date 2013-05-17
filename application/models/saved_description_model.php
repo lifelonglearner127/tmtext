@@ -46,17 +46,4 @@ class Saved_Description_model extends CI_Model {
         return $this->db->insert_id();
     }
 
-    function getLastWithSearchesByUserId($id)
-    {
-        $query = $this->db
-                  ->from($this->tables['saved_descriptions'])
-                  ->join('searches', $this->tables['saved_descriptions'].'.search_id = searches.id')
-                  ->where('user_id', $id)
-                  ->order_by($this->tables['saved_descriptions'].'.created', 'desc')
-                  ->limit(1)
-                  ->get();
-
-        return $query->row_array();
-    }
-
 }
