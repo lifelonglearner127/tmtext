@@ -49,6 +49,6 @@ class System extends MY_Controller {
 			}
 
 		}
-		redirect('system/index', 'refresh');
+		redirect('system/index?ajax=true');
 	}
 }
