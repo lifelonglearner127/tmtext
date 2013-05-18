@@ -524,3 +524,17 @@ a.gray_out {
 #popup{
     display: none;
 }
+
+.dd-container, .dd-container .dd-select, ul.dd-options {
+    width: 200px!important;
+    float:left;
+    margin-right: 20px;
+}
+
+.dd-option-image, .dd-selected-image {
+    max-width: 100px!important;
+}
+
+a.dd-selected, a.dd-option{
+    padding: 5px!important;
+}

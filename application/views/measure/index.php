@@ -1,14 +1,33 @@
-	<div class="row-fluid">
-            <input type="text" name="compare_text" style="width:90%" value="42LN5700" id="compare_text" class="span11" placeholder=""/>
+<script>
+$(document).ready(function () {
+    $('#websites_first').ddslick({
+        data: ddData_first,
+        defaultSelectedIndex: 0
+    });
+
+    $('#websites_second').ddslick({
+        data: ddData_second,
+        defaultSelectedIndex: 0
+    });
+
+    $('#websites_third').ddslick({
+        data: ddData_third,
+        defaultSelectedIndex: 0
+    });
+});
+</script>
+
+    <div class="row-fluid">
+            <input type="text" name="compare_text" style="width:90%" value="KDL-55EX640" id="compare_text" class="span11" placeholder=""/>
             <button type="submit" class="btn pull-right">Compare</button>
 	</div>
 	<div class="row-fluid">
-            <div class="span3"><?php echo form_dropdown('items', array('First Item','Second Item','Third Item') ); ?></div>
-            <div class="span3"><?php echo form_dropdown('properties', array('First Property','Second Property','Third Property') ); ?></div>
-            <div class="span3"><?php echo form_dropdown('attributes', array('First Attribute','Second Attribute','Third Attribute') ); ?></div>
+            <div id="websites_first" class="dropdowns"></div>
+            <div id="websites_second" class="dropdowns"></div>
+            <div id="websites_third" class="dropdowns"></div>
         </div>
-        <div class="row-fluid">
-            <div class="span9"><b>Item description</b> <a href="#" style="float:right" >top to page</a></div>
+        <div class="row-fluid mt_10">
+            <div class="span9"><b>Item description</b></div>
         </div>
 	<div class="row-fluid">            
             <div class="span9 search_area uneditable-input cursor_default" style="height:350px; overflow : auto;" id="items">                
@@ -38,8 +57,8 @@
                         <li><a href="#">Site Metrics</a></li>
                         <li>Alexa: 156</li>
                         <li>SKUs: 1,278,400</li>
+                        <li>&nbsp;</li>
                         <li><a href="#">Page Metrics</a></li>
-                        <li>SKU: KDL-55EX640</li>
                         <li>SKU: KDL-55EX640</li>
                      </ul>
 	    </div>

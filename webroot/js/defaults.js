@@ -8,6 +8,48 @@ var next = 0;
 var action = '';
 var last_input = '';
 var last_edition = '';
+var ddData_first = [
+    {
+        text: "",
+        value: "",
+        description: "",
+        imageSrc: "/webroot/img/walmart-logo.png"
+    },
+    {
+        text: "",
+        value: "",
+        description: "",
+        imageSrc: "/webroot/img/sears-logo.png"
+    },
+];
+var ddData_second = [
+    {
+        text: "",
+        value: "",
+        description: "",
+        imageSrc: "/webroot/img/sears-logo.png"
+    },
+    {
+        text: "",
+        value: "",
+        description: "",
+        imageSrc: "/webroot/img/walmart-logo.png"
+    },
+];
+var ddData_third = [
+    {
+        text: "",
+        value: "",
+        description: "",
+        imageSrc: "/webroot/img/tigerdirect-logo.jpg"
+    },
+    {
+        text: "",
+        value: "",
+        description: "",
+        imageSrc: "/webroot/img/walmart-logo.png"
+    },
+];
 
 function replaceAt(search, replace, subject, n) {
     return subject.substring(0, n) +subject.substring(n).replace(search, replace);
