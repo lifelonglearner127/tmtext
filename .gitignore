@@ -4,3 +4,11 @@ application/config/database.local.php
 nbproject/
 # PHP Storm, other java IDE's
 .idea/
+#Eclipse
+license.txt
+.buildpath
+.project
+.settings
+#Other
+/application/logs
+/application/controllers/test.php
