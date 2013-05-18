@@ -538,3 +538,31 @@ a.gray_out {
 a.dd-selected, a.dd-option{
     padding: 5px!important;
 }
+
+
+.item_section {
+    height:700px;
+    display:block;
+    overflow : hidden;
+    border: none;
+}
+
+.item_title {
+    background: #F5F5F5;
+    border: 1px solid #ccc;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+    color:#666666;
+    padding-left: 10px;
+    padding-top: 3px;
+    height: 20px;
+    font-size: 14px;
+    font-family: "Arial", sans-serif;
+}
+
+.item_section_content {
+    color: #666666;
+    font-size: 12px;
+    margin: 15px 10px 20px;
+}
