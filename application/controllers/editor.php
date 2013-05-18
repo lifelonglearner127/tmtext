@@ -103,7 +103,7 @@ class Editor extends MY_Controller {
 			$csv_rows = array();
 
 			// Search in files
-			if ( $this->system_settings['use_files'] ) {
+			if ( isset($this->system_settings['use_files']) && !is_null($this->system_settings['use_files'])) {
 				if ($path = realpath($attr_path)) {
 					$objects = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path), RecursiveIteratorIterator::SELF_FIRST);
 					foreach($objects as $name => $object){
@@ -130,7 +130,7 @@ class Editor extends MY_Controller {
 			}
 
 			// Search in database
-			if ( $this->system_settings['use_database'] ) {
+			if ( isset($this->system_settings['use_database']) && !is_null($this->system_settings['use_files'])) {
 				$this->load->model('imported_data_model');
 				if (( $_rows = $this->imported_data_model->findByData($s))!== false) {
 					foreach($_rows as $row) {

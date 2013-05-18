@@ -307,17 +307,19 @@ jQuery(document).ready(function($) {
 
     $(document).on("click", "#validate", function(){
         var vbutton = $(this);
-        //var description =  $('.new_product #textarea span').text();
         var description = '';
         $('.new_product #textarea li').each(function(){
             if($(this).find('span').text()!='' && $(this).find('span').text()!=undefined){
-                description += $(this).find('span').text();
+                description += $(this).find('span').text()+' ';
             }
             if($(this).find('input').val()!='' && $(this).find('input').val()!=undefined){
-                description += $(this).find('input').val();
+                description += $(this).find('input').val()+' ';
             }
         });
-        //$('.new_product').find('textarea[name="description"]').val();
+        if(description==''){
+            description = $('.new_product').find('textarea[name="description"]').val();
+        }
+
         var url =  $('#attributesForm').attr( 'action' ).replace('attributes', 'validate');
 
         vbutton.html('<i class="icon-ok-sign"></i>&nbsp;Validating...');
