@@ -72,10 +72,10 @@
 					<div class="row-fluid">
 						<div class="span6 admin_system_content">
 							<p>Python script:</p>
-							<input type="text" id="python_script"/>
+							<input type="text" name="settings[python_cmd]" id="python_script" value="<?php echo isset($settings['python_cmd'])? $settings['python_cmd']:'' ?>"/>
 							<div class="clear-fix"></div>
 							<p>Java tools:</p>
-							<input type="text" id="java_tool"/>
+							<input type="text" name="settings[java_cmd]" id="java_tool" value="<?php echo isset($settings['java_cmd'])? $settings['java_cmd']:'' ?>"/>
 						</div>
 						<div class="span6 admin_system_content">
 							<p>Python input:</p>
@@ -125,14 +125,18 @@
 					</div>
 					<div class="row-fluid">
 						<h3>Description Generators:</h3>
-					    <?php foreach ($this->config->item('generators') as $key => $generator) {?>
-				    		<div class="control-group">
-								<label class="control-label" for="java_generator"><?php echo $generator[0];?></label>
-								<div class="controls">
-									<?php echo form_checkbox($generator[1], 1, $generator[2], 'id="'.$generator[1].'"'.(($generator[1]=='python_generator1')?' disabled':''));?>
-								</div>
+			    		<div class="control-group">
+							<label class="control-label" for="java_generator">Java Generator</label>
+							<div class="controls">
+								<?php echo form_checkbox('settings[java_generator]', 1, (isset($settings['java_generator'])? $settings['java_generator']:false), 'id="java_generator"');?>
 							</div>
-						<?php } ?>
+						</div>
+			    		<div class="control-group">
+							<label class="control-label" for="python_generator">Python Generator</label>
+							<div class="controls">
+								<?php echo form_checkbox('settings[python_generator]', 1, (isset($settings['python_generator'])? $settings['python_generator']:false), 'id="python_generator"');?>
+							</div>
+						</div>
 					</div>
 					<h3>Website titles:</h3>
 					<div class="row-fluid">

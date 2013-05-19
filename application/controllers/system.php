@@ -33,18 +33,14 @@ class System extends MY_Controller {
 
 
 		if ($this->form_validation->run() === true) {
-			$generators = $this->config->item('generators');
-			foreach($generators as &$generator) {
-				$generator[2] = (bool) $this->input->post($generator[1]);
-
-			}
-
-			$this->session->set_userdata('generators', $generators);
-
 			$settings = $this->input->post('settings');
 			// Process checkboxes
 			$settings['use_files'] = (isset($settings['use_files'])?true:false);
 			$settings['use_database'] = (isset($settings['use_database'])?true:false);
+
+			$settings['java_generator'] = (isset($settings['java_generator'])?true:false);
+			$settings['python_generator'] = (isset($settings['python_generator'])?true:false);
+
 
 			foreach ($settings as $key=>$value) {
 				if (!$this->settings_model->update_system_value($key,$value)) {

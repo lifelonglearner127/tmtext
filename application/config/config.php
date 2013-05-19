@@ -381,7 +381,8 @@ $config['attr_replace'] = array(
 
 $config['attr_replace_validate'] = array(
 	array(
-		" inch" => "\""
+		" inch" => "\"",
+		" Hertz" => "Hz"
 	)
 );
 

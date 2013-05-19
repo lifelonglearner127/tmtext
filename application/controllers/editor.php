@@ -232,27 +232,25 @@ class Editor extends MY_Controller {
 			}
 
 			$generators_cmd = $this->config->item('generators_cmd');
-			foreach ($this->config->item('generators') as $key => $generator) {
-				if ($generator[2] && $generator[1]=='java_generator') {
-					$descCmd = str_replace($this->config->item('cmd_mask'), $data['file_id'] ,$generators_cmd[$generator[1]]);
-					if ($result = shell_exec($descCmd)) {
-						if (preg_match_all('/\(.*\)\: "(.*)"/i',$result,$matches) && isset($matches[1]) && count($matches[1])>0) {
-							if( is_array($data['product_descriptions']) )
-								$data['product_descriptions'] = array_merge($data['product_descriptions'], $matches[1]);
-							else
-								$data['product_descriptions'] = $matches[1];
-						}
+			if ($this->system_settings['java_generator']) {
+				$descCmd = str_replace($this->config->item('cmd_mask'), $data['file_id'] ,$this->system_settings['java_cmd']);
+				if ($result = shell_exec($descCmd)) {
+					if (preg_match_all('/\(.*\)\: "(.*)"/i',$result,$matches) && isset($matches[1]) && count($matches[1])>0) {
+						if( is_array($data['product_descriptions']) )
+							$data['product_descriptions'] = array_merge($data['product_descriptions'], $matches[1]);
+						else
+							$data['product_descriptions'] = $matches[1];
 					}
 				}
-				if ($generator[2] && $generator[1]=='python_generator') {
-					$descCmd = str_replace($this->config->item('cmd_mask'), $s ,$generators_cmd[$generator[1]]);
-					if ($result = shell_exec($descCmd)) {
-						if (preg_match_all('/.*ELECTR_DESCRIPTION:\s*(.*)\s*-{5,}/',$result,$matches)) {
-							if( is_array($data['product_descriptions']) )
-								$data['product_descriptions'] = array_merge($data['product_descriptions'], $matches[1]);
-							else
-								$data['product_descriptions'] = $matches[1];
-						}
+			}
+			if ($this->system_settings['python_generator']) {
+				$descCmd = str_replace($this->config->item('cmd_mask'), $s ,$this->system_settings['python_cmd']);
+				if ($result = shell_exec($descCmd)) {
+					if (preg_match_all('/.*ELECTR_DESCRIPTION:\s*(.*)\s*-{5,}/',$result,$matches)) {
+						if( is_array($data['product_descriptions']) )
+							$data['product_descriptions'] = array_merge($data['product_descriptions'], $matches[1]);
+						else
+							$data['product_descriptions'] = $matches[1];
 					}
 				}
 			}
