@@ -8,48 +8,6 @@ var next = 0;
 var action = '';
 var last_input = '';
 var last_edition = '';
-var ddData_first = [
-    {
-        text: "",
-        value: "Walmart.com",
-        description: "",
-        imageSrc: base_url+"img/walmart-logo.png"
-    },
-    {
-        text: "",
-        value: "Sears.com",
-        description: "",
-        imageSrc: base_url+"img/sears-logo.png"
-    },
-];
-var ddData_second = [
-    {
-        text: "",
-        value: "Sears.com",
-        description: "",
-        imageSrc: base_url+"img/sears-logo.png"
-    },
-    {
-        text: "",
-        value: "Walmart.com",
-        description: "",
-        imageSrc: base_url+"img/walmart-logo.png"
-    },
-];
-var ddData_third = [
-    {
-        text: "",
-        value: "TigerDirect.com",
-        description: "",
-        imageSrc: base_url+"img/tigerdirect-logo.jpg"
-    },
-    {
-        text: "",
-        value: "Walmart.com",
-        description: "",
-        imageSrc: base_url+"img/walmart-logo.png"
-    },
-];
 
 function replaceAt(search, replace, subject, n) {
     return subject.substring(0, n) +subject.substring(n).replace(search, replace);
@@ -446,6 +404,17 @@ jQuery(document).ready(function($) {
 
     $(document).on("focusout", "#tageditor_content #items_list li", function(){
         $(this).parent().html('<span>'+$(this).val()+'</span>');
+    });
+
+    $('html').click(function(event) {
+        if($(event.target).parents().index($('#tageditor_content')) == -1) {
+            $("#tageditor_content #items_list li").each(function(){
+                $(this).css({'background':'none'})
+            });
+            $("#tageditor_content #items_list li input").each(function(){
+                $(this).parent().html('<span>'+$(this).val()+'</span>');
+            });
+        }
     });
 
     $(document).on("change", "select[name='filename']", function(){

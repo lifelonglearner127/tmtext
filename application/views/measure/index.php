@@ -1,4 +1,47 @@
 <script>
+    var ddData_first = [
+        {
+            text: "",
+            value: "Walmart.com",
+            description: "",
+            imageSrc: "<?php echo base_url(); ?>img/walmart-logo.png"
+        },
+        {
+            text: "",
+            value: "Sears.com",
+            description: "",
+            imageSrc: "<?php echo base_url(); ?>img/sears-logo.png"
+        },
+    ];
+    var ddData_second = [
+        {
+            text: "",
+            value: "Sears.com",
+            description: "",
+            imageSrc: "<?php echo base_url(); ?>img/sears-logo.png"
+        },
+        {
+            text: "",
+            value: "Walmart.com",
+            description: "",
+            imageSrc: "<?php echo base_url(); ?>img/walmart-logo.png"
+        },
+    ];
+    var ddData_third = [
+        {
+            text: "",
+            value: "TigerDirect.com",
+            description: "",
+            imageSrc: "<?php echo base_url(); ?>img/tigerdirect-logo.png"
+        },
+        {
+            text: "",
+            value: "Walmart.com",
+            description: "",
+            imageSrc: "<?php echo base_url(); ?>img/walmart-logo.png"
+        },
+    ];
+
 $(document).ready(function () {
     $('#websites_first').ddslick({
         data: ddData_first,
