@@ -13,13 +13,13 @@ var ddData_first = [
         text: "",
         value: "Walmart.com",
         description: "",
-        imageSrc: "/img/walmart-logo.png"
+        imageSrc: base_url+"img/walmart-logo.png"
     },
     {
         text: "",
         value: "Sears.com",
         description: "",
-        imageSrc: "/img/sears-logo.png"
+        imageSrc: base_url+"img/sears-logo.png"
     },
 ];
 var ddData_second = [
@@ -27,13 +27,13 @@ var ddData_second = [
         text: "",
         value: "Sears.com",
         description: "",
-        imageSrc: "/img/sears-logo.png"
+        imageSrc: base_url+"img/sears-logo.png"
     },
     {
         text: "",
         value: "Walmart.com",
         description: "",
-        imageSrc: "/img/walmart-logo.png"
+        imageSrc: base_url+"img/walmart-logo.png"
     },
 ];
 var ddData_third = [
@@ -41,13 +41,13 @@ var ddData_third = [
         text: "",
         value: "TigerDirect.com",
         description: "",
-        imageSrc: "/img/tigerdirect-logo.jpg"
+        imageSrc: base_url+"img/tigerdirect-logo.jpg"
     },
     {
         text: "",
         value: "Walmart.com",
         description: "",
-        imageSrc: "/img/walmart-logo.png"
+        imageSrc: base_url+"img/walmart-logo.png"
     },
 ];
 
@@ -626,7 +626,7 @@ jQuery(document).ready(function($) {
         });
         return false;
     });
-    
+
     $(document).on("click", ".admin_tageditor_content button#delete_desc", function(){
         $.post('admin_tag_editor/delete', { description: $('#tageditor_description').text() })
             .done(function(data) {
