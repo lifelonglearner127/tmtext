@@ -45,6 +45,9 @@ a:focus {
   outline-offset: -2px;
 }
 
+.nav-tabs > li > a:focus {
+  outline: 0;
+}
 a:hover,
 a:active {
   outline: 0;
@@ -4040,6 +4043,7 @@ input[type="submit"].btn.btn-mini {
 
 .tabbable {
   *zoom: 1;
+  margin-bottom: 18px;
 }
 
 .tabbable:before,
@@ -4055,6 +4059,8 @@ input[type="submit"].btn.btn-mini {
 
 .tab-content {
   overflow: auto;
+  padding-bottom: 9px; 
+  border-bottom: 1px solid #ddd;
 }
 
 .tabs-below > .nav-tabs,
@@ -5893,4 +5899,57 @@ a.badge:hover {
 
 .affix {
   position: fixed;
+}
+#tab3 > h4 {
+	text-align: center;
+}
+.row-fluid .span3 > P:first-child,.row-fluid .span4 > P:first-child,.row-fluid .span2 > P:first-child {
+	font-weight:bold;
+	font-size: 16px;
+}
+
+.row-fluid .span3 > P,.row-fluid .span4 > P,.row-fluid .span2 > P {
+	width:100%;
+}
+#tab3 > .row-fluid > div:first-child {
+	margin-left:70px;
+}
+
+#tab4 > .row-fluid .span9 > input[type="text"] {
+	width:500px;
+}
+#tab4 > .row-fluid > div{	
+	margin-left:90px;
+}
+.align_center{
+	text-align: center;
+	margin-top:10px;
+	margin-bottom:10px;
+}
+.span9 > select{
+	width:500px;
+	margin-bottom:20px;
+}
+
+.span9 > select:focus {
+  outline: 0;
+}
+.span9 > input[type="checkbox"]{
+	width:auto;
+	margin-top: 8px;
+}
+.row-fluid .span9 .margin-none{
+	margin:0px;
+	background-color:#FFFFFF;
+	cursor: default;
+}
+.row-fluid .aclist{
+	margin-bottom:20px;
+}
+.aclist > select{
+	margin:0px;
+}
+.admin_system_content > input[type="checkbox"]{
+	width:auto;
+	margin-top:3px;
 }

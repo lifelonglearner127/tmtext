@@ -523,6 +523,8 @@ a.gray_out {
 
 #popup{
     display: none;
+<<<<<<< HEAD
+=======
 }
 
 .dd-container, .dd-container .dd-select, ul.dd-options {
@@ -565,4 +567,5 @@ a.dd-selected, a.dd-option{
     color: #666666;
     font-size: 12px;
     margin: 15px 10px 20px;
+>>>>>>> 6cf52629d64687249309fb0eee4af8e0e86dd0d2
 }
