@@ -42,13 +42,16 @@
         <span class="matches_found"></span>
     </div>
 <div class="row-fluid mt_10 admin_tageditor_content">
-    <div class="search_area uneditable-input span10" style="width: 765px; height: 250px; overflow : auto;" id="tageditor_description">
+    <div class="search_area uneditable-input span10" onClick="this.contentEditable='true';" style="cursor: text; width: 765px; height: 250px; overflow : auto;" id="tageditor_description">
         <?php
             echo ul($description,
                 array()
             );
         ?>
     </div>
+    <button id="new_desc" class="btn new_btn btn-primary mt_10 ml_15"><i class="icon-white icon-ok"></i>&nbsp;New</button>
+    <button id="save_desc" class="btn new_btn btn-success mt_10 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Save</button>
+    <button id="delete_desc" class="btn new_btn btn-danger mt_10 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
     <div id="standart_description" style="display:none">
         <?php
         echo ul($description,

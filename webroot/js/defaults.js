@@ -577,6 +577,10 @@ jQuery(document).ready(function($) {
                 var n = 0;
                 next++;
                 final_str = pipe_replace(reg, result, next);
+                if (final_str.indexOf('span') == -1)  {
+                    next = 1;
+                    final_str = pipe_replace(reg, result, next);
+                }
                 $('#tageditor_description').html(final_str);
                 $('#tageditor_description').scrollTo( 'span#'+next, 500, { easing:'swing', queue:true, axis:'xy' } );
             }
@@ -594,6 +598,28 @@ jQuery(document).ready(function($) {
         sentence = $('#textarea ul#desc').html().replace('current_product', '');
         return false;
     });
+
+    $(document).on("click", ".admin_tageditor_content button#new_desc", function(){
+        $('#tageditor_description').empty();
+        return false;
+    });
+
+    $(document).on("click", ".admin_tageditor_content button#save_desc", function(){
+        $.post('admin_tag_editor/save', { description: $('#tageditor_description').text() })
+            .done(function(data) {
+                console.log(data);
+        });
+        return false;
+    });
+    
+    $(document).on("click", ".admin_tageditor_content button#delete_desc", function(){
+        $.post('admin_tag_editor/delete', { description: $('#tageditor_description').text() })
+            .done(function(data) {
+                $('#tageditor_description').empty();
+            });
+        return false;
+    });
+
 
     $(document).on("click", "button#undo", function(){
         if(action == 'delete'){

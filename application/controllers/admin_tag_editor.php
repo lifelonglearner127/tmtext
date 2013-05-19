@@ -8,6 +8,11 @@ class Admin_Tag_Editor extends MY_Controller {
 
         $this->load->library('form_validation');
         $this->data['title'] = 'Admin Tag Editor Setting';
+
+        if ($generators = $this->session->userdata('generators')) {
+            $this->config->set_item('generators',$generators);
+        }
+
         if (!$this->ion_auth->logged_in())
         {
             //redirect them to the login page
@@ -58,27 +63,33 @@ class Admin_Tag_Editor extends MY_Controller {
 
     }
 
-    public function get_product_description() {
-        $row = 1;
+    public function get_product_description()
+    {
         $description = array();
-        $file = $this->config->item('attr_path').'/tiger/all.csv';
-        if (($handle = fopen($file, "r")) !== FALSE) {
-            while (($data = fgetcsv($handle, 1000, ";")) !== FALSE) {
-                $num = count($data);
-                $row++;
-                for ($c=0; $c < $num; $c++) {
-                    if($data[$c]!='') {
-                        $line = iconv( "Windows-1252", "UTF-8", $data[$c] );
-                        array_push($description, $line);
+        $this->load->model('tag_editor_descriptions_model');
+        $data = $this->tag_editor_descriptions_model->get($this->ion_auth->get_user_id());
+        if(empty($data)){
+            $row = 1;
+            $file = $this->config->item('attr_path').'/tiger/all.csv';
+            if (($handle = fopen($file, "r")) !== FALSE) {
+                while (($data = fgetcsv($handle, 1000, ";")) !== FALSE) {
+                    $num = count($data);
+                    $row++;
+                    for ($c=0; $c < $num; $c++) {
+                        if($data[$c]!='') {
+                            $line = iconv( "Windows-1252", "UTF-8", $data[$c] );
+                            array_push($description, $line);
+                        }
                     }
                 }
+                fclose($handle);
             }
-            fclose($handle);
         }
         return $description;
     }
 
-    public function save_file_data() {
+    public function save_file_data()
+    {
         if($this->input->post('filename')!=''){
             $filename = $this->input->post('filename');
             $path = $this->config->item('tag_rules_dir').'/'.$filename.'.dat';
@@ -86,11 +97,55 @@ class Admin_Tag_Editor extends MY_Controller {
         }
     }
 
-    public function delete_file() {
+    public function delete_file()
+    {
         if($this->input->post('filename')!='') {
             $path = $this->config->item('tag_rules_dir').'/'.$this->input->post('filename').'.dat';
             unlink($path);
         }
     }
+
+    public function save()
+    {
+        $this->load->model('tag_editor_descriptions_model');
+
+        $this->ion_auth->get_user_id();
+        $this->form_validation->set_rules('description', 'Description', 'required|xss_clean');
+
+        if ($this->form_validation->run() === true) {
+            $data = $this->tag_editor_descriptions_model->get($this->ion_auth->get_user_id());
+            if(empty($data)){
+                $data['tag_description_id'] = $this->tag_editor_descriptions_model->insert($this->input->post('description'));
+            } else {
+                $data['tag_description_id'] = $this->tag_editor_descriptions_model->update($this->ion_auth->get_user_id(),
+                    $this->input->post('description'));
+            }
+        } else {
+            $data['message'] = (validation_errors() ? validation_errors() : $this->session->flashdata('message'));
+        }
+
+        $this->output->set_content_type('application/json')
+            ->set_output(json_encode($data));
+
+    }
+
+    public function delete()
+    {
+        $this->load->model('tag_editor_descriptions_model');
+
+        $this->ion_auth->get_user_id();
+        $this->form_validation->set_rules('description', 'Description', 'required|xss_clean');
+
+        if ($this->form_validation->run() === true) {
+           $data = $this->tag_editor_descriptions_model->delete($this->ion_auth->get_user_id());
+        } else {
+            $data['message'] = (validation_errors() ? validation_errors() : $this->session->flashdata('message'));
+        }
+
+        $this->output->set_content_type('application/json')
+            ->set_output(json_encode($data));
+
+    }
+
 
 }
