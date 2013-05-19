@@ -12,6 +12,12 @@
             description: "",
             imageSrc: "<?php echo base_url(); ?>img/sears-logo.png"
         },
+        {
+            text: "",
+            value: "TigerDirect.com",
+            description: "",
+            imageSrc: "<?php echo base_url(); ?>img/tigerdirect-logo.png"
+        },
     ];
     var ddData_second = [
         {
@@ -26,6 +32,12 @@
             description: "",
             imageSrc: "<?php echo base_url(); ?>img/walmart-logo.png"
         },
+        {
+            text: "",
+            value: "TigerDirect.com",
+            description: "",
+            imageSrc: "<?php echo base_url(); ?>img/tigerdirect-logo.png"
+        },
     ];
     var ddData_third = [
         {
@@ -39,6 +51,12 @@
             value: "Walmart.com",
             description: "",
             imageSrc: "<?php echo base_url(); ?>img/walmart-logo.png"
+        },
+        {
+            text: "",
+            value: "Sears.com",
+            description: "",
+            imageSrc: "<?php echo base_url(); ?>img/sears-logo.png"
         },
     ];
 
