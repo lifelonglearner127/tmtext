@@ -301,8 +301,14 @@ class Editor extends MY_Controller {
 						$a = $attrib['@attributes']['value'];
 						$attrib['@attributes']['value'] = array();
 						$attrib['@attributes']['value'][] = $a;
+                        if (array_key_exists($a, $output['spellcheck'])) {
+                            unset($output['spellcheck'][$a]);
+                        }
 						foreach ($this->config->item('attr_replace_validate') as $replacement) {
 							if ( str_replace(array_keys($replacement), array_values($replacement), $a) != $a ) {
+                                if (array_key_exists($a, $output['spellcheck'])) {
+                                    unset($output['spellcheck'][$a]);
+                                }
 								$attrib['@attributes']['value'][] = str_replace(array_keys($replacement), array_values($replacement), $a);
 							}
 						}
