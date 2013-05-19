@@ -11,43 +11,43 @@ var last_edition = '';
 var ddData_first = [
     {
         text: "",
-        value: "",
+        value: "Walmart.com",
         description: "",
-        imageSrc: "/webroot/img/walmart-logo.png"
+        imageSrc: "/img/walmart-logo.png"
     },
     {
         text: "",
-        value: "",
+        value: "Sears.com",
         description: "",
-        imageSrc: "/webroot/img/sears-logo.png"
+        imageSrc: "/img/sears-logo.png"
     },
 ];
 var ddData_second = [
     {
         text: "",
-        value: "",
+        value: "Sears.com",
         description: "",
-        imageSrc: "/webroot/img/sears-logo.png"
+        imageSrc: "/img/sears-logo.png"
     },
     {
         text: "",
-        value: "",
+        value: "Walmart.com",
         description: "",
-        imageSrc: "/webroot/img/walmart-logo.png"
+        imageSrc: "/img/walmart-logo.png"
     },
 ];
 var ddData_third = [
     {
         text: "",
-        value: "",
+        value: "TigerDirect.com",
         description: "",
-        imageSrc: "/webroot/img/tigerdirect-logo.jpg"
+        imageSrc: "/img/tigerdirect-logo.jpg"
     },
     {
         text: "",
-        value: "",
+        value: "Walmart.com",
         description: "",
-        imageSrc: "/webroot/img/walmart-logo.png"
+        imageSrc: "/img/walmart-logo.png"
     },
 ];
 
