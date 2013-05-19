@@ -127,7 +127,7 @@ function moveSentence() {
 
         setTimeout(function(){
             changeTextareaVal();
-        },1000)
+        },1200)
     });
 }
 
@@ -596,6 +596,21 @@ jQuery(document).ready(function($) {
 
     $(document).on("click", "button#use", function(){
         sentence = $('#textarea ul#desc').html().replace('current_product', '');
+        return false;
+    });
+
+    $(document).on("click", "button#new_clear", function(){
+        sentence = '';
+        if (current_product!==undefined && current_product!==0) {
+            current_product = 1;
+            var description = $('.new_product').find('textarea[name="description"]');
+            var descriptionDiv = $('.new_product #textarea');
+            description.val(products[current_product-1]);
+            descriptionDiv.html('<ul id="desc" class="desc_title desc">'+sentence+' '+'<li><span class="current_product">'+
+                products[current_product-1]+'</span><a hef="#" class="ui-icon-trash">x</a></li>').trigger('change');
+            moveSentence();
+            $('#pagination').html(getPager());
+        }
         return false;
     });
 

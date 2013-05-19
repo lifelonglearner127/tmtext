@@ -32,7 +32,7 @@
 					<div class="row-fluid new_product">
 						<textarea class="span12 search_area" name='description' style="display:none"></textarea>
 						<div class="pull-left">
-							<button class="btn new_btn btn-primary"><i class="icon-white icon-file"></i>&nbsp;New</button>
+							<button id="new_clear" class="btn new_btn btn-primary"><i class="icon-white icon-file"></i>&nbsp;New</button>
 							<div class="pagination">
 			                    <ul id="pagination">
 			                    </ul>
