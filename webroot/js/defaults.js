@@ -557,7 +557,7 @@ jQuery(document).ready(function($) {
         return false;
     });
 
-    $('#tageditor_content button#delete').bind('click', function(){
+    $(document).on("click", "#tageditor_content button#delete", function(){
         action = 'delete';
         $("#tageditor_content #items_list li input").parent().show().fadeOut("slow");
         return false;
