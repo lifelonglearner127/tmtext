@@ -73,7 +73,7 @@ class Admin_Tag_Editor extends MY_Controller {
             $row = 1;
             $file = $this->config->item('attr_path').'/tiger/all.csv';
             if (($handle = fopen($file, "r")) !== FALSE) {
-                while (($data = fgetcsv($handle, 1000, ";")) !== FALSE) {
+                while (($data = fgetcsv($handle, 2000, "\n")) !== FALSE) {
                     $num = count($data);
                     $row++;
                     for ($c=0; $c < $num; $c++) {
@@ -85,7 +85,7 @@ class Admin_Tag_Editor extends MY_Controller {
                 }
                 fclose($handle);
             }
-            echo ul($description, array());
+            echo ul($description, array('id'=>'desc_count_'.count($description)));
         } else {
             echo ul(array($data[0]->description), array());
         }        

@@ -180,7 +180,8 @@ jQuery(document).ready(function($) {
                     n++;
                     return '<span id="'+n+'" class="highlight">'+str+'</span>';
                 });
-                $('span.matches_found').html(n+' matches found in '+final_str.length+' matches');
+                var sum = $('#tageditor_description ul').attr('id').replace('desc_count_', '');
+                $('span.matches_found').html(n+' matches found in '+sum+' descriptions');
                 $('#tageditor_description').html(final_str);
                 next=1;
                 $('#tageditor_description').scrollTo( 'span#'+next, 500, { easing:'swing', queue:true, axis:'xy' } );
