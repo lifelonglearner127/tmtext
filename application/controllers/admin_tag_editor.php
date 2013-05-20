@@ -25,7 +25,6 @@ class Admin_Tag_Editor extends MY_Controller {
     {
         $this->data['files'] = $this->file_list();
         $this->data['tagrules_data'] = $this->file_data($this->data['files'][0]);
-        $this->data['description'] = $this->get_product_description();
         $this->render();
     }
 
@@ -52,15 +51,17 @@ class Admin_Tag_Editor extends MY_Controller {
         }
         $path = $this->config->item('tag_rules_dir').'/'.$filename.'.dat';
         $lines = explode("\n", file_get_contents($path));
+        $data = array();
         foreach($lines as $key => $line){
-            $lines[$key] = '<span>'. $line . '</span>';
+            if($line != ''){ 
+                array_push($data, '<span>'. $line . '</span>');
+            }            
         }
         if(isset($_POST) && !empty($_POST)) {
-            echo ul($lines, array('id' => 'items_list'));
+            echo ul($data, array('id' => 'items_list'));
         } else {
-            return $lines;
+            return $data;
         }
-
     }
 
     public function get_product_description()
@@ -78,14 +79,16 @@ class Admin_Tag_Editor extends MY_Controller {
                     for ($c=0; $c < $num; $c++) {
                         if($data[$c]!='') {
                             $line = iconv( "Windows-1252", "UTF-8", $data[$c] );
-                            array_push($description, $line);
+                            array_push($description, str_replace(',,,,', '', $line));
                         }
                     }
                 }
                 fclose($handle);
             }
-        }
-        return $description;
+            echo ul($description, array());
+        } else {
+            echo ul(array($data[0]->description), array());
+        }        
     }
 
     public function save_file_data()
