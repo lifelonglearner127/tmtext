@@ -379,6 +379,15 @@ body{
         padding-right:10px;
     }
 
+    .desc li div.change_text{
+        float:none;
+        margin:0px;
+        cursor:move;
+        padding-right: 0px;
+        color:green;
+        display: inline;
+    }
+
     .desc li a{
         float:right;
         margin:5px 5px 5px -10px;
@@ -523,8 +532,6 @@ a.gray_out {
 
 #popup{
     display: none;
-<<<<<<< HEAD
-=======
 }
 
 .dd-container, .dd-container .dd-select, ul.dd-options {
@@ -567,5 +574,4 @@ a.dd-selected, a.dd-option{
     color: #666666;
     font-size: 12px;
     margin: 15px 10px 20px;
->>>>>>> 6cf52629d64687249309fb0eee4af8e0e86dd0d2
 }

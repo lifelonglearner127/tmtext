@@ -8,6 +8,7 @@ var next = 0;
 var action = '';
 var last_input = '';
 var last_edition = '';
+var desc_input = '';
 
 function replaceAt(search, replace, subject, n) {
     return subject.substring(0, n) +subject.substring(n).replace(search, replace);
@@ -221,6 +222,7 @@ jQuery(document).ready(function($) {
                 description.removeAttr('disabled');
                 description.val(products[0]);
                 description.trigger('change');
+                desc_input = products[0];
 
                 var descriptionDiv = $('.new_product #textarea');
 
@@ -249,6 +251,7 @@ jQuery(document).ready(function($) {
             description.val(products[current_product-1]);
             descriptionDiv.html('<ul id="desc" class="desc_title desc">'+sentence+' '+'<li><span class="current_product">'+
                 products[current_product-1]+'</span><a hef="#" class="ui-icon-trash">x</a></li>').trigger('change');
+            desc_input = products[current_product-1];
             moveSentence();
             //descriptionDiv.html(products[current_product-1]).trigger('change');
 
@@ -697,6 +700,37 @@ jQuery(document).ready(function($) {
         return false;
     });
     $(document).on("blur", "#textarea ul#desc li input", function() {
+        var str_input= desc_input;
+        var str_output= $(this).val();
+        var splitinput = str_input.split("\n");
+        var splitoutput = str_output.split("\n");
+        var inlines=splitinput.length;
+        var outlines=splitoutput.length;
+        var lines;
+        if (outlines>inlines) {
+            lines=outlines;
+        } else {
+            lines=inlines;
+        }
+        var buildoutput="";
+
+        for (i=0; i<lines; i++) {
+            var testundefined = false;
+            if (splitinput[i] == undefined) {
+                buildoutput = buildoutput+diffString("",splitoutput[i]);
+                testundefined = true;
+            }
+
+            if (splitoutput[i] == undefined) {
+                buildoutput = buildoutput+diffString(splitinput[i],"");
+                testundefined = true;
+            }
+
+            if (testundefined==false) {
+                buildoutput = buildoutput+diffString(splitinput[i],splitoutput[i]);
+            }
+        }
+
         var sentence_class = '';
         if($(this).attr('class')=='current_product') {
             sentence_class += 'current_product';
@@ -706,7 +740,7 @@ jQuery(document).ready(function($) {
             if($(this).attr('class')=='current_product') {
                 sentence_class += 'current_product';
             }
-            $(this).parent().html('<span class="'+sentence_class+'">'+$(this).val()+'</span><a hef="#" class="ui-icon-trash">x</a>');
+            $(this).parent().html('<span class="'+sentence_class+'">'+buildoutput+'</span><a hef="#" class="ui-icon-trash">x</a>');
         });
         $("#textarea #desc li").css('width','auto');
         moveSentence();
