@@ -641,8 +641,9 @@ jQuery(document).ready(function($) {
             if (editorCont.length == 0) {
                 var url = $(this).attr('href');
                 var posting = $.post(url+"?ajax=true", function(data) {
-                    var response_data = eval('('+data+')');
+                    var response_data = $.parseJSON( data );
                     $('.main_content_editor').html(response_data.ajax_data);
+                    $('.main_content > .main_content_editor').html($('.main_content .main_content_editor .main_content_editor').html());
                 });
             }
             $('.main_content_other').css('display', 'none');
@@ -652,7 +653,7 @@ jQuery(document).ready(function($) {
         }else{
             var url = $(this).attr('href');
             var posting = $.post(url+"?ajax=true", function(data) {
-                var response_data = eval('('+data+')');
+                var response_data = $.parseJSON( data );
                 $('.main_content_other').html(response_data.ajax_data);
             });
             $(".left_nav_content li, .right_nav_content li").removeClass('active');
