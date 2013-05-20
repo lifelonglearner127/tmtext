@@ -20,6 +20,7 @@ class MY_Controller extends CI_Controller {
     protected $page_title;
     protected $system_settings;
     protected $user_settings;
+    protected $settings;
 
     public function __construct() {
         parent::__construct();
@@ -42,8 +43,16 @@ class MY_Controller extends CI_Controller {
 		$this->system_settings = $this->settings_model->get_system_settings();
 		$this->data['settings'] = $this->system_settings;
 
+		$this->settings	= $this->system_settings;
+
 		if ($this->ion_auth->get_user_id()) {
 			$this->user_settings = $this->settings_model->get_settings($this->ion_auth->get_user_id());
+
+			// Replace settings with user settings
+			foreach ($this->user_settings as $key => $value) {
+				$this->settings[$key] = $this->user_settings[$key];
+			}
+
 		}
     }
 

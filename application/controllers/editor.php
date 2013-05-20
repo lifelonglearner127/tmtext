@@ -11,10 +11,6 @@ class Editor extends MY_Controller {
   		$this->load->library('form_validation');
 		$this->data['title'] = 'Editor';
 
-		if ($generators = $this->session->userdata('generators')) {
-			$this->config->set_item('generators',$generators);
-		}
-
 		$this->exceptions[] = array(
 			'attribute_name' => 'MANU',
 			'attribute_value' => 'Samsung',
@@ -103,7 +99,7 @@ class Editor extends MY_Controller {
 			$csv_rows = array();
 
 			// Search in files
-			if ( isset($this->system_settings['use_files']) && !is_null($this->system_settings['use_files'])) {
+			if ( isset($this->settings['use_files']) && $this->settings['use_files']) {
 				if ($path = realpath($attr_path)) {
 					$objects = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path), RecursiveIteratorIterator::SELF_FIRST);
 					foreach($objects as $name => $object){
@@ -130,7 +126,7 @@ class Editor extends MY_Controller {
 			}
 
 			// Search in database
-			if ( isset($this->system_settings['use_database']) && !is_null($this->system_settings['use_files'])) {
+			if ( isset($this->settings['use_database']) && $this->settings['use_database']) {
 				$this->load->model('imported_data_model');
 				if (( $_rows = $this->imported_data_model->findByData($s))!== false) {
 					foreach($_rows as $row) {
@@ -216,7 +212,7 @@ class Editor extends MY_Controller {
 
 									if (!empty($attributes)) {
 										$title = array();
-										foreach ($this->system_settings['product_title'] as $v) {
+										foreach ($this->settings['product_title'] as $v) {
 											if (isset($attributes[strtoupper($v)]))
 												$title[] = $attributes[strtoupper($v)	];
 										}
@@ -231,7 +227,6 @@ class Editor extends MY_Controller {
 				}
 			}
 
-			$generators_cmd = $this->config->item('generators_cmd');
 			if ($this->system_settings['java_generator']) {
 				$descCmd = str_replace($this->config->item('cmd_mask'), $data['file_id'] ,$this->system_settings['java_cmd']);
 				if ($result = shell_exec($descCmd)) {

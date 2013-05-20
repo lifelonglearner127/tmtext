@@ -30,11 +30,10 @@
 	});
 	</script>
 
-
+					<div id="info"><?php echo $message;?></div>
 					<div class="row-fluid">
 						<div class="span9">
-						    <form class="form-horizontal" id="product_description">
-						    <?php  form_open("admin_customer/save", array("class"=>"form-horizontal", "id"=>"system_save")); ?>
+						    <?php echo form_open("admin_customer/save", array("class"=>"form-horizontal", "id"=>"customer_settings_save")); ?>
 							    <div class="control-group">
 								    <label class="control-label" for="customer_name">Customer name:</label>
 								    <div class="controls">
@@ -101,7 +100,7 @@
 								    <div class="controls">
 									    <button type="submit" class="btn btn-success"><i class="icon-white icon-ok"></i>&nbsp;Save</button>
 									    <button type="submit" class="btn ml_20">Restore Default</button>
-									    <button type="submit" class="btn ml_50 btn-inverse">Delete</button>
+									    <!--  <button type="submit" class="btn ml_50 btn-inverse">Delete</button> -->
 								    </div>
 							    </div>
 						    </form>

@@ -204,7 +204,8 @@ body{
 /* Customer Container Style */
 
 #product_description .control-group label,
-#account_configure .control-group label{
+#account_configure .control-group label,
+#customer_settings_save .control-group label {
 	text-align:left !important;
 }
 
@@ -215,7 +216,7 @@ body{
 	float:left;
 }
 
-#product_description{
+#product_description, #customer_settings_save{
 	float:left;
 	width:100%;
 }
