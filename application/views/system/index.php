@@ -30,6 +30,16 @@
 	});
 	</script>
 
+	<div class="tabbable">
+		<ul class="nav nav-tabs">
+			<li class="active"><a data-toggle="tab" href="index">General</a></li>
+			<li class=""><a data-toggle="tab" href="system_accounts">New Accounts</a></li>
+			<li class=""><a data-toggle="tab" href="system_roles">Roles</a></li>
+			<li class=""><a data-toggle="tab" href="system_users">Users</a></li>
+		</ul>
+		<div class="tab-content">
+			<div id="tab1" class="tab-pane active">
+
 				<div id="info"><?php echo $message;?></div>
 				<?php echo form_open("system/save", array("class"=>"form-horizontal", "id"=>"system_save"));?>
 					<h3>Original Descriptions:</h3>
@@ -171,6 +181,8 @@
 						    </div>
 					    </div>
 					</div>
-
+			</div>
+		</div>
+	</div>
 
 				    <?php echo form_close();?>

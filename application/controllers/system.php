@@ -19,6 +19,21 @@ class System extends MY_Controller {
 		$this->render();
 	}
 
+	public function system_accounts()
+	{
+		$this->render();
+	}
+
+	public function system_roles()
+	{
+		$this->render();
+	}
+
+	public function system_users()
+	{
+		$this->render();
+	}
+
 	public function save()
 	{
 		$this->form_validation->set_rules('settings[site_name]', 'Site name', 'required|xss_clean');
