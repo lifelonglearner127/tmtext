@@ -735,9 +735,15 @@ jQuery(document).ready(function($) {
 
     $(document).on("submit", "#system_save", function(e){
         e.preventDefault();
+        var postData = $(this).serialize();
+
+        $('#gallery li').each(function() {
+        	if ($(this).find('span').attr('id') !== undefined)
+        		postData = postData + '&'+escape('settings[product_title][]')+'=' + escape($(this).find('span').attr('id'));
+        });
+
         var url = $( this ).attr( 'action' );
-        var posting = $.post(url+"?ajax=true", $(this).serialize(), function(data) {
-//                console.log(1);
+        var posting = $.post(url+"?ajax=true", postData, function(data) {
                 var response_data = eval('('+data+')');
                 $('.main_content_other').html(response_data.ajax_data);
             });

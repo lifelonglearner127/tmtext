@@ -19,6 +19,7 @@ class MY_Controller extends CI_Controller {
     protected $save_previous_url = false;
     protected $page_title;
     protected $system_settings;
+    protected $user_settings;
 
     public function __construct() {
         parent::__construct();
@@ -40,6 +41,10 @@ class MY_Controller extends CI_Controller {
         $this->load->model('settings_model');
 		$this->system_settings = $this->settings_model->get_system_settings();
 		$this->data['settings'] = $this->system_settings;
+
+		if ($this->ion_auth->get_user_id()) {
+			$this->user_settings = $this->settings_model->get_settings($this->ion_auth->get_user_id());
+		}
     }
 
     protected function render($template='main') {

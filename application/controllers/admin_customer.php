@@ -9,15 +9,18 @@ class Admin_Customer extends MY_Controller {
   		$this->load->library('form_validation');
 		$this->data['title'] = 'Admin Customer Setting';
 
- 		if (!$this->ion_auth->logged_in())
-		{
-			//redirect them to the login page
-			redirect('auth/login', 'refresh');
-		}
  	}
 
 	public function index()
 	{
+//		var_dump($this->user_settings);
+
+		$this->data['user_settings'] = $this->user_settings;
+
 		$this->render();
+	}
+
+	public function save() {
+
 	}
 }

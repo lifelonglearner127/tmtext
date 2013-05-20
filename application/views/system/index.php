@@ -79,10 +79,10 @@
 						</div>
 						<div class="span6 admin_system_content">
 							<p>Python input:</p>
-							<input type="text" id="python_input"/>
+							<input type="text" id="python_input" name="settings[python_input]" value="<?php echo isset($settings['python_input'])? $settings['python_input']:'' ?>"/>
 							<div class="clear-fix"></div>
 							<p>Java input:</p>
-							<input type="text" id="java_input"/>
+							<input type="text" id="java_input" name="settings[java_input]" value="<?php echo isset($settings['java_input'])? $settings['java_input']:'' ?>"/>
 						</div>
 					</div>
 					<div class="row-fluid">
@@ -93,11 +93,17 @@
 							    <label class="control-label" for="account_title">Title:</label>
 							    <div class="controls">
 									<ul id="gallery" class="product_title_content gallery">
-										<li><span>Channels</span><a hef="#" class="ui-icon-trash">x</a></li>
-										<li><span>Product Name</span><a hef="#" class="ui-icon-trash">x</a></li>
-										<li><span>Type</span><a hef="#" class="ui-icon-trash">x</a></li>
-										<li><span>Item</span><a hef="#" class="ui-icon-trash">x</a></li>
-										<li><span>Specs</span><a hef="#" class="ui-icon-trash">x</a></li>
+										<?php
+										$all_product_titles = $this->config->item('all_product_titles');
+
+										if (isset($settings['product_title'])) {
+											foreach($settings['product_title'] as $value) {
+										?>
+											<li><span id="<?php echo $value; ?>"><?php echo $all_product_titles[$value]; ?></span><a hef="#" class="ui-icon-trash">x</a></li>
+										<?php
+											}
+										}
+										?>
 									</ul>
 							    </div>
 						    </div>
@@ -105,14 +111,14 @@
 							    <div class="control-group">
 								    <label class="control-label" for="default_title">Default Title:</label>
 								    <div class="controls">
-									    <input type="text" id="default_title" class="span2">
+									    <input type="text" id="default_title" name="settings[title_length]" class="span2" value="<?php echo isset($settings['title_length'])? $settings['title_length']:'128' ?>">
 										<p class="title_max">characters max</p>
 								    </div>
 							    </div>
 							    <div class="control-group">
 								    <label class="control-label" for="description_length">Description length:</label>
 								    <div class="controls">
-									    <input type="text" id="description_length" class="span2">
+									    <input type="text" id="description_length" name="settings[description_length]" class="span2" value="<?php echo isset($settings['description_length'])? $settings['description_length']:'150' ?>">
 										<p class="title_max">words max</p>
 								    </div>
 							    </div>
@@ -120,6 +126,15 @@
 						</div>
 						<div class="span3">
 							<ul id="trash" class="product_title_content trash">
+								<?php
+								foreach($this->config->item('all_product_titles') as $key=>$value) {
+									if (!isset($settings['product_title']) || !in_array($key, $settings['product_title'])) {
+								?>
+								<li><span id="<?php echo $key; ?>"><?php echo $value; ?></span><a hef="#" class="ui-icon-trash">x</a></li>
+								<?php
+									}
+								}
+								?>
 							</ul>
 						</div>
 					</div>

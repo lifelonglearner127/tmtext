@@ -370,6 +370,13 @@ $config['tag_rules_dir'] = $config['cmd_path'].'/tagRules';
 
 $config['product_title'] = array('manu','screensize', 'manu', 'model', 'is3d', 'isled', 'ishdtv');
 
+$config['all_product_titles'] = array(
+	'manu'=> 'Manufacturer',
+	'screensize' => 'Screen Size',
+	'model' => 'Model',
+	'isled' => 'Type'
+);
+
 $config['attr_replace'] = array(
 	array(
 		"@inch" => "\""

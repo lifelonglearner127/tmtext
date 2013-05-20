@@ -216,7 +216,7 @@ class Editor extends MY_Controller {
 
 									if (!empty($attributes)) {
 										$title = array();
-										foreach ($this->config->item('product_title') as $v) {
+										foreach ($this->system_settings['product_title'] as $v) {
 											if (isset($attributes[strtoupper($v)]))
 												$title[] = $attributes[strtoupper($v)	];
 										}
