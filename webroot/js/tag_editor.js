@@ -180,8 +180,16 @@ jQuery(document).ready(function($) {
                     n++;
                     return '<span id="'+n+'" class="highlight">'+str+'</span>';
                 });
-                var sum = $('#tageditor_description ul').attr('id').replace('desc_count_', '');
-                $('span.matches_found').html(n+' matches found in '+sum+' descriptions');
+                var sum = '1';
+                if($('#tageditor_description ul').attr('id')!='' && $('#tageditor_description ul').attr('id')!=undefined){
+                    sum += $('#tageditor_description ul').attr('id').replace('desc_count_', '');
+                }
+                if(sum != '1'){
+                    sum += ' descriptions';
+                } else {
+                    sum += ' description';
+                }
+                $('span.matches_found').html(n+' matches found in '+sum);
                 $('#tageditor_description').html(final_str);
                 next=1;
                 $('#tageditor_description').scrollTo( 'span#'+next, 500, { easing:'swing', queue:true, axis:'xy' } );
@@ -291,6 +299,7 @@ jQuery(document).ready(function($) {
         $.post('admin_tag_editor/save', { description: $('#tageditor_description').text() })
             .done(function(data) {
                 console.log(data);
+                $('#standart_description').html($('#tageditor_description').text());
         });
         return false;
     });
