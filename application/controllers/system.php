@@ -54,7 +54,6 @@ class System extends MY_Controller {
 		} else {
 			$this->session->set_flashdata('message', (validation_errors()) ? validation_errors() : $this->session->flashdata('message'));
 
-<<<<<<< HEAD
 		}
 		redirect('system/index?ajax=true');
 	}
@@ -99,74 +98,9 @@ class System extends MY_Controller {
 			}
 			$this->imported_data_model->db->trans_complete();
 		}
-=======
-		}
-		redirect('system/index?ajax=true');
-	}
-
-	public function csv_import() {
-		$this->load->model('imported_data_model');
-
-		$_rows = array(); $i = 0;
-
-		// Find all unique lines in files
-		foreach(explode("\n",trim($this->system_settings['csv_directories'])) as $_path) {
-			if ($path = realpath($_path)) {
-				$objects = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path), RecursiveIteratorIterator::SELF_FIRST);
-				foreach ($objects as $name => $object){
-					if ($object->isFile()) {
-						$path_parts = pathinfo($object->getFilename());
-						if ( in_array($path_parts['extension'], array('csv')) ) {
-							if (($handle = fopen($name, "r")) !== FALSE) {
-								while (($row = fgets($handle)) !== false) {
-									$key = $this->imported_data_model->_get_key($row); $i++;
-									if (!array_key_exists($key, $_rows)) {
-										$_rows[$key] = $row;
-									}
-								}
-							}
-							fclose($handle);
-						}
-					}
-				}
-			}
-		}
-
-		$imported_rows = 0;
-		// Compare all rows with database rows
-		if (!empty($_rows)) {
-			$this->imported_data_model->db->trans_start();
-			foreach ($_rows as $key=>$row) {
-				if (!$this->imported_data_model->findByKey($key)) {
-					$this->imported_data_model->insert($row);
-					$imported_rows++;
-				}
-			}
-			$this->imported_data_model->db->trans_complete();
-		}
->>>>>>> 6cf52629d64687249309fb0eee4af8e0e86dd0d2
 
 		echo json_encode(array(
 			'message' => 'Imported '.$imported_rows.' rows. Total '.count($_rows).' rows.'
 		));
-<<<<<<< HEAD
 	}
-	
-	public function system_accounts()
-	{
-		$this->render();
-	}
-	
-	public function system_roles()
-	{
-		$this->render();
-	}
-	
-	public function system_users()
-	{
-		$this->render();
-=======
->>>>>>> 6cf52629d64687249309fb0eee4af8e0e86dd0d2
-	}
-	
 }

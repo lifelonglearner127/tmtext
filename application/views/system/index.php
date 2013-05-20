@@ -1,64 +1,3 @@
-<<<<<<< HEAD
-
-							<div class="tabbable">
-				              <ul class="nav nav-tabs">
-				                <li class="active"><a data-toggle="tab" href="index">General</a></li>
-				                <li class=""><a data-toggle="tab" href="system_accounts">New Accounts</a></li>
-				                <li class=""><a data-toggle="tab" href="system_roles">Roles</a></li>
-				                <li class=""><a data-toggle="tab" href="system_users">Users</a></li>
-				              </ul>
-				              <div class="tab-content">
-				                <div id="tab1" class="tab-pane active">
-									<h3>Original Descriptions:</h3>
-									<div class="row-fluid">
-										<div class="span6 admin_system_content">
-											<p class="mt_40">CSV Directories:</p>
-											<textarea></textarea>
-										</div>
-										<div class="span6 admin_system_content">
-											<p class="mt_40">Database:</p>
-											<input type="text" class="mt_30" id="database">
-										</div>
-									</div>
-									<h3>Generator Paths:</h3>
-									<div class="row-fluid">
-										<div class="span6 admin_system_content">
-											<p>Python script:</p>
-											<input type="text" id="python_script">
-											<div class="clear-fix"></div>
-											<p>Java tools:</p>
-											<input type="text" id="java_tool">
-										</div>
-										<div class="span6 admin_system_content">
-											<p>Python input:</p>
-											<input type="text" id="python_input">
-											<div class="clear-fix"></div>
-											<p>Java input:</p>
-											<input type="text" id="java_input">
-										</div>
-									</div>
-									
-									<div class="row-fluid">
-										<h3>Description Generators:</h3>
-									    <?php foreach ($this->config->item('generators') as $key => $generator) {?>
-								    		<div class="control-group">
-												<label class="control-label" for="java_generator"><?php echo $generator[0];?></label>
-												<div class="controls">
-													<?php echo form_checkbox($generator[1], 1, $generator[2], 'id="'.$generator[1].'"'.(($generator[1]=='python_generator1')?' disabled':''));?>
-												</div>
-											</div>
-										<?php } ?>
-										    <div class="control-group">
-											    <div class="controls">
-												    <button type="submit" class="btn btn-danger"><i class="icon-white icon-ok"></i>&nbsp;Save</button>
-												    <button type="submit" class="btn ml_20">Restore Default</button>
-											    </div>
-										    </div>
-									</div>
-				                </div>
-				              </div>
-				            </div>
-=======
 	<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
 
 	<script>
@@ -216,4 +155,3 @@
 
 
 				    <?php echo form_close();?>
->>>>>>> 6cf52629d64687249309fb0eee4af8e0e86dd0d2
