@@ -10,9 +10,6 @@ class System extends MY_Controller {
 
 		$this->load->library('form_validation');
 
-		if ($generators = $this->session->userdata('generators')) {
-			$this->config->set_item('generators',$generators);
-		}
  	}
 
 	public function index()
@@ -24,33 +21,33 @@ class System extends MY_Controller {
 
 	public function save()
 	{
-		$this->load->model('settings_model');
-
 		$this->form_validation->set_rules('settings[site_name]', 'Site name', 'required|xss_clean');
 		$this->form_validation->set_rules('settings[company_name]', 'Company name', 'required|xss_clean');
 		$this->form_validation->set_rules('settings[csv_directories]', 'CSV Directories', 'required|xss_clean');
 		$this->form_validation->set_rules('settings[tag_rules_dir]', 'tagRules', 'required|xss_clean'); // Shulgin I.L.
-
+		$this->form_validation->set_rules('settings[python_cmd]', 'Python script', 'required|xss_clean');
+		$this->form_validation->set_rules('settings[java_cmd]', 'Java tools', 'required|xss_clean');
+		$this->form_validation->set_rules('settings[python_input]', 'Python input', 'required|xss_clean');
+		$this->form_validation->set_rules('settings[java_input]', 'Java input', 'required|xss_clean');
+		$this->form_validation->set_rules('settings[title_length]', 'Default Title', 'required|integer|xss_clean');
+		$this->form_validation->set_rules('settings[description_length]', 'Description Length', 'required|integer|xss_clean');
 
 		if ($this->form_validation->run() === true) {
-			$generators = $this->config->item('generators');
-			foreach($generators as &$generator) {
-				$generator[2] = (bool) $this->input->post($generator[1]);
-
-			}
-
-			$this->session->set_userdata('generators', $generators);
-
 			$settings = $this->input->post('settings');
 			// Process checkboxes
 			$settings['use_files'] = (isset($settings['use_files'])?true:false);
 			$settings['use_database'] = (isset($settings['use_database'])?true:false);
 
+			$settings['java_generator'] = (isset($settings['java_generator'])?true:false);
+			$settings['python_generator'] = (isset($settings['python_generator'])?true:false);
+
+			$this->settings_model->db->trans_start();
 			foreach ($settings as $key=>$value) {
 				if (!$this->settings_model->update_system_value($key,$value)) {
 					$this->settings_model->create_system($key, $value, $key);
 				}
 			}
+			$this->settings_model->db->trans_complete();
 		} else {
 			$this->session->set_flashdata('message', (validation_errors()) ? validation_errors() : $this->session->flashdata('message'));
 

@@ -79,7 +79,16 @@ class Settings_model extends CI_Model {
     	if ($query->num_rows() === 1)
 		{
 			$row = $query->row();
-			return $this->db->update($this->tables['setting_values'], array('value' => $value), array('user_id' => $user_id, 'setting_id' => $row->id));
+
+			if (is_array($value)) {
+				$value = serialize($value);
+			}
+
+			if ($this->get_value($user_id, $key) === false) {
+				return $this->db->insert($this->tables['setting_values'], array('value' => $value, 'user_id' => $user_id, 'setting_id' => $row->id));
+			} else {
+				return $this->db->update($this->tables['setting_values'], array('value' => $value), array('user_id' => $user_id, 'setting_id' => $row->id));
+			}
 		}
 		return false;
     }

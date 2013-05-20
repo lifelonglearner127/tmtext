@@ -11,10 +11,6 @@ class Editor extends MY_Controller {
   		$this->load->library('form_validation');
 		$this->data['title'] = 'Editor';
 
-		if ($generators = $this->session->userdata('generators')) {
-			$this->config->set_item('generators',$generators);
-		}
-
 		$this->exceptions[] = array(
 			'attribute_name' => 'MANU',
 			'attribute_value' => 'Samsung',
@@ -103,7 +99,7 @@ class Editor extends MY_Controller {
 			$csv_rows = array();
 
 			// Search in files
-			if ( isset($this->system_settings['use_files']) && $this->system_settings['use_files']) {
+			if ( isset($this->settings['use_files']) && $this->settings['use_files']) {
 				if ($path = realpath($attr_path)) {
 					$objects = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path), RecursiveIteratorIterator::SELF_FIRST);
 					foreach($objects as $name => $object){
@@ -130,7 +126,7 @@ class Editor extends MY_Controller {
 			}
 
 			// Search in database
-			if ( isset($this->system_settings['use_database']) && $this->system_settings['use_database']) {
+			if ( isset($this->settings['use_database']) && $this->settings['use_database']) {
 				$this->load->model('imported_data_model');
 				if (( $_rows = $this->imported_data_model->findByData($s))!== false) {
 					foreach($_rows as $row) {
@@ -216,7 +212,7 @@ class Editor extends MY_Controller {
 
 									if (!empty($attributes)) {
 										$title = array();
-										foreach ($this->config->item('product_title') as $v) {
+										foreach ($this->settings['product_title'] as $v) {
 											if (isset($attributes[strtoupper($v)]))
 												$title[] = $attributes[strtoupper($v)	];
 										}
@@ -231,28 +227,25 @@ class Editor extends MY_Controller {
 				}
 			}
 
-			$generators_cmd = $this->config->item('generators_cmd');
-			foreach ($this->config->item('generators') as $key => $generator) {
-				if ($generator[2] && $generator[1]=='java_generator') {
-					$descCmd = str_replace($this->config->item('cmd_mask'), $data['file_id'] ,$generators_cmd[$generator[1]]);
-					if ($result = shell_exec($descCmd)) {
-						if (preg_match_all('/\(.*\)\: "(.*)"/i',$result,$matches) && isset($matches[1]) && count($matches[1])>0) {
-							if( is_array($data['product_descriptions']) )
-								$data['product_descriptions'] = array_merge($data['product_descriptions'], $matches[1]);
-							else
-								$data['product_descriptions'] = $matches[1];
-						}
+			if ($this->system_settings['java_generator']) {
+				$descCmd = str_replace($this->config->item('cmd_mask'), $data['file_id'] ,$this->system_settings['java_cmd']);
+				if ($result = shell_exec($descCmd)) {
+					if (preg_match_all('/\(.*\)\: "(.*)"/i',$result,$matches) && isset($matches[1]) && count($matches[1])>0) {
+						if( is_array($data['product_descriptions']) )
+							$data['product_descriptions'] = array_merge($data['product_descriptions'], $matches[1]);
+						else
+							$data['product_descriptions'] = $matches[1];
 					}
 				}
-				if ($generator[2] && $generator[1]=='python_generator') {
-					$descCmd = str_replace($this->config->item('cmd_mask'), $s ,$generators_cmd[$generator[1]]);
-					if ($result = shell_exec($descCmd)) {
-						if (preg_match_all('/.*ELECTR_DESCRIPTION:\s*(.*)\s*-{5,}/',$result,$matches)) {
-							if( is_array($data['product_descriptions']) )
-								$data['product_descriptions'] = array_merge($data['product_descriptions'], $matches[1]);
-							else
-								$data['product_descriptions'] = $matches[1];
-						}
+			}
+			if ($this->system_settings['python_generator']) {
+				$descCmd = str_replace($this->config->item('cmd_mask'), $s ,$this->system_settings['python_cmd']);
+				if ($result = shell_exec($descCmd)) {
+					if (preg_match_all('/.*ELECTR_DESCRIPTION:\s*(.*)\s*-{5,}/',$result,$matches)) {
+						if( is_array($data['product_descriptions']) )
+							$data['product_descriptions'] = array_merge($data['product_descriptions'], $matches[1]);
+						else
+							$data['product_descriptions'] = $matches[1];
 					}
 				}
 			}
