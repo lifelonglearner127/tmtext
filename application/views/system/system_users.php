@@ -1,9 +1,9 @@
 							<div class="tabbable">
 				              <ul class="nav nav-tabs">
-				                <li class=""><a data-toggle="tab" href="index">General</a></li>
-				                <li class=""><a data-toggle="tab" href="system_accounts">New Accounts</a></li>
-				                <li class=""><a data-toggle="tab" href="system_roles">Roles</a></li>
-				                <li class="active"><a data-toggle="tab" href="system_users">Users</a></li>
+								<li class=""><a data-toggle="tab" href="<?php echo site_url('system');?>">General</a></li>
+								<li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_accounts');?>">New Accounts</a></li>
+								<li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_roles');?>">Roles</a></li>
+								<li class="active"><a data-toggle="tab" href="<?php echo site_url('system/system_users');?>">Users</a></li>
 				              </ul>
 							  <div class="tab-content">
 				                <div id="tab4" class="tab-pane">
@@ -27,7 +27,7 @@
 											<p>Customers :</p>
 											<input class="margin-none" type="text" id="user_customerss" onclick="edit_own();" readonly="readonly"/>
 
-											<select id="foo" multiple="multiple" onchange="select_s();" onblur="disappear_own(this);"> 
+											<select id="foo" multiple="multiple" onchange="select_s();" onblur="disappear_own(this);">
 												<option>Walmart</option>
 												<option>Sears</option>
 												<option>Staples</option>
@@ -36,7 +36,7 @@
 										</div>
 										<div class="span9 admin_system_content">
 											<p>Role :</p>
-											<select id="user_role"> 
+											<select id="user_role">
 												<option>Editor</option>
 												<option>1</option>
 												<option>1</option>

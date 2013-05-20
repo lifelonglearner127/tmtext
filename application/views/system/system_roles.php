@@ -1,9 +1,9 @@
 							<div class="tabbable">
 				              <ul class="nav nav-tabs">
-				                <li class=""><a data-toggle="tab" href="index">General</a></li>
-				                <li class=""><a data-toggle="tab" href="system_accounts">New Accounts</a></li>
-				                <li class="active"><a data-toggle="tab" href="system_roles">Roles</a></li>
-				                <li class=""><a data-toggle="tab" href="system_users">Users</a></li>
+								<li class=""><a data-toggle="tab" href="<?php echo site_url('system');?>">General</a></li>
+								<li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_accounts');?>">New Accounts</a></li>
+								<li class="active"><a data-toggle="tab" href="<?php echo site_url('system/system_roles');?>">Roles</a></li>
+								<li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_users');?>">Users</a></li>
 				              </ul>
 				              <div class="tab-content">
 				                <div id="tab3" class="tab-pane active">
@@ -53,14 +53,14 @@
 											<div class="clear-fix"></div>
 											<input type="checkbox" />
 										</div>
-									</div>	
-									
+									</div>
+
 									<div class="align_center">
 										<div class="clear-fix"></div>
 										<button class="btn btn-success" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Save</button>
 									</div>
-									
+
 								</div>
-								
+
 				              </div>
 				            </div>
