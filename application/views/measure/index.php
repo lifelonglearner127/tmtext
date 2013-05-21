@@ -17,7 +17,7 @@
                     if(i == 0) {
                         top_style = "style='margin-top: 5px;'";
                     }
-                    seo_items += "<li " + top_style + ">" + data[i]['ph'] + " (" + data[i]['count'] + ")</li>";
+                    seo_items += "<li class='word_wrap_li' " + top_style + ">" + data[i]['ph'] + " (" + data[i]['count'] + ")</li>";
                 }
             }
             $(seo_items).insertAfter($("#metrics_seo_phrases"));
