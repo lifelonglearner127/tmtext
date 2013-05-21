@@ -1,4 +1,33 @@
 <script>
+    
+    // ---- METRICS (SEO PHRASES) (START)
+    var measureBaseUrl = "<?php echo base_url(); ?>index.php/measure/";
+    function phrasesAnalysis() {
+        var t = $(".search_area").text();
+        var clean_t = t.replace(/\s+/g, ' '); // --- remove all tabs, whitespaces, newlines
+        clean_t = clean_t.trim();
+        var postUrl = measureBaseUrl + "analyzestring";
+        var analyzer = $.post(postUrl, { clean_t: clean_t }, 'json').done(function(data) {
+            $("#metrics_seo_phrases").nextAll().remove(); // --- clean up previous seo phrases
+            // --- collect and insert incoming seo phrases (start)
+            var seo_items = "";
+            if(data.length > 0) {
+                var top_style = "";
+                for(var i = 0; i < data.length; i++) {
+                    if(i == 0) {
+                        top_style = "style='margin-top: 5px;'";
+                    }
+                    seo_items += "<li " + top_style + ">" + data[i]['ph'] + " (" + data[i]['count'] + ")</li>";
+                }
+            }
+            $(seo_items).insertAfter($("#metrics_seo_phrases"));
+            console.log(data);
+            // --- collect and insert incoming seo phrases (end)
+        });
+    }
+    setTimeout(phrasesAnalysis(), 1000);
+    // ---- METRICS (SEO PHRASES) (END)
+
     var ddData_first = [
         {
             text: "",
@@ -77,7 +106,6 @@ $(document).ready(function () {
     });
 });
 </script>
-
     <div class="row-fluid">
             <input type="text" name="compare_text" style="width:90%" value="KDL-55EX640" id="compare_text" class="span11" placeholder=""/>
             <button type="submit" class="btn pull-right">Compare</button>
@@ -115,6 +143,9 @@ $(document).ready(function () {
                         <li>&nbsp;</li>
                         <li><a href="#">Page Metrics</a></li>
                         <li>SKU: KDL-55EX640</li>
+                        <li>&nbsp;</li>
+                        <li id="metrics_seo_phrases"><a href='javascript:void(0)'>SEO Phrases</a>&nbsp;<button type='button' onclick="phrasesAnalysis()" class='btn btn-primary btn-small'>re-start</button></li>
+                        <li>&nbsp;</li>
                      </ul>
 	    </div>
 	</div>
