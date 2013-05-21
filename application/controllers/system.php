@@ -31,6 +31,8 @@ class System extends MY_Controller {
 
 	public function system_users()
 	{
+		$this->load->model('user_groups_model');
+		$this->data['user_groups'] = $this->user_groups_model->getAll();
 		$this->render();
 	}
 

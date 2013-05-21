@@ -14,7 +14,7 @@
     <link href="<?php echo base_url();?>css/jquery.fancybox.css" rel="stylesheet">
 	<link href="<?php echo base_url();?>css/bootstrap.css" rel="stylesheet">
 	<link href="<?php echo base_url();?>css/style.css" rel="stylesheet">
-
+	<link href="<?php echo base_url();?>css/chosen.css" rel="stylesheet">
 
 	<!--[if lt IE 9]>
 		<script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
@@ -29,6 +29,7 @@
     <script src="<?php echo base_url();?>js/defaults.js"></script>
     <script src="<?php echo base_url();?>js/jquery.ddslick.js"></script>
     <script src="<?php echo base_url();?>js/jquery.expander.js"></script>
+    <script src="<?php echo base_url();?>js/chosen.jquery.min.js"></script>    
 	<!-- script src="<?php echo base_url();?>js/main.js"></script-->
 <?php if (isset($js)){ ?>
 <script type='text/javascript'>

@@ -1,5 +1,5 @@
 							<div class="tabbable">
-				              <ul class="nav nav-tabs">
+				              <ul class="nav nav-tabs jq-system-tabs">
 								<li class=""><a data-toggle="tab" href="<?php echo site_url('system');?>">General</a></li>
 								<li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_accounts');?>">New Accounts</a></li>
 								<li class="active"><a data-toggle="tab" href="<?php echo site_url('system/system_roles');?>">Roles</a></li>
