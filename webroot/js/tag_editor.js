@@ -117,8 +117,22 @@ jQuery(document).ready(function($) {
     $(document).on("ready", "#tageditor_description", function(){
         $.post('admin_tag_editor/get_product_description', {})
             .done(function(data) {
-                $('#tageditor_description').html(data);
-                $('#standart_description').html(data);
+                var type = typeof data;
+                if (type == "object") {
+                    var arr = data[0].description.split('\n');
+                    var str = '<ul>';
+                    for(var i=0; i<arr.length; i++){
+                        if(arr[i] != ''){
+                            str += '<li class="row">'+arr[i]+'\n</li>';
+                        }                        
+                    }
+                    str += '</ul>';
+                    $('#tageditor_description').html(str);
+                    $('#standart_description').html(str);
+                }  else if (type == "string") {
+                    $('#tageditor_description').html(data);
+                    $('#standart_description').html(data);
+                }                                
         });
         return false;
     });  
@@ -173,23 +187,31 @@ jQuery(document).ready(function($) {
             var regexp = regtext.split(re);
             var querystr = regexp[1];
             if(querystr != undefined && querystr != ''){
-                var result = $('#standart_description').html();
                 var reg = new RegExp(querystr, 'gi');
+                var result = $('#standart_description').html();
+                var desc_count = 0;
+                $('#standart_description ul li.row').each(function(){
+                    if($(this).text() != ''){
+                        if(reg.test($(this).text())){
+                            desc_count++;
+                        }
+                    }                   
+                });                
+                
                 var n = 0;
                 var final_str = result.replace(reg, function(str) {
                     n++;
                     return '<span id="'+n+'" class="highlight">'+str+'</span>';
                 });
-                var sum = '1';
                 if($('#tageditor_description ul').attr('id')!='' && $('#tageditor_description ul').attr('id')!=undefined){
-                    sum += $('#tageditor_description ul').attr('id').replace('desc_count_', '');
+                    desc_count = parseInt($('#tageditor_description ul').attr('id').replace('desc_count_', ''));
                 }
-                if(sum != '1'){
-                    sum += ' descriptions';
+                if(desc_count > 1){
+                    str = desc_count + ' descriptions';
                 } else {
-                    sum += ' description';
+                    str = desc_count + ' description';
                 }
-                $('span.matches_found').html(n+' matches found in '+sum);
+                $('span.matches_found').html(n+' matches found in '+ str);
                 $('#tageditor_description').html(final_str);
                 next=1;
                 $('#tageditor_description').scrollTo( 'span#'+next, 500, { easing:'swing', queue:true, axis:'xy' } );
@@ -298,7 +320,6 @@ jQuery(document).ready(function($) {
     $(document).on("click", "button#save_desc", function(){
         $.post('admin_tag_editor/save', { description: $('#tageditor_description').text() })
             .done(function(data) {
-                console.log(data);
                 $('#standart_description').html($('#tageditor_description').text());
         });
         return false;

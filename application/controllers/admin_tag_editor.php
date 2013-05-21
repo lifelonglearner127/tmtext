@@ -87,7 +87,8 @@ class Admin_Tag_Editor extends MY_Controller {
             }
             echo ul($description, array('id'=>'desc_count_'.count($description)));
         } else {
-            echo ul(array($data[0]->description), array());
+             $this->output->set_content_type('application/json')
+            ->set_output(json_encode($data));
         }        
     }
 
