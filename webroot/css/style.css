@@ -360,40 +360,40 @@ body{
     margin:0;
     position:relative;
     overflow: auto;
+    line-height: 40px;
+    width: 878px !important;
+    min-height: 20px;
+    padding: 7px;
 }
 
-    .desc li{
-        float:left;
-        margin:5px;
-        cursor:pointer;
-        border:1px solid #CCCCCC;
-        -webkit-border-radius: 4px;
-        -moz-border-radius: 4px;
-        border-radius: 4px;
-        background:#FBFBFB;
-    }
+.desc li{
+	display: inline;
+    cursor:pointer;
+    border:1px solid #CCCCCC;
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    background:#FBFBFB;
+    padding: 5px 0;
+}
 
-    .desc li span{
-        float:left;
-        margin:5px;
-        cursor:move;
-        padding-right:10px;
-    }
+.desc li span{
+    padding: 5px;
+    cursor:move;
+}
 
-    .desc li div.change_text{
-        float:none;
-        margin:0px;
-        cursor:move;
-        padding-right: 0px;
-        color:green;
-        display: inline;
-    }
+.desc li div.change_text{
+    float:none;
+    margin:0px;
+    cursor:move;
+    padding-right: 0px;
+    color:green;
+    display: inline;
+}
 
-    .desc li a{
-        float:right;
-        margin:5px 5px 5px -10px;
-        position:absolute;
-    }
+.desc li a{
+	padding: 0 5px;
+}
 
 /* Margin Style  */
 
