@@ -3,8 +3,9 @@
     // ---- METRICS (SEO PHRASES) (START)
     var measureBaseUrl = "<?php echo base_url(); ?>index.php/measure/";
     function phrasesAnalysis() {
-        console.log($("#search").val());
-        var t = $(".search_area").text();
+        // console.log($("#search").val());
+        // var t = $(".search_area").text();
+        var t = $(".item_section").text();
         var clean_t = t.replace(/\s+/g, ' '); // --- remove all tabs, whitespaces, newlines
         clean_t = clean_t.trim();
         var postUrl = measureBaseUrl + "analyzestring";
@@ -22,11 +23,38 @@
                 }
             }
             $(seo_items).insertAfter($("#metrics_seo_phrases"));
-            console.log("M DATA: ", data);
+            // console.log("M DATA: ", data);
             // --- collect and insert incoming seo phrases (end)
         });
     }
-    setTimeout(phrasesAnalysis, 1000);
+
+    phrasesAnalysis();
+
+    // var pa = function() {
+    //     console.log($("#search").val());
+    //     var t = $(".search_area").text();
+    //     var clean_t = t.replace(/\s+/g, ' '); // --- remove all tabs, whitespaces, newlines
+    //     clean_t = clean_t.trim();
+    //     var postUrl = measureBaseUrl + "analyzestring";
+    //     var analyzer = $.post(postUrl, { clean_t: clean_t }, 'json').done(function(data) {
+    //         $("#metrics_seo_phrases").nextAll().remove(); // --- clean up previous seo phrases
+    //         // --- collect and insert incoming seo phrases (start)
+    //         var seo_items = "";
+    //         if(data.length > 0) {
+    //             var top_style = "";
+    //             for(var i = 0; i < data.length; i++) {
+    //                 if(i == 0) {
+    //                     top_style = "style='margin-top: 5px;'";
+    //                 }
+    //                 seo_items += "<li class='word_wrap_li' " + top_style + ">" + data[i]['ph'] + " (" + data[i]['count'] + ")</li>";
+    //             }
+    //         }
+    //         $(seo_items).insertAfter($("#metrics_seo_phrases"));
+    //         console.log("M DATA: ", data);
+    //         // --- collect and insert incoming seo phrases (end)
+    //     });
+    // }();
+
     // ---- METRICS (SEO PHRASES) (END)
 
     var ddData_first = [
