@@ -134,7 +134,7 @@ $(document).ready(function () {
                         <div class="ProdQuestions prtHid" id="hideProductQuesLink">Do you have questions about this product? <a onclick="s_objectID=&quot;http://www.walmart.com/ip/Sony-55-Class-LED-1080p-60Hz-HDTV-2-3-8-ultra-slim-KDL-55EX640/20593825_36&quot;;return this.s_oc?this.s_oc(e):true" href="#Q%26A+Exchange">Ask a question</a>.</div>
                     </div>
             </div>
-            <div class="span3" style="width:195px; margin-top: -80px;" id="attributes">
+            <div class="span3" style="width:195px; margin-top: -80px;" id="attributes_metrics">
                     <h3>Metrics</h3>
                     <ul>
                         <li><a href="#">Site Metrics</a></li>

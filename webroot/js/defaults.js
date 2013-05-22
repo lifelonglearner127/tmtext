@@ -47,7 +47,7 @@ function clearEditorForm() {
     $( ".auto_title #title" ).val('');
     $('#pagination').html('');
     $( "#items" ).html('Original product descriptions');
-    // $( "#attributes" ).html('Product attributes'); // EXP
+    $( "#attributes" ).html('Product attributes');
     $('#wc').html('0');
     $('#tc').html('0');
     search_id = undefined;
