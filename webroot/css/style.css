@@ -459,7 +459,7 @@ html.busy, html.busy * {
 }
 
 
-ul#items_list, #tageditor_description ul, #attributes ul {
+ul#items_list, #tageditor_description ul, #attributes ul, #attributes_metrics ul {
 	list-style-type: none;
 }
 
