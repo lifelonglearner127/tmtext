@@ -61,8 +61,13 @@ jQuery(document).ready(function($) {
     
     $(document).on("keypress", "#tageditor_content #items_list li input", function(e){
         action = 'edit';
-        if(e.keyCode == 13){
-            return false;
+        if(e.keyCode == 13 || e.keyCode == 8){
+            $("#tageditor_content #items_list li").each(function(){
+                $(this).css({'background':'none'})
+            });
+            $("#tageditor_content #items_list li input").each(function(){
+                $(this).parent().html('<span>'+$(this).val()+'</span>');
+            });
         } else {
             if(e.keyCode == 38){
                 if($(this).parent().prev().length > 0) {
@@ -245,6 +250,7 @@ jQuery(document).ready(function($) {
     });
     
     $(document).on("click", "button#new", function(){
+        $("button#save_data").trigger('click');
         $("#tageditor_content #items_list li").each(function(){
             $(this).css({'background':'none'});
         });
@@ -330,6 +336,21 @@ jQuery(document).ready(function($) {
             .done(function(data) {
                 $('#tageditor_description').empty();
             });
+        return false;
+    });
+
+    $(document).on("click", "#items", function(){
+        if($("#tageditor_content #items_list li").text() == ""){
+            $("button#new").trigger('click');
+        } else {
+            $("button#save_data").trigger('click');
+            $("#tageditor_content #items_list li").each(function(){
+                $(this).css({'background':'none'})
+            });
+            $("#tageditor_content #items_list li input").each(function(){
+                $(this).parent().html('<span>'+$(this).val()+'</span>');
+            });
+        }
         return false;
     });
 });
