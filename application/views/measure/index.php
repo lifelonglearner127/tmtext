@@ -21,11 +21,10 @@
                 }
             }
             $(seo_items).insertAfter($("#metrics_seo_phrases"));
-            console.log(data);
             // --- collect and insert incoming seo phrases (end)
         });
     }
-    setTimeout(phrasesAnalysis(), 1000);
+    setTimeout(phrasesAnalysis, 1000);
     // ---- METRICS (SEO PHRASES) (END)
 
     var ddData_first = [
