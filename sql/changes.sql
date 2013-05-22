@@ -1,3 +1,25 @@
+# 05/22 Ruslan
+ALTER TABLE  `imported_data` ADD  `company_id` INT NOT NULL AFTER  `imported_data_attribute_id`
+
+CREATE TABLE IF NOT EXISTS `companies` (
+  `id` int(10) unsigned NOT NULL DEFAULT '0',
+  `name` varchar(200) COLLATE utf8_unicode_ci NOT NULL,
+  `description` varchar(1000) COLLATE utf8_unicode_ci NOT NULL,
+  `image` varchar(250) COLLATE utf8_unicode_ci NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `imported_data_parsed` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `imported_data_id` int(10) unsigned NOT NULL,
+  `key` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
+  `value` text COLLATE utf8_unicode_ci NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `imported_data_id` (`imported_data_id`,`key`),
+  KEY `imported_data_id_2` (`imported_data_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
+
+#--
 CREATE TABLE IF NOT EXISTS `tag_editor_descriptions` (
  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
  `user_id` int(11) NOT NULL,
