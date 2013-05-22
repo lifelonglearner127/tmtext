@@ -3,6 +3,7 @@
     // ---- METRICS (SEO PHRASES) (START)
     var measureBaseUrl = "<?php echo base_url(); ?>index.php/measure/";
     function phrasesAnalysis() {
+        console.log($("#search").val());
         var t = $(".search_area").text();
         var clean_t = t.replace(/\s+/g, ' '); // --- remove all tabs, whitespaces, newlines
         clean_t = clean_t.trim();
