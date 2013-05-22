@@ -454,7 +454,7 @@ html.busy, html.busy * {
     margin-left: -20px;
 }
 
-#attributes ul li  {
+#attributes_metrics ul li, #attributes ul li  {
 	margin-left: -20px;
 }
 
