@@ -339,10 +339,19 @@ jQuery(document).ready(function($) {
         return false;
     });
 
-    $(document).on("click", "#items", function(){
-        if($("#tageditor_content #items_list li").text() == ""){
-            $("button#new").trigger('click');
-        } else {
+    $(document).on("click", "#items", function(event){
+        var str = '';
+        $('#tageditor_content #items_list li').each(function(){
+            if($(this).attr('class') != 'hidden_class'){
+                if($(this).find('input').val()!=undefined){
+                    str += $(this).find('input').val();
+                } else {
+                    str += $(this).text();
+                }
+            }
+        });
+
+        if($(event.target).index($('div#items.span10')) != -1 && str != ""){
             $("button#save_data").trigger('click');
             $("#tageditor_content #items_list li").each(function(){
                 $(this).css({'background':'none'})
@@ -350,6 +359,8 @@ jQuery(document).ready(function($) {
             $("#tageditor_content #items_list li input").each(function(){
                 $(this).parent().html('<span>'+$(this).val()+'</span>');
             });
+        } else if(str == ""){
+            $("button#new").trigger('click');
         }
         return false;
     });
