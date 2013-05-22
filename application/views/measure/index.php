@@ -21,7 +21,7 @@
                 }
             }
             $(seo_items).insertAfter($("#metrics_seo_phrases"));
-            console.log(data);
+            console.log("M DATA: ", data);
             // --- collect and insert incoming seo phrases (end)
         });
     }
