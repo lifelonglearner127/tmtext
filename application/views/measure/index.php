@@ -21,6 +21,7 @@
                 }
             }
             $(seo_items).insertAfter($("#metrics_seo_phrases"));
+            console.log(data);
             // --- collect and insert incoming seo phrases (end)
         });
     }
