@@ -69,8 +69,9 @@ class Helpers {
                 $final_ph = $orig[$pos[$i]]." ".$orig[$pos[$i]+$len-1];
             }
             // --- find phrase in original text (end)
+            $final_ph = preg_replace('/[^A-Za-z0-9 ]/', '', $final_ph);
             $mid = array(
-              "ph" => trim($final_ph),
+              "ph" =>  trim($final_ph),
               "count" => $pos[0],
               "ph_length" => strlen(trim($final_ph))
             );
