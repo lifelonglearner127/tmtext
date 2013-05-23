@@ -1,1 +1,1 @@
-<?php echo $search_results[0]; ?>
+<div><?php echo $search_results[0]; ?></div>

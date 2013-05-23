@@ -8,7 +8,7 @@
         var s = $.trim($("#search").val());
         var searcher = $.post(editorSearchBaseUrl, { s: s }, 'html').done(function(data) {
             if(typeof(data) !== "undefined" && data !== "") {
-                var title_dom = $("<div>" + data + "</div>").find("#link_m_title");
+                var title_dom = $(data).find("#link_m_title");
                 var title = "No Title";
                 if(title_dom.length > 0) {
                     title = $(title_dom[0]).text();
@@ -43,7 +43,7 @@
         var s = $.trim($("#compare_text").val());
         var searcher = $.post(editorSearchBaseUrl, { s: s }, 'html').done(function(data) {
             if(typeof(data) !== "undefined" && data !== "") {
-                var title_dom = $("<div>" + data + "</div>").find("#link_m_title");
+                var title_dom = $(data).find("#link_m_title");
                 var title = "No Title";
                 if(title_dom.length > 0) {
                     title = $(title_dom[0]).text();
@@ -157,7 +157,7 @@ $(document).ready(function () {
 });
 </script>
 <div class="row-fluid">
-    <input type="text" name="compare_text" style="width:90%" value="KDL-55EX640" id="compare_text" class="span11" placeholder=""/>
+    <input type="text" name="compare_text" style="width:90%" value="UN40ES6500" id="compare_text" class="span11" placeholder=""/>
     <button type="button" onclick="startMeasureCompare()" class="btn pull-right">Compare</button>
 </div>
 <div class="row-fluid">
