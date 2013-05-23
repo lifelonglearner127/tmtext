@@ -26,6 +26,7 @@
 						</div>
 					</div>
 					<div class="row-fluid new_product">
+                        <p class="show_ballons"><input type="checkbox" name="show_ballons" value="1" /><span> Show balloons</span></p>
 						<div class="search_area uneditable-input" id="textarea" onClick="this.contentEditable='true';" style="cursor: text; width: 98.5%;"></div>
                         <ul id="trash" class="desc_title trash" style="display:none"></ul>
 					</div>

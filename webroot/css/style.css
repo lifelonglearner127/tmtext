@@ -585,3 +585,7 @@ a.dd-selected, a.dd-option{
     font-size: 12px;
     margin: 15px 10px 20px;
 }
+
+p.show_ballons input{
+    margin-top: -1px;
+}

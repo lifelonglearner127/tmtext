@@ -5,6 +5,7 @@ var rev = [];
 var search_id = undefined;
 var sentence = '';
 var desc_input = '';
+var action = '';
 
 function replaceAt(search, replace, subject, n) {
     return subject.substring(0, n) +subject.substring(n).replace(search, replace);
@@ -142,7 +143,9 @@ jQuery(document).ready(function($) {
             $(this).val(limited);
         }
         $('#wc').html(number);
-        saveCurrentProduct($('.new_product #textarea span.current_product').text());
+        if($('.new_product #textarea ul').html() != undefined){
+            saveCurrentProduct($('.new_product #textarea span.current_product').text());
+        }
     });
 
     $(document).on("keydown change", ".auto_title #title", function() {
@@ -166,6 +169,7 @@ jQuery(document).ready(function($) {
         var posting = $.post( url, { s: term } );
 
         posting.done(function( data ) {
+            action = 'search';
             $( "#items" ).html( $(data).find('#content') );
             $( "#items #items_list li" ).expander({
                 slicePoint: 150,
@@ -208,11 +212,7 @@ jQuery(document).ready(function($) {
                 desc_input = products[0];
 
                 var descriptionDiv = $('.new_product #textarea');
-
-                fulltext = '<ul id="desc" class="desc_title desc"><li>' +
-                    '<span class="current_product">'+products[0]+'</span><a hef="#" class="ui-icon-trash">x</a></li></ul>';
-                descriptionDiv.html(fulltext);
-                //descriptionDiv.text(products[0]);
+                descriptionDiv.text(products[0]);
                 descriptionDiv.trigger('change');
 
                 moveSentence();
@@ -227,17 +227,30 @@ jQuery(document).ready(function($) {
     $(document).on("click", "#pagination a", function(event){
         event.preventDefault();
         current_product = $(this).data('page');
-
         if ($(this).data('page')!==undefined) {
             var description = $('.new_product').find('textarea[name="description"]');
             var descriptionDiv = $('.new_product #textarea');
             description.val(products[current_product-1]);
-            descriptionDiv.html('<ul id="desc" class="desc_title desc">'+sentence+' '+'<li><span class="current_product">'+
-                products[current_product-1]+'</span><a hef="#" class="ui-icon-trash">x</a></li>').trigger('change');
             desc_input = products[current_product-1];
-            moveSentence();
-            //descriptionDiv.html(products[current_product-1]).trigger('change');
 
+            if($('#textarea ul').html()!=undefined){
+
+                var str = '';
+                if(sentence !== ''){
+                    var arr = sentence.split('.');
+                    for(var i=0; i < arr.length;i++){
+                        if(arr[i] != ' '){
+                            str += '<li><span>'+arr[i]+'</span><a hef="#" class="ui-icon-trash">x</a></li>';
+                        }
+                    }
+                }
+                descriptionDiv.html('<ul id="desc" class="desc_title desc">'+str+'<li><span class="current_product">'+
+                    products[current_product-1]+'</span><a hef="#" class="ui-icon-trash">x</a></li></ul>').trigger('change');
+            } else {
+                descriptionDiv.html(sentence+' '+products[current_product-1]).trigger('change');
+            }
+
+            moveSentence();
             $('#pagination').html(getPager());
 
         }
@@ -250,6 +263,9 @@ jQuery(document).ready(function($) {
         });
 
     $(document).on("click", "#validate", function(){
+        if($('input[type=checkbox]').is(':checked')){
+            $('input[type=checkbox]').attr('checked',false);
+        }
         var vbutton = $(this);
         var description = '';
         $('.new_product #textarea li').each(function(){
@@ -261,7 +277,10 @@ jQuery(document).ready(function($) {
             }
         });
         if(description==''){
-            description = $('.new_product').find('textarea[name="description"]').val();
+            //description = $('.new_product').find('textarea[name="description"]').val();
+            description = $('.new_product #textarea').text();
+        } else {
+            description = sentence + ' ' +description;
         }
 
         var url =  $('#attributesForm').attr( 'action' ).replace('attributes', 'validate');
@@ -364,10 +383,21 @@ jQuery(document).ready(function($) {
 
                 //console.log(rev);
             });
-    });    
-   
+    });
+
     $(document).on("click", "button#use", function(){
-        sentence = $('#textarea ul#desc').html().replace('current_product', '');
+        if($('#textarea ul').html() != undefined) {
+            var str = '';
+            $('.new_product #textarea li').each(function(){
+
+                if($(this).find('span').text()!='' && $(this).find('span').text()!=undefined){
+                    str += ' '+$(this).find('span').text()+' ';
+                }
+            });
+            sentence = str.replace('current_product', '');
+        } else {
+            sentence = $('.new_product #textarea').text()+' ';
+        }
         return false;
     });
 
@@ -378,8 +408,12 @@ jQuery(document).ready(function($) {
             var description = $('.new_product').find('textarea[name="description"]');
             var descriptionDiv = $('.new_product #textarea');
             description.val(products[current_product-1]);
-            descriptionDiv.html('<ul id="desc" class="desc_title desc">'+sentence+' '+'<li><span class="current_product">'+
-                products[current_product-1]+'</span><a hef="#" class="ui-icon-trash">x</a></li>').trigger('change');
+            if($('input[type=checkbox]').is(':checked')) {
+                descriptionDiv.html('<ul id="desc" class="desc_title desc">'+sentence+' '+'<li><span class="current_product">'+
+                    products[current_product-1]+'</span><a hef="#" class="ui-icon-trash">x</a></li>').trigger('change');
+            } else {
+                descriptionDiv.html(products[current_product-1]);
+            }
             moveSentence();
             $('#pagination').html(getPager());
         }
@@ -502,7 +536,7 @@ jQuery(document).ready(function($) {
         return false;
     });
 
-    
+
     $(document).on("click", "button#csv_import", function(event){
     	event.preventDefault();
 
@@ -551,16 +585,50 @@ jQuery(document).ready(function($) {
         var postData = $(this).serialize();
         var url = $( this ).attr( 'action' );
         var posting = $.post(url, postData, function(data) {
-                if(data.success == 1){
-                    $( "#system_save_new_user input" ).val('');
-                    $("#user_customers").val('').trigger("liszt:updated");
-                    $("#user_role").val('').trigger("liszt:updated");  
-                    $( '.info-message' ).html('<p class="text-success">'+data.message+'</p>');         
-                }else{
-                    $( '.info-message' ).html(data.message);
-                    $( '.info-message p' ).addClass('text-error');
+            if(data.success == 1){
+                $( "#system_save_new_user input" ).val('');
+                $("#user_customers").val('').trigger("liszt:updated");
+                $("#user_role").val('').trigger("liszt:updated");
+                $( '.info-message' ).html('<p class="text-success">'+data.message+'</p>');
+            }else{
+                $( '.info-message' ).html(data.message);
+                $( '.info-message p' ).addClass('text-error');
+            }
+        });
+    });
+
+
+    $(document).on("click", "input:checkbox", function(){
+        if(action == 'search'){
+            var $this = $(this);
+            if ($this.is(':checked')) {
+                // the checkbox was checked
+                var descriptionDiv = $('.new_product #textarea');
+                var str = '';
+                if(sentence != '' ){
+                    str = '<li>'+sentence+'<a hef="#" class="ui-icon-trash">x</a></li>';
                 }
-            });
+                fulltext = '<ul id="desc" class="desc_title desc">'+str+'<li>' +
+                    '<span class="current_product">'+desc_input+'</span><a hef="#" class="ui-icon-trash">x</a></li></ul>';
+                descriptionDiv.html(fulltext);
+            } else {
+                // th*e checkbox was unchecked
+                var description = '';
+                $('.new_product #textarea li').each(function(){
+                    if($(this).find('span').text()!='' && $(this).find('span').text()!=undefined){
+                        description += $(this).find('span').text()+' ';
+                    }
+                    if($(this).find('input').val()!='' && $(this).find('input').val()!=undefined){
+                        description += $(this).find('input').val()+' ';
+                    }
+                });
+                if(description==''){
+                    //description = $('.new_product').find('textarea[name="description"]').val();
+                    description = $('.new_product #textarea').text();
+                }
+                $('.new_product #textarea').html(sentence+' '+description).trigger('change');
+            }
+        }
     });
 
 });
