@@ -351,7 +351,8 @@ jQuery(document).ready(function($) {
             }
         });
 
-        if($(event.target).index($('div#items.span10')) != -1 && str != ""){
+        if($(event.target).index($('div#items.span10')) != -1 && str != ""
+            && $('#tageditor_content #items_list li').find('input').val()!=undefined){
             $("button#save_data").trigger('click');
             $("#tageditor_content #items_list li").each(function(){
                 $(this).css({'background':'none'})
@@ -359,7 +360,7 @@ jQuery(document).ready(function($) {
             $("#tageditor_content #items_list li input").each(function(){
                 $(this).parent().html('<span>'+$(this).val()+'</span>');
             });
-        } else if(str == ""){
+        } else if(str == "" || $('#tageditor_content #items_list li').find('input').val()==undefined){
             $("button#new").trigger('click');
         }
         return false;
