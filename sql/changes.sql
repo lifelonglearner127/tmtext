@@ -1,3 +1,26 @@
+# 05/23 Andrew <-- start
+CREATE TABLE IF NOT EXISTS `customers` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(256) NOT NULL,
+  `description` text NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+
+INSERT INTO `customers` (`id`, `name`, `description`) VALUES
+(1, 'Walmart.com', 0),
+(2, 'Sears.com', 0),
+(3, 'BJs.com', 0),
+(4, 'Staples.com', 0);
+
+CREATE TABLE IF NOT EXISTS `users_to_customers` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `customer_id` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`,`customer_id`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+# 05/23 --> end
+
 # 05/22 Ruslan
 ALTER TABLE  `imported_data` ADD  `company_id` INT NOT NULL AFTER  `imported_data_attribute_id`
 
@@ -19,7 +42,6 @@ CREATE TABLE IF NOT EXISTS `imported_data_parsed` (
   KEY `imported_data_id_2` (`imported_data_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
 
-#--
 CREATE TABLE IF NOT EXISTS `tag_editor_descriptions` (
  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
  `user_id` int(11) NOT NULL,

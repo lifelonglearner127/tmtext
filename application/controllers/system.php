@@ -32,7 +32,10 @@ class System extends MY_Controller {
 	public function system_users()
 	{
 		$this->load->model('user_groups_model');
+		$this->load->model('customers_model');
 		$this->data['user_groups'] = $this->user_groups_model->getAll();
+		$this->data['customers'] = $this->customers_model->getAll();
+		$this->data['message'] = array();
 		$this->render();
 	}
 
@@ -116,5 +119,47 @@ class System extends MY_Controller {
 		echo json_encode(array(
 			'message' => 'Imported '.$imported_rows.' rows. Total '.count($_rows).' rows.'
 		));
+	}
+
+	public function save_new_user()
+	{
+		$response = array();
+		//validate form input
+		$this->form_validation->set_rules('user_name', 'User name', 'required|xss_clean|is_unique[users.username]');
+		$this->form_validation->set_rules('user_mail', 'User mail', 'required|valid_email|is_unique[users.email]');
+		$this->form_validation->set_rules('user_password', 'User password','required|min_length[' . $this->config->item('min_password_length', 'ion_auth') . ']|max_length[' . $this->config->item('max_password_length', 'ion_auth') . ']');
+		$this->form_validation->set_rules('user_role', 'User role', 'required|xss_clean]');
+
+		if ($this->form_validation->run() == true)
+		{
+			$username = strtolower($this->input->post('user_name'));
+			$email    = $this->input->post('user_mail');
+			$password = $this->input->post('user_password');
+			$customers = $this->input->post('user_customers');
+			$group = array($this->input->post('user_role'));
+			$additional_data = array();
+			$active = $this->input->post('user_active');
+			$new_id = $this->ion_auth->register($username, $password, $email, $additional_data, $group);
+			if ($new_id)
+			{
+				$this->load->model('users_to_customers_model');
+				foreach ($customers as $customer) {
+					$this->users_to_customers_model->set($new_id, $customer);
+				}
+				if((empty($active))){
+					$this->ion_auth->deactivate($new_id);
+				}
+				$response['success'] = 1;
+				$response['message'] = 'User created successfully';
+				$this->output->set_content_type('application/json')
+		            ->set_output(json_encode($response));
+			}
+		}
+		else
+		{
+			$response['message'] = validation_errors();
+			$this->output->set_content_type('application/json')
+		        ->set_output(json_encode($response));
+		}
 	}
 }

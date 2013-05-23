@@ -1,5 +1,5 @@
 <script>
-	$("#user_customerss").chosen();
+	$("#user_customers").chosen();
 	$("#user_role").chosen();
 </script>
 <style>
@@ -37,6 +37,9 @@
 	.chzn-container-multi .chzn-choices .search-choice a{
 		margin-top: 2px;
 	}
+	#system_save_new_user .admin_system_content{
+		margin-left: 2.12766%;
+	}
 </style>
 <div class="tabbable">
   <ul class="nav nav-tabs jq-system-tabs">
@@ -47,37 +50,41 @@
   </ul>
   <div class="tab-content">
     <div id="tab4" class="tab-pane active">
+    	<div class="info-message"></div>
+     	<?php echo form_open("system/save_new_user", array("class"=>"form-horizontal", "id"=>"system_save_new_user"));?>
 		<div class="row-fluid">
 			<div class="span9 admin_system_content">
 				<p>Name :</p>
-				<input type="text" id="user_name" placeholder="Name">
+				<input type="text" id="user_name" name="user_name" placeholder="Name" value="">
 				<div class="clear-fix"></div>
 			</div>
 			<div class="span9 admin_system_content">
 				<p>Email :</p>
-				<input type="text" id="user_mail" placeholder="Email">
+				<input type="text" id="user_mail" name="user_mail" placeholder="Email">
 				<div class="clear-fix"></div>
 			</div>
 			<div class="span9 admin_system_content">
 				<p>Password :</p>
-				<input type="text" id="user_password" placeholder="Password">
+				<input type="text" id="user_password" name="user_password" placeholder="Password">
 				<div class="clear-fix"></div>
 			</div>
 			<div class="span9 admin_system_content aclist">
 				<p>Customers :</p>
-		        <select id="user_customerss" data-placeholder="Click to select customers" multiple class="chzn-select" tabindex="8">
-					<option>Walmart</option>
-					<option>Sears</option>
-					<option>Staples</option>
+		        <select id="user_customers" data-placeholder="Click to select customers" multiple class="chzn-select" tabindex="8" name="user_customers[]">
+					<?php 
+					foreach ($customers as $customer) {
+						print '<option value="'.$customer->id.'">'.$customer->name.'</option>';
+					}
+					 ?>
 		        </select>
 				<div class="clear-fix"></div>
 			</div>
 			<div class="span9 admin_system_content aclist">
 				<p>Role :</p>
-				<select id="user_role" data-placeholder="Select user role" class="chzn-select" tabindex="8">
+				<select id="user_role" data-placeholder="Select user role" class="chzn-select" tabindex="8" name="user_role">
 					<?php 
 					foreach ($user_groups as $user_group) {
-						print '<option value="'.$user_group->name.'">'.$user_group->name.'</option>';
+						print '<option value="'.$user_group->id.'">'.$user_group->name.'</option>';
 					}
 					 ?>
 				</select>
@@ -85,18 +92,19 @@
 			</div>
 			<div class="span9 admin_system_content">
 				<p>Active :</p>
-				<input type="checkbox" id="user_active">
+				<input type="checkbox" id="user_active" name="user_active">
 				<div class="clear-fix"></div>
 			</div>
 		</div>
 		<div class="row-fluid">
 		    <div class="control-group">
 			    <div class="controls align_center">
-					<button class="btn new_btn btn-primary"><i class="icon-white icon-file"></i>&nbsp;New</button>
+					<button class="btn new_btn btn-primary" type="submit"><i class="icon-white icon-file"></i>&nbsp;New</button>
 				    <button class="btn btn-success" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Update</button>
 			    </div>
 		    </div>
 		</div>
+		<?php echo form_close();?>
     </div>
   </div>
 </div>

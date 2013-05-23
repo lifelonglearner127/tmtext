@@ -546,6 +546,23 @@ jQuery(document).ready(function($) {
         });
     });
 
+    $(document).on("submit", "#system_save_new_user", function(e){
+        e.preventDefault();
+        var postData = $(this).serialize();
+        var url = $( this ).attr( 'action' );
+        var posting = $.post(url, postData, function(data) {
+                if(data.success == 1){
+                    $( "#system_save_new_user input" ).val('');
+                    $("#user_customers").val('').trigger("liszt:updated");
+                    $("#user_role").val('').trigger("liszt:updated");  
+                    $( '.info-message' ).html('<p class="text-success">'+data.message+'</p>');         
+                }else{
+                    $( '.info-message' ).html(data.message);
+                    $( '.info-message p' ).addClass('text-error');
+                }
+            });
+    });
+
 });
 //var start = new Date().getMilliseconds();
 //console.log("Executed in " + (new Date().getMilliseconds() - start) + " milliseconds");
