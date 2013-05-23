@@ -156,9 +156,13 @@ $(document).ready(function () {
     });
 });
 </script>
+<div class="main_content_other"></div>
+<div class="main_content_editor">
 <div class="row-fluid">
-    <input type="text" name="compare_text" style="width:90%" value="UN40ES6500" id="compare_text" class="span11" placeholder=""/>
-    <button type="button" onclick="startMeasureCompare()" class="btn pull-right">Compare</button>
+    <?php echo form_open('', array('id'=>'measureForm')); ?>
+        <input type="text" name="compare_text" value="UN40ES6500" id="compare_text" class="span11" placeholder=""/>
+        <button type="button" onclick="startMeasureCompare()" class="btn pull-right">Search</button>
+    <?php echo form_close();?>
 </div>
 <div class="row-fluid">
     <div id="websites_first" class="dropdowns"></div>
@@ -207,6 +211,7 @@ $(document).ready(function () {
             </ul>
 	    </div>
 	</div>
+</div>
 </div>
 <!--- REAL CONTENT SECTION (END) -->
 

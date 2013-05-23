@@ -597,3 +597,7 @@ a.dd-selected, a.dd-option{
 p.show_ballons input{
     margin-top: -1px;
 }
+
+#measureForm{
+    margin-top: 20px;
+}
