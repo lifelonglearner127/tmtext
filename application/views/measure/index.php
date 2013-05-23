@@ -4,40 +4,42 @@
     var measureAnalyzerBaseUrl = "<?php echo base_url(); ?>index.php/measure/analyzestring";
     var editorSearchBaseUrl = "<?php echo base_url(); ?>index.php/editor/searchmeasure";
 
-    function phrasesAnalysis() {
-        var s = $.trim($("#search").val());
-        var searcher = $.post(editorSearchBaseUrl, { s: s }, 'html').done(function(data) {
-            if(typeof(data) !== "undefined" && data !== "") {
-                var title_dom = $(data).find("#link_m_title");
-                var title = "No Title";
-                if(title_dom.length > 0) {
-                    title = $(title_dom[0]).text();
-                }
-                var str = $(data).html();
-                str = str.replace(/\s+/g, ' ');
-                str = str.trim();
-                $("#measure_tab_pr_content_body").html(data);
-                $("#measure_tab_pr_content_head .item_title b").text(title);
-                // ---- fill up DOM (end)
-                var analyzer = $.post(measureAnalyzerBaseUrl, { clean_t: str }, 'json').done(function(a_data) {
-                    $("#metrics_seo_phrases").nextAll().remove(); // --- clean up previous seo phrases
-                    // --- collect and insert incoming seo phrases (start)
-                    var seo_items = "";
-                    if(a_data.length > 0) {
-                        var top_style = "";
-                        for(var i = 0; i < a_data.length; i++) {
-                            if(i == 0) {
-                                top_style = "style='margin-top: 5px;'";
-                            }
-                            seo_items += "<li class='word_wrap_li' " + top_style + ">" + a_data[i]['ph'] + " (" + a_data[i]['count'] + ")</li>";
-                        }
-                    }
-                    $(seo_items).insertAfter($("#metrics_seo_phrases"));
-                    // --- collect and insert incoming seo phrases (end)
-                });
-            }
-        });
-    }
+    // function phrasesAnalysis() {
+    //     var s = $.trim($("#search").val());
+    //     var searcher = $.post(editorSearchBaseUrl, { s: s }, 'html').done(function(data) {
+    //         if(typeof(data) !== "undefined" && data !== "") {
+    //             var title_dom = $(data).find("#link_m_title");
+    //             var title = "No Title";
+    //             if(title_dom.length > 0) {
+    //                 title = $(title_dom[0]).text();
+    //             }
+    //             var str = $(data).html();
+    //             str = str.replace(/\s+/g, ' ');
+    //             str = str.trim();
+    //             $("#measure_tab_pr_content_body").html(data);
+    //             $("#measure_tab_pr_content_head .item_title b").text(title);
+    //             // ---- fill up DOM (end)
+    //             var analyzer = $.post(measureAnalyzerBaseUrl, { clean_t: str }, 'json').done(function(a_data) {
+    //                 $("#metrics_seo_phrases").nextAll().remove(); // --- clean up previous seo phrases
+    //                 // --- collect and insert incoming seo phrases (start)
+    //                 var seo_items = "";
+    //                 if(a_data.length > 0) {
+    //                     var top_style = "";
+    //                     for(var i = 0; i < a_data.length; i++) {
+    //                         if(i == 0) {
+    //                             top_style = "style='margin-top: 5px;'";
+    //                         }
+    //                         seo_items += "<li class='word_wrap_li' " + top_style + ">" + a_data[i]['ph'] + " (" + a_data[i]['count'] + ")</li>";
+    //                     }
+    //                 }
+    //                 $(seo_items).insertAfter($("#metrics_seo_phrases"));
+    //                 // --- collect and insert incoming seo phrases (end)
+    //             });
+    //         }
+    //     });
+    // }
+
+    // setTimeout(phrasesAnalysis, 1000);
 
     function startMeasureCompare() {
         var s = $.trim($("#compare_text").val());
@@ -73,8 +75,6 @@
             }
         });
     }
-
-    setTimeout(phrasesAnalysis, 1000);
 
     // ---- METRICS (SEO PHRASES) (END)
 
