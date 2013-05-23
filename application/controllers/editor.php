@@ -78,6 +78,78 @@ class Editor extends MY_Controller {
 
 	}
 
+	public function searchmeasure() {
+
+		$s = $this->input->post('s');
+
+		$data = array(
+			's' => $s,
+			'search_results' => array()
+		);
+
+		$attr_path = $this->config->item('attr_path');
+
+		$csv_rows = array();
+
+		// Search in files
+		if ( isset($this->settings['use_files']) && $this->settings['use_files']) {
+			if ($path = realpath($attr_path)) {
+				$objects = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path), RecursiveIteratorIterator::SELF_FIRST);
+				foreach($objects as $name => $object){
+					if (!$object->isDir()) {
+						if (preg_match("/.*\.csv/i",$object->getFilename(),$matches)) {
+							$_rows = array();
+							if (($handle = fopen($name, "r")) !== FALSE) {
+								while (($row = fgets($handle)) !== false) {
+									if (preg_match("/$s/i",$row,$matches)) {
+										$_rows[] = $row;
+									}
+								}
+							}
+							fclose($handle);
+
+							foreach (array_keys(array_count_values($_rows)) as $row){
+								$csv_rows[] = str_getcsv($row, ",", "\"");
+							}
+							unset($_rows);
+						}
+					}
+				}
+			}
+		}
+
+		// Search in database
+		if ( isset($this->settings['use_database']) && $this->settings['use_database']) {
+			$this->load->model('imported_data_model');
+			if (( $_rows = $this->imported_data_model->findByData($s))!== false) {
+				foreach($_rows as $row) {
+					$csv_rows[] = str_getcsv($row['data'], ",", "\"");
+				}
+			}
+		}
+
+		if (!empty($csv_rows)) {
+			$row = $csv_rows[0];
+			foreach ($row as $col) {
+				if (preg_match("/^http:\/\/*/i",$col,$matches)) {
+					$row['url'] = $col;
+				} else if ( mb_strlen($col) <= 250) {
+					$row['title'] = $col;
+				} else if (empty($row['description'])) {
+					$row['description'] = $col;
+				}
+			}
+
+			if (!empty($row['url']) && !empty($row['title'])) {
+				$data['search_results'][] =  '<a id="link_m_title" href="'.$row['url'].'">'.$row['title'].'</a><br/>'.$row['description'];
+			} else if (!empty($row['description'])) {
+				$data['search_results'][] =  $row['description'];
+			}
+		}
+
+		$this->load->view('editor/searchmeasure', $data);
+	}
+
 	public function search()
 	{
 		$this->form_validation->set_rules('s', 'Search', 'required|alpha_dash|xss_clean');

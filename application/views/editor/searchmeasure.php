@@ -1,0 +1,1 @@
+<?php echo $search_results[0]; ?>

@@ -25,6 +25,7 @@ class Measure extends MY_Controller {
     public function analyzestring() {
         $clean_t = $this->input->post('clean_t');
         $output = $this->helpers->measure_analyzer_start($clean_t);
+        // $output = $clean_t;
         $this->output->set_content_type('application/json')->set_output(json_encode($output));
     }
 }

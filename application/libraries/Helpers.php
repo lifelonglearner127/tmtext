@@ -15,6 +15,7 @@ class Helpers {
 
     // --- ANALYZER ALGO CODE (START)
     $text = trim($clean_t);
+    // $text = preg_replace("/([a-zA-z])([^a-z ])/", "$1 $2", $text);
     $orig = $text; // ---- initial original text
     $text = strtolower($text);
     // ---- convert to array (start)
@@ -25,6 +26,7 @@ class Helpers {
     $repeats = array();
     for($s = $max_phrase_size; $s >= $min_phrase_size; $s=$s-1) {
         // --- loop through every phrase of that size
+        // for($p = 0; $p < (count($words) - $s); $p++) {
         for($p = 0; $p < (count($words) - $s); $p++) {
             // --- check to make sure the phrase doesn't end or begin with a punctuation mark
             if(preg_match("/[a-z'A-Z<>\/]+/", $words[$p]) && preg_match("/[a-zA-Z<>\/]+/", $words[$p+$s-1])) {
@@ -33,12 +35,15 @@ class Helpers {
                 $s_temp = $s;
                 $period = false;
                 for($w = 0; $w < $s_temp; $w++) {
-                    $phrase[] = $words[$p+$w];
-                    $p_str .= $words[$p+$w]." ";
-                    if(preg_match("/[^A-Za-z]/", $words[$p+$w])) {
-                        $s_temp++;
-                        if(preg_match("/[.]/", $words[$p+$w])) {
-                            $period = true;
+                    // echo $words[$p+$w]."<br />";
+                    if(gettype($words[$p+$w]) !== "undefined" && $words[$p+$w] !== null) {
+                        $phrase[] = $words[$p+$w];
+                        $p_str .= $words[$p+$w]." ";
+                        if(preg_match("/[^A-Za-z]/", $words[$p+$w])) {
+                            $s_temp++;
+                            if(preg_match("/[.]/", $words[$p+$w])) {
+                                $period = true;
+                            }
                         }
                     }
                 }
