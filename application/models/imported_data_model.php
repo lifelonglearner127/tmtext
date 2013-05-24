@@ -4,6 +4,8 @@ class Imported_data_model extends CI_Model {
 
 	var $key = '';
 	var $imported_data_attribute_id = null;
+	var $company_id;
+	var $category_id;
 	var $data = '';
 	var $created = null;
 
@@ -23,17 +25,18 @@ class Imported_data_model extends CI_Model {
         return $query->result();
     }
 
-    function insert($data, $attribute_id = null) {
+    function insert($data, $category_id = null, $attribute_id = null) {
         $this->data = $data;
         $this->key = $this->_get_key($data);
         $this->imported_data_attribute_id = $attribute_id;
+        $this->category_id = $category_id;
         $this->created = date('Y-m-d h:i:s');
 
         $this->db->insert($this->tables['imported_data'], $this);
         return $this->db->insert_id();
     }
 
-    function update($id, $data, $attribute_id = null) {
+    function update($id, $data, $category_id = null, $attribute_id = null) {
         $this->data = $data;
         $this->key = $this->_get_key($data);
         $this->imported_data_attribute_id = $attribute_id;
@@ -41,12 +44,12 @@ class Imported_data_model extends CI_Model {
         $this->db->update($this->tables['imported_data'], $this, array('id' => $id));
     }
 
-	function addDataWithAttributes($data, $attributes) {
+	function addDataWithAttributes($data, $attributes, $category_id = null) {
     	$CI =& get_instance();
 		$CI->load->model('Imported_data_attributes_model');
 
 		if ($attribute_id = $CI->Imported_data_attributes_model->insert($attributes)) {
-			return $this->insert($data, $attribute_id);
+			return $this->insert($data, $category_id, $attribute_id);
 		}
 		return false;
 	}

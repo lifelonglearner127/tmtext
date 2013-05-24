@@ -107,7 +107,7 @@ class Editor extends MY_Controller {
 							if (preg_match("/.*\.csv/i",$object->getFilename(),$matches)) {
 								$_rows = array();
 								if (($handle = fopen($name, "r")) !== FALSE) {
-									while (($row = fgets($handle)) !== false) {
+									while (($row = fgets($handle, 1000)) !== false) {
 										if (preg_match("/$s/i",$row,$matches)) {
 											$_rows[] = $row;
 										}

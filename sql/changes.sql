@@ -1,3 +1,13 @@
+# 05/24 Ruslan
+ALTER TABLE  `imported_data` ADD  `category_id` INT UNSIGNED NULL AFTER  `company_id`
+ 
+CREATE TABLE IF NOT EXISTS `categories` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(200) COLLATE utf8_unicode_ci NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
+
+# --------------------------
 CREATE TABLE IF NOT EXISTS `tag_editor_descriptions` (
  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
  `user_id` int(11) NOT NULL,
