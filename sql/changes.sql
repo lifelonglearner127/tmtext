@@ -1,5 +1,7 @@
 # 05/24 Ruslan
-ALTER TABLE  `imported_data` ADD  `category_id` INT UNSIGNED NULL AFTER  `company_id`
+ALTER TABLE  `imported_data` CHANGE  `company_id`  `company_id` INT( 11 ) NULL;
+
+ALTER TABLE  `imported_data` ADD  `category_id` INT UNSIGNED NULL AFTER  `company_id`;
  
 CREATE TABLE IF NOT EXISTS `categories` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
