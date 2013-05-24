@@ -566,4 +566,34 @@ class Ion_auth
 		}
 	}
 
+	function set_rules_to_group($group_id, $deny_controllers){
+		$access = 1;
+		$deny = 0;
+		$this->load->library('controllerlist');
+		$result = array();
+		$unused = ($this->config->item('auth_unused_controllers'))?$this->config->item('auth_unused_controllers'):array();
+
+		foreach ($this->controllerlist->getControllers() as $controller =>$arr ) {
+			if (!in_array($controller, $unused) AND !empty($deny_controllers)) {
+				foreach ($arr as $method) {
+					foreach ($deny_controllers as $deny_controller) {
+						if($deny_controller == $controller){
+							foreach ($arr as $method) {
+								$result[$controller][$method] = $deny;
+							}
+						}else{
+							$result[$controller][$method] = $access;
+						}
+					}
+				}
+			}else{
+				foreach ($arr as $method) {
+					$result[$controller][$method] = $access;
+				}
+			}
+		}
+		if(!$this->ion_auth->update_group_auth_rules($group_id, serialize($result))){
+			return 'Roles saving error';
+		}
+	}
 }

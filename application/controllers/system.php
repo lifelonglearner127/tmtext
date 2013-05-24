@@ -2,11 +2,14 @@
 
 class System extends MY_Controller {
 
+
+
 	function __construct()
  	{
   		parent::__construct();
 
 		$this->data['title'] = 'System Settings';
+		$this->data['checked_controllers'] = array('editor', 'validate', 'measure');
 
 		$this->load->library('form_validation');
 
@@ -26,6 +29,19 @@ class System extends MY_Controller {
 
 	public function system_roles()
 	{
+		$this->load->model('user_groups_model');
+		$user_groups = $this->user_groups_model->getAll();
+		$this->data['user_groups'] = $user_groups;
+		$checked = array();
+		foreach ($user_groups as $user_group) {
+			$rules = unserialize($user_group->auth_rules);
+			foreach ($this->data['checked_controllers'] as $checked_controller) {
+				if($rules[$checked_controller]['index']){
+					$checked[$user_group->id][$checked_controller] = true;
+				}
+			}
+		}
+		$this->data['checked'] = $checked;
 		$this->render();
 	}
 
@@ -248,5 +264,29 @@ class System extends MY_Controller {
 			$this->output->set_content_type('application/json')
 		        ->set_output(json_encode($response));
 		}
+	}
+
+	public function save_roles(){
+		$roles = array();
+		$response = array();
+
+		foreach ($_POST as $checkbox_name => $checkbox_value) {
+			$arr = explode('_', $checkbox_name);
+			$roles[$arr[1]][] = $arr[0];
+		}
+		foreach ($roles as $key => $value) {
+			$deny_controllers = array_diff($this->data['checked_controllers'], $value);
+			$saving_errors = $this->ion_auth->set_rules_to_group($key, $deny_controllers);
+		}
+
+		if(empty($saving_errors)){
+			$response['success'] = 1;
+			$response['message'] = 'Roles saved successfully';
+		}else{
+			$response['message'] = $saving_errors;
+		}	
+
+		$this->output->set_content_type('application/json')
+		            ->set_output(json_encode($response));
 	}
 }

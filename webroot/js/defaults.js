@@ -631,6 +631,19 @@ jQuery(document).ready(function($) {
         }
     });
 
+    $(document).on("submit", "#system_save_roles", function(e){
+        e.preventDefault();
+        var postData = $(this).serialize();
+        var url = $( this ).attr( 'action' );
+        var posting = $.post(url, postData, function(data) {
+            if(data.success == 1){
+                $( '.info-message' ).html('<p class="text-success">'+data.message+'</p>');         
+            }else{
+                $( '.info-message' ).html('<p class="text-error">'+data.message+'</p>');
+            } 
+        });
+    });
+
 });
 //var start = new Date().getMilliseconds();
 //console.log("Executed in " + (new Date().getMilliseconds() - start) + " milliseconds");

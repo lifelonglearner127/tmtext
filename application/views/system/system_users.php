@@ -40,6 +40,10 @@
 	#system_save_new_user .admin_system_content{
 		margin-left: 2.12766%;
 	}
+
+	.tab-content{
+		overflow: hidden;
+	}
 </style>
 <div class="tabbable">
   <ul class="nav nav-tabs jq-system-tabs">
@@ -84,7 +88,7 @@
 				<select id="user_role" data-placeholder="Select user role" class="chzn-select" tabindex="8" name="user_role">
 					<?php 
 					foreach ($user_groups as $user_group) {
-						print '<option value="'.$user_group->id.'">'.$user_group->name.'</option>';
+						print '<option value="'.$user_group->id.'">'.$user_group->description.'</option>';
 					}
 					 ?>
 				</select>
