@@ -601,3 +601,61 @@ p.show_ballons input{
 #measureForm{
     margin-top: 20px;
 }
+
+#research_text{
+    margin-right: 16px;
+}
+
+.research h3{
+    font-size: 20px;
+    background: #ccc;
+    margin: 0px;
+    padding-left: 10px;
+}
+#research {
+    border: 1px solid #CCCCCC;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+}
+
+#research_edit {
+    border: 1px solid #CCCCCC;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+    width:  440px;
+}
+
+.research_content {
+    padding: 10px;
+}
+.research .boxes{
+    border: 1px solid #CCCCCC;
+    height: 310px;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+}
+
+.research .boxes h3 {
+    font-size: 18px;
+    cursor: pointer;
+}
+.research .boxes p {
+    margin-left: 10px;
+}
+.research .boxes input{
+    margin-bottom: 0px;
+}
+.connectedSortable {
+    margin:0px;
+}
+
+.connectedSortable li {
+    list-style: none;
+}
+.boxes_content{
+    padding-top: 10px;
+    padding-right: 10px;
+}

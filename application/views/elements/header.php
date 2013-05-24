@@ -15,6 +15,7 @@
 	<link href="<?php echo base_url();?>css/bootstrap.css" rel="stylesheet">
 	<link href="<?php echo base_url();?>css/style.css" rel="stylesheet">
 	<link href="<?php echo base_url();?>css/chosen.css" rel="stylesheet">
+    <link href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.17/themes/base/jquery-ui.css" rel="stylesheet">
 
 	<!--[if lt IE 9]>
 		<script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
