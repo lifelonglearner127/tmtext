@@ -642,9 +642,11 @@ p.show_ballons input{
     font-size: 18px;
     cursor: pointer;
 }
+
 .research .boxes p {
     margin-left: 10px;
 }
+
 .research .boxes input{
     margin-bottom: 0px;
 }
@@ -655,7 +657,13 @@ p.show_ballons input{
 .connectedSortable li {
     list-style: none;
 }
+
 .boxes_content{
     padding-top: 10px;
     padding-right: 10px;
+}
+
+#compare_text{
+    margin-right: 15px;
+
 }

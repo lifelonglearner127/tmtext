@@ -111,18 +111,16 @@
 <div class="main_content_editor">
 <div class="row-fluid">
     <?php echo form_open('', array('id'=>'measureForm')); ?>
-        <input type="text" name="compare_text" value="UN40ES6500" id="compare_text" class="span11" placeholder=""/>
+        <input type="text" name="compare_text" value="UN40ES6500" id="compare_text" class="span8" placeholder=""/>
+        <div id="websites_first" class="dropdowns"></div>
         <button type="button" onclick="startMeasureCompare()" class="btn pull-right">Search</button>
     <?php echo form_close();?>
-</div>
-<div class="row-fluid">
-    <div id="websites_first" class="dropdowns"></div>
 </div>
 
 <!--- REAL CONTENT SECTION (START) -->
 <div id="measure_tab_pr_content">
     <div id="measure_tab_pr_content_head" class="row-fluid mt_10">
-        <div class="span9 item_title"><b class='btag_elipsis'>No Title</b></div>
+        <div class="span8 item_title"><b class='btag_elipsis'>No Title</b></div>
     </div>
 	<div class="row-fluid">            
        <div id="measure_tab_pr_content_body" class="span9 search_area uneditable-input cursor_default item_section">
