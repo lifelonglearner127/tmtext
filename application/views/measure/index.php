@@ -78,30 +78,28 @@
     }
 
     // ---- METRICS (SEO PHRASES) (END)
-
-    var ddData_first = [
-        {
-            text: "",
-            value: "Walmart.com",
-            description: "",
-            imageSrc: "<?php echo base_url(); ?>img/walmart-logo.png"
-        },
-        {
-            text: "",
-            value: "Sears.com",
-            description: "",
-            imageSrc: "<?php echo base_url(); ?>img/sears-logo.png"
-        },
-        {
-            text: "",
-            value: "TigerDirect.com",
-            description: "",
-            imageSrc: "<?php echo base_url(); ?>img/tigerdirect-logo.png"
-        },
-    ];
-
     $(document).ready(function () {
-        $('#websites_first').ddslick({
+        var ddData_first = [
+            {
+                text: "",
+                value: "Walmart.com",
+                description: "",
+                imageSrc: "<?php echo base_url(); ?>img/walmart-logo.png"
+            },
+            {
+                text: "",
+                value: "Sears.com",
+                description: "",
+                imageSrc: "<?php echo base_url(); ?>img/sears-logo.png"
+            },
+            {
+                text: "",
+                value: "TigerDirect.com",
+                description: "",
+                imageSrc: "<?php echo base_url(); ?>img/tigerdirect-logo.png"
+            },
+        ];
+        $('#measure_dropdown').ddslick({
             data: ddData_first,
             defaultSelectedIndex: 0
         });
@@ -112,7 +110,7 @@
 <div class="row-fluid">
     <?php echo form_open('', array('id'=>'measureForm')); ?>
         <input type="text" name="compare_text" value="UN40ES6500" id="compare_text" class="span8" placeholder=""/>
-        <div id="websites_first" class="dropdowns"></div>
+        <div id="measure_dropdown" class="dropdowns"></div>
         <button type="button" onclick="startMeasureCompare()" class="btn pull-right">Search</button>
     <?php echo form_close();?>
 </div>
@@ -143,7 +141,7 @@
                 <div class="ProdQuestions prtHid" id="hideProductQuesLink">Do you have questions about this product? <a onclick="s_objectID=&quot;http://www.walmart.com/ip/Sony-55-Class-LED-1080p-60Hz-HDTV-2-3-8-ultra-slim-KDL-55EX640/20593825_36&quot;;return this.s_oc?this.s_oc(e):true" href="#Q%26A+Exchange">Ask a question</a>.</div> -->
             </div>
         </div>
-        <div class="span3" style="width:195px; margin-top: -80px;" id="attributes_metrics">
+        <div class="span3" style="width:195px; margin-top: -45px;" id="attributes_metrics">
             <h3>Metrics</h3>
             <ul>
                 <li><a href="#">Site Metrics</a></li>

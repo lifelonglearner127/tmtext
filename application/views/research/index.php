@@ -1,27 +1,27 @@
-<script>
-    var ddData_first = [
-        {
-            text: "",
-            value: "Walmart.com",
-            description: "",
-            imageSrc: "<?php echo base_url(); ?>img/walmart-logo.png"
-        },
-        {
-            text: "",
-            value: "Sears.com",
-            description: "",
-            imageSrc: "<?php echo base_url(); ?>img/sears-logo.png"
-        },
-        {
-            text: "",
-            value: "TigerDirect.com",
-            description: "",
-            imageSrc: "<?php echo base_url(); ?>img/tigerdirect-logo.png"
-        },
-    ];
-
+<script type="text/javascript">
     $(document).ready(function () {
-        $('#websites_first').ddslick({
+        var ddData_first = [
+            {
+                text: "",
+                value: "Walmart.com",
+                description: "",
+                imageSrc: "<?php echo base_url(); ?>img/walmart-logo.png"
+            },
+            {
+                text: "",
+                value: "Sears.com",
+                description: "",
+                imageSrc: "<?php echo base_url(); ?>img/sears-logo.png"
+            },
+            {
+                text: "",
+                value: "TigerDirect.com",
+                description: "",
+                imageSrc: "<?php echo base_url(); ?>img/tigerdirect-logo.png"
+            },
+        ];
+
+        $('#research_dropdown').ddslick({
             data: ddData_first,
             defaultSelectedIndex: 0
         });
@@ -36,7 +36,7 @@
     <div class="row-fluid">
         <?php echo form_open('', array('id'=>'measureForm')); ?>
         <input type="text" id="research_text" name="research_text" value="UN40E6400" class="span8 " placeholder=""/>
-        <div id="websites_first" class="dropdowns"></div>
+        <div id="research_dropdown"></div>
         <button type="button" class="btn pull-right">Search</button>
         <?php echo form_close();?>
     </div>

@@ -560,10 +560,11 @@ a.gray_out {
 
 .dd-option-image, .dd-selected-image {
     max-width: 100px!important;
+    height: 28px;
 }
 
 a.dd-selected, a.dd-option{
-    padding: 5px!important;
+    padding: 0px!important;
 }
 
 
