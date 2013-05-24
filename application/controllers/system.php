@@ -77,9 +77,12 @@ class System extends MY_Controller {
 
 	public function csv_import() {
 		$this->load->model('imported_data_model');
+		$this->load->model('imported_data_parsed_model');
+		$this->load->model('category_model');
 
 		$_rows = array(); $i = 0;
 
+		$header_replace = $this->config->item('csv_header_replace');
 		// Find all unique lines in files
 		foreach(explode("\n",trim($this->system_settings['csv_directories'])) as $_path) {
 			if ($path = realpath($_path)) {
@@ -88,11 +91,82 @@ class System extends MY_Controller {
 					if ($object->isFile()) {
 						$path_parts = pathinfo($object->getFilename());
 						if ( in_array($path_parts['extension'], array('csv')) ) {
+
+							// Parse company name
+							/*
+							  	categoryname.csv 								([^_\-]*)
+								categoryname_20130521.csv 						([^_\-]*)_(\d*)
+								sitename_xxxxxx_categoryname.csv 				([^_\-]*)_([^_\-]*)_([^_\-0-9]*)
+								sitename_xxxxxx_categoryname_20130521.csv 		([^_\-]*)_([^_\-]*)_([^_\-]*)_(\d*)
+								sitename_categoryname.csv						([^_\-]*)_([^_\-0-9]*)
+								sitename_categoryname_20130521.csv				([^_\-]*)_([^_\-]*)_(\d*)
+								sitename - categoryname -xxxxxx.csv				([^_\-\s]*)\s*-\s*([^_\-\s]*)\s*-\s*([^_\-\s]*)
+								sitename - categoryname -xxxxxx-20130521.csv 	([^_\-\s]*)\s*-\s*([^_\-\s]*)\s*-\s*([^_\-\s]*)\s*-\s*(\d*)
+							*/
+							$category =''; $header = array();
+							if ( preg_match('/^([^_\-]*)$/', $path_parts['filename'], $matches) && isset($matches[0][0]) ) {
+								$category = $matches[1];
+							} else
+							if (preg_match('/^([^_\-]*)_(\d*)$/', $path_parts['filename'], $matches)) {
+								$category = $matches[1];
+							} else if (preg_match('/^([^_\-]*)_([^_\-]*)_([^_\-0-9]*)$/', $path_parts['filename'], $matches)) {
+								$category = $matches[3];
+							} else if (preg_match('/^([^_\-]*)_([^_\-]*)_([^_\-]*)_(\d*)$/', $path_parts['filename'], $matches)) {
+								$category = $matches[3];
+							} else if (preg_match('/^([^_\-]*)_([^_\-0-9]*)$/', $path_parts['filename'], $matches)) {
+								$category = $matches[2];
+							} else if (preg_match('/^([^_\-]*)_([^_\-]*)_(\d*)$/', $path_parts['filename'], $matches)) {
+								$category = $matches[2];
+							} else if (preg_match('/^([^_\-\s]*)\s*-\s*([^_\-\s]*)\s*-\s*([^_\-]*)$/', $path_parts['filename'], $matches)) {
+								$category = $matches[2];
+							} else if (preg_match('/^([^_\-\s]*)\s*-\s*([^_\-\s]*)\s*-\s*([^_\-\s]*)\s*-\s*(\d*)$/', $path_parts['filename'], $matches)) {
+								$category = $matches[2];
+							}
+
 							if (($handle = fopen($name, "r")) !== FALSE) {
-								while (($row = fgets($handle)) !== false) {
+								$first_line = true;
+								while (($parsed = fgetcsv($handle, 2000, ",", "\"")) !== false) {
+									$continue = false;
+									// first line is a header?
+									if ($first_line) {
+										$first_line = false;
+
+										foreach($parsed as &$col) {
+											if ( in_array(strtolower($col),array('url','product name', 'description')) ) {
+												$continue = true;
+											}
+											if (isset($header_replace[$col])) {
+												$col = $header_replace[$col];
+											}
+										}
+
+									}
+									if ($continue) {
+										$header = $parsed;
+										continue;
+									}
+
+									$parsed_tmp = $parsed;
+									foreach($parsed_tmp as &$col) {
+										$col = '"'.str_replace('"','\"', $col).'"';
+									}
+									$row = implode(',',$parsed_tmp);
+
 									$key = $this->imported_data_model->_get_key($row); $i++;
 									if (!array_key_exists($key, $_rows)) {
-										$_rows[$key] = $row;
+										$_rows[$key] = array(
+											'row'=>$row,
+											'category' => $category
+										);
+										// add parsed data
+										if (!empty($header)) {
+											foreach( $header as $i=>$h ){
+												if (!empty($h)) {
+													$_rows[$key]['parsed'][$h] = $parsed[$i];
+												}
+											}
+										}
+
 									}
 								}
 							}
@@ -107,9 +181,22 @@ class System extends MY_Controller {
 		// Compare all rows with database rows
 		if (!empty($_rows)) {
 			$this->imported_data_model->db->trans_start();
-			foreach ($_rows as $key=>$row) {
+			foreach ($_rows as $key=>$arr) {
 				if (!$this->imported_data_model->findByKey($key)) {
-					$this->imported_data_model->insert($row);
+					if (!empty($arr['category'])) {
+						if ( ($category_id = $this->category_model->getIdByName($arr['category'])) == false ) {
+							$category_id  = $this->category_model->insert($arr['category']);
+						}
+						$imported_id = $this->imported_data_model->insert($arr['row'], $category_id);
+					} else {
+						$imported_id = $this->imported_data_model->insert($arr['row']);
+					}
+
+					if (isset($arr['parsed'])) {
+						foreach($arr['parsed'] as $key=>$value) {
+							$this->imported_data_parsed_model->insert($imported_id, $key, $value);
+						}
+					}
 					$imported_rows++;
 				}
 			}

@@ -403,6 +403,11 @@ $config['generators_cmd'] = array(
 	'python_generator' => 'cd '.$config['cmd_path'].'; '.$config['python_cmd']
 );
 
+
+$config['csv_header_replace'] = array(
+	'Features - List Form'=>'Long_Description',
+);
+
 // allow the local environment to override the settings
 if (file_exists(APPPATH.'config/config.local.php')) {
 	@require_once APPPATH.'config/config.local.php';
