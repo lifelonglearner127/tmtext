@@ -1,6 +1,7 @@
 <script>
     
     // ---- METRICS (SEO PHRASES) (START)
+    var tmp_dumm = 'Samsung UN40ES6500 40 Class LED 3D HDTV The Samsung UN40ES6500 40 Class LED 3D HDTV Samsung UN40ES6500 40 Class LED 3D HDTV The Samsung UN40ES6500 40 Class LED 3D HDTV';
     var measureAnalyzerBaseUrl = "<?php echo base_url(); ?>index.php/measure/analyzestring";
     var editorSearchBaseUrl = "<?php echo base_url(); ?>index.php/editor/searchmeasure";
 
@@ -56,7 +57,7 @@
                 $("#measure_tab_pr_content_body").html(data);
                 $("#measure_tab_pr_content_head .item_title b").text(title);
                 // ---- fill up DOM (end)
-                var analyzer = $.post(measureAnalyzerBaseUrl, { clean_t: str }, 'json').done(function(a_data) {
+                var analyzer = $.post(measureAnalyzerBaseUrl, { clean_t: tmp_dumm }, 'json').done(function(a_data) {
                     $("#metrics_seo_phrases").nextAll().remove(); // --- clean up previous seo phrases
                     // --- collect and insert incoming seo phrases (start)
                     var seo_items = "";

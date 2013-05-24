@@ -26,7 +26,6 @@ class Helpers {
     $repeats = array();
     for($s = $max_phrase_size; $s >= $min_phrase_size; $s=$s-1) {
         // --- loop through every phrase of that size
-        // for($p = 0; $p < (count($words) - $s); $p++) {
         for($p = 0; $p < (count($words) - $s); $p++) {
             // --- check to make sure the phrase doesn't end or begin with a punctuation mark
             if(preg_match("/[a-z'A-Z<>\/]+/", $words[$p]) && preg_match("/[a-zA-Z<>\/]+/", $words[$p+$s-1])) {
@@ -59,6 +58,7 @@ class Helpers {
     }
 
     $final_repeats = array();
+    // die(\var_dump($repeats));
     foreach($repeats as $phrase => $pos) {
         if($repeats[$phrase][0] > 1 && count($pos) > 2) { // --- collect phrase which appears more then one time 
             // --- find phrase in original text (start)
