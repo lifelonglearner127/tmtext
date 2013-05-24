@@ -3,7 +3,7 @@ var products = '';
 var attribs = '';
 var rev = [];
 var search_id = undefined;
-var sentence = '';
+var sentence = new Array();
 var desc_input = '';
 var action = '';
 
@@ -120,6 +120,20 @@ function collectGallery(postData, v) {
     return postData;
 }
 
+function htmlspecialchars(str) {
+    if (typeof(str) == "string") {
+        str = str.replace(/&/g, "&amp;"); /* must do &amp; first */
+        str = str.replace(/"/g, "&quot;");
+        str = str.replace(/'/g, "&#039;");
+        str = str.replace(/</g, "&lt;");
+        str = str.replace(/>/g, "&gt;");
+    }
+    return str;
+}
+
+
+
+
 jQuery(document).ready(function($) {
 
     wrapper();
@@ -234,20 +248,18 @@ jQuery(document).ready(function($) {
             desc_input = products[current_product-1];
 
             if($('#textarea ul').html()!=undefined){
-
                 var str = '';
-                if(sentence !== ''){
-                    var arr = sentence.split('.');
-                    for(var i=0; i < arr.length;i++){
-                        if(arr[i] != ' '){
-                            str += '<li><span>'+arr[i]+'</span><a hef="#" class="ui-icon-trash">x</a></li>';
-                        }
-                    }
+                for(var i=0; i< sentence.length; i++){
+                    str += '<li><span>'+sentence[i]+'</span><a hef="#" class="ui-icon-trash">x</a></li>';
                 }
                 descriptionDiv.html('<ul id="desc" class="desc_title desc">'+str+'<li><span class="current_product">'+
                     products[current_product-1]+'</span><a hef="#" class="ui-icon-trash">x</a></li></ul>').trigger('change');
             } else {
-                descriptionDiv.html(sentence+' '+products[current_product-1]).trigger('change');
+                var str = '';
+                for(var i=0; i< sentence.length; i++){
+                    str += sentence[i]+' ';
+                }
+                descriptionDiv.html(str+' '+products[current_product-1]).trigger('change');
             }
 
             moveSentence();
@@ -280,7 +292,11 @@ jQuery(document).ready(function($) {
             //description = $('.new_product').find('textarea[name="description"]').val();
             description = $('.new_product #textarea').text();
         } else {
-            description = sentence + ' ' +description;
+            var str = '';
+            for(var i=0; i<sentence.length; i++){
+                str += sentence[i];
+            }
+            description = str + ' ' +description;
         }
 
         var url =  $('#attributesForm').attr( 'action' ).replace('attributes', 'validate');
@@ -387,29 +403,34 @@ jQuery(document).ready(function($) {
 
     $(document).on("click", "button#use", function(){
         if($('#textarea ul').html() != undefined) {
-            var str = '';
             $('.new_product #textarea li').each(function(){
-
                 if($(this).find('span').text()!='' && $(this).find('span').text()!=undefined){
-                    str += ' '+$(this).find('span').text()+' ';
+                    el = $(this).find('span').text().replace('current_product', '')+' ';
                 }
             });
-            sentence = str.replace('current_product', '');
         } else {
-            sentence = $('.new_product #textarea').text()+' ';
+            if(sentence.length > 0) {
+                var el = $('.new_product #textarea').text();
+                for(var i=0; i< sentence.length; i++){
+                    el = htmlspecialchars(el).replace(htmlspecialchars(sentence[i]), '');
+                }
+            } else {
+                el = $('.new_product #textarea').text();
+            }
         }
+        sentence.push(el);
         return false;
     });
 
     $(document).on("click", "button#new_clear", function(){
-        sentence = '';
+        sentence = new Array();
         if (current_product!==undefined && current_product!==0) {
             current_product = 1;
             var description = $('.new_product').find('textarea[name="description"]');
             var descriptionDiv = $('.new_product #textarea');
             description.val(products[current_product-1]);
             if($('input[type=checkbox]').is(':checked')) {
-                descriptionDiv.html('<ul id="desc" class="desc_title desc">'+sentence+' '+'<li><span class="current_product">'+
+                descriptionDiv.html('<ul id="desc" class="desc_title desc"><li><span class="current_product">'+
                     products[current_product-1]+'</span><a hef="#" class="ui-icon-trash">x</a></li>').trigger('change');
             } else {
                 descriptionDiv.html(products[current_product-1]);
@@ -605,8 +626,10 @@ jQuery(document).ready(function($) {
                 // the checkbox was checked
                 var descriptionDiv = $('.new_product #textarea');
                 var str = '';
-                if(sentence != '' ){
-                    str = '<li>'+sentence+'<a hef="#" class="ui-icon-trash">x</a></li>';
+                if(sentence.length>0){
+                    for(var i=0; i<sentence.length; i++){
+                        str += "<li>"+sentence[i]+"<a hef='#' class='ui-icon-trash'>x</a></li>";
+                    }
                 }
                 fulltext = '<ul id="desc" class="desc_title desc">'+str+'<li>' +
                     '<span class="current_product">'+desc_input+'</span><a hef="#" class="ui-icon-trash">x</a></li></ul>';
