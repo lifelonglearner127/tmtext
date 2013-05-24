@@ -116,8 +116,6 @@
 </div>
 <div class="row-fluid">
     <div id="websites_first" class="dropdowns"></div>
-    <div id="websites_second" class="dropdowns"></div>
-    <div id="websites_third" class="dropdowns"></div>
 </div>
 
 <!--- REAL CONTENT SECTION (START) -->
