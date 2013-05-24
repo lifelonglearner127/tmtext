@@ -57,6 +57,7 @@ class System extends MY_Controller {
 
 	public function save()
 	{
+		$response = array();
 		$this->form_validation->set_rules('settings[site_name]', 'Site name', 'required|xss_clean');
 		$this->form_validation->set_rules('settings[company_name]', 'Company name', 'required|xss_clean');
 		$this->form_validation->set_rules('settings[csv_directories]', 'CSV Directories', 'required|xss_clean');
@@ -65,8 +66,6 @@ class System extends MY_Controller {
 		$this->form_validation->set_rules('settings[java_cmd]', 'Java tools', 'required|xss_clean');
 		$this->form_validation->set_rules('settings[python_input]', 'Python input', 'required|xss_clean');
 		$this->form_validation->set_rules('settings[java_input]', 'Java input', 'required|xss_clean');
-		$this->form_validation->set_rules('settings[title_length]', 'Default Title', 'required|integer|xss_clean');
-		$this->form_validation->set_rules('settings[description_length]', 'Description Length', 'required|integer|xss_clean');
 
 		if ($this->form_validation->run() === true) {
 			$settings = $this->input->post('settings');
@@ -84,11 +83,39 @@ class System extends MY_Controller {
 				}
 			}
 			$this->settings_model->db->trans_complete();
+			$response['success'] = 1;
+			$response['message'] =  'Settings vas saved successfully';
 		} else {
-			$this->session->set_flashdata('message', (validation_errors()) ? validation_errors() : $this->session->flashdata('message'));
-
+			$response['message'] =  (validation_errors()) ? validation_errors() : '';
 		}
-		redirect('system/index?ajax=true');
+		$this->output->set_content_type('application/json')
+		        ->set_output(json_encode($response));
+	}
+
+	public function save_account_deafults()
+	{
+		$response = array();
+		$this->form_validation->set_rules('settings[title_length]', 'Default Title', 'required|integer|xss_clean');
+		$this->form_validation->set_rules('settings[description_length]', 'Description Length', 'required|integer|xss_clean');
+
+		$response['message'] =  'ping';
+		if ($this->form_validation->run() === true) {
+			$settings = $this->input->post('settings');
+
+			$this->settings_model->db->trans_start();
+			foreach ($settings as $key=>$value) {
+				if (!$this->settings_model->update_system_value($key,$value)) {
+					$this->settings_model->create_system($key, $value, $key);
+				}
+			}
+			$this->settings_model->db->trans_complete();
+			$response['success'] = 1;
+			$response['message'] =  'Settings vas saved successfully';
+		} else {
+			$response['message'] =  (validation_errors()) ? validation_errors() : 'Saving error';
+		}
+		$this->output->set_content_type('application/json')
+		        ->set_output(json_encode($response));
 	}
 
 	public function csv_import() {

@@ -8,7 +8,7 @@
 		<div class="tab-content">
 			<div id="tab1" class="tab-pane active">
 
-				<div id="info"><?php echo $message;?></div>
+				<div class="info-message"></div>
 				<?php echo form_open("system/save", array("class"=>"form-horizontal", "id"=>"system_save"));?>
 					<h3>Original Descriptions:</h3>
 					<div class="row-fluid">

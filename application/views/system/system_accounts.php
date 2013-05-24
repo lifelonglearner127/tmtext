@@ -36,10 +36,11 @@
   </ul>
   <div class="tab-content">
     <div id="tab2" class="tab-pane active">
+    	 <?php echo form_open("system/save_account_deafults", array("class"=>"form-horizontal", "id"=>"system_save_account_defaults"));?>
 		<div class="row-fluid">
 			<div class="span9">
 				<h3>New Account Defaults:</h3>
-			    <form class="form-horizontal" id="new_account_defaults">
+				<div class="info-message"></div>
 			    <div class="control-group">
 				    <label class="control-label" for="account_title">Title:</label>
 				    <div class="controls">
@@ -99,10 +100,7 @@
 			    </div>
 			</div>
 		</div>
+		<?php echo form_close();?>
     </div>
   </div>
 </div>
-
-
-
-

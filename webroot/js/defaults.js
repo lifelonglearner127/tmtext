@@ -576,8 +576,11 @@ jQuery(document).ready(function($) {
 
         var url = $( this ).attr( 'action' );
         var posting = $.post(url+"?ajax=true", postData, function(data) {
-                var response_data = $.parseJSON( data );
-                $('.main_content_other').html(response_data.ajax_data);
+                if(data.success == 1){
+                    $( '.info-message' ).html('<p class="text-success">'+data.message+'</p>');         
+                }else{
+                    $( '.info-message' ).html('<p class="text-error">'+data.message+'</p>');
+                }
             });
     });
 
@@ -665,6 +668,20 @@ jQuery(document).ready(function($) {
                 $( '.info-message' ).html('<p class="text-error">'+data.message+'</p>');
             } 
         });
+    });
+
+    $(document).on("submit", "#system_save_account_defaults", function(e){
+        e.preventDefault();
+        var postData = collectGallery( $(this).serialize() , 'settings' );
+
+        var url = $( this ).attr( 'action' );
+        var posting = $.post(url, postData, function(data) {
+                if(data.success == 1){
+                    $( '.info-message' ).html('<p class="text-success">'+data.message+'</p>');         
+                }else{
+                    $( '.info-message' ).html('<p class="text-error">'+data.message+'</p>');
+                } 
+            });
     });
 
 });
