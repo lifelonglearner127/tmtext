@@ -98,63 +98,13 @@
             imageSrc: "<?php echo base_url(); ?>img/tigerdirect-logo.png"
         },
     ];
-    var ddData_second = [
-        {
-            text: "",
-            value: "Sears.com",
-            description: "",
-            imageSrc: "<?php echo base_url(); ?>img/sears-logo.png"
-        },
-        {
-            text: "",
-            value: "Walmart.com",
-            description: "",
-            imageSrc: "<?php echo base_url(); ?>img/walmart-logo.png"
-        },
-        {
-            text: "",
-            value: "TigerDirect.com",
-            description: "",
-            imageSrc: "<?php echo base_url(); ?>img/tigerdirect-logo.png"
-        },
-    ];
-    var ddData_third = [
-        {
-            text: "",
-            value: "TigerDirect.com",
-            description: "",
-            imageSrc: "<?php echo base_url(); ?>img/tigerdirect-logo.png"
-        },
-        {
-            text: "",
-            value: "Walmart.com",
-            description: "",
-            imageSrc: "<?php echo base_url(); ?>img/walmart-logo.png"
-        },
-        {
-            text: "",
-            value: "Sears.com",
-            description: "",
-            imageSrc: "<?php echo base_url(); ?>img/sears-logo.png"
-        },
-    ];
 
-$(document).ready(function () {
-    $('#websites_first').ddslick({
-        data: ddData_first,
-        defaultSelectedIndex: 0
+    $(document).ready(function () {
+        $('#websites_first').ddslick({
+            data: ddData_first,
+            defaultSelectedIndex: 0
+        });
     });
-
-    $('#websites_second').ddslick({
-        data: ddData_second,
-        defaultSelectedIndex: 0
-    });
-
-    $('#websites_third').ddslick({
-        data: ddData_third,
-        defaultSelectedIndex: 0
-    });
-});
 </script>
 <div class="main_content_other"></div>
 <div class="main_content_editor">
