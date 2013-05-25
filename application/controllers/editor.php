@@ -150,6 +150,46 @@ class Editor extends MY_Controller {
 		$this->load->view('editor/searchmeasure', $data);
 	}
 
+	public function searchmeasuredb() {
+		$s = $this->input->post('s');
+
+		$data = array(
+			'search_flag' => '',
+			'search_results' => array()
+		);
+
+		$this->load->model('imported_data_parsed_model');
+		$files_data_flag = false;
+		$data_import = $this->imported_data_parsed_model->getByValueLikeGroup($s);
+		if($data_import !== false) { // ---- DB DATA
+			if(count($data_import) > 0) {
+				$res = array('product_name' => '', 'short_desc' => '', 'long_desc' => '', 'url' => '');
+				foreach ($data_import as $k => $v) {
+					if(isset($v['key']) && isset($v['value'])) {
+						switch ($v['key']) {
+							case 'Description':
+								$res['short_desc'] = $v['value']; 
+								break;
+							case 'Long_Description':
+								$res['long_desc'] = $v['value'];
+								break;
+							case 'Product Name':
+								$res['product_name'] = $v['value'];
+								break;
+							case 'URL':
+								$res['url'] = $v['value'];
+								break;
+						}
+					}
+				}
+				$data['search_results'] = $res;
+				$data['search_flag'] = 'db';
+			}
+		}
+
+		$this->load->view('editor/searchmeasure', $data);
+	}
+
 	public function search()
 	{
 		$this->form_validation->set_rules('s', 'Search', 'required|alpha_dash|xss_clean');

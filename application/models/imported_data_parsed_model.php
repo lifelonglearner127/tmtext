@@ -22,6 +22,21 @@ class Imported_data_parsed_model extends CI_Model {
         return $query->result();
     }
 
+    function getByValueLikeGroup($s) {
+        $this->db->select('imported_data_id, key, value');
+        $this->db->like('value', $s);
+        $this->db->group_by('imported_data_id');
+        $res = $this->db->get($this->tables['imported_data_parsed']);
+        if($res->num_rows() > 0) {
+            $result = $res->result_array();
+            $im_data_id = $result[0]['imported_data_id'];
+
+            $query = $this->db->where('imported_data_id', $im_data_id)->get($this->tables['imported_data_parsed']);
+            return $query->result_array();
+        }
+        return false;
+    }
+
     function insert($imported_id, $key, $value) {
         $this->key = $key;
         $this->value = $value;
