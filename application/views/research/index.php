@@ -28,7 +28,10 @@
         $( "#sortable1, #sortable2" ).sortable({
             connectWith: ".connectedSortable"
         }).disableSelection();
+
         $( "ul#sortable1 li.boxes, ul#sortable2 li.boxes" ).resizable();
+
+        $("#related_keywords").resizable({minWidth: 418, maxWidth:418});
     });
 </script>
 <div class="main_content_other"></div>
@@ -37,7 +40,7 @@
         <?php echo form_open('', array('id'=>'measureForm')); ?>
         <input type="text" id="research_text" name="research_text" value="UN40E6400" class="span8 " placeholder=""/>
         <div id="research_dropdown"></div>
-        <button type="button" class="btn pull-right">Search</button>
+        <button type="button" class="btn pull-right btn-success">Search</button>
         <?php echo form_close();?>
     </div>
     <div class="clear"></div>
@@ -56,7 +59,7 @@
                 </select>
         </div>
         <div class="span4">
-            Boxes:
+            Batch:
             <select name="text">
                 <option value="text1">text1</option>
                 <option value="text2">text2</option>
@@ -73,7 +76,7 @@
                     <h3>Results</h3>
                     <div class="boxes_content"></div>
                 </li>
-                <li class="boxes mt_10">
+                <li class="boxes mt_10" id="related_keywords">
                     <h3>Related keywords</h3>
                     <div class="boxes_content"></div>
                 </li>

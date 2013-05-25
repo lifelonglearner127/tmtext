@@ -1,6 +1,6 @@
 <?php
 $menu = array(
-    array('controller' => 'research', 'name' => 'Research & edit'),
+    array('controller' => 'research', 'name' => 'Research & Edit'),
 	array('controller' => 'editor', 'name' => 'Create'),
     array('controller' => 'validate', 'name' => 'Validate'),
     array('controller' => 'measure', 'name' => 'Analysis'),

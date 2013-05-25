@@ -633,14 +633,16 @@ p.show_ballons input{
 }
 .research .boxes{
     border: 1px solid #CCCCCC;
-    height: 310px;
+    min-height: 100px;
     -webkit-border-radius: 5px;
     -moz-border-radius: 5px;
     border-radius: 5px;
 }
-
+#research_edit h3, #research h3{
+    font-size: 16px;
+}
 .research .boxes h3 {
-    font-size: 18px;
+    font-size: 14px!important;
     cursor: pointer;
 }
 
