@@ -305,10 +305,10 @@ jQuery(document).ready(function($) {
         $('#tageditor_content #items_list li').each(function(){
                 if($(this).attr('class') != 'hidden_class'){
                     if($(this).find('input').val()!=undefined){                        
-                        arr += $(this).find('input').val();                        
+                        arr += $(this).find('input').val();
                     } else {
-                        arr += $(this).text();   
-                    }                    
+                        arr += $(this).text();
+                    }
                     arr += '\n';
                 }                
         });

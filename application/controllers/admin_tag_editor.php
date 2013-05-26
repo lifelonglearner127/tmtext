@@ -23,39 +23,47 @@ class Admin_Tag_Editor extends MY_Controller {
 
     public function index()
     {
-        $this->data['files'] = $this->file_list();
+        $this->data['category_list'] = $this->category_list();
         $this->data['tagrules_data'] = $this->file_data($this->data['files'][0]);
         $this->render();
     }
 
-    public function file_list()
+    public function category_list()
     {
-        $file_list = array();
-        $files_path = $this->config->item('tag_rules_dir');
-        if ($path = realpath($files_path)) {
-            $objects = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path), RecursiveIteratorIterator::SELF_FIRST);
-            foreach ($objects as $name => $object){
-                if (!$object->isDir()) {
-                    $filename = str_replace('.dat', '', $object->getFilename());
-                    array_push($file_list, $filename);
-                }
-            }
+        $this->load->model('category_model');
+        $categories = $this->category_model->getAll();
+        $category_list = array();
+        foreach($categories as $category){
+            array_push($category_list, $category->name);
         }
-        return $file_list;
+        return $category_list;
+
     }
 
     public function file_data($filename = '')
     {
+        $this->load->model('category_model');
+        $this->load->model('tag_editor_rules_model');
         if($filename == ''){
             $filename = $this->input->post('filename');
         }
-        $path = $this->config->item('tag_rules_dir').'/'.$filename.'.dat';
-        $lines = explode("\n", file_get_contents($path));
+        $category_id = $this->category_model->getIdByName($filename);
+
         $data = array();
-        foreach($lines as $key => $line){
-            if($line != ''){ 
-                array_push($data, '<span>'. $line . '</span>');
-            }            
+        if($category_id > 0) {
+            $results = $this->tag_editor_rules_model->getAllByCategoryId($category_id);
+            foreach($results as $result){
+                array_push($data, '<span>'. $result->rule . '</span>');
+            }
+        } else {
+            $path = $this->config->item('tag_rules_dir').'/'.$filename.'.dat';
+            $lines = explode("\n", file_get_contents($path));
+            $data = array();
+            foreach($lines as $key => $line){
+                if($line != ''){
+                    array_push($data, '<span>'. $line . '</span>');
+                }
+            }
         }
         if(isset($_POST) && !empty($_POST)) {
             echo ul($data, array('id' => 'items_list'));
@@ -63,7 +71,7 @@ class Admin_Tag_Editor extends MY_Controller {
             return $data;
         }
     }
-
+    
     public function get_product_description()
     {
         $description = array();
@@ -94,8 +102,21 @@ class Admin_Tag_Editor extends MY_Controller {
 
     public function save_file_data()
     {
+        $this->load->model('category_model');
+        $this->load->model('tag_editor_rules_model');
         if($this->input->post('filename')!=''){
             $filename = $this->input->post('filename');
+
+            $category_id = $this->category_model->getIdByName($filename);
+            if($category_id == false) {
+                $category_id = $this->category_model->insert($filename);
+            }
+            $this->tag_editor_rules_model->delete($category_id);
+            foreach(explode("\n", $this->input->post('data')) as $line) {
+                if($line != ''){
+                    $this->tag_editor_rules_model->insert( $line, $category_id);
+                }
+            }
             $path = $this->config->item('tag_rules_dir').'/'.$filename.'.dat';
             file_put_contents($path, $this->input->post('data'));
         }

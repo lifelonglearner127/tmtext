@@ -1,3 +1,15 @@
+# 05/26 Tatiana <-- start
+CREATE TABLE IF NOT EXISTS `tag_editor_rules` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `rule` text CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `category_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `created` datetime NOT NULL,
+  `modified` datetime NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=34 ;
+# 05/26 --> end
+
 # 05/24 Andrew <-- start
 DELETE FROM `tmeditor.dev`.`groups` WHERE `groups`.`id` = 2;
 

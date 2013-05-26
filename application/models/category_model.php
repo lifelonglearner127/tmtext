@@ -13,6 +13,13 @@ class Category_model extends CI_Model {
         parent::__construct();
     }
 
+    function getAll()
+    {
+        $query = $this->db->get($this->tables['categories']);
+
+        return $query->result();
+    }
+
     function get($id)
     {
         $query = $this->db->where('id', $id)
