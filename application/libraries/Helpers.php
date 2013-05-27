@@ -7,6 +7,64 @@ class Helpers {
 
   }
 
+  public function measure_analyzer_start_v2($clean_t) { // !!! EXPREIMENTAL !!!
+    $clean_t = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $clean_t);
+    $text = strtolower($clean_t);
+
+    // ---- convert to array (start)
+    $words = explode(" ", $text); // !!! LOOP TARGET !!!
+    $orig = explode(" ", $clean_t);
+    $overall_words_count = count($words);
+    // ---- convert to array (end)
+
+    $res_stack = array();
+    for($l = 6; $l >= 1; $l--) {
+        for($i = 0, $j = $l; $j < $overall_words_count; $i++, $j++) {
+            // --- PREPARE PHRASE STRING FOR CHECK
+            $w = "";
+            for($k = $i; $k <= $j; $k++ ) {
+                $w = $w.$words[$k]." "; 
+            }
+            $w = substr($w, 0, strlen($w)-1);
+            // --- CHECK OUT STRING DUPLICATIONS
+            $r = substr_count($text, $w);
+            if($r > 1) {
+                $mid = array(
+                    "ph" => trim($w),
+                    "count" => $r,
+                    "ph_length" => strlen($w)  
+                );
+                $res_stack[] = $mid;
+            }
+        }
+    }
+
+    // --- sort final result (start)
+    $ph_length = array();
+    foreach ($res_stack as $key => $row) {
+        $ph_length[$key] = $row['ph_length'];
+    }
+    array_multisort($ph_length, SORT_DESC, $res_stack);
+    // --- sort final result (end)
+
+    $res_stack = array_unique($res_stack, SORT_REGULAR);
+
+    // -- FILTER  OUT SUBSETS (START)
+    foreach ($res_stack as $key => $value) {
+        $inv_str = $value['ph'];
+        // ----  CHECK OUT VALUE (START)
+        foreach ($res_stack as $ka => $va) {
+            if(($va['ph'] !== $inv_str) && strlen($va['ph']) > strlen($inv_str) && strpos($va['ph'], $inv_str) !== false) {
+                unset($res_stack[$key]);
+            } 
+        }
+        // ----  CHECK OUT VALUE (END)
+    }
+    // -- FILTER  OUT SUBSETS (END)
+
+    return $res_stack;
+  }
+
   public function measure_analyzer_start($clean_t) {
     // --- analyzer config (start)
     $min_phrase_size = 2;

@@ -26,40 +26,34 @@
                         $("#measure_tab_pr_content_head .item_title b").html(title_section);
                     }
 
-                    var short_desc_an = $("#details-short-desc").html();
-                    short_desc_an = short_desc_an.replace(/\s+/g, ' ');
-                    short_desc_an = short_desc_an.trim();
-
+                    // --- LONG DESC ANALYZER
                     var long_desc_an = $("#details-long-desc").html();
                     long_desc_an = long_desc_an.replace(/\s+/g, ' ');
                     long_desc_an = long_desc_an.trim();
-
-                    // --- SHORT DESC ANALYZER
-                    var analyzer_short = $.post(measureAnalyzerBaseUrl, { clean_t: short_desc_an }, 'json').done(function(a_data) {
-                        var seo_items = "<li class='long_desc_sep'>Short Description:</li>";
-                        if(a_data.length > 0) {
-                            var top_style = "";
-                            for(var i = 0; i < a_data.length; i++) {
-                                if(i == 0) {
-                                    top_style = "style='margin-top: 5px;'";
-                                }
-                                seo_items += "<li class='word_wrap_li' " + top_style + ">" + a_data[i]['ph'] + " (" + a_data[i]['count'] + ")</li>";
+                    var analyzer_long = $.post(measureAnalyzerBaseUrl, { clean_t: long_desc_an }, 'json').done(function(a_data) {
+                        var seo_items = "<li class='long_desc_sep'>Long Description:</li>";
+                        var top_style = "";
+                        for(var i in a_data) {
+                            if(i == 0) {
+                                top_style = "style='margin-top: 5px;'";
                             }
+                            seo_items += "<li class='word_wrap_li' " + top_style + ">" + a_data[i]['ph'] + " (" + a_data[i]['count'] + ")</li>";
                         }
                         $(seo_items).insertAfter($("#metrics_seo_phrases"));
                     });
 
-                    // --- LONG DESC ANALYZER
-                    var analyzer_long = $.post(measureAnalyzerBaseUrl, { clean_t: long_desc_an }, 'json').done(function(a_data) {
-                        var seo_items = "<li class='long_desc_sep'>Long Description:</li>";
-                        if(a_data.length > 0) {
-                            var top_style = "";
-                            for(var i = 0; i < a_data.length; i++) {
-                                if(i == 0) {
-                                    top_style = "style='margin-top: 5px;'";
-                                }
-                                seo_items += "<li class='word_wrap_li' " + top_style + ">" + a_data[i]['ph'] + " (" + a_data[i]['count'] + ")</li>";
+                    // --- SHORT DESC ANALYZER
+                    var short_desc_an = $("#details-short-desc").html();
+                    short_desc_an = short_desc_an.replace(/\s+/g, ' ');
+                    short_desc_an = short_desc_an.trim();
+                    var analyzer_short = $.post(measureAnalyzerBaseUrl, { clean_t: short_desc_an }, 'json').done(function(a_data) {
+                        var seo_items = "<li class='long_desc_sep'>Short Description:</li>";
+                        var top_style = "";
+                        for(var i in a_data) {
+                            if(i == 0) {
+                                top_style = "style='margin-top: 5px;'";
                             }
+                            seo_items += "<li class='word_wrap_li' " + top_style + ">" + a_data[i]['ph'] + " (" + a_data[i]['count'] + ")</li>";
                         }
                         $(seo_items).insertAfter($("#metrics_seo_phrases"));
                     });
