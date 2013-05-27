@@ -25,6 +25,16 @@
 	font-weight: bold;
 }
 
+/* Keywords Metrics (analysis) (start) */
+.keywords_metrics_bl span {
+
+}
+.keywords_metrics_bl textarea {
+	width: 100%;
+	resize: none;
+}
+/* Keywords Metrics (analysis) (end) */
+
 /* Login container style */
 
 body{

@@ -120,12 +120,24 @@
         <div class="span3" style="width:195px; margin-top: -45px;" id="attributes_metrics">
             <h3>Metrics</h3>
             <ul>
-                <li><a href="#">Site Metrics</a></li>
+                <li><a href="javascript:void(0)">Site Metrics</a></li>
                 <li>Alexa: 156</li>
                 <li>SKUs: 1,278,400</li>
                 <li>&nbsp;</li>
-                <li><a href="#">Page Metrics</a></li>
+                <li><a href="javascript:void(0)">Page Metrics</a></li>
                 <li>SKU: KDL-55EX640</li>
+                <li>&nbsp;</li>
+                <li><a href="javascript:void(0)">Keywords Metrics</a></li>
+                <li class='keywords_metrics_bl'>
+                    <span>Primary:</span><textarea id="km_primary_edit"></textarea>
+                </li>
+                <li class='keywords_metrics_bl'>
+                    <span>Secondary:</span><textarea id="km_secondary_edit"></textarea>
+                </li>
+                <li class='keywords_metrics_bl'>
+                    <span>Tertiary:</span><textarea id="km_tertiary_edit"></textarea>
+                </li>
+                <li class='keywords_metrics_bl'><button type='button' class='btn btn-primary'>Update</button></li>
                 <li>&nbsp;</li>
                 <!-- <li id="metrics_seo_phrases"><a href='javascript:void(0)'>SEO Phrases</a>&nbsp;<button type='button' onclick="phrasesAnalysis()" class='btn btn-primary btn-small'>re-start</button></li> -->
                 <li id="metrics_seo_phrases"><a href='javascript:void(0)'>SEO Phrases</a></li>
