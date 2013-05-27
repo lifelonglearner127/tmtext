@@ -98,7 +98,7 @@
 <div class="main_content_other"></div>
 <div class="main_content_editor">
 <div class="row-fluid">
-    <?php echo form_open('', array('id'=>'measureForm')); ?>
+    <?php echo form_open('', array('id'=>'measureFormMetrics')); ?>
         <!-- <input type="text" name="compare_text" value="UN40ES6500" id="compare_text" class="span8" placeholder=""/> -->
         <input type="text" name="compare_text" value="Samsung" id="compare_text" class="span8" placeholder=""/>
         <div id="measure_dropdown" class="dropdowns"></div>
@@ -129,13 +129,13 @@
                 <li>&nbsp;</li>
                 <li><a href="javascript:void(0)">Keywords Metrics</a></li>
                 <li class='keywords_metrics_bl'>
-                    <span>Primary:</span><textarea id="km_primary_edit"></textarea>
+                    <span>Primary:</span><textarea id="km_primary_edit" disabled='true'>X% Y%</textarea>
                 </li>
                 <li class='keywords_metrics_bl'>
-                    <span>Secondary:</span><textarea id="km_secondary_edit"></textarea>
+                    <span>Secondary:</span><textarea id="km_secondary_edit" disabled='true'>X% Y%</textarea>
                 </li>
                 <li class='keywords_metrics_bl'>
-                    <span>Tertiary:</span><textarea id="km_tertiary_edit"></textarea>
+                    <span>Tertiary:</span><textarea id="km_tertiary_edit" disabled='true'>X% Y%</textarea>
                 </li>
                 <li class='keywords_metrics_bl'><button type='button' class='btn btn-primary'>Update</button></li>
                 <li>&nbsp;</li>
