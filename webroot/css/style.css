@@ -624,6 +624,7 @@ p.show_ballons input{
     -webkit-border-radius: 5px;
     -moz-border-radius: 5px;
     border-radius: 5px;
+    margin: 5px;
 }
 
 #research_edit {
@@ -632,6 +633,7 @@ p.show_ballons input{
     -moz-border-radius: 5px;
     border-radius: 5px;
     width:  440px;
+    margin: 5px;
 }
 
 .research_content {
@@ -670,9 +672,23 @@ p.show_ballons input{
 .boxes_content{
     padding-top: 10px;
     padding-right: 10px;
+    overflow: hidden;
+}
+
+.boxes_content .row-fluid label{
+    margin-left: 10px;
+    float: left;
+    margin-right: 10px;
 }
 
 #compare_text{
     margin-right: 15px;
 
+}
+
+#keywords span{
+    display: block;
+    float: left;
+    padding-top: 5px;
+    width: 80px;
 }

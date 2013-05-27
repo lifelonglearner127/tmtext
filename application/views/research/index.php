@@ -27,11 +27,47 @@
         });
         $( "#sortable1, #sortable2" ).sortable({
             connectWith: ".connectedSortable"
-        }).disableSelection();
+        });
+        
+        $( "#research, #research_edit" ).draggable({containment: "#main"});
 
         $( "ul#sortable1 li.boxes, ul#sortable2 li.boxes" ).resizable();
 
         $("#related_keywords").resizable({minWidth: 418, maxWidth:418});
+        
+        $(document).on("keydown change", 'textarea[name="short_description"]', function() {
+            var number = 0;
+            var matches = $(this).val().match(/\b/g);
+            if(matches) {
+                number = matches.length/2;
+            }
+
+            var _limit = $('input[name="description_length"]').val();
+
+            if (number>_limit) {
+                var limited = $.trim($(this).val()).split(" ", _limit);
+                limited = limited.join(" ");
+                $(this).val(limited);
+            }
+            $('#wc').html(number);
+        });
+        
+        $(document).on("keydown change", 'textarea[name="long_description"]', function() {
+            var number = 0;
+            var matches = $(this).val().match(/\b/g);
+            if(matches) {
+                number = matches.length/2;
+            }
+
+            var _limit = $('input[name="long_description_length"]').val();
+
+            if (number>_limit) {
+                var limited = $.trim($(this).val()).split(" ", _limit);
+                limited = limited.join(" ");
+                $(this).val(limited);
+            }
+            $('#wc1').html(number);
+        });
     });
 </script>
 <div class="main_content_other"></div>
@@ -50,6 +86,8 @@
                     <option value="10">10</option>
                     <option value="20">20</option>
                     <option value="50">50</option>
+                    <option value="50">100</option>
+                    <option value="50">200</option>
                  </select>
             results in category
                 <select name="category">
@@ -69,7 +107,7 @@
         <button type="button" class="btn pull-right">Export</button>
     </div>
     <div class="row-fluid" id="main">
-        <div class="span6" id="research">
+        <div class="span6" id="research" class="connectedMoved"> 
             <h3>Research</h3>
             <ul class="research_content connectedSortable" id="sortable1">
                 <li class="boxes">
@@ -86,12 +124,16 @@
                 </li>
             </ul>
         </div>
-        <div class="span6" id="research_edit">
+        <div class="span6" id="research_edit" class="connectedMoved">
             <h3>Edit</h3>
             <ul class="research_content connectedSortable" id="sortable2">
-                <li class="boxes">
+                <li class="boxes" id="keywords">
                     <h3>Keywords</h3>
-                    <div class="boxes_content"></div>
+                    <div class="boxes_content">
+                        <p><span>Primary:</span><input type="text" name="primary"/></p>
+                        <p><span>Secondary:</span><input type="text" name="secondary"/></p>
+                        <p><span>Text:</span><input type="text" name="txt"/></p>                       
+                    </div>
                 </li>
 
                 <li class="boxes mt_10 ">
@@ -102,12 +144,25 @@
                         </p>
                         <p><label>Meta title:</label><input type="text" name="meta_title" /></p>
                         <p><label>Meta description:</label><input type="text" name="meta_description" /></p>
-                        <p><label>Meta keywords:</label><input type="text" name="meta_keywords" /></p>
+                        <p><button type="button" class="btn pull-right">Generate</button>
+                            <label>Meta keywords:</label><input type="text" name="meta_keywords" /></p>
                     </div>
                 </li>
                 <li class="boxes mt_10">
                     <h3>Descriptions</h3>
-                    <div class="boxes_content"></div>
+                    <div class="boxes_content">
+                        <div class="row-fluid"><label>Short description:</label>
+                             <button type="button" class="btn" style="float:left;">Generate</button>
+                             <label><span id="wc">0</span> words</label>
+                             <input type="hidden" name="description_length" value="50" class="span3"/>
+                           <textarea type="text" name="short_description" class="span10 mt_10"></textarea>
+                        </div>
+                        <div class="row-fluid"><label>Long description:</label>
+                           <input type="hidden" name="long_description_length" value="100" class="span3"/>
+                           <label><span id="wc1">0</span> words</label>
+                           <textarea type="text" name="long_description" class="span10"></textarea>
+                        </div>
+                    </div>
                 </li>
             </ul>
         </div>
