@@ -77,7 +77,7 @@ $("#user_mail").autocomplete({
 		<div class="row-fluid">
 		    <div class="control-group">
 			    <div class="controls align_center">
-					<button id="btn_system_new_user" class="btn new_btn btn-primary" type="submit"><i class="icon-white icon-file"></i>&nbsp;New</button>
+					<button id="btn_system_new_user" class="btn new_btn btn-primary" type="submit"><i class="icon-white icon-file"></i>&nbsp;Create</button>
 				    <button id="btn_system_update_user" class="btn btn-success" disabled type="submit"><i class="icon-white icon-ok"></i>&nbsp;Update</button>
 			    </div>
 		    </div>
