@@ -172,5 +172,35 @@ class Admin_Tag_Editor extends MY_Controller {
 
     }
 
+    public function import_rules()
+    {
+        $this->load->model('category_model');
+        $this->load->model('tag_editor_rules_model');
+        $dir = $this->config->item('tag_rules_dir');
+        if (is_dir($dir)) {
+            if ($dh = opendir($dir)) {
+                while (($file = readdir($dh)) !== false) {
+                   if($file != '.' && $file != '..'){
+                       $category_name = str_replace('.dat', '', $file);
+                       $category_id = $this->category_model->getIdByName($category_name);
+                       $path = $this->config->item('tag_rules_dir').'/'.$file;
+                       if(file_exists($path)){
+                           $lines = explode("\n", file_get_contents($path));
+                           foreach($lines as $key => $line){
+                               if($line != ''){
+                                   if($category_id == false){
+                                       $category_id = $this->category_model->insert($category_name);
+                                   }
+                                   $this->tag_editor_rules_model->insert($line, $category_id);
+                               }
+                           }
+                       }
+                   }
+                }
+                closedir($dh);
+            }
+        }
+    }
+
 
 }
