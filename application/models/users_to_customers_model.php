@@ -19,6 +19,14 @@ class Users_To_Customers_model extends CI_Model {
 
         return $query->result();
     }
+    
+    function getByUserId($user_id){
+        $query = $this->db
+                      ->where('user_id', $user_id)
+                      ->get($this->tables['users_to_customers']);
+
+        return $query->result();
+    }
 
     function getAll()
     {
@@ -35,6 +43,12 @@ class Users_To_Customers_model extends CI_Model {
 
         $query = $this->db->insert('users_to_customers', $data);
 
+        return $query;
+    }
+
+    function delete($user_id, $customer_id){
+        $query = $this->db->where('user_id', $user_id)->where('customer_id', $customer_id)->delete($this->tables['users_to_customers']);
+    
         return $query;
     }
 }

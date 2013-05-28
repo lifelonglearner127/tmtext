@@ -131,8 +131,38 @@ function htmlspecialchars(str) {
     return str;
 }
 
+function cleanNewUserForm(){
+    $( "#user_name" ).val('');
+    $( "#user_mail" ).val('');
+    $( "#user_password" ).val('');
+    $( "#user_customers" ).val('').trigger("liszt:updated");
+    $( "#user_role" ).val('').trigger("liszt:updated");
+    $( ".user_id" ).html(''); 
+    $( ".user_active" ).prop('checked', true);
+    $( '#btn_system_update_user' ).attr('disabled', 'disabled');
+}
 
+function afterAutocomplete(loadData){
 
+    var postData = {id: loadData.item.id};
+    var posting = $.post('/index.php/auth/getUserById', postData, function(data) {
+        cleanNewUserForm();
+        console.log(data.active);
+        $("#user_name").val(data.username);
+        $("#user_mail").val(data.email);
+        $("#user_customers").val(data.customers).trigger("liszt:updated");
+        $("#user_role").val(data.role.group_id).trigger("liszt:updated");
+        if(data.active == 1){
+            $(".user_active").prop('checked', true);
+            console.log($(".user_active"));
+        }else{
+            $(".user_active").prop('checked', false);
+             console.log($(".user_active"));
+        };
+        $('<input type="hidden" name="user_id" id="user_id" value="'+data.id+'" />').appendTo('.user_id');
+        $( '#btn_system_update_user' ).removeAttr('disabled');
+    });
+}
 
 jQuery(document).ready(function($) {
 
@@ -604,15 +634,34 @@ jQuery(document).ready(function($) {
         });
     });
 
-    $(document).on("submit", "#system_save_new_user", function(e){
+    $(document).on("click", "#btn_system_new_user", function(e){
         e.preventDefault();
-        var postData = $(this).serialize();
-        var url = $( this ).attr( 'action' );
+        if($("#user_id").length>0){
+            cleanNewUserForm();
+        }
+        else
+        {   
+            var postData = $( "#system_save_new_user" ).serialize();
+            var url = $( "#system_save_new_user" ).attr( 'action' );
+            var posting = $.post(url, postData, function(data) {
+                if(data.success == 1){
+                    cleanNewUserForm();
+                    $( '.info-message' ).html('<p class="text-success">'+data.message+'</p>');
+                }else{
+                    $( '.info-message' ).html(data.message);
+                    $( '.info-message p' ).addClass('text-error');
+                }
+            });
+        }
+    });
+
+    $(document).on("click", "#btn_system_update_user", function(e){
+        e.preventDefault();
+        var postData = $( "#system_save_new_user" ).serialize();
+        var url = '/index.php/system/update_user';
         var posting = $.post(url, postData, function(data) {
             if(data.success == 1){
-                $( "#system_save_new_user input" ).val('');
-                $("#user_customers").val('').trigger("liszt:updated");
-                $("#user_role").val('').trigger("liszt:updated");
+                cleanNewUserForm();
                 $( '.info-message' ).html('<p class="text-success">'+data.message+'</p>');
             }else{
                 $( '.info-message' ).html(data.message);
@@ -683,7 +732,6 @@ jQuery(document).ready(function($) {
                 } 
             });
     });
-
 });
 //var start = new Date().getMilliseconds();
 //console.log("Executed in " + (new Date().getMilliseconds() - start) + " milliseconds");

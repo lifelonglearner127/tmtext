@@ -1,50 +1,23 @@
-<script>
-	$("#user_customers").chosen();
-	$("#user_role").chosen();
+<script type="text/javascript">
+$("#user_customers").chosen();
+$("#user_role").chosen();
+$("#user_name").autocomplete({
+    source: '/index.php/system/jqueryAutocomplete?column=username',
+    minChars: 2,
+    deferRequestBy: 300,
+    select: function(event, ui){
+        afterAutocomplete(ui);
+    }
+});
+$("#user_mail").autocomplete({
+    source: '/index.php/system/jqueryAutocomplete?column=email',
+    minChars: 2,
+    deferRequestBy: 300,
+    select: function(event, ui){
+        afterAutocomplete(ui);
+    }
+});
 </script>
-<style>
-	
-	.chzn-container-multi .chzn-choices{
-		min-height: 28px;
-		border: 1px solid #CCCCCC;
-		border-radius: 4px;
-	}
-
-	.chzn-container-multi  .chzn-choices .search-field input{
-		min-height: 28px;
-		font-size: 14px !important;
-	}
-
-	.chzn-container-single .chzn-single{
-		font-size: 14px;
-		background: none;
-		min-height: 28px;
-		border: 1px solid #CCCCCC;
-		border-radius: 4px;
-		line-height: 28px;
-		color: #555555;
-	}
-
-	.chzn-container-multi .chzn-choices .search-choice{
-		background: none repeat scroll 0 0 #FBFBFB;
-	    border: 1px solid #CCCCCC;
-	    border-radius: 4px 4px 4px 4px;
-	    cursor: pointer;
-	    height: 18px;
-		line-height: 18px;
-	}
-	
-	.chzn-container-multi .chzn-choices .search-choice a{
-		margin-top: 2px;
-	}
-	#system_save_new_user .admin_system_content{
-		margin-left: 2.12766%;
-	}
-
-	.tab-content{
-		overflow: hidden;
-	}
-</style>
 <div class="tabbable">
   <ul class="nav nav-tabs jq-system-tabs">
 	<li class=""><a data-toggle="tab" href="<?php echo site_url('system');?>">General</a></li>
@@ -58,22 +31,22 @@
      	<?php echo form_open("system/save_new_user", array("class"=>"form-horizontal", "id"=>"system_save_new_user"));?>
 		<div class="row-fluid">
 			<div class="span9 admin_system_content">
-				<p>Name :</p>
+				<p>Name:</p>
 				<input type="text" id="user_name" name="user_name" placeholder="Name" value="">
 				<div class="clear-fix"></div>
 			</div>
 			<div class="span9 admin_system_content">
-				<p>Email :</p>
+				<p>Email:</p>
 				<input type="text" id="user_mail" name="user_mail" placeholder="Email">
 				<div class="clear-fix"></div>
 			</div>
 			<div class="span9 admin_system_content">
-				<p>Password :</p>
+				<p>Password:</p>
 				<input type="text" id="user_password" name="user_password" placeholder="Password">
 				<div class="clear-fix"></div>
 			</div>
 			<div class="span9 admin_system_content aclist">
-				<p>Customers :</p>
+				<p>Customers:</p>
 		        <select id="user_customers" data-placeholder="Click to select customers" multiple class="chzn-select" tabindex="8" name="user_customers[]">
 					<?php 
 					foreach ($customers as $customer) {
@@ -84,7 +57,7 @@
 				<div class="clear-fix"></div>
 			</div>
 			<div class="span9 admin_system_content aclist">
-				<p>Role :</p>
+				<p>Role:</p>
 				<select id="user_role" data-placeholder="Select user role" class="chzn-select" tabindex="8" name="user_role">
 					<?php 
 					foreach ($user_groups as $user_group) {
@@ -95,16 +68,17 @@
 				<div class="clear-fix"></div>
 			</div>
 			<div class="span9 admin_system_content">
-				<p>Active :</p>
-				<input type="checkbox" id="user_active" name="user_active">
+				<p>Active:</p>
+				<input type="checkbox" class="user_active" name="user_active" checked="checked">
 				<div class="clear-fix"></div>
 			</div>
+			<div class="user_id"></div>
 		</div>
 		<div class="row-fluid">
 		    <div class="control-group">
 			    <div class="controls align_center">
-					<button class="btn new_btn btn-primary" type="submit"><i class="icon-white icon-file"></i>&nbsp;New</button>
-				    <button class="btn btn-success" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Update</button>
+					<button id="btn_system_new_user" class="btn new_btn btn-primary" type="submit"><i class="icon-white icon-file"></i>&nbsp;New</button>
+				    <button id="btn_system_update_user" class="btn btn-success" disabled type="submit"><i class="icon-white icon-ok"></i>&nbsp;Update</button>
 			    </div>
 		    </div>
 		</div>
