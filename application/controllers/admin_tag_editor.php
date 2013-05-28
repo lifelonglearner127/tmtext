@@ -191,7 +191,9 @@ class Admin_Tag_Editor extends MY_Controller {
                                    if($category_id == false){
                                        $category_id = $this->category_model->insert($category_name);
                                    }
-                                   $this->tag_editor_rules_model->insert($line, $category_id);
+                                   if( $this->tag_editor_rules_model->getByRule($line, $category_id) == false) {
+                                       $this->tag_editor_rules_model->insert($line, $category_id);
+                                   }
                                }
                            }
                        }
