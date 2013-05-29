@@ -696,9 +696,52 @@ p.show_ballons input{
 
 }
 
+<<<<<<< HEAD
 #keywords span{
     display: block;
     float: left;
     padding-top: 5px;
     width: 80px;
+=======
+.chzn-container-multi .chzn-choices{
+	min-height: 28px;
+	border: 1px solid #CCCCCC;
+	border-radius: 4px;
+}
+
+.chzn-container-multi  .chzn-choices .search-field input{
+	min-height: 28px;
+	font-size: 14px !important;
+}
+
+.chzn-container-single .chzn-single{
+	font-size: 14px;
+	background: none;
+	min-height: 28px;
+	border: 1px solid #CCCCCC;
+	border-radius: 4px;
+	line-height: 28px;
+	color: #555555;
+}
+
+.chzn-container-multi .chzn-choices .search-choice{
+	background: none repeat scroll 0 0 #FBFBFB;
+    border: 1px solid #CCCCCC;
+    border-radius: 4px 4px 4px 4px;
+    cursor: pointer;
+    height: 18px;
+	line-height: 18px;
+}
+
+.chzn-container-multi .chzn-choices .search-choice a{
+	margin-top: 2px;
+}
+
+#system_save_new_user .admin_system_content{
+	margin-left: 2.12766%;
+}
+
+.tab-content{
+	overflow: hidden;
+>>>>>>> 3d3c12378136b72949bed81f615108c633321861
 }

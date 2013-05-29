@@ -111,25 +111,36 @@ jQuery(document).ready(function($) {
         }        
     });
 
-    $(document).on("change", "select[name='filename']", function(){
-        $.post('admin_tag_editor/file_data', { filename: $("select[name='filename'] option:selected").text() })
+    $(document).on("change", "select[name='category']", function(){
+        $.post('admin_tag_editor/file_data', { category: $("select[name='category'] option:selected").text() })
             .done(function(data) {
                 $('#tageditor_content #items').html(data);
+                $("#tageditor_description").trigger("ready");
             });
-    });    
-    $("select[name='filename']").trigger("change");
-    
+    });
+    $("select[name='category']").trigger("change");
+
     $(document).on("ready", "#tageditor_description", function(){
-        $.post('admin_tag_editor/get_product_description', {})
+        $.post('admin_tag_editor/get_product_description', {category: $("select[name='category'] option:selected").text()})
             .done(function(data) {
                 var type = typeof data;
                 if (type == "object") {
-                    var arr = data[0].description.split('\n');
                     var str = '<ul>';
-                    for(var i=0; i<arr.length; i++){
-                        if(arr[i] != ''){
-                            str += '<li class="row">'+arr[i]+'\n</li>';
-                        }                        
+                    if(data.length == 1){
+                        var arr = data[0].description.split('\n');
+                        for(var i=0; i<arr.length; i++){
+                            if(arr[i] != ''){
+                                str += '<li class="row">'+arr[i]+'\n</li>';
+                            }
+                        }
+                    } else {
+                        for(var i=0; i < data.length; i++){
+                            for(var j=0; j<data[i].length; j++){
+                                if(data[i][j].description != ''){
+                                    str += '<li class="row">'+data[i][j].description+'\n</li>';
+                                }
+                            }
+                        }
                     }
                     str += '</ul>';
                     $('#tageditor_description').html(str);
@@ -137,22 +148,23 @@ jQuery(document).ready(function($) {
                 }  else if (type == "string") {
                     $('#tageditor_description').html(data);
                     $('#standart_description').html(data);
-                }                                
-        });
+                }
+            });
         return false;
-    });  
+    });
+
     $("#tageditor_description").trigger("ready");
     /*---------------------------Buttons---------------------------------*/
-    
-    $("a#delete_category").fancybox({ 'beforeShow': function(){ $('#category_name').text($("select[name='filename'] option:selected").text()); } });
+
+    $("a#delete_category").fancybox({ 'beforeShow': function(){ $('#category_name').text($("select[name='category'] option:selected").text()); } });
 
     $(document).on("click", "button#yes", function(){
-        $.post('admin_tag_editor/delete_file', { filename: $("select[name='filename'] option:selected").text() })
+        $.post('admin_tag_editor/delete_file', { category: $("select[name='category'] option:selected").text() })
             .done(function(data) {
                 $.fancybox.close();
-                $("select[name='filename'] option:selected").remove();
-                $("select[name='filename']").trigger('change');
-        });
+                $("select[name='category'] option:selected").remove();
+                $("select[name='category']").trigger('change');
+            });
         return false;
     });
 
@@ -164,17 +176,18 @@ jQuery(document).ready(function($) {
     $(document).on("click", "button#create", function(){
         if($('input[name="new_file"]').val() !='' ){
             var cat_exist = 0;
-            $('select[name="filename"] option').each(function(){
+            $("#tageditor_description").html('');
+            $('select[name="category"] option').each(function(){
                  if($(this).text() == $('input[name="new_file"]').val()){
                      cat_exist = 1;
                  }
             });
             if(cat_exist == 0){
-                $('select[name="filename"]').append('<option selected="selected">'+$('input[name="new_file"]').val()+'</option>');
+                $('select[name="category"]').append('<option selected="selected">'+$('input[name="new_file"]').val()+'</option>');
                 $('#tageditor_content #items_list').empty();
                 $("#tageditor_content button#new").trigger('click');
                 var arr = new Array();
-                $.post('admin_tag_editor/save_file_data', { data: arr, filename: $('input[name="new_file"]').val() })
+                $.post('admin_tag_editor/save_file_data', { data: arr, category: $('input[name="new_file"]').val() })
                     .done(function(data) {
                     });
                 return false;
@@ -312,7 +325,7 @@ jQuery(document).ready(function($) {
                     arr += '\n';
                 }                
         });
-        $.post('admin_tag_editor/save_file_data', { data: arr, filename: $("select[name='filename'] option:selected").text() })
+        $.post('admin_tag_editor/save_file_data', { data: arr, category: $("select[name='category'] option:selected").text() })
             .done(function(data) {
         });
         return false;
@@ -324,7 +337,7 @@ jQuery(document).ready(function($) {
     });
 
     $(document).on("click", "button#save_desc", function(){
-        $.post('admin_tag_editor/save', { description: $('#tageditor_description').text() })
+        $.post('admin_tag_editor/save', { description: $('#tageditor_description').text(), category: $("select[name='category'] option:selected").text() })
             .done(function(data) {
                 $('#standart_description').html($('#tageditor_description').text());
         });
@@ -332,7 +345,7 @@ jQuery(document).ready(function($) {
     });
 
     $(document).on("click", "button#delete_desc", function(){
-        $.post('admin_tag_editor/delete', { description: $('#tageditor_description').text() })
+        $.post('admin_tag_editor/delete', { description: $('#tageditor_description').text(), category: $("select[name='category'] option:selected").text() })
             .done(function(data) {
                 $('#tageditor_description').empty();
             });

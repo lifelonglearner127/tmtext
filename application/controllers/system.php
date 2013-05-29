@@ -311,9 +311,125 @@ class System extends MY_Controller {
 			$response['message'] = 'Roles saved successfully';
 		}else{
 			$response['message'] = $saving_errors;
-		}	
+		}
 
 		$this->output->set_content_type('application/json')
 		            ->set_output(json_encode($response));
+	}
+
+	public function jqueryAutocomplete(){
+		$userQuery = $this->input->get('term');
+		$searchColumn = $this->input->get('column');
+		$columns = array('username', 'email');
+		if(in_array($searchColumn, $columns)){
+			$answer = $this->ion_auth->getUserLike($searchColumn, $userQuery);
+			$response = array();
+			foreach ($answer as $row) {
+				$response[] = array('id' => $row['id'], 'value' => $row[$searchColumn]);
+			}
+			$this->output->set_content_type('application/json')
+			        ->set_output(json_encode($response));
+		}
+	}
+
+	public function update_user()
+	{
+		$this->load->model('users_to_customers_model');
+		$this->load->model('user_groups_model');
+		$response = array();
+		$response['success'] = 1;
+		$new_data = array();
+		$user_id = $this->input->post('user_id');
+		$old_user_info = $this->ion_auth->user($user_id)->result_array();
+		$old_user_group = $this->user_groups_model->getRoleByUserId($user_id);
+		$customers = $this->users_to_customers_model->getByUserId($user_id);
+		$old_customers = array();
+		foreach ($customers as $customer) {
+			$old_customers[] = $customer->customer_id;
+		}
+
+		if($old_user_info[0]['username'] != $this->input->post('user_name')){
+			$this->form_validation->set_rules('user_name', 'User name', 'required|xss_clean|is_unique[users.username]');
+			$new_data['username'] = strtolower($this->input->post('user_name'));
+		}
+
+		if($old_user_info[0]['email'] != $this->input->post('user_mail')){
+			$this->form_validation->set_rules('user_mail', 'User mail', 'required|valid_email|is_unique[users.email]');
+			$new_data['email'] = $this->input->post('user_mail');
+		}
+
+		$new_password = $this->input->post('user_password');
+		if(!empty($new_password)){
+			$this->form_validation->set_rules('user_password', 'User password','required|min_length[' . $this->config->item('min_password_length', 'ion_auth') . ']|max_length[' . $this->config->item('max_password_length', 'ion_auth') . ']');
+			$new_data['password'] = $this->input->post('user_password');
+		}
+
+		$this->form_validation->set_rules('user_role', 'User role', 'required|xss_clean]');
+
+		if ($this->form_validation->run() == true)
+		{
+			$new_customers = $this->input->post('user_customers');
+			$new_group = $this->input->post('user_role');
+			$active = $this->input->post('user_active');
+
+			if(!empty($new_data)){
+				$this->ion_auth->update($user_id, $new_data);
+			}
+
+			if($old_user_group[0]->group_id != $new_group){
+				$this->ion_auth->remove_from_group($old_user_group[0]->group_id, $user_id);
+				$this->ion_auth->add_to_group($new_group, $user_id);
+			}
+
+			$add_customers = array_diff($new_customers, $old_customers);
+			$delete_customers = array_diff($old_customers, $new_customers);
+
+			if(empty($new_customers)){
+				foreach ($old_customers as $customer) {
+					$this->users_to_customers_model->delete($user_id, $customer);
+				}
+			}
+			if(!empty($add_customers)){
+				foreach ($add_customers as $customer) {
+					$this->users_to_customers_model->set($user_id, $customer);
+				}
+			}
+			if(!empty($delete_customers)){
+				foreach ($delete_customers as $customer) {
+					$this->users_to_customers_model->delete($user_id, $customer);
+				}
+			}
+
+			if((empty($active))){
+				$this->ion_auth->deactivate($user_id);
+			}else{
+				$this->ion_auth->activate($user_id);
+			}
+
+
+			$response['message'] = 'User updated successfully';
+			$this->output->set_content_type('application/json')
+		        ->set_output(json_encode($response));
+		}
+		else
+		{
+			$response['success'] = false;
+			$response['message'] = validation_errors();
+			$this->output->set_content_type('application/json')
+		        ->set_output(json_encode($response));
+		}
+	}
+
+	function upload_csv() {
+		$this->load->library('UploadHandler');
+
+		$this->output->set_content_type('application/json');
+		$this->uploadhandler->upload(array(
+            'script_url' => site_url('system/upload_csv'),
+            'upload_dir' => $this->config->item('csv_upload_dir'),
+            'param_name' => 'files',
+            'delete_type' => 'POST',
+			'accept_file_types' => '/.+\.csv$/i',
+		));
 	}
 }

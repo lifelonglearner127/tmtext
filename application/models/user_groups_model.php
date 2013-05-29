@@ -3,7 +3,8 @@
 class User_Groups_model extends CI_Model {
 
     var $tables = array(
-    	'groups' => 'groups'
+    	'groups' => 'groups',
+        'users_groups' => 'users_groups'
     );
 
     function __construct()
@@ -16,6 +17,15 @@ class User_Groups_model extends CI_Model {
     	$query = $this->db->where('id', $id)
                     ->limit(1)
                     ->get($this->tables['groups']);
+
+        return $query->result();
+    }
+
+    function getRoleByUserId($user_id){
+        $query = $this->db
+                      ->select('group_id')
+                      ->where('user_id', $user_id)
+                      ->get($this->tables['users_groups']);
 
         return $query->result();
     }

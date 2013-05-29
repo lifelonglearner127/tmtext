@@ -80,6 +80,7 @@
         <?php echo form_close();?>
     </div>
     <div class="clear"></div>
+<<<<<<< HEAD
     <div class="row-fluid mt_10">
         <div class="span7">
             Show <select name="result_amount" style="width:50px;">
@@ -89,22 +90,34 @@
                     <option value="50">100</option>
                     <option value="50">200</option>
                  </select>
+=======
+    <div class="row-fluid">
+        <div class="span6">
+            Show <select class="mt_10" style="width:50px;" name="result_amount">
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+            </select>
+>>>>>>> 3d3c12378136b72949bed81f615108c633321861
             results in category
-                <select name="category">
-                    <option value="category1">category1</option>
-                    <option value="category2">category2</option>
-                    <option value="category3">category3</option>
-                </select>
+            <select class="mt_10" name="category">
+                <option value="category1">category1</option>
+                <option value="category2">category2</option>
+                <option value="category3">category3</option>
+            </select>
         </div>
-        <div class="span4">
+        <div class="span6">
             Batch:
-            <select name="text">
+            <select class="mt_10" style="width: 100px;" name="text">
                 <option value="text1">text1</option>
                 <option value="text2">text2</option>
                 <option value="text3">text3</option>
             </select>
+            <button class="btn" type="button" style="margin-left:5px; margin-right: 10px;">Export</button>
+            Add new: <input type="text" class="mt_10" style="width:80px" name="new_batch">
+            <button class="btn" type="button" style="margin-left:5px">New</button>
         </div>
-        <button type="button" class="btn pull-right">Export</button>
+
     </div>
     <div class="row-fluid" id="main">
         <div class="span6" id="research" class="connectedMoved"> 

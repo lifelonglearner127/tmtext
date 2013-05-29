@@ -2089,4 +2089,9 @@ class Ion_auth_model extends CI_Model
 		return TRUE;
 	}
 
+	public function getUserLike($column, $userQuery){
+		$query = $this->db->select('id, username, email')->like($column, $userQuery)->get('users');
+		return $query->result_array();
+	}
+
 }

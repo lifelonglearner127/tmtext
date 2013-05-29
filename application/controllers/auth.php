@@ -844,4 +844,26 @@ class Auth extends MY_Controller {
 		}
 	}
 
+	function getUserById(){
+		$this->load->model('users_to_customers_model');
+		$this->load->model('user_groups_model');
+		if ($this->ion_auth->logged_in() AND $this->ion_auth->is_admin())
+		{
+			$user_id = $this->input->get_post('id');
+			$user = $this->ion_auth->user($user_id)->result_array();
+			$customers = $this->users_to_customers_model->getByUserId($user_id);
+			$custommersArray = array();
+			foreach ($customers as $customer) {
+				$custommersArray[] = $customer->customer_id;
+			}
+			$user[0]['customers'] = $custommersArray;
+			$role = $this->user_groups_model->getRoleByUserId($user_id);
+			$user[0]['role'] = $role[0];
+			unset($user[0]['password']);
+			unset($user[0]['ip_address']);
+			$this->output->set_content_type('application/json')
+			        ->set_output(json_encode($user[0]));
+		}
+	}
+
 }
