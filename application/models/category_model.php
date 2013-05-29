@@ -5,7 +5,9 @@ class Category_model extends CI_Model {
     var $name = '';
 
     var $tables = array(
-        'categories' => 'categories'
+        'categories' => 'categories',
+        'imported_data' => 'imported_data',
+        'imported_data_parsed' => 'imported_data_parsed',
     );
 
     function __construct()
@@ -54,5 +56,19 @@ class Category_model extends CI_Model {
         return $this->db->delete($this->tables['categories'], array('id' => $id));
     }
 
+    function getAllCategoryDescriptions($category_id = '')
+    {
+        $sql = "SELECT p.value as description, cat.id as category_id FROM `{$this->tables['categories']}` cat
+                LEFT JOIN `{$this->tables['imported_data']}` i ON cat.id = i.category_id
+                LEFT JOIN `{$this->tables['imported_data_parsed']}` p ON p.imported_data_id = i.id";
+        if($category_id > 0) {
+            $sql .= " WHERE i.category_id =? AND p.key = 'Description'";
+            $query = $this->db->query($sql, $category_id);
+        } else {
+            $sql .= " WHERE p.key = 'Description'";
+            $query = $this->db->query($sql);
+        }
+        return $query->result();
+    }
 
 }

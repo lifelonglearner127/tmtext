@@ -49,6 +49,14 @@ class Tag_Editor_Rules_model extends CI_Model {
         return $this->db->insert_id();
     }
 
+    function getAll()
+    {
+        $query = $this->db->get($this->tables['tag_editor_rules']);
+
+        return $query->result();
+    }
+
+
     function getByRule($name, $category_id)
     {
        $query = $this->db->where('rule', $name)->where('category_id', $category_id)->get($this->tables['tag_editor_rules']);

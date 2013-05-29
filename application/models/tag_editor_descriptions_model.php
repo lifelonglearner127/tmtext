@@ -3,6 +3,7 @@
 class Tag_Editor_Descriptions_model extends CI_Model {
 
     var $user_id = 0;
+    var $category_id = 0;
     var $description = '';
     var $created = '';
     var $modified = '';
@@ -16,20 +17,25 @@ class Tag_Editor_Descriptions_model extends CI_Model {
         parent::__construct();
     }
 
-    function get($id)
+    function get($user_id, $category_id = '')
     {
-        $query = $this->db->where('user_id', $id)
-            ->limit(1)
-            ->get($this->tables['tag_editor_descriptions']);
+        if($category_id == '') {
+            $query = $this->db->where('user_id', $user_id)->get($this->tables['tag_editor_descriptions']);
+        } else {
+            $query = $this->db->where('user_id', $user_id)->where('category_id', $category_id)
+                ->limit(1)
+                ->get($this->tables['tag_editor_descriptions']);
+        }
 
         return $query->result();
     }
 
-    function insert($description)
+    function insert($description, $category_id)
     {
         $CI =& get_instance();
 
         $this->description = $description;
+        $this->category_id = $category_id;
 
         $this->user_id = $CI->ion_auth->get_user_id();
 
@@ -40,16 +46,16 @@ class Tag_Editor_Descriptions_model extends CI_Model {
         return $this->db->insert_id();
     }
 
-    function update($user_id, $value)
+    function update($user_id, $category_id, $value)
     {
-          return $this->db->update($this->tables['tag_editor_descriptions'],
-                array('description' => $value, 'modified' => date('Y-m-d h:i:s')),
-                array('user_id' => $user_id));
+        return $this->db->update($this->tables['tag_editor_descriptions'],
+            array('description' => $value, 'modified' => date('Y-m-d h:i:s')),
+            array('user_id' => $user_id, 'category_id' => $category_id));
     }
 
-    function delete($user_id)
+    function delete($user_id, $category_id)
     {
-        return $this->db->delete($this->tables['tag_editor_descriptions'], array('user_id' => $user_id));
+        return $this->db->delete($this->tables['tag_editor_descriptions'], array('user_id' => $user_id, 'category_id' => $category_id));
     }
 
 

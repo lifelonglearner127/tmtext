@@ -40,23 +40,27 @@ class Admin_Tag_Editor extends MY_Controller {
 
     }
 
-    public function file_data($filename = '')
+    public function file_data($category = '')
     {
         $this->load->model('category_model');
         $this->load->model('tag_editor_rules_model');
-        if($filename == ''){
-            $filename = $this->input->post('filename');
+        if($category == ''){
+            $category = $this->input->post('category');
         }
-        $category_id = $this->category_model->getIdByName($filename);
+        $category_id = $this->category_model->getIdByName($category);
 
         $data = array();
         if($category_id > 0) {
-            $results = $this->tag_editor_rules_model->getAllByCategoryId($category_id);
+            if($category == 'All'){
+                $results = $this->tag_editor_rules_model->getAll();
+            } else {
+                $results = $this->tag_editor_rules_model->getAllByCategoryId($category_id);
+            }
             foreach($results as $result){
                 array_push($data, '<span>'. $result->rule . '</span>');
             }
         } else {
-            $path = $this->config->item('tag_rules_dir').'/'.$filename.'.dat';
+            $path = $this->config->item('tag_rules_dir').'/'.$category.'.dat';
             $lines = explode("\n", file_get_contents($path));
             $data = array();
             foreach($lines as $key => $line){
@@ -71,14 +75,36 @@ class Admin_Tag_Editor extends MY_Controller {
             return $data;
         }
     }
-    
+
     public function get_product_description()
     {
         $description = array();
+        $this->load->model('category_model');
         $this->load->model('tag_editor_descriptions_model');
-        $data = $this->tag_editor_descriptions_model->get($this->ion_auth->get_user_id());
+        $category_id = '';
+
+        if($this->input->post('category') != 'All'){
+            $category_id = $this->category_model->getIdByName($this->input->post('category'));
+            $data = $this->tag_editor_descriptions_model->get($this->ion_auth->get_user_id(), $category_id);
+        } else {
+            $all = $this->category_model->getAll();
+            $data = array();
+            foreach($all as $item){
+                $desc = $this->tag_editor_descriptions_model->get($this->ion_auth->get_user_id(), $item->id);
+                if(empty($desc)){
+                    $desc = $this->category_model->getAllCategoryDescriptions($item->id);
+                }
+                array_push($data, $desc);
+            }
+        }
+        //die;
         if(empty($data)){
-            $row = 1;
+            $descriptions = $this->category_model->getAllCategoryDescriptions($category_id);
+            $result = array();
+            foreach($descriptions as $desc){
+                array_push($result, $desc->description);
+            }
+            /*$row = 1;
             $file = $this->config->item('attr_path').'/tiger/all.csv';
             if (($handle = fopen($file, "r")) !== FALSE) {
                 while (($data = fgetcsv($handle, 2000, "\n")) !== FALSE) {
@@ -92,24 +118,25 @@ class Admin_Tag_Editor extends MY_Controller {
                     }
                 }
                 fclose($handle);
-            }
-            echo ul($description, array('id'=>'desc_count_'.count($description)));
+            }*/
+            echo ul($result, array('id'=>'desc_count_'.count($descriptions)));
         } else {
-             $this->output->set_content_type('application/json')
-            ->set_output(json_encode($data));
-        }        
+
+            $this->output->set_content_type('application/json')
+                ->set_output(json_encode($data));
+        }
     }
 
     public function save_file_data()
     {
         $this->load->model('category_model');
         $this->load->model('tag_editor_rules_model');
-        if($this->input->post('filename')!=''){
-            $filename = $this->input->post('filename');
+        if($this->input->post('category')!=''){
+            $category = $this->input->post('category');
 
-            $category_id = $this->category_model->getIdByName($filename);
+            $category_id = $this->category_model->getIdByName($category);
             if($category_id == false) {
-                $category_id = $this->category_model->insert($filename);
+                $category_id = $this->category_model->insert($category);
             }
             $this->tag_editor_rules_model->delete($category_id);
             foreach(explode("\n", $this->input->post('data')) as $line) {
@@ -117,15 +144,19 @@ class Admin_Tag_Editor extends MY_Controller {
                     $this->tag_editor_rules_model->insert( $line, $category_id);
                 }
             }
-            $path = $this->config->item('tag_rules_dir').'/'.$filename.'.dat';
+            $path = $this->config->item('tag_rules_dir').'/'.$category.'.dat';
             file_put_contents($path, $this->input->post('data'));
         }
     }
 
     public function delete_file()
     {
-        if($this->input->post('filename')!='') {
-            $path = $this->config->item('tag_rules_dir').'/'.$this->input->post('filename').'.dat';
+        $this->load->model('category_model');
+
+        if($this->input->post('category')!='') {
+            $category_id = $this->category_model->getIdByName($this->input->post('category'));
+            $this->category_model->delete($category_id);
+            $path = $this->config->item('tag_rules_dir').'/'.$this->input->post('category').'.dat';
             unlink($path);
         }
     }
@@ -133,16 +164,18 @@ class Admin_Tag_Editor extends MY_Controller {
     public function save()
     {
         $this->load->model('tag_editor_descriptions_model');
+        $this->load->model('category_model');
 
         $this->ion_auth->get_user_id();
         $this->form_validation->set_rules('description', 'Description', 'required|xss_clean');
 
         if ($this->form_validation->run() === true) {
-            $data = $this->tag_editor_descriptions_model->get($this->ion_auth->get_user_id());
+            $category_id = $this->category_model->getIdByName($this->input->post('category'));
+            $data = $this->tag_editor_descriptions_model->get($this->ion_auth->get_user_id(), $category_id);
             if(empty($data)){
-                $data['tag_description_id'] = $this->tag_editor_descriptions_model->insert($this->input->post('description'));
+                $data['tag_description_id'] = $this->tag_editor_descriptions_model->insert($this->input->post('description'), $category_id);
             } else {
-                $data['tag_description_id'] = $this->tag_editor_descriptions_model->update($this->ion_auth->get_user_id(),
+                $data['tag_description_id'] = $this->tag_editor_descriptions_model->update($this->ion_auth->get_user_id(), $category_id,
                     $this->input->post('description'));
             }
         } else {
@@ -157,12 +190,14 @@ class Admin_Tag_Editor extends MY_Controller {
     public function delete()
     {
         $this->load->model('tag_editor_descriptions_model');
+        $this->load->model('category_model');
 
         $this->ion_auth->get_user_id();
         $this->form_validation->set_rules('description', 'Description', 'required|xss_clean');
+        $category_id = $this->category_model->getIdByName($this->input->post('category'));
 
         if ($this->form_validation->run() === true) {
-           $data = $this->tag_editor_descriptions_model->delete($this->ion_auth->get_user_id());
+            $data = $this->tag_editor_descriptions_model->delete($this->ion_auth->get_user_id(), $category_id);
         } else {
             $data['message'] = (validation_errors() ? validation_errors() : $this->session->flashdata('message'));
         }

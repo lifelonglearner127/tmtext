@@ -7,7 +7,7 @@
     </div>
     <div class="row-fluid">
          <div class="span5" style="width: 327px;">
-             <?php echo form_dropdown('filename', $category_list ); ?>
+             <?php echo form_dropdown('category', $category_list ); ?>
              <a href="#popup" id="delete_category" class="btn btn-danger ml_10 fancybox"><i class="icon-white icon-ok"></i>&nbsp;Delete</a>
              <div id="popup">
                  <p>This will delete <span id="category_name"></span> category and all associated rules permanently. Are you sure you want to continue?</p>
