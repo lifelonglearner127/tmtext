@@ -55,6 +55,15 @@ function clearEditorForm() {
     rev = [];
 }
 
+//This prototype function allows you to remove even array from array
+Array.prototype.remove = function(x) {
+    for(i in this){
+        if(this[i].toString() == x.toString()){
+            this.splice(i,1)
+        }
+    }
+}
+
 function moveSentence() {
     // there's the desc and the trash
     var $desc = $( "#desc" ),
@@ -68,6 +77,20 @@ function moveSentence() {
 
     // resolve the icons behavior with event delegation
     $( "ul.desc_title > li > a" ).click(function( event ) {
+
+        var txt = $(this).parent().find('span').html();
+        if(sentence.length > 0){
+            for(var i=0; i<sentence.length; i++){
+                if($.trim(sentence[i]) == $.trim(txt)){
+                    sentence.remove(sentence[i]);
+                }
+            }
+        }
+
+        if($.trim(desc_input) == $.trim(txt)){
+            desc_input = '';
+        }
+
         var $item = $( this ),
             $target = $( event.target );
 
@@ -680,28 +703,35 @@ jQuery(document).ready(function($) {
                 var str = '';
                 if(sentence.length>0){
                     for(var i=0; i<sentence.length; i++){
-                        str += "<li>"+sentence[i]+"<a hef='#' class='ui-icon-trash'>x</a></li>";
+                        if($.trim(sentence[i])==$.trim(desc_input)){
+                            desc_input = '';
+                        }
+                        str += "<li><span>"+sentence[i]+"</span><a hef='#' class='ui-icon-trash'>x</a></li>";
                     }
                 }
-                fulltext = '<ul id="desc" class="desc_title desc">'+str+'<li>' +
-                    '<span class="current_product">'+desc_input+'</span><a hef="#" class="ui-icon-trash">x</a></li></ul>';
+                fulltext = '<ul id="desc" class="desc_title desc">'+str;
+                if(desc_input!=''){
+                    fulltext += '<li><span class="current_product">'+desc_input+'</span><a hef="#" class="ui-icon-trash">x</a></li>';
+                }
+                fulltext += '</ul>';
                 descriptionDiv.html(fulltext);
+                moveSentence();
             } else {
-                // th*e checkbox was unchecked
+                // the checkbox was unchecked
+
                 var description = '';
-                $('.new_product #textarea li').each(function(){
-                    if($(this).find('span').text()!='' && $(this).find('span').text()!=undefined){
-                        description += $(this).find('span').text()+' ';
+                if(sentence.length>0){
+                    for(var i=0; i<sentence.length; i++){
+                        if($.trim(sentence[i])==$.trim(desc_input)){
+                            desc_input = '';
+                        }
+                        description += sentence[i]+" ";
                     }
-                    if($(this).find('input').val()!='' && $(this).find('input').val()!=undefined){
-                        description += $(this).find('input').val()+' ';
-                    }
-                });
-                if(description==''){
-                    //description = $('.new_product').find('textarea[name="description"]').val();
-                    description = $('.new_product #textarea').text();
                 }
-                $('.new_product #textarea').html(sentence+' '+description).trigger('change');
+                if(desc_input!=''){
+                    description += desc_input+" ";
+                }
+                $('.new_product #textarea').html(description).trigger('change');
             }
         }
     });
