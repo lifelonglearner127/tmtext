@@ -31,11 +31,31 @@
             <button id="delete" class="btn new_btn btn-danger mt_10 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>            
             <button id="undo" class="btn new_btn btn-warning mt_10 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Undo</button>
             <button id="save_data" class="btn new_btn btn-success mt_10 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Save</button>
-        </div>
+            <span class="btn btn-success fileinput-button mt_10 ml_15 btn-mini">Import<i class="icon-plus icon-white"></i>
+			        <input id="fileupload" type="file" name="files[]" multiple>
+            </span>
+            <div id="files"></div>
+            <script>
+                $(function () {
+                    var url = '<?php echo site_url('admin_tag_editor/upload_dat');?>';
+                    $('#fileupload').fileupload({
+                        url: url,
+                        dataType: 'json',
+                        done: function (e, data) {
+                            $.each(data.result.files, function (index, file) {
+                                $.post('<?php echo site_url('admin_tag_editor/import_rules');?>', function(data) {
+                                });
+                            });
 
+                        }
+                    });
+                });
+            </script>
+        </div>
     </div>
     <div class="row-fluid matches_message">
         <span class="matches_found"></span>
+        <button id="export" class="btn btn-success pull-right btn-mini" style="margin-right:60px"><i class="icon-white icon-ok"></i>&nbsp;Export</button>
     </div>
     <div class="row-fluid mt_10 admin_tageditor_content">
         <div class="search_area uneditable-input span10" onClick="this.contentEditable='true';" style="cursor: text; width: 765px; height: 250px; overflow : auto;" id="tageditor_description">           

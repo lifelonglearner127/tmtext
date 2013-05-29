@@ -207,11 +207,25 @@ class Admin_Tag_Editor extends MY_Controller {
 
     }
 
+    public function upload_dat()
+    {
+        $this->load->library('UploadHandler');
+        $this->output->set_content_type('application/json');
+
+        $this->uploadhandler->upload(array(
+            'script_url' => site_url('admin_tag_editor/upload_dat'),
+            'upload_dir' => $this->system_settings['tag_rules_dir'],
+            'param_name' => 'files',
+            'delete_type' => 'POST',
+            'accept_file_types' => '/.+\.dat$/i',
+        ));
+    }
+
     public function import_rules()
     {
         $this->load->model('category_model');
         $this->load->model('tag_editor_rules_model');
-        $dir = $this->config->item('tag_rules_dir');
+        $dir = $this->system_settings['tag_rules_dir'];
         if (is_dir($dir)) {
             if ($dh = opendir($dir)) {
                 while (($file = readdir($dh)) !== false) {
@@ -237,6 +251,23 @@ class Admin_Tag_Editor extends MY_Controller {
                 closedir($dh);
             }
         }
+    }
+
+    public function export_rules()
+    {
+        /*$this->load->model('category_model');
+        $this->load->model('tag_editor_rules_model');
+
+        $category_id = $this->category_model->getIdByName($this->input->post('category'));
+        if($category_id != false){
+            $results = $this->tag_editor_rules_model->getAllByCategoryId($category_id);
+            $data = array();
+            foreach($results as $result){
+                array_push($data, $result->rule."\n");
+            }
+            $path =  $this->system_settings['tag_rules_dir'].$this->input->post('category').'.dat';
+            file_put_contents($path, $data);
+        }*/
     }
 
 
