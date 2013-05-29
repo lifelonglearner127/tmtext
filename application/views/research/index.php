@@ -80,17 +80,6 @@
         <?php echo form_close();?>
     </div>
     <div class="clear"></div>
-<<<<<<< HEAD
-    <div class="row-fluid mt_10">
-        <div class="span7">
-            Show <select name="result_amount" style="width:50px;">
-                    <option value="10">10</option>
-                    <option value="20">20</option>
-                    <option value="50">50</option>
-                    <option value="50">100</option>
-                    <option value="50">200</option>
-                 </select>
-=======
     <div class="row-fluid">
         <div class="span6">
             Show <select class="mt_10" style="width:50px;" name="result_amount">
@@ -98,7 +87,6 @@
                 <option value="20">20</option>
                 <option value="50">50</option>
             </select>
->>>>>>> 3d3c12378136b72949bed81f615108c633321861
             results in category
             <select class="mt_10" name="category">
                 <option value="category1">category1</option>
