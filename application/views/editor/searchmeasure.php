@@ -14,14 +14,16 @@
 	?>
 
 	<div class='item_body'>
-		<input type="hidden" id="link_m_title" value="<?php echo $pr_title; ?>">
-		<input type="hidden" id="link_m_url" value="<?php echo $pr_url; ?>">
+		<input type="hidden" id="link_m_title" value='<?php echo $pr_title; ?>'>
+		<input type="hidden" id="link_m_url" value='<?php echo $pr_url; ?>'>
+		<span class='analysis_content_head'>Short Description:</span>
 	    <div>
 	        <span id="details-short-desc" class="ql-details-short-desc"><?php if(isset($search_results['short_desc']) && $search_results['short_desc'] !== "") { ?> <?php echo $search_results['short_desc']; ?>  <?php ?> <?php } else { ?> No short description <?php } ?></span>
 	    </div>
 	</div>
+	<br>
 	<div class="item_body">
-		<br>
+		<span class='analysis_content_head'>Long Description:</span>
 	    <div id="details-long-desc"><?php if(isset($search_results['long_desc']) && $search_results['long_desc'] !== "") { ?> <?php echo $search_results['long_desc']; ?>  <?php ?> <?php } else { ?> No long description <?php } ?></div>
 	</div>
 

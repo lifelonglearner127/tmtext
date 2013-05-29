@@ -168,10 +168,14 @@ class Editor extends MY_Controller {
 					if(isset($v['key']) && isset($v['value'])) {
 						switch ($v['key']) {
 							case 'Description':
-								$res['short_desc'] = $v['value']; 
+								// $res['short_desc'] = $v['value'];
+								// $res['short_desc'] = preg_replace('/[^A-Za-z0-9\-]\"\./', ' ', $v['value']);
+								$res['short_desc'] = str_replace(array(';'), array(','), $v['value']);
 								break;
 							case 'Long_Description':
-								$res['long_desc'] = $v['value'];
+								// $res['long_desc'] = $v['value'];
+								// $res['long_desc'] = preg_replace('/[^A-Za-z0-9\-]\"\./', ' ', $v['value']);
+								$res['long_desc'] = str_replace(array(';'), array(','), $v['value']); 
 								break;
 							case 'Product Name':
 								$res['product_name'] = $v['value'];

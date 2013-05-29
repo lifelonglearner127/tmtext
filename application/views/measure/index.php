@@ -33,11 +33,14 @@
                     var analyzer_long = $.post(measureAnalyzerBaseUrl, { clean_t: long_desc_an }, 'json').done(function(a_data) {
                         var seo_items = "<li class='long_desc_sep'>Long Description:</li>";
                         var top_style = "";
+                        console.log("LONG: ", a_data);
                         for(var i in a_data) {
-                            if(i == 0) {
-                                top_style = "style='margin-top: 5px;'";
+                            if(typeof(a_data[i]) === 'object') {
+                                if(i == 0) {
+                                    top_style = "style='margin-top: 5px;'";
+                                }
+                                seo_items += "<li " + top_style + ">" + "<span class='word_wrap_li_pr hover_en'>" + a_data[i]['ph'] + "</span>" + " <span class='word_wrap_li_sec'>(" + a_data[i]['count'] + ")</span></li>";
                             }
-                            seo_items += "<li class='word_wrap_li' " + top_style + ">" + a_data[i]['ph'] + " (" + a_data[i]['count'] + ")</li>";
                         }
                         $(seo_items).insertAfter($("#metrics_seo_phrases"));
                     });
@@ -49,11 +52,14 @@
                     var analyzer_short = $.post(measureAnalyzerBaseUrl, { clean_t: short_desc_an }, 'json').done(function(a_data) {
                         var seo_items = "<li class='long_desc_sep'>Short Description:</li>";
                         var top_style = "";
+                        console.log("SHORT: ", a_data);
                         for(var i in a_data) {
-                            if(i == 0) {
-                                top_style = "style='margin-top: 5px;'";
+                            if(typeof(a_data[i]) === 'object') {
+                                if(i == 0) {
+                                    top_style = "style='margin-top: 5px;'";
+                                }
+                                seo_items += "<li " + top_style + ">" + "<span class='word_wrap_li_pr hover_en'>" + a_data[i]['ph'] + "</span>" + " <span class='word_wrap_li_sec'>(" + a_data[i]['count'] + ")</span></li>";
                             }
-                            seo_items += "<li class='word_wrap_li' " + top_style + ">" + a_data[i]['ph'] + " (" + a_data[i]['count'] + ")</li>";
                         }
                         $(seo_items).insertAfter($("#metrics_seo_phrases"));
                     });
@@ -100,7 +106,7 @@
 <div class="row-fluid">
     <?php echo form_open('', array('id'=>'measureFormMetrics')); ?>
         <!-- <input type="text" name="compare_text" value="UN40ES6500" id="compare_text" class="span8" placeholder=""/> -->
-        <input type="text" name="compare_text" value="Samsung" id="compare_text" class="span8" placeholder=""/>
+        <input type="text" name="compare_text" value="UN40ES6500" id="compare_text" class="span8" placeholder=""/>
         <div id="measure_dropdown" class="dropdowns"></div>
         <button type="submit" onclick="return startMeasureCompare()" class="btn pull-right">Search</button>
     <?php echo form_close();?>

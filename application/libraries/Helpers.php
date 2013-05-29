@@ -8,8 +8,14 @@ class Helpers {
   }
 
   public function measure_analyzer_start_v2($clean_t) { // !!! EXPREIMENTAL !!!
+    // $clean_t = "3D ready, allows playback of full 3D high-definition content 480 Clear Motion Rate, less motion blur for your fast-paced videos HDMI and USB ports, lets you connect to a wide variety of devices WiFi capable, allows you to access countless hours visual content from the Internet";
     $clean_t = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $clean_t);
-    $text = strtolower($clean_t);
+    // $r = substr_count($clean_t, 'to a');
+    // $w = 'to a';
+    // preg_match_all("/($w)/", $clean_t, $matches);
+    // die("TEST ME: ".var_dump($matches));
+    // $text = strtolower($clean_t);
+    $text = $clean_t;
 
     // ---- convert to array (start)
     $words = explode(" ", $text); // !!! LOOP TARGET !!!
@@ -26,6 +32,7 @@ class Helpers {
                 $w = $w.$words[$k]." "; 
             }
             $w = substr($w, 0, strlen($w)-1);
+            $w = trim($w);
             // --- CHECK OUT STRING DUPLICATIONS
             $r = substr_count($text, $w);
             if($r > 1) {
@@ -50,15 +57,17 @@ class Helpers {
     $res_stack = array_unique($res_stack, SORT_REGULAR);
 
     // -- FILTER  OUT SUBSETS (START)
-    foreach ($res_stack as $key => $value) {
-        $inv_str = $value['ph'];
-        // ----  CHECK OUT VALUE (START)
-        foreach ($res_stack as $ka => $va) {
-            if(($va['ph'] !== $inv_str) && strlen($va['ph']) > strlen($inv_str) && strpos($va['ph'], $inv_str) !== false) {
-                unset($res_stack[$key]);
-            } 
+    if(count($res_stack) > 1) {
+        foreach ($res_stack as $key => $value) {
+            $inv_str = $value['ph'];
+            // ----  CHECK OUT VALUE (START)
+            foreach ($res_stack as $ka => $va) {
+                if(($va['ph'] !== $inv_str) && strlen($va['ph']) > strlen($inv_str) && strpos($va['ph'], $inv_str) !== false) {
+                    unset($res_stack[$key]);
+                } 
+            }
+            // ----  CHECK OUT VALUE (END)
         }
-        // ----  CHECK OUT VALUE (END)
     }
     // -- FILTER  OUT SUBSETS (END)
 
