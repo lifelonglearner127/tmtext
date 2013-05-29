@@ -176,6 +176,7 @@ jQuery(document).ready(function($) {
     $(document).on("click", "button#create", function(){
         if($('input[name="new_file"]').val() !='' ){
             var cat_exist = 0;
+            $("#tageditor_description").html('');
             $('select[name="category"] option').each(function(){
                  if($(this).text() == $('input[name="new_file"]').val()){
                      cat_exist = 1;
