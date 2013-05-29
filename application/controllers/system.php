@@ -311,7 +311,7 @@ class System extends MY_Controller {
 			$response['message'] = 'Roles saved successfully';
 		}else{
 			$response['message'] = $saving_errors;
-		}	
+		}
 
 		$this->output->set_content_type('application/json')
 		            ->set_output(json_encode($response));
@@ -371,7 +371,7 @@ class System extends MY_Controller {
 			$new_customers = $this->input->post('user_customers');
 			$new_group = $this->input->post('user_role');
 			$active = $this->input->post('user_active');
-	
+
 			if(!empty($new_data)){
 				$this->ion_auth->update($user_id, $new_data);
 			}
@@ -399,7 +399,7 @@ class System extends MY_Controller {
 					$this->users_to_customers_model->delete($user_id, $customer);
 				}
 			}
-			
+
 			if((empty($active))){
 				$this->ion_auth->deactivate($user_id);
 			}else{
@@ -418,5 +418,18 @@ class System extends MY_Controller {
 			$this->output->set_content_type('application/json')
 		        ->set_output(json_encode($response));
 		}
+	}
+
+	function upload_csv() {
+		$this->load->library('UploadHandler');
+
+		$this->output->set_content_type('application/json');
+		$this->uploadhandler->upload(array(
+            'script_url' => site_url('system/upload_csv'),
+            'upload_dir' => $this->config->item('csv_upload_dir'),
+            'param_name' => 'files',
+            'delete_type' => 'POST',
+			'accept_file_types' => '/.+\.csv$/i',
+		));
 	}
 }

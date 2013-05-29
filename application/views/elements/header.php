@@ -15,6 +15,7 @@
 	<link href="<?php echo base_url();?>css/bootstrap.css" rel="stylesheet">
 	<link href="<?php echo base_url();?>css/style.css" rel="stylesheet">
 	<link href="<?php echo base_url();?>css/chosen.css" rel="stylesheet">
+	<link href="<?php echo base_url();?>css/fileupload/jquery.fileupload-ui.css" rel="stylesheet">
     <link href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.17/themes/base/jquery-ui.css" rel="stylesheet">
 
 	<!--[if lt IE 9]>
@@ -30,7 +31,11 @@
     <script src="<?php echo base_url();?>js/defaults.js"></script>
     <script src="<?php echo base_url();?>js/jquery.ddslick.js"></script>
     <script src="<?php echo base_url();?>js/jquery.expander.js"></script>
-    <script src="<?php echo base_url();?>js/chosen.jquery.min.js"></script>    
+    <script src="<?php echo base_url();?>js/chosen.jquery.min.js"></script>
+    <script src="<?php echo base_url();?>js/fileupload/vendor/jquery.ui.widget.js"></script>
+	<script src="<?php echo base_url();?>js/fileupload/jquery.iframe-transport.js"></script>
+	<script src="<?php echo base_url();?>js/fileupload/jquery.fileupload.js"></script>
+
 	<!-- script src="<?php echo base_url();?>js/main.js"></script-->
 <?php if (isset($js)){ ?>
 <script type='text/javascript'>

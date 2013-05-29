@@ -10,6 +10,9 @@ CREATE TABLE IF NOT EXISTS `tag_editor_rules` (
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=34 ;
 # 05/26 --> end
 
+# 05/ 25
+DELETE FROM `users_groups` WHERE `group_id`=2;
+
 # 05/24 Andrew <-- start
 DELETE FROM `tmeditor.dev`.`groups` WHERE `groups`.`id` = 2;
 

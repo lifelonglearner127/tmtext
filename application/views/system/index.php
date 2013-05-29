@@ -42,6 +42,48 @@
 					</div>
 					<div class="row-fluid">
 						<div class="span6 admin_system_content">
+							<div class="controls">
+								<span class="btn btn-success fileinput-button">
+									Upload
+									<i class="icon-plus icon-white"></i>
+									<input id="fileupload" type="file" name="files[]" multiple>
+								</span>
+								<div id="progress" class="progress progress-success progress-striped">
+									<div class="bar"></div>
+								</div>
+								<div id="files"></div>
+								<script>
+								$(function () {
+								    'use strict';
+								    var url = '<?php echo site_url('system/upload_csv');?>';
+								    $('#fileupload').fileupload({
+								        url: url,
+								        dataType: 'json',
+								        done: function (e, data) {
+								            $.each(data.result.files, function (index, file) {
+								            	if (file.error == undefined) {
+								                	$('<p/>').text(file.name).appendTo('#files');
+								               	}
+								            });
+								        },
+								        progressall: function (e, data) {
+								            var progress = parseInt(data.loaded / data.total * 100, 10);
+								            $('#progress .bar').css(
+								                'width',
+								                progress + '%'
+								            );
+								            if (progress == 100) {
+									            $('#csv_import').trigger('click');
+									        }
+								        }
+								    });
+								});
+								</script>
+							</div>
+						</div>
+					</div>
+					<div class="row-fluid">
+						<div class="span6 admin_system_content">
 							<p class="mt_40">Tag Rules:</p>
 							<textarea type="text" class='tag_rules_settings' id="tar_rules" name="settings[tag_rules_dir]"><?php echo isset($settings['tag_rules_dir'])? $settings['tag_rules_dir']:'' ?></textarea>
 						</div>
