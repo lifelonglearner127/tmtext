@@ -143,7 +143,7 @@
                 
             </div>
         </div>
-        <div class="span3" style="width: 260px; margin-left: 35px; margin-top: -45px;" id="attributes_metrics">
+        <div class="span3" style="width: 290px; margin-left: 5px; margin-top: -45px;" id="attributes_metrics">
             <h3>Metrics</h3>
             <ul>
                 <li><a href="javascript:void(0)">Site Metrics</a></li>

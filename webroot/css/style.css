@@ -42,7 +42,7 @@
 	overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    max-width: 230px;
+    max-width: 260px;
     font-size: 12px;
 }
 .word_wrap_li_pr.hover_en {
