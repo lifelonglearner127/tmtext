@@ -331,6 +331,14 @@ jQuery(document).ready(function($) {
         return false;
     });
 
+    $(document).on("click", "button#export", function(e){
+        e.preventDefault();
+        if($("select[name='category'] option:selected").text() != 'All'){
+            window.location.href = 'admin_tag_editor/export_rules?category='+$("select[name='category'] option:selected").text();
+        }
+        return false;
+    });
+
     $(document).on("click", "button#new_desc", function(){
         $('#tageditor_description').empty();
         return false;

@@ -255,19 +255,24 @@ class Admin_Tag_Editor extends MY_Controller {
 
     public function export_rules()
     {
-        /*$this->load->model('category_model');
-        $this->load->model('tag_editor_rules_model');
 
-        $category_id = $this->category_model->getIdByName($this->input->post('category'));
-        if($category_id != false){
-            $results = $this->tag_editor_rules_model->getAllByCategoryId($category_id);
-            $data = array();
-            foreach($results as $result){
-                array_push($data, $result->rule."\n");
-            }
-            $path =  $this->system_settings['tag_rules_dir'].$this->input->post('category').'.dat';
-            file_put_contents($path, $data);
-        }*/
+        // set this to the path where your zipped files are located
+        $filename = $this->input->get('category').'.dat';
+        $filepath = $this->system_settings['tag_rules_dir'].$filename;
+
+        // a little security
+        if(strpos($filename, '..') !== false || realpath($filepath) != $filepath) die();
+        if (file_exists($filepath)){
+            // make sure the browser knows what it's getting, and what to do with it
+            header("Content-Type: text/html");
+            header("Content-Disposition: attachment; filename=".$filename);
+            //header("location: ".$filename);
+            readfile($filepath);
+            die();
+        } else {
+            die('Error: File not found.');
+        }
+       ;
     }
 
 
