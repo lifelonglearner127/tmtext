@@ -113,7 +113,15 @@
                 </li>
                 <li class="boxes mt_10" id="related_keywords">
                     <h3>Related keywords</h3>
-                    <div class="boxes_content"></div>
+                    <div class="boxes_content">
+                        <ul id="products">
+                            <li><span>Product Name</span><span>URL</span></li>
+                            <li><span>&nbsp;</span><span>&nbsp;</span></li>
+                            <li><span>&nbsp;</span><span>&nbsp;</span></li>
+                            <li><span>&nbsp;</span><span>&nbsp;</span></li>
+                            <li><span>&nbsp;</span><span>&nbsp;</span></li>
+                        </ul>
+                    </div>
                 </li>
                 <li class="boxes mt_10">
                     <h3>SEO Phrases</h3>
@@ -158,6 +166,11 @@
                            <input type="hidden" name="long_description_length" value="100" class="span3"/>
                            <label><span id="wc1">0</span> words</label>
                            <textarea type="text" name="long_description" class="span10"></textarea>
+                        </div>
+                        <div class="row-fluid mb_20">
+                            <button type="button" class="btn ml_10">Validate</button>
+                            <button type="button" class="btn ml_10">Save</button>
+                            <button type="button" class="btn ml_10">Save & Next</button>
                         </div>
                     </div>
                 </li>
