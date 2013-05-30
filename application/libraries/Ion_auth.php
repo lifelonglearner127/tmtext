@@ -596,4 +596,18 @@ class Ion_auth
 			return 'Roles saving error';
 		}
 	}
+
+	function check_user_permission($controller){
+		$this->load->model('user_groups_model');
+		$user_group = $this->user_groups_model->getRoleByUserId($this->ion_auth->get_user_id());
+		$group = $this->user_groups_model->getGroupById($user_group[0]->group_id);
+		$groups_permissions = unserialize($group[0]['auth_rules']);
+		if(isset($groups_permissions[$controller]['index']) AND $groups_permissions[$controller]['index'] == 1)
+		{
+			return TRUE;
+		}else
+		{
+			return FALSE;
+		}
+	}
 }

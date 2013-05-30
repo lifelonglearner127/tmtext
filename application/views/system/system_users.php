@@ -1,5 +1,13 @@
 <script type="text/javascript">
-$("#user_customers").chosen();
+$("#user_customers").chosen().change(function(e){
+	var marcked = $(this).val();
+	var check = $.inArray('all', marcked);
+	if(check > -1){
+		$("#user_customers option").prop("selected", "selected");
+		$("#user_customers option.all").prop("selected", false);
+		$("#user_customers option").trigger("liszt:updated");
+	}
+});
 $("#user_role").chosen();
 $("#user_name").autocomplete({
     source: '/index.php/system/jqueryAutocomplete?column=username',
@@ -49,8 +57,8 @@ $("#user_mail").autocomplete({
 				<p>Customers:</p>
 		        <select id="user_customers" data-placeholder="Click to select customers" multiple class="chzn-select" tabindex="8" name="user_customers[]">
 					<?php 
-					foreach ($customers as $customer) {
-						print '<option value="'.$customer->id.'">'.$customer->name.'</option>';
+					foreach ($customers as $key => $value) {
+						print '<option class="'.$key.'" value="'.$key.'">'.$value.'</option>';
 					}
 					 ?>
 		        </select>

@@ -1,3 +1,7 @@
+# 05/30 Andrew <-- start
+INSERT INTO `tmeditor.dev`.`customers` (`id` , `name` , `description`) VALUES ( NULL , 'Overstock.com', '0');
+# 05/30 --> end
+
 # 05/26 Tatiana <-- start
 CREATE TABLE IF NOT EXISTS `tag_editor_rules` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,

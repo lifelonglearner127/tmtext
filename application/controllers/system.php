@@ -9,7 +9,9 @@ class System extends MY_Controller {
   		parent::__construct();
 
 		$this->data['title'] = 'System Settings';
-		$this->data['checked_controllers'] = array('editor', 'validate', 'measure');
+		$this->data['checked_controllers'] = array('research', 'editor', 'validate', 'measure', 'customer');
+		$this->data['admin_controllers'] = array('system', 'admin_customer', 'admin_editor', 'admin_tag_editor');
+
 
 		$this->load->library('form_validation');
 
@@ -29,9 +31,10 @@ class System extends MY_Controller {
 
 	public function system_roles()
 	{
-		$this->load->model('user_groups_model');
-		$user_groups = $this->user_groups_model->getAll();
-		$this->data['user_groups'] = $user_groups;
+
+        $this->load->model('user_groups_model');
+        $user_groups = $this->user_groups_model->getAll();
+        $this->data['user_groups'] = $user_groups;
 		$checked = array();
 		foreach ($user_groups as $user_group) {
 			$rules = unserialize($user_group->auth_rules);
@@ -50,7 +53,16 @@ class System extends MY_Controller {
 		$this->load->model('user_groups_model');
 		$this->load->model('customers_model');
 		$this->data['user_groups'] = $this->user_groups_model->getAll();
-		$this->data['customers'] = $this->customers_model->getAll();
+		$customers = $this->customers_model->getAll();
+		$customersArray = array();
+		$customersArray['all'] = 'All';
+		foreach ($customers as $customer) {
+			if(!in_array($customer->name, $customersArray)){
+				$customersArray[$customer->id] = $customer->name;
+			}
+		}
+		asort($customersArray);
+		$this->data['customers'] = $customersArray;
 		$this->data['message'] = array();
 		$this->render();
 	}
@@ -303,6 +315,9 @@ class System extends MY_Controller {
 		}
 		foreach ($roles as $key => $value) {
 			$deny_controllers = array_diff($this->data['checked_controllers'], $value);
+			if($key !== 1){
+				$deny_controllers = array_merge($deny_controllers, $this->data['admin_controllers']);
+			}
 			$saving_errors = $this->ion_auth->set_rules_to_group($key, $deny_controllers);
 		}
 
