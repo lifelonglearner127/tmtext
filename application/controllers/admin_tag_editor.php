@@ -209,12 +209,14 @@ class Admin_Tag_Editor extends MY_Controller {
 
     public function upload_dat()
     {
+        $dir = $this->system_settings['tag_rules_dir'];
+        $dir .= (substr($dir, -1) == '/' ? '' : '/');
         $this->load->library('UploadHandler');
         $this->output->set_content_type('application/json');
 
         $this->uploadhandler->upload(array(
             'script_url' => site_url('admin_tag_editor/upload_dat'),
-            'upload_dir' => $this->system_settings['tag_rules_dir'],
+            'upload_dir' => $dir,
             'param_name' => 'files',
             'delete_type' => 'POST',
             'accept_file_types' => '/.+\.dat$/i',
@@ -226,6 +228,7 @@ class Admin_Tag_Editor extends MY_Controller {
         $this->load->model('category_model');
         $this->load->model('tag_editor_rules_model');
         $dir = $this->system_settings['tag_rules_dir'];
+        $dir .= (substr($dir, -1) == '/' ? '' : '/');
         if (is_dir($dir)) {
             if ($dh = opendir($dir)) {
                 while (($file = readdir($dh)) !== false) {
@@ -258,7 +261,9 @@ class Admin_Tag_Editor extends MY_Controller {
 
         // set this to the path where your zipped files are located
         $filename = $this->input->get('category').'.dat';
-        $filepath = $this->system_settings['tag_rules_dir'].$filename;
+        $dir = $this->system_settings['tag_rules_dir'];
+        $dir .= (substr($dir, -1) == '/' ? '' : '/');
+        $filepath = $dir.$filename;
 
         // a little security
         if(strpos($filename, '..') !== false || realpath($filepath) != $filepath) die();
