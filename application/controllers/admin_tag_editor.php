@@ -264,7 +264,7 @@ class Admin_Tag_Editor extends MY_Controller {
         if(strpos($filename, '..') !== false || realpath($filepath) != $filepath) die();
         if (file_exists($filepath)){
             // make sure the browser knows what it's getting, and what to do with it
-            header("Content-Type: text/html");
+            header("Content-Type: application/octet-stream");
             header("Content-Disposition: attachment; filename=".$filename);
             //header("location: ".$filename);
             readfile($filepath);
