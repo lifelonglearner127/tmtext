@@ -792,17 +792,17 @@ p.show_ballons input{
 	overflow: hidden;
 }
 
-#products{
+#products, #related_keywords{
     margin:10px;
     padding: 0px;
 }
 
-#products li{
+#products li, #related_keywords li{
     border: 1px solid #ccc;
     border-bottom: none ;
 }
 
-#products li:last-child{
+#products li:last-child, #related_keywords li:last-child{
     border-bottom: 1px solid #ccc;
 }
 
@@ -811,7 +811,18 @@ p.show_ballons input{
 }
 
 #products li span{
-   display: inline-block;
+    display: inline-block;
     padding: 5px;
     width: 45%;
+    vertical-align: top;
+    word-wrap: break-word;
+}
+
+#related_keywords li span{
+    display: inline-block;
+    padding: 5px;
+}
+
+.research a.clear_all{
+    margin-left: 10px;
 }

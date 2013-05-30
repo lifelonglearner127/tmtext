@@ -54,4 +54,20 @@ class Imported_data_parsed_model extends CI_Model {
         return $this->db->update($this->tables['imported_data_parsed'], $this, array('id' => $id));
     }
 
+    function getData($value){
+
+        $query = $this->db->select('imported_data_id, key, value')->where('key', 'Product Name')
+            ->like('value', $value)->get($this->tables['imported_data_parsed']);
+        $results = $query->result();
+        $data = array();
+        foreach($results as $result){
+            $res = $this->db->select('value')->where('key', 'URL')->where('imported_data_id', $result->imported_data_id)
+                ->get($this->tables['imported_data_parsed']);
+            $url = $res->result();
+            array_push($data, array('product_name'=>$result->value, 'url'=>$url[0]->value));
+        }
+
+        return $data;
+    }
+
 }

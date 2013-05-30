@@ -32,7 +32,16 @@ class Research extends MY_Controller {
             array_push($category_list, $category->name);
         }
         return $category_list;
+    }
 
+    public function search_results()
+    {
+        $this->load->model('imported_data_parsed_model');
+        if($this->input->post('search_data') != '') {
+            $imported_data_parsed = $this->imported_data_parsed_model->getData($this->input->post('search_data'));
+            $this->output->set_content_type('application/json')
+                ->set_output(json_encode($imported_data_parsed));
+        }
     }
 
 }

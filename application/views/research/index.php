@@ -68,6 +68,28 @@
             }
             $('#wc1').html(number);
         });
+
+        $(document).on("click", 'a.clear_all', function() {
+            $(this).prev().val('');
+            return false;
+        });
+
+        $(document).on("click", 'button#research_search', function(){
+            $.post('research/search_results', { 'search_data': $('input[name="research_text"]').val() }, function(data){
+                    if(data.length > 0){
+                        $('ul#products li').each(function(){
+                            if($(this).attr('class') != 'main' || $(this).attr('class') == undefined){
+                                $(this).remove();
+                            }
+                        });
+                        var str='';
+                        for(var i=0; i < data.length; i++){
+                            str += '<li><span>'+data[i].product_name+'</span><span>'+data[i].url+'</span></li>';
+                        }
+                        $('ul#products').append(str);
+                    }
+                }, 'json');
+        });
     });
 </script>
 <div class="main_content_other"></div>
@@ -76,7 +98,7 @@
         <?php echo form_open('', array('id'=>'measureForm')); ?>
         <input type="text" id="research_text" name="research_text" value="UN40E6400" class="span8 " placeholder=""/>
         <div id="research_dropdown"></div>
-        <button type="button" class="btn pull-right btn-success">Search</button>
+        <button id="research_search" type="button" class="btn pull-right btn-success">Search</button>
         <?php echo form_close();?>
     </div>
     <div class="clear"></div>
@@ -109,17 +131,24 @@
             <ul class="research_content connectedSortable" id="sortable1">
                 <li class="boxes">
                     <h3>Results</h3>
-                    <div class="boxes_content"></div>
+                    <div class="boxes_content">
+                        <ul id="products">
+                            <li class="main"><span>Product Name</span><span>URL</span></li>
+                            <li><span>&nbsp;</span><span>&nbsp;</span></li>
+                            <li><span>&nbsp;</span><span>&nbsp;</span></li>
+                            <li><span>&nbsp;</span><span>&nbsp;</span></li>
+                            <li><span>&nbsp;</span><span>&nbsp;</span></li>
+                        </ul>
+                    </div>
                 </li>
                 <li class="boxes mt_10" id="related_keywords">
                     <h3>Related keywords</h3>
                     <div class="boxes_content">
-                        <ul id="products">
-                            <li><span>Product Name</span><span>URL</span></li>
-                            <li><span>&nbsp;</span><span>&nbsp;</span></li>
-                            <li><span>&nbsp;</span><span>&nbsp;</span></li>
-                            <li><span>&nbsp;</span><span>&nbsp;</span></li>
-                            <li><span>&nbsp;</span><span>&nbsp;</span></li>
+                        <ul id="related_keywords">
+                            <li><span>Televisions</span></li>
+                            <li><span>TVs</span></li>
+                            <li><span>LCD TV</span></li>
+                            <li><span>LED TV</span></li>
                         </ul>
                     </div>
                 </li>
@@ -135,9 +164,9 @@
                 <li class="boxes" id="keywords">
                     <h3>Keywords</h3>
                     <div class="boxes_content">
-                        <p><span>Primary:</span><input type="text" name="primary"/></p>
-                        <p><span>Secondary:</span><input type="text" name="secondary"/></p>
-                        <p><span>Text:</span><input type="text" name="txt"/></p>                       
+                        <p><span>Primary:</span><input type="text" name="primary" value="Television" /><a href="#" class="clear_all">x</a></p>
+                        <p><span>Secondary:</span><input type="text" name="secondary" value="TVs" /><a href="#" class="clear_all">x</a></p>
+                        <p><span>Third:</span><input type="text" name="third" value="LCD TV" /><a href="#" class="clear_all">x</a></p>
                     </div>
                 </li>
 
