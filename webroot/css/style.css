@@ -42,7 +42,8 @@
 	overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    max-width: 165px;
+    max-width: 230px;
+    font-size: 12px;
 }
 .word_wrap_li_pr.hover_en {
 	text-decoration: underline;
@@ -53,6 +54,24 @@
 }
 .word_wrap_li_sec {
 	display: inline-block;
+}
+.bold_li {
+	font-weight: bold;
+}
+.normal_font_w {
+	font-weight: normal;
+}
+li[data-status='words_an'] {
+	display: none;
+}
+*[data-status='seo_an'] {
+	display: none;
+}
+.less_b_margin {
+	margin-bottom: 0px;
+}
+.li_top_margin {
+	margin-top: 5px;
 }
 /* Keywords Metrics (analysis) (end) */
 
