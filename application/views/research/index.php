@@ -88,11 +88,7 @@
                 <option value="50">50</option>
             </select>
             results in category
-            <select class="mt_10" name="category">
-                <option value="category1">category1</option>
-                <option value="category2">category2</option>
-                <option value="category3">category3</option>
-            </select>
+            <?php echo form_dropdown('category', $category_list, array(), 'class="mt_10"'); ?>
         </div>
         <div class="span6">
             Batch:

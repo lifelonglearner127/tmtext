@@ -19,8 +19,20 @@ class Research extends MY_Controller {
 
     public function index()
     {
+        $this->data['category_list'] = $this->category_list();
         $this->render();
     }
 
+    public function category_list()
+    {
+        $this->load->model('category_model');
+        $categories = $this->category_model->getAll();
+        $category_list = array();
+        foreach($categories as $category){
+            array_push($category_list, $category->name);
+        }
+        return $category_list;
+
+    }
 
 }
