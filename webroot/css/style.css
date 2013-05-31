@@ -728,8 +728,7 @@ p.show_ballons input{
 }
 
 .boxes_content{
-    padding-top: 10px;
-    padding-right: 10px;
+    padding: 10px;
     overflow: hidden;
 }
 
@@ -792,9 +791,10 @@ p.show_ballons input{
 	overflow: hidden;
 }
 
-#products, #related_keywords{
-    margin:10px;
+#products{
+    margin:0px;
     padding: 0px;
+    font-size: 12px;
 }
 
 #products li, #related_keywords li{
@@ -825,4 +825,17 @@ p.show_ballons input{
 
 .research a.clear_all{
     margin-left: 10px;
+}
+
+#related_keywords{
+    margin:0px;
+    font-size: 12px;
+}
+
+label.dd-selected-text, label.dd-option-text{
+    margin:4px;
+}
+
+#product_descriptions{
+    display: none;
 }

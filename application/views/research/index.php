@@ -2,6 +2,11 @@
     $(document).ready(function () {
         var ddData_first = [
             {
+                text: "All",
+                value: "",
+                description: "",
+            },
+            {
                 text: "",
                 value: "Walmart.com",
                 description: "",
@@ -77,18 +82,45 @@
         $(document).on("click", 'button#research_search', function(){
             $.post('research/search_results', { 'search_data': $('input[name="research_text"]').val() }, function(data){
                     if(data.length > 0){
+                        $('ul#product_descriptions').empty();
                         $('ul#products li').each(function(){
                             if($(this).attr('class') != 'main' || $(this).attr('class') == undefined){
                                 $(this).remove();
                             }
                         });
-                        var str='';
+                        var str = '';
+                        var desc = '';
                         for(var i=0; i < data.length; i++){
-                            str += '<li><span>'+data[i].product_name+'</span><span>'+data[i].url+'</span></li>';
+                            str += '<li id="'+data[i].imported_data_id+'"><span>'+data[i].product_name.substr(0, 23)+
+                                '...</span><span>'+data[i].url.substr(0, 27)+'...</span></li>';
+                            desc +=  '<li id="'+data[i].imported_data_id+'_desc">'+data[i].description+'</li>';
+
                         }
                         $('ul#products').append(str);
+                        $('ul#product_descriptions').append(desc);
                     }
                 }, 'json');
+        });
+
+        $(document).on("click", '#related_keywords li', function(){
+            var txt = $(this).text();
+            if($('input[name="primary"]').val() == ''){
+                $('input[name="primary"]').val(txt);
+            } else if($('input[name="primary"]').val() != '' && $('input[name="secondary"]').val() == ''){
+                $('input[name="secondary"]').val(txt);
+            } else if($('input[name="secondary"]').val() != '' && $('input[name="third"]').val() == ''){
+                $('input[name="third"]').val(txt);
+            }
+        });
+
+        $(document).on("click", '#products li', function(){
+            $('textarea[name="short_description"]').text('');
+            $('textarea[name="long_description"]').text('');
+            if($(this).attr('id')!='' && $(this).attr('id')!=undefined){
+                var txt = $('ul#product_descriptions li#'+$(this).attr('id')+'_desc').text();
+                $('textarea[name="short_description"]').text(txt);
+                $('textarea[name="long_description"]').text(txt);
+            }
         });
     });
 </script>
@@ -115,9 +147,9 @@
         <div class="span6">
             Batch:
             <select class="mt_10" style="width: 100px;" name="text">
-                <option value="text1">text1</option>
-                <option value="text2">text2</option>
-                <option value="text3">text3</option>
+                <option value="Batch1">Batch1</option>
+                <option value="Batch2">Batch2</option>
+                <option value="text3">Batch3</option>
             </select>
             <button class="btn" type="button" style="margin-left:5px; margin-right: 10px;">Export</button>
             Add new: <input type="text" class="mt_10" style="width:80px" name="new_batch">
@@ -131,14 +163,15 @@
             <ul class="research_content connectedSortable" id="sortable1">
                 <li class="boxes">
                     <h3>Results</h3>
-                    <div class="boxes_content">
+                    <div class="boxes_content" style="height: 200px; overflow: auto;">
                         <ul id="products">
-                            <li class="main"><span>Product Name</span><span>URL</span></li>
+                            <li class="main"><span><b>Product Name</b></span><span><b>URL</b></span></li>
                             <li><span>&nbsp;</span><span>&nbsp;</span></li>
                             <li><span>&nbsp;</span><span>&nbsp;</span></li>
                             <li><span>&nbsp;</span><span>&nbsp;</span></li>
                             <li><span>&nbsp;</span><span>&nbsp;</span></li>
                         </ul>
+                        <ul id="product_descriptions"></ul>
                     </div>
                 </li>
                 <li class="boxes mt_10" id="related_keywords">
@@ -164,9 +197,9 @@
                 <li class="boxes" id="keywords">
                     <h3>Keywords</h3>
                     <div class="boxes_content">
-                        <p><span>Primary:</span><input type="text" name="primary" value="Television" /><a href="#" class="clear_all">x</a></p>
-                        <p><span>Secondary:</span><input type="text" name="secondary" value="TVs" /><a href="#" class="clear_all">x</a></p>
-                        <p><span>Third:</span><input type="text" name="third" value="LCD TV" /><a href="#" class="clear_all">x</a></p>
+                        <p><span>Primary:</span><input type="text" name="primary" value="" /><a href="#" class="clear_all">x</a></p>
+                        <p><span>Secondary:</span><input type="text" name="secondary" value="" /><a href="#" class="clear_all">x</a></p>
+                        <p><span>Third:</span><input type="text" name="third" value="" /><a href="#" class="clear_all">x</a></p>
                     </div>
                 </li>
 
