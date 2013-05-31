@@ -152,6 +152,7 @@ class Editor extends MY_Controller {
 
 	public function searchmeasuredb() {
 		$s = $this->input->post('s');
+		$sl = $this->input->post('sl');
 
 		$data = array(
 			'search_flag' => '',
@@ -160,7 +161,7 @@ class Editor extends MY_Controller {
 
 		$this->load->model('imported_data_parsed_model');
 		$files_data_flag = false;
-		$data_import = $this->imported_data_parsed_model->getByValueLikeGroup($s);
+		$data_import = $this->imported_data_parsed_model->getByValueLikeGroup($s, $sl);
 		if($data_import !== false) { // ---- DB DATA
 			if(count($data_import) > 0) {
 				$res = array('product_name' => '', 'short_desc' => '', 'long_desc' => '', 'url' => '');

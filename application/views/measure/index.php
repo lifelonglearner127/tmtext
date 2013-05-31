@@ -8,7 +8,8 @@
     function startMeasureCompare() {
         $("#measure_tab_pr_content_head .item_title b").html('No Title');
         var s = $.trim($("#compare_text").val());
-        var searcher = $.post(editorSearchBaseUrl, { s: s }, 'html').done(function(data) {
+        var sl = $.trim($(".dd-selected-value").val());
+        var searcher = $.post(editorSearchBaseUrl, { s: s, sl: sl }, 'html').done(function(data) {
             if(typeof(data) !== "undefined" && data !== "") {
                 $("#measure_tab_pr_content_body").html(data);
                 var ms = $(data).find("#measure_res_status").val();
@@ -33,15 +34,17 @@
                     var analyzer_short = $.post(measureAnalyzerBaseUrl, { clean_t: short_desc_an }, 'json').done(function(a_data) {
                         var seo_items = "<li class='long_desc_sep'>Short Description:</li>";
                         var top_style = "";
+                        var s_counter = 0;
                         for(var i in a_data) {
                             if(typeof(a_data[i]) === 'object') {
+                                s_counter++;
                                 if(i == 0) {
                                     top_style = "style='margin-top: 5px;'";
                                 }
                                 seo_items += '<li ' + top_style + '>' + '<span data-status="seo_link" onclick="wordHighLighter(\''+a_data[i]['ph']+'\', \''+short_status+'\');" class="word_wrap_li_pr hover_en">' + a_data[i]['ph'] + '</span>' + ' <span class="word_wrap_li_sec">(' + a_data[i]['count'] + ')</span></li>';
                             }
                         }
-                        $("ul[data-st-id='short_desc_seo']").html(seo_items);
+                        if(s_counter > 0) $("ul[data-st-id='short_desc_seo']").html(seo_items);
                     });
                     // --- SHORT DESC ANALYZER (END)
 
@@ -53,8 +56,10 @@
                     var analyzer_long = $.post(measureAnalyzerBaseUrl, { clean_t: long_desc_an }, 'json').done(function(a_data) {
                         var seo_items = "<li class='long_desc_sep'>Long Description:</li>";
                         var top_style = "";
+                        var l_counter = 0;
                         for(var i in a_data) {
                             if(typeof(a_data[i]) === 'object') {
+                                l_counter++;
                                 if(i == 0) {
                                     top_style = "style='margin-top: 5px;'";
                                 }
@@ -62,7 +67,7 @@
                                 // seo_items += '<li ' + top_style + '>' + '<span data-status="seo_link" data-status-sv="long"  class="word_wrap_li_pr hover_en">' + a_data[i]['ph'] + '</span>' + ' <span class="word_wrap_li_sec">(' + a_data[i]['count'] + ')</span></li>';
                             }
                         }
-                        $("ul[data-st-id='long_desc_seo']").html(seo_items);
+                        if(l_counter > 0) $("ul[data-st-id='long_desc_seo']").html(seo_items);
                     });
                     // --- LONG DESC ANALYZER (END)
 
@@ -168,30 +173,30 @@
         if(typeof(attr) !== 'undefined' && attr === 'seo_link') {} else { removeTagsFromDescs(); }
     });
 
-    // $("span[data-status='seo_link']").delegate('click', function(e) {
-    //     var w = $.trim($(e.target).text());
-    //     var status = $(e.target).attr('data-status-sv');
-    //     wordHighLighter(w, status);
-    // });
 
     // ---- METRICS (SEO PHRASES) (END)
     $(document).ready(function () {
         var ddData_first = [
             {
+                text: "All",
+                value: "all",
+                description: ""
+            },
+            {
                 text: "",
-                value: "Walmart.com",
+                value: "walmart.com",
                 description: "",
                 imageSrc: "<?php echo base_url(); ?>img/walmart-logo.png"
             },
             {
                 text: "",
-                value: "Sears.com",
+                value: "sears.com",
                 description: "",
                 imageSrc: "<?php echo base_url(); ?>img/sears-logo.png"
             },
             {
                 text: "",
-                value: "TigerDirect.com",
+                value: "tigerdirect.com",
                 description: "",
                 imageSrc: "<?php echo base_url(); ?>img/tigerdirect-logo.png"
             },

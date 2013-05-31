@@ -22,17 +22,56 @@ class Imported_data_parsed_model extends CI_Model {
         return $query->result();
     }
 
-    function getByValueLikeGroup($s) {
+    function getByValueLikeGroup($s, $sl) {
         $this->db->select('imported_data_id, key, value');
         $this->db->like('value', $s);
         $this->db->group_by('imported_data_id');
         $res = $this->db->get($this->tables['imported_data_parsed']);
         if($res->num_rows() > 0) {
             $result = $res->result_array();
-            $im_data_id = $result[0]['imported_data_id'];
+            
+            // --- OLD ONE (START)
+            // $im_data_id = $result[0]['imported_data_id'];
+            // $query = $this->db->where('imported_data_id', $im_data_id)->get($this->tables['imported_data_parsed']);
+            // return $query->result_array();
+            // --- OLD ONE (END)
 
-            $query = $this->db->where('imported_data_id', $im_data_id)->get($this->tables['imported_data_parsed']);
-            return $query->result_array();
+            // --- NEW ONE (START)
+            $final_res = array();
+            if($sl !== 'all') {
+                $im_data_id_arr = array();
+                foreach ($result as $key => $value) {
+                    $im_data_id_arr[] = $value['imported_data_id'];
+                }
+                $query = $this->db->where_in('imported_data_id', $im_data_id_arr)->get($this->tables['imported_data_parsed']);
+                $f_res = $query->result_array();
+                $f_index = 0;
+                foreach ($f_res as $key => $value) {
+                    if($value['key'] === 'URL') {
+                        if(strpos($value['value'], "$sl") !== false) {
+                            $f_index = $value['imported_data_id'];
+                            break;
+                        }
+                    }
+                }
+                if($f_index != 0) {
+                    $im_data_id = $f_index;
+                    $query = $this->db->where('imported_data_id', $im_data_id)->get($this->tables['imported_data_parsed']);
+                    $f_res = $query->result_array();
+                    $final_res = $f_res;
+                    return $final_res;
+                } else {
+                    return $final_res;
+                }
+            } else {
+                $im_data_id = $result[0]['imported_data_id'];
+                $query = $this->db->where('imported_data_id', $im_data_id)->get($this->tables['imported_data_parsed']);
+                $f_res = $query->result_array();
+                $final_res = $f_res;
+            }
+            return $final_res;
+            // --- NEW ONE (END)
+            
         }
         return false;
     }
