@@ -38,7 +38,7 @@
                                 if(i == 0) {
                                     top_style = "style='margin-top: 5px;'";
                                 }
-                                seo_items += '<li ' + top_style + '>' + '<span onclick="wordHighLighter(\''+a_data[i]['ph']+'\', \''+short_status+'\');" class="word_wrap_li_pr hover_en">' + a_data[i]['ph'] + '</span>' + ' <span class="word_wrap_li_sec">(' + a_data[i]['count'] + ')</span></li>';
+                                seo_items += '<li ' + top_style + '>' + '<span data-status="seo_link" onclick="wordHighLighter(\''+a_data[i]['ph']+'\', \''+short_status+'\');" class="word_wrap_li_pr hover_en">' + a_data[i]['ph'] + '</span>' + ' <span class="word_wrap_li_sec">(' + a_data[i]['count'] + ')</span></li>';
                             }
                         }
                         $("ul[data-st-id='short_desc_seo']").html(seo_items);
@@ -58,7 +58,7 @@
                                 if(i == 0) {
                                     top_style = "style='margin-top: 5px;'";
                                 }
-                                seo_items += '<li ' + top_style + '>' + '<span onclick="wordHighLighter(\''+a_data[i]['ph']+'\', \''+long_status+'\');" class="word_wrap_li_pr hover_en">' + a_data[i]['ph'] + '</span>' + ' <span class="word_wrap_li_sec">(' + a_data[i]['count'] + ')</span></li>';
+                                seo_items += '<li ' + top_style + '>' + '<span data-status="seo_link" onclick="wordHighLighter(\''+a_data[i]['ph']+'\', \''+long_status+'\');" class="word_wrap_li_pr hover_en">' + a_data[i]['ph'] + '</span>' + ' <span class="word_wrap_li_sec">(' + a_data[i]['count'] + ')</span></li>';
                             }
                         }
                         $("ul[data-st-id='long_desc_seo']").html(seo_items);
@@ -161,6 +161,11 @@
             $.scrollTo("#details-long-desc", 400);
         }  
     }
+
+    $("*").click(function(e) {
+        var attr = $(e.target).attr('data-status');
+        if(typeof(attr) !== 'undefined' && attr === 'seo_link') {} else { removeTagsFromDescs(); }
+    });
 
     // ---- METRICS (SEO PHRASES) (END)
     $(document).ready(function () {
