@@ -92,21 +92,73 @@
         
     }
 
+    // function wordHighLighter(w, status) {
+    //     if(status === 'short') {
+    //         var high_opt = {
+    //             exact: 'whole',
+    //             highlight: $('#details-short-desc'),
+    //             keys: w
+    //         };
+    //         $('#details-short-desc').SearchHighlight(high_opt);
+    //     } else if(status === 'long') {
+    //         var high_opt = {
+    //             exact: 'whole',
+    //             highlight: $('#details-long-desc'),
+    //             keys: w
+    //         };
+    //         $('#details-long-desc').SearchHighlight(high_opt);
+    //     }  
+    // }
+
+    function removeTagsFromDescs() {
+        var short_str = $("#details-short-desc").text();
+        var long_str = $("#details-long-desc").text();
+        var short_str_clean = short_str.replace(/<\/?[^>]+(>|$)/g, "");
+        var long_str_clean = long_str.replace(/<\/?[^>]+(>|$)/g, "");
+        $("#details-short-desc").html(short_str_clean);
+        $("#details-long-desc").html(long_str_clean);
+    }
+
     function wordHighLighter(w, status) {
+        removeTagsFromDescs();
+        var highlightStartTag = "<span class='hilite'>";
+        var highlightEndTag = "</span>";
+        var searchTerm = w;
+        var bodyText = '';
         if(status === 'short') {
-            var high_opt = {
-                exact: 'whole',
-                highlight: $('#details-short-desc'),
-                keys: w
-            };
-            $('#details-short-desc').SearchHighlight(high_opt);
+            bodyText = $("#details-short-desc").text();
         } else if(status === 'long') {
-            var high_opt = {
-                exact: 'whole',
-                highlight: $('#details-long-desc'),
-                keys: w
-            };
-            $('#details-long-desc').SearchHighlight(high_opt);
+            bodyText = $("#details-long-desc").text();
+        }
+
+        var newText = "";
+        var i = -1;
+        var lcSearchTerm = searchTerm.toLowerCase();
+        var lcBodyText = bodyText.toLowerCase();
+
+        while (bodyText.length > 0) {
+            i = lcBodyText.indexOf(lcSearchTerm, i+1);
+            if (i < 0) {
+              newText += bodyText;
+              bodyText = "";
+            } else {
+              if (bodyText.lastIndexOf(">", i) >= bodyText.lastIndexOf("<", i)) {
+                if (lcBodyText.lastIndexOf("/script>", i) >= lcBodyText.lastIndexOf("<script", i)) {
+                  newText += bodyText.substring(0, i) + highlightStartTag + bodyText.substr(i, searchTerm.length) + highlightEndTag;
+                  bodyText = bodyText.substr(i + searchTerm.length);
+                  lcBodyText = bodyText.toLowerCase();
+                  i = -1;
+                }
+              }
+            }
+        }
+
+        if(status === 'short') {
+            bodyText = $("#details-short-desc").html(newText);
+            $.scrollTo("#details-short-desc", 400);
+        } else if(status === 'long') {
+            bodyText = $("#details-long-desc").html(newText);
+            $.scrollTo("#details-long-desc", 400);
         }  
     }
 
