@@ -132,14 +132,16 @@
                 $(this).css({'background':'none'});
             });
             $(this).css({'background':'#CAEAFF'});
-            $('#rel_keywords').css({'display':'block'})
-            $('textarea[name="short_description"]').text('');
-            $('textarea[name="long_description"]').text('');
+            $('#rel_keywords').css({'display':'block'});
+            $('textarea[name="short_description"]').val('');
+            $('textarea[name="long_description"]').val('');
             if($(this).attr('id')!='' && $(this).attr('id')!=undefined){
                 var txt = $('ul#product_descriptions li#'+$(this).attr('id')+'_desc').text();
-                $('textarea[name="short_description"]').text(txt);
-                $('textarea[name="long_description"]').text(txt);
+                $('textarea[name="short_description"]').val(txt);
+                $('textarea[name="long_description"]').val(txt);
                 $('input[name="product_name"]').val($(this).find('span:first-child').text());
+                $('textarea[name="short_description"]').trigger('change');
+                $('textarea[name="long_description"]').trigger('change');
             }
         });
     });
