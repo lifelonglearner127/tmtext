@@ -73,6 +73,7 @@ li[data-status='words_an'] {
 .li_top_margin {
 	margin-top: 5px;
 }
+span[class*="hilite"] { background: yellow; }
 /* Keywords Metrics (analysis) (end) */
 
 /* Login container style */

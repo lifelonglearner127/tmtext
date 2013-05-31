@@ -6,7 +6,6 @@
     var editorSearchBaseUrl = "<?php echo base_url(); ?>index.php/editor/searchmeasuredb";
 
     function startMeasureCompare() {
-        // $("#metrics_seo_phrases").nextAll().remove();
         $("#measure_tab_pr_content_head .item_title b").html('No Title');
         var s = $.trim($("#compare_text").val());
         var searcher = $.post(editorSearchBaseUrl, { s: s }, 'html').done(function(data) {
@@ -27,6 +26,7 @@
                     }
 
                     // --- SHORT DESC ANALYZER (START)
+                    var short_status = 'short';
                     var short_desc_an = $("#details-short-desc").html();
                     short_desc_an = short_desc_an.replace(/\s+/g, ' ');
                     short_desc_an = short_desc_an.trim();
@@ -38,15 +38,15 @@
                                 if(i == 0) {
                                     top_style = "style='margin-top: 5px;'";
                                 }
-                                seo_items += "<li " + top_style + ">" + "<span class='word_wrap_li_pr hover_en'>" + a_data[i]['ph'] + "</span>" + " <span class='word_wrap_li_sec'>(" + a_data[i]['count'] + ")</span></li>";
+                                seo_items += '<li ' + top_style + '>' + '<span onclick="wordHighLighter(\''+a_data[i]['ph']+'\', \''+short_status+'\');" class="word_wrap_li_pr hover_en">' + a_data[i]['ph'] + '</span>' + ' <span class="word_wrap_li_sec">(' + a_data[i]['count'] + ')</span></li>';
                             }
                         }
-                        // $(seo_items).insertAfter($("#metrics_seo_phrases"));
                         $("ul[data-st-id='short_desc_seo']").html(seo_items);
                     });
                     // --- SHORT DESC ANALYZER (END)
 
                     // --- LONG DESC ANALYZER (START)
+                    var long_status = 'long';
                     var long_desc_an = $("#details-long-desc").html();
                     long_desc_an = long_desc_an.replace(/\s+/g, ' ');
                     long_desc_an = long_desc_an.trim();
@@ -58,10 +58,9 @@
                                 if(i == 0) {
                                     top_style = "style='margin-top: 5px;'";
                                 }
-                                seo_items += "<li " + top_style + ">" + "<span class='word_wrap_li_pr hover_en'>" + a_data[i]['ph'] + "</span>" + " <span class='word_wrap_li_sec'>(" + a_data[i]['count'] + ")</span></li>";
+                                seo_items += '<li ' + top_style + '>' + '<span onclick="wordHighLighter(\''+a_data[i]['ph']+'\', \''+long_status+'\');" class="word_wrap_li_pr hover_en">' + a_data[i]['ph'] + '</span>' + ' <span class="word_wrap_li_sec">(' + a_data[i]['count'] + ')</span></li>';
                             }
                         }
-                        // $(seo_items).insertAfter($("#metrics_seo_phrases"));
                         $("ul[data-st-id='long_desc_seo']").html(seo_items);
                     });
                     // --- LONG DESC ANALYZER (END)
@@ -93,6 +92,19 @@
         
     }
 
+    function wordHighLighter(w, status) {
+        var high_opt = {
+            exact: 'exact',
+            keys: w
+        };
+        if(status === 'short') {
+            $('#details-short-desc').SearchHighlight(high_opt);
+            s_area = '#details-short-desc';
+        } else if(status === 'long') {
+            $('#details-long-desc').SearchHighlight(high_opt);
+        }  
+    }
+
     // ---- METRICS (SEO PHRASES) (END)
     $(document).ready(function () {
         var ddData_first = [
@@ -119,6 +131,7 @@
             data: ddData_first,
             defaultSelectedIndex: 0
         });
+
     });
 </script>
 <div class="main_content_other"></div>
