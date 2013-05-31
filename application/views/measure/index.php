@@ -59,6 +59,7 @@
                                     top_style = "style='margin-top: 5px;'";
                                 }
                                 seo_items += '<li ' + top_style + '>' + '<span data-status="seo_link" onclick="wordHighLighter(\''+a_data[i]['ph']+'\', \''+long_status+'\');" class="word_wrap_li_pr hover_en">' + a_data[i]['ph'] + '</span>' + ' <span class="word_wrap_li_sec">(' + a_data[i]['count'] + ')</span></li>';
+                                // seo_items += '<li ' + top_style + '>' + '<span data-status="seo_link" data-status-sv="long"  class="word_wrap_li_pr hover_en">' + a_data[i]['ph'] + '</span>' + ' <span class="word_wrap_li_sec">(' + a_data[i]['count'] + ')</span></li>';
                             }
                         }
                         $("ul[data-st-id='long_desc_seo']").html(seo_items);
@@ -166,6 +167,12 @@
         var attr = $(e.target).attr('data-status');
         if(typeof(attr) !== 'undefined' && attr === 'seo_link') {} else { removeTagsFromDescs(); }
     });
+
+    // $("span[data-status='seo_link']").delegate('click', function(e) {
+    //     var w = $.trim($(e.target).text());
+    //     var status = $(e.target).attr('data-status-sv');
+    //     wordHighLighter(w, status);
+    // });
 
     // ---- METRICS (SEO PHRASES) (END)
     $(document).ready(function () {
