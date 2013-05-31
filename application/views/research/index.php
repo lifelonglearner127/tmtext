@@ -1,46 +1,78 @@
 <script type="text/javascript">
-    $(document).ready(function () {
-        var ddData_first = [
-            {
-                text: "All",
-                value: "",
-                description: "",
-            },
-            {
-                text: "",
-                value: "Overstock.com",
-                description: "",
-                imageSrc: "<?php echo base_url(); ?>img/overstock-logo.png"
-            },
-            {
-                text: "",
-                value: "Walmart.com",
-                description: "",
-                imageSrc: "<?php echo base_url(); ?>img/walmart-logo.png"
-            },
-            {
-                text: "",
-                value: "Sears.com",
-                description: "",
-                imageSrc: "<?php echo base_url(); ?>img/sears-logo.png"
-            },
-            {
-                text: "",
-                value: "TigerDirect.com",
-                description: "",
-                imageSrc: "<?php echo base_url(); ?>img/tigerdirect-logo.png"
-            },
-        ];
-
+    var ddData_first = [
+        {
+            text: "All Sites",
+            value: "",
+            description: "",
+        },
+        {
+            text: "",
+            value: "Overstock.com",
+            description: "",
+            imageSrc: "<?php echo base_url(); ?>img/overstock-logo.png"
+        },
+        {
+            text: "",
+            value: "Sears.com",
+            description: "",
+            imageSrc: "<?php echo base_url(); ?>img/sears-logo.png"
+        },
+        {
+            text: "",
+            value: "TigerDirect.com",
+            description: "",
+            imageSrc: "<?php echo base_url(); ?>img/tigerdirect-logo.png"
+        },
+        {
+            text: "",
+            value: "Walmart.com",
+            description: "",
+            imageSrc: "<?php echo base_url(); ?>img/walmart-logo.png"
+        },
+    ];
+    function addDropdown(){
+        window.preventAction = false;
         $('#research_dropdown').ddslick({
             data: ddData_first,
-            defaultSelectedIndex: 0
+            defaultSelectedIndex: 0,
+            selectText: "Select your favorite social network",
+            truncateDescription: true,
         });
+    }
+    $(document).ready(function () {
+        addDropdown();
         $( "#sortable1, #sortable2" ).sortable({
             connectWith: ".connectedSortable"
         });
         
-        $( "#research, #research_edit" ).draggable({containment: "#main"});
+        $("#research, #research_edit" ).draggable({
+            containment: "#main",
+            drag: function( event, ui ) {
+               if(ui.originalPosition.left > ui.position.left){
+                   if($(this).attr('id')=='research_edit'){
+                       $(this).addClass('left_pos');
+                       $('#research').css({'float':'right'});
+                   } else {
+                       $(this).addClass('left_pos');
+                       $(this).css({'float':'left'});
+                       $('#research_edit').addClass('left_pos');
+                       $('#research_edit').css({'float':'right'});
+                   }
+               } else {
+                   if($(this).attr('id')=='research_edit'){
+                       $(this).addClass('left_pos');
+                       $('#research').css({'float':'left'});
+                   } else {
+                       $(this).addClass('left_pos');
+                       $(this).css({'float':'right'});
+                       $('#research_edit').addClass('left_pos');
+                       $('#research_edit').css({'float':'right'});
+                   }
+               }
+            }
+        });
+
+        $( ".ui-draggable" ).disableSelection();
 
         $( "ul#sortable1 li.boxes, ul#sortable2 li.boxes" ).resizable();
 
@@ -105,6 +137,7 @@
                         $('.main span:first-child').css({'width':'172px'});
                         $('ul#products').append(str);
                         $('ul#product_descriptions').append(desc);
+                        $('#products li:eq(0)').trigger('click');
                     }
                 }, 'json');
         });

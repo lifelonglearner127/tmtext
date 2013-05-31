@@ -678,12 +678,15 @@ p.show_ballons input{
     margin: 0px;
     padding-left: 10px;
 }
+
 #research {
     border: 1px solid #CCCCCC;
     -webkit-border-radius: 5px;
     -moz-border-radius: 5px;
     border-radius: 5px;
     margin: 5px;
+    background: #fff;
+    z-index: ;0000;
 }
 
 #research_edit {
@@ -693,6 +696,7 @@ p.show_ballons input{
     border-radius: 5px;
     width:  440px;
     margin: 5px;
+    background: #fff;
 }
 
 .research_content {
@@ -704,6 +708,7 @@ p.show_ballons input{
     -webkit-border-radius: 5px;
     -moz-border-radius: 5px;
     border-radius: 5px;
+    background: #fff;
 }
 #research_edit h3, #research h3{
     font-size: 16px;
@@ -846,4 +851,8 @@ label.dd-selected-text, label.dd-option-text{
 }
 .boxes_content textarea{
     width:380px!important;
+}
+
+.left_pos{
+    left:0!important;
 }
