@@ -1,10 +1,10 @@
 # 05/31 Tatiana
 ALTER TABLE `groups` ADD `default_controller` VARCHAR( 255 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL AFTER `auth_rules`;
-UPDATE `tmeditor`.`groups` SET `default_controller` = 'editor/index' WHERE `groups`.`id` =1;
-UPDATE `tmeditor`.`groups` SET `default_controller` = 'validate/index' WHERE `groups`.`id` =3;
-UPDATE `tmeditor`.`groups` SET `default_controller` = 'editor/index' WHERE `groups`.`id` =4;
-UPDATE `tmeditor`.`groups` SET `default_controller` = 'editor/index' WHERE `groups`.`id` =5;
-UPDATE `tmeditor`.`groups` SET `default_controller` = 'editor/index' WHERE `groups`.`id` =6;
+UPDATE `groups` SET `default_controller` = 'editor/index' WHERE `groups`.`id` =1;
+UPDATE `groups` SET `default_controller` = 'validate/index' WHERE `groups`.`id` =3;
+UPDATE `groups` SET `default_controller` = 'editor/index' WHERE `groups`.`id` =4;
+UPDATE `groups` SET `default_controller` = 'editor/index' WHERE `groups`.`id` =5;
+UPDATE `groups` SET `default_controller` = 'editor/index' WHERE `groups`.`id` =6;
 
 # 05/30 Andrew <-- start
 INSERT INTO `tmeditor.dev`.`customers` (`id` , `name` , `description`) VALUES ( NULL , 'Overstock.com', '0');
