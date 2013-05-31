@@ -792,13 +792,13 @@ p.show_ballons input{
 	overflow: hidden;
 }
 
-#products{
+#products, .product_title{
     margin:0px;
     padding: 0px;
     font-size: 12px;
 }
 
-#products li, #related_keywords li{
+#products li, .product_title li, #related_keywords li{
     border: 1px solid #ccc;
     border-bottom: none ;
 }
@@ -807,11 +807,11 @@ p.show_ballons input{
     border-bottom: 1px solid #ccc;
 }
 
-#products li span:first-child{
+#products li span:first-child, .product_title li span:first-child{
     border-right: 1px solid #ccc;
 }
 
-#products li span{
+#products li span, .product_title li span{
     display: inline-block;
     padding: 5px;
     width: 45%;
@@ -839,4 +839,11 @@ label.dd-selected-text, label.dd-option-text{
 
 #product_descriptions{
     display: none;
+}
+#rel_keywords{
+    display: none;
+    margin: 0px;
+}
+.boxes_content textarea{
+    width:380px!important;
 }

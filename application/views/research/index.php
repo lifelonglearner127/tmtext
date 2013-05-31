@@ -8,6 +8,12 @@
             },
             {
                 text: "",
+                value: "Overstock.com",
+                description: "",
+                imageSrc: "<?php echo base_url(); ?>img/overstock-logo.png"
+            },
+            {
+                text: "",
                 value: "Walmart.com",
                 description: "",
                 imageSrc: "<?php echo base_url(); ?>img/walmart-logo.png"
@@ -96,6 +102,7 @@
                             desc +=  '<li id="'+data[i].imported_data_id+'_desc">'+data[i].description+'</li>';
 
                         }
+                        $('.main span:first-child').css({'width':'172px'});
                         $('ul#products').append(str);
                         $('ul#product_descriptions').append(desc);
                     }
@@ -104,6 +111,13 @@
 
         $(document).on("click", '#related_keywords li', function(){
             var txt = $(this).text();
+            var count = 0;
+            $('input.keywords').each(function(){
+                if($.trim(txt)==$.trim($(this).val())){
+                    count++;
+                }
+            });
+            if(count>0){ return false; }
             if($('input[name="primary"]').val() == ''){
                 $('input[name="primary"]').val(txt);
             } else if($('input[name="primary"]').val() != '' && $('input[name="secondary"]').val() == ''){
@@ -114,12 +128,18 @@
         });
 
         $(document).on("click", '#products li', function(){
+            $("#products li").each(function(){
+                $(this).css({'background':'none'});
+            });
+            $(this).css({'background':'#CAEAFF'});
+            $('#rel_keywords').css({'display':'block'})
             $('textarea[name="short_description"]').text('');
             $('textarea[name="long_description"]').text('');
             if($(this).attr('id')!='' && $(this).attr('id')!=undefined){
                 var txt = $('ul#product_descriptions li#'+$(this).attr('id')+'_desc').text();
                 $('textarea[name="short_description"]').text(txt);
                 $('textarea[name="long_description"]').text(txt);
+                $('input[name="product_name"]').val($(this).find('span:first-child').text());
             }
         });
     });
@@ -163,9 +183,11 @@
             <ul class="research_content connectedSortable" id="sortable1">
                 <li class="boxes">
                     <h3>Results</h3>
-                    <div class="boxes_content" style="height: 200px; overflow: auto;">
-                        <ul id="products">
+                    <div class="boxes_content"  style="height: 200px;">
+                        <ul class="product_title">
                             <li class="main"><span><b>Product Name</b></span><span><b>URL</b></span></li>
+                        </ul>
+                        <ul id="products" style="height: 170px; overflow: auto;">
                             <li><span>&nbsp;</span><span>&nbsp;</span></li>
                             <li><span>&nbsp;</span><span>&nbsp;</span></li>
                             <li><span>&nbsp;</span><span>&nbsp;</span></li>
@@ -177,11 +199,10 @@
                 <li class="boxes mt_10" id="related_keywords">
                     <h3>Related keywords</h3>
                     <div class="boxes_content">
-                        <ul id="related_keywords">
+                        <ul id="rel_keywords">
                             <li><span>Televisions</span></li>
                             <li><span>TVs</span></li>
                             <li><span>LCD TV</span></li>
-                            <li><span>LED TV</span></li>
                         </ul>
                     </div>
                 </li>
@@ -197,9 +218,9 @@
                 <li class="boxes" id="keywords">
                     <h3>Keywords</h3>
                     <div class="boxes_content">
-                        <p><span>Primary:</span><input type="text" name="primary" value="" /><a href="#" class="clear_all">x</a></p>
-                        <p><span>Secondary:</span><input type="text" name="secondary" value="" /><a href="#" class="clear_all">x</a></p>
-                        <p><span>Third:</span><input type="text" name="third" value="" /><a href="#" class="clear_all">x</a></p>
+                        <p><span>Primary:</span><input class="keywords" type="text" name="primary" value="" /><a href="#" class="clear_all">x</a></p>
+                        <p><span>Secondary:</span><input class="keywords" type="text" name="secondary" value="" /><a href="#" class="clear_all">x</a></p>
+                        <p><span>Tertiary:</span><input class="keywords" type="text" name="third" value="" /><a href="#" class="clear_all">x</a></p>
                     </div>
                 </li>
 
@@ -222,17 +243,17 @@
                              <button type="button" class="btn" style="float:left;">Generate</button>
                              <label><span id="wc">0</span> words</label>
                              <input type="hidden" name="description_length" value="50" class="span3"/>
-                           <textarea type="text" name="short_description" class="span10 mt_10"></textarea>
+                           <textarea type="text" name="short_description" class="span10 mt_10" style="height:100px;"></textarea>
                         </div>
                         <div class="row-fluid"><label>Long description:</label>
                            <input type="hidden" name="long_description_length" value="100" class="span3"/>
                            <label><span id="wc1">0</span> words</label>
-                           <textarea type="text" name="long_description" class="span10"></textarea>
+                           <textarea type="text" name="long_description" class="span10"  style="height:150px;"></textarea>
                         </div>
                         <div class="row-fluid mb_20">
                             <button type="button" class="btn ml_10">Validate</button>
-                            <button type="button" class="btn ml_10">Save</button>
-                            <button type="button" class="btn ml_10">Save & Next</button>
+                            <button type="button" class="btn ml_10 btn-success">Save</button>
+                            <button type="button" class="btn ml_10 btn-success">Save & Next</button>
                         </div>
                     </div>
                 </li>
