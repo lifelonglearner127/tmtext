@@ -165,7 +165,7 @@
                 </li>
                 <li class='keywords_metrics_bl'><button type='button' class='btn btn-primary'>Update</button></li>
                 <li>&nbsp;</li>
-                <li data-status='words_an'><a href='javascript:void(0)'>Words Analysis:</a></li>
+                <li data-status='words_an'><a href='javascript:void(0)'>Word Analysis:</a></li>
                 <li data-status='words_an' class='bold_li li_top_margin'>Short Description: <span class='normal_font_w' data-st-id='short_desc'>0</span></li>
                 <li data-status='words_an' class='bold_li li_top_margin'>Long Description: <span class='normal_font_w' data-st-id='long_desc'>0</span></li>
                 <li data-status='words_an' class='bold_li li_top_margin'>Total: <span class='normal_font_w' data-st-id='total'>0</span></li>
