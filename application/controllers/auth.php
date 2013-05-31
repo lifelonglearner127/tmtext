@@ -80,7 +80,11 @@ class Auth extends MY_Controller {
 				//if the login is successful
 				//redirect them back to the home page
 				$this->session->set_flashdata('message', $this->ion_auth->messages());
-				redirect('/', 'refresh');
+				//redirect('/', 'refresh');
+                $this->load->model('user_groups_model');
+                $user_group = $this->user_groups_model->getRoleByUserId($this->ion_auth->get_user_id());
+                $group = $this->user_groups_model->getGroupById($user_group[0]->group_id);
+                redirect($group[0]["default_controller"], 'refresh');
 			}
 			else
 			{
