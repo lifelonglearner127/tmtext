@@ -1,4 +1,5 @@
 <script type="text/javascript">
+var autocompleteURL = $('#system_autocomplete').attr('action');
 $("#user_customers").chosen().change(function(e){
 	var marcked = $(this).val();
 	var check = $.inArray('all', marcked);
@@ -10,7 +11,7 @@ $("#user_customers").chosen().change(function(e){
 });
 $("#user_role").chosen();
 $("#user_name").autocomplete({
-    source: '/index.php/system/jqueryAutocomplete?column=username',
+    source: autocompleteURL+'?column=username',
     minChars: 2,
     deferRequestBy: 300,
     select: function(event, ui){
@@ -18,7 +19,7 @@ $("#user_name").autocomplete({
     }
 });
 $("#user_mail").autocomplete({
-    source: '/index.php/system/jqueryAutocomplete?column=email',
+    source: autocompleteURL+'?column=email',
     minChars: 2,
     deferRequestBy: 300,
     select: function(event, ui){
@@ -91,6 +92,7 @@ $("#user_mail").autocomplete({
 		    </div>
 		</div>
 		<?php echo form_close();?>
+		<?php echo form_open("system/jqueryAutocomplete", array("id"=>"system_autocomplete"));?><?php echo form_close();?>
     </div>
   </div>
 </div>

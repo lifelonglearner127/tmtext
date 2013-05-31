@@ -574,6 +574,9 @@ class Ion_auth
 		$unused = ($this->config->item('auth_unused_controllers'))?$this->config->item('auth_unused_controllers'):array();
 
 		foreach ($this->controllerlist->getControllers() as $controller =>$arr ) {
+			foreach ($arr as $method) {
+				$result[$controller][$method] = $access;
+			}
 			if (!in_array($controller, $unused) AND !empty($deny_controllers)) {
 				foreach ($arr as $method) {
 					foreach ($deny_controllers as $deny_controller) {
@@ -581,14 +584,8 @@ class Ion_auth
 							foreach ($arr as $method) {
 								$result[$controller][$method] = $deny;
 							}
-						}else{
-							$result[$controller][$method] = $access;
 						}
 					}
-				}
-			}else{
-				foreach ($arr as $method) {
-					$result[$controller][$method] = $access;
 				}
 			}
 		}
