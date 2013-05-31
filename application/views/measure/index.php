@@ -93,14 +93,19 @@
     }
 
     function wordHighLighter(w, status) {
-        var high_opt = {
-            exact: 'exact',
-            keys: w
-        };
         if(status === 'short') {
+            var high_opt = {
+                exact: 'whole',
+                highlight: $('#details-short-desc'),
+                keys: w
+            };
             $('#details-short-desc').SearchHighlight(high_opt);
-            s_area = '#details-short-desc';
         } else if(status === 'long') {
+            var high_opt = {
+                exact: 'whole',
+                highlight: $('#details-long-desc'),
+                keys: w
+            };
             $('#details-long-desc').SearchHighlight(high_opt);
         }  
     }
