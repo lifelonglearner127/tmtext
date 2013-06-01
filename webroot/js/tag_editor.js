@@ -28,7 +28,7 @@ function pipe_replace(reg, str,n) {
     });
 }
 
-jQuery(document).ready(function($) {
+$(document).ready(function() {
     $('html').click(function(event) {
         if($(event.target).parents().index($('#tageditor_content')) == -1) {
             $("#tageditor_content #items_list li").each(function(){
@@ -111,12 +111,12 @@ jQuery(document).ready(function($) {
         }        
     });
 
-    $(document).on("change", "select[name='category']", function(){
+    $(document).on("change ready", "select[name='category']", function(){
         $.post('admin_tag_editor/file_data', { category: $("select[name='category'] option:selected").text() })
             .done(function(data) {
                 $('#tageditor_content #items').html(data);
                 $("#tageditor_description").trigger("ready");
-            });
+        });
     });
     $("select[name='category']").trigger("change");
 

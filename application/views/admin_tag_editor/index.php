@@ -1,3 +1,7 @@
+<script type="text/javascript">
+    $("select[name='category']").trigger("change");
+    $("#tageditor_description").trigger("ready");
+</script>
 <form class="form-horizontal" id="tag_editor">
     <div>
         <div id="products">
