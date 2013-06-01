@@ -1,4 +1,3 @@
-<script src="<?php echo base_url();?>js/tag_editor.js"></script>
 <form class="form-horizontal" id="tag_editor">
     <div>
         <div id="products">
