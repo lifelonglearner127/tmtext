@@ -1,4 +1,7 @@
 <script>
+    
+    $("#compare_text").focus();
+
     // ---- METRICS (SEO PHRASES) (START)
 
     var measureAnalyzerBaseUrl = "<?php echo base_url(); ?>index.php/measure/analyzestring";
@@ -179,7 +182,7 @@
 
         var customers_list = $.post(customersListBaseUrl, { }, 'json').done(function(c_data) {
             var cl_arr = [];
-            var ddData_first = [];
+            var ddData_second = [];
             cl_arr.push("All Sites");
             for(i in c_data) {
                 cl_arr.push(c_data[i]);
@@ -222,10 +225,10 @@
                         imageSrc: imageSrc_d
                     };
                 }
-                ddData_first.push(mid);
+                ddData_second.push(mid);
             };
             $('#measure_dropdown').ddslick({
-                data: ddData_first,
+                data: ddData_second,
                 defaultSelectedIndex: 0
             });
         });
@@ -267,7 +270,7 @@
 <div class="row-fluid">
     <?php echo form_open('', array('id'=>'measureFormMetrics')); ?>
         <!-- <input type="text" name="compare_text" value="UN40ES6500" id="compare_text" class="span8" placeholder=""/> -->
-        <input type="text" name="compare_text" value="UN40ES6500" id="compare_text" class="span8" placeholder=""/>
+        <input type="text" name="compare_text" value="" id="compare_text" class="span8" placeholder=""/>
         <div id="measure_dropdown" class="dropdowns"></div>
         <button type="submit" onclick="return startMeasureCompare()" class="btn pull-right">Search</button>
     <?php echo form_close();?>
