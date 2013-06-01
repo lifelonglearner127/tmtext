@@ -3,7 +3,7 @@
     $("#compare_text").focus();
 
     // ---- METRICS (SEO PHRASES) (START)
-
+    var customersListBaseUrl = "<?php echo base_url(); ?>index.php/measure/getcustomerslist";
     var measureAnalyzerBaseUrl = "<?php echo base_url(); ?>index.php/measure/analyzestring";
     var editorSearchBaseUrl = "<?php echo base_url(); ?>index.php/editor/searchmeasuredb";
 
@@ -229,15 +229,8 @@
 <div class="main_content_editor">
 <div class="row-fluid">
     <?php echo form_open('', array('id'=>'measureFormMetrics')); ?>
-<<<<<<< Updated upstream
-
     <input type="text" name="compare_text" value="" id="compare_text" class="span8" placeholder=""/>
-    <div class="ddslick_dropdown dropdowns" style="width:104"></div>
-
-=======
-        <input type="text" name="compare_text" value="" id="compare_text" class="span8" placeholder=""/>
-        <div id="measure_dropdown" class="dropdowns"></div>
->>>>>>> Stashed changes
+    <div id="measure_dropdown" class="ddslick_dropdown dropdowns"></div>
         <select class='cats_an_select' id='cats_an' name='cats_an'>
             <?php if(count($category_list) > 0) { ?>
                 <?php foreach ($category_list as $key => $value) { ?>
