@@ -3,7 +3,7 @@
     $("#compare_text").focus();
 
     // ---- METRICS (SEO PHRASES) (START)
-    var customersListBaseUrl = "<?php echo base_url(); ?>index.php/measure/getcustomerslist";
+    // var customersListBaseUrl = "<?php echo base_url(); ?>index.php/measure/getcustomerslist";
     var measureAnalyzerBaseUrl = "<?php echo base_url(); ?>index.php/measure/analyzestring";
     var editorSearchBaseUrl = "<?php echo base_url(); ?>index.php/editor/searchmeasuredb";
 
@@ -168,59 +168,59 @@
     // ---- METRICS (SEO PHRASES) (END)
     $(document).ready(function () {
 
-        var customers_list = $.post(customersListBaseUrl, { }, 'json').done(function(c_data) {
-            var cl_arr = [];
-            var ddData_second = [];
-            cl_arr.push("All Sites");
-            for(i in c_data) {
-                cl_arr.push(c_data[i]);
-            }
-            for (var i = 0; i < cl_arr.length; i++) {
-                if(i == 0) {
-                    var mid = {
-                        text: cl_arr[i],
-                        value: "all",
-                        description: ""
-                    };    
-                } else {
-                    var text_d = cl_arr[i];
-                    var value_d = cl_arr[i];
-                    var imageSrc_d = "";
-                    if(cl_arr[i] == 'bjs.com') {
-                        text_d = "";
-                        imageSrc_d = "<?php echo base_url(); ?>img/bjs-logo.gif";
-                    } else if(cl_arr[i] == 'sears.com') {
-                        text_d = "";
-                        imageSrc_d = "<?php echo base_url(); ?>img/sears-logo.png";
-                    } else if(cl_arr[i] == 'walmart.com') {
-                        text_d = "";
-                        imageSrc_d = "<?php echo base_url(); ?>img/walmart-logo.png";
-                    } else if(cl_arr[i] == 'staples.com') {
-                        text_d = "";
-                        imageSrc_d = "<?php echo base_url(); ?>img/staples-logo.png";
-                    } else if(cl_arr[i] == 'overstock.com') {
-                        text_d = "";
-                        imageSrc_d = "<?php echo base_url(); ?>img/overstock-logo.png";
-                    } else if(cl_arr[i] == 'tigerdirect.com') {
-                        text_d = "";
-                        imageSrc_d = "<?php echo base_url(); ?>img/tigerdirect-logo.png";
-                    }
+        // var customers_list = $.post(customersListBaseUrl, { }, 'json').done(function(c_data) {
+        //     var cl_arr = [];
+        //     var ddData_second = [];
+        //     cl_arr.push("All Sites");
+        //     for(i in c_data) {
+        //         cl_arr.push(c_data[i]);
+        //     }
+        //     for (var i = 0; i < cl_arr.length; i++) {
+        //         if(i == 0) {
+        //             var mid = {
+        //                 text: cl_arr[i],
+        //                 value: "all",
+        //                 description: ""
+        //             };    
+        //         } else {
+        //             var text_d = cl_arr[i];
+        //             var value_d = cl_arr[i];
+        //             var imageSrc_d = "";
+        //             if(cl_arr[i] == 'bjs.com') {
+        //                 text_d = "";
+        //                 imageSrc_d = "<?php echo base_url(); ?>img/bjs-logo.gif";
+        //             } else if(cl_arr[i] == 'sears.com') {
+        //                 text_d = "";
+        //                 imageSrc_d = "<?php echo base_url(); ?>img/sears-logo.png";
+        //             } else if(cl_arr[i] == 'walmart.com') {
+        //                 text_d = "";
+        //                 imageSrc_d = "<?php echo base_url(); ?>img/walmart-logo.png";
+        //             } else if(cl_arr[i] == 'staples.com') {
+        //                 text_d = "";
+        //                 imageSrc_d = "<?php echo base_url(); ?>img/staples-logo.png";
+        //             } else if(cl_arr[i] == 'overstock.com') {
+        //                 text_d = "";
+        //                 imageSrc_d = "<?php echo base_url(); ?>img/overstock-logo.png";
+        //             } else if(cl_arr[i] == 'tigerdirect.com') {
+        //                 text_d = "";
+        //                 imageSrc_d = "<?php echo base_url(); ?>img/tigerdirect-logo.png";
+        //             }
 
-                    var mid = {
-                        text: text_d,
-                        value: value_d,
-                        description: "",
-                        imageSrc: imageSrc_d
-                    };
-                }
-                ddData_second.push(mid);
-            };
-            $('#measure_dropdown').ddslick({
-                data: ddData_second,
-                width: 104,
-                defaultSelectedIndex: 0
-            });
-        });
+        //             var mid = {
+        //                 text: text_d,
+        //                 value: value_d,
+        //                 description: "",
+        //                 imageSrc: imageSrc_d
+        //             };
+        //         }
+        //         ddData_second.push(mid);
+        //     };
+        //     $('#measure_dropdown').ddslick({
+        //         data: ddData_second,
+        //         width: 104,
+        //         defaultSelectedIndex: 0
+        //     });
+        // });
 
     });
 

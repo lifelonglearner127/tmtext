@@ -143,7 +143,7 @@
     <div class="row-fluid">
         <?php echo form_open('', array('id'=>'measureForm')); ?>
         <input type="text" id="research_text" name="research_text" value="UN40E6400" class="span8 " placeholder=""/>
-        <div class="ddslick_dropdown"></div>
+        <div id="res_dropdown" class="ddslick_dropdown"></div>
         <button id="research_search" type="button" class="btn pull-right btn-success">Search</button>
         <?php echo form_close();?>
     </div>
