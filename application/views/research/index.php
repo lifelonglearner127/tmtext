@@ -44,29 +44,21 @@
         $( "#sortable1, #sortable2" ).sortable({
             connectWith: ".connectedSortable"
         });
-        
+
         $("#research, #research_edit" ).draggable({
             containment: "#main",
             drag: function( event, ui ) {
-               if(ui.originalPosition.left > ui.position.left){
+               if(ui.originalPosition.left-100 > ui.position.left){
                    if($(this).attr('id')=='research_edit'){
-                       $(this).addClass('left_pos');
-                       $('#research').css({'float':'right'});
+                       $('#research').css({'left':'50%'});
                    } else {
-                       $(this).addClass('left_pos');
-                       $(this).css({'float':'left'});
-                       $('#research_edit').addClass('left_pos');
-                       $('#research_edit').css({'float':'right'});
+                       $('#research_edit').css({'left':'0%'});
                    }
                } else {
                    if($(this).attr('id')=='research_edit'){
-                       $(this).addClass('left_pos');
-                       $('#research').css({'float':'left'});
+                      $('#research').css({'left':'0%'});
                    } else {
-                       $(this).addClass('left_pos');
-                       $(this).css({'float':'right'});
-                       $('#research_edit').addClass('left_pos');
-                       $('#research_edit').css({'float':'right'});
+                      $('#research_edit').css({'left':'-50%'});
                    }
                }
             }
@@ -191,7 +183,7 @@
     <div class="clear"></div>
     <div class="row-fluid">
         <div class="span6">
-            Show <select class="mt_10" style="width:50px;" name="result_amount">
+            Show <select class="mt_10" name="result_amount">
                 <option value="10">10</option>
                 <option value="20">20</option>
                 <option value="50">50</option>
@@ -213,8 +205,8 @@
 
     </div>
     <div class="row-fluid" id="main">
-        <div class="span6" id="research" class="connectedMoved"> 
-            <h3>Research</h3>
+        <div class="span6" id="research" class="connectedMoved">
+        <h3>Research</h3>
             <ul class="research_content connectedSortable" id="sortable1">
                 <li class="boxes">
                     <h3>Results</h3>
