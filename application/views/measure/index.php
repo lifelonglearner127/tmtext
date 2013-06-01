@@ -156,15 +156,88 @@
         var attr = $(e.target).attr('data-status');
         if(typeof(attr) !== 'undefined' && attr === 'seo_link') {} else { removeTagsFromDescs(); }
     });
+
+    // --- KEYWORDS ANALYZER (START)
+    function keywordsAnalizer() {
+        var primary_ph = $("#km_primary_edit").val();
+        var secondary_ph = $("#km_secondary_edit").val();
+        var tertiary_ph = $("#km_tertiary_edit").val();
+    }   
+    // --- KEYWORDS ANALYZER (END)
+
+    // ---- METRICS (SEO PHRASES) (END)
+    $(document).ready(function () {
+
+        var customers_list = $.post(customersListBaseUrl, { }, 'json').done(function(c_data) {
+            var cl_arr = [];
+            var ddData_second = [];
+            cl_arr.push("All Sites");
+            for(i in c_data) {
+                cl_arr.push(c_data[i]);
+            }
+            for (var i = 0; i < cl_arr.length; i++) {
+                if(i == 0) {
+                    var mid = {
+                        text: cl_arr[i],
+                        value: "all",
+                        description: ""
+                    };    
+                } else {
+                    var text_d = cl_arr[i];
+                    var value_d = cl_arr[i];
+                    var imageSrc_d = "";
+                    if(cl_arr[i] == 'bjs.com') {
+                        text_d = "";
+                        imageSrc_d = "<?php echo base_url(); ?>img/bjs-logo.gif";
+                    } else if(cl_arr[i] == 'sears.com') {
+                        text_d = "";
+                        imageSrc_d = "<?php echo base_url(); ?>img/sears-logo.png";
+                    } else if(cl_arr[i] == 'walmart.com') {
+                        text_d = "";
+                        imageSrc_d = "<?php echo base_url(); ?>img/walmart-logo.png";
+                    } else if(cl_arr[i] == 'staples.com') {
+                        text_d = "";
+                        imageSrc_d = "<?php echo base_url(); ?>img/staples-logo.png";
+                    } else if(cl_arr[i] == 'overstock.com') {
+                        text_d = "";
+                        imageSrc_d = "<?php echo base_url(); ?>img/overstock-logo.png";
+                    } else if(cl_arr[i] == 'tigerdirect.com') {
+                        text_d = "";
+                        imageSrc_d = "<?php echo base_url(); ?>img/tigerdirect-logo.png";
+                    }
+
+                    var mid = {
+                        text: text_d,
+                        value: value_d,
+                        description: "",
+                        imageSrc: imageSrc_d
+                    };
+                }
+                ddData_second.push(mid);
+            };
+            $('#measure_dropdown').ddslick({
+                data: ddData_second,
+                width: 104,
+                defaultSelectedIndex: 0
+            });
+        });
+
+    });
+
 </script>
 <div class="main_content_other"></div>
 <div class="main_content_editor">
 <div class="row-fluid">
     <?php echo form_open('', array('id'=>'measureFormMetrics')); ?>
+<<<<<<< Updated upstream
 
     <input type="text" name="compare_text" value="" id="compare_text" class="span8" placeholder=""/>
     <div class="ddslick_dropdown dropdowns" style="width:104"></div>
 
+=======
+        <input type="text" name="compare_text" value="" id="compare_text" class="span8" placeholder=""/>
+        <div id="measure_dropdown" class="dropdowns"></div>
+>>>>>>> Stashed changes
         <select class='cats_an_select' id='cats_an' name='cats_an'>
             <?php if(count($category_list) > 0) { ?>
                 <?php foreach ($category_list as $key => $value) { ?>
@@ -205,15 +278,15 @@
                 <li>&nbsp;</li>
                 <li><a href="javascript:void(0)">Keywords Metrics</a></li>
                 <li class='keywords_metrics_bl'>
-                    <span>Primary:</span><textarea id="km_primary_edit" disabled='true'>X% Y%</textarea>
+                    <span>Primary:</span><textarea id="km_primary_edit"></textarea>
                 </li>
                 <li class='keywords_metrics_bl'>
-                    <span>Secondary:</span><textarea id="km_secondary_edit" disabled='true'>X% Y%</textarea>
+                    <span>Secondary:</span><textarea id="km_secondary_edit"></textarea>
                 </li>
                 <li class='keywords_metrics_bl'>
-                    <span>Tertiary:</span><textarea id="km_tertiary_edit" disabled='true'>X% Y%</textarea>
+                    <span>Tertiary:</span><textarea id="km_tertiary_edit"></textarea>
                 </li>
-                <li class='keywords_metrics_bl'><button type='button' class='btn btn-primary'>Update</button></li>
+                <li class='keywords_metrics_bl'><button type='button' onclick="keywordsAnalizer()" class='btn btn-primary'>Update</button></li>
                 <li>&nbsp;</li>
                 <li data-status='words_an'><a href='javascript:void(0)'>Word Analysis:</a></li>
                 <li data-status='words_an' class='bold_li li_top_margin'>Short Description: <span class='normal_font_w' data-st-id='short_desc'>0</span></li>
