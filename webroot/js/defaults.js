@@ -7,6 +7,12 @@ var sentence = new Array();
 var desc_input = '';
 var action = '';
 
+function refreshHeaderTitle(t) {
+    $.post("/editor/refreshheader", { t: t}, 'html').done(function(f) {
+        $("head").find("title").replaceWith(f);
+    });
+}
+
 function replaceAt(search, replace, subject, n) {
     return subject.substring(0, n) +subject.substring(n).replace(search, replace);
 }

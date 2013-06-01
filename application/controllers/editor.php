@@ -30,6 +30,7 @@ class Editor extends MY_Controller {
 
 	public function index()
 	{
+		$this->page_title = "Test";
 		$this->render();
 	}
 
@@ -193,6 +194,16 @@ class Editor extends MY_Controller {
 		}
 
 		$this->load->view('editor/searchmeasure', $data);
+	}
+
+	public function refreshheader() {
+		$title_dyn = $this->input->post('t');
+
+		$data = array(
+			'title_dyn' =>  $title_dyn
+		);
+
+		$this->load->view('editor/refreshheader', $data);
 	}
 
 	public function search()
