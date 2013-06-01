@@ -101,24 +101,6 @@
         
     }
 
-    // function wordHighLighter(w, status) {
-    //     if(status === 'short') {
-    //         var high_opt = {
-    //             exact: 'whole',
-    //             highlight: $('#details-short-desc'),
-    //             keys: w
-    //         };
-    //         $('#details-short-desc').SearchHighlight(high_opt);
-    //     } else if(status === 'long') {
-    //         var high_opt = {
-    //             exact: 'whole',
-    //             highlight: $('#details-long-desc'),
-    //             keys: w
-    //         };
-    //         $('#details-long-desc').SearchHighlight(high_opt);
-    //     }  
-    // }
-
     function removeTagsFromDescs() {
         var short_str = $("#details-short-desc").text();
         var long_str = $("#details-long-desc").text();
@@ -234,47 +216,26 @@
             });
         });
 
-        // var ddData_first = [
-        //     {
-        //         text: "All",
-        //         value: "all",
-        //         description: ""
-        //     },
-        //     {
-        //         text: "",
-        //         value: "walmart.com",
-        //         description: "",
-        //         imageSrc: "<?php echo base_url(); ?>img/walmart-logo.png"
-        //     },
-        //     {
-        //         text: "",
-        //         value: "sears.com",
-        //         description: "",
-        //         imageSrc: "<?php echo base_url(); ?>img/sears-logo.png"
-        //     },
-        //     {
-        //         text: "",
-        //         value: "tigerdirect.com",
-        //         description: "",
-        //         imageSrc: "<?php echo base_url(); ?>img/tigerdirect-logo.png"
-        //     },
-        // ];
-        // $('#measure_dropdown').ddslick({
-        //     data: ddData_first,
-        //     defaultSelectedIndex: 0
-        // });
-
     });
 </script>
 <div class="main_content_other"></div>
 <div class="main_content_editor">
 <div class="row-fluid">
     <?php echo form_open('', array('id'=>'measureFormMetrics')); ?>
-        <!-- <input type="text" name="compare_text" value="UN40ES6500" id="compare_text" class="span8" placeholder=""/> -->
         <input type="text" name="compare_text" value="" id="compare_text" class="span8" placeholder=""/>
         <div id="measure_dropdown" class="dropdowns"></div>
         <select class='cats_an_select' id='cats_an' name='cats_an'>
+            <?php if(count($category_list) > 0) { ?>
+                <?php foreach ($category_list as $key => $value) { ?>
+                    <?php if($value->name == "All") { ?>
+                    <option value="all">All Categories</option>
+                    <?php } else { ?>
+                    <option value="<?php echo $value->id; ?>"><?php echo $value->name; ?></option>
+                    <?php } ?>
+                <?php } ?>
+            <?php } else { ?>
             <option value='all'>All Categories</option>
+            <?php } ?>
         </select>
         <button type="submit" onclick="return startMeasureCompare()" class="btn pull-right">Search</button>
     <?php echo form_close();?>
