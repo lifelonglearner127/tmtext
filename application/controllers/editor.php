@@ -30,7 +30,6 @@ class Editor extends MY_Controller {
 
 	public function index()
 	{
-		$this->page_title = "Test";
 		$this->render();
 	}
 
