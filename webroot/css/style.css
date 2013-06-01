@@ -618,7 +618,7 @@ a.gray_out {
 }
 
 .dd-container, .dd-container .dd-select, ul.dd-options {
-    width: 200px!important;
+    /*width: 200px!important;*/
     float:left;
     margin-right: 20px;
 }

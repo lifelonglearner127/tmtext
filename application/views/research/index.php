@@ -35,6 +35,7 @@
         $('#research_dropdown').ddslick({
             data: ddData_first,
             defaultSelectedIndex: 0,
+            width: 200,
             selectText: "Select your favorite social network",
             truncateDescription: true,
         });

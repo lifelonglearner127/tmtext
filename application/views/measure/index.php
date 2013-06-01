@@ -229,6 +229,7 @@
             };
             $('#measure_dropdown').ddslick({
                 data: ddData_second,
+                width: 104,
                 defaultSelectedIndex: 0
             });
         });
