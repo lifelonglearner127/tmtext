@@ -273,6 +273,9 @@
         <!-- <input type="text" name="compare_text" value="UN40ES6500" id="compare_text" class="span8" placeholder=""/> -->
         <input type="text" name="compare_text" value="" id="compare_text" class="span8" placeholder=""/>
         <div id="measure_dropdown" class="dropdowns"></div>
+        <select class='cats_an_select' id='cats_an' name='cats_an'>
+            <option value='all'>All Categories</option>
+        </select>
         <button type="submit" onclick="return startMeasureCompare()" class="btn pull-right">Search</button>
     <?php echo form_close();?>
 </div>
@@ -280,15 +283,15 @@
 <!--- REAL CONTENT SECTION (START) -->
 <div id="measure_tab_pr_content">
     <div id="measure_tab_pr_content_head" class="row-fluid mt_10">
-        <div class="span8 item_title"><b class='btag_elipsis'>No Title</b></div>
+        <div class="span8 item_title an_sv_left"><b class='btag_elipsis'>No Title</b></div>
     </div>
 	<div class="row-fluid">            
-       <div class="span8 search_area uneditable-input cursor_default item_section">
+       <div class="span8 search_area uneditable-input cursor_default item_section an_sv_left">
             <div id='measure_tab_pr_content_body' class="item_section_content" >
                 
             </div>
-        </div>
-        <div class="span3" style="width: 290px; margin-left: 5px; margin-top: -45px;" id="attributes_metrics">
+        </div> 
+        <div class="span3 an_sv_right" id="attributes_metrics">
             <h3>Metrics</h3>
             <ul>
                 <li><a href="javascript:void(0)">Site Metrics</a></li>

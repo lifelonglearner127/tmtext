@@ -42,7 +42,7 @@
 	overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    max-width: 260px;
+    max-width: 303px;
     font-size: 12px;
 }
 .word_wrap_li_pr.hover_en {
@@ -75,6 +75,28 @@ li[data-status='words_an'] {
 }
 span[class*="hilite"] { background: yellow; }
 /* Keywords Metrics (analysis) (end) */
+
+/* Competitive Intelligence (standart view) (start) */
+.cats_an_select {
+	float: left;
+	display: block;
+	width: 140px;
+}
+#measure_dropdown {
+	margin-right: 10px !important;
+}
+#compare_text {
+	width: 550px;
+}
+.an_sv_left {
+	width: 550px !important;
+}
+.an_sv_right {
+	width: 333px !important; 
+	margin-left: 5px; 
+	margin-top: -45px;
+}
+/* Competitive Intelligence (standart view) (end) */
 
 /* Login container style */
 
