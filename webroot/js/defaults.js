@@ -587,7 +587,7 @@ jQuery(document).ready(function($) {
                     selectText: "Select your favorite social network",
                     truncateDescription: true,
                 });
-            }, 300);
+            }, 1500);
         }
     });
 
