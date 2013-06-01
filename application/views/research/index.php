@@ -1,47 +1,5 @@
 <script type="text/javascript">
-    var ddData_first = [
-        {
-            text: "All Sites",
-            value: "",
-            description: "",
-        },
-        {
-            text: "",
-            value: "Overstock.com",
-            description: "",
-            imageSrc: "<?php echo base_url(); ?>img/overstock-logo.png"
-        },
-        {
-            text: "",
-            value: "Sears.com",
-            description: "",
-            imageSrc: "<?php echo base_url(); ?>img/sears-logo.png"
-        },
-        {
-            text: "",
-            value: "TigerDirect.com",
-            description: "",
-            imageSrc: "<?php echo base_url(); ?>img/tigerdirect-logo.png"
-        },
-        {
-            text: "",
-            value: "Walmart.com",
-            description: "",
-            imageSrc: "<?php echo base_url(); ?>img/walmart-logo.png"
-        },
-    ];
-    function addDropdown(){
-        window.preventAction = false;
-        $('#research_dropdown').ddslick({
-            data: ddData_first,
-            defaultSelectedIndex: 0,
-            width: 200,
-            selectText: "Select your favorite social network",
-            truncateDescription: true,
-        });
-    }
     $(document).ready(function () {
-        addDropdown();
         $( "#sortable1, #sortable2" ).sortable({
             connectWith: ".connectedSortable"
         });
@@ -185,7 +143,7 @@
     <div class="row-fluid">
         <?php echo form_open('', array('id'=>'measureForm')); ?>
         <input type="text" id="research_text" name="research_text" value="UN40E6400" class="span8 " placeholder=""/>
-        <div id="research_dropdown"></div>
+        <div class="ddslick_dropdown"></div>
         <button id="research_search" type="button" class="btn pull-right btn-success">Search</button>
         <?php echo form_close();?>
     </div>
