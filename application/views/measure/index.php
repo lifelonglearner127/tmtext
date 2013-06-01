@@ -210,6 +210,9 @@
                     } else if(cl_arr[i] == 'overstock.com') {
                         text_d = "";
                         imageSrc_d = "<?php echo base_url(); ?>img/overstock-logo.png";
+                    } else if(cl_arr[i] == 'tigerdirect.com') {
+                        text_d = "";
+                        imageSrc_d = "<?php echo base_url(); ?>img/tigerdirect-logo.png";
                     }
 
                     var mid = {
@@ -221,7 +224,6 @@
                 }
                 ddData_first.push(mid);
             };
-            console.log(ddData_first); 
             $('#measure_dropdown').ddslick({
                 data: ddData_first,
                 defaultSelectedIndex: 0
