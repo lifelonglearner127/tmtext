@@ -271,14 +271,30 @@
                 <li>&nbsp;</li>
                 <li><a href="javascript:void(0)">Keywords Metrics</a></li>
                 <li class='keywords_metrics_bl'>
-                    <span>Primary:</span><textarea id="km_primary_edit"></textarea>
+                    <table class='keywords_metrics_tbl'>
+                        <tbody>
+                            <tr>
+                                <td><span>Primary:</span></td>
+                                <td><textarea id="km_primary_edit"></textarea></td>
+                            </tr>
+                            <tr>
+                                <td><span>Secondary:</span></td>
+                                <td><textarea id="km_secondary_edit"></textarea></td>
+                            </tr>
+                            <tr>
+                                <td><span>Tertiary:</span></td>
+                                <td><textarea id="km_tertiary_edit"></textarea></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <!-- <span>Primary:</span><textarea id="km_primary_edit"></textarea> -->
                 </li>
-                <li class='keywords_metrics_bl'>
+                <!-- <li class='keywords_metrics_bl'>
                     <span>Secondary:</span><textarea id="km_secondary_edit"></textarea>
-                </li>
-                <li class='keywords_metrics_bl'>
+                </li> -->
+                <!-- <li class='keywords_metrics_bl'>
                     <span>Tertiary:</span><textarea id="km_tertiary_edit"></textarea>
-                </li>
+                </li> -->
                 <li class='keywords_metrics_bl'><button type='button' onclick="keywordsAnalizer()" class='btn btn-primary'>Update</button></li>
                 <li>&nbsp;</li>
                 <li data-status='words_an'><a href='javascript:void(0)'>Word Analysis:</a></li>
