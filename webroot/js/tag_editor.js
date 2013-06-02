@@ -112,7 +112,7 @@ $(document).ready(function() {
     });
 
     $(document).on("change ready", "select[name='category']", function(){
-        $.post('/index.php/admin_tag_editor/file_data', { category: $("select[name='category'] option:selected").text() })
+        $.post(base_url + 'index.php/admin_tag_editor/file_data', { category: $("select[name='category'] option:selected").text() })
             .done(function(data) {
                 $('#tageditor_content #items').html(data);
                 $("#tageditor_description").trigger("ready");
@@ -121,7 +121,7 @@ $(document).ready(function() {
     $("select[name='category']").trigger("change");
 
     $(document).on("ready", "#tageditor_description", function(){
-        $.post('/index.php/admin_tag_editor/get_product_description', {category: $("select[name='category'] option:selected").text()})
+        $.post(base_url + 'index.php/admin_tag_editor/get_product_description', {category: $("select[name='category'] option:selected").text()})
             .done(function(data) {
                 var type = typeof data;
                 if (type == "object") {
@@ -159,7 +159,7 @@ $(document).ready(function() {
     $("a#delete_category").fancybox({ 'beforeShow': function(){ $('#category_name').text($("select[name='category'] option:selected").text()); } });
 
     $(document).on("click", "button#yes", function(){
-        $.post('/index.php/admin_tag_editor/delete_file', { category: $("select[name='category'] option:selected").text() })
+        $.post(base_url + 'index.php/admin_tag_editor/delete_file', { category: $("select[name='category'] option:selected").text() })
             .done(function(data) {
                 $.fancybox.close();
                 $("select[name='category'] option:selected").remove();
@@ -187,7 +187,7 @@ $(document).ready(function() {
                 $('#tageditor_content #items_list').empty();
                 $("#tageditor_content button#new").trigger('click');
                 var arr = new Array();
-                $.post('/index.php/admin_tag_editor/save_file_data', { data: arr, category: $('input[name="new_file"]').val() })
+                $.post(base_url + 'index.php/admin_tag_editor/save_file_data', { data: arr, category: $('input[name="new_file"]').val() })
                     .done(function(data) {
                     });
                 return false;
@@ -325,7 +325,7 @@ $(document).ready(function() {
                     arr += '\n';
                 }                
         });
-        $.post('/index.php/admin_tag_editor/save_file_data', { data: arr, category: $("select[name='category'] option:selected").text() })
+        $.post(base_url + 'index.php/admin_tag_editor/save_file_data', { data: arr, category: $("select[name='category'] option:selected").text() })
             .done(function(data) {
         });
         return false;
@@ -334,7 +334,7 @@ $(document).ready(function() {
     $(document).on("click", "button#export", function(e){
         e.preventDefault();
         if($("select[name='category'] option:selected").text() != 'All'){
-            window.location.href = '/index.php/admin_tag_editor/export_rules?category='+$("select[name='category'] option:selected").text();
+            window.location.href = base_url + 'index.php/admin_tag_editor/export_rules?category='+$("select[name='category'] option:selected").text();
         }
         return false;
     });
@@ -345,7 +345,7 @@ $(document).ready(function() {
     });
 
     $(document).on("click", "button#save_desc", function(){
-        $.post('/index.php/admin_tag_editor/save', { description: $('#tageditor_description').text(), category: $("select[name='category'] option:selected").text() })
+        $.post(base_url + 'index.php/admin_tag_editor/save', { description: $('#tageditor_description').text(), category: $("select[name='category'] option:selected").text() })
             .done(function(data) {
                 $('#standart_description').html($('#tageditor_description').text());
         });
@@ -353,7 +353,7 @@ $(document).ready(function() {
     });
 
     $(document).on("click", "button#delete_desc", function(){
-        $.post('/index.php/admin_tag_editor/delete', { description: $('#tageditor_description').text(), category: $("select[name='category'] option:selected").text() })
+        $.post(base_url + 'index.php/admin_tag_editor/delete', { description: $('#tageditor_description').text(), category: $("select[name='category'] option:selected").text() })
             .done(function(data) {
                 $('#tageditor_description').empty();
             });
