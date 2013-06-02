@@ -57,19 +57,87 @@ class Category_model extends CI_Model {
         return $this->db->delete($this->tables['categories'], array('id' => $id));
     }
 
-    function getAllCategoryDescriptions($category_id = '')
+    function getAllCategoryDescriptions($category_id = '', $limit = false, $random = false)
+    {
+    	$this->db->select('p.value as description, cat.id as category_id')
+    		->from($this->tables['categories'].' as cat')
+    		->join($this->tables['imported_data'].' as i', 'cat.id = i.category_id', 'left')
+    		->join($this->tables['imported_data_parsed'].' as p', 'p.imported_data_id = i.id', 'left')
+    		->where('p.key', 'Description');
+
+    	if ($category_id > 0) {
+    		$this->db->where('i.category_id', $category_id);
+    	}
+
+    	if ($limit) {
+    		$this->db->limit((int)$limit);
+    	}
+
+        if ($random) {
+    		$this->db->order_by('description', 'random');
+    	}
+
+
+    	$query = $this->db->get();
+
+    	return $query->result();
+    }
+
+    function countAllCategoryDescriptions($category_id = '')
+    {
+        $this->db->select('p.value as description, cat.id as category_id')
+    		->from($this->tables['categories'].' as cat')
+    		->join($this->tables['imported_data'].' as i', 'cat.id = i.category_id', 'left')
+    		->join($this->tables['imported_data_parsed'].' as p', 'p.imported_data_id = i.id', 'left')
+    		->where('p.key', 'Description');
+
+    	if ($category_id > 0) {
+    		$this->db->where('i.category_id', $category_id);
+    	}
+
+    	return $this->db->count_all_results();
+    }
+
+/*    function getAllCategoryDescriptions($category_id = '', $limit = false)
     {
         $sql = "SELECT p.value as description, cat.id as category_id FROM `{$this->tables['categories']}` cat
                 LEFT JOIN `{$this->tables['imported_data']}` i ON cat.id = i.category_id
                 LEFT JOIN `{$this->tables['imported_data_parsed']}` p ON p.imported_data_id = i.id";
+
         if($category_id > 0) {
-            $sql .= " WHERE i.category_id =? AND p.key = 'Description'";
-            $query = $this->db->query($sql, $category_id);
+        	if ($limit !== false) {
+        		$sql .= " WHERE i.category_id =? AND p.key = 'Description' LIMIT ?";
+            	$query = $this->db->query($sql, array($category_id, (int)$limit));
+        	} else {
+            	$sql .= " WHERE i.category_id =? AND p.key = 'Description'";
+            	$query = $this->db->query($sql, $category_id);
+        	}
         } else {
-            $sql .= " WHERE p.key = 'Description'";
-            $query = $this->db->query($sql);
+        	if ($limit !== false) {
+        		$sql .= " WHERE p.key = 'Description' LIMIT ?";
+            	$query = $this->db->query($sql, $limit);
+        	} else {
+            	$sql .= " WHERE p.key = 'Description'";
+            	$query = $this->db->query($sql);
+        	}
         }
+
         return $query->result();
     }
 
+    function countAllCategoryDescriptions($category_id = '')
+    {
+        $sql = "SELECT count(p.value) as quantity FROM `{$this->tables['categories']}` cat
+                LEFT JOIN `{$this->tables['imported_data']}` i ON cat.id = i.category_id
+                LEFT JOIN `{$this->tables['imported_data_parsed']}` p ON p.imported_data_id = i.id";
+
+        if($category_id > 0) {
+            	$sql .= " WHERE i.category_id =? AND p.key = 'Description'";
+            	$query = $this->db->query($sql, $category_id);
+        } else {
+            	$sql .= " WHERE p.key = 'Description'";
+            	$query = $this->db->query($sql);
+        }
+        return $query->row()->quantity;
+    } */
 }

@@ -4,6 +4,8 @@ var action = '';
 var last_input = '';
 var last_edition = '';
 var desc_input = '';
+var max_prod_desc = 0;
+var random_descriptions = false;
 
 function cursorEnd(){
     var el = $("#tageditor_content #items_list li input:text").get(0);
@@ -39,26 +41,26 @@ jQuery(document).ready(function($) {
             });
         }
     });
-    
+
     $(document).on("click", "#tageditor_description ul li", function(){
         return false;
     });
-    
+
     $(document).on("focusout", "#tageditor_content #items_list li", function(){
         $(this).parent().html('<span>'+$(this).val()+'</span>');
     });
-    
+
     $(document).on("focusout", "#tageditor_content #items_list li input", function(){
         return false;
     });
-    
+
     $(document).on("click", "#tageditor_content #items_list li input", function(){
         $("#tageditor_content #items_list li").each(function(){
             $(this).css({'background':'none'})
         });
         $(this).parent().css({'background':'#CAEAFF'});
     });
-    
+
     $(document).on("keypress", "#tageditor_content #items_list li input", function(e){
         action = 'edit';
         if(e.keyCode == 13 || e.keyCode == 8){
@@ -93,7 +95,7 @@ jQuery(document).ready(function($) {
             last_edition = $(this).val();
         }
     });
-    
+
     $(document).on("click", "#tageditor_content #items_list li span", function(){
         action = 'edit_input';
         last_edition = $("#tageditor_content #items_list li input").val();
@@ -108,47 +110,61 @@ jQuery(document).ready(function($) {
         $(this).parent().html("<input type='text' name='tagRule[]'value='"+$(this).text()+"'>");
         if($(this).parent().find('input')){
             cursorEnd();
-        }        
+        }
     });
 
     $(document).on("change", "select[name='category']", function(){
         $.post('admin_tag_editor/file_data', { category: $("select[name='category'] option:selected").text() })
             .done(function(data) {
                 $('#tageditor_content #items').html(data);
-                $("#tageditor_description").trigger("ready");
+                $("#tageditor_description").trigger("file_data_ready");  // ready sometimes doesn't work
             });
     });
     $("select[name='category']").trigger("change");
 
-    $(document).on("ready", "#tageditor_description", function(){
-        $.post('admin_tag_editor/get_product_description', {category: $("select[name='category'] option:selected").text()})
+    $(document).on("file_data_ready", "#tageditor_description", function(){
+        $.post('admin_tag_editor/get_product_description', { category: $("select[name='category'] option:selected").text() , limit:$('#description_limit').val(), random: random_descriptions })
             .done(function(data) {
                 var type = typeof data;
                 if (type == "object") {
-                    var str = '<ul>';
-                    if(data.length == 1){
-                        var arr = data[0].description.split('\n');
-                        for(var i=0; i<arr.length; i++){
-                            if(arr[i] != ''){
-                                str += '<li class="row">'+arr[i]+'\n</li>';
-                            }
-                        }
-                    } else {
-                        for(var i=0; i < data.length; i++){
-                            for(var j=0; j<data[i].length; j++){
-                                if(data[i][j].description != ''){
-                                    str += '<li class="row">'+data[i][j].description+'\n</li>';
-                                }
-                            }
-                        }
-                    }
-                    str += '</ul>';
+                	var str = '';
+                	if ( data.descriptions !== undefined ) {
+	                	str = '<ul id="desc_count_'+data.desc_count+'">';
+
+	                	$.each(data.descriptions, function(i,e){
+	                		str += "<li>"+e+"\n</li>";
+	                    });
+	                    str += '</ul>';
+
+	                    max_prod_desc = data.quantity;
+                	} else {
+	                	str = '<ul>';
+	                    if(data.length == 1){
+	                        var arr = data[0].description.split('\n');
+	                        for(var i=0; i<arr.length; i++){
+	                            if(arr[i] != ''){
+	                                str += '<li class="row">'+arr[i]+'\n</li>';
+	                            }
+	                        }
+	                    } else {
+	                        for(var i=0; i < data.length; i++){
+	                            for(var j=0; j<data[i].length; j++){
+	                                if(data[i][j].description != ''){
+	                                    str += '<li class="row">'+data[i][j].description+'\n</li>';
+	                                }
+	                            }
+	                        }
+	                    }
+	                    str += '</ul>';
+                	}
+
                     $('#tageditor_description').html(str);
                     $('#standart_description').html(str);
                 }  else if (type == "string") {
                     $('#tageditor_description').html(data);
                     $('#standart_description').html(data);
                 }
+                random_descriptions = false;
             });
         return false;
     });
@@ -200,7 +216,7 @@ jQuery(document).ready(function($) {
         if($("#tageditor_content #items_list li").find('input')!=''
             && $("#tageditor_content #items_list li input").val()!=undefined && $("#tageditor_content #items_list li input").val()!=''){
             $('span.matches_found').empty();
-            var regtext = $("#tageditor_content #items_list li input").val();            
+            var regtext = $("#tageditor_content #items_list li input").val();
             var re = new RegExp('"(.*)"\,', 'gi');
             var regexp = regtext.split(re);
             var querystr = regexp[1];
@@ -213,9 +229,9 @@ jQuery(document).ready(function($) {
                         if(reg.test($(this).text())){
                             desc_count++;
                         }
-                    }                   
-                });                
-                
+                    }
+                });
+
                 var n = 0;
                 var final_str = result.replace(reg, function(str) {
                     n++;
@@ -241,7 +257,7 @@ jQuery(document).ready(function($) {
     $(document).on("click", "button#next", function(){
         if($("#tageditor_content #items_list li").find('input')!=''
             && $("#tageditor_content #items_list li input").val()!=undefined && $("#tageditor_content #items_list li input").val()!=''){
-            var regtext = $("#tageditor_content #items_list li input").val();            
+            var regtext = $("#tageditor_content #items_list li input").val();
             var re = new RegExp('"(.*)"\,', 'gi');
             var regexp = regtext.split(re);
             var querystr = regexp[1];
@@ -250,7 +266,7 @@ jQuery(document).ready(function($) {
                 var reg = new RegExp(querystr, 'gi');
                 var n = 0;
                 next++;
-                final_str = pipe_replace(reg, result, next);                
+                final_str = pipe_replace(reg, result, next);
                 if (final_str.indexOf('span') == -1)  {
                     next = 1;
                     final_str = pipe_replace(reg, result, next);
@@ -261,7 +277,7 @@ jQuery(document).ready(function($) {
         }
         return false;
     });
-    
+
     $(document).on("click", "button#new", function(){
         $("button#save_data").trigger('click');
         $("#tageditor_content #items_list li").each(function(){
@@ -275,14 +291,14 @@ jQuery(document).ready(function($) {
         $('#tageditor_content #items_list li:last-child input').focus();
         return false;
     });
-    
+
     $(document).on("click", "button#delete", function(){
         action = 'delete';
         $("#tageditor_content #items_list li input").parent().addClass('hidden_class');
         $("#tageditor_content #items_list li input").parent().show().fadeOut("slow");
         return false;
     });
-    
+
     $(document).on("click", "button#undo", function(){
         if(action == ''){
             return false;
@@ -292,19 +308,19 @@ jQuery(document).ready(function($) {
             $("#tageditor_content #items_list li input").parent().show().fadeIn("slow");
         } else if(action == 'edit'){
             $("#tageditor_content #items_list li input").val(last_input);
-        } else if(action == 'edit_input'){           
+        } else if(action == 'edit_input'){
             if(last_edition == undefined) {
                 return false;
             }
-            
-            $("#tageditor_content #items_list li").each(function(){       
+
+            $("#tageditor_content #items_list li").each(function(){
                 if($(this).find("span").text() == last_edition){
                     $(this).css({'background':'#CAEAFF'});
                     $(this).html("<input type='text' name='tagRule[]'value='"+last_edition+"'>");
                 }
                 if($(this).find("input").val() == last_input){
                     $(this).css({'background':'none'});
-                    $(this).html('<span>'+last_input+'</span>');                    
+                    $(this).html('<span>'+last_input+'</span>');
                 }
             });
         }
@@ -312,18 +328,18 @@ jQuery(document).ready(function($) {
         action = '';
         return false;
     });
-    
+
     $(document).on("click", "button#save_data", function(){
         var arr = new Array();
         $('#tageditor_content #items_list li').each(function(){
                 if($(this).attr('class') != 'hidden_class'){
-                    if($(this).find('input').val()!=undefined){                        
+                    if($(this).find('input').val()!=undefined){
                         arr += $(this).find('input').val();
                     } else {
                         arr += $(this).text();
                     }
                     arr += '\n';
-                }                
+                }
         });
         $.post('admin_tag_editor/save_file_data', { data: arr, category: $("select[name='category'] option:selected").text() })
             .done(function(data) {
@@ -386,6 +402,24 @@ jQuery(document).ready(function($) {
         }
         return false;
     });
+
+    $(document).on("click", "#input_fln_up, #input_fln_down", function(event){
+    	var inp = $(this).parent().find('input');
+    	if ( $(this).attr('id') == 'input_fln_up' && parseInt(inp.val()) < max_prod_desc ) {
+    		inp.val(parseInt(inp.val())+1);
+    	} else if ( $(this).attr('id') == 'input_fln_down' && parseInt(inp.val()) > 1 ) {
+    		inp.val(parseInt(inp.val())-1);
+    	}
+    	return false;
+    });
+
+    $(document).on("click", "#new_test_set", function(event){
+    	 random_descriptions = true;
+    	 $("#tageditor_description").trigger("file_data_ready");
+
+    	 return false;
+    });
+
 });
 
 /*---------------------------------------------------------------------------------------*/

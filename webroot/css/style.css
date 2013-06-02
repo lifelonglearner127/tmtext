@@ -847,3 +847,8 @@ label.dd-selected-text, label.dd-option-text{
 .boxes_content textarea{
     width:380px!important;
 }
+
+.span2.input_fln {
+	float: none;
+	margin-left: 0px;
+}

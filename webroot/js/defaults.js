@@ -160,7 +160,7 @@ function cleanNewUserForm(){
     $( "#user_password" ).val('');
     $( "#user_customers" ).val('').trigger("liszt:updated");
     $( "#user_role" ).val('').trigger("liszt:updated");
-    $( ".user_id" ).html(''); 
+    $( ".user_id" ).html('');
     $( ".user_active" ).prop('checked', true);
     $( '#btn_system_update_user' ).attr('disabled', 'disabled');
 }
@@ -630,7 +630,7 @@ jQuery(document).ready(function($) {
         var url = $( this ).attr( 'action' );
         var posting = $.post(url+"?ajax=true", postData, function(data) {
                 if(data.success == 1){
-                    $( '.info-message' ).html('<p class="text-success">'+data.message+'</p>');         
+                    $( '.info-message' ).html('<p class="text-success">'+data.message+'</p>');
                 }else{
                     $( '.info-message' ).html('<p class="text-error">'+data.message+'</p>');
                 }
@@ -663,7 +663,7 @@ jQuery(document).ready(function($) {
             cleanNewUserForm();
         }
         else
-        {   
+        {
             var postData = $( "#system_save_new_user" ).serialize();
             var url = $( "#system_save_new_user" ).attr( 'action' );
             var posting = $.post(url, postData, function(data) {
@@ -742,10 +742,10 @@ jQuery(document).ready(function($) {
         var url = $( this ).attr( 'action' );
         var posting = $.post(url, postData, function(data) {
             if(data.success == 1){
-                $( '.info-message' ).html('<p class="text-success">'+data.message+'</p>');         
+                $( '.info-message' ).html('<p class="text-success">'+data.message+'</p>');
             }else{
                 $( '.info-message' ).html('<p class="text-error">'+data.message+'</p>');
-            } 
+            }
         });
     });
 
@@ -756,10 +756,10 @@ jQuery(document).ready(function($) {
         var url = $( this ).attr( 'action' );
         var posting = $.post(url, postData, function(data) {
                 if(data.success == 1){
-                    $( '.info-message' ).html('<p class="text-success">'+data.message+'</p>');         
+                    $( '.info-message' ).html('<p class="text-success">'+data.message+'</p>');
                 }else{
                     $( '.info-message' ).html('<p class="text-error">'+data.message+'</p>');
-                } 
+                }
             });
     });
 });

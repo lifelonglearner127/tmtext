@@ -82,6 +82,7 @@ class Admin_Tag_Editor extends MY_Controller {
         $this->load->model('category_model');
         $this->load->model('tag_editor_descriptions_model');
         $category_id = '';
+		$quantity = 0;
 
         if($this->input->post('category') != 'All'){
             $category_id = $this->category_model->getIdByName($this->input->post('category'));
@@ -92,14 +93,15 @@ class Admin_Tag_Editor extends MY_Controller {
             foreach($all as $item){
                 $desc = $this->tag_editor_descriptions_model->get($this->ion_auth->get_user_id(), $item->id);
                 if(empty($desc)){
-                    $desc = $this->category_model->getAllCategoryDescriptions($item->id);
+                    $desc = $this->category_model->getAllCategoryDescriptions($item->id, $this->input->post('limit'), $this->input->post('random'));
                 }
                 array_push($data, $desc);
             }
         }
         //die;
         if(empty($data)){
-            $descriptions = $this->category_model->getAllCategoryDescriptions($category_id);
+            $descriptions = $this->category_model->getAllCategoryDescriptions($category_id, $this->input->post('limit'), $this->input->post('random'));
+            $quantity = $this->category_model->countAllCategoryDescriptions($category_id);
             $result = array();
             foreach($descriptions as $desc){
                 array_push($result, $desc->description);
@@ -119,7 +121,14 @@ class Admin_Tag_Editor extends MY_Controller {
                 }
                 fclose($handle);
             }*/
-            echo ul($result, array('id'=>'desc_count_'.count($descriptions)));
+            //echo ul($result, array('id'=>'desc_count_'.count($descriptions)));
+
+            $this->output->set_content_type('application/json')
+                ->set_output(json_encode(array(
+                	'descriptions' => $result,
+                	'quantity' => $quantity,
+                	'desc_count' => count($descriptions)
+                )));
         } else {
 
             $this->output->set_content_type('application/json')
