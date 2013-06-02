@@ -49,4 +49,14 @@ class Measure extends MY_Controller {
         $this->output->set_content_type('application/json')->set_output(json_encode($output));
     }
 
+    public function analyzekeywords() {
+        $primary_ph = $this->input->post('primary_ph');
+        $secondary_ph = $this->input->post('secondary_ph');
+        $tertiary_ph = $this->input->post('tertiary_ph');
+        $short_desc = $this->input->post('short_desc');
+        $long_desc = $this->input->post('long_desc');
+        $output = $this->helpers->measure_analyzer_keywords($primary_ph, $secondary_ph, $tertiary_ph, $short_desc, $long_desc);
+        $this->output->set_content_type('application/json')->set_output(json_encode($output));
+    }
+
 }

@@ -83,6 +83,18 @@ span[class*="hilite"] { background: yellow; }
 .keywords_metrics_tbl tr td span {
 	font-size: 14px;
 }
+.keywords_metrics_bl_res_tbl {
+	width: 100%;
+}
+.keywords_metrics_bl_res_tbl tr td {
+	vertical-align: top;
+}
+.keywords_metrics_bl_res_tbl tr td span {
+	font-size: 14px;
+}
+.keywords_metrics_bl_res {
+	display: none;
+}
 /* Keywords Metrics (analysis) (end) */
 
 /* Competitive Intelligence (standart view) (start) */

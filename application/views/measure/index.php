@@ -3,9 +3,9 @@
     $("#compare_text").focus();
 
     // ---- METRICS (SEO PHRASES) (START)
-    // var customersListBaseUrl = "<?php echo base_url(); ?>index.php/measure/getcustomerslist";
     var measureAnalyzerBaseUrl = "<?php echo base_url(); ?>index.php/measure/analyzestring";
     var editorSearchBaseUrl = "<?php echo base_url(); ?>index.php/editor/searchmeasuredb";
+    var keywordsAnalyzerBaseUrl = "<?php echo base_url(); ?>index.php/measure/analyzekeywords";
 
     function startMeasureCompare() {
         $("#measure_tab_pr_content_head .item_title b").html('No Title');
@@ -159,70 +159,43 @@
 
     // --- KEYWORDS ANALYZER (START)
     function keywordsAnalizer() {
-        var primary_ph = $("#km_primary_edit").val();
-        var secondary_ph = $("#km_secondary_edit").val();
-        var tertiary_ph = $("#km_tertiary_edit").val();
+        var primary_ph = $.trim($("#km_primary_edit").val());
+        var secondary_ph = $.trim($("#km_secondary_edit").val());
+        var tertiary_ph = $.trim($("#km_tertiary_edit").val());
+        if(primary_ph !== "") primary_ph.replace(/<\/?[^>]+(>|$)/g, "");
+        if(secondary_ph !== "") secondary_ph.replace(/<\/?[^>]+(>|$)/g, "");
+        if(tertiary_ph !== "") tertiary_ph.replace(/<\/?[^>]+(>|$)/g, "");
+
+        var short_desc = $.trim($("#details-short-desc").html());
+        var long_desc = $.trim($("#details-long-desc").html());
+        if(short_desc !== "") short_desc.replace(/<\/?[^>]+(>|$)/g, "");
+        if(long_desc !== "") long_desc.replace(/<\/?[^>]+(>|$)/g, "");
+
+        var kw_send_object = {
+            primary_ph: primary_ph,
+            secondary_ph: secondary_ph,
+            tertiary_ph: tertiary_ph,
+            short_desc: short_desc,
+            long_desc: long_desc
+        };
+
+        var analyzer_kw = $.post(keywordsAnalyzerBaseUrl, kw_send_object, 'json').done(function(data) {
+            $("#kw_primary_short_res").text(data['primary'][0].toFixed(1) + "%");
+            $("#kw_primary_long_res").text(data['primary'][1].toFixed(1) + "%");
+
+            $("#kw_secondary_short_res").text(data['secondary'][0].toFixed(1) + "%");
+            $("#kw_secondary_long_res").text(data['secondary'][1].toFixed(1) + "%");
+
+            $("#kw_tertiary_short_res").text(data['tertiary'][0].toFixed(1) + "%");
+            $("#kw_tertiary_long_res").text(data['tertiary'][1].toFixed(1) + "%");
+
+            $('.keywords_metrics_bl_res').fadeOut('fast', function() {
+                $('.keywords_metrics_bl_res').fadeIn();
+            });
+        });
+        
     }   
     // --- KEYWORDS ANALYZER (END)
-
-    // ---- METRICS (SEO PHRASES) (END)
-    $(document).ready(function () {
-
-        // var customers_list = $.post(customersListBaseUrl, { }, 'json').done(function(c_data) {
-        //     var cl_arr = [];
-        //     var ddData_second = [];
-        //     cl_arr.push("All Sites");
-        //     for(i in c_data) {
-        //         cl_arr.push(c_data[i]);
-        //     }
-        //     for (var i = 0; i < cl_arr.length; i++) {
-        //         if(i == 0) {
-        //             var mid = {
-        //                 text: cl_arr[i],
-        //                 value: "all",
-        //                 description: ""
-        //             };    
-        //         } else {
-        //             var text_d = cl_arr[i];
-        //             var value_d = cl_arr[i];
-        //             var imageSrc_d = "";
-        //             if(cl_arr[i] == 'bjs.com') {
-        //                 text_d = "";
-        //                 imageSrc_d = "<?php echo base_url(); ?>img/bjs-logo.gif";
-        //             } else if(cl_arr[i] == 'sears.com') {
-        //                 text_d = "";
-        //                 imageSrc_d = "<?php echo base_url(); ?>img/sears-logo.png";
-        //             } else if(cl_arr[i] == 'walmart.com') {
-        //                 text_d = "";
-        //                 imageSrc_d = "<?php echo base_url(); ?>img/walmart-logo.png";
-        //             } else if(cl_arr[i] == 'staples.com') {
-        //                 text_d = "";
-        //                 imageSrc_d = "<?php echo base_url(); ?>img/staples-logo.png";
-        //             } else if(cl_arr[i] == 'overstock.com') {
-        //                 text_d = "";
-        //                 imageSrc_d = "<?php echo base_url(); ?>img/overstock-logo.png";
-        //             } else if(cl_arr[i] == 'tigerdirect.com') {
-        //                 text_d = "";
-        //                 imageSrc_d = "<?php echo base_url(); ?>img/tigerdirect-logo.png";
-        //             }
-
-        //             var mid = {
-        //                 text: text_d,
-        //                 value: value_d,
-        //                 description: "",
-        //                 imageSrc: imageSrc_d
-        //             };
-        //         }
-        //         ddData_second.push(mid);
-        //     };
-        //     $('#measure_dropdown').ddslick({
-        //         data: ddData_second,
-        //         width: 104,
-        //         defaultSelectedIndex: 0
-        //     });
-        // });
-
-    });
 
 </script>
 <div class="main_content_other"></div>
@@ -287,15 +260,35 @@
                             </tr>
                         </tbody>
                     </table>
-                    <!-- <span>Primary:</span><textarea id="km_primary_edit"></textarea> -->
                 </li>
-                <!-- <li class='keywords_metrics_bl'>
-                    <span>Secondary:</span><textarea id="km_secondary_edit"></textarea>
-                </li> -->
-                <!-- <li class='keywords_metrics_bl'>
-                    <span>Tertiary:</span><textarea id="km_tertiary_edit"></textarea>
-                </li> -->
                 <li class='keywords_metrics_bl'><button type='button' onclick="keywordsAnalizer()" class='btn btn-primary'>Update</button></li>
+                <li>&nbsp;</li>
+                <li class='keywords_metrics_bl_res'>
+                    <table class='keywords_metrics_bl_res_tbl'>
+                        <tbody>
+                            <tr>
+                                <td><span>Description Density:</span></td>
+                                <td><span>Short</span></td>
+                                <td><span>Long</span></td>
+                            </tr>
+                            <tr>
+                                <td><span>Primary:</span></td>
+                                <td><span id='kw_primary_short_res'>0%</span></td>
+                                <td><span id='kw_primary_long_res'>0%</span></td>
+                            </tr>
+                            <tr>
+                                <td><span>Secondary:</td>
+                                <td><span id='kw_secondary_short_res'>0%</span></td>
+                                <td><span id='kw_secondary_long_res'>0%</span></td>
+                            </tr>
+                            <tr>
+                                <td><span>Tertiary:</td>
+                                <td><span id='kw_tertiary_short_res'>0%</span></td>
+                                <td><span id='kw_tertiary_long_res'>0%</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </li>
                 <li>&nbsp;</li>
                 <li data-status='words_an'><a href='javascript:void(0)'>Word Analysis:</a></li>
                 <li data-status='words_an' class='bold_li li_top_margin'>Short Description: <span class='normal_font_w' data-st-id='short_desc'>0</span></li>
