@@ -1,9 +1,11 @@
 <script>
     
+    $("#compare_text").focus();
+
     // ---- METRICS (SEO PHRASES) (START)
-    var tmp_dumm = 'Samsung UN40ES6500 40 Class LED 3D HDTV The Samsung UN40ES6500 40 Class LED 3D HDTV Samsung UN40ES6500 40 Class LED 3D HDTV The Samsung UN40ES6500 40 Class LED 3D HDTV';
     var measureAnalyzerBaseUrl = "<?php echo base_url(); ?>index.php/measure/analyzestring";
     var editorSearchBaseUrl = "<?php echo base_url(); ?>index.php/editor/searchmeasuredb";
+    var keywordsAnalyzerBaseUrl = "<?php echo base_url(); ?>index.php/measure/analyzekeywords";
 
     function startMeasureCompare() {
         $("#measure_tab_pr_content_head .item_title b").html('No Title');
@@ -98,24 +100,6 @@
         
     }
 
-    // function wordHighLighter(w, status) {
-    //     if(status === 'short') {
-    //         var high_opt = {
-    //             exact: 'whole',
-    //             highlight: $('#details-short-desc'),
-    //             keys: w
-    //         };
-    //         $('#details-short-desc').SearchHighlight(high_opt);
-    //     } else if(status === 'long') {
-    //         var high_opt = {
-    //             exact: 'whole',
-    //             highlight: $('#details-long-desc'),
-    //             keys: w
-    //         };
-    //         $('#details-long-desc').SearchHighlight(high_opt);
-    //     }  
-    // }
-
     function removeTagsFromDescs() {
         var short_str = $("#details-short-desc").text();
         var long_str = $("#details-long-desc").text();
@@ -173,48 +157,66 @@
         if(typeof(attr) !== 'undefined' && attr === 'seo_link') {} else { removeTagsFromDescs(); }
     });
 
+    // --- KEYWORDS ANALYZER (START)
+    function keywordsAnalizer() {
+        var primary_ph = $.trim($("#km_primary_edit").val());
+        var secondary_ph = $.trim($("#km_secondary_edit").val());
+        var tertiary_ph = $.trim($("#km_tertiary_edit").val());
+        if(primary_ph !== "") primary_ph.replace(/<\/?[^>]+(>|$)/g, "");
+        if(secondary_ph !== "") secondary_ph.replace(/<\/?[^>]+(>|$)/g, "");
+        if(tertiary_ph !== "") tertiary_ph.replace(/<\/?[^>]+(>|$)/g, "");
 
-    // ---- METRICS (SEO PHRASES) (END)
-    $(document).ready(function () {
-        var ddData_first = [
-            {
-                text: "All",
-                value: "all",
-                description: ""
-            },
-            {
-                text: "",
-                value: "walmart.com",
-                description: "",
-                imageSrc: "<?php echo base_url(); ?>img/walmart-logo.png"
-            },
-            {
-                text: "",
-                value: "sears.com",
-                description: "",
-                imageSrc: "<?php echo base_url(); ?>img/sears-logo.png"
-            },
-            {
-                text: "",
-                value: "tigerdirect.com",
-                description: "",
-                imageSrc: "<?php echo base_url(); ?>img/tigerdirect-logo.png"
-            },
-        ];
-        $('#measure_dropdown').ddslick({
-            data: ddData_first,
-            defaultSelectedIndex: 0
+        var short_desc = $.trim($("#details-short-desc").html());
+        var long_desc = $.trim($("#details-long-desc").html());
+        if(short_desc !== "") short_desc.replace(/<\/?[^>]+(>|$)/g, "");
+        if(long_desc !== "") long_desc.replace(/<\/?[^>]+(>|$)/g, "");
+
+        var kw_send_object = {
+            primary_ph: primary_ph,
+            secondary_ph: secondary_ph,
+            tertiary_ph: tertiary_ph,
+            short_desc: short_desc,
+            long_desc: long_desc
+        };
+
+        var analyzer_kw = $.post(keywordsAnalyzerBaseUrl, kw_send_object, 'json').done(function(data) {
+            $("#kw_primary_short_res").text(data['primary'][0].toFixed(1) + "%");
+            $("#kw_primary_long_res").text(data['primary'][1].toFixed(1) + "%");
+
+            $("#kw_secondary_short_res").text(data['secondary'][0].toFixed(1) + "%");
+            $("#kw_secondary_long_res").text(data['secondary'][1].toFixed(1) + "%");
+
+            $("#kw_tertiary_short_res").text(data['tertiary'][0].toFixed(1) + "%");
+            $("#kw_tertiary_long_res").text(data['tertiary'][1].toFixed(1) + "%");
+
+            $('.keywords_metrics_bl_res').fadeOut('fast', function() {
+                $('.keywords_metrics_bl_res').fadeIn();
+            });
         });
+        
+    }   
+    // --- KEYWORDS ANALYZER (END)
 
-    });
 </script>
 <div class="main_content_other"></div>
 <div class="main_content_editor">
 <div class="row-fluid">
     <?php echo form_open('', array('id'=>'measureFormMetrics')); ?>
-        <!-- <input type="text" name="compare_text" value="UN40ES6500" id="compare_text" class="span8" placeholder=""/> -->
-        <input type="text" name="compare_text" value="UN40ES6500" id="compare_text" class="span8" placeholder=""/>
-        <div id="measure_dropdown" class="dropdowns"></div>
+    <input type="text" name="compare_text" value="" id="compare_text" class="span8" placeholder=""/>
+    <div id="measure_dropdown" class="ddslick_dropdown dropdowns"></div>
+        <select class='cats_an_select' id='cats_an' name='cats_an'>
+            <?php if(count($category_list) > 0) { ?>
+                <?php foreach ($category_list as $key => $value) { ?>
+                    <?php if($value->name == "All") { ?>
+                    <option value="all">All Categories</option>
+                    <?php } else { ?>
+                    <option value="<?php echo $value->id; ?>"><?php echo $value->name; ?></option>
+                    <?php } ?>
+                <?php } ?>
+            <?php } else { ?>
+            <option value='all'>All Categories</option>
+            <?php } ?>
+        </select>
         <button type="submit" onclick="return startMeasureCompare()" class="btn pull-right">Search</button>
     <?php echo form_close();?>
 </div>
@@ -222,15 +224,15 @@
 <!--- REAL CONTENT SECTION (START) -->
 <div id="measure_tab_pr_content">
     <div id="measure_tab_pr_content_head" class="row-fluid mt_10">
-        <div class="span8 item_title"><b class='btag_elipsis'>No Title</b></div>
+        <div class="span8 item_title an_sv_left"><b class='btag_elipsis'>No Title</b></div>
     </div>
 	<div class="row-fluid">            
-       <div class="span8 search_area uneditable-input cursor_default item_section">
+       <div class="span8 search_area uneditable-input cursor_default item_section an_sv_left">
             <div id='measure_tab_pr_content_body' class="item_section_content" >
                 
             </div>
-        </div>
-        <div class="span3" style="width: 290px; margin-left: 5px; margin-top: -45px;" id="attributes_metrics">
+        </div> 
+        <div class="span3 an_sv_right" id="attributes_metrics">
             <h3>Metrics</h3>
             <ul>
                 <li><a href="javascript:void(0)">Site Metrics</a></li>
@@ -242,15 +244,51 @@
                 <li>&nbsp;</li>
                 <li><a href="javascript:void(0)">Keywords Metrics</a></li>
                 <li class='keywords_metrics_bl'>
-                    <span>Primary:</span><textarea id="km_primary_edit" disabled='true'>X% Y%</textarea>
+                    <table class='keywords_metrics_tbl'>
+                        <tbody>
+                            <tr>
+                                <td><span>Primary:</span></td>
+                                <td><textarea id="km_primary_edit"></textarea></td>
+                            </tr>
+                            <tr>
+                                <td><span>Secondary:</span></td>
+                                <td><textarea id="km_secondary_edit"></textarea></td>
+                            </tr>
+                            <tr>
+                                <td><span>Tertiary:</span></td>
+                                <td><textarea id="km_tertiary_edit"></textarea></td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </li>
-                <li class='keywords_metrics_bl'>
-                    <span>Secondary:</span><textarea id="km_secondary_edit" disabled='true'>X% Y%</textarea>
+                <li class='keywords_metrics_bl'><button type='button' onclick="keywordsAnalizer()" class='btn btn-primary'>Update</button></li>
+                <li>&nbsp;</li>
+                <li class='keywords_metrics_bl_res'>
+                    <table class='keywords_metrics_bl_res_tbl'>
+                        <tbody>
+                            <tr>
+                                <td><span>Description Density:</span></td>
+                                <td><span>Short</span></td>
+                                <td><span>Long</span></td>
+                            </tr>
+                            <tr>
+                                <td><span>Primary:</span></td>
+                                <td><span id='kw_primary_short_res'>0%</span></td>
+                                <td><span id='kw_primary_long_res'>0%</span></td>
+                            </tr>
+                            <tr>
+                                <td><span>Secondary:</td>
+                                <td><span id='kw_secondary_short_res'>0%</span></td>
+                                <td><span id='kw_secondary_long_res'>0%</span></td>
+                            </tr>
+                            <tr>
+                                <td><span>Tertiary:</td>
+                                <td><span id='kw_tertiary_short_res'>0%</span></td>
+                                <td><span id='kw_tertiary_long_res'>0%</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </li>
-                <li class='keywords_metrics_bl'>
-                    <span>Tertiary:</span><textarea id="km_tertiary_edit" disabled='true'>X% Y%</textarea>
-                </li>
-                <li class='keywords_metrics_bl'><button type='button' class='btn btn-primary'>Update</button></li>
                 <li>&nbsp;</li>
                 <li data-status='words_an'><a href='javascript:void(0)'>Word Analysis:</a></li>
                 <li data-status='words_an' class='bold_li li_top_margin'>Short Description: <span class='normal_font_w' data-st-id='short_desc'>0</span></li>

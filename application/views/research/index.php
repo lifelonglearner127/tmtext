@@ -1,46 +1,37 @@
 <script type="text/javascript">
     $(document).ready(function () {
-        var ddData_first = [
-            {
-                text: "All",
-                value: "",
-                description: "",
-            },
-            {
-                text: "",
-                value: "Overstock.com",
-                description: "",
-                imageSrc: "<?php echo base_url(); ?>img/overstock-logo.png"
-            },
-            {
-                text: "",
-                value: "Walmart.com",
-                description: "",
-                imageSrc: "<?php echo base_url(); ?>img/walmart-logo.png"
-            },
-            {
-                text: "",
-                value: "Sears.com",
-                description: "",
-                imageSrc: "<?php echo base_url(); ?>img/sears-logo.png"
-            },
-            {
-                text: "",
-                value: "TigerDirect.com",
-                description: "",
-                imageSrc: "<?php echo base_url(); ?>img/tigerdirect-logo.png"
-            },
-        ];
-
-        $('#research_dropdown').ddslick({
-            data: ddData_first,
-            defaultSelectedIndex: 0
-        });
         $( "#sortable1, #sortable2" ).sortable({
             connectWith: ".connectedSortable"
         });
         
-        $( "#research, #research_edit" ).draggable({containment: "#main"});
+        $("#research, #research_edit" ).draggable({
+            containment: "#main",
+            drag: function( event, ui ) {
+               if(ui.originalPosition.left > ui.position.left){
+                   if($(this).attr('id')=='research_edit'){
+                       $(this).addClass('left_pos');
+                       $('#research').css({'float':'right'});
+                   } else {
+                       $(this).addClass('left_pos');
+                       $(this).css({'float':'left'});
+                       $('#research_edit').addClass('left_pos');
+                       $('#research_edit').css({'float':'right'});
+                   }
+               } else {
+                   if($(this).attr('id')=='research_edit'){
+                       $(this).addClass('left_pos');
+                       $('#research').css({'float':'left'});
+                   } else {
+                       $(this).addClass('left_pos');
+                       $(this).css({'float':'right'});
+                       $('#research_edit').addClass('left_pos');
+                       $('#research_edit').css({'float':'right'});
+                   }
+               }
+            }
+        });
+
+        $( ".ui-draggable" ).disableSelection();
 
         $( "ul#sortable1 li.boxes, ul#sortable2 li.boxes" ).resizable();
 
@@ -105,6 +96,7 @@
                         $('.main span:first-child').css({'width':'172px'});
                         $('ul#products').append(str);
                         $('ul#product_descriptions').append(desc);
+                        $('#products li:eq(0)').trigger('click');
                     }
                 }, 'json');
         });
@@ -132,14 +124,16 @@
                 $(this).css({'background':'none'});
             });
             $(this).css({'background':'#CAEAFF'});
-            $('#rel_keywords').css({'display':'block'})
-            $('textarea[name="short_description"]').text('');
-            $('textarea[name="long_description"]').text('');
+            $('#rel_keywords').css({'display':'block'});
+            $('textarea[name="short_description"]').val('');
+            $('textarea[name="long_description"]').val('');
             if($(this).attr('id')!='' && $(this).attr('id')!=undefined){
                 var txt = $('ul#product_descriptions li#'+$(this).attr('id')+'_desc').text();
-                $('textarea[name="short_description"]').text(txt);
-                $('textarea[name="long_description"]').text(txt);
+                $('textarea[name="short_description"]').val(txt);
+                $('textarea[name="long_description"]').val(txt);
                 $('input[name="product_name"]').val($(this).find('span:first-child').text());
+                $('textarea[name="short_description"]').trigger('change');
+                $('textarea[name="long_description"]').trigger('change');
             }
         });
     });
@@ -149,7 +143,7 @@
     <div class="row-fluid">
         <?php echo form_open('', array('id'=>'measureForm')); ?>
         <input type="text" id="research_text" name="research_text" value="UN40E6400" class="span8 " placeholder=""/>
-        <div id="research_dropdown"></div>
+        <div id="res_dropdown" class="ddslick_dropdown"></div>
         <button id="research_search" type="button" class="btn pull-right btn-success">Search</button>
         <?php echo form_close();?>
     </div>

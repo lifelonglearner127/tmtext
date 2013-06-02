@@ -195,6 +195,16 @@ class Editor extends MY_Controller {
 		$this->load->view('editor/searchmeasure', $data);
 	}
 
+	public function refreshheader() {
+		$title_dyn = $this->input->post('t');
+
+		$data = array(
+			'title_dyn' =>  $title_dyn
+		);
+
+		$this->load->view('editor/refreshheader', $data);
+	}
+
 	public function search()
 	{
 		$this->form_validation->set_rules('s', 'Search', 'required|alpha_dash|xss_clean');

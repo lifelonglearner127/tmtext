@@ -19,7 +19,28 @@ class Measure extends MY_Controller {
 
     public function index()
     {
+        $this->data['category_list'] = $this->category_full_list();
         $this->render();
+    }
+
+    private function category_full_list() {
+        $this->load->model('category_model');
+        $categories = $this->category_model->getAll();
+        return $categories;
+    }
+
+    public function getcustomerslist() {
+        $this->load->model('customers_model');
+        $output = array();
+        $customers_init_list = $this->customers_model->getAll();
+        if(count($customers_init_list) > 0) {
+            foreach ($customers_init_list as $key => $value) {
+                $n = strtolower($value->name);
+                $output[] = $n;
+            }
+        }
+        $output = array_unique($output);
+        $this->output->set_content_type('application/json')->set_output(json_encode($output));
     }
 
     public function analyzestring() {
@@ -27,4 +48,15 @@ class Measure extends MY_Controller {
         $output = $this->helpers->measure_analyzer_start_v2($clean_t);
         $this->output->set_content_type('application/json')->set_output(json_encode($output));
     }
+
+    public function analyzekeywords() {
+        $primary_ph = $this->input->post('primary_ph');
+        $secondary_ph = $this->input->post('secondary_ph');
+        $tertiary_ph = $this->input->post('tertiary_ph');
+        $short_desc = $this->input->post('short_desc');
+        $long_desc = $this->input->post('long_desc');
+        $output = $this->helpers->measure_analyzer_keywords($primary_ph, $secondary_ph, $tertiary_ph, $short_desc, $long_desc);
+        $this->output->set_content_type('application/json')->set_output(json_encode($output));
+    }
+
 }

@@ -42,7 +42,7 @@
 	overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    max-width: 260px;
+    max-width: 303px;
     font-size: 12px;
 }
 .word_wrap_li_pr.hover_en {
@@ -74,7 +74,50 @@ li[data-status='words_an'] {
 	margin-top: 5px;
 }
 span[class*="hilite"] { background: yellow; }
+.keywords_metrics_tbl {
+	width: 100%;
+}
+.keywords_metrics_tbl tr td {
+	vertical-align: top;
+}
+.keywords_metrics_tbl tr td span {
+	font-size: 14px;
+}
+.keywords_metrics_bl_res_tbl {
+	width: 100%;
+}
+.keywords_metrics_bl_res_tbl tr td {
+	vertical-align: top;
+}
+.keywords_metrics_bl_res_tbl tr td span {
+	font-size: 14px;
+}
+.keywords_metrics_bl_res {
+	display: none;
+}
 /* Keywords Metrics (analysis) (end) */
+
+/* Competitive Intelligence (standart view) (start) */
+.cats_an_select {
+	float: left;
+	display: block;
+	width: 140px;
+}
+#measure_dropdown {
+	margin-right: 10px !important;
+}
+#compare_text {
+	width: 550px;
+}
+.an_sv_left {
+	width: 550px !important;
+}
+.an_sv_right {
+	width: 333px !important;
+	margin-left: 5px;
+	margin-top: -45px;
+}
+/* Competitive Intelligence (standart view) (end) */
 
 /* Login container style */
 
@@ -618,7 +661,7 @@ a.gray_out {
 }
 
 .dd-container, .dd-container .dd-select, ul.dd-options {
-    width: 200px!important;
+    /*width: 200px!important;*/
     float:left;
     margin-right: 20px;
 }
@@ -678,12 +721,15 @@ p.show_ballons input{
     margin: 0px;
     padding-left: 10px;
 }
+
 #research {
     border: 1px solid #CCCCCC;
     -webkit-border-radius: 5px;
     -moz-border-radius: 5px;
     border-radius: 5px;
     margin: 5px;
+    background: #fff;
+    z-index: ;0000;
 }
 
 #research_edit {
@@ -693,6 +739,7 @@ p.show_ballons input{
     border-radius: 5px;
     width:  440px;
     margin: 5px;
+    background: #fff;
 }
 
 .research_content {
@@ -704,6 +751,7 @@ p.show_ballons input{
     -webkit-border-radius: 5px;
     -moz-border-radius: 5px;
     border-radius: 5px;
+    background: #fff;
 }
 #research_edit h3, #research h3{
     font-size: 16px;
@@ -851,4 +899,8 @@ label.dd-selected-text, label.dd-option-text{
 .span2.input_fln {
 	float: none;
 	margin-left: 0px;
+}
+
+.left_pos{
+    left:0!important;
 }

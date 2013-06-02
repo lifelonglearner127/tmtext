@@ -22,7 +22,7 @@ class Customers_model extends CI_Model {
 
     function getAll()
     {
-        $query = $this->db->get($this->tables['customers']);
+        $query = $this->db->order_by('name', 'asc')->get($this->tables['customers']);
 
         return $query->result();
     }

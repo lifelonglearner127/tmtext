@@ -6,6 +6,59 @@ var search_id = undefined;
 var sentence = new Array();
 var desc_input = '';
 var action = '';
+var ddData_first = [];
+var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist', { }, 'json').done(function(c_data) {
+    var cl_arr = [];
+    cl_arr.push("All Sites");
+    for(i in c_data) {
+        cl_arr.push(c_data[i]);
+    }
+    for (var i = 0; i < cl_arr.length; i++) {
+        if(i == 0) {
+            var mid = {
+                text: cl_arr[i],
+                value: "all",
+                description: ""
+            };
+        } else {
+            var text_d = cl_arr[i];
+            var value_d = cl_arr[i];
+            var imageSrc_d = "";
+            if(cl_arr[i] == 'bjs.com') {
+                text_d = "";
+                imageSrc_d = base_url + "img/bjs-logo.gif";
+            } else if(cl_arr[i] == 'sears.com') {
+                text_d = "";
+                imageSrc_d = base_url + "img/sears-logo.png";
+            } else if(cl_arr[i] == 'walmart.com') {
+                text_d = "";
+                imageSrc_d = base_url + "img/walmart-logo.png";
+            } else if(cl_arr[i] == 'staples.com') {
+                text_d = "";
+                imageSrc_d = base_url + "img/staples-logo.png";
+            } else if(cl_arr[i] == 'overstock.com') {
+                text_d = "";
+                imageSrc_d = base_url + "img/overstock-logo.png";
+            } else if(cl_arr[i] == 'tigerdirect.com') {
+                text_d = "";
+                imageSrc_d = base_url + "img/tigerdirect-logo.png";
+            }
+            var mid = {
+                text: text_d,
+                value: value_d,
+                description: "",
+                imageSrc: imageSrc_d
+            };
+        }
+        ddData_first.push(mid);
+    };
+});
+
+function refreshHeaderTitle(t) {
+    $.post("/editor/refreshheader", { t: t}, 'html').done(function(f) {
+        $("head").find("title").replaceWith(f);
+    });
+}
 
 function replaceAt(search, replace, subject, n) {
     return subject.substring(0, n) +subject.substring(n).replace(search, replace);
@@ -497,6 +550,8 @@ jQuery(document).ready(function($) {
     $(document).on("click", ".left_nav_content li a, .right_nav_content li a", function(e){
         e.preventDefault();
 
+
+
         if($(this).hasClass('jq-editor')){
             var editorCont = $('.main_content_editor').html();
             if (editorCont.length == 0) {
@@ -521,6 +576,25 @@ jQuery(document).ready(function($) {
             $(this).parent('li').addClass('active');
             $('.main_content_other').css('display', 'block');
             $('.main_content_editor').css('display', 'none');
+        }
+
+        if(typeof ddData_first != 'undefined'){
+            setTimeout(function(){
+                var el_dr = $('.ddslick_dropdown');
+                if(el_dr.length > 0) {
+                    var w_el_dr = 200;
+                    if($('.ddslick_dropdown').attr('id') == 'measure_dropdown') {
+                        w_el_dr = 104;
+                    }
+                    $('.ddslick_dropdown').ddslick({
+                        data: ddData_first,
+                        defaultSelectedIndex: 0,
+                        width:w_el_dr,
+                        selectText: "Select your favorite social network",
+                        truncateDescription: true,
+                    });
+                }
+            }, 1500);
         }
     });
 

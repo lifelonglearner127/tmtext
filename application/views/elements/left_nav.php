@@ -1,9 +1,17 @@
 <?php
+// $menu = array(
+//     array('controller' => 'research', 'name' => 'Research & Edit'),
+// 	array('controller' => 'editor', 'name' => 'Create'),
+//     array('controller' => 'validate', 'name' => 'Validate'),
+//     array('controller' => 'measure', 'name' => 'Analysis'),
+// 	array('controller' => 'customer', 'name' => 'Settings'),
+// );
+
 $menu = array(
+    array('controller' => 'measure', 'name' => 'Competitive Intelligence'),
     array('controller' => 'research', 'name' => 'Research & Edit'),
-	array('controller' => 'editor', 'name' => 'Create'),
+    array('controller' => 'editor', 'name' => 'Create'),
     array('controller' => 'validate', 'name' => 'Validate'),
-    array('controller' => 'measure', 'name' => 'Analysis'),
 	array('controller' => 'customer', 'name' => 'Settings'),
 );
 

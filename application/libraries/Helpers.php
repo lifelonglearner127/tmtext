@@ -7,6 +7,60 @@ class Helpers {
 
   }
 
+  public function measure_analyzer_keywords($primary_ph, $secondary_ph, $tertiary_ph, $short_desc, $long_desc) {
+    // --- default res array and values (start)
+    $res = array(
+        "primary" => array(0, 0),
+        "secondary" => array(0, 0),
+        "tertiary" => array(0, 0)
+    );
+    $short_desc_words_count = count(explode(" ", $short_desc));
+    $long_desc_words_count = count(explode(" ", $long_desc));
+    // --- default res array and values (end)
+
+    // --- primary calculation (start)
+    if($primary_ph !== "") {
+        $primary_ph_words_count = count(explode(" ", $primary_ph));
+        if($short_desc !== "") {
+            if($this->keywords_appearence($short_desc, $primary_ph) !== 0) $res['primary'][0] = $short_desc_words_count / ($this->keywords_appearence($short_desc, $primary_ph) * $primary_ph_words_count);
+        }
+        if($long_desc !== "") {
+            if($this->keywords_appearence($long_desc, $primary_ph) !== 0) $res['primary'][1] = $long_desc_words_count / ($this->keywords_appearence($long_desc, $primary_ph) * $primary_ph_words_count);
+        }
+    }
+    // --- primary calculation (end)
+
+    // --- secondary calculation (start)
+    if($secondary_ph !== "") {
+        $secondary_ph_words_count = count(explode(" ", $secondary_ph));
+        if($short_desc !== "") {
+            if($this->keywords_appearence($short_desc, $secondary_ph) !== 0) $res['secondary'][0] = $short_desc_words_count / ($this->keywords_appearence($short_desc, $secondary_ph) * $secondary_ph_words_count);
+        }
+        if($long_desc !== "") {
+            if($this->keywords_appearence($long_desc, $secondary_ph) !== 0) $res['secondary'][1] = $long_desc_words_count / ($this->keywords_appearence($long_desc, $secondary_ph) * $secondary_ph_words_count);
+        }
+    }
+    // --- secondary calculation (end)
+
+    // --- tertiary calculation (start)
+    if($tertiary_ph !== "") {
+        $tertiary_ph_words_count = count(explode(" ", $tertiary_ph));
+        if($short_desc !== "") {
+            if($this->keywords_appearence($short_desc, $tertiary_ph) !== 0) $res['tertiary'][0] = $short_desc_words_count / ($this->keywords_appearence($short_desc, $tertiary_ph) * $tertiary_ph_words_count);
+        }
+        if($long_desc !== "") {
+            if($this->keywords_appearence($long_desc, $tertiary_ph) !== 0) $res['tertiary'][1] = $long_desc_words_count / ($this->keywords_appearence($long_desc, $tertiary_ph) * $tertiary_ph_words_count);
+        }
+    }
+    // --- tertiary calculation (end)
+
+    return $res;
+  }
+
+  private function keywords_appearence($desc, $phrase) {
+    return substr_count($desc, $phrase);
+  }
+
   public function measure_analyzer_start_v2($clean_t) { // !!! EXPREIMENTAL !!!
     // $clean_t = "3D ready, allows playback of full 3D high-definition content 480 Clear Motion Rate, less motion blur for your fast-paced videos HDMI and USB ports, lets you connect to a wide variety of devices WiFi capable, allows you to access countless hours visual content from the Internet";
     $clean_t = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $clean_t);
