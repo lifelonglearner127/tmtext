@@ -39,7 +39,7 @@ class Measure extends MY_Controller {
                 $output[] = $n;
             }
         }
-        $output = array_unique($output, SORT_STRING);
+        $output = array_unique($output);
         $this->output->set_content_type('application/json')->set_output(json_encode($output));
     }
 
