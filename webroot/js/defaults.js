@@ -221,7 +221,9 @@ function cleanNewUserForm(){
 function afterAutocomplete(loadData){
 
     var postData = {id: loadData.item.id};
-    var posting = $.post('/index.php/auth/getUserById', postData, function(data) {
+    console.log(location.href);
+    var getuserURL = $('#auth_getuser').attr('action');
+    var posting = $.post(getuserURL, postData, function(data) {
         cleanNewUserForm();
         console.log(data.active);
         $("#user_name").val(data.username);

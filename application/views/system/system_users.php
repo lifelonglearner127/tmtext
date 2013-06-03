@@ -93,6 +93,7 @@ $("#user_mail").autocomplete({
 		</div>
 		<?php echo form_close();?>
 		<?php echo form_open("system/jqueryAutocomplete", array("id"=>"system_autocomplete"));?><?php echo form_close();?>
+		<?php echo form_open("auth/getUserById", array("id"=>"auth_getuser"));?><?php echo form_close();?>
     </div>
   </div>
 </div>
