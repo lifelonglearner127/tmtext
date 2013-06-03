@@ -248,15 +248,15 @@
                         <tbody>
                             <tr>
                                 <td><span>Primary:</span></td>
-                                <td><textarea id="km_primary_edit"></textarea></td>
+                                <td><input type='text' name='km_primary_edit' id="km_primary_edit"></td>
                             </tr>
                             <tr>
                                 <td><span>Secondary:</span></td>
-                                <td><textarea id="km_secondary_edit"></textarea></td>
+                                <td><input type='text' name='km_secondary_edit' id="km_secondary_edit"></td>
                             </tr>
                             <tr>
                                 <td><span>Tertiary:</span></td>
-                                <td><textarea id="km_tertiary_edit"></textarea></td>
+                                <td><input type='text' name='km_tertiary_edit' id="km_tertiary_edit"></td>
                             </tr>
                         </tbody>
                     </table>
