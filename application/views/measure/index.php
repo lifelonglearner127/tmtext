@@ -7,6 +7,14 @@
     var editorSearchBaseUrl = "<?php echo base_url(); ?>index.php/editor/searchmeasuredb";
     var keywordsAnalyzerBaseUrl = "<?php echo base_url(); ?>index.php/measure/analyzekeywords";
 
+    function startMeasureCompareV2() {
+        var s = $.trim($("#compare_text").val());
+        var sl = $.trim($(".dd-selected-value").val());
+        var cat = $("#cats_an").val();
+        console.log(s+" | "+sl+" | "+cat);
+        return false;
+    }
+
     function startMeasureCompare() {
         $("#measure_tab_pr_content_head .item_title b").html('No Title');
         var s = $.trim($("#compare_text").val());
@@ -217,7 +225,7 @@
             <option value='all'>All Categories</option>
             <?php } ?>
         </select>
-        <button type="submit" onclick="return startMeasureCompare()" class="btn pull-right">Search</button>
+        <button type="submit" id="an_search" disabled='true' onclick="return startMeasureCompare()" class="btn pull-right">Search</button>
     <?php echo form_close();?>
 </div>
 

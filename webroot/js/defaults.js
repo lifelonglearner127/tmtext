@@ -596,6 +596,7 @@ jQuery(document).ready(function($) {
                         truncateDescription: true,
                     });
                 }
+                if($("#an_search").length > 0) $("#an_search").removeAttr('disabled');
             }, 1500);
         }
     });
