@@ -22,6 +22,54 @@ class Imported_data_parsed_model extends CI_Model {
         return $query->result();
     }
 
+    function getByImId($im_data_id) {
+        $this->db->select('imported_data_id, key, value');
+        $this->db->where('key', 'Product Name');
+        $this->db->where('imported_data_id', $im_data_id);
+        $this->db->limit(1);
+        $query = $this->db->get($this->tables['imported_data_parsed']);
+        $results = $query->result();
+        $data = array();
+        foreach($results as $result){
+            $res = $this->db->select('value')->where_in('key', array('URL', 'Description', 'Long_Description'))->where('imported_data_id', $result->imported_data_id)
+                ->get($this->tables['imported_data_parsed']);
+            $info = $res->result();
+            array_push($data, array('imported_data_id'=>$result->imported_data_id, 'product_name'=>$result->value, 'url'=>$info[2]->value, 'description'=>$info[0]->value, 'long_description'=>$info[1]->value));
+        }
+        $f_res = null;
+        if(count($data) > 0) {
+            $f_res = $data[0];
+        }
+        return $f_res;
+    }
+
+    function getByValueLikeGroupCat($s, $sl, $opt_ids) {
+        $this->db->select('imported_data_id, key, value');
+        $this->db->where('key', 'Product Name');
+        $this->db->like('value', $s);
+        if(count($opt_ids) > 0) $this->db->where_in('imported_data_id', $opt_ids);
+        $query = $this->db->get($this->tables['imported_data_parsed']);
+        $results = $query->result();
+        $data = array();
+        foreach($results as $result){
+            $res = $this->db->select('value')->where_in('key', array('URL', 'Description', 'Long_Description'))->where('imported_data_id', $result->imported_data_id)
+                ->get($this->tables['imported_data_parsed']);
+            $info = $res->result();
+            array_push($data, array('imported_data_id'=>$result->imported_data_id, 'product_name'=>$result->value, 'url'=>$info[2]->value, 'description'=>$info[0]->value, 'long_description'=>$info[1]->value));
+        }
+
+        if($sl !== "all") {
+            foreach ($data as $key => $value) {
+                if(strpos($value['url'], "$sl") === false) {
+                    unset($data[$key]);
+                }
+            }
+        }
+
+        return $data;
+
+    }
+
     function getByValueLikeGroup($s, $sl) {
         $this->db->select('imported_data_id, key, value');
         $this->db->like('value', $s);

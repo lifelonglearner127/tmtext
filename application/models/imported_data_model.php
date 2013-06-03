@@ -17,6 +17,12 @@ class Imported_data_model extends CI_Model {
         parent::__construct();
     }
 
+    function getByCateggoryId($cat_id) {
+    	$query = $this->db->where('category_id', $cat_id)
+                  ->get($this->tables['imported_data']);
+        return $query->result();
+    }
+
     function get($id) {
     	$query = $this->db->where('id', $id)
                   ->limit(1)

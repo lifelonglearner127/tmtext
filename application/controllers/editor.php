@@ -150,48 +150,63 @@ class Editor extends MY_Controller {
 		$this->load->view('editor/searchmeasure', $data);
 	}
 
-	public function searchmeasuredb() {
-		$s = $this->input->post('s');
-		$sl = $this->input->post('sl');
+	// public function searchmeasuredb() {
+	// 	$s = $this->input->post('s');
+	// 	$sl = $this->input->post('sl');
 
+	// 	$data = array(
+	// 		'search_flag' => '',
+	// 		'search_results' => array()
+	// 	);
+
+	// 	$this->load->model('imported_data_parsed_model');
+	// 	$files_data_flag = false;
+	// 	$data_import = $this->imported_data_parsed_model->getByValueLikeGroup($s, $sl);
+	// 	if($data_import !== false) { // ---- DB DATA
+	// 		if(count($data_import) > 0) {
+	// 			$res = array('product_name' => '', 'short_desc' => '', 'long_desc' => '', 'url' => '');
+	// 			foreach ($data_import as $k => $v) {
+	// 				if(isset($v['key']) && isset($v['value'])) {
+	// 					switch ($v['key']) {
+	// 						case 'Description':
+	// 							// $res['short_desc'] = $v['value'];
+	// 							// $res['short_desc'] = preg_replace('/[^A-Za-z0-9\-]\"\./', ' ', $v['value']);
+	// 							$res['short_desc'] = str_replace(array(';'), array(','), $v['value']);
+	// 							break;
+	// 						case 'Long_Description':
+	// 							// $res['long_desc'] = $v['value'];
+	// 							// $res['long_desc'] = preg_replace('/[^A-Za-z0-9\-]\"\./', ' ', $v['value']);
+	// 							$res['long_desc'] = str_replace(array(';'), array(','), $v['value']); 
+	// 							break;
+	// 						case 'Product Name':
+	// 							$res['product_name'] = $v['value'];
+	// 							break;
+	// 						case 'URL':
+	// 							$res['url'] = $v['value'];
+	// 							break;
+	// 					}
+	// 				}
+	// 			}
+	// 			$data['search_results'] = $res;
+	// 			$data['search_flag'] = 'db';
+	// 		}
+	// 	}
+
+	// 	$this->load->view('editor/searchmeasure', $data);
+	// }
+
+	public function searchmeasuredb() {
+		$im_data_id = $this->input->post('im_data_id');
 		$data = array(
 			'search_flag' => '',
 			'search_results' => array()
 		);
-
 		$this->load->model('imported_data_parsed_model');
-		$files_data_flag = false;
-		$data_import = $this->imported_data_parsed_model->getByValueLikeGroup($s, $sl);
-		if($data_import !== false) { // ---- DB DATA
-			if(count($data_import) > 0) {
-				$res = array('product_name' => '', 'short_desc' => '', 'long_desc' => '', 'url' => '');
-				foreach ($data_import as $k => $v) {
-					if(isset($v['key']) && isset($v['value'])) {
-						switch ($v['key']) {
-							case 'Description':
-								// $res['short_desc'] = $v['value'];
-								// $res['short_desc'] = preg_replace('/[^A-Za-z0-9\-]\"\./', ' ', $v['value']);
-								$res['short_desc'] = str_replace(array(';'), array(','), $v['value']);
-								break;
-							case 'Long_Description':
-								// $res['long_desc'] = $v['value'];
-								// $res['long_desc'] = preg_replace('/[^A-Za-z0-9\-]\"\./', ' ', $v['value']);
-								$res['long_desc'] = str_replace(array(';'), array(','), $v['value']); 
-								break;
-							case 'Product Name':
-								$res['product_name'] = $v['value'];
-								break;
-							case 'URL':
-								$res['url'] = $v['value'];
-								break;
-						}
-					}
-				}
-				$data['search_results'] = $res;
-				$data['search_flag'] = 'db';
-			}
+		$data_import = $this->imported_data_parsed_model->getByImId($im_data_id);
+		if($data_import !== null) { // ---- DB DATA
+			$data['search_results'] = $data_import;
+			$data['search_flag'] = 'db';
 		}
-
 		$this->load->view('editor/searchmeasure', $data);
 	}
 

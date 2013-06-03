@@ -6,107 +6,112 @@
     var measureAnalyzerBaseUrl = "<?php echo base_url(); ?>index.php/measure/analyzestring";
     var editorSearchBaseUrl = "<?php echo base_url(); ?>index.php/editor/searchmeasuredb";
     var keywordsAnalyzerBaseUrl = "<?php echo base_url(); ?>index.php/measure/analyzekeywords";
-
+    
+    var editorSearchAllBaseUrl = "<?php echo base_url(); ?>index.php/measure/searchmeasuredball";
     function startMeasureCompareV2() {
         var s = $.trim($("#compare_text").val());
         var sl = $.trim($(".dd-selected-value").val());
         var cat = $("#cats_an").val();
-        console.log(s+" | "+sl+" | "+cat);
-        return false;
-    }
-
-    function startMeasureCompare() {
-        $("#measure_tab_pr_content_head .item_title b").html('No Title');
-        var s = $.trim($("#compare_text").val());
-        var sl = $.trim($(".dd-selected-value").val());
-        var searcher = $.post(editorSearchBaseUrl, { s: s, sl: sl }, 'html').done(function(data) {
-            if(typeof(data) !== "undefined" && data !== "") {
-                $("#measure_tab_pr_content_body").html(data);
-                var ms = $(data).find("#measure_res_status").val();
-
-                if(ms === 'db') {
-
-                    var title_dom = $(data).find("#link_m_title").val();
-                    var url_dom = $(data).find("#link_m_url").val();
-                    if(typeof(title_dom) !== 'undefined' && title_dom !== "") {
-                        var title_section = title_dom;
-                        if(typeof(url_dom) !== 'undefined' && url_dom !== "") {
-                            title_section = "<a href='" + url_dom + "'>" + title_dom + "</a>";
-                        }
-                        $("#measure_tab_pr_content_head .item_title b").html(title_section);
-                    }
-
-                    // --- SHORT DESC ANALYZER (START)
-                    var short_status = 'short';
-                    var short_desc_an = $("#details-short-desc").html();
-                    short_desc_an = short_desc_an.replace(/\s+/g, ' ');
-                    short_desc_an = short_desc_an.trim();
-                    var analyzer_short = $.post(measureAnalyzerBaseUrl, { clean_t: short_desc_an }, 'json').done(function(a_data) {
-                        var seo_items = "<li class='long_desc_sep'>Short Description:</li>";
-                        var top_style = "";
-                        var s_counter = 0;
-                        for(var i in a_data) {
-                            if(typeof(a_data[i]) === 'object') {
-                                s_counter++;
-                                if(i == 0) {
-                                    top_style = "style='margin-top: 5px;'";
-                                }
-                                seo_items += '<li ' + top_style + '>' + '<span data-status="seo_link" onclick="wordHighLighter(\''+a_data[i]['ph']+'\', \''+short_status+'\');" class="word_wrap_li_pr hover_en">' + a_data[i]['ph'] + '</span>' + ' <span class="word_wrap_li_sec">(' + a_data[i]['count'] + ')</span></li>';
-                            }
-                        }
-                        if(s_counter > 0) $("ul[data-st-id='short_desc_seo']").html(seo_items);
-                    });
-                    // --- SHORT DESC ANALYZER (END)
-
-                    // --- LONG DESC ANALYZER (START)
-                    var long_status = 'long';
-                    var long_desc_an = $("#details-long-desc").html();
-                    long_desc_an = long_desc_an.replace(/\s+/g, ' ');
-                    long_desc_an = long_desc_an.trim();
-                    var analyzer_long = $.post(measureAnalyzerBaseUrl, { clean_t: long_desc_an }, 'json').done(function(a_data) {
-                        var seo_items = "<li class='long_desc_sep'>Long Description:</li>";
-                        var top_style = "";
-                        var l_counter = 0;
-                        for(var i in a_data) {
-                            if(typeof(a_data[i]) === 'object') {
-                                l_counter++;
-                                if(i == 0) {
-                                    top_style = "style='margin-top: 5px;'";
-                                }
-                                seo_items += '<li ' + top_style + '>' + '<span data-status="seo_link" onclick="wordHighLighter(\''+a_data[i]['ph']+'\', \''+long_status+'\');" class="word_wrap_li_pr hover_en">' + a_data[i]['ph'] + '</span>' + ' <span class="word_wrap_li_sec">(' + a_data[i]['count'] + ')</span></li>';
-                                // seo_items += '<li ' + top_style + '>' + '<span data-status="seo_link" data-status-sv="long"  class="word_wrap_li_pr hover_en">' + a_data[i]['ph'] + '</span>' + ' <span class="word_wrap_li_sec">(' + a_data[i]['count'] + ')</span></li>';
-                            }
-                        }
-                        if(l_counter > 0) $("ul[data-st-id='long_desc_seo']").html(seo_items);
-                    });
-                    // --- LONG DESC ANALYZER (END)
-
-                    $("ul[data-status='seo_an']").fadeOut();
-                    $("ul[data-status='seo_an']").fadeIn();
-
-                    // ---- WORDS COUNTER (START)
-                    var short_words_text = $.trim($("#details-short-desc").text());
-                    var short_words_arr = short_words_text.split(" ");
-                    var short_words_count = short_words_arr.length;
-                    var long_words_text = $.trim($("#details-long-desc").text());
-                    var long_words_arr = long_words_text.split(" ");
-                    var long_words_count = long_words_arr.length;
-                    var words_total = short_words_count + long_words_count;
-                    $("li[data-status='words_an'] > span[data-st-id='short_desc']").text(short_words_count + " words");
-                    $("li[data-status='words_an'] > span[data-st-id='long_desc']").text(long_words_count + " words");
-                    $("li[data-status='words_an'] > span[data-st-id='total']").text(words_total + " words");
-                    $("li[data-status='words_an']").fadeOut();
-                    $("li[data-status='words_an']").fadeIn();
-                    // ---- WORDS COUNTER (END)
-
-                }
-
-            }
+        var searcher_all = $.post(editorSearchAllBaseUrl, { s: s, sl: sl, cat: cat }, 'html').done(function(data) {
+            $("#an_products_box").html(data);
+            $("#an_products_box").fadeOut();
+            $("#an_products_box").fadeIn();
         });
-        
         return false;
-        
     }
+
+    // function startMeasureCompare() {
+    //     $("#measure_tab_pr_content_head .item_title b").html('No Title');
+    //     var s = $.trim($("#compare_text").val());
+    //     var sl = $.trim($(".dd-selected-value").val());
+    //     var searcher = $.post(editorSearchBaseUrl, { s: s, sl: sl }, 'html').done(function(data) {
+    //         if(typeof(data) !== "undefined" && data !== "") {
+    //             $("#measure_tab_pr_content_body").html(data);
+    //             var ms = $(data).find("#measure_res_status").val();
+
+    //             if(ms === 'db') {
+
+    //                 var title_dom = $(data).find("#link_m_title").val();
+    //                 var url_dom = $(data).find("#link_m_url").val();
+    //                 if(typeof(title_dom) !== 'undefined' && title_dom !== "") {
+    //                     var title_section = title_dom;
+    //                     if(typeof(url_dom) !== 'undefined' && url_dom !== "") {
+    //                         title_section = "<a href='" + url_dom + "'>" + title_dom + "</a>";
+    //                     }
+    //                     $("#measure_tab_pr_content_head .item_title b").html(title_section);
+    //                 }
+
+    //                 // --- SHORT DESC ANALYZER (START)
+    //                 var short_status = 'short';
+    //                 var short_desc_an = $("#details-short-desc").html();
+    //                 short_desc_an = short_desc_an.replace(/\s+/g, ' ');
+    //                 short_desc_an = short_desc_an.trim();
+    //                 var analyzer_short = $.post(measureAnalyzerBaseUrl, { clean_t: short_desc_an }, 'json').done(function(a_data) {
+    //                     var seo_items = "<li class='long_desc_sep'>Short Description:</li>";
+    //                     var top_style = "";
+    //                     var s_counter = 0;
+    //                     for(var i in a_data) {
+    //                         if(typeof(a_data[i]) === 'object') {
+    //                             s_counter++;
+    //                             if(i == 0) {
+    //                                 top_style = "style='margin-top: 5px;'";
+    //                             }
+    //                             seo_items += '<li ' + top_style + '>' + '<span data-status="seo_link" onclick="wordHighLighter(\''+a_data[i]['ph']+'\', \''+short_status+'\');" class="word_wrap_li_pr hover_en">' + a_data[i]['ph'] + '</span>' + ' <span class="word_wrap_li_sec">(' + a_data[i]['count'] + ')</span></li>';
+    //                         }
+    //                     }
+    //                     if(s_counter > 0) $("ul[data-st-id='short_desc_seo']").html(seo_items);
+    //                 });
+    //                 // --- SHORT DESC ANALYZER (END)
+
+    //                 // --- LONG DESC ANALYZER (START)
+    //                 var long_status = 'long';
+    //                 var long_desc_an = $("#details-long-desc").html();
+    //                 long_desc_an = long_desc_an.replace(/\s+/g, ' ');
+    //                 long_desc_an = long_desc_an.trim();
+    //                 var analyzer_long = $.post(measureAnalyzerBaseUrl, { clean_t: long_desc_an }, 'json').done(function(a_data) {
+    //                     var seo_items = "<li class='long_desc_sep'>Long Description:</li>";
+    //                     var top_style = "";
+    //                     var l_counter = 0;
+    //                     for(var i in a_data) {
+    //                         if(typeof(a_data[i]) === 'object') {
+    //                             l_counter++;
+    //                             if(i == 0) {
+    //                                 top_style = "style='margin-top: 5px;'";
+    //                             }
+    //                             seo_items += '<li ' + top_style + '>' + '<span data-status="seo_link" onclick="wordHighLighter(\''+a_data[i]['ph']+'\', \''+long_status+'\');" class="word_wrap_li_pr hover_en">' + a_data[i]['ph'] + '</span>' + ' <span class="word_wrap_li_sec">(' + a_data[i]['count'] + ')</span></li>';
+    //                             // seo_items += '<li ' + top_style + '>' + '<span data-status="seo_link" data-status-sv="long"  class="word_wrap_li_pr hover_en">' + a_data[i]['ph'] + '</span>' + ' <span class="word_wrap_li_sec">(' + a_data[i]['count'] + ')</span></li>';
+    //                         }
+    //                     }
+    //                     if(l_counter > 0) $("ul[data-st-id='long_desc_seo']").html(seo_items);
+    //                 });
+    //                 // --- LONG DESC ANALYZER (END)
+
+    //                 $("ul[data-status='seo_an']").fadeOut();
+    //                 $("ul[data-status='seo_an']").fadeIn();
+
+    //                 // ---- WORDS COUNTER (START)
+    //                 var short_words_text = $.trim($("#details-short-desc").text());
+    //                 var short_words_arr = short_words_text.split(" ");
+    //                 var short_words_count = short_words_arr.length;
+    //                 var long_words_text = $.trim($("#details-long-desc").text());
+    //                 var long_words_arr = long_words_text.split(" ");
+    //                 var long_words_count = long_words_arr.length;
+    //                 var words_total = short_words_count + long_words_count;
+    //                 $("li[data-status='words_an'] > span[data-st-id='short_desc']").text(short_words_count + " words");
+    //                 $("li[data-status='words_an'] > span[data-st-id='long_desc']").text(long_words_count + " words");
+    //                 $("li[data-status='words_an'] > span[data-st-id='total']").text(words_total + " words");
+    //                 $("li[data-status='words_an']").fadeOut();
+    //                 $("li[data-status='words_an']").fadeIn();
+    //                 // ---- WORDS COUNTER (END)
+
+    //             }
+
+    //         }
+    //     });
+        
+    //     return false;
+        
+    // }
 
     function removeTagsFromDescs() {
         var short_str = $("#details-short-desc").text();
@@ -225,20 +230,20 @@
             <option value='all'>All Categories</option>
             <?php } ?>
         </select>
-        <button type="submit" id="an_search" disabled='true' onclick="return startMeasureCompare()" class="btn pull-right">Search</button>
+        <button type="submit" id="an_search" disabled='true' onclick="return startMeasureCompareV2()" class="btn pull-right">Search</button>
     <?php echo form_close();?>
 </div>
 
 <!--- REAL CONTENT SECTION (START) -->
 <div id="measure_tab_pr_content">
     <div id="measure_tab_pr_content_head" class="row-fluid mt_10">
-        <div class="span8 item_title an_sv_left"><b class='btag_elipsis'>No Title</b></div>
+        <!-- <div class="span8 an_sv_left" style='height: 30px;'><b class='btag_elipsis'>No Title</b></div> -->
+        <div class="span8 an_sv_left" style='height: 30px;'>&nbsp;</div>
     </div>
 	<div class="row-fluid">            
-       <div class="span8 search_area uneditable-input cursor_default item_section an_sv_left">
-            <div id='measure_tab_pr_content_body' class="item_section_content" >
-                
-            </div>
+       <div style='margin-top: -40px;' class="span8 search_area uneditable-input cursor_default item_section an_sv_left">
+            <div id="an_products_box" style='display: none;' class="span8 an_sv_left connectedSortable">&nbsp;</div>
+            <div id='measure_tab_pr_content_body' class="item_section_content">&nbsp;</div>
         </div> 
         <div class="span3 an_sv_right" id="attributes_metrics">
             <h3>Metrics</h3>

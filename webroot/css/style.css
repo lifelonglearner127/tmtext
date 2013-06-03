@@ -19,6 +19,10 @@
     padding-right: 10px;
 }
 
+.btag_elipsis.an_search {
+	width: 510px;
+}
+
 .long_desc_sep {
 	margin-top: 5px;
 	margin-bottom: 5px;
@@ -26,6 +30,17 @@
 }
 
 /* Keywords Metrics (analysis) (start) */
+.products_an_search {
+	height: 170px; 
+	overflow: auto;
+}
+.products_an_search li span {
+	display: inline-block;
+	overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: 45%;
+}
 .keywords_metrics_bl span {
 
 }

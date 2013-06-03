@@ -59,4 +59,27 @@ class Measure extends MY_Controller {
         $this->output->set_content_type('application/json')->set_output(json_encode($output));
     }
 
+    public function searchmeasuredball() {
+        $s = $this->input->post('s');
+        $sl = $this->input->post('sl');
+        $cat_id = $this->input->post('cat');
+        $this->load->model('imported_data_parsed_model');
+        $data = array(
+            'search_results' => array()
+        );
+        $opt_ids = array();
+        if($cat_id != 'all') {
+            $this->load->model('imported_data_model');
+            $opt = $this->imported_data_model->getByCateggoryId($cat_id);
+            if(count($opt) > 0) {
+                foreach ($opt as $key => $value) {
+                    $opt_ids[] = $value->id;
+                }
+            } 
+        }
+        $data_import = $this->imported_data_parsed_model->getByValueLikeGroupCat($s, $sl, $opt_ids);
+        $data['search_results'] = $data_import;
+        $this->load->view('measure/searchmeasuredball', $data);
+    }
+
 }

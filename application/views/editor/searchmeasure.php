@@ -12,15 +12,15 @@
 			$pr_url = $search_results['url'];
 		}
 	?>
-
+	<div class="item_title" style="float: left; width: 520px; margin-bottom: 15px;"><b class='btag_elipsis an_search'><a href="<?php echo $pr_url; ?>"><?php echo $pr_title; ?></a></b></div>
 	<div class='item_body'>
-		<input type="hidden" id="link_m_title" value='<?php echo $pr_title; ?>'>
-		<input type="hidden" id="link_m_url" value='<?php echo $pr_url; ?>'>
+		<!-- <input type="hidden" id="link_m_title" value='<?php echo $pr_title; ?>'>
+		<input type="hidden" id="link_m_url" value='<?php echo $pr_url; ?>'> -->
 		<span class='analysis_content_head'>Short Description:</span>
 	    <div>
 	        <span id="details-short-desc" class="ql-details-short-desc">
-	        	<?php if(isset($search_results['short_desc']) && $search_results['short_desc'] !== "") { ?> 
-	        		<?php echo preg_replace('/[^A-Za-z0-9\. -!]/', '', $search_results['short_desc']); ?> 
+	        	<?php if(isset($search_results['description']) && $search_results['description'] !== "") { ?> 
+	        		<?php echo preg_replace('/[^A-Za-z0-9\. -!]/', '', $search_results['description']); ?> 
         		<?php } else { ?> 
         			No short description 
     			<?php } ?>
@@ -31,8 +31,8 @@
 	<div class="item_body">
 		<span class='analysis_content_head'>Long Description:</span>
 	    <div id="details-long-desc">
-	    	<?php if(isset($search_results['long_desc']) && $search_results['long_desc'] !== "") { ?> 
-	    		<?php echo preg_replace('/[^A-Za-z0-9\. -!]/', '', $search_results['long_desc']); ?>
+	    	<?php if(isset($search_results['long_description']) && $search_results['long_description'] !== "") { ?> 
+	    		<?php echo preg_replace('/[^A-Za-z0-9\. -!]/', '', $search_results['long_description']); ?>
     		<?php } else { ?> 
     			No long description 
 			<?php } ?>
