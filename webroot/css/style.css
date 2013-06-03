@@ -881,6 +881,10 @@ p.show_ballons input{
     font-size: 12px;
 }
 
+#related_keywords li:hover{
+    cursor:pointer;
+}
+
 label.dd-selected-text, label.dd-option-text{
     margin:4px;
 }

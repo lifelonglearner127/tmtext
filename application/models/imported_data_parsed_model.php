@@ -100,10 +100,10 @@ class Imported_data_parsed_model extends CI_Model {
         $results = $query->result();
         $data = array();
         foreach($results as $result){
-            $res = $this->db->select('value')->where_in('key', array('URL', 'Description'))->where('imported_data_id', $result->imported_data_id)
+            $res = $this->db->select('value')->where_in('key', array('URL', 'Description', 'Long_Description'))->where('imported_data_id', $result->imported_data_id)
                 ->get($this->tables['imported_data_parsed']);
             $info = $res->result();
-            array_push($data, array('imported_data_id'=>$result->imported_data_id, 'product_name'=>$result->value, 'url'=>$info[1]->value, 'description'=>$info[0]->value));
+            array_push($data, array('imported_data_id'=>$result->imported_data_id, 'product_name'=>$result->value, 'url'=>$info[2]->value, 'description'=>$info[0]->value, 'long_description'=>$info[1]->value));
         }
 
         return $data;
