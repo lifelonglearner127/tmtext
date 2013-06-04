@@ -5,7 +5,9 @@ class Overrides {
     	$CI =& get_instance();
 		$_allowed = false;
 
-		if (!$_allowed = $CI->ion_auth->_allowed($CI->router->fetch_method())) {
+		$method = explode('.',$CI->router->fetch_method());
+
+		if (!$_allowed = $CI->ion_auth->_allowed($method[0])) {
         	if (!$CI->ion_auth->logged_in())
 			{
 				redirect('auth/login', 'refresh');
