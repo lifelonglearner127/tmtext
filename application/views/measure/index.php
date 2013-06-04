@@ -2,6 +2,42 @@
     
     $("#compare_text").focus();
 
+    // --- SCROLL UP / DOWN DETECTION (START)
+    // if ($(window).scrollTop() == $(document).height() - $(window).height()) { alert('top re'); }
+    // if (($(window).scrollTop()+document.body.clientHeight)==$(window).height()) { alert('bottom re'); }
+    var mousewheelevt;
+    mousewheelevt = (/Firefox/i.test(navigator.userAgent) ? "DOMMouseScroll" : "mousewheel");
+    $("body").bind(mousewheelevt, function(e) {
+        var delta, evt;
+        evt = window.event || e;
+        evt = (evt.originalEvent ? evt.originalEvent : evt);
+        delta = (evt.detail ? evt.detail * (-40) : evt.wheelDelta);
+        var mode = false;
+        if($("#measure_product_ind_wrap").length > 0) {
+            mode = true;
+        }
+        if(mode) {
+            var step = 10;
+            var current_margin = $("#measure_product_ind_wrap").css('margin-top');
+            current_margin = parseInt(current_margin.substr(0, current_margin.length - 2));
+            if (delta > 0) { // --- SCROLL UP EVENT
+                if ($(window).scrollTop() == $(document).height() - $(window).height()) {  
+                    $("#measure_product_ind_wrap").css('margin-top', '0px');
+                } else {
+                    if(current_margin > 0) {
+                        var new_margin = current_margin - step;
+                        $("#measure_product_ind_wrap").css('margin-top', new_margin + 'px');
+                    }
+                }
+            } else { // --- SCROLL DOWN EVENT
+                if (($(window).scrollTop()+document.body.clientHeight)==$(window).height()) {} else {
+                    var new_margin = current_margin + step;
+                    $("#measure_product_ind_wrap").css('margin-top', new_margin + 'px');
+                }
+            }
+        }
+    });
+
     // ---- METRICS (SEO PHRASES) (START)
     var measureAnalyzerBaseUrl = "<?php echo base_url(); ?>index.php/measure/analyzestring";
     var editorSearchBaseUrl = "<?php echo base_url(); ?>index.php/editor/searchmeasuredb";
@@ -242,7 +278,8 @@
         <div class="span8 an_sv_left" style='height: 30px;'>&nbsp;</div>
     </div>
 	<div class="row-fluid">            
-       <div style='margin-top: -40px;' class="span8 search_area cursor_default item_section an_sv_left">
+       <!-- <div style='margin-top: -40px;' class="span8 search_area cursor_default item_section an_sv_left"> -->
+       <div style='margin-top: -40px; height: auto;' class="span8 search_area cursor_default an_sv_left">
             <div id="an_products_box" style='display: none;' class="span8 an_sv_left connectedSortable">&nbsp;</div>
             <div id='measure_tab_pr_content_body' class="item_section_content">&nbsp;</div>
         </div> 
