@@ -38,7 +38,16 @@ class Research extends MY_Controller {
     {
         $this->load->model('imported_data_parsed_model');
         if($this->input->post('search_data') != '') {
-            $imported_data_parsed = $this->imported_data_parsed_model->getData($this->input->post('search_data'));
+        	$imported_data_parsed = $this->imported_data_parsed_model->getData($this->input->post('search_data'));
+            if (empty($imported_data_parsed)) {
+            	$this->load->library('PageProcessor');
+				if ($this->pageprocessor->isURL($this->input->post('search_data'))) {
+					$parsed_data = $this->pageprocessor->get_data($this->input->post('search_data'));
+					$imported_data_parsed[0] = $parsed_data;
+					$imported_data_parsed[0]['url'] = $this->input->post('search_data');
+					$imported_data_parsed[0]['imported_data_id'] = 0;
+				}
+            }
             $this->output->set_content_type('application/json')
                 ->set_output(json_encode($imported_data_parsed));
         }
