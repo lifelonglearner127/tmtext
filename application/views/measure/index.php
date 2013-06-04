@@ -242,7 +242,7 @@
         <div class="span8 an_sv_left" style='height: 30px;'>&nbsp;</div>
     </div>
 	<div class="row-fluid">            
-       <div style='margin-top: -40px;' class="span8 search_area uneditable-input cursor_default item_section an_sv_left">
+       <div style='margin-top: -40px;' class="span8 search_area cursor_default item_section an_sv_left">
             <div id="an_products_box" style='display: none;' class="span8 an_sv_left connectedSortable">&nbsp;</div>
             <div id='measure_tab_pr_content_body' class="item_section_content">&nbsp;</div>
         </div> 

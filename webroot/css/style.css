@@ -134,6 +134,7 @@ span[class*="hilite"] { background: yellow; }
 }
 .an_sv_left {
 	width: 550px !important;
+	height: auto;
 }
 .an_sv_right {
 	width: 333px !important;
