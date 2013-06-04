@@ -251,7 +251,8 @@
 <div class="main_content_other"></div>
 <div class="main_content_editor">
 <div class="row-fluid">
-    <?php echo form_open('', array('id'=>'measureFormMetrics')); ?>
+    <?php // echo form_open('', array('id'=>'measureFormMetrics')); ?>
+    <form id="measureFormMetrics" accept-charset="utf-8" method="post" action="javascript:void()">
     <input type="text" name="compare_text" value="" id="compare_text" class="span8" placeholder=""/>
     <div id="measure_dropdown" class="ddslick_dropdown dropdowns"></div>
         <select class='cats_an_select' id='cats_an' name='cats_an'>
@@ -268,7 +269,8 @@
             <?php } ?>
         </select>
         <button type="submit" id="an_search" disabled='true' onclick="return startMeasureCompareV2()" class="btn pull-right">Search</button>
-    <?php echo form_close();?>
+    <?php // echo form_close();?>
+    </form>
 </div>
 
 <!--- REAL CONTENT SECTION (START) -->
