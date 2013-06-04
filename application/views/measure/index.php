@@ -21,19 +21,19 @@
             var current_margin = $("#measure_product_ind_wrap").css('margin-top');
             current_margin = parseInt(current_margin.substr(0, current_margin.length - 2));
             if (delta > 0) { // --- SCROLL UP EVENT
-                if ($(window).scrollTop() == $(document).height() - $(window).height()) {  
-                    $("#measure_product_ind_wrap").css('margin-top', '0px');
-                } else {
-                    if(current_margin > 0) {
-                        var new_margin = current_margin - step;
-                        $("#measure_product_ind_wrap").css('margin-top', new_margin + 'px');
-                    }
-                }
+                // if ($(window).scrollTop() == $(document).height() - $(window).height()) {  
+                //     $("#measure_product_ind_wrap").css('margin-top', '0px');
+                // } else {
+                //     if(current_margin > 0) {
+                //         var new_margin = current_margin - step;
+                //         $("#measure_product_ind_wrap").css('margin-top', new_margin + 'px');
+                //     }
+                // }
             } else { // --- SCROLL DOWN EVENT
-                if (($(window).scrollTop()+document.body.clientHeight)==$(window).height()) {} else {
-                    var new_margin = current_margin + step;
-                    $("#measure_product_ind_wrap").css('margin-top', new_margin + 'px');
-                }
+                // if (($(window).scrollTop()+document.body.clientHeight)==$(window).height()) {} else {
+                //     var new_margin = current_margin + step;
+                //     $("#measure_product_ind_wrap").css('margin-top', new_margin + 'px');
+                // }
             }
         }
     });
