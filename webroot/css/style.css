@@ -69,6 +69,7 @@
 }
 .word_wrap_li_sec {
 	display: inline-block;
+	font-size: 12px;
 }
 .bold_li {
 	font-weight: bold;
@@ -93,7 +94,11 @@ span[class*="hilite"] { background: yellow; }
 	width: 100%;
 }
 .keywords_metrics_tbl tr td {
-	vertical-align: top;
+	vertical-align: center;
+	padding-bottom: 10px;
+}
+.keywords_metrics_tbl tr td input {
+	margin-bottom: 0px;
 }
 .keywords_metrics_tbl tr td span {
 	font-size: 14px;

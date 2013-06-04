@@ -26,19 +26,7 @@
 		            if(typeof(data) !== "undefined" && data !== "") {
 		                $("#measure_tab_pr_content_body").html(data);
 		                var ms = $(data).find("#measure_res_status").val();
-
 		                if(ms === 'db') {
-
-		                    // var title_dom = $(data).find("#link_m_title").val();
-		                    // var url_dom = $(data).find("#link_m_url").val();
-		                    // if(typeof(title_dom) !== 'undefined' && title_dom !== "") {
-		                    //     var title_section = title_dom;
-		                    //     if(typeof(url_dom) !== 'undefined' && url_dom !== "") {
-		                    //         title_section = "<a href='" + url_dom + "'>" + title_dom + "</a>";
-		                    //     }
-		                    //     $("#measure_tab_pr_content_head .item_title b").html(title_section);
-		                    // }
-
 		                    // --- SHORT DESC ANALYZER (START)
 		                    var short_status = 'short';
 		                    var short_desc_an = $("#details-short-desc").html();
@@ -77,7 +65,6 @@
 		                                    top_style = "style='margin-top: 5px;'";
 		                                }
 		                                seo_items += '<li ' + top_style + '>' + '<span data-status="seo_link" onclick="wordHighLighter(\''+a_data[i]['ph']+'\', \''+long_status+'\');" class="word_wrap_li_pr hover_en">' + a_data[i]['ph'] + '</span>' + ' <span class="word_wrap_li_sec">(' + a_data[i]['count'] + ')</span></li>';
-		                                // seo_items += '<li ' + top_style + '>' + '<span data-status="seo_link" data-status-sv="long"  class="word_wrap_li_pr hover_en">' + a_data[i]['ph'] + '</span>' + ' <span class="word_wrap_li_sec">(' + a_data[i]['count'] + ')</span></li>';
 		                            }
 		                        }
 		                        if(l_counter > 0) $("ul[data-st-id='long_desc_seo']").html(seo_items);
@@ -101,7 +88,8 @@
 		                    $("li[data-status='words_an']").fadeOut();
 		                    $("li[data-status='words_an']").fadeIn();
 		                    // ---- WORDS COUNTER (END)
-
+		                    
+		                    keywordsAnalizer();
 		                }
 
 		            }

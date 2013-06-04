@@ -179,34 +179,35 @@
         if(secondary_ph !== "") secondary_ph.replace(/<\/?[^>]+(>|$)/g, "");
         if(tertiary_ph !== "") tertiary_ph.replace(/<\/?[^>]+(>|$)/g, "");
 
-        var short_desc = $.trim($("#details-short-desc").html());
-        var long_desc = $.trim($("#details-long-desc").html());
-        if(short_desc !== "") short_desc.replace(/<\/?[^>]+(>|$)/g, "");
-        if(long_desc !== "") long_desc.replace(/<\/?[^>]+(>|$)/g, "");
+        if(primary_ph !== "" || secondary_ph !== "" || tertiary_ph !== "") {
+            var short_desc = $.trim($("#details-short-desc").html());
+            var long_desc = $.trim($("#details-long-desc").html());
+            if(short_desc !== "") short_desc.replace(/<\/?[^>]+(>|$)/g, "");
+            if(long_desc !== "") long_desc.replace(/<\/?[^>]+(>|$)/g, "");
 
-        var kw_send_object = {
-            primary_ph: primary_ph,
-            secondary_ph: secondary_ph,
-            tertiary_ph: tertiary_ph,
-            short_desc: short_desc,
-            long_desc: long_desc
-        };
+            var kw_send_object = {
+                primary_ph: primary_ph,
+                secondary_ph: secondary_ph,
+                tertiary_ph: tertiary_ph,
+                short_desc: short_desc,
+                long_desc: long_desc
+            };
 
-        var analyzer_kw = $.post(keywordsAnalyzerBaseUrl, kw_send_object, 'json').done(function(data) {
-            $("#kw_primary_short_res").text(data['primary'][0].toFixed(1) + "%");
-            $("#kw_primary_long_res").text(data['primary'][1].toFixed(1) + "%");
+            var analyzer_kw = $.post(keywordsAnalyzerBaseUrl, kw_send_object, 'json').done(function(data) {
+                $("#kw_primary_short_res").text(data['primary'][0].toPrecision(3) + "%");
+                $("#kw_primary_long_res").text(data['primary'][1].toPrecision(3) + "%");
 
-            $("#kw_secondary_short_res").text(data['secondary'][0].toFixed(1) + "%");
-            $("#kw_secondary_long_res").text(data['secondary'][1].toFixed(1) + "%");
+                $("#kw_secondary_short_res").text(data['secondary'][0].toPrecision(3) + "%");
+                $("#kw_secondary_long_res").text(data['secondary'][1].toPrecision(3) + "%");
 
-            $("#kw_tertiary_short_res").text(data['tertiary'][0].toFixed(1) + "%");
-            $("#kw_tertiary_long_res").text(data['tertiary'][1].toFixed(1) + "%");
+                $("#kw_tertiary_short_res").text(data['tertiary'][0].toPrecision(3) + "%");
+                $("#kw_tertiary_long_res").text(data['tertiary'][1].toPrecision(3) + "%");
 
-            $('.keywords_metrics_bl_res').fadeOut('fast', function() {
-                $('.keywords_metrics_bl_res').fadeIn();
+                $('.keywords_metrics_bl_res').fadeOut('fast', function() {
+                    $('.keywords_metrics_bl_res').fadeIn();
+                });
             });
-        });
-        
+        }
     }   
     // --- KEYWORDS ANALYZER (END)
 
@@ -255,7 +256,7 @@
                 <li><a href="javascript:void(0)">Page Metrics</a></li>
                 <li>SKU: KDL-55EX640</li>
                 <li>&nbsp;</li>
-                <li><a href="javascript:void(0)">Keywords Metrics</a></li>
+                <li style='margin-bottom: 5px;'><a href="javascript:void(0)">Keyword Metrics</a></li>
                 <li class='keywords_metrics_bl'>
                     <table class='keywords_metrics_tbl'>
                         <tbody>
