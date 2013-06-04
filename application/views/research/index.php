@@ -2,7 +2,7 @@
     var measureAnalyzerBaseUrl = "<?php echo base_url(); ?>index.php/measure/analyzestring";
 
     function getSearchResult(){
-        $.post(base_url + 'index.php/research/search_results', { 'search_data': $('input[name="research_text"]').val() }, function(data){
+        $.post(base_url + 'index.php/research/search_results', { 'search_data': $('input[name="research_text"]').val(), 'website': $('input.dd-selected-value').val() }, function(data){
             if(data.length > 0){
                 $('ul#product_descriptions').empty();
                 $('ul#products li').each(function(){
@@ -20,7 +20,7 @@
                     desc +=  '<li id="'+data[i].imported_data_id+'_long_desc">'+data[i].long_description+'</li>';
 
                 }
-                $('.main span:first-child').css({'width':'172px'});
+                $('.main span:first-child').css({'width':'182px'});
                 $('ul#products').append(str);
                 $('ul#product_descriptions').append(desc);
                 $('#products li:eq(0)').trigger('click');
@@ -103,21 +103,7 @@
         });
 
         $(document).on("click", '#related_keywords li', function(){
-            var txt = $(this).text();
-            var count = 0;
-            $('input.keywords').each(function(){
-                if($.trim(txt)==$.trim($(this).val())){
-                    count++;
-                }
-            });
-            if(count>0){ return false; }
-            if($('input[name="primary"]').val() == ''){
-                $('input[name="primary"]').val(txt);
-            } else if($('input[name="primary"]').val() != '' && $('input[name="secondary"]').val() == ''){
-                $('input[name="secondary"]').val(txt);
-            } else if($('input[name="secondary"]').val() != '' && $('input[name="third"]').val() == ''){
-                $('input[name="third"]').val(txt);
-            }
+            $('input[name="'+$(this).attr('class')+'"]').val($(this).text());
         });
 
         $(document).on("click", '#products li', function(){
@@ -184,8 +170,8 @@
                 });
                 // --- LONG DESC ANALYZER (END)
 
-                $("ul[data-status='seo_an']").fadeOut();
-                $("ul[data-status='seo_an']").fadeIn();
+                $("ul[data-status='seo_an']").show();
+                //$("ul[data-status='seo_an']").fadeIn();
             }
 
         });
@@ -245,6 +231,7 @@
                 <option value="10">10</option>
                 <option value="20">20</option>
                 <option value="50">50</option>
+                <option value="100">100</option>
             </select>
             results in category
             <?php echo form_dropdown('category', $category_list, array(), 'class="mt_10"'); ?>
@@ -268,7 +255,7 @@
             <ul class="research_content connectedSortable" id="sortable1">
                 <li class="boxes">
                     <h3>Results</h3>
-                    <div class="boxes_content"  style="height: 200px;">
+                    <div class="boxes_content"  style="height: 200px;padding:0px;">
                         <ul class="product_title">
                             <li class="main"><span><b>Product Name</b></span><span><b>URL</b></span></li>
                         </ul>
@@ -282,12 +269,21 @@
                     </div>
                 </li>
                 <li class="boxes mt_10" id="related_keywords">
-                    <h3>Related keywords</h3>
+                    <h3>Related Keywords</h3>
                     <div class="boxes_content">
                         <ul id="rel_keywords">
-                            <li><span>Televisions</span></li>
-                            <li><span>TVs</span></li>
-                            <li><span>LCD TV</span></li>
+                            <li class="primary"><span>Televisions</span></li>
+                            <li class="secondary"><span>TVs</span></li>
+                            <li class="tertiary"><span>LCD TV</span></li>
+                            <li class="primary"><span>LED TV</span></li>
+                            <li class="secondary"><span>Digital TV</span></li>
+                            <li class="tertiary"><span>Internet TV</span></li>
+                            <li class="primary"><span>HDTV</span></li>
+                            <li class="secondary"><span>3D</span></li>
+                            <li class="tertiary"><span>HDMI</span></li>
+                            <li class="primary"><span>2D</span></li>
+                            <li class="secondary"><span>TFT</span></li>
+                            <li class="tertiary"><span>USB</span></li>
                         </ul>
                     </div>
                 </li>
@@ -295,7 +291,6 @@
                     <h3>SEO Phrases</h3>
                     <div class="boxes_content">
                         <ul class='less_b_margin ml_0' data-status='seo_an'>
-                            <li><a href='javascript:void(0)'>SEO Phrases</a></li>
                         </ul>
                         <ul class='less_b_margin ml_0' data-st-id='short_desc_seo' data-status='seo_an'></ul>
                         <ul class='less_b_margin ml_0' data-st-id='long_desc_seo' data-status='seo_an'></ul>
@@ -311,28 +306,28 @@
                     <div class="boxes_content">
                         <p><span>Primary:</span><input class="keywords" type="text" name="primary" value="" /><a href="#" class="clear_all">x</a></p>
                         <p><span>Secondary:</span><input class="keywords" type="text" name="secondary" value="" /><a href="#" class="clear_all">x</a></p>
-                        <p><span>Tertiary:</span><input class="keywords" type="text" name="third" value="" /><a href="#" class="clear_all">x</a></p>
+                        <p><span>Tertiary:</span><input class="keywords" type="text" name="tertiary" value="" /><a href="#" class="clear_all">x</a></p>
                     </div>
                 </li>
 
-                <li class="boxes mt_10 ">
-                    <h3>Page elements</h3>
+                <li class="boxes mt_10" id="page_elements">
+                    <h3>Page Elements</h3>
                     <div class="boxes_content">
                         <p><button id="generate_product" type="button" class="btn pull-right">Generate</button>
-                            <label>Product name:</label><input type="text" name="product_name"/>
+                            <label>Product name:</label><input type="text" class="span11 ml_0" name="product_name"/>
                         </p>
-                        <p><label>Meta title:</label><input type="text" name="meta_title" /></p>
+                        <p><label>Meta title:</label><input type="text"  class="span11 ml_0" name="meta_title" /></p>
                         <p><label>Meta description:</label><textarea name="meta_description" style="height:100px;" ></textarea></p>
                         <p><button id="generate_keywords" type="button" class="btn pull-right">Generate</button>
-                            <label>Meta keywords:</label><input type="text" name="meta_keywords" /></p>
+                            <label>Meta keywords:</label><input type="text" class="span11 ml_0" name="meta_keywords" /></p>
                     </div>
                 </li>
                 <li class="boxes mt_10">
                     <h3>Descriptions</h3>
                     <div class="boxes_content">
                         <div class="row-fluid"><label>Short description:</label>
-                             <button type="button" class="btn" style="float:left;">Generate</button>
                              <label><span id="wc">0</span> words</label>
+                             <button type="button" class="btn" style="float:left;">Generate</button>
                              <textarea type="text" name="short_description" class="span10 mt_10" style="height:100px;"></textarea>
                         </div>
                         <div class="row-fluid"><label>Long description:</label>
