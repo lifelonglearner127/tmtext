@@ -1,10 +1,42 @@
 <script type="text/javascript">
     var measureAnalyzerBaseUrl = "<?php echo base_url(); ?>index.php/measure/analyzestring";
+
+    function getSearchResult(){
+        $.post(base_url + 'index.php/research/search_results', { 'search_data': $('input[name="research_text"]').val() }, function(data){
+            if(data.length > 0){
+                $('ul#product_descriptions').empty();
+                $('ul#products li').each(function(){
+                    if($(this).attr('class') != 'main' || $(this).attr('class') == undefined){
+                        $(this).remove();
+                    }
+                });
+                var str = '';
+                var desc = '';
+                for(var i=0; i < data.length; i++){
+                    str += '<li id="'+data[i].imported_data_id+'"><span>'+data[i].product_name.substr(0, 23)+
+                        '...</span><span>'+data[i].url.substr(0, 27)+'...</span></li>';
+                    desc +=  '<li id="'+data[i].imported_data_id+'_name">'+data[i].product_name+'</li>';
+                    desc +=  '<li id="'+data[i].imported_data_id+'_desc">'+data[i].description+'</li>';
+                    desc +=  '<li id="'+data[i].imported_data_id+'_long_desc">'+data[i].long_description+'</li>';
+
+                }
+                $('.main span:first-child').css({'width':'172px'});
+                $('ul#products').append(str);
+                $('ul#product_descriptions').append(desc);
+                $('#products li:eq(0)').trigger('click');
+            }
+        }, 'json');
+    }
     $(document).ready(function () {
+
+        $('input[name="research_text"]').focus();
         $( "#sortable1, #sortable2" ).sortable({
-            connectWith: ".connectedSortable"
+            connectWith: ".connectedSortable",
+            cursor: 'move',
+            revert: "invalid",
+            handle: ".handle",
         });
-        
+
         $("#research, #research_edit" ).draggable({
             containment: "#main",
             drag: function( event, ui ) {
@@ -30,9 +62,9 @@
                    }
                }
             }
+        }).bind('click', function(){
+          $(this).focus();
         });
-
-        $( ".ui-draggable" ).disableSelection();
 
         $( "ul#sortable1 li.boxes, ul#sortable2 li.boxes" ).resizable();
 
@@ -44,30 +76,14 @@
             if(matches) {
                 number = matches.length/2;
             }
-
-            var _limit = $('input[name="description_length"]').val();
-
-            if (number>_limit) {
-                var limited = $.trim($(this).val()).split(" ", _limit);
-                limited = limited.join(" ");
-                $(this).val(limited);
-            }
             $('#wc').html(number);
         });
         
-        $(document).on("keydown change", 'textarea[name="long_description"]', function() {
+        $(document).on("keydown change", '#long_description', function() {
             var number = 0;
-            var matches = $(this).val().match(/\b/g);
+            var matches = $(this).text().match(/\b/g);
             if(matches) {
                 number = matches.length/2;
-            }
-
-            var _limit = $('input[name="long_description_length"]').val();
-
-            if (number>_limit) {
-                var limited = $.trim($(this).val()).split(" ", _limit);
-                limited = limited.join(" ");
-                $(this).val(limited);
             }
             $('#wc1').html(number);
         });
@@ -76,32 +92,14 @@
             $(this).prev().val('');
             return false;
         });
-
+        $(document).on("keypress", 'input[name="research_text"]', function(e){
+            if(e.keyCode == 13){
+               getSearchResult();
+               return false;
+            }
+        });
         $(document).on("click", 'button#research_search', function(){
-            $.post(base_url + 'index.php/research/search_results', { 'search_data': $('input[name="research_text"]').val() }, function(data){
-                    if(data.length > 0){
-                        $('ul#product_descriptions').empty();
-                        $('ul#products li').each(function(){
-                            if($(this).attr('class') != 'main' || $(this).attr('class') == undefined){
-                                $(this).remove();
-                            }
-                        });
-                        var str = '';
-                        var desc = '';
-                        for(var i=0; i < data.length; i++){
-                            str += '<li id="'+data[i].imported_data_id+'"><span>'+data[i].product_name.substr(0, 23)+
-                                '...</span><span>'+data[i].url.substr(0, 27)+'...</span></li>';
-                            desc +=  '<li id="'+data[i].imported_data_id+'_name">'+data[i].product_name+'</li>';
-                            desc +=  '<li id="'+data[i].imported_data_id+'_desc">'+data[i].description+'</li>';
-                            desc +=  '<li id="'+data[i].imported_data_id+'_long_desc">'+data[i].long_description+'</li>';
-
-                        }
-                        $('.main span:first-child').css({'width':'172px'});
-                        $('ul#products').append(str);
-                        $('ul#product_descriptions').append(desc);
-                        $('#products li:eq(0)').trigger('click');
-                    }
-                }, 'json');
+            getSearchResult();
         });
 
         $(document).on("click", '#related_keywords li', function(){
@@ -165,7 +163,7 @@
                 var long_desc_an = $('ul#product_descriptions li#'+$(this).attr('id')+'_long_desc').text();
                 $('#long_description').text(long_desc_an);
                 //$('textarea[name="long_description"]').val(long_desc_an);
-                //$('textarea[name="long_description"]').trigger('change');
+                $('#long_description').trigger('change');
                 long_desc_an = long_desc_an.replace(/\s+/g, ' ');
                 long_desc_an = long_desc_an.trim();
                 var analyzer_long = $.post(measureAnalyzerBaseUrl, { clean_t: long_desc_an }, 'json').done(function(a_data) {
@@ -204,7 +202,7 @@
         });
 
 
-        /*$(document).on("click", "#validate", function(){
+        $(document).on("click", "#validate", function(){
             var vbutton = $(this);
             var description = $('#long_description').html();
 
@@ -222,12 +220,12 @@
                     $('#long_description').html(description);
                 });
 
-        });*/
+        });
+
+        $(document).on("click", "#long_description", function(){
+            $(this).focus();
+        });
     });
-
-
-
-
 
 
 </script>
@@ -235,7 +233,7 @@
 <div class="main_content_editor research">
     <div class="row-fluid">
         <?php echo form_open('', array('id'=>'measureForm')); ?>
-        <input type="text" id="research_text" name="research_text" value="UN40E6400" class="span8 " placeholder=""/>
+        <input type="text" id="research_text" name="research_text" value="" class="span8 " placeholder=""/>
         <div id="res_dropdown" class="ddslick_dropdown"></div>
         <button id="research_search" type="button" class="btn pull-right btn-success">Search</button>
         <?php echo form_close();?>
@@ -266,7 +264,7 @@
     </div>
     <div class="row-fluid" id="main">
         <div class="span6" id="research" class="connectedMoved"> 
-            <h3>Research</h3>
+            <h3 class="handle">Research</h3>
             <ul class="research_content connectedSortable" id="sortable1">
                 <li class="boxes">
                     <h3>Results</h3>
@@ -296,17 +294,17 @@
                 <li class="boxes mt_10">
                     <h3>SEO Phrases</h3>
                     <div class="boxes_content">
-                        <ul class='less_b_margin' data-status='seo_an'>
+                        <ul class='less_b_margin ml_0' data-status='seo_an'>
                             <li><a href='javascript:void(0)'>SEO Phrases</a></li>
                         </ul>
-                        <ul class='less_b_margin' data-st-id='short_desc_seo' data-status='seo_an'></ul>
-                        <ul class='less_b_margin' data-st-id='long_desc_seo' data-status='seo_an'></ul>
+                        <ul class='less_b_margin ml_0' data-st-id='short_desc_seo' data-status='seo_an'></ul>
+                        <ul class='less_b_margin ml_0' data-st-id='long_desc_seo' data-status='seo_an'></ul>
                     </div>
                 </li>
             </ul>
         </div>
         <div class="span6" id="research_edit" class="connectedMoved">
-            <h3>Edit</h3>
+            <h3 class="handle">Edit</h3>
             <ul class="research_content connectedSortable" id="sortable2">
                 <li class="boxes" id="keywords">
                     <h3>Keywords</h3>
@@ -335,17 +333,18 @@
                         <div class="row-fluid"><label>Short description:</label>
                              <button type="button" class="btn" style="float:left;">Generate</button>
                              <label><span id="wc">0</span> words</label>
-                             <input type="hidden" name="description_length" value="50" class="span3"/>
-                           <textarea type="text" name="short_description" class="span10 mt_10" style="height:100px;"></textarea>
+                             <textarea type="text" name="short_description" class="span10 mt_10" style="height:100px;"></textarea>
                         </div>
                         <div class="row-fluid"><label>Long description:</label>
-                           <input type="hidden" name="long_description_length" value="100" class="span3"/>
-                           <label><span id="wc1">0</span> words</label>
-                            <div class="search_area uneditable-input" id="long_description" onClick="this.contentEditable='true';" style="cursor: text;height:150px; width:380px;"></div>
+                            <label><span id="wc1">0</span> words</label>
+                            <div class="search_area uneditable-input ml_10"  id="long_description" onClick="this.contentEditable='true';" style="cursor: text; width: 365px;"></div>
+
+                            <!--div class="search_area uneditable-input" id="long_description"
+                                 onclick="this.focus(); " style="cursor: text;height:150px; width:380px;"></div-->
                            <!--textarea type="text" name="long_description" class="span10"  style="height:150px;display:none"></textarea-->
                         </div>
                         <div class="row-fluid mb_20">
-                            <button type="button" class="btn ml_10">Validate</button>
+                            <button id="validate" type="button" class="btn ml_10">Validate</button>
                             <button type="button" class="btn ml_10 btn-success">Save</button>
                             <button type="button" class="btn ml_10 btn-success">Save & Next</button>
                         </div>
