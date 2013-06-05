@@ -100,9 +100,9 @@ function researchKeywordsAnalizer() {
         };
 
         $.post(base_url+'index.php/measure/analyzekeywords', research_send_object, 'json').done(function(data) {
-            var first = data['primary'][1].toPrecision(3);
-            var second = data['secondary'][1].toPrecision(3);
-            var third = data['tertiary'][1].toPrecision(3);
+            var first = (data['primary'][1].toPrecision(3)*100).toFixed(2);
+            var second = (data['secondary'][1].toPrecision(3)*100).toFixed(2);
+            var third = (data['tertiary'][1].toPrecision(3)*100).toFixed(2);
             $('input[name="research_primary"]').val(first + "%");
             $('input[name="research_secondary"]').val(second + "%");
             $('input[name="research_tertiary"]').val(third + "%");
