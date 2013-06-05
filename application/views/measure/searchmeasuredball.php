@@ -94,6 +94,9 @@
 
 		            }
 		        });
+				
+				initGrid();
+            	switchToListView();
 
 		    }
 
