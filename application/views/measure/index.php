@@ -216,14 +216,20 @@
             };
 
             var analyzer_kw = $.post(keywordsAnalyzerBaseUrl, kw_send_object, 'json').done(function(data) {
-                $("#kw_primary_short_res").text(data['primary'][0].toPrecision(3) + "%");
-                $("#kw_primary_long_res").text(data['primary'][1].toPrecision(3) + "%");
+                var kw_primary_short_res = data['primary'][0].toPrecision(3)*100;
+                var kw_primary_long_res = data['primary'][1].toPrecision(3)*100;
+                $("#kw_primary_short_res").text(kw_primary_short_res.toPrecision(2) + "%");
+                $("#kw_primary_long_res").text(kw_primary_long_res.toPrecision(2) + "%");
 
-                $("#kw_secondary_short_res").text(data['secondary'][0].toPrecision(3) + "%");
-                $("#kw_secondary_long_res").text(data['secondary'][1].toPrecision(3) + "%");
+                var kw_secondary_short_res = data['secondary'][0].toPrecision(3)*100;
+                var kw_secondary_long_res = data['secondary'][1].toPrecision(3)*100;
+                $("#kw_secondary_short_res").text(kw_secondary_short_res.toPrecision(2) + "%");
+                $("#kw_secondary_long_res").text(kw_secondary_long_res.toPrecision(2) + "%");
 
-                $("#kw_tertiary_short_res").text(data['tertiary'][0].toPrecision(3) + "%");
-                $("#kw_tertiary_long_res").text(data['tertiary'][1].toPrecision(3) + "%");
+                var kw_tertiary_short_res = data['tertiary'][0].toPrecision(3)*100;
+                var kw_tertiary_long_res = data['tertiary'][1].toPrecision(3)*100;
+                $("#kw_tertiary_short_res").text(kw_tertiary_short_res.toPrecision(2) + "%");
+                $("#kw_tertiary_long_res").text(kw_tertiary_long_res.toPrecision(2) + "%");
 
                 $('.keywords_metrics_bl_res').fadeOut('fast', function() {
                     $('.keywords_metrics_bl_res').fadeIn();
