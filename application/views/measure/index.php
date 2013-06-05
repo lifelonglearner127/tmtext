@@ -2,24 +2,33 @@
     
     // --- GRIDS (START)
     var grid_status = 'list';
-    function initGrid() {
+    function viewIconsReset() {
         $('#grid_sw_list, #grid_sw_grid').removeClass('btn-primary');
+        $('#grid_sw_list > i').removeClass('icon-white');
+        $('#grid_sw_grid > i').removeClass('icon-white');
+    }
+    function initGrid() {
+        viewIconsReset();
         if(grid_status === 'list') {
             $('#grid_sw_list').addClass('btn-primary');
+            $('#grid_sw_list > i').addClass('icon-white');
         } else if(grid_status === 'grid') {
             $('#grid_sw_grid').addClass('btn-primary');
+            $('#grid_sw_grid > i').addClass('icon-white');
         }
         $('.grid_switcher').show();
     }
 
     function switchToListView() {
-        $('#grid_sw_list, #grid_sw_grid').removeClass('btn-primary');
+        viewIconsReset();
         $('#grid_sw_list').addClass('btn-primary');
+        $('#grid_sw_list > i').addClass('icon-white');
     }
 
     function switchToGridView() {
-        $('#grid_sw_list, #grid_sw_grid').removeClass('btn-primary');
+        viewIconsReset();
         $('#grid_sw_grid').addClass('btn-primary');
+        $('#grid_sw_grid > i').addClass('icon-white');
     }
     // --- GRIDS (END)
 
