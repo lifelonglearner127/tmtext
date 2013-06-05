@@ -142,9 +142,9 @@ span[class*="hilite"] { background: yellow; }
 
 }
 #compet_area_grid .grid_se_section .c {
-	-moz-box-shadow: 0 0 6px 2px #b0b2ab;
-  	-webkit-box-shadow: 0 0 6px 2px #b0b2ab;
-  	box-shadow: 0 0 6px 2px #b0b2ab;
+	-moz-box-shadow: 0 0 3px 2px #b0b2ab;
+  	-webkit-box-shadow: 0 0 3px 2px #b0b2ab;
+  	box-shadow: 0 0 3px 2px #b0b2ab;
   	height: auto;
 	min-height: 30px;
 	width: 280px;
