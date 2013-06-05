@@ -53,14 +53,14 @@ $(document).ready(function() {
     <div class="clear"></div>
     <div class="row-fluid">
         <div class="span6">
-            Show <select class="mt_10" style="width:50px;" name="result_amount">
+            Show <select class="mt_10" style="width:60px; margin-right:5px;" name="result_amount">
                 <option value="10">10</option>
                 <option value="20">20</option>
                 <option value="50">50</option>
                 <option value="100">100</option>
             </select>
             results in category
-            <?php echo form_dropdown('category', $category_list, array(), 'class="mt_10"'); ?>
+            <?php echo form_dropdown('category', $category_list, array(), 'class="mt_10 category_list"'); ?>
         </div>
         <div class="span6">
             Batch:
