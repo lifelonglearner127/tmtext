@@ -3,13 +3,13 @@
 
     function getSearchResult(){
         $.post(base_url + 'index.php/research/search_results', { 'search_data': $('input[name="research_text"]').val(), 'website': $('input.dd-selected-value').val() }, function(data){
+            $('ul#product_descriptions').empty();
+            $('ul#research_products li').each(function(){
+                if($(this).attr('class') != 'main' || $(this).attr('class') == undefined){
+                    $(this).remove();
+                }
+            });
             if(data.length > 0){
-                $('ul#product_descriptions').empty();
-                $('ul#products li').each(function(){
-                    if($(this).attr('class') != 'main' || $(this).attr('class') == undefined){
-                        $(this).remove();
-                    }
-                });
                 var str = '';
                 var desc = '';
                 for(var i=0; i < data.length; i++){
@@ -22,9 +22,9 @@
 
                 }
                 $('.main span:first-child').css({'width':'182px'});
-                $('ul#products').append(str);
+                $('ul#research_products').append(str);
                 $('ul#product_descriptions').append(desc);
-                $('#products li:eq(0)').trigger('click');
+                $('#research_products li:eq(0)').trigger('click');
             }
         }, 'json');
     }
@@ -108,12 +108,12 @@
             $('input[name="'+$(this).attr('class')+'"]').val($(this).text());
         });
 
-        $(document).on("click", '#products li', function(){
+        $(document).on("click", '#research_products li', function(){
             $('textarea[name="short_description"]').val('');
             $('textarea[name="long_description"]').val('');
             if($(this).attr('id')!='' && $(this).attr('id')!=undefined){
                 var id = $(this).attr('id');
-                $("#products li").each(function(){
+                $("#research_products li").each(function(){
                     $(this).css({'background':'none'});
                 });
                 $(this).css({'background':'#CAEAFF'});
@@ -394,7 +394,7 @@
                         <ul class="product_title">
                             <li class="main"><span><b>Product Name</b></span><span><b>URL</b></span></li>
                         </ul>
-                        <ul id="products" style="height: 170px; overflow: auto;">
+                        <ul id="research_products" style="height: 170px; overflow: auto;">
                             <li><span>&nbsp;</span><span>&nbsp;</span></li>
                             <li><span>&nbsp;</span><span>&nbsp;</span></li>
                             <li><span>&nbsp;</span><span>&nbsp;</span></li>

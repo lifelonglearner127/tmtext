@@ -50,7 +50,7 @@ class Research extends MY_Controller {
     {
         $this->load->model('imported_data_parsed_model');
         if($this->input->post('search_data') != '') {
-        	$imported_data_parsed = $this->imported_data_parsed_model->getData($this->input->post('search_data'));
+        	$imported_data_parsed = $this->imported_data_parsed_model->getData($this->input->post('search_data'), $this->input->post('website'));
             if (empty($imported_data_parsed)) {
             	$this->load->library('PageProcessor');
 				if ($this->pageprocessor->isURL($this->input->post('search_data'))) {

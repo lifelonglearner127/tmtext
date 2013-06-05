@@ -141,17 +141,39 @@ class Imported_data_parsed_model extends CI_Model {
         return $this->db->update($this->tables['imported_data_parsed'], $this, array('id' => $id));
     }
 
-    function getData($value){
+    function getData($value, $website = ''){
 
         $query = $this->db->select('imported_data_id, key, value')->where('key', 'Product Name')
             ->like('value', $value)->get($this->tables['imported_data_parsed']);
         $results = $query->result();
         $data = array();
         foreach($results as $result){
-            $res = $this->db->select('value')->where_in('key', array('URL', 'Description', 'Long_Description'))->where('imported_data_id', $result->imported_data_id)
-                ->get($this->tables['imported_data_parsed']);
-            $info = $res->result();
-            array_push($data, array('imported_data_id'=>$result->imported_data_id, 'product_name'=>$result->value, 'url'=>$info[2]->value, 'description'=>$info[0]->value, 'long_description'=>$info[1]->value));
+            $query = $this->db->where('imported_data_id', $result->imported_data_id)->get($this->tables['imported_data_parsed']);
+            $res = $query->result_array();
+            $description = '';
+            $long_description = '';
+            $url = '';
+            foreach($res as $val){
+                if($val['key'] == 'URL'){ $url = $val['value']; }
+                if($val['key'] == 'Description'){ $description = $val['value']; }
+                if($val['key'] == 'Long_Description'){ $long_description = $val['value']; }
+            }
+            if($website != '' && $website != 'all'){
+               if(substr_count($url, $website) > 0){
+                   array_push($data, array('imported_data_id'=>$result->imported_data_id, 'product_name'=>$result->value,
+                       'description'=>$description, 'long_description'=>$long_description, 'url'=>$url ));
+               }
+            } else {
+                array_push($data, array('imported_data_id'=>$result->imported_data_id, 'product_name'=>$result->value,
+                    'description'=>$description, 'long_description'=>$long_description, 'url'=>$url ));
+            }
+            /*$this->db->select('value');
+            $this->db->where_in('key', array('Description', 'Long_Description', 'URL'));
+            $this->db->where('imported_data_id', $result->imported_data_id);
+            $res = $this->db->get($this->tables['imported_data_parsed']);
+            $info = $res->result();*/
+
+
         }
 
         return $data;

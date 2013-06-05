@@ -922,13 +922,13 @@ p.show_ballons input{
 	overflow: hidden;
 }
 
-#products, .product_title{
+#products, #research_products, .product_title{
     margin:0px;
     padding: 0px;
     font-size: 12px;
 }
 
-#products li, .product_title li, #related_keywords li{
+#products li, #research_products li, .product_title li, #related_keywords li{
     border-top: 1px solid #ccc;
     border-bottom: none ;
 }
@@ -936,15 +936,15 @@ p.show_ballons input{
     border-left: 1px solid #ccc;
     border-right: 1px solid #ccc;
 }
-#products li:last-child, #related_keywords li:last-child{
+#products li:last-child, #research_products li:last-child, #related_keywords li:last-child{
     border-bottom: 1px solid #ccc;
 }
 
-#products li span:first-child, .product_title li span:first-child{
+#products li span:first-child, #research_products li span:first-child, .product_title li span:first-child{
     border-right: 1px solid #ccc;
 }
 
-#products li span, .product_title li span{
+#products li span, #research_products li span, .product_title li span{
     display: inline-block;
     padding: 1px;
     width: 45%;
