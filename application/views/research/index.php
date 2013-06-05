@@ -1,3 +1,46 @@
+<script type="text/javascript">
+$(document).ready(function() {
+    $('input[name="research_text"]').focus();
+    $( "#sortable1, #sortable2" ).sortable({
+        connectWith: ".connectedSortable",
+        cursor: 'move',
+        revert: "invalid",
+        handle: ".handle",
+    });
+
+    $("#research, #research_edit" ).draggable({
+        containment: "#main",
+        drag: function( event, ui ) {
+            if(ui.originalPosition.left > ui.position.left){
+                if($(this).attr('id')=='research_edit'){
+                    $(this).addClass('left_pos');
+                    $('#research').css({'float':'right'});
+                } else {
+                    $(this).addClass('left_pos');
+                    $(this).css({'float':'left'});
+                    $('#research_edit').addClass('left_pos');
+                    $('#research_edit').css({'float':'right'});
+                }
+            } else {
+                if($(this).attr('id')=='research_edit'){
+                    $(this).addClass('left_pos');
+                    $('#research').css({'float':'left'});
+                } else {
+                    $(this).addClass('left_pos');
+                    $(this).css({'float':'right'});
+                    $('#research_edit').addClass('left_pos');
+                    $('#research_edit').css({'float':'right'});
+                }
+            }
+        }
+    }).bind('click', function(){
+        $(this).focus();
+    });
+
+    $( "ul#sortable1 li.boxes, ul#sortable2 li.boxes" ).resizable();
+    $("#related_keywords").resizable({minWidth: 418, maxWidth:418});
+});
+</script>
 <div class="main_content_other"></div>
 <div class="main_content_editor research">
     <div class="row-fluid">
@@ -121,9 +164,10 @@
                            <!--textarea type="text" name="long_description" class="span10"  style="height:150px;display:none"></textarea-->
                         </div>
                         <div class="row-fluid" id="research_density">
-                            <label>Persixy:</label><label>Primary:</label><input type="text" name="research_primary" class="span2" value="0" readonly="readonly" /><span class="percent">%</span>
+                            <label>Density:</label><label>Primary:</label><input type="text" name="research_primary" class="span2" value="0" readonly="readonly" /><span class="percent">%</span>
                             <label>Secondary:</label><input type="text" name="research_secondary" class="span2" value="0" readonly="readonly" /><span class="percent" >%</span>
-                            <label>Tertiary:</label><input type="text" name="research_tertiary" class="span2" value="0" readonly="readonly" /><span class="percent" >%</span></p>
+                            <label>Tertiary:</label><input type="text" name="research_tertiary" class="span2" value="0" readonly="readonly" /><span class="percent" >%</span>
+                            <button id="research_update_density" type='button' class='btn btn-primary ml_10'>Update</button></p>
                             <p>Total words: <span id="research_total">0</span> words</p>
                         </div>
                         <div class="row-fluid mb_20">

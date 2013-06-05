@@ -1,3 +1,5 @@
+var sentence = '';
+
 function getSearchResult(){
     $.post(base_url + 'index.php/research/search_results', { 'search_data': $('input[name="research_text"]').val(),
         'website': $('input.dd-selected-value').val(),
@@ -78,8 +80,6 @@ function selectRange(range) {
 }
 
 function researchKeywordsAnalizer() {
-    var num = parseInt($('#research_wc').html())+parseInt($('#research_wc1').html());
-    $('#research_total').html(num);
     var research_primary_ph = $.trim($('input[name="primary"]').val());
     var research_secondary_ph = $.trim($('input[name="secondary"]').val());
     var research_tertiary_ph = $.trim($('input[name="tertiary"]').val());
@@ -111,48 +111,6 @@ function researchKeywordsAnalizer() {
 }
 
 $(document).ready(function () {
-
-    $('input[name="research_text"]').focus();
-    $( "#sortable1, #sortable2" ).sortable({
-        connectWith: ".connectedSortable",
-        cursor: 'move',
-        revert: "invalid",
-        handle: ".handle",
-    });
-
-    $("#research, #research_edit" ).draggable({
-        containment: "#main",
-        drag: function( event, ui ) {
-            if(ui.originalPosition.left > ui.position.left){
-                if($(this).attr('id')=='research_edit'){
-                    $(this).addClass('left_pos');
-                    $('#research').css({'float':'right'});
-                } else {
-                    $(this).addClass('left_pos');
-                    $(this).css({'float':'left'});
-                    $('#research_edit').addClass('left_pos');
-                    $('#research_edit').css({'float':'right'});
-                }
-            } else {
-                if($(this).attr('id')=='research_edit'){
-                    $(this).addClass('left_pos');
-                    $('#research').css({'float':'left'});
-                } else {
-                    $(this).addClass('left_pos');
-                    $(this).css({'float':'right'});
-                    $('#research_edit').addClass('left_pos');
-                    $('#research_edit').css({'float':'right'});
-                }
-            }
-        }
-    }).bind('click', function(){
-            $(this).focus();
-    });
-
-    $( "ul#sortable1 li.boxes, ul#sortable2 li.boxes" ).resizable();
-
-    $("#related_keywords").resizable({minWidth: 418, maxWidth:418});
-
     $(document).on("keydown change", 'textarea[name="short_description"]', function() {
         var number = 0;
         var matches = $(this).val().match(/\b/g);
@@ -160,7 +118,6 @@ $(document).ready(function () {
             number = matches.length/2;
         }
         $('#research_wc').html(number);
-        researchKeywordsAnalizer();
     });
 
     $(document).on("keydown change", '#long_description', function() {
@@ -170,11 +127,6 @@ $(document).ready(function () {
             number = matches.length/2;
         }
         $('#research_wc1').html(number);
-        researchKeywordsAnalizer();
-    });
-
-    $(document).on("focusout change", '.keywords', function() {
-        researchKeywordsAnalizer();
     });
 
     $(document).on("click", 'a.clear_all', function() {
@@ -191,12 +143,34 @@ $(document).ready(function () {
 
     $(document).on("click", 'button#research_search', function(){
         getSearchResult();
-        researchKeywordsAnalizer();
     });
 
     $(document).on("click", '#related_keywords li', function(){
-        $('input[name="'+$(this).attr('class')+'"]').val($(this).text());
-        researchKeywordsAnalizer();
+        var txt = $(this).text();
+
+        if($('input[name="primary"]').val()==''){
+            sentence = 'primary';
+            $('input[name="primary"]').val(txt)
+        } else if($('input[name="primary"]').val()!='' && $('input[name="secondary"]').val()==''){
+            sentence = 'secondary';
+            $('input[name="secondary"]').val(txt);
+        } else if($('input[name="primary"]').val()!='' && $('input[name="secondary"]').val()!=''
+            && $('input[name="tertiary"]').val()==''){
+            sentence = 'tertiary';
+            $('input[name="tertiary"]').val(txt);
+        } else if($('input[name="tertiary"]').val()!='' && $('input[name="primary"]').val()!=''
+            && $('input[name="secondary"]').val()!=''){
+            if(sentence=='tertiary'){
+                $('input[name="primary"]').val(txt);
+                sentence = 'primary';
+            } else if(sentence == 'primary'){
+                $('input[name="secondary"]').val(txt);
+                sentence = 'secondary';
+            } else if(sentence == 'secondary'){
+                $('input[name="tertiary"]').val(txt);
+                sentence = 'tertiary';
+            }
+        }
     });
 
     $(document).on("click", '#research_products li', function(){
@@ -282,8 +256,9 @@ $(document).ready(function () {
                     // --- LONG DESC ANALYZER (END)
 
                     $("ul[data-status='seo_an']").show();
+                    var num = parseInt($('#research_wc').html())+parseInt($('#research_wc1').html());
+                    $('#research_total').html(num);
             }, 'json');
-            researchKeywordsAnalizer();
         }
 
     });
@@ -297,7 +272,6 @@ $(document).ready(function () {
         });
         str = str.substring(0,str.length-2);
         $('input[name="meta_keywords"]').val(str);
-        researchKeywordsAnalizer();
     });
 
 
@@ -319,7 +293,6 @@ $(document).ready(function () {
                 vbutton.html('<i class="icon-ok-sign"></i>&nbsp;Validate');
                 $('#long_description').html(description);
         });
-        researchKeywordsAnalizer();
     });
 
     $(document).on("click", "button#new_batch", function(){
@@ -377,6 +350,10 @@ $(document).ready(function () {
             }
             return false;
         });
+    });
+
+    $(document).on("click", "button#research_update_density", function(){
+        researchKeywordsAnalizer();
     });
 
     $("#long_description").click(function(evt) {
