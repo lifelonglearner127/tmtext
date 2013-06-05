@@ -30,6 +30,10 @@
 }
 
 /* Keywords Metrics (analysis) (start) */
+.grid_switcher {
+	display: none;
+	margin-left: 20px;
+}
 .products_an_search {
 	height: 170px; 
 	overflow: auto;

@@ -1,5 +1,28 @@
 <script>
     
+    // --- GRIDS (START)
+    var grid_status = 'list';
+    function initGrid() {
+        $('#grid_sw_list, #grid_sw_grid').removeClass('btn-primary');
+        if(grid_status === 'list') {
+            $('#grid_sw_list').addClass('btn-primary');
+        } else if(grid_status === 'grid') {
+            $('#grid_sw_grid').addClass('btn-primary');
+        }
+        $('.grid_switcher').show();
+    }
+
+    function switchToListView() {
+        $('#grid_sw_list, #grid_sw_grid').removeClass('btn-primary');
+        $('#grid_sw_list').addClass('btn-primary');
+    }
+
+    function switchToGridView() {
+        $('#grid_sw_list, #grid_sw_grid').removeClass('btn-primary');
+        $('#grid_sw_grid').addClass('btn-primary');
+    }
+    // --- GRIDS (END)
+
     $("#compare_text").focus();
 
     // --- SCROLL UP / DOWN DETECTION (START)
@@ -53,6 +76,7 @@
             $("#an_products_box").fadeOut();
             $("#an_products_box").fadeIn();
         });
+        initGrid();
         return false;
     }
 
@@ -279,13 +303,20 @@
         <!-- <div class="span8 an_sv_left" style='height: 30px;'><b class='btag_elipsis'>No Title</b></div> -->
         <div class="span8 an_sv_left" style='height: 30px;'>&nbsp;</div>
     </div>
-	<div class="row-fluid">            
+	<div id='compet_area' class="row-fluid">            
        <!-- <div style='margin-top: -40px;' class="span8 search_area cursor_default item_section an_sv_left"> -->
        <div style='margin-top: -40px; height: auto;' class="span8 search_area cursor_default an_sv_left">
             <div id="an_products_box" style='display: none;' class="span8 an_sv_left connectedSortable">&nbsp;</div>
             <div id='measure_tab_pr_content_body' class="item_section_content">&nbsp;</div>
         </div> 
         <div class="span3 an_sv_right" id="attributes_metrics">
+            <ul class='grid_switcher' data-status='grid-switch'>
+                <li>
+                    <h3>View:</h3n>
+                    <button class='btn' onclick="switchToListView();" id='grid_sw_list' type='button'><i class="icon-th-list"></i>&nbsp;List</button>
+                    <button class='btn' onclick="switchToGridView();" id='grid_sw_grid' type='button'><i class="icon-th-large"></i>&nbsp;Grid</button>
+                </li>
+            </ul>
             <h3>Metrics</h3>
             <ul>
                 <li><a href="javascript:void(0)">Site Metrics</a></li>
