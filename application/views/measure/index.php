@@ -254,7 +254,7 @@
             <option value='all'>All Categories</option>
             <?php } ?>
         </select>
-        <button type="submit" id="an_search" disabled='true' onclick="return startMeasureCompareV2()" class="btn pull-right">Search</button>
+        <button type="submit" id="an_search" disabled='true' onclick="return startMeasureCompareV2()" class="btn btn-success pull-right">Search</button>
     <?php // echo form_close();?>
     </form>
 </div>
