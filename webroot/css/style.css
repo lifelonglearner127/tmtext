@@ -147,7 +147,8 @@ span[class*="hilite"] { background: yellow; }
   	box-shadow: 0 0 6px 2px #b0b2ab;
   	height: auto;
 	min-height: 30px;
-	width: 100%;
+	width: 280px;
+	padding: 5px;
 }
 .grid_seo ul {
 	margin-left: 0px;

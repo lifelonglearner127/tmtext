@@ -26,6 +26,7 @@
         $("#compet_area_grid").hide();
         $("#attributes_metrics ul:not(.grid_switcher)").show();
         $("#measure_product_ind_wrap").show();
+        grid_status = 'list';
     }
 
     function switchToGridView() {
@@ -35,6 +36,23 @@
         $("#attributes_metrics ul:not(.grid_switcher)").hide();
         $("#measure_product_ind_wrap").hide();
         $("#compet_area_grid").show();
+        grid_status = 'grid';
+        // --- DEMO DATA FILL (START)
+        var short_desc = $.trim($("#details-short-desc").text());
+        var long_desc = $.trim($("#details-long-desc").text());
+        var short_desc_count = 0;
+        if(short_desc !== "") short_desc_count = short_desc.split(" ").length;
+        var long_desc_count = 0;
+        if(long_desc !== "") long_desc_count = long_desc.split(" ").length;
+        var seo_short = $("ul[data-status='seo_an'][data-st-id='short_desc_seo']").html();
+        var seo_long = $("ul[data-status='seo_an'][data-st-id='long_desc_seo']").html();
+        $("#grid_se_section_1 .short_desc_wc, #grid_se_section_2 .short_desc_wc, #grid_se_section_3 .short_desc_wc").text(short_desc_count + " words");
+        $("#grid_se_section_1 .short_desc_con, #grid_se_section_2 .short_desc_con, #grid_se_section_3 .short_desc_con").text(short_desc);
+        $("#grid_se_section_1 .long_desc_wc, #grid_se_section_2 .long_desc_wc, #grid_se_section_3 .long_desc_wc").text(long_desc_count + " words");
+        $("#grid_se_section_1 .long_desc_con, #grid_se_section_2 .long_desc_con, #grid_se_section_3 .long_desc_con").text(short_desc);
+        $(".gr_seo_short_ph").html(seo_short);
+        $(".gr_seo_long_ph").html(seo_long);
+        // --- DEMO DATA FILL (END)
     }
     // --- GRIDS (END)
 
@@ -407,13 +425,13 @@
     <!-- GRID VIEW LAYOUT (START) -->
     <div id='compet_area_grid' class='row-fluid'>
         
-        <div class='grid_se_section'>
+        <div id='grid_se_section_1' class='grid_se_section'>
             <div class='h'>
                 <select>
                     <?php if(count($customers_list) > 0) { ?>
-                        <option value="all">All Sites</option>
                         <?php foreach ($customers_list as $key => $value) { ?>
-                            <option value="<?php echo $value; ?>"><?php echo $value; ?></option>
+                            <?php if($value == 'walmart.com') { $selected = 'selected'; } else { $selected = ''; } ?>
+                            <option <?php echo $selected; ?> value="<?php echo $value; ?>"><?php echo $value; ?></option>
                         <?php } ?>
                     <?php } else { ?>
                     <option value='all'>All Sites</option>
@@ -421,14 +439,19 @@
                 </select>
             </div>
             <div class='c'>
-
+                <span class='analysis_content_head'>Short Description (<span class='short_desc_wc'>0 words</span>):</span>
+                <p class='short_desc_con'>none</p>
+                <span class='analysis_content_head'>Long Description (<span class='long_desc_wc'>0 words</span>):</span>
+                <p class='long_desc_con'>none</p>
             </div>
             <div class='grid_seo'>
                 <ul>
                     <li><a href='javascript:void()'>SEO Phrases:</a></li>
                 </ul>
-                <ul style='margin-top: 5px;'>
+                <ul class='gr_seo_short_ph' style='margin-top: 5px;'>
                     <li class='bold'>Short Description:</li>
+                </ul>
+                <ul class='gr_seo_long_ph' style='margin-top: 5px;'>
                     <li class='bold'>Long Description:</li>
                 </ul>
                 <ul>
@@ -437,13 +460,13 @@
             </div>
         </div>
 
-        <div class='grid_se_section left'>
+        <div id='grid_se_section_2' class='grid_se_section left'>
             <div class='h'>
                 <select>
                     <?php if(count($customers_list) > 0) { ?>
-                        <option value="all">All Sites</option>
                         <?php foreach ($customers_list as $key => $value) { ?>
-                            <option value="<?php echo $value; ?>"><?php echo $value; ?></option>
+                            <?php if($value == 'staples.com') { $selected = 'selected'; } else { $selected = ''; } ?>
+                            <option <?php echo $selected; ?> value="<?php echo $value; ?>"><?php echo $value; ?></option>
                         <?php } ?>
                     <?php } else { ?>
                     <option value='all'>All Sites</option>
@@ -451,14 +474,19 @@
                 </select>
             </div>
             <div class='c'>
-
+                <span class='analysis_content_head'>Short Description (<span class='short_desc_wc'>0 words</span>):</span>
+                <p class='short_desc_con'>none</p>
+                <span class='analysis_content_head'>Long Description (<span class='long_desc_wc'>0 words</span>):</span>
+                <p class='long_desc_con'>none</p>
             </div>
             <div class='grid_seo'>
                 <ul>
                     <li><a href='javascript:void()'>SEO Phrases:</a></li>
                 </ul>
-                <ul style='margin-top: 5px;'>
+                <ul class='gr_seo_short_ph' style='margin-top: 5px;'>
                     <li class='bold'>Short Description:</li>
+                </ul>
+                <ul class='gr_seo_long_ph' style='margin-top: 5px;'>
                     <li class='bold'>Long Description:</li>
                 </ul>
                 <ul>
@@ -467,13 +495,13 @@
             </div>
         </div>
 
-        <div class='grid_se_section left'>
+        <div id='grid_se_section_3' class='grid_se_section left'>
             <div class='h'>
                 <select>
                     <?php if(count($customers_list) > 0) { ?>
-                        <option value="all">All Sites</option>
                         <?php foreach ($customers_list as $key => $value) { ?>
-                            <option value="<?php echo $value; ?>"><?php echo $value; ?></option>
+                            <?php if($value == 'overstock.com') { $selected = 'selected'; } else { $selected = ''; } ?>
+                            <option <?php echo $selected; ?> value="<?php echo $value; ?>"><?php echo $value; ?></option>
                         <?php } ?>
                     <?php } else { ?>
                     <option value='all'>All Sites</option>
@@ -481,14 +509,19 @@
                 </select>
             </div>
             <div class='c'>
-
+                <span class='analysis_content_head'>Short Description (<span class='short_desc_wc'>0 words</span>):</span>
+                <p class='short_desc_con'>none</p>
+                <span class='analysis_content_head'>Long Description (<span class='long_desc_wc'>0 words</span>):</span>
+                <p class='long_desc_con'>none</p>
             </div>
             <div class='grid_seo'>
                 <ul>
                     <li><a href='javascript:void()'>SEO Phrases:</a></li>
                 </ul>
-                <ul style='margin-top: 5px;'>
+                <ul class='gr_seo_short_ph' style='margin-top: 5px;'>
                     <li class='bold'>Short Description:</li>
+                </ul>
+                <ul class='gr_seo_long_ph' style='margin-top: 5px;'>
                     <li class='bold'>Long Description:</li>
                 </ul>
                 <ul>

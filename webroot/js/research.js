@@ -110,7 +110,6 @@ function researchKeywordsAnalizer() {
     }
 }
 
-
 $(document).ready(function () {
 
     $('input[name="research_text"]').focus();
