@@ -143,6 +143,7 @@ class Imported_data_parsed_model extends CI_Model {
     }
 
     function getData($value, $website = '', $category_id='', $limit= ''){
+
         $this->db->select('p.imported_data_id, p.key, p.value')
             ->from($this->tables['imported_data_parsed'].' as p')
             ->join($this->tables['imported_data'].' as i', 'i.id = p.imported_data_id', 'left')
@@ -150,6 +151,10 @@ class Imported_data_parsed_model extends CI_Model {
 
         if ($category_id > 0) {
             $this->db->where('i.category_id', $category_id);
+        }
+
+        if($website != '' && $website != 'all'){
+            $this->db->like('i.data', $website);
         }
 
         if ($limit) {
@@ -170,22 +175,9 @@ class Imported_data_parsed_model extends CI_Model {
                 if($val['key'] == 'Description'){ $description = $val['value']; }
                 if($val['key'] == 'Long_Description'){ $long_description = $val['value']; }
             }
-            if($website != '' && $website != 'all'){
-               if(substr_count($url, $website) > 0){
-                   array_push($data, array('imported_data_id'=>$result->imported_data_id, 'product_name'=>$result->value,
-                       'description'=>$description, 'long_description'=>$long_description, 'url'=>$url ));
-               }
-            } else {
-                array_push($data, array('imported_data_id'=>$result->imported_data_id, 'product_name'=>$result->value,
-                    'description'=>$description, 'long_description'=>$long_description, 'url'=>$url ));
-            }
-            /*$this->db->select('value');
-            $this->db->where_in('key', array('Description', 'Long_Description', 'URL'));
-            $this->db->where('imported_data_id', $result->imported_data_id);
-            $res = $this->db->get($this->tables['imported_data_parsed']);
-            $info = $res->result();*/
 
-
+            array_push($data, array('imported_data_id'=>$result->imported_data_id, 'product_name'=>$result->value,
+               'description'=>$description, 'long_description'=>$long_description, 'url'=>$url ));
         }
 
         return $data;
