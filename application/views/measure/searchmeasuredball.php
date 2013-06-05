@@ -100,7 +100,7 @@
 		});
 	</script>
 
-	<div id='an_sort_search_box' class='boxes_content' style='height: 200px; margin-bottom: 15px;'>
+	<div id='an_sort_search_box' class='boxes_content' style='margin-bottom: 15px;'>
 		<ul class='product_title'>
 			<li class='main'>
 				<span><b>Product Name</b></span>

@@ -1,7 +1,26 @@
 <script>
     
+    var measureAnalyzerAttrBaseUrl = "<?php echo base_url(); ?>index.php/measure/attributesmeasure";
+
     // --- GRIDS (START)
     var grid_status = 'list';
+
+    function getSearchProductAttributes(s) {
+        if(s !== "") {
+            var analyzer_attr = $.post(measureAnalyzerAttrBaseUrl, { s: s }, 'json').done(function(data) {
+                console.log('Attributes: ', data['search_results']);
+                var res = 'no attributes';
+                var count = 0;
+                if(data['search_results'] !== "") {
+                    res = data['search_results'];
+                    count = res.split("<br />").length;
+                }
+                $("#grid_se_section_1 .gr_attr_count, #grid_se_section_2 .gr_attr_count, #grid_se_section_3 .gr_attr_count").text(count);
+                $("#grid_se_section_1 .gr_attr_con, #grid_se_section_2 .gr_attr_con, #grid_se_section_3 .gr_attr_con").html(res);
+            });
+        }
+    }
+
     function viewIconsReset() {
         $('#grid_sw_list, #grid_sw_grid').removeClass('btn-primary');
         $('#grid_sw_list > i').removeClass('icon-white');
@@ -52,6 +71,7 @@
         $("#grid_se_section_1 .long_desc_con, #grid_se_section_2 .long_desc_con, #grid_se_section_3 .long_desc_con").text(short_desc);
         $(".gr_seo_short_ph").html(seo_short);
         $(".gr_seo_long_ph").html(seo_long);
+        getSearchProductAttributes($.trim($("#compare_text").val()));
         // --- DEMO DATA FILL (END)
     }
     // --- GRIDS (END)
@@ -455,7 +475,8 @@
                     <li class='bold'>Long Description:</li>
                 </ul>
                 <ul>
-                    <li><a href='javascript:void()'>Attributes used (0):</a></li>
+                    <li><a href='javascript:void()'>Attributes used (<span class='gr_attr_count'>0</span>):</a></li>
+                    <li class='gr_attr_con'>no attributes</li>
                 </ul>
             </div>
         </div>
@@ -490,7 +511,8 @@
                     <li class='bold'>Long Description:</li>
                 </ul>
                 <ul>
-                    <li><a href='javascript:void()'>Attributes used (0):</a></li>
+                    <li><a href='javascript:void()'>Attributes used (<span class='gr_attr_count'>0</span>):</a></li>
+                    <li class='gr_attr_con'>no attributes</li>
                 </ul>
             </div>
         </div>
@@ -525,7 +547,8 @@
                     <li class='bold'>Long Description:</li>
                 </ul>
                 <ul>
-                    <li><a href='javascript:void()'>Attributes used (0):</a></li>
+                    <li><a href='javascript:void()'>Attributes used (<span class='gr_attr_count'>0</span>):</a></li>
+                    <li class='gr_attr_con'>no attributes</li>
                 </ul>
             </div>
         </div>
