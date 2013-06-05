@@ -1,5 +1,9 @@
 function getSearchResult(){
-    $.post(base_url + 'index.php/research/search_results', { 'search_data': $('input[name="research_text"]').val(), 'website': $('input.dd-selected-value').val() }, function(data){
+    $.post(base_url + 'index.php/research/search_results', { 'search_data': $('input[name="research_text"]').val(),
+        'website': $('input.dd-selected-value').val(),
+        'category': $('select[name="category"] option:selected').text(),
+        'limit': $('select[name="result_amount"] option:selected').val()
+    }, function(data){
         $('ul#product_descriptions').empty();
         $('ul#research_products li').each(function(){
             if($(this).attr('class') != 'main' || $(this).attr('class') == undefined){
@@ -73,6 +77,40 @@ function selectRange(range) {
     }
 }
 
+function researchKeywordsAnalizer() {
+    var num = parseInt($('#research_wc').html())+parseInt($('#research_wc1').html());
+    $('#research_total').html(num);
+    var research_primary_ph = $.trim($('input[name="primary"]').val());
+    var research_secondary_ph = $.trim($('input[name="secondary"]').val());
+    var research_tertiary_ph = $.trim($('input[name="tertiary"]').val());
+    if(research_primary_ph !== "") research_primary_ph.replace(/<\/?[^>]+(>|$)/g, "");
+    if(research_secondary_ph !== "") research_secondary_ph.replace(/<\/?[^>]+(>|$)/g, "");
+    if(research_tertiary_ph !== "") research_tertiary_ph.replace(/<\/?[^>]+(>|$)/g, "");
+
+    if(research_primary_ph !== "" || research_secondary_ph !== "" || research_tertiary_ph !== "") {
+        var research_long_desc = $.trim($('textarea[name="short_description"]').html() +' '+ $("#long_description").html());
+        if(research_long_desc !== "") research_long_desc.replace(/<\/?[^>]+(>|$)/g, "");
+
+        var research_send_object = {
+            primary_ph: research_primary_ph,
+            secondary_ph: research_secondary_ph,
+            tertiary_ph: research_tertiary_ph,
+            short_desc: '',
+            long_desc: research_long_desc
+        };
+
+        $.post(base_url+'index.php/measure/analyzekeywords', research_send_object, 'json').done(function(data) {
+            var first = data['primary'][1].toPrecision(3);
+            var second = data['secondary'][1].toPrecision(3);
+            var third = data['tertiary'][1].toPrecision(3);
+            $('input[name="research_primary"]').val(first + "%");
+            $('input[name="research_secondary"]').val(second + "%");
+            $('input[name="research_tertiary"]').val(third + "%");
+        });
+    }
+}
+
+
 $(document).ready(function () {
 
     $('input[name="research_text"]').focus();
@@ -122,7 +160,8 @@ $(document).ready(function () {
         if(matches) {
             number = matches.length/2;
         }
-        $('#wc').html(number);
+        $('#research_wc').html(number);
+        researchKeywordsAnalizer();
     });
 
     $(document).on("keydown change", '#long_description', function() {
@@ -131,7 +170,12 @@ $(document).ready(function () {
         if(matches) {
             number = matches.length/2;
         }
-        $('#wc1').html(number);
+        $('#research_wc1').html(number);
+        researchKeywordsAnalizer();
+    });
+
+    $(document).on("focusout change", '.keywords', function() {
+        researchKeywordsAnalizer();
     });
 
     $(document).on("click", 'a.clear_all', function() {
@@ -148,10 +192,12 @@ $(document).ready(function () {
 
     $(document).on("click", 'button#research_search', function(){
         getSearchResult();
+        researchKeywordsAnalizer();
     });
 
     $(document).on("click", '#related_keywords li', function(){
         $('input[name="'+$(this).attr('class')+'"]').val($(this).text());
+        researchKeywordsAnalizer();
     });
 
     $(document).on("click", '#research_products li', function(){
@@ -237,7 +283,8 @@ $(document).ready(function () {
                     // --- LONG DESC ANALYZER (END)
 
                     $("ul[data-status='seo_an']").show();
-                }, 'json');
+            }, 'json');
+            researchKeywordsAnalizer();
         }
 
     });
@@ -251,13 +298,15 @@ $(document).ready(function () {
         });
         str = str.substring(0,str.length-2);
         $('input[name="meta_keywords"]').val(str);
+        researchKeywordsAnalizer();
     });
 
 
     $(document).on("click", "#validate", function(){
         var vbutton = $(this);
         var description = $('#long_description').html();
-
+        $('#long_description').trigger('change');
+        $('textarea[name="short_description"]').trigger('change');
         vbutton.html('<i class="icon-ok-sign"></i>&nbsp;Validating...');
 
         $.post(base_url + 'index.php/editor/validate', { description: description }, 'json')
@@ -270,8 +319,8 @@ $(document).ready(function () {
                 }
                 vbutton.html('<i class="icon-ok-sign"></i>&nbsp;Validate');
                 $('#long_description').html(description);
-            });
-
+        });
+        researchKeywordsAnalizer();
     });
 
     $(document).on("click", "button#new_batch", function(){
@@ -344,6 +393,13 @@ $(document).ready(function () {
         return false;
     });
 
+    $(document).on("change", 'select[name="result_amount"]', function(){
+        getSearchResult();
+    });
+
+    $(document).on("change", 'select[name="category"]', function(){
+        getSearchResult();
+    });
 
 });
 

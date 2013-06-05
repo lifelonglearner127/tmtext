@@ -7,7 +7,8 @@ class Imported_data_parsed_model extends CI_Model {
 	var $value = '';
 
     var $tables = array(
-    	'imported_data_parsed' => 'imported_data_parsed'
+    	'imported_data_parsed' => 'imported_data_parsed',
+        'imported_data' => 'imported_data',
     );
 
     function __construct() {
@@ -141,10 +142,21 @@ class Imported_data_parsed_model extends CI_Model {
         return $this->db->update($this->tables['imported_data_parsed'], $this, array('id' => $id));
     }
 
-    function getData($value, $website = ''){
+    function getData($value, $website = '', $category_id='', $limit= ''){
+        $this->db->select('p.imported_data_id, p.key, p.value')
+            ->from($this->tables['imported_data_parsed'].' as p')
+            ->join($this->tables['imported_data'].' as i', 'i.id = p.imported_data_id', 'left')
+            ->where('p.key', 'Product Name')->like('p.value', $value);
 
-        $query = $this->db->select('imported_data_id, key, value')->where('key', 'Product Name')
-            ->like('value', $value)->get($this->tables['imported_data_parsed']);
+        if ($category_id > 0) {
+            $this->db->where('i.category_id', $category_id);
+        }
+
+        if ($limit) {
+            $this->db->limit((int)$limit);
+        }
+
+        $query = $this->db->get();
         $results = $query->result();
         $data = array();
         foreach($results as $result){

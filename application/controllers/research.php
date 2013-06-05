@@ -49,8 +49,20 @@ class Research extends MY_Controller {
     public function search_results()
     {
         $this->load->model('imported_data_parsed_model');
+        $this->load->model('category_model');
+
         if($this->input->post('search_data') != '') {
-        	$imported_data_parsed = $this->imported_data_parsed_model->getData($this->input->post('search_data'), $this->input->post('website'));
+
+            $category_id = '';
+            $limit = '';
+            if($this->input->post('category') != '' && $this->input->post('category') != 'All'){
+                $category_id = $this->category_model->getIdByName($this->input->post('category'));
+            }
+            if($this->input->post('limit')!=''){
+                $limit = $this->input->post('limit');
+            }
+
+            $imported_data_parsed = $this->imported_data_parsed_model->getData($this->input->post('search_data'), $this->input->post('website'), $category_id, $limit);
             if (empty($imported_data_parsed)) {
             	$this->load->library('PageProcessor');
 				if ($this->pageprocessor->isURL($this->input->post('search_data'))) {

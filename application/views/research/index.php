@@ -107,17 +107,24 @@
                     <h3>Descriptions</h3>
                     <div class="boxes_content">
                         <div class="row-fluid"><label>Short description:</label>
-                             <label><span id="wc">0</span> words</label>
+                             <label><span id="research_wc">0</span> words</label>
                              <button type="button" class="btn" style="float:left;">Generate</button>
                              <textarea type="text" name="short_description" class="span10 mt_10" style="height:100px;"></textarea>
                         </div>
                         <div class="row-fluid"><label>Long description:</label>
-                            <label><span id="wc1">0</span> words</label>
+                            <label><span id="research_wc1">0</span> words</label>
                             <div class="search_area uneditable-input ml_10"  id="long_description" onClick="this.contentEditable='true';" style="cursor: text; width: 365px;"></div>
+
 
                             <!--div class="search_area uneditable-input" id="long_description"
                                  onclick="this.focus(); " style="cursor: text;height:150px; width:380px;"></div-->
                            <!--textarea type="text" name="long_description" class="span10"  style="height:150px;display:none"></textarea-->
+                        </div>
+                        <div class="row-fluid" id="research_density">
+                            <label>Persixy:</label><label>Primary:</label><input type="text" name="research_primary" class="span2" value="0" readonly="readonly" /><span class="percent">%</span>
+                            <label>Secondary:</label><input type="text" name="research_secondary" class="span2" value="0" readonly="readonly" /><span class="percent" >%</span>
+                            <label>Tertiary:</label><input type="text" name="research_tertiary" class="span2" value="0" readonly="readonly" /><span class="percent" >%</span></p>
+                            <p>Total words: <span id="research_total">0</span> words</p>
                         </div>
                         <div class="row-fluid mb_20">
                             <button id="validate" type="button" class="btn ml_10">Validate</button>
