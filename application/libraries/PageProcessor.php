@@ -36,6 +36,7 @@ class PageProcessor {
         		$this->$methodName();
         	}
 
+        	// TODO: add caching
 			if ($this->html = $this->curl->simple_get($this->url)) {
 				$this->nokogiri->loadHtml($this->html);
 				return true;

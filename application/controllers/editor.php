@@ -176,7 +176,7 @@ class Editor extends MY_Controller {
 	// 						case 'Long_Description':
 	// 							// $res['long_desc'] = $v['value'];
 	// 							// $res['long_desc'] = preg_replace('/[^A-Za-z0-9\-]\"\./', ' ', $v['value']);
-	// 							$res['long_desc'] = str_replace(array(';'), array(','), $v['value']); 
+	// 							$res['long_desc'] = str_replace(array(';'), array(','), $v['value']);
 	// 							break;
 	// 						case 'Product Name':
 	// 							$res['product_name'] = $v['value'];
@@ -201,8 +201,21 @@ class Editor extends MY_Controller {
 			'search_flag' => '',
 			'search_results' => array()
 		);
-		$this->load->model('imported_data_parsed_model');
-		$data_import = $this->imported_data_parsed_model->getByImId($im_data_id);
+
+		// TODO: Fast way, not clean
+		if ($im_data_id !== "0") {
+			$this->load->model('imported_data_parsed_model');
+			$data_import = $this->imported_data_parsed_model->getByImId($im_data_id);
+		} else {
+            $this->load->library('PageProcessor');
+			if ($this->pageprocessor->isURL($this->input->post('search_data'))) {
+				$parsed_data = $this->pageprocessor->get_data($this->input->post('search_data'));
+				$data_import = $parsed_data;
+				$data_import['url'] = $this->input->post('search_data');
+				$data_import['imported_data_id'] = 0;
+			}
+		}
+
 		if($data_import !== null) { // ---- DB DATA
 			$data['search_results'] = $data_import;
 			$data['search_flag'] = 'db';

@@ -90,9 +90,19 @@ class Measure extends MY_Controller {
                 foreach ($opt as $key => $value) {
                     $opt_ids[] = $value->id;
                 }
-            } 
+            }
         }
         $data_import = $this->imported_data_parsed_model->getByValueLikeGroupCat($s, $sl, $opt_ids);
+     	if (empty($data_import)) {
+            $this->load->library('PageProcessor');
+			if ($this->pageprocessor->isURL($this->input->post('s'))) {
+				$parsed_data = $this->pageprocessor->get_data($this->input->post('s'));
+				$data_import[0] = $parsed_data;
+				$data_import[0]['url'] = $this->input->post('s');
+				$data_import[0]['imported_data_id'] = 0;
+			}
+		}
+
         $data['search_results'] = $data_import;
         $this->load->view('measure/searchmeasuredball', $data);
     }

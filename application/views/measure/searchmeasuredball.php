@@ -1,5 +1,5 @@
 <?php if(count($search_results) > 0) { ?>
-	
+
 	<script type='text/javascript'>
 		$(document).ready(function () {
 
@@ -22,7 +22,7 @@
 
 
         	function startMeasureCompare(im_data_id) {
-		        var searcher = $.post(editorSearchBaseUrl, { im_data_id: im_data_id }, 'html').done(function(data) {
+		        var searcher = $.post(editorSearchBaseUrl, { im_data_id: im_data_id, search_data: $.trim($("#compare_text").val()) }, 'html').done(function(data) {
 		            if(typeof(data) !== "undefined" && data !== "") {
 		                $("#measure_tab_pr_content_body").html(data);
 		                var ms = $(data).find("#measure_res_status").val();
@@ -88,13 +88,13 @@
 		                    $("li[data-status='words_an']").fadeOut();
 		                    $("li[data-status='words_an']").fadeIn();
 		                    // ---- WORDS COUNTER (END)
-		                    
+
 		                    keywordsAnalizer();
 		                }
 
 		            }
 		        });
-		        
+
 		    }
 
 		});
