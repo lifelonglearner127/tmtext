@@ -37,6 +37,7 @@
 	<script src="<?php echo base_url();?>js/fileupload/jquery.fileupload.js"></script>
 	<script src="<?php echo base_url();?>js/search_highlight_plug.js"></script>
     <script src="<?php echo base_url();?>js/tag_editor.js"></script>
+    <script src="<?php echo base_url();?>js/research.js"></script>
 
 	<!-- script src="<?php echo base_url();?>js/main.js"></script-->
 <?php if (isset($js)){ ?>
