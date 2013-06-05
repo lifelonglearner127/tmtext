@@ -23,12 +23,18 @@
         viewIconsReset();
         $('#grid_sw_list').addClass('btn-primary');
         $('#grid_sw_list > i').addClass('icon-white');
+        $("#compet_area_grid").hide();
+        $("#attributes_metrics ul:not(.grid_switcher)").show();
+        $("#measure_product_ind_wrap").show();
     }
 
     function switchToGridView() {
         viewIconsReset();
         $('#grid_sw_grid').addClass('btn-primary');
         $('#grid_sw_grid > i').addClass('icon-white');
+        $("#attributes_metrics ul:not(.grid_switcher)").hide();
+        $("#measure_product_ind_wrap").hide();
+        $("#compet_area_grid").show();
     }
     // --- GRIDS (END)
 
@@ -86,6 +92,7 @@
             $("#an_products_box").fadeIn();
         });
         initGrid();
+        switchToListView();
         return false;
     }
 
@@ -312,7 +319,7 @@
         <!-- <div class="span8 an_sv_left" style='height: 30px;'><b class='btag_elipsis'>No Title</b></div> -->
         <div class="span8 an_sv_left" style='height: 30px;'>&nbsp;</div>
     </div>
-	<div id='compet_area' class="row-fluid">            
+	<div id='compet_area_list' class="row-fluid">            
        <!-- <div style='margin-top: -40px;' class="span8 search_area cursor_default item_section an_sv_left"> -->
        <div style='margin-top: -40px; height: auto;' class="span8 search_area cursor_default an_sv_left">
             <div id="an_products_box" style='display: none;' class="span8 an_sv_left connectedSortable">&nbsp;</div>
@@ -326,8 +333,9 @@
                     <button class='btn' onclick="switchToGridView();" id='grid_sw_grid' type='button'><i class="icon-th-large"></i>&nbsp;Grid</button>
                 </li>
             </ul>
-            <h3>Metrics</h3>
+            <!-- <h3>Metrics</h3> -->
             <ul>
+                <li><h3>Metrics</h3></li>
                 <li><a href="javascript:void(0)">Site Metrics</a></li>
                 <li>Alexa: 156</li>
                 <li>SKUs: 1,278,400</li>
@@ -395,6 +403,103 @@
             <ul class='less_b_margin' data-st-id='long_desc_seo' data-status='seo_an'></ul>
 	    </div>
 	</div>
+
+    <!-- GRID VIEW LAYOUT (START) -->
+    <div id='compet_area_grid' class='row-fluid'>
+        
+        <div class='grid_se_section'>
+            <div class='h'>
+                <select>
+                    <?php if(count($customers_list) > 0) { ?>
+                        <option value="all">All Sites</option>
+                        <?php foreach ($customers_list as $key => $value) { ?>
+                            <option value="<?php echo $value; ?>"><?php echo $value; ?></option>
+                        <?php } ?>
+                    <?php } else { ?>
+                    <option value='all'>All Sites</option>
+                    <?php } ?>
+                </select>
+            </div>
+            <div class='c'>
+
+            </div>
+            <div class='grid_seo'>
+                <ul>
+                    <li><a href='javascript:void()'>SEO Phrases:</a></li>
+                </ul>
+                <ul style='margin-top: 5px;'>
+                    <li class='bold'>Short Description:</li>
+                    <li class='bold'>Long Description:</li>
+                </ul>
+                <ul>
+                    <li><a href='javascript:void()'>Attributes used (0):</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class='grid_se_section left'>
+            <div class='h'>
+                <select>
+                    <?php if(count($customers_list) > 0) { ?>
+                        <option value="all">All Sites</option>
+                        <?php foreach ($customers_list as $key => $value) { ?>
+                            <option value="<?php echo $value; ?>"><?php echo $value; ?></option>
+                        <?php } ?>
+                    <?php } else { ?>
+                    <option value='all'>All Sites</option>
+                    <?php } ?>
+                </select>
+            </div>
+            <div class='c'>
+
+            </div>
+            <div class='grid_seo'>
+                <ul>
+                    <li><a href='javascript:void()'>SEO Phrases:</a></li>
+                </ul>
+                <ul style='margin-top: 5px;'>
+                    <li class='bold'>Short Description:</li>
+                    <li class='bold'>Long Description:</li>
+                </ul>
+                <ul>
+                    <li><a href='javascript:void()'>Attributes used (0):</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class='grid_se_section left'>
+            <div class='h'>
+                <select>
+                    <?php if(count($customers_list) > 0) { ?>
+                        <option value="all">All Sites</option>
+                        <?php foreach ($customers_list as $key => $value) { ?>
+                            <option value="<?php echo $value; ?>"><?php echo $value; ?></option>
+                        <?php } ?>
+                    <?php } else { ?>
+                    <option value='all'>All Sites</option>
+                    <?php } ?>
+                </select>
+            </div>
+            <div class='c'>
+
+            </div>
+            <div class='grid_seo'>
+                <ul>
+                    <li><a href='javascript:void()'>SEO Phrases:</a></li>
+                </ul>
+                <ul style='margin-top: 5px;'>
+                    <li class='bold'>Short Description:</li>
+                    <li class='bold'>Long Description:</li>
+                </ul>
+                <ul>
+                    <li><a href='javascript:void()'>Attributes used (0):</a></li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+    <!-- GRID VIEW LAYOUT (END) -->
+
 </div>
 </div>
 <!--- REAL CONTENT SECTION (END) -->

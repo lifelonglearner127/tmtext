@@ -20,6 +20,7 @@ class Measure extends MY_Controller {
     public function index()
     {
         $this->data['category_list'] = $this->category_full_list();
+        $this->data['customers_list'] = $this->category_customers_list();
         $this->render();
     }
 
@@ -27,6 +28,20 @@ class Measure extends MY_Controller {
         $this->load->model('category_model');
         $categories = $this->category_model->getAll();
         return $categories;
+    }
+
+    private function category_customers_list() {
+        $this->load->model('customers_model');
+        $output = array();
+        $customers_init_list = $this->customers_model->getAll();
+        if(count($customers_init_list) > 0) {
+            foreach ($customers_init_list as $key => $value) {
+                $n = strtolower($value->name);
+                $output[] = $n;
+            }
+        }
+        $output = array_unique($output);
+        return $output;
     }
 
     public function getcustomerslist() {
