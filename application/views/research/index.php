@@ -16,6 +16,7 @@
                     str += '<li id="'+data[i].imported_data_id+'"><span>'+data[i].product_name.substr(0, 23)+
                         '...</span><span>'+data[i].url.substr(0, 27)+'...</span></li>';
                     desc +=  '<li id="'+data[i].imported_data_id+'_name">'+data[i].product_name+'</li>';
+                    desc +=  '<li id="'+data[i].imported_data_id+'_url">'+data[i].url+'</li>';
                     desc +=  '<li id="'+data[i].imported_data_id+'_desc">'+data[i].description+'</li>';
                     desc +=  '<li id="'+data[i].imported_data_id+'_long_desc">'+data[i].long_description+'</li>';
 
@@ -111,69 +112,92 @@
             $('textarea[name="short_description"]').val('');
             $('textarea[name="long_description"]').val('');
             if($(this).attr('id')!='' && $(this).attr('id')!=undefined){
+                var id = $(this).attr('id');
                 $("#products li").each(function(){
                     $(this).css({'background':'none'});
                 });
                 $(this).css({'background':'#CAEAFF'});
                 $('#rel_keywords').css({'display':'block'});
-                $('input[name="product_name"]').val($('ul#product_descriptions li#'+$(this).attr('id')+'_name').text());
-                $('input[name="meta_title"]').val($('ul#product_descriptions li#'+$(this).attr('id')+'_name').text());
+                $.post(base_url + 'index.php/research/get_research_data', { 'batch': $('select[name="batches"] option:selected').text(),
+                'product_name': $('ul#product_descriptions li#'+$(this).attr('id')+'_name').text()},
+                function(data){
+                        var short_status = 'short';
+                        var long_status = 'long';
+                        var short_desc_an = '';
+                        var long_desc_an = '';
+                        if(data.length > 0){
+                            $('input[name="product_name"]').val(data[0].product_name);
+                            $('input[name="meta_title"]').val(data[0].product_name);
+                            $('input[name="meta_keywords"]').val(data[0].meta_keywords);
+                            $('input[name="primary"]').val(data[0].keyword1);
+                            $('input[name="secondary"]').val(data[0].keyword2);
+                            $('input[name="tertiary"]').val(data[0].keyword3);
+                            $('input[name="url"]').val(data[0].url);
+                            $('input[name="revision"]').val(data[0].revision);
+                            short_desc_an = data[0].short_description;
+                            long_desc_an = data[0].long_description;
+                        } else {
+                                $('input[name="product_name"]').val($('ul#product_descriptions li#'+id+'_name').text());
+                                $('input[name="meta_title"]').val($('ul#product_descriptions li#'+id+'_name').text());
+                                $('input[name="url"]').val($('ul#product_descriptions li#'+id+'_url').text());
 
-                // --- SHORT DESC ANALYZER (START)
-                var short_status = 'short';
-                var short_desc_an = $('ul#product_descriptions li#'+$(this).attr('id')+'_desc').text();
-                $('textarea[name="meta_description"]').val(short_desc_an);
-                $('textarea[name="short_description"]').val(short_desc_an);
-                $('textarea[name="short_description"]').trigger('change');
-                short_desc_an = short_desc_an.replace(/\s+/g, ' ');
-                short_desc_an = short_desc_an.trim();
-                var analyzer_short = $.post(measureAnalyzerBaseUrl, { clean_t: short_desc_an }, 'json').done(function(a_data) {
-                    console.log(a_data);
-                    var seo_items = "<li class='long_desc_sep'>Short Description:</li>";
-                    var top_style = "";
-                    var s_counter = 0;
-                    for(var i in a_data) {
-                        if(typeof(a_data[i]) === 'object') {
-                            s_counter++;
-                            if(i == 0) {
-                                top_style = "style='margin-top: 5px;'";
-                            }
-                            seo_items += '<li ' + top_style + '>' + '<span data-status="seo_link" class="word_wrap_li_pr hover_en">' + a_data[i]['ph'] + '</span>' + ' <span class="word_wrap_li_sec">(' + a_data[i]['count'] + ')</span></li>';
+                                short_desc_an = $('ul#product_descriptions li#'+id+'_desc').text();
+                                long_desc_an = $('ul#product_descriptions li#'+id+'_long_desc').text();
                         }
-                    }
-                    if(s_counter > 0) $("ul[data-st-id='short_desc_seo']").html(seo_items);
-                });
-                // --- SHORT DESC ANALYZER (END)
-
-                // --- LONG DESC ANALYZER (START)
-                var long_status = 'long';
-                var long_desc_an = $('ul#product_descriptions li#'+$(this).attr('id')+'_long_desc').text();
-                $('#long_description').text(long_desc_an);
-                //$('textarea[name="long_description"]').val(long_desc_an);
-                $('#long_description').trigger('change');
-                long_desc_an = long_desc_an.replace(/\s+/g, ' ');
-                long_desc_an = long_desc_an.trim();
-                var analyzer_long = $.post(measureAnalyzerBaseUrl, { clean_t: long_desc_an }, 'json').done(function(a_data) {
-                    var seo_items = "<li class='long_desc_sep'>Long Description:</li>";
-                    var top_style = "";
-                    var l_counter = 0;
-                    for(var i in a_data) {
-                        if(typeof(a_data[i]) === 'object') {
-                            l_counter++;
-                            if(i == 0) {
-                                top_style = "style='margin-top: 5px;'";
+                        // --- SHORT DESC ANALYZER (START)
+                        $('textarea[name="meta_description"]').val(short_desc_an);
+                        $('textarea[name="short_description"]').val(short_desc_an);
+                        $('textarea[name="short_description"]').trigger('change');
+                        short_desc_an = short_desc_an.replace(/\s+/g, ' ');
+                        short_desc_an = short_desc_an.trim();
+                        var analyzer_short = $.post(measureAnalyzerBaseUrl, { clean_t: short_desc_an }, 'json').done(function(a_data) {
+                            var seo_items = "<li class='long_desc_sep'>Short Description:</li>";
+                            var top_style = "";
+                            var s_counter = 0;
+                            for(var i in a_data) {
+                                if(typeof(a_data[i]) === 'object') {
+                                    s_counter++;
+                                    if(i == 0) {
+                                        top_style = "style='margin-top: 5px;'";
+                                    }
+                                    seo_items += '<li ' + top_style + '>' + '<span data-status="seo_link" class="word_wrap_li_pr hover_en">' + a_data[i]['ph'] + '</span>' + ' <span class="word_wrap_li_sec">(' + a_data[i]['count'] + ')</span></li>';
+                                }
                             }
-                            seo_items += '<li ' + top_style + '>' + '<span data-status="seo_link" class="word_wrap_li_pr hover_en">' + a_data[i]['ph'] + '</span>' + ' <span class="word_wrap_li_sec">(' + a_data[i]['count'] + ')</span></li>';
-                            // seo_items += '<li ' + top_style + '>' + '<span data-status="seo_link" data-status-sv="long"  class="word_wrap_li_pr hover_en">' + a_data[i]['ph'] + '</span>' + ' <span class="word_wrap_li_sec">(' + a_data[i]['count'] + ')</span></li>';
-                        }
-                    }
-                    if(l_counter > 0) $("ul[data-st-id='long_desc_seo']").html(seo_items);
-                });
-                // --- LONG DESC ANALYZER (END)
+                            if(s_counter > 0) $("ul[data-st-id='short_desc_seo']").html(seo_items);
+                        });
+                        // --- SHORT DESC ANALYZER (END)
 
-                $("ul[data-status='seo_an']").show();
-                //$("ul[data-status='seo_an']").fadeIn();
+                        // --- LONG DESC ANALYZER (START)
+                        $('#long_description').text(long_desc_an);
+                        $('#long_description').trigger('change');
+                        long_desc_an = long_desc_an.replace(/\s+/g, ' ');
+                        long_desc_an = long_desc_an.trim();
+                        var analyzer_long = $.post(measureAnalyzerBaseUrl, { clean_t: long_desc_an }, 'json').done(function(a_data) {
+                            var seo_items = "<li class='long_desc_sep'>Long Description:</li>";
+                            var top_style = "";
+                            var l_counter = 0;
+                            for(var i in a_data) {
+                                if(typeof(a_data[i]) === 'object') {
+                                    l_counter++;
+                                    if(i == 0) {
+                                        top_style = "style='margin-top: 5px;'";
+                                    }
+                                    seo_items += '<li ' + top_style + '>' + '<span data-status="seo_link" class="word_wrap_li_pr hover_en">' + a_data[i]['ph'] + '</span>' + ' <span class="word_wrap_li_sec">(' + a_data[i]['count'] + ')</span></li>';
+                                    // seo_items += '<li ' + top_style + '>' + '<span data-status="seo_link" data-status-sv="long"  class="word_wrap_li_pr hover_en">' + a_data[i]['ph'] + '</span>' + ' <span class="word_wrap_li_sec">(' + a_data[i]['count'] + ')</span></li>';
+                                }
+                            }
+                            if(l_counter > 0) $("ul[data-st-id='long_desc_seo']").html(seo_items);
+                        });
+                        // --- LONG DESC ANALYZER (END)
+
+                        $("ul[data-status='seo_an']").show();
+                }, 'json');
+
+
             }
+
+
+
 
         });
 
@@ -209,113 +233,124 @@
 
         });
 
-        function getMouseEventCaretRange(evt) {
-            var range, x = evt.clientX, y = evt.clientY;
+        $(document).on("click", "button#new_batch", function(){
+            $.post(base_url + 'index.php/research/new_batch', { 'batch': $('input[name="new_batch"]').val() }).done(function(data) {
+                    if($('input[name="new_batch"]').val() !='' ){
+                        var cat_exist = 0;
+                        $('select[name="batches"] option').each(function(){
+                            if($(this).text() == $('input[name="new_batch"]').val()){
+                                cat_exist = 1;
+                            }
+                        });
+                        if(cat_exist == 0){
+                            $('select[name="batches"]').append('<option selected="selected">'+
+                                $('input[name="new_batch"]').val()+'</option>');
+                            return false;
+                        }
+                    }
+                    return false;
+            });
+        });
 
-            // Try the simple IE way first
-            if (document.body.creacreateTextRange) {
-                range = document.body.createTextRange();
-                range.moveToPoint(x, y);
-            } else if (typeof document.createRange != "undefined") {
-                // Try Mozilla's rangeOffset and rangeParent properties, which are exactly what we want
+        $(document).on("click", "button#save_in_batch", function(){
+            $.post(base_url + 'index.php/research/save_in_batch', {
+                'batch': $('select[name="batches"] option:selected').text(),
+                'url': $('input[name="url"]').val(),
+                'product_name': $('input[name="product_name"]').val(),
+                'keyword1': $('input[name="primary"]').val(),
+                'keyword2': $('input[name="secondary"]').val(),
+                'keyword3': $('input[name="tertiary"]').val(),
+                'meta_title': $('input[name="meta_title"]').val(),
+                'meta_description': $('textarea[name="meta_description"]').val(),
+                'meta_keywords': $('input[name="meta_keywords"]').val(),
+                'short_description': $('textarea[name="short_description"]').val(),
+                'long_description': $('#long_description').text()
+            }).done(function(data) {
+                console.log(data);
+                return false;
+            });
+        });
 
-                if (typeof evt.rangeParent != "undefined") {
-                    range = document.createRange();
-                    range.setStart(evt.rangeParent, evt.rangeOffset);
-                    range.collapse(true);
+        $(document).on("click", "button#save_next", function(){
+            $.post(base_url + 'index.php/research/new_batch', { 'batch': $('input[name="new_batch"]').val() }).done(function(data) {
+                if($('input[name="new_batch"]').val() !='' ){
+                    var cat_exist = 0;
+                    $('select[name="batches"] option').each(function(){
+                        if($(this).text() == $('input[name="new_batch"]').val()){
+                            cat_exist = 1;
+                        }
+                    });
+                    if(cat_exist == 0){
+                        $('select[name="batches"]').append('<option selected="selected">'+
+                            $('input[name="new_batch"]').val()+'</option>');
+                        return false;
+                    }
                 }
+                return false;
+            });
+        });
 
-                // Try the standards-based way next
-                else if (document.caretPositionFromPoint) {
-                    var pos = document.caretPositionFromPoint(x, y);
-                    range = document.createRange();
-                    range.setStart(pos.offsetNode, pos.offset);
-                    range.collapse(true);
-                }
-
-                // Next, the WebKit way
-                else if (document.caretRangeFromPoint) {
-                    range = document.caretRangeFromPoint(x, y);
-                }
-            }
-
-            return range;
-        }
-
-        function selectRange(range) {
-            if (range) {
-                if (typeof range.select != "undefined") {
-                    range.select();
-                } else if (typeof window.getSelection != "undefined") {
-                    var sel = window.getSelection();
-                    sel.removeAllRanges();
-                    sel.addRange(range);
-                }
-            }
-        }
     });
 
-
-
     function getMouseEventCaretRange(evt) {
-        var range, x = evt.clientX, y = evt.clientY;
+         var range, x = evt.clientX, y = evt.clientY;
 
-        // Try the simple IE way first
-        if (document.body.createTextRange) {
-            range = document.body.createTextRange();
-            range.moveToPoint(x, y);
-        }
+         // Try the simple IE way first
+         if (document.body.createTextRange) {
+             range = document.body.createTextRange();
+             range.moveToPoint(x, y);
+         }
 
-        else if (typeof document.createRange != "undefined") {
-            // Try Mozilla's rangeOffset and rangeParent properties, which are exactly what we want
+         else if (typeof document.createRange != "undefined") {
+         // Try Mozilla's rangeOffset and rangeParent properties, which are exactly what we want
 
-            if (typeof evt.rangeParent != "undefined") {
-                range = document.createRange();
-                range.setStart(evt.rangeParent, evt.rangeOffset);
-                range.collapse(true);
-            }
+             if (typeof evt.rangeParent != "undefined") {
+                 range = document.createRange();
+                 range.setStart(evt.rangeParent, evt.rangeOffset);
+                 range.collapse(true);
+             }
 
-            // Try the standards-based way next
-            else if (document.caretPositionFromPoint) {
-                var pos = document.caretPositionFromPoint(x, y);
-                range = document.createRange();
-                range.setStart(pos.offsetNode, pos.offset);
-                range.collapse(true);
-            }
+             // Try the standards-based way next
+             else if (document.caretPositionFromPoint) {
+                 var pos = document.caretPositionFromPoint(x, y);
+                 range = document.createRange();
+                 range.setStart(pos.offsetNode, pos.offset);
+                 range.collapse(true);
+             }
 
-            // Next, the WebKit way
-            else if (document.caretRangeFromPoint) {
-                range = document.caretRangeFromPoint(x, y);
-            }
+         // Next, the WebKit way
+         else if (document.caretRangeFromPoint) {
+            range = document.caretRangeFromPoint(x, y);
+         }
         }
 
         return range;
-    }
+     }
 
-    function selectRange(range) {
-        if (range) {
-            if (typeof range.select != "undefined") {
+     function selectRange(range) {
+         if (range) {
+             if (typeof range.select != "undefined") {
                 range.select();
-            } else if (typeof window.getSelection != "undefined") {
-                var sel = window.getSelection();
-                sel.removeAllRanges();
-                sel.addRange(range);
-            }
-        }
-    }
+             } else if (typeof window.getSelection != "undefined") {
+                 var sel = window.getSelection();
+                 sel.removeAllRanges();
+                 sel.addRange(range);
+             }
+         }
+     }
 
-    document.getElementById("long_description").onclick = function(evt) {
-        evt = evt || window.event;
-        this.contentEditable = true;
-        this.focus();
-        var caretRange = getMouseEventCaretRange(evt);
+     document.getElementById("long_description").onclick = function(evt) {
+         evt = evt || window.event;
+         this.contentEditable = true;
+         this.focus();
+         var caretRange = getMouseEventCaretRange(evt);
 
-        // Set a timer to allow the selection to happen and the dust settle first
-        window.setTimeout(function() {
+         // Set a timer to allow the selection to happen and the dust settle first
+         window.setTimeout(function() {
             selectRange(caretRange);
-        }, 10);
-        return false;
-    };
+         }, 5);
+         return false;
+     };
 
 
 </script>
@@ -342,14 +377,10 @@
         </div>
         <div class="span6">
             Batch:
-            <select class="mt_10" style="width: 100px;" name="text">
-                <option value="Batch1">Batch1</option>
-                <option value="Batch2">Batch2</option>
-                <option value="text3">Batch3</option>
-            </select>
+            <?php echo form_dropdown('batches', $batches_list, array(), 'class="mt_10" style="width: 100px;"'); ?>
             <button class="btn" type="button" style="margin-left:5px; margin-right: 10px;">Export</button>
             Add new: <input type="text" class="mt_10" style="width:80px" name="new_batch">
-            <button class="btn" type="button" style="margin-left:5px">New</button>
+            <button id="new_batch" class="btn" type="button" style="margin-left:5px">New</button>
         </div>
 
     </div>
@@ -419,6 +450,8 @@
                     <div class="boxes_content">
                         <p><button id="generate_product" type="button" class="btn pull-right">Generate</button>
                             <label>Product name:</label><input type="text" class="span11 ml_0" name="product_name"/>
+                            <input type="hidden" name="url"/>
+                            <input type="hidden" name="revision"/>
                         </p>
                         <p><label>Meta title:</label><input type="text"  class="span11 ml_0" name="meta_title" /></p>
                         <p><label>Meta description:</label><textarea name="meta_description" style="height:100px;" ></textarea></p>
@@ -444,8 +477,8 @@
                         </div>
                         <div class="row-fluid mb_20">
                             <button id="validate" type="button" class="btn ml_10">Validate</button>
-                            <button type="button" class="btn ml_10 btn-success">Save</button>
-                            <button type="button" class="btn ml_10 btn-success">Save & Next</button>
+                            <button id="save_in_batch" type="button" class="btn ml_10 btn-success">Save</button>
+                            <button id="save_next" type="button" class="btn ml_10 btn-success">Save & Next</button>
                         </div>
                     </div>
                 </li>

@@ -1,3 +1,36 @@
+# 06/05 Tatiana
+CREATE TABLE IF NOT EXISTS `batches` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `title` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `created` datetime NOT NULL,
+  `modified` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id` (`id`)
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=3 ;
+
+
+CREATE TABLE IF NOT EXISTS `research_data` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `batch_id` int(11) unsigned NOT NULL,
+  `user_id` int(11) unsigned NOT NULL,
+  `url` text CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `product_name` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `keyword1` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `keyword2` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `keyword3` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `meta_name` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `meta_description` text CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `meta_keywords` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `short_description` text CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `long_description` text CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `revision` tinyint(4) NOT NULL DEFAULT '0',
+  `created` datetime NOT NULL,
+  `modified` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `batch_id` (`batch_id`)
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=2 ;
+
 # 05/31 Tatiana
 ALTER TABLE `groups` ADD `default_controller` VARCHAR( 255 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL AFTER `auth_rules`;
 UPDATE `groups` SET `default_controller` = 'editor/index' WHERE `groups`.`id` =1;
