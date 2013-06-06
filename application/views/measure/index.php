@@ -371,7 +371,8 @@
         
         <div id='grid_se_section_1' class='grid_se_section'>
             <div class='h'>
-                <select>
+                <div id='an_grd_view_drop_gr1' class='ddslick_dropdown an_grd_view_drop'></div>
+                <!-- <select>
                     <?php if(count($customers_list) > 0) { ?>
                         <?php foreach ($customers_list as $key => $value) { ?>
                             <?php if($value == 'walmart.com') { $selected = 'selected'; } else { $selected = ''; } ?>
@@ -380,7 +381,7 @@
                     <?php } else { ?>
                     <option value='all'>All Sites</option>
                     <?php } ?>
-                </select>
+                </select> -->
             </div>
             <div class='c'>
                 <span class='analysis_content_head'>Short Description (<span class='short_desc_wc'>0 words</span>):</span>
@@ -407,7 +408,8 @@
 
         <div id='grid_se_section_2' class='grid_se_section left'>
             <div class='h'>
-                <select>
+                <div id='an_grd_view_drop_gr2' class='ddslick_dropdown an_grd_view_drop'></div>
+                <!-- <select>
                     <?php if(count($customers_list) > 0) { ?>
                         <?php foreach ($customers_list as $key => $value) { ?>
                             <?php if($value == 'staples.com') { $selected = 'selected'; } else { $selected = ''; } ?>
@@ -416,7 +418,7 @@
                     <?php } else { ?>
                     <option value='all'>All Sites</option>
                     <?php } ?>
-                </select>
+                </select> -->
             </div>
             <div class='c'>
                 <span class='analysis_content_head'>Short Description (<span class='short_desc_wc'>0 words</span>):</span>
@@ -443,7 +445,8 @@
 
         <div id='grid_se_section_3' class='grid_se_section left'>
             <div class='h'>
-                <select>
+                <div id='an_grd_view_drop_gr3' class='ddslick_dropdown an_grd_view_drop'></div>
+                <!-- <select>
                     <?php if(count($customers_list) > 0) { ?>
                         <?php foreach ($customers_list as $key => $value) { ?>
                             <?php if($value == 'overstock.com') { $selected = 'selected'; } else { $selected = ''; } ?>
@@ -452,7 +455,7 @@
                     <?php } else { ?>
                     <option value='all'>All Sites</option>
                     <?php } ?>
-                </select>
+                </select> -->
             </div>
             <div class='c'>
                 <span class='analysis_content_head'>Short Description (<span class='short_desc_wc'>0 words</span>):</span>
