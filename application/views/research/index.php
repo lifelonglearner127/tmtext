@@ -41,7 +41,7 @@ $(document).ready(function() {
     $("#related_keywords").resizable({minWidth: 418, maxWidth:418});
 });
 </script>
-<div class="main_content_other"></div>
+<!-- <div class="main_content_other"></div> -->
 <div class="main_content_editor research">
     <div class="row-fluid">
         <?php echo form_open('', array('id'=>'measureForm')); ?>

@@ -1,4 +1,6 @@
-<script>
+<script type="text/javascript">
+
+    $("#compare_text").focus();
     
     var measureAnalyzerAttrBaseUrl = "<?php echo base_url(); ?>index.php/measure/attributesmeasure";
 
@@ -78,8 +80,6 @@
         // --- DEMO DATA FILL (END)
     }
     // --- GRIDS (END)
-
-    $("#compare_text").focus();
 
     // --- SCROLL UP / DOWN DETECTION (START)
     // if ($(window).scrollTop() == $(document).height() - $(window).height()) { alert('top re'); }
@@ -239,12 +239,21 @@
     }   
     // --- KEYWORDS ANALYZER (END)
 
+    $(document).ready(function() {
+        
+        $("#measureFormMetrics").submit(function(e) {
+            e.preventDefault();
+            startMeasureCompareV2();
+        });
+
+    });
+
 </script>
-<div class="main_content_other"></div>
+<!-- <div class="main_content_other"></div> -->
 <div class="main_content_editor">
 <div class="row-fluid">
     <?php // echo form_open('', array('id'=>'measureFormMetrics')); ?>
-    <form id="measureFormMetrics" accept-charset="utf-8" method="post" action="javascript:void()">
+    <form id="measureFormMetrics" accept-charset="utf-8" method="post" action="javascript:void(0)">
     <input type="text" name="compare_text" value="" id="compare_text" class="span8" placeholder=""/>
     <div id="measure_dropdown" class="ddslick_dropdown dropdowns"></div>
         <select class='cats_an_select' id='cats_an' name='cats_an'>
@@ -260,7 +269,8 @@
             <option value='all'>All Categories</option>
             <?php } ?>
         </select>
-        <button type="submit" id="an_search" disabled='true' onclick="return startMeasureCompareV2()" class="btn btn-success pull-right">Search</button>
+        <!-- <button type="submit" id="an_search" disabled='true' onclick="return startMeasureCompareV2()" class="btn btn-success pull-right">Search</button> -->
+        <button type="submit" id="an_search" disabled='true' class="btn btn-success pull-right">Search</button>
     <?php // echo form_close();?>
     </form>
 </div>
