@@ -174,8 +174,16 @@ $(document).ready(function () {
     });
 
     $(document).on("click", '#research_products li', function(){
+        $('input[name="product_name"]').val('');
+        $('input[name="meta_title"]').val('');
+        $('input[name="meta_keywords"]').val('');
+        $('input[name="primary"]').val('');
+        $('input[name="secondary"]').val('');
+        $('input[name="tertiary"]').val('');
+        $('input[name="url"]').val('');
         $('textarea[name="short_description"]').val('');
         $('textarea[name="long_description"]').val('');
+        $('input[name="revision"]').val('');
         if($(this).attr('id')!='' && $(this).attr('id')!=undefined){
             var id = $(this).attr('id');
             $("#research_products li").each(function(){
@@ -375,6 +383,9 @@ $(document).ready(function () {
 
     $(document).on("change", 'select[name="category"]', function(){
         getSearchResult();
+    });
+    $(document).on("click", "#export_batch", function(){
+        window.location.href = base_url + 'index.php/research/export?batch='+$("select[name='batches'] option:selected").text();
     });
 
 });

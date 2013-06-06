@@ -286,7 +286,6 @@ class Admin_Tag_Editor extends MY_Controller {
         } else {
             die('Error: File not found.');
         }
-       ;
     }
 
 

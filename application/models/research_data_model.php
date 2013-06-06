@@ -60,8 +60,8 @@ class Research_data_model extends CI_Model {
         return $this->db->insert_id();
     }
 
-    function update($id, $batch_id, $url, $product_name, $keyword1, $keyword2, $keyword3, $meta_name,
-                    $meta_description, $meta_keywords, $short_description, $long_description)
+   function update($id, $batch_id, $url, $product_name, $keyword1, $keyword2, $keyword3, $meta_name,
+                    $meta_description, $meta_keywords, $short_description, $long_description, $revision)
     {
         $CI =& get_instance();
         $this->batch_id = $batch_id;
@@ -76,6 +76,7 @@ class Research_data_model extends CI_Model {
         $this->meta_keywords = $meta_keywords;
         $this->short_description = $short_description;
         $this->long_description = $long_description;
+        $this->revision = $revision;
         $this->modified = date('Y-m-d h:i:s');
 
         return $this->db->update($this->tables['research_data'],
@@ -96,10 +97,19 @@ class Research_data_model extends CI_Model {
         return $query->result();
     }
 
+    function getLastRevision(){
+        $query = $this->db->select('revision')->limit(1)->order_by("id", "desc")->get($this->tables['research_data']);
+        return $query->result();
+    }
+
+    function getAllByBatchId($batch_id){
+        $query = $this->db->where('batch_id', $batch_id)->get($this->tables['research_data']);
+        return $query->result();
+    }
+
     function delete($id)
     {
         return $this->db->delete($this->tables['research_data'], array('id' => $id));
     }
-
 
 }

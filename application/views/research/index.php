@@ -65,7 +65,7 @@ $(document).ready(function() {
         <div class="span6">
             Batch:
             <?php echo form_dropdown('batches', $batches_list, array(), 'class="mt_10" style="width: 100px;"'); ?>
-            <button class="btn" type="button" style="margin-left:5px; margin-right: 10px;">Export</button>
+            <button id="export_batch" class="btn" type="button" style="margin-left:5px; margin-right: 10px;">Export</button>
             Add new: <input type="text" class="mt_10" style="width:80px" name="new_batch">
             <button id="new_batch" class="btn" type="button" style="margin-left:5px">New</button>
         </div>

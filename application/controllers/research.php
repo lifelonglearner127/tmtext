@@ -135,11 +135,24 @@ class Research extends MY_Controller {
             $meta_keywords = $this->input->post('meta_keywords');
             $short_description = $this->input->post('short_description');
             $long_description = $this->input->post('long_description');
-            if (!($revision = $this->input->post('revision'))) {
-                $revision = 1;
+            if ($this->input->post('revision')=='') {
+                $last_revision = $this->research_data_model->getLastRevision();
+                if(!empty($last_revision)){
+                    $revision = $last_revision[0]->revision + 1;
+                } else {
+                    $revision = 1;
+                }
+            } else {
+                $revision = $this->input->post('revision');
             }
-            $data['research_data_id'] = $this->research_data_model->insert($batch_id, $url, $product_name, $keyword1, $keyword2,
-                $keyword3, $meta_title, $meta_description, $meta_keywords, $short_description, $long_description, $revision);
+            $results = $this->research_data_model->getAllByProductName($product_name, $batch_id);
+            if(empty($results)){
+                $data['research_data_id'] = $this->research_data_model->insert($batch_id, $url, $product_name, $keyword1, $keyword2,
+                    $keyword3, $meta_title, $meta_description, $meta_keywords, $short_description, $long_description, $revision);
+            } else {
+                $data['research_data_id'] = $this->research_data_model->update($results[0]->id, $batch_id, $url, $product_name, $keyword1, $keyword2,
+                    $keyword3, $meta_title, $meta_description, $meta_keywords, $short_description, $long_description, $revision);
+            }
             $data['revision'] = $revision;
         } else {
             $data['message'] = (validation_errors() ? validation_errors() : $this->session->flashdata('message'));
@@ -147,6 +160,16 @@ class Research extends MY_Controller {
 
         $this->output->set_content_type('application/json')
             ->set_output(json_encode($data));
+    }
+
+    public function export()
+    {
+        $this->load->model('batches_model');
+        $batch_id = $this->batches_model->getIdByName($this->input->get('batch'));
+        $this->load->database();
+        $query = $this->db->where('batch_id', $batch_id)->get('research_data');
+        $this->load->helper('csv');
+        query_to_csv($query, TRUE, 'export.csv');
     }
 
 }
