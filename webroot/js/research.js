@@ -188,8 +188,10 @@ $(document).ready(function () {
             var id = $(this).attr('id');
             $("#research_products li").each(function(){
                 $(this).css({'background':'none'});
+                $(this).removeClass('current_selected');
             });
             $(this).css({'background':'#CAEAFF'});
+            $(this).addClass('current_selected');
             $('#rel_keywords').css({'display':'block'});
             $.post(base_url + 'index.php/research/get_research_data', { 'batch': $('select[name="batches"] option:selected').text(),
                     'product_name': $('ul#product_descriptions li#'+$(this).attr('id')+'_name').text()},
@@ -336,28 +338,13 @@ $(document).ready(function () {
             'short_description': $('textarea[name="short_description"]').val(),
             'long_description': $('#long_description').text()
         }).done(function(data) {
-                console.log(data);
                 return false;
             });
     });
 
     $(document).on("click", "button#save_next", function(){
-        $.post(base_url + 'index.php/research/new_batch', { 'batch': $('input[name="new_batch"]').val() }).done(function(data) {
-            if($('input[name="new_batch"]').val() !='' ){
-                var cat_exist = 0;
-                $('select[name="batches"] option').each(function(){
-                    if($(this).text() == $('input[name="new_batch"]').val()){
-                        cat_exist = 1;
-                    }
-                });
-                if(cat_exist == 0){
-                    $('select[name="batches"]').append('<option selected="selected">'+
-                        $('input[name="new_batch"]').val()+'</option>');
-                    return false;
-                }
-            }
-            return false;
-        });
+        $("button#save_in_batch").trigger("click");
+        $('#research_products li.current_selected').next().trigger('click');
     });
 
     $(document).on("click", "button#research_update_density", function(){
