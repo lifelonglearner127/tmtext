@@ -2,6 +2,7 @@
 
 	<script>
 	$(function() {
+		$('head').find('title').text('Customers');
 		// there's the gallery and the trash
 		var $gallery = $( "#gallery" ),
 			$trash = $( "#trash" );

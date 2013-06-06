@@ -1,5 +1,6 @@
 <script type="text/javascript">
 $(document).ready(function() {
+    $('head').find('title').text('Research & Edit');
     $('input[name="research_text"]').focus();
     $( "#sortable1, #sortable2" ).sortable({
         connectWith: ".connectedSortable",

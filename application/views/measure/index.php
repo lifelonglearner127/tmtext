@@ -1,5 +1,5 @@
 <script type="text/javascript">
-
+    $('head').find('title').text('Competitive Intelligence');
     $("#compare_text").focus();
     
     var measureAnalyzerAttrBaseUrl = "<?php echo base_url(); ?>index.php/measure/attributesmeasure";

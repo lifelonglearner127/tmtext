@@ -1,3 +1,8 @@
+<script type="text/javascript">
+	$(document).ready(function() {
+		$('head').find('title').text('System');
+	});
+</script>
 	<div class="tabbable">
 		<ul class="nav nav-tabs jq-system-tabs">
 			<li class="active"><a data-toggle="tab" href="<?php echo site_url('system');?>">General</a></li>

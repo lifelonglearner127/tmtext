@@ -1,4 +1,8 @@
-
+<script type="text/javascript">
+	$(document).ready(function() {
+		$('head').find('title').text('Create');
+	});
+</script>
 				<div class="main_content_other"></div>
 				<div class="main_content_editor">
 					<div class="row-fluid">

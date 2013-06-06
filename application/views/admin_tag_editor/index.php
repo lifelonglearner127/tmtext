@@ -1,4 +1,7 @@
 <script type="text/javascript">
+    $(function() {
+        $('head').find('title').text('Tag Editor');
+    });
     $("select[name='category']").trigger("change");
     $("#tageditor_description").trigger("ready");
 </script>

@@ -1,4 +1,9 @@
 <script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
+<script type="text/javascript">
+	$(document).ready(function() {
+		$('head').find('title').text('Validate');
+	});
+</script>
 <div class="row-fluid">
 	<?php
 		echo form_open('editor/attributes', array('id'=>'attributesForm')).form_close();
