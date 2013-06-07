@@ -286,7 +286,22 @@ jQuery(document).ready(function($) {
 
         var $form = $( this ),
             term = $form.find( 'input[name="s"]' ).val(),
+            form_id = $form.find("input[type='hidden'][id='form_id']").val('validate_form'),
             url = $form.attr( 'action' );
+
+        // --- record search term to cookie storage (start)
+        if(typeof(form_id) !== 'undefined' && form_id !== null && form_id !== "") {
+            if(term !== "") {
+                var cookie_search_str = $.cookie('validate_search_str');
+                if(typeof(cookie_search_str) !== 'undefined') {
+                    $.removeCookie('validate_search_str', { path: '/' }); // destroy 
+                    $.cookie('validate_search_str', term, { expires: 7, path: '/' }); // re-create
+                } else {
+                    $.cookie('validate_search_str', term, { expires: 7, path: '/' }); // create
+                }
+            }
+        }
+        // --- record search term to cookie storage (end)
 
         var posting = $.post( url, { s: term } );
 

@@ -144,7 +144,7 @@
         if(s !== "") {
             var cookie_search_str = $.cookie('com_intel_search_str');
             if(typeof(cookie_search_str) !== 'undefined') {
-                $.removeCookie('com_intel_search_str', { path: '/' })// destroy 
+                $.removeCookie('com_intel_search_str', { path: '/' }); // destroy 
                 $.cookie('com_intel_search_str', s, { expires: 7, path: '/' }); // re-create
             } else {
                 $.cookie('com_intel_search_str', s, { expires: 7, path: '/' }); // create
