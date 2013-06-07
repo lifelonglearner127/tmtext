@@ -2,6 +2,22 @@
     $('head').find('title').text('Competitive Intelligence');
     $("#compare_text").focus();
     
+    // ---- search string cookie (auto mode search launcher) (start)
+    var auto_mode_search_str = "";
+    var cookie_search_str = $.cookie('com_intel_search_str');
+    if(typeof(cookie_search_str) !== 'undefined' && cookie_search_str !== null && cookie_search_str !== "") {
+        auto_mode_search_str = cookie_search_str;
+    }
+    if(auto_mode_search_str !== "") {
+        $("#compare_text").val(auto_mode_search_str);
+        $("#an_search").attr('disabled', true);
+        setTimeout(function() {
+            $("#measureFormMetrics").trigger('submit');
+            $("#an_search").removeAttr('disabled');
+        }, 2500);
+    }
+    // ---- search string cookie (auto mode search launcher) (end)
+
     var measureAnalyzerAttrBaseUrl = "<?php echo base_url(); ?>index.php/measure/attributesmeasure";
 
     // --- GRIDS (START)
@@ -10,7 +26,6 @@
     function getSearchProductAttributes(s) {
         if(s !== "") {
             var analyzer_attr = $.post(measureAnalyzerAttrBaseUrl, { s: s }, 'json').done(function(data) {
-                console.log('Attributes: ', data['search_results']);
                 var res = 'no attributes';
                 var count = 0;
                 if(data['search_results'] !== "") {
@@ -41,7 +56,6 @@
     }
 
     function switchToListView() {
-        console.log("LIST VIEW");
         viewIconsReset();
         $('#grid_sw_list').addClass('btn-primary');
         $('#grid_sw_list > i').addClass('icon-white');
@@ -53,7 +67,6 @@
     }
 
     function switchToGridView() {
-        console.log('GRID VIEW');
         viewIconsReset();
         $('#grid_sw_grid').addClass('btn-primary');
         $('#grid_sw_grid > i').addClass('icon-white');
@@ -127,6 +140,17 @@
         var s = $.trim($("#compare_text").val());
         var sl = $.trim($(".dd-selected-value").val());
         var cat = $("#cats_an").val();
+        // --- record search term to cookie storage (start)
+        if(s !== "") {
+            var cookie_search_str = $.cookie('com_intel_search_str');
+            if(typeof(cookie_search_str) !== 'undefined') {
+                $.removeCookie('com_intel_search_str', { path: '/' })// destroy 
+                $.cookie('com_intel_search_str', s, { expires: 7, path: '/' }); // re-create
+            } else {
+                $.cookie('com_intel_search_str', s, { expires: 7, path: '/' }); // create
+            }
+        }
+        // --- record search term to cookie storage (end)
         var searcher_all = $.post(editorSearchAllBaseUrl, { s: s, sl: sl, cat: cat }, 'html').done(function(data) {
             $("#an_products_box").html(data);
             $("#an_products_box").fadeOut();
