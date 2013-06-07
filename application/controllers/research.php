@@ -77,6 +77,11 @@ class Research extends MY_Controller {
         }
     }
 
+    public function research_batches(){
+        $this->data['batches_list'] = $this->batches_list();
+        $this->render();
+    }
+
     public function new_batch()
     {
         $this->load->model('batches_model');
