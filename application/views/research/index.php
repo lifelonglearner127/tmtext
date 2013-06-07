@@ -12,25 +12,17 @@ $(document).ready(function() {
     $("#research, #research_edit" ).draggable({
         containment: "#main",
         drag: function( event, ui ) {
-            if(ui.originalPosition.left > ui.position.left){
+            if(ui.originalPosition.left-100 > ui.position.left){
                 if($(this).attr('id')=='research_edit'){
-                    $(this).addClass('left_pos');
-                    $('#research').css({'float':'right'});
+                    $('#research').css({'left':'50%'});
                 } else {
-                    $(this).addClass('left_pos');
-                    $(this).css({'float':'left'});
-                    $('#research_edit').addClass('left_pos');
-                    $('#research_edit').css({'float':'right'});
+                    $('#research_edit').css({'left':'0%'});
                 }
             } else {
                 if($(this).attr('id')=='research_edit'){
-                    $(this).addClass('left_pos');
-                    $('#research').css({'float':'left'});
+                    $('#research').css({'left':'0%'});
                 } else {
-                    $(this).addClass('left_pos');
-                    $(this).css({'float':'right'});
-                    $('#research_edit').addClass('left_pos');
-                    $('#research_edit').css({'float':'right'});
+                    $('#research_edit').css({'left':'-50%'});
                 }
             }
         }

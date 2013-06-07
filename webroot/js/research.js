@@ -24,8 +24,8 @@ function getSearchResult(){
                 desc +=  '<li id="'+data[i].imported_data_id+'_long_desc">'+data[i].long_description+'</li>';
 
             }
-            $('.main span:first-child').css({'width':'182px'});
             $('ul#research_products').append(str);
+            $('.main span:first-child').css({'width':$('ul#research_products li:first-child span:first-child').css('width')});
             $('ul#product_descriptions').append(desc);
             $('#research_products li:eq(0)').trigger('click');
         }

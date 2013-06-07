@@ -5,7 +5,17 @@
     </ul>
     <div class="tab-content">
         <div id="research_tab2" class="tab-pane active">
-            Batches
+            <table>
+                <thead>
+                   <tr>
+                       <td>Date/time</td>
+                       <td>User</td>
+                       <td>User</td>
+                       <td>Description</td>
+                   </tr>
+                </thead>
+            </table>
+
         </div>
     </div>
 </div>
