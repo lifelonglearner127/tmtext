@@ -169,7 +169,7 @@ class Research extends MY_Controller {
         $this->load->database();
         $query = $this->db->where('batch_id', $batch_id)->get('research_data');
         $this->load->helper('csv');
-        query_to_csv($query, TRUE, 'export.csv');
+        query_to_csv($query, TRUE, $this->input->get('batch').'.csv');
     }
 
 }
