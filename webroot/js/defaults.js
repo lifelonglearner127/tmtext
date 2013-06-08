@@ -542,7 +542,7 @@ jQuery(document).ready(function($) {
             }
         }
         console.log(sentence);
-        console.log(el);.
+        console.log(el);
         sentence.push(el);
         return false;
     });
