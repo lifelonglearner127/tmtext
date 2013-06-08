@@ -52,7 +52,7 @@ var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist', { }
         }
         ddData_first.push(mid);
     };
-});
+});variable array
 
 function refreshHeaderTitle(t) {
     $.post("/editor/refreshheader", { t: t}, 'html').done(function(f) {
@@ -525,6 +525,7 @@ jQuery(document).ready(function($) {
     });
 
     $(document).on("click", "button#use", function(){
+        console.log(sentence);
         if($('#textarea ul').html() != undefined) {
             $('.new_product #textarea li').each(function(){
                 if($(this).find('span').text()!='' && $(this).find('span').text()!=undefined){
