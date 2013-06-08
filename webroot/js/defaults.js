@@ -525,7 +525,6 @@ jQuery(document).ready(function($) {
     });
 
     $(document).on("click", "button#use", function(){
-        console.log(sentence);
         if($('#textarea ul').html() != undefined) {
             $('.new_product #textarea li').each(function(){
                 if($(this).find('span').text()!='' && $(this).find('span').text()!=undefined){
@@ -542,8 +541,6 @@ jQuery(document).ready(function($) {
                 el = $('.new_product #textarea').text();
             }
         }
-        console.log(sentence);
-        console.log(el);
         sentence.push(el);
         return false;
     });

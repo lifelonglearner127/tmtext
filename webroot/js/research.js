@@ -1,4 +1,4 @@
-var sentence = '';
+var research_sentence = '';
 
 function getSearchResult(){
     $.post(base_url + 'index.php/research/search_results', { 'search_data': $('input[name="research_text"]').val(),
@@ -149,26 +149,26 @@ $(document).ready(function () {
         var txt = $(this).text();
 
         if($('input[name="primary"]').val()==''){
-            sentence = 'primary';
+            research_sentence = 'primary';
             $('input[name="primary"]').val(txt)
         } else if($('input[name="primary"]').val()!='' && $('input[name="secondary"]').val()==''){
-            sentence = 'secondary';
+            research_sentence = 'secondary';
             $('input[name="secondary"]').val(txt);
         } else if($('input[name="primary"]').val()!='' && $('input[name="secondary"]').val()!=''
             && $('input[name="tertiary"]').val()==''){
-            sentence = 'tertiary';
+            research_sentence = 'tertiary';
             $('input[name="tertiary"]').val(txt);
         } else if($('input[name="tertiary"]').val()!='' && $('input[name="primary"]').val()!=''
             && $('input[name="secondary"]').val()!=''){
-            if(sentence=='tertiary'){
+            if(research_sentence=='tertiary'){
                 $('input[name="primary"]').val(txt);
-                sentence = 'primary';
-            } else if(sentence == 'primary'){
+                research_sentence = 'primary';
+            } else if(research_sentence == 'primary'){
                 $('input[name="secondary"]').val(txt);
-                sentence = 'secondary';
-            } else if(sentence == 'secondary'){
+                research_sentence = 'secondary';
+            } else if(research_sentence == 'secondary'){
                 $('input[name="tertiary"]').val(txt);
-                sentence = 'tertiary';
+                research_sentence = 'tertiary';
             }
         }
     });
