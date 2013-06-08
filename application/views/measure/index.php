@@ -23,6 +23,22 @@
     // --- GRIDS (START)
     var grid_status = 'list';
 
+    function getSearchProductAttributeStack(s) {
+        var analyzer_attr = $.post(measureAnalyzerAttrBaseUrl, { s: s }, 'json').done(function(data) {
+            var res = {
+                'search': [],
+                'count': 0
+            };
+            if(data['search_results'] !== "") {
+                var incoming = data['search_results'];
+                var sr_stack = incoming.split("<br />");
+                if(sr_stack.length > 0) res.search = sr_stack;
+                res.count = sr_stack.length;
+            }
+            console.log('Attributes results: ', res);
+        });
+    }
+
     function getSearchProductAttributes(s) {
         if(s !== "") {
             var analyzer_attr = $.post(measureAnalyzerAttrBaseUrl, { s: s }, 'json').done(function(data) {
@@ -89,7 +105,7 @@
         $("#grid_se_section_1 .long_desc_con, #grid_se_section_2 .long_desc_con, #grid_se_section_3 .long_desc_con").text(short_desc);
         $(".gr_seo_short_ph").html(seo_short);
         $(".gr_seo_long_ph").html(seo_long);
-        getSearchProductAttributes($.trim($("#compare_text").val()));
+        // getSearchProductAttributes($.trim($("#compare_text").val()));
         // --- DEMO DATA FILL (END)
     }
     // --- GRIDS (END)
@@ -156,6 +172,7 @@
             $("#an_products_box").fadeOut();
             $("#an_products_box").fadeIn();
         });
+        if(s !== "") getSearchProductAttributeStack(s);
         return false;
     }
 
