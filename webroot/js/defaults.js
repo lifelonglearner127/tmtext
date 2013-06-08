@@ -52,7 +52,7 @@ var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist', { }
         }
         ddData_first.push(mid);
     };
-});variable array
+});
 
 function refreshHeaderTitle(t) {
     $.post("/editor/refreshheader", { t: t}, 'html').done(function(f) {
