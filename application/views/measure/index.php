@@ -32,10 +32,17 @@
             if(data['search_results'] !== "") {
                 var incoming = data['search_results'];
                 var sr_stack = incoming.split("<br />");
+                // --- map attributes array to clean it up (start)
+                sr_stack = $.map(sr_stack, function(val, index) {
+                    val = val.replace(/\n/g, "")
+                    val = val.replace(/\s+/g, ' ');
+                    return val;
+                });
+                // --- map attributes array to clean it up (end) 
                 if(sr_stack.length > 0) res.search = sr_stack;
                 res.count = sr_stack.length;
             }
-            console.log('Attributes results: ', res);
+            // console.log('Attributes results: ', res);
         });
     }
 
@@ -290,7 +297,7 @@
     });
 
 </script>
-<!-- <div class="main_content_other"></div> -->
+<!-- <div class="main_content_other"></div> UN40ES6500 -->
 <div class="main_content_editor">
 <div class="row-fluid">
     <?php // echo form_open('', array('id'=>'measureFormMetrics')); ?>
