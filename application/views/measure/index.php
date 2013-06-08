@@ -23,43 +23,64 @@
     // --- GRIDS (START)
     var grid_status = 'list';
 
-    function getSearchProductAttributeStack(s) {
-        var analyzer_attr = $.post(measureAnalyzerAttrBaseUrl, { s: s }, 'json').done(function(data) {
-            var res = {
-                'search': [],
-                'count': 0
-            };
-            if(data['search_results'] !== "") {
-                var incoming = data['search_results'];
-                var sr_stack = incoming.split("<br />");
-                // --- map attributes array to clean it up (start)
-                sr_stack = $.map(sr_stack, function(val, index) {
-                    val = val.replace(/\n/g, "")
-                    val = val.replace(/\s+/g, ' ');
-                    return val;
-                });
-                // --- map attributes array to clean it up (end) 
-                if(sr_stack.length > 0) res.search = sr_stack;
-                res.count = sr_stack.length;
-            }
-            // console.log('Attributes results: ', res);
-        });
-    }
-
-    function getSearchProductAttributes(s) {
+    function startGridsBoxesContentAnalyzer(s) {
         if(s !== "") {
+            $(".grid_se_section .c_content").hide();
+            $(".preloader_grids_box").show();
             var analyzer_attr = $.post(measureAnalyzerAttrBaseUrl, { s: s }, 'json').done(function(data) {
-                var res = 'no attributes';
-                var count = 0;
+                var res = {
+                    'search': [],
+                    'count': 0
+                };
                 if(data['search_results'] !== "") {
-                    res = data['search_results'];
-                    count = res.split("<br />").length;
+                    var incoming = data['search_results'];
+                    var sr_stack = incoming.split("<br />");
+                    // --- map attributes array to clean it up (start)
+                    sr_stack = $.map(sr_stack, function(val, index) {
+                        val = val.replace(/\n/g, "")
+                        val = val.replace(/\s+/g, ' ');
+                        return val;
+                    });
+                    // --- map attributes array to clean it up (end) 
+                    if(sr_stack.length > 0) res.search = sr_stack;
+                    res.count = sr_stack.length;
                 }
-                $("#grid_se_section_1 .gr_attr_count, #grid_se_section_2 .gr_attr_count, #grid_se_section_3 .gr_attr_count").text(count);
-                $("#grid_se_section_1 .gr_attr_con, #grid_se_section_2 .gr_attr_con, #grid_se_section_3 .gr_attr_con").html(res);
+
+                // next analyzer step (using getted attributes) (start)
+                console.log("MIDDLEWARE: ", res);
+                // next analyzer step (using getted attributes) (end)
+
+                // output attributes list (rendering) (start)
+                $("#grid_se_section_1 .gr_attr_count, #grid_se_section_2 .gr_attr_count, #grid_se_section_3 .gr_attr_count").text(res.count);
+                if(res.search.length > 0) {
+                    var attr_output = "";
+                    for(var i = 0; i < res.search.length; i++) {
+                        attr_output += res.search[i] + "<br/>";
+                    }
+                    $("#grid_se_section_1 .gr_attr_con, #grid_se_section_2 .gr_attr_con, #grid_se_section_3 .gr_attr_con").html(attr_output);
+                }
+                // output attributes list (rendering) (end)
+
+                $(".preloader_grids_box").hide();
+                $(".grid_se_section .c_content").show();
             });
         }
     }
+
+    // function getSearchProductAttributes(s) {
+    //     if(s !== "") {
+    //         var analyzer_attr = $.post(measureAnalyzerAttrBaseUrl, { s: s }, 'json').done(function(data) {
+    //             var res = 'no attributes';
+    //             var count = 0;
+    //             if(data['search_results'] !== "") {
+    //                 res = data['search_results'];
+    //                 count = res.split("<br />").length;
+    //             }
+    //             $("#grid_se_section_1 .gr_attr_count, #grid_se_section_2 .gr_attr_count, #grid_se_section_3 .gr_attr_count").text(count);
+    //             $("#grid_se_section_1 .gr_attr_con, #grid_se_section_2 .gr_attr_con, #grid_se_section_3 .gr_attr_con").html(res);
+    //         });
+    //     }
+    // }
 
     function viewIconsReset() {
         $('#grid_sw_list, #grid_sw_grid').removeClass('btn-primary');
@@ -112,8 +133,9 @@
         $("#grid_se_section_1 .long_desc_con, #grid_se_section_2 .long_desc_con, #grid_se_section_3 .long_desc_con").text(short_desc);
         $(".gr_seo_short_ph").html(seo_short);
         $(".gr_seo_long_ph").html(seo_long);
-        // getSearchProductAttributes($.trim($("#compare_text").val()));
         // --- DEMO DATA FILL (END)
+        $.scrollTo("#compet_area_grid", 400);
+        startGridsBoxesContentAnalyzer($.trim($("#compare_text").val()));
     }
     // --- GRIDS (END)
 
@@ -179,7 +201,6 @@
             $("#an_products_box").fadeOut();
             $("#an_products_box").fadeIn();
         });
-        if(s !== "") getSearchProductAttributeStack(s);
         return false;
     }
 
@@ -432,10 +453,13 @@
                 </select> -->
             </div>
             <div class='c'>
-                <span class='analysis_content_head'>Short Description (<span class='short_desc_wc'>0 words</span>):</span>
-                <p class='short_desc_con'>none</p>
-                <span class='analysis_content_head'>Long Description (<span class='long_desc_wc'>0 words</span>):</span>
-                <p class='long_desc_con'>none</p>
+                <img class='preloader_grids_box' src="<?php echo base_url() ?>/img/grids_boxes_preloader.gif">
+                <div class='c_content'>
+                    <span class='analysis_content_head'>Short Description (<span class='short_desc_wc'>0 words</span>):</span>
+                    <p class='short_desc_con'>none</p>
+                    <span class='analysis_content_head'>Long Description (<span class='long_desc_wc'>0 words</span>):</span>
+                    <p class='long_desc_con'>none</p>
+                </div>
             </div>
             <div class='grid_seo'>
                 <ul>
@@ -469,10 +493,13 @@
                 </select> -->
             </div>
             <div class='c'>
-                <span class='analysis_content_head'>Short Description (<span class='short_desc_wc'>0 words</span>):</span>
-                <p class='short_desc_con'>none</p>
-                <span class='analysis_content_head'>Long Description (<span class='long_desc_wc'>0 words</span>):</span>
-                <p class='long_desc_con'>none</p>
+                <img class='preloader_grids_box' src="<?php echo base_url() ?>/img/grids_boxes_preloader.gif">
+                <div class='c_content'>
+                    <span class='analysis_content_head'>Short Description (<span class='short_desc_wc'>0 words</span>):</span>
+                    <p class='short_desc_con'>none</p>
+                    <span class='analysis_content_head'>Long Description (<span class='long_desc_wc'>0 words</span>):</span>
+                    <p class='long_desc_con'>none</p>
+                </div>
             </div>
             <div class='grid_seo'>
                 <ul>
@@ -506,10 +533,13 @@
                 </select> -->
             </div>
             <div class='c'>
-                <span class='analysis_content_head'>Short Description (<span class='short_desc_wc'>0 words</span>):</span>
-                <p class='short_desc_con'>none</p>
-                <span class='analysis_content_head'>Long Description (<span class='long_desc_wc'>0 words</span>):</span>
-                <p class='long_desc_con'>none</p>
+                <img class='preloader_grids_box' src="<?php echo base_url() ?>/img/grids_boxes_preloader.gif">
+                <div class='c_content'>
+                    <span class='analysis_content_head'>Short Description (<span class='short_desc_wc'>0 words</span>):</span>
+                    <p class='short_desc_con'>none</p>
+                    <span class='analysis_content_head'>Long Description (<span class='long_desc_wc'>0 words</span>):</span>
+                    <p class='long_desc_con'>none</p>
+                </div>
             </div>
             <div class='grid_seo'>
                 <ul>

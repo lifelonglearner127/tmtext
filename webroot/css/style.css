@@ -152,6 +152,15 @@ span[class*="hilite"] { background: yellow; }
 	width: 280px;
 	padding: 5px;
 }
+#compet_area_grid .grid_se_section .c .preloader_grids_box {
+	display: block;
+	margin: 0 auto;
+	margin-top: 15px;
+	margin-bottom: 15px; 
+}
+#compet_area_grid .grid_se_section .c .c_content {
+	display: none;
+}
 .grid_seo ul {
 	margin-left: 0px;
 	margin-top: 15px;
