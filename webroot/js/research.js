@@ -16,8 +16,8 @@ function getSearchResult(){
             var str = '';
             var desc = '';
             for(var i=0; i < data.length; i++){
-                str += '<li id="'+data[i].imported_data_id+'"><span>'+data[i].product_name.substr(0, 23)+
-                    '...</span><span>'+data[i].url.substr(0, 27)+'...</span></li>';
+                str += '<li id="'+data[i].imported_data_id+'"><span class="product_name">'+data[i].product_name.substr(0, 23)+
+                    '...</span><span class="url">'+data[i].url.substr(0, 27)+'...</span></li>';
                 desc +=  '<li id="'+data[i].imported_data_id+'_name">'+data[i].product_name+'</li>';
                 desc +=  '<li id="'+data[i].imported_data_id+'_url">'+data[i].url+'</li>';
                 desc +=  '<li id="'+data[i].imported_data_id+'_desc">'+data[i].description+'</li>';
@@ -173,7 +173,7 @@ $(document).ready(function () {
         }
     });
 
-    $(document).on("click", '#research_products li', function(){
+    $(document).on("click", '#research_products li', function(e){
         $('input[name="product_name"]').val('');
         $('input[name="meta_title"]').val('');
         $('input[name="meta_keywords"]').val('');
@@ -186,6 +186,22 @@ $(document).ready(function () {
         $('input[name="revision"]').val('');
         if($(this).attr('id')!='' && $(this).attr('id')!=undefined){
             var id = $(this).attr('id');
+            var name_txt = $('ul#product_descriptions li#'+id+'_name').text();
+            var url_txt = $('ul#product_descriptions li#'+id+'_url').text();
+            var $target = $(e.target);
+            if( $target.is("span.url")) {
+                if($.trim($target.text()) == $.trim(url_txt)){
+                    $target.text(url_txt.substr(0, 27)+'...');
+                }else{
+                    $target.text(url_txt);
+                }
+            } else if( $target.is("span.product_name")) {
+                if($.trim($target.text()) == $.trim(name_txt)){
+                    $target.text(name_txt.substr(0, 23)+'...');
+                }else{
+                    $target.text(name_txt);
+                }
+            }
             $("#research_products li").each(function(){
                 $(this).css({'background':'none'});
                 $(this).removeClass('current_selected');
@@ -212,9 +228,9 @@ $(document).ready(function () {
                         short_desc_an = data[0].short_description;
                         long_desc_an = data[0].long_description;
                     } else {
-                        $('input[name="product_name"]').val($('ul#product_descriptions li#'+id+'_name').text());
-                        $('input[name="meta_title"]').val($('ul#product_descriptions li#'+id+'_name').text());
-                        $('input[name="url"]').val($('ul#product_descriptions li#'+id+'_url').text());
+                        $('input[name="product_name"]').val(name_txt);
+                        $('input[name="meta_title"]').val(name_txt);
+                        $('input[name="url"]').val(url_txt);
 
                         short_desc_an = $('ul#product_descriptions li#'+id+'_desc').text();
                         long_desc_an = $('ul#product_descriptions li#'+id+'_long_desc').text();
