@@ -541,6 +541,8 @@ jQuery(document).ready(function($) {
                 el = $('.new_product #textarea').text();
             }
         }
+        console.log(sentence);
+        console.log(el);.
         sentence.push(el);
         return false;
     });
