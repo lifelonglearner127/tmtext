@@ -246,6 +246,20 @@ jQuery(document).ready(function($) {
 
     wrapper();
 
+    // --- destroy search strings from cookie ('Competitive Intelligence' and 'Validate' tabs) (start)
+    $(window).unload(function() {
+        var com_intel_search_str = $.cookie('com_intel_search_str');
+        if(typeof(com_intel_search_str) !== 'undefined' && com_intel_search_str !== null && com_intel_search_str !== "") {
+            $.removeCookie('com_intel_search_str', { path: '/' });
+        }
+
+        var validate_search_str = $.cookie('validate_search_str');
+        if(typeof(validate_search_str) !== 'undefined' && validate_search_str !== null && validate_search_str !== "") {
+            $.removeCookie('validate_search_str', { path: '/' });
+        }
+    });
+    // --- destroy search strings from cookie ('Competitive Intelligence' and 'Validate' tabs) (end)
+
     $(document).on("keyup change", '.new_product #textarea', function() {
         changeTextareaVal();
     });
