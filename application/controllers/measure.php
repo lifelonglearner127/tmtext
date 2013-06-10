@@ -101,18 +101,10 @@ class Measure extends MY_Controller {
         $data = array(
             'search_results' => array()
         );
-        $opt_ids = array();
-        if($cat_id != 'all') {
-            $this->load->model('imported_data_model');
-            $opt = $this->imported_data_model->getByCateggoryId($cat_id);
-            if(count($opt) > 0) {
-                foreach ($opt as $key => $value) {
-                    $opt_ids[] = $value->id;
-                }
-            }
-        }
-        $data_import = $this->imported_data_parsed_model->getByValueLikeGroupCat($s, $sl, $opt_ids);
-     	if (empty($data_import)) {
+
+        $data_import = $this->imported_data_parsed_model->getData($s, $sl, $cat_id);
+
+        if (empty($data_import)) {
             $this->load->library('PageProcessor');
 			if ($this->pageprocessor->isURL($this->input->post('s'))) {
 				$parsed_data = $this->pageprocessor->get_data($this->input->post('s'));
