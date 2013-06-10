@@ -3,14 +3,16 @@
 	<script type='text/javascript'>
 		$(document).ready(function () {
 
-			$( "#an_products_box").sortable({
+			$("#an_products_box").sortable({
 	            connectWith: ".connectedSortable"
 	        });
 	        $(document).on("click", '#products li', function() {
 	        	$("#products li").each(function(){
                     $(this).css({'background':'none'});
+                    $(this).attr('data-status', 'standart');
                 });
                 $(this).css({'background':'#CAEAFF'});
+                $(this).attr('data-status', 'selected');
                 // ---- START DISTINCT PRODUCT METRICS (START)
                 var im_data_id = $(this).attr('data-value');
                 startMeasureCompare(im_data_id);
@@ -112,7 +114,7 @@
 		</ul>
 		<ul id="products" class='products_an_search'>
 			<?php foreach($search_results as $k => $v) { ?>
-				<li data-value="<?php echo $v['imported_data_id']; ?>">
+				<li data-status='standart' data-value="<?php echo $v['imported_data_id']; ?>">
 					<span><?php echo $v['product_name']; ?></span>
 					<span><?php echo $v['url']; ?></span>
 				</li>

@@ -1,7 +1,7 @@
 <script type="text/javascript">
     $('head').find('title').text('Competitive Intelligence');
     $("#compare_text").focus();
-    // var editorGridViewBaseUrl = base_url + 'index.php/measure/gridview';
+    var editorGridViewBaseUrl = base_url + 'index.php/measure/gridview';
     // ---- ajax customers list loader for grids view (start)
     function gridsCustomersListLoader() {
         var ddData_grids_1 = [];
@@ -183,7 +183,7 @@
                 }
 
                 // next analyzer step (using getted attributes) (start)
-                console.log("MIDDLEWARE: ", res);
+                console.log("MIDDLEWARE (SELECTED ITEM ATTRIBUTES): ", res);
                 // next analyzer step (using getted attributes) (end)
 
                 // output attributes list (rendering) (start)
@@ -252,8 +252,9 @@
         $('#grid_sw_grid > i').addClass('icon-white');
         $("#attributes_metrics ul:not(.grid_switcher)").hide();
         $("#measure_product_ind_wrap").hide();
-        // AJAX CALL TO GET GRID VIEW CONTENT (START)
-        // var grid_view = $.post(editorGridViewBaseUrl, { s: $.trim($("#compare_text").val()) }, 'html').done(function(data) {});
+        // AJAX CALL TO GET GRID VIEW CONTENT (START) 
+        // var im_data_id = $("#an_sort_search_box > #products > li[data-status='selected']").attr('data-value');
+        // var grid_view = $.post(editorGridViewBaseUrl, { im_data_id: im_data_id }, 'html').done(function(data) { console.log("EXPERIMENTAL GRID VIEW: ", data); });
         // AJAX CALL TO GET GRID VIEW CONTENT (END)
         $("#compet_area_grid").show();
         grid_status = 'grid';
@@ -337,9 +338,7 @@
         }
         // --- record search term to cookie storage (end)
         var searcher_all = $.post(editorSearchAllBaseUrl, { s: s, sl: sl, cat: cat }, 'html').done(function(data) {
-            console.log(data);
             $("#an_products_box").html(data);
-            console.log($('ul#products li:first-child span:first-child').css('width'));
             $('.main span:first-child').css({'width':'232px'});
             $("#an_products_box").fadeOut();
             $("#an_products_box").fadeIn();

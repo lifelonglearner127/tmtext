@@ -44,13 +44,24 @@ class Measure extends MY_Controller {
         return $output;
     }
 
-    // public function gridview() {
-    //     $s = $this->input->post('s');
-    //     $data = array(
-    //         'search_results' => array()
-    //     );
-    //     $this->load->view('measure/gridview', $data);
-    // }
+    public function gridview() {
+        $im_data_id = $this->input->post('im_data_id');
+        if($im_data_id !== null && is_numeric($im_data_id)) {
+            $data = array(
+                'im_data_id' => $im_data_id
+            );
+
+            // --- GET SELECTED RPODUCT DATA (START)
+
+            // --- GET SELECTED RPODUCT DATA (END)
+
+            // --- GET SELECTED RPODUCT ATTRIBUTES (START)
+
+            // --- GET SELECTED RPODUCT ATTRIBUTES (END)
+
+        }
+        $this->load->view('measure/gridview', $data);
+    }
 
     public function getcustomerslist() {
         $this->load->model('customers_model');
