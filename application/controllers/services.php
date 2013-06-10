@@ -13,7 +13,7 @@ class Services extends REST_Controller {
   		));
 	}
 
-    function get_product_data_get()
+    function get_data_from_url_get()
     {
     	$url = urldecode($this->get('url'));
 
@@ -22,5 +22,17 @@ class Services extends REST_Controller {
 
 		$this->response($data);
     }
+
+    function get_data_from_text_post()
+    {
+    	$text = $this->post('text');
+
+		$this->load->library('PageProcessor');
+		$this->pageprocessor->loadHtml($text);
+		$data = $this->pageprocessor->process();
+
+		$this->response($data);
+    }
+
 
 }

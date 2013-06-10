@@ -143,7 +143,7 @@ class PageProcessor {
 		return array(
 			'product_name' => $title['#text'][0],
 			'description' => $description['#text'][0],
-			'description_long' => $descriptionLong['#text'][0]
+			'long_description' => $descriptionLong['#text'][0]
 		);
 	}
 
@@ -167,8 +167,8 @@ class PageProcessor {
 
 		return array(
 			'product_name' => $title['#text'][0],
-			'description' => $description['#text'][0],
-			'description_short' => $descriptionShort['#text'][0]
+			'long_description' => $description['#text'][0],
+			'description' => $descriptionShort['#text'][0]
 		);
 	}
 
@@ -189,6 +189,97 @@ class PageProcessor {
 		);
 	}
 
+	public function process_parties(){
+		foreach($this->nokogiri->get('div.panel div.section-container div.readMore') as $item) {
+			$description[] = $item['#text'][0];
+		}
+		$description = implode(' ',$description);
+
+		foreach($this->nokogiri->get('h1.mainHeading') as $item) {
+			$title = $item;
+		}
+
+		return array(
+			'product_name' => $title['#text'][0],
+			'description' => $description,
+		);
+	}
+
+	public function process_overstock(){
+		foreach($this->nokogiri->get('#mainCenter_priceDescWrap ul') as $item) {
+			$description[] = $item['#text'][0];
+		}
+		$description = implode(' ',$description);
+
+		foreach($this->nokogiri->get('#prod_tabs #tab-Wrapper #description-text #details_descFull') as $item) {
+			$description_long[] = $item['#text'][0];
+		}
+		foreach($this->nokogiri->get('#prod_tabs #tab-Wrapper #description-text #details_descFull ul li') as $item) {
+			$description_long[] = $item['#text'][0];
+		}
+
+		$description_long = implode(' ',$description_long);
+
+		foreach($this->nokogiri->get('#prod_mainCenter div h1') as $item) {
+			$title = $item;
+		}
+
+		return array(
+			'product_name' => $title['#text'][0],
+			'description' => $description,
+			'long_description' => $description_long
+		);
+	}
+
+	public function process_officemax(){
+		foreach($this->nokogiri->get('#productTabs .tabContentWrapper .details') as $item) {
+			$description[] = $item['#text'][0];
+		}
+		$description = implode(' ',$description);
+
+		foreach($this->nokogiri->get('#productTabs .tabContentWrapper .details ul.featuressku li span') as $item) {
+			$description_long[] = $item['#text'][0];
+		}
+		$description_long = implode(' ',$description_long);
+
+		foreach($this->nokogiri->get('#main_sku_wrap .skuHeading') as $item) {
+			$title = $item;
+		}
+
+		return array(
+			'product_name' => $title['#text'][0],
+			'description' => $description,
+			'long_description' => $description_long
+		);
+	}
+
+	public function process_officedepot(){
+		foreach($this->nokogiri->get('div.skuHeading longBulletTop i') as $item) {
+			$description[] = $item['#text'][0];
+		}
+		foreach($this->nokogiri->get('div.skuHeading longBulletTop ul li') as $item) {
+			$description[] = $item['#text'][0];
+		}
+		$description = implode(' ',$description);
+
+		foreach($this->nokogiri->get('#productTabs .sku_desc b') as $item) {
+			$description_long[] = $item['#text'][0];
+		}
+		foreach($this->nokogiri->get('#productTabs .sku_desc ul li b') as $item) {
+			$description_long[] = $item['#text'][0];
+		}
+		$description_long = implode(' ',$description_long);
+
+		foreach($this->nokogiri->get('div.skuHeading h1') as $item) {
+			$title = $item;
+		}
+
+		return array(
+			'product_name' => $title['#text'][0],
+			'description' => $description,
+			'long_description' => $description_long
+		);
+	}
 }
 
 ?>
