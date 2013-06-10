@@ -1,7 +1,7 @@
 <script type="text/javascript">
     $('head').find('title').text('Competitive Intelligence');
     $("#compare_text").focus();
-    
+    // var editorGridViewBaseUrl = base_url + 'index.php/measure/gridview';
     // ---- ajax customers list loader for grids view (start)
     function gridsCustomersListLoader() {
         var ddData_grids_1 = [];
@@ -252,6 +252,9 @@
         $('#grid_sw_grid > i').addClass('icon-white');
         $("#attributes_metrics ul:not(.grid_switcher)").hide();
         $("#measure_product_ind_wrap").hide();
+        // AJAX CALL TO GET GRID VIEW CONTENT (START)
+        // var grid_view = $.post(editorGridViewBaseUrl, { s: $.trim($("#compare_text").val()) }, 'html').done(function(data) {});
+        // AJAX CALL TO GET GRID VIEW CONTENT (END)
         $("#compet_area_grid").show();
         grid_status = 'grid';
         // --- DEMO DATA FILL (START)

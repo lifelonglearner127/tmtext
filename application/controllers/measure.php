@@ -44,6 +44,14 @@ class Measure extends MY_Controller {
         return $output;
     }
 
+    // public function gridview() {
+    //     $s = $this->input->post('s');
+    //     $data = array(
+    //         'search_results' => array()
+    //     );
+    //     $this->load->view('measure/gridview', $data);
+    // }
+
     public function getcustomerslist() {
         $this->load->model('customers_model');
         $output = array();
