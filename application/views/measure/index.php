@@ -331,7 +331,11 @@
         $(".gr_seo_long_ph").html(seo_long);
         // --- DEMO DATA FILL (END)
         $.scrollTo("#compet_area_grid", 400);
-        startGridsBoxesContentAnalyzer($.trim($("#compare_text").val()));
+        // startGridsBoxesContentAnalyzer($.trim($("#compare_text").val()));
+        // --- TMP (in cause slow files attribtes fetch) (start)
+        $(".preloader_grids_box").hide();
+        $(".grid_se_section .c_content").show();
+        // --- TMP (in cause slow files attribtes fetch) (end)
         gridsCustomersListLoader();
     }
     // --- GRIDS (END)
