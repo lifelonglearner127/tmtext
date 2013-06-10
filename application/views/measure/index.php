@@ -337,7 +337,10 @@
         }
         // --- record search term to cookie storage (end)
         var searcher_all = $.post(editorSearchAllBaseUrl, { s: s, sl: sl, cat: cat }, 'html').done(function(data) {
+            console.log(data);
             $("#an_products_box").html(data);
+            console.log($('ul#products li:first-child span:first-child').css('width'));
+            $('.main span:first-child').css({'width':'232px'});
             $("#an_products_box").fadeOut();
             $("#an_products_box").fadeIn();
         });
