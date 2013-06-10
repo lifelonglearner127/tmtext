@@ -2,6 +2,62 @@
     $('head').find('title').text('Competitive Intelligence');
     $("#compare_text").focus();
     var editorGridViewBaseUrl = base_url + 'index.php/measure/gridview';
+    function ciCustomersGridsLoader() {
+        var ddData_grids_ci = [];
+        var customers_list_ci = $.post(base_url + 'index.php/measure/getcustomerslist', { }, 'json').done(function(c_data) {
+            var cl_arr = [];
+            cl_arr.push("All Sites");
+            for(i in c_data) {
+                cl_arr.push(c_data[i]);
+            }
+            for (var i = 0; i < cl_arr.length; i++) {
+                if(i == 0) {
+                    var mid = {
+                        text: cl_arr[i],
+                        value: "all",
+                        description: ""
+                    };
+                } else {
+                    var text_d = cl_arr[i];
+                    var value_d = cl_arr[i];
+                    var imageSrc_d = "";
+                    if(cl_arr[i] == 'bjs.com') {
+                        text_d = "";
+                        imageSrc_d = base_url + "img/bjs-logo.gif";
+                    } else if(cl_arr[i] == 'sears.com') {
+                        text_d = "";
+                        imageSrc_d = base_url + "img/sears-logo.png";
+                    } else if(cl_arr[i] == 'walmart.com') {
+                        text_d = "";
+                        imageSrc_d = base_url + "img/walmart-logo.png";
+                    } else if(cl_arr[i] == 'staples.com') {
+                        text_d = "";
+                        imageSrc_d = base_url + "img/staples-logo.png";
+                    } else if(cl_arr[i] == 'overstock.com') {
+                        text_d = "";
+                        imageSrc_d = base_url + "img/overstock-logo.png";
+                    } else if(cl_arr[i] == 'tigerdirect.com') {
+                        text_d = "";
+                        imageSrc_d = base_url + "img/tigerdirect-logo.png";
+                    }
+                    var mid = {
+                        text: text_d,
+                        value: value_d,
+                        description: "",
+                        imageSrc: imageSrc_d
+                    };
+                }
+                ddData_grids_ci.push(mid);
+                setTimeout(function(){
+                    $('#ci_dropdown').ddslick({
+                        data: ddData_grids_ci,
+                        width: 104,
+                        truncateDescription: true,
+                    })
+                }, 500);
+            };
+        });
+    }
     // ---- ajax customers list loader for grids view (start)
     function gridsCustomersListLoader() {
         var ddData_grids_1 = [];
@@ -452,6 +508,8 @@
 
     $(document).ready(function() {
         
+        ciCustomersGridsLoader();
+
         $("#measureFormMetrics").submit(function(e) {
             e.preventDefault();
             startMeasureCompareV2();
@@ -466,7 +524,8 @@
     <?php // echo form_open('', array('id'=>'measureFormMetrics')); ?>
     <form id="measureFormMetrics" accept-charset="utf-8" method="post" action="javascript:void(0)">
     <input type="text" name="compare_text" value="" id="compare_text" class="span8" placeholder=""/>
-    <div id="measure_dropdown" class="ddslick_dropdown dropdowns"></div>
+    <!-- <div id="measure_dropdown" class="ddslick_dropdown dropdowns"></div> -->
+    <div id="ci_dropdown"></div>
         <select class='cats_an_select' id='cats_an' name='cats_an'>
             <?php if(count($category_list) > 0) { ?>
                 <?php foreach ($category_list as $key => $value) { ?>
