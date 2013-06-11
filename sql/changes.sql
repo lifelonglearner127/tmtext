@@ -1,3 +1,30 @@
+# 06/10 Tatiana
+CREATE TABLE IF NOT EXISTS `research_box_position` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `position` varchar(100) CHARACTER SET utf8 NOT NULL,
+  `box_id` varchar(255) CHARACTER SET utf8 NOT NULL,
+  `width` int(11) NOT NULL DEFAULT '0',
+  `height` int(11) NOT NULL DEFAULT '0',
+  `created` datetime NOT NULL,
+  `modified` datetime NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM  DEFAULT CHARSET=latin1 AUTO_INCREMENT=9 ;
+
+--
+-- Dumping data for table `research_box_position`
+--
+
+INSERT INTO `research_box_position` (`id`, `user_id`, `position`, `box_id`, `width`, `height`, `created`, `modified`) VALUES
+(1, 4, 'left', 'main_research_box', 0, 0, '2013-06-11 01:40:16', '2013-06-11 01:40:16'),
+(2, 4, 'left', 'page_elements', 0, 0, '2013-06-11 01:40:32', '2013-06-11 01:40:32'),
+(3, 4, 'left', 'related_keywords', 0, 0, '2013-06-11 01:43:29', '2013-06-11 01:43:29'),
+(4, 4, 'left', 'seo_phrases', 0, 0, '2013-06-11 01:43:29', '2013-06-11 01:43:29'),
+(5, 4, 'right', 'main_edit_box', 0, 0, '2013-06-11 01:44:39', '2013-06-11 01:44:39'),
+(6, 4, 'right', 'keywords', 0, 0, '2013-06-11 01:44:39', '2013-06-11 01:44:39'),
+(7, 4, 'right', 'results', 0, 0, '2013-06-11 01:45:33', '2013-06-11 01:45:33'),
+(8, 4, 'right', 'descriptions', 0, 0, '2013-06-11 01:45:33', '2013-06-11 01:45:33');
+
 # 06/05 Tatiana
 CREATE TABLE IF NOT EXISTS `batches` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,

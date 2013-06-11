@@ -177,4 +177,11 @@ class Research extends MY_Controller {
         query_to_csv($query, TRUE, $this->input->get('batch').'.csv');
     }
 
+    function getBoxData(){
+        $this->load->model('research_box_position_model');
+        $data = $this->research_box_position_model->getDataByUserId();
+        $this->output->set_content_type('application/json')
+            ->set_output(json_encode($data));
+    }
+
 }
