@@ -174,8 +174,8 @@ $(document).ready(function() {
                     </li>
                     <li class="boxes mt_10" id="related_keywords">
                         <h3>Related Keywords</h3>
-                        <div class="boxes_content">
-                            <ul id="rel_keywords">
+                        <div class="boxes_content" >
+                            <ul id="rel_keywords" style="height: 170px; overflow: auto;">
                                 <li class="primary"><span>Televisions</span></li>
                                 <li class="secondary"><span>TVs</span></li>
                                 <li class="tertiary"><span>LCD TV</span></li>
