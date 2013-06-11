@@ -92,13 +92,21 @@
 		                    // ---- WORDS COUNTER (END)
 
 		                    keywordsAnalizer();
+
+		                    initGrid();
+
+		                    if(grid_status === 'list') {
+		                    	switchToListView();
+		                    } else if(grid_status === 'grid') {
+		                    	switchToGridView();
+		                    } 
+
 		                }
 
 		            }
 		        });
 				
-				initGrid();
-            	switchToListView();
+			
 
 		    }
 

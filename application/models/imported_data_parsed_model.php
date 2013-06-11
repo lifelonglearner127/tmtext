@@ -25,24 +25,50 @@ class Imported_data_parsed_model extends CI_Model {
 
     function getByImId($im_data_id) {
         $this->db->select('imported_data_id, key, value');
-        $this->db->where('key', 'Product Name');
         $this->db->where('imported_data_id', $im_data_id);
-        $this->db->limit(1);
         $query = $this->db->get($this->tables['imported_data_parsed']);
         $results = $query->result();
-        $data = array();
-        foreach($results as $result){
-            $res = $this->db->select('value')->where_in('key', array('URL', 'Description', 'Long_Description'))->where('imported_data_id', $result->imported_data_id)
-                ->get($this->tables['imported_data_parsed']);
-            $info = $res->result();
-            array_push($data, array('imported_data_id'=>$result->imported_data_id, 'product_name'=>$result->value, 'url'=>$info[2]->value, 'description'=>$info[0]->value, 'long_description'=>$info[1]->value));
+        $data = array('url' => '', 'product_name' => '', 'description' => '', 'long_description' => '');
+        foreach($results as $result) {
+            if($result->key === 'URL') {
+                $data['url'] = $result->value;
+            }
+            if($result->key === 'Product Name') {
+                $data['product_name'] = $result->value;
+            }
+            if($result->key === 'Description') {
+                $data['description'] = $result->value;
+            }
+            if($result->key === 'Long_Description') {
+                $data['long_description'] = $result->value;
+            }
         }
-        $f_res = null;
         if(count($data) > 0) {
-            $f_res = $data[0];
+            $f_res = $data;
         }
         return $f_res;
     }
+
+    // function getByImId($im_data_id) {
+    //     $this->db->select('imported_data_id, key, value');
+    //     $this->db->where('key', 'Product Name');
+    //     $this->db->where('imported_data_id', $im_data_id);
+    //     $this->db->limit(1);
+    //     $query = $this->db->get($this->tables['imported_data_parsed']);
+    //     $results = $query->result();
+    //     $data = array();
+    //     foreach($results as $result){
+    //         $res = $this->db->select('value')->where_in('key', array('URL', 'Description', 'Long_Description'))->where('imported_data_id', $result->imported_data_id)
+    //             ->get($this->tables['imported_data_parsed']);
+    //         $info = $res->result();
+    //         array_push($data, array('imported_data_id'=>$result->imported_data_id, 'product_name'=>$result->value, 'url'=>$info[2]->value, 'description'=>$info[0]->value, 'long_description'=>$info[1]->value));
+    //     }
+    //     $f_res = null;
+    //     if(count($data) > 0) {
+    //         $f_res = $data[0];
+    //     }
+    //     return $f_res;
+    // }
 
     function getByValueLikeGroupCat($s, $sl, $opt_ids) {
         $this->db->select('imported_data_id, key, value');
