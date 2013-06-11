@@ -1,3 +1,10 @@
+# 06/12 Tatiana
+UPDATE `groups` SET `default_controller` = 'measure/index' WHERE `groups`.`id` =1;
+UPDATE `groups` SET `default_controller` = 'validate/index' WHERE `groups`.`id` =3;
+UPDATE `groups` SET `default_controller` = 'measure/index' WHERE `groups`.`id` =4;
+UPDATE `groups` SET `default_controller` = 'measure/index' WHERE `groups`.`id` =5;
+UPDATE `groups` SET `default_controller` = 'measure/index' WHERE `groups`.`id` =6;
+
 # 06/10 Tatiana
 CREATE TABLE IF NOT EXISTS `research_box_position` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,

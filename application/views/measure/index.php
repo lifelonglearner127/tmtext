@@ -522,7 +522,7 @@
     });
 
 </script>
-<!-- <div class="main_content_other"></div> UN40ES6500 -->
+<div class="main_content_other"></div>
 <div class="main_content_editor">
 <div class="row-fluid">
     <?php // echo form_open('', array('id'=>'measureFormMetrics')); ?>

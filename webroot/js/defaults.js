@@ -583,7 +583,7 @@ jQuery(document).ready(function($) {
 
 
 
-        if($(this).hasClass('jq-editor')){
+        if($(this).hasClass('jq-measure')){
             var editorCont = $('.main_content_editor').html();
             if (editorCont.length == 0) {
                 var url = $(this).attr('href');
