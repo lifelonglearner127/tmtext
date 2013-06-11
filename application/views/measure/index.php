@@ -544,7 +544,7 @@
             <?php } ?>
         </select>
         <!-- <button type="submit" id="an_search" disabled='true' onclick="return startMeasureCompareV2()" class="btn btn-success pull-right">Search</button> -->
-        <button type="submit" id="an_search" disabled='true' class="btn btn-success pull-right">Search</button>
+        <button type="submit" id="an_search" class="btn btn-success pull-right">Search</button>
     <?php // echo form_close();?>
     </form>
 </div>
