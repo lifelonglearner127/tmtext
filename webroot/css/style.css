@@ -1020,3 +1020,7 @@ label.dd-selected-text, label.dd-option-text{
     width: 180px;
     margin-left: 5px;
 }
+
+.arrow{
+    float: right;
+}

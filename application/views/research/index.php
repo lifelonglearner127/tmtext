@@ -127,7 +127,7 @@ $(document).ready(function() {
             last_edition = '';
             return false;
         }
-        if($(this).parent().parent().parent().attr('id') == 'main'){
+            if($(this).parent().parent().parent().attr('id') == 'main'){
             var div = $(this).parent().parent().attr('id');
             if(div == 'research'){
                 last_edition = $('#main').html();
