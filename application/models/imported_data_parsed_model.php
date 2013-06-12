@@ -24,6 +24,7 @@ class Imported_data_parsed_model extends CI_Model {
     }
 
     function getByImId($im_data_id) {
+        $f_res = array();
         $this->db->select('imported_data_id, key, value');
         $this->db->where('imported_data_id', $im_data_id);
         $query = $this->db->get($this->tables['imported_data_parsed']);

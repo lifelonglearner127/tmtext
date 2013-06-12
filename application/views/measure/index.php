@@ -309,35 +309,44 @@
         $('#grid_sw_grid > i').addClass('icon-white');
         $("#attributes_metrics ul:not(.grid_switcher)").hide();
         $("#measure_product_ind_wrap").hide();
-        // AJAX CALL TO GET GRID VIEW CONTENT (START) 
-        // var im_data_id = $("#an_sort_search_box > #products > li[data-status='selected']").attr('data-value');
-        // var grid_view = $.post(editorGridViewBaseUrl, { im_data_id: im_data_id }, 'html').done(function(data) { console.log("EXPERIMENTAL GRID VIEW: ", data); });
-        // AJAX CALL TO GET GRID VIEW CONTENT (END)
-        $("#compet_area_grid").show();
+        // AJAX CALL TO GET GRID VIEW CONTENT (START) (NEW STUFF)
+        var im_data_id = $("#an_sort_search_box > #products > li[data-status='selected']").attr('data-value');
+        var grid_view = $.post(editorGridViewBaseUrl, { im_data_id: im_data_id }, 'html').done(function(data) {
+            $("#compet_area_grid").html(data); 
+            $("#compet_area_grid").show();
+            $(".preloader_grids_box").hide();
+            $(".grid_se_section .c_content").show();
+            gridsCustomersListLoader(); 
+        });
         grid_status = 'grid';
+        // AJAX CALL TO GET GRID VIEW CONTENT (END) (NEW STUFF)
+        // ------------- !!!! OLD STUFF (START) -------------
+        // $("#compet_area_grid").show();
+        // grid_status = 'grid';
         // --- DEMO DATA FILL (START)
-        var short_desc = $.trim($("#details-short-desc").text());
-        var long_desc = $.trim($("#details-long-desc").text());
-        var short_desc_count = 0;
-        if(short_desc !== "") short_desc_count = short_desc.split(" ").length;
-        var long_desc_count = 0;
-        if(long_desc !== "") long_desc_count = long_desc.split(" ").length;
-        var seo_short = $("ul[data-status='seo_an'][data-st-id='short_desc_seo']").html();
-        var seo_long = $("ul[data-status='seo_an'][data-st-id='long_desc_seo']").html();
-        $("#grid_se_section_1 .short_desc_wc, #grid_se_section_2 .short_desc_wc, #grid_se_section_3 .short_desc_wc").text(short_desc_count + " words");
-        $("#grid_se_section_1 .short_desc_con, #grid_se_section_2 .short_desc_con, #grid_se_section_3 .short_desc_con").text(short_desc);
-        $("#grid_se_section_1 .long_desc_wc, #grid_se_section_2 .long_desc_wc, #grid_se_section_3 .long_desc_wc").text(long_desc_count + " words");
-        $("#grid_se_section_1 .long_desc_con, #grid_se_section_2 .long_desc_con, #grid_se_section_3 .long_desc_con").text(long_desc);
-        $(".gr_seo_short_ph").html(seo_short);
-        $(".gr_seo_long_ph").html(seo_long);
+        // var short_desc = $.trim($("#details-short-desc").text());
+        // var long_desc = $.trim($("#details-long-desc").text());
+        // var short_desc_count = 0;
+        // if(short_desc !== "") short_desc_count = short_desc.split(" ").length;
+        // var long_desc_count = 0;
+        // if(long_desc !== "") long_desc_count = long_desc.split(" ").length;
+        // var seo_short = $("ul[data-status='seo_an'][data-st-id='short_desc_seo']").html();
+        // var seo_long = $("ul[data-status='seo_an'][data-st-id='long_desc_seo']").html();
+        // $("#grid_se_section_1 .short_desc_wc, #grid_se_section_2 .short_desc_wc, #grid_se_section_3 .short_desc_wc").text(short_desc_count + " words");
+        // $("#grid_se_section_1 .short_desc_con, #grid_se_section_2 .short_desc_con, #grid_se_section_3 .short_desc_con").text(short_desc);
+        // $("#grid_se_section_1 .long_desc_wc, #grid_se_section_2 .long_desc_wc, #grid_se_section_3 .long_desc_wc").text(long_desc_count + " words");
+        // $("#grid_se_section_1 .long_desc_con, #grid_se_section_2 .long_desc_con, #grid_se_section_3 .long_desc_con").text(long_desc);
+        // $(".gr_seo_short_ph").html(seo_short);
+        // $(".gr_seo_long_ph").html(seo_long);
         // --- DEMO DATA FILL (END)
         // $.scrollTo("#compet_area_grid", 400);
         // startGridsBoxesContentAnalyzer($.trim($("#compare_text").val()));
         // --- TMP (in cause slow files attribtes fetch) (start)
-        $(".preloader_grids_box").hide();
-        $(".grid_se_section .c_content").show();
+        // $(".preloader_grids_box").hide();
+        // $(".grid_se_section .c_content").show();
         // --- TMP (in cause slow files attribtes fetch) (end)
-        gridsCustomersListLoader();
+        // gridsCustomersListLoader();
+        // ------------- !!!! OLD STUFF (END) -------------
     }
     // --- GRIDS (END)
 
@@ -414,6 +423,72 @@
         var long_str_clean = long_str.replace(/<\/?[^>]+(>|$)/g, "");
         $("#details-short-desc").html(short_str_clean);
         $("#details-long-desc").html(long_str_clean);
+    }
+
+    function removeTagsFromAllGridDescs() {
+        var short_str = $("#grid_se_section_1 .short_desc_con").text();
+        var long_str = $("#grid_se_section_1 .long_desc_con").text();
+        var short_str_clean = short_str.replace(/<\/?[^>]+(>|$)/g, "");
+        var long_str_clean = long_str.replace(/<\/?[^>]+(>|$)/g, "");
+        $("#grid_se_section_1 .short_desc_con").html(short_str_clean);
+        $("#grid_se_section_1 .long_desc_con").html(long_str_clean);
+
+        var short_str = $("#grid_se_section_2 .short_desc_con").text();
+        var long_str = $("#grid_se_section_2 .long_desc_con").text();
+        var short_str_clean = short_str.replace(/<\/?[^>]+(>|$)/g, "");
+        var long_str_clean = long_str.replace(/<\/?[^>]+(>|$)/g, "");
+        $("#grid_se_section_2 .short_desc_con").html(short_str_clean);
+        $("#grid_se_section_2 .long_desc_con").html(long_str_clean);
+
+        var short_str = $("#grid_se_section_3 .short_desc_con").text();
+        var long_str = $("#grid_se_section_3 .long_desc_con").text();
+        var short_str_clean = short_str.replace(/<\/?[^>]+(>|$)/g, "");
+        var long_str_clean = long_str.replace(/<\/?[^>]+(>|$)/g, "");
+        $("#grid_se_section_3 .short_desc_con").html(short_str_clean);
+        $("#grid_se_section_3 .long_desc_con").html(long_str_clean);
+    }
+
+    function wordGridModeHighLighter(section, w, status) {
+        removeTagsFromAllGridDescs();
+        var highlightStartTag = "<span class='hilite'>";
+        var highlightEndTag = "</span>";
+        var searchTerm = w;
+        var bodyText = '';
+        if(status === 'short') {
+            bodyText = $("#grid_se_" + section + " .short_desc_con").text();
+        } else if(status === 'long') {
+            bodyText = $("#grid_se_" + section + " .long_desc_con").text();
+        }
+
+        var newText = "";
+        var i = -1;
+        var lcSearchTerm = searchTerm.toLowerCase();
+        var lcBodyText = bodyText.toLowerCase();
+
+        while (bodyText.length > 0) {
+            i = lcBodyText.indexOf(lcSearchTerm, i+1);
+            if (i < 0) {
+              newText += bodyText;
+              bodyText = "";
+            } else {
+              if (bodyText.lastIndexOf(">", i) >= bodyText.lastIndexOf("<", i)) {
+                if (lcBodyText.lastIndexOf("/script>", i) >= lcBodyText.lastIndexOf("<script", i)) {
+                  newText += bodyText.substring(0, i) + highlightStartTag + bodyText.substr(i, searchTerm.length) + highlightEndTag;
+                  bodyText = bodyText.substr(i + searchTerm.length);
+                  lcBodyText = bodyText.toLowerCase();
+                  i = -1;
+                }
+              }
+            }
+        }
+
+        if(status === 'short') {
+            $("#grid_se_" + section + " .short_desc_con").html(newText);
+            $.scrollTo("#grid_se_" + section + " .short_desc_con", 400);
+        } else if(status === 'long') {
+            $("#grid_se_" + section + " .long_desc_con").html(newText);
+            $.scrollTo("#grid_se_" + section + " .long_desc_con", 400);
+        }
     }
 
     function wordHighLighter(w, status) {
@@ -644,20 +719,9 @@
     <!-- GRID VIEW LAYOUT (START) -->
     <div id='compet_area_grid' class='row-fluid'>
         
-        <div id='grid_se_section_1' class='grid_se_section'>
+        <!-- <div id='grid_se_section_1' class='grid_se_section'>
             <div class='h'>
-                <!-- <div id='an_grd_view_drop_gr1' class='ddslick_dropdown an_grd_view_drop'></div> -->
                 <div id='an_grd_view_drop_gr1' class='an_grd_view_drop'></div>
-                <!-- <select>
-                    <?php if(count($customers_list) > 0) { ?>
-                        <?php foreach ($customers_list as $key => $value) { ?>
-                            <?php if($value == 'walmart.com') { $selected = 'selected'; } else { $selected = ''; } ?>
-                            <option <?php echo $selected; ?> value="<?php echo $value; ?>"><?php echo $value; ?></option>
-                        <?php } ?>
-                    <?php } else { ?>
-                    <option value='all'>All Sites</option>
-                    <?php } ?>
-                </select> -->
             </div>
             <div class='c'>
                 <img class='preloader_grids_box' src="<?php echo base_url() ?>/img/grids_boxes_preloader.gif">
@@ -687,18 +751,7 @@
 
         <div id='grid_se_section_2' class='grid_se_section left'>
             <div class='h'>
-                <!-- <div id='an_grd_view_drop_gr2' class='ddslick_dropdown an_grd_view_drop'></div> -->
                 <div id='an_grd_view_drop_gr2' class='an_grd_view_drop'></div>
-                <!-- <select>
-                    <?php if(count($customers_list) > 0) { ?>
-                        <?php foreach ($customers_list as $key => $value) { ?>
-                            <?php if($value == 'staples.com') { $selected = 'selected'; } else { $selected = ''; } ?>
-                            <option <?php echo $selected; ?> value="<?php echo $value; ?>"><?php echo $value; ?></option>
-                        <?php } ?>
-                    <?php } else { ?>
-                    <option value='all'>All Sites</option>
-                    <?php } ?>
-                </select> -->
             </div>
             <div class='c'>
                 <img class='preloader_grids_box' src="<?php echo base_url() ?>/img/grids_boxes_preloader.gif">
@@ -728,18 +781,7 @@
 
         <div id='grid_se_section_3' class='grid_se_section left'>
             <div class='h'>
-                <!-- <div id='an_grd_view_drop_gr3' class='ddslick_dropdown an_grd_view_drop'></div> -->
                 <div id='an_grd_view_drop_gr3' class='an_grd_view_drop'></div>
-                <!-- <select>
-                    <?php if(count($customers_list) > 0) { ?>
-                        <?php foreach ($customers_list as $key => $value) { ?>
-                            <?php if($value == 'overstock.com') { $selected = 'selected'; } else { $selected = ''; } ?>
-                            <option <?php echo $selected; ?> value="<?php echo $value; ?>"><?php echo $value; ?></option>
-                        <?php } ?>
-                    <?php } else { ?>
-                    <option value='all'>All Sites</option>
-                    <?php } ?>
-                </select> -->
             </div>
             <div class='c'>
                 <img class='preloader_grids_box' src="<?php echo base_url() ?>/img/grids_boxes_preloader.gif">
@@ -765,7 +807,7 @@
                     <li class='gr_attr_con'>no attributes</li>
                 </ul>
             </div>
-        </div>
+        </div> -->
 
     </div>
     <!-- GRID VIEW LAYOUT (END) -->
