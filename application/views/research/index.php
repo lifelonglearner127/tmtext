@@ -62,7 +62,7 @@ function setMovement(){
         cursor: 'move',
         revert: "invalid",
         helper : 'clone',
-        handle: ".handle",
+        //handle: ".handle",
     });
 
     $("#research, #research_edit" ).draggable({
