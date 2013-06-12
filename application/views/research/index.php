@@ -71,14 +71,22 @@ function setMovement(){
             if(ui.originalPosition.left-100 > ui.position.left){
                 if($(this).attr('id')=='research_edit'){
                     $('#research').css({'left':'50%'});
+                    $('#research_edit').css({'z-index':'9999'});
+                    $('#research').css({'z-index':'9998'});
                 } else {
+                    $('#research_edit').css({'z-index':'9998'});
+                    $('#research').css({'z-index':'9999'});
                     $('#research_edit').css({'left':'0%'});
                 }
             } else {
                 if($(this).attr('id')=='research_edit'){
+                    $('#research_edit').css({'z-index':'9999'});
+                    $('#research').css({'z-index':'9998'});
                     $('#research').css({'left':'0%'});
                 } else {
                     $('#research_edit').css({'left':'-50%'});
+                    $('#research_edit').css({'z-index':'9998'});
+                    $('#research').css({'z-index':'9999'});
                 }
             }
         }
