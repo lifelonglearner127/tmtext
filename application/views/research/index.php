@@ -125,6 +125,7 @@ $(document).ready(function() {
             $('div#research').css({'width':''});
             $('div#research_edit').css({'width':''});
             $(this).removeClass('changed');
+            $('div#long_description').css({'margin-left':'7px'});
             last_edition = '';
             setMovement();
             return false;
@@ -152,9 +153,9 @@ $(document).ready(function() {
             }
         } else {
             var parent_id = $(this).parent().parent().parent().parent().attr('id');
+            $('div#long_description').css({'margin-left':'107px'});
             if(parent_id == 'research'){
                 last_edition = $('#main').html();
-
                 $(this).parent().parent().parent().prepend($(this).parent().parent());
                 $('div#'+parent_id).css({'width':'99%'});
                 $('div#research_edit').css({'width':'99%'});
