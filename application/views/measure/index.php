@@ -53,7 +53,8 @@
                         data: ddData_grids_ci,
                         width: 104,
                         truncateDescription: true,
-                    })
+                    });
+                    $("#an_search").removeAttr('disabled');
                 }, 500);
             };
         });
@@ -330,7 +331,7 @@
         $(".gr_seo_short_ph").html(seo_short);
         $(".gr_seo_long_ph").html(seo_long);
         // --- DEMO DATA FILL (END)
-        $.scrollTo("#compet_area_grid", 400);
+        // $.scrollTo("#compet_area_grid", 400);
         // startGridsBoxesContentAnalyzer($.trim($("#compare_text").val()));
         // --- TMP (in cause slow files attribtes fetch) (start)
         $(".preloader_grids_box").hide();
