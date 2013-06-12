@@ -1,5 +1,5 @@
 <script type="text/javascript">
-
+var last_edition = '';
 var box = new Array();
 box['main_research_box_start'] = '<div class="span6" id="research" class="connectedMoved"><h3 class="handle">Research</h3>' +
         '<ul class="research_content connectedSortable" id="sortable1">';
@@ -87,12 +87,14 @@ $(document).ready(function() {
         connectWith: ".connectedSortable",
         cursor: 'move',
         revert: "invalid",
-        handle: ".handle",
+        helper : 'clone',
+        //handle: ".handle",
     });
 
     $("#research, #research_edit" ).draggable({
         containment: "#main",
         drag: function( event, ui ) {
+            console.log(111);
             if(ui.originalPosition.left-100 > ui.position.left){
                 if($(this).attr('id')=='research_edit'){
                     $('#research').css({'left':'50%'});
@@ -113,6 +115,63 @@ $(document).ready(function() {
 
     $( "ul#sortable1 li.boxes, ul#sortable2 li.boxes" ).resizable();
     $("#related_keywords").resizable({minWidth: 418, maxWidth:418});
+
+
+    $(document).on("click", '.arrow', function() {
+        if($(this).hasClass('changed') && last_edition != ''){
+            $('#main').empty();
+            $('#main').html(last_edition);
+            $('div#research').css({'width':''});
+            $('div#research_edit').css({'width':''});
+            $(this).removeClass('changed');
+            last_edition = '';
+            return false;
+        }
+        if($(this).parent().parent().parent().attr('id') == 'main'){
+            var div = $(this).parent().parent().attr('id');
+            if(div == 'research'){
+                last_edition = $('#main').html();
+                $('div#'+div).css({'width':'99%'});
+                $('div#research_edit').css({'width':'99%'});
+                $(this).addClass('changed');
+                return false;
+            }
+            if(div == 'research_edit'){
+                var research_edit = $('div#'+div);
+                var research = $('div#research');
+                last_edition = $('#main').html();
+                $('div#'+div).css({'width':'99%'});
+                $('div#research').css({'width':'99%'});
+                $('#main').empty();
+                $('#main').append(research_edit).append(research);
+                $(this).addClass('changed');
+                return false;
+            }
+        } else {
+            var parent_id = $(this).parent().parent().parent().parent().attr('id');
+            if(parent_id == 'research'){
+                last_edition = $('#main').html();
+                $(this).parent().parent().parent().prepend($(this).parent().parent());
+                $('div#'+parent_id).css({'width':'99%'});
+                $('div#research_edit').css({'width':'99%'});
+                $(this).addClass('changed');
+                return false;
+            }
+            if(parent_id == 'research_edit'){
+                var research_edit = $('div#'+parent_id);
+                var research = $('div#research');
+                last_edition = $('#main').html();
+                $(this).parent().parent().parent().prepend($(this).parent().parent());
+                $('div#'+parent_id).css({'width':'99%'});
+                $('div#research').css({'width':'99%'});
+                $('#main').empty();
+                $('#main').append(research_edit).append(research);
+                $(this).addClass('changed');
+            }
+        }
+        return false;
+    });
+
 });
 </script>
 <!-- <div class="main_content_other"></div> -->
@@ -155,10 +214,10 @@ $(document).ready(function() {
         </div>
         <div class="row-fluid" id="main">
             <div class="span6" id="research" class="connectedMoved">
-                <h3 class="handle">Research</h3>
+                <h3 class="handle">Research<a href="#" class="ml_10 arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
                 <ul class="research_content connectedSortable" id="sortable1">
-                    <li class="boxes">
-                        <h3>Results</h3>
+                    <li class="boxes mt_10">
+                        <h3>Results<a href="#" class="ml_10 arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
                         <div class="boxes_content"  style="height: 200px;padding:0px;">
                             <ul class="product_title">
                                 <li class="main"><span><b>Product Name</b></span><span><b>URL</b></span></li>
@@ -173,7 +232,7 @@ $(document).ready(function() {
                         </div>
                     </li>
                     <li class="boxes mt_10" id="related_keywords">
-                        <h3>Related Keywords</h3>
+                        <h3>Related Keywords<a href="#" class="ml_10 arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
                         <div class="boxes_content" >
                             <ul id="rel_keywords" style="height: 170px; overflow: auto;">
                                 <li class="primary"><span>Televisions</span></li>
@@ -192,7 +251,7 @@ $(document).ready(function() {
                         </div>
                     </li>
                     <li class="boxes mt_10">
-                        <h3>SEO Phrases</h3>
+                        <h3>SEO Phrases<a href="#" class="ml_10 arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
                         <div class="boxes_content">
                             <ul class='less_b_margin ml_0' data-status='seo_an'>
                             </ul>
@@ -203,10 +262,10 @@ $(document).ready(function() {
                 </ul>
             </div>
             <div class="span6" id="research_edit" class="connectedMoved">
-                <h3 class="handle">Edit</h3>
+                <h3 class="handle">Edit<a href="#" class="ml_10 arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
                 <ul class="research_content connectedSortable" id="sortable2">
-                    <li class="boxes" id="keywords">
-                        <h3>Keywords</h3>
+                    <li class="boxes mt_10" id="keywords">
+                        <h3>Keywords<a href="#" class="ml_10 arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
                         <div class="boxes_content">
                             <p><span>Primary:</span><input class="keywords" type="text" name="primary" value="" /><a href="#" class="clear_all">x</a></p>
                             <p><span>Secondary:</span><input class="keywords" type="text" name="secondary" value="" /><a href="#" class="clear_all">x</a></p>
@@ -215,7 +274,7 @@ $(document).ready(function() {
                     </li>
 
                     <li class="boxes mt_10" id="page_elements">
-                        <h3>Page Elements</h3>
+                        <h3>Page Elements<a href="#" class="ml_10 arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
                         <div class="boxes_content">
                             <p><button id="generate_product" type="button" class="btn pull-right">Generate</button>
                                 <label>Product name:</label><input type="text" class="span11 ml_0" name="product_name"/>
@@ -229,7 +288,7 @@ $(document).ready(function() {
                         </div>
                     </li>
                     <li class="boxes mt_10">
-                        <h3>Descriptions</h3>
+                        <h3>Descriptions<a href="#" class="ml_10 arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
                         <div class="boxes_content">
                             <div class="row-fluid"><label>Short description:</label>
                                  <label><span id="research_wc">0</span> words</label>
