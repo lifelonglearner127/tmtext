@@ -67,32 +67,56 @@ function setMovement(){
 
     $("#research, #research_edit" ).draggable({
         containment: "#main",
+        handle: ".handle",
         drag: function( event, ui ) {
-            if(ui.originalPosition.left-100 > ui.position.left){
-                if($(this).attr('id')=='research_edit'){
-                    $('#research').css({'left':'50%'});
-                    $('#research_edit').css({'z-index':'9999'});
-                    $('#research').css({'z-index':'9998'});
-                } else {
-                    $('#research_edit').css({'z-index':'9998'});
-                    $('#research').css({'z-index':'9999'});
-                    $('#research_edit').css({'left':'0%'});
+                var isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+                var isSafari = /Safari/.test(navigator.userAgent) && /Apple Computer/.test(navigator.vendor);
+
+                if (isChrome || isSafari){
+                    if(ui.originalPosition.left-100 > ui.position.left){
+                        if($(this).attr('id')=='research_edit'){
+                            $('#research_edit').css({'z-index':'9999'});
+                            $('#research').css({'z-index':'9998'});
+                        } else {
+                            $('#research_edit').css({'z-index':'9998'});
+                            $('#research').css({'z-index':'9999'});
+                        }
+                    } else {
+                        if($(this).attr('id')=='research_edit'){
+                            $('#research_edit').css({'z-index':'9999'});
+                            $('#research').css({'z-index':'9998'});
+                        } else {
+                            $('#research_edit').css({'z-index':'9998'});
+                            $('#research').css({'z-index':'9999'});
+                        }
+                    }
+                }else{
+                    if(ui.originalPosition.left-100 > ui.position.left){
+                        if($(this).attr('id')=='research_edit'){
+                            $('#research').css({'left':'50%'});
+                            $('#research_edit').css({'z-index':'9999'});
+                            $('#research').css({'z-index':'9998'});
+                        } else {
+                            $('#research_edit').css({'z-index':'9998'});
+                            $('#research').css({'z-index':'9999'});
+                            $('#research_edit').css({'left':'0%'});
+                        }
+                    } else {
+                        if($(this).attr('id')=='research_edit'){
+                            $('#research_edit').css({'z-index':'9999'});
+                            $('#research').css({'z-index':'9998'});
+                            $('#research').css({'left':'0%'});
+                        } else {
+                            $('#research_edit').css({'left':'-50%'});
+                            $('#research_edit').css({'z-index':'9998'});
+                            $('#research').css({'z-index':'9999'});
+                        }
+                    }
                 }
-            } else {
-                if($(this).attr('id')=='research_edit'){
-                    $('#research_edit').css({'z-index':'9999'});
-                    $('#research').css({'z-index':'9998'});
-                    $('#research').css({'left':'0%'});
-                } else {
-                    $('#research_edit').css({'left':'-50%'});
-                    $('#research_edit').css({'z-index':'9998'});
-                    $('#research').css({'z-index':'9999'});
-                }
-            }
-        }
+        },
     }).bind('click', function(){
             $(this).focus();
-        });
+    });
 
     $( "ul#sortable1 li.boxes, ul#sortable2 li.boxes" ).resizable();
     $("#related_keywords").resizable({minWidth: 418, maxWidth:418});
