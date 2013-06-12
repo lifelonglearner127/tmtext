@@ -55,6 +55,40 @@ box['descriptions'] = '<h3>Descriptions</h3><div class="boxes_content"><div clas
         '<button id="save_in_batch" type="button" class="btn ml_10 btn-success">Save</button>' +
         '<button id="save_next" type="button" class="btn ml_10 btn-success">Save & Next</button></div></div>';
 
+function setMovement(){
+    $('input[name="research_text"]').focus();
+    $( "#sortable1, #sortable2" ).sortable({
+        connectWith: ".connectedSortable",
+        cursor: 'move',
+        revert: "invalid",
+        helper : 'clone',
+        handle: ".handle",
+    });
+
+    $("#research, #research_edit" ).draggable({
+        containment: "#main",
+        drag: function( event, ui ) {
+            if(ui.originalPosition.left-100 > ui.position.left){
+                if($(this).attr('id')=='research_edit'){
+                    $('#research').css({'left':'50%'});
+                } else {
+                    $('#research_edit').css({'left':'0%'});
+                }
+            } else {
+                if($(this).attr('id')=='research_edit'){
+                    $('#research').css({'left':'0%'});
+                } else {
+                    $('#research_edit').css({'left':'-50%'});
+                }
+            }
+        }
+    }).bind('click', function(){
+            $(this).focus();
+        });
+
+    $( "ul#sortable1 li.boxes, ul#sortable2 li.boxes" ).resizable();
+    $("#related_keywords").resizable({minWidth: 418, maxWidth:418});
+}
 $(document).ready(function() {
     $('head').find('title').text('Research & Edit');
 
@@ -82,40 +116,7 @@ $(document).ready(function() {
 
     }, 'json');
 
-    $('input[name="research_text"]').focus();
-    $( "#sortable1, #sortable2" ).sortable({
-        connectWith: ".connectedSortable",
-        cursor: 'move',
-        revert: "invalid",
-        helper : 'clone',
-        //handle: ".handle",
-    });
-
-    $("#research, #research_edit" ).draggable({
-        containment: "#main",
-        drag: function( event, ui ) {
-            console.log(111);
-            if(ui.originalPosition.left-100 > ui.position.left){
-                if($(this).attr('id')=='research_edit'){
-                    $('#research').css({'left':'50%'});
-                } else {
-                    $('#research_edit').css({'left':'0%'});
-                }
-            } else {
-                if($(this).attr('id')=='research_edit'){
-                    $('#research').css({'left':'0%'});
-                } else {
-                    $('#research_edit').css({'left':'-50%'});
-                }
-            }
-        }
-    }).bind('click', function(){
-        $(this).focus();
-    });
-
-    $( "ul#sortable1 li.boxes, ul#sortable2 li.boxes" ).resizable();
-    $("#related_keywords").resizable({minWidth: 418, maxWidth:418});
-
+    setMovement();
 
     $(document).on("click", '.arrow', function() {
         if($(this).hasClass('changed') && last_edition != ''){
@@ -125,9 +126,11 @@ $(document).ready(function() {
             $('div#research_edit').css({'width':''});
             $(this).removeClass('changed');
             last_edition = '';
+            setMovement();
             return false;
         }
-            if($(this).parent().parent().parent().attr('id') == 'main'){
+
+        if($(this).parent().parent().parent().attr('id') == 'main'){
             var div = $(this).parent().parent().attr('id');
             if(div == 'research'){
                 last_edition = $('#main').html();
@@ -151,6 +154,7 @@ $(document).ready(function() {
             var parent_id = $(this).parent().parent().parent().parent().attr('id');
             if(parent_id == 'research'){
                 last_edition = $('#main').html();
+
                 $(this).parent().parent().parent().prepend($(this).parent().parent());
                 $('div#'+parent_id).css({'width':'99%'});
                 $('div#research_edit').css({'width':'99%'});
@@ -167,9 +171,10 @@ $(document).ready(function() {
                 $('#main').empty();
                 $('#main').append(research_edit).append(research);
                 $(this).addClass('changed');
+                return false;
             }
         }
-        return false;
+
     });
 
 });
