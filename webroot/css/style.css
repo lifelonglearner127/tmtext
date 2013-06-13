@@ -4,6 +4,16 @@
 	text-align: center;
 }
 
+.icb_systme_compare_btn  {
+	display: block;
+	width: 85px;
+	margin: 0 auto;
+}
+
+.icb_systme_compare_btn.margin_bottom {
+	margin-bottom: 15px;
+}
+
 .text-center{
 	text-align:center;
 }
