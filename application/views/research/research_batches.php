@@ -1,5 +1,5 @@
 <div class="tabbable">
-    <ul class="nav nav-tabs jq-system-tabs">
+    <ul class="nav nav-tabs jq-research-tabs">
         <li class=""><a data-toggle="tab" href="<?php echo site_url('research');?>">General</a></li>
         <li class="active"><a data-toggle="tab" href="<?php echo site_url('research/research_batches');?>">Batches</a></li>
     </ul>
