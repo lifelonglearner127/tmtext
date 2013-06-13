@@ -24,6 +24,10 @@ class System extends MY_Controller {
 		$this->render();
 	}
 
+	public function system_compare() {
+		$this->render();	
+	}
+
 	public function system_accounts()
 	{
 		$this->render();

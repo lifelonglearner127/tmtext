@@ -311,7 +311,7 @@
         $("#measure_product_ind_wrap").hide();
         // AJAX CALL TO GET GRID VIEW CONTENT (START) (NEW STUFF)
         var im_data_id = $("#an_sort_search_box > #products > li[data-status='selected']").attr('data-value');
-        var grid_view = $.post(editorGridViewBaseUrl, { im_data_id: im_data_id }, 'html').done(function(data) {
+        var grid_view = $.post(editorGridViewBaseUrl, { im_data_id: im_data_id, s_term: $.trim($("#compare_text").val()) }, 'html').done(function(data) {
             $("#compet_area_grid").html(data); 
             $("#compet_area_grid").show();
             $(".preloader_grids_box").hide();

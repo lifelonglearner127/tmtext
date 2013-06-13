@@ -79,12 +79,13 @@ class Measure extends MY_Controller {
                 $data['seo']['long'] = $this->helpers->measure_analyzer_start_v2($data_import['long_description']);
             }
             // --- GET SELECTED RPODUCT SEO DATA (END)
-
-            // --- GET SELECTED RPODUCT ATTRIBUTES (START)
-
-            // --- GET SELECTED RPODUCT ATTRIBUTES (END)
-
         }
+
+        // -------- COMPARING V1 (START)
+        $s_term = $this->input->post('s_term');
+        
+        // -------- COMPARING V1 (END)
+
         $this->load->view('measure/gridview', $data);
     }
 
