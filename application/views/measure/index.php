@@ -296,10 +296,10 @@
         viewIconsReset();
         $('#grid_sw_list').addClass('btn-primary');
         $('#grid_sw_list > i').addClass('icon-white');
-        // $("#attributes_metrics ul:not(.grid_switcher)").show();
+        $("#compet_area_grid").empty();
+        $("#compet_area_grid").hide();
         $("#attributes_metrics ul").show();
         $("#measure_product_ind_wrap").show();
-        $("#compet_area_grid").hide();
         grid_status = 'list';
     }
 
@@ -536,7 +536,12 @@
 
     $("*").click(function(e) {
         var attr = $(e.target).attr('data-status');
-        if(typeof(attr) !== 'undefined' && attr === 'seo_link') {} else { removeTagsFromDescs(); }
+        if(typeof(attr) !== 'undefined' && attr === 'seo_link') {} else { 
+            removeTagsFromDescs();
+            if($("#compet_area_grid .grid_se_section").length > 0) {
+                removeTagsFromAllGridDescs();
+            } 
+        }
     });
 
     // --- KEYWORDS ANALYZER (START)

@@ -26,7 +26,7 @@
             	<?php foreach ($seo['short'] as $key => $value) { ?>
             	<?php $v_ph = $value['ph']; ?>
             	<li style='margin-top: 5px;'>
-            		<span onclick="wordGridModeHighLighter('section_1', '<?php echo $v_ph; ?>', 'short')" class='word_wrap_li_pr hover_en'>
+            		<span data-status='seo_link' onclick="wordGridModeHighLighter('section_1', '<?php echo $v_ph; ?>', 'short')" class='word_wrap_li_pr hover_en'>
             			<?php echo $value['ph']; ?>
             		</span>
             		<span class='word_wrap_li_sec'><?php echo $value['count']; ?></span>
@@ -42,7 +42,7 @@
             	<?php foreach ($seo['long'] as $key => $value) { ?>
             	<?php $v_ph = $value['ph']; ?>
             	<li style='margin-top: 5px;'>
-            		<span onclick="wordGridModeHighLighter('section_1', '<?php echo $v_ph; ?>', 'long')" class='word_wrap_li_pr hover_en'>
+            		<span data-status='seo_link' onclick="wordGridModeHighLighter('section_1', '<?php echo $v_ph; ?>', 'long')" class='word_wrap_li_pr hover_en'>
             			<?php echo $value['ph']; ?>
             		</span>
             		<span class='word_wrap_li_sec'><?php echo $value['count']; ?></span>
@@ -82,7 +82,7 @@
             	<?php foreach ($seo['short'] as $key => $value) { ?>
             	<?php $v_ph = $value['ph']; ?>
             	<li style='margin-top: 5px;'>
-            		<span onclick="wordGridModeHighLighter('section_2', '<?php echo $v_ph; ?>', 'short')" class='word_wrap_li_pr hover_en'>
+            		<span data-status='seo_link' onclick="wordGridModeHighLighter('section_2', '<?php echo $v_ph; ?>', 'short')" class='word_wrap_li_pr hover_en'>
             			<?php echo $value['ph']; ?>
             		</span>
             		<span class='word_wrap_li_sec'><?php echo $value['count']; ?></span>
@@ -98,7 +98,7 @@
             	<?php foreach ($seo['long'] as $key => $value) { ?>
             	<?php $v_ph = $value['ph']; ?>
             	<li style='margin-top: 5px;'>
-            		<span onclick="wordGridModeHighLighter('section_2', '<?php echo $v_ph; ?>', 'long')" class='word_wrap_li_pr hover_en'>
+            		<span data-status='seo_link' onclick="wordGridModeHighLighter('section_2', '<?php echo $v_ph; ?>', 'long')" class='word_wrap_li_pr hover_en'>
             			<?php echo $value['ph']; ?>
             		</span>
             		<span class='word_wrap_li_sec'><?php echo $value['count']; ?></span>
@@ -138,7 +138,7 @@
             	<?php foreach ($seo['short'] as $key => $value) { ?>
             	<?php $v_ph = $value['ph']; ?>
             	<li style='margin-top: 5px;'>
-            		<span onclick="wordGridModeHighLighter('section_3', '<?php echo $v_ph; ?>', 'short')" class='word_wrap_li_pr hover_en'>
+            		<span data-status='seo_link' onclick="wordGridModeHighLighter('section_3', '<?php echo $v_ph; ?>', 'short')" class='word_wrap_li_pr hover_en'>
             			<?php echo $value['ph']; ?>
             		</span>
             		<span class='word_wrap_li_sec'><?php echo $value['count']; ?></span>
@@ -154,7 +154,7 @@
             	<?php foreach ($seo['long'] as $key => $value) { ?>
             	<?php $v_ph = $value['ph']; ?>
             	<li style='margin-top: 5px;'>
-            		<span onclick="wordGridModeHighLighter('section_3', '<?php echo $v_ph; ?>', 'long')" class='word_wrap_li_pr hover_en'>
+            		<span data-status='seo_link' onclick="wordGridModeHighLighter('section_3', '<?php echo $v_ph; ?>', 'long')" class='word_wrap_li_pr hover_en'>
             			<?php echo $value['ph']; ?>
             		</span>
             		<span class='word_wrap_li_sec'><?php echo $value['count']; ?></span>
