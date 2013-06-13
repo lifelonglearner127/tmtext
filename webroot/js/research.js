@@ -391,6 +391,44 @@ $(document).ready(function () {
         window.location.href = base_url + 'index.php/research/export?batch='+$("select[name='batches'] option:selected").text();
     });
 
+    /*----------------------------Research batches--------------------------------------------*/
+
+    $(document).on("change", 'select[name="research_batches"]', function() {
+        $('input[name="batche_name"]').val($('select[name="research_batches"] option:selected').text());
+    });
+    $('select[name="research_batches"]').trigger('change');
+
+    $(document).on("click", '#research_batches_save', function() {
+        $.post(base_url + 'index.php/research/change_batch_name', { 'old_batch_name': $('select[name="research_batches"] option:selected').text(),
+            'new_batch_name': $('input[name="batche_name"]').val()}, function(data){
+            if(data.message == 'success'){
+                $('select[name="research_batches"] option:selected').text($('input[name="batche_name"]').val());
+            }
+        });
+    });
+
+    $(document).on("click", '#research_batches_search', function() {
+        $.post(base_url + 'index.php/research/get_research_info', { 'choosen_batch': $('select[name="research_batches"] option:selected').text(),
+                'search_text': $('input[name="research_batches_text"]').val() },
+            function(data){
+                if(data.length > 0 ){
+                    $('table#research_results tbody').empty();
+                    var str = '';
+                    for(var i=0; i < data.length; i++){
+                        str += '<tr><td>'+data[i].created+'</td>';
+                        str += '<td>'+data[i].user_id+'</td>';
+                        str += '<td>'+data[i].product_name+'</td>';
+                        str += '<td>'+data[i].url+'</td>';
+                        str += '<td>'+data[i].meta_name+'</td>';
+                        str += '<td>'+data[i].meta_description+'</td>';
+                        str += '<td>'+data[i].short_description+'</td>';
+                        str += '<td>'+data[i].long_description+'</td></tr>';
+                    }
+                    $('table#research_results tbody').append(str);
+                }
+            });
+    });
+
 });
 
 

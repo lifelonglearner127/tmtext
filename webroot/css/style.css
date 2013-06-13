@@ -616,6 +616,10 @@ body{
 	margin-left:20px;
 }
 
+.mt_20{
+    margin-top: 20px;
+}
+
 .mt_40{
 	margin-top: 35px !important;
 }
@@ -636,6 +640,9 @@ body{
 	margin-top:10px !important;
 }
 
+.mr_10{
+    margin-right:10px;
+}
 /* new styles */
 
 html.busy, html.busy * {
@@ -1023,4 +1030,25 @@ label.dd-selected-text, label.dd-option-text{
 
 .arrow{
     float: right;
+}
+
+.research_batches input{
+    width: 120px;
+}
+
+.research_batches table td{
+    border:1px solid #ccc;
+    padding: 10px;
+    border-right:none;
+}
+
+.research_batches table thead td{
+    font-size: 14px;
+}
+
+.research_batches table tbody td{
+    font-size: 10px;
+}
+.research_batches table td:last-child{
+    border-right: 1px solid #ccc;
 }
