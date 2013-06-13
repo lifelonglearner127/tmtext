@@ -177,17 +177,17 @@
             setTimeout(function(){
                 $('#an_grd_view_drop_gr1').ddslick({
                     data: ddData_grids_1,
-                    width: 220,
+                    width: 290,
                     truncateDescription: true,
                 });
                 $('#an_grd_view_drop_gr2').ddslick({
                     data: ddData_grids_2,
-                    width: 220,
+                    width: 290,
                     truncateDescription: true,
                 });
                 $('#an_grd_view_drop_gr3').ddslick({
                     data: ddData_grids_3,
-                    width: 220,
+                    width: 290,
                     truncateDescription: true,
                 });
             }, 500);
