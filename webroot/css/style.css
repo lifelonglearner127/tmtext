@@ -5,6 +5,15 @@
 	overflow: auto;
 }
 
+.h_400 {
+	height: 400px;
+}
+
+.sc_compare_selection_block {
+	width: 100%;
+	height: 480px;
+}
+
 .centered {
 	text-align: center;
 }

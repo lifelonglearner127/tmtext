@@ -9,33 +9,56 @@
   <div class="tab-content">
     <div id="tab5" class="tab-pane active">
 
-    	<!-- PRODUCTS SELECTION BOX -->
-    	<div class='span5'>
-    		<div class='well limited_list'>
-    			<p class='centered'><span class="label">SELECT PRODUCTS BOX</span></p>
-    			<ul id='select_pr_boxer' class='nav nav-pills nav-stacked'>
-    				<?php if(count($all_products) > 0) { ?>
-    					<?php foreach($all_products as $k=>$v) { ?>
-    					<li><a data-id="<?php echo $k; ?>" href='javascript:void(0)'><?php echo $v['product_name']; ?></a></li>
-    					<?php } ?>
-    				<?php } ?>
-				</ul>
+    	<div class='sc_compare_selection_block' id='sc_compare_selection_block'>
+	    	<!-- PRODUCTS SELECTION BOX -->
+	    	<div class='span5'>
+	    		<div class='well limited_list'>
+	    			<p class='centered'><span class="label">SELECT PRODUCTS BOX</span></p>
+	    			<ul id='select_pr_boxer' class='nav nav-pills nav-stacked'>
+	    				<?php if(count($all_products) > 0) { ?>
+	    					<?php foreach($all_products as $k=>$v) { ?>
+	    					<li><a data-id="<?php echo $k; ?>" href='javascript:void(0)'><?php echo $v['product_name']; ?></a></li>
+	    					<?php } ?>
+	    				<?php } ?>
+					</ul>
+				</div>
+			</div>
+			<!-- INTERACTIONS CONTROL BOX -->
+			<div class='span2'>
+	    		<div class='well h_400'>
+	    			<p class='centered'><span class="label label-info">CONTROLS</span></p>
+	    			<button id='ibc_move_btn' onclick="moveProductsToCompare()" type='button' disabled='true' class='btn btn-primary icb_systme_compare_btn margin_bottom disabled'><i class="icon-chevron-right icon-white"></i>&nbsp;Move</button>
+	    			<button id='ibc_clean_btn' onclick="cleanAndRestore()" type='button' disabled='true' class='btn btn-danger icb_systme_compare_btn margin_bottom disabled'><i class="icon-off icon-white"></i>&nbsp;Clean</button>
+					<button id='ibc_start_btn' onclick="renderCompareSection()" type='button' disabled='true' class='btn btn-success icb_systme_compare_btn disabled'><i class="icon-ok icon-white"></i>&nbsp;Start</button>
+				</div>
+			</div>
+			<!-- SELECTED FOR COMPARE BOX -->
+			<div class='span5'>
+	    		<div class='well h_400'>
+	    			<p class='centered'><span class="label label-success">PRODUCTS FOR COMPARE</span></p>
+	    			<ul id='compare_pr_boxer' class='nav nav-pills nav-stacked'>&nbsp;</ul>
+				</div>
 			</div>
 		</div>
-		<!-- INTERACTIONS CONTROL BOX -->
-		<div class='span2'>
-    		<div class='well'>
-    			<p class='centered'><span class="label label-info">CONTROLS</span></p>
-    			<button id='ibc_move_btn' onclick="moveProductsToCompare()" type='button' disabled='true' class='btn btn-primary icb_systme_compare_btn margin_bottom disabled'><i class="icon-chevron-right icon-white"></i>&nbsp;Move</button>
-    			<button id='ibc_clean_btn' onclick="cleanAndRestore()" type='button' disabled='true' class='btn btn-danger icb_systme_compare_btn margin_bottom disabled'><i class="icon-off icon-white"></i>&nbsp;Clean</button>
-				<button id='ibc_start_btn' type='button' disabled='true' class='btn btn-success icb_systme_compare_btn disabled'><i class="icon-ok icon-white"></i>&nbsp;Start</button>
+
+		<div class='sc_compare_block' id='sc_compare_block'>
+			<div class='span5'>
+	    		<div class='well'>
+	    			<p class='centered'><span class="label label-success">PRODUCT FOR COMPARE</span></p>
+				</div>
 			</div>
-		</div>
-		<!-- SELECTED FOR COMPARE BOX -->
-		<div class='span5'>
-    		<div class='well'>
-    			<p class='centered'><span class="label label-success">PRODUCTS FOR COMPARE</span></p>
-    			<ul id='compare_pr_boxer' class='nav nav-pills nav-stacked'>&nbsp;</ul>
+			<div class='span2'>
+	    		<div class='well'>
+	    			<p class='centered'><span class="label label-info">DECISION</span></p>
+	    			<button id='sccb_yes_btn' type='button' disabled='true' class='btn btn-primary icb_systme_compare_btn margin_bottom disabled'>Yes</button>
+	    			<button id='sccb_not_btn' type='button' disabled='true' class='btn btn-danger icb_systme_compare_btn margin_bottom disabled'>No</button>
+					<button id='sccb_notsure_btn' type='button' disabled='true' class='btn icb_systme_compare_btn disabled'>Not sure</button>
+    			</div>
+			</div>
+			<div class='span5'>
+	    		<div class='well'>
+	    			<p class='centered'><span class="label label-success">PRODUCT FOR COMPARE</span></p>
+				</div>
 			</div>
 		</div>
 
@@ -80,6 +103,10 @@
 	// 	console.log("AAAA");
 	// 	$(this).removeClass('active');
 	// });
+	
+	function renderCompareSection() {
+
+	}
 
 	function cleanAndRestore() {
 		$('#ibc_clean_btn').addClass('disabled');
