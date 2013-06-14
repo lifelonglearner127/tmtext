@@ -25,6 +25,8 @@ class System extends MY_Controller {
 	}
 
 	public function system_compare() {
+		$this->load->model('imported_data_parsed_model');
+		$this->data['all_products'] = $this->imported_data_parsed_model->getAllProducts();
 		$this->render();	
 	}
 

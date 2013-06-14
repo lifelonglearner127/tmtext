@@ -23,6 +23,48 @@ class Imported_data_parsed_model extends CI_Model {
         return $query->result();
     }
 
+    function getAllProducts() {
+
+        $this->db->select('imported_data_id, key, value');
+        $this->db->group_by('imported_data_id');
+        $query = $this->db->get($this->tables['imported_data_parsed']);
+        $results = $query->result();
+        $ids = array();
+        if(count($results) > 0) {
+            foreach ($results as $key => $value) {  
+                $ids[] = $value->imported_data_id;
+            }
+        }
+        $ids = array_unique($ids);
+        foreach ($ids as $k => $v) {
+            $template[$v] = array('url' => '', 'product_name' => '', 'description' => '', 'long_description' => '');
+        }
+
+
+        $this->db->select('imported_data_id, key, value');
+        $this->db->group_by(array('imported_data_id', 'key'));
+        $query = $this->db->get($this->tables['imported_data_parsed']);
+        $results = $query->result();
+        if(count($results) > 0) {
+            foreach ($results as $key => $value) {
+                $im_id_current = $value->imported_data_id;
+                if($value->key == 'URL') {
+                    $template[$im_id_current]['url'] = $value->value;
+                }
+                if($value->key == 'Product Name') {
+                    $template[$im_id_current]['product_name'] = $value->value;   
+                }
+                if($value->key == 'Description') {
+                    $template[$im_id_current]['description'] = $value->value;
+                }
+                if($value->key == 'Long_Description') {
+                    $template[$im_id_current]['long_description'] = $value->value;
+                }
+            }
+        }
+        return $template;
+    }
+
     function getByImId($im_data_id) {
         $f_res = array();
         $this->db->select('imported_data_id, key, value');

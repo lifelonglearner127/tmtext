@@ -1,5 +1,10 @@
 /* Basic style */
 
+.limited_list {
+	height: 400px;
+	overflow: auto;
+}
+
 .centered {
 	text-align: center;
 }

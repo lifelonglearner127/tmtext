@@ -11,13 +11,14 @@
 
     	<!-- PRODUCTS SELECTION BOX -->
     	<div class='span5'>
-    		<div class='well'>
+    		<div class='well limited_list'>
     			<p class='centered'><span class="label">SELECT PRODUCTS BOX</span></p>
     			<ul id='select_pr_boxer' class='nav nav-pills nav-stacked'>
-    				<li><a href='javascript:void(0)'>Test 1</a></li>
-    				<li><a href='javascript:void(0)'>Test 2</a></li>
-    				<li><a href='javascript:void(0)'>Test 3</a></li>
-    				<li><a href='javascript:void(0)'>Test 4</a></li>
+    				<?php if(count($all_products) > 0) { ?>
+    					<?php foreach($all_products as $k=>$v) { ?>
+    					<li><a data-id="<?php echo $k; ?>" href='javascript:void(0)'><?php echo $v['product_name']; ?></a></li>
+    					<?php } ?>
+    				<?php } ?>
 				</ul>
 			</div>
 		</div>
