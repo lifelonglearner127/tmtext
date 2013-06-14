@@ -367,7 +367,7 @@ $(document).ready(function () {
         researchKeywordsAnalizer();
     });
 
-    $("#long_description").click(function(evt) {
+    $(document).on("click", '#long_description', function(evt){
         evt = evt || window.event;
         this.contentEditable = true;
         this.focus();
@@ -376,7 +376,7 @@ $(document).ready(function () {
         // Set a timer to allow the selection to happen and the dust settle first
         window.setTimeout(function() {
             selectRange(caretRange);
-        }, 5);
+        }, 10);
         return false;
     });
 

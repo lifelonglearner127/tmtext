@@ -62,7 +62,7 @@ function setMovement(){
         cursor: 'move',
         revert: "invalid",
         helper : 'clone',
-        //handle: ".handle",
+        handle: "h3",
     });
 
     $("#research, #research_edit" ).draggable({
@@ -335,7 +335,7 @@ $(document).ready(function() {
                             </div>
                             <div class="row-fluid"><label>Long description:</label>
                                 <label><span id="research_wc1">0</span> words</label>
-                                <div class="search_area uneditable-input ml_10"  id="long_description" onClick="this.contentEditable='true';" style="cursor: text; width: 365px;"></div>
+                                <div class="search_area uneditable-input ml_10"  id="long_description" contenteditable="false" style="cursor: text; width: 365px; overflow: auto;"></div>
                             </div>
                             <div class="row-fluid" id="research_density">
                                 <label>Density:</label><label>Primary:</label><input type="text" name="research_primary" class="span2" value="0" readonly="readonly" /><span class="percent">%</span>
