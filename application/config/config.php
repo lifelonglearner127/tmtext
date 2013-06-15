@@ -368,6 +368,7 @@ $config['tsv_cmd'] = 'cd '.$config['cmd_path'].'; ./'.$config['tsv_cmd'];
 $config['tag_rules_dir'] = $config['cmd_path'].'/tagRules';
 
 $config['csv_upload_dir'] = $config['attr_path'].'/uploads/';
+$config['tmp_upload_dir'] = $config['attr_path'].'/uploads/';
 
 $config['product_title'] = array('manu','screensize', 'manu', 'model', 'is3d', 'isled', 'ishdtv');
 

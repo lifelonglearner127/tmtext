@@ -1,3 +1,13 @@
+# 06/15 Ruslan
+CREATE TABLE IF NOT EXISTS `crawler_list` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `url` varchar(2000) COLLATE utf8_unicode_ci NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `status` varchar(30) COLLATE utf8_unicode_ci NOT NULL,
+  `created` datetime NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1;
+
 # 06/12 Tatiana
 UPDATE `groups` SET `default_controller` = 'measure/index' WHERE `groups`.`id` =1;
 UPDATE `groups` SET `default_controller` = 'validate/index' WHERE `groups`.`id` =3;

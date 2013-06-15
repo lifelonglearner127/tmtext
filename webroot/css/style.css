@@ -133,7 +133,7 @@ span[class*="hilite"] { background: yellow; }
 }
 #compet_area_grid .grid_se_section {
 	float: left;
-	width: 290px; 
+	width: 290px;
 	height: auto;
 	min-height: 30px;
 }
@@ -156,7 +156,7 @@ span[class*="hilite"] { background: yellow; }
 	display: block;
 	margin: 0 auto;
 	margin-top: 15px;
-	margin-bottom: 15px; 
+	margin-bottom: 15px;
 }
 #compet_area_grid .grid_se_section .c .c_content {
 	display: none;
@@ -311,6 +311,7 @@ body{
 
 	.right_nav_content li,
 	.left_nav_content li{
+		font-size: 12px;
 		float:left;
 		margin:0 5px;
 		background:#ffffff;
@@ -489,18 +490,18 @@ body{
 		width: 250px;
 	}
 
-.admin_tageditor_content{
+.admin_tageditor_content, .site_crawler_content{
     float:left;
     width:100%;
 }
 
 
-    .admin_tageditor_content p{
+    .admin_tageditor_content p, .site_crawler_content p{
         float:left;
         margin-top:5px;
     }
 
-    .admin_tageditor_content input{
+    .admin_tageditor_content input, .site_crawler_content input{
         margin-left:0px;
         width:100%;
     }
@@ -702,7 +703,7 @@ a.gray_out {
     cursor: pointer;
 }
 
-#tageditor_content #items_list li, #tageditor_description ul li{
+#tageditor_content #items_list li, #tageditor_description ul li, #Add_List #items_list li {
     margin-bottom: 8px;
     padding-bottom: 0px;
 }
