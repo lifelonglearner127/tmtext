@@ -24,6 +24,16 @@ class System extends MY_Controller {
 		$this->render();
 	}
 
+	public function getcompareproducts() {
+		$this->load->model('imported_data_parsed_model');
+		$ids = $this->input->post('ids');
+        $data = array(
+            'c_product' => $this->imported_data_parsed_model->getProductsByIdStack($ids)
+        );
+
+        $this->load->view('system/getcompareproducts', $data);
+	}
+
 	public function system_compare() {
 		$this->load->model('imported_data_parsed_model');
 		$this->data['all_products'] = $this->imported_data_parsed_model->getAllProducts();

@@ -41,26 +41,7 @@
 			</div>
 		</div>
 
-		<div class='sc_compare_block' id='sc_compare_block'>
-			<div class='span5'>
-	    		<div class='well'>
-	    			<p class='centered'><span class="label label-success">PRODUCT FOR COMPARE</span></p>
-				</div>
-			</div>
-			<div class='span2'>
-	    		<div class='well'>
-	    			<p class='centered'><span class="label label-info">DECISION</span></p>
-	    			<button id='sccb_yes_btn' type='button' disabled='true' class='btn btn-primary icb_systme_compare_btn margin_bottom disabled'>Yes</button>
-	    			<button id='sccb_not_btn' type='button' disabled='true' class='btn btn-danger icb_systme_compare_btn margin_bottom disabled'>No</button>
-					<button id='sccb_notsure_btn' type='button' disabled='true' class='btn icb_systme_compare_btn disabled'>Not sure</button>
-    			</div>
-			</div>
-			<div class='span5'>
-	    		<div class='well'>
-	    			<p class='centered'><span class="label label-success">PRODUCT FOR COMPARE</span></p>
-				</div>
-			</div>
-		</div>
+		<div class='sc_compare_block' id='sc_compare_block'>&nbsp;</div>
 
     </div>
   </div>
@@ -103,9 +84,20 @@
 	// 	console.log("AAAA");
 	// 	$(this).removeClass('active');
 	// });
+
+	var systemCompareProductsBaseUrl = base_url + 'index.php/system/getcompareproducts';
 	
 	function renderCompareSection() {
-
+		var ids = [];
+		$("#compare_pr_boxer > li > a").each(function(index, value) {
+			ids.push($(value).data('id'));
+		});
+		var grid_view = $.post(systemCompareProductsBaseUrl, { ids: ids }, 'html').done(function(data) {
+			$("#sc_compare_block").html(data);
+			$("#sccb_yes_btn, #sccb_not_btn, #sccb_notsure_btn").removeClass('disabled');
+			$("#sccb_yes_btn, #sccb_not_btn, #sccb_notsure_btn").removeAttr('disabled');
+			$.scrollTo("#sc_compare_block", 400);
+        });
 	}
 
 	function cleanAndRestore() {
@@ -115,6 +107,7 @@
 		$('#ibc_start_btn').attr('disabled', true);
 		$("#compare_pr_boxer").empty();
 		$("#select_pr_boxer > li > a").bind('click', selectPrBoxerClickHandler);
+		$("#sc_compare_block").empty();
 	}
 
 	function moveProductsToCompare() {

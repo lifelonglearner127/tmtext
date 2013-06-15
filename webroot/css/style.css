@@ -1,5 +1,9 @@
 /* Basic style */
 
+.nav > li > a {
+	line-height: 1.3em !important; 
+}
+
 .limited_list {
 	height: 400px;
 	overflow: auto;
