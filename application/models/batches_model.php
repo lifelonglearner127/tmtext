@@ -60,6 +60,8 @@ class Batches_model extends CI_Model {
 
     function update($id, $title)
     {
+        $CI =& get_instance();
+        $this->user_id = $CI->ion_auth->get_user_id();
         $this->title = $title;
         $this->modified = date('Y-m-d h:i:s');
 

@@ -1,5 +1,33 @@
 /* Basic style */
 
+.limited_list {
+	height: 400px;
+	overflow: auto;
+}
+
+.h_400 {
+	height: 400px;
+}
+
+.sc_compare_selection_block {
+	width: 100%;
+	height: 480px;
+}
+
+.centered {
+	text-align: center;
+}
+
+.icb_systme_compare_btn  {
+	display: block;
+	width: 85px;
+	margin: 0 auto;
+}
+
+.icb_systme_compare_btn.margin_bottom {
+	margin-bottom: 15px;
+}
+
 .text-center{
 	text-align:center;
 }
@@ -617,6 +645,10 @@ body{
 	margin-left:20px;
 }
 
+.mt_20{
+    margin-top: 20px;
+}
+
 .mt_40{
 	margin-top: 35px !important;
 }
@@ -637,6 +669,9 @@ body{
 	margin-top:10px !important;
 }
 
+.mr_10{
+    margin-right:10px;
+}
 /* new styles */
 
 html.busy, html.busy * {
@@ -1024,4 +1059,25 @@ label.dd-selected-text, label.dd-option-text{
 
 .arrow{
     float: right;
+}
+
+.research_batches input{
+    width: 120px;
+}
+
+.research_batches table td{
+    border:1px solid #ccc;
+    padding: 10px;
+    border-right:none;
+}
+
+.research_batches table thead td{
+    font-size: 14px;
+}
+
+.research_batches table tbody td{
+    font-size: 10px;
+}
+.research_batches table td:last-child{
+    border-right: 1px solid #ccc;
 }

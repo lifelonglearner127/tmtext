@@ -93,6 +93,19 @@ class Research extends MY_Controller {
             }
         }
     }
+    public function change_batch_name(){
+        $this->load->model('research_data_model');
+        $this->load->model('batches_model');
+        $batch = $this->input->post('old_batch_name');
+        $batch_id = $this->batches_model->getIdByName($batch);
+        if($this->batches_model->update($batch_id, $this->input->post('new_batch_name'))){
+            $response['message'] = 'success';
+        } else {
+            $response['message'] = 'error';
+        }
+        $this->output->set_content_type('application/json')
+            ->set_output(json_encode($response));
+    }
 
     public function get_research_data()
     {
@@ -104,6 +117,17 @@ class Research extends MY_Controller {
             $batch_id = $this->batches_model->insert($batch);
         }
         $results = $this->research_data_model->getAllByProductName($this->input->post('product_name'), $batch_id);
+        $this->output->set_content_type('application/json')
+            ->set_output(json_encode($results));
+    }
+
+    public function get_research_info()
+    {
+        $this->load->model('research_data_model');
+        $this->load->model('batches_model');
+        $batch = trim($this->input->post('choosen_batch'));
+        $batch_id = $this->batches_model->getIdByName($batch);
+        $results = $this->research_data_model->getDataByBatchId($this->input->post('search_text'), $batch_id);
         $this->output->set_content_type('application/json')
             ->set_output(json_encode($results));
     }
@@ -177,11 +201,17 @@ class Research extends MY_Controller {
         query_to_csv($query, TRUE, $this->input->get('batch').'.csv');
     }
 
-    function getBoxData(){
+    public function getBoxData()
+    {
         $this->load->model('research_box_position_model');
         $data = $this->research_box_position_model->getDataByUserId();
         $this->output->set_content_type('application/json')
             ->set_output(json_encode($data));
     }
 
+    public function delete_research_data()
+    {
+        $this->load->model('research_data_model');
+        $this->research_data_model->delete($this->input->post('id'));
+    }
 }

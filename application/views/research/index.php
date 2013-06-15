@@ -55,6 +55,72 @@ box['descriptions'] = '<h3>Descriptions</h3><div class="boxes_content"><div clas
         '<button id="save_in_batch" type="button" class="btn ml_10 btn-success">Save</button>' +
         '<button id="save_next" type="button" class="btn ml_10 btn-success">Save & Next</button></div></div>';
 
+function setMovement(){
+    $('input[name="research_text"]').focus();
+    $( "#sortable1, #sortable2" ).sortable({
+        connectWith: ".connectedSortable",
+        cursor: 'move',
+        revert: "invalid",
+        helper : 'clone',
+        handle: "h3",
+    });
+
+    $("#research, #research_edit" ).draggable({
+        containment: "#main",
+        handle: ".handle",
+        drag: function( event, ui ) {
+                var isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+                var isSafari = /Safari/.test(navigator.userAgent) && /Apple Computer/.test(navigator.vendor);
+
+                if (isChrome || isSafari){
+                    if(ui.originalPosition.left-100 > ui.position.left){
+                        if($(this).attr('id')=='research_edit'){
+                            $('#research_edit').css({'z-index':'9999'});
+                            $('#research').css({'z-index':'9998'});
+                        } else {
+                            $('#research_edit').css({'z-index':'9998'});
+                            $('#research').css({'z-index':'9999'});
+                        }
+                    } else {
+                        if($(this).attr('id')=='research_edit'){
+                            $('#research_edit').css({'z-index':'9999'});
+                            $('#research').css({'z-index':'9998'});
+                        } else {
+                            $('#research_edit').css({'z-index':'9998'});
+                            $('#research').css({'z-index':'9999'});
+                        }
+                    }
+                }else{
+                    if(ui.originalPosition.left-100 > ui.position.left){
+                        if($(this).attr('id')=='research_edit'){
+                            $('#research').css({'left':'50%'});
+                            $('#research_edit').css({'z-index':'9999'});
+                            $('#research').css({'z-index':'9998'});
+                        } else {
+                            $('#research_edit').css({'z-index':'9998'});
+                            $('#research').css({'z-index':'9999'});
+                            $('#research_edit').css({'left':'0%'});
+                        }
+                    } else {
+                        if($(this).attr('id')=='research_edit'){
+                            $('#research_edit').css({'z-index':'9999'});
+                            $('#research').css({'z-index':'9998'});
+                            $('#research').css({'left':'0%'});
+                        } else {
+                            $('#research_edit').css({'left':'-50%'});
+                            $('#research_edit').css({'z-index':'9998'});
+                            $('#research').css({'z-index':'9999'});
+                        }
+                    }
+                }
+        },
+    }).bind('click', function(){
+            $(this).focus();
+    });
+
+    $( "ul#sortable1 li.boxes, ul#sortable2 li.boxes" ).resizable();
+    $("#related_keywords").resizable({minWidth: 418, maxWidth:418});
+}
 $(document).ready(function() {
     $('head').find('title').text('Research & Edit');
 
@@ -82,40 +148,7 @@ $(document).ready(function() {
 
     }, 'json');
 
-    $('input[name="research_text"]').focus();
-    $( "#sortable1, #sortable2" ).sortable({
-        connectWith: ".connectedSortable",
-        cursor: 'move',
-        revert: "invalid",
-        helper : 'clone',
-        //handle: ".handle",
-    });
-
-    $("#research, #research_edit" ).draggable({
-        containment: "#main",
-        drag: function( event, ui ) {
-            console.log(111);
-            if(ui.originalPosition.left-100 > ui.position.left){
-                if($(this).attr('id')=='research_edit'){
-                    $('#research').css({'left':'50%'});
-                } else {
-                    $('#research_edit').css({'left':'0%'});
-                }
-            } else {
-                if($(this).attr('id')=='research_edit'){
-                    $('#research').css({'left':'0%'});
-                } else {
-                    $('#research_edit').css({'left':'-50%'});
-                }
-            }
-        }
-    }).bind('click', function(){
-        $(this).focus();
-    });
-
-    $( "ul#sortable1 li.boxes, ul#sortable2 li.boxes" ).resizable();
-    $("#related_keywords").resizable({minWidth: 418, maxWidth:418});
-
+    setMovement();
 
     $(document).on("click", '.arrow', function() {
         if($(this).hasClass('changed') && last_edition != ''){
@@ -124,10 +157,13 @@ $(document).ready(function() {
             $('div#research').css({'width':''});
             $('div#research_edit').css({'width':''});
             $(this).removeClass('changed');
+            $('div#long_description').css({'margin-left':'7px'});
             last_edition = '';
+            setMovement();
             return false;
         }
-            if($(this).parent().parent().parent().attr('id') == 'main'){
+
+        if($(this).parent().parent().parent().attr('id') == 'main'){
             var div = $(this).parent().parent().attr('id');
             if(div == 'research'){
                 last_edition = $('#main').html();
@@ -149,6 +185,7 @@ $(document).ready(function() {
             }
         } else {
             var parent_id = $(this).parent().parent().parent().parent().attr('id');
+            $('div#long_description').css({'margin-left':'107px'});
             if(parent_id == 'research'){
                 last_edition = $('#main').html();
                 $(this).parent().parent().parent().prepend($(this).parent().parent());
@@ -167,9 +204,10 @@ $(document).ready(function() {
                 $('#main').empty();
                 $('#main').append(research_edit).append(research);
                 $(this).addClass('changed');
+                return false;
             }
         }
-        return false;
+
     });
 
 });
@@ -297,7 +335,7 @@ $(document).ready(function() {
                             </div>
                             <div class="row-fluid"><label>Long description:</label>
                                 <label><span id="research_wc1">0</span> words</label>
-                                <div class="search_area uneditable-input ml_10"  id="long_description" onClick="this.contentEditable='true';" style="cursor: text; width: 365px;"></div>
+                                <div class="search_area uneditable-input ml_10"  id="long_description" contenteditable="false" style="cursor: text; width: 365px; overflow: auto;"></div>
                             </div>
                             <div class="row-fluid" id="research_density">
                                 <label>Density:</label><label>Primary:</label><input type="text" name="research_primary" class="span2" value="0" readonly="readonly" /><span class="percent">%</span>

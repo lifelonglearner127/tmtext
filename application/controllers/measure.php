@@ -46,20 +46,46 @@ class Measure extends MY_Controller {
 
     public function gridview() {
         $im_data_id = $this->input->post('im_data_id');
+        $data = array(
+            'im_data_id' => $im_data_id,
+            's_product' => array(),
+            's_product_short_desc_count' => 0,
+            's_product_long_desc_count' => 0,
+            'seo' => array('short' => array(), 'long' => array())
+        );
         if($im_data_id !== null && is_numeric($im_data_id)) {
-            $data = array(
-                'im_data_id' => $im_data_id
-            );
 
             // --- GET SELECTED RPODUCT DATA (START)
-
+            $this->load->model('imported_data_parsed_model');
+            $data_import = $this->imported_data_parsed_model->getByImId($im_data_id);
+            if($data_import['description'] !== null && trim($data_import['description']) !== "") {
+                $data_import['description'] = preg_replace('/\s+/', ' ', $data_import['description']);
+                // $data_import['description'] = preg_replace('/[^A-Za-z0-9\. -!]/', ' ', $data_import['description']);
+                $data['s_product_short_desc_count'] = count(explode(" ", $data_import['description']));
+            }
+            if($data_import['long_description'] !== null && trim($data_import['long_description']) !== "") {
+                $data_import['long_description'] = preg_replace('/\s+/', ' ', $data_import['long_description']);
+                // $data_import['long_description'] = preg_replace('/[^A-Za-z0-9\. -!]/', ' ', $data_import['long_description']);
+                $data['s_product_long_desc_count'] = count(explode(" ", $data_import['long_description']));
+            }  
+            $data['s_product'] = $data_import; 
             // --- GET SELECTED RPODUCT DATA (END)
 
-            // --- GET SELECTED RPODUCT ATTRIBUTES (START)
-
-            // --- GET SELECTED RPODUCT ATTRIBUTES (END)
-
+            // --- GET SELECTED RPODUCT SEO DATA (START)
+            if($data_import['description'] !== null && trim($data_import['description']) !== "") {
+                $data['seo']['short'] = $this->helpers->measure_analyzer_start_v2($data_import['description']);
+            }
+            if($data_import['long_description'] !== null && trim($data_import['long_description']) !== "") {
+                $data['seo']['long'] = $this->helpers->measure_analyzer_start_v2($data_import['long_description']);
+            }
+            // --- GET SELECTED RPODUCT SEO DATA (END)
         }
+
+        // -------- COMPARING V1 (START)
+        $s_term = $this->input->post('s_term');
+        
+        // -------- COMPARING V1 (END)
+
         $this->load->view('measure/gridview', $data);
     }
 
