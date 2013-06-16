@@ -6,6 +6,7 @@
 
 	<div class='span5'>
 		<div class='well'>
+			<input type='hidden' name='get_pc' value="<?php echo $keys[0]; ?>">
 			<p class='centered'><span class="label label-success">PRODUCT FOR COMPARE</span></p>
 			<p class='centered'><span class="label label-info"><?php echo $c_product[$keys[0]]['customer']; ?></span></p>
 			<p class='centered'>
@@ -62,6 +63,7 @@
 
 	<div class='span5'>
 		<div class='well'>
+			<input type='hidden' name='get_pc' value="<?php echo $keys[1]; ?>">
 			<p class='centered'><span class="label label-success">PRODUCT FOR COMPARE</span></p>
 			<p class='centered'><span class="label label-info"><?php echo $c_product[$keys[1]]['customer']; ?></span></p>
 			<p class='centered'>

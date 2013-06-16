@@ -25,7 +25,23 @@ class Imported_data_parsed_model extends CI_Model {
         return $query->result();
     }
 
+    function deleteProductsVotedPair($id) {
+        return $this->db->delete($this->tables['products_compare'], array('id' => $id)); 
+    }
+
     function getProductsCompareVoted() {
+        // ---- get customers list (start)
+        $customers_list = array();
+        $query_cus = $this->db->order_by('name', 'asc')->get($this->tables['customers']);
+        $query_cus_res = $query_cus->result();
+        if(count($query_cus_res) > 0) {
+            foreach ($query_cus_res as $key => $value) {
+                $n = strtolower($value->name);
+                $customers_list[] = $n;
+            }
+        }
+        $customers_list = array_unique($customers_list);
+        // ---- get customers list (end)
         $query_voted = $this->db->order_by('stamp', 'desc')->get($this->tables['products_compare']);
         $query_voted_res = $query_voted->result();
         $res_stack = array();
@@ -52,6 +68,13 @@ class Imported_data_parsed_model extends CI_Model {
                 foreach($results as $result) {
                     if($result->key === 'URL') {
                         $data_f['url'] = $result->value;
+                        $cus_val = "";
+                        foreach ($customers_list as $ki => $vi) {
+                            if(strpos($result->value, "$vi") !== false) {
+                                $cus_val  = $vi;
+                            }
+                        }
+                        if($cus_val !== "") $data_f['customer'] = $cus_val;
                     }
                     if($result->key === 'Product Name') {
                         $data_f['product_name'] = $result->value;
@@ -71,10 +94,17 @@ class Imported_data_parsed_model extends CI_Model {
                 $this->db->where('imported_data_id', $v->im_pr_s);
                 $query = $this->db->get($this->tables['imported_data_parsed']);
                 $results = $query->result();
-                $data_s = array('url' => '', 'product_name' => '', 'description' => '', 'long_description' => '');
+                $data_s = array('url' => '', 'product_name' => '', 'description' => '', 'long_description' => '', 'customer' => '');
                 foreach($results as $result) {
                     if($result->key === 'URL') {
                         $data_s['url'] = $result->value;
+                        $cus_val = "";
+                        foreach ($customers_list as $ki => $vi) {
+                            if(strpos($result->value, "$vi") !== false) {
+                                $cus_val  = $vi;
+                            }
+                        }
+                        if($cus_val !== "") $data_s['customer'] = $cus_val;
                     }
                     if($result->key === 'Product Name') {
                         $data_s['product_name'] = $result->value;

@@ -90,12 +90,37 @@
 	var systemCompareProductsBaseUrl = base_url + 'index.php/system/getcompareproducts';
 	var systemCompareProductsVoteBaseUrl = base_url + 'index.php/system/votecompareproducts';
 	var systemCompareGetProductsVotedBaseUrl = base_url + 'index.php/system/getproductscomparevoted';
+	var systemCompareDeleteProductsVotedPairBaseUrl = base_url + 'index.php/system/deleteproductsvotedpair';
+
+	function reComparePair(im_pr_f, im_pr_s) {
+		cleanAndRestore();
+		var ids = [im_pr_f, im_pr_s];
+		var render_compare_section = $.post(systemCompareProductsBaseUrl, { ids: ids }, 'html').done(function(data) {
+			$("#sc_compare_block").html(data);
+			$("#sccb_yes_btn, #sccb_not_btn, #sccb_notsure_btn").removeClass('disabled');
+			$("#sccb_yes_btn, #sccb_not_btn, #sccb_notsure_btn").removeAttr('disabled');
+			$.scrollTo("#sc_compare_block", 400);
+        });
+	}
+
+	function deleteComparePair(id) {
+		if(confirm('Are you sure?')) {
+			var delete_products_votedpair = $.post(systemCompareDeleteProductsVotedPairBaseUrl, { id: id }, 'json').done(function(data) {
+				if(data) {
+					renderComparedProductsData();
+				}
+			});
+		}
+	}
 
 	function productCompareDecision(dec) {
 		var ids = [];
-		$("#compare_pr_boxer > li > a").each(function(index, value) {
-			ids.push($(value).data('id'));
-		});
+		$("input[type='hidden'][name='get_pc']").each(function(index, value) {
+			ids.push($(value).val());
+		});		
+		// $("#compare_pr_boxer > li > a").each(function(index, value) {
+		// 	ids.push($(value).data('id'));
+		// });
 		if(ids.length === 2) {
 			var product_compare_decision = $.post(systemCompareProductsVoteBaseUrl, { ids: ids, dec: dec }, 'json').done(function(data) {
 				if(data) {

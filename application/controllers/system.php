@@ -24,6 +24,13 @@ class System extends MY_Controller {
 		$this->render();
 	}
 
+	public function deleteproductsvotedpair() {
+		$this->load->model('imported_data_parsed_model');
+		$id = $this->input->post('id');
+		$res = $this->imported_data_parsed_model->deleteProductsVotedPair($id);
+		$this->output->set_content_type('application/json')->set_output(json_encode($res));
+	}
+
 	public function getproductscomparevoted() {
 		$this->load->model('imported_data_parsed_model');
         $data = array(
