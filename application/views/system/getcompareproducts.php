@@ -54,9 +54,9 @@
 	<div class='span2'>
 		<div class='well'>
 			<p class='centered'><span class="label label-info">DECISION</span></p>
-			<button id='sccb_yes_btn' type='button' disabled='true' class='btn btn-primary icb_systme_compare_btn margin_bottom disabled'>Yes</button>
-			<button id='sccb_not_btn' type='button' disabled='true' class='btn btn-danger icb_systme_compare_btn margin_bottom disabled'>No</button>
-			<button id='sccb_notsure_btn' type='button' disabled='true' class='btn icb_systme_compare_btn disabled'>Not sure</button>
+			<button id='sccb_yes_btn' onclick="productCompareDecision(2);" type='button' disabled='true' class='btn btn-primary icb_systme_compare_btn margin_bottom disabled'>Yes</button>
+			<button id='sccb_not_btn' onclick="productCompareDecision(1);" type='button' disabled='true' class='btn btn-danger icb_systme_compare_btn margin_bottom disabled'>No</button>
+			<button id='sccb_notsure_btn' onclick="productCompareDecision(0);" type='button' disabled='true' class='btn icb_systme_compare_btn disabled'>Not sure</button>
 		</div>
 	</div>
 

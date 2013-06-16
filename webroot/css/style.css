@@ -1,5 +1,19 @@
 /* Basic style */
 
+.sc_pair_section {
+	margin-bottom: 20px;
+}
+.sc_pair_section .general_well_middle {
+	margin-top: 10px;
+}
+.sc_pair_section .general_well_middle .gwm_label {
+	font-weight: bold;
+	font-size: 12px;
+}
+.sc_pair_section .general_well_middle .gwm_body {
+	font-size: 12px;
+}
+
 .nav > li > a {
 	line-height: 1.3em !important; 
 }

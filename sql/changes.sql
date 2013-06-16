@@ -1,3 +1,13 @@
+# 06/16 Ilya
+CREATE TABLE IF NOT EXISTS `products_compare` (
+  `id` INT NOT NULL AUTO_INCREMENT ,
+  `im_pr_f` INT NULL ,
+  `im_pr_s` INT NULL ,
+  `rate` TINYINT NULL ,
+  `stamp` DATETIME NULL ,
+  PRIMARY KEY (`id`) 
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1;
+
 # 06/15 Ruslan
 CREATE TABLE IF NOT EXISTS `crawler_list` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,

@@ -9,7 +9,8 @@ class Imported_data_parsed_model extends CI_Model {
     var $tables = array(
     	'imported_data_parsed' => 'imported_data_parsed',
         'imported_data' => 'imported_data',
-        'customers' => 'customers'
+        'customers' => 'customers',
+        'products_compare' => 'products_compare'
     );
 
     function __construct() {
@@ -22,6 +23,105 @@ class Imported_data_parsed_model extends CI_Model {
                   ->get($this->tables['imported_data_parsed']);
 
         return $query->result();
+    }
+
+    function getProductsCompareVoted() {
+        $query_voted = $this->db->order_by('stamp', 'desc')->get($this->tables['products_compare']);
+        $query_voted_res = $query_voted->result();
+        $res_stack = array();
+        if(count($query_voted_res) > 0) {
+            foreach ($query_voted_res as $k => $v) {
+                $md = array(
+                    'id' => $v->id,
+                    'im_pr_f' => $v->im_pr_f,
+                    'im_pr_s' => $v->im_pr_s,
+                    'rate' => $v->rate,
+                    'stamp' => $v->stamp,
+                    'products_data' => array(
+                        "$v->im_pr_f" => array(),
+                        "$v->im_pr_s" => array()
+                    )
+                );
+                // ----- get product details (start)
+                // --- get first
+                $this->db->select('imported_data_id, key, value');
+                $this->db->where('imported_data_id', $v->im_pr_f);
+                $query = $this->db->get($this->tables['imported_data_parsed']);
+                $results = $query->result();
+                $data_f = array('url' => '', 'product_name' => '', 'description' => '', 'long_description' => '', 'customer' => '');
+                foreach($results as $result) {
+                    if($result->key === 'URL') {
+                        $data_f['url'] = $result->value;
+                    }
+                    if($result->key === 'Product Name') {
+                        $data_f['product_name'] = $result->value;
+                    }
+                    if($result->key === 'Description') {
+                        $data_f['description'] = $result->value;
+                    }
+                    if($result->key === 'Long_Description') {
+                        $data_f['long_description'] = $result->value;
+                    }
+                }
+                if(count($data_f) > 0) {
+                    $md['products_data']["$v->im_pr_f"] = $data_f;
+                }
+                // --- get second
+                $this->db->select('imported_data_id, key, value');
+                $this->db->where('imported_data_id', $v->im_pr_s);
+                $query = $this->db->get($this->tables['imported_data_parsed']);
+                $results = $query->result();
+                $data_s = array('url' => '', 'product_name' => '', 'description' => '', 'long_description' => '');
+                foreach($results as $result) {
+                    if($result->key === 'URL') {
+                        $data_s['url'] = $result->value;
+                    }
+                    if($result->key === 'Product Name') {
+                        $data_s['product_name'] = $result->value;
+                    }
+                    if($result->key === 'Description') {
+                        $data_s['description'] = $result->value;
+                    }
+                    if($result->key === 'Long_Description') {
+                        $data_s['long_description'] = $result->value;
+                    }
+                }
+                if(count($data_s) > 0) {
+                    $md['products_data']["$v->im_pr_s"] = $data_s;
+                }
+                // ----- get product details (end)
+                $res_stack[] = $md;
+            }
+        }
+        return $res_stack;
+    }
+
+    function voteCompareProducts($ids, $dec) {
+        $st = 1; // 1 - insert, 2 - update
+        $check_query = $this->db->get_where($this->tables['products_compare'], array('im_pr_f' => $ids[0], 'im_pr_s' => $ids[1]));
+        $check_query_res = $check_query->result();
+        if(count($check_query_res) > 0) {
+            $st = 2;
+        }
+        $change_status = false;
+        if($st === 1) { // insert
+            $insert_object = array(
+                'im_pr_f' => $ids[0],
+                'im_pr_s' => $ids[1],
+                'rate' => $dec,
+                'stamp' => date("Y-m-d H:i:s")
+            );
+            $this->db->insert($this->tables['products_compare'], $insert_object);
+            $insert_id = $this->db->insert_id();
+            if($insert_id > 0) $change_status = true;
+        } else if($st === 2) { // update
+            $update_object = array(
+                'rate' => $dec
+            );
+            $res = $this->db->update($this->tables['products_compare'], $update_object, array('im_pr_f' => $ids[0], 'im_pr_s' => $ids[1]));
+            if($res) $change_status = true;
+        }
+        return $change_status;
     }
 
     function getProductsByIdStack($ids) {

@@ -24,13 +24,28 @@ class System extends MY_Controller {
 		$this->render();
 	}
 
+	public function getproductscomparevoted() {
+		$this->load->model('imported_data_parsed_model');
+        $data = array(
+            'v_producs' => $this->imported_data_parsed_model->getProductsCompareVoted()
+        );
+        $this->load->view('system/getproductscomparevoted', $data);
+	}
+
+	public function votecompareproducts() {
+		$this->load->model('imported_data_parsed_model');
+		$ids = $this->input->post('ids');
+		$dec = $this->input->post('dec');
+		$output = $this->imported_data_parsed_model->voteCompareProducts($ids, $dec);
+		$this->output->set_content_type('application/json')->set_output(json_encode($output));
+	}
+
 	public function getcompareproducts() {
 		$this->load->model('imported_data_parsed_model');
 		$ids = $this->input->post('ids');
         $data = array(
             'c_product' => $this->imported_data_parsed_model->getProductsByIdStack($ids)
         );
-
         $this->load->view('system/getcompareproducts', $data);
 	}
 
