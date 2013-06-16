@@ -119,6 +119,7 @@ class Site_Crawler extends MY_Controller {
 			$this->crawler_list_model->updateStatus($data->id, 'lock');
 
 			if ($page_data = $this->pageprocessor->get_data($data->url)) {
+				$page_data['URL'] = $data->url;
 				// save data
 				$csv_row = $this->arrayToCsv($page_data);
 				$key = $this->imported_data_model->_get_key($csv_row);
@@ -148,6 +149,7 @@ class Site_Crawler extends MY_Controller {
 		$this->crawler_list_model->updateStatus($data->id, 'lock');
 
 		if ($page_data = $this->pageprocessor->get_data($data->url)) {
+			$page_data['URL'] = $data->url;
 			// save data
 			$csv_row = $this->arrayToCsv($page_data);
 			$key = $this->imported_data_model->_get_key($csv_row);
