@@ -75,7 +75,11 @@ class PageProcessor {
 		$methodName = 'process_'.$this->hostName;
 
 		if	( method_exists($this, $methodName) ) {
-        	return $this->$methodName();
+			$result = $this->$methodName();
+			foreach ($result as &$value) {
+				$value = trim($value);
+			}
+        	return $result;
         }
 
         return false;
@@ -101,8 +105,8 @@ class PageProcessor {
 		}
 
 		return array(
-			'product_name' => $title['#text'][0],
-			'description' => $description['#text'][0]
+			'Product Name' => $title['#text'][0],
+			'Description' => $description['#text'][0]
 		);
 	}
 
@@ -121,8 +125,8 @@ class PageProcessor {
 		}
 
 		return array(
-			'product_name' => $title['#text'][0],
-			'description' => $description['#text'][0]
+			'Product Name' => $title['#text'][0],
+			'Description' => $description['#text'][0]
 		);
 	}
 
@@ -141,9 +145,9 @@ class PageProcessor {
 		}
 
 		return array(
-			'product_name' => $title['#text'][0],
-			'description' => $description['#text'][0],
-			'long_description' => $descriptionLong['#text'][0]
+			'Product Name' => $title['#text'][0],
+			'Description' => $description['#text'][0],
+			'Long_Description' => $descriptionLong['#text'][0]
 		);
 	}
 
@@ -166,9 +170,9 @@ class PageProcessor {
 		}
 
 		return array(
-			'product_name' => $title['#text'][0],
-			'long_description' => $description['#text'][0],
-			'description' => $descriptionShort['#text'][0]
+			'Product Name' => $title['#text'][0],
+			'Long_Description' => $description['#text'][0],
+			'Description' => $descriptionShort['#text'][0]
 		);
 	}
 
@@ -184,8 +188,8 @@ class PageProcessor {
 
 
 		return array(
-			'product_name' => $title['#text'][0],
-			'description' => $description,
+			'Product Name' => $title['#text'][0],
+			'Description' => $description,
 		);
 	}
 
@@ -200,8 +204,8 @@ class PageProcessor {
 		}
 
 		return array(
-			'product_name' => $title['#text'][0],
-			'description' => $description,
+			'Product Name' => $title['#text'][0],
+			'Description' => $description,
 		);
 	}
 
@@ -225,9 +229,9 @@ class PageProcessor {
 		}
 
 		return array(
-			'product_name' => $title['#text'][0],
-			'description' => $description,
-			'long_description' => $description_long
+			'Product Name' => $title['#text'][0],
+			'Description' => $description,
+			'Long_Description' => $description_long
 		);
 	}
 
@@ -247,9 +251,9 @@ class PageProcessor {
 		}
 
 		return array(
-			'product_name' => $title['#text'][0],
-			'description' => $description,
-			'long_description' => $description_long
+			'Product Name' => $title['#text'][0],
+			'Description' => $description,
+			'Long_Description' => $description_long
 		);
 	}
 
@@ -275,9 +279,9 @@ class PageProcessor {
 		}
 
 		return array(
-			'product_name' => $title['#text'][0],
-			'description' => $description,
-			'long_description' => $description_long
+			'Product Name' => $title['#text'][0],
+			'Description' => $description,
+			'Long_Description' => $description_long
 		);
 	}
 }

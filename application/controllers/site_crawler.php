@@ -108,6 +108,36 @@ class Site_Crawler extends MY_Controller {
 		));
 	}
 
+	function crawl_now() {
+		$this->load->model('imported_data_model');
+		$this->load->model('imported_data_parsed_model');
+		$this->load->model('crawler_list_model');
+		$this->load->library('PageProcessor');
+
+		$rows = $this->crawler_list_model->getAllNew();
+		foreach( $rows as $data) {
+			$this->crawler_list_model->updateStatus($data->id, 'lock');
+
+			if ($page_data = $this->pageprocessor->get_data($data->url)) {
+				// save data
+				$csv_row = $this->arrayToCsv($page_data);
+				$key = $this->imported_data_model->_get_key($csv_row);
+
+				if (!$this->imported_data_model->findByKey($key)) {
+					$imported_id = $this->imported_data_model->insert($csv_row);
+
+					foreach($page_data as $key=>$value) {
+						$value = (!is_null($value))?$value: '';
+						$this->imported_data_parsed_model->insert($imported_id, $key, $value);
+					}
+				}
+				$this->crawler_list_model->updateStatus($data->id, 'finished');
+			} else {
+				$this->crawler_list_model->updateStatus($data->id, 'new');
+			}
+		}
+	}
+
 	function download_one(){
 		$this->load->model('imported_data_model');
 		$this->load->model('imported_data_parsed_model');
