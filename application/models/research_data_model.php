@@ -60,8 +60,8 @@ class Research_data_model extends CI_Model {
         return $this->db->insert_id();
     }
 
-   function update($id, $batch_id, $url, $product_name, $keyword1, $keyword2, $keyword3, $meta_name,
-                    $meta_description, $meta_keywords, $short_description, $long_description, $revision)
+   function update($id, $batch_id, $url, $product_name, $short_description, $long_description, $keyword1='', $keyword2='', $keyword3='', $meta_name='',
+                    $meta_description='', $meta_keywords='')
     {
         $CI =& get_instance();
         $this->batch_id = $batch_id;
@@ -113,6 +113,17 @@ class Research_data_model extends CI_Model {
     function getAllByBatchId($batch_id){
         $query = $this->db->where('batch_id', $batch_id)->get($this->tables['research_data']);
         return $query->result();
+    }
+
+    public function updateItem($id, $product_name, $url, $short_description, $long_description) {
+        $data = array(
+            'product_name' => $product_name,
+            'url' => $url,
+            'short_description' => $short_description,
+            'long_description' => $long_description
+        );
+
+        $this->db->update( 'research_data', $data, array( 'id' => $id ) );
     }
 
     function delete($id)

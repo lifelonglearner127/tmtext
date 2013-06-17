@@ -100,12 +100,14 @@ function researchKeywordsAnalizer() {
         };
 
         $.post(base_url+'index.php/measure/analyzekeywords', research_send_object, 'json').done(function(data) {
-            var first = (data['primary'][1].toPrecision(3)*100).toFixed(2);
-            var second = (data['secondary'][1].toPrecision(3)*100).toFixed(2);
-            var third = (data['tertiary'][1].toPrecision(3)*100).toFixed(2);
-            $('input[name="research_primary"]').val(first);
-            $('input[name="research_secondary"]').val(second);
-            $('input[name="research_tertiary"]').val(third);
+            if(data.length > 0){
+                var first = (data['primary'][1].toPrecision(3)*100).toFixed(2);
+                var second = (data['secondary'][1].toPrecision(3)*100).toFixed(2);
+                var third = (data['tertiary'][1].toPrecision(3)*100).toFixed(2);
+                $('input[name="research_primary"]').val(first);
+                $('input[name="research_secondary"]').val(second);
+                $('input[name="research_tertiary"]').val(third);
+            }
         });
     }
 }
@@ -408,11 +410,13 @@ $(document).ready(function () {
     });
 
     $(document).on("click", '#research_batches_search', function() {
-        $.post(base_url + 'index.php/research/get_research_info', { 'choosen_batch': $('select[name="research_batches"] option:selected').text(),
+
+        /*$.post(base_url + 'index.php/research/get_research_info', { 'choosen_batch': $('select[name="research_batches"] option:selected').text(),
                 'search_text': $('input[name="research_batches_text"]').val() },
             function(data){
                 $('table#research_results tbody').empty();
                 if(data.length > 0 ){
+                    $( '#readTemplate' ).render( data ).appendTo( "#records" );
                     var str = '';
                     for(var i=0; i < data.length; i++){
                         str += '<tr id="'+data[i].id+'"><td>'+data[i].created+'</td>';
@@ -428,10 +432,11 @@ $(document).ready(function () {
                 } else {
                     $('table#research_results tbody').append('<tr align="center"><td colspan="8">Empty result</td></tr>');
                 }
-            });
+          });*/
+        readResearchData();
     });
 
-    $(document).on("click", 'table#research_results tr', function() {
+    /*$(document).on("click", 'table#research_results tr', function() {
         $("table#research_results tr").each(function(){
             $(this).css({'background':'none'});
         });
@@ -450,7 +455,7 @@ $(document).ready(function () {
             function(data){
 
         });
-    });
+    });*/
 
 });
 

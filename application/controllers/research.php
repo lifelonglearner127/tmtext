@@ -8,7 +8,7 @@ class Research extends MY_Controller {
 
         $this->load->library('form_validation');
         $this->load->library('helpers');
-        $this->data['title'] = 'Research & edit';
+        $this->data['title'] = 'Research & Edit';
 
         if (!$this->ion_auth->logged_in())
         {
@@ -125,11 +125,39 @@ class Research extends MY_Controller {
     {
         $this->load->model('research_data_model');
         $this->load->model('batches_model');
-        $batch = trim($this->input->post('choosen_batch'));
+        $batch = trim($this->input->get('choosen_batch'));
         $batch_id = $this->batches_model->getIdByName($batch);
-        $results = $this->research_data_model->getDataByBatchId($this->input->post('search_text'), $batch_id);
+
+        $results = $this->research_data_model->getDataByBatchId($this->input->get('search_text'), $batch_id);
+
         $this->output->set_content_type('application/json')
             ->set_output(json_encode($results));
+    }
+
+    public function update_research_info()
+    {
+        $this->load->model('research_data_model');
+        if( !empty( $_POST ) ) {
+            $id = $this->input->post('id');
+            $url = $this->input->post('url');
+            $product_name = $this->input->post('product_name');
+            $short_description = $this->input->post('short_description');
+            $long_description = $this->input->post('long_description');
+            $this->research_data_model->updateItem($id, $product_name, $url, $short_description, $long_description);
+            echo 'Record updated successfully!';
+        }
+    }
+
+    public function delete_research_info()
+    {
+        $this->load->model('research_data_model');
+        $id = $this->input->post('id');
+        if( is_null( $id ) ) {
+            echo 'ERROR: Id not provided.';
+            return;
+        }
+        $this->research_data_model->delete( $id );
+        echo 'Records deleted successfully';
     }
 
     public function save_in_batch()
@@ -191,6 +219,12 @@ class Research extends MY_Controller {
             ->set_output(json_encode($data));
     }
 
+    public function getById( $id ) {
+        $this->load->model('research_data_model');
+        if( isset( $id ) )
+            echo json_encode( $this->research_data_model->get( $id ) );
+    }
+
     public function export()
     {
         $this->load->model('batches_model');
@@ -211,7 +245,6 @@ class Research extends MY_Controller {
 
     public function delete_research_data()
     {
-        $this->load->model('research_data_model');
         $this->research_data_model->delete($this->input->post('id'));
     }
 }
