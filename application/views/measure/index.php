@@ -59,139 +59,139 @@
         });
     }
     // ---- ajax customers list loader for grids view (start)
-    function gridsCustomersListLoader() {
-        var ddData_grids_1 = [];
-        var ddData_grids_2 = [];
-        var ddData_grids_3 = [];
-        var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist', { }, 'json').done(function(c_data) {
-            var cl_arr = [];
-            for(i in c_data) {
-                cl_arr.push(c_data[i]);
-            }
-            // --- GRID SECTION 1
-            for (var i = 0; i < cl_arr.length; i++) {
-                var text_d = cl_arr[i];
-                var value_d = cl_arr[i];
-                var imageSrc_d = "";
-                var select_st = false;
-                if(cl_arr[i] == 'bjs.com') {
-                    text_d = "";
-                    imageSrc_d = base_url + "img/bjs-logo.gif";
-                } else if(cl_arr[i] == 'sears.com') {
-                    text_d = "";
-                    imageSrc_d = base_url + "img/sears-logo.png";
-                } else if(cl_arr[i] == 'walmart.com') {
-                    text_d = "";
-                    imageSrc_d = base_url + "img/walmart-logo.png";
-                    select_st = true;
-                } else if(cl_arr[i] == 'staples.com') {
-                    text_d = "";
-                    imageSrc_d = base_url + "img/staples-logo.png";
-                } else if(cl_arr[i] == 'overstock.com') {
-                    text_d = "";
-                    imageSrc_d = base_url + "img/overstock-logo.png";
-                } else if(cl_arr[i] == 'tigerdirect.com') {
-                    text_d = "";
-                    imageSrc_d = base_url + "img/tigerdirect-logo.png";
-                }
-                var mid = {
-                    text: text_d,
-                    value: value_d,
-                    selected: select_st,
-                    description: "",
-                    imageSrc: imageSrc_d
-                };
-                ddData_grids_1.push(mid);
-            };
-            // --- GRID SECTION 2 
-            for (var i = 0; i < cl_arr.length; i++) {
-                var text_d = cl_arr[i];
-                var value_d = cl_arr[i];
-                var imageSrc_d = "";
-                var select_st = false;
-                if(cl_arr[i] == 'bjs.com') {
-                    text_d = "";
-                    imageSrc_d = base_url + "img/bjs-logo.gif";
-                } else if(cl_arr[i] == 'sears.com') {
-                    text_d = "";
-                    imageSrc_d = base_url + "img/sears-logo.png";
-                } else if(cl_arr[i] == 'walmart.com') {
-                    text_d = "";
-                    imageSrc_d = base_url + "img/walmart-logo.png";
-                } else if(cl_arr[i] == 'staples.com') {
-                    text_d = "";
-                    imageSrc_d = base_url + "img/staples-logo.png";
-                    select_st = true;
-                } else if(cl_arr[i] == 'overstock.com') {
-                    text_d = "";
-                    imageSrc_d = base_url + "img/overstock-logo.png";
-                } else if(cl_arr[i] == 'tigerdirect.com') {
-                    text_d = "";
-                    imageSrc_d = base_url + "img/tigerdirect-logo.png";
-                }
-                var mid = {
-                    text: text_d,
-                    value: value_d,
-                    selected: select_st,
-                    description: "",
-                    imageSrc: imageSrc_d
-                };
-                ddData_grids_2.push(mid);
-            };
-            // --- GRID SECTION 3
-            for (var i = 0; i < cl_arr.length; i++) {
-                var text_d = cl_arr[i];
-                var value_d = cl_arr[i];
-                var imageSrc_d = "";
-                var select_st = false;
-                if(cl_arr[i] == 'bjs.com') {
-                    text_d = "";
-                    imageSrc_d = base_url + "img/bjs-logo.gif";
-                } else if(cl_arr[i] == 'sears.com') {
-                    text_d = "";
-                    imageSrc_d = base_url + "img/sears-logo.png";
-                } else if(cl_arr[i] == 'walmart.com') {
-                    text_d = "";
-                    imageSrc_d = base_url + "img/walmart-logo.png";
-                } else if(cl_arr[i] == 'staples.com') {
-                    text_d = "";
-                    imageSrc_d = base_url + "img/staples-logo.png";
-                } else if(cl_arr[i] == 'overstock.com') {
-                    text_d = "";
-                    imageSrc_d = base_url + "img/overstock-logo.png";
-                    select_st = true;
-                } else if(cl_arr[i] == 'tigerdirect.com') {
-                    text_d = "";
-                    imageSrc_d = base_url + "img/tigerdirect-logo.png";
-                }
-                var mid = {
-                    text: text_d,
-                    value: value_d,
-                    selected: select_st,
-                    description: "",
-                    imageSrc: imageSrc_d
-                };
-                ddData_grids_3.push(mid);
-            };
-            setTimeout(function(){
-                $('#an_grd_view_drop_gr1').ddslick({
-                    data: ddData_grids_1,
-                    width: 290,
-                    truncateDescription: true,
-                });
-                $('#an_grd_view_drop_gr2').ddslick({
-                    data: ddData_grids_2,
-                    width: 290,
-                    truncateDescription: true,
-                });
-                $('#an_grd_view_drop_gr3').ddslick({
-                    data: ddData_grids_3,
-                    width: 290,
-                    truncateDescription: true,
-                });
-            }, 500);
-        });
-    }
+    // function gridsCustomersListLoader() {
+    //     var ddData_grids_1 = [];
+    //     var ddData_grids_2 = [];
+    //     var ddData_grids_3 = [];
+    //     var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist', { }, 'json').done(function(c_data) {
+    //         var cl_arr = [];
+    //         for(i in c_data) {
+    //             cl_arr.push(c_data[i]);
+    //         }
+    //         // --- GRID SECTION 1
+    //         for (var i = 0; i < cl_arr.length; i++) {
+    //             var text_d = cl_arr[i];
+    //             var value_d = cl_arr[i];
+    //             var imageSrc_d = "";
+    //             var select_st = false;
+    //             if(cl_arr[i] == 'bjs.com') {
+    //                 text_d = "";
+    //                 imageSrc_d = base_url + "img/bjs-logo.gif";
+    //             } else if(cl_arr[i] == 'sears.com') {
+    //                 text_d = "";
+    //                 imageSrc_d = base_url + "img/sears-logo.png";
+    //             } else if(cl_arr[i] == 'walmart.com') {
+    //                 text_d = "";
+    //                 imageSrc_d = base_url + "img/walmart-logo.png";
+    //                 select_st = true;
+    //             } else if(cl_arr[i] == 'staples.com') {
+    //                 text_d = "";
+    //                 imageSrc_d = base_url + "img/staples-logo.png";
+    //             } else if(cl_arr[i] == 'overstock.com') {
+    //                 text_d = "";
+    //                 imageSrc_d = base_url + "img/overstock-logo.png";
+    //             } else if(cl_arr[i] == 'tigerdirect.com') {
+    //                 text_d = "";
+    //                 imageSrc_d = base_url + "img/tigerdirect-logo.png";
+    //             }
+    //             var mid = {
+    //                 text: text_d,
+    //                 value: value_d,
+    //                 selected: select_st,
+    //                 description: "",
+    //                 imageSrc: imageSrc_d
+    //             };
+    //             ddData_grids_1.push(mid);
+    //         };
+    //         // --- GRID SECTION 2 
+    //         for (var i = 0; i < cl_arr.length; i++) {
+    //             var text_d = cl_arr[i];
+    //             var value_d = cl_arr[i];
+    //             var imageSrc_d = "";
+    //             var select_st = false;
+    //             if(cl_arr[i] == 'bjs.com') {
+    //                 text_d = "";
+    //                 imageSrc_d = base_url + "img/bjs-logo.gif";
+    //             } else if(cl_arr[i] == 'sears.com') {
+    //                 text_d = "";
+    //                 imageSrc_d = base_url + "img/sears-logo.png";
+    //             } else if(cl_arr[i] == 'walmart.com') {
+    //                 text_d = "";
+    //                 imageSrc_d = base_url + "img/walmart-logo.png";
+    //             } else if(cl_arr[i] == 'staples.com') {
+    //                 text_d = "";
+    //                 imageSrc_d = base_url + "img/staples-logo.png";
+    //                 select_st = true;
+    //             } else if(cl_arr[i] == 'overstock.com') {
+    //                 text_d = "";
+    //                 imageSrc_d = base_url + "img/overstock-logo.png";
+    //             } else if(cl_arr[i] == 'tigerdirect.com') {
+    //                 text_d = "";
+    //                 imageSrc_d = base_url + "img/tigerdirect-logo.png";
+    //             }
+    //             var mid = {
+    //                 text: text_d,
+    //                 value: value_d,
+    //                 selected: select_st,
+    //                 description: "",
+    //                 imageSrc: imageSrc_d
+    //             };
+    //             ddData_grids_2.push(mid);
+    //         };
+    //         // --- GRID SECTION 3
+    //         for (var i = 0; i < cl_arr.length; i++) {
+    //             var text_d = cl_arr[i];
+    //             var value_d = cl_arr[i];
+    //             var imageSrc_d = "";
+    //             var select_st = false;
+    //             if(cl_arr[i] == 'bjs.com') {
+    //                 text_d = "";
+    //                 imageSrc_d = base_url + "img/bjs-logo.gif";
+    //             } else if(cl_arr[i] == 'sears.com') {
+    //                 text_d = "";
+    //                 imageSrc_d = base_url + "img/sears-logo.png";
+    //             } else if(cl_arr[i] == 'walmart.com') {
+    //                 text_d = "";
+    //                 imageSrc_d = base_url + "img/walmart-logo.png";
+    //             } else if(cl_arr[i] == 'staples.com') {
+    //                 text_d = "";
+    //                 imageSrc_d = base_url + "img/staples-logo.png";
+    //             } else if(cl_arr[i] == 'overstock.com') {
+    //                 text_d = "";
+    //                 imageSrc_d = base_url + "img/overstock-logo.png";
+    //                 select_st = true;
+    //             } else if(cl_arr[i] == 'tigerdirect.com') {
+    //                 text_d = "";
+    //                 imageSrc_d = base_url + "img/tigerdirect-logo.png";
+    //             }
+    //             var mid = {
+    //                 text: text_d,
+    //                 value: value_d,
+    //                 selected: select_st,
+    //                 description: "",
+    //                 imageSrc: imageSrc_d
+    //             };
+    //             ddData_grids_3.push(mid);
+    //         };
+    //         setTimeout(function(){
+    //             $('#an_grd_view_drop_gr1').ddslick({
+    //                 data: ddData_grids_1,
+    //                 width: 290,
+    //                 truncateDescription: true,
+    //             });
+    //             $('#an_grd_view_drop_gr2').ddslick({
+    //                 data: ddData_grids_2,
+    //                 width: 290,
+    //                 truncateDescription: true,
+    //             });
+    //             $('#an_grd_view_drop_gr3').ddslick({
+    //                 data: ddData_grids_3,
+    //                 width: 290,
+    //                 truncateDescription: true,
+    //             });
+    //         }, 500);
+    //     });
+    // }
     // ---- ajax customers list loader for grids view (end)
 
     // ---- search string cookie (auto mode search launcher) (start)
@@ -315,7 +315,7 @@
             $("#compet_area_grid").show();
             $(".preloader_grids_box").hide();
             $(".grid_se_section .c_content").show();
-            gridsCustomersListLoader(); 
+            // gridsCustomersListLoader(); 
         });
         grid_status = 'grid';
         // AJAX CALL TO GET GRID VIEW CONTENT (END) (NEW STUFF)

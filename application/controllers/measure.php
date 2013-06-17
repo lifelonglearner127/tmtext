@@ -51,7 +51,8 @@ class Measure extends MY_Controller {
             's_product' => array(),
             's_product_short_desc_count' => 0,
             's_product_long_desc_count' => 0,
-            'seo' => array('short' => array(), 'long' => array())
+            'seo' => array('short' => array(), 'long' => array()),
+            'same_pr' => array()
         );
         if($im_data_id !== null && is_numeric($im_data_id)) {
 
@@ -71,14 +72,26 @@ class Measure extends MY_Controller {
             $data['s_product'] = $data_import; 
             // --- GET SELECTED RPODUCT DATA (END)
 
-            // --- GET SELECTED RPODUCT SEO DATA (START)
+            // --- ATTEMPT TO GET 'SAME' FROM 'HUMAN INTERFACE' (products_compare table) (START)
+            $same_pr = $this->imported_data_parsed_model->getSameProductsHuman($im_data_id);
+            if(count($same_pr) === 3) {
+                foreach ($same_pr as $ks => $vs) {
+                    $same_pr[$ks]['seo']['short'] = $this->helpers->measure_analyzer_start_v2(preg_replace('/\s+/', ' ', $vs['description']));
+                    $same_pr[$ks]['seo']['long'] = $this->helpers->measure_analyzer_start_v2(preg_replace('/\s+/', ' ', $vs['long_description']));
+                    
+                }
+                $data['same_pr'] = $same_pr;
+            }
+            // --- ATTEMPT TO GET 'SAME' FROM 'HUMAN INTERFACE' (products_compare table) (END)
+
+            // --- GET SELECTED RPODUCT SEO DATA (TMP) (START)
             if($data_import['description'] !== null && trim($data_import['description']) !== "") {
                 $data['seo']['short'] = $this->helpers->measure_analyzer_start_v2($data_import['description']);
             }
             if($data_import['long_description'] !== null && trim($data_import['long_description']) !== "") {
                 $data['seo']['long'] = $this->helpers->measure_analyzer_start_v2($data_import['long_description']);
             }
-            // --- GET SELECTED RPODUCT SEO DATA (END)
+            // --- GET SELECTED RPODUCT SEO DATA (TMP) (END)
         }
 
         // -------- COMPARING V1 (START)

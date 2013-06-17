@@ -25,6 +25,80 @@ class Imported_data_parsed_model extends CI_Model {
         return $query->result();
     }
 
+    function getSameProductsHuman($sid) {
+        $this->db->where('rate', 2);
+        $this->db->where('im_pr_f', $sid);
+        $this->db->or_where('im_pr_s', $sid);
+        $query = $this->db->get($this->tables['products_compare']);
+        $results = $query->result(); 
+        $ids = array();
+        if(count($results) > 0) {
+            foreach ($results as $key => $value) {
+                $ids[] = $value->im_pr_f;
+                $ids[] = $value->im_pr_s;
+            }
+            $ids = array_unique($ids);
+            $d_key = null;
+            foreach ($ids as $k => $v) {
+                if($v == $sid) {
+                    $d_key = $k;
+                    break;
+                } 
+            }
+            if($d_key !== null) unset($ids[$d_key]);
+            if(count($ids) > 3) $ids = array_slice($ids, 0, 3); 
+        }
+        $template = array();
+        if(count($ids) === 3) {
+            // ---- get customers list (start)
+            $customers_list = array();
+            $query_cus = $this->db->order_by('name', 'asc')->get($this->tables['customers']);
+            $query_cus_res = $query_cus->result();
+            if(count($query_cus_res) > 0) {
+                foreach ($query_cus_res as $key => $value) {
+                    $n = strtolower($value->name);
+                    $customers_list[] = $n;
+                }
+            }
+            $customers_list = array_unique($customers_list);
+            // ---- get customers list (end)
+            if(count($ids) > 0) {
+                foreach ($ids as $k => $v) {
+                    $template[$v] = array('url' => '', 'product_name' => '', 'description' => '', 'long_description' => '', 'customer' => '', 'seo' => array('short' => array(), 'long' => array()));
+                }
+                $this->db->select('imported_data_id, key, value');
+                $this->db->where_in('imported_data_id', $ids);
+                $query = $this->db->get($this->tables['imported_data_parsed']);
+                $results = $query->result();
+                if(count($results) > 0) {
+                    foreach ($results as $key => $value) {
+                        $im_id_current = $value->imported_data_id;
+                        if($value->key == 'URL') {
+                            $template[$im_id_current]['url'] = $value->value;
+                            $cus_val = "";
+                            foreach ($customers_list as $ki => $vi) {
+                                if(strpos($value->value, "$vi") !== false) {
+                                    $cus_val  = $vi;
+                                }
+                            }
+                            if($cus_val !== "") $template[$im_id_current]['customer'] = $cus_val;
+                        }
+                        if($value->key == 'Product Name') {
+                            $template[$im_id_current]['product_name'] = $value->value;   
+                        }
+                        if($value->key == 'Description') {
+                            $template[$im_id_current]['description'] = $value->value;
+                        }
+                        if($value->key == 'Long_Description') {
+                            $template[$im_id_current]['long_description'] = $value->value;
+                        }
+                    }
+                }
+            }
+        }
+        return $template;
+    }
+
     function deleteProductsVotedPair($id) {
         return $this->db->delete($this->tables['products_compare'], array('id' => $id)); 
     }
