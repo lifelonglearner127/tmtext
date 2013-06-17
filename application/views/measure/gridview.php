@@ -379,10 +379,10 @@
                 <li style='margin-top: 5px;'>none</li>
                 <?php } ?>
             </ul>
-            <!-- <ul>
+            <ul>
                 <li><a href='javascript:void()'>Attributes used (<span class='gr_attr_count'>0</span>):</a></li>
                 <li class='gr_attr_con'>no attributes</li>
-            </ul> -->
+            </ul>
         </div>
     </div>
 
