@@ -151,7 +151,7 @@ $(document).ready(function() {
 
     setMovement();*/
 
-    $(document).on("click", '.arrow', function() {
+   $('.arrow').click(function() {
         if($(this).hasClass('changed') && last_edition != ''){
             $('#main').empty();
             $('#main').html(last_edition);
@@ -209,7 +209,7 @@ $(document).ready(function() {
             }
         }
 
-    });
+   });
 
 });
 </script>
