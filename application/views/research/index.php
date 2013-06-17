@@ -125,7 +125,7 @@ $(document).ready(function() {
     $('title').text("Research & Edit");
 
 
-    $.post(base_url + 'index.php/research/getBoxData', {}, function(data){
+    /*$.post(base_url + 'index.php/research/getBoxData', {}, function(data){
         var content = '';
 
         for(var i=0; i<data.length; i++){
@@ -149,7 +149,7 @@ $(document).ready(function() {
 
     }, 'json');
 
-    setMovement();
+    setMovement();*/
 
     $(document).on("click", '.arrow', function() {
         if($(this).hasClass('changed') && last_edition != ''){
