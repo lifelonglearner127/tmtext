@@ -1,5 +1,4 @@
 <script type="text/javascript">
-    $('head').find('title').text('Competitive Intelligence');
     $("#compare_text").focus();
     var editorGridViewBaseUrl = base_url + 'index.php/measure/gridview';
     function ciCustomersGridsLoader() {
@@ -592,14 +591,16 @@
     // --- KEYWORDS ANALYZER (END)
 
     $(document).ready(function() {
-        
+        setTimeout(function(){
+            $('head').find('title').text('Competitive Intelligence');
+        }, 10);
+
         ciCustomersGridsLoader();
 
         $("#measureFormMetrics").submit(function(e) {
             e.preventDefault();
             startMeasureCompareV2();
         });
-
     });
 
 </script>
