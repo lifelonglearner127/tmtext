@@ -166,7 +166,7 @@ class Research extends MY_Controller {
         $this->load->model('batches_model');
 
         $this->form_validation->set_rules('product_name', 'Product Name', 'required|xss_clean');
-        $this->form_validation->set_rules('keyword1', 'Keyword1', 'required|xss_clean');
+        /*$this->form_validation->set_rules('keyword1', 'Keyword1', 'required|xss_clean');
         $this->form_validation->set_rules('keyword2', 'Keyword2', 'required|xss_clean');
         $this->form_validation->set_rules('keyword3', 'Keyword3', 'required|xss_clean');
         $this->form_validation->set_rules('meta_title', 'Meta title', 'required|xss_clean');
@@ -174,7 +174,7 @@ class Research extends MY_Controller {
         $this->form_validation->set_rules('meta_keywords', 'Meta keywords', 'required|xss_clean');
         $this->form_validation->set_rules('short_description', 'Short Description', 'required|xss_clean');
         $this->form_validation->set_rules('long_description', 'Long Description', 'required|xss_clean');
-        $this->form_validation->set_rules('revision', 'Revision', 'integer');
+        $this->form_validation->set_rules('revision', 'Revision', 'integer');*/
 
         if ($this->form_validation->run() === true) {
             $batch = $this->input->post('batch');
