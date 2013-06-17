@@ -99,7 +99,7 @@ class Research_data_model extends CI_Model {
 
     function getDataByBatchId($text, $batch_id)
     {
-        $query = $this->db->query("select *, DATE_FORMAT(`created`,'%d-%m-%Y') as created from ".$this->tables['research_data']." where concat(url, product_name,
+        $query = $this->db->query("select *, DATE_FORMAT(`created`,'%d-%m-%Y') as created, (select email from users u where id=research_data.user_id) as user_id from ".$this->tables['research_data']." where concat(url, product_name,
             keyword1, keyword2, keyword3, meta_name, meta_description, meta_keywords, short_description, long_description ) like '%".$text."%'
              and batch_id=".$batch_id);
         return $query->result();

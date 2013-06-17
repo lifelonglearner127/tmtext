@@ -13,7 +13,7 @@
                     Edit Name:<input type="text" class="mt_10 ml_10" name="batche_name" />
                     <button id="research_batches_save" type="button" class="btn pull-right btn-success mt_10">Save</button>
                     <input type="text" id="research_batches_text" name="research_batches_text" value="" class="span8 ml_0" placeholder=""/>
-                    <button id="research_batches_search" type="button" class="btn ml_10">Search</button>
+                    <button id="research_batches_search" type="button" class="btn ml_5">Filter</button>
                 </div>
                 <div class="span6">
                     <div class="control-group">
@@ -36,7 +36,7 @@
                 <div id="tabs">
 
                     <ul>
-                        <li><a href="#read">Read</a></li>
+                        <li><a href="#read">Review</a></li>
                         <li><a href="#create">Create</a></li>
                     </ul>
 
