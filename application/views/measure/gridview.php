@@ -18,6 +18,8 @@
             <div class='c'>
                 <img class='preloader_grids_box' src="<?php echo base_url() ?>/img/grids_boxes_preloader.gif">
                 <div class='c_content'>
+                    <span class='analysis_content_head'>Product Name:</span>
+                    <p class='short_product_name'><?php echo $vs['product_name']; ?></p>
                     <span class='analysis_content_head'>Short Description (<span class='short_desc_wc'><?php echo $s_product_short_desc_count ?> words</span>):</span>
                     <p class='short_desc_con'><?php echo $s_product_description; ?></p>
                     <span class='analysis_content_head'>Long Description (<span class='long_desc_wc'><?php echo $s_product_long_desc_count; ?> words</span>):</span>
@@ -225,6 +227,8 @@
         <div class='c'>
             <img class='preloader_grids_box' src="<?php echo base_url() ?>/img/grids_boxes_preloader.gif">
             <div class='c_content'>
+                <span class='analysis_content_head'>Product Name:</span>
+                <p class='short_product_name'><?php echo $s_product['product_name']; ?></p>
                 <span class='analysis_content_head'>Short Description (<span class='short_desc_wc'><?php echo $s_product_short_desc_count ?> words</span>):</span>
                 <p class='short_desc_con'><?php echo $s_product_description; ?></p>
                 <span class='analysis_content_head'>Long Description (<span class='long_desc_wc'><?php echo $s_product_long_desc_count; ?> words</span>):</span>
@@ -281,6 +285,8 @@
         <div class='c'>
             <img class='preloader_grids_box' src="<?php echo base_url() ?>/img/grids_boxes_preloader.gif">
             <div class='c_content'>
+                <span class='analysis_content_head'>Product Name:</span>
+                <p class='short_product_name'><?php echo $s_product['product_name']; ?></p>
                 <span class='analysis_content_head'>Short Description (<span class='short_desc_wc'><?php echo $s_product_short_desc_count ?> words</span>):</span>
                 <p class='short_desc_con'><?php echo $s_product['description']; ?></p>
                 <span class='analysis_content_head'>Long Description (<span class='long_desc_wc'><?php echo $s_product_long_desc_count; ?> words</span>):</span>
@@ -337,6 +343,8 @@
         <div class='c'>
             <img class='preloader_grids_box' src="<?php echo base_url() ?>/img/grids_boxes_preloader.gif">
             <div class='c_content'>
+                <span class='analysis_content_head'>Product Name:</span>
+                <p class='short_product_name'><?php echo $s_product['product_name']; ?></p>
                 <span class='analysis_content_head'>Short Description (<span class='short_desc_wc'><?php echo $s_product_short_desc_count ?> words</span>):</span>
                 <p class='short_desc_con'><?php echo $s_product['description']; ?></p>
                 <span class='analysis_content_head'>Long Description (<span class='long_desc_wc'><?php echo $s_product_long_desc_count; ?> words</span>):</span>
