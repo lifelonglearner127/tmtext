@@ -111,7 +111,7 @@ $( function() {
         $( '#ajaxLoadAni' ).fadeIn( 'slow' );
         
         $.ajax({
-            url: 'index.php/research/getById/' + updateId,
+            url: base_url + 'index.php/research/getById/' + updateId,
             dataType: 'json',
             
             success: function( response ) {
