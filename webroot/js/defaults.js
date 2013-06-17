@@ -584,7 +584,7 @@ jQuery(document).ready(function($) {
 
 
         if($(this).hasClass('jq-measure')){
-            $('head').find('title').text('Competitive Intelligence');
+            $('title').text("Competitive Intelligence");
             var editorCont = $('.main_content_editor').html();
             if (editorCont.length == 0) {
                 var url = $(this).attr('href');
@@ -600,9 +600,9 @@ jQuery(document).ready(function($) {
             $(this).parent('li').addClass('active');
         }else{
             if($(this).hasClass('jq-validate')){
-                $('head').find('title').text('Validate');
+                $('title').text("Validate");
             }else if($(this).hasClass('jq-research')){
-                $('head').find('title').text('Research & Edit');
+                $('title').text('Research & Edit');
             }
             var url = $(this).attr('href');
             var posting = $.post(url+"?ajax=true", function(data) {

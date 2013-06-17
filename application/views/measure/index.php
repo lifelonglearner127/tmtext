@@ -591,9 +591,7 @@
     // --- KEYWORDS ANALYZER (END)
 
     $(document).ready(function() {
-        setTimeout(function(){
-            $('head').find('title').text('Competitive Intelligence');
-        }, 10);
+        $('title').text("Competitive Intelligence");
 
         ciCustomersGridsLoader();
 

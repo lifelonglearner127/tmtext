@@ -122,9 +122,7 @@ function setMovement(){
     $("#related_keywords").resizable({minWidth: 418, maxWidth:418});
 }
 $(document).ready(function() {
-    setTimeout(function(){
-        $('head').find('title').text('Research & Edit');
-    }, 10);
+    $('title').text("Research & Edit");
 
 
     $.post(base_url + 'index.php/research/getBoxData', {}, function(data){

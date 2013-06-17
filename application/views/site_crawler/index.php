@@ -62,7 +62,7 @@ function checkAddList(){
 
 $(function () {
     setTimeout(function(){
-        $('head').find('title').text('Site Crawler');
+        $('title').text("Site Crawler");
     }, 10);
     $(document).click(function(event) {
         if($(event.target).parents().index($('#Add_List')) == -1) {
