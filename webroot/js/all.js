@@ -11,7 +11,7 @@ $( function() {
     $( '#tabs' ).tabs({
         fx: { height: 'toggle', opacity: 'toggle' }
     });
-    
+    readResearchData();
     $( '#msgDialog' ).dialog({
         autoOpen: false,
         

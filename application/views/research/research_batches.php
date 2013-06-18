@@ -6,20 +6,25 @@
     <div class="tab-content research_batches">
         <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/smoothness/jquery-ui-1.8.2.custom.css" />
         <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/styles.css" />
+        <script>
+            $(function() {
+                $( ".draggable" ).draggable();
+            });
+        </script>
         <div id="research_tab2" class="tab-pane active">
             <div class="row-fluid">
                 <div class="span6">
                     Batch: <?php echo form_dropdown('research_batches', $batches_list, array(), 'class="mt_10 mr_10" style="width: 100px;"'); ?>
                     Edit Name:<input type="text" class="mt_10 ml_10" name="batche_name" />
-                    <button id="research_batches_save" type="button" class="btn pull-right btn-success mt_10">Save</button>
-                    <input type="text" id="research_batches_text" name="research_batches_text" value="" class="span8 ml_0" placeholder=""/>
-                    <button id="research_batches_search" type="button" class="btn ml_5">Filter</button>
+                    <button id="research_batches_save" type="button" class="btn btn-success ml_5">Save</button>
                 </div>
                 <div class="span6">
+                    <button id="research_batches_search" type="button" class="btn ml_10 pull-right">Filter</button>
+                    <input type="text" id="research_batches_text" name="research_batches_text" value="" class="span8 ml_0 pull-right" placeholder=""/>
                     <div class="control-group">
-                        <label class="control-label mt_10" for="customer_name" style="width:70px; float: left">Columns:</label>
+                        <label class="control-label mt_40" for="customer_name" style="width:70px; float: left">Columns:</label>
                         <div class="controls mt_10">
-                            <ul id="gallery" class="product_title_content gallery span10">
+                            <ul id="gallery" class="product_title_content gallery span10 pull-right">
                                 <li><span>Date</span><a hef="#" class="ui-icon-trash">x</a></li>
                                 <li><span>Meta Title</span><a hef="#" class="ui-icon-trash">x</a></li>
                                 <li><span>Meta Description</span><a hef="#" class="ui-icon-trash">x</a></li>
@@ -33,7 +38,7 @@
                     <span>Loading...</span>
                 </div>
 
-                <div id="tabs">
+                <div id="tabs" class="mt_10">
 
                     <ul>
                         <li><a href="#read">Review</a></li>
@@ -44,12 +49,12 @@
                         <table id="records">
                             <thead>
                             <tr>
-                                <th>Editor</th>
-                                <th>Product Name</th>
-                                <th>URL</th>
-                                <th>Short Description</th>
-                                <th>Long Description</th>
-                                <th>Actions</th>
+                                <th><div class="draggable">Editor</div></th>
+                                <th><div class="draggable">Product Name</div></th>
+                                <th><div class="draggable">URL</div></th>
+                                <th><div class="draggable">Short Description</div></th>
+                                <th><div class="draggable">Long Description</div></th>
+                                <th><div class="draggable">Actions</div></th>
                             </tr>
                             </thead>
                             <tbody></tbody>
@@ -118,8 +123,8 @@
                 <script type="text/javascript" src="<?php echo base_url();?>js/all.js"></script>
             </div>
             <div class="row-fluid mt_20">
-                <button id="research_batches_delete" type="button" class="btn btn-danger ml_10">Delete</button>
                 <button id="research_batches_undo" type="button" class="btn ml_10">Undo</button>
+                <button id="research_batches_delete" type="button" class="btn btn-danger ml_10">Delete</button>
             </div>
             <div class="clear mt_40"></div>
         </div>
