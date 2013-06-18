@@ -90,10 +90,11 @@
 						</tbody>
 					</table>
 				</div>
-				<hr>
 			<?php } ?>
 		<?php } ?>
 	</div>
+
+	<hr class='pci_list_sep'>
 
 	<?php } ?>
 	
