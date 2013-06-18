@@ -408,9 +408,10 @@
         // --- record search term to cookie storage (end)
         var searcher_all = $.post(editorSearchAllBaseUrl, { s: s, sl: sl, cat: cat }, 'html').done(function(data) {
             $("#an_products_box").html(data);
-            $('.main span:first-child').css({'width':'232px'});
             $("#an_products_box").fadeOut();
             $("#an_products_box").fadeIn();
+            var w = $('ul#products li:first-child span:first-child').width();
+            $('#an_sort_search_box .product_title .main span:first-child').width(w);
         });
         return false;
     }
