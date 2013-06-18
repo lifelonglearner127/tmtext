@@ -13,22 +13,22 @@
 				<?php 
 					switch ($c_product[$keys[0]]['customer']) {
 						case 'bjs.com':
-							$img_c_source = "/img/bjs-logo.gif";
+							$img_c_source = base_url()."/img/bjs-logo.gif";
 							break;
 						case 'sears.com':
-							$img_c_source = "/img/sears-logo.png";
+							$img_c_source = base_url()."/img/sears-logo.png";
 							break;
 						case 'walmart.com':
-							$img_c_source = "/img/walmart-logo.png";
+							$img_c_source = base_url()."/img/walmart-logo.png";
 							break;
 						case 'staples.com':
-							$img_c_source = "/img/staples-logo.png";
+							$img_c_source = base_url()."/img/staples-logo.png";
 							break;
 						case 'overstock.com':
-							$img_c_source = "/img/overstock-logo.png";
+							$img_c_source = base_url()."/img/overstock-logo.png";
 							break;
 						case 'tigerdirect.com':
-							$img_c_source = "/img/tigerdirect-logo.jpg";
+							$img_c_source = base_url()."/img/tigerdirect-logo.jpg";
 							break;
 						
 						default:
@@ -70,22 +70,22 @@
 				<?php 
 					switch ($c_product[$keys[1]]['customer']) {
 						case 'bjs.com':
-							$img_c_source = "/img/bjs-logo.gif";
+							$img_c_source = base_url()."/img/bjs-logo.gif";
 							break;
 						case 'sears.com':
-							$img_c_source = "/img/sears-logo.png";
+							$img_c_source = base_url()."/img/sears-logo.png";
 							break;
 						case 'walmart.com':
-							$img_c_source = "/img/walmart-logo.png";
+							$img_c_source = base_url()."/img/walmart-logo.png";
 							break;
 						case 'staples.com':
-							$img_c_source = "/img/staples-logo.png";
+							$img_c_source = base_url()."/img/staples-logo.png";
 							break;
 						case 'overstock.com':
-							$img_c_source = "/img/overstock-logo.png";
+							$img_c_source = base_url()."/img/overstock-logo.png";
 							break;
 						case 'tigerdirect.com':
-							$img_c_source = "/img/tigerdirect-logo.jpg";
+							$img_c_source = base_url()."/img/tigerdirect-logo.jpg";
 							break;
 						
 						default:
