@@ -133,13 +133,13 @@
 		}
 	}
 
-	function renderComparedProductsData() {
-		var get_products_voted = $.post(systemCompareGetProductsVotedBaseUrl, {}, 'html').done(function(data) {
+	function renderComparedProductsData(page) {
+		var get_products_voted = $.post(systemCompareGetProductsVotedBaseUrl, {page: page}, 'html').done(function(data) {
 			$("#sc_compare_voted_list").html(data);
         });
 	}
 
-	renderComparedProductsData();
+	renderComparedProductsData(1);
 	
 	function renderCompareSection() {
 		var ids = [];

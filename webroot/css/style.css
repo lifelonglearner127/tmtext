@@ -1,5 +1,14 @@
 /* Basic style */
 
+.pager_pci_wrap {
+	clear: both;
+	width: 100%;
+	height: 50px;
+}
+.pager_pci_wrap .pager_pci { 
+	clear: both;
+}
+
 .pci_list_sep {
 	width: 100%;
 	height: 4px;

@@ -32,9 +32,14 @@ class System extends MY_Controller {
 	}
 
 	public function getproductscomparevoted() {
+		$page = $this->input->post('page');
+		$items_per_page = 2;
 		$this->load->model('imported_data_parsed_model');
         $data = array(
-            'v_producs' => $this->imported_data_parsed_model->getProductsCompareVoted()
+            'v_producs' => $this->imported_data_parsed_model->getProductsCompareVoted($page, $items_per_page),
+            'v_producs_count' => $this->imported_data_parsed_model->getProductsCompareVotedTotalCount(),
+            'page' => $page,
+            'items_per_page' => $items_per_page
         );
         $this->load->view('system/getproductscomparevoted', $data);
 	}

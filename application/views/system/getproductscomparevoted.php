@@ -1,4 +1,21 @@
 <?php if(count($v_producs) > 0) { ?>
+
+	<?php $pages = ceil($v_producs_count/$items_per_page); ?>
+
+	<!-- TOP VOTED PRODUCTS PAGINATION (START) -->
+	<?php if($pages > 1) { ?>
+ 		<div class='pager_pci_wrap'>
+		    <div class="pagination pager_pci">
+			    <ul>
+			    	<?php for($i = 1; $i<=$pages; $i++) { ?>
+			    		<?php $act_state = ""; if($i == $page) $act_state = "class='active'"; ?>
+			    		<li <?php echo $act_state; ?>><a onclick="renderComparedProductsData(<?php echo $i; ?>)" href="javascript:void(0)"><?php echo $i; ?></a></li>
+			    	<?php } ?>
+			    </ul>
+		    </div>
+		</div>
+ 	<?php } ?>
+ 	<!-- TOP VOTED PRODUCTS PAGINATION (END) -->
 	
 	<?php foreach($v_producs as $k => $v) { ?>
 
@@ -97,5 +114,6 @@
 	<hr class='pci_list_sep'>
 
 	<?php } ?>
+
 	
 <?php } ?>

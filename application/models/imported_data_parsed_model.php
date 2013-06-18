@@ -103,7 +103,12 @@ class Imported_data_parsed_model extends CI_Model {
         return $this->db->delete($this->tables['products_compare'], array('id' => $id)); 
     }
 
-    function getProductsCompareVoted() {
+    function getProductsCompareVotedTotalCount() {
+        return $this->db->count_all_results($this->tables['products_compare']);
+    }
+
+    function getProductsCompareVoted($page, $items_per_page) {
+        $position = $items_per_page*($page-1);
         // ---- get customers list (start)
         $customers_list = array();
         $query_cus = $this->db->order_by('name', 'asc')->get($this->tables['customers']);
@@ -116,7 +121,8 @@ class Imported_data_parsed_model extends CI_Model {
         }
         $customers_list = array_unique($customers_list);
         // ---- get customers list (end)
-        $query_voted = $this->db->order_by('stamp', 'desc')->get($this->tables['products_compare']);
+        // $query_voted = $this->db->order_by('stamp', 'desc')->get($this->tables['products_compare']);
+        $query_voted = $this->db->order_by('stamp', 'desc')->limit($items_per_page, $position)->get($this->tables['products_compare']);
         $query_voted_res = $query_voted->result();
         $res_stack = array();
         if(count($query_voted_res) > 0) {
