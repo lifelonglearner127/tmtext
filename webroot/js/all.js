@@ -200,29 +200,29 @@ $( function() {
 function readResearchData() {
     //display ajax loader animation
     $( '#ajaxLoadAni' ).fadeIn( 'slow' );
-    
+
     $.ajax({
         url: readUrl,
         dataType: 'json',
-        data:{'choosen_batch': $('select[name="research_batches"] option:selected').text(),
+        data:{'choosen_batch': $('#research_tab2 select[name="research_batches"] option:selected').text(),
             'search_text': $('input[name="research_batches_text"]').val()},
         success: function( response ) {
-            
+
             for( var i in response ) {
                 response[ i ].updateLink = updateUrl + '/' + response[ i ].id;
                 response[ i ].deleteLink = delUrl + '/' + response[ i ].id;
             }
-            
+
             //clear old rows
             $( '#records > tbody' ).html( '' );
-            
+
             //append new rows
             $( '#readTemplate' ).render( response ).appendTo( "#records > tbody" );
-            
+
             //apply dataTable to #records table and save its object in dataTable variable
             if( typeof dataTable == 'undefined' )
                 dataTable = $( '#records' ).dataTable({"bJQueryUI": true});
-            
+
             //hide ajax loader animation here...
             $( '#ajaxLoadAni' ).fadeOut( 'slow' );
         }
