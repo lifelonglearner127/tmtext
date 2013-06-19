@@ -9,7 +9,7 @@
 			    <ul>
 			    	<?php for($i = 1; $i<=$pages; $i++) { ?>
 			    		<?php $act_state = ""; if($i == $page) $act_state = "class='active'"; ?>
-			    		<li <?php echo $act_state; ?>><a onclick="renderComparedProductsData(<?php echo $i; ?>)" href="javascript:void(0)"><?php echo $i; ?></a></li>
+			    		<li <?php echo $act_state; ?>><a onclick="renderComparedProductsData(<?php echo $i; ?>, '#tab2_pci_tabset')" href="javascript:void(0)"><?php echo $i; ?></a></li>
 			    	<?php } ?>
 			    </ul>
 		    </div>
@@ -55,7 +55,7 @@
 			<span class="label <?php echo $bage_class; ?> label_c">
 				<?php echo $rate_sign; ?>
 			</span>
-			<a href='javascript:void(0)' onclick="reComparePair('<?php echo $im_pr_f; ?>', '<?php echo $im_pr_s; ?>')" class='btn btn-primary'><i class="icon-edit icon-white"></i>&nbsp;Re-compare</a>
+			<!-- <a href='javascript:void(0)' onclick="reComparePair('<?php echo $im_pr_f; ?>', '<?php echo $im_pr_s; ?>')" class='btn btn-primary'><i class="icon-edit icon-white"></i>&nbsp;Re-compare</a> -->
 			<a href='javascript:void(0)' onclick="deleteComparePair('<?php echo $pair_id; ?>')" class='btn btn-danger'><i class="icon-remove-circle icon-white"></i>&nbsp;Delete</a>
 		</div>
 		<?php if(count($v['products_data']) > 0) { ?>

@@ -31,6 +31,14 @@ class System extends MY_Controller {
 		$this->output->set_content_type('application/json')->set_output(json_encode($res));
 	}
 
+	public function getmatchnowinterface() {
+		$this->load->model('imported_data_parsed_model');
+		$data = array(
+			'all_products' => $this->imported_data_parsed_model->getAllProducts()
+		);
+		$this->load->view('system/getmatchnowinterface', $data);
+	}
+
 	public function getproductscomparevoted() {
 		$page = $this->input->post('page');
 		$items_per_page = 2;
