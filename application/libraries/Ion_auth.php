@@ -434,15 +434,31 @@ class Ion_auth
 	 * @return integer
 	 * @author jrmadsen67
 	 **/
-	public function get_user_id()
+	public function get_user_data()
 	{
-		$user_id = $this->session->userdata('user_id');
-		if (!empty($user_id))
-		{
-			return $user_id;
-		}
-		return null;
+        $info = $this->session->all_userdata();
+        if (!empty($info))
+        {
+            return $info;
+        }
+        return null;
 	}
+
+    /**
+     * logged_in
+     *
+     * @return integer
+     * @author jrmadsen67
+     **/
+    public function get_user_id()
+    {
+        $user_id = $this->session->userdata('user_id');
+        if (!empty($user_id))
+        {
+            return $user_id;
+        }
+        return null;
+    }
 
 
 	/**
@@ -459,6 +475,21 @@ class Ion_auth
 
 		return $this->in_group($admin_group, $id);
 	}
+
+    /**
+     * is_admin
+     *
+     * @return bool
+     * @author Ben Edmunds
+     **/
+    public function is_editor($id=false)
+    {
+        $this->ion_auth_model->trigger_events('is_editor');
+
+        $editor_group = $this->config->item('editor_group', 'ion_auth');
+
+        return $this->in_group($editor_group, $id);
+    }
 
 	/**
 	 * in_group

@@ -785,6 +785,16 @@ jQuery(document).ready(function($) {
         });
     });
 
+    $(document).on("click", ".jq-customer-tabs li a", function(e){
+        e.preventDefault();
+        var url = $(this).attr('href');
+        var posting = $.post(url+"?ajax=true", function(data) {
+            var response_data = $.parseJSON( data );
+            $('.main_content_other').html(response_data.ajax_data);
+        });
+    });
+
+
     $(document).on("click", "#btn_system_new_user", function(e){
         e.preventDefault();
         if($("#user_id").length>0){

@@ -62,6 +62,9 @@ input[type=text] {
     width: 90px;
 }
 
+#updateDialog p {
+    margin:0px;
+}
 #create label {
     display: inline-block;
     text-align: right;

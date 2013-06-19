@@ -18,6 +18,18 @@ class Customer extends MY_Controller {
 
 	public function index()
 	{
+        $info = $this->ion_auth->get_user_data();
+        $this->data['email'] = $info['email'];
+        $this->data['identity'] = $info['identity'];
+        $this->data['title'] = 'Customer Settings';
 		$this->render();
 	}
+
+    public function product_description()
+    {
+        if (!$this->ion_auth->is_editor($this->ion_auth->get_user_id())) {
+            $this->data['title'] = 'Customer Settings';
+            $this->render();
+        }
+    }
 }
