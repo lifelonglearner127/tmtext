@@ -25,6 +25,8 @@
 		$im_pr_s = $v['im_pr_s'];
 	?>
 
+	<?php if($k == 0) { ?><hr class='pci_list_sep'><?php } ?>
+
 	<div class='sc_pair_section'>
 		<div class='general_top'>
 			<span class="label label_c"><?php echo date('jS F, Y, G:i:s', strtotime($v['stamp'])); ?></span>
@@ -115,5 +117,20 @@
 
 	<?php } ?>
 
+
+	<!-- BOTTOM VOTED PRODUCTS PAGINATION (START) -->
+	<?php if($pages > 1) { ?>
+ 		<div class='pager_pci_wrap margin_bottom'>
+		    <div class="pagination pager_pci">
+			    <ul>
+			    	<?php for($i = 1; $i<=$pages; $i++) { ?>
+			    		<?php $act_state = ""; if($i == $page) $act_state = "class='active'"; ?>
+			    		<li <?php echo $act_state; ?>><a onclick="renderComparedProductsData(<?php echo $i; ?>)" href="javascript:void(0)"><?php echo $i; ?></a></li>
+			    	<?php } ?>
+			    </ul>
+		    </div>
+		</div>
+ 	<?php } ?>
+ 	<!-- BOTTOM VOTED PRODUCTS PAGINATION (END) -->
 	
 <?php } ?>

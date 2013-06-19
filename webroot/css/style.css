@@ -3,7 +3,10 @@
 .pager_pci_wrap {
 	clear: both;
 	width: 100%;
-	height: 50px;
+	height: 30px;
+}
+.pager_pci_wrap.margin_bottom {
+	margin-bottom: 20px;
 }
 .pager_pci_wrap .pager_pci { 
 	clear: both;
