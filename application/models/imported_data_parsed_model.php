@@ -25,6 +25,122 @@ class Imported_data_parsed_model extends CI_Model {
         return $query->result();
     }
 
+    function getRandomRightCompareProduct($customer_exc, $id_exc) {
+        // ---- get customers list (start)
+        $customers_list = array();
+        $query_cus = $this->db->order_by('name', 'asc')->get($this->tables['customers']);
+        $query_cus_res = $query_cus->result();
+        if(count($query_cus_res) > 0) {
+            foreach ($query_cus_res as $key => $value) {
+                $n = strtolower($value->name);
+                $customers_list[] = $n;
+            }
+        }
+        $customers_list = array_unique($customers_list);
+        // ---- get customers list (end)
+
+        // ---- get product with excluding id and customer params (start)
+        $f_res = array();
+        $this->db->select('imported_data_id, key, value');
+        $this->db->where('imported_data_id != ', $id_exc);
+        $this->db->not_like('value', $customer_exc);
+        $query = $this->db->get($this->tables['imported_data_parsed']);
+        $results = $query->result();
+        $data = array('id' => '', 'url' => '', 'product_name' => '', 'description' => '', 'long_description' => '', 'customer' => '');
+        foreach($results as $result) {
+            $data['id'] = $result->imported_data_id;
+            if($result->key === 'URL') {
+                $data['url'] = $result->value;
+                $cus_val = "";
+                foreach ($customers_list as $ki => $vi) {
+                    if(strpos($result->value, "$vi") !== false) {
+                        $cus_val  = $vi;
+                    }
+                }
+                if($cus_val !== "") $data['customer'] = $cus_val;
+            }
+            if($result->key === 'Product Name') {
+                $data['product_name'] = $result->value;
+            }
+            if($result->key === 'Description') {
+                $data['description'] = $result->value;
+            }
+            if($result->key === 'Long_Description') {
+                $data['long_description'] = $result->value;
+            }
+        }
+        if(count($data) > 0) {
+            $f_res = $data;
+        }
+        return $f_res;
+        // ---- get product with excluding id and customer params (end)
+    }
+
+    function getRandomLeftCompareProduct() {
+        // ---- get customers list (start)
+        $customers_list = array();
+        $query_cus = $this->db->order_by('name', 'asc')->get($this->tables['customers']);
+        $query_cus_res = $query_cus->result();
+        if(count($query_cus_res) > 0) {
+            foreach ($query_cus_res as $key => $value) {
+                $n = strtolower($value->name);
+                $customers_list[] = $n;
+            }
+        }
+        $customers_list = array_unique($customers_list);
+        // ---- get customers list (end)
+
+        // ---- get imported_data_id list (start)
+        $this->db->select('imported_data_id, key, value');
+        $query = $this->db->get($this->tables['imported_data_parsed']);
+        $results = $query->result();
+        $ids = array();
+        if(count($results) > 0) {
+            foreach ($results as $key => $value) {  
+                $ids[] = $value->imported_data_id;
+            }
+        }
+        $ids = array_unique($ids);
+        // ---- get imported_data_id list (end)
+
+        $random_id = $ids[array_rand($ids, 1)];
+
+        // ---- get random product by random id (start)
+        $f_res = array();
+        $this->db->select('imported_data_id, key, value');
+        $this->db->where('imported_data_id', $random_id);
+        $query = $this->db->get($this->tables['imported_data_parsed']);
+        $results = $query->result();
+        $data = array('id' => $random_id, 'url' => '', 'product_name' => '', 'description' => '', 'long_description' => '', 'customer' => '');
+        foreach($results as $result) {
+            if($result->key === 'URL') {
+                $data['url'] = $result->value;
+                $cus_val = "";
+                foreach ($customers_list as $ki => $vi) {
+                    if(strpos($result->value, "$vi") !== false) {
+                        $cus_val  = $vi;
+                    }
+                }
+                if($cus_val !== "") $data['customer'] = $cus_val;
+            }
+            if($result->key === 'Product Name') {
+                $data['product_name'] = $result->value;
+            }
+            if($result->key === 'Description') {
+                $data['description'] = $result->value;
+            }
+            if($result->key === 'Long_Description') {
+                $data['long_description'] = $result->value;
+            }
+        }
+        if(count($data) > 0) {
+            $f_res = $data;
+        }
+        return $f_res;
+        // ---- get random product by random id (end)
+
+    }
+
     function getSameProductsHuman($sid) {
         $this->db->where('rate', 2);
         $this->db->where('im_pr_f', $sid);

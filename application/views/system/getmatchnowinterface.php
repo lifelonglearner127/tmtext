@@ -1,36 +1,116 @@
 <div class='sc_compare_selection_block' id='sc_compare_selection_block'>
-	<!-- PRODUCTS SELECTION BOX -->
-	<div class='span5'>
-		<div class='well limited_list'>
-			<p class='centered'><span class="label">SELECT PRODUCTS BOX</span></p>
-			<ul id='select_pr_boxer' class='nav nav-pills nav-stacked'>
-				<?php if(count($all_products) > 0) { ?>
-					<?php foreach($all_products as $k=>$v) { ?>
-					<li><a data-id="<?php echo $k; ?>" href='javascript:void(0)'><?php echo $v['product_name']; ?></a></li>
-					<?php } ?>
-				<?php } ?>
-			</ul>
+
+	<div style='display: block;' class='sc_compare_block' id='sc_compare_block'>
+		<div class='span5'>
+			<div class='well'>
+				<input type='hidden' name='get_pc' value="<?php echo $get_random_l['id']; ?>">
+				<p class='centered'><span class="label label-success">PRODUCT FOR COMPARE</span></p>
+				<p class='centered'><span class="label label-info"><?php echo $get_random_l['customer']; ?></span></p>
+				<p class='centered'>
+					<?php 
+						switch ($get_random_l['customer']) {
+							case 'bjs.com':
+								$img_c_source = base_url()."/img/bjs-logo.gif";
+								break;
+							case 'sears.com':
+								$img_c_source = base_url()."/img/sears-logo.png";
+								break;
+							case 'walmart.com':
+								$img_c_source = base_url()."/img/walmart-logo.png";
+								break;
+							case 'staples.com':
+								$img_c_source = base_url()."/img/staples-logo.png";
+								break;
+							case 'overstock.com':
+								$img_c_source = base_url()."/img/overstock-logo.png";
+								break;
+							case 'tigerdirect.com':
+								$img_c_source = base_url()."/img/tigerdirect-logo.jpg";
+								break;
+							
+							default:
+								$img_c_source = "";
+								break;
+						}
+					?>
+					<img src="<?php echo $img_c_source; ?>">
+				</p>
+				<ul class='nav nav-pills nav-stacked'>
+					<li class='active'><a data-id="<?php echo $get_random_l['id']; ?>" href='javascript:void(0)'><?php echo $get_random_l['product_name']; ?></a></li>
+				</ul>
+				<p class='centered'><span class="label label-success">SHORT DESCRIPTION</span></p>
+				<ul class='nav nav-pills nav-stacked'>
+					<li><?php echo $get_random_l['description']; ?></li>
+				</ul>
+				<p class='centered'><span class="label label-success">LONG DESCRIPTION</span></p>
+				<ul class='nav nav-pills nav-stacked'>
+					<li><?php echo $get_random_l['long_description']; ?></li>
+				</ul>
+			</div>
 		</div>
-	</div>
-	<!-- INTERACTIONS CONTROL BOX -->
-	<div class='span2'>
-		<div class='well h_400'>
-			<p class='centered'><span class="label label-info">CONTROLS</span></p>
-			<button id='ibc_move_btn' onclick="moveProductsToCompare()" type='button' disabled='true' class='btn btn-primary icb_systme_compare_btn margin_bottom disabled'><i class="icon-chevron-right icon-white"></i>&nbsp;Move</button>
-			<button id='ibc_clean_btn' onclick="cleanAndRestore()" type='button' disabled='true' class='btn btn-danger icb_systme_compare_btn margin_bottom disabled'><i class="icon-off icon-white"></i>&nbsp;Clean</button>
-			<button id='ibc_start_btn' onclick="renderCompareSection()" type='button' disabled='true' class='btn btn-success icb_systme_compare_btn disabled'><i class="icon-ok icon-white"></i>&nbsp;Start</button>
+
+		<div class='span2'>
+			<div class='well'>
+				<p class='centered'><span class="label label-info">DECISION</span></p>
+				<button id='sccb_notsure_btn' onclick="productCompareDecision(0);" type='button' disabled='true' class='btn btn-success icb_systme_compare_btn margin_bottom disabled'>New</button>
+				<button id='sccb_yes_btn' onclick="productCompareDecision(2);" type='button' disabled='true' class='btn btn-primary icb_systme_compare_btn margin_bottom disabled'>Yes</button>
+				<button id='sccb_not_btn' onclick="productCompareDecision(1);" type='button' disabled='true' class='btn btn-danger icb_systme_compare_btn disabled'>No</button>
+			</div>
 		</div>
-	</div>
-	<!-- SELECTED FOR COMPARE BOX -->
-	<div class='span5'>
-		<div class='well h_400'>
-			<p class='centered'><span class="label label-success">PRODUCTS FOR COMPARE</span></p>
-			<ul id='compare_pr_boxer' class='nav nav-pills nav-stacked'>&nbsp;</ul>
+
+		<div class='span5'>
+			<div class='well'>
+				<input type='hidden' name='get_pc' value="<?php echo $get_random_r['id']; ?>">
+				<p class='centered'><span class="label label-success">PRODUCT FOR COMPARE</span></p>
+				<p class='centered'><span class="label label-info"><?php echo $get_random_r['customer']; ?></span></p>
+				<p class='centered'>
+					<?php 
+						switch ($get_random_r['customer']) {
+							case 'bjs.com':
+								$img_c_source = base_url()."/img/bjs-logo.gif";
+								break;
+							case 'sears.com':
+								$img_c_source = base_url()."/img/sears-logo.png";
+								break;
+							case 'walmart.com':
+								$img_c_source = base_url()."/img/walmart-logo.png";
+								break;
+							case 'staples.com':
+								$img_c_source = base_url()."/img/staples-logo.png";
+								break;
+							case 'overstock.com':
+								$img_c_source = base_url()."/img/overstock-logo.png";
+								break;
+							case 'tigerdirect.com':
+								$img_c_source = base_url()."/img/tigerdirect-logo.jpg";
+								break;
+							
+							default:
+								$img_c_source = "";
+								break;
+						}
+					?>
+					<img src="<?php echo $img_c_source; ?>">
+				</p>
+				<ul class='nav nav-pills nav-stacked'>
+					<li class='active'><a data-id="<?php echo $get_random_r['id']; ?>" href='javascript:void(0)'><?php echo $get_random_r['product_name']; ?></a></li>
+				</ul>
+				<p class='centered'><span class="label label-success">SHORT DESCRIPTION</span></p>
+				<ul class='nav nav-pills nav-stacked'>
+					<li><?php echo $get_random_r['description']; ?></li>
+				</ul>
+				<p class='centered'><span class="label label-success">LONG DESCRIPTION</span></p>
+				<ul class='nav nav-pills nav-stacked'>
+					<li><?php echo $get_random_r['long_description']; ?></li>
+				</ul>
+			</div>
 		</div>
+
 	</div>
+
 </div>
 
-<div class='sc_compare_block' id='sc_compare_block'>&nbsp;</div>
+<!-- <div class='sc_compare_block' id='sc_compare_block'>&nbsp;</div> -->
 
 <script type='text/javascript'>
 

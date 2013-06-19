@@ -33,8 +33,13 @@ class System extends MY_Controller {
 
 	public function getmatchnowinterface() {
 		$this->load->model('imported_data_parsed_model');
+
+		$get_random_l = $this->imported_data_parsed_model->getRandomLeftCompareProduct();
+		$get_random_r = $this->imported_data_parsed_model->getRandomRightCompareProduct($get_random_l['customer'], $get_random_l['id']);
+
 		$data = array(
-			'all_products' => $this->imported_data_parsed_model->getAllProducts()
+			'get_random_l' => $get_random_l,
+			'get_random_r' => $get_random_r
 		);
 		$this->load->view('system/getmatchnowinterface', $data);
 	}
