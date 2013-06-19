@@ -1,4 +1,9 @@
 /* Basic style */
+#dd_drop_random_l, #dd_drop_random_r {
+	margin-top: 15px;
+	margin-bottom: 15px;
+	margin-left: 22px;
+}
 
 .pager_pci_wrap {
 	clear: both;

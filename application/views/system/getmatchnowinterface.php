@@ -2,7 +2,9 @@
 
 	<div style='display: block;' class='sc_compare_block' id='sc_compare_block'>
 		<div class='span5'>
+			<div id="dd_drop_random_l"></div>
 			<div class='well'>
+				<input type='hidden' name='random_l_hidden_c' value="<?php echo $get_random_l['customer']; ?>">
 				<input type='hidden' name='get_pc' value="<?php echo $get_random_l['id']; ?>">
 				<p class='centered'><span class="label label-success">PRODUCT FOR COMPARE</span></p>
 				<p class='centered'><span class="label label-info"><?php echo $get_random_l['customer']; ?></span></p>
@@ -52,14 +54,16 @@
 		<div class='span2'>
 			<div class='well'>
 				<p class='centered'><span class="label label-info">DECISION</span></p>
-				<button id='sccb_notsure_btn' onclick="productCompareDecision(0);" type='button' disabled='true' class='btn btn-success icb_systme_compare_btn margin_bottom disabled'>New</button>
-				<button id='sccb_yes_btn' onclick="productCompareDecision(2);" type='button' disabled='true' class='btn btn-primary icb_systme_compare_btn margin_bottom disabled'>Yes</button>
-				<button id='sccb_not_btn' onclick="productCompareDecision(1);" type='button' disabled='true' class='btn btn-danger icb_systme_compare_btn disabled'>No</button>
+				<button id='sccb_notsure_btn' onclick="return false;" type='button' class='btn btn-success icb_systme_compare_btn margin_bottom'>New</button>
+				<button id='sccb_yes_btn' onclick="return false;" type='button' class='btn btn-primary icb_systme_compare_btn margin_bottom'>Yes</button>
+				<button id='sccb_not_btn' onclick="return false;" type='button' class='btn btn-danger icb_systme_compare_btn'>No</button>
 			</div>
 		</div>
 
 		<div class='span5'>
+			<div id="dd_drop_random_r"></div>
 			<div class='well'>
+				<input type='hidden' name='random_r_hidden_c' value="<?php echo $get_random_r['customer']; ?>">
 				<input type='hidden' name='get_pc' value="<?php echo $get_random_r['id']; ?>">
 				<p class='centered'><span class="label label-success">PRODUCT FOR COMPARE</span></p>
 				<p class='centered'><span class="label label-info"><?php echo $get_random_r['customer']; ?></span></p>
@@ -117,6 +121,102 @@
 		var systemCompareProductsBaseUrl = base_url + 'index.php/system/getcompareproducts';
 		var systemCompareProductsVoteBaseUrl = base_url + 'index.php/system/votecompareproducts';
 		var systemCompareDeleteProductsVotedPairBaseUrl = base_url + 'index.php/system/deleteproductsvotedpair';
+
+		function initCustomersPciDropdowns() {
+			var ddData_grids_l_current = $("input[type='hidden'][name='random_l_hidden_c']").val();
+			var ddData_grids_r_current = $("input[type='hidden'][name='random_r_hidden_c']").val();
+			var ddData_grids_l = [];
+            var ddData_grids_r = [];
+            var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist', { }, 'json').done(function(c_data) {
+                var cl_arr = [];
+                for(i in c_data) {
+                    cl_arr.push(c_data[i]);
+                }
+                // --- LEFT PRODUCT DROPDOWN
+                for (var i = 0; i < cl_arr.length; i++) {
+                    var text_d = cl_arr[i];
+                    var value_d = cl_arr[i];
+                    var imageSrc_d = "";
+                    var select_st = false;
+                    if(cl_arr[i] == ddData_grids_l_current) select_st = true; 
+                    if(cl_arr[i] == 'bjs.com') {
+                        text_d = "";
+                        imageSrc_d = base_url + "img/bjs-logo.gif";
+                    } else if(cl_arr[i] == 'sears.com') {
+                        text_d = "";
+                        imageSrc_d = base_url + "img/sears-logo.png";
+                    } else if(cl_arr[i] == 'walmart.com') {
+                        text_d = "";
+                        imageSrc_d = base_url + "img/walmart-logo.png";
+                    } else if(cl_arr[i] == 'staples.com') {
+                        text_d = "";
+                        imageSrc_d = base_url + "img/staples-logo.png";
+                    } else if(cl_arr[i] == 'overstock.com') {
+                        text_d = "";
+                        imageSrc_d = base_url + "img/overstock-logo.png";
+                    } else if(cl_arr[i] == 'tigerdirect.com') {
+                        text_d = "";
+                        imageSrc_d = base_url + "img/tigerdirect-logo.png";
+                    }
+                    var mid = {
+                        text: text_d,
+                        value: value_d,
+                        selected: select_st,
+                        description: "",
+                        imageSrc: imageSrc_d
+                    };
+                    ddData_grids_l.push(mid);
+                };
+                // --- RIGHT PRODUCT DROPDOWN 
+                for (var i = 0; i < cl_arr.length; i++) {
+                    var text_d = cl_arr[i];
+                    var value_d = cl_arr[i];
+                    var imageSrc_d = "";
+                    var select_st = false;
+                    if(cl_arr[i] == ddData_grids_r_current) select_st = true; 
+                    if(cl_arr[i] == 'bjs.com') {
+                        text_d = "";
+                        imageSrc_d = base_url + "img/bjs-logo.gif";
+                    } else if(cl_arr[i] == 'sears.com') {
+                        text_d = "";
+                        imageSrc_d = base_url + "img/sears-logo.png";
+                    } else if(cl_arr[i] == 'walmart.com') {
+                        text_d = "";
+                        imageSrc_d = base_url + "img/walmart-logo.png";
+                    } else if(cl_arr[i] == 'staples.com') {
+                        text_d = "";
+                        imageSrc_d = base_url + "img/staples-logo.png";
+                    } else if(cl_arr[i] == 'overstock.com') {
+                        text_d = "";
+                        imageSrc_d = base_url + "img/overstock-logo.png";
+                    } else if(cl_arr[i] == 'tigerdirect.com') {
+                        text_d = "";
+                        imageSrc_d = base_url + "img/tigerdirect-logo.png";
+                    }
+                    var mid = {
+                        text: text_d,
+                        value: value_d,
+                        selected: select_st,
+                        description: "",
+                        imageSrc: imageSrc_d
+                    };
+                    ddData_grids_r.push(mid);
+                };
+                setTimeout(function(){
+                    $('#dd_drop_random_l').ddslick({
+                        data: ddData_grids_l,
+                        width: 320,
+                        truncateDescription: true,
+                    });
+                    $('#dd_drop_random_r').ddslick({
+                        data: ddData_grids_r,
+                        width: 320,
+                        truncateDescription: true,
+                    });
+                }, 500);
+            });
+		}
+		initCustomersPciDropdowns();
 
 		function reComparePair(im_pr_f, im_pr_s) {
 			cleanAndRestore();
