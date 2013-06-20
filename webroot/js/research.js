@@ -113,22 +113,26 @@ function researchKeywordsAnalizer() {
 }
 
 $(document).ready(function () {
-    $(document).on("keydown change", 'textarea[name="short_description"]', function() {
+    $(document).on("keydown change focusout", 'textarea[name="short_description"]', function() {
         var number = 0;
         var matches = $(this).val().match(/\b/g);
         if(matches) {
             number = matches.length/2;
         }
         $('#research_wc').html(number);
+        var num = parseInt($('#research_wc').html())+parseInt($('#research_wc1').html());
+        $('#research_total').html(num);
     });
 
-    $(document).on("keydown change", '#long_description', function() {
+    $(document).on("keydown change focusout", '#long_description', function() {
         var number = 0;
         var matches = $(this).text().match(/\b/g);
         if(matches) {
             number = matches.length/2;
         }
         $('#research_wc1').html(number);
+        var num = parseInt($('#research_wc').html())+parseInt($('#research_wc1').html());
+        $('#research_total').html(num);
     });
 
     $(document).on("click", 'a.clear_all', function() {
