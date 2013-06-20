@@ -4,7 +4,7 @@ $menu = array(
 	array('controller' => 'admin_customer', 'name' => 'Customers'),
 	array('controller' => 'admin_editor', 'name' => 'Editors'),
     array('controller' => 'admin_tag_editor', 'name' => 'Tag Editor'),
-    array('controller' => 'site_crawler', 'name' => 'Site Crawler'),
+    /*array('controller' => 'site_crawler', 'name' => 'Site Crawler'),*/
 );
 
 ?>

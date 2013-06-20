@@ -1,39 +1,51 @@
-<div class="info-message"></div>
-<div class="site_crawler_content">
-	<h3>Add to list:</h3>
-	<div class="row-fluid">
-		<div class="search_area uneditable-input span10" onClick="this.contentEditable='false';" style="cursor: text; width: 765px; height: 250px; overflow : auto;" id="Add_List">
-		</div>
-		<span class="btn btn-success fileinput-button ml_15">
-			Upload
-			<i class="icon-plus icon-white"></i>
-			<input id="fileupload" type="file" name="files[]">
-		</span>
-		<script>
-		$(function () {
-			var url = '<?php echo site_url('site_crawler/upload');?>';
-			$('#fileupload').fileupload({
-				url: url,
-				dataType: 'json',
-				done: function (e, data) {
-					$.each(data.result.urls, function (index, url) {
-						$('#Add_List').append("<div>"+url+"</div>");
+<div class="tabbable">
+      <ul class="nav nav-tabs jq-system-tabs">
+		<li class=""><a data-toggle="tab" href="<?php echo site_url('system');?>">General</a></li>
+		<li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_accounts');?>">New Accounts</a></li>
+		<li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_roles');?>">Roles</a></li>
+		<li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_users');?>">Users</a></li>
+		<li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_compare');?>">Product Compare Interface</a></li>
+		<li class="active"><a data-toggle="tab" href="<?php echo site_url('site_crawler');?>">Site Crawler</a></li>
+	  </ul>
+	  <div class="tab-content">
+		<div class="info-message"></div>
+		<div class="site_crawler_content">
+			<h3>Add to list:</h3>
+			<div class="row-fluid">
+				<div class="search_area uneditable-input span10" onClick="this.contentEditable='false';" style="cursor: text; width: 765px; height: 250px; overflow : auto;" id="Add_List">
+				</div>
+				<span class="btn btn-success fileinput-button ml_15">
+					Upload
+					<i class="icon-plus icon-white"></i>
+					<input id="fileupload" type="file" name="files[]">
+				</span>
+				<script>
+				$(function () {
+					var url = '<?php echo site_url('site_crawler/upload');?>';
+					$('#fileupload').fileupload({
+						url: url,
+						dataType: 'json',
+						done: function (e, data) {
+							$.each(data.result.urls, function (index, url) {
+								$('#Add_List').append("<div>"+url+"</div>");
+							});
+							checkAddList();
+						}
 					});
-					checkAddList();
-				}
-			});
-		});
-		</script>
-		<button id="add_url_list" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Add</button>
-		<button id="add_list_delete" class="btn new_btn btn-danger mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
-	</div>
-	<h3>Current list:</h3>
-	<div class="row-fluid">
-		<div class="search_area uneditable-input span10" style="cursor: text; width: 765px; height: 250px; overflow : auto;" id="Current_List">
+				});
+				</script>
+				<button id="add_url_list" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Add</button>
+				<button id="add_list_delete" class="btn new_btn btn-danger mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
+			</div>
+			<h3>Current list:</h3>
+			<div class="row-fluid">
+				<div class="search_area uneditable-input span10" style="cursor: text; width: 765px; height: 250px; overflow : auto;" id="Current_List">
+				</div>
+				<button id="current_list_delete" class="btn new_btn btn-danger mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
+				<button id="crawl_now" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Crawl Now</button>
+			</div>
 		</div>
-		<button id="current_list_delete" class="btn new_btn btn-danger mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
-		<button id="crawl_now" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Crawl Now</button>
-	</div>
+	  </div>
 </div>
 <script>
 function loadCurrentList(){

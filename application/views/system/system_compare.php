@@ -5,6 +5,7 @@
 	<li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_roles');?>">Roles</a></li>
 	<li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_users');?>">Users</a></li>
 	<li class="active"><a data-toggle="tab" href="<?php echo site_url('system/system_compare');?>">Product Compare Interface</a></li>
+	<li class=""><a data-toggle="tab" href="<?php echo site_url('site_crawler');?>">Site Crawler</a></li>
   </ul>
   <div class="tab-content">
     <div id="tab5" class="tab-pane active">
@@ -20,7 +21,7 @@
 				<div id="tab2_pci_tabset" class='tab-pane'>&nbsp;</div>
 			</div>
 		</div>
-    	<!-- NEW SUB TABS INTERFACE (END) -->	
+    	<!-- NEW SUB TABS INTERFACE (END) -->
 
     </div>
   </div>

@@ -34,6 +34,7 @@ $("#user_mail").autocomplete({
 	<li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_roles');?>">Roles</a></li>
 	<li class="active"><a data-toggle="tab" href="<?php echo site_url('system/system_users');?>">Users</a></li>
 	<li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_compare');?>">Product Compare Interface</a></li>
+	<li class=""><a data-toggle="tab" href="<?php echo site_url('site_crawler');?>">Site Crawler</a></li>
   </ul>
   <div class="tab-content">
     <div id="tab4" class="tab-pane active">
@@ -58,7 +59,7 @@ $("#user_mail").autocomplete({
 			<div class="span9 admin_system_content aclist">
 				<p>Customers:</p>
 		        <select id="user_customers" data-placeholder="Click to select customers" multiple class="chzn-select" tabindex="8" name="user_customers[]">
-					<?php 
+					<?php
 					foreach ($customers as $key => $value) {
 						print '<option class="'.$key.'" value="'.$key.'">'.$value.'</option>';
 					}
@@ -69,7 +70,7 @@ $("#user_mail").autocomplete({
 			<div class="span9 admin_system_content aclist">
 				<p>Role:</p>
 				<select id="user_role" data-placeholder="Select user role" class="chzn-select" tabindex="8" name="user_role">
-					<?php 
+					<?php
 					foreach ($user_groups as $user_group) {
 						print '<option value="'.$user_group->id.'">'.$user_group->description.'</option>';
 					}

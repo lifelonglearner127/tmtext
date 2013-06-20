@@ -5,6 +5,7 @@
 								<li class="active"><a data-toggle="tab" href="<?php echo site_url('system/system_roles');?>">Roles</a></li>
 								<li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_users');?>">Users</a></li>
 								<li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_compare');?>">Product Compare Interface</a></li>
+								<li class=""><a data-toggle="tab" href="<?php echo site_url('site_crawler');?>">Site Crawler</a></li>
 				              </ul>
 				              <div class="tab-content">
 				                <div id="tab3" class="tab-pane active">
@@ -15,7 +16,7 @@
 										<div class="span4 admin_system_content">
 											<p>ROLE</p>
 											<div class="clear-fix"></div>
-											<?php 
+											<?php
 											foreach ($user_groups as $user_group) {	?>
 												<p><?php echo $user_group->description;?></p>
 												<div class="clear-fix"></div>

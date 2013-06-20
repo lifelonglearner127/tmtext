@@ -10,6 +10,7 @@
 			<li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_roles');?>">Roles</a></li>
 			<li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_users');?>">Users</a></li>
 			<li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_compare');?>">Product Compare Interface</a></li>
+			<li class=""><a data-toggle="tab" href="<?php echo site_url('site_crawler');?>">Site Crawler</a></li>
 		</ul>
 		<div class="tab-content">
 			<div id="tab1" class="tab-pane active">
