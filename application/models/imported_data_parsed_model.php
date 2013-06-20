@@ -25,6 +25,38 @@ class Imported_data_parsed_model extends CI_Model {
         return $query->result();
     }
 
+    private function get_random_right_compare_pr_regression($customer_exc, $customers_list, $ids) {
+        $random_id = $ids[array_rand($ids, 1)];
+        $this->db->select('imported_data_id, key, value');
+        $this->db->where('imported_data_id', $random_id);
+        $query = $this->db->get($this->tables['imported_data_parsed']);
+        $results = $query->result();
+        $data = array('id' => '', 'url' => '', 'product_name' => '', 'description' => '', 'long_description' => '', 'customer' => '');
+        foreach($results as $result) {
+            $data['id'] = $result->imported_data_id;
+            if($result->key === 'URL') {
+                $data['url'] = $result->value;
+                $cus_val = "";
+                foreach ($customers_list as $ki => $vi) {
+                    if(strpos($result->value, "$vi") !== false) {
+                        $cus_val  = $vi;
+                    }
+                }
+                if($cus_val !== "" && $cus_val !== $customer_exc) $data['customer'] = $cus_val;
+            }
+            if($result->key === 'Product Name') {
+                $data['product_name'] = $result->value;
+            }
+            if($result->key === 'Description') {
+                $data['description'] = $result->value;
+            }
+            if($result->key === 'Long_Description') {
+                $data['long_description'] = $result->value;
+            }
+        }
+        return $data;
+    }
+
     function getRandomRightCompareProduct($customer_exc, $id_exc) {
         // ---- get customers list (start)
         $customers_list = array();
@@ -39,11 +71,22 @@ class Imported_data_parsed_model extends CI_Model {
         $customers_list = array_unique($customers_list);
         // ---- get customers list (end)
 
-        // ---- get product with excluding id and customer params (start)
-        $f_res = array();
+        // ---- get randomly indexed import id (start) (new stuff)
         $this->db->select('imported_data_id, key, value');
-        $this->db->where('imported_data_id != ', $id_exc);
-        $this->db->not_like('value', $customer_exc);
+        $query = $this->db->where('imported_data_id != ', $id_exc)->get($this->tables['imported_data_parsed']);
+        $results = $query->result();
+        $ids = array();
+        if(count($results) > 0) {
+            foreach ($results as $key => $value) {  
+                $ids[] = $value->imported_data_id;
+            }
+        }
+        $ids = array_unique($ids);
+        $random_id = $ids[array_rand($ids, 1)];
+        // ---- get randomly indexed import id (end) (new stuff)
+
+        $this->db->select('imported_data_id, key, value');
+        $this->db->where('imported_data_id', $random_id);
         $query = $this->db->get($this->tables['imported_data_parsed']);
         $results = $query->result();
         $data = array('id' => '', 'url' => '', 'product_name' => '', 'description' => '', 'long_description' => '', 'customer' => '');
@@ -57,7 +100,7 @@ class Imported_data_parsed_model extends CI_Model {
                         $cus_val  = $vi;
                     }
                 }
-                if($cus_val !== "") $data['customer'] = $cus_val;
+                if($cus_val !== "" && $cus_val !== $customer_exc) $data['customer'] = $cus_val;
             }
             if($result->key === 'Product Name') {
                 $data['product_name'] = $result->value;
@@ -69,11 +112,12 @@ class Imported_data_parsed_model extends CI_Model {
                 $data['long_description'] = $result->value;
             }
         }
-        if(count($data) > 0) {
-            $f_res = $data;
+        // ---- regression check (start)
+        while( trim($data['url'] === '') || trim($data['product_name'] === '') || trim($data['description'] === '') || trim($data['long_description'] === '') || trim($data['customer'] === '') ) {
+            $data = $this->get_random_right_compare_pr_regression($customer_exc, $customers_list, $ids);
         }
-        return $f_res;
-        // ---- get product with excluding id and customer params (end)
+        // ---- regression check (end)
+        return $data;
     }
 
     function getRandomLeftCompareProduct() {
@@ -109,6 +153,7 @@ class Imported_data_parsed_model extends CI_Model {
         $f_res = array();
         $this->db->select('imported_data_id, key, value');
         $this->db->where('imported_data_id', $random_id);
+        $this->db->where('value != ', ""); // new stuff
         $query = $this->db->get($this->tables['imported_data_parsed']);
         $results = $query->result();
         $data = array('id' => $random_id, 'url' => '', 'product_name' => '', 'description' => '', 'long_description' => '', 'customer' => '');

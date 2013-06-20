@@ -1,4 +1,12 @@
 /* Basic style */
+
+.preloader_grids_box_pci {
+	display: none;
+	width: 220px;
+	margin: 0 auto;
+	margin-bottom: 15px;
+}
+
 #dd_drop_random_l, #dd_drop_random_r {
 	margin-top: 15px;
 	margin-bottom: 15px;

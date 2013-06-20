@@ -31,6 +31,30 @@ class System extends MY_Controller {
 		$this->output->set_content_type('application/json')->set_output(json_encode($res));
 	}
 
+	public function renewcomparerightside() {
+		$customer_l = $this->input->post('customer_l');
+		$id_l = $this->input->post('id_l');
+		$this->load->model('imported_data_parsed_model');
+		$get_random_r = $this->imported_data_parsed_model->getRandomRightCompareProduct($customer_l, $id_l);
+		$data = array(
+			'get_random_r' => $get_random_r
+		);
+		$this->load->view('system/renewcomparerightside', $data);
+	}
+
+	public function renewallcomparesides() {
+		$this->load->model('imported_data_parsed_model');
+
+		$get_random_l = $this->imported_data_parsed_model->getRandomLeftCompareProduct();
+		$get_random_r = $this->imported_data_parsed_model->getRandomRightCompareProduct($get_random_l['customer'], $get_random_l['id']);
+
+		$data = array(
+			'get_random_l' => $get_random_l,
+			'get_random_r' => $get_random_r
+		);
+		$this->load->view('system/renewallcomparesides', $data);
+	}
+
 	public function getmatchnowinterface() {
 		$this->load->model('imported_data_parsed_model');
 
