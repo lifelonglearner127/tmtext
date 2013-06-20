@@ -690,6 +690,10 @@ body{
 	margin-left:20px;
 }
 
+.mt_5{
+    margin-top: 5px;
+}
+
 .mt_20{
     margin-top: 20px;
 }
@@ -1129,4 +1133,8 @@ label.dd-selected-text, label.dd-option-text{
 }
 .research_batches table td:last-child{
     border-right: 1px solid #ccc;
+}
+
+.system_drop{
+    width:120px;
 }

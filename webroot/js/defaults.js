@@ -7,6 +7,7 @@ var sentence = new Array();
 var desc_input = '';
 var action = '';
 var ddData_first = [];
+var default_tab = '';
 var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist', { }, 'json').done(function(c_data) {
     var cl_arr = [];
     cl_arr.push("All Sites");
@@ -580,11 +581,10 @@ jQuery(document).ready(function($) {
 
     $(document).on("click", ".left_nav_content li a, .right_nav_content li a", function(e){
         e.preventDefault();
-
-
-
-        if($(this).hasClass('jq-measure')){
-            $('title').text("Competitive Intelligence");
+        if($(this).parent().hasClass('active')){
+            if($(this).hasClass('jq-measure')){
+                $('title').text("Competitive Intelligence");
+            }
             var editorCont = $('.main_content_editor').html();
             if (editorCont.length == 0) {
                 var url = $(this).attr('href');

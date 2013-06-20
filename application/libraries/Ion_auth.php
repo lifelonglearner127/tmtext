@@ -625,6 +625,12 @@ class Ion_auth
 		}
 	}
 
+    function set_default_tab_to_group($group_id, $default_tab){
+        if(!$this->ion_auth->update_group_default_tab($group_id, $default_tab)){
+            return 'Roles saving error';
+        }
+    }
+
 	function check_user_permission($controller){
 		$this->load->model('user_groups_model');
 		$user_group = $this->user_groups_model->getRoleByUserId($this->ion_auth->get_user_id());

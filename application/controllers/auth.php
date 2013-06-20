@@ -84,7 +84,29 @@ class Auth extends MY_Controller {
                 $this->load->model('user_groups_model');
                 $user_group = $this->user_groups_model->getRoleByUserId($this->ion_auth->get_user_id());
                 $group = $this->user_groups_model->getGroupById($user_group[0]->group_id);
-                redirect($group[0]["default_controller"], 'refresh');
+                $rules = unserialize($group[0]['auth_rules']);
+                $checked_controllers = array('research', 'editor', 'validate', 'measure', 'customer');
+                $checked = array();
+                foreach ($checked_controllers as $checked_controller) {
+                    if($rules[$checked_controller]['index']){
+                        $checked[$checked_controller] = true;
+                    }
+                }
+                $url = '';
+                foreach($checked as $key => $value){
+                    if($key == $group[0]["default_controller"]){
+                        $url = $group[0]["default_controller"];
+                    }
+                }
+                if($url!=''){
+                    redirect($url.'/index', 'refresh');
+                } else{
+                    foreach($checked as $key => $value){
+                        redirect($key.'/index', 'refresh');
+                        break;
+                    }
+                }
+                //redirect($group[0]["default_controller"].'/index', 'refresh');
 			}
 			else
 			{

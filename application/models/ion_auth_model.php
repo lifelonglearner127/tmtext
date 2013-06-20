@@ -2089,6 +2089,12 @@ class Ion_auth_model extends CI_Model
 		return TRUE;
 	}
 
+    public function update_group_default_tab($group_id, $default_tab) {
+        $this->db->update($this->tables['groups'], array('default_controller'=> $default_tab), array('id' => $group_id));
+        $this->set_message('group_update_successful');
+        return TRUE;
+    }
+
 	public function getUserLike($column, $userQuery){
 		$query = $this->db->select('id, username, email')->like($column, $userQuery)->get('users');
 		return $query->result_array();

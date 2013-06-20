@@ -78,6 +78,35 @@
 												}
 											 ?>
 										</div>
+                                        <div class="span1 admin_system_content">
+                                            <p>Default</p>
+                                            <div class="clear-fix"></div>
+                                            <?php
+                                            foreach ($user_groups as $user_group) {	?>
+                                                <select name="default_<?php echo $user_group->id;?>" class="system_drop">
+                                                    <?php foreach($checked_controllers as $checked_controller){ ?>
+                                                        <option value="<?php echo $checked_controller; ?>"
+                                                            <?php if(isset($checked[$user_group->id]['default_controller']) && $checked[$user_group->id]['default_controller']==$checked_controller){print 'selected';}?>>
+                                                            <?php
+                                                                if($checked_controller=='editor'){
+                                                                    echo 'Create';
+                                                                } else if($checked_controller=='measure'){
+                                                                    echo 'Analysis';
+                                                                } else if($checked_controller=='customer'){
+                                                                    echo 'Settings';
+                                                                } else {
+                                                                    echo ucfirst($checked_controller);
+                                                                }
+                                                            ?>
+                                                        </option>
+                                                    <?php } ?>
+
+                                                </select>
+                                                <div class="clear-fix mt_5"></div>
+                                            <?php
+                                            }
+                                            ?>
+                                        </div>
 									</div>
 
 									<div class="align_center">

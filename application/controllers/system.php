@@ -99,6 +99,7 @@ class System extends MY_Controller {
 					$checked[$user_group->id][$checked_controller] = true;
 				}
 			}
+            $checked[$user_group->id]['default_controller'] = $user_group->default_controller;
 		}
 		$this->data['checked'] = $checked;
 		$this->render();
@@ -370,6 +371,7 @@ class System extends MY_Controller {
 			$roles[$arr[1]][] = $arr[0];
 		}
 		foreach ($roles as $key => $value) {
+            $this->ion_auth->set_default_tab_to_group($key, $this->input->post('default_'.$key));
 			$deny_controllers = array_diff($this->data['checked_controllers'], $value);
 			if($key !== 1){
 				$deny_controllers = array_merge($deny_controllers, $this->data['admin_controllers']);
