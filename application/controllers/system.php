@@ -31,6 +31,19 @@ class System extends MY_Controller {
 		$this->output->set_content_type('application/json')->set_output(json_encode($res));
 	}
 
+	public function renewcomparerightsidefromdropdown() {
+		$customer_r_selected = $this->input->post('customer_r_selected');
+		$customer_l = $this->input->post('customer_l');
+		$id_l = $this->input->post('id_l');
+		$id_r = $this->input->post('id_r');
+		$this->load->model('imported_data_parsed_model');
+		$get_random_r = $this->imported_data_parsed_model->getRandomRightCompareProductDrop($customer_r_selected, $customer_l, $id_l, $id_r);
+		$data = array(
+			'get_random_r' => $get_random_r
+		);
+		$this->load->view('system/renewcomparerightside', $data);
+	}
+
 	public function renewcomparerightside() {
 		$customer_l = $this->input->post('customer_l');
 		$id_l = $this->input->post('id_l');

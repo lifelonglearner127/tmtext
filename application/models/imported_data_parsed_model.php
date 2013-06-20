@@ -57,6 +57,54 @@ class Imported_data_parsed_model extends CI_Model {
         return $data;
     }
 
+    function getRandomRightCompareProductDrop($customer_r_selected, $customer_l, $id_l, $id_r) {
+        // ---- get customers list (start)
+        $customers_list = array();
+        $query_cus = $this->db->order_by('name', 'asc')->get($this->tables['customers']);
+        $query_cus_res = $query_cus->result();
+        if(count($query_cus_res) > 0) {
+            foreach ($query_cus_res as $key => $value) {
+                $n = strtolower($value->name);
+                $customers_list[] = $n;
+            }
+        }
+        $customers_list = array_unique($customers_list);
+        // ---- get customers list (end)
+
+        $not_in = array($id_l, $id_r);
+        $this->db->select('p.imported_data_id, p.key, p.value')
+            ->from($this->tables['imported_data_parsed'].' as p')
+            ->join($this->tables['imported_data'].' as i', 'i.id = p.imported_data_id', 'left')
+            ->where('p.key', 'Product Name')->where_not_in('p.imported_data_id', $not_in)->like('i.data', $customer_r_selected)->not_like('i.data', $customer_l)->limit(1);
+
+        $query = $this->db->get();
+        $results = $query->result();
+        $data = array();
+        foreach($results as $result){
+            $query = $this->db->where('imported_data_id', $result->imported_data_id)->get($this->tables['imported_data_parsed']);
+            $res = $query->result_array();
+            $description = '';
+            $long_description = '';
+            $url = '';
+            foreach($res as $val){
+                if($val['key'] == 'URL') { 
+                    $url = $val['value'];
+                    $cus_val = "";
+                    foreach ($customers_list as $ki => $vi) {
+                        if(strpos($url, "$vi") !== false) {
+                            $cus_val  = $vi;
+                        }
+                    }
+                    if($cus_val !== "") $customer = $cus_val; 
+                }
+                if($val['key'] == 'Description'){ $description = $val['value']; }
+                if($val['key'] == 'Long_Description'){ $long_description = $val['value']; }
+            }
+            $data = array('id' => $result->imported_data_id, 'url' => $url, 'product_name' => $result->value, 'description' => $description, 'long_description' => $long_description, 'customer' => $customer);
+        }
+        return $data;
+    }
+
     function getRandomRightCompareProduct($customer_exc, $id_exc) {
         // ---- get customers list (start)
         $customers_list = array();

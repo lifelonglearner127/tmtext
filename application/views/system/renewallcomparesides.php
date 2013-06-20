@@ -53,7 +53,7 @@
 		<p class='centered'><span class="label label-info">DECISION</span></p>
 		<button id='sccb_newset_btn' onclick="productCompareNewSet();" type='button' class='btn btn-success icb_systme_compare_btn margin_bottom'>New</button>
 		<button id='sccb_yes_btn' onclick="productCompareDecision(2);" type='button' class='btn btn-primary icb_systme_compare_btn margin_bottom'>Yes</button>
-		<button id='sccb_not_btn' onclick="productCompareDecision(1);" type='button' class='btn btn-danger icb_systme_compare_btn'>No</button>
+		<!-- <button id='sccb_not_btn' onclick="productCompareDecision(1);" type='button' class='btn btn-danger icb_systme_compare_btn'>No</button> -->
 	</div>
 </div>
 

@@ -56,7 +56,7 @@
 				<p class='centered'><span class="label label-info">DECISION</span></p>
 				<button id='sccb_newset_btn' onclick="productCompareNewSet();" type='button' class='btn btn-success icb_systme_compare_btn margin_bottom'>New</button>
 				<button id='sccb_yes_btn' onclick="productCompareDecision(2);" type='button' class='btn btn-primary icb_systme_compare_btn margin_bottom'>Yes</button>
-				<button id='sccb_not_btn' onclick="productCompareDecision(1);" type='button' class='btn btn-danger icb_systme_compare_btn'>No</button>
+				<!-- <button id='sccb_not_btn' onclick="productCompareDecision(1);" type='button' class='btn btn-danger icb_systme_compare_btn'>No</button> -->
 			</div>
 		</div>
 
@@ -122,6 +122,7 @@
 		var systemCompareDeleteProductsVotedPairBaseUrl = base_url + 'index.php/system/deleteproductsvotedpair';
 		var reNewCompareRightSideBaseUrl = base_url + 'index.php/system/renewcomparerightside';
 		var reNewAllCompareSidesBaseUrl = base_url + 'index.php/system/renewallcomparesides';
+		var reNewCompareRightSideFromDropdownBaseUrl = base_url + 'index.php/system/renewcomparerightsidefromdropdown';
 
 		function initCustomersPciDropdownRight() {
 			var ddData_grids_r_current = $("input[type='hidden'][name='random_r_hidden_c']").val();
@@ -260,12 +261,18 @@
                     $('#dd_drop_random_l').ddslick({
                         data: ddData_grids_l,
                         width: 320,
-                        truncateDescription: true,
+                        truncateDescription: true
+                        // onSelected: function(data) {
+                        // 	console.log('L: ', data['selectedData']['value']);
+                        // }
                     });
                     $('#dd_drop_random_r').ddslick({
                         data: ddData_grids_r,
                         width: 320,
-                        truncateDescription: true,
+                        truncateDescription: true
+                        // onSelected: function(data) {
+                        // 	reNewCompareRightSideFromDropdown(data['selectedData']['value']);
+                        // }
                     });
                 }, 500);
             });
@@ -317,6 +324,25 @@
 		        });
 			}
 		}
+
+		// function reNewCompareRightSideFromDropdown(customer_r_selected) {
+		// 	var customer_l = $("input[type='hidden'][name='random_l_hidden_c']").val();
+		// 	var id_l = $("input[type='hidden'][name='get_pc'][id='get_pc_l']").val();
+		// 	var id_r = $("input[type='hidden'][name='get_pc'][id='get_pc_r']").val();
+		// 	var send_obj = {
+		// 		customer_r_selected: customer_r_selected,
+		// 		customer_l: customer_l,
+		// 		id_l: id_l,
+		// 		id_r: id_r
+		// 	};
+		// 	var renew_compare_rightside_fromdd = $.post(reNewCompareRightSideFromDropdownBaseUrl, send_obj, 'html').done(function(data) {
+		// 		if(data) {
+		// 			$(".preloader_grids_box_pci").hide();
+		// 			$("#pci_r_section").html(data);
+		// 			initCustomersPciDropdownRight();
+		// 		}
+	 //        });
+		// }
 
 		function reNewCompareRightSide(customer_l, id_l) {
 			$(".preloader_grids_box_pci").show();
