@@ -113,7 +113,7 @@ function researchKeywordsAnalizer() {
 }
 
 $(document).ready(function () {
-    $(document).on("keydown change focusout", 'textarea[name="short_description"]', function() {
+    $(document).on("keydown keyup change focusout", 'textarea[name="short_description"]', function() {
         var number = 0;
         var matches = $(this).val().match(/\b/g);
         if(matches) {
@@ -124,7 +124,7 @@ $(document).ready(function () {
         $('#research_total').html(num);
     });
 
-    $(document).on("keydown change focusout", '#long_description', function() {
+    $(document).on("keydown keyup change focusout", '#long_description', function() {
         var number = 0;
         var matches = $(this).text().match(/\b/g);
         if(matches) {
