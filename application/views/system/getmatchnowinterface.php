@@ -12,22 +12,22 @@
 					<?php 
 						switch ($get_random_l['customer']) {
 							case 'bjs.com':
-								$img_c_source = base_url()."/img/bjs-logo.gif";
+								$img_c_source = base_url()."img/bjs-logo.gif";
 								break;
 							case 'sears.com':
-								$img_c_source = base_url()."/img/sears-logo.png";
+								$img_c_source = base_url()."img/sears-logo.png";
 								break;
 							case 'walmart.com':
-								$img_c_source = base_url()."/img/walmart-logo.png";
+								$img_c_source = base_url()."img/walmart-logo.png";
 								break;
 							case 'staples.com':
-								$img_c_source = base_url()."/img/staples-logo.png";
+								$img_c_source = base_url()."img/staples-logo.png";
 								break;
 							case 'overstock.com':
-								$img_c_source = base_url()."/img/overstock-logo.png";
+								$img_c_source = base_url()."img/overstock-logo.png";
 								break;
 							case 'tigerdirect.com':
-								$img_c_source = base_url()."/img/tigerdirect-logo.jpg";
+								$img_c_source = base_url()."img/tigerdirect-logo.jpg";
 								break;
 							
 							default:
@@ -56,12 +56,12 @@
 				<p class='centered'><span class="label label-info">DECISION</span></p>
 				<button id='sccb_newset_btn' onclick="productCompareNewSet();" type='button' class='btn btn-success icb_systme_compare_btn margin_bottom'>New</button>
 				<button id='sccb_yes_btn' onclick="productCompareDecision(2);" type='button' class='btn btn-primary icb_systme_compare_btn margin_bottom'>Yes</button>
-				<!-- <button id='sccb_not_btn' onclick="productCompareDecision(1);" type='button' class='btn btn-danger icb_systme_compare_btn'>No</button> -->
+				<button id='sccb_not_btn' onclick="productCompareDecision(1);" type='button' class='btn btn-danger icb_systme_compare_btn'>No</button>
 			</div>
 		</div>
 
 		<div id='pci_r_section' class='span5'>
-			<img class='preloader_grids_box_pci' src="<?php echo base_url() ?>/img/grids_boxes_preloader.gif">
+			<!-- <img class='preloader_grids_box_pci' src="<?php echo base_url() ?>/img/grids_boxes_preloader.gif"> -->
 			<div id="dd_drop_random_r"></div>
 			<div class='well'>
 				<input type='hidden' name='random_r_hidden_c' value="<?php echo $get_random_r['customer']; ?>">
@@ -72,22 +72,22 @@
 					<?php 
 						switch ($get_random_r['customer']) {
 							case 'bjs.com':
-								$img_c_source = base_url()."/img/bjs-logo.gif";
+								$img_c_source = base_url()."img/bjs-logo.gif";
 								break;
 							case 'sears.com':
-								$img_c_source = base_url()."/img/sears-logo.png";
+								$img_c_source = base_url()."img/sears-logo.png";
 								break;
 							case 'walmart.com':
-								$img_c_source = base_url()."/img/walmart-logo.png";
+								$img_c_source = base_url()."img/walmart-logo.png";
 								break;
 							case 'staples.com':
-								$img_c_source = base_url()."/img/staples-logo.png";
+								$img_c_source = base_url()."img/staples-logo.png";
 								break;
 							case 'overstock.com':
-								$img_c_source = base_url()."/img/overstock-logo.png";
+								$img_c_source = base_url()."img/overstock-logo.png";
 								break;
 							case 'tigerdirect.com':
-								$img_c_source = base_url()."/img/tigerdirect-logo.jpg";
+								$img_c_source = base_url()."img/tigerdirect-logo.jpg";
 								break;
 							
 							default:
@@ -345,10 +345,10 @@
 		// }
 
 		function reNewCompareRightSide(customer_l, id_l) {
-			$(".preloader_grids_box_pci").show();
+			// $(".preloader_grids_box_pci").show();
 			var renew_compare_rightside = $.post(reNewCompareRightSideBaseUrl, { customer_l: customer_l, id_l: id_l }, 'html').done(function(data) {
 				if(data) {
-					$(".preloader_grids_box_pci").hide();
+					// $(".preloader_grids_box_pci").hide();
 					$("#pci_r_section").html(data);
 					initCustomersPciDropdownRight();
 				}
