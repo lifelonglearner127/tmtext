@@ -19,6 +19,7 @@ class Research extends MY_Controller {
 
     public function index()
     {
+        $this->data['customer_list'] = $this->getCustomersByUserId();
         $this->data['category_list'] = $this->category_list();
         $this->data['batches_list'] = $this->batches_list();
         $this->render();
@@ -55,7 +56,7 @@ class Research extends MY_Controller {
 
             $category_id = '';
             $limit = '';
-            if($this->input->post('category') != '' && $this->input->post('category') != 'All'){
+            if($this->input->post('category') != '' && $this->input->post('category') != 'All categories'){
                 $category_id = $this->category_model->getIdByName($this->input->post('category'));
             }
             if($this->input->post('limit')!=''){

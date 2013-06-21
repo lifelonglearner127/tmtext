@@ -841,6 +841,10 @@ a.gray_out {
     margin-right: 20px;
 }
 
+#res_dropdown{
+    margin-right: 10px;
+}
+
 .dd-option-image, .dd-selected-image {
     max-width: 100px!important;
     height: 28px;
@@ -1108,6 +1112,11 @@ label.dd-selected-text, label.dd-option-text{
     float: left;
     margin-top: 7px;
     margin-left: 3px;
+}
+
+.research .category_list{
+    width: 140px;
+    margin-left: 5px;
 }
 
 .category_list{

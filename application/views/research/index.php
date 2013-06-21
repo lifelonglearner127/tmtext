@@ -166,10 +166,8 @@ $(document).ready(function() {
         <div class="row-fluid">
             <?php echo form_open('', array('id'=>'measureForm')); ?>
             <input type="text" id="research_text" name="research_text" value="" class="span8 " placeholder=""/>
-            <div id="res_dropdown" class="ddslick_dropdown" style="width:104px;"></div>
-            <select id="res_categories" name='res_categories'>
-                    <option value='all'>All</option>
-            </select>
+            <div id="res_dropdown" class="ddslick_dropdown" style="width:90px;"></div>
+            <?php echo form_dropdown('category', $category_list, array(), 'class="category_list"'); ?>
             <button id="research_search" type="button" class="btn pull-right btn-success">Search</button>
             <?php echo form_close();?>
         </div>
@@ -184,14 +182,14 @@ $(document).ready(function() {
                     <option value="50">50</option>
                     <option value="100">100</option>
                 </select>
-                results in category
-                <?php echo form_dropdown('category', $category_list, array(), 'class="mt_10 category_list"'); ?>
+                results
+
             </div>
             <div class="span6">
                 Batch:
-                <?php echo form_dropdown('customer', $customer_list, array(), 'class="mt_10" style="width: 100px;"'); ?>
+                <?php echo form_dropdown('customers', $customer_list, array(), 'class="mt_10 category_list"'); ?>
                 <?php echo form_dropdown('batches', $batches_list, array(), 'class="mt_10" style="width: 100px;"'); ?>
-                <button id="export_batch" class="btn" type="button" style="margin-left:5px; margin-right: 10px;">Export</button>
+                <button id="export_batch" class="btn" type="button" style="margin-left:5px; margin-right: 10px;">Export</button><br />
                 Add new: <input type="text" class="mt_10" style="width:80px" name="new_batch">
                 <button id="new_batch" class="btn" type="button" style="margin-left:5px">New</button>
             </div>
