@@ -224,7 +224,10 @@ $(document).ready(function() {
         <div class="row-fluid">
             <?php echo form_open('', array('id'=>'measureForm')); ?>
             <input type="text" id="research_text" name="research_text" value="" class="span8 " placeholder=""/>
-            <div id="res_dropdown" class="ddslick_dropdown"></div>
+            <div id="res_dropdown" class="ddslick_dropdown" style="width:104px;"></div>
+            <select id="res_categories" name='res_categories'>
+                    <option value='all'>All</option>
+            </select>
             <button id="research_search" type="button" class="btn pull-right btn-success">Search</button>
             <?php echo form_close();?>
         </div>

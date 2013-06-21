@@ -886,9 +886,6 @@ p.show_ballons input{
     margin-top: 20px;
 }
 
-#research_text{
-    margin-right: 16px;
-}
 
 .research h3{
     font-size: 20px;
@@ -1145,4 +1142,13 @@ label.dd-selected-text, label.dd-option-text{
 
 .system_drop{
     width:120px;
+}
+
+#res_categories{
+    width:140px;
+}
+
+#research_text{
+    margin-right: 10px;
+    width:550px;
 }
