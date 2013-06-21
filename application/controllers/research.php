@@ -79,6 +79,7 @@ class Research extends MY_Controller {
 
     public function research_batches(){
         $this->data['batches_list'] = $this->batches_list();
+        $this->data['customer_list'] = $this->getCustomersByUserId();
         $this->render();
     }
 
@@ -246,5 +247,21 @@ class Research extends MY_Controller {
     public function delete_research_data()
     {
         $this->research_data_model->delete($this->input->post('id'));
+    }
+
+    public function getCustomersByUserId(){
+        $this->load->model('customers_model');
+        $this->load->model('users_to_customers_model');
+        $customers = $this->users_to_customers_model->getByUserId($this->ion_auth->get_user_id());
+        if(count($customers) == 0){
+            $customers = $this->customers_model->getAll();
+        }
+        $customer_list = array(''=>'Select');
+        foreach($customers as $customer){
+            array_push($customer_list, $customer->name);
+        }
+
+        return $customer_list;
+
     }
 }

@@ -1,3 +1,6 @@
+# 06/21 Tatiana
+ALTER TABLE `batches` ADD `customer_id` INT NOT NULL AFTER `user_id`
+
 # 06/16 Ilya
 CREATE TABLE IF NOT EXISTS `products_compare` (
   `id` INT NOT NULL AUTO_INCREMENT ,

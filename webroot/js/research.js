@@ -461,6 +461,66 @@ $(document).ready(function () {
         });
     });*/
 
+    $(document).on("click", '.research_arrow', function() {
+        if($(this).hasClass('changed') && last_edition != ''){
+            $('#main').empty();
+            $('#main').html(last_edition);
+            $('div#research').css({'width':''});
+            $('div#research_edit').css({'width':''});
+            $(this).removeClass('changed');
+            $('div#long_description').css({'margin-left':'7px'});
+            last_edition = '';
+            setMovement();
+            return false;
+        }
+
+        if($(this).parent().parent().parent().attr('id') == 'main'){
+            var div = $(this).parent().parent().attr('id');
+            if(div == 'research'){
+                last_edition = $('#main').html();
+                $('div#'+div).css({'width':'99%'});
+                $('div#research_edit').css({'width':'99%'});
+                $(this).addClass('changed');
+                return false;
+            }
+            if(div == 'research_edit'){
+                var research_edit = $('div#'+div);
+                var research = $('div#research');
+                last_edition = $('#main').html();
+                $('div#'+div).css({'width':'99%'});
+                $('div#research').css({'width':'99%'});
+                $('#main').empty();
+                $('#main').append(research_edit).append(research);
+                $(this).addClass('changed');
+                return false;
+            }
+        } else {
+            var parent_id = $(this).parent().parent().parent().parent().attr('id');
+            $('div#long_description').css({'margin-left':'107px'});
+            if(parent_id == 'research'){
+                last_edition = $('#main').html();
+                $(this).parent().parent().parent().prepend($(this).parent().parent());
+                $('div#'+parent_id).css({'width':'99%'});
+                $('div#research_edit').css({'width':'99%'});
+                $(this).addClass('changed');
+                return false;
+            }
+            if(parent_id == 'research_edit'){
+                var research_edit = $('div#'+parent_id);
+                var research = $('div#research');
+                last_edition = $('#main').html();
+                $(this).parent().parent().parent().prepend($(this).parent().parent());
+                $('div#'+parent_id).css({'width':'99%'});
+                $('div#research').css({'width':'99%'});
+                $('#main').empty();
+                $('#main').append(research_edit).append(research);
+                $(this).addClass('changed');
+                return false;
+            }
+        }
+
+    });
+
 });
 
 
