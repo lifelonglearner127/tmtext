@@ -277,7 +277,7 @@ $(document).ready(function() {
                         <div class="boxes_content">
                             <div class="row-fluid"><label>Short description:</label>
                                  <label><span id="research_wc">0</span> words</label>
-                                 <button type="button" class="btn" style="float:left;">Generate</button>
+                                 <button id="research_generate" type="button" class="btn" style="float:left;">Generate</button>
                                  <textarea type="text" name="short_description" class="span10 mt_10" style="height:100px;"></textarea>
                             </div>
                             <div class="row-fluid"><label>Long description:</label>

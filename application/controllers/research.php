@@ -264,4 +264,92 @@ class Research extends MY_Controller {
         return $customer_list;
 
     }
+
+    public function generateDesc(){
+        $s = $this->input->post('product_name');
+
+        $this->load->library('pagination');
+        $pagination_config['base_url'] = $this->config->site_url().'/research/generateDesc';
+        $pagination_config['per_page'] = 0;
+
+        $data = array(
+            's' => $s,
+            'search_results' => array()
+        );
+
+        $attr_path = $this->config->item('attr_path');
+
+        $csv_rows = array();
+
+        // Search in files
+        if ( isset($this->settings['use_files']) && $this->settings['use_files']) {
+            if ($path = realpath($attr_path)) {
+                $objects = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path), RecursiveIteratorIterator::SELF_FIRST);
+                foreach($objects as $name => $object){
+                    if (!$object->isDir()) {
+                        if (preg_match("/.*\.csv/i",$object->getFilename(),$matches)) {
+                            $_rows = array();
+                            if (($handle = fopen($name, "r")) !== FALSE) {
+                                while (($row = fgets($handle, 1000)) !== false) {
+                                    if (preg_match("/$s/i",$row,$matches)) {
+                                        $_rows[] = $row;
+                                    }
+                                }
+                            }
+                            fclose($handle);
+
+                            foreach (array_keys(array_count_values($_rows)) as $row){
+                                $csv_rows[] = str_getcsv($row, ",", "\"");
+                            }
+                            unset($_rows);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Search in database
+        if ( isset($this->settings['use_database']) && $this->settings['use_database']) {
+            $this->load->model('imported_data_model');
+            if (( $_rows = $this->imported_data_model->findByData($s))!== false) {
+                foreach($_rows as $row) {
+                    $csv_rows[] = str_getcsv($row['data'], ",", "\"");
+                }
+            }
+        }
+
+        if (!empty($csv_rows)) {
+            $current_row = 0;
+            foreach($csv_rows as $row) {
+                if ($current_row < (int)$this->uri->segment(3)) {
+                    $current_row++;
+                    continue;
+                }
+                foreach ($row as $col) {
+                    if (preg_match("/^http:\/\/*/i",$col,$matches)) {
+                        $row['url'] = $col;
+                    } else if ( mb_strlen($col) <= 250) {
+                        $row['title'] = $col;
+                    } else if (empty($row['description'])){
+                        $row['description'] = substr($col, 0, strpos(wordwrap($col, 200), "\n"));
+
+                    }
+                }
+
+                if (!empty($row['url']) && !empty($row['title'])) {
+                    $data['search_results'][] =  '<a href="'.$row['url'].'">'.$row['title'].'</a><br/>'.$row['description'];
+                } else if (!empty($row['description'])) {
+                    $data['search_results'][] =  $row['description'];
+                }
+                if (count($data['search_results']) == $pagination_config['per_page']) break;
+            }
+        }
+
+        $pagination_config['total_rows'] = count($csv_rows);
+        $this->pagination->initialize($pagination_config);
+        $data['pagination']= $this->pagination->create_links();
+
+        $this->output->set_content_type('application/json')
+            ->set_output(json_encode($data));
+    }
 }
