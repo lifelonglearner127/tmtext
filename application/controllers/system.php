@@ -27,14 +27,15 @@ class System extends MY_Controller {
 	public function testattributesext() {
 		$s = $this->input->post('desc');
 		$descCmd = str_replace($this->config->item('cmd_mask'), $s, $this->system_settings['python_cmd']);
-		echo "SEARCH: ".$s."\n";
-		echo "MASK: ".$this->config->item('cmd_mask')."\n";
-		echo "CMD: ".$this->system_settings['python_cmd']."\n";
+		echo "SEARCH: ".$s."<br />";
+		echo "MASK: ".$this->config->item('cmd_mask')."<br />";
+		echo "CMD: ".$this->system_settings['python_cmd']."<br />";
+		echo "EXEC RES: ".shell_exec($descCmd)."<br />";
 		if($result = shell_exec($descCmd)) {
-			echo "EXEC RES:"."\n";
+			echo "EXEC RES:"."<br />";
 			echo var_dump($result);
 			if (preg_match_all('/.*ELECTR_DESCRIPTION:\s*(.*)\s*-{5,}/', $result, $matches)) {
-				echo "PREG MATCH RES:"."\n";
+				echo "PREG MATCH RES:"."<br />";
 				echo var_dump($matches);
 			}
 			die('NO MATCHES');
