@@ -467,12 +467,62 @@ $(document).ready(function () {
         return false;
     });
 
+    $(document).on("change", "select[name='batches']", function(){
+        $.post(base_url + 'index.php/research/filterCustomerByBatch', { 'batch': $("select[name='batches'] option:selected").text()}, function(data){
+            if(data != null){
+                $("select[name='customers'] option").each(function(){
+                    if(data==$(this).text()){
+                        $(this).prop('selected',true);
+                    }
+                });
+            } else {
+                $("select[name='customers'] option").each(function(){
+                    $(this).removeAttr('selected');
+                });
+            }
+        });
+    });
+
+    $(document).on("change", "select[name='customers']", function(){
+        $.post(base_url + 'index.php/research/filterBatchByCustomer', { 'customer_name': $("select[name='customers'] option:selected").text()}, function(data){
+           if(data.length>0){
+                $("select[name='batches']").empty();
+                for(var i=0; i<data.length; i++){
+                    $("select[name='batches']").append('<option>'+data[i]+'</option>');
+                }
+           }
+        });
+    });
     /*----------------------------Research batches--------------------------------------------*/
 
     $(document).on("change", 'select[name="research_batches"]', function() {
+        $.post(base_url + 'index.php/research/filterCustomerByBatch', { 'batch': $("select[name='research_batches'] option:selected").text()}, function(data){
+            if(data != null){
+                $("select[name='research_customers'] option").each(function(){
+                    if(data==$(this).text()){
+                        $(this).prop('selected',true);
+                    }
+                });
+            } else {
+                $("select[name='research_customers'] option").each(function(){
+                    $(this).removeAttr('selected');
+                });
+            }
+        });
         $('input[name="batche_name"]').val($('select[name="research_batches"] option:selected').text());
     });
     $('select[name="research_batches"]').trigger('change');
+
+    $(document).on("change", "select[name='research_customers']", function(){
+        $.post(base_url + 'index.php/research/filterBatchByCustomer', { 'customer_name': $("select[name='research_customers'] option:selected").text()}, function(data){
+            if(data.length>0){
+                $("select[name='research_batches']").empty();
+                for(var i=0; i<data.length; i++){
+                    $("select[name='research_batches']").append('<option>'+data[i]+'</option>');
+                }
+            }
+        });
+    });
 
     $(document).on("click", '#research_batches_save', function() {
         $.post(base_url + 'index.php/research/change_batch_name', { 'old_batch_name': $('select[name="research_batches"] option:selected').text(),

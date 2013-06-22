@@ -358,4 +358,28 @@ class Research extends MY_Controller {
         $this->output->set_content_type('application/json')
             ->set_output(json_encode($data));
     }
+
+    public function filterCustomerByBatch(){
+        $this->load->model('batches_model');
+        $batch = $this->input->post('batch');
+        $customer_name = $this->batches_model->getCustomerByBatch($batch);
+        $this->output->set_content_type('application/json')
+            ->set_output(json_encode($customer_name));
+    }
+
+    public function filterBatchByCustomer(){
+        $this->load->model('batches_model');
+        $this->load->model('customers_model');
+        $customer_id = $this->customers_model->getIdByName($this->input->post('customer_name'));
+        $batches = $this->batches_model->getAllByCustomer($customer_id);
+        if(count($batches) == 0){
+            $batches = $this->batches_model->getAll();
+        }
+        $batches_list = array();
+        foreach($batches as $batch){
+            array_push($batches_list, $batch->title);
+        }
+        $this->output->set_content_type('application/json')
+            ->set_output(json_encode($batches_list));
+    }
 }
