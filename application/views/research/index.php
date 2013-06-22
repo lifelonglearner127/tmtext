@@ -165,10 +165,19 @@ $(document).ready(function() {
     <div class="main_content_editor research">
         <div class="row-fluid">
             <?php echo form_open('', array('id'=>'measureForm')); ?>
-            <input type="text" id="research_text" name="research_text" value="" class="span8 " placeholder=""/>
-            <div id="res_dropdown" class="ddslick_dropdown" style="width:90px;"></div>
-            <?php echo form_dropdown('category', $category_list, array(), 'class="category_list"'); ?>
-            <button id="research_search" type="button" class="btn pull-right btn-success">Search</button>
+
+                <input type="text" id="research_text" name="research_text" value="" class="span5" placeholder=""/>
+                <div id="res_dropdown" class="ddslick_dropdown" style="width:90px;"></div>
+                <?php echo form_dropdown('category', $category_list, array(), 'class="category_list"'); ?>
+                <button id="research_search" type="button" class="btn btn-success" style="margin-top:-10px;">Search</button>
+                <p>Show <select style="width:60px; margin-right:5px;margin-top: 9px;" name="result_amount">
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                    results
+                </p >
             <?php echo form_close();?>
         </div>
         <div class="clear"></div>
@@ -176,20 +185,14 @@ $(document).ready(function() {
         <div id="research_tab1" class="tab-pane active">
         <div class="row-fluid">
             <div class="span6">
-                Show <select class="mt_10" style="width:60px; margin-right:5px;" name="result_amount">
-                    <option value="10">10</option>
-                    <option value="20">20</option>
-                    <option value="50">50</option>
-                    <option value="100">100</option>
-                </select>
-                results
+                Batch:
+                <?php echo form_dropdown('customers', $customer_list, array(), 'class="mt_10 category_list"'); ?>
+                <?php echo form_dropdown('batches', $batches_list, array(), 'class="mt_10" style="width: 145px;"'); ?>
+                <button id="export_batch" class="btn" type="button" style="margin-left:5px; margin-right: 10px;">Export</button>
+
 
             </div>
             <div class="span6">
-                Batch:
-                <?php echo form_dropdown('customers', $customer_list, array(), 'class="mt_10 category_list"'); ?>
-                <?php echo form_dropdown('batches', $batches_list, array(), 'class="mt_10" style="width: 100px;"'); ?>
-                <button id="export_batch" class="btn" type="button" style="margin-left:5px; margin-right: 10px;">Export</button><br />
                 Add new: <input type="text" class="mt_10" style="width:80px" name="new_batch">
                 <button id="new_batch" class="btn" type="button" style="margin-left:5px">New</button>
             </div>

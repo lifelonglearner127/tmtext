@@ -887,7 +887,8 @@ p.show_ballons input{
 }
 
 #measureForm{
-    margin-top: 20px;
+    margin-top: 10px;
+    margin-bottom: 0px;
 }
 
 
@@ -1159,5 +1160,10 @@ label.dd-selected-text, label.dd-option-text{
 
 #research_text{
     margin-right: 10px;
-    width:550px;
+}
+
+.research .row-fluid p{
+    width: 180px;
+    float: right;
+    margin-top: -9px;
 }
