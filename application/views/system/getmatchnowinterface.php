@@ -1,5 +1,10 @@
 <div class='sc_compare_selection_block' id='sc_compare_selection_block'>
 
+	<div style='margin-bottom: 20px;'>
+		<input type='text' id='pci_attr_test_s' name='pci_attr_test_s'><br>
+		<button type='button' class='btn' onclick="testAttributesExt();" >Test Attributes Extractor</button>
+	</div>
+
 	<div style='display: block;' class='sc_compare_block' id='sc_compare_block'>
 		<div id='pci_l_section' class='span5'>
 			<div id="dd_drop_random_l"></div>
@@ -116,6 +121,14 @@
 </div>
 
 <script type='text/javascript'>
+
+		function testAttributesExt() {
+			// var desc = "UN40ES6500";
+			var desc = $("#pci_attr_test_s").val();
+			var test_attr_ext = $.post(base_url + 'index.php/system/testattributesext', { desc: desc }, 'json').done(function(data) {
+				console.log("ATTRIBUTES EXT TEST RES: ", data);
+			});
+		}
 
 		var systemCompareProductsBaseUrl = base_url + 'index.php/system/getcompareproducts';
 		var systemCompareProductsVoteBaseUrl = base_url + 'index.php/system/votecompareproducts';

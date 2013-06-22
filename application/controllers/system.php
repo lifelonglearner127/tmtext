@@ -24,6 +24,24 @@ class System extends MY_Controller {
 		$this->render();
 	}
 
+	public function testattributesext() {
+		$s = $this->input->post('desc');
+		$descCmd = str_replace($this->config->item('cmd_mask'), $s, $this->system_settings['python_cmd']);
+		echo "SEARCH: ".$s."\n";
+		echo "MASK: ".$this->config->item('cmd_mask')."\n";
+		echo "CMD: ".$this->system_settings['python_cmd']."\n";
+		if($result = shell_exec($descCmd)) {
+			echo "EXEC RES:"."\n";
+			echo var_dump($result);
+			if (preg_match_all('/.*ELECTR_DESCRIPTION:\s*(.*)\s*-{5,}/', $result, $matches)) {
+				echo "PREG MATCH RES:"."\n";
+				echo var_dump($matches);
+			}
+			die('NO MATCHES');
+		}
+		die('EXEC LAUNCH FAILED!');
+	}
+
 	public function deleteproductsvotedpair() {
 		$this->load->model('imported_data_parsed_model');
 		$id = $this->input->post('id');
