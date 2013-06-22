@@ -34,11 +34,12 @@ class Batches_model extends CI_Model {
     }
 
 
-    function insert($title)
+    function insert($title, $customer_id)
     {
         $CI =& get_instance();
         $this->title = $title;
         $this->user_id = $CI->ion_auth->get_user_id();
+        $this->customer_id = $customer_id;
         $this->created = date('Y-m-d h:i:s');
         $this->modified = date('Y-m-d h:i:s');
 

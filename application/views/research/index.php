@@ -193,7 +193,7 @@ $(document).ready(function() {
 
             </div>
             <div class="span6">
-                Add new: <input type="text" class="mt_10" style="width:80px" name="new_batch">
+                Add new: <input type="text" class="mt_10" style="width:180px" name="new_batch">
                 <button id="new_batch" class="btn" type="button" style="margin-left:5px">New</button>
             </div>
 

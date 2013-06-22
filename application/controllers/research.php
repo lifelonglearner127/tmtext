@@ -86,12 +86,17 @@ class Research extends MY_Controller {
 
     public function new_batch()
     {
+        $this->load->model('customers_model');
         $this->load->model('batches_model');
         if($this->input->post('batch')!=''){
             $batch = $this->input->post('batch');
+            $customer_id = '';
+            if($this->input->post('customer_name') != 'Customer'){
+                $customer_id = $this->customers_model->getIdByName($this->input->post('customer_name'));
+            }
             $batch_id = $this->batches_model->getIdByName($batch);
             if($batch_id == false) {
-                $batch_id = $this->batches_model->insert($batch);
+                $batch_id = $this->batches_model->insert($batch, $customer_id);
             }
         }
     }

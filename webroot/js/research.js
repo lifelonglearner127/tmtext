@@ -328,7 +328,10 @@ $(document).ready(function () {
     });
 
     $(document).on("click", "button#new_batch", function(){
-        $.post(base_url + 'index.php/research/new_batch', { 'batch': $('input[name="new_batch"]').val() }).done(function(data) {
+        $.post(base_url + 'index.php/research/new_batch', {
+            'batch': $('input[name="new_batch"]').val(),
+            'customer_name': $('select[name="customers"] option:selected').text(),
+        }).done(function(data) {
             if($('input[name="new_batch"]').val() !='' ){
                 var cat_exist = 0;
                 $('select[name="batches"] option').each(function(){
