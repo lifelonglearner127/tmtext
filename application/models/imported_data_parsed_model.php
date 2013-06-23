@@ -6,6 +6,20 @@ class Imported_data_parsed_model extends CI_Model {
 	var $key = '';
 	var $value = '';
 
+    // -------  WHITE LISTS FOR FILTERING (START)
+    var $manu = array(
+        'sony',
+        'samsung',
+        'sharp',
+        'lg',
+        'nikon',
+        'canon',
+        'pentax',
+        'fuji',
+        'vizio'
+    );
+    // -------  WHITE LISTS FOR FILTERING (END)
+
     var $tables = array(
     	'imported_data_parsed' => 'imported_data_parsed',
         'imported_data' => 'imported_data',
@@ -23,6 +37,37 @@ class Imported_data_parsed_model extends CI_Model {
                   ->get($this->tables['imported_data_parsed']);
 
         return $query->result();
+    }
+
+    private function get_random_left_compare_pr_regression($customers_list, $ids) {
+        $random_id = $ids[array_rand($ids, 1)];
+        $this->db->select('imported_data_id, key, value');
+        $this->db->where('imported_data_id', $random_id);
+        $query = $this->db->get($this->tables['imported_data_parsed']);
+        $results = $query->result();
+        $data = array('id' => $random_id, 'url' => '', 'product_name' => '', 'description' => '', 'long_description' => '', 'customer' => '');
+        foreach($results as $result) {
+            if($result->key === 'URL') {
+                $data['url'] = $result->value;
+                $cus_val = "";
+                foreach ($customers_list as $ki => $vi) {
+                    if(strpos($result->value, "$vi") !== false) {
+                        $cus_val  = $vi;
+                    }
+                }
+                if($cus_val !== "") $data['customer'] = $cus_val;
+            }
+            if($result->key === 'Product Name') {
+                $data['product_name'] = $result->value;
+            }
+            if($result->key === 'Description') {
+                $data['description'] = $result->value;
+            }
+            if($result->key === 'Long_Description') {
+                $data['long_description'] = $result->value;
+            }
+        }
+        return $data;
     }
 
     private function get_random_right_compare_pr_regression($customer_exc, $customers_list, $ids) {
@@ -105,7 +150,7 @@ class Imported_data_parsed_model extends CI_Model {
         return $data;
     }
 
-    function getRandomRightCompareProduct($customer_exc, $id_exc) {
+    function getRandomRightCompareProduct($customer_exc, $id_exc, $l_product_name) {
         // ---- get customers list (start)
         $customers_list = array();
         $query_cus = $this->db->order_by('name', 'asc')->get($this->tables['customers']);
@@ -160,13 +205,108 @@ class Imported_data_parsed_model extends CI_Model {
                 $data['long_description'] = $result->value;
             }
         }
-        // ---- regression check (start)
-        while( trim($data['url'] === '') || trim($data['product_name'] === '') || trim($data['description'] === '') || trim($data['long_description'] === '') || trim($data['customer'] === '') ) {
+
+        // ------------ MANUFACTURER CHECK AND DETECTION  (START) ------------ //
+        $manu_ckeck_st = true;
+        // if(trim($data['product_name']) !== "") {
+        //     // --- DETECT LEFT SIDE PRODUCT MANUFACTURER
+        //     $man_left = "";
+        //     foreach ($this->manu as $km => $vm) {
+        //         if( (strpos($l_product_name, $vm) !== false) || (strpos($l_product_name, strtoupper($vm)) !== false) || strpos($l_product_name, ucfirst($vm)) !== false ) {
+        //             $man_left = $vm;
+        //             break; 
+        //         }
+        //     }
+        //     // --- DETECT RIGHT SIDE PRODUCT MANUFACTURER
+        //     $man_right = "";
+        //     foreach ($this->manu as $km => $vm) {
+        //         if( (strpos($data['product_name'], $vm) !== false) || (strpos($data['product_name'], strtoupper($vm)) !== false) || strpos($data['product_name'], ucfirst($vm)) !== false ) {
+        //             $man_right = $vm;
+        //             break; 
+        //         }
+        //     }
+        //     if($man_left == $man_right) $manu_ckeck_st = true;
+        // }
+        // echo var_dump($l_product_name);
+        // echo var_dump($data['product_name']);
+        // echo var_dump($man_left);
+        // echo var_dump($man_right);
+        // ------------ MANUFACTURER CHECK AND DETECTION  (START) ------------ //
+
+        // ------------ REGRESSION CHECKER (START) ------------ //
+        // $i = 0;
+        while( $manu_ckeck_st !== true || trim($data['url']) === '' || trim($data['product_name']) === '' || trim($data['description']) === '' || trim($data['long_description']) === '' || trim($data['customer']) === '' ) {
+            // echo var_dump("ITERATION: ". $i);
+            // if($i == 4) die;
             $data = $this->get_random_right_compare_pr_regression($customer_exc, $customers_list, $ids);
+            // $i++;
         }
-        // ---- regression check (end)
+        // ------------ REGRESSION CHECKER (END) ------------ //
         return $data;
     }
+
+    // function getRandomRightCompareProduct($customer_exc, $id_exc) {
+    //     // ---- get customers list (start)
+    //     $customers_list = array();
+    //     $query_cus = $this->db->order_by('name', 'asc')->get($this->tables['customers']);
+    //     $query_cus_res = $query_cus->result();
+    //     if(count($query_cus_res) > 0) {
+    //         foreach ($query_cus_res as $key => $value) {
+    //             $n = strtolower($value->name);
+    //             $customers_list[] = $n;
+    //         }
+    //     }
+    //     $customers_list = array_unique($customers_list);
+    //     // ---- get customers list (end)
+
+    //     // ---- get randomly indexed import id (start) (new stuff)
+    //     $this->db->select('imported_data_id, key, value');
+    //     $query = $this->db->where('imported_data_id != ', $id_exc)->get($this->tables['imported_data_parsed']);
+    //     $results = $query->result();
+    //     $ids = array();
+    //     if(count($results) > 0) {
+    //         foreach ($results as $key => $value) {  
+    //             $ids[] = $value->imported_data_id;
+    //         }
+    //     }
+    //     $ids = array_unique($ids);
+    //     $random_id = $ids[array_rand($ids, 1)];
+    //     // ---- get randomly indexed import id (end) (new stuff)
+
+    //     $this->db->select('imported_data_id, key, value');
+    //     $this->db->where('imported_data_id', $random_id);
+    //     $query = $this->db->get($this->tables['imported_data_parsed']);
+    //     $results = $query->result();
+    //     $data = array('id' => '', 'url' => '', 'product_name' => '', 'description' => '', 'long_description' => '', 'customer' => '');
+    //     foreach($results as $result) {
+    //         $data['id'] = $result->imported_data_id;
+    //         if($result->key === 'URL') {
+    //             $data['url'] = $result->value;
+    //             $cus_val = "";
+    //             foreach ($customers_list as $ki => $vi) {
+    //                 if(strpos($result->value, "$vi") !== false) {
+    //                     $cus_val  = $vi;
+    //                 }
+    //             }
+    //             if($cus_val !== "" && $cus_val !== $customer_exc) $data['customer'] = $cus_val;
+    //         }
+    //         if($result->key === 'Product Name') {
+    //             $data['product_name'] = $result->value;
+    //         }
+    //         if($result->key === 'Description') {
+    //             $data['description'] = $result->value;
+    //         }
+    //         if($result->key === 'Long_Description') {
+    //             $data['long_description'] = $result->value;
+    //         }
+    //     }
+    //     // ---- regression check (start)
+    //     while( trim($data['url'] === '') || trim($data['product_name'] === '') || trim($data['description'] === '') || trim($data['long_description'] === '') || trim($data['customer'] === '') ) {
+    //         $data = $this->get_random_right_compare_pr_regression($customer_exc, $customers_list, $ids);
+    //     }
+    //     // ---- regression check (end)
+    //     return $data;
+    // }
 
     function getRandomLeftCompareProduct() {
         // ---- get customers list (start)
@@ -198,10 +338,10 @@ class Imported_data_parsed_model extends CI_Model {
         $random_id = $ids[array_rand($ids, 1)];
 
         // ---- get random product by random id (start)
-        $f_res = array();
+        // $f_res = array();
         $this->db->select('imported_data_id, key, value');
         $this->db->where('imported_data_id', $random_id);
-        $this->db->where('value != ', ""); // new stuff
+        // $this->db->where('value != ', ""); // new stuff
         $query = $this->db->get($this->tables['imported_data_parsed']);
         $results = $query->result();
         $data = array('id' => $random_id, 'url' => '', 'product_name' => '', 'description' => '', 'long_description' => '', 'customer' => '');
@@ -226,11 +366,19 @@ class Imported_data_parsed_model extends CI_Model {
                 $data['long_description'] = $result->value;
             }
         }
-        if(count($data) > 0) {
-            $f_res = $data;
+
+        // ------------ REGRESSION CHECKER (START) ------------ //
+        while( trim($data['url']) === '' || trim($data['product_name']) === '' || trim($data['description']) === '' || trim($data['long_description']) === '' || trim($data['customer']) === '' ) {
+            $data = $this->get_random_left_compare_pr_regression($customers_list, $ids);
         }
-        return $f_res;
-        // ---- get random product by random id (end)
+        // ------------ REGRESSION CHECKER (END) ------------ //
+        return $data;
+
+        // if(count($data) > 0) {
+        //     $f_res = $data;
+        // }
+
+        // return $f_res;
 
     }
 
