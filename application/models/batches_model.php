@@ -8,7 +8,8 @@ class Batches_model extends CI_Model {
     var $modified = '';
 
     var $tables = array(
-        'batches' => 'batches'
+        'batches' => 'batches',
+        'customers' => 'customers'
     );
 
     function __construct()
@@ -33,12 +34,20 @@ class Batches_model extends CI_Model {
         return $query->result();
     }
 
+    function getAllByCustomer($customer_id='')
+    {
+        $this->db->order_by("title", "asc");
+        $query = $this->db->where('customer_id', $customer_id)->get($this->tables['batches']);
 
-    function insert($title)
+        return $query->result();
+    }
+
+    function insert($title, $customer_id)
     {
         $CI =& get_instance();
         $this->title = $title;
         $this->user_id = $CI->ion_auth->get_user_id();
+        $this->customer_id = $customer_id;
         $this->created = date('Y-m-d h:i:s');
         $this->modified = date('Y-m-d h:i:s');
 
@@ -75,5 +84,16 @@ class Batches_model extends CI_Model {
         return $this->db->delete($this->tables['batches'], array('id' => $id));
     }
 
+    function getCustomerByBatch($batch)
+    {
+        $query =  $this->db->select('c.name')
+            ->from($this->tables['batches'].' as b')
+            ->join($this->tables['customers'].' as c', 'c.id = b.customer_id', 'left')
+            ->where('b.title', trim($batch))->limit(1)->get();
+        if($query->num_rows() > 0) {
+            return $query->row()->name;
+        }
+        return false;
+    }
 
 }

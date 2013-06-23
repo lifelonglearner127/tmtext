@@ -151,65 +151,7 @@ $(document).ready(function() {
 
     setMovement();*/
 
-    $(document).on("click", '.research_arrow', function() {
-        if($(this).hasClass('changed') && last_edition != ''){
-            $('#main').empty();
-            $('#main').html(last_edition);
-            $('div#research').css({'width':''});
-            $('div#research_edit').css({'width':''});
-            $(this).removeClass('changed');
-            $('div#long_description').css({'margin-left':'7px'});
-            last_edition = '';
-            setMovement();
-            return false;
-        }
 
-        if($(this).parent().parent().parent().attr('id') == 'main'){
-            var div = $(this).parent().parent().attr('id');
-            if(div == 'research'){
-                last_edition = $('#main').html();
-                $('div#'+div).css({'width':'99%'});
-                $('div#research_edit').css({'width':'99%'});
-                $(this).addClass('changed');
-                return false;
-            }
-            if(div == 'research_edit'){
-                var research_edit = $('div#'+div);
-                var research = $('div#research');
-                last_edition = $('#main').html();
-                $('div#'+div).css({'width':'99%'});
-                $('div#research').css({'width':'99%'});
-                $('#main').empty();
-                $('#main').append(research_edit).append(research);
-                $(this).addClass('changed');
-                return false;
-            }
-        } else {
-            var parent_id = $(this).parent().parent().parent().parent().attr('id');
-            $('div#long_description').css({'margin-left':'107px'});
-            if(parent_id == 'research'){
-                last_edition = $('#main').html();
-                $(this).parent().parent().parent().prepend($(this).parent().parent());
-                $('div#'+parent_id).css({'width':'99%'});
-                $('div#research_edit').css({'width':'99%'});
-                $(this).addClass('changed');
-                return false;
-            }
-            if(parent_id == 'research_edit'){
-                var research_edit = $('div#'+parent_id);
-                var research = $('div#research');
-                last_edition = $('#main').html();
-                $(this).parent().parent().parent().prepend($(this).parent().parent());
-                $('div#'+parent_id).css({'width':'99%'});
-                $('div#research').css({'width':'99%'});
-                $('#main').empty();
-                $('#main').append(research_edit).append(research);
-                $(this).addClass('changed');
-                return false;
-            }
-        }
-
-   });
 
 });
 </script>
@@ -223,9 +165,19 @@ $(document).ready(function() {
     <div class="main_content_editor research">
         <div class="row-fluid">
             <?php echo form_open('', array('id'=>'measureForm')); ?>
-            <input type="text" id="research_text" name="research_text" value="" class="span8 " placeholder=""/>
-            <div id="res_dropdown" class="ddslick_dropdown"></div>
-            <button id="research_search" type="button" class="btn pull-right btn-success">Search</button>
+
+                <input type="text" id="research_text" name="research_text" value="" class="span5" placeholder=""/>
+                <div id="res_dropdown" class="ddslick_dropdown" style="width:90px;"></div>
+                <?php echo form_dropdown('category', $category_list, array(), 'class="category_list"'); ?>
+                <button id="research_search" type="button" class="btn btn-success" style="margin-top:-10px;">Search</button>
+                <p>Show <select style="width:60px; margin-right:5px;margin-top: 9px;" name="result_amount">
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                    results
+                </p >
             <?php echo form_close();?>
         </div>
         <div class="clear"></div>
@@ -233,20 +185,13 @@ $(document).ready(function() {
         <div id="research_tab1" class="tab-pane active">
         <div class="row-fluid">
             <div class="span6">
-                Show <select class="mt_10" style="width:60px; margin-right:5px;" name="result_amount">
-                    <option value="10">10</option>
-                    <option value="20">20</option>
-                    <option value="50">50</option>
-                    <option value="100">100</option>
-                </select>
-                results in category
-                <?php echo form_dropdown('category', $category_list, array(), 'class="mt_10 category_list"'); ?>
+                Batch:
+                <?php echo form_dropdown('customers', $customer_list, array(), 'class="mt_10 category_list"'); ?>
+                <?php echo form_dropdown('batches', $batches_list, array(), 'class="mt_10" style="width: 145px;"'); ?>
+                <button id="export_batch" class="btn" type="button" style="margin-left:5px; margin-right: 10px;">Export</button>
             </div>
             <div class="span6">
-                Batch:
-                <?php echo form_dropdown('batches', $batches_list, array(), 'class="mt_10" style="width: 100px;"'); ?>
-                <button id="export_batch" class="btn" type="button" style="margin-left:5px; margin-right: 10px;">Export</button>
-                Add new: <input type="text" class="mt_10" style="width:80px" name="new_batch">
+                Add new: <input type="text" class="mt_10" style="width:180px" name="new_batch">
                 <button id="new_batch" class="btn" type="button" style="margin-left:5px">New</button>
             </div>
 
@@ -331,7 +276,7 @@ $(document).ready(function() {
                         <div class="boxes_content">
                             <div class="row-fluid"><label>Short description:</label>
                                  <label><span id="research_wc">0</span> words</label>
-                                 <button type="button" class="btn" style="float:left;">Generate</button>
+                                 <button id="research_generate" type="button" class="btn" style="float:left;">Generate</button>
                                  <textarea type="text" name="short_description" class="span10 mt_10" style="height:100px;"></textarea>
                             </div>
                             <div class="row-fluid"><label>Long description:</label>

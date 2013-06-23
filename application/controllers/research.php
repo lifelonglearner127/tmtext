@@ -19,6 +19,7 @@ class Research extends MY_Controller {
 
     public function index()
     {
+        $this->data['customer_list'] = $this->getCustomersByUserId();
         $this->data['category_list'] = $this->category_list();
         $this->data['batches_list'] = $this->batches_list();
         $this->render();
@@ -55,7 +56,7 @@ class Research extends MY_Controller {
 
             $category_id = '';
             $limit = '';
-            if($this->input->post('category') != '' && $this->input->post('category') != 'All'){
+            if($this->input->post('category') != '' && $this->input->post('category') != 'All categories'){
                 $category_id = $this->category_model->getIdByName($this->input->post('category'));
             }
             if($this->input->post('limit')!=''){
@@ -79,17 +80,23 @@ class Research extends MY_Controller {
 
     public function research_batches(){
         $this->data['batches_list'] = $this->batches_list();
+        $this->data['customer_list'] = $this->getCustomersByUserId();
         $this->render();
     }
 
     public function new_batch()
     {
+        $this->load->model('customers_model');
         $this->load->model('batches_model');
         if($this->input->post('batch')!=''){
             $batch = $this->input->post('batch');
+            $customer_id = '';
+            if($this->input->post('customer_name') != 'Customer'){
+                $customer_id = $this->customers_model->getIdByName($this->input->post('customer_name'));
+            }
             $batch_id = $this->batches_model->getIdByName($batch);
             if($batch_id == false) {
-                $batch_id = $this->batches_model->insert($batch);
+                $batch_id = $this->batches_model->insert($batch, $customer_id);
             }
         }
     }
@@ -246,5 +253,133 @@ class Research extends MY_Controller {
     public function delete_research_data()
     {
         $this->research_data_model->delete($this->input->post('id'));
+    }
+
+    public function getCustomersByUserId(){
+        $this->load->model('customers_model');
+        $this->load->model('users_to_customers_model');
+        $customers = $this->users_to_customers_model->getByUserId($this->ion_auth->get_user_id());
+        if(count($customers) == 0){
+            $customers = $this->customers_model->getAll();
+        }
+        $customer_list = array(''=>'Customer');
+        foreach($customers as $customer){
+            array_push($customer_list, $customer->name);
+        }
+
+        return $customer_list;
+
+    }
+
+    public function generateDesc(){
+        $s = $this->input->post('product_name');
+
+        $this->load->library('pagination');
+        $pagination_config['base_url'] = $this->config->site_url().'/research/generateDesc';
+        $pagination_config['per_page'] = 0;
+
+        $data = array(
+            's' => $s,
+            'search_results' => array()
+        );
+
+        $attr_path = $this->config->item('attr_path');
+
+        $csv_rows = array();
+
+        // Search in files
+        if ( isset($this->settings['use_files']) && $this->settings['use_files']) {
+            if ($path = realpath($attr_path)) {
+                $objects = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path), RecursiveIteratorIterator::SELF_FIRST);
+                foreach($objects as $name => $object){
+                    if (!$object->isDir()) {
+                        if (preg_match("/.*\.csv/i",$object->getFilename(),$matches)) {
+                            $_rows = array();
+                            if (($handle = fopen($name, "r")) !== FALSE) {
+                                while (($row = fgets($handle, 1000)) !== false) {
+                                    if (preg_match("/$s/i",$row,$matches)) {
+                                        $_rows[] = $row;
+                                    }
+                                }
+                            }
+                            fclose($handle);
+
+                            foreach (array_keys(array_count_values($_rows)) as $row){
+                                $csv_rows[] = str_getcsv($row, ",", "\"");
+                            }
+                            unset($_rows);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Search in database
+        if ( isset($this->settings['use_database']) && $this->settings['use_database']) {
+            $this->load->model('imported_data_model');
+            if (( $_rows = $this->imported_data_model->findByData($s))!== false) {
+                foreach($_rows as $row) {
+                    $csv_rows[] = str_getcsv($row['data'], ",", "\"");
+                }
+            }
+        }
+
+        if (!empty($csv_rows)) {
+            $current_row = 0;
+            foreach($csv_rows as $row) {
+                if ($current_row < (int)$this->uri->segment(3)) {
+                    $current_row++;
+                    continue;
+                }
+                foreach ($row as $col) {
+                    if (preg_match("/^http:\/\/*/i",$col,$matches)) {
+                        $row['url'] = $col;
+                    } else if ( mb_strlen($col) <= 250) {
+                        $row['title'] = $col;
+                    } else if (empty($row['description'])){
+                        $row['description'] = substr($col, 0, strpos(wordwrap($col, 200), "\n"));
+
+                    }
+                }
+
+                if (!empty($row['url']) && !empty($row['title'])) {
+                    $data['search_results'][] =  '<a href="'.$row['url'].'">'.$row['title'].'</a><br/>'.$row['description'];
+                } else if (!empty($row['description'])) {
+                    $data['search_results'][] =  $row['description'];
+                }
+                if (count($data['search_results']) == $pagination_config['per_page']) break;
+            }
+        }
+
+        $pagination_config['total_rows'] = count($csv_rows);
+        $this->pagination->initialize($pagination_config);
+        $data['pagination']= $this->pagination->create_links();
+
+        $this->output->set_content_type('application/json')
+            ->set_output(json_encode($data));
+    }
+
+    public function filterCustomerByBatch(){
+        $this->load->model('batches_model');
+        $batch = $this->input->post('batch');
+        $customer_name = $this->batches_model->getCustomerByBatch($batch);
+        $this->output->set_content_type('application/json')
+            ->set_output(json_encode($customer_name));
+    }
+
+    public function filterBatchByCustomer(){
+        $this->load->model('batches_model');
+        $this->load->model('customers_model');
+        $customer_id = $this->customers_model->getIdByName($this->input->post('customer_name'));
+        $batches = $this->batches_model->getAllByCustomer($customer_id);
+        if(count($batches) == 0){
+            $batches = $this->batches_model->getAll();
+        }
+        $batches_list = array();
+        foreach($batches as $batch){
+            array_push($batches_list, $batch->title);
+        }
+        $this->output->set_content_type('application/json')
+            ->set_output(json_encode($batches_list));
     }
 }

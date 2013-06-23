@@ -51,7 +51,7 @@ class Admin_Tag_Editor extends MY_Controller {
 
         $data = array();
         if($category_id > 0) {
-            if($category == 'All'){
+            if($category == 'All categories'){
                 $results = $this->tag_editor_rules_model->getAll();
             } else {
                 $results = $this->tag_editor_rules_model->getAllByCategoryId($category_id);
@@ -84,7 +84,7 @@ class Admin_Tag_Editor extends MY_Controller {
         $category_id = '';
 		$quantity = 0;
 
-        if($this->input->post('category') != 'All'){
+        if($this->input->post('category') != 'All categories'){
             $category_id = $this->category_model->getIdByName($this->input->post('category'));
             $data = $this->tag_editor_descriptions_model->get($this->ion_auth->get_user_id(), $category_id);
         } else {

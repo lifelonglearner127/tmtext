@@ -3,7 +3,8 @@
 class Users_To_Customers_model extends CI_Model {
 
     var $tables = array(
-    	'users_to_customers' => 'users_to_customers'
+    	'users_to_customers' => 'users_to_customers',
+        'customers' => 'customers'
     );
 
     function __construct()
@@ -21,9 +22,11 @@ class Users_To_Customers_model extends CI_Model {
     }
     
     function getByUserId($user_id){
-        $query = $this->db
+        $query = $this->db->select('*')
+                      ->from($this->tables['users_to_customers'].' as u')
+                      ->join($this->tables['customers'].' as c', 'c.id = u.customer_id', 'left')
                       ->where('user_id', $user_id)
-                      ->get($this->tables['users_to_customers']);
+                      ->get();
 
         return $query->result();
     }

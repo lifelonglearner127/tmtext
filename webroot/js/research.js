@@ -113,22 +113,26 @@ function researchKeywordsAnalizer() {
 }
 
 $(document).ready(function () {
-    $(document).on("keydown change", 'textarea[name="short_description"]', function() {
+    $(document).on("keydown keyup change focusout", 'textarea[name="short_description"]', function() {
         var number = 0;
         var matches = $(this).val().match(/\b/g);
         if(matches) {
             number = matches.length/2;
         }
         $('#research_wc').html(number);
+        var num = parseInt($('#research_wc').html())+parseInt($('#research_wc1').html());
+        $('#research_total').html(num);
     });
 
-    $(document).on("keydown change", '#long_description', function() {
+    $(document).on("keydown keyup change focusout", '#long_description', function() {
         var number = 0;
         var matches = $(this).text().match(/\b/g);
         if(matches) {
             number = matches.length/2;
         }
         $('#research_wc1').html(number);
+        var num = parseInt($('#research_wc').html())+parseInt($('#research_wc1').html());
+        $('#research_total').html(num);
     });
 
     $(document).on("click", 'a.clear_all', function() {
@@ -324,7 +328,10 @@ $(document).ready(function () {
     });
 
     $(document).on("click", "button#new_batch", function(){
-        $.post(base_url + 'index.php/research/new_batch', { 'batch': $('input[name="new_batch"]').val() }).done(function(data) {
+        $.post(base_url + 'index.php/research/new_batch', {
+            'batch': $('input[name="new_batch"]').val(),
+            'customer_name': $('select[name="customers"] option:selected').text(),
+        }).done(function(data) {
             if($('input[name="new_batch"]').val() !='' ){
                 var cat_exist = 0;
                 $('select[name="batches"] option').each(function(){
@@ -393,12 +400,129 @@ $(document).ready(function () {
         window.location.href = base_url + 'index.php/research/export?batch='+$("select[name='batches'] option:selected").text();
     });
 
+    $(document).on("click", '.research_arrow', function() {
+        if($(this).hasClass('changed') && last_edition != ''){
+            $('#main').empty();
+            $('#main').html(last_edition);
+            $('div#research').css({'width':''});
+            $('div#research_edit').css({'width':''});
+            $(this).removeClass('changed');
+            $('div#long_description').css({'margin-left':'7px'});
+            last_edition = '';
+            setMovement();
+            return false;
+        }
+
+        if($(this).parent().parent().parent().attr('id') == 'main'){
+            var div = $(this).parent().parent().attr('id');
+            if(div == 'research'){
+                last_edition = $('#main').html();
+                $('div#'+div).css({'width':'99%'});
+                $('div#research_edit').css({'width':'99%'});
+                $(this).addClass('changed');
+                return false;
+            }
+            if(div == 'research_edit'){
+                var research_edit = $('div#'+div);
+                var research = $('div#research');
+                last_edition = $('#main').html();
+                $('div#'+div).css({'width':'99%'});
+                $('div#research').css({'width':'99%'});
+                $('#main').empty();
+                $('#main').append(research_edit).append(research);
+                $(this).addClass('changed');
+                return false;
+            }
+        } else {
+            var parent_id = $(this).parent().parent().parent().parent().attr('id');
+            $('div#long_description').css({'margin-left':'107px'});
+            if(parent_id == 'research'){
+                last_edition = $('#main').html();
+                $(this).parent().parent().parent().prepend($(this).parent().parent());
+                $('div#'+parent_id).css({'width':'99%'});
+                $('div#research_edit').css({'width':'99%'});
+                $(this).addClass('changed');
+                return false;
+            }
+            if(parent_id == 'research_edit'){
+                var research_edit = $('div#'+parent_id);
+                var research = $('div#research');
+                last_edition = $('#main').html();
+                $(this).parent().parent().parent().prepend($(this).parent().parent());
+                $('div#'+parent_id).css({'width':'99%'});
+                $('div#research').css({'width':'99%'});
+                $('#main').empty();
+                $('#main').append(research_edit).append(research);
+                $(this).addClass('changed');
+                return false;
+            }
+        }
+
+    });
+
+    $(document).on("click", 'button#research_generate', function(){
+        $.post(base_url + 'index.php/research/generateDesc', { 'product_name': $('input[name="research_text"]').val()}, function(data){
+            console.log(data);
+        });
+        return false;
+    });
+
+    $(document).on("change", "select[name='batches']", function(){
+        $.post(base_url + 'index.php/research/filterCustomerByBatch', { 'batch': $("select[name='batches'] option:selected").text()}, function(data){
+            if(data != null){
+                $("select[name='customers'] option").each(function(){
+                    if(data==$(this).text()){
+                        $(this).prop('selected',true);
+                    }
+                });
+            } else {
+                $("select[name='customers'] option").each(function(){
+                    $(this).removeAttr('selected');
+                });
+            }
+        });
+    });
+
+    $(document).on("change", "select[name='customers']", function(){
+        $.post(base_url + 'index.php/research/filterBatchByCustomer', { 'customer_name': $("select[name='customers'] option:selected").text()}, function(data){
+           if(data.length>0){
+                $("select[name='batches']").empty();
+                for(var i=0; i<data.length; i++){
+                    $("select[name='batches']").append('<option>'+data[i]+'</option>');
+                }
+           }
+        });
+    });
     /*----------------------------Research batches--------------------------------------------*/
 
     $(document).on("change", 'select[name="research_batches"]', function() {
+        $.post(base_url + 'index.php/research/filterCustomerByBatch', { 'batch': $("select[name='research_batches'] option:selected").text()}, function(data){
+            if(data != null){
+                $("select[name='research_customers'] option").each(function(){
+                    if(data==$(this).text()){
+                        $(this).prop('selected',true);
+                    }
+                });
+            } else {
+                $("select[name='research_customers'] option").each(function(){
+                    $(this).removeAttr('selected');
+                });
+            }
+        });
         $('input[name="batche_name"]').val($('select[name="research_batches"] option:selected').text());
     });
     $('select[name="research_batches"]').trigger('change');
+
+    $(document).on("change", "select[name='research_customers']", function(){
+        $.post(base_url + 'index.php/research/filterBatchByCustomer', { 'customer_name': $("select[name='research_customers'] option:selected").text()}, function(data){
+            if(data.length>0){
+                $("select[name='research_batches']").empty();
+                for(var i=0; i<data.length; i++){
+                    $("select[name='research_batches']").append('<option>'+data[i]+'</option>');
+                }
+            }
+        });
+    });
 
     $(document).on("click", '#research_batches_save', function() {
         $.post(base_url + 'index.php/research/change_batch_name', { 'old_batch_name': $('select[name="research_batches"] option:selected').text(),
@@ -456,6 +580,7 @@ $(document).ready(function () {
 
         });
     });*/
+
 
 });
 

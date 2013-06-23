@@ -26,4 +26,16 @@ class Customers_model extends CI_Model {
 
         return $query->result();
     }
+
+    function getIdByName($name)
+    {
+        $query = $this->db->where('name', $name)
+            ->limit(1)
+            ->get($this->tables['customers']);
+
+        if($query->num_rows() > 0) {
+            return $query->row()->id;
+        }
+        return '';
+    }
 }

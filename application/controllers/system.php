@@ -24,11 +24,67 @@ class System extends MY_Controller {
 		$this->render();
 	}
 
+	public function testattributesext() {
+		$s = $this->input->post('desc');
+		$descCmd = str_replace($this->config->item('cmd_mask'), $s, $this->system_settings['python_cmd']);
+		echo "SEARCH: ".$s."<br />";
+		echo "MASK: ".$this->config->item('cmd_mask')."<br />";
+		echo "CMD: ".$this->system_settings['python_cmd']."<br />";
+		echo "EXEC RES: ".shell_exec($descCmd)."<br />";
+		if($result = shell_exec($descCmd)) {
+			echo "EXEC RES:"."<br />";
+			echo var_dump($result);
+			if (preg_match_all('/.*ELECTR_DESCRIPTION:\s*(.*)\s*-{5,}/', $result, $matches)) {
+				echo "PREG MATCH RES:"."<br />";
+				echo var_dump($matches);
+			}
+			die('NO MATCHES');
+		}
+		die('EXEC LAUNCH FAILED!');
+	}
+
 	public function deleteproductsvotedpair() {
 		$this->load->model('imported_data_parsed_model');
 		$id = $this->input->post('id');
 		$res = $this->imported_data_parsed_model->deleteProductsVotedPair($id);
 		$this->output->set_content_type('application/json')->set_output(json_encode($res));
+	}
+
+	public function renewcomparerightsidefromdropdown() {
+		$customer_r_selected = $this->input->post('customer_r_selected');
+		$customer_l = $this->input->post('customer_l');
+		$id_l = $this->input->post('id_l');
+		$id_r = $this->input->post('id_r');
+		$this->load->model('imported_data_parsed_model');
+		$get_random_r = $this->imported_data_parsed_model->getRandomRightCompareProductDrop($customer_r_selected, $customer_l, $id_l, $id_r);
+		$data = array(
+			'get_random_r' => $get_random_r
+		);
+		$this->load->view('system/renewcomparerightside', $data);
+	}
+
+	public function renewcomparerightside() {
+		$customer_l = $this->input->post('customer_l');
+		$id_l = $this->input->post('id_l');
+		$this->load->model('imported_data_parsed_model');
+		$get_random_r = $this->imported_data_parsed_model->getRandomRightCompareProduct($customer_l, $id_l);
+		$data = array(
+			'get_random_r' => $get_random_r
+		);
+		$this->load->view('system/renewcomparerightside', $data);
+	}
+
+	public function renewallcomparesides() {
+		$this->load->model('imported_data_parsed_model');
+
+		$get_random_l = $this->imported_data_parsed_model->getRandomLeftCompareProduct();
+		$get_random_r = $this->imported_data_parsed_model->getRandomRightCompareProduct($get_random_l['customer'], $get_random_l['id']);
+
+		$data = array(
+			'get_random_l' => $get_random_l,
+			'get_random_r' => $get_random_r
+		);
+		$this->load->view('system/renewallcomparesides', $data);
 	}
 
 	public function getmatchnowinterface() {
