@@ -1162,7 +1162,7 @@ label.dd-selected-text, label.dd-option-text{
     margin-right: 10px;
 }
 
-.research .row-fluid p{
+.research .row-fluid p#show_result{
     width: 180px;
     float: right;
     margin-top: -9px;

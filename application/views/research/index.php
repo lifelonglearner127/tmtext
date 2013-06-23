@@ -170,7 +170,7 @@ $(document).ready(function() {
                 <div id="res_dropdown" class="ddslick_dropdown" style="width:90px;"></div>
                 <?php echo form_dropdown('category', $category_list, array(), 'class="category_list"'); ?>
                 <button id="research_search" type="button" class="btn btn-success" style="margin-top:-10px;">Search</button>
-                <p>Show <select style="width:60px; margin-right:5px;margin-top: 9px;" name="result_amount">
+                <p id="show_result">Show <select style="width:60px; margin-right:5px;margin-top: 9px;" name="result_amount">
                         <option value="10">10</option>
                         <option value="20">20</option>
                         <option value="50">50</option>
