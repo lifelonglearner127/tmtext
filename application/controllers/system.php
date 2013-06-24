@@ -89,9 +89,10 @@ class System extends MY_Controller {
 
 	public function getmatchnowinterface() {
 		$this->load->model('imported_data_parsed_model');
-
+		
 		$get_random_l = $this->imported_data_parsed_model->getRandomLeftCompareProduct();
-		$get_random_r = $this->imported_data_parsed_model->getRandomRightCompareProduct($get_random_l['customer'], $get_random_l['id']);
+		// $get_random_r = $this->imported_data_parsed_model->getRandomRightCompareProduct($get_random_l['customer'], $get_random_l['id']);
+		$get_random_r = $this->imported_data_parsed_model->getRandomRightCompareProduct($get_random_l['customer'], $get_random_l['id'], $get_random_l['product_name']);
 
 		$data = array(
 			'get_random_l' => $get_random_l,

@@ -123,7 +123,6 @@
 <script type='text/javascript'>
 
 		function testAttributesExt() {
-			// var desc = "UN40ES6500";
 			var desc = $("#pci_attr_test_s").val();
 			var test_attr_ext = $.post(base_url + 'index.php/system/testattributesext', { desc: desc }, 'json').done(function(data) {
 				console.log("ATTRIBUTES EXT TEST RES: ", data);
