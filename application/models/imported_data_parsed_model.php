@@ -836,7 +836,7 @@ class Imported_data_parsed_model extends CI_Model {
             ->join($this->tables['imported_data'].' as i', 'i.id = p.imported_data_id', 'left')
             ->where('p.key', 'Product Name')->like('p.value', $value);
 
-        if ($category_id > 0) {
+        if ($category_id > 0 && $category_id!=2) {
             $this->db->where('i.category_id', $category_id);
         }
 
