@@ -1,3 +1,16 @@
+# 06/24 Ruslan
+
+CREATE TABLE IF NOT EXISTS `crawler_list_prices` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `price` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
+  `crawler_list_id` int(10) unsigned NOT NULL,
+  `created` datetime NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
+
+ALTER TABLE  `crawler_list` ADD  `category_id` INT UNSIGNED NOT NULL AFTER  `user_id`;
+
+
 # 06/21 Tatiana
 ALTER TABLE `batches` ADD `customer_id` INT NOT NULL AFTER `user_id`
 

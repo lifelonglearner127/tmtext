@@ -5,9 +5,10 @@ class PageProcessor {
 	private $url = '';
 	private $html = '';
 	private $hostName = '';
+	private $nokogiri;
 
 	public function __construct() {
-		$this->load->library('nokogiri');
+		$this->load->library('nokogiri', null, 'noko');
 	}
 
 	public function __get($var)
@@ -17,7 +18,7 @@ class PageProcessor {
 
 	public function loadHtml($html) {
 		$this->html = $html;
-		$this->nokogiri->loadHtml($this->html);
+		$this->nokogiri = new nokogiri($this->html);
 	}
 
 	public function loadUrl($url) {
@@ -38,7 +39,7 @@ class PageProcessor {
 
         	// TODO: add caching
 			if ($this->html = $this->curl->simple_get($this->url)) {
-				$this->nokogiri->loadHtml($this->html);
+				$this->nokogiri = new nokogiri($this->html);
 				return true;
 			}
 		}
@@ -104,9 +105,19 @@ class PageProcessor {
 			$title = $item;
 		}
 
+		$price = '';
+		foreach($this->nokogiri->get('.PricingInfo .camelPrice span') as $item) {
+			$price .= $item['#text'][0];
+		}
+
+		if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $price, $match)) {
+				$price = $match[1];
+		}
+
 		return array(
 			'Product Name' => $title['#text'][0],
-			'Description' => $description['#text'][0]
+			'Description' => $description['#text'][0],
+			'Price' => $price
 		);
 	}
 
@@ -116,7 +127,11 @@ class PageProcessor {
 
 	public function process_tigerdirect() {
 		foreach($this->nokogiri->get('.shortDesc p') as $item) {
-				$description[] = $item['#text'][0];
+			if (isset($item['#text'])) {
+				foreach($item['#text'] as $text) {
+					$description[] = $text;
+				}
+			}
 		}
 		$description = implode(' ',$description);
 
@@ -124,9 +139,17 @@ class PageProcessor {
 			$title = $item;
 		}
 
+		foreach($this->nokogiri->get('.contentMain .prodInfo .priceToday .salePrice') as $item) {
+			$price = $item['sup'][0]['#text'][0] . $item['#text'][0]. '.' . $item['sup'][1]['#text'][0];
+			if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $price, $match)) {
+				$price = $match[1];
+			}
+		}
+
 		return array(
 			'Product Name' => $title['#text'][0],
-			'Description' => $description['#text'][0]
+			'Description' => $description,
+			'Price' => $price
 		);
 	}
 
@@ -169,10 +192,17 @@ class PageProcessor {
 			$title = $item;
 		}
 
+		foreach($this->nokogiri->get('.skuWrapper #SkuForm .priceTotal .finalPrice b i') as $item) {
+			if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $item['#text'][0], $match)) {
+				$price = $match[1];
+			}
+		}
+
 		return array(
 			'Product Name' => $title['#text'][0],
 			'Long_Description' => $description['#text'][0],
-			'Description' => $descriptionShort['#text'][0]
+			'Description' => $descriptionShort['#text'][0],
+			'Price' => $price
 		);
 	}
 
@@ -185,11 +215,16 @@ class PageProcessor {
 		foreach($this->nokogiri->get('h1.adbl-prod-h1-title') as $item) {
 			$title = $item;
 		}
-
+		foreach($this->nokogiri->get('.adbl-prod-detail-main .adbl-price-content .adbl-reg-price') as $item) {
+			if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $item['#text'][0], $match)) {
+				$price = $match[1];
+			}
+		}
 
 		return array(
 			'Product Name' => $title['#text'][0],
 			'Description' => $description,
+			'Price' => $price
 		);
 	}
 
@@ -203,9 +238,16 @@ class PageProcessor {
 			$title = $item;
 		}
 
+		foreach($this->nokogiri->get('.mainProduct .mainPrice strong') as $item) {
+			if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $item['#text'][0], $match)) {
+				$price = $match[1];
+			}
+		}
+
 		return array(
 			'Product Name' => $title['#text'][0],
 			'Description' => $description,
+			'Price' => $price
 		);
 	}
 
@@ -228,10 +270,17 @@ class PageProcessor {
 			$title = $item;
 		}
 
+		foreach($this->nokogiri->get('#prod_mainCenter .main-price-red') as $item) {
+			if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $item['#text'][0], $match)) {
+				$price = $match[1];
+			}
+		}
+
 		return array(
 			'Product Name' => $title['#text'][0],
 			'Description' => $description,
-			'Long_Description' => $description_long
+			'Long_Description' => $description_long,
+			'Price' => $price
 		);
 	}
 
@@ -250,10 +299,17 @@ class PageProcessor {
 			$title = $item;
 		}
 
+		foreach($this->nokogiri->get('#main_sku_wrap .skuPrice') as $item) {
+			if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $item['#text'][0], $match)) {
+				$price = $match[1];
+			}
+		}
+
 		return array(
 			'Product Name' => $title['#text'][0],
 			'Description' => $description,
-			'Long_Description' => $description_long
+			'Long_Description' => $description_long,
+			'Price' => $price
 		);
 	}
 
@@ -278,10 +334,17 @@ class PageProcessor {
 			$title = $item;
 		}
 
+		foreach($this->nokogiri->get('#skuTop #purchaseBlock .your_price .price .price_amount') as $item) {
+			if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $item['#text'][0], $match)) {
+				$price = $match[1];
+			}
+		}
+
 		return array(
 			'Product Name' => $title['#text'][0],
 			'Description' => $description,
-			'Long_Description' => $description_long
+			'Long_Description' => $description_long,
+			'Price' => $price
 		);
 	}
 }

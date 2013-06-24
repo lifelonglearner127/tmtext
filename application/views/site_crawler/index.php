@@ -34,6 +34,8 @@
 					});
 				});
 				</script>
+
+				<?php echo form_dropdown('category', $category_list, array(), 'id="category" class="mt_30 ml_15" style="width:120px"'); ?>
 				<button id="add_url_list" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Add</button>
 				<button id="add_list_delete" class="btn new_btn btn-danger mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
 			</div>
@@ -139,7 +141,7 @@ $(function () {
 		});
 
 		if (list.length>0) {
-		  	$.post('<?php echo site_url('site_crawler/add');?>', {urls: list}, function(data) {
+		  	$.post('<?php echo site_url('site_crawler/add');?>', {urls: list, category_id: $('#category option:selected').val() }, function(data) {
 		  		loadCurrentList();
 	        });
 		}

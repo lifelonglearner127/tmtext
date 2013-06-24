@@ -12,6 +12,14 @@ class Site_Crawler extends MY_Controller {
 
 	public function index()
 	{
+		$this->load->model('category_model');
+        $categories = $this->category_model->getAll();
+        $category_list = array();
+        foreach($categories as $category){
+            $category_list[$category->id] = $category->name;
+        }
+        $this->data['category_list'] = $category_list;
+
 		$this->render();
 	}
 
@@ -47,9 +55,20 @@ class Site_Crawler extends MY_Controller {
 							}
 						} else {
 							while (($line = fgets($handle)) !== false) {
-								$line = str_replace(array('"', "'","\r", "\n"), '', $line);
-								if ($this->pageprocessor->isURL($line)) {
-									$urls[] = $line;
+								$arr = explode("\r", $line); // bug #106
+								if (count($arr)>1) {
+									foreach($arr as $l) {
+										$line = str_replace(array('"', "'","\r", "\n"), '', $l);
+										if ($this->pageprocessor->isURL($l)) {
+											$urls[] = $l;
+										}
+									}
+								} else {
+									$line = str_replace(array('"', "'","\r", "\n"), '', $line);
+
+									if ($this->pageprocessor->isURL($line)) {
+										$urls[] = $line;
+									}
 								}
 							}
 						}
@@ -71,13 +90,14 @@ class Site_Crawler extends MY_Controller {
 		$this->load->library('PageProcessor');
 
 		$urls = $this->input->post('urls');
+		$category_id = $this->input->post('category_id');
 
 		$this->crawler_list_model->db->trans_start();
 		foreach($urls as $url) {
 			$url = str_replace(array('"', "'","\r", "\n"), '', $url);
 			if ($this->pageprocessor->isURL($url)) {
 				if (!$this->crawler_list_model->getByUrl($url)) {
-					$this->crawler_list_model->insert($url);
+					$this->crawler_list_model->insert($url, $category_id);
 				}
 			}
 		}
@@ -112,6 +132,7 @@ class Site_Crawler extends MY_Controller {
 		$this->load->model('imported_data_model');
 		$this->load->model('imported_data_parsed_model');
 		$this->load->model('crawler_list_model');
+		$this->load->model('crawler_list_prices_model');
 		$this->load->library('PageProcessor');
 
 		$rows = $this->crawler_list_model->getAllNew();
@@ -121,13 +142,18 @@ class Site_Crawler extends MY_Controller {
 			if ($page_data = $this->pageprocessor->get_data($data->url)) {
 				$page_data['URL'] = $data->url;
 				// save data
-				$csv_row = $this->arrayToCsv($page_data);
+				$page_data_without_price = $page_data;
+				if (isset($page_data_without_price['Price'])) {
+					unset($page_data_without_price['Price']);
+					$this->crawler_list_prices_model->insert($data->id, $page_data['Price']);
+				}
+				$csv_row = $this->arrayToCsv($page_data_without_price);
 				$key = $this->imported_data_model->_get_key($csv_row);
 
 				if (!$this->imported_data_model->findByKey($key)) {
-					$imported_id = $this->imported_data_model->insert($csv_row);
+					$imported_id = $this->imported_data_model->insert($csv_row, $data->category_id);
 
-					foreach($page_data as $key=>$value) {
+					foreach($page_data_without_price as $key=>$value) {
 						$value = (!is_null($value))?$value: '';
 						$this->imported_data_parsed_model->insert($imported_id, $key, $value);
 					}
@@ -151,13 +177,19 @@ class Site_Crawler extends MY_Controller {
 		if ($page_data = $this->pageprocessor->get_data($data->url)) {
 			$page_data['URL'] = $data->url;
 			// save data
-			$csv_row = $this->arrayToCsv($page_data);
+			$page_data_without_price = $page_data;
+			if (isset($page_data_without_price['Price'])) {
+				unset($page_data_without_price['Price']);
+				$this->crawler_list_prices_model->insert($data->id, $page_data['Price']);
+			}
+			$csv_row = $this->arrayToCsv($page_data_without_price);
 			$key = $this->imported_data_model->_get_key($csv_row);
 
 			if (!$this->imported_data_model->findByKey($key)) {
-				$imported_id = $this->imported_data_model->insert($csv_row);
+				$imported_id = $this->imported_data_model->insert($csv_row, $data->category_id);
 
-				foreach($page_data as $key=>$value) {
+				foreach($page_data_without_price as $key=>$value) {
+					$value = (!is_null($value))?$value: '';
 					$this->imported_data_parsed_model->insert($imported_id, $key, $value);
 				}
 			}

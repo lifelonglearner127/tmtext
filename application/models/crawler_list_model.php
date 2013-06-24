@@ -5,7 +5,7 @@ class Crawler_List_model extends CI_Model {
     var $user_id = 0;
     var $status = 'new'; // new, reserved, finished
     var $created = '';
-
+	var $category_id = 0;
 
     var $tables = array(
     	'crawler_list' => 'crawler_list'
@@ -23,11 +23,12 @@ class Crawler_List_model extends CI_Model {
         return $query->result();
     }
 
-    function insert($url) {
+    function insert($url, $category_id) {
 		$CI =& get_instance();
 
     	$this->url = $url;
         $this->user_id = $CI->ion_auth->get_user_id();
+        $this->category_id = $category_id;
         $this->created = date('Y-m-d h:i:s');
 
         $this->db->insert($this->tables['crawler_list'], $this);
@@ -65,7 +66,7 @@ class Crawler_List_model extends CI_Model {
     {
     	$CI =& get_instance();
 
-    	$this->db->select('id, url')
+    	$this->db->select('id, url, category_id')
     		->where('user_id',  $CI->ion_auth->get_user_id())
     		->where('status', 'new');
         $query = $this->db->get($this->tables['crawler_list']);
