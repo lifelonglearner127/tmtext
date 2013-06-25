@@ -620,7 +620,7 @@ jQuery(document).ready(function($) {
                 var el_dr = $('.ddslick_dropdown');
                 if(el_dr.length > 0) {
                     var w_el_dr = 200;
-                    if($('.ddslick_dropdown').attr('id') == 'measure_dropdown' ||
+                    if($('.ddslick_dropdown').attr('id') == 'ci_dropdown' ||
                         $('.ddslick_dropdown').attr('id') == 'res_dropdown') {
                         w_el_dr = 104;
                     }
