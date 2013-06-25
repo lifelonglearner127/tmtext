@@ -404,6 +404,7 @@
                 for (var i = 0; i < c_data.length; i++) {
                     cl_arr.push(c_data[i]);
                 }
+
                 // --- GRID SECTION 1
                 for (var i = 0; i < cl_arr.length; i++) {
                     var text_d = cl_arr[i];
@@ -419,7 +420,6 @@
                     } else if(cl_arr[i] == 'walmart.com') {
                         text_d = "";
                         imageSrc_d = base_url + "img/walmart-logo.png";
-                        select_st = true;
                     } else if(cl_arr[i] == 'staples.com') {
                         text_d = "";
                         imageSrc_d = base_url + "img/staples-logo.png";
@@ -429,6 +429,9 @@
                     } else if(cl_arr[i] == 'tigerdirect.com') {
                         text_d = "";
                         imageSrc_d = base_url + "img/tigerdirect-logo.png";
+                    }
+                    if(cl_arr[i] == $('input.dd-selected-value').val()){
+                        select_st = true;
                     }
                     var mid = {
                         text: text_d,
