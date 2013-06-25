@@ -16,7 +16,8 @@ class Imported_data_parsed_model extends CI_Model {
         'pentax',
         'fuji',
         'vizio',
-        'toshiba'
+        'toshiba',
+        'kodak'
     );
     // -------  WHITE LISTS FOR FILTERING (END)
 
