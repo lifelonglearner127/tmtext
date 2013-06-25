@@ -3,7 +3,7 @@
 <div class="row-fluid">
     <?php // echo form_open('', array('id'=>'measureFormMetrics')); ?>
     <form id="measureFormMetrics" accept-charset="utf-8" method="post" action="javascript:void(0)">
-    <input type="text" name="compare_text" value="" id="compare_text" class="span8" placeholder=""/>
+    <input type="text" name="compare_text" value="" id="compare_text" class="span8" placeholder="" autocomplete="off"/>
     <!-- <div id="measure_dropdown" class="ddslick_dropdown dropdowns"></div> -->
     <div id="ci_dropdown" class="ddslick_dropdown"></div>
         <select class='cats_an_select' id='cats_an' name='cats_an'>
@@ -215,4 +215,44 @@
 </div>
 </div>
 <!--- REAL CONTENT SECTION (END) -->
+
+<script type='text/javascript'>
+    
+    // --- CI search term autocomplete (start)
+    var autocomplete_ci_baseurl = base_url + 'index.php/measure/cisearchteram'; 
+    $("#compare_text").autocomplete({
+        source: autocomplete_ci_baseurl,
+        minChars: 3,
+        deferRequestBy: 300,
+        select: function(event, ui){
+            console.log(ui);
+        }
+    });
+
+
+    // function afterAutocomplete(loadData){
+    //     var postData = {id: loadData.item.id};
+    //     console.log(location.href);
+    //     var getuserURL = $('#auth_getuser').attr('action');
+    //     var posting = $.post(getuserURL, postData, function(data) {
+    //         cleanNewUserForm();
+    //         console.log(data.active);
+    //         $("#user_name").val(data.username);
+    //         $("#user_mail").val(data.email);
+    //         $("#user_customers").val(data.customers).trigger("liszt:updated");
+    //         $("#user_role").val(data.role.group_id).trigger("liszt:updated");
+    //         if(data.active == 1){
+    //             $(".user_active").prop('checked', true);
+    //             console.log($(".user_active"));
+    //         }else{
+    //             $(".user_active").prop('checked', false);
+    //              console.log($(".user_active"));
+    //         };
+    //         $('<input type="hidden" name="user_id" id="user_id" value="'+data.id+'" />').appendTo('.user_id');
+    //         $( '#btn_system_update_user' ).removeAttr('disabled');
+    //     });
+    // }
+    // --- CI search term autocomplete (end)
+    
+</script>
 

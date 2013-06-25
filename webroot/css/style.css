@@ -1,5 +1,15 @@
 /* Basic style */
 
+.ui-autocomplete li a {
+	max-width: 532px !important;
+	width: 532px !important;
+	display: block;
+	overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding-right: 10px;
+} 
+
 .reset_mb_mt15 {
 	margin-top: 15px !important;
 	margin-bottom: 0px !important;

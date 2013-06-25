@@ -44,6 +44,16 @@ class Measure extends MY_Controller {
         return $output;
     }
 
+    public function cisearchteram() {
+        $q = $this->input->get('term');
+        $this->load->model('imported_data_parsed_model');
+        $data = $this->imported_data_parsed_model->getData($q, 10);
+        foreach ($data as $key => $value) {
+            $response[] = array('id' => $value['imported_data_id'], 'value' => $value['product_name']);
+        };
+        $this->output->set_content_type('application/json')->set_output(json_encode($response));
+    }
+
     public function gridview() {
         $im_data_id = $this->input->post('im_data_id');
         $data = array(

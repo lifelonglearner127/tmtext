@@ -1,4 +1,5 @@
 $("#compare_text").focus();
+
 var editorGridViewBaseUrl = base_url + 'index.php/measure/gridview';
 function ciCustomersGridsLoader() {
     var ddData_grids_ci = [];
@@ -463,4 +464,5 @@ $(document).ready(function() {
         e.preventDefault();
         startMeasureCompareV2();
     });
+
 });
