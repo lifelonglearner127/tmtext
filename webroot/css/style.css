@@ -1,8 +1,7 @@
 /* Basic style */
 
 .ui-autocomplete li a {
-	max-width: 532px !important;
-	width: 532px !important;
+	max-width: 500px !important;
 	display: block;
 	overflow: hidden;
     text-overflow: ellipsis;
@@ -320,7 +319,7 @@ span[class*="hilite"] { background: yellow; }
 	margin-right: 10px !important;
 }
 #compare_text {
-	width: 550px;
+	width: 520px;
 }
 .an_sv_left {
 	width: 550px !important;
