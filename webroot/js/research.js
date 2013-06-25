@@ -399,6 +399,9 @@ $(document).ready(function () {
     $(document).on("click", "#export_batch", function(){
         window.location.href = base_url + 'index.php/research/export?batch='+$("select[name='batches'] option:selected").text();
     });
+    $(document).on("click", "#export_batch_review", function(){
+        window.location.href = base_url + 'index.php/research/export?batch='+$("select[name='research_batches'] option:selected").text();
+    });
 
     $(document).on("click", '.research_arrow', function() {
         if($(this).hasClass('changed') && last_edition != ''){
