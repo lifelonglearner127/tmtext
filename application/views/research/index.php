@@ -164,6 +164,7 @@ $(document).ready(function() {
     <div class="tab-content">
     <div class="main_content_editor research">
         
+        <!-- NEW STUFF (START) -->
         <div class="row-fluid">
             <div class="span6">
                 Batch:
@@ -176,7 +177,9 @@ $(document).ready(function() {
                 <button id="new_batch" class="btn" type="button" style="margin-left:5px">New</button>
             </div>
         </div>
+        <!-- NEW STUFF (END) -->
 
+        <!-- OLD STUFF (START) -->
         <!-- <div class="row-fluid">
             <?php echo form_open('', array('id'=>'measureForm')); ?>
 
@@ -194,11 +197,13 @@ $(document).ready(function() {
                 </p >
             <?php echo form_close();?>
         </div> -->
+        <!-- OLD STUFF (END) -->
         
         <div class="clear"></div>
 
         <div id="research_tab1" class="tab-pane active">
 
+            <!-- NEW STUFF (START) -->
             <div class="row-fluid">
                 <p  style='width: 44px' class='inline_block float_l reset_mb_mt15'>Filter:</p>
                 <?php echo form_open('', array('id'=>'measureForm', 'style' => 'float: left; width: 840px;')); ?>
@@ -216,7 +221,9 @@ $(document).ready(function() {
                     </p >
                 <?php echo form_close();?>
             </div>
+            <!-- NEW STUFF (END) -->
             
+            <!-- OLD STUFF (START) -->
             <!-- <div class="row-fluid">
                 <div class="span6">
                     Batch:
@@ -229,6 +236,7 @@ $(document).ready(function() {
                     <button id="new_batch" class="btn" type="button" style="margin-left:5px">New</button>
                 </div>
             </div> -->
+            <!-- OLD STUFF (END) -->
 
             <div class="row-fluid" id="main">
                 <div class="span6" id="research" class="connectedMoved">
