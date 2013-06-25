@@ -1,7 +1,16 @@
 /* Basic style */
 
+.reset_mb_mt15 {
+	margin-top: 15px !important;
+	margin-bottom: 0px !important;
+}
+
 .inline_block {
 	display: inline-block;
+}
+
+.reset_mb {
+	margin-bottom: 0px !important;
 }
 
 .float_r {
