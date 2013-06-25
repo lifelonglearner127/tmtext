@@ -10,6 +10,7 @@ var ddData_first = [];
 var default_tab = '';
 var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist', { }, 'json').done(function(c_data) {
     var cl_arr = [];
+    cl_arr.push("All sites");
     for (var i = 0; i < c_data.length; i++) {
         cl_arr.push(c_data[i]);
     }
@@ -51,7 +52,7 @@ var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist', { }
             };
         }
         ddData_first.push(mid);
-    };s
+    };
 });
 
 function refreshHeaderTitle(t) {
