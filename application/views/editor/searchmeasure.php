@@ -17,7 +17,7 @@
 		
 		<?php if($search_results['description'] !== null && $search_results['description'] !== "") { ?>
 		<span class='analysis_content_head'>Short Description:</span>
-		<p id="details-short-desc"><?php echo preg_replace('/[^A-Za-z0-9\. -!]/', ' ', $search_results['description']); ?></p>
+		<p id="details-short-desc"><?php echo htmlspecialchars($search_results['description']); ?></p>
 		<?php } else { ?>
 		<span class='analysis_content_head'>&nbsp;</span>
 		<p id="details-short-desc">&nbsp;</p>
@@ -25,7 +25,7 @@
 
 		<?php if($search_results['long_description'] !== null && $search_results['long_description'] !== "") { ?>
 		<span class='analysis_content_head'>Long Description:</span>
-		<p id="details-long-desc"><?php echo preg_replace('/[^A-Za-z0-9\. -!]/', '', $search_results['long_description']); ?></p>
+		<p id="details-long-desc"><?php echo htmlspecialchars($search_results['long_description']); ?></p>
 		<?php } else { ?>
 		<span class='analysis_content_head'>&nbsp;</span>
 		<p id="details-long-desc">&nbsp;</p>
