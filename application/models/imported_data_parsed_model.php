@@ -10,13 +10,13 @@ class Imported_data_parsed_model extends CI_Model {
     var $manu = array(
         'sony',
         'samsung',
-        'sharp',
         'lg',
         'nikon',
         'canon',
         'pentax',
         'fuji',
-        'vizio'
+        'vizio',
+        'toshiba'
     );
     // -------  WHITE LISTS FOR FILTERING (END)
 
@@ -322,7 +322,7 @@ class Imported_data_parsed_model extends CI_Model {
         $customers_list = array_unique($customers_list);
         // ---- get customers list (end)
 
-        // ---- get imported_data_id list (start)
+        // ---- get imported_data_id list (start) ( !!! OLD STUFF !!! )
         $this->db->select('imported_data_id, key, value');
         $query = $this->db->get($this->tables['imported_data_parsed']);
         $results = $query->result();
@@ -333,18 +333,79 @@ class Imported_data_parsed_model extends CI_Model {
             }
         }
         $ids = array_unique($ids);
-        // ---- get imported_data_id list (end)
-
         $random_id = $ids[array_rand($ids, 1)];
+        // ---- get imported_data_id list (end) ( !!! OLD STUFF !!! )
 
-        // ---- get random product by random id (start)
-        // $f_res = array();
+        // ---- get random product by random id (start) ( !!! NEW STUFF !!! )
+        // $this->db->select('p.imported_data_id, p.key, p.value')
+        //     ->from($this->tables['imported_data_parsed'].' as p')
+        //     ->join($this->tables['imported_data'].' as i', 'i.id = p.imported_data_id', 'left')
+        //     ->where('p.key', 'Product Name');
+
+        // foreach ($this->manu as $km => $vm) {
+        //     if($km == 0) {
+        //         $this->db->like('i.data', $vm, 'after')->or_like('i.data', strtoupper($vm), 'after')->or_like('i.data', ucfirst('i.data', $vm), 'after');
+        //     } else {
+        //         $this->db->or_like('i.data', $vm, 'after')->or_like('i.data', strtoupper($vm), 'after')->or_like('i.data', ucfirst('i.data', $vm), 'after');
+        //     }
+        // }
+
+        // $query = $this->db->get();
+        // $results = $query->result();
+        // $data = array();
+        // $data_ids = array();
+        // foreach($results as $result) {
+        //     $manu = "";
+        //     foreach ($this->manu as $km => $vm) {
+        //         if( (strpos($result->value, $vm) !== false) || (strpos($result->value, strtoupper($vm)) !== false) || strpos($result->value, ucfirst($vm)) !== false ) {
+        //             $manu = $vm;
+        //             break; 
+        //         }
+        //     }
+        //     $query = $this->db->where('imported_data_id', $result->imported_data_id)->get($this->tables['imported_data_parsed']);
+        //     $res = $query->result_array();
+        //     $description = '';
+        //     $long_description = '';
+        //     $url = '';
+        //     foreach($res as $val) {
+        //         if($val['key'] == 'URL') { 
+        //             $url = $val['value'];
+        //             $customer = '';
+        //             $cus_val = "";
+        //             foreach ($customers_list as $ki => $vi) {
+        //                 if(strpos($url, "$vi") !== false) {
+        //                     $cus_val  = $vi;
+        //                 }
+        //             }
+        //             if($cus_val !== "") $customer = $cus_val; 
+        //         }
+        //         if($val['key'] == 'Description') { $description = $val['value']; }
+        //         if($val['key'] == 'Long_Description') { $long_description = $val['value']; }
+        //     }
+        //     $mid = array('id' => $result->imported_data_id, 'url' => $url, 'product_name' => $result->value, 'description' => $description, 'long_description' => $long_description, 'customer' => $customer, 'manu' => $manu);
+        //     array_push($data, $mid);
+        //     array_push($data_ids, $result->imported_data_id);
+        // }
+        // $random_id = $data_ids[array_rand($data_ids, 1)];
+        // $data_in = array('id' => '', 'url' => '', 'product_name' => '', 'description' => '', 'long_description' => '', 'customer' => '', 'manu' => '');
+        // $key_s = null;
+        // foreach ($data as $ks => $vs) {
+        //     if($vs['id'] == $random_id) {
+        //         $key_s = $ks;
+        //         break;
+        //     }
+        // }
+        // if($key_s !== null) $data_in = $data[$key_s];
+        // die(var_dump($data_in));
+        // return $data_in;
+        // ---- get random product by random id (end) ( !!! NEW STUFF !!! )
+
+        // ---- get random product by random id (start) ( !!! OLD STUFF !!! )
         $this->db->select('imported_data_id, key, value');
         $this->db->where('imported_data_id', $random_id);
-        // $this->db->where('value != ', ""); // new stuff
         $query = $this->db->get($this->tables['imported_data_parsed']);
         $results = $query->result();
-        $data = array('id' => $random_id, 'url' => '', 'product_name' => '', 'description' => '', 'long_description' => '', 'customer' => '');
+        $data = array('id' => $random_id, 'url' => '', 'product_name' => '', 'description' => '', 'long_description' => '', 'customer' => '', 'manu' => '');
         foreach($results as $result) {
             if($result->key === 'URL') {
                 $data['url'] = $result->value;
@@ -366,20 +427,14 @@ class Imported_data_parsed_model extends CI_Model {
                 $data['long_description'] = $result->value;
             }
         }
+        // ---- get random product by random id (end) ( !!! OLD STUFF !!! )
 
-        // ------------ REGRESSION CHECKER (START) ------------ //
+        // ------------ REGRESSION CHECKER (START) ------------ // ( !!! OLD STUFF !!! )
         while( trim($data['url']) === '' || trim($data['product_name']) === '' || trim($data['description']) === '' || trim($data['long_description']) === '' || trim($data['customer']) === '' ) {
             $data = $this->get_random_left_compare_pr_regression($customers_list, $ids);
         }
-        // ------------ REGRESSION CHECKER (END) ------------ //
         return $data;
-
-        // if(count($data) > 0) {
-        //     $f_res = $data;
-        // }
-
-        // return $f_res;
-
+        // ------------ REGRESSION CHECKER (END) ------------ // ( !!! OLD STUFF !!! )
     }
 
     function getSameProductsHuman($sid) {
