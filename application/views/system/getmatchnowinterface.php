@@ -141,7 +141,7 @@
 			var ddData_grids_r = [];
 			var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist', { }, 'json').done(function(c_data) {
                 var cl_arr = [];
-                for(i in c_data) {
+                for (var i = 0; i < c_data.length; i++) {
                     cl_arr.push(c_data[i]);
                 }
                 // --- RIGHT PRODUCT DROPDOWN 
@@ -196,7 +196,7 @@
             var ddData_grids_r = [];
             var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist', { }, 'json').done(function(c_data) {
                 var cl_arr = [];
-                for(i in c_data) {
+                for (var i = 0; i < c_data.length; i++) {
                     cl_arr.push(c_data[i]);
                 }
                 // --- LEFT PRODUCT DROPDOWN

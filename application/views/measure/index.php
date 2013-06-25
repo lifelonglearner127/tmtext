@@ -5,18 +5,10 @@
         var ddData_grids_ci = [];
         var customers_list_ci = $.post(base_url + 'index.php/measure/getcustomerslist', { }, 'json').done(function(c_data) {
             var cl_arr = [];
-            cl_arr.push("All Sites");
-            for(i in c_data) {
+            for (var i = 0; i < c_data.length; i++) {
                 cl_arr.push(c_data[i]);
             }
             for (var i = 0; i < cl_arr.length; i++) {
-                if(i == 0) {
-                    var mid = {
-                        text: cl_arr[i],
-                        value: "all",
-                        description: ""
-                    };
-                } else {
                     var text_d = cl_arr[i];
                     var value_d = cl_arr[i];
                     var imageSrc_d = "";
@@ -45,7 +37,6 @@
                         description: "",
                         imageSrc: imageSrc_d
                     };
-                }
                 ddData_grids_ci.push(mid);
                 setTimeout(function(){
                     $('#ci_dropdown').ddslick({

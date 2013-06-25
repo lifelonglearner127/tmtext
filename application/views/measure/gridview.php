@@ -83,7 +83,7 @@
 
             var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist', { }, 'json').done(function(c_data) {
                 var cl_arr = [];
-                for(i in c_data) {
+                for (var i = 0; i < c_data.length; i++) {
                     cl_arr.push(c_data[i]);
                 }
                 // --- GRID SECTION 1
@@ -401,7 +401,7 @@
             var ddData_grids_3 = [];
             var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist', { }, 'json').done(function(c_data) {
                 var cl_arr = [];
-                for(i in c_data) {
+                for (var i = 0; i < c_data.length; i++) {
                     cl_arr.push(c_data[i]);
                 }
                 // --- GRID SECTION 1
@@ -439,7 +439,7 @@
                     };
                     ddData_grids_1.push(mid);
                 };
-                // --- GRID SECTION 2 
+                // --- GRID SECTION 2
                 for (var i = 0; i < cl_arr.length; i++) {
                     var text_d = cl_arr[i];
                     var value_d = cl_arr[i];
