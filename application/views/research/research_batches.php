@@ -14,14 +14,41 @@
         </script>
         <div id="research_tab2" class="tab-pane active">
             <div class="row-fluid">
-                <div class="span6">
+                <!-- NEW STUFF (START) -->
+                <div class='span12'>
+                    Batch:
+                    <?php echo form_dropdown('research_customers', $customer_list, array(), 'class="mt_10 category_list"'); ?>
+                    <?php echo form_dropdown('research_batches', $batches_list, array(), 'class="mt_10 mr_10" style="width: 100px;"'); ?>
+                    Edit Name:<input type="text" class="mt_10 ml_10" name="batche_name" />
+                    <button id="research_batches_save" type="button" class="btn btn-success ml_5">Save</button>
+                    <button id='export_batch_review' type="button" class="btn btn-success ml_5">Export</button>
+                </div>
+                <div style='margin-left: 0px;' class='span12 mt_10'>
+                    <span class='inline_block lh_30 mr_10'>Filter:</span>
+                    <input type="text" id="research_batches_text" name="research_batches_text" value="" class="inline_block lh_30 w_286 mb_reset" placeholder=""/>
+                    <button id="research_batches_search" type="button" class="btn ml_10" >Search</button>
+                    <div class="control-group w_375 float_r">
+                        <label class="control-label mt_10" for="customer_name" style="width:70px; float: left">Columns:</label>
+                        <div class="controls">
+                            <ul id="gallery" class="product_title_content gallery w_300 pull-right">
+                                <li><span>Date</span><a hef="#" class="ui-icon-trash">x</a></li>
+                                <li><span>Meta Title</span><a hef="#" class="ui-icon-trash">x</a></li>
+                                <li><span>Meta Description</span><a hef="#" class="ui-icon-trash">x</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <!-- NEW STUFF (END) -->
+
+                <!-- OLD STUFF (START) -->
+                <!-- <div class="span6">
                     Batch:
                     <?php echo form_dropdown('research_customers', $customer_list, array(), 'class="mt_10 category_list"'); ?>
                     <?php echo form_dropdown('research_batches', $batches_list, array(), 'class="mt_10 mr_10" style="width: 100px;"'); ?><br />
                     Edit Name:<input type="text" class="mt_10 ml_10" name="batche_name" />
                     <button id="research_batches_save" type="button" class="btn btn-success ml_5">Save</button>
-                </div>
-                <div class="span6">
+                </div> -->
+                <!-- <div class="span6">
                     <button id="research_batches_search" type="button" class="btn ml_10 pull-right mt_10" >Filter</button>
                     <input type="text" id="research_batches_text" name="research_batches_text" value="" class="span8 ml_0 pull-right mt_10" placeholder=""/>
                     <div class="control-group">
@@ -34,7 +61,9 @@
                             </ul>
                         </div>
                     </div>
-                </div>
+                </div> -->
+                <!-- OLD STUFF (END) -->
+
             </div>
             <div class="row-fluid">
                 <div id="ajaxLoadAni">

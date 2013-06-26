@@ -10,8 +10,8 @@ var ddData_first = [];
 var default_tab = '';
 var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist', { }, 'json').done(function(c_data) {
     var cl_arr = [];
-    cl_arr.push("All Sites");
-    for(i in c_data) {
+    cl_arr.push("All sites");
+    for (var i = 0; i < c_data.length; i++) {
         cl_arr.push(c_data[i]);
     }
     for (var i = 0; i < cl_arr.length; i++) {
@@ -620,7 +620,7 @@ jQuery(document).ready(function($) {
                 var el_dr = $('.ddslick_dropdown');
                 if(el_dr.length > 0) {
                     var w_el_dr = 200;
-                    if($('.ddslick_dropdown').attr('id') == 'measure_dropdown' ||
+                    if($('.ddslick_dropdown').attr('id') == 'ci_dropdown' ||
                         $('.ddslick_dropdown').attr('id') == 'res_dropdown') {
                         w_el_dr = 104;
                     }

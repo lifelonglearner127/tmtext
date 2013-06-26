@@ -1,5 +1,63 @@
 /* Basic style */
 
+.ui-autocomplete li a {
+	max-width: 500px !important;
+	display: block;
+	overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding-right: 10px;
+} 
+
+.reset_mb_mt15 {
+	margin-top: 15px !important;
+	margin-bottom: 0px !important;
+}
+
+.inline_block {
+	display: inline-block;
+}
+
+.reset_mb {
+	margin-bottom: 0px !important;
+}
+
+.float_r {
+	float: right;
+}
+
+.float_l {
+	float: left;
+}
+
+.mb_reset {
+	margin-bottom: 0px !important;
+}
+
+.lh_30 {
+	line-height: 30px;
+} 
+
+.w_400 {
+	width: 400px !important;
+}
+
+.w_286 {
+	width: 286px !important;
+}
+
+.w_375 {
+	width: 375px !important;
+}
+
+.w_300 {
+	width: 300px !important;
+}
+
+.w_420 {
+	width: 420px;
+}
+
 .preloader_grids_box_pci {
 	display: none;
 	width: 220px;
@@ -261,7 +319,7 @@ span[class*="hilite"] { background: yellow; }
 	margin-right: 10px !important;
 }
 #compare_text {
-	width: 550px;
+	width: 520px;
 }
 .an_sv_left {
 	width: 550px !important;

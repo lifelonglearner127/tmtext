@@ -4,6 +4,7 @@ class Batches_model extends CI_Model {
 
     var $title = '';
     var $user_id = 0;
+    var $customer_id = 0;
     var $created = '';
     var $modified = '';
 
@@ -28,8 +29,10 @@ class Batches_model extends CI_Model {
 
     function getAll()
     {
-        $this->db->order_by("title", "asc");
-        $query = $this->db->get($this->tables['batches']);
+        $query =  $this->db->select('*, b.id as id')
+            ->from($this->tables['batches'].' as b')
+            ->join($this->tables['customers'].' as c', 'c.id = b.customer_id', 'left')
+            ->order_by("b.title", "asc")->get();
 
         return $query->result();
     }

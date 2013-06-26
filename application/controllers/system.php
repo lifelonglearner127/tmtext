@@ -550,7 +550,8 @@ class System extends MY_Controller {
 		}
 	}
 
-	function upload_csv() {
+	public function upload_csv()
+    {
 		$this->load->library('UploadHandler');
 
 		$this->output->set_content_type('application/json');
@@ -562,4 +563,46 @@ class System extends MY_Controller {
 			'accept_file_types' => '/.+\.csv$/i',
 		));
 	}
+
+    public function get_batch_review()
+    {
+        $this->load->model('batches_model');
+        $results = $this->batches_model->getAll();
+        $this->output->set_content_type('application/json')
+            ->set_output(json_encode($results));
+    }
+
+    public function update_batch_review()
+    {
+        $this->load->model('batches_model');
+        if( !empty( $_POST ) ) {
+            $id = $this->input->post('id');
+            $title = $this->input->post('title');
+            $this->batches_model->update($id, $title);
+            echo 'Record updated successfully!';
+        }
+    }
+
+    public function delete_batch_review()
+    {
+        $this->load->model('batches_model');
+        $id = $this->input->post('id');
+        if( is_null( $id ) ) {
+            echo 'ERROR: Id not provided.';
+            return;
+        }
+        $this->batches_model->delete( $id );
+        echo 'Records deleted successfully';
+    }
+
+    public function getBatchById( $id ) {
+        $this->load->model('batches_model');
+        if( isset( $id ) )
+            echo json_encode( $this->batches_model->get( $id ) );
+    }
+
+    public function batch_review()
+    {
+        $this->render();
+    }
 }

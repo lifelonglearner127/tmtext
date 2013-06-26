@@ -7,7 +7,7 @@
 
 	<div style='display: block;' class='sc_compare_block' id='sc_compare_block'>
 		<div id='pci_l_section' class='span5'>
-			<div id="dd_drop_random_l"></div>
+			<!-- <div id="dd_drop_random_l"></div> -->
 			<div class='well'>
 				<input type='hidden' name='random_l_hidden_c' value="<?php echo $get_random_l['customer']; ?>">
 				<input type='hidden' id='get_pc_l' name='get_pc' value="<?php echo $get_random_l['id']; ?>">
@@ -66,8 +66,7 @@
 		</div>
 
 		<div id='pci_r_section' class='span5'>
-			<!-- <img class='preloader_grids_box_pci' src="<?php echo base_url() ?>/img/grids_boxes_preloader.gif"> -->
-			<div id="dd_drop_random_r"></div>
+			<!-- <div id="dd_drop_random_r"></div> -->
 			<div class='well'>
 				<input type='hidden' name='random_r_hidden_c' value="<?php echo $get_random_r['customer']; ?>">
 				<input type='hidden' id='get_pc_r' name='get_pc' value="<?php echo $get_random_r['id']; ?>">
@@ -141,7 +140,7 @@
 			var ddData_grids_r = [];
 			var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist', { }, 'json').done(function(c_data) {
                 var cl_arr = [];
-                for(i in c_data) {
+                for (var i = 0; i < c_data.length; i++) {
                     cl_arr.push(c_data[i]);
                 }
                 // --- RIGHT PRODUCT DROPDOWN 
@@ -196,7 +195,7 @@
             var ddData_grids_r = [];
             var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist', { }, 'json').done(function(c_data) {
                 var cl_arr = [];
-                for(i in c_data) {
+                for (var i = 0; i < c_data.length; i++) {
                     cl_arr.push(c_data[i]);
                 }
                 // --- LEFT PRODUCT DROPDOWN
@@ -274,22 +273,16 @@
                         data: ddData_grids_l,
                         width: 320,
                         truncateDescription: true
-                        // onSelected: function(data) {
-                        // 	console.log('L: ', data['selectedData']['value']);
-                        // }
                     });
                     $('#dd_drop_random_r').ddslick({
                         data: ddData_grids_r,
                         width: 320,
                         truncateDescription: true
-                        // onSelected: function(data) {
-                        // 	reNewCompareRightSideFromDropdown(data['selectedData']['value']);
-                        // }
                     });
                 }, 500);
             });
 		}
-		initCustomersPciDropdowns();
+		// initCustomersPciDropdowns();
 
 		function reComparePair(im_pr_f, im_pr_s) {
 			cleanAndRestore();
@@ -337,32 +330,12 @@
 			}
 		}
 
-		// function reNewCompareRightSideFromDropdown(customer_r_selected) {
-		// 	var customer_l = $("input[type='hidden'][name='random_l_hidden_c']").val();
-		// 	var id_l = $("input[type='hidden'][name='get_pc'][id='get_pc_l']").val();
-		// 	var id_r = $("input[type='hidden'][name='get_pc'][id='get_pc_r']").val();
-		// 	var send_obj = {
-		// 		customer_r_selected: customer_r_selected,
-		// 		customer_l: customer_l,
-		// 		id_l: id_l,
-		// 		id_r: id_r
-		// 	};
-		// 	var renew_compare_rightside_fromdd = $.post(reNewCompareRightSideFromDropdownBaseUrl, send_obj, 'html').done(function(data) {
-		// 		if(data) {
-		// 			$(".preloader_grids_box_pci").hide();
-		// 			$("#pci_r_section").html(data);
-		// 			initCustomersPciDropdownRight();
-		// 		}
-	 //        });
-		// }
-
 		function reNewCompareRightSide(customer_l, id_l) {
 			// $(".preloader_grids_box_pci").show();
 			var renew_compare_rightside = $.post(reNewCompareRightSideBaseUrl, { customer_l: customer_l, id_l: id_l }, 'html').done(function(data) {
 				if(data) {
-					// $(".preloader_grids_box_pci").hide();
 					$("#pci_r_section").html(data);
-					initCustomersPciDropdownRight();
+					// initCustomersPciDropdownRight();
 				}
 	        });
 		}

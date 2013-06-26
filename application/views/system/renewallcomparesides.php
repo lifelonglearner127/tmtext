@@ -1,5 +1,5 @@
 <div id='pci_l_section' class='span5'>
-	<div id="dd_drop_random_l"></div>
+	<!-- <div id="dd_drop_random_l"></div> -->
 	<div class='well'>
 		<input type='hidden' name='random_l_hidden_c' value="<?php echo $get_random_l['customer']; ?>">
 		<input type='hidden' id='get_pc_l' name='get_pc' value="<?php echo $get_random_l['id']; ?>">
@@ -58,8 +58,7 @@
 </div>
 
 <div id='pci_r_section' class='span5'>
-	<!-- <img class='preloader_grids_box_pci' src="<?php echo base_url() ?>/img/grids_boxes_preloader.gif"> -->
-	<div id="dd_drop_random_r"></div>
+	<!-- <div id="dd_drop_random_r"></div> -->
 	<div class='well'>
 		<input type='hidden' name='random_r_hidden_c' value="<?php echo $get_random_r['customer']; ?>">
 		<input type='hidden' id='get_pc_r' name='get_pc' value="<?php echo $get_random_r['id']; ?>">
