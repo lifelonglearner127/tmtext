@@ -463,12 +463,12 @@ $(document).ready(function () {
 
     });
 
-    $(document).on("click", 'button#research_generate', function(){
+    /*$(document).on("click", 'button#research_generate', function(){
         $.post(base_url + 'index.php/research/generateDesc', { 'product_name': $('input[name="research_text"]').val()}, function(data){
             console.log(data);
         });
         return false;
-    });
+    });*/
 
     $(document).on("change", "select[name='batches']", function(){
         $.post(base_url + 'index.php/research/filterCustomerByBatch', { 'batch': $("select[name='batches'] option:selected").text()}, function(data){
