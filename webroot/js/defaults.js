@@ -901,6 +901,33 @@ jQuery(document).ready(function($) {
                 }
             });
     });
+
+
+    $(document).on("click", 'button#research_generate', function(){
+        var attributes = $.post( base_url+'index.php/editor/attributes', { s: $('input[name="research_text"]').val() }, 'json' );
+        attributes.done(function( data ) {
+            products = data['product_descriptions'];
+
+            var description = $('.boxes').find('textarea[name="short_description"]');
+            description.removeAttr('disabled');
+            description.val(products[0]);
+            description.trigger('change');
+            current_product = 1;
+            $('#pagination').html(getPager());
+        });
+        return false;
+    });
+
+    $(document).on("click", ".boxes_content #pagination a", function(event){
+        event.preventDefault();
+        current_product = $(this).data('page');
+        if ($(this).data('page')!==undefined) {
+            var description = $('.boxes').find('textarea[name="short_description"]');
+            description.val(products[current_product-1]);
+            description.trigger('change');
+            $('#pagination').html(getPager());
+        }
+    });
 });
 //var start = new Date().getMilliseconds();
 //console.log("Executed in " + (new Date().getMilliseconds() - start) + " milliseconds");

@@ -326,6 +326,10 @@ $(document).ready(function() {
                                      <label><span id="research_wc">0</span> words</label>
                                      <button id="research_generate" type="button" class="btn" style="float:left;">Generate</button>
                                      <textarea type="text" name="short_description" class="span10 mt_10" style="height:100px;"></textarea>
+                                     <div class="pagination">
+                                         <ul id="pagination">
+                                         </ul>
+                                     </div>
                                 </div>
                                 <div class="row-fluid"><label>Long description:</label>
                                     <label><span id="research_wc1">0</span> words</label>
