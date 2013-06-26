@@ -47,7 +47,7 @@ class Measure extends MY_Controller {
     public function cisearchteram() {
         $q = $this->input->get('term');
         $this->load->model('imported_data_parsed_model');
-        $data = $this->imported_data_parsed_model->getData($q, 10);
+        $data = $this->imported_data_parsed_model->getData($q, '', '',  4);
         foreach ($data as $key => $value) {
             $response[] = array('id' => $value['imported_data_id'], 'value' => $value['product_name']);
         };

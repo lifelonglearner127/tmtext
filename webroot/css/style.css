@@ -319,7 +319,8 @@ span[class*="hilite"] { background: yellow; }
 	margin-right: 10px !important;
 }
 #compare_text {
-	width: 520px;
+	width: 530px;
+	margin-left: 10px;
 }
 .an_sv_left {
 	width: 550px !important;
