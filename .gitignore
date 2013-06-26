@@ -12,3 +12,4 @@ license.txt
 #Other
 /application/logs
 /application/controllers/test.php
+/application/config/database.php

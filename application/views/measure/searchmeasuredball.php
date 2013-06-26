@@ -99,17 +99,22 @@
 		                    	switchToListView();
 		                    } else if(grid_status === 'grid') {
 		                    	switchToGridView();
-		                    } 
+		                    }
 
 		                }
 
 		            }
 		        });
-				
-			
-
 		    }
 
+            // click on table row for expand or shrink
+            $("#products span").click(function() {
+                if($(this).css('white-space') == 'normal') {
+                    $(this).parent().find('span').css('white-space', 'nowrap');
+                } else {
+                    $(this).parent().find('span').css('white-space', 'normal');
+                }
+            });
 		});
 	</script>
 

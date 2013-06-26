@@ -414,7 +414,7 @@ $config['csv_header_replace'] = array(
 if (file_exists(APPPATH.'config/config.local.php')) {
 	@require_once APPPATH.'config/config.local.php';
 } else {
-	die;
+	die ('Error loading config file: config.local.php');
 }
 
 /* End of file config.php */

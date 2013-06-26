@@ -217,9 +217,9 @@
 <!--- REAL CONTENT SECTION (END) -->
 
 <script type='text/javascript'>
-    
+
     // --- CI search term autocomplete (start)
-    var autocomplete_ci_baseurl = base_url + 'index.php/measure/cisearchteram'; 
+    var autocomplete_ci_baseurl = base_url + 'index.php/measure/cisearchteram';
     $("#compare_text").autocomplete({
         source: autocomplete_ci_baseurl,
         minChars: 3,

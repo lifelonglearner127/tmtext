@@ -178,8 +178,8 @@
 .products_an_search li span {
 	display: inline-block;
 	overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    text-overflow: clip;
+    white-space: normal;
     width: 45%;
 }
 .keywords_metrics_bl span {
