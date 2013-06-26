@@ -168,7 +168,12 @@ $(document).ready(function() {
         <div class="row-fluid">
             <div class="span6">
                 Batch:
-                <?php echo form_dropdown('customers', $customer_list, array(), 'class="mt_10 category_list"'); ?>
+                <?php
+                    $selected = array();
+                    if(count($customer_list) == 2){
+                        $selected = array(0);
+                    }
+                    echo form_dropdown('customers', $customer_list, $selected, 'class="mt_10 category_list"'); ?>
                 <?php echo form_dropdown('batches', $batches_list, array(), 'class="mt_10" style="width: 145px;"'); ?>
                 <button id="export_batch" class="btn" type="button" style="margin-left:5px; margin-right: 10px;">Export</button>
             </div>

@@ -3,7 +3,8 @@ var readUrl   = base_url + 'index.php/system/get_batch_review',
     delUrl    = base_url + 'index.php/system/delete_batch_review',
     delHref,
     updateHref,
-    updateId;
+    updateId,
+    delId;
 
 
 $( function() {
@@ -71,18 +72,18 @@ $( function() {
             'Yes': function() {
                 //display ajax loader animation here...
                 $( '#ajaxLoadAni' ).fadeIn( 'slow' );
-
                 $( this ).dialog( 'close' );
 
                 $.ajax({
                     url: delHref,
-
+                    type:'POST',
+                    data:{'id': delId},
                     success: function( response ) {
                         //hide ajax loader animation here...
                         $( '#ajaxLoadAni' ).fadeOut( 'slow' );
 
-                        $( '#msgDialog > p' ).html( response );
-                        $( '#msgDialog' ).dialog( 'option', 'title', 'Success' ).dialog( 'open' );
+                        //$( '#msgDialog > p' ).html( response );
+                        //$( '#msgDialog' ).dialog( 'option', 'title', 'Success' ).dialog( 'open' );
 
                         $( 'a[href=' + delHref + ']' ).parents( 'tr' )
                             .fadeOut( 'slow', function() {
@@ -126,7 +127,8 @@ $( function() {
 
     $( '#records' ).delegate( 'a.deleteBtn', 'click', function() {
         delHref = $( this ).attr( 'href' );
-
+        delId = $( this ).parents( 'tr' ).attr( "id" );
+        $('span.batch_name').text($( 'tr#'+delId+' td:nth-child(3)' ).text());
         $( '#delConfDialog' ).dialog( 'open' );
 
         return false;

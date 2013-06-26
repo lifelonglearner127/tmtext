@@ -17,7 +17,13 @@
                 <!-- NEW STUFF (START) -->
                 <div class='span12'>
                     Batch:
-                    <?php echo form_dropdown('research_customers', $customer_list, array(), 'class="mt_10 category_list"'); ?>
+                    <?php
+                        $selected = array();
+                        if(count($customer_list) == 2){
+                            $selected = array(0);
+                        }
+                        echo form_dropdown('research_customers', $customer_list, $selected, 'class="mt_10 category_list"');
+                    ?>
                     <?php echo form_dropdown('research_batches', $batches_list, array(), 'class="mt_10 mr_10" style="width: 100px;"'); ?>
                     Edit Name:<input type="text" class="mt_10 ml_10" name="batche_name" />
                     <button id="research_batches_save" type="button" class="btn btn-success ml_5">Save</button>

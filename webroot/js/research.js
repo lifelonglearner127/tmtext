@@ -493,6 +493,8 @@ $(document).ready(function () {
                 for(var i=0; i<data.length; i++){
                     $("select[name='batches']").append('<option>'+data[i]+'</option>');
                 }
+           } else if(data.length==0 && $("select[name='customers'] option:selected").text()!="All customers"){
+               $("select[name='batches']").empty();
            }
         });
     });
@@ -503,7 +505,7 @@ $(document).ready(function () {
             if(data != null){
                 $("select[name='research_customers'] option").each(function(){
                     if(data==$(this).text()){
-                        $(this).prop('selected',true);
+                        $(this).attr({'selected':'selected'});
                     }
                 });
             } else {
@@ -523,6 +525,8 @@ $(document).ready(function () {
                 for(var i=0; i<data.length; i++){
                     $("select[name='research_batches']").append('<option>'+data[i]+'</option>');
                 }
+            } else if(data.length==0 && $("select[name='research_customers'] option:selected").text()!="All customers"){
+                $("select[name='research_batches']").empty();
             }
         });
     });

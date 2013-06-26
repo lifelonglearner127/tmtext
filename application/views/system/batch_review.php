@@ -57,7 +57,7 @@
 
             <!-- delete confirmation dialog box -->
             <div id="delConfDialog" title="Confirm">
-                <p>Are you sure?</p>
+                <p>Are you sure you want to delete batch <span class="batch_name"></span>?</p>
             </div>
 
 
