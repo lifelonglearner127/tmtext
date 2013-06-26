@@ -355,6 +355,88 @@ function wordGridModeHighLighter(section, w, status) {
     }
 }
 
+// function stackWordsHighLighterMainContent(words, status) {
+//     removeTagsFromDescs();
+//     var highlightStartTag = "<span class='hilite'>";
+//     var highlightEndTag = "</span>";
+//     if(words.length > 0) {
+//         for(var j=0; j < words.length; j++) {
+//             var searchTerm = words[j];
+//             var bodyText = '';
+//             if(status === 'short') {
+//                 bodyText = $("#details-short-desc").text();
+//             } else if(status === 'long') {
+//                 bodyText = $("#details-long-desc").text();
+//             }
+
+//             var newText = "";
+//             var i = -1;
+//             var lcSearchTerm = searchTerm.toLowerCase();
+//             var lcBodyText = bodyText.toLowerCase();
+
+//             while (bodyText.length > 0) {
+//                 i = lcBodyText.indexOf(lcSearchTerm, i+1);
+//                 if (i < 0) {
+//                     newText += bodyText;
+//                     bodyText = "";
+//                 } else {
+//                     if (bodyText.lastIndexOf(">", i) >= bodyText.lastIndexOf("<", i)) {
+//                         if (lcBodyText.lastIndexOf("/script>", i) >= lcBodyText.lastIndexOf("<script", i)) {
+//                             newText += bodyText.substring(0, i) + highlightStartTag + bodyText.substr(i, searchTerm.length) + highlightEndTag;
+//                             bodyText = bodyText.substr(i + searchTerm.length);
+//                             lcBodyText = bodyText.toLowerCase();
+//                             i = -1;
+//                         }
+//                     }
+//                 }
+//             }
+
+//             if(status === 'short') {
+//                 bodyText = $("#details-short-desc").html(newText);
+//             } else if(status === 'long') {
+//                 bodyText = $("#details-long-desc").html(newText);
+//             }
+//         }
+//     }
+// }
+
+function stackWordsHighLighterMainContent(words) {
+    removeTagsFromDescs();
+    var highlightStartTag = "<span class='hilite'>";
+    var highlightEndTag = "</span>";
+    if(words.length > 0) {
+        for(var j=0; j < words.length; j++) {
+            var searchTerm = words[j];
+            var bodyText = '';
+            bodyText = $("#measure_product_ind_wrap").html();
+
+            var newText = "";
+            var i = -1;
+            var lcSearchTerm = searchTerm.toLowerCase();
+            var lcBodyText = bodyText.toLowerCase();
+
+            while (bodyText.length > 0) {
+                i = lcBodyText.indexOf(lcSearchTerm, i+1);
+                if (i < 0) {
+                    newText += bodyText;
+                    bodyText = "";
+                } else {
+                    if (bodyText.lastIndexOf(">", i) >= bodyText.lastIndexOf("<", i)) {
+                        if (lcBodyText.lastIndexOf("/script>", i) >= lcBodyText.lastIndexOf("<script", i)) {
+                            newText += bodyText.substring(0, i) + highlightStartTag + bodyText.substr(i, searchTerm.length) + highlightEndTag;
+                            bodyText = bodyText.substr(i + searchTerm.length);
+                            lcBodyText = bodyText.toLowerCase();
+                            i = -1;
+                        }
+                    }
+                }
+            }
+
+            $("#measure_product_ind_wrap").html(newText);
+        }
+    }
+}
+
 function wordHighLighter(w, status) {
     removeTagsFromDescs();
     var highlightStartTag = "<span class='hilite'>";
@@ -446,6 +528,79 @@ function keywordsAnalizer() {
             var kw_tertiary_long_res = data['tertiary'][1].toPrecision(3)*100;
             $("#kw_tertiary_short_res").text(kw_tertiary_short_res.toPrecision(2) + "%");
             $("#kw_tertiary_long_res").text(kw_tertiary_long_res.toPrecision(2) + "%");
+
+            // --- figure out highlighter stack (start)
+            var hl_stack_short = [];
+            var hl_stack_long = [];
+            var hl_stack_common = [];
+            var tmp = [];
+            if(kw_primary_short_res > 0) {
+                tmp = primary_ph.split(" ");
+                if(tmp.length > 0) {
+                    for(var i=0; i < tmp.length; i++) {
+                        hl_stack_common.push(tmp[i]);
+                        // hl_stack_short.push(tmp[i]);
+                    }
+                }
+                tmp = [];
+            }
+            if(kw_primary_long_res > 0) {
+                tmp = primary_ph.split(" ");
+                if(tmp.length > 0) {
+                    for(var i=0; i < tmp.length; i++) {
+                        hl_stack_common.push(tmp[i]);
+                        // hl_stack_long.push(tmp[i]);
+                    }
+                }
+                tmp = [];
+            }
+            if(kw_secondary_short_res > 0) {
+                tmp = secondary_ph.split(" ");
+                if(tmp.length > 0) {
+                    for(var i=0; i < tmp.length; i++) {
+                        hl_stack_common.push(tmp[i]);
+                        // hl_stack_short.push(tmp[i]);
+                    }
+                }
+                tmp = [];
+            }
+            if(kw_secondary_long_res > 0) {
+                tmp = secondary_ph.split(" ");
+                if(tmp.length > 0) {
+                    for(var i=0; i < tmp.length; i++) {
+                        hl_stack_common.push(tmp[i]);
+                        // hl_stack_long.push(tmp[i]);
+                    }
+                }
+                tmp = [];
+            }
+            if(kw_tertiary_short_res > 0) {
+                tmp = tertiary_ph.split(" ");
+                if(tmp.length > 0) {
+                    for(var i=0; i < tmp.length; i++) {
+                        hl_stack_common.push(tmp[i]);
+                        // hl_stack_short.push(tmp[i]);
+                    }
+                }
+                tmp = [];
+            }
+            if(kw_tertiary_long_res > 0) {
+                tmp = tertiary_ph.split(" ");
+                if(tmp.length > 0) {
+                    for(var i=0; i < tmp.length; i++) {
+                        hl_stack_common.push(tmp[i]);
+                        // hl_stack_long.push(tmp[i]);
+                    }
+                }
+                tmp = [];
+            }
+            hl_stack_common = _.uniq(hl_stack_common);
+            stackWordsHighLighterMainContent(hl_stack_common);
+            // hl_stack_short = _.uniq(hl_stack_short);
+            // hl_stack_long = _.uniq(hl_stack_long);
+            // stackWordsHighLighterMainContent(hl_stack_short, 'short');
+            // stackWordsHighLighterMainContent(hl_stack_long, 'long');
+            // --- figure out highlighter stack (end)
 
             $('.keywords_metrics_bl_res').fadeOut('fast', function() {
                 $('.keywords_metrics_bl_res').fadeIn();
