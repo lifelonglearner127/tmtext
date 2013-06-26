@@ -42,27 +42,49 @@
 			<h3>Current list:</h3>
 			<div class="row-fluid">
 				<div class="search_area uneditable-input span10" style="cursor: text; width: 765px; height: 250px; overflow : auto;" id="Current_List">
+				<ul>
+					<lh><span>Status</span><span>Last Crawled</span><span>Category</span><span>URL</span></lh>
+				</ul>
 				</div>
 				<button id="current_list_delete" class="btn new_btn btn-danger mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
-				<button id="crawl_now" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Crawl Now</button>
+				<button id="crawl_new" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Crawl New</button>
+				<button id="crawl_all" class="btn new_btn btn-success mt_10 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Crawl All</button>
+			</div>
+			<div class="row-fluid">
+				<div id="Current_List_Pager"></div>
 			</div>
 		</div>
 	  </div>
 </div>
 <script>
-function loadCurrentList(){
-	$.get('<?php echo site_url('site_crawler/new_urls');?>', function(data) {
-  		$('#Current_List').html('');
+function loadCurrentList(url){
+	url = typeof url !== 'undefined' ? url: '<?php echo site_url('site_crawler/all_urls');?>';
+
+	$.get(url, function(data) {
+		$('#Current_List ul li').remove();
 
 		if(data.new_urls.length > 0) {
-			$("button#crawl_now").removeAttr('disabled');
+			$("button#crawl_new").removeAttr('disabled');
 		} else {
-			$("button#crawl_now").attr('disabled', 'disabled');
+			$("button#crawl_new").attr('disabled', 'disabled');
 		}
 
   		$.each(data.new_urls, function (index, node) {
-			$('#Current_List').append("<div id=\"id_"+node.id+"\">"+node.url+"</div>");
+  	  		var category = '';
+  	  		if (node.name != undefined) {
+  	  	  		category = node.name;
+  	  		}
+
+  	  		if (node.updated == null) {
+  	  	  		updated = 'Never';
+  	  		} else {
+  	  			updated = node.updated;
+  	  		}
+
+			$('#Current_List ul').append("<li id=\"id_"+node.id+"\"><span>"+node.status+"</span><span>"+updated+"</span><span>"+category+"</span><span class=\"url ellipsis\">"+node.url+"</span></li>");
 		});
+
+  		$('#Current_List_Pager').html(data.pager);
     });
 }
 
@@ -74,25 +96,29 @@ function checkAddList(){
 	}
 }
 
+function closeInputs() {
+	if($(event.target).parents().index($('#Add_List')) == -1) {
+        $("#Add_List > div >input").each(function(i,e){
+            if (!$(this).parent('div').hasClass('new')){
+            	$(this).parent().html($(this).val());
+            }
+        });
+    }
+    if($(event.target).parents().index($('#Current_List')) == -1) {
+        $("#Current_List > ul > li > span > input").each(function(){
+            $(this).parent().html($(this).val());
+            $.post('<?php echo site_url('site_crawler/update');?>', {id: $('#Current_List > ul > li.active').attr('id'), url:$(this).val()}, function(data) {});
+        });
+    }
+    checkAddList();
+}
+
 $(function () {
     setTimeout(function(){
         $('title').text("Site Crawler");
     }, 10);
     $(document).click(function(event) {
-        if($(event.target).parents().index($('#Add_List')) == -1) {
-            $("#Add_List > div >input").each(function(i,e){
-                if (!$(this).parent('div').hasClass('new')){
-                	$(this).parent().html($(this).val());
-                }
-            });
-        }
-        if($(event.target).parents().index($('#Current_List')) == -1) {
-            $("#Current_List > div >input").each(function(){
-                $(this).parent().html($(this).val());
-                $.post('<?php echo site_url('site_crawler/update');?>', {id: $('#Current_List > div.active').attr('id'), url:$(this).val()}, function(data) {});
-            });
-        }
-        checkAddList();
+    	closeInputs();
     });
 
     $(document).on('change', '#Add_List > div.new > input',  function(){
@@ -105,7 +131,7 @@ $(function () {
         }
 	});
 
-	$(document).on("click", "#Add_List > div, #Current_List > div", function(){
+	$(document).on("click", "#Add_List > div", function(){
 		$(this).parent('div').find('div').removeClass('active');
 		$(this).addClass('active');
 
@@ -114,11 +140,21 @@ $(function () {
 		}
 	});
 
+	$(document).on("click", "#Current_List li span.url", function(){
+		$(this).parent('ul').find('li').removeClass('active');
+		$(this).parent('li').addClass('active');
+
+		if ($(this).find('input').val() == undefined) {
+			$(this).html("<input type='text' value='"+$(this).text()+"'>");
+		}
+	});
+
+
 	$(document).on("click", "#Add_List > div", function(){
 		$('#add_list_delete').removeAttr('disabled');
 	})
 
-	$(document).on("click", "#Current_List > div", function(){
+	$(document).on("click", "#Current_List li span.url", function(){
 		$('#current_list_delete').removeAttr('disabled');
 	})
 
@@ -129,11 +165,13 @@ $(function () {
 
 	$(document).on("click", "#current_list_delete", function(){
 		$('#current_list_delete').attr('disabled', 'disabled');
-		$.post('<?php echo site_url('site_crawler/delete');?>', {id: $('#Current_List > div.active').attr('id')}, function(data) {});
+		$.post('<?php echo site_url('site_crawler/delete');?>', {id: $('#Current_List > ul > li.active').attr('id')}, function(data) {});
 		loadCurrentList();
 	});
 
 	$(document).on("click", "button#add_url_list", function(){
+		closeInputs();
+
 		var list = [];
 		$('#Add_List div').each(function(index, node) {
 			var url = $(node).text();
@@ -149,12 +187,22 @@ $(function () {
 		$('#add_list_delete').attr('disabled', 'disabled');
 	});
 
-	$(document).on("click", "button#crawl_now", function(){
-		$.post('<?php echo site_url('site_crawler/crawl_now');?>', function(data) {
+	$(document).on("click", "button#crawl_new", function(){
+		$.post('<?php echo site_url('site_crawler/crawl_new');?>', function(data) {
 			loadCurrentList();
 		});
 	});
 
+	$(document).on("click", "button#crawl_all", function(){
+		$.post('<?php echo site_url('site_crawler/crawl_all');?>', function(data) {
+			loadCurrentList();
+		});
+	});
+
+	$(document).on("click", "#Current_List_Pager a", function(event){
+		event.preventDefault();
+		loadCurrentList($(this).attr('href'));
+	});
 
 	jQuery(document).ready(function($) {
 		loadCurrentList();

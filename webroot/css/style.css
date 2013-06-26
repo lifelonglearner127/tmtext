@@ -21,7 +21,7 @@
 .pager_pci_wrap.margin_bottom {
 	margin-bottom: 20px;
 }
-.pager_pci_wrap .pager_pci { 
+.pager_pci_wrap .pager_pci {
 	clear: both;
 }
 
@@ -46,7 +46,7 @@
 }
 
 .nav > li > a {
-	line-height: 1.3em !important; 
+	line-height: 1.3em !important;
 }
 
 .limited_list {
@@ -1166,4 +1166,51 @@ label.dd-selected-text, label.dd-option-text{
     width: 180px;
     float: right;
     margin-top: -9px;
+}
+
+#Current_List ul {
+	margin: 0px 0px 0px 0px;
+	font-size: 13px;
+}
+
+#Current_List ul li {
+	line-height: 17px;
+}
+
+#Current_List ul lh {
+	font-weight: bold;
+	line-height: 19px;
+}
+
+#Current_List ul li span, #Current_List ul lh span{
+	padding: 5px 5px 5px 5px;
+	/*border-right: 1px solid #ccc;*/
+	display: inline-block;
+	width: 12%;
+}
+
+#Current_List ul li span input{
+	margin: 0px;
+	height: 21px;
+}
+
+#Current_List ul lh, #Current_List ul li  {
+	border-bottom: 1px solid #ccc;
+}
+
+#Current_List ul li:last-child {
+	border-bottom: 0px;
+}
+
+#Current_List ul li span:last-child, #Current_List ul lh span:last-child {
+	border-right: 0px;
+	width: 58%;
+}
+
+.ellipsis {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -o-text-overflow: ellipsis;
+    -moz-binding: url('ellipsis.xml#ellipsis');
 }

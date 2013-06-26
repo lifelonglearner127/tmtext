@@ -8,7 +8,8 @@ class Crawler_List_model extends CI_Model {
 	var $category_id = 0;
 
     var $tables = array(
-    	'crawler_list' => 'crawler_list'
+    	'crawler_list' => 'crawler_list',
+    	'categories' => 'categories'
     );
 
     function __construct() {
@@ -45,6 +46,14 @@ class Crawler_List_model extends CI_Model {
         return $this->db->update($this->tables['crawler_list'], array('status' => $status), array('id' => $id));
     }
 
+    function updated($id) {
+    	 return $this->db->update($this->tables['crawler_list'], array('updated' => date('Y-m-d h:i:s')), array('id' => $id));
+    }
+
+	function updateImportedDataId($id, $imported_id) {
+    	 return $this->db->update($this->tables['crawler_list'], array('imported_data_id' => $imported_id), array('id' => $id));
+    }
+
 
     function delete($id) {
     	$CI =& get_instance();
@@ -73,6 +82,48 @@ class Crawler_List_model extends CI_Model {
 
         return $query->result();
     }
+
+    function getAll()
+    {
+    	$CI =& get_instance();
+
+    	$this->db->select('id, url, category_id, imported_data_id, status')
+    		->where('user_id',  $CI->ion_auth->get_user_id());
+
+        $query = $this->db->get($this->tables['crawler_list']);
+
+        return $query->result();
+    }
+
+    function getAllLimit($limit, $start)
+    {
+    	$CI =& get_instance();
+
+    	$this->db->select('cl.id, cl.url, c.name as name, cl.status, DATE(cl.updated) as updated')
+    		->from($this->tables['crawler_list'].' as cl')
+            ->join($this->tables['categories'].' as c', 'cl.category_id = c.id', 'left')
+    		->where('user_id',  $CI->ion_auth->get_user_id())
+    		->order_by("cl.created", "desc")
+    		->limit($limit, $start);
+
+        $query = $this->db->get();
+
+        return $query->result();
+    }
+
+    function countAll()
+    {
+    	$CI =& get_instance();
+
+    	$this->db->select('cl.id')
+    		->from($this->tables['crawler_list'].' as cl')
+            ->join($this->tables['categories'].' as c', 'cl.category_id = c.id', 'left')
+    		->where('user_id',  $CI->ion_auth->get_user_id())
+    		->order_by("cl.created", "desc");
+
+        return $this->db->count_all_results();
+    }
+
 
     function getNew()
     {

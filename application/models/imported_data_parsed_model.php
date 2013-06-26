@@ -5,6 +5,7 @@ class Imported_data_parsed_model extends CI_Model {
 	var $imported_data_id = null;
 	var $key = '';
 	var $value = '';
+	var $revision = 1;
 
     // -------  WHITE LISTS FOR FILTERING (START)
     var $manu = array(
@@ -132,7 +133,7 @@ class Imported_data_parsed_model extends CI_Model {
             $long_description = '';
             $url = '';
             foreach($res as $val){
-                if($val['key'] == 'URL') { 
+                if($val['key'] == 'URL') {
                     $url = $val['value'];
                     $cus_val = "";
                     foreach ($customers_list as $ki => $vi) {
@@ -140,7 +141,7 @@ class Imported_data_parsed_model extends CI_Model {
                             $cus_val  = $vi;
                         }
                     }
-                    if($cus_val !== "") $customer = $cus_val; 
+                    if($cus_val !== "") $customer = $cus_val;
                 }
                 if($val['key'] == 'Description'){ $description = $val['value']; }
                 if($val['key'] == 'Long_Description'){ $long_description = $val['value']; }
@@ -170,7 +171,7 @@ class Imported_data_parsed_model extends CI_Model {
         $results = $query->result();
         $ids = array();
         if(count($results) > 0) {
-            foreach ($results as $key => $value) {  
+            foreach ($results as $key => $value) {
                 $ids[] = $value->imported_data_id;
             }
         }
@@ -214,7 +215,7 @@ class Imported_data_parsed_model extends CI_Model {
         //     foreach ($this->manu as $km => $vm) {
         //         if( (strpos($l_product_name, $vm) !== false) || (strpos($l_product_name, strtoupper($vm)) !== false) || strpos($l_product_name, ucfirst($vm)) !== false ) {
         //             $man_left = $vm;
-        //             break; 
+        //             break;
         //         }
         //     }
         //     // --- DETECT RIGHT SIDE PRODUCT MANUFACTURER
@@ -222,7 +223,7 @@ class Imported_data_parsed_model extends CI_Model {
         //     foreach ($this->manu as $km => $vm) {
         //         if( (strpos($data['product_name'], $vm) !== false) || (strpos($data['product_name'], strtoupper($vm)) !== false) || strpos($data['product_name'], ucfirst($vm)) !== false ) {
         //             $man_right = $vm;
-        //             break; 
+        //             break;
         //         }
         //     }
         //     if($man_left == $man_right) $manu_ckeck_st = true;
@@ -265,7 +266,7 @@ class Imported_data_parsed_model extends CI_Model {
     //     $results = $query->result();
     //     $ids = array();
     //     if(count($results) > 0) {
-    //         foreach ($results as $key => $value) {  
+    //         foreach ($results as $key => $value) {
     //             $ids[] = $value->imported_data_id;
     //         }
     //     }
@@ -328,7 +329,7 @@ class Imported_data_parsed_model extends CI_Model {
         $results = $query->result();
         $ids = array();
         if(count($results) > 0) {
-            foreach ($results as $key => $value) {  
+            foreach ($results as $key => $value) {
                 $ids[] = $value->imported_data_id;
             }
         }
@@ -387,7 +388,7 @@ class Imported_data_parsed_model extends CI_Model {
         $this->db->where('im_pr_f', $sid);
         $this->db->or_where('im_pr_s', $sid);
         $query = $this->db->get($this->tables['products_compare']);
-        $results = $query->result(); 
+        $results = $query->result();
         $ids = array();
         if(count($results) > 0) {
             foreach ($results as $key => $value) {
@@ -400,10 +401,10 @@ class Imported_data_parsed_model extends CI_Model {
                 if($v == $sid) {
                     $d_key = $k;
                     break;
-                } 
+                }
             }
             if($d_key !== null) unset($ids[$d_key]);
-            if(count($ids) > 3) $ids = array_slice($ids, 0, 3); 
+            if(count($ids) > 3) $ids = array_slice($ids, 0, 3);
         }
         $template = array();
         if(count($ids) === 3) {
@@ -441,7 +442,7 @@ class Imported_data_parsed_model extends CI_Model {
                             if($cus_val !== "") $template[$im_id_current]['customer'] = $cus_val;
                         }
                         if($value->key == 'Product Name') {
-                            $template[$im_id_current]['product_name'] = $value->value;   
+                            $template[$im_id_current]['product_name'] = $value->value;
                         }
                         if($value->key == 'Description') {
                             $template[$im_id_current]['description'] = $value->value;
@@ -457,7 +458,7 @@ class Imported_data_parsed_model extends CI_Model {
     }
 
     function deleteProductsVotedPair($id) {
-        return $this->db->delete($this->tables['products_compare'], array('id' => $id)); 
+        return $this->db->delete($this->tables['products_compare'], array('id' => $id));
     }
 
     function getProductsCompareVotedTotalCount() {
@@ -627,7 +628,7 @@ class Imported_data_parsed_model extends CI_Model {
                         if($cus_val !== "") $template[$im_id_current]['customer'] = $cus_val;
                     }
                     if($value->key == 'Product Name') {
-                        $template[$im_id_current]['product_name'] = $value->value;   
+                        $template[$im_id_current]['product_name'] = $value->value;
                     }
                     if($value->key == 'Description') {
                         $template[$im_id_current]['description'] = $value->value;
@@ -649,7 +650,7 @@ class Imported_data_parsed_model extends CI_Model {
         $results = $query->result();
         $ids = array();
         if(count($results) > 0) {
-            foreach ($results as $key => $value) {  
+            foreach ($results as $key => $value) {
                 $ids[] = $value->imported_data_id;
             }
         }
@@ -670,7 +671,7 @@ class Imported_data_parsed_model extends CI_Model {
                     $template[$im_id_current]['url'] = $value->value;
                 }
                 if($value->key == 'Product Name') {
-                    $template[$im_id_current]['product_name'] = $value->value;   
+                    $template[$im_id_current]['product_name'] = $value->value;
                 }
                 if($value->key == 'Description') {
                     $template[$im_id_current]['description'] = $value->value;
@@ -765,7 +766,7 @@ class Imported_data_parsed_model extends CI_Model {
         $res = $this->db->get($this->tables['imported_data_parsed']);
         if($res->num_rows() > 0) {
             $result = $res->result_array();
-            
+
             // --- OLD ONE (START)
             // $im_data_id = $result[0]['imported_data_id'];
             // $query = $this->db->where('imported_data_id', $im_data_id)->get($this->tables['imported_data_parsed']);
@@ -807,15 +808,16 @@ class Imported_data_parsed_model extends CI_Model {
             }
             return $final_res;
             // --- NEW ONE (END)
-            
+
         }
         return false;
     }
 
-    function insert($imported_id, $key, $value) {
+    function insert($imported_id, $key, $value, $revision = 1) {
         $this->key = $key;
         $this->value = $value;
         $this->imported_data_id = $imported_id;
+        $this->revision = $revision;
 
         $this->db->insert($this->tables['imported_data_parsed'], $this);
         return $this->db->insert_id();
@@ -868,6 +870,15 @@ class Imported_data_parsed_model extends CI_Model {
         }
 
         return $data;
+    }
+
+    function getMaxRevision($imported_data_id) {
+    	$query = $this->db->select('max(revision) as revision')
+    			  ->where('imported_data_id', $imported_data_id)
+                  ->limit(1)
+                  ->get($this->tables['imported_data_parsed']);
+
+        return $query->row()->revision;
     }
 
 }

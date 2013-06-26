@@ -114,10 +114,16 @@ class PageProcessor {
 				$price = $match[1];
 		}
 
+		foreach($this->nokogiri->get('.SpecTable tr') as $item) {
+			$features[] = trim($item['td'][0]['#text'][0]).trim($item['td'][1]['#text'][0]);
+		}
+		$features = implode("\n",$features);
+
 		return array(
 			'Product Name' => $title['#text'][0],
 			'Description' => $description['#text'][0],
-			'Price' => $price
+			'Price' => $price,
+			'Features' => $features
 		);
 	}
 
@@ -146,10 +152,22 @@ class PageProcessor {
 			}
 		}
 
+		foreach($this->nokogiri->get('#DetailedSpecs table.prodSpec tr') as $item) {
+			$i = trim($item['th'][0]['#text'][0]);
+			$j = trim($item['td'][0]['#text'][0]);
+			if (!empty($i) && !empty($j)) {
+				$features[] = $i.": ".$j;
+			} else if (!empty($j)) {
+				$features[] = $j;
+			}
+		}
+		$features = implode("\n",$features);
+
 		return array(
 			'Product Name' => $title['#text'][0],
 			'Description' => $description,
-			'Price' => $price
+			'Price' => $price,
+			'Features' => $features
 		);
 	}
 
@@ -198,11 +216,17 @@ class PageProcessor {
 			}
 		}
 
+		foreach($this->nokogiri->get('#subdesc_content .layoutWidth06 ul li') as $item) {
+			$features[] = $item['#text'][0];
+		}
+		$features = implode("\n",$features);
+
 		return array(
 			'Product Name' => $title['#text'][0],
 			'Long_Description' => $description['#text'][0],
 			'Description' => $descriptionShort['#text'][0],
-			'Price' => $price
+			'Price' => $price,
+			'Features' => $features
 		);
 	}
 
@@ -276,11 +300,18 @@ class PageProcessor {
 			}
 		}
 
+		foreach($this->nokogiri->get('#productAttributes .bd ul li') as $item) {
+			$features[] = trim($item['div'][0]['#text'][0]).': '.trim($item['div'][1]['#text'][0]);
+		}
+
+		$features = implode("\n",$features);
+
 		return array(
 			'Product Name' => $title['#text'][0],
 			'Description' => $description,
 			'Long_Description' => $description_long,
-			'Price' => $price
+			'Price' => $price,
+			'Features' => $features
 		);
 	}
 
@@ -290,10 +321,15 @@ class PageProcessor {
 		}
 		$description = implode(' ',$description);
 
+//		foreach($this->nokogiri->get('#productTabs .tabContentWrapper .details ul.featuressku li span') as $item) {
+//			$description_long[] = $item['#text'][0];
+//		}
+//		$description_long = implode(' ',$description_long);
+
 		foreach($this->nokogiri->get('#productTabs .tabContentWrapper .details ul.featuressku li span') as $item) {
-			$description_long[] = $item['#text'][0];
+			$features[] = $item['#text'][0];
 		}
-		$description_long = implode(' ',$description_long);
+		$features = implode(' ',$features);
 
 		foreach($this->nokogiri->get('#main_sku_wrap .skuHeading') as $item) {
 			$title = $item;
@@ -308,7 +344,8 @@ class PageProcessor {
 		return array(
 			'Product Name' => $title['#text'][0],
 			'Description' => $description,
-			'Long_Description' => $description_long,
+//			'Long_Description' => $description_long,
+			'Features' => $features,
 			'Price' => $price
 		);
 	}

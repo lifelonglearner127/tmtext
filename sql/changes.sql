@@ -1,3 +1,8 @@
+# 06/26 Ruslan
+ALTER TABLE  `crawler_list` ADD  `updated` DATETIME NULL AFTER  `status`;
+ALTER TABLE  `crawler_list` ADD  `imported_data_id` INT NULL AFTER  `category_id`;
+ALTER TABLE  `imported_data_parsed` ADD  `revision` TINYINT NOT NULL DEFAULT  '1' AFTER  `value`;
+
 # 06/24 Ruslan
 
 CREATE TABLE IF NOT EXISTS `crawler_list_prices` (
