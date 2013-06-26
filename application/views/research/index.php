@@ -171,6 +171,7 @@ $(document).ready(function() {
                 <?php
                     $selected = array();
                     if(count($customer_list) == 2){
+                        array_shift($customer_list);
                         $selected = array(0);
                     }
                     echo form_dropdown('customers', $customer_list, $selected, 'class="mt_10 category_list"'); ?>

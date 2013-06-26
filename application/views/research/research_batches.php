@@ -20,6 +20,7 @@
                     <?php
                         $selected = array();
                         if(count($customer_list) == 2){
+                            array_shift($customer_list);
                             $selected = array(0);
                         }
                         echo form_dropdown('research_customers', $customer_list, $selected, 'class="mt_10 category_list"');
@@ -134,7 +135,6 @@
                 <div id="delConfDialog" title="Confirm">
                     <p>Are you sure?</p>
                 </div>
-
 
                 <!-- message dialog box -->
                 <div id="msgDialog"><p></p></div>
