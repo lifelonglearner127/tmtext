@@ -41,7 +41,7 @@ $( function() {
                         $( '#ajaxLoadAni' ).fadeOut( 'slow' );
 
                         //--- update row in table with new values ---
-                        var title = $( 'tr#' + updateId + ' td' )[ 1 ];
+                        var title = $( 'tr#' + updateId + ' td' )[ 2 ];
 
                         $( title ).html( $( '#title' ).val() );
 
