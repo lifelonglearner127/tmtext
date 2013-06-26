@@ -262,7 +262,7 @@ class Research extends MY_Controller {
         if(count($customers) == 0){
             $customers = $this->customers_model->getAll();
         }
-        $customer_list = array(''=>'Customer');
+        $customer_list = array(''=>'All Customers');
         foreach($customers as $customer){
             array_push($customer_list, $customer->name);
         }
@@ -372,12 +372,14 @@ class Research extends MY_Controller {
         $this->load->model('customers_model');
         $customer_id = $this->customers_model->getIdByName($this->input->post('customer_name'));
         $batches = $this->batches_model->getAllByCustomer($customer_id);
-        if(count($batches) == 0){
+        if($this->input->post('customer_name') ==  "All Customers"){
             $batches = $this->batches_model->getAll();
         }
         $batches_list = array();
-        foreach($batches as $batch){
-            array_push($batches_list, $batch->title);
+        if(!empty($batches)){
+            foreach($batches as $batch){
+                array_push($batches_list, $batch->title);
+            }
         }
         $this->output->set_content_type('application/json')
             ->set_output(json_encode($batches_list));

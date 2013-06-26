@@ -493,6 +493,8 @@ $(document).ready(function () {
                 for(var i=0; i<data.length; i++){
                     $("select[name='batches']").append('<option>'+data[i]+'</option>');
                 }
+           } else if(data.length==0 && $("select[name='customers'] option:selected").text()!="All customers"){
+               $("select[name='batches']").empty();
            }
         });
     });
