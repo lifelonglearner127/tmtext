@@ -49,11 +49,11 @@
             <ul>
                 <li><h3>Metrics</h3></li>
                 <li><a href="javascript:void(0)">Site Metrics</a></li>
-                <li>Alexa: 156</li>
-                <li>SKUs: 1,278,400</li>
+                <li>Alexa: &nbsp;</li>
+                <li>SKUs: &nbsp;</li>
                 <li>&nbsp;</li>
                 <li><a href="javascript:void(0)">Page Metrics</a></li>
-                <li>SKU: KDL-55EX640</li>
+                <li>SKU: &nbsp;</li>
                 <li>&nbsp;</li>
                 <li style='margin-bottom: 5px;'><a href="javascript:void(0)">Keyword Metrics</a></li>
                 <li class='keywords_metrics_bl'>
