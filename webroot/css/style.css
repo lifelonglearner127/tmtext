@@ -179,7 +179,7 @@
 	display: inline-block;
 	overflow: hidden;
     text-overflow: clip;
-    white-space: normal;
+    white-space: nowrap;
     width: 45%;
 }
 .keywords_metrics_bl span {
