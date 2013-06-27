@@ -48,6 +48,16 @@
 
 	$(document).ready(function() {
 
+		$("#clientreg_form input[type=text], #clientreg_form input[type=password]").keypress(function() {
+			if(empty_check_validation()) {
+				$("#reg_form_sbm_btn").removeClass('disabled');
+				$("#reg_form_sbm_btn").removeAttr('disabled');
+				if(!$("#reg_form_sbm_btn").hasClass('btn-success')) {
+					$("#reg_form_sbm_btn").addClass('btn-success');
+				}
+			}
+		});
+
 		$("#clientreg_form input[type=text], #clientreg_form input[type=password]").blur(function() {
 			if(empty_check_validation()) {
 				$("#reg_form_sbm_btn").removeClass('disabled');
