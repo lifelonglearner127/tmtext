@@ -105,16 +105,25 @@
 			    $('#password_error').fadeIn();
 			}
 		} else {
-			var wrRegBaseUrl = base_url + 'index.php/auth/ajaxregwriter';
-			var obj = {
-				fname: fname,
-				email: email,
-				psw: psw
-			};
-			$.post(wrRegBaseUrl, obj, 'json').done(function(data) {
-				fullFormReset();
-		        console.log(data);
-		    });
+			var checkregEmailBaseUrl = base_url + 'index.php/auth/ajaxcheckregemail';
+			$.post(checkregEmailBaseUrl, {email: email}, 'json').done(function(data_c) {
+				if(data_c) {
+					var wrRegBaseUrl = base_url + 'index.php/auth/ajaxregwriter';
+					var obj = {
+						fname: fname,
+						email: email,
+						psw: psw
+					};
+					$.post(wrRegBaseUrl, obj, 'json').done(function(data) {
+						fullFormReset();
+						if(data) location.href = base_url + 'index.php/research';
+				    });
+				} else {
+					$('#email_error').text('such email already exists');
+				    $('#email_error').fadeOut();
+				    $('#email_error').fadeIn();
+				}
+			});
 		}
 		return false;
 	}

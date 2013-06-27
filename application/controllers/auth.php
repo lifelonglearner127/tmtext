@@ -29,6 +29,8 @@ class Auth extends MY_Controller {
 			'ajaxregclient' => true, // new stuff
 			'writereg' => true, // new stuff
 			'ajaxregwriter' => true // new stuff
+			'ajaxregwriter' => true, // new stuff
+			'ajaxcheckregemail' => true // mew stuff
   		));
 	}
 
@@ -64,6 +66,13 @@ class Auth extends MY_Controller {
 		}
 	}
 
+	function ajaxcheckregemail() {
+		$this->load->model('user_groups_model');
+		$email = $this->input->post('email');
+		$data = $this->user_groups_model->checkRegEmail($email);
+		$this->output->set_content_type('application/json')->set_output(json_encode($data));
+	}
+
 	/*
 	* New Client Registration
 	*/
@@ -71,9 +80,27 @@ class Auth extends MY_Controller {
 	function ajaxregclient() {
 		$fname = $this->input->post('fname');
 		$email = $this->input->post('email');
-		$psw = $this->input->post('psw');
-        $data = array('fname' => $fname, 'email' => $email, 'psw' => $psw);
-        $this->output->set_content_type('application/json')->set_output(json_encode($data));
+		$password = $this->input->post('psw');
+		$username = strtolower($fname);
+
+		$additional_data = array(
+			'first_name' => $fname,
+			'last_name'  => '',
+			'company'    => '',
+			'phone'      => '',
+		);
+
+
+        $data = array('fname' => $fname, 'email' => $email, 'psw' => $password);
+        $groups = array(4);
+        $this->ion_auth->register($username, $password, $email, $additional_data, $groups);
+        $res = false;
+        // ---- login user (start)
+        if ($this->ion_auth->login($email, $password)) {
+            $res = true;
+		} 
+        // ---- login end (start)
+        $this->output->set_content_type('application/json')->set_output(json_encode($res));
 	}
 
 	function clientreg() {
@@ -95,49 +122,6 @@ class Auth extends MY_Controller {
 		);
 		$this->render('login');
 	}
-	// function clientreg() {
-	// 	// --- validate form input
-	// 	$this->form_validation->set_rules('fname', $this->lang->line('create_user_validation_fname_label'), 'required|xss_clean');
-	// 	$this->form_validation->set_rules('email', $this->lang->line('create_user_validation_email_label'), 'required|valid_email');
-	// 	$this->form_validation->set_rules('password', $this->lang->line('create_user_validation_password_label'), 'required|min_length[' . $this->config->item('min_password_length', 'ion_auth') . ']|max_length[' . $this->config->item('max_password_length', 'ion_auth') . ']|matches[password_confirm]');
-
-	// 	if ($this->form_validation->run() == true) {
-	// 		die('OK2');
-	// 		$username = strtolower($this->input->post('fname'));
-	// 		$email    = $this->input->post('email');
-	// 		$password = $this->input->post('password');
-
-	// 		$additional_data = array(
-	// 			'first_name' => $this->input->post('fname'),
-	// 			'last_name'  => '',
-	// 			'company'    => '',
-	// 			'phone'      => '',
-	// 		);
-	// 	}
-	// 	if ($this->form_validation->run() == true && $this->ion_auth->register($username, $password, $email, $additional_data)) {
-	// 		die("OK");
-	// 		$this->session->set_flashdata('message', $this->ion_auth->messages());
-	// 		redirect("auth", 'refresh');
-	// 	} else {
-	// 		$this->data['fname'] = array('name' => 'fname',
-	// 			'id' => 'fname',
-	// 			'type' => 'text',
-	// 			'value' => $this->form_validation->set_value('fname'),
-	// 		);
-	// 		$this->data['email'] = array('name' => 'email',
-	// 			'id' => 'email',
-	// 			'type' => 'text',
-	// 			'value' => $this->form_validation->set_value('email'),
-	// 		);
-	// 		$this->data['password'] = array(
-	// 			'name'  => 'password',
-	// 			'id'    => 'password',
-	// 			'type'  => 'password',
-	// 			'value' => $this->form_validation->set_value('password'),
-	// 		);
-	// 		$this->render('login');
-	// 	}
-	// }
 
 	/*
 	* New Writer Registration
@@ -145,9 +129,27 @@ class Auth extends MY_Controller {
 	function ajaxregwriter() {
 		$fname = $this->input->post('fname');
 		$email = $this->input->post('email');
-		$psw = $this->input->post('psw');
-        $data = array('fname' => $fname, 'email' => $email, 'psw' => $psw);
-        $this->output->set_content_type('application/json')->set_output(json_encode($data));
+		$password = $this->input->post('psw');
+		$username = strtolower($fname);
+
+		$additional_data = array(
+			'first_name' => $fname,
+			'last_name'  => '',
+			'company'    => '',
+			'phone'      => '',
+		);
+
+
+        $data = array('fname' => $fname, 'email' => $email, 'psw' => $password);
+        $groups = array(5);
+        $this->ion_auth->register($username, $password, $email, $additional_data, $groups);
+        $res = false;
+        // ---- login user (start)
+        if ($this->ion_auth->login($email, $password)) {
+            $res = true;
+		} 
+        // ---- login end (start)
+        $this->output->set_content_type('application/json')->set_output(json_encode($res));
 	}
 
 	function writereg() {
