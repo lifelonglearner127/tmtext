@@ -59,7 +59,7 @@ input[type=text] {
 #updateDialog label {
     display: inline-block;
     text-align: right;
-    width: 90px;
+    width: 150px;
 }
 
 #updateDialog p {
@@ -69,6 +69,33 @@ input[type=text] {
     display: inline-block;
     text-align: right;
     width: 60px;
+}
+#updateDialog input, #updateDialog textarea, #updateDialog .uneditable-input {
+    width: 380px;
+}
+#updateDialog textarea {
+    height: 80px;
+}
+.ui-dialog .ui-dialog-buttonpane button.researchReviewUpdate {
+    background-color: #5BB75B;
+    background-image: linear-gradient(to bottom, #62C462, #51A351);
+    background-repeat: repeat-x;
+    border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);
+    color: #FFFFFF;
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.2) inset, 0 1px 2px rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+}
+.ui-dialog .ui-dialog-buttonpane button.researchReviewUpdate:hover,
+.ui-dialog .ui-dialog-buttonpane button.researchReviewUpdate:active,
+.ui-dialog .ui-dialog-buttonpane button.researchReviewUpdate.active,
+.ui-dialog .ui-dialog-buttonpane button.researchReviewUpdate.disabled,
+.ui-dialog .ui-dialog-buttonpane button.researchReviewUpdate[disabled] {
+    color: #FFFFFF;
+    background-color: #51a351;
+    background-position: 0 -13px;
+    text-decoration: none;
+    transition: background-position 0.1s linear 0s;
 }
 
 /* Validation label */

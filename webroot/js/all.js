@@ -25,46 +25,49 @@ $( function() {
     $( '#updateDialog' ).dialog({
         autoOpen: false,
         buttons: {
-            'Update': function() {
-                $( '#ajaxLoadAni' ).fadeIn( 'slow' );
-                $( this ).dialog( 'close' );
-                
-                $.ajax({
-                    url: updateHref,
-                    type: 'POST',
-                    data: $( '#updateDialog form' ).serialize(),
-                    
-                    success: function( response ) {
-                       $( '#msgDialog > p' ).html( response );
-                        $( '#msgDialog' ).dialog( 'option', 'title', 'Success' ).dialog( 'open' );
-                        
-                        $( '#ajaxLoadAni' ).fadeOut( 'slow' );
-                        
-                        //--- update row in table with new values ---
-                        var productname = $( 'tr#' + updateId + ' td' )[ 1 ];
-                        var url = $( 'tr#' + updateId + ' td' )[ 2 ];
-                        var short_description = $( 'tr#' + updateId + ' td' )[ 3];
-                        var long_description = $( 'tr#' + updateId + ' td' )[ 4 ];
+            'Update':
+                function() {
+                    $( '#ajaxLoadAni' ).fadeIn( 'slow' );
+                    $( this ).dialog( 'close' );
 
-                        $( productname ).html( $( '#product_name' ).val() );
-                        $( url ).html( $( '#url' ).val() );
-                        $( short_description ).html( $( '#short_description' ).val() );
-                        $( long_description ).html( $( '#long_description' ).val() );
-                        
-                        //--- clear form ---
-                        $( '#updateDialog form input' ).val( '' );
-                        
-                    } //end success
-                    
-                }); //end ajax()
+                    $.ajax({
+                        url: updateHref,
+                        type: 'POST',
+                        data: $( '#updateDialog form' ).serialize(),
+
+                        success: function( response ) {
+                           $( '#msgDialog > p' ).html( response );
+                            $( '#msgDialog' ).dialog( 'option', 'title', 'Success' ).dialog( 'open' );
+
+                            $( '#ajaxLoadAni' ).fadeOut( 'slow' );
+
+                            //--- update row in table with new values ---
+                            var productname = $( 'tr#' + updateId + ' td' )[ 1 ];
+                            var url = $( 'tr#' + updateId + ' td' )[ 2 ];
+                            var short_description = $( 'tr#' + updateId + ' td' )[ 3];
+                            var long_description = $( 'tr#' + updateId + ' td' )[ 4 ];
+
+                            $( productname ).html( $( '#product_name' ).val() );
+                            $( url ).html( $( '#url' ).val() );
+                            $( short_description ).html( $( '#short_description' ).val() );
+                            $( long_description ).html( $( '#long_description' ).val() );
+
+                            //--- clear form ---
+                            $( '#updateDialog form input' ).val( '' );
+
+                        } //end success
+
+                    }); //end ajax()
             },
             
             'Cancel': function() {
                 $( this ).dialog( 'close' );
             }
         },
-        width: '350px'
-    }); //end update dialog
+        width: '600px'
+    });
+
+    //end update dialog
     
     $( '#delConfDialog' ).dialog({
         autoOpen: false,
@@ -101,7 +104,7 @@ $( function() {
             } //end Yes
             
         } //end buttons
-        
+
     }); //end dialog
     
     $( '#records' ).delegate( 'a.updateBtn', 'click', function() {
@@ -124,8 +127,9 @@ $( function() {
                 
                 //--- assign id to hidden field ---
                 $( '#userId' ).val( updateId );
-                
+
                 $( '#updateDialog' ).dialog( 'open' );
+                $("#updateDialog").parent().find("div.ui-dialog-buttonpane button:first").addClass("researchReviewUpdate");
             }
         });
         
