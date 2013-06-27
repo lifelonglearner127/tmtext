@@ -195,7 +195,7 @@ class Auth extends MY_Controller {
                 $user_group = $this->user_groups_model->getRoleByUserId($this->ion_auth->get_user_id());
                 $group = $this->user_groups_model->getGroupById($user_group[0]->group_id);
                 $rules = unserialize($group[0]['auth_rules']);
-                $checked_controllers = array('research', 'editor', 'validate', 'measure', 'customer');
+                $checked_controllers = array('research', 'editor', 'measure', 'customer');
                 $checked = array();
                 foreach ($checked_controllers as $checked_controller) {
                     if($rules[$checked_controller]['index']){
