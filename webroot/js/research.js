@@ -16,8 +16,8 @@ function getSearchResult(){
             var str = '';
             var desc = '';
             for(var i=0; i < data.length; i++){
-                str += '<li id="'+data[i].imported_data_id+'"><span class="product_name">'+data[i].product_name.substr(0, 23)+
-                    '...</span><span class="url">'+data[i].url.substr(0, 27)+'...</span></li>';
+                str += '<li id="'+data[i].imported_data_id+'"><span class="product_name">'+data[i].product_name+
+                    '</span><span class="url">'+data[i].url+'</span></li>';
                 desc +=  '<li id="'+data[i].imported_data_id+'_name">'+data[i].product_name+'</li>';
                 desc +=  '<li id="'+data[i].imported_data_id+'_url">'+data[i].url+'</li>';
                 desc +=  '<li id="'+data[i].imported_data_id+'_desc">'+data[i].description+'</li>';
@@ -194,20 +194,6 @@ $(document).ready(function () {
             var id = $(this).attr('id');
             var name_txt = $('ul#product_descriptions li#'+id+'_name').text();
             var url_txt = $('ul#product_descriptions li#'+id+'_url').text();
-            var $target = $(e.target);
-            if( $target.is("span.url")) {
-                if($.trim($target.text()) == $.trim(url_txt)){
-                    $target.text(url_txt.substr(0, 27)+'...');
-                }else{
-                    $target.text(url_txt);
-                }
-            } else if( $target.is("span.product_name")) {
-                if($.trim($target.text()) == $.trim(name_txt)){
-                    $target.text(name_txt.substr(0, 23)+'...');
-                }else{
-                    $target.text(name_txt);
-                }
-            }
             $("#research_products li").each(function(){
                 $(this).css({'background':'none'});
                 $(this).removeClass('current_selected');
@@ -498,6 +484,14 @@ $(document).ready(function () {
            }
         });
     });
+
+    $(document).on("click", "#research_products span", function() {
+        if($(this).css('white-space') == 'normal') {
+            $(this).parent().find('span').css('white-space', 'nowrap');
+        } else {
+            $(this).parent().find('span').css('white-space', 'normal');
+        }
+    });
     /*----------------------------Research batches--------------------------------------------*/
 
     $(document).on("change", 'select[name="research_batches"]', function() {
@@ -587,7 +581,6 @@ $(document).ready(function () {
 
         });
     });*/
-
 
 });
 

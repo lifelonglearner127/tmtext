@@ -1121,6 +1121,11 @@ p.show_ballons input{
     vertical-align: top;
     word-wrap: break-word;
 }
+#research_products li span{
+    overflow: hidden;
+    text-overflow: clip;
+    white-space: nowrap;
+}
 
 #related_keywords li span{
     display: inline-block;
