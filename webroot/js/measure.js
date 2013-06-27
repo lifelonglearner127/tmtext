@@ -256,6 +256,7 @@ var keywordsAnalyzerBaseUrl = base_url+"index.php/measure/analyzekeywords";
 
 var editorSearchAllBaseUrl = base_url+"index.php/measure/searchmeasuredball";
 function startMeasureCompareV2() {
+    $(".ui-autocomplete").hide();
     var s = $.trim($("#compare_text").val());
     var sl = $.trim($(".dd-selected-value").val());
     var cat = $("#cats_an").val();
