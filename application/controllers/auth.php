@@ -24,7 +24,11 @@ class Auth extends MY_Controller {
   			'login' => true,
 			'logout' => true,
 			'forgot_password' => true,
-			'reset_auth_rules' => true
+			'reset_auth_rules' => true,
+			'clientreg' => true, // new stuff
+			'ajaxregclient' => true, // new stuff
+			'writereg' => true, // new stuff
+			'ajaxregwriter' => true // new stuff
   		));
 	}
 
@@ -58,6 +62,112 @@ class Auth extends MY_Controller {
 			//$this->_render_page('auth/index', $this->data);
 			$this->render();
 		}
+	}
+
+	/*
+	* New Client Registration
+	*/
+
+	function ajaxregclient() {
+		$fname = $this->input->post('fname');
+		$email = $this->input->post('email');
+		$psw = $this->input->post('psw');
+        $data = array('fname' => $fname, 'email' => $email, 'psw' => $psw);
+        $this->output->set_content_type('application/json')->set_output(json_encode($data));
+	}
+
+	function clientreg() {
+		$this->data['fname'] = array('name' => 'fname',
+			'id' => 'fname',
+			'type' => 'text',
+			'value' => ''
+		);
+		$this->data['email'] = array('name' => 'email',
+			'id' => 'email',
+			'type' => 'text',
+			'value' => ''
+		);
+		$this->data['password'] = array(
+			'name'  => 'password',
+			'id'    => 'password',
+			'type'  => 'password',
+			'value' => ''
+		);
+		$this->render('login');
+	}
+	// function clientreg() {
+	// 	// --- validate form input
+	// 	$this->form_validation->set_rules('fname', $this->lang->line('create_user_validation_fname_label'), 'required|xss_clean');
+	// 	$this->form_validation->set_rules('email', $this->lang->line('create_user_validation_email_label'), 'required|valid_email');
+	// 	$this->form_validation->set_rules('password', $this->lang->line('create_user_validation_password_label'), 'required|min_length[' . $this->config->item('min_password_length', 'ion_auth') . ']|max_length[' . $this->config->item('max_password_length', 'ion_auth') . ']|matches[password_confirm]');
+
+	// 	if ($this->form_validation->run() == true) {
+	// 		die('OK2');
+	// 		$username = strtolower($this->input->post('fname'));
+	// 		$email    = $this->input->post('email');
+	// 		$password = $this->input->post('password');
+
+	// 		$additional_data = array(
+	// 			'first_name' => $this->input->post('fname'),
+	// 			'last_name'  => '',
+	// 			'company'    => '',
+	// 			'phone'      => '',
+	// 		);
+	// 	}
+	// 	if ($this->form_validation->run() == true && $this->ion_auth->register($username, $password, $email, $additional_data)) {
+	// 		die("OK");
+	// 		$this->session->set_flashdata('message', $this->ion_auth->messages());
+	// 		redirect("auth", 'refresh');
+	// 	} else {
+	// 		$this->data['fname'] = array('name' => 'fname',
+	// 			'id' => 'fname',
+	// 			'type' => 'text',
+	// 			'value' => $this->form_validation->set_value('fname'),
+	// 		);
+	// 		$this->data['email'] = array('name' => 'email',
+	// 			'id' => 'email',
+	// 			'type' => 'text',
+	// 			'value' => $this->form_validation->set_value('email'),
+	// 		);
+	// 		$this->data['password'] = array(
+	// 			'name'  => 'password',
+	// 			'id'    => 'password',
+	// 			'type'  => 'password',
+	// 			'value' => $this->form_validation->set_value('password'),
+	// 		);
+	// 		$this->render('login');
+	// 	}
+	// }
+
+	/*
+	* New Writer Registration
+	*/
+	function ajaxregwriter() {
+		$fname = $this->input->post('fname');
+		$email = $this->input->post('email');
+		$psw = $this->input->post('psw');
+        $data = array('fname' => $fname, 'email' => $email, 'psw' => $psw);
+        $this->output->set_content_type('application/json')->set_output(json_encode($data));
+	}
+
+	function writereg() {
+		$this->data['fname'] = array('name' => 'fname',
+			'id' => 'fname',
+			'type' => 'text',
+			'value' => ''
+		);
+		$this->data['email'] = array('name' => 'email',
+			'id' => 'email',
+			'type' => 'text',
+			'value' => ''
+		);
+		$this->data['password'] = array(
+			'name'  => 'password',
+			'id'    => 'password',
+			'type'  => 'password',
+			'value' => ''
+		);
+		$this->render('login');
 	}
 
 	//log the user in

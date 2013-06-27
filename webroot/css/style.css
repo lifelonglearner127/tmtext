@@ -1,4 +1,25 @@
+/* --- OVERALL LOGIN FORM ADDITION (START) --- */
+.add_login_lnk {
+	float: left;
+	width: 100%;
+	margin-top: 15px;
+}
+.add_login_lnk .add_login_lnk_left {
+	float: left;
+	padding-left: 5px;
+}
+.add_login_lnk .add_login_lnk_right {
+	float: right;
+	padding-right: 5px;	
+}
+/* --- OVERALL LOGIN FORM ADDITION (END) --- */
+
 /* Basic style */
+
+.form_hb_error {
+	display: none;
+	color: red;
+}
 
 .ui-autocomplete li a {
 	max-width: 500px !important;
