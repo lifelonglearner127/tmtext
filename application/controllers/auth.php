@@ -28,7 +28,7 @@ class Auth extends MY_Controller {
 			'clientreg' => true, // new stuff
 			'ajaxregclient' => true, // new stuff
 			'writereg' => true, // new stuff
-			'ajaxregwriter' => true // new stuff
+			'ajaxregwriter' => true, // new stuff
 			'ajaxregwriter' => true, // new stuff
 			'ajaxcheckregemail' => true // mew stuff
   		));
