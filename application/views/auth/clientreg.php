@@ -30,7 +30,7 @@
 					<div class="control-group">
 						<label class='control-label'>&nbsp;</label>
 						<div class="controls">
-							By clicking below you agree to the<br/><a href='javascript:void(0)'>Terms of Secure</a>
+							By clicking below you agree to the<br/><a href='javascript:void(0)'>Terms of Service</a>
 						</div>
 					</div>
 					<div class="control-group">
@@ -97,7 +97,8 @@
 		var fname = $.trim($("#fname").val());
 		var email = $.trim($("#email").val());
 		var psw = $.trim($("#password").val());
-		var email_pattern = /^([a-z0-9_\-]+\.)*[a-z0-9_\-]+@([a-z0-9][a-z0-9\-]*[a-z0-9]\.)+[a-z]{2,4}$/i;
+		// var email_pattern = /^([a-z0-9_\-]+\.)*[a-z0-9_\-]+@([a-z0-9][a-z0-9\-]*[a-z0-9]\.)+[a-z]{2,4}$/i;
+		var email_pattern = /^([a-z0-9_\-]+\.\+)*[a-z0-9_\-\+]+@([a-z0-9][a-z0-9\-]*[a-z0-9]\.)+[a-z]{2,4}$/i;
 		if(fname === '' || !email_pattern.test(email) || (psw.length < 8 || psw.length > 20)) {
 			if(fname === '') {
 				$('#fname_error').text('field can not be empty');
@@ -105,7 +106,7 @@
 			    $('#fname_error').fadeIn();
 			}
 			if(!email_pattern.test(email)) {
-				$('#email_error').text('illegal email format');
+				$('#email_error').text('invalid email format');
 			    $('#email_error').fadeOut();
 			    $('#email_error').fadeIn();
 			}
