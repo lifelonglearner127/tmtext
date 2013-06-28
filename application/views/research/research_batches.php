@@ -1,3 +1,4 @@
+<div class="main_content_other"></div>
 <div class="tabbable">
     <ul class="nav nav-tabs jq-research-tabs">
         <li class=""><a data-toggle="tab" href="<?php echo site_url('research');?>">Edit</a></li>

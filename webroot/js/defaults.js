@@ -629,7 +629,7 @@ jQuery(document).ready(function($) {
                         data: ddData_first,
                         defaultSelectedIndex: 0,
                         width:w_el_dr,
-                        selectText: "Select your favorite social network",
+                        selectText: "Select",
                         truncateDescription: true,
                     });
                 }
@@ -781,7 +781,7 @@ jQuery(document).ready(function($) {
                 data: ddData_first,
                 defaultSelectedIndex: 0,
                 width:104,
-                selectText: "Select your favorite social network",
+                selectText: "Select",
                 truncateDescription: true,
             });
         });

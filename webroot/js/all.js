@@ -7,21 +7,21 @@ var readUrl   = base_url + 'index.php/research/get_research_info',
 
 
 $( function() {
-    
+
     $( '#tabs' ).tabs({
         fx: { height: 'toggle', opacity: 'toggle' }
     });
     readResearchData();
     $( '#msgDialog' ).dialog({
         autoOpen: false,
-        
+
         buttons: {
             'Ok': function() {
                 $( this ).dialog( 'close' );
             }
         }
     });
-    
+
     $( '#updateDialog' ).dialog({
         autoOpen: false,
         buttons: {
@@ -59,7 +59,7 @@ $( function() {
 
                     }); //end ajax()
             },
-            
+
             'Cancel': function() {
                 $( this ).dialog( 'close' );
             }
@@ -68,63 +68,63 @@ $( function() {
     });
 
     //end update dialog
-    
+
     $( '#delConfDialog' ).dialog({
         autoOpen: false,
-        
+
         buttons: {
             'No': function() {
                 $( this ).dialog( 'close' );
             },
-            
+
             'Yes': function() {
                 //display ajax loader animation here...
                 $( '#ajaxLoadAni' ).fadeIn( 'slow' );
-                
+
                 $( this ).dialog( 'close' );
-                
+
                 $.ajax({
                     url: delHref,
-                    
+
                     success: function( response ) {
                         //hide ajax loader animation here...
                         $( '#ajaxLoadAni' ).fadeOut( 'slow' );
-                        
+
                         $( '#msgDialog > p' ).html( response );
                         $( '#msgDialog' ).dialog( 'option', 'title', 'Success' ).dialog( 'open' );
-                        
+
                         $( 'a[href=' + delHref + ']' ).parents( 'tr' )
                         .fadeOut( 'slow', function() {
                             $( this ).remove();
                         });
-                        
+
                     } //end success
                 });
-                
+
             } //end Yes
-            
+
         } //end buttons
 
     }); //end dialog
-    
+
     $( '#records' ).delegate( 'a.updateBtn', 'click', function() {
         updateHref = $( this ).attr( 'href' );
         updateId = $( this ).parents( 'tr' ).attr( "id" );
-        
+
         $( '#ajaxLoadAni' ).fadeIn( 'slow' );
-        
+
         $.ajax({
             url: base_url + 'index.php/research/getById/' + updateId,
             dataType: 'json',
-            
+
             success: function( response ) {
                 $( '#product_name' ).val( response[0].product_name );
                 $( '#url' ).val( response[0].url );
                 $( '#short_description' ).val( response[0].short_description );
                 $( '#long_description' ).val( response[0].long_description);
-                
+
                 $( '#ajaxLoadAni' ).fadeOut( 'slow' );
-                
+
                 //--- assign id to hidden field ---
                 $( '#userId' ).val( updateId );
 
@@ -132,27 +132,27 @@ $( function() {
                 $("#updateDialog").parent().find("div.ui-dialog-buttonpane button:first").addClass("researchReviewUpdate");
             }
         });
-        
+
         return false;
     }); //end update delegate
-    
+
     $( '#records' ).delegate( 'a.deleteBtn', 'click', function() {
         delHref = $( this ).attr( 'href' );
-        
+
         $( '#delConfDialog' ).dialog( 'open' );
-        
+
         return false;
-    
+
     }); //end delete delegate
-    
-    
+
+
     // --- Create Record with Validation ---
     /*$( '#create form' ).validate({
         rules: {
             cName: { required: true },
             cEmail: { required: true, email: true }
         },
-        
+
         /*
         //uncomment this block of code if you want to display custom messages
         messages: {
@@ -163,22 +163,22 @@ $( function() {
             }
         },
         /
-        
+
         submitHandler: function( form ) {
             $( '#ajaxLoadAni' ).fadeIn( 'slow' );
-            
+
             $.ajax({
                 url: 'index.php/home/create',
                 type: 'POST',
                 data: $( form ).serialize(),
-                
+
                 success: function( response ) {
                     $( '#msgDialog > p' ).html( 'New user created successfully!' );
                     $( '#msgDialog' ).dialog( 'option', 'title', 'Success' ).dialog( 'open' );
-                    
+
                     //clear all input fields in create form
                     $( 'input', this ).val( '' );
-                    
+
                     //refresh list of users by reading it
                     dataTable.fnAddData([
                         response,
@@ -186,18 +186,18 @@ $( function() {
                         $( '#cEmail' ).val(),
                         '<a class="updateBtn" href="' + updateUrl + '/' + response + '">Update</a> | <a class="deleteBtn" href="' + delUrl + '/' + response + '">Delete</a>'
                     ]);
-                    
+
                     //open Read tab
                     $( '#tabs' ).tabs( 'select', 0 );
-                    
+
                     $( '#ajaxLoadAni' ).fadeOut( 'slow' );
                 }
             });
-            
+
             return false;
         }
     });*/
-    
+
 }); //end document ready
 
 
@@ -208,7 +208,7 @@ function readResearchData() {
     $.ajax({
         url: readUrl,
         dataType: 'json',
-        data:{'choosen_batch': $('#research_tab2 select[name="research_batches"] option:selected').text(),
+        data:{'choosen_batch': $('select[name="research_batches"]').find('option:selected').text(),
             'search_text': $('input[name="research_batches_text"]').val()},
         success: function( response ) {
 

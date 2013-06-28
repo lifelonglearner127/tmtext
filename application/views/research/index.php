@@ -147,17 +147,16 @@ $(document).ready(function() {
         }
         content += '</ul></div>';
 
-    }, 'json');
+    }, 'json');*/
 
-    setMovement();*/
+    setMovement();
 
 
 
 });
 </script>
-<div class="main_content_other"></div>
-<div class="tabbable main_content_editor">
-    <ul class="nav nav-tabs jq-system-tabs">
+<div class="tabbable">
+    <ul class="nav nav-tabs jq-research-tabs">
         <li class="active"><a data-toggle="tab" href="<?php echo site_url('research');?>">Edit</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('research/research_batches');?>">Review</a></li>
     </ul>
