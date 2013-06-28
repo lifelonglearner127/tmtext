@@ -986,7 +986,7 @@ p.show_ballons input{
     border-radius: 5px;
     margin: 5px;
     background: #fff;
-    z-index: ;0000;
+    z-index: 0000;
 }
 
 #research_edit {
@@ -1212,6 +1212,7 @@ label.dd-selected-text, label.dd-option-text{
 
 .research_arrow{
     float: right;
+    margin: 7px 6px 0 0;
 }
 
 .research_batches input{
