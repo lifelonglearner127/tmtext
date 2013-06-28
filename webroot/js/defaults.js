@@ -582,7 +582,6 @@ jQuery(document).ready(function($) {
     $(document).on("click", ".left_nav_content li a, .right_nav_content li a", function(e){
         e.preventDefault();
         if($(this).parent().hasClass('active')){
-            console.log('active');
             if($(this).hasClass('jq-measure')){
                 $('title').text("Competitive Intelligence");
             }
@@ -601,7 +600,6 @@ jQuery(document).ready(function($) {
             $(".left_nav_content li, .right_nav_content li").removeClass('active');
             $(this).parent('li').addClass('active');
         }else{
-            console.log('not-active');
             if($(this).hasClass('jq-validate')){
                 $('title').text("Validate");
             }else if($(this).hasClass('jq-research')){
@@ -610,9 +608,7 @@ jQuery(document).ready(function($) {
             var url = $(this).attr('href');
             var posting = $.post(url+"?ajax=true", function(data) {
                 var response_data = $.parseJSON( data );
-                console.log(response_data);
                 $('.main_content_other').html(response_data.ajax_data);
-                console.log($('.main_content_other').html());
             });
             $(".left_nav_content li, .right_nav_content li").removeClass('active');
             $(this).parent('li').addClass('active');

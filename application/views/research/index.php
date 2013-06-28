@@ -155,14 +155,14 @@ $(document).ready(function() {
 
 });
 </script>
-<!-- <div class="main_content_other"></div> -->
-<div class="tabbable">
+<div class="main_content_other"></div>
+<div class="tabbable main_content_editor">
     <ul class="nav nav-tabs jq-system-tabs">
         <li class="active"><a data-toggle="tab" href="<?php echo site_url('research');?>">Edit</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('research/research_batches');?>">Review</a></li>
     </ul>
     <div class="tab-content">
-    <div class="main_content_editor research">
+    <div class="research">
         
         <!-- NEW STUFF (START) -->
         <div class="row-fluid">
