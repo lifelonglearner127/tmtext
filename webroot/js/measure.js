@@ -59,19 +59,19 @@ function ciCustomersGridsLoader() {
     });
 }
 // ---- search string cookie (auto mode search launcher) (start)
-var auto_mode_search_str = "";
-var cookie_search_str = $.cookie('com_intel_search_str');
-if(typeof(cookie_search_str) !== 'undefined' && cookie_search_str !== null && cookie_search_str !== "") {
-    auto_mode_search_str = cookie_search_str;
-}
-if(auto_mode_search_str !== "") {
-    $("#compare_text").val(auto_mode_search_str);
-    $("#an_search").attr('disabled', true);
-    setTimeout(function() {
-        $("#measureFormMetrics").trigger('submit');
-        $("#an_search").removeAttr('disabled');
-    }, 2500);
-}
+// var auto_mode_search_str = "";
+// var cookie_search_str = $.cookie('com_intel_search_str');
+// if(typeof(cookie_search_str) !== 'undefined' && cookie_search_str !== null && cookie_search_str !== "") {
+//     auto_mode_search_str = cookie_search_str;
+// }
+// if(auto_mode_search_str !== "") {
+//     $("#compare_text").val(auto_mode_search_str);
+//     $("#an_search").attr('disabled', true);
+//     setTimeout(function() {
+//         $("#measureFormMetrics").trigger('submit');
+//         $("#an_search").removeAttr('disabled');
+//     }, 2500);
+// }
 // ---- search string cookie (auto mode search launcher) (end)
 
 var measureAnalyzerAttrBaseUrl = base_url+"index.php/measure/attributesmeasure";

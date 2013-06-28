@@ -230,5 +230,20 @@
     });
     // --- CI search term autocomplete (end)
 
+    // ---- search string cookie (auto mode search launcher) (start)
+    var auto_mode_search_str = "";
+    var cookie_search_str = $.cookie('com_intel_search_str');
+    if(typeof(cookie_search_str) !== 'undefined' && cookie_search_str !== null && cookie_search_str !== "") {
+        auto_mode_search_str = cookie_search_str;
+    }
+    if(auto_mode_search_str !== "") {
+        $("#compare_text").val(auto_mode_search_str);
+        setTimeout(function() {
+            $("#an_search").removeAttr('disabled');
+            startMeasureCompareV2();
+        }, 2500);
+    }
+    // ---- search string cookie (auto mode search launcher) (end)
+
 </script>
 
