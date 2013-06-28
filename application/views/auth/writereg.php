@@ -130,7 +130,7 @@
 						if(data) location.href = base_url + 'index.php/research';
 				    });
 				} else {
-					$('#email_error').text('such email already exists');
+					$('#email_error').text('that email already exists');
 				    $('#email_error').fadeOut();
 				    $('#email_error').fadeIn();
 				}

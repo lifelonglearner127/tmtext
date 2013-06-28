@@ -284,7 +284,11 @@ function startMeasureCompareV2() {
         $("#an_products_box").fadeIn();
         var w = $('ul#products li:first-child span:first-child').width();
         $('#an_sort_search_box .product_title .main span:first-child').width(w);
+        setTimeout(function() {
+            if($(".ui-autocomplete").is(':visible')) $(".ui-autocomplete").hide();
+        }, 1000);
     });
+
     return false;
 }
 
