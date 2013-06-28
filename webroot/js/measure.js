@@ -256,6 +256,13 @@ var keywordsAnalyzerBaseUrl = base_url+"index.php/measure/analyzekeywords";
 
 var editorSearchAllBaseUrl = base_url+"index.php/measure/searchmeasuredball";
 function startMeasureCompareV2() {
+    // ---- LIMIT DETECTION (START)
+    var limit = 0;
+    if($(".ui-autocomplete").is(':visible')) {
+        limit = $(".ui-autocomplete > li").length;
+    }
+    // ---- LIMIT DETECTION (END)
+
     $(".ui-autocomplete").hide();
     var s = $.trim($("#compare_text").val());
     var sl = $.trim($(".dd-selected-value").val());
@@ -271,7 +278,7 @@ function startMeasureCompareV2() {
         }
     }
     // --- record search term to cookie storage (end)
-    var searcher_all = $.post(editorSearchAllBaseUrl, { s: s, sl: sl, cat: cat }, 'html').done(function(data) {
+    var searcher_all = $.post(editorSearchAllBaseUrl, { s: s, sl: sl, cat: cat, limit: limit }, 'html').done(function(data) {
         $("#an_products_box").html(data);
         $("#an_products_box").fadeOut();
         $("#an_products_box").fadeIn();

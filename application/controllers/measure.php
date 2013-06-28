@@ -146,12 +146,17 @@ class Measure extends MY_Controller {
         $s = $this->input->post('s');
         $sl = $this->input->post('sl');
         $cat_id = $this->input->post('cat');
+        $limit = $this->input->post('limit');
         $this->load->model('imported_data_parsed_model');
         $data = array(
             'search_results' => array()
         );
 
-        $data_import = $this->imported_data_parsed_model->getData($s, $sl, $cat_id);
+        if($limit !== 0) {
+            $data_import = $this->imported_data_parsed_model->getData($s, $sl, $cat_id, $limit);
+        } else {
+            $data_import = $this->imported_data_parsed_model->getData($s, $sl, $cat_id);
+        }
 
         if (empty($data_import)) {
             $this->load->library('PageProcessor');

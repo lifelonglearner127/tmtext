@@ -224,7 +224,7 @@
         source: autocomplete_ci_baseurl,
         minChars: 3,
         deferRequestBy: 300,
-        select: function(event, ui) {
+        select: function(event, ui) { 
             startMeasureCompareV2();
         }
     });
