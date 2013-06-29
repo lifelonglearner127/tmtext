@@ -1,3 +1,16 @@
+/* --- PRODUCT MATCH TAB (START) --- */
+.pm_data_table {
+	width: 100%;
+}
+.pm_data_table tr td {
+	padding-left: 10px;
+	padding-right: 10px; 
+}
+.pm_data_table .pm_data_table_tinput {
+	width: 100%;
+}
+/* --- PRODUCT MATCH TAB (END) --- */
+
 /* --- OVERALL LOGIN FORM ADDITION (START) --- */
 .add_login_lnk {
 	float: left;
