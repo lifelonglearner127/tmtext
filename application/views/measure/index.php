@@ -219,15 +219,17 @@
 <script type='text/javascript'>
 
     // --- CI search term autocomplete (start)
-    var autocomplete_ci_baseurl = base_url + 'index.php/measure/cisearchteram';
-    $("#compare_text").autocomplete({
-        source: autocomplete_ci_baseurl,
-        minChars: 3,
-        deferRequestBy: 300,
-        select: function(event, ui) { 
-            startMeasureCompareV2();
-        }
-    });
+    setTimeout(function() {
+        var autocomplete_ci_baseurl = base_url + 'index.php/measure/cisearchteram';
+        $("#compare_text").autocomplete({
+            source: autocomplete_ci_baseurl + "?sl=" + $("#ci_dropdown .dd-selected-value").val() + "&cat=" +  $("#cats_an > option:selected").val(),
+            minChars: 3,
+            deferRequestBy: 300,
+            select: function(event, ui) { 
+                startMeasureCompareV2();
+            }
+        });
+    }, 1000);
     // --- CI search term autocomplete (end)
 
     // ---- search string cookie (auto mode search launcher) (start)
