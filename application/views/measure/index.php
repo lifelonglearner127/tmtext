@@ -229,6 +229,19 @@
                 startMeasureCompareV2();
             }
         });
+
+        // $("#cats_an").change(function() {
+        //     $("#compare_text").autocomplete('destroy');
+        //     $("#compare_text").autocomplete({
+        //         source: autocomplete_ci_baseurl + "?sl=" + $("#ci_dropdown .dd-selected-value").val() + "&cat=" +  $("#cats_an > option:selected").val(),
+        //         minChars: 3,
+        //         deferRequestBy: 300,
+        //         select: function(event, ui) { 
+        //             startMeasureCompareV2();
+        //         }
+        //     });
+        // });
+
     }, 1000);
     // --- CI search term autocomplete (end)
 

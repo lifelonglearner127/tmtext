@@ -131,6 +131,10 @@ class System extends MY_Controller {
         $this->load->view('system/getcompareproducts', $data);
 	}
 
+	public function system_productsmatch() {
+		$this->render();
+	}
+
 	public function system_compare() {
 		$this->load->model('imported_data_parsed_model');
 		$this->data['all_products'] = $this->imported_data_parsed_model->getAllProducts();
