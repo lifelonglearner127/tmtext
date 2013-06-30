@@ -33,11 +33,15 @@
     				<td><input class='pm_data_table_tinput pmtt_url' type='text' placeholder='Type URL'></td>
     				<td><input class='pm_data_table_tinput pmtt_sku' type='text' placeholder='Type SKU'></td>
 				</tr>
+			</tbody>
+		</table>
+		<table class='pm_data_table'>
+			<tbody>
 				<tr>
-    				<td colspan='2'>
-    					<button type='button' id="pm_tab_newrow_btn" class='btn btn-primary' onclick='addNewProductMatchRow();'>Add New Row</button>
+					<td>
+						<button type='button' id="pm_tab_newrow_btn" class='btn btn-primary' onclick='addNewProductMatchRow();'>Add New Row</button>
     					<button type='button' id="pm_tab_save_btn" class='btn disabled' disabled='true' onclick='saveProductMatch();'>Save</button>
-    				</td>
+					</td>
 				</tr>
 			</tbody>
 		</table>
@@ -82,7 +86,16 @@
 	});
 	
 	function addNewProductMatchRow() {
-		alert('ADD NEW ROW PLACEHOLDER');
+		var new_line = "";
+		new_line = "<tr>";
+			new_line += "<td>";
+				new_line += "<input type='text' class='pm_data_table_tinput pmtt_url' placeholder='Type URL' />";
+			new_line += "</td>";
+			new_line += "<td>";
+				new_line += "<input type='text' class='pm_data_table_tinput pmtt_sku' placeholder='Type SKU' />";
+			new_line += "</td>";
+		new_line += "</tr>";
+		$("#pm_data_table > tbody").append($(new_line));
 	}
 
 	function saveProductMatch() {
