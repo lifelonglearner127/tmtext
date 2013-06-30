@@ -24,9 +24,10 @@
 
 	<script type='text/javascript'>var base_url = '<?php echo base_url();?>';</script>
     <script src="<?php echo base_url();?>js/jsdiff.js"></script>
-	<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
+	<!--<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>-->
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
 	<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
-	<!--<script src="<?php echo base_url();?>js/bootstrap.min.js"></script>-->
+	<script src="<?php echo base_url();?>js/bootstrap.min.js"></script>
 	<script src="<?php echo base_url();?>js/underscore.js"></script>
     <script src="<?php echo base_url();?>js/jquery.scrollTo-1.4.3.1.js"></script>
     <script src="<?php echo base_url();?>js/jquery.fancybox.js"></script>
