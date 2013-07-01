@@ -142,17 +142,27 @@
 			$("#pm_data_table tr").each(function(index, value) {
 				var url = $.trim($(value).find('.pmtt_url').val());
 				var sku = $.trim($(value).find('.pmtt_sku').val());
-				if(url !== "" && sku !== "") {
+				if(url === "" && sku === "") {
+					
+				} else {
 					var mid = {
-						'status': false,
+						'status_all': false,
+						'status_url': false,
+						'status_sku': false,
 						'index': index,
 						'url': '',
 						'sku': ''
 					};
 					if(validate_url(url) && sku !== "") {
-						mid['status'] = true;
+						mid['status_all'] = true;
 						mid['url'] = url;
 						mid['sku'] = sku;
+					}
+					if(validate_url(url)) {
+						mid['status_url'] = true;
+					}
+					if(sku !== "") {
+						mid['status_sku'] = true;
 					}
 					crawl_stack.push(mid);
 				}
@@ -161,18 +171,32 @@
 			if(crawl_stack.length > 0) {
 				var tr_res = true;
 				for(var i = 0; i < crawl_stack.length; i++) {
-					if(crawl_stack[i]['status'] !== true) {
+					if(crawl_stack[i]['status_all'] !== true) {
 						tr_res = false;
 						break;
 					}
 				}
 				if(tr_res) { // --- all ok, ready for send to backend
 					outputNotice('Success', 'Crawl objects ready for backend');
-				} else { // ---- not ready, some mistakes
+				} else { // ---- not ready, some mistakes in rows
+					// --- highlight mistakes (start)
+					for(var i=0; i < crawl_stack.length; i++) {
+						if(crawl_stack[i]['status_all'] === false) {
+							if(crawl_stack[i]['status_url'] === false) {
+								var url_error = $("#pm_data_table tr")[crawl_stack[i]['index']];
+								$(url_error).find('.pmtt_url').addClass('error');
+							}
+							if(crawl_stack[i]['status_sku'] === false) {
+								var url_error = $("#pm_data_table tr")[crawl_stack[i]['index']];
+								$(url_error).find('.pmtt_sku').addClass('error');
+							}
+						}
+					}
+					// --- highlight mistakes (end)
 					outputNotice('Fail', 'Check out some mistakes');
 				} 
 			} else {
-				outputNotice('Fail', 'All rows are empty');
+				outputNotice('Notice', 'All rows are empty');
 			}
 			// --- travel through results (end)
 			// console.log("RESULT: ", crawl_stack);

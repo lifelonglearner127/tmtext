@@ -9,6 +9,11 @@
 .pm_data_table .pm_data_table_tinput {
 	width: 100%;
 }
+
+.pm_data_table .pm_data_table_tinput.error {
+	border-color: red;
+	color: red;
+}
 /* --- PRODUCT MATCH TAB (END) --- */
 
 /* --- OVERALL LOGIN FORM ADDITION (START) --- */
