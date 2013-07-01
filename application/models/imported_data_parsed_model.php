@@ -361,7 +361,7 @@ class Imported_data_parsed_model extends CI_Model {
         //     foreach ($this->manu as $km => $vm) {
         //         if( (strpos($result->value, $vm) !== false) || (strpos($result->value, strtoupper($vm)) !== false) || strpos($result->value, ucfirst($vm)) !== false ) {
         //             $manu = $vm;
-        //             break; 
+        //             break;
         //         }
         //     }
         //     $query = $this->db->where('imported_data_id', $result->imported_data_id)->get($this->tables['imported_data_parsed']);
@@ -370,7 +370,7 @@ class Imported_data_parsed_model extends CI_Model {
         //     $long_description = '';
         //     $url = '';
         //     foreach($res as $val) {
-        //         if($val['key'] == 'URL') { 
+        //         if($val['key'] == 'URL') {
         //             $url = $val['value'];
         //             $customer = '';
         //             $cus_val = "";
@@ -379,7 +379,7 @@ class Imported_data_parsed_model extends CI_Model {
         //                     $cus_val  = $vi;
         //                 }
         //             }
-        //             if($cus_val !== "") $customer = $cus_val; 
+        //             if($cus_val !== "") $customer = $cus_val;
         //         }
         //         if($val['key'] == 'Description') { $description = $val['value']; }
         //         if($val['key'] == 'Long_Description') { $long_description = $val['value']; }
@@ -759,6 +759,9 @@ class Imported_data_parsed_model extends CI_Model {
             }
             if($result->key === 'Long_Description') {
                 $data['long_description'] = $result->value;
+            }
+        	if($result->key === 'Features') {
+                $data['features'] = $result->value;
             }
         }
         if(count($data) > 0) {

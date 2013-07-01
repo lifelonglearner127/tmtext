@@ -78,8 +78,8 @@ class Measure extends MY_Controller {
                 $data_import['long_description'] = preg_replace('/\s+/', ' ', $data_import['long_description']);
                 // $data_import['long_description'] = preg_replace('/[^A-Za-z0-9\. -!]/', ' ', $data_import['long_description']);
                 $data['s_product_long_desc_count'] = count(explode(" ", $data_import['long_description']));
-            }  
-            $data['s_product'] = $data_import; 
+            }
+            $data['s_product'] = $data_import;
             // --- GET SELECTED RPODUCT DATA (END)
 
             // --- ATTEMPT TO GET 'SAME' FROM 'HUMAN INTERFACE' (products_compare table) (START)
@@ -88,7 +88,7 @@ class Measure extends MY_Controller {
                 foreach ($same_pr as $ks => $vs) {
                     $same_pr[$ks]['seo']['short'] = $this->helpers->measure_analyzer_start_v2(preg_replace('/\s+/', ' ', $vs['description']));
                     $same_pr[$ks]['seo']['long'] = $this->helpers->measure_analyzer_start_v2(preg_replace('/\s+/', ' ', $vs['long_description']));
-                    
+
                 }
                 $data['same_pr'] = $same_pr;
             }
@@ -106,7 +106,7 @@ class Measure extends MY_Controller {
 
         // -------- COMPARING V1 (START)
         $s_term = $this->input->post('s_term');
-        
+
         // -------- COMPARING V1 (END)
 
         $this->load->view('measure/gridview', $data);
@@ -152,6 +152,28 @@ class Measure extends MY_Controller {
         );
 
         $data_import = $this->imported_data_parsed_model->getData($s, $sl, $cat_id);
+
+        // get similar for first row
+		if (isset($data_import) && isset($data_import[0]) && isset($data_import[0]['imported_data_id'])) {
+			$this->load->model('similar_imported_data_model');
+			if ($group_id = $this->similar_imported_data_model->findByImportedDataId($data_import[0]['imported_data_id'])) {
+				if ($rows = $this->similar_imported_data_model->getImportedDataByGroupId($group_id)) {
+					$data_similar = array();
+					$i=0;
+					foreach ($rows as $row) {
+						$data_similar[$i] = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
+						$data_similar[$i]['imported_data_id'] = $row->imported_data_id;
+						$i++;
+					}
+
+					if (!empty($data_similar)) {
+						$data_import = $data_similar;
+					}
+
+				}
+
+			}
+    	}
 
         if (empty($data_import)) {
             $this->load->library('PageProcessor');

@@ -89,7 +89,7 @@ class System extends MY_Controller {
 
 	public function getmatchnowinterface() {
 		$this->load->model('imported_data_parsed_model');
-		
+
 		$get_random_l = $this->imported_data_parsed_model->getRandomLeftCompareProduct();
 		// $get_random_r = $this->imported_data_parsed_model->getRandomRightCompareProduct($get_random_l['customer'], $get_random_l['id']);
 		$get_random_r = $this->imported_data_parsed_model->getRandomRightCompareProduct($get_random_l['customer'], $get_random_l['id'], $get_random_l['product_name']);
@@ -134,7 +134,7 @@ class System extends MY_Controller {
 	public function system_compare() {
 		$this->load->model('imported_data_parsed_model');
 		$this->data['all_products'] = $this->imported_data_parsed_model->getAllProducts();
-		$this->render();	
+		$this->render();
 	}
 
 	public function system_accounts()
@@ -605,4 +605,145 @@ class System extends MY_Controller {
     {
         $this->render();
     }
+
+ 	public function generate_attributes() {
+ 		$this->load->model('imported_data_parsed_model');
+		$this->load->model('imported_data_model');
+		$this->load->model('imported_data_attributes_model');
+
+		$lines = $this->imported_data_model->findNullAttributes(1000);
+
+		foreach ( $lines as $line) {
+			$imported_id = $line->id;
+			$data = $this->imported_data_parsed_model->getByImId($imported_id);
+
+			$res = array();
+			foreach($data as $key => $value) {
+				if ($key != 'url') {
+					$descCmd = str_replace($this->config->item('cmd_mask'), $value ,$this->config->item('tsv_cmd'));
+					if ($result = shell_exec($descCmd)) {
+						$a = json_decode(json_encode(simplexml_load_string($result)),1);
+						foreach ($a['description']['attributes']['attribute'] as $attribute) {
+							$res[$key][$attribute['@attributes']['tagName']] = $attribute['@attributes']['value'];
+						}
+					}
+				}
+			}
+
+			if (!empty($res)) {
+				$result = $this->imported_data_model->getRow($imported_id);
+				if (is_null($result->imported_data_attribute_id)) {
+					$imported_data_attribute_id = $this->imported_data_attributes_model->insert(serialize($res));
+					$this->imported_data_model->update_attribute_id($imported_id, $imported_data_attribute_id);
+				} else {
+					$imported_data_attribute_id = $result->imported_data_attribute_id;
+					$this->imported_data_attributes_model->update($imported_data_attribute_id ,serialize($res));
+				}
+			}
+		}
+ 	}
+
+ 	function similarity_calculation(){
+		$this->load->model('imported_data_parsed_model');
+		$this->load->model('imported_data_model');
+		$this->load->model('imported_data_attributes_model');
+		$this->load->model('similar_imported_data_model');
+		$this->load->model('similar_groups_model');
+
+		$imported = $this->similar_groups_model->getIdsForComparition();
+
+		$merged = array();
+
+		foreach($imported as $imported_id) {
+			$attributes = $this->imported_data_attributes_model->getByImportedDataId($imported_id);
+
+			$resArr = array();
+			foreach( unserialize($attributes->attributes) as $key=>$value ) {
+				$resArr = array_merge($resArr, $value);
+			}
+			$merged[] = $resArr;
+		}
+
+
+		function allKeysExist($arr, $keys) {
+			foreach($keys as $key) {
+				if (!key_exists($key, $arr)) {
+					return false;
+				}
+			}
+			return true;
+		}
+
+		$similar_array = array(); $similar_to = array(); $similar_to2 = array();
+
+		for($i=0; $i<count($merged); $i++) {
+			for($j=$i+1; $j<count($merged); $j++) {
+				$intersec = array_intersect($merged[$i],$merged[$j]);
+				$diff = abs(count($merged[$i])-count($merged[$j]));
+				$max = max(count($merged[$i]),count($merged[$j]));
+				$similarity = count($intersec)/max(count($merged[$i]),count($merged[$j]));
+
+				$inserted = false;
+				if (allKeysExist($intersec, $this->config->item('important_attributes'))) {
+					foreach ( $similar_to as &$arr) {
+						if (in_array($imported[$i], $arr) && !in_array($imported[$j], $arr)) {
+							$arr[] = $imported[$j];
+							$inserted = true;
+						} else if (in_array($imported[$j], $arr) && !in_array($imported[$i], $arr)) {
+							$arr[] = $imported[$i];
+							$inserted = true;
+						}
+					}
+
+					if (!$inserted) {
+						$similar_to[] = array($imported[$i], $imported[$j]);
+					}
+				} else if ($similarity > 0.7) {
+					foreach ( $similar_to2 as &$arr) {
+						if (in_array($imported[$i], $arr) && !in_array($imported[$j], $arr)) {
+							$arr[] = $imported[$j];
+							$inserted = true;
+						} else if (in_array($imported[$j], $arr) && !in_array($imported[$i], $arr)) {
+							$arr[] = $imported[$i];
+							$inserted = true;
+						}
+					}
+
+					if (!$inserted) {
+						$similar_to2[] = array($imported[$i], $imported[$j]);
+					}
+				}
+			}
+		}
+
+
+		function saveSimilar( $similar_to, $percent = 0) {
+			$CI =& get_instance();
+
+			$similarity = 1;
+			foreach($similar_to as &$similar_group) {
+				$group_id = false;
+
+				$j = count($similar_group);
+				for($i=0; $i<$j ; $i++) { echo 1;
+					if($group_id = $CI->similar_imported_data_model->findByImportedDataId($similar_group[$i])) {
+						 unset($similar_group[$i]);
+					}
+				}
+
+				if($group_id === false) {
+					if ($percent !==0) {
+						$similarity = 0;
+					}
+					$group_id = $CI->similar_groups_model->insert($similarity, $percent);
+				}
+				foreach($similar_group as $imported_id) {
+					$CI->similar_imported_data_model->insert($imported_id, $group_id);
+				}
+			}
+		}
+
+		saveSimilar($similar_to);
+		saveSimilar($similar_to2, 70);
+ 	}
 }

@@ -10,7 +10,8 @@ class Imported_data_model extends CI_Model {
 	var $created = null;
 
     var $tables = array(
-    	'imported_data' => 'imported_data'
+    	'imported_data' => 'imported_data',
+    	'imported_data_parsed' => 'imported_data_parsed'
     );
 
     function __construct() {
@@ -31,6 +32,14 @@ class Imported_data_model extends CI_Model {
         return $query->result();
     }
 
+    function getRow($id) {
+    	$query = $this->db->where('id', $id)
+                  ->limit(1)
+                  ->get($this->tables['imported_data']);
+
+        return $query->row();
+    }
+
     function insert($data, $category_id = null, $attribute_id = null) {
         $this->data = $data;
         $this->key = $this->_get_key($data);
@@ -48,6 +57,10 @@ class Imported_data_model extends CI_Model {
         $this->imported_data_attribute_id = $attribute_id;
 
         $this->db->update($this->tables['imported_data'], $this, array('id' => $id));
+    }
+
+    function update_attribute_id($id, $attribute_id) {
+        return $this->db->update($this->tables['imported_data'], array('imported_data_attribute_id'=>$attribute_id), array('id' => $id));
     }
 
 	function addDataWithAttributes($data, $attributes, $category_id = null) {
@@ -97,5 +110,16 @@ class Imported_data_model extends CI_Model {
 	 */
 	function _get_key($data) {
 		return sha1($data);
+	}
+
+	function findNullAttributes($limit = 10) {
+		$this->db->select('i.id')
+			->distinct()
+			->join($this->tables['imported_data_parsed'].' as ip', 'i.id = ip.imported_data_id')
+			->where('imported_data_attribute_id IS NULL')
+			->limit($limit);
+ 		$query = $this->db->get($this->tables['imported_data'].' as i');
+
+		return $query->result();
 	}
 }

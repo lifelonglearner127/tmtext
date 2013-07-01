@@ -410,6 +410,11 @@ $config['csv_header_replace'] = array(
 	'Features - List Form'=>'Long_Description',
 );
 
+$config['important_attributes'] = array(
+	'MODEL', 'MANU',
+);
+
+
 // allow the local environment to override the settings
 if (file_exists(APPPATH.'config/config.local.php')) {
 	@require_once APPPATH.'config/config.local.php';

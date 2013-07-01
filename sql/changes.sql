@@ -1,3 +1,20 @@
+# 07/01 Ruslan 
+
+CREATE TABLE IF NOT EXISTS `similar_imported_data` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `imported_data_id` int(11) NOT NULL,
+  `similar_group_id` int(11) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
+
+CREATE TABLE IF NOT EXISTS `similar_groups` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `similarity` tinyint(1) NOT NULL,
+  `percent` tinyint(2) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
+
+
 # 06/26 Ruslan
 ALTER TABLE  `crawler_list` ADD  `updated` DATETIME NULL AFTER  `status`;
 ALTER TABLE  `crawler_list` ADD  `imported_data_id` INT NULL AFTER  `category_id`;
