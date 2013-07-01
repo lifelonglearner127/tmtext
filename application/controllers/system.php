@@ -729,7 +729,7 @@ class System extends MY_Controller {
 				$group_id = false;
 
 				$j = count($similar_group);
-				for($i=0; $i<$j ; $i++) { echo 1;
+				for($i=0; $i<$j ; $i++) {
 					if($group_id = $CI->similar_imported_data_model->findByImportedDataId($similar_group[$i])) {
 						 unset($similar_group[$i]);
 					}
