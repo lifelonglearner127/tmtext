@@ -24,6 +24,12 @@ class System extends MY_Controller {
 		$this->render();
 	}
 
+	public function recordcollection() {
+		$this->load->model('imported_data_parsed_model');
+		$crawl_stack = $this->input->post('crawl_stack'); // !!! array of objects !!!
+		$this->output->set_content_type('application/json')->set_output(json_encode($crawl_stack));
+	}
+
 	public function testattributesext() {
 		$s = $this->input->post('desc');
 		$descCmd = str_replace($this->config->item('cmd_mask'), $s, $this->system_settings['python_cmd']);

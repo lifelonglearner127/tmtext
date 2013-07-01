@@ -178,6 +178,18 @@
 					}
 				}
 				if(tr_res) { // --- all ok, ready for send to backend
+					$.ajax({
+			              url: base_url + 'index.php/system/recordcollection',
+			              dataType: "JSON",
+			              async: false,
+			              type: "POST",
+			              data: {
+			                crawl_stack: crawl_stack
+			              },
+			              success: function(res) {
+			              	console.log('ADDING RESULTS: ', res);
+			              }
+		            });
 					outputNotice('Success', 'Crawl objects ready for backend');
 				} else { // ---- not ready, some mistakes in rows
 					// --- highlight mistakes (start)
