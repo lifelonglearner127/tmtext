@@ -1,3 +1,7 @@
+# 07/01 Tatiana
+ALTER TABLE  `research_data` ADD  `short_description_wc` INT NOT NULL AFTER  `short_description`
+ALTER TABLE  `research_data` ADD  `long_description_wc` INT NOT NULL AFTER  `long_description`
+
 # 07/01 Pavel
 CREATE TABLE IF NOT EXISTS `style_guide` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
