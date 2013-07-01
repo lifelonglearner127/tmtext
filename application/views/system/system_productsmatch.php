@@ -138,6 +138,7 @@
 		});
 
 		$("#pm_tab_save_btn").click(function() {
+			$("#pm_data_table tr .pm_data_table_tinput").removeClass('error');
 			var crawl_stack = [];
 			$("#pm_data_table tr").each(function(index, value) {
 				var url = $.trim($(value).find('.pmtt_url').val());
@@ -193,7 +194,7 @@
 						}
 					}
 					// --- highlight mistakes (end)
-					outputNotice('Fail', 'Check out some mistakes');
+					outputNotice('Fail', 'Check out some validation errors');
 				} 
 			} else {
 				outputNotice('Notice', 'All rows are empty');
