@@ -24,7 +24,13 @@ class Auth extends MY_Controller {
   			'login' => true,
 			'logout' => true,
 			'forgot_password' => true,
-			'reset_auth_rules' => true
+			'reset_auth_rules' => true,
+			'clientreg' => true, // new stuff
+			'ajaxregclient' => true, // new stuff
+			'writereg' => true, // new stuff
+			'ajaxregwriter' => true, // new stuff
+			'ajaxregwriter' => true, // new stuff
+			'ajaxcheckregemail' => true // mew stuff
   		));
 	}
 
@@ -60,6 +66,112 @@ class Auth extends MY_Controller {
 		}
 	}
 
+	function ajaxcheckregemail() {
+		$this->load->model('user_groups_model');
+		$email = $this->input->post('email');
+		$data = $this->user_groups_model->checkRegEmail($email);
+		$this->output->set_content_type('application/json')->set_output(json_encode($data));
+	}
+
+	/*
+	* New Client Registration
+	*/
+
+	function ajaxregclient() {
+		$fname = $this->input->post('fname');
+		$email = $this->input->post('email');
+		$password = $this->input->post('psw');
+		$username = strtolower($fname);
+
+		$additional_data = array(
+			'first_name' => $fname,
+			'last_name'  => '',
+			'company'    => '',
+			'phone'      => '',
+		);
+
+
+        $data = array('fname' => $fname, 'email' => $email, 'psw' => $password);
+        $groups = array(4);
+        $this->ion_auth->register($username, $password, $email, $additional_data, $groups);
+        $res = false;
+        // ---- login user (start)
+        if ($this->ion_auth->login($email, $password)) {
+            $res = true;
+		} 
+        // ---- login end (start)
+        $this->output->set_content_type('application/json')->set_output(json_encode($res));
+	}
+
+	function clientreg() {
+		$this->data['fname'] = array('name' => 'fname',
+			'id' => 'fname',
+			'type' => 'text',
+			'value' => ''
+		);
+		$this->data['email'] = array('name' => 'email',
+			'id' => 'email',
+			'type' => 'text',
+			'value' => ''
+		);
+		$this->data['password'] = array(
+			'name'  => 'password',
+			'id'    => 'password',
+			'type'  => 'password',
+			'value' => ''
+		);
+		$this->render('login');
+	}
+
+	/*
+	* New Writer Registration
+	*/
+	function ajaxregwriter() {
+		$fname = $this->input->post('fname');
+		$email = $this->input->post('email');
+		$password = $this->input->post('psw');
+		$username = strtolower($fname);
+
+		$additional_data = array(
+			'first_name' => $fname,
+			'last_name'  => '',
+			'company'    => '',
+			'phone'      => '',
+		);
+
+
+        $data = array('fname' => $fname, 'email' => $email, 'psw' => $password);
+        $groups = array(5);
+        $this->ion_auth->register($username, $password, $email, $additional_data, $groups);
+        $res = false;
+        // ---- login user (start)
+        if ($this->ion_auth->login($email, $password)) {
+            $res = true;
+		} 
+        // ---- login end (start)
+        $this->output->set_content_type('application/json')->set_output(json_encode($res));
+	}
+
+	function writereg() {
+		$this->data['fname'] = array('name' => 'fname',
+			'id' => 'fname',
+			'type' => 'text',
+			'value' => ''
+		);
+		$this->data['email'] = array('name' => 'email',
+			'id' => 'email',
+			'type' => 'text',
+			'value' => ''
+		);
+		$this->data['password'] = array(
+			'name'  => 'password',
+			'id'    => 'password',
+			'type'  => 'password',
+			'value' => ''
+		);
+		$this->render('login');
+	}
+
 	//log the user in
 	function login()
 	{
@@ -85,7 +197,7 @@ class Auth extends MY_Controller {
                 $user_group = $this->user_groups_model->getRoleByUserId($this->ion_auth->get_user_id());
                 $group = $this->user_groups_model->getGroupById($user_group[0]->group_id);
                 $rules = unserialize($group[0]['auth_rules']);
-                $checked_controllers = array('research', 'editor', 'validate', 'measure', 'customer');
+                $checked_controllers = array('research', 'editor', 'measure', 'customer');
                 $checked = array();
                 foreach ($checked_controllers as $checked_controller) {
                     if($rules[$checked_controller]['index']){

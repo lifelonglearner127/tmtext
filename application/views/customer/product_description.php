@@ -2,6 +2,7 @@
     <ul class="nav nav-tabs jq-customer-tabs">
         <li class=""><a data-toggle="tab" href="<?php echo site_url('customer');?>"><b>Account Configuration</b></a></li>
         <li class="active"><a data-toggle="tab" href="<?php echo site_url('customer/product_description');?>"><b>Product Description Defaults</b></a></li>
+        <li class=""><a data-toggle="tab" href="<?php echo site_url('customer/style_guide');?>"><b>Style Guide</b></a></li>
     </ul>
     <div class="tab-content">
         <script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>

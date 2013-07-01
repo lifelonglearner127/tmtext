@@ -596,6 +596,7 @@ jQuery(document).ready(function($) {
             }
             $('.main_content_other').css('display', 'none');
             $('.main_content_editor').css('display', 'block');
+            console.log($(this).parent('li'));
             $(".left_nav_content li, .right_nav_content li").removeClass('active');
             $(this).parent('li').addClass('active');
         }else{
@@ -606,8 +607,8 @@ jQuery(document).ready(function($) {
             }
             var url = $(this).attr('href');
             var posting = $.post(url+"?ajax=true", function(data) {
-            var response_data = $.parseJSON( data );
-                    $('.main_content_other').html(response_data.ajax_data);
+                var response_data = $.parseJSON( data );
+                $('.main_content_other').html(response_data.ajax_data);
             });
             $(".left_nav_content li, .right_nav_content li").removeClass('active');
             $(this).parent('li').addClass('active');
@@ -628,7 +629,7 @@ jQuery(document).ready(function($) {
                         data: ddData_first,
                         defaultSelectedIndex: 0,
                         width:w_el_dr,
-                        selectText: "Select your favorite social network",
+                        selectText: "Select",
                         truncateDescription: true,
                     });
                 }
@@ -780,7 +781,7 @@ jQuery(document).ready(function($) {
                 data: ddData_first,
                 defaultSelectedIndex: 0,
                 width:104,
-                selectText: "Select your favorite social network",
+                selectText: "Select",
                 truncateDescription: true,
             });
         });

@@ -1,4 +1,38 @@
+/* --- PRODUCT MATCH TAB (START) --- */
+.pm_data_table {
+	width: 100%;
+}
+.pm_data_table tr td {
+	padding-left: 10px;
+	padding-right: 10px; 
+}
+.pm_data_table .pm_data_table_tinput {
+	width: 100%;
+}
+/* --- PRODUCT MATCH TAB (END) --- */
+
+/* --- OVERALL LOGIN FORM ADDITION (START) --- */
+.add_login_lnk {
+	float: left;
+	width: 100%;
+	margin-top: 15px;
+}
+.add_login_lnk .add_login_lnk_left {
+	float: left;
+	padding-left: 5px;
+}
+.add_login_lnk .add_login_lnk_right {
+	float: right;
+	padding-right: 5px;	
+}
+/* --- OVERALL LOGIN FORM ADDITION (END) --- */
+
 /* Basic style */
+
+.form_hb_error {
+	display: none;
+	color: red;
+}
 
 .ui-autocomplete li a {
 	max-width: 500px !important;
@@ -179,7 +213,7 @@
 	display: inline-block;
 	overflow: hidden;
     text-overflow: clip;
-    white-space: normal;
+    white-space: nowrap;
     width: 45%;
 }
 .keywords_metrics_bl span {
@@ -965,7 +999,7 @@ p.show_ballons input{
     border-radius: 5px;
     margin: 5px;
     background: #fff;
-    z-index: ;0000;
+    z-index: 0000;
 }
 
 #research_edit {
@@ -1121,6 +1155,11 @@ p.show_ballons input{
     vertical-align: top;
     word-wrap: break-word;
 }
+#research_products li span{
+    overflow: hidden;
+    text-overflow: clip;
+    white-space: nowrap;
+}
 
 #related_keywords li span{
     display: inline-block;
@@ -1186,6 +1225,7 @@ label.dd-selected-text, label.dd-option-text{
 
 .research_arrow{
     float: right;
+    margin: 7px 6px 0 0;
 }
 
 .research_batches input{

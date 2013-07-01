@@ -7,6 +7,7 @@
 								<li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_compare');?>">Product Compare Interface</a></li>
 								<li class=""><a data-toggle="tab" href="<?php echo site_url('site_crawler');?>">Site Crawler</a></li>
                                 <li class=""><a data-toggle="tab" href="<?php echo site_url('system/batch_review');?>">Batch Review</a></li>
+                                <li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_productsmatch');?>">Product Match</a></li>
 				              </ul>
 				              <div class="tab-content">
 				                <div id="tab3" class="tab-pane active">
@@ -25,8 +26,19 @@
 												}
 											 ?>
 										</div>
+                                        <div class="span1 admin_system_content" style="width:85px;">
+                                            <p>Competitive</p>
+                                            <div class="clear-fix"></div>
+                                            <?php
+                                            foreach ($user_groups as $user_group) {	?>
+                                                <input type="checkbox" name="measure_<?php echo $user_group->id;?>" <?php if(isset($checked[$user_group->id]['measure'])){print 'checked';}?> value="1"/>
+                                                <div class="clear-fix"></div>
+                                            <?php
+                                            }
+                                            ?>
+                                        </div>
 										<div class="span1 admin_system_content">
-											<p>Research</p>
+											<p>Edit</p>
 											<div class="clear-fix"></div>
 											<?php
 											foreach ($user_groups as $user_group) {	?>
@@ -42,28 +54,6 @@
 											<?php
 											foreach ($user_groups as $user_group) {	?>
 												<input type="checkbox" name="editor_<?php echo $user_group->id;?>" <?php if(isset($checked[$user_group->id]['editor'])){print 'checked';}?> value="1"/>
-												<div class="clear-fix"></div>
-											<?php
-												}
-											 ?>
-										</div>
-										<div class="span1 admin_system_content">
-											<p>Validate</p>
-											<div class="clear-fix"></div>
-											<?php
-											foreach ($user_groups as $user_group) {	?>
-												<input type="checkbox" name="validate_<?php echo $user_group->id;?>" <?php if(isset($checked[$user_group->id]['validate'])){print 'checked';}?> value="1"/>
-												<div class="clear-fix"></div>
-											<?php
-												}
-											 ?>
-										</div>
-										<div class="span1 admin_system_content">
-											<p>Analysis</p>
-											<div class="clear-fix"></div>
-											<?php
-											foreach ($user_groups as $user_group) {	?>
-												<input type="checkbox" name="measure_<?php echo $user_group->id;?>" <?php if(isset($checked[$user_group->id]['measure'])){print 'checked';}?> value="1"/>
 												<div class="clear-fix"></div>
 											<?php
 												}
@@ -93,11 +83,11 @@
                                                                 if($checked_controller=='editor'){
                                                                     echo 'Create';
                                                                 } else if($checked_controller=='measure'){
-                                                                    echo 'Analysis';
+                                                                    echo 'Competitive';
                                                                 } else if($checked_controller=='customer'){
                                                                     echo 'Settings';
-                                                                } else {
-                                                                    echo ucfirst($checked_controller);
+                                                                } else if($checked_controller=='research'){
+                                                                    echo 'Edit';
                                                                 }
                                                             ?>
                                                         </option>

@@ -3,6 +3,7 @@
         <li class="active"><a data-toggle="tab" href="<?php echo site_url('customer');?>"><b>Account Configuration</b></a></li>
         <?php  if (!$this->ion_auth->is_editor($this->ion_auth->get_user_id())): ?>
             <li class=""><a data-toggle="tab" href="<?php echo site_url('customer/product_description');?>"><b>Product Description Defaults</b></a></li>
+            <li class=""><a data-toggle="tab" href="<?php echo site_url('customer/style_guide');?>"><b>Style Guide</b></a></li>
         <?php endif; ?>
     </ul>
     <div class="tab-content">

@@ -46,8 +46,10 @@ class Measure extends MY_Controller {
 
     public function cisearchteram() {
         $q = $this->input->get('term');
+        $sl = $this->input->get('sl');
+        $cat = $this->input->get('cat');
         $this->load->model('imported_data_parsed_model');
-        $data = $this->imported_data_parsed_model->getData($q, '', '',  4);
+        $data = $this->imported_data_parsed_model->getData($q, $sl, $cat_id, 4);
         foreach ($data as $key => $value) {
             $response[] = array('id' => $value['imported_data_id'], 'value' => $value['product_name']);
         };
@@ -146,12 +148,17 @@ class Measure extends MY_Controller {
         $s = $this->input->post('s');
         $sl = $this->input->post('sl');
         $cat_id = $this->input->post('cat');
+        $limit = $this->input->post('limit');
         $this->load->model('imported_data_parsed_model');
         $data = array(
             'search_results' => array()
         );
 
-        $data_import = $this->imported_data_parsed_model->getData($s, $sl, $cat_id);
+        if($limit !== 0) {
+            $data_import = $this->imported_data_parsed_model->getData($s, $sl, $cat_id, $limit);
+        } else {
+            $data_import = $this->imported_data_parsed_model->getData($s, $sl, $cat_id);
+        }
 
         // get similar for first row
 		if (isset($data_import) && isset($data_import[0]) && isset($data_import[0]['imported_data_id'])) {

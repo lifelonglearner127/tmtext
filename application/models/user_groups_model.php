@@ -4,12 +4,25 @@ class User_Groups_model extends CI_Model {
 
     var $tables = array(
     	'groups' => 'groups',
-        'users_groups' => 'users_groups'
+        'users_groups' => 'users_groups',
+        'users' => 'users'
     );
 
     function __construct()
     {
         parent::__construct();
+    }
+
+    function checkRegEmail($email) {
+        $query = $this->db->where('email', $email)
+                    ->limit(1)
+                    ->get($this->tables['users']);
+        $res = $query->result();
+        if($res) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
     function get($id)

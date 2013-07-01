@@ -59,19 +59,19 @@ function ciCustomersGridsLoader() {
     });
 }
 // ---- search string cookie (auto mode search launcher) (start)
-var auto_mode_search_str = "";
-var cookie_search_str = $.cookie('com_intel_search_str');
-if(typeof(cookie_search_str) !== 'undefined' && cookie_search_str !== null && cookie_search_str !== "") {
-    auto_mode_search_str = cookie_search_str;
-}
-if(auto_mode_search_str !== "") {
-    $("#compare_text").val(auto_mode_search_str);
-    $("#an_search").attr('disabled', true);
-    setTimeout(function() {
-        $("#measureFormMetrics").trigger('submit');
-        $("#an_search").removeAttr('disabled');
-    }, 2500);
-}
+// var auto_mode_search_str = "";
+// var cookie_search_str = $.cookie('com_intel_search_str');
+// if(typeof(cookie_search_str) !== 'undefined' && cookie_search_str !== null && cookie_search_str !== "") {
+//     auto_mode_search_str = cookie_search_str;
+// }
+// if(auto_mode_search_str !== "") {
+//     $("#compare_text").val(auto_mode_search_str);
+//     $("#an_search").attr('disabled', true);
+//     setTimeout(function() {
+//         $("#measureFormMetrics").trigger('submit');
+//         $("#an_search").removeAttr('disabled');
+//     }, 2500);
+// }
 // ---- search string cookie (auto mode search launcher) (end)
 
 var measureAnalyzerAttrBaseUrl = base_url+"index.php/measure/attributesmeasure";
@@ -256,6 +256,14 @@ var keywordsAnalyzerBaseUrl = base_url+"index.php/measure/analyzekeywords";
 
 var editorSearchAllBaseUrl = base_url+"index.php/measure/searchmeasuredball";
 function startMeasureCompareV2() {
+    // ---- LIMIT DETECTION (START)
+    var limit = 0;
+    if($(".ui-autocomplete").is(':visible')) {
+        limit = $(".ui-autocomplete > li").length;
+    }
+    // ---- LIMIT DETECTION (END)
+
+    $(".ui-autocomplete").hide();
     var s = $.trim($("#compare_text").val());
     var sl = $.trim($(".dd-selected-value").val());
     var cat = $("#cats_an").val();
@@ -270,13 +278,17 @@ function startMeasureCompareV2() {
         }
     }
     // --- record search term to cookie storage (end)
-    var searcher_all = $.post(editorSearchAllBaseUrl, { s: s, sl: sl, cat: cat }, 'html').done(function(data) {
+    var searcher_all = $.post(editorSearchAllBaseUrl, { s: s, sl: sl, cat: cat, limit: limit }, 'html').done(function(data) {
         $("#an_products_box").html(data);
         $("#an_products_box").fadeOut();
         $("#an_products_box").fadeIn();
         var w = $('ul#products li:first-child span:first-child').width();
         $('#an_sort_search_box .product_title .main span:first-child').width(w);
+        setTimeout(function() {
+            if($(".ui-autocomplete").is(':visible')) $(".ui-autocomplete").hide();
+        }, 1000);
     });
+
     return false;
 }
 

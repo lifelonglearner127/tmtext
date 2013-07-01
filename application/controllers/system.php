@@ -9,7 +9,7 @@ class System extends MY_Controller {
   		parent::__construct();
 
 		$this->data['title'] = 'System Settings';
-		$this->data['checked_controllers'] = array('research', 'editor', 'validate', 'measure', 'customer');
+		$this->data['checked_controllers'] = array( 'measure', 'research', 'editor', 'customer');
 		$this->data['admin_controllers'] = array('system', 'admin_customer', 'admin_editor', 'admin_tag_editor');
 
 
@@ -129,6 +129,10 @@ class System extends MY_Controller {
             'c_product' => $this->imported_data_parsed_model->getProductsByIdStack($ids)
         );
         $this->load->view('system/getcompareproducts', $data);
+	}
+
+	public function system_productsmatch() {
+		$this->render();
 	}
 
 	public function system_compare() {

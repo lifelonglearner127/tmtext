@@ -219,16 +219,46 @@
 <script type='text/javascript'>
 
     // --- CI search term autocomplete (start)
-    var autocomplete_ci_baseurl = base_url + 'index.php/measure/cisearchteram';
-    $("#compare_text").autocomplete({
-        source: autocomplete_ci_baseurl,
-        minChars: 3,
-        deferRequestBy: 300,
-        select: function(event, ui) {
-            startMeasureCompareV2();
-        }
-    });
+    setTimeout(function() {
+        var autocomplete_ci_baseurl = base_url + 'index.php/measure/cisearchteram';
+        $("#compare_text").autocomplete({
+            source: autocomplete_ci_baseurl + "?sl=" + $("#ci_dropdown .dd-selected-value").val() + "&cat=" +  $("#cats_an > option:selected").val(),
+            minChars: 3,
+            deferRequestBy: 300,
+            select: function(event, ui) { 
+                startMeasureCompareV2();
+            }
+        });
+
+        // $("#cats_an").change(function() {
+        //     $("#compare_text").autocomplete('destroy');
+        //     $("#compare_text").autocomplete({
+        //         source: autocomplete_ci_baseurl + "?sl=" + $("#ci_dropdown .dd-selected-value").val() + "&cat=" +  $("#cats_an > option:selected").val(),
+        //         minChars: 3,
+        //         deferRequestBy: 300,
+        //         select: function(event, ui) { 
+        //             startMeasureCompareV2();
+        //         }
+        //     });
+        // });
+
+    }, 1000);
     // --- CI search term autocomplete (end)
+
+    // ---- search string cookie (auto mode search launcher) (start)
+    var auto_mode_search_str = "";
+    var cookie_search_str = $.cookie('com_intel_search_str');
+    if(typeof(cookie_search_str) !== 'undefined' && cookie_search_str !== null && cookie_search_str !== "") {
+        auto_mode_search_str = cookie_search_str;
+    }
+    if(auto_mode_search_str !== "") {
+        $("#compare_text").val(auto_mode_search_str);
+        setTimeout(function() {
+            $("#an_search").removeAttr('disabled');
+            startMeasureCompareV2();
+        }, 2500);
+    }
+    // ---- search string cookie (auto mode search launcher) (end)
 
 </script>
 

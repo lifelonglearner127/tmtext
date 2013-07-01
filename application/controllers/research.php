@@ -83,6 +83,10 @@ class Research extends MY_Controller {
         $this->data['customer_list'] = $this->getCustomersByUserId();
         $this->render();
     }
+    
+    public function research_reports(){
+        $this->render();
+    }
 
     public function new_batch()
     {
