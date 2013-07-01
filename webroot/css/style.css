@@ -1313,3 +1313,9 @@ label.dd-selected-text, label.dd-option-text{
     -o-text-overflow: ellipsis;
     -moz-binding: url('ellipsis.xml#ellipsis');
 }
+
+.hideBox{
+    overflow: hidden;
+    min-height:40px !important;
+    height:40px !important;
+}

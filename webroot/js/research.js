@@ -113,6 +113,14 @@ function researchKeywordsAnalizer() {
 }
 
 $(document).ready(function () {
+    
+    $('.hideShow').click(function(){
+        $(this).parent().parent().toggleClass('hideBox')
+
+    })
+    
+    
+    
     $(document).on("keydown keyup change focusout", 'textarea[name="short_description"]', function() {
         var number = 0;
         var matches = $(this).val().match(/\b/g);

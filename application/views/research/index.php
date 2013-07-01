@@ -246,10 +246,10 @@ $(document).ready(function() {
 
             <div class="row-fluid" id="main">
                 <div class="span6" id="research" class="connectedMoved">
-                    <h3 class="handle">Research<a href="#" class="ml_10 research_arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
+                    <h3 class="handle"><a href="#" onclick="return false" class="hideShow"><img style="width:15px;margin-right: 10px" src="<?php echo base_url();?>img/arrow-down.png" /></a>Research<a href="#" class="ml_10 research_arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
                     <ul class="research_content connectedSortable" id="sortable1">
                         <li class="boxes mt_10">
-                            <h3>Results<a href="#" class="ml_10 research_arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
+                            <h3><a href="#" onclick="return false" class="hideShow"><img style="width:12px;margin-right: 10px" src="<?php echo base_url();?>img/arrow-down.png" /></a>Results<a href="#" class="ml_10 research_arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
                             <div class="boxes_content"  style="height: 200px;padding:0px;">
                                 <ul class="product_title">
                                     <li class="main"><span><b>Product Name</b></span><span><b>URL</b></span></li>
@@ -264,7 +264,7 @@ $(document).ready(function() {
                             </div>
                         </li>
                         <li class="boxes mt_10" id="related_keywords">
-                            <h3>Related Keywords<a href="#" class="ml_10 research_arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
+                            <h3><a href="#" onclick="return false" class="hideShow"><img style="width:12px;margin-right: 10px" src="<?php echo base_url();?>img/arrow-down.png" /></a>Related Keywords<a href="#" class="ml_10 research_arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
                             <div class="boxes_content" >
                                 <ul id="rel_keywords" style="height: 170px; overflow: auto;">
                                     <li class="primary"><span>Televisions</span></li>
@@ -283,7 +283,7 @@ $(document).ready(function() {
                             </div>
                         </li>
                         <li class="boxes mt_10">
-                            <h3>SEO Phrases<a href="#" class="ml_10 research_arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
+                            <h3><a href="#" onclick="return false" class="hideShow"><img style="width:12px;margin-right: 10px" src="<?php echo base_url();?>img/arrow-down.png" /></a>SEO Phrases<a href="#" class="ml_10 research_arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
                             <div class="boxes_content">
                                 <ul class='less_b_margin ml_0' data-status='seo_an'>
                                 </ul>
@@ -294,10 +294,10 @@ $(document).ready(function() {
                     </ul>
                 </div>
                 <div class="span6" id="research_edit" class="connectedMoved">
-                    <h3 class="handle">Edit<a href="#" class="ml_10 research_arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
+                    <h3 class="handle"><a href="#" onclick="return false" class="hideShow"><img style="width:15px;margin-right: 10px" src="<?php echo base_url();?>img/arrow-down.png" /></a>Edit<a href="#" class="ml_10 research_arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
                     <ul class="research_content connectedSortable" id="sortable2">
                         <li class="boxes mt_10" id="keywords">
-                            <h3>Keywords<a href="#" class="ml_10 research_arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
+                            <h3><a href="#" onclick="return false" class="hideShow"><img style="width:12px;margin-right: 10px" src="<?php echo base_url();?>img/arrow-down.png" /></a>Keywords<a href="#" class="ml_10 research_arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
                             <div class="boxes_content">
                                 <p><span>Primary:</span><input class="keywords" type="text" name="primary" value="" /><a href="#" class="clear_all">x</a></p>
                                 <p><span>Secondary:</span><input class="keywords" type="text" name="secondary" value="" /><a href="#" class="clear_all">x</a></p>
@@ -306,7 +306,7 @@ $(document).ready(function() {
                         </li>
 
                         <li class="boxes mt_10" id="page_elements">
-                            <h3>Page Elements<a href="#" class="ml_10 research_arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
+                            <h3><a href="#" onclick="return false" class="hideShow"><img style="width:12px;margin-right: 10px" src="<?php echo base_url();?>img/arrow-down.png" /></a>Page Elements<a href="#" class="ml_10 research_arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
                             <div class="boxes_content">
                                 <p><button id="generate_product" type="button" class="btn pull-right">Generate</button>
                                     <label>Product name:</label><input type="text" class="span11 ml_0" name="product_name"/>
@@ -320,7 +320,7 @@ $(document).ready(function() {
                             </div>
                         </li>
                         <li class="boxes mt_10">
-                            <h3>Descriptions<a href="#" class="ml_10 research_arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
+                            <h3><a href="#" onclick="return false" class="hideShow"><img style="width:12px;margin-right: 10px" src="<?php echo base_url();?>img/arrow-down.png" /></a>Descriptions<a href="#" class="ml_10 research_arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
                             <div class="boxes_content">
                                 <div class="row-fluid"><label>Short description:</label>
                                      <label><span id="research_wc">0</span> words</label>
