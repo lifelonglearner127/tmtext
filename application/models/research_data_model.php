@@ -37,7 +37,7 @@ class Research_data_model extends CI_Model {
     }
 
     function insert($batch_id, $url, $product_name, $keyword1, $keyword2, $keyword3, $meta_name,
-                    $meta_description, $meta_keywords, $short_description, $long_description, $revision = 1)
+                    $meta_description, $meta_keywords, $short_description, $short_description_wc, $long_description, $long_description_wc, $revision = 1)
     {
         $CI =& get_instance();
         $this->batch_id = $batch_id;
@@ -51,7 +51,9 @@ class Research_data_model extends CI_Model {
         $this->meta_description = $meta_description ;
         $this->meta_keywords = $meta_keywords;
         $this->short_description = $short_description;
+        $this->short_description_wc = $short_description_wc;
         $this->long_description = $long_description;
+        $this->long_description_wc = $long_description_wc;
         $this->revision = $revision;
 
         $this->created = date('Y-m-d h:i:s');
@@ -60,7 +62,7 @@ class Research_data_model extends CI_Model {
         return $this->db->insert_id();
     }
 
-   function update($id, $batch_id, $url, $product_name, $short_description, $long_description, $keyword1='', $keyword2='', $keyword3='', $meta_name='',
+   function update($id, $batch_id, $url, $product_name, $short_description, $short_description_wc, $long_description, $long_description_wc, $keyword1='', $keyword2='', $keyword3='', $meta_name='',
                     $meta_description='', $meta_keywords='')
     {
         $CI =& get_instance();
@@ -75,7 +77,9 @@ class Research_data_model extends CI_Model {
         $this->meta_description = $meta_description;
         $this->meta_keywords = $meta_keywords;
         $this->short_description = $short_description;
+        $this->short_description_wc = $short_description_wc;
         $this->long_description = $long_description;
+        $this->long_description_wc = $long_description_wc;
         $this->revision = $revision;
         $this->modified = date('Y-m-d h:i:s');
 
@@ -100,7 +104,7 @@ class Research_data_model extends CI_Model {
     function getDataByBatchId($text, $batch_id)
     {
         $query = $this->db->query("select *, DATE_FORMAT(`created`,'%d-%m-%Y') as created, (select email from users u where id=research_data.user_id) as user_id from ".$this->tables['research_data']." where concat(url, product_name,
-            keyword1, keyword2, keyword3, meta_name, meta_description, meta_keywords, short_description, long_description ) like '%".$text."%'
+            keyword1, keyword2, keyword3, meta_name, meta_description, meta_keywords, short_description, short_description_wc, long_description, long_description_wc ) like '%".$text."%'
              and batch_id=".$batch_id);
         return $query->result();
     }

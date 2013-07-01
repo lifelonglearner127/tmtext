@@ -128,6 +128,7 @@ $(document).ready(function () {
             number = matches.length/2;
         }
         $('#research_wc').html(number);
+        $('input[name="short_description_wc"]').val(number);
         var num = parseInt($('#research_wc').html())+parseInt($('#research_wc1').html());
         $('#research_total').html(num);
     });
@@ -139,6 +140,7 @@ $(document).ready(function () {
             number = matches.length/2;
         }
         $('#research_wc1').html(number);
+        $('input[name="long_description_wc"]').val(number);
         var num = parseInt($('#research_wc').html())+parseInt($('#research_wc1').html());
         $('#research_total').html(num);
     });
@@ -355,7 +357,9 @@ $(document).ready(function () {
             'meta_description': $('textarea[name="meta_description"]').val(),
             'meta_keywords': $('input[name="meta_keywords"]').val(),
             'short_description': $('textarea[name="short_description"]').val(),
-            'long_description': $('#long_description').text()
+            'short_description_wc': $('input[name="short_description_wc"]').val(),
+            'long_description': $('#long_description').text(),
+            'long_description_wc': $('input[name="long_description_wc"]').val()
         }).done(function(data) {
                 return false;
             });

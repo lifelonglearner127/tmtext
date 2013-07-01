@@ -202,7 +202,9 @@ class Research extends MY_Controller {
             $meta_description = $this->input->post('meta_description');
             $meta_keywords = $this->input->post('meta_keywords');
             $short_description = $this->input->post('short_description');
+            $short_description_wc = $this->input->post('short_description_wc');
             $long_description = $this->input->post('long_description');
+            $long_description_wc = $this->input->post('long_description_wc');
             if ($this->input->post('revision')=='') {
                 $last_revision = $this->research_data_model->getLastRevision();
                 if(!empty($last_revision)){
@@ -216,10 +218,10 @@ class Research extends MY_Controller {
             $results = $this->research_data_model->getAllByProductName($product_name, $batch_id);
             if(empty($results)){
                 $data['research_data_id'] = $this->research_data_model->insert($batch_id, $url, $product_name, $keyword1, $keyword2,
-                    $keyword3, $meta_title, $meta_description, $meta_keywords, $short_description, $long_description, $revision);
+                    $keyword3, $meta_title, $meta_description, $meta_keywords, $short_description, $short_description_wc, $long_description, $long_description_wc, $revision);
             } else {
                 $data['research_data_id'] = $this->research_data_model->update($results[0]->id, $batch_id, $url, $product_name, $keyword1, $keyword2,
-                    $keyword3, $meta_title, $meta_description, $meta_keywords, $short_description, $long_description, $revision);
+                    $keyword3, $meta_title, $meta_description, $meta_keywords, $short_description, $short_description_wc, $long_description, $long_description_wc, $revision);
             }
             $data['revision'] = $revision;
         } else {

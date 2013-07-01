@@ -332,7 +332,7 @@ $(document).ready(function() {
                             <h3><a href="#" onclick="return false" class="hideShow"><img style="width:12px;margin-right: 10px" src="<?php echo base_url();?>img/arrow-down.png" /></a>Descriptions<a href="#" class="ml_10 research_arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
                             <div class="boxes_content">
                                 <div class="row-fluid"><label>Short description:</label>
-                                     <label><span id="research_wc">0</span> words</label>
+                                     <label><span id="research_wc">0</span> words<input type="hidden" name="short_description_wc" /></label>
                                      <button id="research_generate" type="button" class="btn" style="float:left;">Generate</button>
                                      <textarea type="text" name="short_description" class="span10 mt_10" style="height:100px;"></textarea>
                                      <div class="pagination">
@@ -341,7 +341,7 @@ $(document).ready(function() {
                                      </div>
                                 </div>
                                 <div class="row-fluid"><label>Long description:</label>
-                                    <label><span id="research_wc1">0</span> words</label>
+                                    <label><span id="research_wc1">0</span> words<input type="hidden" name="long_description_wc" /></label>
                                     <div class="search_area uneditable-input ml_10"  id="long_description" contenteditable="false" style="cursor: text; width: 365px; overflow: auto;"></div>
                                 </div>
                                 <div class="row-fluid" id="research_density">
