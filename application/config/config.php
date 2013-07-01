@@ -414,6 +414,11 @@ $config['important_attributes'] = array(
 	'MODEL', 'MANU',
 );
 
+$config['important_attributes_min'] = array(
+	'MANU'
+);
+
+
 
 // allow the local environment to override the settings
 if (file_exists(APPPATH.'config/config.local.php')) {

@@ -702,7 +702,7 @@ class System extends MY_Controller {
 					if (!$inserted) {
 						$similar_to[] = array($imported[$i], $imported[$j]);
 					}
-				} else if ($similarity > 0.7) {
+				} else if (allKeysExist($intersec, $this->config->item('important_attributes_min')) && ($similarity > 0.7)) {
 					foreach ( $similar_to2 as &$arr) {
 						if (in_array($imported[$i], $arr) && !in_array($imported[$j], $arr)) {
 							$arr[] = $imported[$j];
