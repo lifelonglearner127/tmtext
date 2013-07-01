@@ -257,6 +257,7 @@ var keywordsAnalyzerBaseUrl = base_url+"index.php/measure/analyzekeywords";
 var editorSearchAllBaseUrl = base_url+"index.php/measure/searchmeasuredball";
 function startMeasureCompareV2() {
     // ---- LIMIT DETECTION (START)
+    // var limit = 0;
     var limit = 4;
     // if($(".ui-autocomplete").is(':visible')) {
     //     limit = $(".ui-autocomplete > li").length;
