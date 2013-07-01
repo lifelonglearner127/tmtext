@@ -35,11 +35,11 @@
 }
 
 .typeahead li {
-	max-width: 530px !important;
+	max-width: 527px !important;
 }
 
 .typeahead li a {
-	max-width: 530px !important;
+	max-width: 527px !important;
 	display: block;
 	overflow: hidden;
     text-overflow: ellipsis;
@@ -367,7 +367,7 @@ span[class*="hilite"] { background: yellow; }
 }
 #compare_text {
 	width: 530px;
-	margin-left: 10px;
+	/*margin-left: 10px;*/
 }
 .an_sv_left {
 	width: 550px !important;

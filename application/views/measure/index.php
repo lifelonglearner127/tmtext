@@ -33,7 +33,7 @@
     </div>
 	<div id='compet_area_list' class="row-fluid">            
        <!-- <div style='margin-top: -40px;' class="span8 search_area cursor_default item_section an_sv_left"> -->
-       <div style='margin-top: -40px; height: auto;' class="span8 search_area cursor_default an_sv_left">
+       <div style='margin-top: -40px; margin-left: -10px; height: auto;' class="span8 search_area cursor_default an_sv_left">
             <div id="an_products_box" style='display: none;' class="span8 an_sv_left connectedSortable">&nbsp;</div>
             <div id='measure_tab_pr_content_body' class="item_section_content">&nbsp;</div>
         </div> 
@@ -220,12 +220,25 @@
   
     // ---- new CI term typeahead (start) 
     $(document).ready(function() {
+      
       var autocomplete_ci_baseurl = base_url + 'index.php/measure/cisearchteram';
       var gTime, ci_search_name;
       ci_search_name = "";
+      
       $("#compare_text").keyup(function(e) {
         if (e.which === 13) ci_search_name = $("#compare_text").val();
       });
+
+      $('#compare_text').keyup(function(e) {
+          ci_search_name = $("#compare_text").val();
+          if(e.which == 13) {
+            setTimeout(function() {
+              $("#measureFormMetrics").submit();
+            }, 1000);
+          }
+
+      });
+
       $("#compare_text").typeahead({
         items: 4,
         minLength: 3,
@@ -233,8 +246,11 @@
           return true;
         },
         updater: function(item) {
-          if (typeof item === "undefined") ci_search_name;
-          return item;
+          if(typeof(item) === "undefined") {
+            return ci_search_name; 
+          } else {
+            return item;
+          }
         },
         source: function(query, process) {
           clearTimeout(gTime);
@@ -250,12 +266,14 @@
                 cat: $("#cats_an > option:selected").val()
               },
               success: function(response) {
-                var labelsTitles;
-                labelsTitles = [];
-                $.each(response, function(i, item) {
-                  labelsTitles.push(item.value);
-                });
-                process(labelsTitles);
+                if(typeof(response) !== 'undefined' && response !== null) {
+                  var labelsTitles;
+                  labelsTitles = [];
+                  $.each(response, function(i, item) {
+                    labelsTitles.push(item.value);
+                  });
+                  process(_.uniq(labelsTitles));
+                }
               }
             });
           }, 300);
