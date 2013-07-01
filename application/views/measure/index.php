@@ -218,7 +218,7 @@
 
 <script type='text/javascript'>
   
-    // ---- new CI term typeahead (start) 
+    // ---- new CI term typeahead (start) (NEW)
     $(document).ready(function() {
       
       var autocomplete_ci_baseurl = base_url + 'index.php/measure/cisearchteram';
@@ -281,9 +281,9 @@
       });
 
     });
-    // ---- new CI term typeahead (end)
+    // ---- new CI term typeahead (end) (NEW)
 
-    // --- CI search term autocomplete (start)
+    // --- CI search term autocomplete (start) (OLD)
     // setTimeout(function() {
     //     var autocomplete_ci_baseurl = base_url + 'index.php/measure/cisearchteram';
     //     $("#compare_text").autocomplete({
@@ -295,7 +295,7 @@
     //         }
     //     });
     // }, 1000);
-    // --- CI search term autocomplete (end)
+    // --- CI search term autocomplete (end) (OLD)
 
     // ---- search string cookie (auto mode search launcher) (start)
     var auto_mode_search_str = "";

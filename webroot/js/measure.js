@@ -256,16 +256,19 @@ var keywordsAnalyzerBaseUrl = base_url+"index.php/measure/analyzekeywords";
 
 var editorSearchAllBaseUrl = base_url+"index.php/measure/searchmeasuredball";
 function startMeasureCompareV2() {
-    // ---- LIMIT DETECTION (START)
+    // ---- LIMIT DETECTION (START) (OLD)
     // var limit = 0;
-    var limit = 4;
     // if($(".ui-autocomplete").is(':visible')) {
     //     limit = $(".ui-autocomplete > li").length;
     // }
+    // ---- LIMIT DETECTION (END) (OLD)
+
+    // ---- LIMIT DETECTION (START) (NEW)
+    var limit = 4;
     if($(".typeahead").is(':visible')) {
         limit = $(".typeahead > li").length;
     }
-    // ---- LIMIT DETECTION (END)
+    // ---- LIMIT DETECTION (END) (NEW)
 
     // $(".ui-autocomplete").hide();
     $(".typeahead").hide();
@@ -290,8 +293,8 @@ function startMeasureCompareV2() {
         var w = $('ul#products li:first-child span:first-child').width();
         $('#an_sort_search_box .product_title .main span:first-child').width(w);
         setTimeout(function() {
-            // if($(".ui-autocomplete").is(':visible')) $(".ui-autocomplete").hide();
-            if($(".typeahead").is(':visible')) $(".typeahead").hide();
+            // if($(".ui-autocomplete").is(':visible')) $(".ui-autocomplete").hide(); // OLD
+            if($(".typeahead").is(':visible')) $(".typeahead").hide(); // NEW
         }, 1000);
     });
 
