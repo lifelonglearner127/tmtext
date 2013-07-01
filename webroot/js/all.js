@@ -36,8 +36,9 @@ $( function() {
                         data: $( '#updateDialog form' ).serialize(),
 
                         success: function( response ) {
-                           $( '#msgDialog > p' ).html( response );
-                            $( '#msgDialog' ).dialog( 'option', 'title', 'Success' ).dialog( 'open' );
+                            $( '#msgDialog > p' ).html( response );
+
+//                            $( '#msgDialog' ).dialog( 'option', 'title', 'Success' ).dialog( 'open' );
 
                             $( '#ajaxLoadAni' ).fadeOut( 'slow' );
 
