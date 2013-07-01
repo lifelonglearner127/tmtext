@@ -3,8 +3,8 @@ var research_sentence = '';
 function getSearchResult(){
     $.post(base_url + 'index.php/research/search_results', { 'search_data': $('input[name="research_text"]').val(),
         'website': $('input.dd-selected-value').val(),
-        'category': $('select[name="category"] option:selected').text(),
-        'limit': $('select[name="result_amount"] option:selected').val()
+        'category': $('select[name="category"]').find('option:selected').text(),
+        'limit': $('select[name="result_amount"]').find('option:selected').val()
     }, function(data){
         $('ul#product_descriptions').empty();
         $('ul#research_products li').each(function(){
@@ -209,7 +209,7 @@ $(document).ready(function () {
             $(this).css({'background':'#CAEAFF'});
             $(this).addClass('current_selected');
             $('#rel_keywords').css({'display':'block'});
-            $.post(base_url + 'index.php/research/get_research_data', { 'batch': $('select[name="batches"] option:selected').text(),
+            $.post(base_url + 'index.php/research/get_research_data', { 'batch': $('select[name="batches"]').find('option:selected').text(),
                     'product_name': $('ul#product_descriptions li#'+$(this).attr('id')+'_name').text()},
                 function(data){
                     var short_status = 'short';
@@ -324,7 +324,7 @@ $(document).ready(function () {
     $(document).on("click", "button#new_batch", function(){
         $.post(base_url + 'index.php/research/new_batch', {
             'batch': $('input[name="new_batch"]').val(),
-            'customer_name': $('select[name="customers"] option:selected').text(),
+            'customer_name': $('select[name="customers"]').find('option:selected').text(),
         }).done(function(data) {
             if($('input[name="new_batch"]').val() !='' ){
                 var cat_exist = 0;
@@ -345,7 +345,7 @@ $(document).ready(function () {
 
     $(document).on("click", "button#save_in_batch", function(){
         $.post(base_url + 'index.php/research/save_in_batch', {
-            'batch': $('select[name="batches"] option:selected').text(),
+            'batch': $('select[name="batches"]').find('option:selected').text(),
             'url': $('input[name="url"]').val(),
             'product_name': $('input[name="product_name"]').val(),
             'keyword1': $('input[name="primary"]').val(),
@@ -391,10 +391,10 @@ $(document).ready(function () {
         getSearchResult();
     });
     $(document).on("click", "#export_batch", function(){
-        window.location.href = base_url + 'index.php/research/export?batch='+$("select[name='batches'] option:selected").text();
+        window.location.href = base_url + 'index.php/research/export?batch='+$("select[name='batches']").find("option:selected").text();
     });
     $(document).on("click", "#export_batch_review", function(){
-        window.location.href = base_url + 'index.php/research/export?batch='+$("select[name='research_batches'] option:selected").text();
+        window.location.href = base_url + 'index.php/research/export?batch='+$("select[name='research_batches']").find("option:selected").text();
     });
 
     $(document).on("click", '.research_arrow', function() {
@@ -465,7 +465,7 @@ $(document).ready(function () {
     });*/
 
     $(document).on("change", "select[name='batches']", function(){
-        $.post(base_url + 'index.php/research/filterCustomerByBatch', { 'batch': $("select[name='batches'] option:selected").text()}, function(data){
+        $.post(base_url + 'index.php/research/filterCustomerByBatch', { 'batch': $("select[name='batches']").find("option:selected").text()}, function(data){
             if(data != null){
                 $("select[name='customers'] option").each(function(){
                     if(data==$(this).text()){
@@ -481,13 +481,13 @@ $(document).ready(function () {
     });
 
     $(document).on("change", "select[name='customers']", function(){
-        $.post(base_url + 'index.php/research/filterBatchByCustomer', { 'customer_name': $("select[name='customers'] option:selected").text()}, function(data){
+        $.post(base_url + 'index.php/research/filterBatchByCustomer', { 'customer_name': $("select[name='customers']").find("option:selected").text()}, function(data){
            if(data.length>0){
                 $("select[name='batches']").empty();
                 for(var i=0; i<data.length; i++){
                     $("select[name='batches']").append('<option>'+data[i]+'</option>');
                 }
-           } else if(data.length==0 && $("select[name='customers'] option:selected").text()!="All customers"){
+           } else if(data.length==0 && $("select[name='customers']").find("option:selected").text()!="All customers"){
                $("select[name='batches']").empty();
            }
         });
@@ -516,7 +516,7 @@ $(document).ready(function () {
     /*----------------------------Research batches--------------------------------------------*/
 
     $(document).on("change", 'select[name="research_batches"]', function() {
-        $.post(base_url + 'index.php/research/filterCustomerByBatch', { 'batch': $("select[name='research_batches'] option:selected").text()}, function(data){
+        $.post(base_url + 'index.php/research/filterCustomerByBatch', { 'batch': $("select[name='research_batches']").find("option:selected").text()}, function(data){
             if(data != null){
                 $("select[name='research_customers'] option").each(function(){
                     if(data==$(this).text()){
@@ -529,28 +529,28 @@ $(document).ready(function () {
                 });
             }
         });
-        $('input[name="batche_name"]').val($('select[name="research_batches"] option:selected').text());
+        $('input[name="batche_name"]').val($('select[name="research_batches"]').find('option:selected').text());
     });
     $('select[name="research_batches"]').trigger('change');
 
     $(document).on("change", "select[name='research_customers']", function(){
-        $.post(base_url + 'index.php/research/filterBatchByCustomer', { 'customer_name': $("select[name='research_customers'] option:selected").text()}, function(data){
+        $.post(base_url + 'index.php/research/filterBatchByCustomer', { 'customer_name': $("select[name='research_customers']").find("option:selected").text()}, function(data){
             if(data.length>0){
                 $("select[name='research_batches']").empty();
                 for(var i=0; i<data.length; i++){
                     $("select[name='research_batches']").append('<option>'+data[i]+'</option>');
                 }
-            } else if(data.length==0 && $("select[name='research_customers'] option:selected").text()!="All customers"){
+            } else if(data.length==0 && $("select[name='research_customers']").find("option:selected").text()!="All customers"){
                 $("select[name='research_batches']").empty();
             }
         });
     });
 
     $(document).on("click", '#research_batches_save', function() {
-        $.post(base_url + 'index.php/research/change_batch_name', { 'old_batch_name': $('select[name="research_batches"] option:selected').text(),
+        $.post(base_url + 'index.php/research/change_batch_name', { 'old_batch_name': $('select[name="research_batches"]').find('option:selected').text(),
             'new_batch_name': $('input[name="batche_name"]').val()}, function(data){
             if(data.message == 'success'){
-                $('select[name="research_batches"] option:selected').text($('input[name="batche_name"]').val());
+                $('select[name="research_batches"]').find('option:selected').text($('input[name="batche_name"]').val());
             }
         });
     });
