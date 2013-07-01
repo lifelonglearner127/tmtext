@@ -1,3 +1,11 @@
+# 07/01 Pavel
+CREATE TABLE IF NOT EXISTS `style_guide` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `style` text NOT NULL,
+  `customer_id` int(11) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+
 # 07/01 Ruslan 
 
 CREATE TABLE IF NOT EXISTS `similar_imported_data` (

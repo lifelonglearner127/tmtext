@@ -29,6 +29,7 @@ box['keywords'] = '<h3>Keywords</h3><div class="boxes_content"><p><span>Primary:
         '<p><span>Secondary:</span><input class="keywords" type="text" name="secondary" value="" />' +
         '<a href="#" class="clear_all">x</a></p><p><span>Tertiary:</span>' +
         '<input class="keywords" type="text" name="tertiary" value="" /><a href="#" class="clear_all">x</a></p></div>';
+box['stylegide'] = '<h3>Style Guide</h3><div class="boxes_content"></div>';
 box['page_elements'] = '<h3>Page Elements</h3><div class="boxes_content"><p>' +
         '<button id="generate_product" type="button" class="btn pull-right">Generate</button>' +
         '<label>Product name:</label><input type="text" class="span11 ml_0" name="product_name"/>' +
@@ -296,6 +297,14 @@ $(document).ready(function() {
                 <div class="span6" id="research_edit" class="connectedMoved">
                     <h3 class="handle"><a href="#" onclick="return false" class="hideShow"><img style="width:15px;margin-right: 10px" src="<?php echo base_url();?>img/arrow-down.png" /></a>Edit<a href="#" class="ml_10 research_arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
                     <ul class="research_content connectedSortable" id="sortable2">
+                        
+                        <li class="boxes mt_10" id="styleguide">
+                            <h3><a href="#" onclick="return false" class="hideShow"><img style="width:12px;margin-right: 10px" src="<?php echo base_url();?>img/arrow-down.png" /></a>Style Guide<a href="#" class="ml_10 research_arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
+                            <div class="boxes_content">
+                            </div>
+                        </li>
+                        
+                        
                         <li class="boxes mt_10" id="keywords">
                             <h3><a href="#" onclick="return false" class="hideShow"><img style="width:12px;margin-right: 10px" src="<?php echo base_url();?>img/arrow-down.png" /></a>Keywords<a href="#" class="ml_10 research_arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
                             <div class="boxes_content">

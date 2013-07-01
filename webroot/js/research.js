@@ -492,6 +492,19 @@ $(document).ready(function () {
            }
         });
     });
+    
+    $(document).on("change", "select[name='customersStyle']", function(){
+        $.post(base_url + 'index.php/customer/getStyleByCustomer', { 'customer_name': $("select[name='customersStyle'] option:selected").text()}, function(data){
+           $("textarea[name='style_guide']").val('');
+           $("textarea[name='style_guide']").val(data);
+            if(data){
+                $("textarea[name='style_guide']").empty();
+                $("textarea[name='style_guide']").val(data);
+           } else if(data == undefined || data == '' || $("select[name='customersStyle'] option:selected").text()!="Select Customers"){
+               $("textarea[name='style_guide']").val('');
+           }
+        });
+    });
 
     $(document).on("click", "#research_products span", function() {
         if($(this).css('white-space') == 'normal') {

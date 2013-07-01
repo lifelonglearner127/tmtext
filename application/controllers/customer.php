@@ -19,11 +19,11 @@ class Customer extends MY_Controller {
 
 	public function index()
 	{
-        $info = $this->ion_auth->get_user_data();
-        $this->data['email'] = $info['email'];
-        $this->data['identity'] = $info['identity'];
-        $this->data['title'] = 'Customer Settings';
-		$this->render();
+            $info = $this->ion_auth->get_user_data();
+            $this->data['email'] = $info['email'];
+            $this->data['identity'] = $info['identity'];
+            $this->data['title'] = 'Customer Settings';
+                    $this->render();
 	}
 
     public function product_description()
@@ -62,14 +62,46 @@ class Customer extends MY_Controller {
     public function upload_style()
     {
 	$this->load->library('UploadHandler');
-
+        
 	$this->output->set_content_type('application/json');
 	$this->uploadhandler->upload(array(
             'script_url' => site_url('customer/upload_style'),
-            'upload_dir' => $this->config->item('style_upload_dir'),
+            //'upload_dir' => $this->config->item('csv_upload_dir'),
             'param_name' => 'files',
             'delete_type' => 'POST',
             'accept_file_types' => '/.+\.txt$/i',
             ));
+        
+        if(!$this->ion_auth->is_admin($this->ion_auth->get_user_id())){
+            $this->load->model('users_to_customers_model');
+            $id = $this->users_to_customers_model->getByUserId($this->ion_auth->get_user_id());
+            $customerId = $id[0]->customer_id;
+        }else{
+            $customerId = 1; //test
+        }
+        
+        $txtcontent = file_get_contents(base_url().'webroot/uploads/'.$_FILES['files']['name'][0]);
+        $this->load->model('style_guide_model');
+        if($customerId!==null){
+            $this->style_guide_model->insertStyle($txtcontent, $customerId);
+        }
+    }
+    public function getStyleByCustomer()
+    {
+        
+        $this->load->model('customers_model');
+        $this->load->model('style_guide_model');
+        if(!$this->ion_auth->is_admin($this->ion_auth->get_user_id())){
+            $this->load->model('users_to_customers_model');
+            $id = $this->users_to_customers_model->getByUserId($this->ion_auth->get_user_id());
+            $customer_id = $id[0]->customer_id;
+        }else{
+            $customer_id = $this->customers_model->getIdByName($this->input->post('customer_name'));
+        }
+        
+        $style = $this->style_guide_model->getStyleByCustomerId($customer_id);
+        
+        $this->output->set_content_type('application/json')
+            ->set_output(json_encode($style[0]->style));
     }
 }

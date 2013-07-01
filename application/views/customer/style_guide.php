@@ -40,7 +40,10 @@
                         done: function (e, data) {
                             $.each(data.result.files, function (index, file) {
                                 if (file.error == undefined) {
-                                        $('#files').text(file.name);
+                                    $.post(base_url + 'index.php/customer/getStyleByCustomer', function(data){
+                                        $("textarea[name='style_guide']").val(data);
+                                    });
+                                    $('#files').text(file.name);
                                 }else{
                                     $('#files').text(file.error);
                                 }
@@ -65,14 +68,14 @@
                            array_shift($customer_list);
                            $selected = array(0);
                        }
-                       echo 'Customers: '.form_dropdown('customers', $customer_list, $selected, 'class="mt_10 category_list"');
+                       echo 'Customers: '.form_dropdown('customersStyle', $customer_list, $selected, 'class="mt_10 category_list"');
                    }
                 ?>
           </span>
                
             <div class="span10">
                     <div class="controls">
-                            <textarea type="text" name="style_guide" class="span10 mt_10" style="height: 130px; max-width: 570px;"></textarea>
+                            <textarea name="style_guide" class="span10 mt_10" style="height: 130px; max-width: 570px;"></textarea>
                     </div>
             </div>
             <div class="span10">
