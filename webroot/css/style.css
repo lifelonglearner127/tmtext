@@ -34,6 +34,19 @@
 	color: red;
 }
 
+.typeahead li {
+	max-width: 530px !important;
+}
+
+.typeahead li a {
+	max-width: 530px !important;
+	display: block;
+	overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding-right: 10px;
+}
+
 .ui-autocomplete li a {
 	max-width: 500px !important;
 	display: block;

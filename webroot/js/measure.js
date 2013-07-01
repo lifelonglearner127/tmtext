@@ -258,12 +258,16 @@ var editorSearchAllBaseUrl = base_url+"index.php/measure/searchmeasuredball";
 function startMeasureCompareV2() {
     // ---- LIMIT DETECTION (START)
     var limit = 0;
-    if($(".ui-autocomplete").is(':visible')) {
-        limit = $(".ui-autocomplete > li").length;
+    // if($(".ui-autocomplete").is(':visible')) {
+    //     limit = $(".ui-autocomplete > li").length;
+    // }
+    if($(".typeahead").is(':visible')) {
+        limit = $(".typeahead > li").length;
     }
     // ---- LIMIT DETECTION (END)
 
-    $(".ui-autocomplete").hide();
+    // $(".ui-autocomplete").hide();
+    $(".typeahead").hide();
     var s = $.trim($("#compare_text").val());
     var sl = $.trim($(".dd-selected-value").val());
     var cat = $("#cats_an").val();
@@ -285,7 +289,8 @@ function startMeasureCompareV2() {
         var w = $('ul#products li:first-child span:first-child').width();
         $('#an_sort_search_box .product_title .main span:first-child').width(w);
         setTimeout(function() {
-            if($(".ui-autocomplete").is(':visible')) $(".ui-autocomplete").hide();
+            // if($(".ui-autocomplete").is(':visible')) $(".ui-autocomplete").hide();
+            if($(".typeahead").is(':visible')) $(".typeahead").hide();
         }, 1000);
     });
 
