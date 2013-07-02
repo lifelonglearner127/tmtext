@@ -75,17 +75,30 @@ class Customer extends MY_Controller {
         if(!$this->ion_auth->is_admin($this->ion_auth->get_user_id())){
             $this->load->model('users_to_customers_model');
             $id = $this->users_to_customers_model->getByUserId($this->ion_auth->get_user_id());
-            $customerId = $id[0]->customer_id;
+            $customer_id = $id[0]->customer_id;
         }else{
-            $customerId = 1; //test
+            $this->load->model('customers_model');
+            $this->input->post('customerName');
+            if($this->input->post('customerName')!=='Select Customer'){
+                $customer_id = $this->customers_model->getIdByName($this->input->post('customerName'));
+            }else{
+                exit;
+            }
         }
         
         $txtcontent = file_get_contents(base_url().'webroot/uploads/'.$_FILES['files']['name'][0]);
         $this->load->model('style_guide_model');
-        if($customerId!==null){
-            $this->style_guide_model->insertStyle($txtcontent, $customerId);
+        if(empty($customer_id) || $customer_id==null || $customer_id==''){
+            $response = array(
+              'error' => 'There are no customers'   
+            );
+            $this->output->set_content_type('application/json')
+                ->set_output(json_encode($response));
+        }else{
+            $this->style_guide_model->insertStyle($txtcontent, $customer_id);
         }
     }
+    
     public function getStyleByCustomer()
     {
         
@@ -103,5 +116,36 @@ class Customer extends MY_Controller {
         
         $this->output->set_content_type('application/json')
             ->set_output(json_encode($style[0]->style));
+    }
+    public function saveTheStyle()
+    {
+        $this->load->model('style_guide_model');
+        $this->load->model('customers_model');
+        
+        $txtcontent = $this->input->post('txtcontent');
+        $customerName = $this->input->post('customerName');
+        $customer_id = $this->customers_model->getIdByName($customerName);
+        
+        if(!$this->ion_auth->is_admin($this->ion_auth->get_user_id())){
+            $this->load->model('users_to_customers_model');
+            $id = $this->users_to_customers_model->getByUserId($this->ion_auth->get_user_id());
+            $customer_id = $id[0]->customer_id;
+            
+            if($customer_id == null){ 
+                $this->output->set_content_type('application/json')
+                ->set_output(json_encode('There are no customers'));
+            }else{
+                $this->style_guide_model->insertStyle($txtcontent, $customer_id);
+                $this->output->set_content_type('application/json')
+                ->set_output(json_encode('The style has been saved.'));
+            }
+            
+        }else{
+            $this->style_guide_model->insertStyle($txtcontent, $customer_id);
+             $this->output->set_content_type('application/json')
+            ->set_output(json_encode('The style has been saved.'));
+        }
+       
+        
     }
 }

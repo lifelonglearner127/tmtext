@@ -121,6 +121,14 @@ $(document).ready(function () {
         $(this).parent().parent().toggleClass('hideBox');
     });
     
+    var customer_name = $("select[name='customers']").find("option:selected").text();
+    if(customer_name!=='All Customers'){
+        $.post(base_url + 'index.php/research/filterStyleByCustomer', { 'customer_name': customer_name}, function(data){
+                $('li#styleguide').find('.boxes_content').empty();
+                $('li#styleguide').find('.boxes_content').text(data);
+        });
+    }
+    
     
     
     $(document).on("keydown keyup change focusout", 'textarea[name="short_description"]', function() {
@@ -487,6 +495,11 @@ $(document).ready(function () {
     });
 
     $(document).on("change", "select[name='customers']", function(){
+        $.post(base_url + 'index.php/research/filterStyleByCustomer', { 'customer_name': $("select[name='customers']").find("option:selected").text()}, function(data){
+            $('li#styleguide').find('.boxes_content').empty();
+            $('li#styleguide').find('.boxes_content').text(data);
+        });
+        
         $.post(base_url + 'index.php/research/filterBatchByCustomer', { 'customer_name': $("select[name='customers']").find("option:selected").text()}, function(data){
            if(data.length>0){
                 $("select[name='batches']").empty();

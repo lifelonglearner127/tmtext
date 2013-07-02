@@ -395,4 +395,16 @@ class Research extends MY_Controller {
         $this->output->set_content_type('application/json')
             ->set_output(json_encode($batches_list));
     }
+    
+     public function filterStyleByCustomer(){
+        $this->load->model('customers_model');
+        $this->load->model('style_guide_model');
+        if($this->input->post('customer_name')!=='All Customers'){
+            $customer_id = $this->customers_model->getIdByName($this->input->post('customer_name'));
+            $style = $this->style_guide_model->getStyleByCustomerId($customer_id);
+
+            $this->output->set_content_type('application/json')
+                ->set_output(json_encode($style[0]->style));
+        }
+    }
 }

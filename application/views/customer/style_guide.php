@@ -11,8 +11,9 @@
                     $('head').find('title').text('Settings');
                 });
             </script>
+            <script src="<?php echo base_url();?>js/styleguide.js"></script>
             
-           <span class="span10">Upload Your Style Guide or Type It Into The Edit Box </span>
+            <span class="span10">Upload Your Style Guide or Type It Into The Edit Box </span>
                   
             
             
@@ -22,43 +23,13 @@
                     <span class="btn btn-success fileinput-button">
 			Upload & Save
 			<i class="icon-plus icon-white"></i>
-			<input id="fileupload" type="file" name="files[]" multiple>
+			<input id="styleupload" type="file" name="files[]" multiple>
                     </span>
                 </form>
                 <div id="progress" style="display:none"  class="progress progress-success progress-striped">
                     <div class="bar"></div>
 		</div><div id="files"></div>
-            </div>
-                
-            <script>
-                $(function () {
-                    'use strict';
-                    var url = '<?php echo site_url('customer/upload_style');?>';
-                    $('#fileupload').fileupload({
-                        url: url,
-                        dataType: 'json',
-                        done: function (e, data) {
-                            $.each(data.result.files, function (index, file) {
-                                if (file.error == undefined) {
-                                    $.post(base_url + 'index.php/customer/getStyleByCustomer', function(data){
-                                        $("textarea[name='style_guide']").val(data);
-                                    });
-                                    $('#files').text(file.name);
-                                }else{
-                                    $('#files').text(file.error);
-                                }
-                            });
-                        },
-                        progressall: function (e, data) {
-                            var progress = parseInt(data.loaded / data.total * 100, 10);
-                            $('#progress .bar').css('width',progress + '%');
-                            if (progress == 100) {
-                                   //$('#progress .bar').css('display','none');
-                                }
-                        }
-                    });
-                });
-            </script>         
+            </div>        
                     
             <span class="span4">
                 <?php
@@ -79,9 +50,11 @@
                     </div>
             </div>
             <div class="span10">
-                    <div class="controls span7">
-                            <button type="submit" class="btn btn-success"><i class="icon-white icon-ok"></i>&nbsp;Save</button>
+                    <div class="controls span3">
+                            <button type="submit" name="saveStyle" class="btn btn-success"><i class="icon-white icon-ok"></i>&nbsp;Save</button>
+                            
                     </div>
+                <span class="span5" id="responseMess"></span>
             </div>
                 
                 
