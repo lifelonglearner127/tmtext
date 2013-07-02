@@ -73,6 +73,7 @@
 		function resetRowsInputs() {
 			$('.pm_data_table_tinput').val('');
 			$('.pm_data_table_tinput').removeClass('error');
+			$("#pm_tab_save_btn").removeClass('btn-success');
 			$("#pm_tab_save_btn").addClass('disabled');
 			$("#pm_tab_save_btn").attr('disabled', true);
 		}
