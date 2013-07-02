@@ -27,7 +27,31 @@ class System extends MY_Controller {
 	public function recordcollection() {
 		$this->load->model('imported_data_parsed_model');
 		$crawl_stack = $this->input->post('crawl_stack'); // !!! array of objects !!!
-		$this->output->set_content_type('application/json')->set_output(json_encode($crawl_stack));
+		$error_code = 1;
+		$crawl = array();
+		if($crawl_stack !== null && count($crawl_stack) > 0) {
+			$cid = md5(time());
+			foreach ($crawl_stack as $k => $v) {
+				$check = $this->imported_data_parsed_model->checkIfUrlIExists($v->url); // ---- check if such url exists in products data
+				if($check !== false) {
+					$mid = array(
+						'cid' => $cid,
+						'imported_data_id' => $check,
+						'url' => $v->url, 
+						'sku' => $v->sku 
+					);
+					array_push($crawl, $mid); 
+				}
+			}
+			if(count($crawl) > 1) { // --- all ok, so record collection to DB
+				$record = $this->imported_data_parsed_model->recordProductMatchCollection($crawl);
+			} else {
+				$error_code = 2; // --- not enough valid collection items (must be 2>)
+			}
+		} else {
+			$error_code = 3; // --- internal server error
+		}
+		$this->output->set_content_type('application/json')->set_output(json_encode($error_code));
 	}
 
 	public function testattributesext() {
