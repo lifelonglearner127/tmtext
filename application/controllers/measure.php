@@ -71,6 +71,7 @@ class Measure extends MY_Controller {
             // --- GET SELECTED RPODUCT DATA (START)
             $this->load->model('imported_data_parsed_model');
             $data_import = $this->imported_data_parsed_model->getByImId($im_data_id);
+
             if($data_import['description'] !== null && trim($data_import['description']) !== "") {
                 $data_import['description'] = preg_replace('/\s+/', ' ', $data_import['description']);
                 // $data_import['description'] = preg_replace('/[^A-Za-z0-9\. -!]/', ' ', $data_import['description']);
@@ -86,14 +87,54 @@ class Measure extends MY_Controller {
 
             // --- ATTEMPT TO GET 'SAME' FROM 'HUMAN INTERFACE' (products_compare table) (START)
             $same_pr = $this->imported_data_parsed_model->getSameProductsHuman($im_data_id);
-            if(count($same_pr) === 3) {
+
+            // get similar for first row
+			$this->load->model('similar_imported_data_model');
+
+            $customers_list = array();
+	        $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('customers');
+	        $query_cus_res = $query_cus->result();
+	        if(count($query_cus_res) > 0) {
+	            foreach ($query_cus_res as $key => $value) {
+	                $n = strtolower($value->name);
+	                $customers_list[] = $n;
+	            }
+	        }
+	        $customers_list = array_unique($customers_list);
+
+			if ($group_id = $this->similar_imported_data_model->findByImportedDataId($im_data_id)) {
+				if ($rows = $this->similar_imported_data_model->getImportedDataByGroupId($group_id)) {
+					$data_similar = array();
+
+					foreach ($rows as $key => $row) {
+						$data_similar[$key] = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
+						$data_similar[$key]['imported_data_id'] = $row->imported_data_id;
+
+						$cus_val = "";
+						foreach ($customers_list as $ki => $vi) {
+							if(strpos($data_similar[$key]['url'], "$vi") !== false) {
+								$cus_val  = $vi;
+							}
+						}
+						if($cus_val !== "") $data_similar[$key]['customer'] = $cus_val;
+					}
+
+					if (!empty($data_similar)) {
+						$same_pr = $data_similar;
+					}
+
+				}
+
+			}
+
+//			if(count($same_pr) === 3) {
                 foreach ($same_pr as $ks => $vs) {
                     $same_pr[$ks]['seo']['short'] = $this->helpers->measure_analyzer_start_v2(preg_replace('/\s+/', ' ', $vs['description']));
                     $same_pr[$ks]['seo']['long'] = $this->helpers->measure_analyzer_start_v2(preg_replace('/\s+/', ' ', $vs['long_description']));
 
                 }
                 $data['same_pr'] = $same_pr;
-            }
+//            }
             // --- ATTEMPT TO GET 'SAME' FROM 'HUMAN INTERFACE' (products_compare table) (END)
 
             // --- GET SELECTED RPODUCT SEO DATA (TMP) (START)
@@ -159,28 +200,6 @@ class Measure extends MY_Controller {
         } else {
             $data_import = $this->imported_data_parsed_model->getData($s, $sl, $cat_id);
         }
-
-        // get similar for first row
-		if (isset($data_import) && isset($data_import[0]) && isset($data_import[0]['imported_data_id'])) {
-			$this->load->model('similar_imported_data_model');
-			if ($group_id = $this->similar_imported_data_model->findByImportedDataId($data_import[0]['imported_data_id'])) {
-				if ($rows = $this->similar_imported_data_model->getImportedDataByGroupId($group_id)) {
-					$data_similar = array();
-					$i=0;
-					foreach ($rows as $row) {
-						$data_similar[$i] = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
-						$data_similar[$i]['imported_data_id'] = $row->imported_data_id;
-						$i++;
-					}
-
-					if (!empty($data_similar)) {
-						$data_import = $data_similar;
-					}
-
-				}
-
-			}
-    	}
 
         if (empty($data_import)) {
             $this->load->library('PageProcessor');
