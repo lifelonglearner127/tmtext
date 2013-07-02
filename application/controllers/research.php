@@ -154,7 +154,10 @@ class Research extends MY_Controller {
             $product_name = $this->input->post('product_name');
             $short_description = $this->input->post('short_description');
             $long_description = $this->input->post('long_description');
-            $this->research_data_model->updateItem($id, $product_name, $url, $short_description, $long_description);
+            // count words
+            $short_description_wc = intval(preg_match_all("/\b/", $short_description)) / 2;
+            $long_description_wc = intval(preg_match_all("/\b/", $long_description)) / 2;
+            $this->research_data_model->updateItem($id, $product_name, $url, $short_description, $long_description, $short_description_wc, $long_description_wc);
             echo 'Record updated successfully!';
         }
     }
@@ -216,13 +219,15 @@ class Research extends MY_Controller {
                 $revision = $this->input->post('revision');
             }
             $results = $this->research_data_model->getAllByProductName($product_name, $batch_id);
+
             if(empty($results)){
                 $data['research_data_id'] = $this->research_data_model->insert($batch_id, $url, $product_name, $keyword1, $keyword2,
                     $keyword3, $meta_title, $meta_description, $meta_keywords, $short_description, $short_description_wc, $long_description, $long_description_wc, $revision);
             } else {
-                $data['research_data_id'] = $this->research_data_model->update($results[0]->id, $batch_id, $url, $product_name, $keyword1, $keyword2,
-                    $keyword3, $meta_title, $meta_description, $meta_keywords, $short_description, $short_description_wc, $long_description, $long_description_wc, $revision);
+                $data['research_data_id'] = $this->research_data_model->update($results[0]->id, $batch_id, $url, $product_name, $short_description, $short_description_wc, $long_description, $long_description_wc, $keyword1, $keyword2,
+                    $keyword3, $meta_title, $meta_description, $meta_keywords, $revision);
             }
+
             $data['revision'] = $revision;
         } else {
             $data['message'] = (validation_errors() ? validation_errors() : $this->session->flashdata('message'));

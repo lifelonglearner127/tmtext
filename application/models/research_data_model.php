@@ -127,12 +127,14 @@ class Research_data_model extends CI_Model {
         return $query->result();
     }
 
-    public function updateItem($id, $product_name, $url, $short_description, $long_description) {
+    public function updateItem($id, $product_name, $url, $short_description, $long_description, $short_description_wc = 0, $long_description_wc = 0) {
         $data = array(
             'product_name' => $product_name,
             'url' => $url,
             'short_description' => $short_description,
-            'long_description' => $long_description
+            'long_description' => $long_description,
+            'short_description_wc' => $short_description_wc,
+            'long_description_wc' => $long_description_wc,
         );
 
         $this->db->update( 'research_data', $data, array( 'id' => $id ) );
