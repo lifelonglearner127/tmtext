@@ -139,7 +139,7 @@ class Research extends MY_Controller {
         if($this->input->get('search_text') != ''){
             $data = $this->input->get('search_text');
         }
-        $results = $this->research_data_model->getDataByBatchId($data);
+        $results = $this->research_data_model->getInfoFromResearchData($data);
 
         $this->output->set_content_type('application/json')
             ->set_output(json_encode($results));

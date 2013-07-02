@@ -103,7 +103,7 @@ class Research_data_model extends CI_Model {
         return $query->result();
     }
 
-    function getDataByBatchId($text)
+    function getInfoFromResearchData($text)
     {
         $query = $this->db->query("select `rd`.*, DATE_FORMAT(`rd`.`created`,'%d-%m-%Y') as `created`,
         `u`.`email` as `user_id`,
