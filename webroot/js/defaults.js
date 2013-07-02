@@ -222,21 +222,17 @@ function cleanNewUserForm(){
 function afterAutocomplete(loadData){
 
     var postData = {id: loadData.item.id};
-    console.log(location.href);
     var getuserURL = $('#auth_getuser').attr('action');
     var posting = $.post(getuserURL, postData, function(data) {
         cleanNewUserForm();
-        console.log(data.active);
         $("#user_name").val(data.username);
         $("#user_mail").val(data.email);
         $("#user_customers").val(data.customers).trigger("liszt:updated");
         $("#user_role").val(data.role.group_id).trigger("liszt:updated");
         if(data.active == 1){
             $(".user_active").prop('checked', true);
-            console.log($(".user_active"));
         }else{
             $(".user_active").prop('checked', false);
-             console.log($(".user_active"));
         };
         $('<input type="hidden" name="user_id" id="user_id" value="'+data.id+'" />').appendTo('.user_id');
         $( '#btn_system_update_user' ).removeAttr('disabled');
@@ -825,7 +821,7 @@ jQuery(document).ready(function($) {
     $(document).on("click", "#btn_system_update_user", function(e){
         e.preventDefault();
         var postData = $( "#system_save_new_user" ).serialize();
-        var url = '/index.php/system/update_user';
+        var url = base_url + 'index.php/system/update_user';
         var posting = $.post(url, postData, function(data) {
             if(data.success == 1){
                 cleanNewUserForm();
