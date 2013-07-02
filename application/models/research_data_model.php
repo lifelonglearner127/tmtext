@@ -19,7 +19,9 @@ class Research_data_model extends CI_Model {
 
 
     var $tables = array(
-        'research_data' => 'research_data'
+        'research_data' => 'research_data',
+        'batches' => 'batches',
+        'users' => 'users'
     );
 
     function __construct()
@@ -37,7 +39,7 @@ class Research_data_model extends CI_Model {
     }
 
     function insert($batch_id, $url, $product_name, $keyword1, $keyword2, $keyword3, $meta_name,
-                    $meta_description, $meta_keywords, $short_description, $long_description, $revision = 1)
+                    $meta_description, $meta_keywords, $short_description, $short_description_wc, $long_description, $long_description_wc, $revision = 1)
     {
         $CI =& get_instance();
         $this->batch_id = $batch_id;
@@ -51,7 +53,9 @@ class Research_data_model extends CI_Model {
         $this->meta_description = $meta_description ;
         $this->meta_keywords = $meta_keywords;
         $this->short_description = $short_description;
+        $this->short_description_wc = $short_description_wc;
         $this->long_description = $long_description;
+        $this->long_description_wc = $long_description_wc;
         $this->revision = $revision;
 
         $this->created = date('Y-m-d h:i:s');
@@ -60,7 +64,7 @@ class Research_data_model extends CI_Model {
         return $this->db->insert_id();
     }
 
-   function update($id, $batch_id, $url, $product_name, $short_description, $long_description, $keyword1='', $keyword2='', $keyword3='', $meta_name='',
+   function update($id, $batch_id, $url, $product_name, $short_description, $short_description_wc, $long_description, $long_description_wc, $keyword1='', $keyword2='', $keyword3='', $meta_name='',
                     $meta_description='', $meta_keywords='')
     {
         $CI =& get_instance();
@@ -75,7 +79,9 @@ class Research_data_model extends CI_Model {
         $this->meta_description = $meta_description;
         $this->meta_keywords = $meta_keywords;
         $this->short_description = $short_description;
+        $this->short_description_wc = $short_description_wc;
         $this->long_description = $long_description;
+        $this->long_description_wc = $long_description_wc;
         $this->revision = $revision;
         $this->modified = date('Y-m-d h:i:s');
 
@@ -97,11 +103,17 @@ class Research_data_model extends CI_Model {
         return $query->result();
     }
 
-    function getDataByBatchId($text, $batch_id)
+    function getInfoFromResearchData($text)
     {
-        $query = $this->db->query("select *, DATE_FORMAT(`created`,'%d-%m-%Y') as created, (select email from users u where id=research_data.user_id) as user_id from ".$this->tables['research_data']." where concat(url, product_name,
-            keyword1, keyword2, keyword3, meta_name, meta_description, meta_keywords, short_description, long_description ) like '%".$text."%'
-             and batch_id=".$batch_id);
+        $query = $this->db->query("select `rd`.*, DATE_FORMAT(`rd`.`created`,'%d-%m-%Y') as `created`,
+        `u`.`email` as `user_id`,
+        `b`.`title` as `batch_name`
+        from ".$this->tables['research_data']." as `rd`
+        left join ".$this->tables['batches']." as `b` on `rd`.`batch_id` = `b`.`id`
+        left join ".$this->tables['users']." as `u` on `rd`.`user_id` = `u`.`id`
+        where concat(`rd`.`url`, `rd`.`product_name`, `rd`.`keyword1`, `rd`.`keyword2`, `rd`.`keyword3`, `rd`.`meta_name`,
+        `rd`.`meta_description`, `rd`.`meta_keywords`, `rd`.`short_description`, `rd`.`short_description_wc`,
+        `rd`.`long_description`, `rd`.`long_description_wc`) like '%".$text."%'");
         return $query->result();
     }
 
@@ -115,12 +127,14 @@ class Research_data_model extends CI_Model {
         return $query->result();
     }
 
-    public function updateItem($id, $product_name, $url, $short_description, $long_description) {
+    public function updateItem($id, $product_name, $url, $short_description, $long_description, $short_description_wc = 0, $long_description_wc = 0) {
         $data = array(
             'product_name' => $product_name,
             'url' => $url,
             'short_description' => $short_description,
-            'long_description' => $long_description
+            'long_description' => $long_description,
+            'short_description_wc' => $short_description_wc,
+            'long_description_wc' => $long_description_wc,
         );
 
         $this->db->update( 'research_data', $data, array( 'id' => $id ) );

@@ -9,6 +9,7 @@ license.txt
 .buildpath
 .project
 .settings
+.htaccess
 #Other
 /application/logs
 /application/controllers/test.php

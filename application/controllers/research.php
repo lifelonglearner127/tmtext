@@ -21,7 +21,10 @@ class Research extends MY_Controller {
     {
         $this->data['customer_list'] = $this->getCustomersByUserId();
         $this->data['category_list'] = $this->category_list();
-        $this->data['batches_list'] = $this->batches_list();
+        if(!empty($this->data['customer_list'])){
+             $this->data['batches_list'] = $this->batches_list();
+        }
+        
         $this->render();
     }
 
@@ -79,8 +82,9 @@ class Research extends MY_Controller {
     }
 
     public function research_batches(){
-        $this->data['batches_list'] = $this->batches_list();
+        
         $this->data['customer_list'] = $this->getCustomersByUserId();
+        $this->data['batches_list'] = $this->batches_list();
         $this->render();
     }
     
@@ -135,11 +139,11 @@ class Research extends MY_Controller {
     public function get_research_info()
     {
         $this->load->model('research_data_model');
-        $this->load->model('batches_model');
-        $batch = trim($this->input->get('choosen_batch'));
-        $batch_id = $this->batches_model->getIdByName($batch);
-
-        $results = $this->research_data_model->getDataByBatchId($this->input->get('search_text'), $batch_id);
+        $data = '';
+        if($this->input->get('search_text') != ''){
+            $data = $this->input->get('search_text');
+        }
+        $results = $this->research_data_model->getInfoFromResearchData($data);
 
         $this->output->set_content_type('application/json')
             ->set_output(json_encode($results));
@@ -154,7 +158,10 @@ class Research extends MY_Controller {
             $product_name = $this->input->post('product_name');
             $short_description = $this->input->post('short_description');
             $long_description = $this->input->post('long_description');
-            $this->research_data_model->updateItem($id, $product_name, $url, $short_description, $long_description);
+            // count words
+            $short_description_wc = intval(preg_match_all("/\b/", $short_description)) / 2;
+            $long_description_wc = intval(preg_match_all("/\b/", $long_description)) / 2;
+            $this->research_data_model->updateItem($id, $product_name, $url, $short_description, $long_description, $short_description_wc, $long_description_wc);
             echo 'Record updated successfully!';
         }
     }
@@ -202,7 +209,9 @@ class Research extends MY_Controller {
             $meta_description = $this->input->post('meta_description');
             $meta_keywords = $this->input->post('meta_keywords');
             $short_description = $this->input->post('short_description');
+            $short_description_wc = $this->input->post('short_description_wc');
             $long_description = $this->input->post('long_description');
+            $long_description_wc = $this->input->post('long_description_wc');
             if ($this->input->post('revision')=='') {
                 $last_revision = $this->research_data_model->getLastRevision();
                 if(!empty($last_revision)){
@@ -214,13 +223,15 @@ class Research extends MY_Controller {
                 $revision = $this->input->post('revision');
             }
             $results = $this->research_data_model->getAllByProductName($product_name, $batch_id);
+
             if(empty($results)){
                 $data['research_data_id'] = $this->research_data_model->insert($batch_id, $url, $product_name, $keyword1, $keyword2,
-                    $keyword3, $meta_title, $meta_description, $meta_keywords, $short_description, $long_description, $revision);
+                    $keyword3, $meta_title, $meta_description, $meta_keywords, $short_description, $short_description_wc, $long_description, $long_description_wc, $revision);
             } else {
-                $data['research_data_id'] = $this->research_data_model->update($results[0]->id, $batch_id, $url, $product_name, $keyword1, $keyword2,
-                    $keyword3, $meta_title, $meta_description, $meta_keywords, $short_description, $long_description, $revision);
+                $data['research_data_id'] = $this->research_data_model->update($results[0]->id, $batch_id, $url, $product_name, $short_description, $short_description_wc, $long_description, $long_description_wc, $keyword1, $keyword2,
+                    $keyword3, $meta_title, $meta_description, $meta_keywords, $revision);
             }
+
             $data['revision'] = $revision;
         } else {
             $data['message'] = (validation_errors() ? validation_errors() : $this->session->flashdata('message'));
@@ -263,14 +274,24 @@ class Research extends MY_Controller {
         $this->load->model('customers_model');
         $this->load->model('users_to_customers_model');
         $customers = $this->users_to_customers_model->getByUserId($this->ion_auth->get_user_id());
-        if(count($customers) == 0){
+        if(!$this->ion_auth->is_admin($this->ion_auth->get_user_id())){
+            if(count($customers) == 0){
+                $customer_list = array();
+            }else{
+                $customer_list = array(''=>'All Customers');
+            }
+            foreach($customers as $customer){
+                array_push($customer_list, $customer->name);
+            }
+        }else{
+            if(count($customers) == 0){
             $customers = $this->customers_model->getAll();
+            }
+            $customer_list = array(''=>'All Customers');
+            foreach($customers as $customer){
+                array_push($customer_list, $customer->name);
+            }
         }
-        $customer_list = array(''=>'All Customers');
-        foreach($customers as $customer){
-            array_push($customer_list, $customer->name);
-        }
-
         return $customer_list;
 
     }
@@ -387,5 +408,17 @@ class Research extends MY_Controller {
         }
         $this->output->set_content_type('application/json')
             ->set_output(json_encode($batches_list));
+    }
+    
+     public function filterStyleByCustomer(){
+        $this->load->model('customers_model');
+        $this->load->model('style_guide_model');
+        if($this->input->post('customer_name')!=='All Customers'){
+            $customer_id = $this->customers_model->getIdByName($this->input->post('customer_name'));
+            $style = $this->style_guide_model->getStyleByCustomerId($customer_id);
+
+            $this->output->set_content_type('application/json')
+                ->set_output(json_encode($style[0]->style));
+        }
     }
 }

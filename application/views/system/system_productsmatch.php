@@ -70,6 +70,14 @@
 
 		$("#pm_data_table .pm_data_table_tinput").bind('keypress', keypressHandler);
 
+		function resetRowsInputs() {
+			$('.pm_data_table_tinput').val('');
+			$('.pm_data_table_tinput').removeClass('error');
+			$("#pm_tab_save_btn").removeClass('btn-success');
+			$("#pm_tab_save_btn").addClass('disabled');
+			$("#pm_tab_save_btn").attr('disabled', true);
+		}
+
 		function keypressHandler() {
 			if(empty_check_validation()) {
 				$("#pm_tab_save_btn").removeClass('disabled');
@@ -138,21 +146,32 @@
 		});
 
 		$("#pm_tab_save_btn").click(function() {
+			$("#pm_data_table tr .pm_data_table_tinput").removeClass('error');
 			var crawl_stack = [];
 			$("#pm_data_table tr").each(function(index, value) {
 				var url = $.trim($(value).find('.pmtt_url').val());
 				var sku = $.trim($(value).find('.pmtt_sku').val());
-				if(url !== "" && sku !== "") {
+				if(url === "" && sku === "") {
+					
+				} else {
 					var mid = {
-						'status': false,
+						'status_all': false,
+						'status_url': false,
+						'status_sku': false,
 						'index': index,
 						'url': '',
 						'sku': ''
 					};
 					if(validate_url(url) && sku !== "") {
-						mid['status'] = true;
+						mid['status_all'] = true;
 						mid['url'] = url;
 						mid['sku'] = sku;
+					}
+					if(validate_url(url)) {
+						mid['status_url'] = true;
+					}
+					if(sku !== "") {
+						mid['status_sku'] = true;
 					}
 					crawl_stack.push(mid);
 				}
@@ -161,18 +180,50 @@
 			if(crawl_stack.length > 0) {
 				var tr_res = true;
 				for(var i = 0; i < crawl_stack.length; i++) {
-					if(crawl_stack[i]['status'] !== true) {
+					if(crawl_stack[i]['status_all'] !== true) {
 						tr_res = false;
 						break;
 					}
 				}
 				if(tr_res) { // --- all ok, ready for send to backend
-					outputNotice('Success', 'Crawl objects ready for backend');
-				} else { // ---- not ready, some mistakes
-					outputNotice('Fail', 'Check out some mistakes');
+					$.ajax({
+			              url: base_url + 'index.php/system/recordcollection',
+			              dataType: "JSON",
+			              async: false,
+			              type: "POST",
+			              data: {
+			                crawl_stack: crawl_stack
+			              },
+			              success: function(res) {
+			              	if(res === 1) { // --- all ok
+			              		resetRowsInputs();
+			              		outputNotice('Success', 'Collection successfully saved.');
+			              	} else if(res === 2) { // --- not enough valid collection items (must be 2>)
+			              		outputNotice('Notice', 'Not enough valid collection items. Must be at least two.');
+			              	} else if(res === 3) { // --- internal server error
+			              		outputNotice('Warning', 'Internal Server Error');
+			              	}
+			              }
+		            });
+				} else { // ---- not ready, some mistakes in rows
+					// --- highlight mistakes (start)
+					for(var i=0; i < crawl_stack.length; i++) {
+						if(crawl_stack[i]['status_all'] === false) {
+							if(crawl_stack[i]['status_url'] === false) {
+								var url_error = $("#pm_data_table tr")[crawl_stack[i]['index']];
+								$(url_error).find('.pmtt_url').addClass('error');
+							}
+							if(crawl_stack[i]['status_sku'] === false) {
+								var url_error = $("#pm_data_table tr")[crawl_stack[i]['index']];
+								$(url_error).find('.pmtt_sku').addClass('error');
+							}
+						}
+					}
+					// --- highlight mistakes (end)
+					outputNotice('Fail', 'Check out some validation errors');
 				} 
 			} else {
-				outputNotice('Fail', 'All rows are empty');
+				outputNotice('Notice', 'All rows are empty');
 			}
 			// --- travel through results (end)
 			// console.log("RESULT: ", crawl_stack);

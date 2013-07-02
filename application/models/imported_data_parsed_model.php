@@ -26,7 +26,8 @@ class Imported_data_parsed_model extends CI_Model {
     	'imported_data_parsed' => 'imported_data_parsed',
         'imported_data' => 'imported_data',
         'customers' => 'customers',
-        'products_compare' => 'products_compare'
+        'products_compare' => 'products_compare',
+        'product_match_collections' => 'product_match_collections'
     );
 
     function __construct() {
@@ -103,6 +104,25 @@ class Imported_data_parsed_model extends CI_Model {
         }
         return $data;
     }
+
+    function checkIfUrlIExists($url) {
+        $this->db->select('p.imported_data_id, p.key, p.value')
+            ->from($this->tables['imported_data_parsed'].' as p')
+            ->join($this->tables['imported_data'].' as i', 'i.id = p.imported_data_id', 'left')
+            ->where('p.key', 'URL')->where('p.value', $url);
+        $query = $this->db->get();
+        $results = $query->result();
+        if(count($results) > 0) {
+            return $results[0]->imported_data_id;
+        } else {
+            return false;
+        }
+    }
+
+    function recordProductMatchCollection($crawl) {
+        return $this->db->insert_batch($this->tables['product_match_collections'], $crawl); 
+    }
+
 
     function getRandomRightCompareProductDrop($customer_r_selected, $customer_l, $id_l, $id_r) {
         // ---- get customers list (start)

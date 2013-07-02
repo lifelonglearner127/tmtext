@@ -1,3 +1,26 @@
+# 07/02 Ilya
+
+CREATE TABLE IF NOT EXISTS `product_match_collections` (
+  `id` INT NOT NULL ,
+  `cid` VARCHAR(128) NULL ,
+  `imported_data_id` INT NULL ,
+  `url` TEXT NULL ,
+  `sku` TEXT NULL ,
+  PRIMARY KEY (`id`) 
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1;
+
+# 07/01 Tatiana
+ALTER TABLE  `research_data` ADD  `short_description_wc` INT NOT NULL AFTER  `short_description`;
+ALTER TABLE  `research_data` ADD  `long_description_wc` INT NOT NULL AFTER  `long_description`;
+
+# 07/01 Pavel
+CREATE TABLE IF NOT EXISTS `style_guide` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `style` text NOT NULL,
+  `customer_id` int(11) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+
 # 07/01 Ruslan 
 
 CREATE TABLE IF NOT EXISTS `similar_imported_data` (

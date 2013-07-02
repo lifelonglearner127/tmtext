@@ -772,6 +772,9 @@ jQuery(document).ready(function($) {
     });
 
     $(document).on("click", ".jq-research-tabs li a", function(e){
+        if( typeof dataTable == 'object' ){
+            dataTable = undefined;
+        }
         e.preventDefault();
         var url = $(this).attr('href');
         var posting = $.post(url+"?ajax=true", function(data) {
@@ -785,6 +788,7 @@ jQuery(document).ready(function($) {
                 truncateDescription: true,
             });
         });
+
     });
 
     $(document).on("click", ".jq-customer-tabs li a", function(e){

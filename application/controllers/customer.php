@@ -19,11 +19,11 @@ class Customer extends MY_Controller {
 
 	public function index()
 	{
-        $info = $this->ion_auth->get_user_data();
-        $this->data['email'] = $info['email'];
-        $this->data['identity'] = $info['identity'];
-        $this->data['title'] = 'Customer Settings';
-		$this->render();
+            $info = $this->ion_auth->get_user_data();
+            $this->data['email'] = $info['email'];
+            $this->data['identity'] = $info['identity'];
+            $this->data['title'] = 'Customer Settings';
+                    $this->render();
 	}
 
     public function product_description()
@@ -62,14 +62,90 @@ class Customer extends MY_Controller {
     public function upload_style()
     {
 	$this->load->library('UploadHandler');
-
+        
 	$this->output->set_content_type('application/json');
 	$this->uploadhandler->upload(array(
             'script_url' => site_url('customer/upload_style'),
-            'upload_dir' => $this->config->item('style_upload_dir'),
+            //'upload_dir' => $this->config->item('csv_upload_dir'),
             'param_name' => 'files',
             'delete_type' => 'POST',
             'accept_file_types' => '/.+\.txt$/i',
             ));
+        
+        if(!$this->ion_auth->is_admin($this->ion_auth->get_user_id())){
+            $this->load->model('users_to_customers_model');
+            $id = $this->users_to_customers_model->getByUserId($this->ion_auth->get_user_id());
+            $customer_id = $id[0]->customer_id;
+        }else{
+            $this->load->model('customers_model');
+            $this->input->post('customerName');
+            if($this->input->post('customerName')!=='Select Customer'){
+                $customer_id = $this->customers_model->getIdByName($this->input->post('customerName'));
+            }else{
+                exit;
+            }
+        }
+        
+        $txtcontent = file_get_contents(base_url().'webroot/uploads/'.$_FILES['files']['name'][0]);
+        $this->load->model('style_guide_model');
+        if(empty($customer_id) || $customer_id==null || $customer_id==''){
+            $response = array(
+              'error' => 'There are no customers'   
+            );
+            $this->output->set_content_type('application/json')
+                ->set_output(json_encode($response));
+        }else{
+            $this->style_guide_model->insertStyle($txtcontent, $customer_id);
+        }
+    }
+    
+    public function getStyleByCustomer()
+    {
+        
+        $this->load->model('customers_model');
+        $this->load->model('style_guide_model');
+        if(!$this->ion_auth->is_admin($this->ion_auth->get_user_id())){
+            $this->load->model('users_to_customers_model');
+            $id = $this->users_to_customers_model->getByUserId($this->ion_auth->get_user_id());
+            $customer_id = $id[0]->customer_id;
+        }else{
+            $customer_id = $this->customers_model->getIdByName($this->input->post('customer_name'));
+        }
+        
+        $style = $this->style_guide_model->getStyleByCustomerId($customer_id);
+        
+        $this->output->set_content_type('application/json')
+            ->set_output(json_encode($style[0]->style));
+    }
+    public function saveTheStyle()
+    {
+        $this->load->model('style_guide_model');
+        $this->load->model('customers_model');
+        
+        $txtcontent = $this->input->post('txtcontent');
+        $customerName = $this->input->post('customerName');
+        $customer_id = $this->customers_model->getIdByName($customerName);
+        
+        if(!$this->ion_auth->is_admin($this->ion_auth->get_user_id())){
+            $this->load->model('users_to_customers_model');
+            $id = $this->users_to_customers_model->getByUserId($this->ion_auth->get_user_id());
+            $customer_id = $id[0]->customer_id;
+            
+            if($customer_id == null){ 
+                $this->output->set_content_type('application/json')
+                ->set_output(json_encode('There are no customers'));
+            }else{
+                $this->style_guide_model->insertStyle($txtcontent, $customer_id);
+                $this->output->set_content_type('application/json')
+                ->set_output(json_encode('The style has been saved.'));
+            }
+            
+        }else{
+            $this->style_guide_model->insertStyle($txtcontent, $customer_id);
+             $this->output->set_content_type('application/json')
+            ->set_output(json_encode('The style has been saved.'));
+        }
+       
+        
     }
 }

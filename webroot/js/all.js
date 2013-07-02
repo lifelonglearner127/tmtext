@@ -25,6 +25,44 @@ $( function() {
     $( '#updateDialog' ).dialog({
         autoOpen: false,
         buttons: {
+            'Update & Next':
+                function() {
+                    $( '#ajaxLoadAni' ).fadeIn( 'slow' );
+                    $( this ).dialog( 'close' );
+
+                    $.ajax({
+                        url: updateHref,
+                        type: 'POST',
+                        data: $( '#updateDialog form' ).serialize(),
+
+                        success: function( response ) {
+                            $( '#msgDialog > p' ).html( response );
+
+//                            $( '#msgDialog' ).dialog( 'option', 'title', 'Success' ).dialog( 'open' );
+
+                            $( '#ajaxLoadAni' ).fadeOut( 'slow' );
+
+                            //--- update row in table with new values ---
+                            var productname = $( 'tr#' + updateId + ' td' )[ 1 ];
+                            var url = $( 'tr#' + updateId + ' td' )[ 2 ];
+                            var short_description = $( 'tr#' + updateId + ' td' )[ 3];
+                            var long_description = $( 'tr#' + updateId + ' td' )[ 4 ];
+
+                            $( productname ).html( $( '#product_name' ).val() );
+                            $( url ).html( $( '#url' ).val() );
+                            $( short_description ).html( $( '#short_description' ).val() );
+                            $( long_description ).html( $( '#long_description' ).val() );
+
+                            //--- clear form ---
+                            $( '#updateDialog form input' ).val( '' );
+
+                            updateNextDialog(updateId);
+
+                        } //end success
+
+                    }); //end ajax()
+                },
+
             'Update':
                 function() {
                     $( '#ajaxLoadAni' ).fadeIn( 'slow' );
@@ -36,8 +74,9 @@ $( function() {
                         data: $( '#updateDialog form' ).serialize(),
 
                         success: function( response ) {
-                           $( '#msgDialog > p' ).html( response );
-                            $( '#msgDialog' ).dialog( 'option', 'title', 'Success' ).dialog( 'open' );
+                            $( '#msgDialog > p' ).html( response );
+
+//                            $( '#msgDialog' ).dialog( 'option', 'title', 'Success' ).dialog( 'open' );
 
                             $( '#ajaxLoadAni' ).fadeOut( 'slow' );
 
@@ -129,7 +168,7 @@ $( function() {
                 $( '#userId' ).val( updateId );
 
                 $( '#updateDialog' ).dialog( 'open' );
-                $("#updateDialog").parent().find("div.ui-dialog-buttonpane button:first").addClass("researchReviewUpdate");
+                $("#updateDialog").parent().find("div.ui-dialog-buttonpane button").not(":eq(2)").addClass("researchReviewUpdate");
             }
         });
 
@@ -144,6 +183,12 @@ $( function() {
         return false;
 
     }); //end delete delegate
+
+    function updateNextDialog(updateId) {
+        // Click on next btn update for update
+        $("tr#" + updateId).next().find("a.updateBtn").click();
+
+    }
 
 
     // --- Create Record with Validation ---
@@ -200,7 +245,6 @@ $( function() {
 
 }); //end document ready
 
-
 function readResearchData() {
     //display ajax loader animation
     $( '#ajaxLoadAni' ).fadeIn( 'slow' );
@@ -208,8 +252,7 @@ function readResearchData() {
     $.ajax({
         url: readUrl,
         dataType: 'json',
-        data:{'choosen_batch': $('select[name="research_batches"]').find('option:selected').text(),
-            'search_text': $('input[name="research_batches_text"]').val()},
+        data:{ 'search_text': $('input[name="research_batches_text"]').val() },
         success: function( response ) {
 
             for( var i in response ) {
@@ -224,8 +267,21 @@ function readResearchData() {
             $( '#readTemplate' ).render( response ).appendTo( "#records > tbody" );
 
             //apply dataTable to #records table and save its object in dataTable variable
-            if( typeof dataTable == 'undefined' )
-                dataTable = $( '#records' ).dataTable({"bJQueryUI": true});
+            if( typeof dataTable == 'undefined' ){
+                dataTable = $( '#records' ).dataTable({"bJQueryUI": true, "bDestroy": true,
+                    "oLanguage": {
+                        "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
+                        "sInfoEmpty": "Showing 0 to 0 of 0 records",
+                        "sInfoFiltered": "",
+                    },
+                    "aoColumns": [
+                         null, null, null, null, null, { "bVisible": false }, null
+                    ]
+                });
+            }
+
+            dataTable.fnFilter( $('select[name="research_batches"]').find('option:selected').text(), 5);
+            dataTable.fnSetColumnVis( 5, false, true);
 
             //hide ajax loader animation here...
             $( '#ajaxLoadAni' ).fadeOut( 'slow' );

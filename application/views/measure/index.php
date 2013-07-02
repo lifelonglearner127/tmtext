@@ -33,7 +33,7 @@
     </div>
 	<div id='compet_area_list' class="row-fluid">            
        <!-- <div style='margin-top: -40px;' class="span8 search_area cursor_default item_section an_sv_left"> -->
-       <div style='margin-top: -40px; height: auto;' class="span8 search_area cursor_default an_sv_left">
+       <div style='margin-top: -40px; margin-left: -10px; height: auto;' class="span8 search_area cursor_default an_sv_left">
             <div id="an_products_box" style='display: none;' class="span8 an_sv_left connectedSortable">&nbsp;</div>
             <div id='measure_tab_pr_content_body' class="item_section_content">&nbsp;</div>
         </div> 
@@ -217,33 +217,85 @@
 <!--- REAL CONTENT SECTION (END) -->
 
 <script type='text/javascript'>
+  
+    // ---- new CI term typeahead (start) (NEW)
+    $(document).ready(function() {
+      
+      var autocomplete_ci_baseurl = base_url + 'index.php/measure/cisearchteram';
+      var gTime, ci_search_name;
+      ci_search_name = "";
+      
+      $("#compare_text").keyup(function(e) {
+        if (e.which === 13) ci_search_name = $("#compare_text").val();
+      });
 
-    // --- CI search term autocomplete (start)
-    setTimeout(function() {
-        var autocomplete_ci_baseurl = base_url + 'index.php/measure/cisearchteram';
-        $("#compare_text").autocomplete({
-            source: autocomplete_ci_baseurl + "?sl=" + $("#ci_dropdown .dd-selected-value").val() + "&cat=" +  $("#cats_an > option:selected").val(),
-            minChars: 3,
-            deferRequestBy: 300,
-            select: function(event, ui) { 
-                startMeasureCompareV2();
-            }
-        });
+      $('#compare_text').keyup(function(e) {
+          ci_search_name = $("#compare_text").val();
+          if(e.which == 13) {
+            setTimeout(function() {
+              $("#measureFormMetrics").submit();
+            }, 1000);
+          }
 
-        // $("#cats_an").change(function() {
-        //     $("#compare_text").autocomplete('destroy');
-        //     $("#compare_text").autocomplete({
-        //         source: autocomplete_ci_baseurl + "?sl=" + $("#ci_dropdown .dd-selected-value").val() + "&cat=" +  $("#cats_an > option:selected").val(),
-        //         minChars: 3,
-        //         deferRequestBy: 300,
-        //         select: function(event, ui) { 
-        //             startMeasureCompareV2();
-        //         }
-        //     });
-        // });
+      });
 
-    }, 1000);
-    // --- CI search term autocomplete (end)
+      $("#compare_text").typeahead({
+        items: 4,
+        minLength: 3,
+        matcher: function() {
+          return true;
+        },
+        updater: function(item) {
+          if(typeof(item) === "undefined") {
+            return ci_search_name; 
+          } else {
+            return item;
+          }
+        },
+        source: function(query, process) {
+          clearTimeout(gTime);
+          gTime = setTimeout(function() {
+            var xhr;
+            if (xhr && xhr.readystate !== 4) xhr.abort();
+            xhr = $.ajax({
+              url: autocomplete_ci_baseurl,
+              dataType: "JSON",
+              data: {
+                q: query,
+                sl: $("#ci_dropdown .dd-selected-value").val(),
+                cat: $("#cats_an > option:selected").val()
+              },
+              success: function(response) {
+                if(typeof(response) !== 'undefined' && response !== null) {
+                  var labelsTitles;
+                  labelsTitles = [];
+                  $.each(response, function(i, item) {
+                    labelsTitles.push(item.value);
+                  });
+                  process(_.uniq(labelsTitles));
+                }
+              }
+            });
+          }, 300);
+        }
+      });
+
+    });
+    // ---- new CI term typeahead (end) (NEW)
+
+    // --- CI search term autocomplete (start) (OLD)
+    // setTimeout(function() {
+    //     var autocomplete_ci_baseurl = base_url + 'index.php/measure/cisearchteram';
+    //     $("#compare_text").autocomplete({
+    //         source: autocomplete_ci_baseurl + "?sl=" + $("#ci_dropdown .dd-selected-value").val() + "&cat=" +  $("#cats_an > option:selected").val(),
+    //         minChars: 3,
+    //         deferRequestBy: 300,
+    //         select: function(event, ui) { 
+    //             startMeasureCompareV2();
+    //         }
+    //     });
+    // }, 1000);
+    // --- CI search term autocomplete (end) (OLD)
 
     // ---- search string cookie (auto mode search launcher) (start)
     var auto_mode_search_str = "";

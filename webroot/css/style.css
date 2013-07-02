@@ -9,6 +9,11 @@
 .pm_data_table .pm_data_table_tinput {
 	width: 100%;
 }
+
+.pm_data_table .pm_data_table_tinput.error {
+	border-color: red;
+	color: red;
+}
 /* --- PRODUCT MATCH TAB (END) --- */
 
 /* --- OVERALL LOGIN FORM ADDITION (START) --- */
@@ -32,6 +37,19 @@
 .form_hb_error {
 	display: none;
 	color: red;
+}
+
+.typeahead li {
+	max-width: 527px !important;
+}
+
+.typeahead li a {
+	max-width: 527px !important;
+	display: block;
+	overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding-right: 10px;
 }
 
 .ui-autocomplete li a {
@@ -354,7 +372,7 @@ span[class*="hilite"] { background: yellow; }
 }
 #compare_text {
 	width: 530px;
-	margin-left: 10px;
+	/*margin-left: 10px;*/
 }
 .an_sv_left {
 	width: 550px !important;
@@ -1312,4 +1330,10 @@ label.dd-selected-text, label.dd-option-text{
     text-overflow: ellipsis;
     -o-text-overflow: ellipsis;
     -moz-binding: url('ellipsis.xml#ellipsis');
+}
+
+.hideBox{
+    overflow: hidden;
+    min-height:40px !important;
+    height:40px !important;
 }
