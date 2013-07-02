@@ -252,8 +252,7 @@ function readResearchData() {
     $.ajax({
         url: readUrl,
         dataType: 'json',
-        data:{'choosen_batch': $('select[name="research_batches"]').find('option:selected').text(),
-            'search_text': $('input[name="research_batches_text"]').val()},
+        data:{ 'search_text': $('input[name="research_batches_text"]').val() },
         success: function( response ) {
 
             for( var i in response ) {
@@ -268,8 +267,21 @@ function readResearchData() {
             $( '#readTemplate' ).render( response ).appendTo( "#records > tbody" );
 
             //apply dataTable to #records table and save its object in dataTable variable
-            if( typeof dataTable == 'undefined' )
-                dataTable = $( '#records' ).dataTable({"bJQueryUI": true});
+            if( typeof dataTable == 'undefined' ){
+                dataTable = $( '#records' ).dataTable({"bJQueryUI": true, "bDestroy": true,
+                    "oLanguage": {
+                        "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
+                        "sInfoEmpty": "Showing 0 to 0 of 0 records",
+                        "sInfoFiltered": "",
+                    },
+                    "aoColumns": [
+                         null, null, null, null, null, { "bVisible": false }, null
+                    ]
+                });
+            }
+
+            dataTable.fnFilter( $('select[name="research_batches"]').find('option:selected').text(), 5);
+            dataTable.fnSetColumnVis( 5, false, true);
 
             //hide ajax loader animation here...
             $( '#ajaxLoadAni' ).fadeOut( 'slow' );

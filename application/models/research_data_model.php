@@ -19,7 +19,9 @@ class Research_data_model extends CI_Model {
 
 
     var $tables = array(
-        'research_data' => 'research_data'
+        'research_data' => 'research_data',
+        'batches' => 'batches',
+        'users' => 'users'
     );
 
     function __construct()
@@ -101,11 +103,17 @@ class Research_data_model extends CI_Model {
         return $query->result();
     }
 
-    function getDataByBatchId($text, $batch_id)
+    function getDataByBatchId($text)
     {
-        $query = $this->db->query("select *, DATE_FORMAT(`created`,'%d-%m-%Y') as created, (select email from users u where id=research_data.user_id) as user_id from ".$this->tables['research_data']." where concat(url, product_name,
-            keyword1, keyword2, keyword3, meta_name, meta_description, meta_keywords, short_description, short_description_wc, long_description, long_description_wc ) like '%".$text."%'
-             and batch_id=".$batch_id);
+        $query = $this->db->query("select `rd`.*, DATE_FORMAT(`rd`.`created`,'%d-%m-%Y') as `created`,
+        `u`.`email` as `user_id`,
+        `b`.`title` as `batch_name`
+        from ".$this->tables['research_data']." as `rd`
+        left join ".$this->tables['batches']." as `b` on `rd`.`batch_id` = `b`.`id`
+        left join ".$this->tables['users']." as `u` on `rd`.`user_id` = `u`.`id`
+        where concat(`rd`.`url`, `rd`.`product_name`, `rd`.`keyword1`, `rd`.`keyword2`, `rd`.`keyword3`, `rd`.`meta_name`,
+        `rd`.`meta_description`, `rd`.`meta_keywords`, `rd`.`short_description`, `rd`.`short_description_wc`,
+        `rd`.`long_description`, `rd`.`long_description_wc`) like '%".$text."%'");
         return $query->result();
     }
 

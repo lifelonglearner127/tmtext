@@ -95,6 +95,7 @@
                                 <th><div class="draggable">URL</div></th>
                                 <th><div class="draggable">Short Description</div></th>
                                 <th><div class="draggable">Long Description</div></th>
+                                <th><div class="draggable">BatchName</div></th>
                                 <th><div class="draggable">Actions</div></th>
                             </tr>
                             </thead>
@@ -154,6 +155,7 @@
                         <td>${url}</td>
                         <td>${short_description}</td>
                         <td>${long_description}</td>
+                        <td>${batch_name}</td>
                         <td nowrap><a class="updateBtn icon-edit" style="float:left;" href="${updateLink}"></a>
                             <a class="deleteBtn icon-remove ml_5" href="${deleteLink}"></a>
                         </td>
