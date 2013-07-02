@@ -117,10 +117,9 @@ function researchKeywordsAnalizer() {
 
 $(document).ready(function () {
     
-    $('.hideShow').click(function(){
-        $(this).parent().parent().toggleClass('hideBox')
-
-    })
+    $('.hideShow').live("click", function(){
+        $(this).parent().parent().toggleClass('hideBox');
+    });
     
     
     
