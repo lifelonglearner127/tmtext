@@ -32,13 +32,13 @@ class System extends MY_Controller {
 		if($crawl_stack !== null && count($crawl_stack) > 0) {
 			$cid = md5(time());
 			foreach ($crawl_stack as $k => $v) {
-				$check = $this->imported_data_parsed_model->checkIfUrlIExists($v->url); // ---- check if such url exists in products data
+				$check = $this->imported_data_parsed_model->checkIfUrlIExists($v['url']); // ---- check if such url exists in products data
 				if($check !== false) {
 					$mid = array(
 						'cid' => $cid,
 						'imported_data_id' => $check,
-						'url' => $v->url, 
-						'sku' => $v->sku 
+						'url' => $v['url'], 
+						'sku' => $v['sku'] 
 					);
 					array_push($crawl, $mid); 
 				}

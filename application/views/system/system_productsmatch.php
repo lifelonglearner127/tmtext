@@ -70,6 +70,11 @@
 
 		$("#pm_data_table .pm_data_table_tinput").bind('keypress', keypressHandler);
 
+		function resetRowsInputs() {
+			$('.pm_data_table_tinput').val('');
+			$('.pm_data_table_tinput').removeClass('error');
+		}
+
 		function keypressHandler() {
 			if(empty_check_validation()) {
 				$("#pm_tab_save_btn").removeClass('disabled');
@@ -187,10 +192,17 @@
 			                crawl_stack: crawl_stack
 			              },
 			              success: function(res) {
-			              	console.log('ADDING RESULTS: ', res);
+			              	alert(res);
+			              	if(res === 1) { // --- all ok
+			              		resetRowsInputs();
+			              		outputNotice('Success', 'Collection successfully saved.');
+			              	} else if(res === 2) { // --- not enough valid collection items (must be 2>)
+			              		outputNotice('Notice', 'Not enough valid collection items. Must be at least two.');
+			              	} else if(res === 3) { // --- internal server error
+			              		outputNotice('Warning', 'Internal Server Error');
+			              	}
 			              }
 		            });
-					outputNotice('Success', 'Crawl objects ready for backend');
 				} else { // ---- not ready, some mistakes in rows
 					// --- highlight mistakes (start)
 					for(var i=0; i < crawl_stack.length; i++) {
