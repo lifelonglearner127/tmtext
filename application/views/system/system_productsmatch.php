@@ -192,7 +192,6 @@
 			                crawl_stack: crawl_stack
 			              },
 			              success: function(res) {
-			              	alert(res);
 			              	if(res === 1) { // --- all ok
 			              		resetRowsInputs();
 			              		outputNotice('Success', 'Collection successfully saved.');
