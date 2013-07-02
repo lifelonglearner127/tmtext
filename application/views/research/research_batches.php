@@ -123,10 +123,12 @@
                             <p>
                                 <label for="short_description">Short Description:</label>
                                 <textarea id="short_description" name="short_description" ></textarea>
+                                <label><span id="research_wc">0</span> words<input type="hidden" name="short_description_wc" /></label>
                             </p>
                             <p>
                                 <label for="long_description">Long Description:</label>
                                 <textarea id="long_description" name="long_description" ></textarea>
+                                <label><span id="research_wc1">0</span> words<input type="hidden" name="long_description_wc" /></label>
                             </p>
 
                             <input type="hidden" id="userId" name="id" />
