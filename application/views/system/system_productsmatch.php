@@ -88,6 +88,17 @@
 
 	$(document).ready(function() {
 
+		// ---- UI tooltips (start)
+		$("#pm_tab_newrow_btn").tooltip({
+			placement: 'bottom',
+			title: 'Maximum 10 rows'
+		});
+		$("#pm_tab_save_btn").tooltip({
+			placement: 'right',
+			title: 'Save Collection'
+		});
+		// ---- UI tooltips (end)
+
 		function resetRowsInputs() {
 			$('.pm_data_table_tinput').val('');
 			$('.pm_data_table_tinput').removeClass('error');
