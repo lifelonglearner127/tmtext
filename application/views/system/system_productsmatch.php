@@ -143,7 +143,7 @@
 				new_line += "</tr>";
 				$("#pm_data_table > tbody").append($(new_line));
 			} else {
-				alert('Rows limit is reached. Maximum - 10 rows.');
+				outputNotice('Notice', 'Rows limit is reached. Maximum - 10 rows.');
 			}
 		});
 
