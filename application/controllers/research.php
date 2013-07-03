@@ -84,7 +84,9 @@ class Research extends MY_Controller {
     public function research_batches(){
         
         $this->data['customer_list'] = $this->getCustomersByUserId();
-        $this->data['batches_list'] = $this->batches_list();
+        if(!empty($this->data['customer_list'])){
+            $this->data['batches_list'] = $this->batches_list();
+        }
         $this->render();
     }
     
@@ -273,6 +275,7 @@ class Research extends MY_Controller {
     public function getCustomersByUserId(){
         $this->load->model('customers_model');
         $this->load->model('users_to_customers_model');
+        
         $customers = $this->users_to_customers_model->getByUserId($this->ion_auth->get_user_id());
         if(!$this->ion_auth->is_admin($this->ion_auth->get_user_id())){
             if(count($customers) == 0){
