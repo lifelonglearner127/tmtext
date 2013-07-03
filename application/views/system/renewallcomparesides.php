@@ -107,3 +107,22 @@
 	</div>
 </div>
 
+<script type='text/javascript'>
+	$(document).ready(function(e) {
+		// ---- UI tooltips (start)
+		$("#sccb_newset_btn").tooltip({
+			placement: 'left',
+			title: 'Load new set'
+		});
+		$("#sccb_yes_btn").tooltip({
+			placement: 'left',
+			title: 'Mark as similar'
+		});
+		$("#sccb_not_btn").tooltip({
+			placement: 'bottom',
+			title: 'Mark as different'
+		});
+		// ---- UI tooltips (end)
+	});
+</script>
+
