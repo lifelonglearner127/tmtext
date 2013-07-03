@@ -225,13 +225,9 @@
       var gTime, ci_search_name;
       ci_search_name = "";
       
-      $("#compare_text").keyup(function(e) {
-        if (e.which === 13) ci_search_name = $("#compare_text").val();
-      });
-
       $('#compare_text').keyup(function(e) {
-          ci_search_name = $("#compare_text").val();
           if(e.which == 13) {
+            ci_search_name = $("#compare_text").val();
             setTimeout(function() {
               $("#measureFormMetrics").submit();
             }, 1000);
