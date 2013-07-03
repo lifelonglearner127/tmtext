@@ -37,10 +37,10 @@ class System extends MY_Controller {
 					$mid = array(
 						'cid' => $cid,
 						'imported_data_id' => $check,
-						'url' => $v['url'], 
-						'sku' => $v['sku'] 
+						'url' => $v['url'],
+						'sku' => $v['sku']
 					);
-					array_push($crawl, $mid); 
+					array_push($crawl, $mid);
 				}
 			}
 			if(count($crawl) > 1) { // --- all ok, so record collection to DB
@@ -693,7 +693,9 @@ class System extends MY_Controller {
 
 			$resArr = array();
 			foreach( unserialize($attributes->attributes) as $key=>$value ) {
-				$resArr = array_merge($resArr, $value);
+				if ($key != 'features') {
+					$resArr = array_merge($resArr, $value);
+				}
 			}
 			$merged[] = $resArr;
 		}
