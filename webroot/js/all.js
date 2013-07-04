@@ -102,7 +102,11 @@ $( function() {
                 case 'column_short_description_wc' : {
                     if($(this).attr('checked') == true) {
                         var short_description_wc = $( 'tr#' + updateId + ' td.column_short_description_wc' );
-                        $(short_description_wc).html( $( '#short_description_wc' ).val() );
+                        var short_description_wc_text = $( '#short_description_wc' ).text();
+                        if(short_description_wc_text == '0') {
+                            short_description_wc_text = '-';
+                        }
+                        $(short_description_wc).html(short_description_wc_text);
                     }
                     break;
                 }
@@ -115,16 +119,18 @@ $( function() {
                 }
                 case 'column_long_description_wc' : {
                     if($(this).attr('checked') == true) {
-                        var long_description_wc = $( 'tr#' + updateId + ' td.column_long_description_wc' );
-                        $(long_description_wc).html( $( '#long_description_wc' ).val() );
+                        var long_description_wc = $( 'tr#' + updateId + ' td.column_long_description_wc');
+                        var long_description_wc_text = $( '#long_description_wc' ).text();
+                        if(long_description_wc_text == '0') {
+                            long_description_wc_text = '-';
+                        }
+                        $(long_description_wc).html(long_description_wc_text);
                     }
                     break;
                 }
             }
         });
-    }
-
-    //end update dialog
+    }//end update dialog
 
     $( '#delConfDialog' ).dialog({
         autoOpen: false,
@@ -189,6 +195,8 @@ $( function() {
 
                 $( '#updateDialog' ).dialog( 'open' );
                 $("#updateDialog").parent().find("div.ui-dialog-buttonpane button").not(":eq(2)").addClass("researchReviewUpdate");
+                shortDescriptionWordCount();
+                longDescriptionWordCount();
             }
         });
 
@@ -260,6 +268,35 @@ $( function() {
         $('#choiceColumnDialog').parent().find('button:first').addClass("popupGreen");
     });
 
+    // Short descriptin Word count in update dialog
+    function shortDescriptionWordCount() {
+        var number = 0;
+        var matches = $('#short_description').val().match(/\b/g);
+        if(matches) {
+            number = matches.length/2;
+        }
+        $('#short_description_wc').html(number);
+        $('input[name="short_description_wc"]').val(number);
+    }
+    $('#short_description').live("keydown keyup change focusout", function() {
+        shortDescriptionWordCount();
+    });
+
+    // Long descriptin Word count in update dialog
+    function longDescriptionWordCount() {
+        var number = 0;
+//        console.log($('textarea[name=long_description]').val());
+        var matches = $('#long_description').val().match(/\b/g);
+        if(matches) {
+            number = matches.length/2;
+        }
+//        console.log("text: " + number);
+        $('#long_description_wc').html(number);
+        $('input[name="long_description_wc"]').val(number);
+    }
+    $('#long_description').live("keydown keyup change focusout", function() {
+        longDescriptionWordCount()
+    });
 
     // --- Create Record with Validation ---
     /*$( '#create form' ).validate({
