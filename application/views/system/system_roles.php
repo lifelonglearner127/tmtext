@@ -53,7 +53,7 @@
                                             <div class="clear-fix"></div>
                                             <?php
                                             foreach ($user_groups as $user_group) {	?>
-                                                <input type="checkbox" name="editor_<?php echo $user_group->id;?>" <?php if(isset($checked[$user_group->id]['job_board'])){print 'checked';}?> value="1"/>
+                                                <input type="checkbox" name="job_board_<?php echo $user_group->id;?>" <?php if(isset($checked[$user_group->id]['job_board'])){print 'checked';}?> value="1"/>
                                                 <div class="clear-fix"></div>
                                             <?php
                                             }
