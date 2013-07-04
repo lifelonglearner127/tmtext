@@ -1,6 +1,7 @@
 <div class="main_content_other"></div>
 <div class="tabbable">
     <ul class="nav nav-tabs jq-research-tabs">
+        <li class=""><a data-toggle="tab" href="<?php echo site_url('research/create_batch');?>">Create Batch</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('research');?>">Edit</a></li>
         <li class="active"><a data-toggle="tab" href="<?php echo site_url('research/research_batches');?>">Review</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('research/research_reports');?>">Reports</a></li>
@@ -118,10 +119,12 @@
                             <p>
                                 <label for="short_description">Short Description:</label>
                                 <textarea id="short_description" name="short_description" ></textarea>
+                                <label><span id="research_wc">0</span> words<input type="hidden" name="short_description_wc" /></label>
                             </p>
                             <p>
                                 <label for="long_description">Long Description:</label>
                                 <textarea id="long_description" name="long_description" ></textarea>
+                                <label><span id="research_wc1">0</span> words<input type="hidden" name="long_description_wc" /></label>
                             </p>
 
                             <input type="hidden" id="userId" name="id" />
@@ -177,6 +180,7 @@
                     </div>
                 </div>
 
+                <!-- Table doesnt work without this jQuery include yet -->
                 <script type="text/javascript" src="<?php echo base_url();?>js/jquery-1.4.2.min.js"></script>
                 <script type="text/javascript" src="<?php echo base_url();?>js/jquery-ui-1.8.2.min.js"></script>
                 <script type="text/javascript" src="<?php echo base_url();?>js/jquery-templ.js"></script>

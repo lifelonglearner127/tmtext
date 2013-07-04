@@ -154,12 +154,14 @@ $(function () {
 
 	$(document).on("click", "#Add_List > div", function(){
 		$('#add_list_delete').removeAttr('disabled');
-	})
+	});
 
-	$(document).on("click", "#Current_List li span.url", function(){
+	$(document).on("click", "#Current_List li", function(){
+                $('#Current_List li').removeClass('active');
+                $(this).addClass('active');
 		$('#current_list_delete').removeAttr('disabled');
-	})
-
+	});
+        
 	$(document).on("click", "#add_list_delete", function(){
 		$('#Add_List > div.active').remove();
 		$('#add_list_delete').attr('disabled', 'disabled');
@@ -170,6 +172,13 @@ $(function () {
 		$.post('<?php echo site_url('site_crawler/delete');?>', {id: $('#Current_List > ul > li.active').attr('id')}, function(data) {});
 		loadCurrentList();
 	});
+        
+        $('html').click(function() {
+            if(!$(event.target).is('#current_list_delete')){
+                $('#current_list_delete').attr('disabled', 'disabled');
+                $('#Current_List li').removeClass('active');
+            }
+        });
 
 	$(document).on("click", "button#add_url_list", function(){
 		closeInputs();

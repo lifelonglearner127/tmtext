@@ -1,10 +1,10 @@
-<?php if(count($same_pr) === 3) { ?>
+<?php //if(count($same_pr) === 3) { ?>
     <?php $i = 1; ?>
     <?php foreach($same_pr as $ks => $vs) { ?>
         <?php
-            $customer = $vs['customer']; 
+            $customer = $vs['customer'];
             $class_left = "";
-            if($i == 2 || $i == 3) $class_left = 'left';
+            if($i%2 ==0 || $i%3 ==0) $class_left = 'left';
             $s_product_description = $vs['description'];
             $s_product_long_description = $vs['long_description'];
             $s_product_short_desc_count = count(explode(" ", $s_product_description));
@@ -18,6 +18,8 @@
             <div class='c'>
                 <img class='preloader_grids_box' src="<?php echo base_url() ?>/img/grids_boxes_preloader.gif">
                 <div class='c_content'>
+                 	<span class='analysis_content_head'>URL:</span>
+                    <p class='short_product_name ellipsis'><a href="<?php echo $vs['url']; ?>"><?php echo $vs['url']; ?></a></p>
                     <span class='analysis_content_head'>Product Name:</span>
                     <p class='short_product_name'><?php echo $vs['product_name']; ?></p>
                     <span class='analysis_content_head'>Short Description (<span class='short_desc_wc'><?php echo $s_product_short_desc_count ?> words</span>):</span>
@@ -68,6 +70,10 @@
                 </ul> -->
             </div>
         </div>
+        <?php if ($i%3 == 0) { ?>
+        <div style="clear:both"></div>
+        <?php } ?>
+
         <?php $i += 1; ?>
     <?php } ?>
 
@@ -121,7 +127,7 @@
                     };
                     ddData_grids_1.push(mid);
                 };
-                // --- GRID SECTION 2 
+                // --- GRID SECTION 2
                 for (var i = 0; i < cl_arr.length; i++) {
                     var text_d = cl_arr[i];
                     var value_d = cl_arr[i];
@@ -213,9 +219,9 @@
         gridsCustomersListLoader();
     </script>
 
-<?php } else { ?>
+<?php /* } else { ?>
 
-    <?php 
+    <?php
     	$s_product_description = $s_product['description'];
     	$s_product_long_description = $s_product['long_description'];
     ?>
@@ -534,4 +540,4 @@
         gridsCustomersListLoader();
     </script>
 
-<?php } ?>
+<?php }*/ ?>

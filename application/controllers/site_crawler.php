@@ -164,7 +164,7 @@ class Site_Crawler extends MY_Controller {
 				$page_data['URL'] = $data->url;
 				// save data
 				$page_data_without_price = $page_data;
-				if (isset($page_data_without_price['Price'])) {
+				if (isset($page_data_without_price['Price']) && !empty($page_data['Price'])) {
 					unset($page_data_without_price['Price']);
 					$this->crawler_list_prices_model->insert($data->id, $page_data['Price']);
 				}
@@ -177,7 +177,13 @@ class Site_Crawler extends MY_Controller {
 
 					foreach($page_data_without_price as $key=>$value) {
 						$value = (!is_null($value))?$value: '';
-						$this->imported_data_parsed_model->insert($imported_id, $key, $value);
+						if (!empty($value)) {
+							$this->imported_data_parsed_model->insert($imported_id, $key, $value);
+						}
+					}
+
+					if (($attributes = $this->pageprocessor->attributes()) !== false) {
+						$this->imported_data_parsed_model->insert($imported_id, 'parsed_attributes', serialize($attributes));
 					}
 				}
 

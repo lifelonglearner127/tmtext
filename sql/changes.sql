@@ -1,8 +1,10 @@
-# 07/01 Ilya
+# 07/02 Ilya
+
 CREATE TABLE IF NOT EXISTS `product_match_collections` (
   `id` INT NOT NULL ,
-  `cid` INT NULL ,
+  `cid` VARCHAR(128) NULL ,
   `imported_data_id` INT NULL ,
+  `url` TEXT NULL ,
   `sku` TEXT NULL ,
   PRIMARY KEY (`id`) 
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1;

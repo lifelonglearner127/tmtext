@@ -9,7 +9,7 @@ class System extends MY_Controller {
   		parent::__construct();
 
 		$this->data['title'] = 'System Settings';
-		$this->data['checked_controllers'] = array( 'measure', 'research', 'editor', 'customer');
+		$this->data['checked_controllers'] = array( 'measure', 'research', 'job_board', 'editor', 'customer');
 		$this->data['admin_controllers'] = array('system', 'admin_customer', 'admin_editor', 'admin_tag_editor');
 
 
@@ -27,7 +27,31 @@ class System extends MY_Controller {
 	public function recordcollection() {
 		$this->load->model('imported_data_parsed_model');
 		$crawl_stack = $this->input->post('crawl_stack'); // !!! array of objects !!!
-		$this->output->set_content_type('application/json')->set_output(json_encode($crawl_stack));
+		$error_code = 1;
+		$crawl = array();
+		if($crawl_stack !== null && count($crawl_stack) > 0) {
+			$cid = md5(time());
+			foreach ($crawl_stack as $k => $v) {
+				$check = $this->imported_data_parsed_model->checkIfUrlIExists($v['url']); // ---- check if such url exists in products data
+				if($check !== false) {
+					$mid = array(
+						'cid' => $cid,
+						'imported_data_id' => $check,
+						'url' => $v['url'],
+						'sku' => $v['sku']
+					);
+					array_push($crawl, $mid);
+				}
+			}
+			if(count($crawl) > 1) { // --- all ok, so record collection to DB
+				$record = $this->imported_data_parsed_model->recordProductMatchCollection($crawl);
+			} else {
+				$error_code = 2; // --- not enough valid collection items (must be 2>)
+			}
+		} else {
+			$error_code = 3; // --- internal server error
+		}
+		$this->output->set_content_type('application/json')->set_output(json_encode($error_code));
 	}
 
 	public function testattributesext() {
@@ -435,7 +459,12 @@ class System extends MY_Controller {
 
 		foreach ($_POST as $checkbox_name => $checkbox_value) {
 			$arr = explode('_', $checkbox_name);
-			$roles[$arr[1]][] = $arr[0];
+            if($arr[0] != 'job'){
+                $roles[$arr[1]][] = $arr[0];
+            } else {
+                $roles[$arr[2]][] = $arr[0].'_'.$arr[1];
+            }
+
 		}
 		foreach ($roles as $key => $value) {
             $this->ion_auth->set_default_tab_to_group($key, $this->input->post('default_'.$key));
@@ -669,7 +698,9 @@ class System extends MY_Controller {
 
 			$resArr = array();
 			foreach( unserialize($attributes->attributes) as $key=>$value ) {
-				$resArr = array_merge($resArr, $value);
+				if ($key != 'features') {
+					$resArr = array_merge($resArr, $value);
+				}
 			}
 			$merged[] = $resArr;
 		}

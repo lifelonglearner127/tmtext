@@ -160,7 +160,9 @@ $( function() {
                 $( '#product_name' ).val( response[0].product_name );
                 $( '#url' ).val( response[0].url );
                 $( '#short_description' ).val( response[0].short_description );
+                $( '#short_description_wc' ).val( response[0].short_description_wc );
                 $( '#long_description' ).val( response[0].long_description);
+                $( '#long_description_wc' ).val( response[0].long_description_wc);
 
                 $( '#ajaxLoadAni' ).fadeOut( 'slow' );
 

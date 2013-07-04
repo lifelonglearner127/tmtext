@@ -1,9 +1,9 @@
 <div class='sc_compare_selection_block' id='sc_compare_selection_block'>
 
-	<div style='margin-bottom: 20px;'>
+	<!-- <div style='margin-bottom: 20px;'>
 		<input type='text' id='pci_attr_test_s' name='pci_attr_test_s'><br>
 		<button type='button' class='btn' onclick="testAttributesExt();" >Test Attributes Extractor</button>
-	</div>
+	</div> -->
 
 	<div style='display: block;' class='sc_compare_block' id='sc_compare_block'>
 		<div id='pci_l_section' class='span5'>
@@ -43,7 +43,7 @@
 					<img src="<?php echo $img_c_source; ?>">
 				</p>
 				<ul class='nav nav-pills nav-stacked'>
-					<li class='active'><a data-id="<?php echo $get_random_l['id']; ?>" href='javascript:void(0)'><?php echo $get_random_l['product_name']; ?></a></li>
+					<li class='active'><a class='pfc_link_l' data-id="<?php echo $get_random_l['id']; ?>" target="_blank" href="<?php echo $get_random_l['url']; ?>"><?php echo $get_random_l['product_name']; ?></a></li>
 				</ul>
 				<p class='centered'><span class="label label-success">SHORT DESCRIPTION</span></p>
 				<ul class='nav nav-pills nav-stacked'>
@@ -102,7 +102,7 @@
 					<img src="<?php echo $img_c_source; ?>">
 				</p>
 				<ul class='nav nav-pills nav-stacked'>
-					<li class='active'><a data-id="<?php echo $get_random_r['id']; ?>" href='javascript:void(0)'><?php echo $get_random_r['product_name']; ?></a></li>
+					<li class='active'><a class='pfc_link_r' data-id="<?php echo $get_random_r['id']; ?>" target="_blank" href="<?php echo $get_random_r['url']; ?>"><?php echo $get_random_r['product_name']; ?></a></li>
 				</ul>
 				<p class='centered'><span class="label label-success">SHORT DESCRIPTION</span></p>
 				<ul class='nav nav-pills nav-stacked'>
@@ -121,12 +121,37 @@
 
 <script type='text/javascript'>
 
-		function testAttributesExt() {
-			var desc = $("#pci_attr_test_s").val();
-			var test_attr_ext = $.post(base_url + 'index.php/system/testattributesext', { desc: desc }, 'json').done(function(data) {
-				console.log("ATTRIBUTES EXT TEST RES: ", data);
+		// function testAttributesExt() {
+		// 	var desc = $("#pci_attr_test_s").val();
+		// 	var test_attr_ext = $.post(base_url + 'index.php/system/testattributesext', { desc: desc }, 'json').done(function(data) {
+		// 		console.log("ATTRIBUTES EXT TEST RES: ", data);
+		// 	});
+		// }
+
+		$(document).ready(function(e) {
+			// ---- UI tooltips (start)
+			$("#sccb_newset_btn").tooltip({
+				placement: 'left',
+				title: 'Load new set'
 			});
-		}
+			$("#sccb_yes_btn").tooltip({
+				placement: 'left',
+				title: 'Mark as similar'
+			});
+			$("#sccb_not_btn").tooltip({
+				placement: 'bottom',
+				title: 'Mark as different'
+			});
+			$(".pfc_link_l").tooltip({
+				placement: 'left',
+				title: 'Press to visit product page'
+			});
+			$(".pfc_link_r").tooltip({
+				placement: 'right',
+				title: 'Press to visit product page'
+			});
+			// ---- UI tooltips (end)
+		});
 
 		var systemCompareProductsBaseUrl = base_url + 'index.php/system/getcompareproducts';
 		var systemCompareProductsVoteBaseUrl = base_url + 'index.php/system/votecompareproducts';

@@ -66,23 +66,52 @@
 
 <script type='text/javascript'>
 
-	$(document).ready(function() {
-
-		$("#pm_data_table .pm_data_table_tinput").bind('keypress', keypressHandler);
-
-		function keypressHandler() {
-			if(empty_check_validation()) {
-				$("#pm_tab_save_btn").removeClass('disabled');
-				$("#pm_tab_save_btn").removeAttr('disabled');
-				if(!$("#pm_tab_save_btn").hasClass('btn-success')) {
-					$("#pm_tab_save_btn").addClass('btn-success');
-				}
+	function saveStateHandlerExt() {
+		if(empty_check_validation_ext()) {
+			$("#pm_tab_save_btn").removeClass('disabled');
+			$("#pm_tab_save_btn").removeAttr('disabled');
+			if(!$("#pm_tab_save_btn").hasClass('btn-success')) {
+				$("#pm_tab_save_btn").addClass('btn-success');
 			}
 		}
+	}
 
-		$("#pm_data_table .pm_data_table_tinput").bind('blur', blurHandler);
+	function empty_check_validation_ext() {
+		var res = false;
+		$("#pm_data_table tr").each(function(index, value) {
+			if( $.trim($(value).find('.pmtt_url').val()) !== "" && $.trim($(value).find('.pmtt_sku').val()) !== ""  ) {
+				res = true;
+			}
+		});
+		return res;
+	}
 
-		function blurHandler() {
+	$(document).ready(function() {
+
+		// ---- UI tooltips (start)
+		$("#pm_tab_newrow_btn").tooltip({
+			placement: 'bottom',
+			title: 'Maximum 10 rows'
+		});
+		$("#pm_tab_save_btn").tooltip({
+			placement: 'right',
+			title: 'Save Collection'
+		});
+		// ---- UI tooltips (end)
+
+		function resetRowsInputs() {
+			$('.pm_data_table_tinput').val('');
+			$('.pm_data_table_tinput').removeClass('error');
+			$("#pm_tab_save_btn").removeClass('btn-success');
+			$("#pm_tab_save_btn").addClass('disabled');
+			$("#pm_tab_save_btn").attr('disabled', true);
+		}
+
+		$("#pm_data_table .pm_data_table_tinput").bind('keypress', saveStateHandler);
+
+		$("#pm_data_table .pm_data_table_tinput").bind('blur', saveStateHandler);
+
+		function saveStateHandler() {
 			if(empty_check_validation()) {
 				$("#pm_tab_save_btn").removeClass('disabled');
 				$("#pm_tab_save_btn").removeAttr('disabled');
@@ -95,7 +124,7 @@
 		function empty_check_validation() {
 			var res = false;
 			$("#pm_data_table tr").each(function(index, value) {
-				if( $.trim($("#pm_data_table tr").find('.pmtt_url').val()) !== "" && $.trim($("#pm_data_table tr").find('.pmtt_sku').val()) !== ""  ) {
+				if( $.trim($(value).find('.pmtt_url').val()) !== "" && $.trim($(value).find('.pmtt_sku').val()) !== ""  ) {
 					res = true;
 				}
 			});
@@ -117,23 +146,15 @@
 				var new_line = "";
 				new_line = "<tr>";
 					new_line += "<td>";
-						new_line += "<input type='text' class='pm_data_table_tinput pmtt_url' placeholder='Type URL' />";
+						new_line += "<input type='text' onkeypress='saveStateHandlerExt()' onblur='saveStateHandlerExt()' class='pm_data_table_tinput pmtt_url' placeholder='Type URL' />";
 					new_line += "</td>";
 					new_line += "<td>";
-						new_line += "<input type='text' class='pm_data_table_tinput pmtt_sku' placeholder='Type SKU' />";
+						new_line += "<input type='text' onkeypress='saveStateHandlerExt()' onblur='saveStateHandlerExt()' class='pm_data_table_tinput pmtt_sku' placeholder='Type SKU' />";
 					new_line += "</td>";
 				new_line += "</tr>";
 				$("#pm_data_table > tbody").append($(new_line));
-				// --- BIND / UNBIND (START)
-				// $("#pm_data_table input[type=text]").unbind('keypress');
-				// $("#pm_data_table input[type=text]").unbind('blur');
-				// setTimeout(function() {
-				// 	$("#pm_data_table input[type=text]").bind('keypress', keypressHandler);
-				// 	$("#pm_data_table input[type=text]").bind('blur', blurHandler);
-				// }, 2000);
-				// --- BIND / UNBIND (END)
 			} else {
-				alert('Rows limit is reached. Maximum - 10 rows.');
+				outputNotice('Notice', 'Rows limit is reached. Maximum - 10 rows.');
 			}
 		});
 
@@ -187,10 +208,16 @@
 			                crawl_stack: crawl_stack
 			              },
 			              success: function(res) {
-			              	console.log('ADDING RESULTS: ', res);
+			              	if(res === 1) { // --- all ok
+			              		resetRowsInputs();
+			              		outputNotice('Success', 'Collection successfully saved.');
+			              	} else if(res === 2) { // --- not enough valid collection items (must be 2>)
+			              		outputNotice('Notice', 'Not enough valid collection items. Must be at least two.');
+			              	} else if(res === 3) { // --- internal server error
+			              		outputNotice('Warning', 'Internal Server Error');
+			              	}
 			              }
 		            });
-					outputNotice('Success', 'Crawl objects ready for backend');
 				} else { // ---- not ready, some mistakes in rows
 					// --- highlight mistakes (start)
 					for(var i=0; i < crawl_stack.length; i++) {

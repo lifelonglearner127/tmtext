@@ -65,7 +65,7 @@ class Research_data_model extends CI_Model {
     }
 
    function update($id, $batch_id, $url, $product_name, $short_description, $short_description_wc, $long_description, $long_description_wc, $keyword1='', $keyword2='', $keyword3='', $meta_name='',
-                    $meta_description='', $meta_keywords='')
+                    $meta_description='', $meta_keywords='', $revision='')
     {
         $CI =& get_instance();
         $this->batch_id = $batch_id;
