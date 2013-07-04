@@ -79,8 +79,29 @@ class Research extends MY_Controller {
     }
 
     public function research_batches(){
+        $this->load->model('settings_model');
         $this->data['batches_list'] = $this->batches_list();
+
         $this->data['customer_list'] = $this->getCustomersByUserId();
+        $user_id = $this->ion_auth->get_user_id();
+        $key = 'research_review';
+
+        $columns = $this->settings_model->get_value($user_id, $key);
+
+        // if columns empty set default values for columns
+        if(empty($columns)) {
+            $columns = array (
+                'editor'                        => 'true',
+                'product_name'                  => 'true',
+                'url'                           => 'true',
+                'short_description'             => 'true',
+                'short_description_wc'          => 'false',
+                'long_description'              => 'true',
+                'long_description_wc'           => 'false',
+                'actions'                       => 'true',
+            );
+        }
+        $this->data['columns'] = $columns;
         $this->render();
     }
     
@@ -140,6 +161,16 @@ class Research extends MY_Controller {
             $data = $this->input->get('search_text');
         }
         $results = $this->research_data_model->getInfoFromResearchData($data);
+
+        // change '0' value to '-'
+        foreach($results as $result) {
+            if($result->short_description_wc == '0') {
+                $result->short_description_wc = '-';
+            }
+            if($result->long_description_wc == '0') {
+                $result->long_description_wc = '-';
+            }
+        }
 
         $this->output->set_content_type('application/json')
             ->set_output(json_encode($results));

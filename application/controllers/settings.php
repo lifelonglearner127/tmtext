@@ -35,5 +35,15 @@ class Settings extends MY_Controller {
 //		var_dump($this->config);
 
 	}
+
+    public function save_columns_state() {
+        $this->load->model('settings_model');
+
+        $user_id = $this->ion_auth->get_user_id();
+        $key = $this->input->post('key');
+        $value = $this->input->post('value');
+        $description = 'Page settings -> columns state';
+        $res = $this->settings_model->replace($user_id, $key, $value, $description);
+        echo json_encode($res);
+    }
 }
-?>

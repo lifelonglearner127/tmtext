@@ -190,6 +190,56 @@ $( function() {
 
     }
 
+    // choice column dialog
+    $( '#choiceColumnDialog' ).dialog({
+        autoOpen: false,
+
+        buttons: {
+            'Save': function() {
+                // get columns params
+                var columns = {
+                    editor : $("#column_editor").attr('checked'),
+                    product_name : $("#column_product_name").attr('checked'),
+                    url : $("#column_url").attr('checked'),
+                    short_description : $("#column_short_description").attr('checked'),
+                    short_description_wc : $("#column_short_description_wc").attr('checked'),
+                    long_description : $("#column_long_description").attr('checked'),
+                    long_description_wc : $("#column_long_description_wc").attr('checked'),
+                    actions : $("#column_actions").attr('checked')
+                };
+
+                // save params to DB
+                $.ajax({
+                    url: base_url + 'index.php/settings/save_columns_state/',
+                    dataType: 'json',
+                    type : 'post',
+                    data : {
+                        key : 'research_review',
+                        value : columns
+                    },
+                    success: function( data ) {
+                        if(data == true) {
+                            dataTable.fnDestroy();
+                            dataTable = undefined;
+                            readResearchData();
+                        }
+                    }
+                });
+
+                $(this).dialog('close');
+            },
+            'Cancel': function() {
+                $(this).dialog('close');
+            }
+        },
+        width: '180px'
+    });
+
+    $( document ).delegate( '#research_batches_columns', 'click', function() {
+        $( '#choiceColumnDialog' ).dialog( 'open' );
+        $('#choiceColumnDialog').parent().find('button:first').addClass("popupGreen");
+    });
+
 
     // --- Create Record with Validation ---
     /*$( '#create form' ).validate({
@@ -275,13 +325,39 @@ function readResearchData() {
                         "sInfoFiltered": "",
                     },
                     "aoColumns": [
-                         null, null, null, null, null, { "bVisible": false }, null
+                         null, null, null, null, null, null, null, null, null
                     ]
                 });
             }
 
             dataTable.fnFilter( $('select[name="research_batches"]').find('option:selected').text(), 5);
-            dataTable.fnSetColumnVis( 5, false, true);
+
+            // get visible columns status
+            var columns_checkboxes = $('#choiceColumnDialog input[type=checkbox]');
+
+//            console.log(columns_checkboxes);
+            $(columns_checkboxes).each(function(i) {
+                if(i >= 7) {  // for Batch Name column
+                    i++;
+                }
+//                console.log("i = " + i + " value = " + $(this).attr('checked'));
+                if($(this).attr('checked') == true) {
+                    dataTable.fnSetColumnVis( i, true, true );
+                } else {
+                    dataTable.fnSetColumnVis( i, false, true );
+                }
+            });
+
+
+
+//            var column_editor = $('#column_editor').attr('checked');
+//            var column_editor = $('#column_editor').attr('checked');
+//            var column_editor = $('#column_editor').attr('checked');
+//            var column_editor = $('#column_editor').attr('checked');
+//            var column_editor = $('#column_editor').attr('checked');
+//            var column_editor = $('#column_editor').attr('checked');
+//            dataTable.fnSetColumnVis( 2, false, true );
+//            dataTable.fnSetColumnVis( 8, false, true );
 
             //hide ajax loader animation here...
             $( '#ajaxLoadAni' ).fadeOut( 'slow' );
