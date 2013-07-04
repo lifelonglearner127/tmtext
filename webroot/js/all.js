@@ -27,47 +27,30 @@ $( function() {
         buttons: {
             'Update & Next':
                 function() {
-                    $( '#ajaxLoadAni' ).fadeIn( 'slow' );
+                    if($('#ajaxLoadAni').css('display') == 'none') {
+                        $( '#ajaxLoadAni' ).fadeIn( 'slow' );
+                    }
                     $( this ).dialog( 'close' );
-
                     $.ajax({
                         url: updateHref,
                         type: 'POST',
                         data: $( '#updateDialog form' ).serialize(),
-
                         success: function( response ) {
                             $( '#msgDialog > p' ).html( response );
-
-//                            $( '#msgDialog' ).dialog( 'option', 'title', 'Success' ).dialog( 'open' );
-
                             $( '#ajaxLoadAni' ).fadeOut( 'slow' );
-
-                            //--- update row in table with new values ---
-                            var productname = $( 'tr#' + updateId + ' td' )[ 1 ];
-                            var url = $( 'tr#' + updateId + ' td' )[ 2 ];
-                            var short_description = $( 'tr#' + updateId + ' td' )[ 3];
-                            var long_description = $( 'tr#' + updateId + ' td' )[ 4 ];
-
-                            $( productname ).html( $( '#product_name' ).val() );
-                            $( url ).html( $( '#url' ).val() );
-                            $( short_description ).html( $( '#short_description' ).val() );
-                            $( long_description ).html( $( '#long_description' ).val() );
-
+                            updateTableRow();
                             //--- clear form ---
                             $( '#updateDialog form input' ).val( '' );
-
                             updateNextDialog(updateId);
-
                         } //end success
-
                     }); //end ajax()
                 },
-
             'Update':
                 function() {
-                    $( '#ajaxLoadAni' ).fadeIn( 'slow' );
+                    if($('#ajaxLoadAni').css('display') == 'none') {
+                        $( '#ajaxLoadAni' ).fadeIn( 'slow' );
+                    }
                     $( this ).dialog( 'close' );
-
                     $.ajax({
                         url: updateHref,
                         type: 'POST',
@@ -75,27 +58,11 @@ $( function() {
 
                         success: function( response ) {
                             $( '#msgDialog > p' ).html( response );
-
-//                            $( '#msgDialog' ).dialog( 'option', 'title', 'Success' ).dialog( 'open' );
-
                             $( '#ajaxLoadAni' ).fadeOut( 'slow' );
-
-                            //--- update row in table with new values ---
-                            var productname = $( 'tr#' + updateId + ' td' )[ 1 ];
-                            var url = $( 'tr#' + updateId + ' td' )[ 2 ];
-                            var short_description = $( 'tr#' + updateId + ' td' )[ 3];
-                            var long_description = $( 'tr#' + updateId + ' td' )[ 4 ];
-
-                            $( productname ).html( $( '#product_name' ).val() );
-                            $( url ).html( $( '#url' ).val() );
-                            $( short_description ).html( $( '#short_description' ).val() );
-                            $( long_description ).html( $( '#long_description' ).val() );
-
+                            updateTableRow();
                             //--- clear form ---
                             $( '#updateDialog form input' ).val( '' );
-
                         } //end success
-
                     }); //end ajax()
             },
 
@@ -105,6 +72,57 @@ $( function() {
         },
         width: '600px'
     });
+
+    function updateTableRow() {
+        //--- update row in table with new values ---
+        var columns_checkboxes = $('#choiceColumnDialog input[type=checkbox]');
+        $(columns_checkboxes).each(function(i) {
+            switch($(this).attr('id')) {
+                case 'column_product_name' : {
+                    if($(this).attr('checked') == true) {
+                        var product_name = $( 'tr#' + updateId + ' td.column_product_name' );
+                        $(product_name).html( $( '#product_name' ).val() );
+                    }
+                    break;
+                }
+                case 'column_url' : {
+                    if($(this).attr('checked') == true) {
+                        var url = $( 'tr#' + updateId + ' td.column_url' );
+                        $(url).html( $( '#url' ).val() );
+                    }
+                    break;
+                }
+                case 'column_short_description' : {
+                    if($(this).attr('checked') == true) {
+                        var short_description = $( 'tr#' + updateId + ' td.column_short_description' );
+                        $(short_description).html( $( '#short_description' ).val() );
+                    }
+                    break;
+                }
+                case 'column_short_description_wc' : {
+                    if($(this).attr('checked') == true) {
+                        var short_description_wc = $( 'tr#' + updateId + ' td.column_short_description_wc' );
+                        $(short_description_wc).html( $( '#short_description_wc' ).val() );
+                    }
+                    break;
+                }
+                case 'column_long_description' : {
+                    if($(this).attr('checked') == true) {
+                        var long_description = $( 'tr#' + updateId + ' td.column_long_description' );
+                        $(long_description).html( $( '#long_description' ).val() );
+                    }
+                    break;
+                }
+                case 'column_long_description_wc' : {
+                    if($(this).attr('checked') == true) {
+                        var long_description_wc = $( 'tr#' + updateId + ' td.column_long_description_wc' );
+                        $(long_description_wc).html( $( '#long_description_wc' ).val() );
+                    }
+                    break;
+                }
+            }
+        });
+    }
 
     //end update dialog
 
@@ -324,7 +342,7 @@ function readResearchData() {
                     "oLanguage": {
                         "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
                         "sInfoEmpty": "Showing 0 to 0 of 0 records",
-                        "sInfoFiltered": "",
+                        "sInfoFiltered": ""
                     },
                     "aoColumns": [
                          null, null, null, null, null, null, null, null, null
@@ -336,30 +354,16 @@ function readResearchData() {
 
             // get visible columns status
             var columns_checkboxes = $('#choiceColumnDialog input[type=checkbox]');
-
-//            console.log(columns_checkboxes);
             $(columns_checkboxes).each(function(i) {
                 if(i >= 7) {  // for Batch Name column
                     i++;
                 }
-//                console.log("i = " + i + " value = " + $(this).attr('checked'));
                 if($(this).attr('checked') == true) {
                     dataTable.fnSetColumnVis( i, true, true );
                 } else {
                     dataTable.fnSetColumnVis( i, false, true );
                 }
             });
-
-
-
-//            var column_editor = $('#column_editor').attr('checked');
-//            var column_editor = $('#column_editor').attr('checked');
-//            var column_editor = $('#column_editor').attr('checked');
-//            var column_editor = $('#column_editor').attr('checked');
-//            var column_editor = $('#column_editor').attr('checked');
-//            var column_editor = $('#column_editor').attr('checked');
-//            dataTable.fnSetColumnVis( 2, false, true );
-//            dataTable.fnSetColumnVis( 8, false, true );
 
             //hide ajax loader animation here...
             $( '#ajaxLoadAni' ).fadeOut( 'slow' );

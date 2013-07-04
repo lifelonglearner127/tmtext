@@ -119,12 +119,12 @@
                             <p>
                                 <label for="short_description">Short Description:</label>
                                 <textarea id="short_description" name="short_description" ></textarea>
-                                <label><span id="research_wc">0</span> words<input type="hidden" name="short_description_wc" /></label>
+                                <label><span id="short_description_wc">0</span> words<input type="hidden" name="short_description_wc" /></label>
                             </p>
                             <p>
                                 <label for="long_description">Long Description:</label>
                                 <textarea id="long_description" name="long_description" ></textarea>
-                                <label><span id="research_wc1">0</span> words<input type="hidden" name="long_description_wc" /></label>
+                                <label><span id="long_description_wc">0</span> words<input type="hidden" name="long_description_wc" /></label>
                             </p>
 
                             <input type="hidden" id="userId" name="id" />
@@ -190,15 +190,15 @@
 
                 <script type="text/template" id="readTemplate">
                     <tr id="${id}">
-                        <td>${user_id}</td>
-                        <td>${product_name}</td>
-                        <td>${url}</td>
-                        <td>${short_description}</td>
-                        <td>${short_description_wc}</td>
-                        <td>${long_description}</td>
-                        <td>${long_description_wc}</td>
-                        <td>${batch_name}</td>
-                        <td nowrap><a class="updateBtn icon-edit" style="float:left;" href="${updateLink}"></a>
+                        <td class="column_editor">${user_id}</td>
+                        <td class="column_product_name">${product_name}</td>
+                        <td class="column_url">${url}</td>
+                        <td class="column_short_description">${short_description}</td>
+                        <td class="column_short_description_wc">${short_description_wc}</td>
+                        <td class="column_long_description">${long_description}</td>
+                        <td class="column_long_description_wc">${long_description_wc}</td>
+                        <td class="column_batch_name">${batch_name}</td>
+                        <td nowrap class="column_actions"><a class="updateBtn icon-edit" style="float:left;" href="${updateLink}"></a>
                             <a class="deleteBtn icon-remove ml_5" href="${deleteLink}"></a>
                         </td>
                     </tr>
