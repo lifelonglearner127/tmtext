@@ -1337,3 +1337,7 @@ label.dd-selected-text, label.dd-option-text{
     min-height:40px !important;
     height:40px !important;
 }
+
+#Current_List li.active{
+    background: rgb(215, 248, 220);
+}
