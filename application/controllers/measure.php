@@ -89,6 +89,11 @@ class Measure extends MY_Controller {
             // --- ATTEMPT TO GET 'SAME' FROM 'HUMAN INTERFACE' (products_compare table) (START)
             $same_pr = $this->imported_data_parsed_model->getSameProductsHuman($im_data_id);
 
+            // get similar by parsed_attributes
+            if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
+            	$same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
+            }
+
             // get similar for first row
 			$this->load->model('similar_imported_data_model');
 
@@ -103,7 +108,7 @@ class Measure extends MY_Controller {
 	        }
 	        $customers_list = array_unique($customers_list);
 
-			if ($group_id = $this->similar_imported_data_model->findByImportedDataId($im_data_id)) {
+			if (empty($same_pr) && ($group_id = $this->similar_imported_data_model->findByImportedDataId($im_data_id))) {
 				if ($rows = $this->similar_imported_data_model->getImportedDataByGroupId($group_id)) {
 					$data_similar = array();
 

@@ -37,11 +37,15 @@ class PageProcessor {
         		$this->$methodName();
         	}
 
+			// hiding useragent
+        	$this->curl->option('USERAGENT', 'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.2.12) Gecko/20101026 Firefox/3.6.12');
+
         	// TODO: add caching
 			if ($this->html = $this->curl->simple_get($this->url)) {
 				$this->nokogiri = new nokogiri($this->html);
 				return true;
 			}
+			$this->curl->debug();
 		}
 		return false;
 	}
@@ -81,6 +85,23 @@ class PageProcessor {
 				$value = trim($value);
 			}
         	return $result;
+        }
+
+        return false;
+	}
+
+	public function attributes() {
+		$methodName = 'attributes_'.$this->hostName;
+
+		if	( method_exists($this, $methodName) ) {
+			$result = $this->$methodName();
+			foreach ($result as &$value) {
+				$value = trim($value);
+			}
+
+			if (!empty($result)) {
+        		return $result;
+			}
         }
 
         return false;
@@ -131,6 +152,27 @@ class PageProcessor {
 		return $this->nokogiri->get('meta')->toArray();
 	}
 
+	public function attributes_walmart() {
+		$result = array();
+
+		foreach($this->nokogiri->get('.SpecTable tr') as $item) {
+			if (stripos($item['td'][0]["#text"][0], 'model no')!==false) {
+				$result['model'] =  trim($item['td'][1]["#text"][0]);
+			}
+		}
+
+		foreach($this->nokogiri->get('h1.productTitle') as $item) {
+			if (isset($result['model']) && !empty($result['model'])) {
+				$s = split($result['model'], $item['#text'][0]);
+				if (isset($s[0]) && !empty($s[0]) && $s[0]!=$item['#text'][0]) {
+					$result['manufacturer'] = $s[0];
+				}
+			}
+		}
+
+		return $result;
+	}
+
 	public function process_tigerdirect() {
 		foreach($this->nokogiri->get('.shortDesc p') as $item) {
 			if (isset($item['#text'])) {
@@ -169,6 +211,21 @@ class PageProcessor {
 			'Price' => $price,
 			'Features' => $features
 		);
+	}
+
+	public function attributes_tigerdirect() {
+		$result = array();
+
+		foreach($this->nokogiri->get('ul.pInfo li:first-child') as $item) {
+			if (stripos($item["#text"][0], 'manufactured by')!==false) {
+				$result['manufacturer'] =  trim($item['strong'][0]["#text"][0]);
+			}
+			if (stripos($item["#text"][3], 'mfg part no')!==false) {
+				$result['model'] =  trim($item["b"][0]["#text"][0]);
+			}
+		}
+
+		return $result;
 	}
 
 	public function process_sears() {
@@ -228,6 +285,26 @@ class PageProcessor {
 			'Price' => $price,
 			'Features' => $features
 		);
+	}
+
+	public function attributes_staples() {
+		$result = array();
+
+		foreach($this->nokogiri->get('.productDetails h1') as $item) {
+			$s = split(' ', trim($item['#text'][0]));
+			if (isset($s[0]) && !empty($s[0])) {
+				$result['manufacturer'] = $s[0];
+			}
+		}
+
+		foreach($this->nokogiri->get('#skuspecial .productDetails .itemModel') as $item) {
+			if (stripos($item['#text'][0], 'model')!==false) {
+				$s = split('Model:', trim($item['#text'][0]));
+				$result['model'] =  trim($s[1]);
+			}
+		}
+
+		return $result;
 	}
 
 	public function process_audible(){
@@ -315,6 +392,28 @@ class PageProcessor {
 		);
 	}
 
+	public function attributes_overstock() {
+		$result = array();
+
+		foreach($this->nokogiri->get('#related_cats .bd ul li ') as $item) {
+
+			if (stripos($item['#text'][0], 'brand')!==false) {
+				$s = split(',',$item['a'][0]['#text'][0]);
+				$result['manufacturer'] =  trim($s[0]);
+			}
+		}
+
+		foreach($this->nokogiri->get('.description-extra-data #details_descMisc dl') as $item) {
+			foreach($item["dt"] as $key=>$dt){
+				if (stripos($dt['#text'][0], 'model no')!==false) {
+					$result['model'] =  trim($item["dd"][$key]['#text'][0]);
+				}
+			}
+		}
+
+		return $result;
+	}
+
 	public function process_officemax(){
 		foreach($this->nokogiri->get('#productTabs .tabContentWrapper .details') as $item) {
 			$description[] = $item['#text'][0];
@@ -384,6 +483,126 @@ class PageProcessor {
 			'Price' => $price
 		);
 	}
+
+	public function process_bestbuy(){
+		foreach($this->nokogiri->get('div#productsummary h1') as $item) {
+			$title = $item['#text'][0];
+		}
+
+		foreach($this->nokogiri->get('#tabbed-overview .csc-medium-column p') as $item) {
+			$line = trim($item['#text'][0]);
+			if (!empty($line)) {
+				$description[] = $line;
+			}
+		}
+
+		if (empty($description)) {
+			foreach($this->nokogiri->get('#tabbed-bundle-overview p') as $item) {
+				$line = trim($item['#text'][0]);
+				if (!empty($line)) {
+					$description[] = $line;
+				}
+			}
+		}
+
+		$description = implode(' ',$description);
+
+		foreach($this->nokogiri->get('#tabbed-overview .csc-medium-column ul li') as $item) {
+			if (isset($item['b'])) {
+				$features[] =  $item['b'][0]['#text'][0].' - '.$item['#text'][0];
+			}
+		}
+
+		foreach($this->nokogiri->get('#tabbed-bundle-overview ul li') as $item) {
+			$features[] =  trim($item['#text'][0]);
+		}
+		$features = implode("\n",$features);
+
+		foreach($this->nokogiri->get('#priceblock #saleprice .price') as $item) {
+			if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $item['#text'][0], $match)) {
+				$price = $match[1];
+			}
+		}
+
+		return array(
+			'Product Name' => $title,
+			'Description' => $description,
+//			'Long_Description' => $description_long,
+			'Features' => $features,
+			'Price' => $price
+		);
+	}
+
+	public function attributes_bestbuy() {
+		$result = array();
+
+		foreach($this->nokogiri->get('div#productsummary h1') as $item) {
+			$s = split('-',$item['#text'][0]);
+			$result['manufacturer'] =  trim($s[0]);
+		}
+
+		foreach($this->nokogiri->get('div#productsummary h2 span') as $item) {
+			if (isset($item['itemprop']) && $item['itemprop']=='model') {
+				$result['model'] =  trim($item['#text'][0]);
+			}
+		}
+
+		return $result;
+	}
+
+	public function process_amazon(){
+		foreach($this->nokogiri->get('h1.parseasinTitle span') as $item) {
+			$title = $item['#text'][0];
+		}
+
+		foreach($this->nokogiri->get('.content .productDescriptionWrapper .productDescriptionWrapper') as $item) {
+			$line = trim($item['#text'][0]);
+			if (!empty($line)) {
+				$description[] = $line;
+			}
+		}
+
+		if (empty($description)) {
+			foreach($this->nokogiri->get('.content .productDescriptionWrapper .aplus .aplus p') as $item) {
+				$line = trim($item['#text'][0]);
+				if (!empty($line)) {
+					$description[] = $line;
+				}
+			}
+		}
+
+		$description = implode(' ',$description);
+
+		return array(
+			'Product Name' => $title,
+			'Description' => $description,
+//			'Long_Description' => $description_long,
+//			'Features' => $features,
+//			'Price' => $price
+		);
+	}
+
+	public function attributes_amazon() {
+		$result = array();
+
+		foreach($this->nokogiri->get('#technical-data ul li') as $item) {
+			if (stripos($item['b'][0]['#text'][0], 'brand name') !==false ) {
+				$result['manufacturer'] =  trim(str_replace(':','',$item['#text'][0]));
+			}
+			if (stripos($item['b'][0]['#text'][0], 'model') !==false ) {
+				$result['model'] =  trim(str_replace(':','',$item['#text'][0]));
+			}
+		}
+
+		foreach($this->nokogiri->get('#detail-bullets table td.bucket ul li') as $item) {
+			if (stripos($item['b'][0]['#text'][0], 'item model number') !==false ) {
+				$result['model'] =  trim($item['#text'][0]);
+			}
+		}
+
+		return $result;
+	}
+
 }
 
 ?>
