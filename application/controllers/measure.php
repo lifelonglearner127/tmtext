@@ -19,9 +19,24 @@ class Measure extends MY_Controller {
 
     public function index()
     {
-        $this->data['category_list'] = $this->category_full_list();
-        $this->data['customers_list'] = $this->category_customers_list();
-        $this->render();
+        $this->render(); 
+    }
+    
+    public function measure_products()
+    {
+       $this->data['category_list'] = $this->category_full_list();
+       $this->data['customers_list'] = $this->category_customers_list();
+       $this->render();     
+    }
+    
+    public function measure_departments()
+    {
+       $this->render();     
+    }
+    
+    public function measure_categories()
+    {
+       $this->render();     
     }
 
     private function category_full_list() {
