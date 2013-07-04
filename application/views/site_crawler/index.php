@@ -59,9 +59,6 @@
 	  </div>
 </div>
 <script>
- /*   $(function() {
-    $( "#Current_List ul" ).selectable();
-  });*/
 function loadCurrentList(url){
 	url = typeof url !== 'undefined' ? url: '<?php echo site_url('site_crawler/all_urls');?>';
 
