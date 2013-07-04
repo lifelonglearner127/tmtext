@@ -81,6 +81,15 @@ class Research extends MY_Controller {
         }
     }
 
+    public function create_batch(){
+
+        $this->data['customer_list'] = $this->getCustomersByUserId();
+        if(!empty($this->data['customer_list'])){
+            $this->data['batches_list'] = array('')+$this->batches_list();
+        }
+        $this->render();
+    }
+
     public function research_batches(){
         
         $this->data['customer_list'] = $this->getCustomersByUserId();
