@@ -9,7 +9,7 @@ class System extends MY_Controller {
   		parent::__construct();
 
 		$this->data['title'] = 'System Settings';
-		$this->data['checked_controllers'] = array( 'measure', 'research', 'editor', 'customer');
+		$this->data['checked_controllers'] = array( 'measure', 'research', 'job_board', 'editor', 'customer');
 		$this->data['admin_controllers'] = array('system', 'admin_customer', 'admin_editor', 'admin_tag_editor');
 
 
@@ -459,7 +459,12 @@ class System extends MY_Controller {
 
 		foreach ($_POST as $checkbox_name => $checkbox_value) {
 			$arr = explode('_', $checkbox_name);
-			$roles[$arr[1]][] = $arr[0];
+            if($arr[0] != 'job'){
+                $roles[$arr[1]][] = $arr[0];
+            } else {
+                $roles[$arr[2]][] = $arr[0].'_'.$arr[1];
+            }
+
 		}
 		foreach ($roles as $key => $value) {
             $this->ion_auth->set_default_tab_to_group($key, $this->input->post('default_'.$key));

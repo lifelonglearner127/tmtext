@@ -43,7 +43,7 @@
 					<img src="<?php echo $img_c_source; ?>">
 				</p>
 				<ul class='nav nav-pills nav-stacked'>
-					<li class='active'><a data-id="<?php echo $get_random_l['id']; ?>" href='javascript:void(0)'><?php echo $get_random_l['product_name']; ?></a></li>
+					<li class='active'><a class='pfc_link_l' data-id="<?php echo $get_random_l['id']; ?>" target="_blank" href="<?php echo $get_random_l['url']; ?>"><?php echo $get_random_l['product_name']; ?></a></li>
 				</ul>
 				<p class='centered'><span class="label label-success">SHORT DESCRIPTION</span></p>
 				<ul class='nav nav-pills nav-stacked'>
@@ -102,7 +102,7 @@
 					<img src="<?php echo $img_c_source; ?>">
 				</p>
 				<ul class='nav nav-pills nav-stacked'>
-					<li class='active'><a data-id="<?php echo $get_random_r['id']; ?>" href='javascript:void(0)'><?php echo $get_random_r['product_name']; ?></a></li>
+					<li class='active'><a class='pfc_link_r' data-id="<?php echo $get_random_r['id']; ?>" target="_blank" href="<?php echo $get_random_r['url']; ?>"><?php echo $get_random_r['product_name']; ?></a></li>
 				</ul>
 				<p class='centered'><span class="label label-success">SHORT DESCRIPTION</span></p>
 				<ul class='nav nav-pills nav-stacked'>
@@ -141,6 +141,14 @@
 			$("#sccb_not_btn").tooltip({
 				placement: 'bottom',
 				title: 'Mark as different'
+			});
+			$(".pfc_link_l").tooltip({
+				placement: 'left',
+				title: 'Press to visit product page'
+			});
+			$(".pfc_link_r").tooltip({
+				placement: 'right',
+				title: 'Press to visit product page'
 			});
 			// ---- UI tooltips (end)
 		});

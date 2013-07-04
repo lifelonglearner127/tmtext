@@ -34,7 +34,7 @@
 		<img src="<?php echo $img_c_source; ?>">
 	</p>
 	<ul class='nav nav-pills nav-stacked'>
-		<li class='active'><a data-id="<?php echo $get_random_r['id']; ?>" href='javascript:void(0)'><?php echo $get_random_r['product_name']; ?></a></li>
+		<li class='active'><a class='pfc_link_r' data-id="<?php echo $get_random_r['id']; ?>" target="_blank" href="<?php echo $get_random_r['url']; ?>"><?php echo $get_random_r['product_name']; ?></a></li>
 	</ul>
 	<p class='centered'><span class="label label-success">SHORT DESCRIPTION</span></p>
 	<ul class='nav nav-pills nav-stacked'>
@@ -45,3 +45,13 @@
 		<li><?php echo $get_random_r['long_description']; ?></li>
 	</ul>
 </div>
+<script type='text/javascript'>
+	$(document).ready(function(e) {
+		// ---- UI tooltips (start)
+		$(".pfc_link_r").tooltip({
+			placement: 'right',
+			title: 'Press to visit product page'
+		});
+		// ---- UI tooltips (end)
+	});
+</script>
