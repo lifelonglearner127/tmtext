@@ -1,5 +1,5 @@
 # Hidden files
-/.htaccess
+!.htaccess
 
 #Config
 application/config/config.local.php
