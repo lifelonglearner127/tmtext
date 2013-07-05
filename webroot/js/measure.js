@@ -211,7 +211,6 @@ function switchToGridView() {
     // --- TMP (in cause slow files attribtes fetch) (end)
     // gridsCustomersListLoader();
     // ------------- !!!! OLD STUFF (END) -------------
-}
 // --- GRIDS (END)
 
 // --- SCROLL UP / DOWN DETECTION (START)
