@@ -1,15 +1,22 @@
+# Hidden files
+!.htaccess
+
+#Config
 application/config/config.local.php
 application/config/database.local.php
-# NetBeans
+
+#NetBeans
 nbproject/
+
 # PHP Storm, other java IDE's
 .idea/
+
 #Eclipse
 license.txt
 .buildpath
 .project
 .settings
-.htaccess
+
 #Other
 /application/logs
 /application/controllers/test.php
