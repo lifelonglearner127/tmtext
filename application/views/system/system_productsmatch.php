@@ -79,11 +79,15 @@
 	function empty_check_validation_ext() {
 		var res = false;
 		$("#pm_data_table tr").each(function(index, value) {
-			if( $.trim($(value).find('.pmtt_url').val()) !== "" && $.trim($(value).find('.pmtt_sku').val()) !== ""  ) {
+			if(validate_url_ext($(value).find('.pmtt_url').val())) {
 				res = true;
 			}
 		});
 		return res;
+	}
+
+	function validate_url_ext(value) {
+		return /^(https?|ftp):\/\/(((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:)*@)?(((\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5]))|((([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.)+(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.?)(:\d*)?)(\/((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)+(\/(([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)*)*)?)?(\?((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)|[\uE000-\uF8FF]|\/|\?)*)?(\#((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)|\/|\?)*)?$/i.test(value);
 	}
 
 	$(document).ready(function() {
@@ -97,6 +101,18 @@
 			placement: 'right',
 			title: 'Save Collection'
 		});
+		function destroyAndReinitTooltips() {
+			$('#pm_tab_newrow_btn').tooltip('destroy');
+			$('#pm_tab_save_btn').tooltip('destroy');
+			$("#pm_tab_newrow_btn").tooltip({
+				placement: 'bottom',
+				title: 'Maximum 10 rows'
+			});
+			$("#pm_tab_save_btn").tooltip({
+				placement: 'right',
+				title: 'Save Collection'
+			});
+		}
 		// ---- UI tooltips (end)
 
 		function resetRowsInputs() {
@@ -106,6 +122,10 @@
 			$("#pm_tab_save_btn").addClass('disabled');
 			$("#pm_tab_save_btn").attr('disabled', true);
 		}
+
+		$("#pm_data_table .pm_data_table_tinput").bind('paste', function() {
+			setTimeout(saveStateHandler, 200);
+		});
 
 		$("#pm_data_table .pm_data_table_tinput").bind('keypress', saveStateHandler);
 
@@ -124,7 +144,7 @@
 		function empty_check_validation() {
 			var res = false;
 			$("#pm_data_table tr").each(function(index, value) {
-				if( $.trim($(value).find('.pmtt_url').val()) !== "" && $.trim($(value).find('.pmtt_sku').val()) !== ""  ) {
+				if(validate_url($(value).find('.pmtt_url').val())) {
 					res = true;
 				}
 			});
@@ -164,33 +184,28 @@
 			$("#pm_data_table tr").each(function(index, value) {
 				var url = $.trim($(value).find('.pmtt_url').val());
 				var sku = $.trim($(value).find('.pmtt_sku').val());
-				if(url === "" && sku === "") {
+				if(url === "") {
 					
 				} else {
 					var mid = {
 						'status_all': false,
 						'status_url': false,
-						'status_sku': false,
+						'status_sku': true,
 						'index': index,
 						'url': '',
 						'sku': ''
 					};
-					if(validate_url(url) && sku !== "") {
+					if(validate_url(url)) {
 						mid['status_all'] = true;
 						mid['url'] = url;
 						mid['sku'] = sku;
-					}
-					if(validate_url(url)) {
 						mid['status_url'] = true;
-					}
-					if(sku !== "") {
-						mid['status_sku'] = true;
 					}
 					crawl_stack.push(mid);
 				}
 			});
 			// --- travel through results (start)
-			if(crawl_stack.length > 0) {
+			if(crawl_stack.length > 1) {
 				var tr_res = true;
 				for(var i = 0; i < crawl_stack.length; i++) {
 					if(crawl_stack[i]['status_all'] !== true) {
@@ -210,6 +225,7 @@
 			              success: function(res) {
 			              	if(res === 1) { // --- all ok
 			              		resetRowsInputs();
+			              		destroyAndReinitTooltips();
 			              		outputNotice('Success', 'Collection successfully saved.');
 			              	} else if(res === 2) { // --- not enough valid collection items (must be 2>)
 			              		outputNotice('Notice', 'Not enough valid collection items. Must be at least two.');
@@ -226,20 +242,16 @@
 								var url_error = $("#pm_data_table tr")[crawl_stack[i]['index']];
 								$(url_error).find('.pmtt_url').addClass('error');
 							}
-							if(crawl_stack[i]['status_sku'] === false) {
-								var url_error = $("#pm_data_table tr")[crawl_stack[i]['index']];
-								$(url_error).find('.pmtt_sku').addClass('error');
-							}
 						}
 					}
 					// --- highlight mistakes (end)
 					outputNotice('Fail', 'Check out some validation errors');
 				} 
 			} else {
-				outputNotice('Notice', 'All rows are empty');
+				outputNotice('Notice', 'Not enough valid collection items.');
+				// outputNotice('Notice', 'All rows are empty');
 			}
 			// --- travel through results (end)
-			// console.log("RESULT: ", crawl_stack);
 		});
 
 	});
