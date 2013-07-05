@@ -26,7 +26,7 @@
                     <option value='all'>All Categories</option>
                     <?php } ?>
                 </select>
-                <button type="submit" id="an_search" disabled='true' onclick="return startMeasureCompareV2()" class="btn btn-success pull-right">Search</button>
+                <button type="submit" id="an_search" onclick="return startMeasureCompareV2()" class="btn btn-success pull-right">Search</button>
                 <!-- <button type="submit" id="an_search" class="btn btn-success pull-right">Search</button> -->
             <?php // echo form_close();?>
             </form>
@@ -225,95 +225,6 @@
 
         <script type='text/javascript'>
 
-            // ---- new CI term typeahead (start) (NEW)
-            $(document).ready(function() {
-
-              var autocomplete_ci_baseurl = base_url + 'index.php/measure/cisearchteram';
-              var gTime, ci_search_name;
-              ci_search_name = "";
-
-              $('#compare_text').keyup(function(e) {
-                  if(e.which == 13) {
-                    ci_search_name = $("#compare_text").val();
-                    setTimeout(function() {
-                      $("#measureFormMetrics").submit();
-                    }, 1000);
-                  }
-
-              });
-
-              $("#compare_text").typeahead({
-                items: 4,
-                minLength: 3,
-                matcher: function() {
-                  return true;
-                },
-                updater: function(item) {
-                  if(typeof(item) === "undefined") {
-                    return ci_search_name;
-                  } else {
-                    return item;
-                  }
-                },
-                source: function(query, process) {
-                  clearTimeout(gTime);
-                  gTime = setTimeout(function() {
-                    var xhr;
-                    if (xhr && xhr.readystate !== 4) xhr.abort();
-                    xhr = $.ajax({
-                      url: autocomplete_ci_baseurl,
-                      dataType: "JSON",
-                      data: {
-                        q: query,
-                        sl: $("#ci_dropdown .dd-selected-value").val(),
-                        cat: $("#cats_an > option:selected").val()
-                      },
-                      success: function(response) {
-                        if(typeof(response) !== 'undefined' && response !== null) {
-                          var labelsTitles;
-                          labelsTitles = [];
-                          $.each(response, function(i, item) {
-                            labelsTitles.push(item.value);
-                          });
-                          process(_.uniq(labelsTitles));
-                        }
-                      }
-                    });
-                  }, 300);
-                }
-              });
-
-            });
-            // ---- new CI term typeahead (end) (NEW)
-
-            // --- CI search term autocomplete (start) (OLD)
-            // setTimeout(function() {
-            //     var autocomplete_ci_baseurl = base_url + 'index.php/measure/cisearchteram';
-            //     $("#compare_text").autocomplete({
-            //         source: autocomplete_ci_baseurl + "?sl=" + $("#ci_dropdown .dd-selected-value").val() + "&cat=" +  $("#cats_an > option:selected").val(),
-            //         minChars: 3,
-            //         deferRequestBy: 300,
-            //         select: function(event, ui) {
-            //             startMeasureCompareV2();
-            //         }
-            //     });
-            // }, 1000);
-            // --- CI search term autocomplete (end) (OLD)
-
-            // ---- search string cookie (auto mode search launcher) (start)
-            var auto_mode_search_str = "";
-            var cookie_search_str = $.cookie('com_intel_search_str');
-            if(typeof(cookie_search_str) !== 'undefined' && cookie_search_str !== null && cookie_search_str !== "") {
-                auto_mode_search_str = cookie_search_str;
-            }
-            if(auto_mode_search_str !== "") {
-                $("#compare_text").val(auto_mode_search_str);
-                setTimeout(function() {
-                    $("#an_search").removeAttr('disabled');
-                    startMeasureCompareV2();
-                }, 2500);
-            }
-            // ---- search string cookie (auto mode search launcher) (end)
 
         </script>
 </div>
