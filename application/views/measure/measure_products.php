@@ -5,6 +5,7 @@
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_departments');?>"><b>Departments</b></a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_categories');?>"><b>Categories</b></a></li>
         <li class="active"><a data-toggle="tab" href="<?php echo site_url('measure/measure_products');?>"><b>Products</b></a></li>
+        <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_gridview'); ?>"><b>Grid View</b></a></li>
     </ul>
     <div class="tab-content">
         <div class="row-fluid">
@@ -47,7 +48,7 @@
                 <div class="span3 an_sv_right" id="attributes_metrics">
                     <ul class='grid_switcher' data-status='grid-switch'>
                         <li>
-                            <h3>View:</h3n>
+                            <h3>View:</h3>
                             <button class='btn' onclick="switchToListView();" id='grid_sw_list' type='button'><i class="icon-th-list"></i>&nbsp;List</button>
                             <button class='btn' onclick="switchToGridView();" id='grid_sw_grid' type='button'><i class="icon-th-large"></i>&nbsp;Grid</button>
                         </li>
@@ -318,4 +319,3 @@
         </script>
 </div>
 </div>
-

@@ -39,6 +39,38 @@ class Measure extends MY_Controller {
        $this->render();     
     }
 
+    public function measure_gridview()
+    {
+        $this->render();
+    }
+
+    public function get_product_price() {
+        $this->load->model('crawler_list_prices_model');
+        $price_list = $this->crawler_list_prices_model->getAll();
+
+        // format date & price
+        foreach($price_list as $price) {
+            /*
+            $date = explode(" ", $price->created);
+            if(!empty($date[0])) {
+                $date = $date[0];
+                $date_part = explode("-", $date);
+                $price->created = $date_part[2] . '/' . $date_part[1] . '/' . $date_part[0];
+            } else {
+                $price->created = '-';
+            }
+            */
+            if(empty($price->price)) {
+                $price->price = '$0';
+            } else {
+                $price->price = '$' . $price->price;
+            }
+        }
+
+        $this->output->set_content_type('application/json')
+            ->set_output(json_encode($price_list));
+    }
+
     private function category_full_list() {
         $this->load->model('category_model');
         $categories = $this->category_model->getAll();
