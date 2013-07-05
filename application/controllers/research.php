@@ -451,15 +451,49 @@ class Research extends MY_Controller {
             ->set_output(json_encode($batches_list));
     }
     
-     public function filterStyleByCustomer(){
+    public function filterStyleByCustomer(){
         $this->load->model('customers_model');
         $this->load->model('style_guide_model');
         if($this->input->post('customer_name')!=='All Customers'){
             $customer_id = $this->customers_model->getIdByName($this->input->post('customer_name'));
             $style = $this->style_guide_model->getStyleByCustomerId($customer_id);
-
             $this->output->set_content_type('application/json')
-                ->set_output(json_encode($style[0]->style));
+               ->set_output(json_encode($style[0]->style));
         }
+    }
+
+    public function upload_csv(){
+        $this->load->library('UploadHandler');
+
+        $this->output->set_content_type('application/json');
+        $this->uploadhandler->upload(array(
+            'script_url' => site_url('research/upload_csv'),
+            'upload_dir' => $this->config->item('csv_upload_dir'),
+            'param_name' => 'files',
+            'delete_type' => 'POST',
+            'accept_file_types' => '/.+\.csv$/i',
+        ));
+    }
+
+    public function csv_import() {
+        $this->load->model('batches_model');
+        $this->load->model('items_model');
+
+        /*if (preg_match("/.*\.csv/i",$object->getFilename(),$matches)) {
+            $_rows = array();
+            if (($handle = fopen($name, "r")) !== FALSE) {
+                while (($row = fgets($handle)) !== false) {
+                    if (preg_match("/$s/i",$row,$matches)) {
+                        $_rows[] = $row;
+                    }
+                }
+            }
+            fclose($handle);
+
+            foreach (array_keys(array_count_values($_rows)) as $row){
+                $csv_rows[] = str_getcsv($row, ",", "\"");
+            }
+            unset($_rows);
+        }*/
     }
 }
