@@ -31,6 +31,7 @@
                             <th>Date Created</th>
                             <th>Customer</th>
                             <th>Batch Name</th>
+                            <th># Items</th>
                             <th><div class="draggable">Actions</div></th>
                         </tr>
                         </thead>
@@ -76,6 +77,7 @@
                     <td>${created}</td>
                     <td>${name}</td>
                     <td>${title}</td>
+                    <td>${items}</td>
                    <td nowrap><a class="updateBtn icon-edit" style="float:left;" href="${updateLink}"></a>
                         <a class="deleteBtn icon-remove ml_5" href="${deleteLink}"></a>
                     </td>

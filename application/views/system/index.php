@@ -63,7 +63,6 @@
 								<div id="files"></div>
 								<script>
 								$(function () {
-								    'use strict';
 								    var url = '<?php echo site_url('system/upload_csv');?>';
 								    $('#fileupload').fileupload({
 								        url: url,

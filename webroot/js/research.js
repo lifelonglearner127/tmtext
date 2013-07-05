@@ -583,6 +583,18 @@ $(document).ready(function () {
         readResearchData();
     });
 
+
+    $(document).on("click", "button#csv_import_create_batch", function(event){
+        event.preventDefault();
+        var url = $(this).parents().find('form').attr( 'action' ).replace('save', 'csv_import');
+
+        $.post(url, { 'choosen_file': $('input[name="choosen_file"]').val() }, function(data) {
+            $('#info').html(data.message);
+        }, 'json');
+
+        return false;
+    });
+
 });
 
 

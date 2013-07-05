@@ -91,11 +91,30 @@ class Research extends MY_Controller {
     }
 
     public function research_batches(){
-        
+        $this->load->model('settings_model');
         $this->data['customer_list'] = $this->getCustomersByUserId();
         if(!empty($this->data['customer_list'])){
             $this->data['batches_list'] = $this->batches_list();
         }
+		$user_id = $this->ion_auth->get_user_id();
+        $key = 'research_review';
+
+        $columns = $this->settings_model->get_value($user_id, $key);
+
+        // if columns empty set default values for columns
+        if(empty($columns)) {
+            $columns = array (
+                'editor'                        => 'true',
+                'product_name'                  => 'true',
+                'url'                           => 'true',
+                'short_description'             => 'true',
+                'short_description_wc'          => 'false',
+                'long_description'              => 'true',
+                'long_description_wc'           => 'false',
+                'actions'                       => 'true',
+            );
+        }
+        $this->data['columns'] = $columns;
         $this->render();
     }
     
@@ -155,6 +174,16 @@ class Research extends MY_Controller {
             $data = $this->input->get('search_text');
         }
         $results = $this->research_data_model->getInfoFromResearchData($data);
+
+        // change '0' value to '-'
+        foreach($results as $result) {
+            if($result->short_description_wc == '0') {
+                $result->short_description_wc = '-';
+            }
+            if($result->long_description_wc == '0') {
+                $result->long_description_wc = '-';
+            }
+        }
 
         $this->output->set_content_type('application/json')
             ->set_output(json_encode($results));
@@ -422,15 +451,49 @@ class Research extends MY_Controller {
             ->set_output(json_encode($batches_list));
     }
     
-     public function filterStyleByCustomer(){
+    public function filterStyleByCustomer(){
         $this->load->model('customers_model');
         $this->load->model('style_guide_model');
         if($this->input->post('customer_name')!=='All Customers'){
             $customer_id = $this->customers_model->getIdByName($this->input->post('customer_name'));
             $style = $this->style_guide_model->getStyleByCustomerId($customer_id);
-
             $this->output->set_content_type('application/json')
-                ->set_output(json_encode($style[0]->style));
+               ->set_output(json_encode($style[0]->style));
         }
+    }
+
+    public function upload_csv(){
+        $this->load->library('UploadHandler');
+
+        $this->output->set_content_type('application/json');
+        $this->uploadhandler->upload(array(
+            'script_url' => site_url('research/upload_csv'),
+            'upload_dir' => $this->config->item('csv_upload_dir'),
+            'param_name' => 'files',
+            'delete_type' => 'POST',
+            'accept_file_types' => '/.+\.csv$/i',
+        ));
+    }
+
+    public function csv_import() {
+        $this->load->model('batches_model');
+        $this->load->model('items_model');
+
+        /*if (preg_match("/.*\.csv/i",$object->getFilename(),$matches)) {
+            $_rows = array();
+            if (($handle = fopen($name, "r")) !== FALSE) {
+                while (($row = fgets($handle)) !== false) {
+                    if (preg_match("/$s/i",$row,$matches)) {
+                        $_rows[] = $row;
+                    }
+                }
+            }
+            fclose($handle);
+
+            foreach (array_keys(array_count_values($_rows)) as $row){
+                $csv_rows[] = str_getcsv($row, ",", "\"");
+            }
+            unset($_rows);
+        }*/
     }
 }

@@ -27,47 +27,30 @@ $( function() {
         buttons: {
             'Update & Next':
                 function() {
-                    $( '#ajaxLoadAni' ).fadeIn( 'slow' );
+                    if($('#ajaxLoadAni').css('display') == 'none') {
+                        $( '#ajaxLoadAni' ).fadeIn( 'slow' );
+                    }
                     $( this ).dialog( 'close' );
-
                     $.ajax({
                         url: updateHref,
                         type: 'POST',
                         data: $( '#updateDialog form' ).serialize(),
-
                         success: function( response ) {
                             $( '#msgDialog > p' ).html( response );
-
-//                            $( '#msgDialog' ).dialog( 'option', 'title', 'Success' ).dialog( 'open' );
-
                             $( '#ajaxLoadAni' ).fadeOut( 'slow' );
-
-                            //--- update row in table with new values ---
-                            var productname = $( 'tr#' + updateId + ' td' )[ 1 ];
-                            var url = $( 'tr#' + updateId + ' td' )[ 2 ];
-                            var short_description = $( 'tr#' + updateId + ' td' )[ 3];
-                            var long_description = $( 'tr#' + updateId + ' td' )[ 4 ];
-
-                            $( productname ).html( $( '#product_name' ).val() );
-                            $( url ).html( $( '#url' ).val() );
-                            $( short_description ).html( $( '#short_description' ).val() );
-                            $( long_description ).html( $( '#long_description' ).val() );
-
+                            updateTableRow();
                             //--- clear form ---
                             $( '#updateDialog form input' ).val( '' );
-
                             updateNextDialog(updateId);
-
                         } //end success
-
                     }); //end ajax()
                 },
-
             'Update':
                 function() {
-                    $( '#ajaxLoadAni' ).fadeIn( 'slow' );
+                    if($('#ajaxLoadAni').css('display') == 'none') {
+                        $( '#ajaxLoadAni' ).fadeIn( 'slow' );
+                    }
                     $( this ).dialog( 'close' );
-
                     $.ajax({
                         url: updateHref,
                         type: 'POST',
@@ -75,27 +58,11 @@ $( function() {
 
                         success: function( response ) {
                             $( '#msgDialog > p' ).html( response );
-
-//                            $( '#msgDialog' ).dialog( 'option', 'title', 'Success' ).dialog( 'open' );
-
                             $( '#ajaxLoadAni' ).fadeOut( 'slow' );
-
-                            //--- update row in table with new values ---
-                            var productname = $( 'tr#' + updateId + ' td' )[ 1 ];
-                            var url = $( 'tr#' + updateId + ' td' )[ 2 ];
-                            var short_description = $( 'tr#' + updateId + ' td' )[ 3];
-                            var long_description = $( 'tr#' + updateId + ' td' )[ 4 ];
-
-                            $( productname ).html( $( '#product_name' ).val() );
-                            $( url ).html( $( '#url' ).val() );
-                            $( short_description ).html( $( '#short_description' ).val() );
-                            $( long_description ).html( $( '#long_description' ).val() );
-
+                            updateTableRow();
                             //--- clear form ---
                             $( '#updateDialog form input' ).val( '' );
-
                         } //end success
-
                     }); //end ajax()
             },
 
@@ -106,7 +73,64 @@ $( function() {
         width: '600px'
     });
 
-    //end update dialog
+    function updateTableRow() {
+        //--- update row in table with new values ---
+        var columns_checkboxes = $('#choiceColumnDialog input[type=checkbox]');
+        $(columns_checkboxes).each(function(i) {
+            switch($(this).attr('id')) {
+                case 'column_product_name' : {
+                    if($(this).attr('checked') == true) {
+                        var product_name = $( 'tr#' + updateId + ' td.column_product_name' );
+                        $(product_name).html( $( '#product_name' ).val() );
+                    }
+                    break;
+                }
+                case 'column_url' : {
+                    if($(this).attr('checked') == true) {
+                        var url = $( 'tr#' + updateId + ' td.column_url' );
+                        $(url).html( $( '#url' ).val() );
+                    }
+                    break;
+                }
+                case 'column_short_description' : {
+                    if($(this).attr('checked') == true) {
+                        var short_description = $( 'tr#' + updateId + ' td.column_short_description' );
+                        $(short_description).html( $( '#short_description' ).val() );
+                    }
+                    break;
+                }
+                case 'column_short_description_wc' : {
+                    if($(this).attr('checked') == true) {
+                        var short_description_wc = $( 'tr#' + updateId + ' td.column_short_description_wc' );
+                        var short_description_wc_text = $( '#short_description_wc' ).text();
+                        if(short_description_wc_text == '0') {
+                            short_description_wc_text = '-';
+                        }
+                        $(short_description_wc).html(short_description_wc_text);
+                    }
+                    break;
+                }
+                case 'column_long_description' : {
+                    if($(this).attr('checked') == true) {
+                        var long_description = $( 'tr#' + updateId + ' td.column_long_description' );
+                        $(long_description).html( $( '#long_description' ).val() );
+                    }
+                    break;
+                }
+                case 'column_long_description_wc' : {
+                    if($(this).attr('checked') == true) {
+                        var long_description_wc = $( 'tr#' + updateId + ' td.column_long_description_wc');
+                        var long_description_wc_text = $( '#long_description_wc' ).text();
+                        if(long_description_wc_text == '0') {
+                            long_description_wc_text = '-';
+                        }
+                        $(long_description_wc).html(long_description_wc_text);
+                    }
+                    break;
+                }
+            }
+        });
+    }//end update dialog
 
     $( '#delConfDialog' ).dialog({
         autoOpen: false,
@@ -171,6 +195,8 @@ $( function() {
 
                 $( '#updateDialog' ).dialog( 'open' );
                 $("#updateDialog").parent().find("div.ui-dialog-buttonpane button").not(":eq(2)").addClass("researchReviewUpdate");
+                shortDescriptionWordCount();
+                longDescriptionWordCount();
             }
         });
 
@@ -192,6 +218,85 @@ $( function() {
 
     }
 
+    // choice column dialog
+    $( '#choiceColumnDialog' ).dialog({
+        autoOpen: false,
+
+        buttons: {
+            'Save': function() {
+                // get columns params
+                var columns = {
+                    editor : $("#column_editor").attr('checked'),
+                    product_name : $("#column_product_name").attr('checked'),
+                    url : $("#column_url").attr('checked'),
+                    short_description : $("#column_short_description").attr('checked'),
+                    short_description_wc : $("#column_short_description_wc").attr('checked'),
+                    long_description : $("#column_long_description").attr('checked'),
+                    long_description_wc : $("#column_long_description_wc").attr('checked'),
+                    actions : $("#column_actions").attr('checked')
+                };
+
+                // save params to DB
+                $.ajax({
+                    url: base_url + 'index.php/settings/save_columns_state/',
+                    dataType: 'json',
+                    type : 'post',
+                    data : {
+                        key : 'research_review',
+                        value : columns
+                    },
+                    success: function( data ) {
+                        if(data == true) {
+                            dataTable.fnDestroy();
+                            dataTable = undefined;
+                            readResearchData();
+                        }
+                    }
+                });
+
+                $(this).dialog('close');
+            },
+            'Cancel': function() {
+                $(this).dialog('close');
+            }
+        },
+        width: '180px'
+    });
+
+    $( document ).delegate( '#research_batches_columns', 'click', function() {
+        $( '#choiceColumnDialog' ).dialog( 'open' );
+        $('#choiceColumnDialog').parent().find('button:first').addClass("popupGreen");
+    });
+
+    // Short descriptin Word count in update dialog
+    function shortDescriptionWordCount() {
+        var number = 0;
+        var matches = $('#short_description').val().match(/\b/g);
+        if(matches) {
+            number = matches.length/2;
+        }
+        $('#short_description_wc').html(number);
+        $('input[name="short_description_wc"]').val(number);
+    }
+    $('#short_description').live("keydown keyup change focusout", function() {
+        shortDescriptionWordCount();
+    });
+
+    // Long descriptin Word count in update dialog
+    function longDescriptionWordCount() {
+        var number = 0;
+//        console.log($('textarea[name=long_description]').val());
+        var matches = $('#long_description').val().match(/\b/g);
+        if(matches) {
+            number = matches.length/2;
+        }
+//        console.log("text: " + number);
+        $('#long_description_wc').html(number);
+        $('input[name="long_description_wc"]').val(number);
+    }
+    $('#long_description').live("keydown keyup change focusout", function() {
+        longDescriptionWordCount()
+    });
 
     // --- Create Record with Validation ---
     /*$( '#create form' ).validate({
@@ -274,16 +379,28 @@ function readResearchData() {
                     "oLanguage": {
                         "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
                         "sInfoEmpty": "Showing 0 to 0 of 0 records",
-                        "sInfoFiltered": "",
+                        "sInfoFiltered": ""
                     },
                     "aoColumns": [
-                         null, null, null, null, null, { "bVisible": false }, null
+                         null, null, null, null, null, null, null, null, null
                     ]
                 });
             }
 
             dataTable.fnFilter( $('select[name="research_batches"]').find('option:selected').text(), 5);
-            dataTable.fnSetColumnVis( 5, false, true);
+
+            // get visible columns status
+            var columns_checkboxes = $('#choiceColumnDialog input[type=checkbox]');
+            $(columns_checkboxes).each(function(i) {
+                if(i >= 7) {  // for Batch Name column
+                    i++;
+                }
+                if($(this).attr('checked') == true) {
+                    dataTable.fnSetColumnVis( i, true, true );
+                } else {
+                    dataTable.fnSetColumnVis( i, false, true );
+                }
+            });
 
             //hide ajax loader animation here...
             $( '#ajaxLoadAni' ).fadeOut( 'slow' );

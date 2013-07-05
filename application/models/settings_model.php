@@ -127,4 +127,47 @@ class Settings_model extends CI_Model {
 		}
 		return false;
     }
+
+    function replace($user_id, $key, $value, $description = '') {
+        if(empty($user_id) || empty($key) || empty($value)) {
+            return false;
+        }
+        $sql = "SELECT s.id FROM `{$this->tables['settings']}` s WHERE s.key=? LIMIT 1";
+        $query = $this->db->query($sql, array($key));
+        if ($query->num_rows() === 1)
+        {
+            $row = $query->row();
+            $setting_id = $row->id;
+        } else {
+            $this->db->insert($this->tables['settings'], array(
+                'key' => $key,
+                'description' => $description,
+                'created' => date('Y-m-d h:i:s'),
+                'modified' => date('Y-m-d h:i:s')
+            ));
+            $setting_id = $this->db->insert_id();
+        }
+
+        if (is_array($value)) {
+            $value = serialize($value);
+        }
+
+        if ($this->get_value($user_id, $key) === false) {
+            return $this->db->insert($this->tables['setting_values'], array(
+                'setting_id' => $setting_id,
+                'user_id' => $user_id,
+                'value' => $value
+            ));
+        } else {
+            $this->db->update($this->tables['setting_values'], array('value' => $value), array('user_id' => $user_id, 'setting_id' => $row->id));
+            $afftectedRows = $this->db->affected_rows();
+            if($afftectedRows > 0) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+        return false;
+    }
+
 }
