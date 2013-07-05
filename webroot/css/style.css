@@ -1,3 +1,46 @@
+/* --- HOME PAGES TAB (START) --- */
+.home_pages .head_line1 {
+	margin-bottom: 15px;
+}
+.home_pages .year_s {
+	width: 80px;
+}
+.ml_disable {
+	margin-left: 0px !important;
+}
+.mt_30 {
+	margin-top: 30px;
+}
+.home_pages .w_100 {
+	width: 100px;
+}
+.home_pages .items_row {
+	margin-bottom: 15px;
+}
+.art_hp_select_item {
+
+}
+.art_hp_item {
+
+}
+.art_hp_item .art_img {
+	float: left;
+	width: 100px;
+	height: 100px;
+	background: #333;
+}
+.art_hp_item .art_oview {
+	float: left;
+	width: 170px;
+	height: auto;
+	margin-left: 8px;
+}
+.art_hp_item .art_oview .h {
+	font-weight: bold;
+}
+
+/* --- HOME PAGES TAB (END) --- */
+
 /* --- PRODUCT MATCH TAB (START) --- */
 .pm_data_table {
 	width: 100%;
