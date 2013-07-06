@@ -8,7 +8,7 @@ var desc_input = '';
 var action = '';
 
 function getCustomerDropdown(){
-    var customers_list_ci = $.post(base_url + 'index.php/measure/getcustomerslist_new', { }, 'json').done(function(c_data) {
+    var customers_list_ci = $.post(base_url + 'index.php/measure/getcustomerslist_new', { }, function(c_data) {
         setTimeout(function(){
             $('.ddslick_dropdown').ddslick({
                 data: c_data,
@@ -17,7 +17,7 @@ function getCustomerDropdown(){
             });
             $("#an_search").removeAttr('disabled');
         }, 500);
-    });
+    }, 'json');
 }
 
 function refreshHeaderTitle(t) {
@@ -577,7 +577,6 @@ jQuery(document).ready(function($) {
             $('.main_content_editor').css('display', 'none');
         }
 
-        if(typeof ddData_first != 'undefined'){
             setTimeout(function(){
                 var el_dr = $('.ddslick_dropdown');
                 if(el_dr.length > 0) {
@@ -586,17 +585,11 @@ jQuery(document).ready(function($) {
                         $('.ddslick_dropdown').attr('id') == 'res_dropdown') {
                         w_el_dr = 104;
                     }
-                    $('.ddslick_dropdown').ddslick({
-                        data: ddData_first,
-                        defaultSelectedIndex: 0,
-                        width:w_el_dr,
-                        selectText: "Select",
-                        truncateDescription: true,
-                    });
+                    getCustomerDropdown();
                 }
                 if($("#an_search").length > 0) $("#an_search").removeAttr('disabled');
             }, 1500);
-        }
+
     });
 
     $(document).on("click", "#textarea #desc li span", function(){
@@ -738,16 +731,13 @@ jQuery(document).ready(function($) {
         }
         e.preventDefault();
         var url = $(this).attr('href');
+        var li_id = $(this).parent().attr('id');
         var posting = $.post(url+"?ajax=true", function(data) {
             var response_data = $.parseJSON( data );
             $('.main_content_other').html(response_data.ajax_data);
-            $('.ddslick_dropdown').ddslick({
-                data: ddData_first,
-                defaultSelectedIndex: 0,
-                width:104,
-                selectText: "Select",
-                truncateDescription: true,
-            });
+            if($('.ddslick_dropdown').length > 0){
+                getCustomerDropdown();
+            }
         });
 
     });

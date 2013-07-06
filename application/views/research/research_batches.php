@@ -3,22 +3,28 @@
     <ul class="nav nav-tabs jq-research-tabs">
         <li class=""><a data-toggle="tab" href="<?php echo site_url('research/create_batch');?>">Create Batch</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('research');?>">Edit</a></li>
-        <li class="active"><a data-toggle="tab" href="<?php echo site_url('research/research_batches');?>">Review</a></li>
+        <li class="active" id="review"><a data-toggle="tab" href="<?php echo site_url('research/research_batches');?>">Review</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('research/research_reports');?>">Reports</a></li>
     </ul>
     <div class="tab-content research_batches">
         <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/smoothness/jquery-ui-1.8.2.custom.css" />
         <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/styles.css" />
-        <script>
-
-            $(function() {
-                $( ".draggable" ).draggable();
-            });
-        </script>
         <div id="research_tab2" class="tab-pane active">
             <div class="row-fluid">
-                <!-- NEW STUFF (START) -->
+                <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+                <script src="<?php echo base_url();?>js/jquery.ddslick.js"></script>
                 <div class='span12'>
+                    <script>
+                        var customers_list_ci = $.post(base_url + 'index.php/measure/getcustomerslist_new', { }, function(c_data) {
+                            setTimeout(function(){
+                                $('#customer_dropdown').ddslick({
+                                    data: c_data,
+                                    width: 104,
+                                    truncateDescription: true,
+                                });
+                            }, 500);
+                        }, 'json');
+                    </script>
                     Batch:
                     <?php
                         $selected = array();
@@ -28,6 +34,7 @@
                         }
                         echo form_dropdown('research_customers', $customer_list, $selected, 'class="mt_10 category_list"');
                     ?>
+                    <!--div id="customer_dropdown"></div-->
                     <?php echo form_dropdown('research_batches', $batches_list, array(), 'class="mt_10 mr_10" style="width: 100px;"'); ?>
                     Edit Name:<input type="text" class="mt_10 ml_10" name="batche_name" />
                     <button id="research_batches_save" type="button" class="btn btn-success ml_5">Save</button>
@@ -41,31 +48,6 @@
                         <button id="research_batches_columns" class="btn btn-success ml_5 float_r">Columns...</button>
                     </div>
                 </div>
-                <!-- NEW STUFF (END) -->
-
-                <!-- OLD STUFF (START) -->
-                <!-- <div class="span6">
-                    Batch:
-                    <?php echo form_dropdown('research_customers', $customer_list, array(), 'class="mt_10 category_list"'); ?>
-                    <?php echo form_dropdown('research_batches', $batches_list, array(), 'class="mt_10 mr_10" style="width: 100px;"'); ?><br />
-                    Edit Name:<input type="text" class="mt_10 ml_10" name="batche_name" />
-                    <button id="research_batches_save" type="button" class="btn btn-success ml_5">Save</button>
-                </div> -->
-                <!-- <div class="span6">
-                    <button id="research_batches_search" type="button" class="btn ml_10 pull-right mt_10" >Filter</button>
-                    <input type="text" id="research_batches_text" name="research_batches_text" value="" class="span8 ml_0 pull-right mt_10" placeholder=""/>
-                    <div class="control-group">
-                        <label class="control-label mt_50" for="customer_name" style="width:70px; float: left">Columns:</label>
-                        <div class="controls mt_10">
-                            <ul id="gallery" class="product_title_content gallery span10 pull-right">
-                                <li><span>Date</span><a hef="#" class="ui-icon-trash">x</a></li>
-                                <li><span>Meta Title</span><a hef="#" class="ui-icon-trash">x</a></li>
-                                <li><span>Meta Description</span><a hef="#" class="ui-icon-trash">x</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                </div> -->
-                <!-- OLD STUFF (END) -->
 
             </div>
             <div class="row-fluid">
