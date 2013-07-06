@@ -24,16 +24,6 @@ class System extends MY_Controller {
 		$this->render();
 	}
 
-	public function gethomepageweekdata() {
-		$year = $this->input->post('year');
-		$week = $this->input->post('week');
-		$data = array(
-			'year' => $year,
-			'week' => $week
-		);
-		$this->load->view('system/gethomepageweekdata', $data);
-	}
-
 	public function recordcollection() {
 		$this->load->model('imported_data_parsed_model');
 		$crawl_stack = $this->input->post('crawl_stack'); // !!! array of objects !!!

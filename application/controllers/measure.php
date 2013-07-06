@@ -21,6 +21,26 @@ class Measure extends MY_Controller {
     {
         $this->render(); 
     }
+
+    public function gethomepageyeardata() {
+        $year = $this->input->post('year');
+        $week = $this->input->post('week');
+        $data = array(
+            'year' => $year,
+            'week' => $week
+        );
+        $this->load->view('measure/gethomepageyeardata', $data);
+    }
+
+    public function gethomepageweekdata() {
+        $year = $this->input->post('year');
+        $week = $this->input->post('week');
+        $data = array(
+            'year' => $year,
+            'week' => $week
+        );
+        $this->load->view('measure/gethomepageweekdata', $data);
+    }
     
     public function measure_products()
     {
