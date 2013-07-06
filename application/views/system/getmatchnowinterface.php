@@ -34,6 +34,9 @@
 							case 'tigerdirect.com':
 								$img_c_source = base_url()."img/tigerdirect-logo.jpg";
 								break;
+                            case 'amazon.com':
+                                $img_c_source = base_url(). "img/amazon-logo.jpg";
+                                break;
 							
 							default:
 								$img_c_source = "";
@@ -93,7 +96,9 @@
 							case 'tigerdirect.com':
 								$img_c_source = base_url()."img/tigerdirect-logo.jpg";
 								break;
-							
+                            case 'amazon.com':
+                                $img_c_source = base_url(). "img/amazon-logo.jpg";
+                                break;
 							default:
 								$img_c_source = "";
 								break;
@@ -193,6 +198,9 @@
                     } else if(cl_arr[i] == 'tigerdirect.com') {
                         text_d = "";
                         imageSrc_d = base_url + "img/tigerdirect-logo.png";
+                    } else if(cl_arr[i] == 'amazon.com') {
+                        text_d = "";
+                        imageSrc_d = base_url + "img/amazon-logo.png";
                     }
                     var mid = {
                         text: text_d,
@@ -248,6 +256,9 @@
                     } else if(cl_arr[i] == 'tigerdirect.com') {
                         text_d = "";
                         imageSrc_d = base_url + "img/tigerdirect-logo.png";
+                    } else if(cl_arr[i] == 'amazon.com') {
+                        text_d = "";
+                        imageSrc_d = base_url + "img/amazon-logo.png";
                     }
                     var mid = {
                         text: text_d,
@@ -283,6 +294,9 @@
                     } else if(cl_arr[i] == 'tigerdirect.com') {
                         text_d = "";
                         imageSrc_d = base_url + "img/tigerdirect-logo.png";
+                    } else if(cl_arr[i] == 'amazon.com') {
+                        text_d = "";
+                        imageSrc_d = base_url + "img/amazon-logo.png";
                     }
                     var mid = {
                         text: text_d,

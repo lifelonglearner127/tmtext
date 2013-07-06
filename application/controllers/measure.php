@@ -208,6 +208,24 @@ class Measure extends MY_Controller {
         $this->load->view('measure/gridview', $data);
     }
 
+    public function getcustomerslist_new() {
+        $this->load->model('customers_model');
+        $output[] = array('text'=>'All sites',
+            'value'=>'all',
+            'imageSrc'=> ''
+        );
+        $customers_init_list = $this->customers_model->getAll();
+        if(count($customers_init_list) > 0) {
+            foreach ($customers_init_list as $key => $value) {
+                $output[] = array('text'=>'',
+                    'value'=>strtolower($value->name),
+                    'imageSrc'=> base_url().'img/'.$value->image_url
+                );
+            }
+        }
+        $this->output->set_content_type('application/json')->set_output(json_encode($output));
+    }
+
     public function getcustomerslist() {
         $this->load->model('customers_model');
         $output = array();

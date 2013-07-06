@@ -66,7 +66,7 @@
 							<tr>
 								<td><span class='gwm_label'>Customer:</span></td>
 								<td>
-									<?php 
+									<?php
 										switch ($value['customer']) {
 											case 'bjs.com':
 												$img_c_source = base_url()."/img/bjs-logo.gif";
@@ -86,6 +86,9 @@
 											case 'tigerdirect.com':
 												$img_c_source = base_url()."/img/tigerdirect-logo.jpg";
 												break;
+                                            case 'amazon.com':
+                                                $img_c_source = base_url()."/img/amazon-logo.jpg";
+                                                break;
 											default:
 												$img_c_source = "";
 												break;

@@ -6,54 +6,19 @@ var search_id = undefined;
 var sentence = new Array();
 var desc_input = '';
 var action = '';
-var ddData_first = [];
-var default_tab = '';
-var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist', { }, 'json').done(function(c_data) {
-    var cl_arr = [];
-    cl_arr.push("All sites");
-    for (var i = 0; i < c_data.length; i++) {
-        cl_arr.push(c_data[i]);
-    }
-    for (var i = 0; i < cl_arr.length; i++) {
-        if(i == 0) {
-            var mid = {
-                text: cl_arr[i],
-                value: "all",
-                description: ""
-            };
-        } else {
-            var text_d = cl_arr[i];
-            var value_d = cl_arr[i];
-            var imageSrc_d = "";
-            if(cl_arr[i] == 'bjs.com') {
-                text_d = "";
-                imageSrc_d = base_url + "img/bjs-logo.gif";
-            } else if(cl_arr[i] == 'sears.com') {
-                text_d = "";
-                imageSrc_d = base_url + "img/sears-logo.png";
-            } else if(cl_arr[i] == 'walmart.com') {
-                text_d = "";
-                imageSrc_d = base_url + "img/walmart-logo.png";
-            } else if(cl_arr[i] == 'staples.com') {
-                text_d = "";
-                imageSrc_d = base_url + "img/staples-logo.png";
-            } else if(cl_arr[i] == 'overstock.com') {
-                text_d = "";
-                imageSrc_d = base_url + "img/overstock-logo.png";
-            } else if(cl_arr[i] == 'tigerdirect.com') {
-                text_d = "";
-                imageSrc_d = base_url + "img/tigerdirect-logo.png";
-            }
-            var mid = {
-                text: text_d,
-                value: value_d,
-                description: "",
-                imageSrc: imageSrc_d
-            };
-        }
-        ddData_first.push(mid);
-    };
-});
+
+function getCustomerDropdown(){
+    var customers_list_ci = $.post(base_url + 'index.php/measure/getcustomerslist_new', { }, 'json').done(function(c_data) {
+        setTimeout(function(){
+            $('.ddslick_dropdown').ddslick({
+                data: c_data,
+                width: 104,
+                truncateDescription: true,
+            });
+            $("#an_search").removeAttr('disabled');
+        }, 500);
+    });
+}
 
 function refreshHeaderTitle(t) {
     $.post("/editor/refreshheader", { t: t}, 'html').done(function(f) {
@@ -802,13 +767,7 @@ jQuery(document).ready(function($) {
         var posting = $.post(url+"?ajax=true", function(data) {
             var response_data = $.parseJSON( data );
             $('.main_content_other').html(response_data.ajax_data);
-            $('.ddslick_dropdown').ddslick({
-                data: ddData_first,
-                defaultSelectedIndex: 0,
-                width:104,
-                selectText: "Select",
-                truncateDescription: true,
-            });
+            getCustomerDropdown();
         });
     });
 
