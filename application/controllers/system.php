@@ -33,15 +33,17 @@ class System extends MY_Controller {
 			$cid = md5(time());
 			foreach ($crawl_stack as $k => $v) {
 				$check = $this->imported_data_parsed_model->checkIfUrlIExists($v['url']); // ---- check if such url exists in products data
+				$mid = array(
+					'cid' => $cid,
+					'imported_data_id' => $check,
+					'url' => $v['url'],
+					'sku' => $v['sku'],
+					'crawl_st' => false
+				);
 				if($check !== false) {
-					$mid = array(
-						'cid' => $cid,
-						'imported_data_id' => $check,
-						'url' => $v['url'],
-						'sku' => $v['sku']
-					);
-					array_push($crawl, $mid);
-				}
+					$mid['crawl_st'] = true;
+				} 
+				array_push($crawl, $mid);
 			}
 			if(count($crawl) > 1) { // --- all ok, so record collection to DB
 				$record = $this->imported_data_parsed_model->recordProductMatchCollection($crawl);
