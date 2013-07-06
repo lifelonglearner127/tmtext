@@ -1,3 +1,13 @@
+# 07/06 Tatiana
+ALTER TABLE `customers` ADD `image_url` VARCHAR( 255 ) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL AFTER `description`;
+UPDATE `customers` SET `image_url` = 'walmart-logo.png' WHERE `customers`.`id` =1;
+UPDATE `customers` SET `image_url` = 'sears-logo.png' WHERE `customers`.`id` =2;
+UPDATE `customers` SET `image_url` = 'bjs-logo.gif' WHERE `customers`.`id` =3;
+UPDATE `customers` SET `image_url` = 'staples-logo.png' WHERE `customers`.`id` =4;
+UPDATE `customers` SET `image_url` = 'overstock-logo.png' WHERE `customers`.`id` =13;
+UPDATE `customers` SET `image_url` = 'tigerdirect-logo.jpg' WHERE `customers`.`id` =14;
+INSERT INTO `customers` (`id` , `name`, `description`, `image_url`) VALUES (NULL , 'Amazon.com', '0', 'amazon-logo.jpg');
+
 # 07/02 Ilya
 
 CREATE TABLE IF NOT EXISTS `product_match_collections` (
