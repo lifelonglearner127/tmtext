@@ -25,13 +25,13 @@
 					<div class='span6 ml_disable'>
 						<div class="pagination">
 							<ul>
-								<li class="disabled"><a href="javascript:void(0)">&laquo;</a></li>
-								<li data-week='1' class="active"><a href="javascript:void(0)" onclick="locaHomePageWeekData('1')">1</a></li>
-								<li data-week='2'><a href="javascript:void(0)" onclick="locaHomePageWeekData('2')">2</a></li>
-								<li data-week='3'><a href="javascript:void(0)" onclick="locaHomePageWeekData('3')">3</a></li>
-								<li data-week='4'><a href="javascript:void(0)" onclick="locaHomePageWeekData('4')">4</a></li>
-								<li data-week='5'><a href="javascript:void(0)" onclick="locaHomePageWeekData('5')">5</a></li>
-								<li><a href="javascript:void(0)">&raquo;</a></li>
+								<li class="page_prev disabled"><a onclick="prevLocaHomePageWeekData()" href="javascript:void(0)">&laquo;</a></li>
+								<li data-week='1' class="page active"><a href="javascript:void(0)" onclick="locaHomePageWeekData('1')">1</a></li>
+								<li data-week='2' class='page'><a href="javascript:void(0)" onclick="locaHomePageWeekData('2')">2</a></li>
+								<li data-week='3' class='page'><a href="javascript:void(0)" onclick="locaHomePageWeekData('3')">3</a></li>
+								<li data-week='4' class='page'><a href="javascript:void(0)" onclick="locaHomePageWeekData('4')">4</a></li>
+								<li data-week='5' class='page'><a href="javascript:void(0)" onclick="locaHomePageWeekData('5')">5</a></li>
+								<li class='page_next'><a onclick="nextLocaHomePageWeekData()" href="javascript:void(0)">&raquo;</a></li>
 							</ul>
 						</div>
 					</div>
@@ -75,10 +75,36 @@
 </div>
 
 <script type='text/javascript'>
+
+	function detectNextPrevBtnPlace() {
+		// --- activate all btns
+		$(".page_next").removeClass('disabled');
+		$(".page_next").find('a').attr('onclick', 'nextLocaHomePageWeekData()');
+		$(".page_prev").removeClass('disabled');
+		$(".page_prev").find('a').attr('onclick', 'prevLocaHomePageWeekData()');
+		// --- configs
+		var current_week_page = $(".pagination ul li.page.active").data('week');
+		var next_sibling = $(".pagination ul li.page.active").next();
+		var next_week_page = $(next_sibling).data('week');
+		var prev_sibling = $(".pagination ul li.page.active").prev();
+		var prev_week_page = $(prev_sibling).data('week');
+		// --- next btn investigation
+		if(current_week_page == '5') {
+			$(".page_next").addClass('disabled');
+			$(".page_next").find('a').attr('onclick', 'return false');
+		}
+		// --- prev btn investigation
+		if(current_week_page == '1') {
+			$(".page_prev").addClass('disabled');
+			$(".page_prev").find('a').attr('onclick', 'return false');
+		}
+	}
+
 	function locaHomePageWeekData(week) {
 		var year = $("#year_s > option:selected").val();
 		$(".pagination ul li").removeClass('active');
 		$(".pagination ul li[data-week=" + week + "]").addClass('active');
+		detectNextPrevBtnPlace();
 		$.ajax({
             url: base_url + 'index.php/system/gethomepageweekdata',
             async: false,
@@ -93,6 +119,19 @@
             		$("#hp_ajax_content").html(res);
             	});
             }
-          });
+      	});
 	}
+
+	function prevLocaHomePageWeekData() {
+		var prev_sibling = $(".pagination ul li.page.active").prev();
+		var prev_week_page = $(prev_sibling).data('week');
+		locaHomePageWeekData(prev_week_page);
+	}
+
+	function nextLocaHomePageWeekData() {
+		var next_sibling = $(".pagination ul li.page.active").next();
+		var next_week_page = $(next_sibling).data('week');
+		locaHomePageWeekData(next_week_page);
+	}
+
 </script>
