@@ -70,9 +70,9 @@
                                 <th><div class="draggable">Product Name</div></th>
                                 <th><div class="draggable">URL</div></th>
                                 <th><div class="draggable">Short Description</div></th>
-                                <th><div class="draggable">Short Description Word Count</div></th>
+                                <th><div class="draggable">Words</div></th>
                                 <th><div class="draggable">Long Description</div></th>
-                                <th><div class="draggable">Long Description Word Count</div></th>
+                                <th><div class="draggable">Words</div></th>
                                 <th><div class="draggable">Batch Name</div></th>
                                 <th><div class="draggable">Actions</div></th>
                             </tr>
@@ -144,7 +144,7 @@
                             </p>
                             <p>
                                 <input type="checkbox" id="column_short_description_wc" name="column_short_description_wc_name" <?php echo($columns['short_description_wc'] == 'true' ? 'checked="checked"' : ''); ?> />
-                                <label for="column_short_description_wc">Short Description Word Count</label>
+                                <label for="column_short_description_wc">Words</label>
                             </p>
                             <p>
                                 <input type="checkbox" id="column_long_description" name="column_long_description_name" <?php echo($columns['long_description'] == 'true' ? 'checked="checked"' : ''); ?> />
@@ -152,7 +152,7 @@
                             </p>
                             <p>
                                 <input type="checkbox" id="column_long_description_wc" name="column_long_description_wc_name" <?php echo($columns['long_description_wc'] == 'true' ? 'checked="checked"' : ''); ?> />
-                                <label for="column_long_description_wc">Long Description Word Count</label>
+                                <label for="column_long_description_wc">Words</label>
                             </p>
                             <p>
                                 <input type="checkbox" id="column_actions" name="column_actions_name" <?php echo($columns['actions'] == 'true' ? 'checked="checked"' : ''); ?> />

@@ -549,7 +549,7 @@ $(document).ready(function () {
             }
         });
         $('input[name="batche_name"]').val($('select[name="research_batches"]').find('option:selected').text());
-        dataTable.fnFilter( $('select[name="research_batches"]').find('option:selected').text(), 5);
+        dataTable.fnFilter( $('select[name="research_batches"]').find('option:selected').text(), 7);
     });
     $('select[name="research_batches"]').trigger('change');
 
@@ -565,7 +565,7 @@ $(document).ready(function () {
             }
         });
         readResearchData();
-        dataTable.fnFilter( $('select[name="research_batches"]').find('option:selected').text(), 5);
+        dataTable.fnFilter( $('select[name="research_batches"]').find('option:selected').text(), 7);
     });
 
     $(document).on("click", '#research_batches_save', function() {
