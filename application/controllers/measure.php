@@ -17,8 +17,8 @@ class Measure extends MY_Controller {
         }
     }
 
-    public function index()
-    {
+    public function index() {
+        $this->data['customers_list'] = $this->customers_list_new();
         $this->render(); 
     }
 
@@ -27,7 +27,8 @@ class Measure extends MY_Controller {
         $week = $this->input->post('week');
         $data = array(
             'year' => $year,
-            'week' => $week
+            'week' => $week,
+            'customers_list' => $this->customers_list_new() 
         );
         $this->load->view('measure/gethomepageyeardata', $data);
     }
@@ -37,7 +38,8 @@ class Measure extends MY_Controller {
         $week = $this->input->post('week');
         $data = array(
             'year' => $year,
-            'week' => $week
+            'week' => $week,
+            'customers_list' => $this->customers_list_new() 
         );
         $this->load->view('measure/gethomepageweekdata', $data);
     }
@@ -95,6 +97,25 @@ class Measure extends MY_Controller {
         $this->load->model('category_model');
         $categories = $this->category_model->getAll();
         return $categories;
+    }
+
+    private function customers_list_new() {
+        $this->load->model('customers_model');
+        $output = array();
+        $customers_init_list = $this->customers_model->getAll();
+        if(count($customers_init_list) > 0) {
+            foreach ($customers_init_list as $key => $value) {
+                $mid = array(
+                    'id' => $value->id,
+                    'desc' => $value->description,
+                    'image_url' => $value->image_url,
+                    'name' => $value->name,
+                    'name_val' => strtolower($value->name)
+                );
+                $output[] = $mid;
+            }
+        }
+        return $output;
     }
 
     private function category_customers_list() {

@@ -1,4 +1,19 @@
+/* --- SOME BOOTSTRAP WEIRD OVERRIDING (START) --- */
+.btn .caret {
+	margin-top: 0px !important;
+}
+.btn-group .dropdown-toggle {
+	height: 30px;
+}
+/* --- SOME BOOTSTRAP WEIRD OVERRIDING (END) --- */
+
 /* --- HOME PAGES TAB (START) --- */
+#hp_ajax_content {
+	position: relative;
+}
+.hp_boot_drop {
+	margin-bottom: 20px;
+}
 .home_pages .head_line1 {
 	margin-bottom: 15px;
 }
@@ -15,7 +30,7 @@
 	width: 100px;
 }
 .home_pages .items_row {
-	margin-bottom: 15px;
+	margin-bottom: 40px;
 }
 .art_hp_select_item {
 
