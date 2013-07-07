@@ -136,5 +136,5 @@
 	</div>
 
 <?php } else { ?>
-	<p>search results are empty</p>
+	<p class="ml_10">search results are empty</p>
 <?php } ?>

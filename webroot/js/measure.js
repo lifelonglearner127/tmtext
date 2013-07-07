@@ -216,7 +216,8 @@ function startMeasureCompareV2() {
     // $(".ui-autocomplete").hide();
     $(".typeahead").hide();
     var s = $.trim($("#compare_text").val());
-    var sl = $.trim($(".dd-selected-value").val());
+    var oDropdown = $("#ci_dropdown").msDropdown().data("dd");
+    var sl = $.trim(oDropdown.getData().data.value);
     var cat = $("#cats_an").val();
     // --- record search term to cookie storage (start)
     if(s !== "") {
