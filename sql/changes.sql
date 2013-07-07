@@ -1,3 +1,7 @@
+# 07/07
+INSERT INTO `customers` (`id`, `name`, `description`, `image_url`) VALUES (NULL , 'toysrus.com', '0', 'toysrus-logo.gif');
+INSERT INTO `customers` (`id`, `name`, `description`, `image_url`) VALUES (NULL, 'bloomingdales.com', '', 'bloomingdales-logo.gif');
+
 # 07/06 Tatiana
 ALTER TABLE `customers` ADD `image_url` VARCHAR( 255 ) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL AFTER `description`;
 UPDATE `customers` SET `image_url` = 'walmart-logo.png' WHERE `customers`.`id` =1;
