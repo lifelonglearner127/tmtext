@@ -10,20 +10,20 @@
 		<?php 
 			$position = $item_per_row*($i-1); 
 			// $row_items = getRowItemsRowFromBackend($item_per_row, $position); // -- method template to get items from backend // designed in such way that row will not have more than 3 items  
-			$row_items = array('1', '2', '3'); // tmp for mockup
+			$row_items = array(rand(), rand(), rand()); // tmp for mockup
 		?>
 		<?php if($i == $items_rows) $dropup = 'dropup'; else $dropup = ''; ?>
 		<?php foreach($row_items as $k=>$v) { ?>
 			<div class='span4 item'>
 				<?php if(count($customers_list) > 0) { ?>
-				    <div class="btn-group <?php echo $dropup; ?> hp_boot_drop">
-					    <button class="btn btn-primary">All customers</button>
+				    <div id="hp_boot_drop_<?php echo $v; ?>" class="btn-group <?php echo $dropup; ?> hp_boot_drop">
+					    <button class="btn btn-primary btn_caret_sign">All customers</button>
 					    <button class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
 					    	<span class="caret"></span>
 					    </button>
 					    <ul class="dropdown-menu">
-					    	<?php foreach($customers_list as $k=>$v) { ?>
-					    		<li><a href="javascript:void(0)"><?php echo $v['name']; ?></a></li>
+					    	<?php foreach($customers_list as $val) { ?>
+					    		<li><a data-item="<?php echo $v; ?>" data-value="<?php echo $val['name_val']; ?>" href="javascript:void(0)"><?php echo $val['name']; ?></a></li>
 					    	<?php } ?>
 					    </ul>
 				    </div>
@@ -40,3 +40,13 @@
 		</div>
 	<?php } ?>
 </div>
+
+<script type="text/javascript">
+	$(document).ready(function() {
+		$(".hp_boot_drop .dropdown-menu > li > a").bind('click', function(e) {
+			var new_caret = $.trim($(this).text());
+			var item_id = $(this).data('item');
+			$("#hp_boot_drop_" + item_id + " .btn_caret_sign").text(new_caret);
+		});
+	});
+</script>
