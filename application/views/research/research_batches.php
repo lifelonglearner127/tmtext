@@ -7,34 +7,14 @@
         <li class=""><a data-toggle="tab" href="<?php echo site_url('research/research_reports');?>">Reports</a></li>
     </ul>
     <div class="tab-content research_batches">
+
         <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/smoothness/jquery-ui-1.8.2.custom.css" />
         <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/styles.css" />
         <div id="research_tab2" class="tab-pane active">
             <div class="row-fluid">
-                <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-                <script src="<?php echo base_url();?>js/jquery.ddslick.js"></script>
                 <div class='span12'>
-                    <script>
-                        var customers_list_ci = $.post(base_url + 'index.php/measure/getcustomerslist_new', { }, function(c_data) {
-                            setTimeout(function(){
-                                $('#customer_dropdown').ddslick({
-                                    data: c_data,
-                                    width: 104,
-                                    truncateDescription: true,
-                                });
-                            }, 500);
-                        }, 'json');
-                    </script>
                     Batch:
-                    <?php
-                        $selected = array();
-                        if(count($customer_list) == 2){
-                            array_shift($customer_list);
-                            $selected = array(0);
-                        }
-                        echo form_dropdown('research_customers', $customer_list, $selected, 'class="mt_10 category_list"');
-                    ?>
-                    <!--div id="customer_dropdown"></div-->
+                    <div id="research_customers" class="customer_dropdown"></div>
                     <?php echo form_dropdown('research_batches', $batches_list, array(), 'class="mt_10 mr_10" style="width: 100px;"'); ?>
                     Edit Name:<input type="text" class="mt_10 ml_10" name="batche_name" />
                     <button id="research_batches_save" type="button" class="btn btn-success ml_5">Save</button>

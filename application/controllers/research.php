@@ -430,7 +430,7 @@ class Research extends MY_Controller {
         $batch = $this->input->post('batch');
         $customer_name = $this->batches_model->getCustomerByBatch($batch);
         $this->output->set_content_type('application/json')
-            ->set_output(json_encode($customer_name));
+            ->set_output(json_encode(strtolower($customer_name)));
     }
 
     public function filterBatchByCustomer(){

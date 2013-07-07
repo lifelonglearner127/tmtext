@@ -11,8 +11,7 @@
             <?php // echo form_open('', array('id'=>'measureFormMetrics')); ?>
             <form id="measureFormMetrics" accept-charset="utf-8" method="post" action="javascript:void(0)">
             <input type="text" name="compare_text" value="" id="compare_text" class="span8" placeholder="" autocomplete="off"/>
-            <!-- <div id="measure_dropdown" class="ddslick_dropdown dropdowns"></div> -->
-            <div id="ci_dropdown" class="ddslick_dropdown"></div>
+            <div id="ci_dropdown" class="website_dropdown"></div>
                 <select class='cats_an_select' id='cats_an' name='cats_an'>
                     <?php if(count($category_list) > 0) { ?>
                         <?php foreach ($category_list as $key => $value) { ?>

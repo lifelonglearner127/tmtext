@@ -995,10 +995,6 @@ a.gray_out {
     margin-right: 20px;
 }
 
-#res_dropdown{
-    margin-right: 10px;
-}
-
 .dd-option-image, .dd-selected-image {
     max-width: 100px!important;
     height: 28px;
@@ -1383,4 +1379,48 @@ label.dd-selected-text, label.dd-option-text{
 
 #Current_List li.active{
     background: rgb(215, 248, 220);
+}
+
+#ci_dropdown{
+    float: left;
+    margin-right: 15px;
+}
+
+#ci_dropdown .dd{
+    width: 120px!important;
+}
+
+.research .customer_dropdown{
+    width: 160px;
+    display: inline;
+}
+
+.research .customer_dropdown .dd{
+    width: 155px!important;
+    margin-right: 5px;
+}
+
+.research .website_dropdown{
+    width: 90px;
+    display: inline-block;
+}
+
+.research .website_dropdown .dd{
+    width: 90px!important;
+    margin-right: 5px;
+    position:relative;
+    top:-5px;
+}
+
+#research_tab2 .customer_dropdown{
+    display: inline;
+}
+
+#research_tab2 .customer_dropdown .dd{
+    width: 150px!important;
+}
+
+.ddcommon .ddTitle .ddTitleText img {
+    max-width: 100px;
+    max-height: 25px;
 }

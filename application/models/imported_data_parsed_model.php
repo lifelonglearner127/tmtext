@@ -924,7 +924,7 @@ class Imported_data_parsed_model extends CI_Model {
             $this->db->where('i.category_id', $category_id);
         }
 
-        if($website != '' && $website != 'all'){
+        if($website != '' && $website != 'All sites'){
             $this->db->like('i.data', $website);
         }
 

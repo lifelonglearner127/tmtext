@@ -230,16 +230,26 @@ class Measure extends MY_Controller {
 
     public function getcustomerslist_new() {
         $this->load->model('customers_model');
-        $output[] = array('text'=>'All sites',
-            'value'=>'all',
-            'imageSrc'=> ''
-        );
+        $type = $this->input->post('type');
         $customers_init_list = $this->customers_model->getAll();
         if(count($customers_init_list) > 0) {
+            if($type == 'website'){
+                $output[] = array('text'=>'All sites',
+                    'value'=>'All sites',
+                    'image'=> ''
+                );
+            } else {
+                if(count($customers_init_list) != 1){
+                    $output[] = array('text'=>'All customers',
+                        'value'=>'All customers',
+                        'image'=> ''
+                    );
+                }
+            }
             foreach ($customers_init_list as $key => $value) {
                 $output[] = array('text'=>'',
                     'value'=>strtolower($value->name),
-                    'imageSrc'=> base_url().'img/'.$value->image_url
+                    'image'=> base_url().'img/'.$value->image_url
                 );
             }
         }
