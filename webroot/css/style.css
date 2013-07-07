@@ -1439,3 +1439,7 @@ label.dd-selected-text, label.dd-option-text{
     max-width: 100px;
     max-height: 25px;
 }
+
+.an_grd_view_drop, .an_grd_view_drop .dd{
+    width:290px!important;
+}

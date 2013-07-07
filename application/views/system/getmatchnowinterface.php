@@ -167,159 +167,33 @@
 
 		function initCustomersPciDropdownRight() {
 			var ddData_grids_r_current = $("input[type='hidden'][name='random_r_hidden_c']").val();
-			var ddData_grids_r = [];
-			var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist', { }, 'json').done(function(c_data) {
-                var cl_arr = [];
-                for (var i = 0; i < c_data.length; i++) {
-                    cl_arr.push(c_data[i]);
-                }
-                // --- RIGHT PRODUCT DROPDOWN 
-                for (var i = 0; i < cl_arr.length; i++) {
-                    var text_d = cl_arr[i];
-                    var value_d = cl_arr[i];
-                    var imageSrc_d = "";
-                    var select_st = false;
-                    if(cl_arr[i] == ddData_grids_r_current) select_st = true; 
-                    if(cl_arr[i] == 'bjs.com') {
-                        text_d = "";
-                        imageSrc_d = base_url + "img/bjs-logo.gif";
-                    } else if(cl_arr[i] == 'sears.com') {
-                        text_d = "";
-                        imageSrc_d = base_url + "img/sears-logo.png";
-                    } else if(cl_arr[i] == 'walmart.com') {
-                        text_d = "";
-                        imageSrc_d = base_url + "img/walmart-logo.png";
-                    } else if(cl_arr[i] == 'staples.com') {
-                        text_d = "";
-                        imageSrc_d = base_url + "img/staples-logo.png";
-                    } else if(cl_arr[i] == 'overstock.com') {
-                        text_d = "";
-                        imageSrc_d = base_url + "img/overstock-logo.png";
-                    } else if(cl_arr[i] == 'tigerdirect.com') {
-                        text_d = "";
-                        imageSrc_d = base_url + "img/tigerdirect-logo.png";
-                    } else if(cl_arr[i] == 'amazon.com') {
-                        text_d = "";
-                        imageSrc_d = base_url + "img/amazon-logo.png";
+			setTimeout(function(){
+                var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist_new', { type: 'customer' }, function(c_data) {
+                    var dd_right = $('#dd_drop_random_r').msDropDown({byJson:{data:c_data}}).data("dd");
+                    if(dd_right != undefined){
+                        dd_right.setIndexByValue(ddData_grids_r_current);
                     }
-                    var mid = {
-                        text: text_d,
-                        value: value_d,
-                        selected: select_st,
-                        description: "",
-                        imageSrc: imageSrc_d
-                    };
-                    ddData_grids_r.push(mid);
-                };
-                setTimeout(function() {
-                    $('#dd_drop_random_r').ddslick({
-                        data: ddData_grids_r,
-                        width: 320,
-                        truncateDescription: true,
-                    });
-                }, 500);
-            });
+                });
+            }, 500);
+
 		}
 
 		function initCustomersPciDropdowns() {
 			var ddData_grids_l_current = $("input[type='hidden'][name='random_l_hidden_c']").val();
 			var ddData_grids_r_current = $("input[type='hidden'][name='random_r_hidden_c']").val();
-			var ddData_grids_l = [];
-            var ddData_grids_r = [];
-            var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist', { }, 'json').done(function(c_data) {
-                var cl_arr = [];
-                for (var i = 0; i < c_data.length; i++) {
-                    cl_arr.push(c_data[i]);
-                }
-                // --- LEFT PRODUCT DROPDOWN
-                for (var i = 0; i < cl_arr.length; i++) {
-                    var text_d = cl_arr[i];
-                    var value_d = cl_arr[i];
-                    var imageSrc_d = "";
-                    var select_st = false;
-                    if(cl_arr[i] == ddData_grids_l_current) select_st = true; 
-                    if(cl_arr[i] == 'bjs.com') {
-                        text_d = "";
-                        imageSrc_d = base_url + "img/bjs-logo.gif";
-                    } else if(cl_arr[i] == 'sears.com') {
-                        text_d = "";
-                        imageSrc_d = base_url + "img/sears-logo.png";
-                    } else if(cl_arr[i] == 'walmart.com') {
-                        text_d = "";
-                        imageSrc_d = base_url + "img/walmart-logo.png";
-                    } else if(cl_arr[i] == 'staples.com') {
-                        text_d = "";
-                        imageSrc_d = base_url + "img/staples-logo.png";
-                    } else if(cl_arr[i] == 'overstock.com') {
-                        text_d = "";
-                        imageSrc_d = base_url + "img/overstock-logo.png";
-                    } else if(cl_arr[i] == 'tigerdirect.com') {
-                        text_d = "";
-                        imageSrc_d = base_url + "img/tigerdirect-logo.png";
-                    } else if(cl_arr[i] == 'amazon.com') {
-                        text_d = "";
-                        imageSrc_d = base_url + "img/amazon-logo.png";
+            var ddData_grids_r_current = $("input[type='hidden'][name='random_r_hidden_c']").val();
+            setTimeout(function(){
+                var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist_new', { type: 'customer' }, function(c_data) {
+                    var dd_left = $('#dd_drop_random_l').msDropDown({byJson:{data:c_data}}).data("dd");
+                    if(dd_left != undefined){
+                        dd_left.setIndexByValue(ddData_grids_l_current);
                     }
-                    var mid = {
-                        text: text_d,
-                        value: value_d,
-                        selected: select_st,
-                        description: "",
-                        imageSrc: imageSrc_d
-                    };
-                    ddData_grids_l.push(mid);
-                };
-                // --- RIGHT PRODUCT DROPDOWN 
-                for (var i = 0; i < cl_arr.length; i++) {
-                    var text_d = cl_arr[i];
-                    var value_d = cl_arr[i];
-                    var imageSrc_d = "";
-                    var select_st = false;
-                    if(cl_arr[i] == ddData_grids_r_current) select_st = true; 
-                    if(cl_arr[i] == 'bjs.com') {
-                        text_d = "";
-                        imageSrc_d = base_url + "img/bjs-logo.gif";
-                    } else if(cl_arr[i] == 'sears.com') {
-                        text_d = "";
-                        imageSrc_d = base_url + "img/sears-logo.png";
-                    } else if(cl_arr[i] == 'walmart.com') {
-                        text_d = "";
-                        imageSrc_d = base_url + "img/walmart-logo.png";
-                    } else if(cl_arr[i] == 'staples.com') {
-                        text_d = "";
-                        imageSrc_d = base_url + "img/staples-logo.png";
-                    } else if(cl_arr[i] == 'overstock.com') {
-                        text_d = "";
-                        imageSrc_d = base_url + "img/overstock-logo.png";
-                    } else if(cl_arr[i] == 'tigerdirect.com') {
-                        text_d = "";
-                        imageSrc_d = base_url + "img/tigerdirect-logo.png";
-                    } else if(cl_arr[i] == 'amazon.com') {
-                        text_d = "";
-                        imageSrc_d = base_url + "img/amazon-logo.png";
+                    var dd_right = $('#dd_drop_random_r').msDropDown({byJson:{data:c_data}}).data("dd");
+                    if(dd_right != undefined){
+                        dd_right.setIndexByValue(ddData_grids_r_current);
                     }
-                    var mid = {
-                        text: text_d,
-                        value: value_d,
-                        selected: select_st,
-                        description: "",
-                        imageSrc: imageSrc_d
-                    };
-                    ddData_grids_r.push(mid);
-                };
-                setTimeout(function(){
-                    $('#dd_drop_random_l').ddslick({
-                        data: ddData_grids_l,
-                        width: 320,
-                        truncateDescription: true
-                    });
-                    $('#dd_drop_random_r').ddslick({
-                        data: ddData_grids_r,
-                        width: 320,
-                        truncateDescription: true
-                    });
-                }, 500);
-            });
+                });
+            }, 500);
 		}
 		// initCustomersPciDropdowns();
 

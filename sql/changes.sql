@@ -1,3 +1,16 @@
+#07/07
+ALTER TABLE `customers` ADD `url` VARCHAR( 255 ) NOT NULL AFTER `name`;
+UPDATE `customers` SET `url` = 'http://walmart.com' WHERE `customers`.`id` =1;
+UPDATE `customers` SET `url` = 'http://sears.com' WHERE `customers`.`id` =2;
+UPDATE `customers` SET `url` = 'http://bjs.com' WHERE `customers`.`id` =3;
+UPDATE `customers` SET `url` = 'http://staples.com' WHERE `customers`.`id` =4;
+UPDATE `customers` SET `url` = 'http://overstock.com' WHERE `customers`.`id` =13;
+UPDATE `customers` SET `url` = 'http://tigerdirect.com' WHERE `customers`.`id` =14;
+UPDATE `customers` SET `url` = 'http://amazon.com' WHERE `customers`.`id` =15;
+UPDATE `customers` SET `url` = 'http://toysrus.com' WHERE `customers`.`id` =16;
+UPDATE `customers` SET `url` = 'http://bloomingdales.com' WHERE `customers`.`id` =17;
+INSERT INTO `c38_devtrillionmonkeyscom`.`customers` (`id`, `name`, `url`, `description`, `image_url`) VALUES (NULL, 'bestbuy.com', 'http://bestbuy.com', '0', 'bestbuy-logo.jpg');
+
 # 07/07
 INSERT INTO `customers` (`id`, `name`, `description`, `image_url`) VALUES (NULL , 'toysrus.com', '0', 'toysrus-logo.gif');
 INSERT INTO `customers` (`id`, `name`, `description`, `image_url`) VALUES (NULL, 'bloomingdales.com', '', 'bloomingdales-logo.gif');
