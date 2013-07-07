@@ -208,22 +208,24 @@ jQuery(document).ready(function($) {
         setTimeout(function() {
             var customers_list_ci = $.post(base_url + 'index.php/measure/getcustomerslist_new', { type: 'customer' }, function(c_data) {
                 var jsn = $('.customer_dropdown').msDropDown({byJson:{data:c_data, name:'customers_list'}}).data("dd");
-                jsn.on("change", function(res) {
-                    if($('.customer_dropdown').attr('id') == 'research_customers'){
-                        $.post(base_url + 'index.php/research/filterBatchByCustomer', { 'customer_name': res.target.value}, function(data){
-                            if(data.length>0){
-                                $("select[name='research_batches']").empty();
-                                for(var i=0; i<data.length; i++){
-                                    $("select[name='research_batches']").append('<option>'+data[i]+'</option>');
+                if(jsn != undefined){
+                    jsn.on("change", function(res) {
+                        if($('.customer_dropdown').attr('id') == 'research_customers'){
+                            $.post(base_url + 'index.php/research/filterBatchByCustomer', { 'customer_name': res.target.value}, function(data){
+                                if(data.length>0){
+                                    $("select[name='research_batches']").empty();
+                                    for(var i=0; i<data.length; i++){
+                                        $("select[name='research_batches']").append('<option>'+data[i]+'</option>');
+                                    }
+                                } else if(data.length==0 && res.target.value !="All customers"){
+                                    $("select[name='research_batches']").empty();
                                 }
-                            } else if(data.length==0 && res.target.value !="All customers"){
-                                $("select[name='research_batches']").empty();
-                            }
-                        });
-                        readResearchData();
-                        dataTable.fnFilter( $('select[name="research_batches"]').find('option:selected').text(), 7);
-                    }
-                });
+                            });
+                            readResearchData();
+                            dataTable.fnFilter( $('select[name="research_batches"]').find('option:selected').text(), 7);
+                        }
+                    });
+                }
             }, 'json');
         }, 100);
     }
