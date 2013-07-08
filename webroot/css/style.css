@@ -1467,3 +1467,7 @@ label.dd-selected-text, label.dd-option-text{
 #create_batch_save{
     min-height: 400px;
 }
+
+#create_batch_save #files p{
+    width: 200px;
+}
