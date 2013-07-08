@@ -577,7 +577,7 @@ class Ion_auth_model extends CI_Model
 			    'password' => $hashed_new_password,
 			    'remember_code' => NULL,
 			);
-            
+
 			$this->trigger_events('extra_where');
 			$this->db->update($this->tables['users'], $data, array($this->identity_column => $identity));
 
