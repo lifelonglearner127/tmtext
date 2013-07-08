@@ -1341,3 +1341,6 @@ label.dd-selected-text, label.dd-option-text{
 #Current_List li.active{
     background: rgb(215, 248, 220);
 }
+.slt_year {
+    width: 80px;
+}
