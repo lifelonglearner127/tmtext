@@ -584,7 +584,7 @@ jQuery(document).ready(function($) {
             'customer_name': oDropdown.getData().data.value,
             'batch_name': $('select[name="batches"]').find('option:selected').text()
         }, function(data) {
-            $('#info').html(data.message);
+            $('<p/>').text(data.message).appendTo('#files');
         }, 'json');
 
         return false;

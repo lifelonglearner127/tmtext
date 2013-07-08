@@ -1,3 +1,16 @@
+function submitEmailReportsConfig() {
+	var recs = $.trim($("#email_rec").val());
+	var rec_day = $("#week_day_rep > option:selected").val();
+	$("#email_rec").val("");
+	$("#email_rec").blur("");
+	$("#configure_email_reports").modal('hide');
+	$("#configure_email_reports_success").modal('show');
+}
+
+function configureEmailReportsModal() {
+	$("#configure_email_reports").modal('show');
+}
+
 function changeHomePageYersHandler() {
 	var year = $("#year_s > option:selected").val();
 	var week = $(".pagination ul li.page.active").data('week');

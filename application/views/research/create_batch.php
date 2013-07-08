@@ -22,7 +22,7 @@
         <div class="admin_system_content">
             <div class="controls span7">
                 <button class="btn btn-success" id="csv_import_create_batch" style="display:none"><i class="icon-white icon-ok"></i>&nbsp;Import</button>
-								<span class="btn btn-success fileinput-button ml_10" style="">
+								<span class="btn btn-success fileinput-button ml_10 pull-left" style="">
 									Upload
 									<i class="icon-plus icon-white"></i>
 									<input type="file" multiple="" name="files[]" id="fileupload">
@@ -42,9 +42,9 @@
                             done: function (e, data) {
                                 $('input[name="choosen_file"]').val(data.result.files[0].name);
                                 $.each(data.result.files, function (index, file) {
-                                    if (file.error == undefined) {
+                                    /*if (file.error == undefined) {
                                         $('<p/>').text(file.name).appendTo('#files');
-                                    }
+                                    }*/
                                 });
                                 $('#csv_import_create_batch').trigger('click');
                             },

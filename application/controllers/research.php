@@ -483,8 +483,8 @@ class Research extends MY_Controller {
         $file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
         $_rows = array();
         if (($handle = fopen($file, "r")) !== FALSE) {
-            while (($data = fgetcsv($handle, 1000, "\n")) !== FALSE) {
-                if(!is_null($data[0]) && $data[0]!='URL'){
+            while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+                if(!is_null($data[0]) && $data[0]!='URL' && $data[0]!=''){
                     $_rows[] = $data[0];
                 }
             }
@@ -495,7 +495,14 @@ class Research extends MY_Controller {
         foreach($_rows as $_row){
             $this->items_model->insert($batch_id, $customer_id, $_row);
         }
-        $response['message'] = 'File was uploaded successfully';
+        $str = count($_rows);
+        if(count($_rows)==1){
+            $str .= ' record';
+        } else if(count($_rows)>1){
+            $str .= ' records';
+        }
+        
+        $response['message'] = $str .' added to batch';
          $this->output->set_content_type('application/json')
                 ->set_output(json_encode($response));
     }
