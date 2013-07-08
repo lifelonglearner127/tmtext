@@ -1,3 +1,46 @@
+#07/07 Tatiana
+CREATE TABLE IF NOT EXISTS `items` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `batch_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `customer_id` int(11) NOT NULL,
+  `product_name` varchar(255) CHARACTER SET utf8 NOT NULL,
+  `url` text CHARACTER SET utf8 NOT NULL,
+  `short_description` text CHARACTER SET utf8 NOT NULL,
+  `long_description` text CHARACTER SET utf8 NOT NULL,
+  `priority` int(11) NOT NULL DEFAULT '50',
+  `status` enum('created','edited','reviewed','delivered','customer_reviewed','customer_published') CHARACTER SET utf8 NOT NULL DEFAULT 'created',
+  `created` datetime NOT NULL,
+  `modified` datetime NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM  DEFAULT CHARSET=latin1 AUTO_INCREMENT=5 ;
+
+ALTER TABLE `customers` ADD `url` VARCHAR( 255 ) NOT NULL AFTER `name`;
+UPDATE `customers` SET `url` = 'http://walmart.com' WHERE `customers`.`id` =1;
+UPDATE `customers` SET `url` = 'http://sears.com' WHERE `customers`.`id` =2;
+UPDATE `customers` SET `url` = 'http://bjs.com' WHERE `customers`.`id` =3;
+UPDATE `customers` SET `url` = 'http://staples.com' WHERE `customers`.`id` =4;
+UPDATE `customers` SET `url` = 'http://overstock.com' WHERE `customers`.`id` =13;
+UPDATE `customers` SET `url` = 'http://tigerdirect.com' WHERE `customers`.`id` =14;
+UPDATE `customers` SET `url` = 'http://amazon.com' WHERE `customers`.`id` =15;
+UPDATE `customers` SET `url` = 'http://toysrus.com' WHERE `customers`.`id` =16;
+UPDATE `customers` SET `url` = 'http://bloomingdales.com' WHERE `customers`.`id` =17;
+INSERT INTO `c38_devtrillionmonkeyscom`.`customers` (`id`, `name`, `url`, `description`, `image_url`) VALUES (NULL, 'bestbuy.com', 'http://bestbuy.com', '0', 'bestbuy-logo.jpg');
+
+
+INSERT INTO `customers` (`id`, `name`, `description`, `image_url`) VALUES (NULL , 'toysrus.com', '0', 'toysrus-logo.gif');
+INSERT INTO `customers` (`id`, `name`, `description`, `image_url`) VALUES (NULL, 'bloomingdales.com', '', 'bloomingdales-logo.gif');
+
+# 07/06 Tatiana
+ALTER TABLE `customers` ADD `image_url` VARCHAR( 255 ) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL AFTER `description`;
+UPDATE `customers` SET `image_url` = 'walmart-logo.png' WHERE `customers`.`id` =1;
+UPDATE `customers` SET `image_url` = 'sears-logo.png' WHERE `customers`.`id` =2;
+UPDATE `customers` SET `image_url` = 'bjs-logo.gif' WHERE `customers`.`id` =3;
+UPDATE `customers` SET `image_url` = 'staples-logo.png' WHERE `customers`.`id` =4;
+UPDATE `customers` SET `image_url` = 'overstock-logo.png' WHERE `customers`.`id` =13;
+UPDATE `customers` SET `image_url` = 'tigerdirect-logo.jpg' WHERE `customers`.`id` =14;
+INSERT INTO `customers` (`id` , `name`, `description`, `image_url`) VALUES (NULL , 'Amazon.com', '0', 'amazon-logo.jpg');
+
 # 07/02 Ilya
 
 CREATE TABLE IF NOT EXISTS `product_match_collections` (

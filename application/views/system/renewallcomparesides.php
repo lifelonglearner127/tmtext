@@ -26,7 +26,9 @@
 					case 'tigerdirect.com':
 						$img_c_source = base_url()."img/tigerdirect-logo.jpg";
 						break;
-					
+                    case 'amazon.com':
+                        $img_c_source = base_url()."img/amazon-logo.jpg";
+                        break;
 					default:
 						$img_c_source = "";
 						break;
@@ -85,6 +87,9 @@
 					case 'tigerdirect.com':
 						$img_c_source = base_url()."img/tigerdirect-logo.jpg";
 						break;
+                    case 'amazon.com':
+                        $img_c_source = base_url()."img/amazon-logo.jpg";
+                        break;
 					
 					default:
 						$img_c_source = "";

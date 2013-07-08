@@ -1344,3 +1344,61 @@ label.dd-selected-text, label.dd-option-text{
 .slt_year {
     width: 80px;
 }
+#ci_dropdown{
+    float: left;
+    margin-right: 15px;
+}
+
+#ci_dropdown .dd{
+    width: 120px!important;
+}
+
+.research .customer_dropdown{
+    width: 160px;
+    display: inline;
+}
+
+.research .customer_dropdown .dd{
+    width: 155px!important;
+    margin-right: 5px;
+}
+
+.research .website_dropdown{
+    width: 90px;
+    display: inline-block;
+}
+
+.research .website_dropdown .dd{
+    width: 90px!important;
+    margin-right: 5px;
+    position:relative;
+    top:-5px;
+}
+
+#research_tab2 .customer_dropdown{
+    display: inline;
+}
+
+#research_tab2 .customer_dropdown .dd{
+    width: 150px!important;
+}
+
+.ddcommon .ddTitle .ddTitleText img {
+    max-width: 100px;
+    max-height: 25px;
+}
+
+.an_grd_view_drop, .an_grd_view_drop .dd{
+    width:290px!important;
+}
+
+#customer_dr{
+    display: inline;
+    width: 150px;
+}
+
+#customer_dr .dd{
+    width:190px!important;
+    position: relative;
+    top: 0px;
+}

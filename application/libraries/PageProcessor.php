@@ -489,6 +489,12 @@ class PageProcessor {
 			$title = $item['#text'][0];
 		}
 
+		if (empty($description)) {
+			foreach($this->nokogiri->get('div#sku-title h1') as $item) {
+				$title = $item['#text'][0];
+			}
+		}
+
 		foreach($this->nokogiri->get('#tabbed-overview .csc-medium-column p') as $item) {
 			$line = trim($item['#text'][0]);
 			if (!empty($line)) {
@@ -498,6 +504,15 @@ class PageProcessor {
 
 		if (empty($description)) {
 			foreach($this->nokogiri->get('#tabbed-bundle-overview p') as $item) {
+				$line = trim($item['#text'][0]);
+				if (!empty($line)) {
+					$description[] = $line;
+				}
+			}
+		}
+
+		if (empty($description)) {
+			foreach($this->nokogiri->get('#long-description') as $item) {
 				$line = trim($item['#text'][0]);
 				if (!empty($line)) {
 					$description[] = $line;
@@ -516,6 +531,11 @@ class PageProcessor {
 		foreach($this->nokogiri->get('#tabbed-bundle-overview ul li') as $item) {
 			$features[] =  trim($item['#text'][0]);
 		}
+
+		foreach($this->nokogiri->get('#features .feature') as $item) {
+			$features[] = trim($item['h4'][0]['#text'][0]).' - '.trim($item['p'][0]['#text'][0]);
+		}
+
 		$features = implode("\n",$features);
 
 		foreach($this->nokogiri->get('#priceblock #saleprice .price') as $item) {
@@ -524,13 +544,26 @@ class PageProcessor {
 			}
 		}
 
-		return array(
+		foreach($this->nokogiri->get('#price #priceblock-wrapper .priceblock .item-price') as $item) {
+			$price = str_replace(',','',$item['#text'][0]);
+		}
+
+
+		$result = array(
 			'Product Name' => $title,
 			'Description' => $description,
 //			'Long_Description' => $description_long,
 			'Features' => $features,
 			'Price' => $price
 		);
+
+		foreach ($result as $key => $value) {
+			if (empty($result[$key])) {
+				unset($result[$key]);
+			}
+		}
+
+		return $result;
 	}
 
 	public function attributes_bestbuy() {
@@ -541,10 +574,19 @@ class PageProcessor {
 			$result['manufacturer'] =  trim($s[0]);
 		}
 
+		foreach($this->nokogiri->get('div#sku-title h1') as $item) {
+			$s = split('-',$item['#text'][0]);
+			$result['manufacturer'] =  trim($s[0]);
+		}
+
 		foreach($this->nokogiri->get('div#productsummary h2 span') as $item) {
 			if (isset($item['itemprop']) && $item['itemprop']=='model') {
 				$result['model'] =  trim($item['#text'][0]);
 			}
+		}
+
+		foreach($this->nokogiri->get('li.model-number #model-value') as $item) {
+			$result['model'] =  trim($item['#text'][0]);
 		}
 
 		return $result;

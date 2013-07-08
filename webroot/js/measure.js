@@ -1,63 +1,6 @@
 $("#compare_text").focus();
 
 var editorGridViewBaseUrl = base_url + 'index.php/measure/gridview';
-function ciCustomersGridsLoader() {
-    var ddData_grids_ci = [];
-    var customers_list_ci = $.post(base_url + 'index.php/measure/getcustomerslist', { }, 'json').done(function(c_data) {
-        var cl_arr = [];
-        cl_arr.push("All sites");
-        for (var i = 0; i < c_data.length; i++) {
-            cl_arr.push(c_data[i]);
-        }
-        for (var i = 0; i < cl_arr.length; i++) {
-            if(i == 0) {
-                var mid = {
-                    text: cl_arr[i],
-                    value: "all",
-                    description: ""
-                };
-            } else {
-                var text_d = cl_arr[i];
-                var value_d = cl_arr[i];
-                var imageSrc_d = "";
-                if(cl_arr[i] == 'bjs.com') {
-                    text_d = "";
-                    imageSrc_d = base_url + "img/bjs-logo.gif";
-                } else if(cl_arr[i] == 'sears.com') {
-                    text_d = "";
-                    imageSrc_d = base_url + "img/sears-logo.png";
-                } else if(cl_arr[i] == 'walmart.com') {
-                    text_d = "";
-                    imageSrc_d = base_url + "img/walmart-logo.png";
-                } else if(cl_arr[i] == 'staples.com') {
-                    text_d = "";
-                    imageSrc_d = base_url + "img/staples-logo.png";
-                } else if(cl_arr[i] == 'overstock.com') {
-                    text_d = "";
-                    imageSrc_d = base_url + "img/overstock-logo.png";
-                } else if(cl_arr[i] == 'tigerdirect.com') {
-                    text_d = "";
-                    imageSrc_d = base_url + "img/tigerdirect-logo.png";
-                }
-                var mid = {
-                    text: text_d,
-                    value: value_d,
-                    description: "",
-                    imageSrc: imageSrc_d
-                };
-            }
-            ddData_grids_ci.push(mid);
-            setTimeout(function(){
-                $('#ci_dropdown').ddslick({
-                    data: ddData_grids_ci,
-                    width: 104,
-                    truncateDescription: true,
-                });
-                $("#an_search").removeAttr('disabled');
-            }, 500);
-        };
-    });
-}
 // ---- search string cookie (auto mode search launcher) (start)
 // var auto_mode_search_str = "";
 // var cookie_search_str = $.cookie('com_intel_search_str');
@@ -143,6 +86,7 @@ function viewIconsReset() {
     $('#grid_sw_list > i').removeClass('icon-white');
     $('#grid_sw_grid > i').removeClass('icon-white');
 }
+
 function initGrid() {
     viewIconsReset();
     if(grid_status === 'list') {
@@ -182,7 +126,7 @@ function switchToGridView() {
         // gridsCustomersListLoader();
     });
     grid_status = 'grid';
-    // AJAX CALL TO GET GRID VIEW CONTENT (END) (NEW STUFF)
+}
     // ------------- !!!! OLD STUFF (START) -------------
     // $("#compet_area_grid").show();
     // grid_status = 'grid';
@@ -210,7 +154,6 @@ function switchToGridView() {
     // --- TMP (in cause slow files attribtes fetch) (end)
     // gridsCustomersListLoader();
     // ------------- !!!! OLD STUFF (END) -------------
-}
 // --- GRIDS (END)
 
 // --- SCROLL UP / DOWN DETECTION (START)
@@ -273,7 +216,8 @@ function startMeasureCompareV2() {
     // $(".ui-autocomplete").hide();
     $(".typeahead").hide();
     var s = $.trim($("#compare_text").val());
-    var sl = $.trim($(".dd-selected-value").val());
+    var oDropdown = $("#ci_dropdown").msDropdown().data("dd");
+    var sl = $.trim(oDropdown.getData().data.value);
     var cat = $("#cats_an").val();
     // --- record search term to cookie storage (start)
     if(s !== "") {
@@ -634,11 +578,96 @@ function keywordsAnalizer() {
 $(document).ready(function() {
     $('title').text("Competitive Intelligence");
 
-    ciCustomersGridsLoader();
-
     $("#measureFormMetrics").submit(function(e) {
         e.preventDefault();
         startMeasureCompareV2();
     });
 
+    var autocomplete_ci_baseurl = base_url + 'index.php/measure/cisearchteram';
+    var gTime, ci_search_name;
+    ci_search_name = "";
+
+    $('#compare_text').keyup(function(e) {
+        if(e.which == 13) {
+            ci_search_name = $("#compare_text").val();
+            setTimeout(function() {
+                $("#measureFormMetrics").submit();
+            }, 1000);
+        }
+
+    });
+
+    $("#compare_text").typeahead({
+        items: 4,
+        minLength: 3,
+        matcher: function() {
+            return true;
+        },
+        updater: function(item) {
+            if(typeof(item) === "undefined") {
+                return ci_search_name;
+            } else {
+                return item;
+            }
+        },
+        source: function(query, process) {
+            clearTimeout(gTime);
+            gTime = setTimeout(function() {
+                var xhr;
+                if (xhr && xhr.readystate !== 4) xhr.abort();
+                xhr = $.ajax({
+                    url: autocomplete_ci_baseurl,
+                    dataType: "JSON",
+                    data: {
+                        q: query,
+                        sl: $("#ci_dropdown .dd-selected-value").val(),
+                        cat: $("#cats_an > option:selected").val()
+                    },
+                    success: function(response) {
+                        if(typeof(response) !== 'undefined' && response !== null) {
+                            var labelsTitles;
+                            labelsTitles = [];
+                            $.each(response, function(i, item) {
+                                labelsTitles.push(item.value);
+                            });
+                            process(_.uniq(labelsTitles));
+                        }
+                    }
+                });
+            }, 300);
+        }
+    });
+
 });
+// ---- new CI term typeahead (end) (NEW)
+
+// --- CI search term autocomplete (start) (OLD)
+// setTimeout(function() {
+//     var autocomplete_ci_baseurl = base_url + 'index.php/measure/cisearchteram';
+//     $("#compare_text").autocomplete({
+//         source: autocomplete_ci_baseurl + "?sl=" + $("#ci_dropdown .dd-selected-value").val() + "&cat=" +  $("#cats_an > option:selected").val(),
+//         minChars: 3,
+//         deferRequestBy: 300,
+//         select: function(event, ui) {
+//             startMeasureCompareV2();
+//         }
+//     });
+// }, 1000);
+// --- CI search term autocomplete (end) (OLD)
+
+// ---- search string cookie (auto mode search launcher) (start)
+var auto_mode_search_str = "";
+var cookie_search_str = $.cookie('com_intel_search_str');
+if(typeof(cookie_search_str) !== 'undefined' && cookie_search_str !== null && cookie_search_str !== "") {
+    auto_mode_search_str = cookie_search_str;
+}
+if(auto_mode_search_str !== "") {
+    $("#compare_text").val(auto_mode_search_str);
+    setTimeout(function() {
+        $("#an_search").removeAttr('disabled');
+        startMeasureCompareV2();
+    }, 2500);
+}
+// ---- search string cookie (auto mode search launcher) (end)
+
+

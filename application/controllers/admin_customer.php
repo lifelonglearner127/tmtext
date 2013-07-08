@@ -44,4 +44,18 @@ class Admin_Customer extends MY_Controller {
 		}
 		redirect('admin_customer/index?ajax=true');
 	}
+
+    public function upload_csv()
+    {
+        $this->load->library('UploadHandler');
+
+        $this->output->set_content_type('application/json');
+        $this->uploadhandler->upload(array(
+            'script_url' => site_url('admin_customer/upload_csv'),
+            'upload_dir' => $this->config->item('csv_upload_dir'),
+            'param_name' => 'files',
+            'delete_type' => 'POST',
+            'accept_file_types' => '/.+\.(jpg|gif|png)$/i',
+        ));
+    }
 }

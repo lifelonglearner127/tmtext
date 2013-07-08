@@ -122,7 +122,7 @@ function setMovement(){
     $( "ul#sortable1 li.boxes, ul#sortable2 li.boxes" ).resizable();
     $("#related_keywords").resizable({minWidth: 418, maxWidth:418});
 }
-$(document).ready(function() {
+jQuery(document).ready(function($) {
     $('title').text("Research & Edit");
 
 
@@ -149,11 +149,7 @@ $(document).ready(function() {
         content += '</ul></div>';
 
     }, 'json');*/
-
     setMovement();
-
-
-
 });
 </script>
 <div class="tabbable">
@@ -165,18 +161,11 @@ $(document).ready(function() {
     </ul>
     <div class="tab-content">
     <div class="research">
-        
-        <!-- NEW STUFF (START) -->
+
         <div class="row-fluid">
             <div class="span6">
                 Batch:
-                <?php
-                    $selected = array();
-                    if(count($customer_list) == 2){
-                        array_shift($customer_list);
-                        $selected = array(0);
-                    }
-                    echo form_dropdown('customers', $customer_list, $selected, 'class="mt_10 category_list"'); ?>
+                <div id="customers" class="customer_dropdown"></div>
                 <?php echo form_dropdown('batches', $batches_list, array(), 'class="mt_10" style="width: 145px;"'); ?>
                 <button id="export_batch" class="btn" type="button" style="margin-left:5px; margin-right: 10px;">Export</button>
             </div>
@@ -185,27 +174,6 @@ $(document).ready(function() {
                 <button id="new_batch" class="btn" type="button" style="margin-left:5px">New</button>
             </div>
         </div>
-        <!-- NEW STUFF (END) -->
-
-        <!-- OLD STUFF (START) -->
-        <!-- <div class="row-fluid">
-            <?php echo form_open('', array('id'=>'measureForm')); ?>
-
-                <input type="text" id="research_text" name="research_text" value="" class="span5" placeholder=""/>
-                <div id="res_dropdown" class="ddslick_dropdown" style="width:90px;"></div>
-                <?php echo form_dropdown('category', $category_list, array(), 'class="category_list"'); ?>
-                <button id="research_search" type="button" class="btn btn-success" style="margin-top:-10px;">Search</button>
-                <p id="show_result">Show <select style="width:60px; margin-right:5px;margin-top: 9px;" name="result_amount">
-                        <option value="10">10</option>
-                        <option value="20">20</option>
-                        <option value="50">50</option>
-                        <option value="100">100</option>
-                    </select>
-                    results
-                </p >
-            <?php echo form_close();?>
-        </div> -->
-        <!-- OLD STUFF (END) -->
         
         <div class="clear"></div>
 
@@ -216,7 +184,7 @@ $(document).ready(function() {
                 <p  style='width: 44px' class='inline_block float_l reset_mb_mt15'>Filter:</p>
                 <?php echo form_open('', array('id'=>'measureForm', 'style' => 'float: left; width: 840px;')); ?>
                     <input type="text" id="research_text" name="research_text" value="" class="span5 w_300" placeholder=""/>
-                    <div id="res_dropdown" class="ddslick_dropdown" style="width:90px;"></div>
+                    <div id="web_dropdown" class="website_dropdown" style="width:90px;"></div>
                     <?php echo form_dropdown('category', $category_list, array(), 'class="category_list"'); ?>
                     <button id="research_search" type="button" class="btn btn-success" style="margin-top:-10px;">Search</button>
                     <p id="show_result">Show <select style="width:60px; margin-right:5px;margin-top: 9px;" name="result_amount">
@@ -229,22 +197,6 @@ $(document).ready(function() {
                     </p >
                 <?php echo form_close();?>
             </div>
-            <!-- NEW STUFF (END) -->
-            
-            <!-- OLD STUFF (START) -->
-            <!-- <div class="row-fluid">
-                <div class="span6">
-                    Batch:
-                    <?php echo form_dropdown('customers', $customer_list, array(), 'class="mt_10 category_list"'); ?>
-                    <?php echo form_dropdown('batches', $batches_list, array(), 'class="mt_10" style="width: 145px;"'); ?>
-                    <button id="export_batch" class="btn" type="button" style="margin-left:5px; margin-right: 10px;">Export</button>
-                </div>
-                <div class="span6">
-                    Add new: <input type="text" class="mt_10" style="width:180px" name="new_batch">
-                    <button id="new_batch" class="btn" type="button" style="margin-left:5px">New</button>
-                </div>
-            </div> -->
-            <!-- OLD STUFF (END) -->
 
             <div class="row-fluid" id="main">
                 <div class="span6" id="research" class="connectedMoved">

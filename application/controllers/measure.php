@@ -17,9 +17,31 @@ class Measure extends MY_Controller {
         }
     }
 
-    public function index()
-    {
+    public function index() {
+        $this->data['customers_list'] = $this->customers_list_new();
         $this->render(); 
+    }
+
+    public function gethomepageyeardata() {
+        $year = $this->input->post('year');
+        $week = $this->input->post('week');
+        $data = array(
+            'year' => $year,
+            'week' => $week,
+            'customers_list' => $this->customers_list_new() 
+        );
+        $this->load->view('measure/gethomepageyeardata', $data);
+    }
+
+    public function gethomepageweekdata() {
+        $year = $this->input->post('year');
+        $week = $this->input->post('week');
+        $data = array(
+            'year' => $year,
+            'week' => $week,
+            'customers_list' => $this->customers_list_new() 
+        );
+        $this->load->view('measure/gethomepageweekdata', $data);
     }
     
     public function measure_products()
@@ -75,6 +97,25 @@ class Measure extends MY_Controller {
         $this->load->model('category_model');
         $categories = $this->category_model->getAll();
         return $categories;
+    }
+
+    private function customers_list_new() {
+        $this->load->model('customers_model');
+        $output = array();
+        $customers_init_list = $this->customers_model->getAll();
+        if(count($customers_init_list) > 0) {
+            foreach ($customers_init_list as $key => $value) {
+                $mid = array(
+                    'id' => $value->id,
+                    'desc' => $value->description,
+                    'image_url' => $value->image_url,
+                    'name' => $value->name,
+                    'name_val' => strtolower($value->name)
+                );
+                $output[] = $mid;
+            }
+        }
+        return $output;
     }
 
     private function category_customers_list() {
@@ -206,6 +247,34 @@ class Measure extends MY_Controller {
         // -------- COMPARING V1 (END)
 
         $this->load->view('measure/gridview', $data);
+    }
+
+    public function getcustomerslist_new() {
+        $this->load->model('customers_model');
+        $type = $this->input->post('type');
+        $customers_init_list = $this->customers_model->getAll();
+        if(count($customers_init_list) > 0) {
+            if($type == 'website'){
+                $output[] = array('text'=>'All sites',
+                    'value'=>'All sites',
+                    'image'=> ''
+                );
+            } else {
+                if(count($customers_init_list) != 1){
+                    $output[] = array('text'=>'All customers',
+                        'value'=>'All customers',
+                        'image'=> ''
+                    );
+                }
+            }
+            foreach ($customers_init_list as $key => $value) {
+                $output[] = array('text'=>'',
+                    'value'=>strtolower($value->name),
+                    'image'=> base_url().'img/'.$value->image_url
+                );
+            }
+        }
+        $this->output->set_content_type('application/json')->set_output(json_encode($output));
     }
 
     public function getcustomerslist() {

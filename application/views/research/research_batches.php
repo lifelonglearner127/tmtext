@@ -3,31 +3,18 @@
     <ul class="nav nav-tabs jq-research-tabs">
         <li class=""><a data-toggle="tab" href="<?php echo site_url('research/create_batch');?>">Create Batch</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('research');?>">Edit</a></li>
-        <li class="active"><a data-toggle="tab" href="<?php echo site_url('research/research_batches');?>">Review</a></li>
+        <li class="active" id="review"><a data-toggle="tab" href="<?php echo site_url('research/research_batches');?>">Review</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('research/research_reports');?>">Reports</a></li>
     </ul>
     <div class="tab-content research_batches">
+
         <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/smoothness/jquery-ui-1.8.2.custom.css" />
         <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/styles.css" />
-        <script>
-
-            $(function() {
-                $( ".draggable" ).draggable();
-            });
-        </script>
         <div id="research_tab2" class="tab-pane active">
             <div class="row-fluid">
-                <!-- NEW STUFF (START) -->
                 <div class='span12'>
                     Batch:
-                    <?php
-                        $selected = array();
-                        if(count($customer_list) == 2){
-                            array_shift($customer_list);
-                            $selected = array(0);
-                        }
-                        echo form_dropdown('research_customers', $customer_list, $selected, 'class="mt_10 category_list"');
-                    ?>
+                    <div id="research_customers" class="customer_dropdown"></div>
                     <?php echo form_dropdown('research_batches', $batches_list, array(), 'class="mt_10 mr_10" style="width: 100px;"'); ?>
                     Edit Name:<input type="text" class="mt_10 ml_10" name="batche_name" />
                     <button id="research_batches_save" type="button" class="btn btn-success ml_5">Save</button>
@@ -41,31 +28,6 @@
                         <button id="research_batches_columns" class="btn btn-success ml_5 float_r">Columns...</button>
                     </div>
                 </div>
-                <!-- NEW STUFF (END) -->
-
-                <!-- OLD STUFF (START) -->
-                <!-- <div class="span6">
-                    Batch:
-                    <?php echo form_dropdown('research_customers', $customer_list, array(), 'class="mt_10 category_list"'); ?>
-                    <?php echo form_dropdown('research_batches', $batches_list, array(), 'class="mt_10 mr_10" style="width: 100px;"'); ?><br />
-                    Edit Name:<input type="text" class="mt_10 ml_10" name="batche_name" />
-                    <button id="research_batches_save" type="button" class="btn btn-success ml_5">Save</button>
-                </div> -->
-                <!-- <div class="span6">
-                    <button id="research_batches_search" type="button" class="btn ml_10 pull-right mt_10" >Filter</button>
-                    <input type="text" id="research_batches_text" name="research_batches_text" value="" class="span8 ml_0 pull-right mt_10" placeholder=""/>
-                    <div class="control-group">
-                        <label class="control-label mt_50" for="customer_name" style="width:70px; float: left">Columns:</label>
-                        <div class="controls mt_10">
-                            <ul id="gallery" class="product_title_content gallery span10 pull-right">
-                                <li><span>Date</span><a hef="#" class="ui-icon-trash">x</a></li>
-                                <li><span>Meta Title</span><a hef="#" class="ui-icon-trash">x</a></li>
-                                <li><span>Meta Description</span><a hef="#" class="ui-icon-trash">x</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                </div> -->
-                <!-- OLD STUFF (END) -->
 
             </div>
             <div class="row-fluid">
@@ -88,9 +50,9 @@
                                 <th><div class="draggable">Product Name</div></th>
                                 <th><div class="draggable">URL</div></th>
                                 <th><div class="draggable">Short Description</div></th>
-                                <th><div class="draggable">Short Description Word Count</div></th>
+                                <th><div class="draggable">Words</div></th>
                                 <th><div class="draggable">Long Description</div></th>
-                                <th><div class="draggable">Long Description Word Count</div></th>
+                                <th><div class="draggable">Words</div></th>
                                 <th><div class="draggable">Batch Name</div></th>
                                 <th><div class="draggable">Actions</div></th>
                             </tr>
@@ -162,7 +124,7 @@
                             </p>
                             <p>
                                 <input type="checkbox" id="column_short_description_wc" name="column_short_description_wc_name" <?php echo($columns['short_description_wc'] == 'true' ? 'checked="checked"' : ''); ?> />
-                                <label for="column_short_description_wc">Short Description Word Count</label>
+                                <label for="column_short_description_wc">Words</label>
                             </p>
                             <p>
                                 <input type="checkbox" id="column_long_description" name="column_long_description_name" <?php echo($columns['long_description'] == 'true' ? 'checked="checked"' : ''); ?> />
@@ -170,7 +132,7 @@
                             </p>
                             <p>
                                 <input type="checkbox" id="column_long_description_wc" name="column_long_description_wc_name" <?php echo($columns['long_description_wc'] == 'true' ? 'checked="checked"' : ''); ?> />
-                                <label for="column_long_description_wc">Long Description Word Count</label>
+                                <label for="column_long_description_wc">Words</label>
                             </p>
                             <p>
                                 <input type="checkbox" id="column_actions" name="column_actions_name" <?php echo($columns['actions'] == 'true' ? 'checked="checked"' : ''); ?> />

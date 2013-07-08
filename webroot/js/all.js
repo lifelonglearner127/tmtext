@@ -387,7 +387,7 @@ function readResearchData() {
                 });
             }
 
-            dataTable.fnFilter( $('select[name="research_batches"]').find('option:selected').text(), 5);
+            dataTable.fnFilter( $('select[name="research_batches"]').find('option:selected').text(), 7);
 
             // get visible columns status
             var columns_checkboxes = $('#choiceColumnDialog input[type=checkbox]');
