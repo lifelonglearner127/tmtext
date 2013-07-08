@@ -1,5 +1,5 @@
 <div class='span12 head_section'>
-	<p class='head_line1'>Home page reports are generated weekly. <a onclick="configureEmailReportsModal()" href="javascript:void(0)">Configure email reports.</a></p>
+	<p class='head_line1'>Home page reports are generated weekly. <a onclick="configureEmailReportsModal()" href="javascript:void(0)">Configure email reports.</a> <a id='customers_screens_crawl' class='btn btn-success'><i class='icon-file'></i>&nbsp;Crawl customers screenshots</a></p>
 	<div class='head_line_2'>
 		<div class="span2">View Reports for:</div>
 		<div class="span2 w_100 ml_disable">
@@ -78,6 +78,11 @@
 			var new_caret = $.trim($(this).text());
 			var item_id = $(this).data('item');
 			$("#hp_boot_drop_" + item_id + " .btn_caret_sign").text(new_caret);
+		});
+
+		$("#customers_screens_crawl").tooltip({
+			placement: 'right',
+			title: 'Test Customers Screens Crawl'
 		});
 	});
 </script>
