@@ -1399,6 +1399,12 @@ label.dd-selected-text, label.dd-option-text{
 
 #customer_dr .dd{
     width:190px!important;
-    position: relative;
-    top: 0px;
+}
+
+#customer_dr .ddcommon{
+    position: absolute;
+}
+
+#create_batch_save{
+    min-height: 400px;
 }
