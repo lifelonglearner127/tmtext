@@ -34,7 +34,7 @@
                     </div>
                     <div class="text-center">
                         <a href="#">
-                            <img src="../img/request-demo-btn.png" />
+                            <?php echo img('../img/request-demo-btn.png', TRUE); ?>
                         </a>
                     </div>
                 </div>
@@ -46,7 +46,7 @@
         <div class="container margin-top-50">
             <div class="row-fluid" style="padding-left: 60px;">
                 <div class="span4">
-                    <img src="../img/graphic.png" />
+                    <?php echo img('../img/graphic.png', TRUE); ?>
                 </div>
                 <div class="span6">
                     <div class="mid-title">Assess the effectiveness of your existing content</div>
@@ -63,7 +63,7 @@
                     <div class="ideas-title">Research the competition</div>
                     <p>Compare your home page, department pages, category landing pages, and individual product pages to your competition.</p>
                     <a href="#" class="learn-more-btn">
-                        <img src='../img/bottom-button.png' />
+                        <?php echo img('../img/bottom-button.png', TRUE); ?>
                     </a>
                     <div class="box-shadow-img"></div>
                 </div>
@@ -71,7 +71,7 @@
                     <div class="ideas-title">Create and Refresh Content</div>
                     <p>Designed for content creation, optimization, and refresh at scale, our workflow system manages thousands of content creators and editors.</p>
                     <a href="#" class="learn-more-btn">
-                        <img src='../img/bottom-button.png' />
+                        <?php echo img('../img/bottom-button.png', TRUE); ?>
                     </a>
                     <div class="box-shadow-img"></div>
                 </div>
@@ -79,7 +79,7 @@
                     <div class="ideas-title">Bring Meaning To Unstructured Web Site Data</div>
                     <p>Extract, compare, assess pricing and product information.</p>
                     <a href="#" class="learn-more-btn">
-                        <img src='../img/bottom-button.png' />
+                        <?php echo img('../img/bottom-button.png', TRUE); ?>
                     </a>
                     <div class="box-shadow-img"></div>
                 </div>
