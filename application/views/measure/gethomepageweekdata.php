@@ -1,6 +1,6 @@
 <div class='ph_placeholder' data-week="<?php echo $week; ?>">
 	<?php 
-		$items_count = 9;
+		$items_count = 6;
 		$item_per_row = 3;
 		$items_rows = ceil($items_count/$item_per_row);
 	?>
