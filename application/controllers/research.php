@@ -495,5 +495,8 @@ class Research extends MY_Controller {
         foreach($_rows as $_row){
             $this->items_model->insert($batch_id, $customer_id, $_row);
         }
+        $response['message'] = 'File was uploaded successfully';
+         $this->output->set_content_type('application/json')
+                ->set_output(json_encode($response));
     }
 }

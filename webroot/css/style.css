@@ -1,3 +1,62 @@
+/* --- SOME BOOTSTRAP WEIRD OVERRIDING (START) --- */
+.btn .caret {
+	margin-top: 0px !important;
+}
+.btn-group .dropdown-toggle {
+	height: 30px;
+}
+/* --- SOME BOOTSTRAP WEIRD OVERRIDING (END) --- */
+
+/* --- HOME PAGES TAB (START) --- */
+#hp_ajax_content {
+	position: relative;
+}
+.hp_boot_drop {
+	margin-bottom: 20px;
+}
+.home_pages .head_line1 {
+	margin-bottom: 15px;
+}
+.home_pages .year_s {
+	width: 80px;
+}
+.ml_disable {
+	margin-left: 0px !important;
+}
+.mt_30 {
+	margin-top: 30px;
+}
+.home_pages .w_100 {
+	width: 100px;
+}
+.home_pages .items_row {
+	margin-bottom: 40px;
+}
+.art_hp_select_item {
+
+}
+.art_hp_item {
+
+}
+.art_hp_item .art_img {
+	float: left;
+	width: 100px;
+	height: 100px;
+	background: #333;
+}
+.art_hp_item .art_oview {
+	float: left;
+	width: 170px;
+	height: auto;
+	margin-left: 8px;
+}
+.art_hp_item .art_oview .h {
+	font-weight: bold;
+}
+
+/* --- HOME PAGES TAB (END) --- */
+
+
 /* --- PRODUCT MATCH TAB (START) --- */
 .pm_data_table {
 	width: 100%;
@@ -1399,6 +1458,12 @@ label.dd-selected-text, label.dd-option-text{
 
 #customer_dr .dd{
     width:190px!important;
-    position: relative;
-    top: 0px;
+}
+
+#customer_dr .ddcommon{
+    position: absolute;
+}
+
+#create_batch_save{
+    min-height: 400px;
 }

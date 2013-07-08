@@ -552,6 +552,9 @@ jQuery(document).ready(function($) {
 
     $(document).on("click", "button#new_batch", function(){
         var oDropdown = $("#customers").msDropdown().data("dd");
+        if(oDropdown==undefined){
+            var oDropdown = $("#customer_dr").msDropdown().data("dd");
+        }
         $.post(base_url + 'index.php/research/new_batch', {
             'batch': $('input[name="new_batch"]').val(),
             'customer_name': oDropdown.getData().data.value,
@@ -581,7 +584,7 @@ jQuery(document).ready(function($) {
             'customer_name': oDropdown.getData().data.value,
             'batch_name': $('select[name="batches"]').find('option:selected').text()
         }, function(data) {
-            //$('#info').html(data.message);
+            $('#info').html(data.message);
         }, 'json');
 
         return false;

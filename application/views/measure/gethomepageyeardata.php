@@ -30,7 +30,7 @@
 <div id='hp_ajax_content' class='span12 body_section ml_disable mt_30'>
 	<div class='ph_placeholder' data-week='1'>
 		<?php 
-			$items_count = 9;
+			$items_count = 6;
 			$item_per_row = 3;
 			$items_rows = ceil($items_count/$item_per_row);
 		?>
