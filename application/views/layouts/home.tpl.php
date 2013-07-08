@@ -60,7 +60,7 @@
         <div class="container">
             <div class="row-fluid">
                 <div class="span4 border-box">
-                    <div class="ideas-title">Research the competition</div>
+                    <div class="ideas-title">Research the Competition</div>
                     <p>Compare your home page, department pages, category landing pages, and individual product pages to your competition.</p>
                     <a href="#" class="learn-more-btn">
                         <?php echo img('../img/bottom-button.png', TRUE); ?>
