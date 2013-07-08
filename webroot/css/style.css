@@ -1443,3 +1443,14 @@ label.dd-selected-text, label.dd-option-text{
 .an_grd_view_drop, .an_grd_view_drop .dd{
     width:290px!important;
 }
+
+#customer_dr{
+    display: inline;
+    width: 150px;
+}
+
+#customer_dr .dd{
+    width:190px!important;
+    position: relative;
+    top: 0px;
+}

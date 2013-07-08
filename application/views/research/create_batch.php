@@ -11,15 +11,9 @@
     <div class="row-fluid">
         <div class="span10">
             Batch:
-            <?php
-            $selected = array();
-            if(count($customer_list) == 2){
-                array_shift($customer_list);
-                $selected = array(0);
-            }
-            echo form_dropdown('customers', $customer_list, $selected, 'class="mt_10 category_list"'); ?>
-            <?php echo form_dropdown('batches', $batches_list, array(), 'class="mt_10" style="width: 145px;"'); ?>
-            <span class="ml_10">Add new:</span> <input type="text" class="mt_10" style="width:180px" name="new_batch">
+            <div id="customer_dr" class="customer_dropdown"></div>
+            <?php echo form_dropdown('batches', $batches_list, array(), ' class="ml_10" style="width: 145px;"'); ?>
+            <span class="ml_10">Add new:</span> <input type="text"  style="width:180px" name="new_batch">
             <button id="new_batch" class="btn" type="button" style="margin-left:5px">Create</button>
         </div>
     </div>
@@ -27,13 +21,13 @@
     <div class="row-fluid mt_20">
         <div class="admin_system_content">
             <div class="controls span7">
-                <button class="btn btn-success" id="csv_import_create_batch"><i class="icon-white icon-ok"></i>&nbsp;Import</button>
+                <button class="btn btn-success" id="csv_import_create_batch" style="display:none"><i class="icon-white icon-ok"></i>&nbsp;Import</button>
 								<span class="btn btn-success fileinput-button ml_10" style="">
 									Upload
 									<i class="icon-plus icon-white"></i>
 									<input type="file" multiple="" name="files[]" id="fileupload">
 								</span>
-                <div class="progress progress-success progress-striped span7 pull-right mr_10" id="progress">
+                <div class="progress progress-success progress-striped span7" id="progress">
                     <div class="bar"></div>
                 </div>
                 <div id="files"></div>

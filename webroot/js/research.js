@@ -531,19 +531,6 @@ $(document).ready(function () {
         dataTable = undefined;
         readResearchData();
     });
-
-
-    $(document).on("click", "button#csv_import_create_batch", function(event){
-        event.preventDefault();
-        var url = $(this).parents().find('form').attr( 'action' ).replace('save', 'csv_import');
-
-        $.post(url, { 'choosen_file': $('input[name="choosen_file"]').val() }, function(data) {
-            $('#info').html(data.message);
-        }, 'json');
-
-        return false;
-    });
-
 });
 
 
@@ -586,4 +573,17 @@ jQuery(document).ready(function($) {
         });
     });
 
+    $(document).on("click", "button#csv_import_create_batch", function(event){
+        event.preventDefault();
+        var url = $(this).parents().find('form').attr( 'action' ).replace('save', 'csv_import');
+        var oDropdown = $("#customer_dr").msDropdown().data("dd");
+        $.post(url, { 'choosen_file': $('input[name="choosen_file"]').val(),
+            'customer_name': oDropdown.getData().data.value,
+            'batch_name': $('select[name="batches"]').find('option:selected').text()
+        }, function(data) {
+            //$('#info').html(data.message);
+        }, 'json');
+
+        return false;
+    });
 });

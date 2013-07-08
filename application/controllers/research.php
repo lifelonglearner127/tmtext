@@ -477,23 +477,23 @@ class Research extends MY_Controller {
 
     public function csv_import() {
         $this->load->model('batches_model');
+        $this->load->model('customers_model');
         $this->load->model('items_model');
 
-        /*if (preg_match("/.*\.csv/i",$object->getFilename(),$matches)) {
-            $_rows = array();
-            if (($handle = fopen($name, "r")) !== FALSE) {
-                while (($row = fgets($handle)) !== false) {
-                    if (preg_match("/$s/i",$row,$matches)) {
-                        $_rows[] = $row;
-                    }
+        $file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
+        $_rows = array();
+        if (($handle = fopen($file, "r")) !== FALSE) {
+            while (($data = fgetcsv($handle, 1000, "\n")) !== FALSE) {
+                if(!is_null($data[0]) && $data[0]!='URL'){
+                    $_rows[] = $data[0];
                 }
             }
             fclose($handle);
-
-            foreach (array_keys(array_count_values($_rows)) as $row){
-                $csv_rows[] = str_getcsv($row, ",", "\"");
-            }
-            unset($_rows);
-        }*/
+        }
+        $batch_id = $this->batches_model->getIdByName($this->input->post('batch_name'));
+        $customer_id = $this->customers_model->getIdByName($this->input->post('customer_name'));
+        foreach($_rows as $_row){
+            $this->items_model->insert($batch_id, $customer_id, $_row);
+        }
     }
 }
