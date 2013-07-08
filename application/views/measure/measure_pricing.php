@@ -4,7 +4,7 @@
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure'); ?>">Home Pages</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_departments'); ?>">Departments & Categories</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_products'); ?>">Products</a></li>
-        <li class="active"><a data-toggle="tab" href="<?php echo site_url('measure/measure_gridview'); ?>">Grid View</a></li>
+        <li class="active"><a data-toggle="tab" href="<?php echo site_url('measure/measure_pricing'); ?>">Pricing</a></li>
     </ul>
     <div class="tab-content">
         <div class="tabbable">
@@ -28,6 +28,7 @@
                                     <thead>
                                     <tr>
                                         <th><div class="draggable">Date</div></th>
+                                        <th><div class="draggable">Product</div></th>
                                         <th><div class="draggable">Price</div></th>
                                     </tr>
                                     </thead>
@@ -52,6 +53,7 @@
                         <script type="text/template" id="readTemplate">
                             <tr id="${id}">
                                 <td class="column_editor">${created}</td>
+                                <td class="column_editor">${product_name}</td>
                                 <td class="column_product_name">${price}</td>
                             </tr>
                         </script>

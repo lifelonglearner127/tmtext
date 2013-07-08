@@ -3,7 +3,9 @@
 class Crawler_List_Prices_model extends CI_Model {
 
     var $tables = array(
-    	'crawler_list_prices' => 'crawler_list_prices'
+    	'crawler_list_prices'               => 'crawler_list_prices',
+        'crawler_list'                      => 'crawler_list',
+        'imported_data_parsed'              => 'imported_data_parsed',
     );
 
     var $price = 0;
@@ -48,4 +50,15 @@ class Crawler_List_Prices_model extends CI_Model {
         $this->db->insert($this->tables['crawler_list_prices'], $this);
         return $this->db->insert_id();
     }
+
+    function getProductsWithPrice() {
+        $this->db->select('idp.id, idp.value as product_name, clp.price, clp.created')
+            ->join($this->tables['crawler_list'].' as cl', 'clp.crawler_list_id = cl.id')
+            ->join($this->tables['imported_data_parsed']. ' as idp', 'idp.imported_data_id = cl.imported_data_id')
+            ->where('idp.key = "Product Name"')
+            ->order_by('created', 'desc');
+        $query = $this->db->get($this->tables['crawler_list_prices'].' as clp');
+        return $query->result();
+    }
+
 }

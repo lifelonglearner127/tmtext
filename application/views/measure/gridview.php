@@ -22,6 +22,25 @@
                     <p class='short_product_name ellipsis'><a href="<?php echo $vs['url']; ?>"><?php echo $vs['url']; ?></a></p>
                     <span class='analysis_content_head'>Product Name:</span>
                     <p class='short_product_name'><?php echo $vs['product_name']; ?></p>
+                    <?php
+                    if(!empty($vs['three_last_prices'])) {
+                        echo "<span class='analysis_content_head'>Price:</span>";
+                        echo '<table>';
+                        foreach($vs['three_last_prices'] as $last_price) {
+                    ?>
+                            <tr>
+                                <td>
+                                    <p class='short_product_name'><?php echo date("m/d/Y", strtotime($last_price->created)); ?>: </p>
+                                </td>
+                                <td>
+                                    <p class='short_product_name'> $<?php echo sprintf("%01.2f", floatval($last_price->price)); ?></p>
+                                </td>
+                            </tr>
+                    <?php
+                        }
+                        echo '</table>';
+                    }
+                    ?>
                     <span class='analysis_content_head'>Short Description (<span class='short_desc_wc'><?php echo $s_product_short_desc_count ?> words</span>):</span>
                     <p class='short_desc_con'><?php echo $s_product_description; ?></p>
                     <span class='analysis_content_head'>Long Description (<span class='long_desc_wc'><?php echo $s_product_long_desc_count; ?> words</span>):</span>

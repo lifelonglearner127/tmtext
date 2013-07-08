@@ -1,10 +1,11 @@
 var readUrl = base_url + 'index.php/measure/get_product_price';
 
 $( function() {
-    /* Grid View */
-    readGridData();
+    /* Pricing */
+    readGridData(); // for pricing
 });
 
+// for pricing
 function readGridData() {
     //display ajax loader animation
     $( '#ajaxLoadAni' ).fadeIn( 'slow' );
@@ -29,7 +30,7 @@ function readGridData() {
                         "sInfoFiltered": ""
                     },
                     "aoColumns": [
-                        null, null
+                        null, null, null
                     ]
                 });
             }

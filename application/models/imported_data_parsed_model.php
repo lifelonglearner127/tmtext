@@ -23,11 +23,13 @@ class Imported_data_parsed_model extends CI_Model {
     // -------  WHITE LISTS FOR FILTERING (END)
 
     var $tables = array(
-    	'imported_data_parsed' => 'imported_data_parsed',
-        'imported_data' => 'imported_data',
-        'customers' => 'customers',
-        'products_compare' => 'products_compare',
-        'product_match_collections' => 'product_match_collections'
+    	'imported_data_parsed'              => 'imported_data_parsed',
+        'imported_data'                     => 'imported_data',
+        'customers'                         => 'customers',
+        'products_compare'                  => 'products_compare',
+        'product_match_collections'         => 'product_match_collections',
+        'crawler_list_prices'               => 'crawler_list_prices',
+        'crawler_list'                      => 'crawler_list',
     );
 
     function __construct() {
@@ -992,6 +994,20 @@ class Imported_data_parsed_model extends CI_Model {
 			}
 			return $rows;
 		}
+    }
+
+    function getLastPrices($imported_data_id, $prices_count = 3) {
+        $this->db->select('clp.id, clp.price, clp.created')
+            ->join($this->tables['crawler_list'].' as cl', 'clp.crawler_list_id = cl.id')
+            ->join($this->tables['imported_data_parsed']. ' as idp', 'idp.imported_data_id = cl.imported_data_id')
+            ->where('idp.key = "Product Name"')
+            ->where('idp.imported_data_id = ' . $imported_data_id)
+            ->order_by('created', 'desc');
+        if($prices_count > 0) {
+            $this->db->limit($prices_count);
+        }
+        $query = $this->db->get($this->tables['crawler_list_prices'].' as clp');
+        return $query->result();
     }
 
 }

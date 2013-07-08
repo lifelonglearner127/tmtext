@@ -61,14 +61,14 @@ class Measure extends MY_Controller {
        $this->render();     
     }
 
-    public function measure_gridview()
+    public function measure_pricing()
     {
         $this->render();
     }
 
     public function get_product_price() {
         $this->load->model('crawler_list_prices_model');
-        $price_list = $this->crawler_list_prices_model->getAll();
+        $price_list = $this->crawler_list_prices_model->getProductsWithPrice();
 
         // format date & price
         foreach($price_list as $price) {
@@ -226,6 +226,10 @@ class Measure extends MY_Controller {
                     $same_pr[$ks]['seo']['short'] = $this->helpers->measure_analyzer_start_v2(preg_replace('/\s+/', ' ', $vs['description']));
                     $same_pr[$ks]['seo']['long'] = $this->helpers->measure_analyzer_start_v2(preg_replace('/\s+/', ' ', $vs['long_description']));
 
+                    // three last prices
+                    $imported_data_id = $same_pr[$ks]['imported_data_id'];
+                    $three_last_prices = $this->imported_data_parsed_model->getLastPrices($imported_data_id);
+                    $same_pr[$ks]['three_last_prices'] = $three_last_prices;
                 }
                 $data['same_pr'] = $same_pr;
 //            }
