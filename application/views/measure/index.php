@@ -10,7 +10,7 @@
     	<div class="row-fluid home_pages">
     		
     		<div class='span12 head_section'>
-	    		<p class='head_line1'>Home page reports are generated weekly. <a href="javascript:void(0)">Configure email reports.</a></p>
+	    		<p class='head_line1'>Home page reports are generated weekly. <a onclick="configureEmailReportsModal()" href="javascript:void(0)">Configure email reports.</a></p>
 				<div class='head_line_2'>
 					<div class="span2">View Reports for:</div>
 					<div class="span2 w_100 ml_disable">
@@ -86,6 +86,56 @@
 		</div>
     </div>
 </div>
+
+<!-- MODALS (START) -->
+<div class="modal hide fade" id='configure_email_reports_success'>
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+		<h3>Reports Configuration Saved</h3>
+	</div>
+	<div class="modal-body">
+		<p>Email configuration successfully saved!</p>
+	</div>
+	<div class="modal-footer">
+		<a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
+	</div>
+</div>
+
+<div class="modal hide fade" id='configure_email_reports'>
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+		<h3>Email Reports Configuration</h3>
+	</div>
+	<div class="modal-body">
+		<form action='' onsubmit="return false;" class="form-horizontal">
+			<div class="control-group">
+				<label class="control-label" for="email_rec">Email recipients:</label>
+				<div class="controls">
+					<input type="text" style="width: 220px;" id="email_rec" name="email_rec" placeholder="recipients..">
+				</div>
+			</div>
+			<div class="control-group">
+				<label class="control-label" style="width: 172px;" for="week_day_rep">Day of week to send report:</label>
+				<div class="controls">
+					<select id="week_day_rep" name="week_day_rep">
+						<option value='monday' selected>Monday</option>
+						<option value='tuesday'>Tuesday</option>
+						<option value='wednesday'>Wednesday</option>
+						<option value='thursday'>Thursday</option>
+						<option value="friday">Friday</option>
+						<option value='saturday'>Saturday</option>
+						<option value='sunday'>Sunday</option>
+					</select>
+				</div>
+			</div>
+		</form>
+	</div>
+	<div class="modal-footer">
+		<a href="javascript:void(0)" class="btn" data-dismiss="modal">Cancel</a>
+		<a href="javascript:void(0)" class="btn btn-success" onclick="submitEmailReportsConfig()">Save</a>
+	</div>
+</div>
+<!-- MODALS (END) -->
 
 <script type="text/javascript">
 	$(document).ready(function() {

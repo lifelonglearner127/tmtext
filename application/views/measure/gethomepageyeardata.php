@@ -1,5 +1,5 @@
 <div class='span12 head_section'>
-	<p class='head_line1'>Home page reports are generated weekly. <a href="javascript:void(0)">Configure email reports.</a></p>
+	<p class='head_line1'>Home page reports are generated weekly. <a onclick="configureEmailReportsModal()" href="javascript:void(0)">Configure email reports.</a></p>
 	<div class='head_line_2'>
 		<div class="span2">View Reports for:</div>
 		<div class="span2 w_100 ml_disable">
