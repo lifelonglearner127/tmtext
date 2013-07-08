@@ -259,21 +259,13 @@ class Measure extends MY_Controller {
 
     public function getcustomerslist_new() {
         $this->load->model('customers_model');
-        $type = $this->input->post('type');
         $customers_init_list = $this->customers_model->getAll();
         if(count($customers_init_list) > 0) {
-            if($type == 'website'){
-                $output[] = array('text'=>'All sites',
-                    'value'=>'All sites',
-                    'image'=> ''
+            if(count($customers_init_list) != 1){
+                $output[] = array('text'=>'All customers',
+                   'value'=>'All customers',
+                   'image'=> ''
                 );
-            } else {
-                if(count($customers_init_list) != 1){
-                    $output[] = array('text'=>'All customers',
-                        'value'=>'All customers',
-                        'image'=> ''
-                    );
-                }
             }
             foreach ($customers_init_list as $key => $value) {
                 $output[] = array('text'=>'',
@@ -284,6 +276,25 @@ class Measure extends MY_Controller {
         }
         $this->output->set_content_type('application/json')->set_output(json_encode($output));
     }
+
+    public function getsiteslist_new() {
+        $this->load->model('sites_model');
+        $customers_init_list = $this->sites_model->getAll();
+        if(count($customers_init_list) > 0) {
+            $output[] = array('text'=>'All sites',
+                'value'=>'All sites',
+                'image'=> ''
+            );
+            foreach ($customers_init_list as $key => $value) {
+                $output[] = array('text'=>'',
+                    'value'=>strtolower($value->name),
+                    'image'=> base_url().'img/'.$value->image_url
+                );
+            }
+        }
+        $this->output->set_content_type('application/json')->set_output(json_encode($output));
+    }
+
 
     public function getcustomerslist() {
         $this->load->model('customers_model');

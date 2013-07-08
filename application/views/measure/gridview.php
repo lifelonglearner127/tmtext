@@ -107,7 +107,7 @@
             var grid_3_customer = $("#grid_se_section_3 input[type='hidden'][name='dd_customer']").val();
 
             setTimeout(function(){
-                var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist_new', { type: 'customer' }, function(c_data) {
+                var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist_new', {}, function(c_data) {
                     var grid1 = $('#an_grd_view_drop_gr1').msDropDown({byJson:{data:c_data}}).data("dd");
                     if(grid1 != undefined){
                         grid1.setIndexByValue(grid_1_customer);

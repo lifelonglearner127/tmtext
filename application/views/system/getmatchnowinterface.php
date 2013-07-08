@@ -168,7 +168,7 @@
 		function initCustomersPciDropdownRight() {
 			var ddData_grids_r_current = $("input[type='hidden'][name='random_r_hidden_c']").val();
 			setTimeout(function(){
-                var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist_new', { type: 'customer' }, function(c_data) {
+                var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist_new', {}, function(c_data) {
                     var dd_right = $('#dd_drop_random_r').msDropDown({byJson:{data:c_data}}).data("dd");
                     if(dd_right != undefined){
                         dd_right.setIndexByValue(ddData_grids_r_current);
@@ -183,7 +183,7 @@
 			var ddData_grids_r_current = $("input[type='hidden'][name='random_r_hidden_c']").val();
             var ddData_grids_r_current = $("input[type='hidden'][name='random_r_hidden_c']").val();
             setTimeout(function(){
-                var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist_new', { type: 'customer' }, function(c_data) {
+                var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist_new', {}, function(c_data) {
                     var dd_left = $('#dd_drop_random_l').msDropDown({byJson:{data:c_data}}).data("dd");
                     if(dd_left != undefined){
                         dd_left.setIndexByValue(ddData_grids_l_current);
