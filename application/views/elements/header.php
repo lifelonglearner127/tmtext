@@ -18,6 +18,7 @@
 	<link href="<?php echo base_url();?>css/fileupload/jquery.fileupload-ui.css" rel="stylesheet">
     <link href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.17/themes/base/jquery-ui.css" rel="stylesheet">
     <link href="<?php echo base_url();?>css/dd.css" rel="stylesheet">
+    <link href="<?php echo base_url();?>css/home-page.css" rel="stylesheet">
 
 	<!--[if lt IE 9]>
 		<script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>

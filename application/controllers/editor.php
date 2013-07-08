@@ -468,4 +468,8 @@ class Editor extends MY_Controller {
 		$this->output->set_content_type('application/json')
     			->set_output(json_encode($output));
 	}
+    
+    public function home(){
+        $this->render('home');
+    }
 }
