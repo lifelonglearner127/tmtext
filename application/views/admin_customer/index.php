@@ -41,6 +41,60 @@
 									    <input type="text" id="customer_name" name="user_settings[customer_name]" class="span12" value="<?php echo isset($user_settings['customer_name'])? $user_settings['customer_name']:'' ?>">
 								    </div>
 							    </div>
+                                <div class="control-group">
+                                    <label class="control-label" for="customer_name">Customer url:</label>
+                                    <div class="controls">
+                                        <input type="text" id="customer_url" name="customer_url" class="span12" value="">
+                                    </div>
+                                </div>
+                                <div class="row-fluid">
+                                    <div class="span6 admin_system_content">
+                                        <div class="controls">
+                                    <span class="btn btn-success fileinput-button">
+                                        Add Logo
+                                        <i class="icon-plus icon-white"></i>
+                                        <input id="fileupload" type="file" name="files[]" multiple>
+                                    </span>
+                                            <div id="progress" class="progress progress-success progress-striped">
+                                                <div class="bar"></div>
+                                            </div>
+                                            <div id="files"></div>
+                                            <script>
+                                                $(function () {
+                                                    var url = '<?php echo site_url('admin_customer/upload_csv');?>';
+                                                    $('#fileupload').fileupload({
+                                                        url: url,
+                                                        dataType: 'json',
+                                                        done: function (e, data) {
+                                                            $.each(data.result.files, function (index, file) {
+                                                                if (file.error == undefined) {
+                                                                    $('<p/>').text(file.name).appendTo('#files');
+                                                                }
+                                                            });
+                                                        },
+                                                        progressall: function (e, data) {
+                                                            var progress = parseInt(data.loaded / data.total * 100, 10);
+                                                            $('#progress .bar').css(
+                                                                'width',
+                                                                progress + '%'
+                                                            );
+                                                            if (progress == 100) {
+                                                                $('#upload_logo').trigger('click');
+                                                            }
+                                                        }
+                                                    });
+                                                });
+                                            </script>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row-fluid">
+                                    <div class="control-group">
+                                        <div class="controls">
+                                            <button id="upload_logo" class="btn btn-success"><i class="icon-white icon-ok"></i>&nbsp;Upload</button>
+                                        </div>
+                                    </div>
+                                </div>
 							    <div class="control-group">
 								    <label class="control-label" for="csv_directory">CSV Directory:</label>
 								    <div class="controls">
