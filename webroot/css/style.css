@@ -1,3 +1,13 @@
+.ci_hp_modals .modal-header h3 {
+	font-size: 16px;
+	color: #666;
+}
+.ci_hp_modals .modal-body table th {
+	font-size: 12px;
+}
+.ci_hp_modals.crawl_launch_panel .modal-body {
+	overflow: hidden;
+}
 /* --- SOME BOOTSTRAP WEIRD OVERRIDING (START) --- */
 .btn .caret {
 	margin-top: 0px !important;
@@ -1470,4 +1480,9 @@ label.dd-selected-text, label.dd-option-text{
 
 #create_batch_save #files p{
     width: 200px;
+}
+
+.info p{
+    width: 250px;
+    background: none;
 }
