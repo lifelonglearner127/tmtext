@@ -6,15 +6,15 @@
     <li class=""><a data-toggle="tab" href="<?php echo site_url('research/research_reports');?>">Reports</a></li>
 </ul>
 <div class="tab-content">
-    <div class="info"></div>
     <?php echo form_open("research/save", array("class"=>"form-horizontal", "id"=>"create_batch_save"));?>
     <div class="row-fluid">
-        <div class="span10">
+        <div class="span11">
             Batch:
             <div id="customer_dr" class="customer_dropdown"></div>
             <?php echo form_dropdown('batches', $batches_list, array(), ' style="width: 145px;margin-left:200px"'); ?>
             <span class="ml_10">Add new:</span> <input type="text"  style="width:180px" name="new_batch">
             <button id="new_batch" class="btn" type="button" style="margin-left:5px">Create</button>
+            <button id="delete_batch" class="btn btn-danger" type="button" style="margin-left:5px">Delete</button>
         </div>
     </div>
 
@@ -33,6 +33,7 @@
                 <div id="files"></div>
                 <input type="hidden" name="choosen_file" />
             </div>
+            <div class="info ml_10 "></div>
             <script>
                    $(function () {
                         var url = '<?php echo site_url('research/upload_csv');?>';

@@ -506,4 +506,10 @@ class Research extends MY_Controller {
          $this->output->set_content_type('application/json')
                 ->set_output(json_encode($response));
     }
+
+    public function delete_batch(){
+        $this->load->model('batches_model');
+        $batch_id =  $this->batches_model->getIdByName($this->input->post('batch_name'));
+        $this->batches_model->delete($batch_id);
+    }
 }
