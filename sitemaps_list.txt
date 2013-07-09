@@ -1,0 +1,10 @@
+Walmart.com	http://www.walmart.com/cp/All-Departments/121828
+Amazon.com	http://www.amazon.com/gp/site-directory/ref=sa_menu_top_fullstore
+Bestbuy.com	http://www.bestbuy.com/site/sitemap.jsp
+Wayfair.com	http://www.wayfair.com/site_map.php
+Overstock.com	http://www.overstock.com/sitemap
+Tigerdirect.com	http://www.tigerdirect.com/computerproducts.asp
+BJs.com http://www.bjs.com/webapp/wcs/stores/servlet/SiteMapView?langId=-1&storeId=10201&catalogId=10001
+Bloomingdales.com http://www1.bloomingdales.com/service/sitemap/index.ognc?cm_sp=NAVIGATION-_-BOTTOM_LINKS-_-SITE_MAP
+Sears.com	http://www.sears.com/shc/s/smv_10153_12605
+Toysrus.com	http://www.toysrus.com/sitemap/map.jsp
