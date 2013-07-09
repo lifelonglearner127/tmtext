@@ -114,11 +114,11 @@
                     }
                     var grid2 = $('#an_grd_view_drop_gr2').msDropDown({byJson:{data:c_data}}).data("dd");
                     if(grid2 != undefined){
-                        grid2.setIndexByValue(grid_1_customer);
+                        grid2.setIndexByValue(grid_2_customer);
                     }
                     var grid3 = $('#an_grd_view_drop_gr3').msDropDown({byJson:{data:c_data}}).data("dd");
                     if(grid3 != undefined){
-                        grid3.setIndexByValue(grid_1_customer);
+                        grid3.setIndexByValue(grid_3_customer);
                     }
                 });
             }, 100);
