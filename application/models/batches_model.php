@@ -30,6 +30,13 @@ class Batches_model extends CI_Model {
 
     function getAll()
     {
+        $this->db->order_by("title", "asc");
+        $query = $this->db->get($this->tables['batches']);
+
+        return $query->result();
+    }
+    /*function getAll()
+    {
         $query =  $this->db->select('b.created as created,b.title as title ,c.name as name , b.id as id, count(r.batch_id) as items')
             ->from($this->tables['batches'].' as b')
             ->join($this->tables['research_data'].' as r', 'r.batch_id = b.id', 'left')
@@ -38,7 +45,7 @@ class Batches_model extends CI_Model {
             ->order_by("b.title", "asc")->get();
         
         return $query->result();
-    }
+    }*/
 
     function getAllByCustomer($customer_id='')
     {
