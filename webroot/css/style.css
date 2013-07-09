@@ -1517,6 +1517,6 @@ label.dd-selected-text, label.dd-option-text{
     margin-left: 5px;
 }
 
-#do_work .product_title li span, #research_products li span{
+#do_work .product_title li span, #do_work #research_products li span{
     width: 49.6%;
 }
