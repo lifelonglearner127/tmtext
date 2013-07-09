@@ -30,7 +30,7 @@ class SearsSpider(BaseSpider):
         # parse each page in urls list with parsePage
         # build urls by adding the prefix of the main page url
         root_url = "http://www.sears.com/shc/s"
-        for url in [urls[0]]:
+        for url in urls:
             yield Request(root_url + "/" + url, callback = self.parsePage)
 
     # parse one page - extract items (categories)
@@ -56,7 +56,7 @@ class SearsSpider(BaseSpider):
             parent = link.select("parent::node()/preceding-sibling::node()[2]/a")
             item['parent_text'] = parent.select('text()').extract()
             item['parent_url'] = parent.select('@href').extract()
-            
+
             item['text'] = link.select('text()').extract()
             item['url'] = link.select('a/@href').extract()
             items.append(item)
