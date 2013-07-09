@@ -1,3 +1,4 @@
+<script type='text/javascript' src="<?php echo base_url();?>js/jquery.dd.js"></script>
 <script type="text/javascript">
     var last_edition = '';
 
@@ -95,9 +96,17 @@
          }, 'json');*/
 
         setMovement();
-
-
-
+    });
+    jQuery(document).ready(function($) {
+        var jsonData = [
+            {image: base_url+'img/layout-icon1.png', value:'side_by_side', text: ''},
+            {image: base_url+'img/layout-icon2.png', value:'rectangle', text: ''},
+            {value:'custom', text: 'Custom'},
+        ];
+        var layout = $('.layout_dropdown').msDropDown({byJson:{data:jsonData, name:'layout_list'}}).data("dd");
+        layout.on("change", function(res) {
+            console.log(res.target.value);
+        });
     });
 </script>
 <div class="tabbable">
@@ -108,16 +117,25 @@
 </ul>
 <div class="tab-content">
 <div class="research">
-    <div id="research_tab1" class="tab-pane active">
+    <div id="do_work" class="tab-pane active">
 
         <div class="row-fluid" id="main">
             <div class="span12 boxes">
-                <h3><a href="#" onclick="return false;" class="hideShow"><img style="width:12px;margin-right: 10px" src="<?php echo base_url();?>img/arrow-down.png" /></a>Individual Jobs<a href="#" class="ml_10 research_arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
-                <div class="boxes_content"  style="height: 200px;padding:0px;">
+                <h3><a href="#" onclick="return false;" class="hideShow">
+                        <img style="width:12px;margin-right: 10px" src="<?php echo base_url();?>img/arrow-down.png" />
+                    </a>
+                    Individual Jobs
+                    <a href="#" class="ml_10 research_arrow">
+                        <img src="<?php echo base_url(); ?>/webroot/img/arrow.png">
+                    </a>
+                    <div class="layout_dropdown ml_10 pull-right"></div>
+                    <span class="pull-right">Layout:</span>
+                </h3>
+                <div class="boxes_content product_box">
                     <ul class="product_title">
                         <li class="main"><span><b>Product Name</b></span><span><b>URL</b></span></li>
                     </ul>
-                    <ul id="research_products" style="height: 170px; overflow: auto;">
+                    <ul id="research_products" style="height: 130px; overflow: auto;">
                         <li><span>&nbsp;</span><span>&nbsp;</span></li>
                         <li><span>&nbsp;</span><span>&nbsp;</span></li>
                         <li><span>&nbsp;</span><span>&nbsp;</span></li>

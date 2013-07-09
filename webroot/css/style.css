@@ -1486,3 +1486,37 @@ label.dd-selected-text, label.dd-option-text{
     width: 250px;
     background: none;
 }
+
+#do_work .dd .ddChild li img{
+    max-width: 28px;
+}
+
+#do_work .product_box{
+    height: 140px;
+    padding:0px;
+    clear:both;
+}
+
+.layout_dropdown, .layout_dropdown .dd{
+    width:100px!important;
+}
+
+#do_work .boxes_content input.keywords{
+    margin-bottom: 0px;
+}
+
+#do_work .ddlabel{
+    font-size: 12px;
+}
+
+#do_work #styleguide{
+    min-height: 180px;
+}
+#do_work .span12{
+    width: 98.8%;
+    margin-left: 5px;
+}
+
+#do_work .product_title li span, #research_products li span{
+    width: 49.6%;
+}
