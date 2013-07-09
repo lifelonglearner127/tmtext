@@ -5,11 +5,12 @@
 
 from scrapy.item import Item, Field
 
-class ToysrusItem(Item):
+class SearsItem(Item):
     # define the fields for your item here like:
     # name = Field()
-    page = Field()
-    url = Field()
     text = Field()
-    #parent_text = Field()
-    #parent_url = Field()
+    url = Field()
+    parent_text = Field()
+    parent_url = Field()
+    page_text = Field()
+    page_url = Field()
