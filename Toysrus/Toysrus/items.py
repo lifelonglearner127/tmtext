@@ -8,6 +8,7 @@ from scrapy.item import Item, Field
 class ToysrusItem(Item):
     # define the fields for your item here like:
     # name = Field()
+    page = Field()
     url = Field()
     text = Field()
     #parent_text = Field()
