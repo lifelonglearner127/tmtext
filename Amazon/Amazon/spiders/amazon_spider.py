@@ -21,13 +21,16 @@ class AmazonSpider(BaseSpider):
     def parse(self, response):
         hxs = HtmlXPathSelector(response)
         links = hxs.select("//div[@id='siteDirectory']//table//a")
-        #links = hxs.select("//a")
         items = []
 
         for link in links:
             item = AmazonItem()
             item['text'] = link.select('text()').extract()
             item['url'] = link.select('@href').extract()
+
+            parent = link.select("parent::node()/parent::node()/preceding-sibling::node()")
+            item['parent_text'] = parent.select('text()').extract()
+
             items.append(item)
 
         return items
