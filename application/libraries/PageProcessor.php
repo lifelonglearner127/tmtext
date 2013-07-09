@@ -119,8 +119,22 @@ class PageProcessor {
 
 	public function process_walmart() {
 		foreach($this->nokogiri->get('.ql-details-short-desc') as $item) {
-			$description = $item;
+			$description[] = $item['#text'][0];
 		}
+
+		foreach($this->nokogiri->get('#prodInfoSpaceBottom div') as $item) {
+			if ($item['itemprop'] == 'description') {
+				foreach($item['div'] as $i) {
+					if (isset($i['p']) && isset($i['p'][0]) && isset($i['p'][0]['#text'])) {
+						foreach ($i['p'][0]['#text'] as $j) {
+							$description[] = $j;
+						}
+					}
+				}
+			}
+		}
+
+		$description = implode(' ', $description);
 
 		foreach($this->nokogiri->get('h1.productTitle') as $item) {
 			$title = $item;
@@ -142,7 +156,7 @@ class PageProcessor {
 
 		return array(
 			'Product Name' => $title['#text'][0],
-			'Description' => $description['#text'][0],
+			'Description' => $description,
 			'Price' => $price,
 			'Features' => $features
 		);

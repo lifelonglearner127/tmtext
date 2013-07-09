@@ -19,7 +19,7 @@ class Measure extends MY_Controller {
 
     public function index() {
         $this->data['customers_list'] = $this->customers_list_new();
-        $this->render(); 
+        $this->render();
     }
 
     public function gethomepageyeardata() {
@@ -28,7 +28,7 @@ class Measure extends MY_Controller {
         $data = array(
             'year' => $year,
             'week' => $week,
-            'customers_list' => $this->customers_list_new() 
+            'customers_list' => $this->customers_list_new()
         );
         $this->load->view('measure/gethomepageyeardata', $data);
     }
@@ -39,26 +39,26 @@ class Measure extends MY_Controller {
         $data = array(
             'year' => $year,
             'week' => $week,
-            'customers_list' => $this->customers_list_new() 
+            'customers_list' => $this->customers_list_new()
         );
         $this->load->view('measure/gethomepageweekdata', $data);
     }
-    
+
     public function measure_products()
     {
        $this->data['category_list'] = $this->category_full_list();
        $this->data['customers_list'] = $this->category_customers_list();
-       $this->render();     
+       $this->render();
     }
-    
+
     public function measure_departments()
     {
-       $this->render();     
+       $this->render();
     }
-    
+
     public function measure_categories()
     {
-       $this->render();     
+       $this->render();
     }
 
     public function measure_pricing()
@@ -180,6 +180,10 @@ class Measure extends MY_Controller {
             // get similar by parsed_attributes
             if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
             	$same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
+            }
+
+        	if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['UPC/EAN/ISBN'])) {
+            	$same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['UPC/EAN/ISBN']);
             }
 
             // get similar for first row
