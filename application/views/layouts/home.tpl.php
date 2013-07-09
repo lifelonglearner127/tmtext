@@ -89,7 +89,7 @@
     <div class="home-footer">
         <div class="container margin-top-50">
             <div class="row-fluid text-center">
-                Copyright &COPY; <?php echo date('Y'); ?>. <b>Content Solutions, Inc.</b> All Rights Reserved.
+                Copyright &COPY; <?php echo date('Y'); ?>. <b><?php echo isset($settings['company_name'])? $settings['company_name']:'' ?></b> All Rights Reserved.
             </div>
         </div> 
     </div>
