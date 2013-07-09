@@ -17,7 +17,7 @@
                     <li class="pull-left"><a href="#">HOME</a></li>
                     <li class="pull-left"><a href="#">PRODUCT</a></li>
                     <li class="pull-left"><a href="#">COMPANY</a></li>
-                    <li class="pull-right"><a href="#">SIGN IN</a></li>
+                    <li class="pull-right"><a href="<?php echo site_url('auth/login');?>">SIGN IN</a></li>
                 </ul>
             </div>
         </div>
