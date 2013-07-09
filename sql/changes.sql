@@ -1,6 +1,7 @@
-#07/09
+#07/09 Bojan
 UPDATE  `setting_values` SET  `value` =  'Content Solutions, Inc.' WHERE  `setting_values`.`id` =1;
 UPDATE  `setting_values` SET  `value` =  'Content Solutions, Inc.' WHERE  `setting_values`.`id` =2;
+UPDATE  `setting_values` SET  `value` =  'Content Solutions' WHERE  `setting_values`.`id` =1 LIMIT 1
 #07/08
 CREATE TABLE IF NOT EXISTS `sites` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
