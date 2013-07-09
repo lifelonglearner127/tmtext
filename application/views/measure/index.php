@@ -150,16 +150,19 @@
 	</div>
 </div>
 
-<div class="modal hide fade ci_hp_modals" id='customers_screens_crawl_modal'>
+<div class="modal hide fade ci_hp_modals crawl_launch_panel" id='customers_screens_crawl_modal'>
 	<div class="modal-header">
 		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 		<h3>Crawl Launch Control Panel</h3>
 	</div>
-	<div class="modal-body">
-		
+	<div class="modal-footer">
+		<div id="cl_cp_crawl_modal" class='cl_cp_crawl_modal'>
+
+		</div>
 	</div>
 	<div class="modal-footer">
 		<a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
+		<a href="javascript:void(0)" id="crawl_modal_sbm_btn" class="btn btn-success" onclick="startCrawl()">Start</a>
 	</div>
 </div>
 

@@ -2,7 +2,12 @@
 	font-size: 16px;
 	color: #666;
 }
-
+.ci_hp_modals .modal-body table th {
+	font-size: 12px;
+}
+.ci_hp_modals.crawl_launch_panel .modal-body {
+	overflow: hidden;
+}
 /* --- SOME BOOTSTRAP WEIRD OVERRIDING (START) --- */
 .btn .caret {
 	margin-top: 0px !important;

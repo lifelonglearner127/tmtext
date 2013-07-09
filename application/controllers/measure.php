@@ -118,6 +118,11 @@ class Measure extends MY_Controller {
         return $output;
     }
 
+    public function getcustomerslist_general() {
+        $output = $this->customers_list_new();
+        $this->output->set_content_type('application/json')->set_output(json_encode($output));
+    }
+
     private function category_customers_list() {
         $this->load->model('customers_model');
         $output = array();
