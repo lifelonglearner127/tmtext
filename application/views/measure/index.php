@@ -82,13 +82,14 @@
 					<?php } ?>
 				</div>
 			</div>
-			<a id='customers_screens_crawl' class='btn btn-warning'><i class='icon-file'></i>&nbsp;Crawl customers screenshots</a>
+			<a id='customers_screens_crawl' onclick="openCrawlLaunchPanelModal()" class='btn btn-warning'><i class='icon-file'></i>&nbsp;Crawl customers screenshots</a>
+			<a id='overview_screens_crawl' onclick="openOverviewScreensCrawlModal()" class='btn btn-success'><i class='icon-print'></i>&nbsp;Overview crawl results</a>
 		</div>
     </div>
 </div>
 
 <!-- MODALS (START) -->
-<div class="modal hide fade" id='configure_email_reports_success'>
+<div class="modal hide fade ci_hp_modals" id='configure_email_reports_success'>
 	<div class="modal-header">
 		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 		<h3>Reports Configuration Saved</h3>
@@ -101,7 +102,7 @@
 	</div>
 </div>
 
-<div class="modal hide fade" id='configure_email_reports'>
+<div class="modal hide fade ci_hp_modals" id='configure_email_reports'>
 	<div class="modal-header">
 		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 		<h3>Email Reports Configuration</h3>
@@ -135,6 +136,33 @@
 		<a href="javascript:void(0)" class="btn btn-success" onclick="submitEmailReportsConfig()">Save</a>
 	</div>
 </div>
+
+<div class="modal hide fade ci_hp_modals" id='overview_screens_crawl_modal'>
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+		<h3>Overview Crawl Results</h3>
+	</div>
+	<div class="modal-body">
+		
+	</div>
+	<div class="modal-footer">
+		<a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
+	</div>
+</div>
+
+<div class="modal hide fade ci_hp_modals" id='customers_screens_crawl_modal'>
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+		<h3>Crawl Launch Control Panel</h3>
+	</div>
+	<div class="modal-body">
+		
+	</div>
+	<div class="modal-footer">
+		<a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
+	</div>
+</div>
+
 <!-- MODALS (END) -->
 
 <script type="text/javascript">
@@ -146,8 +174,13 @@
 		});
 
 		$("#customers_screens_crawl").tooltip({
-			placement: 'right',
-			title: 'Test Customers Screens Crawl'
+			placement: 'bottom',
+			title: 'Open Crawl Launch Control Panel'
+		});
+
+		$("#overview_screens_crawl").tooltip({
+			placement: 'bottom',
+			title: 'Open Crawl Results Panel'
 		});
 	});
 </script>

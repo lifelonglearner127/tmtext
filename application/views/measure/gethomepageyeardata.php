@@ -72,7 +72,8 @@
 	</div>
 </div>
 
-<a id='customers_screens_crawl' class='btn btn-warning'><i class='icon-file'></i>&nbsp;Crawl customers screenshots</a>
+<a id='customers_screens_crawl' onclick="openCrawlLaunchPanelModal()" class='btn btn-warning'><i class='icon-file'></i>&nbsp;Crawl customers screenshots</a>
+<a id='overview_screens_crawl' onclick="openOverviewScreensCrawlModal()" class='btn btn-success'><i class='icon-print'></i>&nbsp;Overview crawl results</a>
 
 <script type="text/javascript">
 	$(document).ready(function() {
@@ -83,8 +84,13 @@
 		});
 
 		$("#customers_screens_crawl").tooltip({
-			placement: 'right',
-			title: 'Test Customers Screens Crawl'
+			placement: 'bottom',
+			title: 'Open Crawl Launch Control Panel'
+		});
+
+		$("#overview_screens_crawl").tooltip({
+			placement: 'bottom',
+			title: 'Open Crawl Results Panel'
 		});
 	});
 </script>

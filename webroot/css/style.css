@@ -1,3 +1,8 @@
+.ci_hp_modals .modal-header h3 {
+	font-size: 16px;
+	color: #666;
+}
+
 /* --- SOME BOOTSTRAP WEIRD OVERRIDING (START) --- */
 .btn .caret {
 	margin-top: 0px !important;

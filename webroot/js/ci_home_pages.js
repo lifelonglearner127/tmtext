@@ -1,3 +1,11 @@
+function openCrawlLaunchPanelModal() {
+	$("#customers_screens_crawl_modal").modal('show');
+}
+
+function openOverviewScreensCrawlModal() {
+	$("#overview_screens_crawl_modal").modal('show');
+}
+
 function submitEmailReportsConfig() {
 	var recs = $.trim($("#email_rec").val());
 	var rec_day = $("#week_day_rep > option:selected").val();
