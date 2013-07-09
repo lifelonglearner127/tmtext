@@ -8,12 +8,12 @@ var desc_input = '';
 var action = '';
 
 function getCustomerDropdown(){
-    var customers_list_ci = $.post(base_url + 'index.php/measure/getcustomerslist_new', { type: 'customer' }, function(c_data) {
+    var customers_list_ci = $.post(base_url + 'index.php/measure/getcustomerslist_new', {}, function(c_data) {
         var jsn = $('.customer_dropdown').msDropDown({byJson:{data:c_data, name:'customers_list'}}).data("dd");
     }, 'json');
 }
 function getWebsiteDropdown(){
-    var websites_list_ci = $.post(base_url + 'index.php/measure/getcustomerslist_new', { type: 'website' }, function(c_data) {
+    var websites_list_ci = $.post(base_url + 'index.php/measure/getsiteslist_new', {}, function(c_data) {
         var jsn = $('.website_dropdown').msDropDown({byJson:{data:c_data, name:'websites_list'}}).data("dd");
     }, 'json');
 }
@@ -206,7 +206,7 @@ jQuery(document).ready(function($) {
 
     function getCustomerDropdown(){
         setTimeout(function() {
-            var customers_list_ci = $.post(base_url + 'index.php/measure/getcustomerslist_new', { type: 'customer' }, function(c_data) {
+            var customers_list_ci = $.post(base_url + 'index.php/measure/getcustomerslist_new', { }, function(c_data) {
                 var jsn = $('.customer_dropdown').msDropDown({byJson:{data:c_data, name:'customers_list'}}).data("dd");
                 if(jsn != undefined){
                     jsn.on("change", function(res) {
@@ -232,7 +232,7 @@ jQuery(document).ready(function($) {
 
     function getWebsiteDropdown(){
         setTimeout(function() {
-            var websites_list_ci = $.post(base_url + 'index.php/measure/getcustomerslist_new', { type: 'website' }, function(c_data) {
+            var websites_list_ci = $.post(base_url + 'index.php/measure/getsiteslist_new', { }, function(c_data) {
                 var jsn = $('.website_dropdown').msDropDown({byJson:{data:c_data, name:'websites_list'}}).data("dd");
             }, 'json');
         }, 100);

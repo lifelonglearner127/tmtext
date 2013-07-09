@@ -1,3 +1,24 @@
+#07/08
+CREATE TABLE IF NOT EXISTS `sites` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(256) NOT NULL,
+  `url` varchar(255) NOT NULL,
+  `image_url` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=20 ;
+
+INSERT INTO `sites` (`id`, `name`, `url`, `image_url`) VALUES
+(1, 'Walmart.com', 'http://walmart.com', 'walmart-logo.png'),
+(2, 'Sears.com', 'http://sears.com', 'sears-logo.png'),
+(3, 'BJs.com', 'http://bjs.com', 'bjs-logo.gif'),
+(4, 'Staples.com', 'http://staples.com', 'staples-logo.png'),
+(5, 'Overstock.com', 'http://overstock.com', 'overstock-logo.png'),
+(6, 'TigerDirect.com', 'http://tigerdirect.com', 'tigerdirect-logo.jpg'),
+(7, 'Amazon.com', 'http://amazon.com', 'amazon-logo.jpg'),
+(8, 'toysrus.com', 'http://toysrus.com', 'toysrus-logo.gif'),
+(9, 'bloomingdales.com', 'http://bloomingdales.com', 'bloomingdales-logo.gif'),
+(10, 'bestbuy.com', 'http://bestbuy.com', 'bestbuy-logo.jpg');
+
 #07/07 Tatiana
 CREATE TABLE IF NOT EXISTS `items` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,

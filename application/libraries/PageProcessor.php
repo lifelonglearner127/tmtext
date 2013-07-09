@@ -64,7 +64,7 @@ class PageProcessor {
 	public function getDomainPart($url) {
 		$part = explode('/', str_ireplace(array('http://','https://'),'', $url));
 		if (!empty($part[0]) && strpos($part[0], '.') !== false) {
-			$part = explode('.', str_ireplace(array('www.'),'', $part[0]));
+			$part = explode('.', str_ireplace(array('www.','www1.'),'', $part[0]));
 		} else {
 			return false;
 		}
@@ -119,8 +119,22 @@ class PageProcessor {
 
 	public function process_walmart() {
 		foreach($this->nokogiri->get('.ql-details-short-desc') as $item) {
-			$description = $item;
+			$description[] = $item['#text'][0];
 		}
+
+		foreach($this->nokogiri->get('#prodInfoSpaceBottom div') as $item) {
+			if ($item['itemprop'] == 'description') {
+				foreach($item['div'] as $i) {
+					if (isset($i['p']) && isset($i['p'][0]) && isset($i['p'][0]['#text'])) {
+						foreach ($i['p'][0]['#text'] as $j) {
+							$description[] = $j;
+						}
+					}
+				}
+			}
+		}
+
+		$description = implode(' ', $description);
 
 		foreach($this->nokogiri->get('h1.productTitle') as $item) {
 			$title = $item;
@@ -142,7 +156,7 @@ class PageProcessor {
 
 		return array(
 			'Product Name' => $title['#text'][0],
-			'Description' => $description['#text'][0],
+			'Description' => $description,
 			'Price' => $price,
 			'Features' => $features
 		);
@@ -167,6 +181,12 @@ class PageProcessor {
 				if (isset($s[0]) && !empty($s[0]) && $s[0]!=$item['#text'][0]) {
 					$result['manufacturer'] = $s[0];
 				}
+			}
+		}
+
+		foreach($this->nokogiri->get('meta') as $item){
+			if($item['itemprop'] == 'productID') {
+				$result['UPC/EAN/ISBN'] =  trim($item['content']);
 			}
 		}
 
@@ -618,9 +638,6 @@ class PageProcessor {
 		return array(
 			'Product Name' => $title,
 			'Description' => $description,
-//			'Long_Description' => $description_long,
-//			'Features' => $features,
-//			'Price' => $price
 		);
 	}
 
@@ -645,6 +662,85 @@ class PageProcessor {
 		return $result;
 	}
 
+	public function process_toysrus(){
+		foreach($this->nokogiri->get('#rightSide h1') as $item) {
+			$title = $item['#text'][0];
+		}
+
+		foreach($this->nokogiri->get('#infoPanel dl dd:first-child p') as $item) {
+			foreach($item['#text'] as $i) {
+				$line = trim($i);
+				if (!empty($line)) {
+					$description[] = $line;
+				}
+			}
+		}
+
+		$description = implode(' ',$description);
+
+
+		foreach($this->nokogiri->get('#buyWrapper #price .retail span') as $item) {
+			if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $item['#text'][0], $match)) {
+				$price = $match[1];
+			}
+		}
+
+		return array(
+			'Product Name' => $title,
+			'Description' => $description,
+			'Price' => $price
+		);
+	}
+
+	public function attributes_toysrus() {
+		$result = array();
+
+		foreach($this->nokogiri->get('#rightSide h3 label') as $item) {
+			$result['manufacturer'] =  trim($item['#text'][0]);
+		}
+
+		foreach($this->nokogiri->get('#infoPanel dl dd#additionalInfo p.upc span') as $item) {
+			$result['UPC/EAN/ISBN'] =  trim($item['#text'][0]);
+		}
+
+		return $result;
+	}
+
+	public function process_bloomingdales(){
+		foreach($this->nokogiri->get('#productDescription h1#productTitle') as $item) {
+			$title = $item['#text'][0];
+		}
+
+		foreach($this->nokogiri->get('#pdp_tabs .pdp_longDescription') as $item) {
+			foreach($item['#text'] as $i) {
+				$line = trim($i);
+				if (!empty($line)) {
+					$description[] = $line;
+				}
+			}
+		}
+
+		$description = implode(' ',$description);
+
+		foreach($this->nokogiri->get('#pdp_tabs #pdp_tabs_body_left ul li') as $item) {
+			$features[] = trim($item['#text'][0]);
+		}
+
+		$features = implode("\n",$features);
+
+		foreach($this->nokogiri->get('#productDescription .priceSale .priceBig') as $item) {
+			if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $item['#text'][0], $match)) {
+				$price = $match[1];
+			}
+		}
+
+		return array(
+			'Product Name' => $title,
+			'Description' => $description,
+			'Price' => $price,
+			'Features' => $features
+		);
+	}
 }
 
 ?>

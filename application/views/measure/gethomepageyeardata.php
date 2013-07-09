@@ -1,5 +1,5 @@
 <div class='span12 head_section'>
-	<p class='head_line1'>Home page reports are generated weekly. <a onclick="configureEmailReportsModal()" href="javascript:void(0)">Configure email reports.</a> <a id='customers_screens_crawl' class='btn btn-success'><i class='icon-file'></i>&nbsp;Crawl customers screenshots</a></p>
+	<p class='head_line1'>Home page reports are generated weekly. <a onclick="configureEmailReportsModal()" href="javascript:void(0)">Configure email reports.</a></p>
 	<div class='head_line_2'>
 		<div class="span2">View Reports for:</div>
 		<div class="span2 w_100 ml_disable">
@@ -47,8 +47,8 @@
 				<div class='span4 item'>
 					<?php if(count($customers_list) > 0) { ?>
 					    <div id="hp_boot_drop_<?php echo $v; ?>" class="btn-group <?php echo $dropup; ?> hp_boot_drop">
-						    <button class="btn btn-primary btn_caret_sign">All customers</button>
-						    <button class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+						    <button class="btn btn-danger btn_caret_sign">All customers</button>
+						    <button class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
 						    	<span class="caret"></span>
 						    </button>
 						    <ul class="dropdown-menu">
@@ -71,6 +71,8 @@
 		<?php } ?>
 	</div>
 </div>
+
+<a id='customers_screens_crawl' class='btn btn-warning'><i class='icon-file'></i>&nbsp;Crawl customers screenshots</a>
 
 <script type="text/javascript">
 	$(document).ready(function() {

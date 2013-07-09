@@ -17,8 +17,8 @@
 			<div class='span4 item'>
 				<?php if(count($customers_list) > 0) { ?>
 				    <div id="hp_boot_drop_<?php echo $v; ?>" class="btn-group <?php echo $dropup; ?> hp_boot_drop">
-					    <button class="btn btn-primary btn_caret_sign">All customers</button>
-					    <button class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+					    <button class="btn btn-danger btn_caret_sign">All customers</button>
+					    <button class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
 					    	<span class="caret"></span>
 					    </button>
 					    <ul class="dropdown-menu">

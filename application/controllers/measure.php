@@ -19,7 +19,7 @@ class Measure extends MY_Controller {
 
     public function index() {
         $this->data['customers_list'] = $this->customers_list_new();
-        $this->render(); 
+        $this->render();
     }
 
     public function gethomepageyeardata() {
@@ -28,7 +28,7 @@ class Measure extends MY_Controller {
         $data = array(
             'year' => $year,
             'week' => $week,
-            'customers_list' => $this->customers_list_new() 
+            'customers_list' => $this->customers_list_new()
         );
         $this->load->view('measure/gethomepageyeardata', $data);
     }
@@ -39,26 +39,26 @@ class Measure extends MY_Controller {
         $data = array(
             'year' => $year,
             'week' => $week,
-            'customers_list' => $this->customers_list_new() 
+            'customers_list' => $this->customers_list_new()
         );
         $this->load->view('measure/gethomepageweekdata', $data);
     }
-    
+
     public function measure_products()
     {
        $this->data['category_list'] = $this->category_full_list();
        $this->data['customers_list'] = $this->category_customers_list();
-       $this->render();     
+       $this->render();
     }
-    
+
     public function measure_departments()
     {
-       $this->render();     
+       $this->render();
     }
-    
+
     public function measure_categories()
     {
-       $this->render();     
+       $this->render();
     }
 
     public function measure_pricing()
@@ -182,6 +182,10 @@ class Measure extends MY_Controller {
             	$same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
             }
 
+        	if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['UPC/EAN/ISBN'])) {
+            	$same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['UPC/EAN/ISBN']);
+            }
+
             // get similar for first row
 			$this->load->model('similar_imported_data_model');
 
@@ -255,21 +259,13 @@ class Measure extends MY_Controller {
 
     public function getcustomerslist_new() {
         $this->load->model('customers_model');
-        $type = $this->input->post('type');
         $customers_init_list = $this->customers_model->getAll();
         if(count($customers_init_list) > 0) {
-            if($type == 'website'){
-                $output[] = array('text'=>'All sites',
-                    'value'=>'All sites',
-                    'image'=> ''
+            if(count($customers_init_list) != 1){
+                $output[] = array('text'=>'All customers',
+                   'value'=>'All customers',
+                   'image'=> ''
                 );
-            } else {
-                if(count($customers_init_list) != 1){
-                    $output[] = array('text'=>'All customers',
-                        'value'=>'All customers',
-                        'image'=> ''
-                    );
-                }
             }
             foreach ($customers_init_list as $key => $value) {
                 $output[] = array('text'=>'',
@@ -280,6 +276,25 @@ class Measure extends MY_Controller {
         }
         $this->output->set_content_type('application/json')->set_output(json_encode($output));
     }
+
+    public function getsiteslist_new() {
+        $this->load->model('sites_model');
+        $customers_init_list = $this->sites_model->getAll();
+        if(count($customers_init_list) > 0) {
+            $output[] = array('text'=>'All sites',
+                'value'=>'All sites',
+                'image'=> ''
+            );
+            foreach ($customers_init_list as $key => $value) {
+                $output[] = array('text'=>'',
+                    'value'=>strtolower($value->name),
+                    'image'=> base_url().'img/'.$value->image_url
+                );
+            }
+        }
+        $this->output->set_content_type('application/json')->set_output(json_encode($output));
+    }
+
 
     public function getcustomerslist() {
         $this->load->model('customers_model');
