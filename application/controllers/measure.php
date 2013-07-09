@@ -22,6 +22,11 @@ class Measure extends MY_Controller {
         $this->render();
     }
 
+    public function testscreenshot() {
+        $grab = $this->helpers->test_screenshot();
+        $this->output->set_content_type('application/json')->set_output(json_encode($grab));
+    }
+
     public function gethomepageyeardata() {
         $year = $this->input->post('year');
         $week = $this->input->post('week');

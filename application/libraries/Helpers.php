@@ -7,6 +7,15 @@ class Helpers {
 
   }
 
+  public function test_screenshot() {
+        include("GrabzItClient.class.php");
+        $grabzIt = new GrabzItClient("M2NhMmU0MzkxZjJmNGVhNGE5N2M5YjZlZjI4M2QwODE=", "PzVPVDoIGj8/Pz8/Pz9lTD8tEj9sJhtHIj8CUz8/BWE=");
+        $grabzIt->SetImageOptions("http://www.google.com");
+        $filepath = $_SERVER["DOCUMENT_ROOT"]."/webroot/img/test.jpg";
+        $grabzIt->SaveTo($filepath);
+        return $filepath;
+  }
+
   public function measure_analyzer_keywords($primary_ph, $secondary_ph, $tertiary_ph, $short_desc, $long_desc) {
     // --- default res array and values (start)
     $res = array(

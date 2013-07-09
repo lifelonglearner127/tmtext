@@ -1,3 +1,9 @@
+function test_screenshot() {
+	var customers_list = $.post(base_url + 'index.php/measure/testscreenshot', {}, function(data) {
+		console.log(data);
+	});
+}
+
 function openCrawlLaunchPanelModal() {
 	$("#customers_screens_crawl_modal").modal('show');
 }
