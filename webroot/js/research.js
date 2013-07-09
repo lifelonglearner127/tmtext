@@ -603,7 +603,7 @@ jQuery(document).ready(function($) {
                     $(this).remove();
                 }
             });
-            $('.info').append('<p class="alert-success">The batch was successfully deleted</p>');
+            $('.info').append('<p class="alert-success">The batch was successfully deleted</p>').fadeOut(10000);
         }, 'json');
 
         return false;
