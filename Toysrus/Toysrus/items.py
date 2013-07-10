@@ -11,5 +11,5 @@ class ToysrusItem(Item):
     page = Field()
     url = Field()
     text = Field()
-    #parent_text = Field()
-    #parent_url = Field()
+    parent_text = Field()
+    parent_url = Field()
