@@ -1,3 +1,7 @@
+/* --- shrinktheweb.com API keys (start) --- */
+var stwaccesskeyid = "28c77fca6deb748";
+/* --- shrinktheweb.com API keys (end) --- */
+
 function test_screenshot() {
 	var customers_list = $.post(base_url + 'index.php/measure/testscreenshot', {}, function(data) {
 		console.log(data);
@@ -36,7 +40,10 @@ function openCrawlLaunchPanelModal() {
 			for (var i = 0; i < c_data.length; i++) {
 				tbl += "<tr data-id='" + c_data[i]['id']  + "'>";
 					tbl += "<td>" + c_data[i]['name'] + "</td>";
-					tbl += "<td><a onclick=\"removeCrawlSiteFromList('" + c_data[i]['id'] + "');\" class='btn btn-danger'><i class='icon-remove-sign'></i></a></td>";
+					tbl += "<td>";
+					tbl += "<a onclick=\"removeCrawlSiteFromList('" + c_data[i]['id'] + "');\" class='btn btn-danger'><i class='icon-remove-sign'></i>&nbspRemove</a>";
+					tbl += "<a style='margin-left: 10px;' onclick=\"previewScreenshotModal('" + c_data[i]['name'] + "');\" class='btn btn-primary'><i class='icon-picture'></i>&nbsp;Preview Screen</a>"
+					tbl += "</td>";
 				tbl += "</tr>";
 			};
 			tbl += "</tbody>";
@@ -46,6 +53,12 @@ function openCrawlLaunchPanelModal() {
 		$("#crawl_modal_sbm_btn").removeAttr("disabled");
 		$("#crawl_modal_sbm_btn").attr("onclick", "startCrawl()");
     }, 'json');
+}
+
+function previewScreenshotModal(url) {
+	var link_img = "http://images.shrinktheweb.com/xino.php?stwembed=1&stwaccesskeyid=" + stwaccesskeyid + "&stwsize=lg&stwurl=http://www." + url;
+	$("#preview_screenshot_modal").modal('show');
+	$("#preview_screenshot_modal #sc_preview > img").attr('src', link_img);
 }
 
 function openOverviewScreensCrawlModal() {

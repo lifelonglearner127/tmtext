@@ -84,7 +84,7 @@
 			</div>
 			<a id='customers_screens_crawl' onclick="openCrawlLaunchPanelModal()" class='btn btn-warning'><i class='icon-file'></i>&nbsp;Crawl sites screenshots</a>
 			<a id='overview_screens_crawl' onclick="openOverviewScreensCrawlModal()" class='btn btn-success'><i class='icon-print'></i>&nbsp;Overview crawl results</a>
-			<a href="javascript:void(0)" class="btn btn-primary" onclick="test_screenshot()">Test Screenshot</a>
+			<!-- <a href="javascript:void(0)" class="btn btn-primary" onclick="test_screenshot()">Test Screenshot</a> -->
 		</div>
     </div>
 </div>
@@ -156,7 +156,7 @@
 		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 		<h3>Crawl Launch Control Panel</h3>
 	</div>
-	<div class="modal-footer">
+	<div class="modal-body">
 		<div id="cl_cp_crawl_modal" class='cl_cp_crawl_modal'>
 
 		</div>
@@ -164,6 +164,19 @@
 	<div class="modal-footer">
 		<a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
 		<a href="javascript:void(0)" id="crawl_modal_sbm_btn" class="btn btn-success" onclick="startCrawl()">Start</a>
+	</div>
+</div>
+
+<div class="modal hide fade ci_hp_modals" id='preview_screenshot_modal'>
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+		<h3>Screenshot Preview</h3>
+	</div>
+	<div class="modal-body">
+		<div id="sc_preview"><img src=""></div>
+	</div>
+	<div class="modal-footer">
+		<a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
 	</div>
 </div>
 
