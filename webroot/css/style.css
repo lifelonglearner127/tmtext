@@ -51,7 +51,8 @@
 .art_hp_item .art_img {
 	float: left;
 	width: 100px;
-	height: 100px;
+	height: auto;
+	min-height: 75px;
 	background: #333;
 }
 .art_hp_item .art_oview {
