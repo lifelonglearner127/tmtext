@@ -1525,6 +1525,46 @@ label.dd-selected-text, label.dd-option-text{
     padding: 10px;
 }
 
-.rectangle #long_description{
+#sortable1 .rectangle #long_description{
     margin-left: 103px!important;
+}
+
+.rectangle_layout #page_elements input {
+    width: 72%;
+}
+
+.rectangle_layout #page_elements button {
+    margin-right:20px;
+    margin-top: 0px;
+}
+
+.rectangle_layout #page_elements label{
+    float: left;
+    width: 115px;
+}
+.rectangle_layout .boxes_content textarea {
+    width: 72%!important;
+}
+
+.rectangle_layout h3 p{
+    width: 210px;
+    float: right;
+    font-weight: normal;
+}
+
+.rectangle_layout #rectangle_desc .boxes_content{
+    width:95%;
+}
+
+#rectangle_desc .rectangle_short_desc label, .rectangle_short_desc button{
+    float:right;
+}
+
+#rectangle_desc textarea{
+    width: 100%!important;
+}
+
+#rectangle_desc #long_description{
+    margin-left: 0px;
+    width: 98%;
 }
