@@ -8,7 +8,7 @@
     </ul>
     <div class="tab-content">
         <div class="tabbable">
-            <div class="tab-content research_batches">
+            <div class="tab-content block_data_table">
                 <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/smoothness/jquery-ui-1.8.2.custom.css" />
                 <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/styles.css" />
                 <script>
@@ -28,6 +28,7 @@
                                     <thead>
                                     <tr>
                                         <th><div class="draggable">Date</div></th>
+                                        <th><div class="draggable">Model</div></th>
                                         <th><div class="draggable">Product</div></th>
                                         <th><div class="draggable">Price</div></th>
                                     </tr>
@@ -51,10 +52,11 @@
                         <script type="text/javascript" src="<?php echo base_url();?>js/jquery.json-2.4.min.js"></script>
 
                         <script type="text/template" id="readTemplate">
-                            <tr id="${id}">
-                                <td class="column_editor">${created}</td>
-                                <td class="column_editor">${product_name}</td>
-                                <td class="column_product_name">${price}</td>
+                            <tr>
+                                <td class="column_created"></td>
+                                <td class="column_model"></td>
+                                <td class="column_product_name"></td>
+                                <td class="column_price"></td>
                             </tr>
                         </script>
 

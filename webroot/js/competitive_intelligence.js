@@ -13,7 +13,9 @@ function readGridData() {
     $.ajax({
         url: readUrl,
         dataType: 'json',
-        data:{ 'search_text': $('input[name="research_batches_text"]').val() },
+        data:{
+            'search_text': $('input[name="research_batches_text"]').val()
+        },
         success: function( response ) {
             //clear old rows
             $( '#records > tbody' ).html( '' );
@@ -22,18 +24,26 @@ function readGridData() {
             $( '#readTemplate' ).render( response ).appendTo( "#records > tbody" );
 
             //apply dataTable to #records table and save its object in dataTable variable
-            if( typeof dataTable == 'undefined' ){
-                dataTable = $( '#records' ).dataTable({"bJQueryUI": true, "bDestroy": true,
-                    "oLanguage": {
-                        "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
-                        "sInfoEmpty": "Showing 0 to 0 of 0 records",
-                        "sInfoFiltered": ""
-                    },
-                    "aoColumns": [
-                        null, null, null
-                    ]
-                });
-            }
+            dataTable = $( '#records' ).dataTable({
+                "bJQueryUI": true,
+                "bDestroy": true,
+                "sPaginationType": "full_numbers",
+                "bProcessing": true,
+                "bServerSide": true,
+                "sAjaxSource": readUrl,
+                "oLanguage": {
+                    "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
+                    "sInfoEmpty": "Showing 0 to 0 of 0 records",
+                    "sInfoFiltered": ""
+                },
+                "aoColumns": [
+                    {"sName" : "created"},
+                    {"sName" : "model"},
+                    {"sName" : "product_name"},
+                    {"sName" : "price"}
+                ]
+
+            });
             dataTable.fnSort([[0, 'desc']]);
 
             //hide ajax loader animation here...
