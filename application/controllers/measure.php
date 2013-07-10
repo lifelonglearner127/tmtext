@@ -68,29 +68,36 @@ class Measure extends MY_Controller {
 
     public function get_product_price() {
         $this->load->model('crawler_list_prices_model');
-        $price_list = $this->crawler_list_prices_model->getProductsWithPrice();
 
-        // format date & price
-        foreach($price_list as $price) {
-            /*
-            $date = explode(" ", $price->created);
-            if(!empty($date[0])) {
-                $date = $date[0];
-                $date_part = explode("-", $date);
-                $price->created = $date_part[2] . '/' . $date_part[1] . '/' . $date_part[0];
-            } else {
-                $price->created = '-';
-            }
-            */
-            if(empty($price->price)) {
-                $price->price = '$0';
-            } else {
-                $price->price = '$' . $price->price;
+        $price_list = $this->crawler_list_prices_model->get_products_with_price();
+
+        if(!empty($price_list['total_rows'])) {
+            $total_rows = $price_list['total_rows'];
+        } else {
+            $total_rows = 0;
+        }
+
+        $output = array(
+            "sEcho"                     => intval($_GET['sEcho']),
+            "iTotalRecords"             => $total_rows,
+            "iTotalDisplayRecords"      => $total_rows,
+            "iDisplayLength"            => $price_list['display_length'],
+            "aaData"                    => array()
+        );
+
+        if(!empty($price_list['result'])) {
+            foreach($price_list['result'] as $price) {
+                $output['aaData'][] = array(
+                    $price->created,
+                    $price->model,
+                    $price->product_name,
+                    sprintf("%01.2f", $price->price),
+                );
             }
         }
 
         $this->output->set_content_type('application/json')
-            ->set_output(json_encode($price_list));
+            ->set_output(json_encode($output));
     }
 
     private function category_full_list() {

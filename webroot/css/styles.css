@@ -164,3 +164,9 @@ input[type=text] {
     text-decoration: none;
     transition: background-position 0.1s linear 0s;
 }
+
+.block_data_table .ui-buttonset .ui-button {
+    margin-left: 0;
+    margin-right: 0;
+    padding: 0 4px;
+}

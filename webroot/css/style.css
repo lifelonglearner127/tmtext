@@ -1326,6 +1326,29 @@ label.dd-selected-text, label.dd-option-text{
     border-right: 1px solid #ccc;
 }
 
+/* Styles for dataTable */
+.block_data_table input{
+    width: 120px;
+}
+
+.block_data_table table td{
+    border:1px solid #ccc;
+    padding: 10px;
+    border-right:none;
+}
+
+.block_data_table table thead td{
+    font-size: 14px;
+}
+
+.block_data_table table tbody td{
+    font-size: 10px;
+}
+.block_data_table table td:last-child{
+    border-right: 1px solid #ccc;
+}
+
+
 .system_drop{
     width:120px;
 }
