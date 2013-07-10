@@ -193,14 +193,15 @@ class Research extends MY_Controller {
     {
         $this->load->model('research_data_model');
         if( !empty( $_POST ) ) {
+            
             $id = $this->input->post('id');
             $url = $this->input->post('url');
             $product_name = $this->input->post('product_name');
             $short_description = $this->input->post('short_description');
             $long_description = $this->input->post('long_description');
             // count words
-            $short_description_wc = intval(preg_match_all("/\b/", $short_description)) / 2;
-            $long_description_wc = intval(preg_match_all("/\b/", $long_description)) / 2;
+            $short_description_wc = $this->input->post('short_description_wc');
+            $long_description_wc = $this->input->post('long_description_wc');
             $this->research_data_model->updateItem($id, $product_name, $url, $short_description, $long_description, $short_description_wc, $long_description_wc);
             echo 'Record updated successfully!';
         }
