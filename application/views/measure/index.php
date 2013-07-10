@@ -163,7 +163,7 @@
 	</div>
 	<div class="modal-footer">
 		<a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
-		<a href="javascript:void(0)" id="crawl_modal_sbm_btn" class="btn btn-success" onclick="startCrawl()">Start</a>
+		<a href="javascript:void(0)" id="crawl_modal_sbm_btn" class="btn btn-success" onclick="startCrawl()">Start all crawl</a>
 	</div>
 </div>
 
@@ -177,6 +177,8 @@
 	</div>
 	<div class="modal-footer">
 		<a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
+		<a href="javascript:void(0)" onclick="openCrawlLaunchPanelModal(true)" class="btn btn-success">Back to list</a>
+		<a href="javascript:void(0)" class="btn btn-primary">Crawl it</a>
 	</div>
 </div>
 

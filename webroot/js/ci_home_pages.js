@@ -25,7 +25,10 @@ function removeCrawlSiteFromList(id) {
 	}
 }
 
-function openCrawlLaunchPanelModal() {
+function openCrawlLaunchPanelModal(close_preview) {
+	if(close_preview) {
+		$("#preview_screenshot_modal").modal('hide');
+	}
 	$("#customers_screens_crawl_modal").modal('show');
 	var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist_general', {}, function(c_data) {
 		var tbl = "";
@@ -56,6 +59,7 @@ function openCrawlLaunchPanelModal() {
 }
 
 function previewScreenshotModal(url) {
+	$("#customers_screens_crawl_modal").modal('hide');
 	var link_img = "http://images.shrinktheweb.com/xino.php?stwembed=1&stwaccesskeyid=" + stwaccesskeyid + "&stwsize=lg&stwurl=http://www." + url;
 	$("#preview_screenshot_modal").modal('show');
 	$("#preview_screenshot_modal #sc_preview > img").attr('src', link_img);
