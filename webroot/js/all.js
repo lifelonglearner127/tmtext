@@ -359,7 +359,9 @@ function readResearchData() {
     $.ajax({
         url: readUrl,
         dataType: 'json',
-        data:{ 'search_text': $('input[name="research_batches_text"]').val() },
+        data:{ 'search_text': $('input[name="research_batches_text"]').val(),
+            'batch_name': $('select[name="research_batches"]').find('option:selected').text()
+        },
         success: function( response ) {
 
             for( var i in response ) {
