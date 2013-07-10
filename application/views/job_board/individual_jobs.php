@@ -1,3 +1,4 @@
+<script type='text/javascript' src="<?php echo base_url();?>js/jquery.dd.js"></script>
 <script type="text/javascript">
     var last_edition = '';
 
@@ -95,9 +96,26 @@
          }, 'json');*/
 
         setMovement();
-
-
-
+    });
+    jQuery(document).ready(function($) {
+        var jsonData = [
+            {image: base_url+'img/layout-icon1.png', value:'side_by_side', text: ''},
+            {image: base_url+'img/layout-icon2.png', value:'rectangle', text: ''},
+            {value:'custom', text: 'Custom'},
+        ];
+        $('.rectangle_layout').css({'display':'none'});
+        $('.side_by_side').css({'display':'block'});
+        var layout = $('.layout_dropdown').msDropDown({byJson:{data:jsonData, name:'layout_list'}}).data("dd");
+        layout.on("change", function(res) {
+            console.log(res.target.value );
+            if(res.target.value == 'side_by_side'){
+                $('.rectangle_layout').css({'display':'none'});
+                $('.side_by_side').css({'display':'block'});
+            } else if(res.target.value == 'rectangle'){
+                $('.rectangle_layout').css({'display':'block'});
+                $('.side_by_side').css({'display':'none'});
+            }
+        });
     });
 </script>
 <div class="tabbable">
@@ -108,16 +126,25 @@
 </ul>
 <div class="tab-content">
 <div class="research">
-    <div id="research_tab1" class="tab-pane active">
+    <div id="do_work" class="tab-pane active">
 
         <div class="row-fluid" id="main">
             <div class="span12 boxes">
-                <h3><a href="#" onclick="return false;" class="hideShow"><img style="width:12px;margin-right: 10px" src="<?php echo base_url();?>img/arrow-down.png" /></a>Individual Jobs<a href="#" class="ml_10 research_arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
-                <div class="boxes_content"  style="height: 200px;padding:0px;">
+                <h3><a href="#" onclick="return false;" class="hideShow">
+                        <img style="width:12px;margin-right: 10px" src="<?php echo base_url();?>img/arrow-down.png" />
+                    </a>
+                    Individual Jobs
+                    <a href="#" class="ml_10 research_arrow">
+                        <img src="<?php echo base_url(); ?>/webroot/img/arrow.png">
+                    </a>
+                    <div class="layout_dropdown ml_10 pull-right"></div>
+                    <span class="pull-right">Layout:</span>
+                </h3>
+                <div class="boxes_content product_box">
                     <ul class="product_title">
                         <li class="main"><span><b>Product Name</b></span><span><b>URL</b></span></li>
                     </ul>
-                    <ul id="research_products" style="height: 170px; overflow: auto;">
+                    <ul id="research_products" style="height: 130px; overflow: auto;">
                         <li><span>&nbsp;</span><span>&nbsp;</span></li>
                         <li><span>&nbsp;</span><span>&nbsp;</span></li>
                         <li><span>&nbsp;</span><span>&nbsp;</span></li>
@@ -152,7 +179,7 @@
                         <div class="boxes_content">
                         </div>
                     </li>
-                    <li class="boxes mt_10" id="page_elements">
+                    <li class="boxes mt_10 side_by_side" id="page_elements" >
                         <h3><a href="#" onclick="return false;" class="hideShow"><img style="width:12px;margin-right: 10px" src="<?php echo base_url();?>img/arrow-down.png" /></a>Page Elements<a href="#" class="ml_10 research_arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
                         <div class="boxes_content">
                             <p><button id="generate_product" type="button" class="btn pull-right">Generate</button>
@@ -188,7 +215,7 @@
                             <p><span>Tertiary:</span><input class="keywords" type="text" name="tertiary" value="" /><a href="#" class="clear_all">x</a></p>
                         </div>
                     </li>
-                    <li class="boxes mt_10">
+                    <li class="boxes mt_10 side_by_side">
                         <h3><a href="#" onclick="return false;" class="hideShow"><img style="width:12px;margin-right: 10px" src="<?php echo base_url();?>img/arrow-down.png" /></a>Descriptions<a href="#" class="ml_10 research_arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
                         <div class="boxes_content">
                             <div class="row-fluid"><label>Short description:</label>
@@ -212,6 +239,65 @@
                                 <p>Total words: <span id="research_total">0</span> words</p>
                             </div>
                             <div class="row-fluid mb_20">
+                                <button id="validate" type="button" class="btn ml_10">Validate</button>
+                                <button id="save_in_batch" type="button" class="btn ml_10 btn-success">Save</button>
+                                <button id="save_next" type="button" class="btn ml_10 btn-success">Save & Next</button>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+            <div class="span12 boxes rectangle_layout">
+                <ul class="connectedSortable" id="sortable3">
+                    <li class="boxes mt_10 rectangle" id="page_elements">
+                        <h3><a href="#" onclick="return false;" class="hideShow"><img style="width:12px;margin-right: 10px" src="<?php echo base_url();?>img/arrow-down.png" /></a>Page Elements<a href="#" class="ml_10 research_arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
+                        <div class="boxes_content">
+                            <p><button id="generate_product" type="button" class="btn pull-right">Generate</button>
+                                <label>Product name:</label><input type="text" class="span11 ml_0" name="product_name"/>
+                                <input type="hidden" name="url"/>
+                                <input type="hidden" name="revision"/>
+                            </p>
+                            <p><label>Meta title:</label><input type="text"  class="span11 ml_0" name="meta_title" /></p>
+                            <p><label>Meta description:</label><textarea name="meta_description" style="height:100px;" ></textarea></p>
+                            <p><button id="generate_keywords" type="button" class="btn pull-right">Generate</button>
+                                <label>Meta keywords:</label><input type="text" class="span11 ml_0" name="meta_keywords" /></p>
+                        </div>
+                    </li>
+                    <li class="boxes mt_10 rectangle" id="rectangle_desc">
+                        <h3><a href="#" onclick="return false;" class="hideShow"><img style="width:12px;margin-right: 10px" src="<?php echo base_url();?>img/arrow-down.png" /></a>
+                            Descriptions
+                            <p>Total words: <span id="research_total">0</span> words<a href="#" class="ml_10 research_arrow pull-right"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></p>
+
+                        </h3>
+                        <div class="boxes_content">
+                            <div class="span2 rectangle_short_desc"><label>Short description:</label><br>
+                                <label style="font-size: 12px"><span id="research_wc">0</span> words<input type="hidden" name="short_description_wc" /></label>
+                                <button id="research_generate" type="button" class="btn" >Generate</button>
+                            </div>
+                            <div class="span10">
+                                <textarea type="text" name="short_description" class="span10" style="height:100px;"></textarea>
+                                <div class="pagination">
+                                    <ul id="pagination">
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="span2 rectangle_short_desc ml_0 mt_10">
+                                <label>Long description:</label>
+                                <label style="font-size: 12px"><span id="research_wc1">0</span> words<input type="hidden" name="long_description_wc" /></label>
+                            </div>
+                            <div class="span10 mt_10">
+                                <div class="search_area uneditable-input ml_10"  id="long_description" contenteditable="false" style="cursor: text; overflow: auto;"></div>
+                            </div>
+                            <div class="clear"></div>
+                            <div class="row-fluid" id="research_density">
+                                <label>Density:</label><label>Primary:</label><input type="text" name="research_primary" class="span2" value="0" readonly="readonly" /><span class="percent">%</span>
+                                <label>Secondary:</label><input type="text" name="research_secondary" class="span2" value="0" readonly="readonly" /><span class="percent" >%</span>
+                                <label>Tertiary:</label><input type="text" name="research_tertiary" class="span2" value="0" readonly="readonly" /><span class="percent" >%</span>
+                                <button id="research_update_density" type='button' class='btn btn-primary ml_10'>Update</button></p>
+
+                            </div>
+                            <div class="row-fluid mb_20" style="text-align: center">
                                 <button id="validate" type="button" class="btn ml_10">Validate</button>
                                 <button id="save_in_batch" type="button" class="btn ml_10 btn-success">Save</button>
                                 <button id="save_next" type="button" class="btn ml_10 btn-success">Save & Next</button>
