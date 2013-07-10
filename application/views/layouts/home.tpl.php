@@ -17,7 +17,7 @@
                     <li class="pull-left"><a href="#">HOME</a></li>
                     <li class="pull-left"><a href="#">PRODUCT</a></li>
                     <li class="pull-left"><a href="#">COMPANY</a></li>
-                    <li class="pull-right"><a href="#">SIGN IN</a></li>
+                    <li class="pull-right"><a href="<?php echo site_url('auth/login');?>">SIGN IN</a></li>
                 </ul>
             </div>
         </div>
@@ -89,7 +89,7 @@
     <div class="home-footer">
         <div class="container margin-top-50">
             <div class="row-fluid text-center">
-                Copyright &COPY; <?php echo date('Y'); ?>. <b>Content Solutions, Inc.</b> All Rights Reserved.
+                Copyright &COPY; <?php echo date('Y'); ?>. <b><?php echo isset($settings['company_name'])? $settings['company_name']:'' ?></b> All Rights Reserved.
             </div>
         </div> 
     </div>

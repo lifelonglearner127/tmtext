@@ -589,4 +589,23 @@ jQuery(document).ready(function($) {
 
         return false;
     });
+
+    $(document).on("click", "button#delete_batch", function(event){
+        event.preventDefault();
+        var batch_name = $('select[name="batches"]').find('option:selected').text();
+        var oDropdown = $("#customer_dr").msDropdown().data("dd");
+        $.post(base_url + 'index.php/research/delete_batch', {
+            'batch_name': batch_name
+        }, function(data) {
+            oDropdown.setIndexByValue('All customers');
+            $('select[name="batches"] option').each(function(){
+                if($(this).text() == batch_name){
+                    $(this).remove();
+                }
+            });
+            $('.info').append('<p class="alert-success">The batch was successfully deleted</p>').fadeOut(10000);
+        }, 'json');
+
+        return false;
+    });
 });

@@ -1,3 +1,57 @@
+function test_screenshot() {
+	var customers_list = $.post(base_url + 'index.php/measure/testscreenshot', {}, function(data) {
+		console.log(data);
+	});
+}
+
+function openCrawlLaunchPanelModal() {
+	$("#customers_screens_crawl_modal").modal('show');
+}
+function startCrawl() {
+	console.log("start crawl");
+}
+
+function removeCrawlSiteFromList(id) {
+	$("#cl_cp_tbl_crawls tr[data-id='" + id + "']").remove();
+	if($("#cl_cp_tbl_crawls tr").length == 1) {
+		$("#cl_cp_crawl_modal").html("<p>No available sites for crawl</p>");
+		$("#crawl_modal_sbm_btn").addClass("disabled");
+		$("#crawl_modal_sbm_btn").attr("disabled", true);
+		$("#crawl_modal_sbm_btn").attr("onclick", "return false");
+	}
+}
+
+function openCrawlLaunchPanelModal() {
+	$("#customers_screens_crawl_modal").modal('show');
+	var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist_general', {}, function(c_data) {
+		var tbl = "";
+		tbl += "<table id='cl_cp_tbl_crawls' class='table table-striped'>";
+			tbl += "<thead>";
+				tbl += "<tr>";
+					tbl += "<th>Sites</th>";
+					tbl += "<th>Controls</th>";
+				tbl += "</tr>";
+			tbl += "</thead>";
+			tbl += "<tbody>";
+			for (var i = 0; i < c_data.length; i++) {
+				tbl += "<tr data-id='" + c_data[i]['id']  + "'>";
+					tbl += "<td>" + c_data[i]['name'] + "</td>";
+					tbl += "<td><a onclick=\"removeCrawlSiteFromList('" + c_data[i]['id'] + "');\" class='btn btn-danger'><i class='icon-remove-sign'></i></a></td>";
+				tbl += "</tr>";
+			};
+			tbl += "</tbody>";
+		tbl += "</table>";
+		$("#cl_cp_crawl_modal").html(tbl);
+		$("#crawl_modal_sbm_btn").removeClass("disabled");
+		$("#crawl_modal_sbm_btn").removeAttr("disabled");
+		$("#crawl_modal_sbm_btn").attr("onclick", "startCrawl()");
+    }, 'json');
+}
+
+function openOverviewScreensCrawlModal() {
+	$("#overview_screens_crawl_modal").modal('show');
+}
+
 function submitEmailReportsConfig() {
 	var recs = $.trim($("#email_rec").val());
 	var rec_day = $("#week_day_rep > option:selected").val();
