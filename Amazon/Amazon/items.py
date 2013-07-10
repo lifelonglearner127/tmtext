@@ -11,3 +11,6 @@ class AmazonItem(Item):
     url = Field()
     text = Field()
     parent_text = Field()
+    parent_url = Field()
+    grandparent_text = Field()
+    grandparent_url = Field()
