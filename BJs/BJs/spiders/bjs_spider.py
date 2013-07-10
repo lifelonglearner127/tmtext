@@ -23,11 +23,18 @@ class BJsSpider(BaseSpider):
         links = hxs.select("//div[@class='links']//a")
         items = []
 
-        #TODO: implement parents: right now it only selects lowest level links
         for link in links:
+
+            # extract parent category
+            parent = link.select("parent::node()/parent::node()/parent::node()/div/div[position()=1]/a")
+
             item = BjsItem()
             item['text'] = link.select('text()').extract()
             item['url'] = link.select('@href').extract()
+
+            item['parent_text'] = parent.select('h2/text()').extract()
+            item['parent_url'] = parent.select('@href').extract()
+
             items.append(item)
 
         return items
