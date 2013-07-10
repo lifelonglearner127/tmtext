@@ -41,6 +41,7 @@
 $route['default_controller'] = "editor";
 $route['404_override'] = '';
 
+$route['debugseophrases'] = 'auth/debug_seo_phrases';
 
 /* End of file routes.php */
 /* Location: ./application/config/routes.php */
