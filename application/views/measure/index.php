@@ -70,7 +70,7 @@
 								    </div>
 							    <?php } ?>
 								<div class='art_hp_item'>
-									<div class='art_img'><img src="http://images.shrinktheweb.com/xino.php?stwembed=1&stwaccesskeyid=28c77fca6deb748&stwsize=sm&stwurl=http://www.google.com" /></div>
+									<div class='art_img'>&nbsp;</div>
 									<div class='art_oview'>
 										<p class='h'>Overview</p>
 										<p class='t'>text sample</p>
