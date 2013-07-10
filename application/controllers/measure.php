@@ -92,9 +92,12 @@ class Measure extends MY_Controller {
 
         if(!empty($price_list['result'])) {
             foreach($price_list['result'] as $price) {
+            	$parsed_attributes = unserialize($price->parsed_attributes);
+            	$model = (!empty($parsed_attributes['model'])?$parsed_attributes['model']: $parsed_attributes['UPC/EAN/ISBN']);
                 $output['aaData'][] = array(
                     $price->created,
-                    $price->model,
+                    '<a href ="'.$price->url.'">'.substr($price->url,0, 60).'</a>',
+                    $model,
                     $price->product_name,
                     sprintf("%01.2f", $price->price),
                 );

@@ -81,7 +81,7 @@
 }
 .pm_data_table tr td {
 	padding-left: 10px;
-	padding-right: 10px; 
+	padding-right: 10px;
 }
 .pm_data_table .pm_data_table_tinput {
 	width: 100%;
@@ -105,7 +105,7 @@
 }
 .add_login_lnk .add_login_lnk_right {
 	float: right;
-	padding-right: 5px;	
+	padding-right: 5px;
 }
 /* --- OVERALL LOGIN FORM ADDITION (END) --- */
 
@@ -136,7 +136,7 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     padding-right: 10px;
-} 
+}
 
 .reset_mb_mt15 {
 	margin-top: 15px !important;
@@ -165,7 +165,7 @@
 
 .lh_30 {
 	line-height: 30px;
-} 
+}
 
 .w_400 {
 	width: 400px !important;

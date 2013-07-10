@@ -38,6 +38,7 @@ function readGridData() {
                 },
                 "aoColumns": [
                     {"sName" : "created"},
+                    {"sName" : "url"},
                     {"sName" : "model"},
                     {"sName" : "product_name"},
                     {"sName" : "price"}

@@ -84,10 +84,11 @@ class Crawler_List_Prices_model extends CI_Model {
             $display_length  = $total_rows - $display_start;
         }
 
-        $this->db->select('clp.id, clp.created, idp2.value as model, idp.value as product_name, clp.price ')
+        $this->db->select('clp.id, clp.created, idp3.value as url, idp2.value as parsed_attributes, idp.value as product_name, clp.price ')
             ->join($this->tables['crawler_list'].' as cl', 'clp.crawler_list_id = cl.id')
             ->join($this->tables['imported_data_parsed']. ' as idp', 'idp.imported_data_id = cl.imported_data_id')
-            ->join($this->tables['imported_data_parsed']. ' as idp2', 'idp2.imported_data_id = cl.imported_data_id AND idp2.key = "Model"', 'left')
+            ->join($this->tables['imported_data_parsed']. ' as idp2', 'idp2.imported_data_id = cl.imported_data_id AND idp2.key = "parsed_attributes"', 'left')
+            ->join($this->tables['imported_data_parsed']. ' as idp3', 'idp3.imported_data_id = cl.imported_data_id AND idp3.key = "URL"', 'left')
             ->where('idp.key = "Product Name"');
         if(!empty($search)) {
             $this->db->where('idp.value like ' . $this->db->escape('%' . $search . '%'));
