@@ -1520,3 +1520,11 @@ label.dd-selected-text, label.dd-option-text{
 #do_work .product_title li span, #do_work #research_products li span{
     width: 49.6%;
 }
+
+.rectangle_layout{
+    padding: 10px;
+}
+
+.rectangle #long_description{
+    margin-left: 107px!important;
+}

@@ -103,9 +103,18 @@
             {image: base_url+'img/layout-icon2.png', value:'rectangle', text: ''},
             {value:'custom', text: 'Custom'},
         ];
+        $('.rectangle_layout').css({'display':'none'});
+        $('.side_by_side').css({'display':'block'});
         var layout = $('.layout_dropdown').msDropDown({byJson:{data:jsonData, name:'layout_list'}}).data("dd");
         layout.on("change", function(res) {
-            console.log(res.target.value);
+            console.log(res.target.value );
+            if(res.target.value == 'side_by_side'){
+                $('.rectangle_layout').css({'display':'none'});
+                $('.side_by_side').css({'display':'block'});
+            } else if(res.target.value == 'rectangle'){
+                $('.rectangle_layout').css({'display':'block'});
+                $('.side_by_side').css({'display':'none'});
+            }
         });
     });
 </script>
@@ -170,7 +179,7 @@
                         <div class="boxes_content">
                         </div>
                     </li>
-                    <li class="boxes mt_10" id="page_elements">
+                    <li class="boxes mt_10 side_by_side" id="page_elements" >
                         <h3><a href="#" onclick="return false;" class="hideShow"><img style="width:12px;margin-right: 10px" src="<?php echo base_url();?>img/arrow-down.png" /></a>Page Elements<a href="#" class="ml_10 research_arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
                         <div class="boxes_content">
                             <p><button id="generate_product" type="button" class="btn pull-right">Generate</button>
@@ -206,7 +215,55 @@
                             <p><span>Tertiary:</span><input class="keywords" type="text" name="tertiary" value="" /><a href="#" class="clear_all">x</a></p>
                         </div>
                     </li>
-                    <li class="boxes mt_10">
+                    <li class="boxes mt_10 side_by_side">
+                        <h3><a href="#" onclick="return false;" class="hideShow"><img style="width:12px;margin-right: 10px" src="<?php echo base_url();?>img/arrow-down.png" /></a>Descriptions<a href="#" class="ml_10 research_arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
+                        <div class="boxes_content">
+                            <div class="row-fluid"><label>Short description:</label>
+                                <label><span id="research_wc">0</span> words<input type="hidden" name="short_description_wc" /></label>
+                                <button id="research_generate" type="button" class="btn" style="float:left;">Generate</button>
+                                <textarea type="text" name="short_description" class="span10 mt_10" style="height:100px;"></textarea>
+                                <div class="pagination">
+                                    <ul id="pagination">
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="row-fluid"><label>Long description:</label>
+                                <label><span id="research_wc1">0</span> words<input type="hidden" name="long_description_wc" /></label>
+                                <div class="search_area uneditable-input ml_10"  id="long_description" contenteditable="false" style="cursor: text; width: 365px; overflow: auto;"></div>
+                            </div>
+                            <div class="row-fluid" id="research_density">
+                                <label>Density:</label><label>Primary:</label><input type="text" name="research_primary" class="span2" value="0" readonly="readonly" /><span class="percent">%</span>
+                                <label>Secondary:</label><input type="text" name="research_secondary" class="span2" value="0" readonly="readonly" /><span class="percent" >%</span>
+                                <label>Tertiary:</label><input type="text" name="research_tertiary" class="span2" value="0" readonly="readonly" /><span class="percent" >%</span>
+                                <button id="research_update_density" type='button' class='btn btn-primary ml_10'>Update</button></p>
+                                <p>Total words: <span id="research_total">0</span> words</p>
+                            </div>
+                            <div class="row-fluid mb_20">
+                                <button id="validate" type="button" class="btn ml_10">Validate</button>
+                                <button id="save_in_batch" type="button" class="btn ml_10 btn-success">Save</button>
+                                <button id="save_next" type="button" class="btn ml_10 btn-success">Save & Next</button>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+            <div class="span12 boxes rectangle_layout">
+                <ul class="connectedSortable" id="sortable3">
+                    <li class="boxes mt_10 rectangle" id="page_elements">
+                        <h3><a href="#" onclick="return false;" class="hideShow"><img style="width:12px;margin-right: 10px" src="<?php echo base_url();?>img/arrow-down.png" /></a>Page Elements<a href="#" class="ml_10 research_arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
+                        <div class="boxes_content">
+                            <p><button id="generate_product" type="button" class="btn pull-right">Generate</button>
+                                <label>Product name:</label><input type="text" class="span11 ml_0" name="product_name"/>
+                                <input type="hidden" name="url"/>
+                                <input type="hidden" name="revision"/>
+                            </p>
+                            <p><label>Meta title:</label><input type="text"  class="span11 ml_0" name="meta_title" /></p>
+                            <p><label>Meta description:</label><textarea name="meta_description" style="height:100px;" ></textarea></p>
+                            <p><button id="generate_keywords" type="button" class="btn pull-right">Generate</button>
+                                <label>Meta keywords:</label><input type="text" class="span11 ml_0" name="meta_keywords" /></p>
+                        </div>
+                    </li>
+                    <li class="boxes mt_10 rectangle">
                         <h3><a href="#" onclick="return false;" class="hideShow"><img style="width:12px;margin-right: 10px" src="<?php echo base_url();?>img/arrow-down.png" /></a>Descriptions<a href="#" class="ml_10 research_arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
                         <div class="boxes_content">
                             <div class="row-fluid"><label>Short description:</label>
