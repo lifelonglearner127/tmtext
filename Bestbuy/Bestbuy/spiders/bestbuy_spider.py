@@ -15,8 +15,7 @@ class BestbuySpider(BaseSpider):
     name = "bestbuy"
     allowed_domains = ["bestbuy.com"]
     start_urls = [
-        #"http://www.bestbuy.com/site/sitemap.jsp",
-        "file:///home/ana/code/nlp_reviews/misc/the_pages/BestBuy.com%20-%20Site%20Map.html"
+        "http://www.bestbuy.com/site/sitemap.jsp",
     ]
 
     def parse(self, response):
@@ -24,13 +23,10 @@ class BestbuySpider(BaseSpider):
         hxs = HtmlXPathSelector(response)
 
         # select all categories (bottom level)
-        product_links = hxs.select("//div[@id='container']/div/header//nav/ul[@id='nav']/li[@class='nav-pro']/ul/li/ul/li/a")
-
-        # select other categories (special)
-        other_links = hxs.select("//div[@id='container']/div/header//nav/ul[@id='nav']/li[@class!='nav-pro']/ul/li/ul/li/a")
+        product_links = hxs.select("//div[@id='container']/div/header//nav/ul[@id='nav']//li/a")
 
         # select all parent categories
-        parent_links = hxs.select("//div[@id='container']/div/header//nav/ul[@id='nav']/li[@class='nav-pro']/ul/li/h4/a")
+        parent_links = hxs.select("//div[@id='container']/div/header//nav/ul[@id='nav']//h4/a")
 
         #TODO: add extraction of level 3 categories (broadest: products, services,...)
         
@@ -45,8 +41,14 @@ class BestbuySpider(BaseSpider):
             item['text'] = link.select('text()').extract()[0]
             item['url'] = link.select('@href').extract()[0]
 
-            item['parent_text'] = parent.select('text()').extract()[0]
-            item['parent_url'] = parent.select('@href').extract()[0]
+            
+            parent_text = parent.select('text()').extract()
+            parent_url = parent.select('@href').extract()
+            if parent_text:
+                item['parent_text'] = parent_text[0]
+            if parent_url:
+                item['parent_url'] = parent_url[0]
+
 
             # mark it as special if a certain condition is checked
             if (link.select("parent::node()/parent::*[@class='nav-res']")):
@@ -54,10 +56,17 @@ class BestbuySpider(BaseSpider):
             #TODO: add its direct parent if it's special (not among the categories). ex: shops, resources...
 
             # get grandparent of the category, mark item as special if grandparent is special
-            #TODO: buggy
             grandparent = parent.select("parent::node()/parent::node()/parent::node()/parent::node()")
-            if (grandparent.select('@class').extract() != 'nav-pro'):
+            if not grandparent.select('@class') or grandparent.select('@class').extract()[0] != 'nav-pro':
                 item['special'] = 1
+
+            
+            grandparent_text = grandparent.select('a/text()').extract()
+            grandparent_url = grandparent.select('a/@href').extract()
+            if grandparent_text:
+                item['grandparent_text'] = grandparent_text[0]
+            if grandparent_url:
+                item['grandparent_url'] = grandparent_url[0]
 
             item['level'] = 0
 
@@ -73,9 +82,15 @@ class BestbuySpider(BaseSpider):
             parent = link.select("parent::node()/parent::node()/parent::node()/parent::node()")
 
             # mark item as special if its parent is special
-            #TODO: buggy
-            if (parent.select('@class').extract() != 'nav-pro'):
+            if not parent.select('@class').extract() or parent.select('@class').extract()[0] != "nav-pro":
                 item['special'] = 1
+
+            parent_text = parent.select('a/text()').extract()
+            parent_url = parent.select('a/@href').extract()
+            if parent_text:
+                item['parent_text'] = parent_text[0]
+            if parent_url:
+                item['parent_url'] = parent_url[0]
 
             items.append(item)
 
