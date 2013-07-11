@@ -24,12 +24,13 @@ class BestbuySpider(BaseSpider):
 
         # currently not extracting parents that are non-links (smaller parent categories like "resources" and "shops")
         hxs = HtmlXPathSelector(response)
-        links = hxs.select("//div[@id='container']/div/header//nav/ul[@id='nav']//a")
+        links = hxs.select("//div[@id='container']/div/header//nav/ul[@id='nav']//li/a")
         items = []
 
         for link in links:
 
             # retrieve parent category for this link
+            #TODO: for links that don't have a parent this output should be omitted, to fix
             parent = link.select("parent::node()/parent::node()/preceding-sibling::node()/a")
             item = BestbuyItem()
 
