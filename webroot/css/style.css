@@ -7,6 +7,10 @@
 }
 .ci_hp_modals.crawl_launch_panel .modal-body {
 	overflow: hidden;
+	max-height: 700px;
+}
+#customers_screens_crawl_modal {
+	top: 40%;
 }
 #preview_screenshot_modal #sc_preview {
 	display: block;
