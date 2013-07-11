@@ -49,11 +49,13 @@ class AmazonSpider(BaseSpider):
             item['level'] = 0
 
             parent = link.select("parent::node()/parent::node()/preceding-sibling::node()")
-            item['parent_text'] = parent.select('text()').extract()[0]
+            parent_text = parent.select('text()').extract()
+            if parent_text:
+                item['parent_text'] = parent_text[0]
 
-            # if its parent is the special category, mark this one as special too
-            if (item['parent_text'] == special_item['text']):
-                item['special'] = 1
+                # if its parent is the special category, mark this one as special too
+                if (item['parent_text'] == special_item['text']):
+                    item['special'] = 1
 
             items.append(item)
 

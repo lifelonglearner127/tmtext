@@ -10,4 +10,4 @@ class BestbuyItem(Item):
     grandparent_url = Field() # url of grandparent category (if any)
     grandparent_text = Field() # name of grandparent category (if any)
     level = Field() # level of category in the nested list (from narrower to broader categories)
-    special = Field() # is it a special category? (0/1)
+    special = Field() # is it a special category? (1 or nothing)

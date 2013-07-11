@@ -1,14 +1,11 @@
-# Define here the models for your scraped items
-#
-# See documentation in:
-# http://doc.scrapy.org/topics/items.html
+# Definition of the models for the scraped items
 
 from scrapy.item import Item, Field
 
 class BjsItem(Item):
-    # define the fields for your item here like:
-    # name = Field()
-    url = Field()
-    text = Field()
-    parent_text = Field()
-    parent_url = Field()
+    url = Field() # url of category
+    text = Field() # name of category
+    parent_text = Field() # name of parent category (if any)
+    parent_url = Field() # url of parent category (if any)
+    level = Field() # level of category in the nested list (from narrower to broader categories)
+    # special = Field() # is it a special category? (1 or nothing)
