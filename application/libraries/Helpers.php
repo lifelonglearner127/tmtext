@@ -139,7 +139,7 @@ class Helpers {
 
   public function measure_analyzer_start_v2($clean_t) { // !!! NEW ONE !!!
     $clean_t = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $clean_t);
-    $clean_t = trim(str_replace('.', ' ', $clean_t));
+    // $clean_t = trim(str_replace('.', ' ', $clean_t));
     $text = $clean_t;
 
     // ---- convert to array (start)

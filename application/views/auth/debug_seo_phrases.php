@@ -30,7 +30,13 @@
                 for(var i in a_data) {
                     if(typeof(a_data[i]) === 'object') {
                         s_counter++;
-                        seo_items += '<li>' + '<span data-value="' + a_data[i]['ph'] + '" data-status="seo_link" onclick="wordHighLighterDebug(\''+a_data[i]['ph']+'\');" class="word_wrap_li_pr hover_en">' + a_data[i]['ph'] + '</span>' + ' <span class="word_wrap_li_sec">(' + a_data[i]['count'] + ')</span></li>';
+                        var ph = a_data[i]['ph'];
+						var l = ph.length;
+						var lastChar = ph.substring(l-1, l);
+						if (lastChar == ".") {
+							ph = ph.substring(0, l-1);
+						}
+                        seo_items += '<li>' + '<span data-value="' + ph + '" data-status="seo_link" onclick="wordHighLighterDebug(\''+ph+'\');" class="word_wrap_li_pr hover_en">' + ph + '</span>' + ' <span class="word_wrap_li_sec">(' + a_data[i]['count'] + ')</span></li>';
                     }
                 }
                 if(s_counter > 0) $("ul#res_seo_list").html(seo_items);
