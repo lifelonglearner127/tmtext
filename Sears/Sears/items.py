@@ -13,3 +13,4 @@ class SearsItem(Item):
     page_url = Field() # url of page
     level = Field() # level of category in the nested list (from narrower to broader categories)
     special = Field() # is it a special category? (1 or nothing)
+    
