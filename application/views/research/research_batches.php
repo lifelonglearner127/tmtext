@@ -135,6 +135,10 @@
                                 <label for="column_long_description_wc">Words</label>
                             </p>
                             <p>
+                                <input type="checkbox" id="column_batch_name" name="column_batch_name" <?php echo($columns['batch_name'] == 'true' ? 'checked="checked"' : ''); ?> />
+                                <label for="column_batch_name">Batch Name</label>
+                            </p>
+                            <p>
                                 <input type="checkbox" id="column_actions" name="column_actions_name" <?php echo($columns['actions'] == 'true' ? 'checked="checked"' : ''); ?> />
                                 <label for="column_actions">Actions</label>
                             </p>
