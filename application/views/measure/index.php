@@ -173,7 +173,7 @@
 		<h3>Screenshot Preview</h3>
 	</div>
 	<div class="modal-body">
-		<div id="sc_preview"><img src=""></div>
+		<div id="sc_preview">&nbsp;</div>
 	</div>
 	<div class="modal-footer">
 		<a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>

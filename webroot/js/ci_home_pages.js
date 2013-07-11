@@ -58,11 +58,20 @@ function openCrawlLaunchPanelModal(close_preview) {
     }, 'json');
 }
 
+// function previewScreenshotModal(url) {
+// 	$("#customers_screens_crawl_modal").modal('hide');
+// 	var link_img = "http://images.shrinktheweb.com/xino.php?stwembed=1&stwaccesskeyid=" + stwaccesskeyid + "&stwsize=lg&stwurl=http://www." + url;
+// 	$("#preview_screenshot_modal").modal('show');
+// 	$("#preview_screenshot_modal #sc_preview > img").attr('src', link_img);
+// }
+
 function previewScreenshotModal(url) {
 	$("#customers_screens_crawl_modal").modal('hide');
-	var link_img = "http://images.shrinktheweb.com/xino.php?stwembed=1&stwaccesskeyid=" + stwaccesskeyid + "&stwsize=lg&stwurl=http://www." + url;
 	$("#preview_screenshot_modal").modal('show');
-	$("#preview_screenshot_modal #sc_preview > img").attr('src', link_img);
+	var preview_img = $.post(base_url + 'index.php/measure/webshoot', { url: url }, function(link_img) {
+		console.log(link_img);
+		$("#preview_screenshot_modal #sc_preview").html("<img src='" + link_img + "'>");
+	});
 }
 
 function openOverviewScreensCrawlModal() {

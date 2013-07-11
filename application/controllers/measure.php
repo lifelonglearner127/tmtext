@@ -22,6 +22,41 @@ class Measure extends MY_Controller {
         $this->render();
     }
 
+    private function upload_record_webshoot($ext_url, $url_name) {
+        // $type = "png";
+        // $holder = $_SERVER['DOCUMENT_ROOT']."/webshoots/$url_name.$type";
+        // $ch = curl_init($ext_url);
+        // $fp = fopen($holder, 'wb');
+        // curl_setopt($ch, CURLOPT_FILE, $fp);
+        // curl_setopt($ch, CURLOPT_HEADER, 0);
+        // curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        // curl_exec($ch);
+        // curl_close($ch);
+        // fclose($fp);
+
+        // $file = file_get_contents($ext_url);
+        // $type = 'png';
+        // file_put_contents($_SERVER['DOCUMENT_ROOT']."/webshoots/$url_name.$type", $file);
+        return $ext_url;
+    }
+
+    public function webshoot() {
+        $url = $this->input->post('url');
+        $url = urlencode(trim($url));
+        // -- configs (start)
+        $api_key = "dc598f9ae119a97234ea";
+        $api_secret = "47c7248bc03fbd368362";
+        $token = md5("$api_secret+$url");
+        $size = "200x150";
+        $format = "png";
+        // -- configs (end) 
+        $res = "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size&format=$format";
+        // $res = base_url()."img/test.jpg";
+        // $res = $_SERVER['DOCUMENT_ROOT']."/img/test.jpg";
+        $res = $this->upload_record_webshoot($res, 'teststuff');
+        $this->output->set_content_type('application/json')->set_output(json_encode($res));
+    }
+
     public function testscreenshot() {
         $grab = $this->helpers->test_screenshot();
         $this->output->set_content_type('application/json')->set_output(json_encode($grab));
