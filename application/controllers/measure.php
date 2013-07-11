@@ -58,7 +58,8 @@ class Measure extends MY_Controller {
 
     public function measure_departments()
     {
-       $this->render();
+        $this->data['customers_list'] = $this->customers_list_new();
+        $this->render();
     }
 
     public function measure_categories()
