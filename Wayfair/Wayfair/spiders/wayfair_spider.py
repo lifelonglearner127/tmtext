@@ -76,7 +76,8 @@ class WayfairSpider(BaseSpider):
 
             items.append(item)
 
-        for link in grandparent_links:
+        # last 2 categories need to be marked as special
+        for link in grandparent_links[:-2]:
             item = WayfairItem()
             item['text'] = link.select('text()').extract()[0]
             item['url'] = link.select('@href').extract()[0]
@@ -84,6 +85,17 @@ class WayfairSpider(BaseSpider):
             item['level'] = 1
 
             items.append(item)
+
+        for link in grandparent_links[-2:]:
+            item = WayfairItem()
+            item['text'] = link.select('text()').extract()[0]
+            item['url'] = link.select('@href').extract()[0]
+
+            item['level'] = 1
+            item['special'] = 1
+
+            items.append(item)
+
 
         for link in special_links:
             # extracting parents
