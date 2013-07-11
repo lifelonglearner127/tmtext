@@ -207,7 +207,7 @@ function startMeasureCompareV2() {
     // ---- LIMIT DETECTION (END) (OLD)
 
     // ---- LIMIT DETECTION (START) (NEW)
-    var limit = 4;
+    var limit = 20;
     if($(".typeahead").is(':visible')) {
         limit = $(".typeahead > li").length;
     }

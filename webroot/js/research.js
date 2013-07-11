@@ -546,7 +546,8 @@ jQuery(document).ready(function($) {
             }
         });
         $('input[name="batche_name"]').val($('select[name="research_batches"]').find('option:selected').text());
-        dataTable.fnFilter( $('select[name="research_batches"]').find('option:selected').text(), 7);
+        $('button#research_batches_search').trigger('click');
+        //dataTable.fnFilter( $('select[name="research_batches"]').find('option:selected').text(), 7);
     });
     $('select[name="research_batches"]').trigger('change');
 

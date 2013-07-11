@@ -30,7 +30,8 @@ class Auth extends MY_Controller {
 			'writereg' => true, // new stuff
 			'ajaxregwriter' => true, // new stuff
 			'ajaxregwriter' => true, // new stuff
-			'ajaxcheckregemail' => true // mew stuff
+			'ajaxcheckregemail' => true, // mew stuff
+			'debug_seo_phrases' => true
   		));
 	}
 
@@ -63,6 +64,14 @@ class Auth extends MY_Controller {
 
 			//$this->_render_page('auth/index', $this->data);
 			$this->render();
+		}
+	}
+
+	function debug_seo_phrases() {
+		if (!$this->ion_auth->logged_in()) {
+			redirect('auth/login', 'refresh');
+		} else {
+			$this->render('debug');
 		}
 	}
 

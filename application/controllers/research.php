@@ -169,11 +169,18 @@ class Research extends MY_Controller {
     public function get_research_info()
     {
         $this->load->model('research_data_model');
+        $this->load->model('batches_model');
         $data = '';
         if($this->input->get('search_text') != ''){
             $data = $this->input->get('search_text');
         }
-        $results = $this->research_data_model->getInfoFromResearchData($data);
+        $batch = $this->input->get('batch_name');
+
+        $batch_id = $this->batches_model->getIdByName($batch);
+        if($batch_id == false || $data != '') {
+            $batch_id = '';
+        }
+        $results = $this->research_data_model->getInfoFromResearchData($data, $batch_id);
 
         // change '0' value to '-'
         foreach($results as $result) {

@@ -28,6 +28,7 @@
                                     <thead>
                                     <tr>
                                         <th><div class="draggable">Date</div></th>
+                                        <th><div class="draggable">Site</div></th>
                                         <th><div class="draggable">Model</div></th>
                                         <th><div class="draggable">Product</div></th>
                                         <th><div class="draggable">Price</div></th>
@@ -54,6 +55,7 @@
                         <script type="text/template" id="readTemplate">
                             <tr>
                                 <td class="column_created"></td>
+								<td class="column_url"></td>
                                 <td class="column_model"></td>
                                 <td class="column_product_name"></td>
                                 <td class="column_price"></td>
