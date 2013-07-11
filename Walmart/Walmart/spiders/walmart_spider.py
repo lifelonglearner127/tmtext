@@ -38,8 +38,8 @@ class WalmartSpider(BaseSpider):
                 item['parent_text'] = parents[-1].select('text()').extract()[0]
                 item['parent_url'] = parents[-1].select('@href').extract()[0]
 
-            item['text'] = link.select('text()').extract()
-            item['url'] = link.select('@href').extract()
+            item['text'] = link.select('text()').extract()[0]
+            item['url'] = link.select('@href').extract()[0]
 
             item['level'] = 0
 
@@ -48,8 +48,8 @@ class WalmartSpider(BaseSpider):
         for link in parent_links:
             item = WalmartItem()
 
-            item['text'] = link.select('text()').extract()
-            item['url'] = link.select('@href').extract()
+            item['text'] = link.select('text()').extract()[0]
+            item['url'] = link.select('@href').extract()[0]
 
             item['level'] = 1
 
