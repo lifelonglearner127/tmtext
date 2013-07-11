@@ -7,6 +7,18 @@
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_pricing'); ?>">Pricing</a></li>
     </ul>
     <div class="tab-content">
+        <div class="measure-products">
+            <div class="row-fluid mb_20">
+                <div class="span6">
+                    Batch:
+                    <div id="product_customers" class="customer_dropdown"></div>
+                    
+                    <select name="product_batches" class="mt_10 mr_10" style="width: 100px;">
+                        <option value='0'>No Batch</option>
+                    </select>
+                </div>
+            </div>
+        </div>
         <div class="row-fluid">
             <?php // echo form_open('', array('id'=>'measureFormMetrics')); ?>
             <form id="measureFormMetrics" accept-charset="utf-8" method="post" action="javascript:void(0)">

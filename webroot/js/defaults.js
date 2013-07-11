@@ -223,6 +223,19 @@ jQuery(document).ready(function($) {
                             });
                             readResearchData();
                             dataTable.fnFilter( $('select[name="research_batches"]').find('option:selected').text(), 7);
+                        } else if ($('.customer_dropdown').attr('id') == 'product_customers') {
+                            $.post(base_url + 'index.php/research/filterBatchByCustomer', { 'customer_name': res.target.value}, function(data){
+                                if(data.length>0){
+                                    $("select[name='product_batches']").empty();
+                                    $("select[name='product_batches']").append('<option>No Batch</option>');
+                                    for(var i=0; i<data.length; i++){
+                                        $("select[name='product_batches']").append('<option>'+data[i]+'</option>');
+                                    }
+                                } else if(data.length==0 && res.target.value !="All customers"){
+                                    $("select[name='product_batches']").empty();
+                                    $("select[name='product_batches']").append('<option>No Batch</option>');
+                                }
+                            });
                         }
                     });
                 }

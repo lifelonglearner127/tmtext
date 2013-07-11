@@ -1445,7 +1445,7 @@ label.dd-selected-text, label.dd-option-text{
     width: 120px!important;
 }
 
-.research .customer_dropdown{
+.research .customer_dropdown, .measure-products .customer_dropdown {
     width: 160px;
     display: inline;
 }
