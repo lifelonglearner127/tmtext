@@ -23,10 +23,13 @@ class BloomingdalesSpider(BaseSpider):
         links = hxs.select("//div[@class='sr_siteMap_container']/div[position()>2 and position()<5]//a")
         items = []
 
+        #TODO: add registry as special category?
+
         for link in links:
             item = BloomingdalesItem()
-            item['text'] = link.select('text()').extract()
-            item['url'] = link.select('@href').extract()
+            item['text'] = link.select('text()').extract()[0]
+            item['url'] = link.select('@href').extract()[0]
+            item['level'] = 0
             items.append(item)
 
         return items
