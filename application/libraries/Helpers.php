@@ -77,13 +77,7 @@ class Helpers {
   }
 
   public function measure_analyzer_start_v2($clean_t) { // !!! EXPREIMENTAL !!!
-    // $clean_t = "3D ready, allows playback of full 3D high-definition content 480 Clear Motion Rate, less motion blur for your fast-paced videos HDMI and USB ports, lets you connect to a wide variety of devices WiFi capable, allows you to access countless hours visual content from the Internet";
     $clean_t = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $clean_t);
-    // $r = substr_count($clean_t, 'to a');
-    // $w = 'to a';
-    // preg_match_all("/($w)/", $clean_t, $matches);
-    // die("TEST ME: ".var_dump($matches));
-    // $text = strtolower($clean_t);
     $text = $clean_t;
 
     // ---- convert to array (start)
@@ -103,7 +97,8 @@ class Helpers {
             $w = substr($w, 0, strlen($w)-1);
             $w = trim($w);
             // --- CHECK OUT STRING DUPLICATIONS
-            $r = substr_count($text, $w);
+            // $r = substr_count($text, $w);
+            $r = substr_count(strtolower($text), strtolower($w));
             if($r > 1) {
                 $mid = array(
                     "ph" => trim($w),
@@ -118,7 +113,8 @@ class Helpers {
     // --- sort final result (start)
     $ph_length = array();
     foreach ($res_stack as $key => $row) {
-        $ph_length[$key] = $row['ph_length'];
+        // $ph_length[$key] = $row['ph_length'];
+        $ph_length[$key] = $row['count'];
     }
     array_multisort($ph_length, SORT_DESC, $res_stack);
     // --- sort final result (end)
