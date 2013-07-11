@@ -15,16 +15,14 @@ class BestbuySpider(BaseSpider):
     name = "bestbuy"
     allowed_domains = ["bestbuy.com"]
     start_urls = [
-        "http://www.bestbuy.com/site/sitemap.jsp",
+        #"http://www.bestbuy.com/site/sitemap.jsp",
+        "file:///home/ana/code/nlp_reviews/misc/the_pages/BestBuy.com%20-%20Site%20Map.html"
     ]
 
     def parse(self, response):
-        # extracting all links in the list (from all levels of nesting).
-        # adding parent_url and parent_text fields for the bottom level categories
-
         # currently not extracting parents that are non-links (smaller parent categories like "resources" and "shops")
         hxs = HtmlXPathSelector(response)
-        links = hxs.select("//div[@id='container']/div/header//nav/ul[@id='nav']//li/a")
+        links = hxs.select("//div[@id='container']/div/header//nav/ul[@id='nav']/a")
         items = []
 
         for link in links:
