@@ -30,7 +30,7 @@
                 for(var i in a_data) {
                     if(typeof(a_data[i]) === 'object') {
                         s_counter++;
-                        seo_items += '<li>' + '<span data-status="seo_link" onclick="wordHighLighterDebug(\''+a_data[i]['ph']+'\');" class="word_wrap_li_pr hover_en">' + a_data[i]['ph'] + '</span>' + ' <span class="word_wrap_li_sec">(' + a_data[i]['count'] + ')</span></li>';
+                        seo_items += '<li>' + '<span data-value="' + a_data[i]['ph'] + '" data-status="seo_link" onclick="wordHighLighterDebug(\''+a_data[i]['ph']+'\');" class="word_wrap_li_pr hover_en">' + a_data[i]['ph'] + '</span>' + ' <span class="word_wrap_li_sec">(' + a_data[i]['count'] + ')</span></li>';
                     }
                 }
                 if(s_counter > 0) $("ul#res_seo_list").html(seo_items);
@@ -41,6 +41,8 @@
 	}
 
 	function wordHighLighterDebug(w) {
+		$(".word_wrap_li_pr").removeClass('act_select');
+		$(".word_wrap_li_pr[data-value='" + w + "']").addClass('act_select');
 		removeTagsFromDebugArea();
 	    var highlightStartTag = "<span class='hilite'>";
 	    var highlightEndTag = "</span>";

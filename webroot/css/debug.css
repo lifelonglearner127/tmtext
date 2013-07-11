@@ -24,4 +24,8 @@
 	border-radius: 5px;
 	padding: 5px;
 }
+.word_wrap_li_pr.act_select {
+	text-decoration: none;
+	font-weight: bold;
+}
 /* --- SEO PHRASES DEBUGGER (END) --- */
