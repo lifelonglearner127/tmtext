@@ -21,6 +21,7 @@ class WayfairSpider(BaseSpider):
     def parse(self, response):
         hxs = HtmlXPathSelector(response)
         # currently extracting bottom level categories, and their parents and grandparents in their fields
+        #TODO: extract parents as low level categories, because some of them don't have children
         links = hxs.select("//div[@class='categories']/ul/li/ul/li/ul/li/a")
         items = []
 

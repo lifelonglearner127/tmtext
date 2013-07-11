@@ -1,16 +1,9 @@
-# Define here the models for your scraped items
-#
-# See documentation in:
-# http://doc.scrapy.org/topics/items.html
+# Definition of models for the scraped items
 
 from scrapy.item import Item, Field
 
 class AmazonItem(Item):
-    # define the fields for your item here like:
-    # name = Field()
     url = Field()
     text = Field()
     parent_text = Field()
-    parent_url = Field()
-    grandparent_text = Field()
-    grandparent_url = Field()
+    level = Field()
