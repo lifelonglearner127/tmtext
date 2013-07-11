@@ -170,6 +170,9 @@ $( function() {
 
     }); //end dialog
 
+    $("#updateDialog #long_description").click(function(e){
+        e.stopPropagation(); // return click to long desc field
+    });
     $( '#records' ).delegate( 'a.updateBtn', 'click', function() {
         updateHref = $( this ).attr( 'href' );
         updateId = $( this ).parents( 'tr' ).attr( "id" );
