@@ -92,6 +92,7 @@
 		    var attr = $(e.target).attr('data-status');
 		    if(typeof(attr) !== 'undefined' && attr === 'seo_link') {} else {
 	        	removeTagsFromDebugArea();
+	        	$(".word_wrap_li_pr").removeClass('act_select');
 		    }
 		});
 	});
