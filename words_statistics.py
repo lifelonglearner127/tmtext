@@ -10,7 +10,7 @@ import networkx as nx
 # (add synonyms?)
 # returns list of tokens
 def normalize(text):
-	stopset = ["and", "the", "&"]#set(stopwords.words('english'))
+	stopset = ["and", "the", "&", "for", "of"]#set(stopwords.words('english'))
 	stemmer = nltk.PorterStemmer()
 	tokens = nltk.WordPunctTokenizer().tokenize(text)
 	clean = [token.lower() for token in tokens if token.lower() not in stopset and len(token) > 2]
@@ -90,10 +90,62 @@ def words_graph(sites, level):
 # all categories in a group contain a word that is found in another category in that group
 # creates graph of words with edges between words that appear in one category name
 # and uses it to group categories that contain that word
-# returns dictionary of groups containing items as in the spiders' outputs
+# returns list of dictionaries of groups containing items as in the spiders' outputs
 def group_by_common_words(sites,level):
-	words = nx.Graph()
+	# list containing final category groups
+	cat_groups = []
+	# connected components of word graph
+	word_groups = words_graph(sites, level)
+	# list of categories indexed by words found in them
+	sites_words = dict(words_in_sites(sites, level))
+	for word_list in word_groups:
+		cat_name = ", ".join(word_list)
+		new_category = {"Group_name":cat_name, "Level":level, "Group_members":[]}
+		for word in word_list:
+			new_category["Group_members"] = merge_dictionaries(new_category["Group_members"], sites_words[word], ["site", "text"])
+		cat_groups.append(new_category)
+	return cat_groups
 
+# merge 2 lists of dictionaries without duplicates
+# where a duplicate is an item with the same value for every key in keys
+# assuming dictionary values are lists, and they both have all the keys in key
+def merge_dictionaries(list1, list2, keys):
+	final_list = []
 
-sites = ["amazon", "bestbuy", "bjs", "bloomingdales", "overstock", "walmart", "wayfair"]
-pprint(words_in_sites(sites, 1))
+	for element1 in list1 + list2:
+		# if element in conjoined lists is different from all the elements in final list (it hasn't been added yet)
+		# if final list is empty add the element
+		if not final_list:
+			final_list.append(element1)
+		# the element is not found in final list
+		notfound = True
+		for element2 in final_list:
+			# if they are different in values for every key in keys list
+			different = False
+			for key in keys:
+				if element1[key]!=element2[key]:
+					different = True
+					break
+			if not different:
+				notfound = False
+				break
+		if (notfound):
+			final_list.append(element1)
+	return final_list
+
+# group categories and store output in json file
+def serialize(sites, level):
+	sites = ["amazon", "bestbuy", "bjs", "bloomingdales", "overstock", "walmart", "wayfair"]
+	groups = group_by_common_words(sites, 1)
+	f = open('groups.jl', 'wb')
+	for group in groups:
+		line = json.dumps(group)
+		f.write(line+"\n\n")
+	f.close()
+
+if __name__=="__main__":
+	sites = ["amazon", "bestbuy", "bjs", "bloomingdales", "overstock", "walmart", "wayfair"]
+	groups = group_by_common_words(sites, 1)
+	pprint(groups)
+
+	serialize(sites,1)

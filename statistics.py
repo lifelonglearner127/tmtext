@@ -40,9 +40,4 @@ def levels_table(sites):
 		print "%20s%20d%20d%20d%20d" % (site, levels['nrlevels'], levels.get(1,0), levels.get(0,0), levels.get(-1,0))
 
 sites = ["amazon", "bestbuy", "bjs", "bloomingdales", "overstock", "walmart", "wayfair"]
-# levels_table(sites)
-
-d = dict(words_in_sites(sites, 1))
-for word in d.keys():
-	print word, len(d[word])
-pprint(d)
+levels_table(sites)
