@@ -39,14 +39,14 @@ def words_in_site(site, level):
 				# add word to dictionary
 				# value of dictionary is item and site name
 
-				#item["site"] = site
-				newitem = {}
-				newitem["site"] = site
-				newitem["text"] = item["text"]
+				item["site"] = site
+				# newitem = {}
+				# newitem["site"] = site
+				# newitem["text"] = item["text"]
 				if word not in words:
-					words[word] = [newitem]
+					words[word] = [item]
 				else:
-					words[word] = words[word] + [newitem]
+					words[word] = words[word] + [item]
 	f.close()
 	return words
 
@@ -99,11 +99,17 @@ def group_by_common_words(sites,level):
 	# list of categories indexed by words found in them
 	sites_words = dict(words_in_sites(sites, level))
 	for word_list in word_groups:
-		cat_name = ", ".join(word_list)
-		new_category = {"Group_name":cat_name, "Level":level, "Group_members":[]}
+		new_group = {"Level":level, "Group_members":[]}
+		names = []
 		for word in word_list:
-			new_category["Group_members"] = merge_dictionaries(new_category["Group_members"], sites_words[word], ["site", "text"])
-		cat_groups.append(new_category)
+			new_group["Group_members"] = merge_dictionaries(new_group["Group_members"], sites_words[word], ["site", "text"])
+
+			# construct category name by concatenating all unique category names in the group
+			for site_item in sites_words[word]:
+				names.append(site_item["text"])
+		cat_name = "; ".join(set(names))
+		new_group["Group_name"] = cat_name
+		cat_groups.append(new_group)
 	return cat_groups
 
 # merge 2 lists of dictionaries without duplicates
