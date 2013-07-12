@@ -476,6 +476,11 @@ class PageProcessor {
 		foreach($this->nokogiri->get('div.skuHeading longBulletTop ul li') as $item) {
 			$description[] = $item['#text'][0];
 		}
+
+		foreach($this->nokogiri->get('div#skuDetails .sku_desc p') as $item) {
+			$description[] = $item['#text'][0];
+		}
+
 		$description = implode(' ',$description);
 
 		foreach($this->nokogiri->get('#productTabs .sku_desc b') as $item) {
@@ -486,9 +491,14 @@ class PageProcessor {
 		}
 		$description_long = implode(' ',$description_long);
 
-		foreach($this->nokogiri->get('div.skuHeading h1') as $item) {
+		foreach($this->nokogiri->get('div#skuHeading h1') as $item) {
 			$title = $item;
 		}
+
+		foreach($this->nokogiri->get('.sku_det table tr') as $item) {
+			$features[] = $item['th'][0]['#text'][0].' - '.$item['td'][0]['#text'][0];
+		}
+		$features = implode(' ',$features);
 
 		foreach($this->nokogiri->get('#skuTop #purchaseBlock .your_price .price .price_amount') as $item) {
 			if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $item['#text'][0], $match)) {
@@ -502,6 +512,21 @@ class PageProcessor {
 			'Long_Description' => $description_long,
 			'Price' => $price
 		);
+	}
+
+	public function attributes_officedepot() {
+		$result = array();
+
+		foreach($this->nokogiri->get('.sku_det table tr') as $item) {
+			if ($item['th'][0]['#text'][0] =='manufacturer' ) {
+				$result['manufacturer'] = trim(str_replace('&nbsp;','',$item['td'][0]['#text'][0]));
+			}
+			if ($item['th'][0]['#text'][0] =='model name' ) {
+				$result['model'] = trim(str_replace('&nbsp;','',$item['td'][0]['#text'][0]));
+			}
+		}
+
+		return $result;
 	}
 
 	public function process_bestbuy(){
