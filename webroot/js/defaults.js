@@ -236,6 +236,32 @@ jQuery(document).ready(function($) {
                                     $("select[name='product_batches']").append('<option>No Batch</option>');
                                 }
                             });
+                        } else if ($('.customer_dropdown').attr('id') == 'customers') {
+                            // get customer name here
+                            var oDropdown = $("#customers").msDropdown().data("dd");
+                            if(oDropdown==undefined){
+                                oDropdown = $("#customer_dr").msDropdown().data("dd");
+                            }
+                            var customer_name = oDropdown.getData().data.value;
+                            // post data to server and fetch styel guide
+                            $.post(base_url + 'index.php/research/filterStyleByCustomer', 
+                                { 'customer_name': customer_name }, 
+                                function(data){
+                                    $('li#styleguide').find('.boxes_content').empty();
+                                    $('li#styleguide').find('.boxes_content').text(data);
+                                }
+                            );
+                            // populate batches dropdown
+                            $.post(base_url + 'index.php/research/filterBatchByCustomer', { 'customer_name': $("select[name='customers']").find("option:selected").text()}, function(data){
+                               if(data.length>0){
+                                    $("select[name='batches']").empty();
+                                    for(var i=0; i<data.length; i++){
+                                        $("select[name='batches']").append('<option>'+data[i]+'</option>');
+                                    }
+                               } else if(data.length==0 && $("select[name='customers']").find("option:selected").text()!="All customers"){
+                                   $("select[name='batches']").empty();
+                               }
+                            });
                         }
                     });
                 }

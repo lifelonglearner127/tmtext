@@ -1,3 +1,9 @@
+<script type='text/javascript'>
+jQuery(document).ready(function($) {
+    $("#compare_text").focus();
+});
+
+</script>
 <div class="main_content_other"></div>
 <div class="tabbable">
     <ul class="nav nav-tabs jq-measure-tabs">
