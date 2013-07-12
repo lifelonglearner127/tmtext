@@ -647,6 +647,11 @@ class System extends MY_Controller {
         $this->render();
     }
 
+    public function sites_view()
+    {
+        $this->render();
+    }
+
  	public function generate_attributes() {
  		$this->load->model('imported_data_parsed_model');
 		$this->load->model('imported_data_model');

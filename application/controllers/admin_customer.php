@@ -19,6 +19,11 @@ class Admin_Customer extends MY_Controller {
 		$this->render();
 	}
 
+    public function customer_list()
+    {
+        $this->render();
+    }
+
 	public function save() {
 		$this->form_validation->set_rules('user_settings[customer_name]', 'Customer name', 'required|xss_clean');
 		$this->form_validation->set_rules('user_settings[csv_directories]', 'CSV Directories', 'required|xss_clean');
