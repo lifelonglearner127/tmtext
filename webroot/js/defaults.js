@@ -252,16 +252,20 @@ jQuery(document).ready(function($) {
                                 }
                             );
                             // populate batches dropdown
-                            $.post(base_url + 'index.php/research/filterBatchByCustomer', { 'customer_name': $("select[name='customers']").find("option:selected").text()}, function(data){
-                               if(data.length>0){
-                                    $("select[name='batches']").empty();
-                                    for(var i=0; i<data.length; i++){
-                                        $("select[name='batches']").append('<option>'+data[i]+'</option>');
-                                    }
-                               } else if(data.length==0 && $("select[name='customers']").find("option:selected").text()!="All customers"){
-                                   $("select[name='batches']").empty();
-                               }
-                            });
+                            $.post(
+                                base_url + 'index.php/research/filterBatchByCustomer', 
+                                { 'customer_name': customer_name}, 
+                                function(data){
+                                   if(data.length>0){
+                                        $("select[name='batches']").empty();
+                                        for(var i=0; i<data.length; i++){
+                                            $("select[name='batches']").append('<option>'+data[i]+'</option>');
+                                        }
+                                   } else if(data.length==0 && $("select[name='customers']").find("option:selected").text()!="All customers"){
+                                       $("select[name='batches']").empty();
+                                   }
+                                }
+                        );
                         }
                     });
                 }
