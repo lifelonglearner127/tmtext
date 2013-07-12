@@ -6,16 +6,64 @@ from pprint import pprint
 import nltk
 import networkx as nx
 
-# normalizes a text: tokenizing, lowercasing, eliminating stopwords, stemming
-# (add synonyms?)
-# returns list of tokens
-def normalize(text):
-	stopset = ["and", "the", "&", "for", "of"]#set(stopwords.words('english'))
-	stemmer = nltk.PorterStemmer()
-	tokens = nltk.WordPunctTokenizer().tokenize(text)
-	clean = [token.lower() for token in tokens if token.lower() not in stopset and len(token) > 2]
-	final = [stemmer.stem(word) for word in clean]
-	return final
+class Utils:
+
+	# static variable that holds a dictionary of stems and their full words
+	# is built in normalize() function, using words from its parameters
+	stems = {}
+
+	# static variable that holds a dictionary of lowercased words and their original corresponding words
+	# is built in normalize() function, using words from its parameters
+	upper = {}
+
+	# normalizes a text: tokenizing, lowercasing, eliminating stopwords, stemming
+	# (add synonyms?)
+	# returns list of tokens
+	@classmethod
+	def normalize(cls, text):
+		stopset = ["and", "the", "&", "for", "of"]#set(stopwords.words('english'))
+		stemmer = nltk.PorterStemmer()
+		tokens = nltk.WordPunctTokenizer().tokenize(text)
+		clean = [token.lower() for token in tokens if token.lower() not in stopset and len(token) > 2]
+		final = [stemmer.stem(word) for word in clean]
+
+		for token in tokens:
+			cls.upper[token.lower()] = token
+
+		for index in range(len(final)):
+			if final[index] not in cls.stems:
+				cls.stems[final[index]] = cls.upper[clean[index]]
+
+		return final
+
+	# merge 2 lists of dictionaries without duplicates
+	# where a duplicate is an item with the same value for every key in keys
+	# assuming dictionary values are lists, and they both have all the keys in key
+	@staticmethod
+	def merge_dictionaries(list1, list2, keys):
+		final_list = []
+
+		for element1 in list1 + list2:
+			# if element in conjoined lists is different from all the elements in final list (it hasn't been added yet)
+			# if final list is empty add the element
+			if not final_list:
+				final_list.append(element1)
+			# the element is not found in final list
+			notfound = True
+			for element2 in final_list:
+				# if they are different in values for every key in keys list
+				different = False
+				for key in keys:
+					if element1[key]!=element2[key]:
+						different = True
+						break
+				if not different:
+					notfound = False
+					break
+			if (notfound):
+				final_list.append(element1)
+		return final_list
+
 
 # gets a dictionary of words that appear in categories of a certain sitemap, on a certain level of nesting
 # excluding special categories
@@ -35,7 +83,7 @@ def words_in_site(site, level):
 	for line in f:
 		item = json.loads(line.strip())
 		if int(item['level']) == level and 'special' not in item:
-			for word in normalize(item['text']):
+			for word in Utils.normalize(item['text']):
 				# add word to dictionary
 				# value of dictionary is item and site name
 
@@ -79,10 +127,11 @@ def words_graph(sites, level):
 		for line in f:
 			item = json.loads(line.strip())
 			if int(item['level']) == level and 'special' not in item:
-				category_words = normalize(item['text'])
+				category_words = Utils.normalize(item['text'])
 				for word in category_words[1:]:
 					words.add_edge(category_words[0], word)
 		f.close()
+
 	# return connected components of the graph
 	return nx.connected_components(words)
 
@@ -99,10 +148,27 @@ def group_by_common_words(sites,level):
 	# list of categories indexed by words found in them
 	sites_words = dict(words_in_sites(sites, level))
 	for word_list in word_groups:
-		new_group = {"Level":level, "Group_members":[]}
+		new_group = {"Group_name":"", "Short_name" : "", "Level":level, "Group_members":[]}
+
+		# build short name from the full version of the stemmed words in the group's list of words
+		#TODO: they shouldn't always be concatenated by "," or "&" (ex: "Home Theater")
+		short_name = "".join(Utils.stems[word_list[0]])
+
+		# keep adding words to it until it's above 40 characters
+		for word in word_list[1:]:
+			short_name += ", " + Utils.stems[word].decode("utf-8")
+
+			# if it's over 40 characters remove the last element and exit loop
+			if len(short_name) > 40:
+				short_name = ",".join(short_name.split(",")[:-1])
+				break
+
+		new_group["Short_name"] = short_name
+
+		# build group members list
 		names = []
 		for word in word_list:
-			new_group["Group_members"] = merge_dictionaries(new_group["Group_members"], sites_words[word], ["site", "text"])
+			new_group["Group_members"] = Utils.merge_dictionaries(new_group["Group_members"], sites_words[word], ["site", "text"])
 
 			# construct category name by concatenating all unique category names in the group
 			for site_item in sites_words[word]:
@@ -112,32 +178,6 @@ def group_by_common_words(sites,level):
 		cat_groups.append(new_group)
 	return cat_groups
 
-# merge 2 lists of dictionaries without duplicates
-# where a duplicate is an item with the same value for every key in keys
-# assuming dictionary values are lists, and they both have all the keys in key
-def merge_dictionaries(list1, list2, keys):
-	final_list = []
-
-	for element1 in list1 + list2:
-		# if element in conjoined lists is different from all the elements in final list (it hasn't been added yet)
-		# if final list is empty add the element
-		if not final_list:
-			final_list.append(element1)
-		# the element is not found in final list
-		notfound = True
-		for element2 in final_list:
-			# if they are different in values for every key in keys list
-			different = False
-			for key in keys:
-				if element1[key]!=element2[key]:
-					different = True
-					break
-			if not different:
-				notfound = False
-				break
-		if (notfound):
-			final_list.append(element1)
-	return final_list
 
 # group categories and store output in json file
 def serialize(sites, level):
@@ -153,5 +193,7 @@ if __name__=="__main__":
 	sites = ["amazon", "bestbuy", "bjs", "bloomingdales", "overstock", "walmart", "wayfair"]
 	groups = group_by_common_words(sites, 1)
 	pprint(groups)
+
+	#pprint(Utils.stems)
 
 	serialize(sites,1)
