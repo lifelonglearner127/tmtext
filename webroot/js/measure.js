@@ -1,4 +1,4 @@
-$("#compare_text").focus();
+
 
 var editorGridViewBaseUrl = base_url + 'index.php/measure/gridview';
 // ---- search string cookie (auto mode search launcher) (start)

@@ -7,6 +7,17 @@ var sentence = new Array();
 var desc_input = '';
 var action = '';
 
+function focusField() {
+    var focusIvt = setInterval(function(){
+        // set focus on desired field
+        $("#compare_text").focus();
+        
+        if ($("#compare_text").is(":visible")) {
+            clearInterval(focusIvt); // stop interval
+        }
+    }, 1000);
+}
+
 function getCustomerDropdown(){
     var customers_list_ci = $.post(base_url + 'index.php/measure/getcustomerslist_new', {}, function(c_data) {
         var jsn = $('.customer_dropdown').msDropDown({byJson:{data:c_data, name:'customers_list'}}).data("dd");
@@ -800,6 +811,7 @@ jQuery(document).ready(function($) {
 
     $(document).on("click", ".jq-measure-tabs li a", function(e){
         e.preventDefault();
+        focusField();
         var url = $(this).attr('href');
         var posting = $.post(url+"?ajax=true", function(data) {
             var response_data = $.parseJSON( data );

@@ -12,10 +12,7 @@
                 <div class="span6">
                     Batch:
                     <div id="product_customers" class="customer_dropdown"></div>
-                    
-                    <select name="product_batches" class="mt_10 mr_10" style="width: 100px;">
-                        <option value='0'>No Batch</option>
-                    </select>
+                    <?php echo form_dropdown('product_batches', $batches_list, array(), 'class="mt_10 mr_10" style="width: 100px;"'); ?>
                 </div>
             </div>
         </div>

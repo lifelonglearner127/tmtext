@@ -86,9 +86,16 @@ class Measure extends MY_Controller {
 
     public function measure_products()
     {
-       $this->data['category_list'] = $this->category_full_list();
-       $this->data['customers_list'] = $this->category_customers_list();
-       $this->render();
+        $this->data['category_list'] = $this->category_full_list();
+        $this->data['customers_list'] = $this->category_customers_list();
+        $this->load->model('batches_model');
+        $batches = $this->batches_model->getAll();
+        $batches_list = array(0 => 'No Batch');
+        foreach($batches as $batch){
+            array_push($batches_list, $batch->title);
+        }
+        $this->data['batches_list'] = $batches_list;
+        $this->render();
     }
 
     public function measure_departments()
