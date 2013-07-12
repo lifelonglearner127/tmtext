@@ -94,7 +94,7 @@
                                             <span class="btn mr_10">
                                                 <i class="icon-align-justify"></i>
                                             </span>
-                                            Text: (... woeds) ...
+                                            Text: (... words) ...
                                         </div>
 									</div>
 								</div>
