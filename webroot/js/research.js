@@ -2,8 +2,12 @@ var research_sentence = '';
 
 function getSearchResult(){
     var oDropdown = $("#web_dropdown").msDropdown().data("dd");
+    var website = '';
+    if(oDropdown != undefined){
+        website = oDropdown.getData().data.value;
+    }
     $.post(base_url + 'index.php/research/search_results', { 'search_data': $('input[name="research_text"]').val(),
-        'website': oDropdown.getData().data.value,
+        'website':  website,
         'category': $('select[name="category"]').find('option:selected').text(),
         'limit': $('select[name="result_amount"]').find('option:selected').val()
     }, function(data){

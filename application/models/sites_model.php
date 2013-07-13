@@ -38,4 +38,24 @@ class Sites_model extends CI_Model {
         }
         return '';
     }
+
+    function insertSiteByName($name)
+    {
+        $this->name = $name;
+        $this->db->insert($this->tables['sites'], $this);
+        return $this->db->insert_id();
+    }
+
+    function delete($id)
+    {
+        return $this->db->delete($this->tables['sites'], array('id' => $id));
+    }
+
+    function updateSite($id, $logo)
+    {
+        $data = array(
+            'image_url' => $logo,
+        );
+        $this->db->update( 'sites', $data, array( 'id' => $id ) );
+    }
 }

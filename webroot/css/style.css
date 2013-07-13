@@ -1603,3 +1603,18 @@ label.dd-selected-text, label.dd-option-text{
     margin-left: 0px;
     width: 98%;
 }
+
+select#sites{
+    width:300px;
+    min-height: 150px;
+    padding: 0px;
+}
+
+select#sites option{
+    border-bottom: 1px solid #CCCCCC;
+    padding: 7px;
+}
+
+#site_logo{
+    max-height: 50px;
+}
