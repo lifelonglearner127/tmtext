@@ -250,7 +250,9 @@ class PageProcessor {
 
 	public function process_sears() {
 		foreach($this->nokogiri->get('#productDetails #desc p') as $item) {
-				$description[] = $item['#text'][0];
+			foreach($item['#text'] as $i) {
+				$description[] = $i;
+			}
 		}
 		$description = implode(' ',$description);
 
