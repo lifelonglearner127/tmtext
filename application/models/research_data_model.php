@@ -164,4 +164,12 @@ union all
         return $this->db->delete($this->tables['research_data'], array('id' => $id));
     }
 
+    public function checkItemUrl($batch_id, $url){
+        $query = $this->db->where('url', $url)->where('batch_id', $batch_id)
+            ->limit(1)
+            ->get($this->tables['research_data']);
+        
+        return $query->result();
+    }
+
 }

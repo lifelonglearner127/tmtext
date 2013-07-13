@@ -486,7 +486,7 @@ class Research extends MY_Controller {
     public function csv_import() {
         $this->load->model('batches_model');
         $this->load->model('customers_model');
-        $this->load->model('items_model');
+        $this->load->model('research_data_model');
 
         $file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
         $_rows = array();
@@ -499,14 +499,22 @@ class Research extends MY_Controller {
             fclose($handle);
         }
         $batch_id = $this->batches_model->getIdByName($this->input->post('batch_name'));
-        $customer_id = $this->customers_model->getIdByName($this->input->post('customer_name'));
+        $last_revision = $this->research_data_model->getLastRevision();
+        $added = 0;
+
         foreach($_rows as $_row){
-            $this->items_model->insert($batch_id, $customer_id, $_row);
+
+            $res = $this->research_data_model->checkItemUrl($batch_id, $_row);
+            if(empty($res)){
+              $this->research_data_model->insert($batch_id, $_row, '', '', '',
+                    '', '', '', '', '', 0, '', 0,  $last_revision);
+                $added += 1;
+            }
         }
-        $str = count($_rows);
-        if(count($_rows)==1){
+        $str = $added;
+        if($added==1){
             $str .= ' record';
-        } else if(count($_rows)>1){
+        } else if($added>1){
             $str .= ' records';
         }
         
