@@ -232,8 +232,9 @@ function startMeasureCompareV2() {
     // --- record search term to cookie storage (end)
     var searcher_all = $.post(editorSearchAllBaseUrl, { s: s, sl: sl, cat: cat, limit: limit }, 'html').done(function(data) {
         $("#an_products_box").html(data);
-        $("#an_products_box").fadeOut();
-        $("#an_products_box").fadeIn();
+        // $("#an_products_box").fadeOut();
+        // $("#an_products_box").fadeIn();
+        $("#an_products_box").show();
         var w = $('ul#products li:first-child span:first-child').width();
         $('#an_sort_search_box .product_title .main span:first-child').width(w);
         setTimeout(function() {
