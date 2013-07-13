@@ -47,13 +47,18 @@ class Measure extends MY_Controller {
         $api_key = "dc598f9ae119a97234ea";
         $api_secret = "47c7248bc03fbd368362";
         $token = md5("$api_secret+$url");
-        $size = "200x150";
+        $size_s = "200x150";
+        $size_l = "600x450";
         $format = "png";
         // -- configs (end) 
-        $res = "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size&format=$format";
+        $res = array(
+            "s" => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_s&format=$format",
+            'l' => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_l&format=$format"
+        );
+        // $res = "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size&format=$format";
         // $res = base_url()."img/test.jpg";
         // $res = $_SERVER['DOCUMENT_ROOT']."/img/test.jpg";
-        $res = $this->upload_record_webshoot($res, 'teststuff');
+        // $res = $this->upload_record_webshoot($res, 'teststuff');
         $this->output->set_content_type('application/json')->set_output(json_encode($res));
     }
 

@@ -58,19 +58,26 @@ function openCrawlLaunchPanelModal(close_preview) {
     }, 'json');
 }
 
-// function previewScreenshotModal(url) {
-// 	$("#customers_screens_crawl_modal").modal('hide');
-// 	var link_img = "http://images.shrinktheweb.com/xino.php?stwembed=1&stwaccesskeyid=" + stwaccesskeyid + "&stwsize=lg&stwurl=http://www." + url;
-// 	$("#preview_screenshot_modal").modal('show');
-// 	$("#preview_screenshot_modal #sc_preview > img").attr('src', link_img);
-// }
-
 function previewScreenshotModal(url) {
 	$("#customers_screens_crawl_modal").modal('hide');
+	$("#preview_screenshot_modal #sc_preview").css('width', '200');
+	$("#preview_screenshot_modal #sc_preview").css('height', '150px');
 	$("#preview_screenshot_modal").modal('show');
-	var preview_img = $.post(base_url + 'index.php/measure/webshoot', { url: url }, function(link_img) {
-		console.log(link_img);
-		$("#preview_screenshot_modal #sc_preview").html("<img src='" + link_img + "'>");
+	var preview_img = $.post(base_url + 'index.php/measure/webshoot', { url: url }, function(data) {
+		var imagest = "";
+		imagest += "<img id='s_img' onclick='openPreviewLarge()' src='" + data.s + "'>";
+		imagest += "<img id='l_img' style='display: none;' src='" + data.l + "'>";
+		$("#preview_screenshot_modal #sc_preview").html(imagest);
+	});
+}
+
+function openPreviewLarge() {
+	$("#s_img").fadeOut('fast', function() {
+		// $("#preview_screenshot_modal #sc_preview").css('width', '600px');
+		// $("#preview_screenshot_modal #sc_preview").css('height', '450px');
+		$("#preview_screenshot_modal #sc_preview").css('width', 'auto');
+		$("#preview_screenshot_modal #sc_preview").css('height', 'auto');
+		$("#l_img").fadeIn('fast');
 	});
 }
 

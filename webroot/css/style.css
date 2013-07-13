@@ -17,7 +17,10 @@
 	margin: 0 auto;
 	width: 200px;
 	height: 150px;
-	background: #333;
+	/*background: #333;*/
+}
+#preview_screenshot_modal #sc_preview #s_img {
+	cursor: pointer;
 }
 /* --- SOME BOOTSTRAP WEIRD OVERRIDING (START) --- */
 .btn .caret {
