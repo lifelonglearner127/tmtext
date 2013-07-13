@@ -1,3 +1,6 @@
+# 07/14 Ruslan
+INSERT INTO  `sites` (`id` ,`name` ,`url` ,`image_url`) VALUES (NULL ,  'OfficeDepot.com',  'http://www.officedepot.com',  'office-logo.png');
+
 #07/09 Bojan
 UPDATE  `setting_values` SET  `value` =  'Content Solutions, Inc.' WHERE  `setting_values`.`id` =1;
 UPDATE  `setting_values` SET  `value` =  'Content Solutions, Inc.' WHERE  `setting_values`.`id` =2;
