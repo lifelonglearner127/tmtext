@@ -259,14 +259,33 @@ class PageProcessor {
 		}
 
 		foreach($this->nokogiri->get('.productName h1') as $item) {
-			$title = $item;
+			$title = $item['#text'][0];
 		}
 
 		return array(
-			'Product Name' => $title['#text'][0],
-			'Description' => $description['#text'][0],
+			'Product Name' => $title,
+			'Description' => $description,
 			'Long_Description' => $descriptionLong['#text'][0]
 		);
+	}
+
+	public function attributes_sears() {
+		$result = array();
+
+		foreach($this->nokogiri->get('meta') as $item){
+			if($item['name'] == 'keywords') {
+				$i = split(',',$item['content']);
+				$result['manufacturer'] =  trim($i[1]);
+			}
+		}
+
+		foreach($this->nokogiri->get('.productName small span') as $item) {
+			if (isset($item['itemprop']) && $item['itemprop']=='model') {
+				$result['model'] =  trim(preg_replace("/[^A-Za-z0-9\- ]/", '',$item['#text'][0]));
+			}
+		}
+
+		return $result;
 	}
 
 	public function pre_staples(){
@@ -514,15 +533,15 @@ class PageProcessor {
 		);
 	}
 
-	public function attributes_officedepot() {
+	public function attributes_officedepot(){
 		$result = array();
 
 		foreach($this->nokogiri->get('.sku_det table tr') as $item) {
 			if ($item['th'][0]['#text'][0] =='manufacturer' ) {
-				$result['manufacturer'] = trim(str_replace('&nbsp;','',$item['td'][0]['#text'][0]));
+				$result['manufacturer'] = preg_replace("/[^A-Za-z0-9\- ]/", '',$item['td'][0]['#text'][0]);
 			}
 			if ($item['th'][0]['#text'][0] =='model name' ) {
-				$result['model'] = trim(str_replace('&nbsp;','',$item['td'][0]['#text'][0]));
+				$result['model'] = preg_replace("/[^A-Za-z0-9\- ]/", '',$item['td'][0]['#text'][0]);
 			}
 		}
 
