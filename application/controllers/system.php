@@ -612,8 +612,7 @@ class System extends MY_Controller {
         $this->output->set_content_type('application/json');
         $this->uploadhandler->upload(array(
             'script_url' => site_url('system/upload_img'),
-            'upload_dir' => $this->config->item('img_dir'),
-            //'upload_dir' => $this->config->item('csv_upload_dir'),
+            'upload_dir' => $this->config->item('tmp_upload_dir'),
             'param_name' => 'files',
             'delete_type' => 'POST',
             'accept_file_types' => '/.+\.(jpg|gif|png)$/i',
@@ -667,13 +666,11 @@ class System extends MY_Controller {
         $this->load->model('sites_model');
         $sites = $this->sites_model->getAll();
         $sitesArray = array();
-        $sitesArray['All Sites'] = 'All Sites';
         foreach ($sites as $site) {
             if(!in_array($customer->name, sitesArray)){
                 $sitesArray[$site->id] = $site->name;
             }
         }
-        asort($sitesArray);
         $this->data['sites'] = $sitesArray;
         $this->render();
     }
@@ -834,6 +831,9 @@ class System extends MY_Controller {
         $this->load->model('sites_model');
         $site_id = $this->input->post('site');
         $site_info = $this->sites_model->get($site_id);
+        foreach($site_info as $site){
+            $site->image_url = $this->config->item('tmp_upload_dir').$site->image_url;
+        }
         $this->output->set_content_type('application/json')->set_output(json_encode($site_info));
     }
 
