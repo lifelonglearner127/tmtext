@@ -2,6 +2,7 @@
 
 import codecs
 import json
+import itertools
 from pprint import pprint
 import nltk
 import networkx as nx
@@ -65,6 +66,10 @@ class Utils:
 		return final_list
 
 class Categories:
+
+	# words not to group by (their normalized version)
+	exceptions = Utils.normalize("Supplies Delivery")
+
 	def __init__(self, sites, level=1):
 		self.sites = sites
 		self.level = level
@@ -93,6 +98,8 @@ class Categories:
 		for line in f:
 			item = json.loads(line.strip())
 			if int(item['level']) == self.level and 'special' not in item:
+
+				# for every word in category's name (normalized)
 				for word in Utils.normalize(item['text']):
 					# add word to dictionary
 					# value of dictionary is item and site name
@@ -137,9 +144,28 @@ class Categories:
 			for line in f:
 				item = json.loads(line.strip())
 				if int(item['level']) == self.level and 'special' not in item:
+					# every word in category's name (normalized)
 					category_words = Utils.normalize(item['text'])
-					for word in category_words[1:]:
-						words.add_edge(category_words[0], word)
+
+					# add edges between every two words in the name
+					for (word1, word2) in itertools.combinations(category_words,2):
+
+						# don't add the edge if they are in the exception list
+						if word1 not in self.exceptions:
+							if word2 not in self.exceptions:
+								words.add_edge(word1, word2)
+
+						# add them as independent nodes if they are not exceptions
+						for word in [word for word in [word1, word2] if word not in self.exceptions]:
+							words.add_node(word)
+
+						#TODO: not adding them in the graph will cause categories that are composed only of an exception word
+						# ("Supplies", "Delivery") not to appear in the final list of groups at all
+
+						# # instead add them as independent nodes
+						# else:
+						# 	words.add_node(word1)
+						# 	words.add_node(word2)
 			f.close()
 
 		# return the graph
