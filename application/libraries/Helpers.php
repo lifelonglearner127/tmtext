@@ -137,6 +137,66 @@ class Helpers {
   //   return $res_stack;
   // }
 
+  private function keywords_appearence_count($desc, $phrase) {
+    return substr_count($desc, $phrase);
+  }
+
+  // private function keywords_appearence_count_exp($desc, $phrase) {
+  //     $phrase_array = explode(" ", trim($phrase));
+  //     $desc_array = explode(" ", trim($desc));
+  //     $res = null;
+  //     $res_debug = array();
+  //     if(count($phrase_array) > 1) {
+  //       $scan = array();
+  //       foreach($phrase_array as $k => $v) {
+  //         if(in_array($v, $desc_array)) {
+  //           $mid = array(
+  //             'word' => $v,
+  //             'pos' => strpos($desc, $v)
+  //           );
+  //           $scan[] = $mid;
+  //         } 
+  //       }
+  //       if(count($scan) == count($phrase_array)) {
+  //         $res = $scan;
+  //       }
+  //     }
+  //     return $res;
+  // }
+
+  private function keywords_appearence_count_expV2($desc, $phrase) {
+      // $phrase_array = explode(" ", trim($phrase));
+      // $desc_array = explode(" ", trim($desc));
+      // $res = null;
+      // $res_debug = array();
+      // if(count($phrase_array) > 1) {
+      //   $scan = array();
+      //   foreach($phrase_array as $k => $v) {
+      //     if(in_array($v, $desc_array)) {
+      //       $mid = array(
+      //         'word' => $v,
+      //         'pos' => strpos($desc, $v)
+      //       );
+      //       $scan[] = $mid;
+      //     } 
+      //   }
+      //   if(count($scan) == count($phrase_array)) {
+      //     $res = $scan;
+      //   }
+      // }
+      // return $res;
+      $res = array();
+      $string = "/$phrase/";
+      if (preg_match_all($string, $desc, &$matches)) {
+        $mid = array(
+          'w' => $matches[0][0],
+          'c' => count($matches[0])
+        );
+        $res[] = $mid;
+      }
+      return $res;
+  }
+
   public function measure_analyzer_start_v2($clean_t) { // !!! NEW ONE !!!
     $clean_t = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $clean_t);
     // $clean_t = trim(str_replace('.', ' ', $clean_t));
@@ -149,6 +209,7 @@ class Helpers {
     // ---- convert to array (end)
 
     $res_stack = array();
+    // $log = array();
     for($l = 6; $l >= 1; $l--) {
         for($i = 0, $j = $l; $j < $overall_words_count; $i++, $j++) {
             // --- PREPARE PHRASE STRING FOR CHECK
@@ -159,8 +220,16 @@ class Helpers {
             $w = substr($w, 0, strlen($w)-1);
             $w = trim($w);
             // --- CHECK OUT STRING DUPLICATIONS
-            // $r = substr_count($text, $w);
-            $r = substr_count(strtolower($text), strtolower($w));
+            $r = $this->keywords_appearence_count(strtolower($text), strtolower($w));
+            // --- debug logger (start)
+            // $r_exp = $this->keywords_appearence_count_expV2(strtolower($text), strtolower($w));
+            // $mid_debug = array(
+            //   's_ph' => $w,
+            //   'count' => $r,
+            //   'count_exp' => $r_exp
+            // );
+            // $log[] = $mid_debug;
+            // --- debug logger (end)
             if($r > 1 && count(explode(" ", trim($w))) > 1) {
                 $mid = array(
                     "ph" => trim($w),
@@ -197,7 +266,7 @@ class Helpers {
         }
     }
     // -- FILTER  OUT SUBSETS (END)
-
+    // die(var_dump($log));
     return $res_stack;
   }
 
