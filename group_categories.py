@@ -3,6 +3,7 @@
 import codecs
 import json
 import itertools
+import re
 from pprint import pprint
 import nltk
 import networkx as nx
@@ -22,7 +23,12 @@ class Utils:
 	# returns list of tokens
 	@classmethod
 	def normalize(cls, text):
-		stopset = ["and", "the", "&", "for", "of"]#set(stopwords.words('english'))
+		# eliminate non-word characters
+		#TODO: fix this
+		re.sub("\W","",text)
+		text.replace(",","")
+
+		stopset = ["and", "the", "&", "for", "of", "on", "as", "to", "in"]#set(stopwords.words('english'))
 		stemmer = nltk.PorterStemmer()
 		tokens = nltk.WordPunctTokenizer().tokenize(text)
 		clean = [token.lower() for token in tokens if token.lower() not in stopset and len(token) > 2]
@@ -174,18 +180,60 @@ class Categories:
 	# returns connected components of words graph - output of words_graph()
 	def connected_words(self):
 		graph = self.words_graph()
+		#print nx.connected_components(graph)
 		return nx.connected_components(graph)
+
+	# uses words graph to generate groups of words that are connected
+	# these will be the connected components of the graph if they are not too large
+	# or subgraphs of them based on their cycles
+	def connected_words2(self):
+		graph = self.words_graph()
+
+		#TODO: which condition to use?
+		#if len(graph.nodes() > 7):
+
+		# if maximum distance between any 2 nodes is <= 4, return connected components
+		# otherwise, find cycles and use them + the remaining nodes each with their corresponding cycle
+		# (the first node adjacent to it that is in the final components list)
+		#TODO: maybe pick the list to which to attach remaining nodes better
+
+		#TODO: maybe use biconnected components instead, or bridges
+		if max(nx.all_pairs_shortest_path_length(graph)) <= 4:
+			return nx.connected_components(graph)
+		else:
+			word_groups = []
+			subgraphs = nx.cycle_basis(graph)
+			# add the remaining nodes
+			subgraphs_nodes = [node for subgraph in subgraphs for node in subgraph]
+			remaining_nodes = [node for node in graph.nodes() if node not in subgraphs_nodes]
+			components = []
+		 	for subgraph in subgraphs:
+		 		components.append(subgraph)
+
+			# add edges found in the original graph for the remaining nodes
+			for node in remaining_nodes:
+				for neighbor in graph.neighbors(node):
+					for subgraph in subgraphs:
+						if neighbor in subgraph:
+							subgraph.append(node)
+							break
+			#print components
+		 	return components
+			#UNDER CONSTRUCTION
+
 
 	# groups categories by following criteria:
 	# all categories in a group contain a word that is found in another category in that group
 	# creates graph of words with edges between words that appear in one category name
 	# and uses it to group categories that contain that word
+	# splits large groups by finding cycles - each cycle along with all direct neighbors of its nodes will form a new group
+	# (so one category can be in more than 1 group)
 	# returns list of dictionaries of groups containing items as in the spiders' outputs
 	def group_by_common_words(self):
 		# list containing final category groups
 		cat_groups = []
 		# connected components of word graph
-		word_groups = self.connected_words()
+		word_groups = self.connected_words2()
 		# list of categories indexed by words found in them
 		sites_words = dict(self.words_in_sites())
 		for word_list in word_groups:
@@ -197,7 +245,7 @@ class Categories:
 
 			# keep adding words to it until it's above 40 characters
 			for word in word_list[1:]:
-				short_name += ", " + Utils.stems[word].decode("utf-8")
+				short_name += ", " + Utils.stems[word]#.decode("utf-8")
 
 				# if it's over 40 characters remove the last element and exit loop
 				if len(short_name) > 40:
@@ -230,9 +278,31 @@ class Categories:
 			f.write(line+"\n\n")
 		f.close()
 
+	# build categories graph
+	def cat_graph(self):
+		cat_groups = self.group_by_common_words()
+		cat_graph = nx.Graph()
+		for cat_group in cat_groups:
+			for (cat1, cat2) in itertools.combinations(cat_group["Group_members"],2):
+				cat_name = cat1["text"]
+				cat_name2 = cat2["text"]
+				cat_graph.add_edge(cat_name,cat_name2)
+		return cat_graph
+
+	# build words subgraph of connected components
+	def word_graph_connected(self):
+		word_subgraph = nx.Graph()
+		components = self.connected_words2()
+		for component in components:
+			for (word1, word2) in itertools.combinations(component,2):
+				word_subgraph.add_edge(word1,word2)
+				print word1, word2
+		return word_subgraph
+
+
 if __name__=="__main__":
 	sites = ["amazon", "bestbuy", "bjs", "bloomingdales", "overstock", "walmart", "wayfair"]
-	gc = Categories(sites, 1)
+	gc = Categories(sites, 0)
 	groups = gc.group_by_common_words()
 	pprint(groups)
 
