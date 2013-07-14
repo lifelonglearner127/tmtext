@@ -42,7 +42,7 @@
 				<div class='ph_placeholder' data-week='1'>
 					<?php 
 						$items_count = 6;
-						$item_per_row = 3;
+						$item_per_row = 2;
 						$items_rows = ceil($items_count/$item_per_row);
 					?>
 
@@ -51,11 +51,12 @@
 						<?php 
 							$position = $item_per_row*($i-1); 
 							// $row_items = getRowItemsRowFromBackend($item_per_row, $position); // -- method template to get items from backend // designed in such way that row will not have more than 3 items  
-							$row_items = array(rand(), rand(), rand()); // tmp for mockup
+							// $row_items = array(rand(), rand(), rand()); // tmp for mockup
+							$row_items = array(rand(), rand()); // tmp for mockup
 						?>
 						<?php if($i == $items_rows) $dropup = 'dropup'; else $dropup = ''; ?>
 						<?php foreach($row_items as $k=>$v) { ?>
-							<div class='span4 item'>
+							<div class='span6 item'>
 								<?php if(count($customers_list) > 0) { ?>
 								    <div id="hp_boot_drop_<?php echo $v; ?>" class="btn-group <?php echo $dropup; ?> hp_boot_drop">
 									    <button class="btn btn-danger btn_caret_sign">[ Choose site ]</button>
