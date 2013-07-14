@@ -20,7 +20,7 @@
                                     $('input#site_url').val('');
                                 }
                                 if(data[0].image_url != ''){
-                                    $('img#site_logo').attr({'src': data[0].image_url });
+                                    $('img#site_logo').attr({'src': base_url+'img/'+data[0].image_url });
                                 } else {
                                     $('img#site_logo').attr({'src': base_url+'img/no-logo.jpg' });
                                 }
