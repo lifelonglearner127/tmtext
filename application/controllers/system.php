@@ -608,11 +608,11 @@ class System extends MY_Controller {
     public function upload_img()
     {
         $this->load->library('UploadHandler');
-
         $this->output->set_content_type('application/json');
+
         $this->uploadhandler->upload(array(
             'script_url' => site_url('system/upload_img'),
-            'upload_dir' => '/home/trillionmonkeysdev/dev/webroot/img',
+            'upload_dir' => $this->config->item('csv_upload_dir'),
             'param_name' => 'files',
             'delete_type' => 'POST',
             'accept_file_types' => '/.+\.(jpg|gif|png)$/i',
