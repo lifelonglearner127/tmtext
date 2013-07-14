@@ -54,7 +54,8 @@
 							// $row_items = array(rand(), rand(), rand()); // tmp for mockup
 							$row_items = array(rand(), rand()); // tmp for mockup
 						?>
-						<?php if($i == $items_rows) $dropup = 'dropup'; else $dropup = ''; ?>
+						<?php // if($i == $items_rows) $dropup = 'dropup'; else $dropup = ''; ?>
+						<?php $dropup = ''; ?>
 						<?php foreach($row_items as $k=>$v) { ?>
 							<div class='span6 item'>
 								<?php if(count($customers_list) > 0) { ?>
