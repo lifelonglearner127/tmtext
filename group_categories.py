@@ -84,12 +84,16 @@ class Utils:
 
 class Categories:
 
-	# words not to group by (their normalized version)
-	exceptions = Utils.normalize("Supplies Delivery")
-
 	def __init__(self, sites, level=1):
 		self.sites = sites
 		self.level = level
+
+		# words not to group by (their normalized version)
+		self.exceptions = Utils.normalize("Supplies Delivery Shop")
+
+		#"Furniture" is exception only for grouping categories"
+		if (self.level < 1):
+			self.exceptions += Utils.normalize("Furniture")
 
 	def set_sites(self, sites):
 		self.sites = sites
@@ -211,8 +215,12 @@ class Categories:
 		# (the first node adjacent to it that is in the final components list)
 		#TODO: maybe pick the list to which to attach remaining nodes better
 
-		#TODO: maybe use biconnected components instead, or bridges
-		if max(nx.all_pairs_shortest_path_length(graph)) <= 4:
+		# For grouping lower level categories we allow larger groups
+		if (self.level == 1):
+			path_limit = 4
+		else:
+			path_limit = 7
+		if max(nx.all_pairs_shortest_path_length(graph)) <= path_limit:
 			return nx.connected_components(graph)
 		else:
 			word_groups = []
@@ -252,7 +260,7 @@ class Categories:
 		# list containing final category groups
 		cat_groups = []
 		# connected components of word graph
-		word_groups = self.connected_words()
+		word_groups = self.connected_words2()
 		# list of categories indexed by words found in them
 		sites_words = dict(self.words_in_sites())
 		for word_list in word_groups:
@@ -335,7 +343,7 @@ class Categories:
 
 if __name__=="__main__":
 	sites = ["amazon", "bestbuy", "bjs", "bloomingdales", "overstock", "walmart", "wayfair"]
-	gc = Categories(sites, 1)
+	gc = Categories(sites, 0)
 	groups = gc.group_by_common_words()
 	pprint(groups)
 

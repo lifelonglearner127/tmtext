@@ -11,13 +11,16 @@ def encode(text_list):
 filename = sys.argv[1]
 f = codecs.open(filename,"r","utf-8")
 
-# output1 = codecs.open("departments.csv","wb")
-# output2 = codecs.open("department_members.csv","wb")
-# output3 = codecs.open("departments_and_members.csv","wb")
+if (filename.split("_")[0]) == "dept":
 
-output1 = codecs.open("categories.csv","wb")
-output2 = codecs.open("category_members.csv","wb")
-output3 = codecs.open("categories_and_members.csv","wb")
+	output1 = codecs.open("departments.csv","wb")
+	output2 = codecs.open("department_members.csv","wb")
+	output3 = codecs.open("departments_and_members.csv","wb")
+	
+else:
+	output1 = codecs.open("categories.csv","wb")
+	output2 = codecs.open("category_members.csv","wb")
+	output3 = codecs.open("categories_and_members.csv","wb")
 
 deptwriter = csv.writer(output1, delimiter=',')
 memberswriter = csv.writer(output2, delimiter=',')
