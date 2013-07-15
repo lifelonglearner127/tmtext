@@ -23,6 +23,8 @@ class Webshoots_model extends CI_Model {
                 'url' => $result['url'],
                 'img' => $result['big_crawl'],
                 'thumb' => $result['small_crawl'],
+                'dir_thumb' => $result['dir_thumb'],
+                'dir_img' => $result['dir_img'],
                 'stamp' => date("Y-m-d H:i:s")
             );
             $this->db->insert($this->tables['webshoots'], $insert_object);
