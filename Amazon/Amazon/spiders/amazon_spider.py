@@ -45,7 +45,8 @@ class AmazonSpider(BaseSpider):
         for link in links_level0:
             item = AmazonItem()
             item['text'] = link.select('text()').extract()[0]
-            item['url'] = link.select('@href').extract()[0]
+            root_url = "http://www.amazon.com"
+            item['url'] = root_url + link.select('@href').extract()[0]
             item['level'] = 1
 
             parent = link.select("parent::node()/parent::node()/preceding-sibling::node()")

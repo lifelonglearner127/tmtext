@@ -28,6 +28,10 @@ class Utils:
 		re.sub("\W","",text)
 		text.replace(",","")
 
+		#TODO: do this more ellegantly
+		# Exclude "Home Theater", put it together with electronics
+		text.replace("Home Theater", "Electronics")
+
 		stopset = ["and", "the", "&", "for", "of", "on", "as", "to", "in"]#set(stopwords.words('english'))
 		stemmer = nltk.PorterStemmer()
 		tokens = nltk.WordPunctTokenizer().tokenize(text)
@@ -106,7 +110,9 @@ class Categories:
 			if int(item['level']) == self.level and 'special' not in item:
 
 				# for every word in category's name (normalized)
-				for word in Utils.normalize(item['text']):
+				normalized = Utils.normalize(item['text'])
+
+				for word in normalized:
 					# add word to dictionary
 					# value of dictionary is item and site name
 
