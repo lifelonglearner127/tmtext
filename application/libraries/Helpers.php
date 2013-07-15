@@ -185,20 +185,28 @@ class Helpers {
       //   }
       // }
       // return $res;
-      $res = array();
-      $string = "/$phrase/";
-      if (preg_match_all($string, $desc, &$matches)) {
-        $mid = array(
-          'w' => $matches[0][0],
-          'c' => count($matches[0])
-        );
-        $res[] = $mid;
-      }
-      return $res;
+      // $res = array();
+      // $string = "/$phrase/";
+      // if (preg_match_all($string, $desc, &$matches)) {
+      //   $mid = array(
+      //     'w' => $matches[0][0],
+      //     'c' => count($matches[0])
+      //   );
+      //   $res[] = $mid;
+      // }
+      // return $res;
+      $pos = strpos($desc, $phrase);
+      $str_len = strlen($phrase);
+      $pos_r = ($pos + $str_len) - 1;
+      return $res = array(
+        'pos' => $pos,
+        'str_len' => $str_len,
+        'pos_r' => $pos_r
+      );
   }
 
   public function measure_analyzer_start_v2($clean_t) { // !!! NEW ONE !!!
-    $clean_t = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $clean_t);
+    // $clean_t = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $clean_t);
     // $clean_t = trim(str_replace('.', ' ', $clean_t));
     $text = $clean_t;
 
