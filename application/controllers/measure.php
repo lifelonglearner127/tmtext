@@ -23,24 +23,45 @@ class Measure extends MY_Controller {
     }
 
     private function upload_record_webshoot($ext_url, $url_name) {
-        // $type = "png";
-        // $holder = $_SERVER['DOCUMENT_ROOT']."/webshoots/$url_name.$type";
-        // $ch = curl_init($ext_url);
-        // $fp = fopen($holder, 'wb');
-        // curl_setopt($ch, CURLOPT_FILE, $fp);
-        // curl_setopt($ch, CURLOPT_HEADER, 0);
-        // curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-        // curl_exec($ch);
-        // curl_close($ch);
-        // fclose($fp);
-
-        // $file = file_get_contents($ext_url);
-        // $type = 'png';
-        // file_put_contents($_SERVER['DOCUMENT_ROOT']."/webshoots/$url_name.$type", $file);
-        return $ext_url;
+        $file = file_get_contents($ext_url);
+        $type = 'png';
+        $dir =  $_SERVER['DOCUMENT_ROOT']."/webroot/webshoots";
+        if(!file_exists($dir)) {
+            mkdir($dir);
+            chmod($dir, 0777);
+        }
+        $t = file_put_contents($dir."/$url_name.$type", $file);
+        $path = base_url()."webshoots/$url_name.$type";
+        return $path;
     }
 
-    public function webshoot() {
+    private function check_screen_crawl_status($url) {
+        $this->load->model('webshoots_model');
+        return $this->webshoots_model->checkScreenCrawlStatus($url);
+    }
+
+    public function getwebshootdata() {
+        $url = $this->input->post('url');
+        $this->load->model('webshoots_model');
+        $res = $this->webshoots_model->getWebshootData($url);
+        $this->output->set_content_type('application/json')->set_output(json_encode($res));
+    }
+
+    public function getcustomerslist_crawl() {
+        $cs = $this->customers_list_new();
+        $res = array();
+        foreach ($cs as $k => $v) {
+            $mid = array(
+                'id' => $v['id'],
+                'name' => $v['name'],
+                'crawl_st' => $this->check_screen_crawl_status($v['name'])
+            );
+            $res[] = $mid;
+        }
+        $this->output->set_content_type('application/json')->set_output(json_encode($res));
+    }
+
+    public function webshootcrawl() {
         $url = $this->input->post('url');
         $url = urlencode(trim($url));
         // -- configs (start)
@@ -55,16 +76,18 @@ class Measure extends MY_Controller {
             "s" => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_s&format=$format",
             'l' => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_l&format=$format"
         );
-        // $res = "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size&format=$format";
-        // $res = base_url()."img/test.jpg";
-        // $res = $_SERVER['DOCUMENT_ROOT']."/img/test.jpg";
-        // $res = $this->upload_record_webshoot($res, 'teststuff');
-        $this->output->set_content_type('application/json')->set_output(json_encode($res));
-    }
-
-    public function testscreenshot() {
-        $grab = $this->helpers->test_screenshot();
-        $this->output->set_content_type('application/json')->set_output(json_encode($grab));
+        $crawl_s = $this->upload_record_webshoot($res['s'], $url."_small");
+        $crawl_l = $this->upload_record_webshoot($res['l'], $url."_big");
+        $result = array(
+            'state' => false,
+            'url' => $url,
+            'small_crawl' => $crawl_s,
+            'big_crawl' => $crawl_l  
+        );
+        $this->load->model('webshoots_model');
+        $r = $this->webshoots_model->recordUpdateWebshoot($result);
+        if($r) $result['state'] = true;
+        $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }
 
     public function gethomepageyeardata() {

@@ -84,8 +84,8 @@
 					<?php } ?>
 				</div>
 			</div>
-			<a id='customers_screens_crawl' onclick="openCrawlLaunchPanelModal()" class='btn btn-warning'><i class='icon-file'></i>&nbsp;Crawl sites screenshots</a>
-			<a id='overview_screens_crawl' onclick="openOverviewScreensCrawlModal()" class='btn btn-success'><i class='icon-print'></i>&nbsp;Overview crawl results</a>
+			<a id='customers_screens_crawl' onclick="openCrawlLaunchPanelModal()" class='btn btn-warning'><i class='icon-file'></i>&nbsp;Crawl sites screenshots interface</a>
+			<!-- <a id='overview_screens_crawl' onclick="openOverviewScreensCrawlModal()" class='btn btn-success'><i class='icon-print'></i>&nbsp;Overview crawl results</a> -->
 			<!-- <a href="javascript:void(0)" class="btn btn-primary" onclick="test_screenshot()">Test Screenshot</a> -->
 		</div>
     </div>
@@ -165,14 +165,14 @@
 	</div>
 	<div class="modal-footer">
 		<a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
-		<a href="javascript:void(0)" id="crawl_modal_sbm_btn" class="btn btn-success" onclick="startCrawl()">Start all crawl</a>
+		<!-- <a href="javascript:void(0)" id="crawl_modal_sbm_btn" class="btn btn-success" onclick="startCrawl()">Start all crawl</a> -->
 	</div>
 </div>
 
 <div class="modal hide fade ci_hp_modals" id='preview_screenshot_modal'>
 	<div class="modal-header">
 		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-		<h3>Screenshot Preview</h3>
+		<h3>Screenshot Review</h3>
 	</div>
 	<div class="modal-body">
 		<div id="sc_preview">&nbsp;</div>
@@ -180,7 +180,12 @@
 	<div class="modal-footer">
 		<a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
 		<a href="javascript:void(0)" onclick="openCrawlLaunchPanelModal(true)" class="btn btn-success">Back to list</a>
-		<a href="javascript:void(0)" class="btn btn-primary">Crawl it</a>
+	</div>
+</div>
+
+<div class="modal hide fade" id='loading_crawl_modal'>
+	<div class="modal-body">
+		<p>Wait for it. Screenshot generating and saving ...</p>
 	</div>
 </div>
 

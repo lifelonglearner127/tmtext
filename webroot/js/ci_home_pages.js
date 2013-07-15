@@ -30,7 +30,8 @@ function openCrawlLaunchPanelModal(close_preview) {
 		$("#preview_screenshot_modal").modal('hide');
 	}
 	$("#customers_screens_crawl_modal").modal('show');
-	var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist_general', {}, function(c_data) {
+	// var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist_general', {}, function(c_data) {
+	var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist_crawl', {}, function(c_data) {
 		var tbl = "";
 		tbl += "<table id='cl_cp_tbl_crawls' class='table table-striped'>";
 			tbl += "<thead>";
@@ -44,30 +45,55 @@ function openCrawlLaunchPanelModal(close_preview) {
 				tbl += "<tr data-id='" + c_data[i]['id']  + "'>";
 					tbl += "<td>" + c_data[i]['name'] + "</td>";
 					tbl += "<td>";
-					tbl += "<a onclick=\"removeCrawlSiteFromList('" + c_data[i]['id'] + "');\" class='btn btn-danger'><i class='icon-remove-sign'></i>&nbspRemove</a>";
-					tbl += "<a style='margin-left: 10px;' onclick=\"previewScreenshotModal('" + c_data[i]['name'] + "');\" class='btn btn-primary'><i class='icon-picture'></i>&nbsp;Preview Screen</a>"
+					// tbl += "<a onclick=\"removeCrawlSiteFromList('" + c_data[i]['id'] + "');\" class='btn btn-danger'><i class='icon-remove-sign'></i>&nbspRemove</a>";
+					if(c_data[i]['crawl_st']) {
+						tbl += "<a style='margin-left: 10px;' onclick=\"previewScreenshotModal('" + c_data[i]['name'] + "');\" class='btn btn-primary'><i class='icon-refresh'></i>&nbsp;Refresh Screenshot</a>"
+					} else {
+						tbl += "<a style='margin-left: 10px;' onclick=\"previewScreenshotModal('" + c_data[i]['name'] + "');\" class='btn btn-primary'><i class='icon-picture'></i>&nbsp;Crawl Screenshot</a>";
+					}
+					if(c_data[i]['crawl_st']) {
+						tbl += "<a style='margin-left: 10px;' onclick=\"flatPreviewScreenshotModal('" + c_data[i]['name'] + "');\" class='btn btn-success'><i class='icon-ok'></i>&nbsp;Screenshot Ready</a>";
+					} else {
+						tbl += "<a style='margin-left: 10px;' class='btn btn-warning disabled'><i class='icon-thumbs-down'></i>&nbsp;No Screenshot</a>";
+					}
 					tbl += "</td>";
 				tbl += "</tr>";
 			};
 			tbl += "</tbody>";
 		tbl += "</table>";
 		$("#cl_cp_crawl_modal").html(tbl);
-		$("#crawl_modal_sbm_btn").removeClass("disabled");
-		$("#crawl_modal_sbm_btn").removeAttr("disabled");
-		$("#crawl_modal_sbm_btn").attr("onclick", "startCrawl()");
     }, 'json');
 }
 
-function previewScreenshotModal(url) {
+function flatPreviewScreenshotModal(url) {
 	$("#customers_screens_crawl_modal").modal('hide');
 	$("#preview_screenshot_modal #sc_preview").css('width', '200');
 	$("#preview_screenshot_modal #sc_preview").css('height', '150px');
 	$("#preview_screenshot_modal").modal('show');
-	var preview_img = $.post(base_url + 'index.php/measure/webshoot', { url: url }, function(data) {
+	var preview_img = $.post(base_url + 'index.php/measure/getwebshootdata', { url: url }, function(data) {
 		var imagest = "";
-		imagest += "<img id='s_img' onclick='openPreviewLarge()' src='" + data.s + "'>";
-		imagest += "<img id='l_img' style='display: none;' src='" + data.l + "'>";
+		imagest += "<img id='s_img' onclick='openPreviewLarge()' src='" + data[0]['thumb'] + "'>";
+		imagest += "<img id='l_img' style='display: none;' src='" + data[0]['img'] + "'>";
 		$("#preview_screenshot_modal #sc_preview").html(imagest);
+	});
+}
+
+function previewScreenshotModal(url) {
+	$("#customers_screens_crawl_modal").modal('hide');
+	$("#loading_crawl_modal").modal('show');
+	var start_site_crawl = $.post(base_url + 'index.php/measure/webshootcrawl', { url: url }, function(data) {
+		$("#loading_crawl_modal").modal('hide');
+		if(data['state']) {
+			$("#preview_screenshot_modal #sc_preview").css('width', '200');
+			$("#preview_screenshot_modal #sc_preview").css('height', '150px');
+			$("#preview_screenshot_modal").modal('show');
+			var imagest = "";
+			imagest += "<img id='s_img' onclick='openPreviewLarge()' src='" + data['small_crawl'] + "'>";
+			imagest += "<img id='l_img' style='display: none;' src='" + data['big_crawl'] + "'>";
+			$("#preview_screenshot_modal #sc_preview").html(imagest);
+		} else {
+			alert('Internal Server Error');
+		}
 	});
 }
 
