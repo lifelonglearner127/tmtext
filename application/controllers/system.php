@@ -612,7 +612,7 @@ class System extends MY_Controller {
 
         $this->uploadhandler->upload(array(
             'script_url' => site_url('system/upload_img'),
-            'upload_dir' => $this->config->item('csv_upload_dir'),
+            'upload_dir' => 'webroot/img/',
             'param_name' => 'files',
             'delete_type' => 'POST',
             'accept_file_types' => '/.+\.(jpg|gif|png)$/i',
@@ -831,6 +831,9 @@ class System extends MY_Controller {
         $this->load->model('sites_model');
         $site_id = $this->input->post('site');
         $site_info = $this->sites_model->get($site_id);
+       /* foreach($site_info as $site){
+            $site->image_url = $this->config->item('tmp_upload_dir').$site->image_url;
+        }*/
         $this->output->set_content_type('application/json')->set_output(json_encode($site_info));
     }
 
@@ -848,10 +851,26 @@ class System extends MY_Controller {
         $this->output->set_content_type('application/json')->set_output(json_encode($response));
     }
 
-    public function update_site(){
+    public function update_site_logo(){
         $this->load->model('sites_model');
         $this->sites_model->updateSite($this->input->post('id'), $this->input->post('logo'));
         $response['message'] =  'Site was updated successfully';
         $this->output->set_content_type('application/json')->set_output(json_encode($response));
     }
+
+    public function update_site_info(){
+        $this->load->model('sites_model');
+        $this->sites_model->update($this->input->post('id'), $this->input->post('site_name'),
+            $this->input->post('site_url'), $this->input->post('logo'));
+        $response['message'] =  'Site was updated successfully';
+        $this->output->set_content_type('application/json')->set_output(json_encode($response));
+    }
+
+    public function delete_sitelogo(){
+        $this->load->model('sites_model');
+        $this->sites_model->updateSite($this->input->post('id'), $this->input->post('logo'));
+        $response['message'] =  'Site was deleted successfully';
+        $this->output->set_content_type('application/json')->set_output(json_encode($response));
+    }
+
 }

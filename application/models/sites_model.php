@@ -58,4 +58,15 @@ class Sites_model extends CI_Model {
         );
         $this->db->update( 'sites', $data, array( 'id' => $id ) );
     }
+
+    function update($id, $name, $url, $image_url)
+    {
+        $this->url = $url;
+        $this->name = $name;
+        $this->image_url = $image_url;
+
+        return $this->db->update($this->tables['sites'],
+            $this,
+            array('id' => $id));
+    }
 }
