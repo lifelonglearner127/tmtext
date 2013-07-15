@@ -172,7 +172,7 @@
 
 .lh_30 {
 	line-height: 30px;
-} 
+}
 
 .w_400 {
 	width: 400px !important;
@@ -1523,9 +1523,9 @@ label.dd-selected-text, label.dd-option-text{
     font-weight: bold;
 }
 
-#customer_dr .ddcommon{
+/*#customer_dr .ddcommon{
     position: absolute;
-}
+}*/
 
 #create_batch_save{
     min-height: 400px;

@@ -244,8 +244,8 @@ jQuery(document).ready(function($) {
                             }
                             var customer_name = oDropdown.getData().data.value;
                             // post data to server and fetch styel guide
-                            $.post(base_url + 'index.php/research/filterStyleByCustomer', 
-                                { 'customer_name': customer_name }, 
+                            $.post(base_url + 'index.php/research/filterStyleByCustomer',
+                                { 'customer_name': customer_name },
                                 function(data){
                                     $('li#styleguide').find('.boxes_content').empty();
                                     $('li#styleguide').find('.boxes_content').text(data);
@@ -253,8 +253,8 @@ jQuery(document).ready(function($) {
                             );
                             // populate batches dropdown
                             $.post(
-                                base_url + 'index.php/research/filterBatchByCustomer', 
-                                { 'customer_name': customer_name}, 
+                                base_url + 'index.php/research/filterBatchByCustomer',
+                                { 'customer_name': customer_name},
                                 function(data){
                                    if(data.length>0){
                                         $("select[name='batches']").empty();
@@ -345,7 +345,7 @@ jQuery(document).ready(function($) {
             if(term !== "") {
                 var cookie_search_str = $.cookie('validate_search_str');
                 if(typeof(cookie_search_str) !== 'undefined') {
-                    $.removeCookie('validate_search_str', { path: '/' }); // destroy 
+                    $.removeCookie('validate_search_str', { path: '/' }); // destroy
                     $.cookie('validate_search_str', term, { expires: 7, path: '/' }); // re-create
                 } else {
                     $.cookie('validate_search_str', term, { expires: 7, path: '/' }); // create
@@ -789,7 +789,7 @@ jQuery(document).ready(function($) {
             $('.main_content_other').html(response_data.ajax_data);
         });
     });
-    
+
     $(document).on("click", ".jq-customer-tabs li a", function(e){
         e.preventDefault();
         var url = $(this).attr('href');
