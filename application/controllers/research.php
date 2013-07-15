@@ -22,8 +22,9 @@ class Research extends MY_Controller {
         $this->data['customer_list'] = $this->getCustomersByUserId();
         $this->data['category_list'] = $this->category_list();
         if(!empty($this->data['customer_list'])){
-            $this->data['batches_list'] = $this->batches_list($this->data['customer_list']);
+             $this->data['batches_list'] = $this->batches_list();
         }
+
         $this->render();
     }
 
@@ -38,19 +39,14 @@ class Research extends MY_Controller {
         return $category_list;
     }
 
-    public function batches_list($customers)
+    public function batches_list()
     {
         $this->load->model('batches_model');
+        $batches = $this->batches_model->getAll();
         $batches_list = array();
-        foreach ($customers as $c_id) {
-            if ($c_id !== "All Customers") {
-                $batches = $this->batches_model->getAllByCustomer($c_id);
-                foreach($batches as $batch){
-                    array_push($batches_list, $batch->title);
-                } 
-            }
+        foreach($batches as $batch){
+            array_push($batches_list, $batch->title);
         }
-        
         return $batches_list;
     }
 
@@ -136,7 +132,7 @@ class Research extends MY_Controller {
 
         $this->data['customer_list'] = $this->getCustomersByUserId();
         if(!empty($this->data['customer_list'])){
-            $this->data['batches_list'] = array('')+$this->batches_list($this->data['customer_list']);
+            $this->data['batches_list'] = array('')+$this->batches_list();
         }
         $this->render();
     }
@@ -587,25 +583,22 @@ class Research extends MY_Controller {
             ->set_output(json_encode(strtolower($customer_name)));
     }
 
-    public function getCustomersByUserId(){
+    public function filterBatchByCustomer(){
+        $this->load->model('batches_model');
         $this->load->model('customers_model');
-        $this->load->model('users_to_customers_model');
-        $customer_list = array();
-        $customers = $this->users_to_customers_model->getByUserId($this->ion_auth->get_user_id());
-        if(!$this->ion_auth->is_admin($this->ion_auth->get_user_id())){
-            foreach($customers as $customer){
-                array_push($customer_list, $customer->id);
-            }
-        }else{
-            if(count($customers) == 0){
-                $customers = $this->customers_model->getAll();
-            }
-            array_push($customer_list, 'All Customers');
-            foreach($customers as $customer){
-                array_push($customer_list, $customer->id);
+        $customer_id = $this->customers_model->getIdByName($this->input->post('customer_name'));
+        $batches = $this->batches_model->getAllByCustomer($customer_id);
+        if($this->input->post('customer_name') ==  "All Customers"){
+            $batches = $this->batches_model->getAll();
+        }
+        $batches_list = array();
+        if(!empty($batches)){
+            foreach($batches as $batch){
+                array_push($batches_list, $batch->title);
             }
         }
-        return $customer_list;
+        $this->output->set_content_type('application/json')
+            ->set_output(json_encode($batches_list));
     }
 
     public function filterStyleByCustomer(){
