@@ -14,6 +14,8 @@ class Research_data_model extends CI_Model {
     var $meta_keywords = '';
     var $short_description = '';
     var $long_description = '';
+    var $priority = '';
+    var status = '';
     var $created = '';
     var $modified = '';
 
@@ -58,7 +60,8 @@ class Research_data_model extends CI_Model {
         $this->long_description = $long_description;
         $this->long_description_wc = $long_description_wc;
         $this->revision = $revision;
-
+        $this->priority = 50;
+        $this->status = 'created';
         $this->created = date('Y-m-d h:i:s');
         $this->modified = date('Y-m-d h:i:s');
         $this->db->insert($this->tables['research_data'], $this);
@@ -83,6 +86,8 @@ class Research_data_model extends CI_Model {
         $this->short_description_wc = $short_description_wc;
         $this->long_description = $long_description;
         $this->long_description_wc = $long_description_wc;
+        $this->priority = 50;
+        $this->status = 'edited';
         $this->revision = $revision;
         $this->modified = date('Y-m-d h:i:s');
 
