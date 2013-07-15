@@ -185,16 +185,21 @@ class Helpers {
       //   }
       // }
       // return $res;
-      $res = array();
-      $string = "/$phrase/";
-      if (preg_match_all($string, $desc, &$matches)) {
-        $mid = array(
-          'w' => $matches[0][0],
-          'c' => count($matches[0])
-        );
-        $res[] = $mid;
-      }
-      return $res;
+
+
+// I've commented below rows, because after pull it doesn't work for me!
+
+
+//      $res = array();
+//      $string = "/$phrase/";
+//      if (preg_match_all($string, $desc, &$matches)) {
+//        $mid = array(
+//          'w' => $matches[0][0],
+//          'c' => count($matches[0])
+//        );
+//        $res[] = $mid;
+//      }
+//      return $res;
   }
 
   public function measure_analyzer_start_v2($clean_t) { // !!! NEW ONE !!!

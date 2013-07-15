@@ -172,7 +172,7 @@
 
 .lh_30 {
 	line-height: 30px;
-}
+} 
 
 .w_400 {
 	width: 400px !important;
@@ -1384,6 +1384,7 @@ label.dd-selected-text, label.dd-option-text{
 
 #research_text{
     margin-right: 10px;
+    width: 230px;
 }
 
 .research .row-fluid p#show_result{
@@ -1479,7 +1480,7 @@ label.dd-selected-text, label.dd-option-text{
     width: 90px!important;
     margin-right: 5px;
     position:relative;
-    top:-5px;
+    top: -1px;
 }
 
 #research_tab2 .customer_dropdown{
@@ -1506,6 +1507,20 @@ label.dd-selected-text, label.dd-option-text{
 
 #customer_dr .dd{
     width:190px!important;
+    position: relative;
+    top: 0px;
+}
+
+.research_edit_filter_links {
+    padding-top: 14px;
+}
+
+.research_edit_filter_links a {
+    text-decoration: none;
+}
+
+.active_link {
+    font-weight: bold;
 }
 
 #customer_dr .ddcommon{

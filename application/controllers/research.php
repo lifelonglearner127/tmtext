@@ -85,6 +85,53 @@ class Research extends MY_Controller {
         }
     }
 
+    public function search_results_bathes()
+    {
+        $this->load->model('imported_data_parsed_model');
+        $this->load->model('category_model');
+
+        $search_data = $this->input->post('search_data');
+
+            $category_id = '';
+            $website = $this->input->post('website');
+            $category = $this->input->post('category');
+            if(!empty($category) && $category != 'All categories'){
+                $category_id = $this->category_model->getIdByName($category);
+            }
+
+            $imported_data_parsed = $this->imported_data_parsed_model->getDataWithPaging($search_data, $website, $category_id);
+
+            if(!empty($imported_data_parsed['total_rows'])) {
+                $total_rows = $imported_data_parsed['total_rows'];
+            } else {
+                $total_rows = 0;
+            }
+
+            $echo = intval($this->input->get('sEcho'));
+            $output = array(
+                "sEcho"                     => $echo,
+                "iTotalRecords"             => $total_rows,
+                "iTotalDisplayRecords"      => $total_rows,
+                "iDisplayLength"            => $imported_data_parsed['display_length'],
+                "aaData"                    => array()
+            );
+
+            if(!empty($imported_data_parsed)) {
+                $count = $imported_data_parsed['display_start'];
+                foreach($imported_data_parsed['result'] as $imported_data_parsed_row) {
+                    $count++;
+                    $output['aaData'][] = array(
+                        $count,
+                        $imported_data_parsed_row->product_name,
+                        $imported_data_parsed_row->url,
+                    );
+                }
+            }
+
+            $this->output->set_content_type('application/json')
+                ->set_output(json_encode($output));
+    }
+
     public function create_batch(){
 
         $this->data['customer_list'] = $this->getCustomersByUserId();
@@ -542,5 +589,38 @@ class Research extends MY_Controller {
         $this->load->model('batches_model');
         $batch_id =  $this->batches_model->getIdByName($this->input->post('batch_name'));
         $this->batches_model->delete($batch_id);
+    }
+
+    public function getREProducts() {
+        $this->load->model('crawler_list_prices_model');
+
+        $price_list = $this->crawler_list_prices_model->get_products_with_price();
+
+        if(!empty($price_list['total_rows'])) {
+            $total_rows = $price_list['total_rows'];
+        } else {
+            $total_rows = 0;
+        }
+
+        $output = array(
+            "sEcho"                     => intval($_GET['sEcho']),
+            "iTotalRecords"             => $total_rows,
+            "iTotalDisplayRecords"      => $total_rows,
+            "iDisplayLength"            => $price_list['display_length'],
+            "aaData"                    => array()
+        );
+
+        if(!empty($price_list['result'])) {
+            foreach($price_list['result'] as $price) {
+                $output['aaData'][] = array(
+                    $price->number,
+                    $price->product_name,
+                    $price->url,
+                );
+            }
+        }
+
+        $this->output->set_content_type('application/json')
+            ->set_output(json_encode($output));
     }
 }
