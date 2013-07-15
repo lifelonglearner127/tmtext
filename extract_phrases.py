@@ -38,34 +38,46 @@ for sentence in sentences:
 # stopwords
 stopset = set(stopwords.words('english'))
 
-bigrams = []
-trigrams = []
-quadgrams = []
-pentagrams = []
-hexagrams = []
+ngrams_lists = [[],[],[],[],[]]
 
 for tokens in token_lists:
-	bigrams += ngrams(tokens, 2)
-	trigrams += ngrams(tokens, 3)
-	quadgrams += ngrams(tokens, 4)
-	pentagrams += ngrams(tokens, 5)
-	hexagrams += ngrams(tokens, 6)
+	for n in range(2,7):
+		# generate ngrams and eliminate stopwords, unless occuring near a keyword
+		ngrams_lists[n-2] += [ngram for ngram in ngrams(tokens, n) \
+			if (ngram[0] not in stopset and ngram[-1] not in stopset) \
+			or (ngram[0] in keywords or ngram[-1] in keywords)]
+
+
+freqs = [Counter(ngrams_list) for ngrams_list in ngrams_lists]
+#print freqs
+
+# remove lower level ngrams with lower or equal frequency
+for fi in range(6,2,-1):
+	for (high_ngram, high_count) in freqs[fi-2].items():
+		# check (and remove if necessary) all the lower level ngrams
+		#print "High:", high_ngram
+		for fj in range(fi-1,1,-1):
+			low_ngrams = freqs[fj-2]
+			# generate lower level ngrams
+			for low_ngram in zip(*(high_ngram[i:] for i in range(fj))):
+		#		print "Low:", low_ngram
+				if low_ngrams[low_ngram] <= high_count:
+					del low_ngrams[low_ngram]
+		#			print low_ngrams[low_ngram]
 
 #print keywords
 
-# eliminate stopwords, unless occuring near a keyword
-ngrams = bigrams + trigrams + quadgrams + pentagrams + hexagrams
-ngrams = [ngram for ngram in ngrams if (ngram[0] not in stopset and ngram[-1] not in stopset) \
-			or (ngram[0] in keywords or ngram[-1] in keywords)]
+all_freq = Counter()
+for freq in freqs:
+	all_freq += freq
 
-freq = Counter(ngrams)
 
 # choose ngrams that appear more than once
-frequent = [item for item in freq.items() if item[1] > 1]
+frequent = [item for item in all_freq.items() if item[1] > 1]
 
 # sort by length of phrase and then number of occurences
-final = sorted(frequent, key=lambda x: (len(x[0]), x[1]), reverse=True)
+final = sorted(frequent, key=lambda x: (-x[1], -len(x[0]), x[0]))
 
 # print
 for (phrase, frequency) in final:
-	print " ".join(phrase), frequency
+	print "\"%s\", \"%d\"" % (" ".join(phrase), frequency)
