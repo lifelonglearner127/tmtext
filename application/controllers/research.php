@@ -24,7 +24,7 @@ class Research extends MY_Controller {
         if(!empty($this->data['customer_list'])){
              $this->data['batches_list'] = $this->batches_list();
         }
-        
+
         $this->render();
     }
 
@@ -117,7 +117,7 @@ class Research extends MY_Controller {
         $this->data['columns'] = $columns;
         $this->render();
     }
-    
+
     public function research_reports(){
         $this->render();
     }
@@ -200,7 +200,7 @@ class Research extends MY_Controller {
     {
         $this->load->model('research_data_model');
         if( !empty( $_POST ) ) {
-            
+
             $id = $this->input->post('id');
             $url = $this->input->post('url');
             $product_name = $this->input->post('product_name');
@@ -321,7 +321,7 @@ class Research extends MY_Controller {
     public function getCustomersByUserId(){
         $this->load->model('customers_model');
         $this->load->model('users_to_customers_model');
-        
+
         $customers = $this->users_to_customers_model->getByUserId($this->ion_auth->get_user_id());
         if(!$this->ion_auth->is_admin($this->ion_auth->get_user_id())){
             if(count($customers) == 0){
@@ -458,7 +458,7 @@ class Research extends MY_Controller {
         $this->output->set_content_type('application/json')
             ->set_output(json_encode($batches_list));
     }
-    
+
     public function filterStyleByCustomer(){
         $this->load->model('customers_model');
         $this->load->model('style_guide_model');
@@ -488,6 +488,10 @@ class Research extends MY_Controller {
         $this->load->model('customers_model');
         $this->load->model('research_data_model');
 
+        $this->load->model('research_data_to_crawler_list_model');
+        $this->load->model('crawler_list_model');
+		$this->load->library('PageProcessor');
+
         $file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
         $_rows = array();
         if (($handle = fopen($file, "r")) !== FALSE) {
@@ -506,9 +510,18 @@ class Research extends MY_Controller {
 
             $res = $this->research_data_model->checkItemUrl($batch_id, $_row);
             if(empty($res)){
-              $this->research_data_model->insert($batch_id, $_row, '', '', '',
+              $research_data_id = $this->research_data_model->insert($batch_id, $_row, '', '', '',
                     '', '', '', '', '', 0, '', 0,  $last_revision);
                 $added += 1;
+
+                // Insert to crawler list
+	            if ($research_data_id && $this->pageprocessor->isURL($_row)) {
+					if (!$this->crawler_list_model->getByUrl($_row)) {
+						$crawler_list_id = $this->crawler_list_model->insert($_row, 0);
+						$this->research_data_to_crawler_list_model->insert($research_data_id, $crawler_list_id);
+					}
+					// add part if url already in crawler_list
+				}
             }
         }
         $str = $added;
@@ -517,7 +530,7 @@ class Research extends MY_Controller {
         } else if($added>1){
             $str .= ' records';
         }
-        
+
         $response['message'] = $str .' added to batch';
          $this->output->set_content_type('application/json')
                 ->set_output(json_encode($response));

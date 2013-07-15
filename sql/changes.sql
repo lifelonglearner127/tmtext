@@ -1,3 +1,11 @@
+# 07/15 Ruslan
+CREATE TABLE IF NOT EXISTS `research_data_to_crawler_list` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `research_data_id` int(11) NOT NULL,
+  `crawler_list_id` int(11) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
+
 # 07/14 Ruslan
 INSERT INTO  `sites` (`id` ,`name` ,`url` ,`image_url`) VALUES (NULL ,  'OfficeDepot.com',  'http://www.officedepot.com',  'office-logo.png');
 
