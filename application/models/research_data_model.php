@@ -15,7 +15,7 @@ class Research_data_model extends CI_Model {
     var $short_description = '';
     var $long_description = '';
     var $priority = '';
-    var status = '';
+    var $status = '';
     var $created = '';
     var $modified = '';
 
