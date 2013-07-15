@@ -28,16 +28,12 @@
 	});
 </script>
 <div class="tabbable">
-  <ul class="nav nav-tabs jq-system-tabs">
-	<li class=""><a data-toggle="tab" href="<?php echo site_url('system');?>">General</a></li>
-	<li class="active"><a data-toggle="tab" href="<?php echo site_url('system/system_accounts');?>">New Accounts</a></li>
-	<li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_roles');?>">Roles</a></li>
-	<li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_users');?>">Users</a></li>
-	<li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_compare');?>">Product Compare Interface</a></li>
-	<li class=""><a data-toggle="tab" href="<?php echo site_url('site_crawler');?>">Site Crawler</a></li>
-    <li class=""><a data-toggle="tab" href="<?php echo site_url('system/batch_review');?>">Batch Review</a></li>
-    <li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_productsmatch');?>">Product Match</a></li>
-  </ul>
+    <ul class="nav nav-tabs jq-system-tabs">
+        <li class="active"><a data-toggle="tab" href="<?php echo site_url('system/system_accounts');?>">New Accounts</a></li>
+        <li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_roles');?>">Roles</a></li>
+        <li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_users');?>">Users</a></li>
+        <li class=""><a data-toggle="tab" href="<?php echo site_url('admin_customer/index');?>">Customer settings</a></li>
+    </ul>
   <div class="tab-content">
     <div id="tab2" class="tab-pane active">
     	 <?php echo form_open("system/save_account_deafults", array("class"=>"form-horizontal", "id"=>"system_save_account_defaults"));?>

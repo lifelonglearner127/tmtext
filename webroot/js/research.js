@@ -2,8 +2,12 @@ var research_sentence = '';
 
 function getSearchResult(){
     var oDropdown = $("#web_dropdown").msDropdown().data("dd");
+    var website = '';
+    if(oDropdown != undefined){
+        website = oDropdown.getData().data.value;
+    }
     $.post(base_url + 'index.php/research/search_results', { 'search_data': $('input[name="research_text"]').val(),
-        'website': oDropdown.getData().data.value,
+        'website':  website,
         'category': $('select[name="category"]').find('option:selected').text(),
         'limit': $('select[name="result_amount"]').find('option:selected').val()
     }, function(data){
@@ -123,16 +127,6 @@ $(document).ready(function () {
     $('.hideShow').live("click", function(){
         $(this).parent().parent().toggleClass('hideBox');
     });
-    
-    var customer_name = $("select[name='customers']").find("option:selected").text();
-    if(customer_name!=='All Customers'){
-        $.post(base_url + 'index.php/research/filterStyleByCustomer', { 'customer_name': customer_name}, function(data){
-                $('li#styleguide').find('.boxes_content').empty();
-                $('li#styleguide').find('.boxes_content').text(data);
-        });
-    }
-    
-    
     
     $(document).on("keydown keyup change focusout", 'textarea[name="short_description"]', function() {
         var number = 0;
@@ -474,24 +468,6 @@ $(document).ready(function () {
             }
         });
     });
-
-    $(document).on("change", "select[name='customers']", function(){
-        $.post(base_url + 'index.php/research/filterStyleByCustomer', { 'customer_name': $("select[name='customers']").find("option:selected").text()}, function(data){
-            $('li#styleguide').find('.boxes_content').empty();
-            $('li#styleguide').find('.boxes_content').text(data);
-        });
-        
-        $.post(base_url + 'index.php/research/filterBatchByCustomer', { 'customer_name': $("select[name='customers']").find("option:selected").text()}, function(data){
-           if(data.length>0){
-                $("select[name='batches']").empty();
-                for(var i=0; i<data.length; i++){
-                    $("select[name='batches']").append('<option>'+data[i]+'</option>');
-                }
-           } else if(data.length==0 && $("select[name='customers']").find("option:selected").text()!="All customers"){
-               $("select[name='batches']").empty();
-           }
-        });
-    });
     
     $(document).on("change", "select[name='customersStyle']", function(){
         $.post(base_url + 'index.php/customer/getStyleByCustomer', { 'customer_name': $("select[name='customersStyle'] option:selected").text()}, function(data){
@@ -546,7 +522,8 @@ jQuery(document).ready(function($) {
             }
         });
         $('input[name="batche_name"]').val($('select[name="research_batches"]').find('option:selected').text());
-        dataTable.fnFilter( $('select[name="research_batches"]').find('option:selected').text(), 7);
+        $('button#research_batches_search').trigger('click');
+        //dataTable.fnFilter( $('select[name="research_batches"]').find('option:selected').text(), 7);
     });
     $('select[name="research_batches"]').trigger('change');
 

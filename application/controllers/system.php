@@ -605,6 +605,20 @@ class System extends MY_Controller {
 		));
 	}
 
+    public function upload_img()
+    {
+        $this->load->library('UploadHandler');
+        $this->output->set_content_type('application/json');
+
+        $this->uploadhandler->upload(array(
+            'script_url' => site_url('system/upload_img'),
+            'upload_dir' => 'webroot/img/',
+            'param_name' => 'files',
+            'delete_type' => 'POST',
+            'accept_file_types' => '/.+\.(jpg|gif|png)$/i',
+        ));
+    }
+
     public function get_batch_review()
     {
         $this->load->model('batches_model');
@@ -643,6 +657,11 @@ class System extends MY_Controller {
     }
 
     public function batch_review()
+    {
+        $this->render();
+    }
+
+    public function sites_view()
     {
         $this->render();
     }
@@ -789,4 +808,5 @@ class System extends MY_Controller {
 		saveSimilar($similar_to);
 		saveSimilar($similar_to2, 70);
  	}
+
 }

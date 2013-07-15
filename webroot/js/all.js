@@ -170,6 +170,9 @@ $( function() {
 
     }); //end dialog
 
+    $("#updateDialog #long_description").click(function(e){
+        e.stopPropagation(); // return click to long desc field
+    });
     $( '#records' ).delegate( 'a.updateBtn', 'click', function() {
         updateHref = $( this ).attr( 'href' );
         updateId = $( this ).parents( 'tr' ).attr( "id" );
@@ -233,6 +236,7 @@ $( function() {
                     short_description_wc : $("#column_short_description_wc").attr('checked'),
                     long_description : $("#column_long_description").attr('checked'),
                     long_description_wc : $("#column_long_description_wc").attr('checked'),
+                    batch_name : $("#column_batch_name").attr('checked'),
                     actions : $("#column_actions").attr('checked')
                 };
 
@@ -359,7 +363,9 @@ function readResearchData() {
     $.ajax({
         url: readUrl,
         dataType: 'json',
-        data:{ 'search_text': $('input[name="research_batches_text"]').val() },
+        data:{ 'search_text': $('input[name="research_batches_text"]').val(),
+            'batch_name': $('select[name="research_batches"]').find('option:selected').text()
+        },
         success: function( response ) {
 
             for( var i in response ) {
@@ -388,11 +394,13 @@ function readResearchData() {
             }
 
             dataTable.fnFilter( $('select[name="research_batches"]').find('option:selected').text(), 7);
+            //hide ajax loader animation here...
+            $( '#ajaxLoadAni' ).fadeOut( 'slow' );
 
             // get visible columns status
             var columns_checkboxes = $('#choiceColumnDialog input[type=checkbox]');
             $(columns_checkboxes).each(function(i) {
-                if(i >= 7) {  // for Batch Name column
+                if(i >= 8) {  // for Batch Name column, include batch name column
                     i++;
                 }
                 if($(this).attr('checked') == true) {
@@ -402,8 +410,7 @@ function readResearchData() {
                 }
             });
 
-            //hide ajax loader animation here...
-            $( '#ajaxLoadAni' ).fadeOut( 'slow' );
+
         }
     });
 }

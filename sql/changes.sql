@@ -1,6 +1,18 @@
-#07/09
+# 07/15 Ruslan
+CREATE TABLE IF NOT EXISTS `research_data_to_crawler_list` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `research_data_id` int(11) NOT NULL,
+  `crawler_list_id` int(11) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
+
+# 07/14 Ruslan
+INSERT INTO  `sites` (`id` ,`name` ,`url` ,`image_url`) VALUES (NULL ,  'OfficeDepot.com',  'http://www.officedepot.com',  'office-logo.png');
+
+#07/09 Bojan
 UPDATE  `setting_values` SET  `value` =  'Content Solutions, Inc.' WHERE  `setting_values`.`id` =1;
 UPDATE  `setting_values` SET  `value` =  'Content Solutions, Inc.' WHERE  `setting_values`.`id` =2;
+UPDATE  `setting_values` SET  `value` =  'Content Solutions' WHERE  `setting_values`.`id` =1 LIMIT 1
 #07/08
 CREATE TABLE IF NOT EXISTS `sites` (
   `id` int(11) NOT NULL AUTO_INCREMENT,

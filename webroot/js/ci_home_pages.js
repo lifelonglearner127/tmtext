@@ -1,3 +1,7 @@
+/* --- shrinktheweb.com API keys (start) --- */
+var stwaccesskeyid = "28c77fca6deb748";
+/* --- shrinktheweb.com API keys (end) --- */
+
 function test_screenshot() {
 	var customers_list = $.post(base_url + 'index.php/measure/testscreenshot', {}, function(data) {
 		console.log(data);
@@ -21,7 +25,10 @@ function removeCrawlSiteFromList(id) {
 	}
 }
 
-function openCrawlLaunchPanelModal() {
+function openCrawlLaunchPanelModal(close_preview) {
+	if(close_preview) {
+		$("#preview_screenshot_modal").modal('hide');
+	}
 	$("#customers_screens_crawl_modal").modal('show');
 	var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist_general', {}, function(c_data) {
 		var tbl = "";
@@ -36,7 +43,10 @@ function openCrawlLaunchPanelModal() {
 			for (var i = 0; i < c_data.length; i++) {
 				tbl += "<tr data-id='" + c_data[i]['id']  + "'>";
 					tbl += "<td>" + c_data[i]['name'] + "</td>";
-					tbl += "<td><a onclick=\"removeCrawlSiteFromList('" + c_data[i]['id'] + "');\" class='btn btn-danger'><i class='icon-remove-sign'></i></a></td>";
+					tbl += "<td>";
+					tbl += "<a onclick=\"removeCrawlSiteFromList('" + c_data[i]['id'] + "');\" class='btn btn-danger'><i class='icon-remove-sign'></i>&nbspRemove</a>";
+					tbl += "<a style='margin-left: 10px;' onclick=\"previewScreenshotModal('" + c_data[i]['name'] + "');\" class='btn btn-primary'><i class='icon-picture'></i>&nbsp;Preview Screen</a>"
+					tbl += "</td>";
 				tbl += "</tr>";
 			};
 			tbl += "</tbody>";
@@ -46,6 +56,29 @@ function openCrawlLaunchPanelModal() {
 		$("#crawl_modal_sbm_btn").removeAttr("disabled");
 		$("#crawl_modal_sbm_btn").attr("onclick", "startCrawl()");
     }, 'json');
+}
+
+function previewScreenshotModal(url) {
+	$("#customers_screens_crawl_modal").modal('hide');
+	$("#preview_screenshot_modal #sc_preview").css('width', '200');
+	$("#preview_screenshot_modal #sc_preview").css('height', '150px');
+	$("#preview_screenshot_modal").modal('show');
+	var preview_img = $.post(base_url + 'index.php/measure/webshoot', { url: url }, function(data) {
+		var imagest = "";
+		imagest += "<img id='s_img' onclick='openPreviewLarge()' src='" + data.s + "'>";
+		imagest += "<img id='l_img' style='display: none;' src='" + data.l + "'>";
+		$("#preview_screenshot_modal #sc_preview").html(imagest);
+	});
+}
+
+function openPreviewLarge() {
+	$("#s_img").fadeOut('fast', function() {
+		// $("#preview_screenshot_modal #sc_preview").css('width', '600px');
+		// $("#preview_screenshot_modal #sc_preview").css('height', '450px');
+		$("#preview_screenshot_modal #sc_preview").css('width', 'auto');
+		$("#preview_screenshot_modal #sc_preview").css('height', 'auto');
+		$("#l_img").fadeIn('fast');
+	});
 }
 
 function openOverviewScreensCrawlModal() {

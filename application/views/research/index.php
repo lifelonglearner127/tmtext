@@ -259,8 +259,8 @@ jQuery(document).ready(function($) {
                             <li class="boxes mt_10">
                                 <div class="row-fluid">
                                     <p style='width: 44px' class='inline_block float_l reset_mb_mt15'>Filter:</p>
-                                    <?php echo form_open('', array('id' => 'measureForm', 'style' => 'float: left; width: 840px;')); ?>
-                                        <input type="text" id="research_text" name="research_text" value="" class="span5 w_300" placeholder="" />
+                                    <?php echo form_open('', array('id' => 'measureForm', 'style' => 'width: 420px;')); ?>
+                                        <input type="text" id="research_text" name="research_text" value="" class="span5" placeholder="" />
                                         <div id="web_dropdown" class="website_dropdown" style="width:90px;"></div>
                                         <br />
                                         <br />

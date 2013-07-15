@@ -8,7 +8,7 @@
     </ul>
     <div class="tab-content">
     	<div class="row-fluid home_pages">
-    		
+
     		<div class='span12 head_section'>
 	    		<p class='head_line1'>Home page reports are generated weekly. <a onclick="configureEmailReportsModal()" href="javascript:void(0)">Configure email reports.</a></p>
 				<div class='head_line_2'>
@@ -37,25 +37,27 @@
 					</div>
 				</div>
 			</div>
-			
+
 			<div id='hp_ajax_content' class='span12 body_section ml_disable mt_30'>
 				<div class='ph_placeholder' data-week='1'>
-					<?php 
+					<?php
 						$items_count = 6;
-						$item_per_row = 3;
+						$item_per_row = 2;
 						$items_rows = ceil($items_count/$item_per_row);
 					?>
 
 					<?php for($i = 1; $i <= $items_rows; $i++) { ?>
 						<div class='span12 items_row ml_disable'>
-						<?php 
-							$position = $item_per_row*($i-1); 
-							// $row_items = getRowItemsRowFromBackend($item_per_row, $position); // -- method template to get items from backend // designed in such way that row will not have more than 3 items  
-							$row_items = array(rand(), rand(), rand()); // tmp for mockup
+						<?php
+							$position = $item_per_row*($i-1);
+							// $row_items = getRowItemsRowFromBackend($item_per_row, $position); // -- method template to get items from backend // designed in such way that row will not have more than 3 items
+							// $row_items = array(rand(), rand(), rand()); // tmp for mockup
+							$row_items = array(rand(), rand()); // tmp for mockup
 						?>
-						<?php if($i == $items_rows) $dropup = 'dropup'; else $dropup = ''; ?>
+						<?php // if($i == $items_rows) $dropup = 'dropup'; else $dropup = ''; ?>
+						<?php $dropup = ''; ?>
 						<?php foreach($row_items as $k=>$v) { ?>
-							<div class='span4 item'>
+							<div class='span6 item'>
 								<?php if(count($customers_list) > 0) { ?>
 								    <div id="hp_boot_drop_<?php echo $v; ?>" class="btn-group <?php echo $dropup; ?> hp_boot_drop">
 									    <button class="btn btn-danger btn_caret_sign">[ Choose site ]</button>
@@ -76,7 +78,7 @@
 										<p class='t'>text sample</p>
 									</div>
 								</div>
-							</div>	
+							</div>
 						<?php } ?>
 						</div>
 					<?php } ?>
@@ -84,7 +86,7 @@
 			</div>
 			<a id='customers_screens_crawl' onclick="openCrawlLaunchPanelModal()" class='btn btn-warning'><i class='icon-file'></i>&nbsp;Crawl sites screenshots</a>
 			<a id='overview_screens_crawl' onclick="openOverviewScreensCrawlModal()" class='btn btn-success'><i class='icon-print'></i>&nbsp;Overview crawl results</a>
-			<a href="javascript:void(0)" class="btn btn-primary" onclick="test_screenshot()">Test Screenshot</a>
+			<!-- <a href="javascript:void(0)" class="btn btn-primary" onclick="test_screenshot()">Test Screenshot</a> -->
 		</div>
     </div>
 </div>
@@ -144,7 +146,7 @@
 		<h3>Overview Crawl Results</h3>
 	</div>
 	<div class="modal-body">
-		
+
 	</div>
 	<div class="modal-footer">
 		<a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
@@ -156,14 +158,29 @@
 		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 		<h3>Crawl Launch Control Panel</h3>
 	</div>
-	<div class="modal-footer">
+	<div class="modal-body">
 		<div id="cl_cp_crawl_modal" class='cl_cp_crawl_modal'>
 
 		</div>
 	</div>
 	<div class="modal-footer">
 		<a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
-		<a href="javascript:void(0)" id="crawl_modal_sbm_btn" class="btn btn-success" onclick="startCrawl()">Start</a>
+		<a href="javascript:void(0)" id="crawl_modal_sbm_btn" class="btn btn-success" onclick="startCrawl()">Start all crawl</a>
+	</div>
+</div>
+
+<div class="modal hide fade ci_hp_modals" id='preview_screenshot_modal'>
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+		<h3>Screenshot Preview</h3>
+	</div>
+	<div class="modal-body">
+		<div id="sc_preview">&nbsp;</div>
+	</div>
+	<div class="modal-footer">
+		<a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
+		<a href="javascript:void(0)" onclick="openCrawlLaunchPanelModal(true)" class="btn btn-success">Back to list</a>
+		<a href="javascript:void(0)" class="btn btn-primary">Crawl it</a>
 	</div>
 </div>
 

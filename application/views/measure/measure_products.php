@@ -1,3 +1,9 @@
+<script type='text/javascript'>
+jQuery(document).ready(function($) {
+    $("#compare_text").focus();
+});
+
+</script>
 <div class="main_content_other"></div>
 <div class="tabbable">
     <ul class="nav nav-tabs jq-measure-tabs">
@@ -7,6 +13,15 @@
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_pricing'); ?>">Pricing</a></li>
     </ul>
     <div class="tab-content">
+        <div class="measure-products">
+            <div class="row-fluid mb_20">
+                <div class="span6">
+                    Batch:
+                    <div id="product_customers" class="customer_dropdown"></div>
+                    <?php echo form_dropdown('product_batches', $batches_list, array(), 'class="mt_10 mr_10" style="width: 100px;"'); ?>
+                </div>
+            </div>
+        </div>
         <div class="row-fluid">
             <?php // echo form_open('', array('id'=>'measureFormMetrics')); ?>
             <form id="measureFormMetrics" accept-charset="utf-8" method="post" action="javascript:void(0)">
@@ -49,6 +64,10 @@
                             <h3>View:</h3>
                             <button class='btn' onclick="switchToListView();" id='grid_sw_list' type='button'><i class="icon-th-list"></i>&nbsp;List</button>
                             <button class='btn' onclick="switchToGridView();" id='grid_sw_grid' type='button'><i class="icon-th-large"></i>&nbsp;Grid</button>
+                        </li>
+                        <li>
+                        	<br/>
+                        	<input id="strict_grid" type="checkbox" name="strict_grid" value="1"> Exact Match
                         </li>
                     </ul>
                     <!-- <h3>Metrics</h3> -->

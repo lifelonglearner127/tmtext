@@ -24,7 +24,7 @@ class Research extends MY_Controller {
         if(!empty($this->data['customer_list'])){
              $this->data['batches_list'] = $this->batches_list();
         }
-        
+
         $this->render();
     }
 
@@ -87,7 +87,6 @@ class Research extends MY_Controller {
         $this->load->model('category_model');
 
         $search_data = $this->input->post('search_data');
-//        if($search_data != '') {
 
             $category_id = '';
             $website = $this->input->post('website');
@@ -97,20 +96,6 @@ class Research extends MY_Controller {
             }
 
             $imported_data_parsed = $this->imported_data_parsed_model->getDataWithPaging($search_data, $website, $category_id);
-        /*
-            if (empty($imported_data_parsed)) {
-                $this->load->library('PageProcessor');
-                if ($this->pageprocessor->isURL($search_data)) {
-                    $parsed_data = $this->pageprocessor->get_data($search_data);
-                    $imported_data_parsed[0] = $parsed_data;
-                    $imported_data_parsed[0]['url'] = $search_data;
-                    $imported_data_parsed[0]['imported_data_id'] = 0;
-                }
-            }
-*/
-
-//        echo '<pre>';
-//        print_r($imported_data_parsed);
 
             if(!empty($imported_data_parsed['total_rows'])) {
                 $total_rows = $imported_data_parsed['total_rows'];
@@ -139,12 +124,8 @@ class Research extends MY_Controller {
                 }
             }
 
-//        echo '<pre>';
-//        print_r($imported_data_parsed);
-
             $this->output->set_content_type('application/json')
                 ->set_output(json_encode($output));
-//        }
     }
 
     public function create_batch(){
@@ -183,7 +164,7 @@ class Research extends MY_Controller {
         $this->data['columns'] = $columns;
         $this->render();
     }
-    
+
     public function research_reports(){
         $this->render();
     }
@@ -235,11 +216,18 @@ class Research extends MY_Controller {
     public function get_research_info()
     {
         $this->load->model('research_data_model');
+        $this->load->model('batches_model');
         $data = '';
         if($this->input->get('search_text') != ''){
             $data = $this->input->get('search_text');
         }
-        $results = $this->research_data_model->getInfoFromResearchData($data);
+        $batch = $this->input->get('batch_name');
+
+        $batch_id = $this->batches_model->getIdByName($batch);
+        if($batch_id == false || $data != '') {
+            $batch_id = '';
+        }
+        $results = $this->research_data_model->getInfoFromResearchData($data, $batch_id);
 
         // change '0' value to '-'
         foreach($results as $result) {
@@ -259,14 +247,15 @@ class Research extends MY_Controller {
     {
         $this->load->model('research_data_model');
         if( !empty( $_POST ) ) {
+
             $id = $this->input->post('id');
             $url = $this->input->post('url');
             $product_name = $this->input->post('product_name');
             $short_description = $this->input->post('short_description');
             $long_description = $this->input->post('long_description');
             // count words
-            $short_description_wc = intval(preg_match_all("/\b/", $short_description)) / 2;
-            $long_description_wc = intval(preg_match_all("/\b/", $long_description)) / 2;
+            $short_description_wc = $this->input->post('short_description_wc');
+            $long_description_wc = $this->input->post('long_description_wc');
             $this->research_data_model->updateItem($id, $product_name, $url, $short_description, $long_description, $short_description_wc, $long_description_wc);
             echo 'Record updated successfully!';
         }
@@ -379,7 +368,7 @@ class Research extends MY_Controller {
     public function getCustomersByUserId(){
         $this->load->model('customers_model');
         $this->load->model('users_to_customers_model');
-        
+
         $customers = $this->users_to_customers_model->getByUserId($this->ion_auth->get_user_id());
         if(!$this->ion_auth->is_admin($this->ion_auth->get_user_id())){
             if(count($customers) == 0){
@@ -516,7 +505,7 @@ class Research extends MY_Controller {
         $this->output->set_content_type('application/json')
             ->set_output(json_encode($batches_list));
     }
-    
+
     public function filterStyleByCustomer(){
         $this->load->model('customers_model');
         $this->load->model('style_guide_model');
@@ -544,7 +533,11 @@ class Research extends MY_Controller {
     public function csv_import() {
         $this->load->model('batches_model');
         $this->load->model('customers_model');
-        $this->load->model('items_model');
+        $this->load->model('research_data_model');
+
+        $this->load->model('research_data_to_crawler_list_model');
+        $this->load->model('crawler_list_model');
+		$this->load->library('PageProcessor');
 
         $file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
         $_rows = array();
@@ -557,17 +550,34 @@ class Research extends MY_Controller {
             fclose($handle);
         }
         $batch_id = $this->batches_model->getIdByName($this->input->post('batch_name'));
-        $customer_id = $this->customers_model->getIdByName($this->input->post('customer_name'));
+        $last_revision = $this->research_data_model->getLastRevision();
+        $added = 0;
+
         foreach($_rows as $_row){
-            $this->items_model->insert($batch_id, $customer_id, $_row);
+
+            $res = $this->research_data_model->checkItemUrl($batch_id, $_row);
+            if(empty($res)){
+              $research_data_id = $this->research_data_model->insert($batch_id, $_row, '', '', '',
+                    '', '', '', '', '', 0, '', 0,  $last_revision);
+                $added += 1;
+
+                // Insert to crawler list
+	            if ($research_data_id && $this->pageprocessor->isURL($_row)) {
+					if (!$this->crawler_list_model->getByUrl($_row)) {
+						$crawler_list_id = $this->crawler_list_model->insert($_row, 0);
+						$this->research_data_to_crawler_list_model->insert($research_data_id, $crawler_list_id);
+					}
+					// add part if url already in crawler_list
+				}
+            }
         }
-        $str = count($_rows);
-        if(count($_rows)==1){
+        $str = $added;
+        if($added==1){
             $str .= ' record';
-        } else if(count($_rows)>1){
+        } else if($added>1){
             $str .= ' records';
         }
-        
+
         $response['message'] = $str .' added to batch';
          $this->output->set_content_type('application/json')
                 ->set_output(json_encode($response));

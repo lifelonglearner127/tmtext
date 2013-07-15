@@ -73,8 +73,9 @@
 		                    });
 		                    // --- LONG DESC ANALYZER (END)
 
-		                    $("ul[data-status='seo_an']").fadeOut();
-		                    $("ul[data-status='seo_an']").fadeIn();
+		                    // $("ul[data-status='seo_an']").fadeOut();
+		                    // $("ul[data-status='seo_an']").fadeIn();
+		                    $("ul[data-status='seo_an']").show();
 
 		                    // ---- WORDS COUNTER (START)
 		                    var short_words_text = $.trim($("#details-short-desc").text());
@@ -87,8 +88,9 @@
 		                    $("li[data-status='words_an'] > span[data-st-id='short_desc']").text(short_words_count + " words");
 		                    $("li[data-status='words_an'] > span[data-st-id='long_desc']").text(long_words_count + " words");
 		                    $("li[data-status='words_an'] > span[data-st-id='total']").text(words_total + " words");
-		                    $("li[data-status='words_an']").fadeOut();
-		                    $("li[data-status='words_an']").fadeIn();
+		                    // $("li[data-status='words_an']").fadeOut();
+		                    // $("li[data-status='words_an']").fadeIn();
+		                    $("li[data-status='words_an']").show();
 		                    // ---- WORDS COUNTER (END)
 
 		                    keywordsAnalizer();

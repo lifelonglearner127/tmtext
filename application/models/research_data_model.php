@@ -14,6 +14,8 @@ class Research_data_model extends CI_Model {
     var $meta_keywords = '';
     var $short_description = '';
     var $long_description = '';
+    var $priority = '';
+    var status = '';
     var $created = '';
     var $modified = '';
 
@@ -21,7 +23,8 @@ class Research_data_model extends CI_Model {
     var $tables = array(
         'research_data' => 'research_data',
         'batches' => 'batches',
-        'users' => 'users'
+        'users' => 'users',
+        'items' => 'items'
     );
 
     function __construct()
@@ -57,7 +60,8 @@ class Research_data_model extends CI_Model {
         $this->long_description = $long_description;
         $this->long_description_wc = $long_description_wc;
         $this->revision = $revision;
-
+        $this->priority = 50;
+        $this->status = 'created';
         $this->created = date('Y-m-d h:i:s');
         $this->modified = date('Y-m-d h:i:s');
         $this->db->insert($this->tables['research_data'], $this);
@@ -82,6 +86,8 @@ class Research_data_model extends CI_Model {
         $this->short_description_wc = $short_description_wc;
         $this->long_description = $long_description;
         $this->long_description_wc = $long_description_wc;
+        $this->priority = 50;
+        $this->status = 'edited';
         $this->revision = $revision;
         $this->modified = date('Y-m-d h:i:s');
 
@@ -103,17 +109,35 @@ class Research_data_model extends CI_Model {
         return $query->result();
     }
 
-    function getInfoFromResearchData($text)
-    {
-        $query = $this->db->query("select `rd`.*, DATE_FORMAT(`rd`.`created`,'%d-%m-%Y') as `created`,
+   function getInfoFromResearchData($text, $batch_id)
+   {
+        $batch_first_str = "";
+        $batch_second_str = "";
+        if($batch_id != ''){
+            $batch_first_str = " `rd`.`batch_id`= ". $batch_id ." and ";
+            $batch_second_str = " `i`.`batch_id`= ". $batch_id ." and ";
+        }
+
+        $query = $this->db->query("(SELECT `rd`.`id`, `rd`.`batch_id`, `rd`.`url`,`rd`.`product_name`, `rd`.`keyword1`, `rd`.`keyword2`, `rd`.`keyword3`, `rd`.`meta_name`,`rd`.`meta_description`, `rd`.`meta_keywords`, `rd`.`short_description`, `rd`.`short_description_wc`, `rd`.`long_description`, `rd`.`long_description_wc`,
         `u`.`email` as `user_id`,
         `b`.`title` as `batch_name`
-        from ".$this->tables['research_data']." as `rd`
+     FROM ".$this->tables['research_data']." as `rd`
         left join ".$this->tables['batches']." as `b` on `rd`.`batch_id` = `b`.`id`
         left join ".$this->tables['users']." as `u` on `rd`.`user_id` = `u`.`id`
-        where concat(`rd`.`url`, `rd`.`product_name`, `rd`.`keyword1`, `rd`.`keyword2`, `rd`.`keyword3`, `rd`.`meta_name`,
+        where ". $batch_first_str." concat(`rd`.`url`, `rd`.`product_name`, `rd`.`keyword1`, `rd`.`keyword2`, `rd`.`keyword3`, `rd`.`meta_name`,
         `rd`.`meta_description`, `rd`.`meta_keywords`, `rd`.`short_description`, `rd`.`short_description_wc`,
-        `rd`.`long_description`, `rd`.`long_description_wc`) like '%".$text."%'");
+        `rd`.`long_description`, `rd`.`long_description_wc`) like '%".$text."%')
+union all
+    (SELECT `i`.`id`, `i`.`batch_id`, `i`.`url`,`i`.`product_name`, `i`.`keyword1`, `i`.`keyword2`, `i`.`keyword3`, `i`.`meta_name`,`i`.`meta_description`, `i`.`meta_keywords`, `i`.`short_description`, `i`.`short_description_wc`, `i`.`long_description`, `i`.`long_description_wc`,
+        `u`.`email` as `user_id`,
+        `b`.`title` as `batch_name`
+     FROM ".$this->tables['items']." as `i`
+        left join ".$this->tables['batches']." as `b` on `i`.`batch_id` = `b`.`id`
+        left join ".$this->tables['users']." as `u` on `i`.`user_id` = `u`.`id`
+        where ".$batch_second_str." concat(`i`.`url`, `i`.`product_name`, `i`.`keyword1`, `i`.`keyword2`, `i`.`keyword3`, `i`.`meta_name`,
+        `i`.`meta_description`, `i`.`meta_keywords`, `i`.`short_description`, `i`.`short_description_wc`,
+        `i`.`long_description`, `i`.`long_description_wc`) like '%".$text."%')");
+
         return $query->result();
     }
 
@@ -143,6 +167,14 @@ class Research_data_model extends CI_Model {
     function delete($id)
     {
         return $this->db->delete($this->tables['research_data'], array('id' => $id));
+    }
+
+    public function checkItemUrl($batch_id, $url){
+        $query = $this->db->where('url', $url)->where('batch_id', $batch_id)
+            ->limit(1)
+            ->get($this->tables['research_data']);
+
+        return $query->result();
     }
 
 }

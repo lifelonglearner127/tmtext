@@ -76,14 +76,135 @@ class Helpers {
     return substr_count($desc, $phrase);
   }
 
-  public function measure_analyzer_start_v2($clean_t) { // !!! EXPREIMENTAL !!!
-    // $clean_t = "3D ready, allows playback of full 3D high-definition content 480 Clear Motion Rate, less motion blur for your fast-paced videos HDMI and USB ports, lets you connect to a wide variety of devices WiFi capable, allows you to access countless hours visual content from the Internet";
+  // public function measure_analyzer_start_v2($clean_t) { // !!! OLD ONE !!!
+  //   $clean_t = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $clean_t);
+  //   $text = $clean_t;
+
+  //   // ---- convert to array (start)
+  //   $words = explode(" ", $text); // !!! LOOP TARGET !!!
+  //   $orig = explode(" ", $clean_t);
+  //   $overall_words_count = count($words);
+  //   // ---- convert to array (end)
+
+  //   $res_stack = array();
+  //   for($l = 6; $l >= 1; $l--) {
+  //       for($i = 0, $j = $l; $j < $overall_words_count; $i++, $j++) {
+  //           // --- PREPARE PHRASE STRING FOR CHECK
+  //           $w = "";
+  //           for($k = $i; $k <= $j; $k++ ) {
+  //               $w = $w.$words[$k]." "; 
+  //           }
+  //           $w = substr($w, 0, strlen($w)-1);
+  //           $w = trim($w);
+  //           // --- CHECK OUT STRING DUPLICATIONS
+  //           $r = substr_count($text, $w);
+  //           if($r > 1) {
+  //               $mid = array(
+  //                   "ph" => trim($w),
+  //                   "count" => $r,
+  //                   "ph_length" => strlen($w)  
+  //               );
+  //               $res_stack[] = $mid;
+  //           }
+  //       }
+  //   }
+
+  //   // --- sort final result (start)
+  //   $ph_length = array();
+  //   foreach ($res_stack as $key => $row) {
+  //       $ph_length[$key] = $row['ph_length'];
+  //   }
+  //   array_multisort($ph_length, SORT_DESC, $res_stack);
+  //   // --- sort final result (end)
+
+  //   $res_stack = array_unique($res_stack, SORT_REGULAR);
+
+  //   // -- FILTER  OUT SUBSETS (START)
+  //   if(count($res_stack) > 1) {
+  //       foreach ($res_stack as $key => $value) {
+  //           $inv_str = $value['ph'];
+  //           // ----  CHECK OUT VALUE (START)
+  //           foreach ($res_stack as $ka => $va) {
+  //               if(($va['ph'] !== $inv_str) && strlen($va['ph']) > strlen($inv_str) && strpos($va['ph'], $inv_str) !== false) {
+  //                   unset($res_stack[$key]);
+  //               } 
+  //           }
+  //           // ----  CHECK OUT VALUE (END)
+  //       }
+  //   }
+  //   // -- FILTER  OUT SUBSETS (END)
+
+  //   return $res_stack;
+  // }
+
+  private function keywords_appearence_count($desc, $phrase) {
+    return substr_count($desc, $phrase);
+  }
+
+  // private function keywords_appearence_count_exp($desc, $phrase) {
+  //     $phrase_array = explode(" ", trim($phrase));
+  //     $desc_array = explode(" ", trim($desc));
+  //     $res = null;
+  //     $res_debug = array();
+  //     if(count($phrase_array) > 1) {
+  //       $scan = array();
+  //       foreach($phrase_array as $k => $v) {
+  //         if(in_array($v, $desc_array)) {
+  //           $mid = array(
+  //             'word' => $v,
+  //             'pos' => strpos($desc, $v)
+  //           );
+  //           $scan[] = $mid;
+  //         } 
+  //       }
+  //       if(count($scan) == count($phrase_array)) {
+  //         $res = $scan;
+  //       }
+  //     }
+  //     return $res;
+  // }
+
+  private function keywords_appearence_count_expV2($desc, $phrase) {
+      // $phrase_array = explode(" ", trim($phrase));
+      // $desc_array = explode(" ", trim($desc));
+      // $res = null;
+      // $res_debug = array();
+      // if(count($phrase_array) > 1) {
+      //   $scan = array();
+      //   foreach($phrase_array as $k => $v) {
+      //     if(in_array($v, $desc_array)) {
+      //       $mid = array(
+      //         'word' => $v,
+      //         'pos' => strpos($desc, $v)
+      //       );
+      //       $scan[] = $mid;
+      //     } 
+      //   }
+      //   if(count($scan) == count($phrase_array)) {
+      //     $res = $scan;
+      //   }
+      // }
+      // return $res;
+
+
+// I've commented below rows, because after pull it doesn't work for me!
+
+
+//      $res = array();
+//      $string = "/$phrase/";
+//      if (preg_match_all($string, $desc, &$matches)) {
+//        $mid = array(
+//          'w' => $matches[0][0],
+//          'c' => count($matches[0])
+//        );
+//        $res[] = $mid;
+//      }
+//      return $res;
+  }
+
+  public function measure_analyzer_start_v2($clean_t) { // !!! NEW ONE !!!
     $clean_t = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $clean_t);
-    // $r = substr_count($clean_t, 'to a');
-    // $w = 'to a';
-    // preg_match_all("/($w)/", $clean_t, $matches);
-    // die("TEST ME: ".var_dump($matches));
-    // $text = strtolower($clean_t);
+    // $clean_t = trim(str_replace('.', ' ', $clean_t));
     $text = $clean_t;
 
     // ---- convert to array (start)
@@ -93,6 +214,7 @@ class Helpers {
     // ---- convert to array (end)
 
     $res_stack = array();
+    // $log = array();
     for($l = 6; $l >= 1; $l--) {
         for($i = 0, $j = $l; $j < $overall_words_count; $i++, $j++) {
             // --- PREPARE PHRASE STRING FOR CHECK
@@ -103,8 +225,17 @@ class Helpers {
             $w = substr($w, 0, strlen($w)-1);
             $w = trim($w);
             // --- CHECK OUT STRING DUPLICATIONS
-            $r = substr_count($text, $w);
-            if($r > 1) {
+            $r = $this->keywords_appearence_count(strtolower($text), strtolower($w));
+            // --- debug logger (start)
+            // $r_exp = $this->keywords_appearence_count_expV2(strtolower($text), strtolower($w));
+            // $mid_debug = array(
+            //   's_ph' => $w,
+            //   'count' => $r,
+            //   'count_exp' => $r_exp
+            // );
+            // $log[] = $mid_debug;
+            // --- debug logger (end)
+            if($r > 1 && count(explode(" ", trim($w))) > 1) {
                 $mid = array(
                     "ph" => trim($w),
                     "count" => $r,
@@ -118,7 +249,8 @@ class Helpers {
     // --- sort final result (start)
     $ph_length = array();
     foreach ($res_stack as $key => $row) {
-        $ph_length[$key] = $row['ph_length'];
+        // $ph_length[$key] = $row['ph_length'];
+        $ph_length[$key] = $row['count'];
     }
     array_multisort($ph_length, SORT_DESC, $res_stack);
     // --- sort final result (end)
@@ -139,7 +271,7 @@ class Helpers {
         }
     }
     // -- FILTER  OUT SUBSETS (END)
-
+    // die(var_dump($log));
     return $res_stack;
   }
 
