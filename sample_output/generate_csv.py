@@ -15,16 +15,21 @@ output1 = codecs.open("departments.csv","wb")
 output2 = codecs.open("department_members.csv","wb")
 output3 = codecs.open("departments_and_members.csv","wb")
 
+deptwriter = csv.writer(output1, delimiter=',')
+memberswriter = csv.writer(output2, delimiter=',')
+bothwriter = csv.writer(output3, delimiter=',')
+
+# write header rows
+deptwriter.writerow(["Group_ID","Group_name","Short_name"])
+memberswriter.writerow(["Group_ID","Site","Text","URL"])
+bothwriter.writerow(["Group_ID","Group_name","Short_name","Site","Text","URL"])
+
 group_id = 0
 
 for line in f:
 	if (line.strip()):
 		group = json.loads(line.strip())
 		group_id += 1
-
-		deptwriter = csv.writer(output1, delimiter=',')
-		memberswriter = csv.writer(output2, delimiter=',')
-		bothwriter = csv.writer(output3, delimiter=',')
 
 		deptwriter.writerow(encode([str(group_id), group["Group_name"], group["Short_name"]]))
 
