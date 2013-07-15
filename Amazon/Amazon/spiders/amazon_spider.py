@@ -29,7 +29,7 @@ class AmazonSpider(BaseSpider):
         # first one is a special category ("Unlimited Instant Videos"), add it separately
         special_item = AmazonItem()
         special_item['text'] = titles_level1[0].select('text()').extract()[0]
-        special_item['level'] = 1
+        special_item['level'] = 2
         special_item['special'] = 1
         items.append(special_item)
 
@@ -37,7 +37,7 @@ class AmazonSpider(BaseSpider):
         for title in titles_level1[1:]:
             item = AmazonItem()
             item['text'] = title.select('text()').extract()[0]
-            item['level'] = 1
+            item['level'] = 2
 
             items.append(item)
 
@@ -46,7 +46,7 @@ class AmazonSpider(BaseSpider):
             item = AmazonItem()
             item['text'] = link.select('text()').extract()[0]
             item['url'] = link.select('@href').extract()[0]
-            item['level'] = 0
+            item['level'] = 1
 
             parent = link.select("parent::node()/parent::node()/preceding-sibling::node()")
             parent_text = parent.select('text()').extract()

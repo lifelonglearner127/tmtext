@@ -287,6 +287,7 @@ class Categories:
 				cat_name = cat1["text"]
 				cat_name2 = cat2["text"]
 				# handle duplicates
+				#TODO: buggy?
 				if cat_name in cat_graph.nodes():
 					cat_name = cat_name + "1"
 				if cat_name2 in cat_graph.nodes():
@@ -301,6 +302,7 @@ class Categories:
 		for component in components:
 			for (word1, word2) in itertools.combinations(component,2):
 				# handle duplicates
+				#TODO: buggy?
 				if word1 in word_subgraph.nodes():
 					word1 = word1 + "1"
 				if word2 in word_subgraph.nodes():
@@ -312,7 +314,7 @@ class Categories:
 
 if __name__=="__main__":
 	sites = ["amazon", "bestbuy", "bjs", "bloomingdales", "overstock", "walmart", "wayfair"]
-	gc = Categories(sites, 0)
+	gc = Categories(sites, 1)
 	groups = gc.group_by_common_words()
 	pprint(groups)
 
