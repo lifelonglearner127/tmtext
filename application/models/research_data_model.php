@@ -136,6 +136,134 @@ union all
         return $query->result();
     }
 
+    function getInfoForAssess($params)
+    {
+
+        $date_from = $params->date_from == '' ? '' : $this->db->escape($params->date_from);
+        $date_to = $params->date_to == '' ? '' : $this->db->escape($params->date_to);
+        $short_less = intval($params->short_less);
+        $short_more = intval($params->short_more);
+        //$params->short_duplicate_context
+        //$params->short_misspelling
+        $long_less = intval($params->long_less);
+        $long_more = intval($params->long_more);
+        //$params->long_duplicate_context
+        //$params->long_misspelling
+
+
+        if($params->batch_id != '') {
+            $batch_id_filter = " and batch_id = $params->batch_id";
+        }
+        $txt_filter = $this->db->escape('%'.$params->txt_filter.'%');
+
+        $date_from = date_parse($date_from);
+        $date_to = date_parse($date_to);
+        if ($date_from['year'] > 0 & $date_from['month'] > 0 & $date_from['day'] > 0 & $date_to['year'] > 0 & $date_to['month'] > 0 & $date_to['day'] > 0) {
+            $d_from = $this->db->escape($date_from['year'].'-'.$date_from['month'].'-'.$date_from['day']);
+            $d_to = $this->db->escape($date_to['year'].'-'.$date_to['month'].'-'.$date_to['day']);
+            $date_filter = ' and i.created>='.$d_from.' and i.created<='.$d_to;
+        }
+        if ($short_less > -1)
+            $short_less_filter = 'and i.short_description_wc<'.$short_less;
+        if ($short_more > -1)
+            $short_more_filter = 'and i.short_description_wc>'.$short_more;
+        if ($long_less > -1)
+            $long_less_filter = 'and i.long_description_wc<'.$long_less;
+        if ($long_more > -1)
+            $long_more_filter = 'and i.long_description_wc>'.$long_more;
+
+
+        $sql_cmd = "
+            select
+                i.id,
+                i.created,
+                i.product_name,
+                i.url,
+                i.short_description_wc,
+                i.long_description_wc
+            from (
+                SELECT
+                    rd.id,
+                    rd.batch_id,
+                    rd.url,
+                    rd.product_name,
+                    rd.keyword1,
+                    rd.keyword2,
+                    rd.keyword3,
+                    rd.meta_name,
+                    rd.meta_description,
+                    rd.meta_keywords,
+                    rd.short_description,
+                    rd.short_description_wc,
+                    rd.long_description,
+                    rd.long_description_wc,
+                    rd.created
+            #		u.email as user_id,
+            #		b.title as batch_name
+                FROM
+                    research_data as rd
+            #	left join batches as b on rd.batch_id = b.id
+            #	left join users as u on rd.user_id = u.id
+            union all
+                SELECT
+                    i.id,
+                    i.batch_id,
+                    i.url,
+                    i.product_name,
+                    i.keyword1,
+                    i.keyword2,
+                    i.keyword3,
+                    i.meta_name,
+                    i.meta_description,
+                    i.meta_keywords,
+                    i.short_description,
+                    i.short_description_wc,
+                    i.long_description,
+                    i.long_description_wc,
+                    i.created
+            #		u.email as user_id,
+            #		b.title as batch_name
+                FROM
+                    items as i
+            #left join batches as b on i.batch_id = b.id
+            #left join users as u on i.user_id = u.id
+            ) as i
+            where
+                concat(
+                    i.url,
+                    i.product_name,
+                    i.keyword1,
+                    i.keyword2,
+                    i.keyword3,
+                    i.meta_name,
+                    i.meta_description,
+                    i.meta_keywords,
+                    i.short_description,
+                    i.short_description_wc,
+                    i.long_description,
+                    i.long_description_wc
+                ) like $txt_filter
+                $batch_id_filter
+                $date_filter
+                and (
+                    i.short_description_wc > -1
+                    $short_less_filter
+                    $short_more_filter
+                )
+            #	and sort description duplicate content
+            #	and sort description mis-spelling
+                and (
+                    i.long_description_wc > -1
+                    $long_less_filter
+                    $long_more_filter
+                )
+            #	and sort description duplicate content
+            #	and sort description mis-spelling
+        ";
+        $query = $this->db->query($sql_cmd);
+        return $query->result();
+    }
+
     function getLastRevision(){
         $query = $this->db->select('revision')->limit(1)->order_by("id", "desc")->get($this->tables['research_data']);
         return $query->result();
