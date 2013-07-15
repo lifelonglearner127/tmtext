@@ -32,7 +32,11 @@ class Measure extends MY_Controller {
         }
         $t = file_put_contents($dir."/$url_name.$type", $file);
         $path = base_url()."webshoots/$url_name.$type";
-        return $path;
+        $res = array(
+            'path' => $path,
+            'dir' => $dir."/$url_name.$type"
+        );
+        return $res;
     }
 
     private function check_screen_crawl_status($url) {
@@ -81,8 +85,10 @@ class Measure extends MY_Controller {
         $result = array(
             'state' => false,
             'url' => $url,
-            'small_crawl' => $crawl_s,
-            'big_crawl' => $crawl_l  
+            'small_crawl' => $crawl_s['path'],
+            'big_crawl' => $crawl_l['path'],
+            'dir_thumb' => $crawl_s['dir'],
+            'dir_img' => $crawl_l['dir']  
         );
         $this->load->model('webshoots_model');
         $r = $this->webshoots_model->recordUpdateWebshoot($result);
