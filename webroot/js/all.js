@@ -393,7 +393,9 @@ function readResearchData() {
                 });
             }
 
-            dataTable.fnFilter( $('select[name="research_batches"]').find('option:selected').text(), 8);
+            dataTable.fnFilter( $('select[name="research_batches"]').find('option:selected').text(), 7);
+            //hide ajax loader animation here...
+            $( '#ajaxLoadAni' ).fadeOut( 'slow' );
 
             // get visible columns status
             var columns_checkboxes = $('#choiceColumnDialog input[type=checkbox]');
@@ -408,8 +410,7 @@ function readResearchData() {
                 }
             });
 
-            //hide ajax loader animation here...
-            $( '#ajaxLoadAni' ).fadeOut( 'slow' );
+
         }
     });
 }

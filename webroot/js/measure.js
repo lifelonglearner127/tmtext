@@ -1,4 +1,4 @@
-$("#compare_text").focus();
+
 
 var editorGridViewBaseUrl = base_url + 'index.php/measure/gridview';
 // ---- search string cookie (auto mode search launcher) (start)
@@ -118,7 +118,13 @@ function switchToGridView() {
     $("#measure_product_ind_wrap").hide();
     // AJAX CALL TO GET GRID VIEW CONTENT (START) (NEW STUFF)
     var im_data_id = $("#an_sort_search_box > #products > li[data-status='selected']").attr('data-value');
-    var grid_view = $.post(editorGridViewBaseUrl, { im_data_id: im_data_id, s_term: $.trim($("#compare_text").val()) }, 'html').done(function(data) {
+
+    var strict = 0;
+    if ( $( "input[name='strict_grid']:checked" ).val() !== undefined ) {
+    	strict = 1;
+    }
+
+    var grid_view = $.post(editorGridViewBaseUrl, { im_data_id: im_data_id, s_term: $.trim($("#compare_text").val()), strict:strict }, 'html').done(function(data) {
         $("#compet_area_grid").html(data);
         $("#compet_area_grid").show();
         $(".preloader_grids_box").hide();
@@ -232,8 +238,9 @@ function startMeasureCompareV2() {
     // --- record search term to cookie storage (end)
     var searcher_all = $.post(editorSearchAllBaseUrl, { s: s, sl: sl, cat: cat, limit: limit }, 'html').done(function(data) {
         $("#an_products_box").html(data);
-        $("#an_products_box").fadeOut();
-        $("#an_products_box").fadeIn();
+        // $("#an_products_box").fadeOut();
+        // $("#an_products_box").fadeIn();
+        $("#an_products_box").show();
         var w = $('ul#products li:first-child span:first-child').width();
         $('#an_sort_search_box .product_title .main span:first-child').width(w);
         setTimeout(function() {

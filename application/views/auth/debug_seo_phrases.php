@@ -1,6 +1,6 @@
 <div class="row-fluid">
 	<div class="span9 offset2">
-		<div class="login_container">
+		<div class="login_container" style="margin-top: 5%;">
 			<div class="login_header">
 				<h3 class="text-center">Seo Phrases Debugger</h3>
 			</div>

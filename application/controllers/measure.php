@@ -47,13 +47,18 @@ class Measure extends MY_Controller {
         $api_key = "dc598f9ae119a97234ea";
         $api_secret = "47c7248bc03fbd368362";
         $token = md5("$api_secret+$url");
-        $size = "200x150";
+        $size_s = "200x150";
+        $size_l = "600x450";
         $format = "png";
-        // -- configs (end) 
-        $res = "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size&format=$format";
+        // -- configs (end)
+        $res = array(
+            "s" => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_s&format=$format",
+            'l' => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_l&format=$format"
+        );
+        // $res = "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size&format=$format";
         // $res = base_url()."img/test.jpg";
         // $res = $_SERVER['DOCUMENT_ROOT']."/img/test.jpg";
-        $res = $this->upload_record_webshoot($res, 'teststuff');
+        // $res = $this->upload_record_webshoot($res, 'teststuff');
         $this->output->set_content_type('application/json')->set_output(json_encode($res));
     }
 
@@ -86,9 +91,16 @@ class Measure extends MY_Controller {
 
     public function measure_products()
     {
-       $this->data['category_list'] = $this->category_full_list();
-       $this->data['customers_list'] = $this->category_customers_list();
-       $this->render();
+        $this->data['category_list'] = $this->category_full_list();
+        $this->data['customers_list'] = $this->category_customers_list();
+        $this->load->model('batches_model');
+        $batches = $this->batches_model->getAll();
+        $batches_list = array(0 => 'No Batch');
+        foreach($batches as $batch){
+            array_push($batches_list, $batch->title);
+        }
+        $this->data['batches_list'] = $batches_list;
+        $this->render();
     }
 
     public function measure_departments()
@@ -235,7 +247,8 @@ class Measure extends MY_Controller {
 
             // get similar by parsed_attributes
             if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
-            	$same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
+            	$strict = $this->input->post('strict');
+            	$same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], $strict);
             }
 
         	if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['UPC/EAN/ISBN'])) {

@@ -17,7 +17,10 @@
 	margin: 0 auto;
 	width: 200px;
 	height: 150px;
-	background: #333;
+	/*background: #333;*/
+}
+#preview_screenshot_modal #sc_preview #s_img {
+	cursor: pointer;
 }
 /* --- SOME BOOTSTRAP WEIRD OVERRIDING (START) --- */
 .btn .caret {
@@ -61,9 +64,9 @@
 }
 .art_hp_item .art_img {
 	float: left;
-	width: 100px;
+	width: 250px;
+	min-height: 188px;
 	height: auto;
-	min-height: 75px;
 	background: #333;
 }
 .art_hp_item .art_oview {
@@ -169,7 +172,7 @@
 
 .lh_30 {
 	line-height: 30px;
-}
+} 
 
 .w_400 {
 	width: 400px !important;
@@ -1381,6 +1384,7 @@ label.dd-selected-text, label.dd-option-text{
 
 #research_text{
     margin-right: 10px;
+    width: 230px;
 }
 
 .research .row-fluid p#show_result{
@@ -1476,7 +1480,7 @@ label.dd-selected-text, label.dd-option-text{
     width: 90px!important;
     margin-right: 5px;
     position:relative;
-    top:-5px;
+    top: -1px;
 }
 
 #research_tab2 .customer_dropdown{
@@ -1503,6 +1507,20 @@ label.dd-selected-text, label.dd-option-text{
 
 #customer_dr .dd{
     width:190px!important;
+    position: relative;
+    top: 0px;
+}
+
+.research_edit_filter_links {
+    padding-top: 14px;
+}
+
+.research_edit_filter_links a {
+    text-decoration: none;
+}
+
+.active_link {
+    font-weight: bold;
 }
 
 #customer_dr .ddcommon{
@@ -1602,4 +1620,19 @@ label.dd-selected-text, label.dd-option-text{
 #rectangle_desc #long_description{
     margin-left: 0px;
     width: 98%;
+}
+
+select#sites{
+    width:300px;
+    min-height: 150px;
+    padding: 0px;
+}
+
+select#sites option{
+    border-bottom: 1px solid #CCCCCC;
+    padding: 7px;
+}
+
+#site_logo{
+    max-height: 50px;
 }

@@ -24,7 +24,7 @@ class Research extends MY_Controller {
         if(!empty($this->data['customer_list'])){
              $this->data['batches_list'] = $this->batches_list();
         }
-        
+
         $this->render();
     }
 
@@ -81,6 +81,53 @@ class Research extends MY_Controller {
         }
     }
 
+    public function search_results_bathes()
+    {
+        $this->load->model('imported_data_parsed_model');
+        $this->load->model('category_model');
+
+        $search_data = $this->input->post('search_data');
+
+            $category_id = '';
+            $website = $this->input->post('website');
+            $category = $this->input->post('category');
+            if(!empty($category) && $category != 'All categories'){
+                $category_id = $this->category_model->getIdByName($category);
+            }
+
+            $imported_data_parsed = $this->imported_data_parsed_model->getDataWithPaging($search_data, $website, $category_id);
+
+            if(!empty($imported_data_parsed['total_rows'])) {
+                $total_rows = $imported_data_parsed['total_rows'];
+            } else {
+                $total_rows = 0;
+            }
+
+            $echo = intval($this->input->get('sEcho'));
+            $output = array(
+                "sEcho"                     => $echo,
+                "iTotalRecords"             => $total_rows,
+                "iTotalDisplayRecords"      => $total_rows,
+                "iDisplayLength"            => $imported_data_parsed['display_length'],
+                "aaData"                    => array()
+            );
+
+            if(!empty($imported_data_parsed)) {
+                $count = $imported_data_parsed['display_start'];
+                foreach($imported_data_parsed['result'] as $imported_data_parsed_row) {
+                    $count++;
+                    $output['aaData'][] = array(
+                        $count,
+                        $imported_data_parsed_row->product_name,
+                        $imported_data_parsed_row->url,
+                    );
+                }
+            }
+
+            $this->output->set_content_type('application/json')
+                ->set_output(json_encode($output));
+    }
+
     public function create_batch(){
 
         $this->data['customer_list'] = $this->getCustomersByUserId();
@@ -117,7 +164,7 @@ class Research extends MY_Controller {
         $this->data['columns'] = $columns;
         $this->render();
     }
-    
+
     public function research_reports(){
         $this->render();
     }
@@ -295,7 +342,7 @@ class Research extends MY_Controller {
     {
         $this->load->model('research_data_model');
         if( !empty( $_POST ) ) {
-            
+
             $id = $this->input->post('id');
             $url = $this->input->post('url');
             $product_name = $this->input->post('product_name');
@@ -416,7 +463,7 @@ class Research extends MY_Controller {
     public function getCustomersByUserId(){
         $this->load->model('customers_model');
         $this->load->model('users_to_customers_model');
-        
+
         $customers = $this->users_to_customers_model->getByUserId($this->ion_auth->get_user_id());
         if(!$this->ion_auth->is_admin($this->ion_auth->get_user_id())){
             if(count($customers) == 0){
@@ -553,7 +600,7 @@ class Research extends MY_Controller {
         $this->output->set_content_type('application/json')
             ->set_output(json_encode($batches_list));
     }
-    
+
     public function filterStyleByCustomer(){
         $this->load->model('customers_model');
         $this->load->model('style_guide_model');
@@ -581,7 +628,11 @@ class Research extends MY_Controller {
     public function csv_import() {
         $this->load->model('batches_model');
         $this->load->model('customers_model');
-        $this->load->model('items_model');
+        $this->load->model('research_data_model');
+
+        $this->load->model('research_data_to_crawler_list_model');
+        $this->load->model('crawler_list_model');
+		$this->load->library('PageProcessor');
 
         $file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
         $_rows = array();
@@ -594,17 +645,34 @@ class Research extends MY_Controller {
             fclose($handle);
         }
         $batch_id = $this->batches_model->getIdByName($this->input->post('batch_name'));
-        $customer_id = $this->customers_model->getIdByName($this->input->post('customer_name'));
+        $last_revision = $this->research_data_model->getLastRevision();
+        $added = 0;
+
         foreach($_rows as $_row){
-            $this->items_model->insert($batch_id, $customer_id, $_row);
+
+            $res = $this->research_data_model->checkItemUrl($batch_id, $_row);
+            if(empty($res)){
+              $research_data_id = $this->research_data_model->insert($batch_id, $_row, '', '', '',
+                    '', '', '', '', '', 0, '', 0,  $last_revision);
+                $added += 1;
+
+                // Insert to crawler list
+	            if ($research_data_id && $this->pageprocessor->isURL($_row)) {
+					if (!$this->crawler_list_model->getByUrl($_row)) {
+						$crawler_list_id = $this->crawler_list_model->insert($_row, 0);
+						$this->research_data_to_crawler_list_model->insert($research_data_id, $crawler_list_id);
+					}
+					// add part if url already in crawler_list
+				}
+            }
         }
-        $str = count($_rows);
-        if(count($_rows)==1){
+        $str = $added;
+        if($added==1){
             $str .= ' record';
-        } else if(count($_rows)>1){
+        } else if($added>1){
             $str .= ' records';
         }
-        
+
         $response['message'] = $str .' added to batch';
          $this->output->set_content_type('application/json')
                 ->set_output(json_encode($response));
@@ -614,5 +682,38 @@ class Research extends MY_Controller {
         $this->load->model('batches_model');
         $batch_id =  $this->batches_model->getIdByName($this->input->post('batch_name'));
         $this->batches_model->delete($batch_id);
+    }
+
+    public function getREProducts() {
+        $this->load->model('crawler_list_prices_model');
+
+        $price_list = $this->crawler_list_prices_model->get_products_with_price();
+
+        if(!empty($price_list['total_rows'])) {
+            $total_rows = $price_list['total_rows'];
+        } else {
+            $total_rows = 0;
+        }
+
+        $output = array(
+            "sEcho"                     => intval($_GET['sEcho']),
+            "iTotalRecords"             => $total_rows,
+            "iTotalDisplayRecords"      => $total_rows,
+            "iDisplayLength"            => $price_list['display_length'],
+            "aaData"                    => array()
+        );
+
+        if(!empty($price_list['result'])) {
+            foreach($price_list['result'] as $price) {
+                $output['aaData'][] = array(
+                    $price->number,
+                    $price->product_name,
+                    $price->url,
+                );
+            }
+        }
+
+        $this->output->set_content_type('application/json')
+            ->set_output(json_encode($output));
     }
 }

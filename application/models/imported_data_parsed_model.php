@@ -915,12 +915,18 @@ class Imported_data_parsed_model extends CI_Model {
         return $this->db->update($this->tables['imported_data_parsed'], $this, array('id' => $id));
     }
 
-    function getData($value, $website = '', $category_id='', $limit= '', $key = 'Product Name'){
+    function getData($value, $website = '', $category_id='', $limit= '', $key = 'Product Name', $strict = false){
 
         $this->db->select('p.imported_data_id, p.key, p.value')
             ->from($this->tables['imported_data_parsed'].' as p')
             ->join($this->tables['imported_data'].' as i', 'i.id = p.imported_data_id', 'left')
-            ->where('p.key', $key)->like('p.value', $value);
+            ->where('p.key', $key);
+
+        if ($strict) {
+        	$this->db->like('p.value', '"'.$value.'"');
+        }  else {
+        	$this->db->like('p.value', $value);
+        }
 
         if ($category_id > 0 && $category_id!=2) {
             $this->db->where('i.category_id', $category_id);
@@ -960,6 +966,102 @@ class Imported_data_parsed_model extends CI_Model {
         return $data;
     }
 
+    function getDataWithPaging($value, $website = '', $category_id='', $key = 'Product Name'){
+
+        $count_sorting_cols = intval($this->input->get('iSortingCols', TRUE));
+
+        // Now just get one column for sort order. If need more columns need TODO: processing iSortCol_(int) and iSortDir_(int)
+        if($count_sorting_cols > 0) {
+            $columns_name_string = $this->input->get('sColumns', TRUE);
+            $sort_col_n = intval($this->input->get('iSortCol_0', TRUE));
+            $sort_direction_n = $this->input->get('sSortDir_0', TRUE);
+            $columns_names = explode(",", $columns_name_string);
+            if(!empty($columns_names[$sort_col_n]) && !empty($sort_direction_n)) {
+                $order_column_name = $columns_names[$sort_col_n];
+            }
+        }
+
+        // set query limit
+        $display_start = intval($this->input->get('iDisplayStart', TRUE));
+        // Let's make sure we don't have bad data coming in. Let's protect the SQL
+        if (empty($display_start)) {
+            $display_start = 0;
+        }
+
+        $display_length = intval($this->input->get('iDisplayLength', TRUE));
+
+        // get total rows for this query
+        $total_rows = $this->getDataWithPagingTotalRows($value, $website, $category_id);
+
+        // Once again, protecting the SQL, as well as making sure we don't go over the limit
+        if (empty($display_length)) {
+            $display_length  = $total_rows - $display_start;
+        }
+
+        $this->db->select('id.id, idp.value AS product_name, idp2.value AS url')
+            ->from($this->tables['imported_data'].' as id')
+            ->join($this->tables['imported_data_parsed'].' as idp', 'id.id = idp.imported_data_id', 'left')
+            ->join($this->tables['imported_data_parsed'].' as idp2', 'id.id = idp2.imported_data_id', 'left')
+            ->where('idp.key', 'Product Name')->where('idp2.key', 'URL');
+        if(!empty($value)) {
+            $value = $this->db->escape($value);
+            $this->db->like('idp.value', $value)->like('idp2.value', $value);
+        }
+
+        if ($category_id > 0 && $category_id!=2) {
+            $this->db->where('i.category_id', $category_id);
+        }
+
+        if(!empty($website) && $website != 'All sites'){
+            $this->db->like('i.data', $website);
+        }
+
+        if(!empty($order_column_name)) {
+            $this->db->order_by($order_column_name, $sort_direction_n);
+        }
+
+        if(isset($display_start) && isset($display_length)) {
+            $this->db->limit($display_length, $display_start);
+        }
+
+        $query = $this->db->get();
+
+        $result = $query->result();
+
+        $resultArray = array(
+            'total_rows'            => $total_rows,
+            'display_length'        => $display_length,
+            'result'                => $result,
+            'display_start'         => $display_start,
+        );
+
+        return $resultArray;
+    }
+
+    protected function getDataWithPagingTotalRows($value, $website = '', $category_id='') {
+        $this->db->select('id.id, idp.value AS product_name, idp2.value AS url')
+            ->from($this->tables['imported_data'].' as id')
+            ->join($this->tables['imported_data_parsed'].' as idp', 'id.id = idp.imported_data_id', 'left')
+            ->join($this->tables['imported_data_parsed'].' as idp2', 'id.id = idp2.imported_data_id', 'left')
+            ->where('idp.key', 'Product Name')->where('idp2.key', 'URL');
+        if(!empty($value)) {
+            $value = $this->db->escape($value);
+            $this->db->like('idp.value', $value)->like('idp2.value', $value);
+        }
+
+        if ($category_id > 0 && $category_id!=2) {
+            $this->db->where('i.category_id', $category_id);
+        }
+
+        if($website != '' && $website != 'All sites'){
+            $this->db->like('i.data', $website);
+        }
+
+        $query = $this->db->get();
+        $total_rows = $query->num_rows();
+        return $total_rows;
+    }
+
     function getMaxRevision($imported_data_id) {
     	$query = $this->db->select('max(revision) as revision')
     			  ->where('imported_data_id', $imported_data_id)
@@ -969,8 +1071,8 @@ class Imported_data_parsed_model extends CI_Model {
         return $query->row()->revision;
     }
 
-    function getByParsedAttributes($search) {
-		if ($rows = $this->getData($search, null, null, null, 'parsed_attributes')) {
+    function getByParsedAttributes($search, $strict = false) {
+		if ($rows = $this->getData($search, null, null, null, 'parsed_attributes', $strict)) {
   			$customers_list = array();
 	        $query_cus = $this->db->order_by('name', 'asc')->get($this->tables['customers']);
 	        $query_cus_res = $query_cus->result();
