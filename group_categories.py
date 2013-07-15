@@ -286,6 +286,11 @@ class Categories:
 			for (cat1, cat2) in itertools.combinations(cat_group["Group_members"],2):
 				cat_name = cat1["text"]
 				cat_name2 = cat2["text"]
+				# handle duplicates
+				if cat_name in cat_graph.nodes():
+					cat_name = cat_name + "1"
+				if cat_name2 in cat_graph.nodes():
+					cat_name2 = cat_name2 + "1"
 				cat_graph.add_edge(cat_name,cat_name2)
 		return cat_graph
 
@@ -295,6 +300,11 @@ class Categories:
 		components = self.connected_words2()
 		for component in components:
 			for (word1, word2) in itertools.combinations(component,2):
+				# handle duplicates
+				if word1 in word_subgraph.nodes():
+					word1 = word1 + "1"
+				if word2 in word_subgraph.nodes():
+					word2 = word2 + "1"
 				word_subgraph.add_edge(word1,word2)
 				print word1, word2
 		return word_subgraph
