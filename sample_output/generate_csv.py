@@ -18,8 +18,6 @@ output3 = codecs.open("departments_and_members.csv","wb")
 group_id = 0
 
 for line in f:
-	print "-------" + line + "---------"
-	#line = "{\"Group_name\":\"name\",\"Short_name\":\"short_name\",\"Group_members\":[{\"site\":\"amazon\",\"text\":\"text\",\"url\":\"url\"}]}"
 	if (line.strip()):
 		group = json.loads(line.strip())
 		group_id += 1
