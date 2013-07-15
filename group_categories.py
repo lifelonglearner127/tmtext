@@ -252,7 +252,7 @@ class Categories:
 		# list containing final category groups
 		cat_groups = []
 		# connected components of word graph
-		word_groups = self.connected_words2()
+		word_groups = self.connected_words()
 		# list of categories indexed by words found in them
 		sites_words = dict(self.words_in_sites())
 		for word_list in word_groups:
@@ -260,10 +260,13 @@ class Categories:
 
 			# build short name from the full version of the stemmed words in the group's list of words
 			#TODO: they shouldn't always be concatenated by "," or "&" (ex: "Home Theater")
-			short_name = "".join(Utils.stems[word_list[0]])
+
+			# sort the word list by number of categories the word appears in
+			sorted_word_list = sorted(word_list, key=lambda word: len(sites_words[word]))
+			short_name = "".join(Utils.stems[sorted_word_list[0]])
 
 			# keep adding words to it until it's above 40 characters
-			for word in word_list[1:]:
+			for word in sorted_word_list[1:]:
 				short_name += ", " + Utils.stems[word]#.decode("utf-8")
 
 				# if it's over 40 characters remove the last element and exit loop
