@@ -50,7 +50,7 @@ class Measure extends MY_Controller {
         $size_s = "200x150";
         $size_l = "600x450";
         $format = "png";
-        // -- configs (end) 
+        // -- configs (end)
         $res = array(
             "s" => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_s&format=$format",
             'l' => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_l&format=$format"
@@ -247,7 +247,8 @@ class Measure extends MY_Controller {
 
             // get similar by parsed_attributes
             if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
-            	$same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
+            	$strict = $this->input->post('strict');
+            	$same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], $strict);
             }
 
         	if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['UPC/EAN/ISBN'])) {
@@ -327,11 +328,17 @@ class Measure extends MY_Controller {
 
     public function getcustomerslist_new() {
         $this->load->model('customers_model');
-        $customers_init_list = $this->customers_model->getAll();
+        $this->load->model('users_to_customers_model');
+        $admin = $this->ion_auth->is_admin($this->ion_auth->get_user_id());
+        $customers_init_list = $this->users_to_customers_model->getByUserId($this->ion_auth->get_user_id());
+        if (count($customers_init_list) == 0 && $admin) {
+            $customers_init_list = $this->customers_model->getAll();
+        }
+        
         if(count($customers_init_list) > 0) {
             if(count($customers_init_list) != 1){
-                $output[] = array('text'=>'All customers',
-                   'value'=>'All customers',
+                $output[] = array('text'=>'All Customers',
+                   'value'=>'All Customers',
                    'image'=> ''
                 );
             }
@@ -341,6 +348,11 @@ class Measure extends MY_Controller {
                     'image'=> base_url().'img/'.$value->image_url
                 );
             }
+        } else {
+            $output[] = array('text'=>'No Customers',
+                   'value'=>'No Customers',
+                   'image'=> ''
+                );
         }
         $this->output->set_content_type('application/json')->set_output(json_encode($output));
     }

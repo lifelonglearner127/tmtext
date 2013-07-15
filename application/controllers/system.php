@@ -612,7 +612,7 @@ class System extends MY_Controller {
 
         $this->uploadhandler->upload(array(
             'script_url' => site_url('system/upload_img'),
-            'upload_dir' => $this->config->item('csv_upload_dir'),
+            'upload_dir' => 'webroot/img/',
             'param_name' => 'files',
             'delete_type' => 'POST',
             'accept_file_types' => '/.+\.(jpg|gif|png)$/i',
@@ -663,15 +663,6 @@ class System extends MY_Controller {
 
     public function sites_view()
     {
-        $this->load->model('sites_model');
-        $sites = $this->sites_model->getAll();
-        $sitesArray = array();
-        foreach ($sites as $site) {
-            if(!in_array($customer->name, sitesArray)){
-                $sitesArray[$site->id] = $site->name;
-            }
-        }
-        $this->data['sites'] = $sitesArray;
         $this->render();
     }
 
@@ -807,16 +798,7 @@ class System extends MY_Controller {
 						$similarity = 0;
 					}
 					$group_id = $CI->similar_groups_model->insert($similarity, $percent);
-				$data = array(
-            'product_name' => $product_name,
-            'url' => $url,
-            'short_description' => $short_description,
-            'long_description' => $long_description,
-            'short_description_wc' => $short_description_wc,
-            'long_description_wc' => $long_description_wc,
-        );
-
-        $this->db->update( 'research_data', $data, array( 'id' => $id ) );}
+				}
 				foreach($similar_group as $imported_id) {
 					$CI->similar_imported_data_model->insert($imported_id, $group_id);
 				}
@@ -827,31 +809,4 @@ class System extends MY_Controller {
 		saveSimilar($similar_to2, 70);
  	}
 
-    public function get_site_info(){
-        $this->load->model('sites_model');
-        $site_id = $this->input->post('site');
-        $site_info = $this->sites_model->get($site_id);
-        $this->output->set_content_type('application/json')->set_output(json_encode($site_info));
-    }
-
-    public function add_new_site(){
-        $this->load->model('sites_model');
-        $response['id'] = $this->sites_model->insertSiteByName($this->input->post('site'));
-        $response['message'] =  'Site was added successfully';
-        $this->output->set_content_type('application/json')->set_output(json_encode($response));
-    }
-
-    public function delete_site(){
-        $this->load->model('sites_model');
-        $this->sites_model->delete($this->input->post('site'));
-        $response['message'] =  'Site was deleted successfully';
-        $this->output->set_content_type('application/json')->set_output(json_encode($response));
-    }
-
-    public function update_site(){
-        $this->load->model('sites_model');
-        $this->sites_model->updateSite($this->input->post('id'), $this->input->post('logo'));
-        $response['message'] =  'Site was updated successfully';
-        $this->output->set_content_type('application/json')->set_output(json_encode($response));
-    }
 }

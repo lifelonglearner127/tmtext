@@ -11,9 +11,13 @@
         <script type="text/javascript">
             function selectOption(){
                 $('#sites option').click(function(){
-                        $('input#site_name').val($(this).text());
                         $.post(base_url + 'index.php/system/get_site_info', {'site': $(this).val()}, function(data){
                             if(data.length > 0){
+                                if(data[0].name != ''){
+                                    $('input#site_name').val(data[0].name);
+                                }else{
+                                    $('input#site_name').val('');
+                                }
                                 if(data[0].url != ''){
                                     $('input#site_url').val(data[0].url);
                                 }else{
@@ -48,6 +52,8 @@
                     $('select#sites').find('option:selected').remove();
                     $('input#new_site').val('');
                     $('input#site_name').val('');
+                    $('input#site_url').val('');
+                    $('img#site_logo').attr({'src': base_url+'img/no-logo.jpg' });
                     $(".info-message").html(data.message);
                     $(".info-message").fadeOut(7000);
                 });
@@ -55,7 +61,7 @@
             });
 
             $('button#sitelogo').click(function(){
-                $.post(base_url + 'index.php/system/update_site', {
+                $.post(base_url + 'index.php/system/update_site_logo', {
                     'id': $('select#sites').find('option:selected').val(),
                     'logo': $('input[name="sitelogo_file"]').val()
                 }, function(data){
@@ -63,9 +69,29 @@
                 return false;
             });
 
-            $('select#sites').keypress(function(e){
-                console.log(e.keyCode);
+            $('button#update_site_info').click(function(){
+                $.post(base_url + 'index.php/system/update_site_info', {
+                    'id': $('select#sites').find('option:selected').val(),
+                    'logo': $('input[name="sitelogo_file"]').val(),
+                    'site_name': $('input[name="site_name"]').val(),
+                    'site_url': $('input[name="site_url"]').val()
+                }, function(data){
+                    $('select#sites').find('option:selected').text($('input[name="site_name"]').val());
+                });
+                return false;
+            });
 
+            $('button#delete_sitelogo').click(function(){
+                $.post(base_url + 'index.php/system/delete_sitelogo', {
+                    'id': $('select#sites').find('option:selected').val(),
+                    'logo': 'no-logo.jpg'
+                }, function(data){
+                    $('img#site_logo').attr({'src': base_url+'img/no-logo.jpg' });
+                });
+                return false;
+            });
+
+            $('select#sites').keypress(function(e){
                 if(e.keyCode==38){
                     var opt = $(this).find('option:selected').prev().val();
                 } else if(e.keyCode==40){
@@ -122,7 +148,7 @@
                 <div class="row-fluid">
                         <p>Name:</p>
                         <input type="text" id="site_name" name="site_name">
-                        <button id="update_site" class="btn btn-success" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Update</button>
+                        <button id="update_site_info" class="btn btn-success" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Update</button>
                         <button id="delete_site" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
                         <div class="clear-fix"></div>
                 </div>
@@ -157,7 +183,7 @@
                                 dataType: 'json',
                                 done: function (e, data) {
                                     $('input[name="sitelogo_file"]').val(data.result.files[0].name);
-                                    $.post(base_url + 'index.php/system/update_site', {
+                                    $.post(base_url + 'index.php/system/update_site_logo', {
                                         'id': $('select#sites').find('option:selected').val(),
                                         'logo': $('input[name="sitelogo_file"]').val()
                                     }, function(data){
@@ -169,6 +195,25 @@
                                          }
                                     });*/
                                     $('button#sitelogo').trigger('click');
+                                    $.post(base_url + 'index.php/system/get_site_info', {'site': $('select#sites').find('option:selected').val()}, function(data){
+                                        if(data.length > 0){
+                                            if(data[0].name != ''){
+                                                $('input#site_name').val(data[0].name);
+                                            }else{
+                                                $('input#site_name').val('');
+                                            }
+                                            if(data[0].url != ''){
+                                                $('input#site_url').val(data[0].url);
+                                            }else{
+                                                $('input#site_url').val('');
+                                            }
+                                            if(data[0].image_url != ''){
+                                                $('img#site_logo').attr({'src': base_url+'img/'+data[0].image_url });
+                                            } else {
+                                                $('img#site_logo').attr({'src': base_url+'img/no-logo.jpg' });
+                                            }
+                                        }
+                                    });
                                 },
                                 progressall: function (e, data) {
                                     var progress = parseInt(data.loaded / data.total * 100, 10);

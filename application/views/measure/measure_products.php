@@ -65,6 +65,10 @@ jQuery(document).ready(function($) {
                             <button class='btn' onclick="switchToListView();" id='grid_sw_list' type='button'><i class="icon-th-list"></i>&nbsp;List</button>
                             <button class='btn' onclick="switchToGridView();" id='grid_sw_grid' type='button'><i class="icon-th-large"></i>&nbsp;Grid</button>
                         </li>
+                        <li>
+                        	<br/>
+                        	<input id="strict_grid" type="checkbox" name="strict_grid" value="1"> Exact Match
+                        </li>
                     </ul>
                     <!-- <h3>Metrics</h3> -->
                     <ul>

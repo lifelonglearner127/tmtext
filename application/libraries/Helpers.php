@@ -203,10 +203,24 @@ class Helpers {
         'str_len' => $str_len,
         'pos_r' => $pos_r
       );
+
+      // I've commented below rows, because after pull it doesn't work for me!
+
+
+      //      $res = array();
+      //      $string = "/$phrase/";
+      //      if (preg_match_all($string, $desc, &$matches)) {
+      //        $mid = array(
+      //          'w' => $matches[0][0],
+      //          'c' => count($matches[0])
+      //        );
+      //        $res[] = $mid;
+      //      }
+      //      return $res;
   }
 
   public function measure_analyzer_start_v2($clean_t) { // !!! NEW ONE !!!
-    // $clean_t = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $clean_t);
+    $clean_t = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $clean_t);
     // $clean_t = trim(str_replace('.', ' ', $clean_t));
     $text = $clean_t;
 
