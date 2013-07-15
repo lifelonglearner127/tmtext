@@ -22,9 +22,8 @@ class Research extends MY_Controller {
         $this->data['customer_list'] = $this->getCustomersByUserId();
         $this->data['category_list'] = $this->category_list();
         if(!empty($this->data['customer_list'])){
-             $this->data['batches_list'] = $this->batches_list();
+            $this->data['batches_list'] = $this->batches_list($this->data['customer_list']);
         }
-
         $this->render();
     }
 
@@ -39,14 +38,19 @@ class Research extends MY_Controller {
         return $category_list;
     }
 
-    public function batches_list()
+    public function batches_list($customers)
     {
         $this->load->model('batches_model');
-        $batches = $this->batches_model->getAll();
         $batches_list = array();
-        foreach($batches as $batch){
-            array_push($batches_list, $batch->title);
+        foreach ($customers as $c_id) {
+            if ($c_id !== "All Customers") {
+                $batches = $this->batches_model->getAllByCustomer($c_id);
+                foreach($batches as $batch){
+                    array_push($batches_list, $batch->title);
+                } 
+            }
         }
+        
         return $batches_list;
     }
 
@@ -85,7 +89,7 @@ class Research extends MY_Controller {
 
         $this->data['customer_list'] = $this->getCustomersByUserId();
         if(!empty($this->data['customer_list'])){
-            $this->data['batches_list'] = array('')+$this->batches_list();
+            $this->data['batches_list'] = array('')+$this->batches_list($this->data['customer_list']);
         }
         $this->render();
     }
@@ -94,7 +98,7 @@ class Research extends MY_Controller {
         $this->load->model('settings_model');
         $this->data['customer_list'] = $this->getCustomersByUserId();
         if(!empty($this->data['customer_list'])){
-            $this->data['batches_list'] = $this->batches_list();
+            $this->data['batches_list'] = $this->batches_list($this->data['customer_list']);
         }
 		$user_id = $this->ion_auth->get_user_id();
         $key = 'research_review';
@@ -321,24 +325,19 @@ class Research extends MY_Controller {
     public function getCustomersByUserId(){
         $this->load->model('customers_model');
         $this->load->model('users_to_customers_model');
-
+        $customer_list = array();
         $customers = $this->users_to_customers_model->getByUserId($this->ion_auth->get_user_id());
         if(!$this->ion_auth->is_admin($this->ion_auth->get_user_id())){
-            if(count($customers) == 0){
-                $customer_list = array();
-            }else{
-                $customer_list = array(''=>'All Customers');
-            }
             foreach($customers as $customer){
-                array_push($customer_list, $customer->name);
+                array_push($customer_list, $customer->id);
             }
         }else{
             if(count($customers) == 0){
-            $customers = $this->customers_model->getAll();
+                $customers = $this->customers_model->getAll();
             }
-            $customer_list = array(''=>'All Customers');
+            array_push($customer_list, 'All Customers');
             foreach($customers as $customer){
-                array_push($customer_list, $customer->name);
+                array_push($customer_list, $customer->id);
             }
         }
         return $customer_list;
@@ -444,13 +443,16 @@ class Research extends MY_Controller {
     public function filterBatchByCustomer(){
         $this->load->model('batches_model');
         $this->load->model('customers_model');
-        $customer_id = $this->customers_model->getIdByName($this->input->post('customer_name'));
-        $batches = $this->batches_model->getAllByCustomer($customer_id);
-        if($this->input->post('customer_name') ==  "All Customers"){
-            $batches = $this->batches_model->getAll();
-        }
         $batches_list = array();
-        if(!empty($batches)){
+
+        if($this->input->post('customer_name') ==  "All Customers"){
+            $customers = $this->getCustomersByUserId();
+            $batches_list = $this->batches_list($customers);
+            var_dump($batches_list);
+            //$batches = $this->batches_model->getAll();
+        } else {
+            $customer_id = $this->customers_model->getIdByName($this->input->post('customer_name'));
+            $batches = $this->batches_model->getAllByCustomer($customer_id);
             foreach($batches as $batch){
                 array_push($batches_list, $batch->title);
             }

@@ -328,7 +328,13 @@ class Measure extends MY_Controller {
 
     public function getcustomerslist_new() {
         $this->load->model('customers_model');
-        $customers_init_list = $this->customers_model->getAll();
+        $this->load->model('users_to_customers_model');
+        $admin = $this->ion_auth->is_admin($this->ion_auth->get_user_id());
+        $customers_init_list = $this->users_to_customers_model->getByUserId($this->ion_auth->get_user_id());
+        if (count($customers_init_list) == 0 && $admin) {
+            $customers_init_list = $this->customers_model->getAll();
+        }
+        
         if(count($customers_init_list) > 0) {
             if(count($customers_init_list) != 1){
                 $output[] = array('text'=>'All customers',
@@ -342,6 +348,11 @@ class Measure extends MY_Controller {
                     'image'=> base_url().'img/'.$value->image_url
                 );
             }
+        } else {
+            $output[] = array('text'=>'No customers',
+                   'value'=>'No customers',
+                   'image'=> ''
+                );
         }
         $this->output->set_content_type('application/json')->set_output(json_encode($output));
     }

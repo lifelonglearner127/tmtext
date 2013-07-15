@@ -203,6 +203,7 @@
 			placement: 'bottom',
 			title: 'Open Crawl Results Panel'
 		});
+        $('title').text("Competitive Intelligence");
 	});
 </script>
 
