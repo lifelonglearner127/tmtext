@@ -26,8 +26,6 @@ for line in f:
 		memberswriter = csv.writer(output2, delimiter=',')
 		bothwriter = csv.writer(output3, delimiter=',')
 
-		print group
-
 		deptwriter.writerow(encode([str(group_id), group["Group_name"], group["Short_name"]]))
 
 		for item in group["Group_members"]:
