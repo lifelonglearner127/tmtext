@@ -314,7 +314,7 @@ class Categories:
 
 if __name__=="__main__":
 	sites = ["amazon", "bestbuy", "bjs", "bloomingdales", "overstock", "walmart", "wayfair"]
-	gc = Categories(sites, 1)
+	gc = Categories(sites, 0)
 	groups = gc.group_by_common_words()
 	pprint(groups)
 
