@@ -6,6 +6,7 @@ import itertools
 import re
 from pprint import pprint
 import nltk
+from nltk.corpus import stopwords
 import networkx as nx
 
 class Utils:
@@ -24,18 +25,24 @@ class Utils:
 	@classmethod
 	def normalize(cls, text):
 		# eliminate non-word characters
-		#TODO: fix this
-		re.sub("\W","",text)
-		text.replace(",","")
+		text = re.sub("[^\w\s]","",text)
+
+		# replace unicode character in "Decor"
+		pattern = re.compile(u'\uFFFD', re.UNICODE)
+		text = re.sub(pattern, "e", text)
 
 		#TODO: do this more ellegantly
 		# Exclude "Home Theater", put it together with electronics
-		text.replace("Home Theater", "Electronics")
+		text = text.replace("Home Theater", "Electronics")
+		# Exclude "Cloud Player for Home"
+		text = text.replace("Cloud Player for Home","Cloud Player")
+		text = text.replace("Home & Portable Audio", "Portable Audio")
+		#print text
 
-		stopset = ["and", "the", "&", "for", "of", "on", "as", "to", "in"]#set(stopwords.words('english'))
+		stopset = set(stopwords.words('english'))#["and", "the", "&", "for", "of", "on", "as", "to", "in"]
 		stemmer = nltk.PorterStemmer()
 		tokens = nltk.WordPunctTokenizer().tokenize(text)
-		clean = [token.lower() for token in tokens if token.lower() not in stopset and len(token) > 2]
+		clean = [token.lower() for token in tokens if token.lower() not in stopset and len(token) > 0]
 		final = [stemmer.stem(word) for word in clean]
 
 		for token in tokens:
@@ -194,6 +201,7 @@ class Categories:
 	# or subgraphs of them based on their cycles
 	def connected_words2(self):
 		graph = self.words_graph()
+		#graph = nx.connected_component_subgraphs(graph)[0]
 
 		#TODO: which condition to use?
 		#if len(graph.nodes() > 7):
@@ -212,16 +220,21 @@ class Categories:
 			# add the remaining nodes
 			subgraphs_nodes = [node for subgraph in subgraphs for node in subgraph]
 			remaining_nodes = [node for node in graph.nodes() if node not in subgraphs_nodes]
-			components = []
-		 	for subgraph in subgraphs:
-		 		components.append(subgraph)
+
+		 	# # find largest cycles by building new graph from these cycles and finding connected components - then add the remaining nodes
+		 	# large_cycles = nx.Graph()
+		 	# for subgraph in subgraphs:
+		 	# 	for node in subgraph[1:]:
+		 	# 		large_cycles.add_edge(node, subgraph[0])
+		 	# components = nx.connected_components(large_cycles)
+		 	components = subgraphs
 
 			# add edges found in the original graph for the remaining nodes
 			for node in remaining_nodes:
 				for neighbor in graph.neighbors(node):
-					for subgraph in subgraphs:
-						if neighbor in subgraph:
-							subgraph.append(node)
+					for component in components:
+						if neighbor in component:
+							component.append(node)
 							break
 			#print components
 		 	return components
@@ -285,19 +298,19 @@ class Categories:
 		f.close()
 
 	# build categories graph
+	#TODO: buggy?
 	def cat_graph(self):
 		cat_groups = self.group_by_common_words()
 		cat_graph = nx.Graph()
+		cindex = 0
 		for cat_group in cat_groups:
+			cindex += 1
 			for (cat1, cat2) in itertools.combinations(cat_group["Group_members"],2):
 				cat_name = cat1["text"]
 				cat_name2 = cat2["text"]
-				# handle duplicates
-				#TODO: buggy?
-				if cat_name in cat_graph.nodes():
-					cat_name = cat_name + "1"
-				if cat_name2 in cat_graph.nodes():
-					cat_name2 = cat_name2 + "1"
+				# handle duplicates - each category name is suffixed by the index of its component
+				cat_name = cat_name + str(cindex)
+				cat_name2 = cat_name2 + str(cindex)
 				cat_graph.add_edge(cat_name,cat_name2)
 		return cat_graph
 
@@ -305,22 +318,21 @@ class Categories:
 	def word_graph_connected(self):
 		word_subgraph = nx.Graph()
 		components = self.connected_words2()
+		cindex = 0;
 		for component in components:
+			cindex += 1
 			for (word1, word2) in itertools.combinations(component,2):
-				# handle duplicates
-				#TODO: buggy?
-				if word1 in word_subgraph.nodes():
-					word1 = word1 + "1"
-				if word2 in word_subgraph.nodes():
-					word2 = word2 + "1"
+				# handle duplicates - each word is suffixed by the index of its component
+				word1 = word1 + " " + str(cindex)
+				word2 = word2 + " " + str(cindex)
 				word_subgraph.add_edge(word1,word2)
-				print word1, word2
+				#print word1, word2
 		return word_subgraph
 
 
 if __name__=="__main__":
 	sites = ["amazon", "bestbuy", "bjs", "bloomingdales", "overstock", "walmart", "wayfair"]
-	gc = Categories(sites, 0)
+	gc = Categories(sites, 1)
 	groups = gc.group_by_common_words()
 	pprint(groups)
 
