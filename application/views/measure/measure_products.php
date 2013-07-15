@@ -67,7 +67,7 @@ jQuery(document).ready(function($) {
                         </li>
                         <li>
                         	<br/>
-                        	<input id="strict_grid" type="checkbox" name="strict_grid" value="1"> strict
+                        	<input id="strict_grid" type="checkbox" name="strict_grid" value="1"> Exact Match
                         </li>
                     </ul>
                     <!-- <h3>Metrics</h3> -->
