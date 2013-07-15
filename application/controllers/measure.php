@@ -26,7 +26,8 @@ class Measure extends MY_Controller {
         $file = file_get_contents($ext_url);
         $type = 'png';
         // $dir =  $_SERVER['DOCUMENT_ROOT']."/webroot/webshoots";
-        $dir =  BASEPATH."../webroot/webshoots";
+        // $dir =  BASEPATH."../webroot/webshoots";
+        $dir = "/ebs/sites/client38/web49/web/producteditor/webroot/webshoots";
         if(!file_exists($dir)) {
             mkdir($dir);
             chmod($dir, 0777);
