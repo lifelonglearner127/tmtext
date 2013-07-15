@@ -43,7 +43,7 @@ class Research extends MY_Controller {
         $this->load->model('batches_model');
         $batches_list = array();
         foreach ($customers as $c_id) {
-            if ($c_id !== "All customers") {
+            if ($c_id !== "All Customers") {
                 $batches = $this->batches_model->getAllByCustomer($c_id);
                 foreach($batches as $batch){
                     array_push($batches_list, $batch->title);
@@ -382,7 +382,7 @@ class Research extends MY_Controller {
             if(count($customers) == 0){
                 $customers = $this->customers_model->getAll();
             }
-            array_push($customer_list, 'All customers');
+            array_push($customer_list, 'All Customers');
             foreach($customers as $customer){
                 array_push($customer_list, $customer->id);
             }
@@ -492,7 +492,7 @@ class Research extends MY_Controller {
         $this->load->model('customers_model');
         $batches_list = array();
         
-        if($this->input->post('customer_name') ==  "All customers"){
+        if($this->input->post('customer_name') ==  "All Customers"){
             $customers = $this->getCustomersByUserId();
             $batches_list = $this->batches_list($customers);
         } else {

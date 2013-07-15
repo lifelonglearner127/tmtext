@@ -337,8 +337,8 @@ class Measure extends MY_Controller {
         
         if(count($customers_init_list) > 0) {
             if(count($customers_init_list) != 1){
-                $output[] = array('text'=>'All customers',
-                   'value'=>'All customers',
+                $output[] = array('text'=>'All Customers',
+                   'value'=>'All Customers',
                    'image'=> ''
                 );
             }
@@ -349,8 +349,8 @@ class Measure extends MY_Controller {
                 );
             }
         } else {
-            $output[] = array('text'=>'No customers',
-                   'value'=>'No customers',
+            $output[] = array('text'=>'No Customers',
+                   'value'=>'No Customers',
                    'image'=> ''
                 );
         }
