@@ -915,12 +915,18 @@ class Imported_data_parsed_model extends CI_Model {
         return $this->db->update($this->tables['imported_data_parsed'], $this, array('id' => $id));
     }
 
-    function getData($value, $website = '', $category_id='', $limit= '', $key = 'Product Name'){
+    function getData($value, $website = '', $category_id='', $limit= '', $key = 'Product Name', $strict = false){
 
         $this->db->select('p.imported_data_id, p.key, p.value')
             ->from($this->tables['imported_data_parsed'].' as p')
             ->join($this->tables['imported_data'].' as i', 'i.id = p.imported_data_id', 'left')
-            ->where('p.key', $key)->like('p.value', $value);
+            ->where('p.key', $key);
+
+        if ($strict) {
+        	$this->db->like('p.value', '"'.$value.'"');
+        }  else {
+        	$this->db->like('p.value', $value);
+        }
 
         if ($category_id > 0 && $category_id!=2) {
             $this->db->where('i.category_id', $category_id);
@@ -969,8 +975,8 @@ class Imported_data_parsed_model extends CI_Model {
         return $query->row()->revision;
     }
 
-    function getByParsedAttributes($search) {
-		if ($rows = $this->getData($search, null, null, null, 'parsed_attributes')) {
+    function getByParsedAttributes($search, $strict = false) {
+		if ($rows = $this->getData($search, null, null, null, 'parsed_attributes', $strict)) {
   			$customers_list = array();
 	        $query_cus = $this->db->order_by('name', 'asc')->get($this->tables['customers']);
 	        $query_cus_res = $query_cus->result();

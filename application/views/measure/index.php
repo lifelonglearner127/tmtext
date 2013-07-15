@@ -8,7 +8,7 @@
     </ul>
     <div class="tab-content">
     	<div class="row-fluid home_pages">
-    		
+
     		<div class='span12 head_section'>
 	    		<p class='head_line1'>Home page reports are generated weekly. <a onclick="configureEmailReportsModal()" href="javascript:void(0)">Configure email reports.</a></p>
 				<div class='head_line_2'>
@@ -37,10 +37,10 @@
 					</div>
 				</div>
 			</div>
-			
+
 			<div id='hp_ajax_content' class='span12 body_section ml_disable mt_30'>
 				<div class='ph_placeholder' data-week='1'>
-					<?php 
+					<?php
 						$items_count = 6;
 						$item_per_row = 2;
 						$items_rows = ceil($items_count/$item_per_row);
@@ -48,9 +48,9 @@
 
 					<?php for($i = 1; $i <= $items_rows; $i++) { ?>
 						<div class='span12 items_row ml_disable'>
-						<?php 
-							$position = $item_per_row*($i-1); 
-							// $row_items = getRowItemsRowFromBackend($item_per_row, $position); // -- method template to get items from backend // designed in such way that row will not have more than 3 items  
+						<?php
+							$position = $item_per_row*($i-1);
+							// $row_items = getRowItemsRowFromBackend($item_per_row, $position); // -- method template to get items from backend // designed in such way that row will not have more than 3 items
 							// $row_items = array(rand(), rand(), rand()); // tmp for mockup
 							$row_items = array(rand(), rand()); // tmp for mockup
 						?>
@@ -78,7 +78,7 @@
 										<p class='t'>text sample</p>
 									</div>
 								</div>
-							</div>	
+							</div>
 						<?php } ?>
 						</div>
 					<?php } ?>
@@ -146,7 +146,7 @@
 		<h3>Overview Crawl Results</h3>
 	</div>
 	<div class="modal-body">
-		
+
 	</div>
 	<div class="modal-footer">
 		<a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>

@@ -50,7 +50,7 @@ class Measure extends MY_Controller {
         $size_s = "200x150";
         $size_l = "600x450";
         $format = "png";
-        // -- configs (end) 
+        // -- configs (end)
         $res = array(
             "s" => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_s&format=$format",
             'l' => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_l&format=$format"
@@ -247,7 +247,8 @@ class Measure extends MY_Controller {
 
             // get similar by parsed_attributes
             if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
-            	$same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
+            	$strict = $this->input->post('strict');
+            	$same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], $strict);
             }
 
         	if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['UPC/EAN/ISBN'])) {
