@@ -140,8 +140,9 @@ input[type=text] {
     display: inline;
     font-size: 1em;
 }
-#choiceColumnDialog {
-
+#research_asses_choiceColumnDialog label {
+    display: inline;
+    font-size: 1em;
 }
 .ui-dialog .ui-dialog-buttonpane button.popupGreen {
     background-color: #5BB75B;

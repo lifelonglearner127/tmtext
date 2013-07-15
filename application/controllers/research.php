@@ -22,8 +22,9 @@ class Research extends MY_Controller {
         $this->data['customer_list'] = $this->getCustomersByUserId();
         $this->data['category_list'] = $this->category_list();
         if(!empty($this->data['customer_list'])){
-            $this->data['batches_list'] = $this->batches_list($this->data['customer_list']);
+             $this->data['batches_list'] = $this->batches_list();
         }
+
         $this->render();
     }
 
@@ -38,19 +39,14 @@ class Research extends MY_Controller {
         return $category_list;
     }
 
-    public function batches_list($customers)
+    public function batches_list()
     {
         $this->load->model('batches_model');
+        $batches = $this->batches_model->getAll();
         $batches_list = array();
-        foreach ($customers as $c_id) {
-            if ($c_id !== "All Customers") {
-                $batches = $this->batches_model->getAllByCustomer($c_id);
-                foreach($batches as $batch){
-                    array_push($batches_list, $batch->title);
-                } 
-            }
+        foreach($batches as $batch){
+            array_push($batches_list, $batch->title);
         }
-        
         return $batches_list;
     }
 
@@ -136,7 +132,7 @@ class Research extends MY_Controller {
 
         $this->data['customer_list'] = $this->getCustomersByUserId();
         if(!empty($this->data['customer_list'])){
-            $this->data['batches_list'] = array('')+$this->batches_list($this->data['customer_list']);
+            $this->data['batches_list'] = array('')+$this->batches_list();
         }
         $this->render();
     }
@@ -145,7 +141,7 @@ class Research extends MY_Controller {
         $this->load->model('settings_model');
         $this->data['customer_list'] = $this->getCustomersByUserId();
         if(!empty($this->data['customer_list'])){
-            $this->data['batches_list'] = $this->batches_list($this->data['customer_list']);
+            $this->data['batches_list'] = $this->batches_list();
         }
 		$user_id = $this->ion_auth->get_user_id();
         $key = 'research_review';
@@ -189,6 +185,101 @@ class Research extends MY_Controller {
             }
         }
     }
+
+    public function research_assess(){
+        $this->data['customer_list'] = $this->getCustomersByUserId();
+        $this->data['category_list'] = $this->category_list();
+        if(!empty($this->data['customer_list'])){
+            $this->data['batches_list'] = $this->batches_list();
+        }
+
+        $user_id = $this->ion_auth->get_user_id();
+        $key = 'research_assess';
+        $columns = $this->settings_model->get_value($user_id, $key);
+
+        // if columns empty set default values for columns
+        if(empty($columns)) {
+            $columns = array (
+                'created'                       => 'true',
+                'product_name'                  => 'true',
+                'url'                           => 'true',
+                'short_description_wc'          => 'true',
+                'long_description_wc'           => 'true',
+                'duplicate_context'             => 'true',
+                'misspelling'                   => 'true',
+            );
+        }
+        $this->data['columns'] = $columns;
+
+        $this->render();
+    }
+
+    public function get_assess_info(){
+        $this->load->model('research_data_model');
+        $this->load->model('batches_model');
+
+        $txt_filter = '';
+        if($this->input->get('search_text') != ''){
+            $txt_filter = $this->input->get('search_text');
+        }
+
+        $batch = $this->input->get('batch_name');
+        $batch_id = $this->batches_model->getIdByName($batch);
+        if($batch_id == false || $txt_filter != '') {
+            $batch_id = '';
+        }
+
+        $date_from = $this->input->get('date_from') == false ? '' : $this->input->get('date_from');
+        $date_to = $this->input->get('date_to') == false ? '' : $this->input->get('date_to');
+        $short_less = $this->input->get('short_less') == false ? -1 : $this->input->get('short_less');
+        $short_more = $this->input->get('short_more') == false ? -1 : $this->input->get('short_more');
+        $short_duplicate_context = $this->input->get('short_duplicate_context');
+        $short_misspelling = $this->input->get('short_misspelling');
+        $long_less = $this->input->get('long_less') == false ? -1 : $this->input->get('long_less');
+        $long_more = $this->input->get('long_more') == false ? -1 : $this->input->get('long_more');
+        $long_duplicate_context = $this->input->get('long_duplicate_context');
+        $long_misspelling = $this->input->get('long_misspelling');
+
+        $params = new stdClass();
+        $params->batch_id = $batch_id;
+        $params->txt_filter = $txt_filter;
+        $params->date_from = $date_from;
+        $params->date_to = $date_to;
+        $params->short_less = $short_less;
+        $params->short_more = $short_more;
+        $params->short_duplicate_context = $short_duplicate_context;
+        $params->short_misspelling = $short_misspelling;
+        $params->long_less = $long_less;
+        $params->long_more = $long_more;
+        $params->long_duplicate_context = $long_duplicate_context;
+        $params->long_misspelling = $long_misspelling;
+
+        $results = $this->research_data_model->getInfoForAssess($params);
+
+        // change '0' value to '-'
+        foreach($results as $result) {
+            if($result->short_description_wc == '0') {
+                $result->short_description_wc = '-';
+            }
+            if($result->long_description_wc == '0') {
+                $result->long_description_wc = '-';
+            }
+        }
+
+        $this->output->set_content_type('application/json')
+            ->set_output(json_encode($results));
+    }
+
+    public function assess_save_columns_state() {
+        $this->load->model('settings_model');
+        $user_id = $this->ion_auth->get_user_id();
+        $key = 'research_assess';
+        $value = $this->input->post('value');
+        $description = 'Page settings -> columns state';
+        $res = $this->settings_model->replace($user_id, $key, $value, $description);
+        echo json_encode($res);
+    }
+
     public function change_batch_name(){
         $this->load->model('research_data_model');
         $this->load->model('batches_model');
@@ -372,19 +463,24 @@ class Research extends MY_Controller {
     public function getCustomersByUserId(){
         $this->load->model('customers_model');
         $this->load->model('users_to_customers_model');
-        $customer_list = array();
+
         $customers = $this->users_to_customers_model->getByUserId($this->ion_auth->get_user_id());
         if(!$this->ion_auth->is_admin($this->ion_auth->get_user_id())){
+            if(count($customers) == 0){
+                $customer_list = array();
+            }else{
+                $customer_list = array(''=>'All Customers');
+            }
             foreach($customers as $customer){
-                array_push($customer_list, $customer->id);
+                array_push($customer_list, $customer->name);
             }
         }else{
             if(count($customers) == 0){
-                $customers = $this->customers_model->getAll();
+            $customers = $this->customers_model->getAll();
             }
-            array_push($customer_list, 'All Customers');
+            $customer_list = array(''=>'All Customers');
             foreach($customers as $customer){
-                array_push($customer_list, $customer->id);
+                array_push($customer_list, $customer->name);
             }
         }
         return $customer_list;
@@ -490,14 +586,13 @@ class Research extends MY_Controller {
     public function filterBatchByCustomer(){
         $this->load->model('batches_model');
         $this->load->model('customers_model');
-        $batches_list = array();
-        
+        $customer_id = $this->customers_model->getIdByName($this->input->post('customer_name'));
+        $batches = $this->batches_model->getAllByCustomer($customer_id);
         if($this->input->post('customer_name') ==  "All Customers"){
-            $customers = $this->getCustomersByUserId();
-            $batches_list = $this->batches_list($customers);
-        } else {
-            $customer_id = $this->customers_model->getIdByName($this->input->post('customer_name'));
-            $batches = $this->batches_model->getAllByCustomer($customer_id);
+            $batches = $this->batches_model->getAll();
+        }
+        $batches_list = array();
+        if(!empty($batches)){
             foreach($batches as $batch){
                 array_push($batches_list, $batch->title);
             }
