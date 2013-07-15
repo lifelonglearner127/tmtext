@@ -49,33 +49,27 @@ for tokens in token_lists:
 
 
 freqs = [Counter(ngrams_list) for ngrams_list in ngrams_lists]
-#print freqs
 
 # remove lower level ngrams with lower or equal frequency
 for fi in range(6,2,-1):
 	for (high_ngram, high_count) in freqs[fi-2].items():
 		# check (and remove if necessary) all the lower level ngrams
-		#print "High:", high_ngram
 		for fj in range(fi-1,1,-1):
 			low_ngrams = freqs[fj-2]
 			# generate lower level ngrams
 			for low_ngram in zip(*(high_ngram[i:] for i in range(fj))):
-		#		print "Low:", low_ngram
 				if low_ngrams[low_ngram] <= high_count:
 					del low_ngrams[low_ngram]
-		#			print low_ngrams[low_ngram]
 
-#print keywords
-
+# concatenate frequency counters
 all_freq = Counter()
 for freq in freqs:
 	all_freq += freq
 
-
 # choose ngrams that appear more than once
 frequent = [item for item in all_freq.items() if item[1] > 1]
 
-# sort by length of phrase and then number of occurences
+# sort by number of occurences (reverse), then phrase length(reverse), then alphabetically
 final = sorted(frequent, key=lambda x: (-x[1], -len(x[0]), x[0]))
 
 # print
