@@ -25,7 +25,8 @@ class Measure extends MY_Controller {
     private function upload_record_webshoot($ext_url, $url_name) {
         $file = file_get_contents($ext_url);
         $type = 'png';
-        $dir =  $_SERVER['DOCUMENT_ROOT']."/webroot/webshoots";
+        // $dir =  $_SERVER['DOCUMENT_ROOT']."/webroot/webshoots";
+        $dir =  BASEPATH."../webroot/webshoots";
         if(!file_exists($dir)) {
             mkdir($dir);
             chmod($dir, 0777);
