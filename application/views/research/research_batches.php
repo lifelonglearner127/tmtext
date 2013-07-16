@@ -156,7 +156,7 @@
                 <script type="text/javascript" src="<?php echo base_url();?>js/jquery.json-2.4.min.js"></script>
 
                 <script type="text/template" id="readTemplate">
-                    <tr id="${id}">
+                    <tr id="${id}" status="${status}">
                         <td class="column_editor">${user_id}</td>
                         <td class="column_product_name">${product_name}</td>
                         <td class="column_url">${url}</td>

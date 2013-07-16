@@ -229,15 +229,15 @@ $( function() {
             'Save': function() {
                 // get columns params
                 var columns = {
-                    editor : $("#column_editor").attr('checked'),
-                    product_name : $("#column_product_name").attr('checked'),
-                    url : $("#column_url").attr('checked'),
-                    short_description : $("#column_short_description").attr('checked'),
-                    short_description_wc : $("#column_short_description_wc").attr('checked'),
-                    long_description : $("#column_long_description").attr('checked'),
-                    long_description_wc : $("#column_long_description_wc").attr('checked'),
-                    batch_name : $("#column_batch_name").attr('checked'),
-                    actions : $("#column_actions").attr('checked')
+                    editor : $("#column_editor").attr('checked') == 'checked',
+                    product_name : $("#column_product_name").attr('checked') == 'checked',
+                    url : $("#column_url").attr('checked') == 'checked',
+                    short_description : $("#column_short_description").attr('checked') == 'checked',
+                    short_description_wc : $("#column_short_description_wc").attr('checked') == 'checked',
+                    long_description : $("#column_long_description").attr('checked') == 'checked',
+                    long_description_wc : $("#column_long_description_wc").attr('checked') == 'checked',
+                    batch_name : $("#column_batch_name").attr('checked') == 'checked',
+                    actions : $("#column_actions").attr('checked') == 'checked'
                 };
 
                 // save params to DB
@@ -381,7 +381,9 @@ function readResearchData() {
 
             //apply dataTable to #records table and save its object in dataTable variable
             if( typeof dataTable == 'undefined' ){
-                dataTable = $( '#records' ).dataTable({"bJQueryUI": true, "bDestroy": true,
+                dataTable = $( '#records' ).dataTable({
+                    "bJQueryUI": true,
+                    "bDestroy": true,
                     "oLanguage": {
                         "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
                         "sInfoEmpty": "Showing 0 to 0 of 0 records",
@@ -400,17 +402,23 @@ function readResearchData() {
             // get visible columns status
             var columns_checkboxes = $('#choiceColumnDialog input[type=checkbox]');
             $(columns_checkboxes).each(function(i) {
-                if(i >= 8) {  // for Batch Name column, include batch name column
-                    i++;
-                }
-                if($(this).attr('checked') == true) {
-                    dataTable.fnSetColumnVis( i, true, true );
-                } else {
+                if($(this).attr('checked') != 'checked') {
                     dataTable.fnSetColumnVis( i, false, true );
                 }
             });
 
+            $('#records tbody tr').each( function() {
 
+
+
+                if ($(this).attr('status') == 'reviewed') {
+                    $(this).removeClass('odd even');
+                    $(this).addClass('reviewed');
+                }
+
+
+                //console.log();
+            });
         }
     });
 }

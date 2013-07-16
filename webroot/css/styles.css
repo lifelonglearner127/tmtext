@@ -39,7 +39,7 @@ input[type=text] {
     width: 100%;
 }
 
-#records tr:nth-child(2n) {
+#records .even {
     background: #EAEAEA;
 }
 
@@ -131,6 +131,10 @@ input[type=text] {
 
 #records th {
     font-weight: bold;
+}
+
+.reviewed {
+    background-color: #d0e9c6;
 }
 
 #updateDialog textarea{

@@ -119,6 +119,7 @@ class Research_data_model extends CI_Model {
         }
 
         $query = $this->db->query("(SELECT `rd`.`id`, `rd`.`batch_id`, `rd`.`url`,`rd`.`product_name`, `rd`.`keyword1`, `rd`.`keyword2`, `rd`.`keyword3`, `rd`.`meta_name`,`rd`.`meta_description`, `rd`.`meta_keywords`, `rd`.`short_description`, `rd`.`short_description_wc`, `rd`.`long_description`, `rd`.`long_description_wc`,
+        `rd`.`status`,
         `u`.`email` as `user_id`,
         `b`.`title` as `batch_name`
      FROM ".$this->tables['research_data']." as `rd`
@@ -129,6 +130,7 @@ class Research_data_model extends CI_Model {
         `rd`.`long_description`, `rd`.`long_description_wc`) like '%".$text."%')
 union all
     (SELECT `i`.`id`, `i`.`batch_id`, `i`.`url`,`i`.`product_name`, `i`.`keyword1`, `i`.`keyword2`, `i`.`keyword3`, `i`.`meta_name`,`i`.`meta_description`, `i`.`meta_keywords`, `i`.`short_description`, `i`.`short_description_wc`, `i`.`long_description`, `i`.`long_description_wc`,
+        `i`.`status`,
         `u`.`email` as `user_id`,
         `b`.`title` as `batch_name`
      FROM ".$this->tables['items']." as `i`
