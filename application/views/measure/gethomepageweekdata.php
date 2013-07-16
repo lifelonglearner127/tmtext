@@ -33,8 +33,8 @@
 				<div class='art_hp_item'>
 					<div class='art_img'>&nbsp;</div>
 					<div class='art_oview'>
-						<p class='h'>Overview</p>
-						<p class='t'>text sample</p>
+						<p class='h'>&nbsp;</p>
+						<p class='t'>&nbsp;</p>
 					</div>
 				</div>
 			</div>	

@@ -74,8 +74,8 @@
 								<div class='art_hp_item'>
 									<div class='art_img'>&nbsp;</div>
 									<div class='art_oview'>
-										<p class='h'>Overview</p>
-										<p class='t'>text sample</p>
+										<p class='h'>&nbsp;</p>
+										<p class='t'>&nbsp;</p>
 									</div>
 								</div>
 							</div>
@@ -197,6 +197,7 @@
 			var new_caret = $.trim($(this).text());
 			var item_id = $(this).data('item');
 			$("#hp_boot_drop_" + item_id + " .btn_caret_sign").text(new_caret);
+			// ---- ATTEMPT TO GET SCREENSHOT
 		});
 
 		$("#customers_screens_crawl").tooltip({
