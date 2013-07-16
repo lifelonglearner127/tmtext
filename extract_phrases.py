@@ -47,11 +47,16 @@ ngrams_lists = [[] for n in range(2,maxn+1)]
 
 for tokens in token_lists:
 	for n in range(2,maxn+1):
-		# generate ngrams and eliminate stopwords, unless occuring near a keyword
-		ngrams_lists[n-2] += [ngram for ngram in ngrams(tokens, n) \
-			if (ngram[0] not in stopset and ngram[-1] not in stopset) \
-			or (ngram[0] in keywords or ngram[-1] in keywords)]
+		# generate ngrams and eliminate ngrams starting OR ending with a stopword, unless occuring near a keyword, for phrases < 4
+		if n < 4:
+			ngrams_lists[n-2] += [ngram for ngram in ngrams(tokens, n) \
+				if (ngram[0] not in stopset and ngram[-1] not in stopset) \
+				or (ngram[0] in keywords or ngram[-1] in keywords)]
 
+		# for phrases > 4 only ignore it if it starts AND ends with a stopword
+		else:
+			ngrams_lists[n-2] += [ngram for ngram in ngrams(tokens, n) \
+					if (ngram[0] not in stopset or ngram[-1] not in stopset)]
 
 freqs = [Counter(ngrams_list) for ngrams_list in ngrams_lists]
 
