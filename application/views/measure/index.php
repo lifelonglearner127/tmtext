@@ -79,6 +79,13 @@
 									</div>
 								</div>
 							</div>
+							<!-- lightbox holder (start) -->
+							<div id="screen_lightbox_<?php echo $v; ?>" class='lightbox hide fade' tabindex="-1" role="dialog" aria-hidden="true">
+								<div class='lightbox-content'>
+									<img id="screen_lightbox_img_<?php echo $v; ?>" src="">
+								</div>
+							</div>
+							<!-- lightbox holder (end) -->
 						<?php } ?>
 						</div>
 					<?php } ?>
@@ -199,7 +206,8 @@
 			$("#hp_boot_drop_" + item_id + " .btn_caret_sign").text(new_caret);
 			// ---- ATTEMPT TO GET SCREENSHOT (START)
 			var getwebshootbyurl = $.post(base_url + 'index.php/measure/getwebshootbyurl', { url: new_caret }, function(data) {
-				$("#art_img_" + item_id).html("<img style='cursor: pointer;' src='" + data['img'] + "'>");
+				$("#screen_lightbox_img_" + item_id).attr('src', data['img']);
+				$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox'><img style='cursor: pointer;' src='" + data['img'] + "'></a>");
 			});
 			// ---- ATTEMPT TO GET SCREENSHOT (END)
 		});
@@ -209,10 +217,10 @@
 			title: 'Open Crawl Launch Control Panel'
 		});
 
-		$("#overview_screens_crawl").tooltip({
-			placement: 'bottom',
-			title: 'Open Crawl Results Panel'
-		});
+		// $("#overview_screens_crawl").tooltip({
+		// 	placement: 'bottom',
+		// 	title: 'Open Crawl Results Panel'
+		// });
         $('title').text("Competitive Intelligence");
 	});
 </script>
