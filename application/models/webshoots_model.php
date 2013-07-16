@@ -40,6 +40,16 @@ class Webshoots_model extends CI_Model {
     //     return $change_status;
     // }
 
+    function getWebshootDataById($insert_id) {
+        $res = false;
+        $check_query = $this->db->get_where($this->tables['webshoots'], array('id' => $insert_id));
+        $check_query_res = $check_query->result();
+        if(count($check_query_res) > 0) {
+            $res = $check_query_res[0];
+        }
+        return $res;
+    }
+
     function recordUpdateWebshoot($result) {
         $insert_object = array(
             'url' => $result['url'],
@@ -51,7 +61,7 @@ class Webshoots_model extends CI_Model {
         );
         $this->db->insert($this->tables['webshoots'], $insert_object);
         $insert_id = $this->db->insert_id();
-        return true;
+        return $insert_id;
     }
 
     function checkScreenCrawlStatus($url) {
@@ -60,6 +70,17 @@ class Webshoots_model extends CI_Model {
         $check_query_res = $check_query->result();
         if(count($check_query_res) > 0) {
             $res = true;
+        }
+        return $res;
+    }
+
+    function getWebShootByUrl($url) {
+        $query = $this->db->where('url', $url)->order_by('stamp', 'asc')->get($this->tables['webshoots']);
+        $query_res = $query->result();
+        if(count($query_res) > 0) {
+            $res = $query_res[0];
+        } else {
+            $res = false;
         }
         return $res;
     }

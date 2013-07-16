@@ -49,6 +49,42 @@ class Measure extends MY_Controller {
         return $this->webshoots_model->checkScreenCrawlStatus($url);
     }
 
+    public function getwebshootbyurl() {
+        $url = $this->input->post('url');
+        $this->load->model('webshoots_model');
+        $res = $this->webshoots_model->getWebShootByUrl($url);
+        if($res !== false) {
+            $result = $res;
+        } else { // --- crawl it
+            $url = urlencode(trim($url));
+            // -- configs (start)
+            $api_key = "dc598f9ae119a97234ea";
+            $api_secret = "47c7248bc03fbd368362";
+            $token = md5("$api_secret+$url");
+            $size_s = "200x150";
+            $size_l = "600x450";
+            $format = "png";
+            // -- configs (end)
+            $res = array(
+                "s" => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_s&format=$format",
+                'l' => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_l&format=$format"
+            );
+            $crawl_s = $this->upload_record_webshoot($res['s'], $url."_small");
+            $crawl_l = $this->upload_record_webshoot($res['l'], $url."_big");
+            $result = array(
+                'state' => false,
+                'url' => $url,
+                'small_crawl' => $crawl_s['path'],
+                'big_crawl' => $crawl_l['path'],
+                'dir_thumb' => $crawl_s['dir'],
+                'dir_img' => $crawl_l['dir']  
+            );
+            $insert_id = $this->webshoots_model->recordUpdateWebshoot($result);
+            $result = $this->webshoots_model->getWebshootDataById($insert_id);
+        }
+        $this->output->set_content_type('application/json')->set_output(json_encode($result));
+    }
+
     public function getwebshootdata() {
         $url = $this->input->post('url');
         $this->load->model('webshoots_model');
@@ -97,7 +133,7 @@ class Measure extends MY_Controller {
         );
         $this->load->model('webshoots_model');
         $r = $this->webshoots_model->recordUpdateWebshoot($result);
-        if($r) $result['state'] = true;
+        if($r > 0) $result['state'] = true;
         $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }
 

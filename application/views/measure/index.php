@@ -72,7 +72,7 @@
 								    </div>
 							    <?php } ?>
 								<div class='art_hp_item'>
-									<div class='art_img'>&nbsp;</div>
+									<div id="art_img_<?php echo $v; ?>" class='art_img'>&nbsp;</div>
 									<div class='art_oview'>
 										<p class='h'>&nbsp;</p>
 										<p class='t'>&nbsp;</p>
@@ -185,7 +185,7 @@
 
 <div class="modal hide fade" id='loading_crawl_modal'>
 	<div class="modal-body">
-		<p style='line-height: 24px;'><img src="/img/fancybox_loading.gif">&nbsp;&nbsp;Wait for it. Screenshot generating and saving ...</p>
+		<p style='line-height: 24px;'><img src="<?php echo base_url() ?>/img/fancybox_loading.gif">&nbsp;&nbsp;Wait for it. Screenshot generating and saving ...</p>
 	</div>
 </div>
 
@@ -197,7 +197,11 @@
 			var new_caret = $.trim($(this).text());
 			var item_id = $(this).data('item');
 			$("#hp_boot_drop_" + item_id + " .btn_caret_sign").text(new_caret);
-			// ---- ATTEMPT TO GET SCREENSHOT
+			// ---- ATTEMPT TO GET SCREENSHOT (START)
+			var getwebshootbyurl = $.post(base_url + 'index.php/measure/getwebshootbyurl', { url: new_caret }, function(data) {
+				$("#art_img_" + item_id).html("<img src='" + data['img'] + "'>");
+			});
+			// ---- ATTEMPT TO GET SCREENSHOT (END)
 		});
 
 		$("#customers_screens_crawl").tooltip({
