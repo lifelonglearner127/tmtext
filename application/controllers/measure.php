@@ -19,6 +19,7 @@ class Measure extends MY_Controller {
 
     public function index() {
         $this->data['customers_list'] = $this->customers_list_new();
+        $this->data['user_id'] = $this->ion_auth->get_user_id();
         $this->render();
     }
 

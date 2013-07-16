@@ -37,7 +37,7 @@
 					</div>
 				</div>
 			</div>
-
+			
 			<div id='hp_ajax_content' class='span12 body_section ml_disable mt_30'>
 				<div class='ph_placeholder' data-week='1'>
 					<?php
