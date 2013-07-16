@@ -19,6 +19,7 @@ class Research extends MY_Controller {
 
     public function index()
     {
+        // test comment - testing out pull
         $this->data['customer_list'] = $this->getCustomersByUserId();
         $this->data['category_list'] = $this->category_list();
         if(!empty($this->data['customer_list'])){
