@@ -185,7 +185,7 @@
 
 <div class="modal hide fade" id='loading_crawl_modal'>
 	<div class="modal-body">
-		<p>Wait for it. Screenshot generating and saving ...</p>
+		<p style='line-height: 24px;'><img src="/img/fancybox_loading.gif">&nbsp;&nbsp;Wait for it. Screenshot generating and saving ...</p>
 	</div>
 </div>
 
