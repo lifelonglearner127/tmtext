@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Extract phrases that appear frequently in a text (length 2, 3, 4, 5 and 6)
+# Extract phrases that appear frequently in a text (length 2...11)
 
 import re
 import nltk
@@ -14,6 +14,10 @@ from pprint import pprint
 import sys
 
 text = sys.argv[1]
+
+# maximum length of phrases
+maxn = 11
+#maxn = len(text.split())/2
 
 # extract proper nouns
 keywords = []
@@ -38,10 +42,11 @@ for sentence in sentences:
 # stopwords
 stopset = set(stopwords.words('english'))
 
-ngrams_lists = [[],[],[],[],[]]
+# initialize ngram lists
+ngrams_lists = [[] for n in range(2,maxn+1)]
 
 for tokens in token_lists:
-	for n in range(2,7):
+	for n in range(2,maxn+1):
 		# generate ngrams and eliminate stopwords, unless occuring near a keyword
 		ngrams_lists[n-2] += [ngram for ngram in ngrams(tokens, n) \
 			if (ngram[0] not in stopset and ngram[-1] not in stopset) \
@@ -51,7 +56,7 @@ for tokens in token_lists:
 freqs = [Counter(ngrams_list) for ngrams_list in ngrams_lists]
 
 # remove lower level ngrams with lower or equal frequency
-for fi in range(6,2,-1):
+for fi in range(maxn,2,-1):
 	for (high_ngram, high_count) in freqs[fi-2].items():
 		# check (and remove if necessary) all the lower level ngrams
 		for fj in range(fi-1,1,-1):
