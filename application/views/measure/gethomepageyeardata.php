@@ -85,7 +85,7 @@
 			$("#hp_boot_drop_" + item_id + " .btn_caret_sign").text(new_caret);
 			// ---- ATTEMPT TO GET SCREENSHOT (START)
 			var getwebshootbyurl = $.post(base_url + 'index.php/measure/getwebshootbyurl', { url: new_caret }, function(data) {
-				$("#art_img_" + item_id).html("<img src='" + data['img'] + "'>");
+				$("#art_img_" + item_id).html("<img style='cursor: pointer;' src='" + data['img'] + "'>");
 			});
 			// ---- ATTEMPT TO GET SCREENSHOT (END)
 		});
