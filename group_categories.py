@@ -204,7 +204,7 @@ class Categories:
 	# these will be the connected components of the graph if they are not too large
 	# or subgraphs of them based on their cycles
 	def connected_words2(self):
-		graph = self.words_graph()
+		word_graph = self.words_graph()
 		#graph = nx.connected_component_subgraphs(graph)[0]
 
 		#TODO: which condition to use?
@@ -220,33 +220,51 @@ class Categories:
 			path_limit = 4
 		else:
 			path_limit = 7
-		if max(nx.all_pairs_shortest_path_length(graph)) <= path_limit:
-			return nx.connected_components(graph)
-		else:
-			word_groups = []
-			subgraphs = nx.cycle_basis(graph)
-			# add the remaining nodes
-			subgraphs_nodes = [node for subgraph in subgraphs for node in subgraph]
-			remaining_nodes = [node for node in graph.nodes() if node not in subgraphs_nodes]
 
-		 	# # find largest cycles by building new graph from these cycles and finding connected components - then add the remaining nodes
-		 	# large_cycles = nx.Graph()
-		 	# for subgraph in subgraphs:
-		 	# 	for node in subgraph[1:]:
-		 	# 		large_cycles.add_edge(node, subgraph[0])
-		 	# components = nx.connected_components(large_cycles)
-		 	components = subgraphs
+		res_components = []
+		for graph in nx.connected_component_subgraphs(word_graph):
 
-			# add edges found in the original graph for the remaining nodes
-			for node in remaining_nodes:
-				for neighbor in graph.neighbors(node):
-					for component in components:
-						if neighbor in component:
-							component.append(node)
-							break
-			#print components
-		 	return components
-			#UNDER CONSTRUCTION
+			# if connected component's diameter is smaller than limit add it as is
+
+			# get maximum length
+			lengths = nx.all_pairs_shortest_path_length(graph)
+			m = 0
+			for subdict in lengths.itervalues():
+				for value in subdict.itervalues():
+					if value > m:
+						m = value
+
+			# if diameter is lower than a limit or there are no cycles (so the else branch wouldn't work)
+			if m <= path_limit or not nx.cycle_basis(graph):
+				res_components.append(graph.nodes())
+			else:
+				# else try to remove bridges
+				word_groups = []
+				subgraphs = nx.cycle_basis(graph)
+				# add the remaining nodes
+				subgraphs_nodes = [node for subgraph in subgraphs for node in subgraph]
+				remaining_nodes = [node for node in graph.nodes() if node not in subgraphs_nodes]
+
+			 	# # find largest cycles by building new graph from these cycles and finding connected components - then add the remaining nodes
+			 	# large_cycles = nx.Graph()
+			 	# for subgraph in subgraphs:
+			 	# 	for node in subgraph[1:]:
+			 	# 		large_cycles.add_edge(node, subgraph[0])
+			 	# components = nx.connected_components(large_cycles)
+			 	components = subgraphs
+
+				# add edges found in the original graph for the remaining nodes
+				for node in remaining_nodes:
+					for neighbor in graph.neighbors(node):
+						for component in components:
+							if neighbor in component:
+								component.append(node)
+								break
+				res_components += components
+
+		return res_components
+
+				#UNDER CONSTRUCTION
 
 
 	# groups categories by following criteria:
@@ -343,7 +361,8 @@ class Categories:
 
 if __name__=="__main__":
 	sites = ["amazon", "bestbuy", "bjs", "bloomingdales", "overstock", "walmart", "wayfair"]
-	gc = Categories(sites, 0)
+	sites = ["bjs","bestbuy"]
+	gc = Categories(sites, 1)
 	groups = gc.group_by_common_words()
 	pprint(groups)
 
