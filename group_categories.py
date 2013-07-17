@@ -31,6 +31,7 @@ class Utils:
 		pattern = re.compile(u'\uFFFD', re.UNICODE)
 		text = re.sub(pattern, "e", text)
 
+		# Exceptions - handling some phrases separately
 		#TODO: do this more ellegantly
 		# Exclude "Home Theater", put it together with electronics
 		text = text.replace("Home Theater", "Electronics")
@@ -45,6 +46,7 @@ class Utils:
 		clean = [token.lower() for token in tokens if token.lower() not in stopset and len(token) > 0]
 		final = [stemmer.stem(word) for word in clean]
 
+		# Fill tokens and stems dictionaries
 		for token in tokens:
 			cls.upper[token.lower()] = token
 
@@ -95,12 +97,6 @@ class Categories:
 		if (self.level < 1):
 			self.exceptions += Utils.normalize("Furniture")
 
-	def set_sites(self, sites):
-		self.sites = sites
-
-	def set_level(self, level):
-		self.level = level
-
 	# gets a dictionary of words that appear in categories of a certain sitemap, on a certain level of nesting
 	# excluding special categories
 	#
@@ -148,7 +144,12 @@ class Categories:
 					words[word] = site_words[word]
 				else:
 					words[word] = words[word] + site_words[word]
-		
+
+		print "\nAll words: "		
+		for word in words:
+			print Utils.stems[word]
+			for item in words[word]:
+				print "\t",item["text"]
 		return sorted(words.items(), key=lambda x: len(x[1]), reverse=True)
 
 	# creates graph that connects words that are both found in a category name
@@ -170,6 +171,10 @@ class Categories:
 					# every word in category's name (normalized)
 					category_words = Utils.normalize(item['text'])
 
+					# If category only has one word add it separately as a node
+					if len(category_words) == 1:
+						words.add_node(category_words[0])
+
 					# add edges between every two words in the name
 					for (word1, word2) in itertools.combinations(category_words,2):
 
@@ -183,7 +188,7 @@ class Categories:
 							words.add_node(word)
 
 						#TODO: not adding them in the graph will cause categories that are composed only of an exception word
-						# ("Supplies", "Delivery") not to appear in the final list of groups at all
+						# ("Supplies", "Delivery") not to appear in the final list of groups at all - I think this is fixed, it's added separately as a node
 
 						# # instead add them as independent nodes
 						# else:
@@ -192,6 +197,9 @@ class Categories:
 			f.close()
 
 		# return the graph
+		print "\nWords graph: "
+		for sublist in nx.connected_components(words):
+			print [Utils.stems[word] for word in sublist]
 		return words
 
 	# returns connected components of words graph - output of words_graph()
@@ -210,7 +218,8 @@ class Categories:
 		#TODO: which condition to use?
 		#if len(graph.nodes() > 7):
 
-		# if maximum distance between any 2 nodes is <= 4, return connected components
+		# for each connected component:
+		# if maximum distance between any 2 nodes is <= 4, return connected component
 		# otherwise, find cycles and use them + the remaining nodes each with their corresponding cycle
 		# (the first node adjacent to it that is in the final components list)
 		#TODO: maybe pick the list to which to attach remaining nodes better
@@ -262,6 +271,9 @@ class Categories:
 								break
 				res_components += components
 
+		print "\nFinal graph:"
+		for sublist in res_components:
+			print [Utils.stems[word] for word in sublist]
 		return res_components
 
 				#UNDER CONSTRUCTION
@@ -364,7 +376,7 @@ if __name__=="__main__":
 	sites = ["bjs","bestbuy"]
 	gc = Categories(sites, 1)
 	groups = gc.group_by_common_words()
-	pprint(groups)
+	#pprint(groups)
 
 	#pprint(Utils.stems)
 
