@@ -65,16 +65,26 @@
 .art_hp_item .art_img {
 	float: left;
 	position: relative;
-	/*width: 250px;
-	min-height: 188px;*/
 	width: 340px;
 	min-height: 255px;
 	height: auto;
 	border: 2px solid #DDDDDD;
-    border-radius: 8px 8px 8px 8px;
+    border-radius: 8px;
+    -webkit-border-radius: 8px;
+	-moz-border-radius: 8px;
+	-webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.055);
+	-moz-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.055); 
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.055);
-    padding: 2px;
+    -webkit-transition: all 0.5s ease-in-out 0s;
+	-moz-transition: all 0.5s ease-in-out 0s;
+	-ms-transition: all 0.5s ease-in-out 0s;
+	-o-transition: all 0.5s ease-in-out 0s;
     transition: all 0.5s ease-in-out 0s;
+}
+.art_hp_item .art_img .loader_over {
+	position: absolute;
+	width: 340px;
+	height: 255px;
 }
 .art_hp_item .art_img:hover {
 	border: 2px solid #888;
