@@ -25,7 +25,8 @@
 					    </button>
 					    <ul class="dropdown-menu">
 					    	<?php foreach($customers_list as $val) { ?>
-					    		<li><a data-item="<?php echo $v; ?>" data-value="<?php echo $val['name_val']; ?>" href="javascript:void(0)"><?php echo $val['name']; ?></a></li>
+					    		<?php $val_name = $val['name_val']; ?>
+					    		<li><a onclick="clickScreenDrop('<?php echo $val_name; ?>', '<?php echo $v; ?>')" data-item="<?php echo $v; ?>" data-value="<?php echo $val['name_val']; ?>" href="javascript:void(0)"><?php echo $val['name']; ?></a></li>
 					    	<?php } ?>
 					    </ul>
 				    </div>
