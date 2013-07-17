@@ -80,7 +80,7 @@ class Measure extends MY_Controller {
                 'small_crawl' => $crawl_s['path'],
                 'big_crawl' => $crawl_l['path'],
                 'dir_thumb' => $crawl_s['dir'],
-                'dir_img' => $crawl_l['dir']  
+                'dir_img' => $crawl_l['dir']
             );
             $insert_id = $this->webshoots_model->recordUpdateWebshoot($result);
             $result = $this->webshoots_model->getWebshootDataById($insert_id);
@@ -134,7 +134,7 @@ class Measure extends MY_Controller {
             'small_crawl' => $crawl_s['path'],
             'big_crawl' => $crawl_l['path'],
             'dir_thumb' => $crawl_s['dir'],
-            'dir_img' => $crawl_l['dir']  
+            'dir_img' => $crawl_l['dir']
         );
         $this->load->model('webshoots_model');
         $r = $this->webshoots_model->recordUpdateWebshoot($result);
@@ -180,6 +180,12 @@ class Measure extends MY_Controller {
 
     public function measure_departments()
     {
+    	$this->load->model('department_model');
+
+    	foreach($this->department_model->getAll() as $row) {;
+    		$this->data['departmens_list'][$row->id] = $row->short_name;
+    	}
+
         $this->data['customers_list'] = $this->customers_list_new();
         $this->render();
     }
@@ -409,7 +415,7 @@ class Measure extends MY_Controller {
         if (count($customers_init_list) == 0 && $admin) {
             $customers_init_list = $this->customers_model->getAll();
         }
-        
+
         if(count($customers_init_list) > 0) {
             if(count($customers_init_list) != 1){
                 $output[] = array('text'=>'All Customers',

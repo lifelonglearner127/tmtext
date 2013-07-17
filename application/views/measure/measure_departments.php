@@ -39,7 +39,9 @@
 
 			<div style='margin-left: 0px;' class='span12 mt_10'>
 				<span class='inline_block lh_30 mr_10 span2'>Department:</span>
-				<input type="text" id="department" name="department" value="" class="inline_block lh_30 w_375 mb_reset" placeholder=""/>
+				<?php //var_dump($departmens_list);?>
+				<?php  echo form_dropdown('department', $departmens_list, null, 'class="inline_block lh_30 w_375 mb_reset"'); ?>
+				<!-- <input type="text" id="department" name="department" value="" class="inline_block lh_30 w_375 mb_reset" placeholder=""/>-->
 				<button id="department_show" type="button" class="btn ml_10" >Show</button>
 				<button id="department_next" type="button" class="btn ml_10" >Next</button>
 			</div>
