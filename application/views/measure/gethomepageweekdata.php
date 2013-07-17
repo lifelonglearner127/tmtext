@@ -30,6 +30,7 @@
 					    	<?php } ?>
 					    </ul>
 				    </div>
+				    <span id="crawl_date_<?php echo $v; ?>" class="label label-info">date</span>
 			    <?php } ?>
 				<div class='art_hp_item'>
 					<div id="art_img_<?php echo $v; ?>" class='art_img'>&nbsp;</div>
@@ -52,17 +53,17 @@
 </div>
 
 <script type="text/javascript">
-	$(document).ready(function() {
-		$(".hp_boot_drop .dropdown-menu > li > a").bind('click', function(e) {
-			var new_caret = $.trim($(this).text());
-			var item_id = $(this).data('item');
-			$("#hp_boot_drop_" + item_id + " .btn_caret_sign").text(new_caret);
-			// ---- ATTEMPT TO GET SCREENSHOT (START)
-			var getwebshootbyurl = $.post(base_url + 'index.php/measure/getwebshootbyurl', { url: new_caret }, function(data) {
-				$("#screen_lightbox_img_" + item_id).attr('src', data['img']);
-				$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox'><img style='cursor: pointer;' src='" + data['thumb'] + "'></a>");
-			});
-			// ---- ATTEMPT TO GET SCREENSHOT (END)
+	function clickScreenDrop(new_caret, item_id) {
+		$("#hp_boot_drop_" + item_id + " .btn_caret_sign").text(new_caret);
+		// ---- ATTEMPT TO GET SCREENSHOT (START)
+		$("#art_img_" + item_id).append("<div id='loader_over_" + item_id + "' class='loader_over'><img src='" + base_url + "img/loader_scr.gif'></div>");
+		var getwebshootbyurl = $.post(base_url + 'index.php/measure/getwebshootbyurl', { url: new_caret }, function(data) {
+			$("#screen_lightbox_img_" + item_id).attr('src', data['img']);
+			$("#loader_over_" + item_id).remove();
+			$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox'><img style='cursor: pointer;' src='" + data['thumb'] + "'></a>");
+			var t = moment(data['stamp']).format('MMMM Do, YYYY');
+			$("#crawl_date_" + item_id).text(t);
 		});
-	});
+		// ---- ATTEMPT TO GET SCREENSHOT (END)
+	}
 </script>

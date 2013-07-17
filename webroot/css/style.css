@@ -35,9 +35,6 @@
 #hp_ajax_content {
 	position: relative;
 }
-.hp_boot_drop {
-	margin-bottom: 20px;
-}
 .home_pages .head_line1 {
 	margin-bottom: 15px;
 }
@@ -60,7 +57,7 @@
 
 }
 .art_hp_item {
-
+	margin-top: 20px;
 }
 .art_hp_item .art_img {
 	float: left;

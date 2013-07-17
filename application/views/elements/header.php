@@ -35,6 +35,7 @@
 	<script src="<?php echo base_url();?>js/bootstrap.js"></script>
 	<script src="<?php echo base_url();?>js/underscore.js"></script>
 	<script src="<?php echo base_url();?>js/bootstrap-lightbox.min.js"></script>
+	<script src="<?php echo base_url();?>js/moment.js"></script>
     <script src="<?php echo base_url();?>js/jquery.scrollTo-1.4.3.1.js"></script>
     <script src="<?php echo base_url();?>js/jquery.fancybox.js"></script>
     <script src="<?php echo base_url();?>js/jquery.cookie.js"></script>

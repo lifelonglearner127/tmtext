@@ -71,6 +71,7 @@
 									    	<?php } ?>
 									    </ul>
 								    </div>
+								    <span id="crawl_date_<?php echo $v; ?>" class="label label-info">date</span>
 							    <?php } ?>
 								<div class='art_hp_item'>
 									<div id="art_img_<?php echo $v; ?>" class='art_img'>&nbsp;</div>
@@ -208,6 +209,8 @@
 			$("#screen_lightbox_img_" + item_id).attr('src', data['img']);
 			$("#loader_over_" + item_id).remove();
 			$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox'><img style='cursor: pointer;' src='" + data['thumb'] + "'></a>");
+			var t = moment(data['stamp']).format('MMMM Do, YYYY');
+			$("#crawl_date_" + item_id).text(t);
 		});
 		// ---- ATTEMPT TO GET SCREENSHOT (END)
 	}
