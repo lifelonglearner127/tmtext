@@ -73,10 +73,10 @@
 							    <?php } ?>
 								<div class='art_hp_item'>
 									<div id="art_img_<?php echo $v; ?>" class='art_img'>&nbsp;</div>
-									<div class='art_oview'>
+									<!-- <div class='art_oview'>
 										<p class='h'>&nbsp;</p>
 										<p class='t'>&nbsp;</p>
-									</div>
+									</div> -->
 								</div>
 							</div>
 							<!-- lightbox holder (start) -->
@@ -207,7 +207,7 @@
 			// ---- ATTEMPT TO GET SCREENSHOT (START)
 			var getwebshootbyurl = $.post(base_url + 'index.php/measure/getwebshootbyurl', { url: new_caret }, function(data) {
 				$("#screen_lightbox_img_" + item_id).attr('src', data['img']);
-				$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox'><img style='cursor: pointer;' src='" + data['img'] + "'></a>");
+				$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox'><img style='cursor: pointer;' src='" + data['thumb'] + "'></a>");
 			});
 			// ---- ATTEMPT TO GET SCREENSHOT (END)
 		});

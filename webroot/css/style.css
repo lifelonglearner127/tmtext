@@ -64,11 +64,27 @@
 }
 .art_hp_item .art_img {
 	float: left;
-	width: 250px;
-	min-height: 188px;
+	position: relative;
+	/*width: 250px;
+	min-height: 188px;*/
+	width: 340px;
+	min-height: 255px;
 	height: auto;
-	background: #333;
+	border: 2px solid #DDDDDD;
+    border-radius: 8px 8px 8px 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.055);
+    padding: 2px;
+    transition: all 0.5s ease-in-out 0s;
 }
+.art_hp_item .art_img:hover {
+	border: 2px solid #888;
+}
+.art_hp_item .art_img img {
+	display: block;
+	border-radius: 8px 8px 8px 8px;
+	width: 100%;
+}
+
 .art_hp_item .art_oview {
 	float: left;
 	width: 170px;

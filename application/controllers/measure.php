@@ -26,9 +26,9 @@ class Measure extends MY_Controller {
     private function upload_record_webshoot($ext_url, $url_name) {
         $file = file_get_contents($ext_url);
         $type = 'png';
-        // $dir =  $_SERVER['DOCUMENT_ROOT']."/webroot/webshoots"; // for local server
+        $dir =  $_SERVER['DOCUMENT_ROOT']."/webroot/webshoots"; // for local server
         // $dir =  BASEPATH."../webroot/webshoots";
-        $dir = "/ebs/sites/client38/web49/web/producteditor/webroot/webshoots"; // for dev server
+        //$dir = "/ebs/sites/client38/web49/web/producteditor/webroot/webshoots"; // for dev server
         if(!file_exists($dir)) {
             mkdir($dir);
             chmod($dir, 0777);
@@ -62,8 +62,10 @@ class Measure extends MY_Controller {
             $api_key = "dc598f9ae119a97234ea";
             $api_secret = "47c7248bc03fbd368362";
             $token = md5("$api_secret+$url");
-            $size_s = "200x150";
-            $size_l = "600x450";
+            // $size_s = "200x150";
+            // $size_l = "600x450";
+            $size_s = "340x255";
+            $size_l = "800x600";
             $format = "png";
             // -- configs (end)
             $res = array(
@@ -114,8 +116,10 @@ class Measure extends MY_Controller {
         $api_key = "dc598f9ae119a97234ea";
         $api_secret = "47c7248bc03fbd368362";
         $token = md5("$api_secret+$url");
-        $size_s = "200x150";
-        $size_l = "600x450";
+        // $size_s = "200x150";
+        // $size_l = "600x450";
+        $size_s = "340x255";
+        $size_l = "800x600";
         $format = "png";
         // -- configs (end)
         $res = array(
