@@ -1,7 +1,7 @@
 $(document).ready(function () {
     $(function () {
         'use strict';
-        var url = base_url+'customer/upload_style';
+        var url = base_url+'index.php/customer/upload_style';
         $('#styleupload').fileupload({
             url: url,
             dataType: 'json',
@@ -35,7 +35,7 @@ $(document).ready(function () {
     
     var customer_name = $("select[name='customersStyle']").find("option:selected").text();
     if(customer_name!=='Select Customer'){
-        $.post(base_url+'customer/getStyleByCustomer', { 'customer_name': customer_name}, function(data){
+        $.post(base_url+'index.php/customer/getStyleByCustomer', { 'customer_name': customer_name}, function(data){
                 $("textarea[name='style_guide']").val('');
                 $("textarea[name='style_guide']").val(data);;
         });
@@ -54,7 +54,7 @@ $(document).ready(function () {
        var txtcontent = $("textarea[name='style_guide']").val();
        var customerName = $("select[name='customersStyle']").find('option:selected').text() ? $("select[name='customersStyle']").find('option:selected').text() : 0;
        if(customerName!=='Select Customer'){
-            $.post(base_url+'customer/saveTheStyle', { 'txtcontent': txtcontent, 'customerName':customerName}, function(data){
+            $.post(base_url+'index.php/customer/saveTheStyle', { 'txtcontent': txtcontent, 'customerName':customerName}, function(data){
                 $('#responseMess').text(data);
                 setTimeout(function () { $('#responseMess').empty(); }, 2000);
             });
