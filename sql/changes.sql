@@ -1,3 +1,27 @@
+# 07/17 Ruslan 
+# data in another file
+ 
+CREATE TABLE IF NOT EXISTS `departments` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(2000) COLLATE utf8_unicode_ci NOT NULL,
+  `level` int(11) NOT NULL DEFAULT '0',
+  `short_name` varchar(300) COLLATE utf8_unicode_ci NOT NULL,
+  `parent_id` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=64 ;
+
+CREATE TABLE IF NOT EXISTS `department_members` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `department_id` int(11) NOT NULL,
+  `site` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
+  `site_id` int(11) DEFAULT NULL,
+  `text` varchar(200) COLLATE utf8_unicode_ci NOT NULL,
+  `url` varchar(2000) COLLATE utf8_unicode_ci NOT NULL,
+  `parent_id` int(11) DEFAULT NULL,
+  `level` int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=686 ;
+
 # 07/15 Ruslan
 CREATE TABLE IF NOT EXISTS `research_data_to_crawler_list` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,

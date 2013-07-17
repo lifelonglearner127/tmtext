@@ -37,7 +37,7 @@
 					</div>
 				</div>
 			</div>
-
+			
 			<div id='hp_ajax_content' class='span12 body_section ml_disable mt_30'>
 				<div class='ph_placeholder' data-week='1'>
 					<?php
@@ -72,13 +72,20 @@
 								    </div>
 							    <?php } ?>
 								<div class='art_hp_item'>
-									<div class='art_img'>&nbsp;</div>
+									<div id="art_img_<?php echo $v; ?>" class='art_img'>&nbsp;</div>
 									<div class='art_oview'>
-										<p class='h'>Overview</p>
-										<p class='t'>text sample</p>
+										<p class='h'>&nbsp;</p>
+										<p class='t'>&nbsp;</p>
 									</div>
 								</div>
 							</div>
+							<!-- lightbox holder (start) -->
+							<div id="screen_lightbox_<?php echo $v; ?>" class='lightbox hide fade' tabindex="-1" role="dialog" aria-hidden="true">
+								<div class='lightbox-content'>
+									<img id="screen_lightbox_img_<?php echo $v; ?>" src="">
+								</div>
+							</div>
+							<!-- lightbox holder (end) -->
 						<?php } ?>
 						</div>
 					<?php } ?>
@@ -185,7 +192,7 @@
 
 <div class="modal hide fade" id='loading_crawl_modal'>
 	<div class="modal-body">
-		<p style='line-height: 24px;'><img src="/img/fancybox_loading.gif">&nbsp;&nbsp;Wait for it. Screenshot generating and saving ...</p>
+		<p style='line-height: 24px;'><img src="<?php echo base_url() ?>/img/fancybox_loading.gif">&nbsp;&nbsp;Wait for it. Screenshot generating and saving ...</p>
 	</div>
 </div>
 
@@ -197,6 +204,12 @@
 			var new_caret = $.trim($(this).text());
 			var item_id = $(this).data('item');
 			$("#hp_boot_drop_" + item_id + " .btn_caret_sign").text(new_caret);
+			// ---- ATTEMPT TO GET SCREENSHOT (START)
+			var getwebshootbyurl = $.post(base_url + 'index.php/measure/getwebshootbyurl', { url: new_caret }, function(data) {
+				$("#screen_lightbox_img_" + item_id).attr('src', data['img']);
+				$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox'><img style='cursor: pointer;' src='" + data['img'] + "'></a>");
+			});
+			// ---- ATTEMPT TO GET SCREENSHOT (END)
 		});
 
 		$("#customers_screens_crawl").tooltip({
@@ -204,10 +217,10 @@
 			title: 'Open Crawl Launch Control Panel'
 		});
 
-		$("#overview_screens_crawl").tooltip({
-			placement: 'bottom',
-			title: 'Open Crawl Results Panel'
-		});
+		// $("#overview_screens_crawl").tooltip({
+		// 	placement: 'bottom',
+		// 	title: 'Open Crawl Results Panel'
+		// });
         $('title').text("Competitive Intelligence");
 	});
 </script>
