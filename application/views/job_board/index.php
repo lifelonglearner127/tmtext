@@ -1,3 +1,8 @@
+<script type="text/javascript">
+    $(document).ready(function() {
+        $('title').text("Job Board");
+    });
+</script>
 <div class="tabbable">
     <ul class="nav nav-tabs jq-job-board-tabs">
         <li class="active"><a data-toggle="tab" href="<?php echo site_url('job_board');?>">Job Board</a></li>

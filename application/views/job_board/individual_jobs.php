@@ -69,7 +69,7 @@
         $("#related_keywords").resizable({minWidth: 418, maxWidth:418});
     }
     $(document).ready(function() {
-        $('title').text("Research & Edit");
+        $('title').text("Job Board");
 
         /*$.post(base_url + 'index.php/research/getBoxData', {}, function(data){
          var content = '';
