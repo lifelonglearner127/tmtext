@@ -224,7 +224,7 @@ $( function() {
     // choice column dialog
     $( '#choiceColumnDialog' ).dialog({
         autoOpen: false,
-
+        modal: true,
         buttons: {
             'Save': function() {
                 // get columns params

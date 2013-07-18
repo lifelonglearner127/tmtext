@@ -165,8 +165,8 @@ jQuery(document).ready(function($) {
             <div class="row-fluid">
                 <div class="span6">
                     Batch:
-                    <div id="customers" class="customer_dropdown"></div>
-                    <?php echo form_dropdown('batches', $batches_list, array(), 'class="mt_10" style="width: 145px;"'); ?>
+                    <div id="research_customers" class="customer_dropdown"></div>
+                    <?php echo form_dropdown('research_batches', $batches_list, array(), 'class="mt_10" style="width: 145px;"'); ?>
                     <button id="export_batch" class="btn" type="button" style="margin-left:5px; margin-right: 10px;">Export</button>
                 </div>
                 <div class="span6 research_edit_filter_links">

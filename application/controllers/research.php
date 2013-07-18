@@ -87,46 +87,47 @@ class Research extends MY_Controller {
         $this->load->model('imported_data_parsed_model');
         $this->load->model('category_model');
 
-        $search_data = $this->input->post('search_data');
+        //$search_data = $this->input->post('search_data');
 
-            $category_id = '';
-            $website = $this->input->post('website');
-            $category = $this->input->post('category');
-            if(!empty($category) && $category != 'All categories'){
-                $category_id = $this->category_model->getIdByName($category);
+        $category_id = '';
+        $website = $this->input->post('website');
+        $category = $this->input->post('category');
+        if(!empty($category) && $category != 'All categories'){
+            $category_id = $this->category_model->getIdByName($category);
+        }
+
+        //$imported_data_parsed = $this->imported_data_parsed_model->getDataWithPaging($search_data, $website, $category_id);
+        $research_data = $this->imported_data_parsed_model->getResearchDataWithPaging();
+
+        if(!empty($research_data['total_rows'])) {
+            $total_rows = $research_data['total_rows'];
+        } else {
+            $total_rows = 0;
+        }
+
+        $echo = intval($this->input->get('sEcho'));
+        $output = array(
+            "sEcho"                     => $echo,
+            "iTotalRecords"             => $total_rows,
+            "iTotalDisplayRecords"      => $total_rows,
+            "iDisplayLength"            => $research_data['display_length'],
+            "aaData"                    => array()
+        );
+
+        if(!empty($research_data)) {
+            $count = $research_data['display_start'];
+            foreach($research_data['result'] as $research_data_row) {
+                $count++;
+                $output['aaData'][] = array(
+                    $count,
+                    $research_data_row->product_name,
+                    $research_data_row->url,
+                );
             }
+        }
 
-            $imported_data_parsed = $this->imported_data_parsed_model->getDataWithPaging($search_data, $website, $category_id);
-
-            if(!empty($imported_data_parsed['total_rows'])) {
-                $total_rows = $imported_data_parsed['total_rows'];
-            } else {
-                $total_rows = 0;
-            }
-
-            $echo = intval($this->input->get('sEcho'));
-            $output = array(
-                "sEcho"                     => $echo,
-                "iTotalRecords"             => $total_rows,
-                "iTotalDisplayRecords"      => $total_rows,
-                "iDisplayLength"            => $imported_data_parsed['display_length'],
-                "aaData"                    => array()
-            );
-
-            if(!empty($imported_data_parsed)) {
-                $count = $imported_data_parsed['display_start'];
-                foreach($imported_data_parsed['result'] as $imported_data_parsed_row) {
-                    $count++;
-                    $output['aaData'][] = array(
-                        $count,
-                        $imported_data_parsed_row->product_name,
-                        $imported_data_parsed_row->url,
-                    );
-                }
-            }
-
-            $this->output->set_content_type('application/json')
-                ->set_output(json_encode($output));
+        $this->output->set_content_type('application/json')
+            ->set_output(json_encode($output));
     }
 
     public function create_batch(){
@@ -205,7 +206,9 @@ class Research extends MY_Controller {
                 'product_name'                  => 'true',
                 'url'                           => 'true',
                 'short_description_wc'          => 'true',
+                'short_seo_phrases'             => 'true',
                 'long_description_wc'           => 'true',
+                'long_seo_phrases'              => 'true',
                 'duplicate_context'             => 'true',
                 'misspelling'                   => 'true',
             );

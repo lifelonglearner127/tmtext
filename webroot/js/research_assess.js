@@ -5,6 +5,10 @@ $(function () {
         format: 'mm-dd-yyyy'
     });
 
+    $('#assess_filter_dateto').datepicker({
+        format: 'mm-dd-yyyy'
+    });
+
     $('#research_assess_short_check').live('click', function() {
         var enabled = $(this).is(':checked');
         if (enabled) {
@@ -44,19 +48,22 @@ $(function () {
     });
 
     // choice column dialog
-    $('#research_asses_choiceColumnDialog').dialog({
+    $('#research_assess_choiceColumnDialog').dialog({
         autoOpen: false,
+        modal: true,
         buttons: {
             'Save': function() {
                 // get columns params
                 var columns = {
-                    created : $("#column_created").attr('checked'),
-                    product_name : $("#column_product_name").attr('checked'),
-                    url : $("#column_url").attr('checked'),
-                    short_description_wc : $("#column_short_description_wc").attr('checked'),
-                    long_description_wc : $("#column_long_description_wc").attr('checked'),
-                    duplicate_context : $("#column_duplicate_context").attr('checked'),
-                    misspelling : $("#column_misspelling").attr('checked')
+                    created : $("#column_created").attr('checked') == 'checked',
+                    product_name : $("#column_product_name").attr('checked') == 'checked',
+                    url : $("#column_url").attr('checked') == 'checked',
+                    short_description_wc : $("#column_short_description_wc").attr('checked') == 'checked',
+                    short_seo_phrases : $("#column_short_seo_phrases").attr('checked') == 'checked',
+                    long_description_wc : $("#column_long_description_wc").attr('checked') == 'checked',
+                    long_seo_phrases : $("#column_long_seo_phrases").attr('checked') == 'checked',
+                    duplicate_content : $("#column_duplicate_content").attr('checked') == 'checked',
+                    misspelling : $("#column_misspelling").attr('checked') == 'checked'
                 };
 
                 // save params to DB
@@ -86,8 +93,8 @@ $(function () {
     });
 
     $('#research_batches_columns').live('click', function() {
-        $('#research_asses_choiceColumnDialog').dialog('open');
-        //$('#research_asses_choiceColumnDialog').parent().find('button:first').addClass("popupGreen");
+        $('#research_assess_choiceColumnDialog').dialog('open');
+        $('#research_assess_choiceColumnDialog').parent().find('button:first').addClass("popupGreen");
     });
 
     readAssessData();
@@ -115,8 +122,8 @@ function readAssessData() {
             data.short_more = $('#research_assess_short_more').val();
         }
 
-        if ($('#research_assess_short_duplicate_context').is(':checked')) {
-            data.short_duplicate_context = true;
+        if ($('#research_assess_short_duplicate_content').is(':checked')) {
+            data.short_duplicate_content = true;
         }
         if ($('#research_assess_short_misspelling').is(':checked')) {
             data.short_misspelling = true;
@@ -131,8 +138,8 @@ function readAssessData() {
             data.long_more = $('#research_assess_long_more').val();
         }
 
-        if ($('#research_assess_long_duplicate_context').is(':checked')) {
-            data.long_duplicate_context = true;
+        if ($('#research_assess_long_duplicate_content').is(':checked')) {
+            data.long_duplicate_content = true;
         }
         if ($('#research_assess_long_misspelling').is(':checked')) {
             data.long_misspelling = true;
@@ -162,7 +169,7 @@ function readAssessData() {
                         "sInfoFiltered": ""
                     },
                     "aoColumns": [
-                        null, null, null, null, null, null, null
+                        null, null, null, null, null, null, null, null, null
                     ]
                 });
             }
@@ -173,15 +180,10 @@ function readAssessData() {
 //            );
 
             // get visible columns status
-            var columns_checkboxes = $('#research_asses_choiceColumnDialog input[type=checkbox]');
+            var columns_checkboxes = $('#research_assess_choiceColumnDialog input[type=checkbox]');
 
             $(columns_checkboxes).each(function(i) {
-                if(i >= 8) {  // for Batch Name column, include batch name column
-                    i++;
-                }
-                if($(this).attr('checked') == true) {
-                    dataTable.fnSetColumnVis( i, true, true );
-                } else {
+                if($(this).attr('checked') != 'checked') {
                     dataTable.fnSetColumnVis( i, false, true );
                 }
             });

@@ -1038,6 +1038,90 @@ class Imported_data_parsed_model extends CI_Model {
         return $resultArray;
     }
 
+    function getResearchDataWithPaging($params) {
+        $status = "";
+        if ($this->input->get('status') == 'batches_edited')
+            $status = "and rd.status = 'edited'";
+        else
+            if ($this->input->get('status') == 'batches_unedited')
+                $status = "and rd.status <> 'edited'";
+
+        $like = "'%'";
+        if ($this->input->get('sSearch')) {
+            $like = $this->db->escape("%".$this->input->get('sSearch')."%");
+        }
+
+        $batch = "";
+        if ($this->input->get('batch')) {
+            $batch = " and b.title = ".$this->db->escape($this->input->get('batch'));
+        }
+
+        $sql_cmd = "
+            select
+                rd.id,
+                rd.product_name,
+                rd.url
+            from
+                research_data as rd
+            left join batches as b ON b.id = rd.batch_id
+            where
+                concat(rd.product_name, rd.url) like $like
+                $status
+                $batch
+        ";
+
+        $query = $this->db->query($sql_cmd);
+
+        $total_rows = $query->num_rows();
+        $display_length = intval($this->input->get('iDisplayLength', TRUE));
+
+
+        $display_start = intval($this->input->get('iDisplayStart', TRUE));
+        if (empty($display_start)) {
+            $display_start = 0;
+        }
+
+        if (empty($display_length)) {
+            $display_length  = $total_rows - $display_start;
+        }
+
+
+
+
+        $count_sorting_cols = intval($this->input->get('iSortingCols', TRUE));
+
+        if($count_sorting_cols > 0) {
+            $columns_name_string = $this->input->get('sColumns', TRUE);
+            $sort_col_n = intval($this->input->get('iSortCol_0', TRUE));
+            $sort_direction_n = $this->input->get('sSortDir_0', TRUE);
+            $columns_names = explode(",", $columns_name_string);
+            if(!empty($columns_names[$sort_col_n]) && !empty($sort_direction_n)) {
+                $order_column_name = $columns_names[$sort_col_n];
+            }
+        }
+
+        if(!empty($order_column_name)) {
+            $sql_cmd = $sql_cmd." order by $order_column_name $sort_direction_n";
+        }
+
+        if(isset($display_start) && isset($display_length)) {
+            $sql_cmd = $sql_cmd." limit $display_start, $display_length";
+        }
+
+        $query = $this->db->query($sql_cmd);
+        $result =  $query->result();
+
+
+        $resultArray = array(
+            'total_rows'            => $total_rows,
+            'display_length'        => $display_length,
+            'result'                => $result,
+            'display_start'         => $display_start,
+        );
+
+        return $resultArray;
+    }
+
     protected function getDataWithPagingTotalRows($value, $website = '', $category_id='') {
         $this->db->select('id.id, idp.value AS product_name, idp2.value AS url')
             ->from($this->tables['imported_data'].' as id')

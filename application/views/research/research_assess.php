@@ -45,9 +45,9 @@
                             <button id="assess_filter_claear_dates" class="btn">Clear</button>
                         </div>
                     </div>
-                    <div class="row-fluid">
+                    <div class="row-fluid assess_filter_options">
                         <div class="span12">
-                            <div class="span3">
+                            <div class="span3" style="height: 50px;">
                                 <label class="checkbox">
                                     <input id="research_assess_short_check" type="checkbox" checked>
                                     Short Descriptions:
@@ -57,30 +57,34 @@
                                 <div class="span4">
                                     <input id="research_assess_short_less_check" type="checkbox" checked>
                                     &#60;
-                                    <input id="research_assess_short_less" type="text" class="mt_10" style="width: 50px;" value="100"/>
+                                    <input id="research_assess_short_less" type="text" value="100"/>
                                     words
                                     &nbsp &nbsp &nbsp
                                     <input id="research_assess_short_more_check" type="checkbox" checked>
                                     &#62;
-                                    <input id="research_assess_short_more" type="text" class="mt_10" style="width: 50px;" value="200"/>
+                                    <input id="research_assess_short_more" type="text" value="200"/>
                                     words
                                 </div>
-                                <div class="span4 offset1">
+                                <div class="span5" style="height: 50px;">
                                     <label class="checkbox">
-                                        <input id="research_assess_short_duplicate_context" type="checkbox" checked>
+                                        <input id="research_assess_short_seo_phrases" type="checkbox" checked>
+                                        SEO Phrases
+                                    </label>
+                                    <label class="checkbox">
+                                        <input id="research_assess_short_duplicate_content" type="checkbox" checked>
                                         Duplicate content
                                     </label>
                                     <label class="checkbox">
                                         <input id="research_assess_short_misspelling" type="checkbox" checked>
-                                        Mis spellings
+                                        Misspellings
                                     </label>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="row-fluid">
+                    <div class="row-fluid assess_filter_options">
                         <div class="span12">
-                            <div class="span3">
+                            <div class="span3" style="height: 50px;">
                                 <label class="checkbox">
                                     <input type="checkbox" id="research_assess_long_check" checked>
                                     Long Descriptions:
@@ -90,22 +94,26 @@
                                 <div class="span4">
                                     <input id="research_assess_long_less_check" type="checkbox" checked>
                                     &#60;
-                                    <input id="research_assess_long_less" type="text" class="mt_10" style="width: 50px;" value="100"/>
+                                    <input id="research_assess_long_less" type="text" value="100"/>
                                     words
                                     &nbsp &nbsp &nbsp
                                     <input id="research_assess_long_more_check" type="checkbox" checked>
                                     &#62;
-                                    <input id="research_assess_long_more" type="text" name="assess_filter_" style="width: 50px;" value="200"/>
+                                    <input id="research_assess_long_more" type="text" value="200"/>
                                     words
                                 </div>
-                                <div class="span4 offset1">
+                                <div class="span5">
                                     <label class="checkbox">
-                                        <input id="research_assess_long_duplicate_context" type="checkbox" checked>
+                                        <input id="research_assess_long_seo_phrases" type="checkbox" checked>
+                                        SEO Phrases
+                                    </label>
+                                    <label class="checkbox">
+                                        <input id="research_assess_long_duplicate_content" type="checkbox" checked>
                                         Duplicate content
                                     </label>
                                     <label class="checkbox">
                                         <input id="research_assess_long_misspelling" type="checkbox" checked>
-                                        Mis spellings
+                                        Misspellings
                                     </label>
                                 </div>
                             </div>
@@ -126,7 +134,7 @@
 
 
         <!-- choise column dialog box -->
-        <div id="research_asses_choiceColumnDialog" title="Select Table Columns">
+        <div id="research_assess_choiceColumnDialog" title="Select Table Columns">
             <div>
                 <form action="" method="post">
                     <p>
@@ -143,19 +151,27 @@
                     </p>
                     <p>
                         <input type="checkbox" id="column_short_description_wc" name="column_short_description_wc_name" <?php echo($columns['short_description_wc'] == 'true' ? 'checked="checked"' : ''); ?> />
-                        <label for="column_short_description_wc">Short Description words count</label>
+                        <label for="column_short_description_wc">Word Count (S)</label>
+                    </p>
+                    <p>
+                        <input type="checkbox" id="column_short_seo_phrases" name="column_short_seo_phrases_name" <?php echo($columns['short_seo_phrases'] == 'true' ? 'checked="checked"' : ''); ?> />
+                        <label for="column_short_seo_phrases">SEO Phrases (S)</label>
                     </p>
                     <p>
                         <input type="checkbox" id="column_long_description_wc" name="column_long_description_wc_name" <?php echo($columns['long_description_wc'] == 'true' ? 'checked="checked"' : ''); ?> />
-                        <label for="column_short_description_wc">Long Description words count</label>
+                        <label for="column_short_description_wc">Word Count (L)</label>
                     </p>
                     <p>
-                        <input type="checkbox" id="column_duplicate_context" name="column_duplicate_context_name" <?php echo($columns['duplicate_context'] == 'true' ? 'checked="checked"' : ''); ?> />
-                        <label for="column_batch_name">Duplicate context</label>
+                        <input type="checkbox" id="column_long_seo_phrases" name="column_long_seo_phrases_name" <?php echo($columns['long_seo_phrases'] == 'true' ? 'checked="checked"' : ''); ?> />
+                        <label for="column_long_seo_phrases">SEO Phrases (S)</label>
+                    </p>
+                    <p>
+                        <input type="checkbox" id="column_duplicate_content" name="column_duplicate_content_name" <?php echo($columns['duplicate_content'] == 'true' ? 'checked="checked"' : ''); ?> />
+                        <label for="column_batch_name">Duplicate content</label>
                     </p>
                     <p>
                         <input type="checkbox" id="column_misspelling" name="column_misspelling_name" <?php echo($columns['misspelling'] == 'true' ? 'checked="checked"' : ''); ?> />
-                        <label for="column_actions">Misspelling</label>
+                        <label for="column_actions">Misspellings</label>
                     </p>
                 </form>
             </div>
@@ -172,10 +188,12 @@
                                 <th><div class="draggable">Date</div></th>
                                 <th><div class="draggable">Product Name</div></th>
                                 <th><div class="draggable">URL</div></th>
-                                <th><div class="draggable">Short Words Count</div></th>
-                                <th><div class="draggable">Long  Words Count</div></th>
-                                <th><div class="draggable">Duplicate Context</div></th>
-                                <th><div class="draggable">Mis-Spelling</div></th>
+                                <th><div class="draggable">Word Count (S)</div></th>
+                                <th><div class="draggable">SEO Phrases (S)</div></th>
+                                <th><div class="draggable">Word Count (L)</div></th>
+                                <th><div class="draggable">SEO Phrases (L)</div></th>
+                                <th><div class="draggable">Duplicate Content</div></th>
+                                <th><div class="draggable">Misspellings</div></th>
                             </tr>
                             </thead>
                             <tbody></tbody>
@@ -195,8 +213,10 @@
                                 <td class="column_product_name">${product_name}</td>
                                 <td class="column_url">${url}</td>
                                 <td class="column_short_description_wc">${short_description_wc}</td>
+                                <td class="column_short_seo_phrases">?</td>
                                 <td class="column_long_description_wc">${long_description_wc}</td>
-                                <td class="column_duplicate_context">?</td>
+                                <td class="column_long_seo_phrases">?</td>
+                                <td class="column_duplicate_content">?</td>
                                 <td class="column_misspelling">?</td>
                             </tr>
                         </script>

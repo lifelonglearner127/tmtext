@@ -144,7 +144,7 @@ input[type=text] {
     display: inline;
     font-size: 1em;
 }
-#research_asses_choiceColumnDialog label {
+#research_assess_choiceColumnDialog label {
     display: inline;
     font-size: 1em;
 }
@@ -174,4 +174,25 @@ input[type=text] {
     margin-left: 0;
     margin-right: 0;
     padding: 0 4px;
+}
+
+.assess_filter_options{
+    font-size: 11px;
+}
+
+.assess_filter_options label{
+    font-size: 11px;
+}
+
+label.checkbox {
+    margin-top: 15px !important;
+}
+
+.assess_filter_options input[type=checkbox] {
+    margin-top: 0px !important;
+}
+
+.assess_filter_options input[type=text] {
+    margin-top: 10px;
+    width: 50px;
 }
