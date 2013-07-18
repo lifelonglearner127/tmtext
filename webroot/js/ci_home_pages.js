@@ -70,31 +70,51 @@ function flatPreviewScreenshotModal(url) {
 	$("#preview_screenshot_modal #sc_preview").css('width', '200');
 	$("#preview_screenshot_modal #sc_preview").css('height', '150px');
 	$("#preview_screenshot_modal").modal('show');
-	var preview_img = $.post(base_url + 'index.php/measure/getwebshootdata', { url: url }, function(data) {
+	if(url === 'bloomingdales.com') { // --- static tmp screens for bloomingdales.com
 		var imagest = "";
-		imagest += "<img id='s_img' onclick='openPreviewLarge()' src='" + data[0]['thumb'] + "'>";
-		imagest += "<img id='l_img' style='display: none;' src='" + data[0]['img'] + "'>";
+		var tmp_thumb = base_url + "img/bloomingdales_com_wide_half.png";
+		imagest += "<img id='s_img' onclick='openPreviewLarge()' src='" + tmp_thumb + "'>";
+		imagest += "<img id='l_img' style='display: none;' src='" + tmp_thumb + "'>";
 		$("#preview_screenshot_modal #sc_preview").html(imagest);
-	});
+	} else {
+		var preview_img = $.post(base_url + 'index.php/measure/getwebshootdata', { url: url }, function(data) {
+			var imagest = "";
+			imagest += "<img id='s_img' onclick='openPreviewLarge()' src='" + data[0]['thumb'] + "'>";
+			imagest += "<img id='l_img' style='display: none;' src='" + data[0]['img'] + "'>";
+			$("#preview_screenshot_modal #sc_preview").html(imagest);
+		});
+	}
 }
 
 function previewScreenshotModal(url) {
 	$("#customers_screens_crawl_modal").modal('hide');
-	$("#loading_crawl_modal").modal('show');
-	var start_site_crawl = $.post(base_url + 'index.php/measure/webshootcrawl', { url: url }, function(data) {
+	if(url === 'bloomingdales.com') { // --- static tmp screens for bloomingdales.com
 		$("#loading_crawl_modal").modal('hide');
-		if(data['state']) {
-			$("#preview_screenshot_modal #sc_preview").css('width', '200');
-			$("#preview_screenshot_modal #sc_preview").css('height', '150px');
-			$("#preview_screenshot_modal").modal('show');
-			var imagest = "";
-			imagest += "<img id='s_img' onclick='openPreviewLarge()' src='" + data['small_crawl'] + "'>";
-			imagest += "<img id='l_img' style='display: none;' src='" + data['big_crawl'] + "'>";
-			$("#preview_screenshot_modal #sc_preview").html(imagest);
-		} else {
-			alert('Internal Server Error');
-		}
-	});
+		$("#preview_screenshot_modal #sc_preview").css('width', '200');
+		$("#preview_screenshot_modal #sc_preview").css('height', '150px');
+		$("#preview_screenshot_modal").modal('show');
+		var imagest = "";
+		var tmp_thumb = base_url + "img/bloomingdales_com_wide_half.png";
+		imagest += "<img id='s_img' onclick='openPreviewLarge()' src='" + tmp_thumb + "'>";
+		imagest += "<img id='l_img' style='display: none;' src='" + tmp_thumb + "'>";
+		$("#preview_screenshot_modal #sc_preview").html(imagest);
+	} else {
+		$("#loading_crawl_modal").modal('show');
+		var start_site_crawl = $.post(base_url + 'index.php/measure/webshootcrawl', { url: url }, function(data) {
+			$("#loading_crawl_modal").modal('hide');
+			if(data['state']) {
+				$("#preview_screenshot_modal #sc_preview").css('width', '200');
+				$("#preview_screenshot_modal #sc_preview").css('height', '150px');
+				$("#preview_screenshot_modal").modal('show');
+				var imagest = "";
+				imagest += "<img id='s_img' onclick='openPreviewLarge()' src='" + data['small_crawl'] + "'>";
+				imagest += "<img id='l_img' style='display: none;' src='" + data['big_crawl'] + "'>";
+				$("#preview_screenshot_modal #sc_preview").html(imagest);
+			} else {
+				alert('Internal Server Error');
+			}
+		});
+	}
 }
 
 function openPreviewLarge() {

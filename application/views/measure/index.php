@@ -203,16 +203,24 @@
 <script type="text/javascript">
 	function clickScreenDrop(new_caret, item_id) {
 		$("#hp_boot_drop_" + item_id + " .btn_caret_sign").text(new_caret);
-		// ---- ATTEMPT TO GET SCREENSHOT (START)
-		$("#art_img_" + item_id).append("<div id='loader_over_" + item_id + "' class='loader_over'><img src='" + base_url + "img/loader_scr.gif'></div>");
-		var getwebshootbyurl = $.post(base_url + 'index.php/measure/getwebshootbyurl', { url: new_caret }, function(data) {
-			$("#screen_lightbox_img_" + item_id).attr('src', data['img']);
-			$("#loader_over_" + item_id).remove();
-			$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox'><img style='cursor: pointer;' src='" + data['thumb'] + "'></a>");
-			var t = moment(data['stamp']).format('MMMM Do, YYYY');
+		if(new_caret === 'bloomingdales.com') { // --- static tmp screens for bloomingdales.com
+			$("#screen_lightbox_img_" + item_id).attr('src', base_url + "img/bloomingdales_com_wide_half.png");
+			var tmp_thumb = base_url + "img/bloomingdales_com_wide_half.png";
+			$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox'><img style='cursor: pointer; height: 100%' src='" + tmp_thumb + "'></a>");
+			var t = moment().format('MMMM Do, YYYY');
 			$("#crawl_date_" + item_id).text(t);
-		});
-		// ---- ATTEMPT TO GET SCREENSHOT (END)
+		} else {
+			// ---- ATTEMPT TO GET SCREENSHOT (START)
+			$("#art_img_" + item_id).append("<div id='loader_over_" + item_id + "' class='loader_over'><img src='" + base_url + "img/loader_scr.gif'></div>");
+			var getwebshootbyurl = $.post(base_url + 'index.php/measure/getwebshootbyurl', { url: new_caret }, function(data) {
+				$("#screen_lightbox_img_" + item_id).attr('src', data['img']);
+				$("#loader_over_" + item_id).remove();
+				$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox'><img style='cursor: pointer;' src='" + data['thumb'] + "'></a>");
+				var t = moment(data['stamp']).format('MMMM Do, YYYY');
+				$("#crawl_date_" + item_id).text(t);
+			});
+			// ---- ATTEMPT TO GET SCREENSHOT (END)
+		}
 	}
 	$(document).ready(function() {
 		$("#customers_screens_crawl").tooltip({
