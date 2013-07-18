@@ -26,9 +26,9 @@ class Measure extends MY_Controller {
     private function upload_record_webshoot($ext_url, $url_name) {
         $file = file_get_contents($ext_url);
         $type = 'png';
-        $dir =  $_SERVER['DOCUMENT_ROOT']."/webroot/webshoots"; // for local server
+        //$dir =  $_SERVER['DOCUMENT_ROOT']."/webroot/webshoots"; // for local server
         // $dir =  BASEPATH."../webroot/webshoots";
-        // $dir = "/ebs/sites/client38/web49/web/producteditor/webroot/webshoots"; // for dev server
+        $dir = "/ebs/sites/client38/web49/web/producteditor/webroot/webshoots"; // for dev server
         if(!file_exists($dir)) {
             mkdir($dir);
             chmod($dir, 0777);
