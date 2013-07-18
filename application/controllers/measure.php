@@ -74,13 +74,21 @@ class Measure extends MY_Controller {
             );
             $crawl_s = $this->upload_record_webshoot($res['s'], $url."_small");
             $crawl_l = $this->upload_record_webshoot($res['l'], $url."_big");
+            // $result = array(
+            //     'state' => false,
+            //     'url' => $url,
+            //     'small_crawl' => $crawl_s['path'],
+            //     'big_crawl' => $crawl_l['path'],
+            //     'dir_thumb' => $crawl_s['dir'],
+            //     'dir_img' => $crawl_l['dir']
+            // );
             $result = array(
                 'state' => false,
                 'url' => $url,
                 'small_crawl' => $crawl_s['path'],
                 'big_crawl' => $crawl_l['path'],
-                'dir_thumb' => $crawl_s['dir'],
-                'dir_img' => $crawl_l['dir']
+                'dir_thumb' => BASEPATH."../webroot/webshoots",
+                'dir_img' => realpath(BASEPATH."../webroot/webshoots")
             );
             $insert_id = $this->webshoots_model->recordUpdateWebshoot($result);
             $result = $this->webshoots_model->getWebshootDataById($insert_id);
@@ -128,13 +136,21 @@ class Measure extends MY_Controller {
         );
         $crawl_s = $this->upload_record_webshoot($res['s'], $url."_small");
         $crawl_l = $this->upload_record_webshoot($res['l'], $url."_big");
+        // $result = array(
+        //     'state' => false,
+        //     'url' => $url,
+        //     'small_crawl' => $crawl_s['path'],
+        //     'big_crawl' => $crawl_l['path'],
+        //     'dir_thumb' => $crawl_s['dir'],
+        //     'dir_img' => $crawl_l['dir']
+        // );
         $result = array(
             'state' => false,
             'url' => $url,
             'small_crawl' => $crawl_s['path'],
             'big_crawl' => $crawl_l['path'],
-            'dir_thumb' => $crawl_s['dir'],
-            'dir_img' => $crawl_l['dir']
+            'dir_thumb' => BASEPATH."../webroot/webshoots",
+            'dir_img' => realpath(BASEPATH."../webroot/webshoots")
         );
         $this->load->model('webshoots_model');
         $r = $this->webshoots_model->recordUpdateWebshoot($result);
