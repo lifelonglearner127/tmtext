@@ -26,9 +26,10 @@ class Measure extends MY_Controller {
     private function upload_record_webshoot($ext_url, $url_name) {
         $file = file_get_contents($ext_url);
         $type = 'png';
-        //$dir =  $_SERVER['DOCUMENT_ROOT']."/webroot/webshoots"; // for local server
+        $dir = realpath(BASEPATH."../webroot/webshoots");
+        // $dir =  $_SERVER['DOCUMENT_ROOT']."/webroot/webshoots"; // for local server
         // $dir =  BASEPATH."../webroot/webshoots";
-        $dir = "/ebs/sites/client38/web49/web/producteditor/webroot/webshoots"; // for dev server
+        // $dir = "/ebs/sites/client38/web49/web/producteditor/webroot/webshoots"; // for dev server
         if(!file_exists($dir)) {
             mkdir($dir);
             chmod($dir, 0777);
@@ -65,7 +66,7 @@ class Measure extends MY_Controller {
             // $size_s = "200x150";
             // $size_l = "600x450";
             $size_s = "800x600";
-            $size_l = "1400x1050";
+            $size_l = "1200x1000";
             $format = "png";
             // -- configs (end)
             $res = array(
@@ -74,21 +75,13 @@ class Measure extends MY_Controller {
             );
             $crawl_s = $this->upload_record_webshoot($res['s'], $url."_small");
             $crawl_l = $this->upload_record_webshoot($res['l'], $url."_big");
-            // $result = array(
-            //     'state' => false,
-            //     'url' => $url,
-            //     'small_crawl' => $crawl_s['path'],
-            //     'big_crawl' => $crawl_l['path'],
-            //     'dir_thumb' => $crawl_s['dir'],
-            //     'dir_img' => $crawl_l['dir']
-            // );
             $result = array(
                 'state' => false,
                 'url' => $url,
                 'small_crawl' => $crawl_s['path'],
                 'big_crawl' => $crawl_l['path'],
-                'dir_thumb' => BASEPATH."../webroot/webshoots",
-                'dir_img' => realpath(BASEPATH."../webroot/webshoots")
+                'dir_thumb' => $crawl_s['dir'],
+                'dir_img' => $crawl_l['dir']
             );
             $insert_id = $this->webshoots_model->recordUpdateWebshoot($result);
             $result = $this->webshoots_model->getWebshootDataById($insert_id);
@@ -127,7 +120,7 @@ class Measure extends MY_Controller {
         // $size_s = "200x150";
         // $size_l = "600x450";
         $size_s = "800x600";
-        $size_l = "1400x1050";
+        $size_l = "1200x1000";
         $format = "png";
         // -- configs (end)
         $res = array(
@@ -136,21 +129,13 @@ class Measure extends MY_Controller {
         );
         $crawl_s = $this->upload_record_webshoot($res['s'], $url."_small");
         $crawl_l = $this->upload_record_webshoot($res['l'], $url."_big");
-        // $result = array(
-        //     'state' => false,
-        //     'url' => $url,
-        //     'small_crawl' => $crawl_s['path'],
-        //     'big_crawl' => $crawl_l['path'],
-        //     'dir_thumb' => $crawl_s['dir'],
-        //     'dir_img' => $crawl_l['dir']
-        // );
         $result = array(
             'state' => false,
             'url' => $url,
             'small_crawl' => $crawl_s['path'],
             'big_crawl' => $crawl_l['path'],
-            'dir_thumb' => BASEPATH."../webroot/webshoots",
-            'dir_img' => realpath(BASEPATH."../webroot/webshoots")
+            'dir_thumb' => $crawl_s['dir'],
+            'dir_img' => $crawl_l['dir']
         );
         $this->load->model('webshoots_model');
         $r = $this->webshoots_model->recordUpdateWebshoot($result);
