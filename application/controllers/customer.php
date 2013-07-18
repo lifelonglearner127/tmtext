@@ -137,13 +137,13 @@ class Customer extends MY_Controller {
             }else{
                 $this->style_guide_model->insertStyle($txtcontent, $customer_id);
                 $this->output->set_content_type('application/json')
-                ->set_output(json_encode('The style has been saved.'));
+                ->set_output(json_encode('The style guide has been saved.'));
             }
             
         }else{
             $this->style_guide_model->insertStyle($txtcontent, $customer_id);
              $this->output->set_content_type('application/json')
-            ->set_output(json_encode('The style has been saved.'));
+            ->set_output(json_encode('The style guide has been saved.'));
         }
        
         
