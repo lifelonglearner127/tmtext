@@ -178,12 +178,14 @@ function detectNextPrevBtnPlace() {
 	var prev_sibling = $(".pagination ul li.page.active").prev();
 	var prev_week_page = $(prev_sibling).data('week');
 	// --- next btn investigation
-	if(current_week_page == '7') {
+	var last_cwp = $(".pagination ul li.page:last").data('week');
+	if(current_week_page == last_cwp) {
 		$("#page_next").addClass('disabled');
 		$("#page_next").find('a').attr('onclick', 'return false');
 	}
 	// --- prev btn investigation
-	if(current_week_page == '1') {
+	var first_cwp = $(".pagination ul li.page:first").data('week');
+	if(current_week_page == first_cwp) {
 		$("#page_prev").addClass('disabled');
 		$("#page_prev").find('a').attr('onclick', 'return false');
 	}
@@ -194,6 +196,8 @@ function locaHomePageWeekData(week) {
 	$(".pagination ul li").removeClass('active');
 	$(".pagination ul li[data-week=" + week + "]").addClass('active');
 	detectNextPrevBtnPlace();
+	var first_cwp = $(".pagination ul li.page:first").data('week');
+	var last_cwp = $(".pagination ul li.page:last").data('week');
 	$.ajax({
         url: base_url + 'index.php/measure/gethomepageweekdata',
         async: false,
@@ -201,7 +205,9 @@ function locaHomePageWeekData(week) {
         type: "POST",
         data: {
         	'year': year,
-        	'week': week
+        	'week': week,
+        	'first_cwp': first_cwp,
+        	'last_cwp': last_cwp
         },
         success: function(res) {
         	$("#hp_ajax_content > div").slideUp('medium', function() {
