@@ -25,7 +25,10 @@ $( function() {
     $( '#updateDialog' ).dialog({
         autoOpen: false,
         buttons: {
-            'Update & Next':
+            'Cancel': function() {
+                $( this ).dialog( 'close' );
+            },
+            'Save & Next':
                 function() {
                     if($('#ajaxLoadAni').css('display') == 'none') {
                         $( '#ajaxLoadAni' ).fadeIn( 'slow' );
@@ -44,8 +47,8 @@ $( function() {
                             updateNextDialog(updateId);
                         } //end success
                     }); //end ajax()
-                },
-            'Update':
+            },
+            'Save':
                 function() {
                     if($('#ajaxLoadAni').css('display') == 'none') {
                         $( '#ajaxLoadAni' ).fadeIn( 'slow' );
@@ -64,11 +67,9 @@ $( function() {
                             $( '#updateDialog form input' ).val( '' );
                         } //end success
                     }); //end ajax()
-            },
-
-            'Cancel': function() {
-                $( this ).dialog( 'close' );
-            }
+            }, 
+            'Reject':
+                function(){}
         },
         width: '600px'
     });
@@ -197,7 +198,9 @@ $( function() {
                 $( '#userId' ).val( updateId );
 
                 $( '#updateDialog' ).dialog( 'open' );
-                $("#updateDialog").parent().find("div.ui-dialog-buttonpane button").not(":eq(2)").addClass("researchReviewUpdate");
+                $( '#updateDialog' ).dialog( "option", "title", "Update - Item "+response[0].id );
+                $("#updateDialog").parent().find("div.ui-dialog-buttonpane button").not(":eq(0)").addClass("researchReviewUpdate");
+                $("#updateDialog").parent().find("div.ui-dialog-buttonpane button").eq(3).replaceWith('<div class="reject"><label><input type="checkbox" id="check1" /> Reject</label></div>');
                 shortDescriptionWordCount();
                 longDescriptionWordCount();
             }

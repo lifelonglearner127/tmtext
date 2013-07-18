@@ -56,10 +56,23 @@ input[type=text] {
     font-size: 1em;
 }
 
-#updateDialog label {
+#updateDialog label{
     display: inline-block;
     text-align: right;
     width: 150px;
+}
+#updateDialog .parag span.labeler {
+    position: relative;
+    top: -31px;
+}
+
+#updateDialog .parag div.bottom-labeler {
+    position: relative;
+    top: -65px;
+}
+
+#updateDialog .parag div.bottom-labeler label {
+    font-size: 12px;
 }
 
 #updateDialog p {
@@ -96,6 +109,30 @@ input[type=text] {
     background-position: 0 -13px;
     text-decoration: none;
     transition: background-position 0.1s linear 0s;
+}
+
+.ui-dialog .ui-dialog-buttonpane .reject {
+   position: relative;
+    top: -24px;
+    left: -38px;
+    height: 20px;
+    width: 20px;
+}
+.ui-dialog .ui-dialog-buttonpane .reject input {
+    width: 13px;
+    height: 13px;
+    padding: 0;
+    margin:0;
+    vertical-align: bottom;
+    position: relative;
+    top: 32px;
+    *overflow: hidden;
+}
+
+.ui-dialog .ui-dialog-buttonpane .reject label {
+    font-size: 10px;
+    display: block;
+    text-indent: -18px;
 }
 
 /* Validation label */

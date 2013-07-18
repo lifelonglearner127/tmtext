@@ -79,16 +79,24 @@
                                 <label for="url">Url:</label>
                                 <input type="text" id="url" name="url" />
                             </p>
-                            <p>
-                                <label for="short_description">Short Description:</label>
+                            <div class="parag">
+                                <span class="labeler">
+                                    <label for="short_description">Short Description:</label>
+                                </span>
                                 <textarea id="short_description" name="short_description" ></textarea>
-                                <label><span id="short_description_wc">0</span> words<input type="hidden" name="short_description_wc" /></label>
-                            </p>
-                            <p>
+                                <div class="bottom-labeler">
+                                    <label><span id="short_description_wc">0</span> words<input type="hidden" name="short_description_wc" /></label>
+                                </div>
+                            </div>
+                            <div class="parag">
+                                <span class="labeler">
                                 <label for="long_description">Long Description:</label>
+                                </span>
                                 <textarea id="long_description" name="long_description" ></textarea>
-                                <label><span id="long_description_wc">0</span> words<input type="hidden" name="long_description_wc" /></label>
-                            </p>
+                                <div class="bottom-labeler">
+                                    <label><span id="long_description_wc">0</span> words<input type="hidden" name="long_description_wc" /></label>
+                                </div>
+                            </div>
 
                             <input type="hidden" id="userId" name="id" />
                         </form>
