@@ -167,10 +167,10 @@ function changeHomePageYersHandler() {
 
 function detectNextPrevBtnPlace() {
 	// --- activate all btns
-	$(".page_next").removeClass('disabled');
-	$(".page_next").find('a').attr('onclick', 'nextLocaHomePageWeekData()');
-	$(".page_prev").removeClass('disabled');
-	$(".page_prev").find('a').attr('onclick', 'prevLocaHomePageWeekData()');
+	$("#page_next").removeClass('disabled');
+	$("#page_next").find('a').attr('onclick', 'nextLocaHomePageWeekData()');
+	$("#page_prev").removeClass('disabled');
+	$("#page_prev").find('a').attr('onclick', 'prevLocaHomePageWeekData()');
 	// --- configs
 	var current_week_page = $(".pagination ul li.page.active").data('week');
 	var next_sibling = $(".pagination ul li.page.active").next();
@@ -178,14 +178,14 @@ function detectNextPrevBtnPlace() {
 	var prev_sibling = $(".pagination ul li.page.active").prev();
 	var prev_week_page = $(prev_sibling).data('week');
 	// --- next btn investigation
-	if(current_week_page == '5') {
-		$(".page_next").addClass('disabled');
-		$(".page_next").find('a').attr('onclick', 'return false');
+	if(current_week_page == '7') {
+		$("#page_next").addClass('disabled');
+		$("#page_next").find('a').attr('onclick', 'return false');
 	}
 	// --- prev btn investigation
 	if(current_week_page == '1') {
-		$(".page_prev").addClass('disabled');
-		$(".page_prev").find('a').attr('onclick', 'return false');
+		$("#page_prev").addClass('disabled');
+		$("#page_prev").find('a').attr('onclick', 'return false');
 	}
 }
 

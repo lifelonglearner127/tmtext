@@ -25,13 +25,17 @@
 					<div class='span6 ml_disable'>
 						<div class="pagination">
 							<ul>
-								<li class="page_prev disabled"><a onclick="prevLocaHomePageWeekData()" href="javascript:void(0)">&laquo;</a></li>
+								<li class='page_prev disabled'><a href="javascript:void(0)">&lsaquo;</a></li>
+								<li id='page_prev' class="page_prev disabled"><a onclick="prevLocaHomePageWeekData()" href="javascript:void(0)">&laquo;</a></li>
 								<li data-week='1' class="page active"><a href="javascript:void(0)" onclick="locaHomePageWeekData('1')">1</a></li>
 								<li data-week='2' class='page'><a href="javascript:void(0)" onclick="locaHomePageWeekData('2')">2</a></li>
 								<li data-week='3' class='page'><a href="javascript:void(0)" onclick="locaHomePageWeekData('3')">3</a></li>
 								<li data-week='4' class='page'><a href="javascript:void(0)" onclick="locaHomePageWeekData('4')">4</a></li>
 								<li data-week='5' class='page'><a href="javascript:void(0)" onclick="locaHomePageWeekData('5')">5</a></li>
-								<li class='page_next'><a onclick="nextLocaHomePageWeekData()" href="javascript:void(0)">&raquo;</a></li>
+								<li data-week='6' class='page'><a href="javascript:void(0)" onclick="locaHomePageWeekData('6')">6</a></li>
+								<li data-week='7' class='page'><a href="javascript:void(0)" onclick="locaHomePageWeekData('7')">7</a></li>
+								<li id='page_next' class='page_next'><a onclick="nextLocaHomePageWeekData()" href="javascript:void(0)">&raquo;</a></li>
+								<li class='page_next disabled'><a href="javascript:void(0)">&rsaquo;</a></li>
 							</ul>
 						</div>
 					</div>
