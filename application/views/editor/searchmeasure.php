@@ -1,7 +1,7 @@
 <div>
 <input type='hidden' name='measure_res_status' id='measure_res_status' value="<?php echo $search_flag; ?>" >
-<?php if(isset($search_flag) && $search_flag === 'db' ) { ?>
-
+<?php if(isset($search_flag) && $search_flag === 'db' && !empty($search_results) ) {//max ?>
+   
 	<?php 
 		$pr_title = "";
 		$pr_url = "";
@@ -42,7 +42,7 @@
 		<br>
 	    <div id="details-long-desc">Long description not finded</div>
 	</div>
-
+        
 <?php } ?>
 
 </div>

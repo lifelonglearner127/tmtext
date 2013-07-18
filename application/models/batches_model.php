@@ -108,5 +108,15 @@ class Batches_model extends CI_Model {
         }
         return false;
     }
-
+     function getCustomerByBatchId($batch_id)//max
+    {
+        $query =  $this->db->select('c.name')
+            ->from($this->tables['batches'].' as b')
+            ->join($this->tables['customers'].' as c', 'c.id = b.customer_id', 'left')
+            ->where('b.id',$batch_id )->limit(1)->get();
+        if($query->num_rows() > 0) {
+            return $query->row()->name;
+        }
+        return false;
+    }//max
 }

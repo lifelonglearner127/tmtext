@@ -296,6 +296,8 @@ class Measure extends MY_Controller {
 
     public function gridview() {
         $im_data_id = $this->input->post('im_data_id');
+        $research_data_id= $this->input->post('research_data_id');//max
+        if(!$research_data_id){//max
         $data = array(
             'im_data_id' => $im_data_id,
             's_product' => array(),
@@ -398,6 +400,28 @@ class Measure extends MY_Controller {
             }
             // --- GET SELECTED RPODUCT SEO DATA (TMP) (END)
         }
+        }//max
+        else{
+            $data = array(
+            'im_data_id' =>  $research_data_id,
+            's_product' => array(),
+            's_product_short_desc_count' => 0,
+            's_product_long_desc_count' => 0,
+            'seo' => array('short' => array(), 'long' => array()),
+            'same_pr' => array()
+        );
+         $this->load->model('research_data_model');
+        
+         $this->load->model('batches_model');
+         
+         $data_import = $this->research_data_model->get_by_id($research_data_id); 
+         
+         $data_import['customer']=$this->batches_model->getCustomerByBatchId($data_import['batch_id']);
+         
+         if($data_import){
+         $data['same_pr'][]=$data_import;
+         }  
+        }
 
         // -------- COMPARING V1 (START)
         $s_term = $this->input->post('s_term');
@@ -488,6 +512,8 @@ class Measure extends MY_Controller {
     }
 
     public function searchmeasuredball() {
+        $batch_id = $this->input->post('batch_id');
+        if(!$batch_id){
         $s = $this->input->post('s');
         $sl = $this->input->post('sl');
         $cat_id = $this->input->post('cat');
@@ -515,6 +541,14 @@ class Measure extends MY_Controller {
 
         $data['search_results'] = $data_import;
         $this->load->view('measure/searchmeasuredball', $data);
+        }else{
+            $this->load->model('research_data_model');
+            $result=$this->research_data_model->get_by_batch_id($batch_id);
+            $data['search_results'] = $result;
+            $data['batches']='batches';
+            $this->load->view('measure/searchmeasuredball', $data);
+           
+        }
     }
 
     public function attributesmeasure() {

@@ -40,7 +40,20 @@ class Research_data_model extends CI_Model {
 
         return $query->result();
     }
+    function get_by_id($id){//max
+         $query = $this->db->where('id', $id)
+            ->limit(1)
+            ->get($this->tables['research_data']);
 
+        return $query->row_array();
+    }
+    function get_by_batch_id($batch_id){
+        $query = $this->db->where('batch_id', $batch_id)
+              ->get($this->tables['research_data']);
+        
+        return $query->result_array();
+   }
+  //max
     function insert($batch_id, $url, $product_name, $keyword1, $keyword2, $keyword3, $meta_name,
                     $meta_description, $meta_keywords, $short_description, $short_description_wc, $long_description, $long_description_wc, $revision = 1)
     {

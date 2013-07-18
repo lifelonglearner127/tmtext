@@ -18,7 +18,7 @@ jQuery(document).ready(function($) {
                 <div class="span6">
                     Batch:
                     <div id="product_customers" class="customer_dropdown"></div>
-                    <?php echo form_dropdown('product_batches', $batches_list, array(), 'class="mt_10 mr_10" style="width: 100px;"'); ?>
+                    <?php  echo form_dropdown('product_batches', $batches_list, array(), 'class="mt_10 mr_10" id="batchess" style="width: 100px;"');//max ?>
                 </div>
             </div>
         </div>

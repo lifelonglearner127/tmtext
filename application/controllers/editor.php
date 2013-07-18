@@ -196,6 +196,8 @@ class Editor extends MY_Controller {
 	// }
 
 	public function searchmeasuredb() {
+                $research_data_id=$this->input->post('research_data_id');
+                if(!$research_data_id){
 		$im_data_id = $this->input->post('im_data_id');
 		$data = array(
 			'search_flag' => '',
@@ -220,6 +222,12 @@ class Editor extends MY_Controller {
 			$data['search_results'] = $data_import;
 			$data['search_flag'] = 'db';
 		}
+                }else{//max
+                    $this->load->model('research_data_model');
+                    $data_import = $this->research_data_model->get_by_id($research_data_id);
+                     $data['search_results'] = $data_import;
+		    $data['search_flag'] = 'db';
+                }//max
 		$this->load->view('editor/searchmeasure', $data);
 	}
 

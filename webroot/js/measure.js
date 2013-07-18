@@ -111,7 +111,9 @@ function switchToListView() {
 }
 
 function switchToGridView() {
+    
     viewIconsReset();
+    var batch_id=$("#batchess").val();
     $('#grid_sw_grid').addClass('btn-primary');
     $('#grid_sw_grid > i').addClass('icon-white');
     $("#attributes_metrics ul:not(.grid_switcher)").hide();
@@ -123,7 +125,9 @@ function switchToGridView() {
     if ( $( "input[name='strict_grid']:checked" ).val() !== undefined ) {
     	strict = 1;
     }
-
+    
+    if(batch_id == 0){
+        
     var grid_view = $.post(editorGridViewBaseUrl, { im_data_id: im_data_id, s_term: $.trim($("#compare_text").val()), strict:strict }, 'html').done(function(data) {
         $("#compet_area_grid").html(data);
         $("#compet_area_grid").show();
@@ -131,6 +135,15 @@ function switchToGridView() {
         $(".grid_se_section .c_content").show();
         // gridsCustomersListLoader();
     });
+    }else{
+        var grid_view = $.post(editorGridViewBaseUrl, { research_data_id: im_data_id, s_term: $.trim($("#compare_text").val()), strict:strict }, 'html').done(function(data) {
+        $("#compet_area_grid").html(data);
+        $("#compet_area_grid").show();
+        $(".preloader_grids_box").hide();
+        $(".grid_se_section .c_content").show();
+        // gridsCustomersListLoader();
+    });
+    }
     grid_status = 'grid';
 }
     // ------------- !!!! OLD STUFF (START) -------------
@@ -213,6 +226,7 @@ function startMeasureCompareV2() {
     // ---- LIMIT DETECTION (END) (OLD)
 
     // ---- LIMIT DETECTION (START) (NEW)
+    $("#batchess").val("0");//max
     var limit = 20;
     if($(".typeahead").is(':visible')) {
         limit = $(".typeahead > li").length;
@@ -251,7 +265,28 @@ function startMeasureCompareV2() {
 
     return false;
 }
+function show_from_butches(){//max
+   var batch_id=$("#batchess").val();
+    
+   var searcher_all = $.post(editorSearchAllBaseUrl , {batch_id: batch_id}, 'html').done(function(data) {
+        $("#an_products_box").html(data);
+        // $("#an_products_box").fadeOut();
+        // $("#an_products_box").fadeIn();
+        $("#an_products_box").show();
+        var w = $('ul#products li:first-child span:first-child').width();
+        $('#an_sort_search_box .product_title .main span:first-child').width(w);
+        setTimeout(function() {
+            // if($(".ui-autocomplete").is(':visible')) $(".ui-autocomplete").hide(); // OLD
+            if($(".typeahead").is(':visible')) $(".typeahead").hide(); // NEW
+        }, 1000);
+    });
 
+    return false;
+    
+}
+
+    
+//max
 function removeTagsFromDescs() {
     var short_str = $("#details-short-desc").text();
     var long_str = $("#details-long-desc").text();
@@ -583,6 +618,16 @@ function keywordsAnalizer() {
 // --- KEYWORDS ANALYZER (END)
 
 $(document).ready(function() {
+    $("#an_search").live('click',function(){//max
+        
+    });
+    $("#products li").live('click',function(){
+        var selsected_li= $(this);
+        $(this).remove();
+        $("#products").prepend(selsected_li);
+        $("#products").scrollTop(0);
+    });
+    //max
     $('title').text("Competitive Intelligence");
 
     $("#measureFormMetrics").submit(function(e) {
@@ -645,7 +690,15 @@ $(document).ready(function() {
         }
     });
 
-});
+    $("#batchess").live('change',function(){//max
+        
+      if($("#batchess").val()!=='0') {
+          //alert($("#batchess").val());
+          show_from_butches();
+      }
+      
+    });
+});//max
 // ---- new CI term typeahead (end) (NEW)
 
 // --- CI search term autocomplete (start) (OLD)
