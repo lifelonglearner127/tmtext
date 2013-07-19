@@ -143,6 +143,18 @@ class Measure extends MY_Controller {
         $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }
 
+    public function timelineblock() {
+        $first_cwp = $this->input->post('first_cwp');
+        $last_cwp = $this->input->post('last_cwp');
+        $state = $this->input->post('state');
+        $data = array(
+            'first_cwp' => $first_cwp,
+            'last_cwp' => $last_cwp,
+            'state' => $state
+        );
+        $this->load->view('measure/timelineblock', $data);
+    }
+
     public function gethomepageyeardata() {
         $year = $this->input->post('year');
         $week = $this->input->post('week');

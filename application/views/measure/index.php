@@ -24,7 +24,7 @@
 					<div class="span1 ml_disable">week:</div>
 					<div class='span6 ml_disable'>
 						<div class="pagination">
-							<ul>
+							<!-- <ul>
 								<li class='page_prev disabled'><a href="javascript:void(0)">&lsaquo;</a></li>
 								<li id='page_prev' class="page_prev disabled"><a onclick="prevLocaHomePageWeekData()" href="javascript:void(0)">&laquo;</a></li>
 								<li data-week='1' class="page active"><a href="javascript:void(0)" onclick="locaHomePageWeekData('1')">1</a></li>
@@ -36,6 +36,16 @@
 								<li data-week='7' class='page'><a href="javascript:void(0)" onclick="locaHomePageWeekData('7')">7</a></li>
 								<li id='page_next' class='page_next'><a onclick="nextLocaHomePageWeekData()" href="javascript:void(0)">&raquo;</a></li>
 								<li class='page_next disabled'><a href="javascript:void(0)">&rsaquo;</a></li>
+							</ul> -->
+							<ul id='timeline_ctr'>
+								<li class='page_prev'><a id="slide_prev_timeline" class='tl_full_left disabled' onclick="return false;" href="javascript:void(0)"><i class='icon-chevron-left icon-white'></i></a></li>
+								<li id='page_prev' class="page_prev disabled"><a onclick="prevLocaHomePageWeekData()" href="javascript:void(0)">&laquo;</a></li>
+								<?php for($i = 1; $i <= 7; $i++) { ?>
+									<?php if($i == 1) { $active = 'active'; } else { $active = ''; } ?>
+									<li data-week="<?php echo $i; ?>" class="page <?php echo $active; ?>"><a href="javascript:void(0)" onclick="locaHomePageWeekData('<?php echo $i; ?>')"><?php echo $i; ?></a></li>
+								<?php } ?>
+								<li id='page_next' class='page_next'><a onclick="nextLocaHomePageWeekData()" href="javascript:void(0)">&raquo;</a></li>
+								<li class='page_next'><a id="slide_next_timeline" class='tl_full_left' onclick="slideTimeline('next')" href="javascript:void(0)"><i class='icon-chevron-right icon-white'></i></a></li>
 							</ul>
 						</div>
 					</div>

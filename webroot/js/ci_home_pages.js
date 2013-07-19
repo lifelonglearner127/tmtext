@@ -228,3 +228,30 @@ function nextLocaHomePageWeekData() {
 	var next_week_page = $(next_sibling).data('week');
 	locaHomePageWeekData(next_week_page);
 }
+
+function slideTimelinePrev() {
+
+}
+
+function slideTimeline(state) { // 'next', 'prev'
+	var first_cwp = $(".pagination ul li.page:first").data('week');
+	var last_cwp = $(".pagination ul li.page:last").data('week');
+	$.ajax({
+        url: base_url + 'index.php/measure/timelineblock',
+        async: false,
+        dataType: 'html',
+        type: "POST",
+        data: {
+        	'first_cwp': first_cwp,
+        	'last_cwp': last_cwp,
+        	'state': state
+        },
+        success: function(res) {
+        	$("#timeline_ctr").replaceWith(res);
+        }
+  	});
+}
+
+
+
+
