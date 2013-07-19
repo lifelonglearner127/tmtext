@@ -104,9 +104,13 @@ class Research_data_model extends CI_Model {
         $this->revision = $revision;
         $this->modified = date('Y-m-d h:i:s');
 
-        return $this->db->update($this->tables['research_data'],
+        unset($this->created);
+
+        $result = $this->db->update($this->tables['research_data'],
             $this,
             array('id' => $id));
+
+        return $result;
     }
 
     function getAllByProductName( $product_name, $batch_id='')
@@ -181,30 +185,34 @@ union all
         if ($date_from['year'] > 0 & $date_from['month'] > 0 & $date_from['day'] > 0 & $date_to['year'] > 0 & $date_to['month'] > 0 & $date_to['day'] > 0) {
             $d_from = $this->db->escape($date_from['year'].'-'.$date_from['month'].'-'.$date_from['day']);
             $d_to = $this->db->escape($date_to['year'].'-'.$date_to['month'].'-'.$date_to['day']);
-            $date_filter = ' and i.created>='.$d_from.' and i.created<='.$d_to;
+            $date_filter = ' and rd.created>='.$d_from.' and rd.created<='.$d_to;
         }
         if ($short_less > -1)
-            $short_less_filter = 'and i.short_description_wc<'.$short_less;
+            $short_less_filter = 'and rd.short_description_wc<'.$short_less;
         if ($short_more > -1)
-            $short_more_filter = 'and i.short_description_wc>'.$short_more;
+            $short_more_filter = 'and rd.short_description_wc>'.$short_more;
         if ($long_less > -1)
-            $long_less_filter = 'and i.long_description_wc<'.$long_less;
+            $long_less_filter = 'and rd.long_description_wc<'.$long_less;
         if ($long_more > -1)
-            $long_more_filter = 'and i.long_description_wc>'.$long_more;
+            $long_more_filter = 'and rd.long_description_wc>'.$long_more;
 
 
         $sql_cmd = "
             select
-                i.id,
-                i.created,
-                i.product_name,
-                i.url,
-                i.short_description_wc,
-                i.long_description_wc
-            from (
-                SELECT
-                    rd.id,
-                    rd.batch_id,
+                rd.id,
+                rd.created,
+                rd.product_name,
+                rd.url,
+                rd.short_description_wc,
+                rd.long_description_wc,
+                '' as seo_s,
+                '' as seo_l,
+                rd.short_description,
+                rd.long_description
+            FROM
+                research_data as rd
+            where
+                concat(
                     rd.url,
                     rd.product_name,
                     rd.keyword1,
@@ -216,69 +224,20 @@ union all
                     rd.short_description,
                     rd.short_description_wc,
                     rd.long_description,
-                    rd.long_description_wc,
-                    rd.created
-            #		u.email as user_id,
-            #		b.title as batch_name
-                FROM
-                    research_data as rd
-            #	left join batches as b on rd.batch_id = b.id
-            #	left join users as u on rd.user_id = u.id
-            union all
-                SELECT
-                    i.id,
-                    i.batch_id,
-                    i.url,
-                    i.product_name,
-                    i.keyword1,
-                    i.keyword2,
-                    i.keyword3,
-                    i.meta_name,
-                    i.meta_description,
-                    i.meta_keywords,
-                    i.short_description,
-                    i.short_description_wc,
-                    i.long_description,
-                    i.long_description_wc,
-                    i.created
-            #		u.email as user_id,
-            #		b.title as batch_name
-                FROM
-                    items as i
-            #left join batches as b on i.batch_id = b.id
-            #left join users as u on i.user_id = u.id
-            ) as i
-            where
-                concat(
-                    i.url,
-                    i.product_name,
-                    i.keyword1,
-                    i.keyword2,
-                    i.keyword3,
-                    i.meta_name,
-                    i.meta_description,
-                    i.meta_keywords,
-                    i.short_description,
-                    i.short_description_wc,
-                    i.long_description,
-                    i.long_description_wc
+                    rd.long_description_wc
                 ) like $txt_filter
                 $batch_id_filter
                 $date_filter
                 and (
-                    i.short_description_wc > -1
+                    rd.short_description_wc > -1
                     $short_less_filter
                     $short_more_filter
                 )
-            #	and sort description duplicate content
-            #	and sort description mis-spelling
                 and (
-                    i.long_description_wc > -1
+                    rd.long_description_wc > -1
                     $long_less_filter
                     $long_more_filter
                 )
-            #	and sort description duplicate content
-            #	and sort description mis-spelling
         ";
         $query = $this->db->query($sql_cmd);
         return $query->result();

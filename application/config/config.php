@@ -363,6 +363,7 @@ $config['attr_path'] = $config['cmd_path'].'/data';
 
 $config['java_cmd'] = 'java -cp dist/NLG.jar com.swta.ChartGenerator data/tiger/all.rules data/tiger/desc/'.$config['cmd_mask'].'/attributes.dat data/tiger/desc/'.$config['cmd_mask'].'/blacklist.dat';
 $config['python_cmd'] = "python ML_script.py search\('".$config['cmd_mask']."'\)";
+$config['extract_phrases'] = "python ../scripts/extract_phrases.py ".$config['cmd_mask'];
 $config['tsv_cmd'] = "./scripts/tsv_single.pl '".$config['cmd_mask']."' tagRules/TVs.dat";
 $config['tsv_cmd'] = 'cd '.$config['cmd_path'].'; ./'.$config['tsv_cmd'];
 $config['tag_rules_dir'] = $config['cmd_path'].'/tagRules';

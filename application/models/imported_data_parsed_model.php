@@ -1038,7 +1038,7 @@ class Imported_data_parsed_model extends CI_Model {
         return $resultArray;
     }
 
-    function getResearchDataWithPaging($params) {
+    function getResearchDataWithPaging() {
         $status = "";
         if ($this->input->get('status') == 'batches_edited')
             $status = "and rd.status = 'edited'";
@@ -1059,22 +1059,24 @@ class Imported_data_parsed_model extends CI_Model {
         $sql_cmd = "
             select
                 rd.id,
+                rd.batch_id,
                 rd.product_name,
                 rd.url
             from
                 research_data as rd
-            left join batches as b ON b.id = rd.batch_id
+            inner join batches as b ON b.id = rd.batch_id
             where
                 concat(rd.product_name, rd.url) like $like
                 $status
                 $batch
+                and trim(rd.product_name) <> ''
+	            and trim(rd.url) <> ''
         ";
 
         $query = $this->db->query($sql_cmd);
 
         $total_rows = $query->num_rows();
         $display_length = intval($this->input->get('iDisplayLength', TRUE));
-
 
         $display_start = intval($this->input->get('iDisplayStart', TRUE));
         if (empty($display_start)) {
@@ -1084,9 +1086,6 @@ class Imported_data_parsed_model extends CI_Model {
         if (empty($display_length)) {
             $display_length  = $total_rows - $display_start;
         }
-
-
-
 
         $count_sorting_cols = intval($this->input->get('iSortingCols', TRUE));
 
@@ -1111,7 +1110,6 @@ class Imported_data_parsed_model extends CI_Model {
         $query = $this->db->query($sql_cmd);
         $result =  $query->result();
 
-
         $resultArray = array(
             'total_rows'            => $total_rows,
             'display_length'        => $display_length,
@@ -1120,6 +1118,25 @@ class Imported_data_parsed_model extends CI_Model {
         );
 
         return $resultArray;
+    }
+
+    function getResearchDataByURLandBatchId($params) {
+        $batch_id = $params->batch_id;
+        $url = $this->db->escape($params->url);
+        $sql_cmd = "
+            select
+                *
+            from
+                research_data as rd
+            where
+                rd.batch_id = $batch_id
+                and rd.url = $url
+            limit 0,1
+        ";
+
+        $query = $this->db->query($sql_cmd);
+        $result =  $query->result();
+        return $result[0];
     }
 
     protected function getDataWithPagingTotalRows($value, $website = '', $category_id='') {

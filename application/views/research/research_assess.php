@@ -213,9 +213,9 @@
                                 <td class="column_product_name">${product_name}</td>
                                 <td class="column_url">${url}</td>
                                 <td class="column_short_description_wc">${short_description_wc}</td>
-                                <td class="column_short_seo_phrases">?</td>
+                                <td class="column_short_seo_phrases_short">${seo_s}</td>
                                 <td class="column_long_description_wc">${long_description_wc}</td>
-                                <td class="column_long_seo_phrases">?</td>
+                                <td class="column_long_seo_phrases_long">${seo_l}</td>
                                 <td class="column_duplicate_content">?</td>
                                 <td class="column_misspelling">?</td>
                             </tr>

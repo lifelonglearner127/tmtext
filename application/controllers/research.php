@@ -122,12 +122,24 @@ class Research extends MY_Controller {
                     $count,
                     $research_data_row->product_name,
                     $research_data_row->url,
+                    $research_data_row->batch_id,
                 );
             }
         }
 
         $this->output->set_content_type('application/json')
             ->set_output(json_encode($output));
+    }
+
+    public function getResearchDataWithPaging() {
+        $params = new stdClass();
+        $params->batch_id = intval($this->input->get('batch_id'));
+        $params->url = $this->input->get('url');
+
+        $this->load->model('imported_data_parsed_model');
+        $research_data = $this->imported_data_parsed_model->getResearchDataByURLandBatchId($params);
+        $this->output->set_content_type('application/json')
+            ->set_output(json_encode($research_data));
     }
 
     public function create_batch(){
@@ -260,18 +272,57 @@ class Research extends MY_Controller {
 
         $results = $this->research_data_model->getInfoForAssess($params);
 
+        $enable_exec = true;
         // change '0' value to '-'
-        foreach($results as $result) {
-            if($result->short_description_wc == '0') {
-                $result->short_description_wc = '-';
+        foreach($results as $row) {
+            if($row->short_description_wc == '0') {
+                $row->short_description_wc = '-';
             }
-            if($result->long_description_wc == '0') {
-                $result->long_description_wc = '-';
+            if($row->long_description_wc == '0') {
+                $row->long_description_wc = '-';
+            }
+            if ($enable_exec) {
+                $cmd = $this->prepare_extract_phrases_cmd($row->short_description);
+                $result = exec($cmd, $output, $error);
+
+                if ($error > 0) {
+                    $enable_exec = false;
+                    continue;
+                }
+                $seo_lines = array();
+                foreach ($output as $line) {
+                    $seo_lines[] = $line;
+                }
+                $row->seo_s = implode("</br>", $seo_lines);
+
+
+                $cmd = $this->prepare_extract_phrases_cmd($row->long_description);
+                $result = exec($cmd, $output, $error);
+
+                if ($error > 0) {
+                    $enable_exec = false;
+                    continue;
+                }
+                $seo_lines = array();
+                foreach ($output as $line) {
+                    $seo_lines[] = $line;
+                }
+                $row->seo_l = implode("</br>", $seo_lines);
             }
         }
 
         $this->output->set_content_type('application/json')
             ->set_output(json_encode($results));
+    }
+
+    private function prepare_extract_phrases_cmd($text) {
+        $text = str_replace("'", "\'", $text);
+        $text = str_replace("`", "\`", $text);
+        $text = str_replace('"', '\"', $text);
+        $text = "\"".$text."\"";
+        $cmd = str_replace($this->config->item('cmd_mask'), $text ,$this->config->item('extract_phrases'));
+        $cmd = $cmd." 2>&1";
+        return $cmd;
     }
 
     public function assess_save_columns_state() {

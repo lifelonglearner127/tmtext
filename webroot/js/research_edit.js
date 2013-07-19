@@ -47,18 +47,54 @@ $(function() {
         "bProcessing": true,
         "bServerSide": true,
         "sAjaxSource": readUrl,
+        "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
+            $(nRow).attr("batch_id", aData[3]);
+            $(nRow).attr("url", aData[2]);
+            return nRow;
+        },
         "oLanguage": {
             "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
             "sInfoEmpty": "Showing 0 to 0 of 0 records",
             "sInfoFiltered": ""
         },
         "aoColumns": [
-            { "bSortable": false },
-            {"sName" : "product_name"},
-            {"sName" : "url"}
+            {"sTitle" : "#", "sWidth": "5%", "bSortable": false},
+            {"sTitle" : "Product Name"},
+            {"sTitle" : "URL"},
+            {"bVisible": false}
         ]
     });
     dataTable.fnSort([[1, 'asc']]);
+
+    $('#records tbody').click(function(event) {
+        $(dataTable.fnSettings().aoData).each(function (){
+            $(this.nTr).removeClass('row_selected');
+        });
+        var row = $(event.target.parentNode);
+        row.addClass('row_selected');
+        var request = {
+            batch_id: row.attr('batch_id'),
+            url: row.attr('url')
+        };
+        $.get(base_url + 'index.php/research/getResearchDataWithPaging', request, function(response) {
+            $('ul#product_descriptions').empty();
+            $('ul#research_products').empty();
+            $('ul#rel_keywords').empty();
+            $('ul[data-st-id="short_desc_seo"]').empty();
+            $('ul[data-st-id="long_desc_seo"]').empty();
+
+
+            $('input[name="product_name"]').val(response.product_name);
+            $('input[name="url"]').val(response.url);
+            $('input[name="meta_title"]').val(response.meta_name);
+            $('textarea[name="meta_description"]').val(response.meta_description);
+            $('input[name="meta_keywords"]').val(response.meta_keywords);
+            $('textarea[name="short_description"]').val(response.short_description);
+            $('div#long_description').text(response.long_description);
+            $('textarea[name="short_description"]').trigger('change');
+            $('div#long_description').trigger('change');
+        });
+    });
 
     drawREProductsTable();
 
