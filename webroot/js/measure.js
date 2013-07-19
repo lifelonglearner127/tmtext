@@ -128,7 +128,7 @@ function switchToGridView() {
     
     if(batch_id == 0){
         
-    var grid_view = $.post(editorGridViewBaseUrl, { im_data_id: im_data_id, s_term: $.trim($("#compare_text").val()), strict:strict }, 'html').done(function(data) {
+    var grid_view = $.post(editorGridViewBaseUrl, {selectedUrl:$('#products li[data-status=selected] span').eq(1).text(), im_data_id: im_data_id, s_term: $.trim($("#compare_text").val()), strict:strict }, 'html').done(function(data) {
         $("#compet_area_grid").html(data);
         $("#compet_area_grid").show();
         $(".preloader_grids_box").hide();
@@ -136,7 +136,7 @@ function switchToGridView() {
         // gridsCustomersListLoader();
     });
     }else{
-        var grid_view = $.post(editorGridViewBaseUrl, { research_data_id: im_data_id, s_term: $.trim($("#compare_text").val()), strict:strict }, 'html').done(function(data) {
+        var grid_view = $.post(editorGridViewBaseUrl, {selectedUrl:$('#products li[data-status=selected] span').eq(1).text(), research_data_id: im_data_id, s_term: $.trim($("#compare_text").val()), strict:strict }, 'html').done(function(data) {
         $("#compet_area_grid").html(data);
         $("#compet_area_grid").show();
         $(".preloader_grids_box").hide();
