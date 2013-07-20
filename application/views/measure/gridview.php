@@ -112,41 +112,57 @@
     <?php } ?>
 
     <script type='text/javascript'>
+        var count=<?php echo count($same_pr); ?>;
+        var ddData_grids = [];
         function gridsCustomersListLoader() {
-            var ddData_grids_1 = [];
-            var ddData_grids_2 = [];
-            var ddData_grids_3 = [];
-            var ddData_grids_4 = [];
-            var ddData_grids_5 = [];
-
-            var grid_1_customer = $("#grid_se_section_1 input[type='hidden'][name='dd_customer']").val();
-            var grid_2_customer = $("#grid_se_section_2 input[type='hidden'][name='dd_customer']").val();
-            var grid_3_customer = $("#grid_se_section_3 input[type='hidden'][name='dd_customer']").val();
-            var grid_4_customer = $("#grid_se_section_4 input[type='hidden'][name='dd_customer']").val();
-            var grid_5_customer = $("#grid_se_section_5 input[type='hidden'][name='dd_customer']").val();
+            
+            for(var i=1;i<=count+1; i++){
+              //ddData_grids[i]['ddData_grid']=[];
+              ddData_grids[i] = $("#grid_se_section_"+i+" input[type='hidden'][name='dd_customer']").val();
+              
+            }
+//            var ddData_grids_1 = [];
+//            var ddData_grids_2 = [];
+//            var ddData_grids_3 = [];
+//            var ddData_grids_4 = [];
+//            var ddData_grids_5 = [];
+//
+//            var grid_1_customer = $("#grid_se_section_1 input[type='hidden'][name='dd_customer']").val();
+//            var grid_2_customer = $("#grid_se_section_2 input[type='hidden'][name='dd_customer']").val();
+//            var grid_3_customer = $("#grid_se_section_3 input[type='hidden'][name='dd_customer']").val();
+//            var grid_4_customer = $("#grid_se_section_4 input[type='hidden'][name='dd_customer']").val();
+//            var grid_5_customer = $("#grid_se_section_5 input[type='hidden'][name='dd_customer']").val();
 
             setTimeout(function(){
                 var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist_new', {}, function(c_data) {
-                    var grid1 = $('#an_grd_view_drop_gr1').msDropDown({byJson:{data:c_data}}).data("dd");
-                    if(grid1 != undefined){
-                        grid1.setIndexByValue(grid_1_customer);
-                    }
-                    var grid2 = $('#an_grd_view_drop_gr2').msDropDown({byJson:{data:c_data}}).data("dd");
-                    if(grid2 != undefined){
-                        grid2.setIndexByValue(grid_2_customer);
-                    }
-                    var grid3 = $('#an_grd_view_drop_gr3').msDropDown({byJson:{data:c_data}}).data("dd");
-                    if(grid3 != undefined){
-                        grid3.setIndexByValue(grid_3_customer);
-                    }
-                    var grid4 = $('#an_grd_view_drop_gr4').msDropDown({byJson:{data:c_data}}).data("dd");
-                    if(grid4 != undefined){
-                        grid4.setIndexByValue(grid_4_customer);
-                    }
-                    var grid5 = $('#an_grd_view_drop_gr5').msDropDown({byJson:{data:c_data}}).data("dd");
-                    if(grid5 != undefined){
-                        grid5.setIndexByValue(grid_5_customer);
-                    }
+                  for(var i=1;i<=count; i++){
+                      console.log(i);
+                      var grid1 = $('#an_grd_view_drop_gr'+i).msDropDown({byJson:{data:c_data}}).data("dd");
+                      if(grid1 != undefined){
+                        grid1.setIndexByValue(ddData_grids[i]);
+                      }
+                  }
+//                   var grid1 = $('#an_grd_view_drop_gr
+//                   1').msDropDown({byJson:{data:c_data}}).data("dd");
+//                    if(grid1 != undefined){
+//                        grid1.setIndexByValue(grid_1_customer);
+//                    }
+//                    var grid2 = $('#an_grd_view_drop_gr2').msDropDown({byJson:{data:c_data}}).data("dd");
+//                    if(grid2 != undefined){
+//                        grid2.setIndexByValue(grid_2_customer);
+//                    }
+//                    var grid3 = $('#an_grd_view_drop_gr3').msDropDown({byJson:{data:c_data}}).data("dd");
+//                    if(grid3 != undefined){
+//                        grid3.setIndexByValue(grid_3_customer);
+//                    }
+//                    var grid4 = $('#an_grd_view_drop_gr4').msDropDown({byJson:{data:c_data}}).data("dd");
+//                    if(grid4 != undefined){
+//                        grid4.setIndexByValue(grid_4_customer);
+//                    }
+//                    var grid5 = $('#an_grd_view_drop_gr5').msDropDown({byJson:{data:c_data}}).data("dd");
+//                    if(grid5 != undefined){
+//                        grid5.setIndexByValue(grid_5_customer);
+//                    }
                 });
             }, 100);
         }
