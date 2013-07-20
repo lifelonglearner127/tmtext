@@ -42,6 +42,7 @@
 </div>
 
 <div id='hp_ajax_content' class='span12 body_section ml_disable mt_30'>
+	<div style='margin-bottom: 15px;'><span class='label label-success'><?php echo $ct_final; ?></span></div>
 	<div class='ph_placeholder' data-week='1'>
 		<?php 
 			$items_count = 6;

@@ -20,6 +20,17 @@ class Measure extends MY_Controller {
     public function index() {
         $this->data['customers_list'] = $this->customers_list_new();
         $this->data['user_id'] = $this->ion_auth->get_user_id();
+        // --------- TMP TIMELINE DATE STATUS (START) (TODO: MAKE IT DYNAMIC)
+        $week = 1;
+        $year = '2013';
+        $year_s = "01/01/2013";
+        // ---- figure out total date (start)
+        $i = ($week - 1)*7;
+        $total = strtotime($year_s) + 60*60*24*$i;
+        $ct_final = date('d.m.Y', $total);
+        // ---- figure out total date (end)
+        $this->data['ct_final'] = $ct_final;
+        // --------- TMP TIMELINE DATE STATUS (END) (TODO: MAKE IT DYNAMIC)
         $this->render();
     }
 
@@ -158,9 +169,16 @@ class Measure extends MY_Controller {
     public function gethomepageyeardata() {
         $year = $this->input->post('year');
         $week = $this->input->post('week');
+        $year_s = "01/01/".$this->input->post('year');
+        // ---- figure out total date (start)
+        $i = ($week - 1)*7;
+        $total = strtotime($year_s) + 60*60*24*$i;
+        $ct_final = date('d.m.Y', $total);
+        // ---- figure out total date (end)
         $data = array(
             'year' => $year,
             'week' => $week,
+            'ct_final' => $ct_final,
             'customers_list' => $this->customers_list_new()
         );
         $this->load->view('measure/gethomepageyeardata', $data);
@@ -169,9 +187,16 @@ class Measure extends MY_Controller {
     public function gethomepageweekdata() {
         $year = $this->input->post('year');
         $week = $this->input->post('week');
+        $year_s = "01/01/".$this->input->post('year');
+        // ---- figure out total date (start)
+        $i = ($week - 1)*7;
+        $total = strtotime($year_s) + 60*60*24*$i;
+        $ct_final = date('d.m.Y', $total);
+        // ---- figure out total date (end)
         $data = array(
             'year' => $year,
             'week' => $week,
+            'ct_final' => $ct_final,
             'customers_list' => $this->customers_list_new()
         );
         $this->load->view('measure/gethomepageweekdata', $data);

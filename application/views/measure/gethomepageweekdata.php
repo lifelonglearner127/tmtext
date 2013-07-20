@@ -1,3 +1,4 @@
+<div style='margin-bottom: 15px;'><span class='label label-success'><?php echo $ct_final; ?></span></div>
 <div class='ph_placeholder' data-week="<?php echo $week; ?>">
 	<?php 
 		$items_count = 6;
