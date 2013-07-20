@@ -24,7 +24,10 @@ class Research_data_model extends CI_Model {
         'research_data' => 'research_data',
         'batches' => 'batches',
         'users' => 'users',
-        'items' => 'items'
+        'items' => 'items',
+        'imported_data_parsed'=>'imported_data_parsed',
+        'imported_data'=>'imported_data'
+        
     );
 
     function __construct()
@@ -48,12 +51,50 @@ class Research_data_model extends CI_Model {
         return $query->row_array();
     }
     function get_by_batch_id($batch_id){
-        $query = $this->db->where('batch_id', $batch_id)
+        $query1 = $this->db->where('batch_id', $batch_id)
               ->get($this->tables['research_data']);
         
-        return $query->result_array();
+        $res= $query1->result_array();
+        $urls=array();
+        foreach($res as $val){
+            $urls[]=$val['url'];
+        }
+        if(count($urls)>0){
+        $this->db->select('p.imported_data_id, p.key, p.value')
+            ->from($this->tables['imported_data_parsed'].' as p')
+            ->join($this->tables['imported_data'].' as i', 'i.id = p.imported_data_id', 'left')
+            ->where('p.key', 'URL')
+           ->where_in('p.value', $urls);
+        $query = $this->db->get();
+        $results = $query->result();
+        $data = array();
+        foreach($results as $result){
+            $query = $this->db->where('imported_data_id', $result->imported_data_id)->get($this->tables['imported_data_parsed']);
+            $res = $query->result_array();
+            $description = '';
+            $long_description = '';
+            $url = '';
+            foreach($res as $val){
+                if($val['key'] == 'URL'){ $url = $val['value']; }
+                if($val['key'] == 'Description'){ $description = $val['value']; }
+                if($val['key'] == 'Long_Description'){ $long_description = $val['value']; }
+
+	            if($val['key'] == 'Product Name') { $product_name = $val['value']; }
+            	if($val['key'] == 'Features') { $features = $val['value']; }
+
+            }
+            array_push($data, array('imported_data_id'=>$result->imported_data_id, 'product_name'=>$result->value,
+               'description'=>$description, 'long_description'=>$long_description, 'url'=>$url, 'product_name' =>$product_name, 'features' => $features ));
+            return $data;
+        }
+        }else{
+            return NULL;
+        }
+        
+        
+        
    }
-  //max
+  //Max
     function insert($batch_id, $url, $product_name, $keyword1, $keyword2, $keyword3, $meta_name,
                     $meta_description, $meta_keywords, $short_description, $short_description_wc, $long_description, $long_description_wc, $revision = 1)
     {
@@ -199,10 +240,10 @@ union all
 
         $sql_cmd = "
             select
-                rd.id,
+                    rd.id,
                 rd.created,
                 rd.product_name,
-                rd.url,
+                    rd.url,
                 rd.short_description_wc,
                 rd.long_description_wc,
                 '' as seo_s,

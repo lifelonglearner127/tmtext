@@ -184,8 +184,9 @@ class Measure extends MY_Controller {
         $this->load->model('batches_model');
         $batches = $this->batches_model->getAll();
         $batches_list = array(0 => 'No Batch');
+        //Max
         foreach($batches as $batch){
-            array_push($batches_list, $batch->title);
+            $batches_list[$batch->id]=$batch->title;
         }
         $this->data['batches_list'] = $batches_list;
         $this->render();
@@ -306,11 +307,10 @@ class Measure extends MY_Controller {
         };
         $this->output->set_content_type('application/json')->set_output(json_encode($response));
     }
-
+//Max
     public function gridview() {
         $im_data_id = $this->input->post('im_data_id');
-        $research_data_id= $this->input->post('research_data_id');//max
-        if(!$research_data_id){//max
+                 
         $data = array(
             'im_data_id' => $im_data_id,
             's_product' => array(),
@@ -324,7 +324,7 @@ class Measure extends MY_Controller {
             // --- GET SELECTED RPODUCT DATA (START)
             $this->load->model('imported_data_parsed_model');
             $data_import = $this->imported_data_parsed_model->getByImId($im_data_id);
-
+            
             if($data_import['description'] !== null && trim($data_import['description']) !== "") {
                 $data_import['description'] = preg_replace('/\s+/', ' ', $data_import['description']);
                 // $data_import['description'] = preg_replace('/[^A-Za-z0-9\. -!]/', ' ', $data_import['description']);
@@ -413,37 +413,15 @@ class Measure extends MY_Controller {
             }
             // --- GET SELECTED RPODUCT SEO DATA (TMP) (END)
         }
-        }//max
-        else{
-            $data = array(
-            'im_data_id' =>  $research_data_id,
-            's_product' => array(),
-            's_product_short_desc_count' => 0,
-            's_product_long_desc_count' => 0,
-            'seo' => array('short' => array(), 'long' => array()),
-            'same_pr' => array()
-        );
-         $this->load->model('research_data_model');
-        
-         $this->load->model('batches_model');
-         
-         $data_import = $this->research_data_model->get_by_id($research_data_id); 
-         
-         $data_import['customer']=$this->batches_model->getCustomerByBatchId($data_import['batch_id']);
-         
-         if($data_import){
-         $data['same_pr'][]=$data_import;
-         }  
-        }
-
+              //Max
         // -------- COMPARING V1 (START)
         $s_term = $this->input->post('s_term');
 
         // -------- COMPARING V1 (END)
-
+        
         $this->load->view('measure/gridview', $data);
     }
-
+    
     public function getcustomerslist_new() {
         $this->load->model('customers_model');
         $this->load->model('users_to_customers_model');
@@ -541,7 +519,7 @@ class Measure extends MY_Controller {
         } else {
             $data_import = $this->imported_data_parsed_model->getData($s, $sl, $cat_id);
         }
-
+        
         if (empty($data_import)) {
             $this->load->library('PageProcessor');
 			if ($this->pageprocessor->isURL($this->input->post('s'))) {
@@ -556,14 +534,17 @@ class Measure extends MY_Controller {
         $this->load->view('measure/searchmeasuredball', $data);
         }else{
             $this->load->model('research_data_model');
+            
             $result=$this->research_data_model->get_by_batch_id($batch_id);
+            
+            
             $data['search_results'] = $result;
-            $data['batches']='batches';
+            
             $this->load->view('measure/searchmeasuredball', $data);
            
         }
     }
-
+    
     public function attributesmeasure() {
 
         $s = $this->input->post('s');

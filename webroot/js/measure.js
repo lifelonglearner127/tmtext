@@ -109,11 +109,11 @@ function switchToListView() {
     $("#measure_product_ind_wrap").show();
     grid_status = 'list';
 }
-
+//Max
 function switchToGridView() {
     
     viewIconsReset();
-    var batch_id=$("#batchess").val();
+    
     $('#grid_sw_grid').addClass('btn-primary');
     $('#grid_sw_grid > i').addClass('icon-white');
     $("#attributes_metrics ul:not(.grid_switcher)").hide();
@@ -126,26 +126,18 @@ function switchToGridView() {
     	strict = 1;
     }
     
-    if(batch_id == 0){
-        
-    var grid_view = $.post(editorGridViewBaseUrl, {selectedUrl:$('#products li[data-status=selected] span').eq(1).text(), im_data_id: im_data_id, s_term: $.trim($("#compare_text").val()), strict:strict }, 'html').done(function(data) {
+      var grid_view = $.post(editorGridViewBaseUrl, {selectedUrl:$('#products li[data-status=selected] span').eq(1).text(), im_data_id: im_data_id, s_term: $.trim($("#compare_text").val()), strict:strict }, 'html').done(function(data) {
         $("#compet_area_grid").html(data);
         $("#compet_area_grid").show();
         $(".preloader_grids_box").hide();
         $(".grid_se_section .c_content").show();
         // gridsCustomersListLoader();
     });
-    }else{
-        var grid_view = $.post(editorGridViewBaseUrl, {selectedUrl:$('#products li[data-status=selected] span').eq(1).text(), research_data_id: im_data_id, s_term: $.trim($("#compare_text").val()), strict:strict }, 'html').done(function(data) {
-        $("#compet_area_grid").html(data);
-        $("#compet_area_grid").show();
-        $(".preloader_grids_box").hide();
-        $(".grid_se_section .c_content").show();
-        // gridsCustomersListLoader();
-    });
-    }
+    
+    
     grid_status = 'grid';
 }
+//Max
     // ------------- !!!! OLD STUFF (START) -------------
     // $("#compet_area_grid").show();
     // grid_status = 'grid';
@@ -691,10 +683,14 @@ $(document).ready(function() {
     });
 
     $("#batchess").live('change',function(){//max
-        
+       
       if($("#batchess").val()!=='0') {
           //alert($("#batchess").val());
           show_from_butches();
+      }else{
+           $("#measure_product_ind_wrap").html('');
+            $("#compet_area_grid").html('');
+            $("#an_sort_search_box").html('');
       }
       
     });
