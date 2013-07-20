@@ -191,11 +191,8 @@ function detectNextPrevBtnPlace() {
 	}
 }
 
-function locaHomePageWeekData(week) {
+function get_home_page_week_data(week) {
 	var year = $("#year_s > option:selected").val();
-	$(".pagination ul li").removeClass('active');
-	$(".pagination ul li[data-week=" + week + "]").addClass('active');
-	detectNextPrevBtnPlace();
 	var first_cwp = $(".pagination ul li.page:first").data('week');
 	var last_cwp = $(".pagination ul li.page:last").data('week');
 	$.ajax({
@@ -217,6 +214,13 @@ function locaHomePageWeekData(week) {
   	});
 }
 
+function locaHomePageWeekData(week) {
+	$(".pagination ul li").removeClass('active');
+	$(".pagination ul li[data-week=" + week + "]").addClass('active');
+	detectNextPrevBtnPlace();
+	get_home_page_week_data(week);
+}
+
 function prevLocaHomePageWeekData() {
 	var prev_sibling = $(".pagination ul li.page.active").prev();
 	var prev_week_page = $(prev_sibling).data('week');
@@ -229,11 +233,8 @@ function nextLocaHomePageWeekData() {
 	locaHomePageWeekData(next_week_page);
 }
 
-function slideTimelinePrev() {
 
-}
-
-function slideTimeline(state) { // 'next', 'prev'
+function slideTimeline(state) { // state: 'next', 'prev'
 	var first_cwp = $(".pagination ul li.page:first").data('week');
 	var last_cwp = $(".pagination ul li.page:last").data('week');
 	$.ajax({
@@ -248,6 +249,7 @@ function slideTimeline(state) { // 'next', 'prev'
         },
         success: function(res) {
         	$("#timeline_ctr").replaceWith(res);
+        	get_home_page_week_data($("#timeline_ctr li.page.active").data('week'));
         }
   	});
 }
