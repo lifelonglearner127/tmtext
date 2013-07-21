@@ -10,11 +10,11 @@ class AmazonItem(Item):
     special = Field() # is it a special category? (1 or nothing)
 
 class ProductItem(Item):
-	url = Field()
-	name = Field()
-	page_title = Field()
-	department = Field()
-	price = Field()
-	rank = Field()
-	SKU = Field()
-	UPC = Field()
+	url = Field() # url of product page
+	name = Field() # name of product - from bestsellers list and from product's page
+	page_title = Field() # title (title tag text) of product page
+	department = Field() # department of product - its name
+	price = Field() # price of product - a string like "29.5$"
+	rank = Field() # rank of the product in the bestsellers list
+	SKU = Field() # SKU code of product (where available)
+	UPC = Field() # UPC code of product (where available)

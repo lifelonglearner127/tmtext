@@ -74,10 +74,15 @@ class BestsellerSpider(BaseSpider):
 
     def parse(self, response):
         hxs = HtmlXPathSelector(response)
-        departments = hxs.select("//ul[@id='zg_browseRoot']/ul/li/a/@href").extract()
+        department_links = hxs.select("//ul[@id='zg_browseRoot']/ul/li/a")
+
+        departments = []
+        for department_link in department_links:
+            department = {"url" : department_link.select("@href").extract()[0], "text" : department_link.select("text()").extract()[0]}
+            departments.append(department)
         
         for department in departments:
-            yield Request(department, callback = self.parseDepartment)
+            yield Request(department['url'], callback = self.parseDepartment)
 
     def parseDepartment(self, response):
         hxs = HtmlXPathSelector(response)
@@ -89,14 +94,14 @@ class BestsellerSpider(BaseSpider):
             item = ProductItem()
 
             #TODO: this name will always be incomplete (ends in "..."), add name on product page
-            item['name'] = product.select("div[@class='zg_title']/a/text()").extract()
-            item['url'] = product.select("div[@class='zg_title']/a/@href").extract()
+            item['name'] = product.select("div[@class='zg_title']/a/text()").extract()[0]
+            item['url'] = product.select("div[@class='zg_title']/a/@href").extract()[0].strip()
 
             #TODO: this needs to be refined, many prices etc
-            item['price'] = product.select(".//strong[@class='price']/text()").extract()
+            item['price'] = product.select(".//strong[@class='price']/text()").extract()[0]
 
-            #TODO:
-            #item['department'] = dep_name
+            dept_name = hxs.select("//ul[@id='zg_browseRoot']//span[@class='zg_selected']/text()").extract()[0].strip()
+            item['department'] = dept_name
 
             items.append(item)
 
