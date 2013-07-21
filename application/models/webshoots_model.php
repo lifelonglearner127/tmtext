@@ -3,42 +3,54 @@
 class Webshoots_model extends CI_Model {
 
     var $tables = array(
-    	'webshoots' => 'webshoots'
+    	'webshoots' => 'webshoots',
+        'webshoots_select' => 'webshoots_select'
     );
 
     function __construct() {
         parent::__construct();
     }
 
-    // function recordUpdateWebshoot($result) {
-    //     $st = 1; // 1 - insert, 2 - update
-    //     $check_query = $this->db->get_where($this->tables['webshoots'], array('url' => $result['url']));
-    //     $check_query_res = $check_query->result();
-    //     if(count($check_query_res) > 0) {
-    //         $st = 2;
-    //     }
-    //     $change_status = false;
-    //     if($st === 1) { // insert
-    //         $insert_object = array(
-    //             'url' => $result['url'],
-    //             'img' => $result['big_crawl'],
-    //             'thumb' => $result['small_crawl'],
-    //             'dir_thumb' => $result['dir_thumb'],
-    //             'dir_img' => $result['dir_img'],
-    //             'stamp' => date("Y-m-d H:i:s")
-    //         );
-    //         $this->db->insert($this->tables['webshoots'], $insert_object);
-    //         $insert_id = $this->db->insert_id();
-    //         if($insert_id > 0) $change_status = true;
-    //     } else if($st === 2) { // update (update only date cause file_put_contents will update image by itself)
-    //         $update_object = array(
-    //             'stamp' => date("Y-m-d H:i:s")
-    //         );
-    //         $res = $this->db->update($this->tables['webshoots'], $update_object, array('url' => $result['url']));
-    //         if($res) $change_status = true;
-    //     }
-    //     return $change_status;
-    // }
+    function recordWebShootSelectionAttempt($screen_id, $uid, $pos, $year, $week, $img, $thumb) {
+        $res = false;
+        $check_obj = array(
+            'pos' => $pos,
+            'uid' => $uid,
+            'year' => $year,
+            'week' => $week
+        );
+        $check_query = $this->db->get_where($this->tables['webshoots_select'], $check_obj);
+        $check_query_res = $check_query->result();
+        if(count($check_query_res) > 0) { // --- update
+            $update_object = array(
+                'screen_id' => $screen_id,
+                'stamp' => date("Y-m-d H:i:s"),
+                'img' => $img,
+                'thumb' => $thumb  
+            );
+            $this->db->update($this->tables['webshoots_select'], $update_object, $check_obj);
+        } else { // --- new
+            $insert_object = array(
+                'screen_id' => $screen_id,
+                'uid' => $uid,
+                'pos' => $pos,
+                'year' => $year,
+                'week' => $week,
+                'img' => $img,
+                'thumb' => $thumb,
+                'stamp' => date("Y-m-d H:i:s")
+            );
+            $this->db->insert($this->tables['webshoots_select'], $insert_object);
+        }
+        return true;
+    }
+
+    function updateWebShootPosition($screen_id, $pos) {
+        $update_object = array(
+            'pos' => $pos
+        );
+        return $this->db->update($this->tables['webshoots'], $update_object, array('id' => $screen_id));
+    }
 
     function getWebshootDataById($insert_id) {
         $res = false;

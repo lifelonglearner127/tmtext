@@ -71,8 +71,10 @@ class Measure extends MY_Controller {
         $this->load->model('webshoots_model');
         $res = $this->webshoots_model->getWebShootByUrl($url);
         if($res !== false) {
+            $screen_id = $res->id;
+            $this->webshoots_model->recordWebShootSelectionAttempt($screen_id, $uid, $pos, $year, $week, $res->img, $res->thumb); // --- webshoot selection record attempt
             $result = $res;
-        } else { // --- crawl it
+        } else { // --- crawl brand new screenshot
             $url = urlencode(trim($url));
             // -- configs (start)
             $api_key = "dc598f9ae119a97234ea";
@@ -104,6 +106,7 @@ class Measure extends MY_Controller {
             );
             $insert_id = $this->webshoots_model->recordUpdateWebshoot($result);
             $result = $this->webshoots_model->getWebshootDataById($insert_id);
+            $this->webshoots_model->recordWebShootSelectionAttempt($insert_id, $uid, $pos, $year, $week, $result->img, $result->thumb); // --- webshoot selection record attempt
         }
         $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }
