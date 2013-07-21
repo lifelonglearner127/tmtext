@@ -1,6 +1,8 @@
 from scrapy.spider import BaseSpider
 from scrapy.selector import HtmlXPathSelector
 from Amazon.items import AmazonItem
+from Amazon.items import ProductItem
+from scrapy.http import Request
 import sys
 
 ################################
@@ -94,7 +96,7 @@ class BestsellerSpider(BaseSpider):
             item['price'] = product.select(".//strong[@class='price']/text()").extract()
 
             #TODO:
-            #item['department'] = 
+            #item['department'] = dep_name
 
             items.append(item)
 
