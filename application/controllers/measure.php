@@ -63,7 +63,10 @@ class Measure extends MY_Controller {
     }
 
     public function getwebshootbyurl() {
+        $year = $this->input->post('year');
+        $week = $this->input->post('week');
         $url = $this->input->post('url');
+        $pos = $this->input->post('pos');
         $uid = $this->ion_auth->get_user_id();
         $this->load->model('webshoots_model');
         $res = $this->webshoots_model->getWebShootByUrl($url);
@@ -94,7 +97,10 @@ class Measure extends MY_Controller {
                 'big_crawl' => $crawl_l['path'],
                 'dir_thumb' => $crawl_s['dir'],
                 'dir_img' => $crawl_l['dir'],
-                'uid' => $uid
+                'uid' => $uid,
+                'year' => $year,
+                'week' => $week,
+                'pos' => $pos
             );
             $insert_id = $this->webshoots_model->recordUpdateWebshoot($result);
             $result = $this->webshoots_model->getWebshootDataById($insert_id);
@@ -124,6 +130,8 @@ class Measure extends MY_Controller {
     }
 
     public function webshootcrawl() {
+        $year = $this->input->post('year');
+        $week = $this->input->post('week');
         $url = $this->input->post('url');
         $url = urlencode(trim($url));
         $uid = $this->ion_auth->get_user_id();
@@ -150,7 +158,10 @@ class Measure extends MY_Controller {
             'big_crawl' => $crawl_l['path'],
             'dir_thumb' => $crawl_s['dir'],
             'dir_img' => $crawl_l['dir'],
-            'uid' => $uid
+            'uid' => $uid,
+            'year' => $year,
+            'week' => $week,
+            'pos' => 0
         );
         $this->load->model('webshoots_model');
         $r = $this->webshoots_model->recordUpdateWebshoot($result);

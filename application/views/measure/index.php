@@ -73,6 +73,27 @@
 						<?php $dropup = ''; ?>
 						<?php foreach($row_items as $k=>$v) { ?>
 							<div class='span6 item'>
+								<?php 
+									$pos = 0;
+									if($i == 1 && $k == 0) {
+										$pos = 1;
+									}
+									if($i == 1 && $k == 1) {
+										$pos = 2;
+									}
+									if($i == 2 && $k == 0) {
+										$pos = 3;
+									}
+									if($i == 2 && $k == 1) {
+										$pos = 4;
+									}
+									if($i == 3 && $k == 0) {
+										$pos = 5;
+									}
+									if($i == 3 && $k == 1) {
+										$pos = 6;
+									}
+								?>
 								<?php if(count($customers_list) > 0) { ?>
 								    <div id="hp_boot_drop_<?php echo $v; ?>" class="btn-group <?php echo $dropup; ?> hp_boot_drop">
 									    <button class="btn btn-danger btn_caret_sign">[ Choose site ]</button>
@@ -82,7 +103,7 @@
 									    <ul class="dropdown-menu">
 									    	<?php foreach($customers_list as $val) { ?>
 									    		<?php $val_name = $val['name_val']; ?>
-									    		<li><a onclick="clickScreenDrop('<?php echo $val_name; ?>', '<?php echo $v; ?>')" data-item="<?php echo $v; ?>" data-value="<?php echo $val['name_val']; ?>" href="javascript:void(0)"><?php echo $val['name']; ?></a></li>
+									    		<li><a onclick="clickScreenDrop('<?php echo $val_name; ?>', '<?php echo $v; ?>', '<?php echo $pos; ?>')" data-pos="<?php echo $pos; ?>" data-item="<?php echo $v; ?>" data-value="<?php echo $val['name_val']; ?>" href="javascript:void(0)"><?php echo $val['name']; ?></a></li>
 									    	<?php } ?>
 									    </ul>
 								    </div>
@@ -90,10 +111,6 @@
 							    <?php } ?>
 								<div class='art_hp_item'>
 									<div id="art_img_<?php echo $v; ?>" class='art_img'>&nbsp;</div>
-									<!-- <div class='art_oview'>
-										<p class='h'>&nbsp;</p>
-										<p class='t'>&nbsp;</p>
-									</div> -->
 								</div>
 							</div>
 							<!-- lightbox holder (start) -->
@@ -109,8 +126,6 @@
 				</div>
 			</div>
 			<a id='customers_screens_crawl' onclick="openCrawlLaunchPanelModal()" class='btn btn-warning'><i class='icon-file'></i>&nbsp;Crawl sites screenshots interface</a>
-			<!-- <a id='overview_screens_crawl' onclick="openOverviewScreensCrawlModal()" class='btn btn-success'><i class='icon-print'></i>&nbsp;Overview crawl results</a> -->
-			<!-- <a href="javascript:void(0)" class="btn btn-primary" onclick="test_screenshot()">Test Screenshot</a> -->
 		</div>
     </div>
 </div>
@@ -216,7 +231,7 @@
 <!-- MODALS (END) -->
 
 <script type="text/javascript">
-	function clickScreenDrop(new_caret, item_id) {
+	function clickScreenDrop(new_caret, item_id, pos) {
 		$("#hp_boot_drop_" + item_id + " .btn_caret_sign").text(new_caret);
 		if(new_caret === 'bloomingdales.com') { // --- static tmp screens for bloomingdales.com
 			$("#screen_lightbox_img_" + item_id).attr('src', base_url + "img/bloomingdales_com_wide_half.png");
@@ -227,7 +242,13 @@
 		} else {
 			// ---- ATTEMPT TO GET SCREENSHOT (START)
 			$("#art_img_" + item_id).append("<div id='loader_over_" + item_id + "' class='loader_over'><img src='" + base_url + "img/loader_scr.gif'></div>");
-			var getwebshootbyurl = $.post(base_url + 'index.php/measure/getwebshootbyurl', { url: new_caret }, function(data) {
+			var send_data = {
+				url: new_caret,
+				year: $("#year_s > option:selected").val(),
+				week: $(".pagination ul li.page.active").data('week'),
+				pos: pos
+			}
+			var getwebshootbyurl = $.post(base_url + 'index.php/measure/getwebshootbyurl', send_data, function(data) {
 				$("#screen_lightbox_img_" + item_id).attr('src', data['img']);
 				$("#loader_over_" + item_id).remove();
 				$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox'><img style='cursor: pointer;' src='" + data['thumb'] + "'></a>");

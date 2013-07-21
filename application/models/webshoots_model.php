@@ -58,7 +58,10 @@ class Webshoots_model extends CI_Model {
             'dir_thumb' => $result['dir_thumb'],
             'dir_img' => $result['dir_img'],
             'stamp' => date("Y-m-d H:i:s"),
-            'uid' => $result['uid']
+            'uid' => $result['uid'],
+            'year' => $result['year'],
+            'week' => $result['week'],
+            'pos' => $result['pos']
         );
         $this->db->insert($this->tables['webshoots'], $insert_object);
         $insert_id = $this->db->insert_id();

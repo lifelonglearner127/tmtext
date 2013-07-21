@@ -77,7 +77,12 @@ function flatPreviewScreenshotModal(url) {
 		imagest += "<img id='l_img' style='display: none;' src='" + tmp_thumb + "'>";
 		$("#preview_screenshot_modal #sc_preview").html(imagest);
 	} else {
-		var preview_img = $.post(base_url + 'index.php/measure/getwebshootdata', { url: url }, function(data) {
+		var send_data = {
+			url: url,
+			year: $("#year_s > option:selected").val(),
+			week: $(".pagination ul li.page.active").data('week')
+		}
+		var preview_img = $.post(base_url + 'index.php/measure/getwebshootdata', send_data, function(data) {
 			var imagest = "";
 			imagest += "<img id='s_img' onclick='openPreviewLarge()' src='" + data[0]['thumb'] + "'>";
 			imagest += "<img id='l_img' style='display: none;' src='" + data[0]['img'] + "'>";
@@ -100,7 +105,12 @@ function previewScreenshotModal(url) {
 		$("#preview_screenshot_modal #sc_preview").html(imagest);
 	} else {
 		$("#loading_crawl_modal").modal('show');
-		var start_site_crawl = $.post(base_url + 'index.php/measure/webshootcrawl', { url: url }, function(data) {
+		var send_data = {
+			url: url,
+			year: $("#year_s > option:selected").val(),
+			week: $(".pagination ul li.page.active").data('week')
+		}
+		var start_site_crawl = $.post(base_url + 'index.php/measure/webshootcrawl', send_data, function(data) {
 			$("#loading_crawl_modal").modal('hide');
 			if(data['state']) {
 				$("#preview_screenshot_modal #sc_preview").css('width', '200');
