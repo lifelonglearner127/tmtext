@@ -11,7 +11,23 @@ class Webshoots_model extends CI_Model {
         parent::__construct();
     }
 
-    function recordWebShootSelectionAttempt($screen_id, $uid, $pos, $year, $week, $img, $thumb) {
+    function getScreenCellSelection($pos, $uid, $year, $week) {
+        $res = false;
+        $check_obj = array(
+            'pos' => $pos,
+            'uid' => $uid,
+            'year' => $year,
+            'week' => $week
+        );
+        $check_query = $this->db->get_where($this->tables['webshoots_select'], $check_obj);
+        $check_query_res = $check_query->result();
+        if(count($check_query_res) > 0) {
+            $res = $check_query_res[0];
+        }
+        return $res;
+    }
+
+    function recordWebShootSelectionAttempt($screen_id, $uid, $pos, $year, $week, $img, $thumb, $screen_stamp) {
         $res = false;
         $check_obj = array(
             'pos' => $pos,
@@ -26,7 +42,8 @@ class Webshoots_model extends CI_Model {
                 'screen_id' => $screen_id,
                 'stamp' => date("Y-m-d H:i:s"),
                 'img' => $img,
-                'thumb' => $thumb  
+                'thumb' => $thumb,
+                'screen_stamp' => $screen_stamp  
             );
             $this->db->update($this->tables['webshoots_select'], $update_object, $check_obj);
         } else { // --- new
@@ -38,7 +55,8 @@ class Webshoots_model extends CI_Model {
                 'week' => $week,
                 'img' => $img,
                 'thumb' => $thumb,
-                'stamp' => date("Y-m-d H:i:s")
+                'stamp' => date("Y-m-d H:i:s"),
+                'screen_stamp' => $screen_stamp
             );
             $this->db->insert($this->tables['webshoots_select'], $insert_object);
         }

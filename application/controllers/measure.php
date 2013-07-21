@@ -62,6 +62,22 @@ class Measure extends MY_Controller {
         return $this->webshoots_model->checkScreenCrawlStatus($url);
     }
 
+    public function dropselectionscan() {
+        $year = $this->input->post('year');
+        $week = $this->input->post('week');
+        $uid = $this->ion_auth->get_user_id();
+        $this->load->model('webshoots_model');
+        $res = array();
+        for($i = 1; $i <= 6; $i++) {
+            $mid = array(
+                'pos' => $i,
+                'cell' => $this->webshoots_model->getScreenCellSelection($i, $uid, $year, $week)
+            );
+            $res[] = $mid;
+        }
+        $this->output->set_content_type('application/json')->set_output(json_encode($res));
+    }
+
     public function getwebshootbyurl() {
         $year = $this->input->post('year');
         $week = $this->input->post('week');
@@ -72,7 +88,7 @@ class Measure extends MY_Controller {
         $res = $this->webshoots_model->getWebShootByUrl($url);
         if($res !== false) {
             $screen_id = $res->id;
-            $this->webshoots_model->recordWebShootSelectionAttempt($screen_id, $uid, $pos, $year, $week, $res->img, $res->thumb); // --- webshoot selection record attempt
+            $this->webshoots_model->recordWebShootSelectionAttempt($screen_id, $uid, $pos, $year, $week, $res->img, $res->thumb, $res->stamp); // --- webshoot selection record attempt
             $result = $res;
         } else { // --- crawl brand new screenshot
             $url = urlencode(trim($url));
@@ -106,7 +122,7 @@ class Measure extends MY_Controller {
             );
             $insert_id = $this->webshoots_model->recordUpdateWebshoot($result);
             $result = $this->webshoots_model->getWebshootDataById($insert_id);
-            $this->webshoots_model->recordWebShootSelectionAttempt($insert_id, $uid, $pos, $year, $week, $result->img, $result->thumb); // --- webshoot selection record attempt
+            $this->webshoots_model->recordWebShootSelectionAttempt($insert_id, $uid, $pos, $year, $week, $result->img, $result->thumb, $result->stamp); // --- webshoot selection record attempt
         }
         $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }

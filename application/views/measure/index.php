@@ -24,19 +24,6 @@
 					<div class="span1 ml_disable">week:</div>
 					<div class='span6 ml_disable'>
 						<div class="pagination">
-							<!-- <ul>
-								<li class='page_prev disabled'><a href="javascript:void(0)">&lsaquo;</a></li>
-								<li id='page_prev' class="page_prev disabled"><a onclick="prevLocaHomePageWeekData()" href="javascript:void(0)">&laquo;</a></li>
-								<li data-week='1' class="page active"><a href="javascript:void(0)" onclick="locaHomePageWeekData('1')">1</a></li>
-								<li data-week='2' class='page'><a href="javascript:void(0)" onclick="locaHomePageWeekData('2')">2</a></li>
-								<li data-week='3' class='page'><a href="javascript:void(0)" onclick="locaHomePageWeekData('3')">3</a></li>
-								<li data-week='4' class='page'><a href="javascript:void(0)" onclick="locaHomePageWeekData('4')">4</a></li>
-								<li data-week='5' class='page'><a href="javascript:void(0)" onclick="locaHomePageWeekData('5')">5</a></li>
-								<li data-week='6' class='page'><a href="javascript:void(0)" onclick="locaHomePageWeekData('6')">6</a></li>
-								<li data-week='7' class='page'><a href="javascript:void(0)" onclick="locaHomePageWeekData('7')">7</a></li>
-								<li id='page_next' class='page_next'><a onclick="nextLocaHomePageWeekData()" href="javascript:void(0)">&raquo;</a></li>
-								<li class='page_next disabled'><a href="javascript:void(0)">&rsaquo;</a></li>
-							</ul> -->
 							<ul id='timeline_ctr'>
 								<li class='page_prev'><a id="slide_prev_timeline" class='tl_full_left disabled' onclick="return false;" href="javascript:void(0)"><i class='icon-chevron-left icon-white'></i></a></li>
 								<li id='page_prev' class="page_prev disabled"><a onclick="prevLocaHomePageWeekData()" href="javascript:void(0)">&laquo;</a></li>
@@ -65,11 +52,8 @@
 						<div class='span12 items_row ml_disable'>
 						<?php
 							$position = $item_per_row*($i-1);
-							// $row_items = getRowItemsRowFromBackend($item_per_row, $position); // -- method template to get items from backend // designed in such way that row will not have more than 3 items
-							// $row_items = array(rand(), rand(), rand()); // tmp for mockup
-							$row_items = array(rand(), rand()); // tmp for mockup
+							$row_items = array(rand(), rand());
 						?>
-						<?php // if($i == $items_rows) $dropup = 'dropup'; else $dropup = ''; ?>
 						<?php $dropup = ''; ?>
 						<?php foreach($row_items as $k=>$v) { ?>
 							<div class='span6 item'>
@@ -95,7 +79,7 @@
 									}
 								?>
 								<?php if(count($customers_list) > 0) { ?>
-								    <div id="hp_boot_drop_<?php echo $v; ?>" class="btn-group <?php echo $dropup; ?> hp_boot_drop">
+								    <div data-pos="<?php echo $pos; ?>" data-itemid="<?php echo $v; ?>" id="hp_boot_drop_<?php echo $v; ?>" class="btn-group hp_boot_drop">
 									    <button class="btn btn-danger btn_caret_sign">[ Choose site ]</button>
 									    <button class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
 									    	<span class="caret"></span>
@@ -264,6 +248,25 @@
 			title: 'Open Crawl Launch Control Panel'
 		});
         $('title').text("Competitive Intelligence");
+
+        // --- screens dropdowns selections scanner (start)
+        var send_data = {
+			year: $("#year_s > option:selected").val(),
+			week: $(".pagination ul li.page.active").data('week')
+		}
+        var drop_selection_scan = $.post(base_url + 'index.php/measure/dropselectionscan', send_data, function(data) {
+        	for(var i=0; i < data.length; i++) {
+        		if(data[i]['cell'] !== false) {
+        			var item_id = $(".hp_boot_drop[data-pos='" + data[i]['pos'] + "']").data('itemid'); 
+        			$("#screen_lightbox_img_" + item_id).attr('src', data[i]['cell']['img']);
+					$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox'><img style='cursor: pointer;' src='" + data[i]['cell']['thumb'] + "'></a>");
+					var t = moment(data[i]['cell']['screen_stamp']).format('MMMM Do, YYYY');
+					$("#crawl_date_" + item_id).text(t);
+        		}
+        	}
+        });
+        // --- screens dropdowns selections scanner (end)
+
 	});
 </script>
 
