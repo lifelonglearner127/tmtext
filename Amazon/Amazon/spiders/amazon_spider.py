@@ -72,18 +72,31 @@ class BestsellerSpider(BaseSpider):
         "http://www.amazon.com/Best-Sellers/zgbs/ref=zg_bs_unv_mas_0_mas_1",
     ]
 
+    # get main pages for department bestseller pages and pass them to the parsePage function
     def parse(self, response):
         hxs = HtmlXPathSelector(response)
         department_links = hxs.select("//ul[@id='zg_browseRoot']/ul/li/a")
 
         departments = []
+
+        # extract department name and url for each department in menu
         for department_link in department_links:
             department = {"url" : department_link.select("@href").extract()[0], "text" : department_link.select("text()").extract()[0]}
             departments.append(department)
         
+        # pass department urls to parsePage
         for department in departments:
-            yield Request(department['url'], callback = self.parseDepartment)
+            yield Request(department['url'], callback = self.parsePage)
 
+    # extract each page url for a department's bestseller list and pass it to parseDepartment
+    def parsePage(self, response):
+        hxs = HtmlXPathSelector(response)
+        page_urls = hxs.select("//div[@id='zg_paginationWrapper']//a/@href").extract()
+
+        for page_url in page_urls:
+            yield Request(page_url, callback = self.parseDepartment)
+
+    # take a page of a department's bestsellers list and extract products
     def parseDepartment(self, response):
         hxs = HtmlXPathSelector(response)
         products = hxs.select("//div[@class='zg_itemWrapper']")
