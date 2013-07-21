@@ -8,3 +8,13 @@ class AmazonItem(Item):
     parent_text = Field() # name of parent category (if any)
     level = Field() # level of category in the nested list (from narrower to broader categories)
     special = Field() # is it a special category? (1 or nothing)
+
+class ProductItem(Item):
+	url = Field()
+	name = Field()
+	page_title = Field()
+	department = Field()
+	price = Field()
+	rank = Field()
+	SKU = Field()
+	UPC = Field()

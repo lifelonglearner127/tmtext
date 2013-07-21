@@ -373,7 +373,7 @@ class Categories:
 
 if __name__=="__main__":
 	sites = ["amazon", "bestbuy", "bjs", "bloomingdales", "overstock", "walmart", "wayfair"]
-	sites = ["bjs","bestbuy"]
+	sites = ["bjs","bestbuy","walmart","amazon"]
 	gc = Categories(sites, 1)
 	groups = gc.group_by_common_words()
 	#pprint(groups)

@@ -61,3 +61,43 @@ class AmazonSpider(BaseSpider):
             items.append(item)
 
         return items
+
+
+class BestsellerSpider(BaseSpider):
+    name = "bestseller"
+    allowed_domains = ["amazon.com"]
+    start_urls = [
+        "http://www.amazon.com/Best-Sellers/zgbs/ref=zg_bs_unv_mas_0_mas_1",
+    ]
+
+    def parse(self, response):
+        hxs = HtmlXPathSelector(response)
+        departments = hxs.select("//ul[@id='zg_browseRoot']/ul/li/a/@href").extract()
+        
+        for department in departments:
+            yield Request(department, callback = self.parseDepartment)
+
+    def parseDepartment(self, response):
+        hxs = HtmlXPathSelector(response)
+        products = hxs.select("//div[@class='zg_itemWrapper']")
+
+        items = []
+
+        for product in products:
+            item = ProductItem()
+
+            #TODO: this name will always be incomplete (ends in "..."), add name on product page
+            item['name'] = product.select("div[@class='zg_title']/a/text()").extract()
+            item['url'] = product.select("div[@class='zg_title']/a/@href").extract()
+
+            #TODO: this needs to be refined, many prices etc
+            item['price'] = product.select(".//strong[@class='price']/text()").extract()
+
+            #TODO:
+            #item['department'] = 
+
+            items.append(item)
+
+            #TODO: implement next page (next 20 items)
+
+        return items
