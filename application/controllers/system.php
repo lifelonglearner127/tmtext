@@ -622,7 +622,7 @@ class System extends MY_Controller {
     public function get_batch_review()
     {
         $this->load->model('batches_model');
-        $results = $this->batches_model->getAll();
+        $results = $this->batches_model->getBatchReview();
         $this->output->set_content_type('application/json')
             ->set_output(json_encode($results));
     }

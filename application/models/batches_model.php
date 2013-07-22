@@ -119,4 +119,16 @@ class Batches_model extends CI_Model {
         }
         return false;
     }//max
+
+    public function getBatchReview()
+    {
+        $query =  $this->db->select('b.created as created,b.title as title ,c.name as name , b.id as id, count(r.batch_id) as items')
+                ->from($this->tables['batches'].' as b')
+                ->join($this->tables['research_data'].' as r', 'r.batch_id = b.id', 'left')
+                ->join($this->tables['customers'].' as c', 'c.id = b.customer_id', 'left')
+                ->group_by("r.batch_id")
+                ->order_by("b.title", "asc")->get();
+
+        return $query->result();
+    }
 }
