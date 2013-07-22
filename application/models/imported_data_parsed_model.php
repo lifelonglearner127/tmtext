@@ -1057,7 +1057,7 @@ class Imported_data_parsed_model extends CI_Model {
         }
 
         $sql_cmd = "
-            select
+            (select
                 rd.id,
                 rd.batch_id,
                 CASE WHEN rd.product_name IS NULL OR rd.product_name = '' THEN kv.`value` ELSE rd.product_name END AS product_name,
@@ -1076,6 +1076,20 @@ class Imported_data_parsed_model extends CI_Model {
                 concat(rd.product_name, kv.`value`, rd.url) like $like
                 $status
                 $batch
+            ) union (
+            select
+                r.id,
+                r.batch_id,
+                r.product_name,
+                r.url
+            from
+                `research_data` r
+            INNER JOIN batches AS b ON
+                b.id = r.batch_Id
+            LEFT JOIN imported_data_parsed i ON r.url = i.value
+                and i.`key` = 'URL'
+            where i.imported_data_id IS NULL $batch
+            )
         ";
 
         $query = $this->db->query($sql_cmd);
