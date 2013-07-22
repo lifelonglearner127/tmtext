@@ -99,7 +99,7 @@ class BestsellerSpider(BaseSpider):
     # take a page of a department's bestsellers list and extract products
     def parseDepartment(self, response):
         hxs = HtmlXPathSelector(response)
-        products = hxs.select("//div[@class='zg_itemWrapper']")
+        products = hxs.select("//div[@class='zg_itemImmersion']")
 
         items = []
 
@@ -107,17 +107,20 @@ class BestsellerSpider(BaseSpider):
             item = ProductItem()
 
             #TODO: this name will always be incomplete (ends in "..."), add name on product page
-            item['name'] = product.select("div[@class='zg_title']/a/text()").extract()[0]
-            item['url'] = product.select("div[@class='zg_title']/a/@href").extract()[0].strip()
+            #TODO: the index for the title is sometimes out of range - sometimes it can't find that tag (remove the [0] to debug)
+            item['name'] = product.select("div[@class='zg_itemWrapper']//div[@class='zg_title']/a/text()").extract()
+            item['url'] = product.select("div[@class='zg_itemWrapper']//div[@class='zg_title']/a/@href").extract()[0].strip()
 
             #TODO: this needs to be refined, many prices etc
-            item['price'] = product.select(".//strong[@class='price']/text()").extract()[0]
+            #TODO: sometimes index is out of range
+            item['price'] = product.select("div[@class='zg_itemWrapper']//strong[@class='price']/text()").extract()
+
+            # extract rank and ignore last character of te string (it's .)
+            item['rank'] = product.select(".//span[@class='zg_rankNumber']/text()").extract()[0][:-1]
 
             dept_name = hxs.select("//ul[@id='zg_browseRoot']//span[@class='zg_selected']/text()").extract()[0].strip()
             item['department'] = dept_name
 
             items.append(item)
-
-            #TODO: implement next page (next 20 items)
 
         return items
