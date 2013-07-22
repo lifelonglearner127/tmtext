@@ -140,5 +140,25 @@
 			placement: 'bottom',
 			title: 'Open Crawl Launch Control Panel'
 		});
+
+		// --- screens dropdowns selections scanner (start)
+	    var send_data = {
+			year: $("#year_s > option:selected").val(),
+			week: $(".pagination ul li.page.active").data('week')
+		}
+	    var drop_selection_scan = $.post(base_url + 'index.php/measure/dropselectionscan', send_data, function(data) {
+	    	for(var i=0; i < data.length; i++) {
+	    		if(data[i]['cell'] !== false) {
+	    			var item_id = $(".hp_boot_drop[data-pos='" + data[i]['pos'] + "']").data('itemid'); 
+	    			$("#screen_lightbox_img_" + item_id).attr('src', data[i]['cell']['img']);
+					$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox'><img style='cursor: pointer;' src='" + data[i]['cell']['thumb'] + "'></a>");
+					var t = moment(data[i]['cell']['screen_stamp']).format('MMMM Do, YYYY');
+					$("#crawl_date_" + item_id).text(t);
+					$("#hp_boot_drop_" + item_id + " .btn_caret_sign").text(data[i]['cell']['site']);
+	    		}
+	    	}
+	    });
+	    // --- screens dropdowns selections scanner (end)
+	    
 	});
 </script>

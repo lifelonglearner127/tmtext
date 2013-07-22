@@ -88,7 +88,7 @@ class Measure extends MY_Controller {
         $res = $this->webshoots_model->getWebShootByUrl($url);
         if($res !== false) {
             $screen_id = $res->id;
-            $this->webshoots_model->recordWebShootSelectionAttempt($screen_id, $uid, $pos, $year, $week, $res->img, $res->thumb, $res->stamp); // --- webshoot selection record attempt
+            $this->webshoots_model->recordWebShootSelectionAttempt($screen_id, $uid, $pos, $year, $week, $res->img, $res->thumb, $res->stamp, $res->url); // --- webshoot selection record attempt
             $result = $res;
         } else { // --- crawl brand new screenshot
             $url = urlencode(trim($url));
@@ -122,7 +122,7 @@ class Measure extends MY_Controller {
             );
             $insert_id = $this->webshoots_model->recordUpdateWebshoot($result);
             $result = $this->webshoots_model->getWebshootDataById($insert_id);
-            $this->webshoots_model->recordWebShootSelectionAttempt($insert_id, $uid, $pos, $year, $week, $result->img, $result->thumb, $result->stamp); // --- webshoot selection record attempt
+            $this->webshoots_model->recordWebShootSelectionAttempt($insert_id, $uid, $pos, $year, $week, $result->img, $result->thumb, $result->stamp, $result->url); // --- webshoot selection record attempt
         }
         $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }

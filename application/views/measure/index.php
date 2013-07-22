@@ -262,6 +262,7 @@
 					$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox'><img style='cursor: pointer;' src='" + data[i]['cell']['thumb'] + "'></a>");
 					var t = moment(data[i]['cell']['screen_stamp']).format('MMMM Do, YYYY');
 					$("#crawl_date_" + item_id).text(t);
+					$("#hp_boot_drop_" + item_id + " .btn_caret_sign").text(data[i]['cell']['site']);
         		}
         	}
         });
