@@ -42,8 +42,10 @@ $(function () {
     });
 
     $('#research_assess_filter').live('click', function() {
-        dataTable.fnDestroy();
-        dataTable = undefined;
+        if (dataTable) {
+            dataTable.fnDestroy();
+            dataTable = undefined;
+        }
         readAssessData();
     });
 
@@ -97,7 +99,7 @@ $(function () {
         $('#research_assess_choiceColumnDialog').parent().find('button:first').addClass("popupGreen");
     });
 
-    readAssessData();
+    //readAssessData();
 
 });
 
@@ -105,7 +107,10 @@ function readAssessData() {
     var data = {};
 
     data.search_text =  $('#assess_filter_text').val();
-    data.batch_name = $('select[name="research_batches"]').find('option:selected').text();
+    data.batch_name = $('select[name="research_batches_assess"]').find('option:selected').text();
+
+//    if (!data.batch_name)
+//        return;
 
     var assess_filter_datefrom = $('#assess_filter_datefrom').val();
     var assess_filter_dateto = $('#assess_filter_dateto').val();
@@ -122,6 +127,9 @@ function readAssessData() {
             data.short_more = $('#research_assess_short_more').val();
         }
 
+        if ($('#research_assess_short_seo_phrases').is(':checked')) {
+            data.short_seo_phrases = true;
+        }
         if ($('#research_assess_short_duplicate_content').is(':checked')) {
             data.short_duplicate_content = true;
         }
@@ -138,6 +146,9 @@ function readAssessData() {
             data.long_more = $('#research_assess_long_more').val();
         }
 
+        if ($('#research_assess_long_seo_phrases').is(':checked')) {
+            data.long_seo_phrases = true;
+        }
         if ($('#research_assess_long_duplicate_content').is(':checked')) {
             data.long_duplicate_content = true;
         }

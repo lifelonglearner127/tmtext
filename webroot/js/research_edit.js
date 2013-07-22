@@ -1,6 +1,9 @@
 var readUrl = base_url + 'index.php/research/search_results_bathes';
-
+var pageInitialized = false;
 $(function() {
+    if(pageInitialized) return;
+        pageInitialized = true;
+
     $.fn.dataTableExt.oApi.fnReloadAjax = function ( oSettings, sNewSource, fnCallback, bStandingRedraw )
     {
         if ( typeof sNewSource != 'undefined' && sNewSource != null )
@@ -45,8 +48,8 @@ $(function() {
         "bDestroy": true,
         "sPaginationType": "full_numbers",
         "bProcessing": true,
-        "bServerSide": true,
-        "sAjaxSource": readUrl,
+        //"bServerSide": true,
+        //"sAjaxSource": readUrl,
         "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
             $(nRow).attr("batch_id", aData[3]);
             $(nRow).attr("url", aData[2]);
@@ -109,8 +112,10 @@ $(function() {
 });
 
 function drawREProductsTable(obj) {
-    $(obj).parent().find('a').removeClass('active_link');
-    $(obj).addClass('active_link');
+    if (obj) {
+        $(obj).parent().find('a').removeClass('active_link');
+        $(obj).addClass('active_link');
+    }
     var link_id = $('div.research_edit_filter_links a[class=active_link]').attr('id');
 
     var selected_batch =  $('select[name="research_batches"]').find('option:selected').text();

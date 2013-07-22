@@ -239,80 +239,108 @@ class Research extends MY_Controller {
             $txt_filter = $this->input->get('search_text');
         }
 
-        $batch = $this->input->get('batch_name');
-        $batch_id = $this->batches_model->getIdByName($batch);
-        if($batch_id == false || $txt_filter != '') {
-            $batch_id = '';
-        }
+        $batch_name = $this->input->get('batch_name');
+//        if (empty($batch_name)) {
+//            $this->output->set_content_type('application/json')
+//                ->set_output("{}");
+//            return;
+//        }
+//        $batch_id = $this->batches_model->getIdByName($batch);
+//        if($batch_id == false || $txt_filter != '') {
+//            $batch_id = '';
+//        }
 
         $date_from = $this->input->get('date_from') == false ? '' : $this->input->get('date_from');
         $date_to = $this->input->get('date_to') == false ? '' : $this->input->get('date_to');
         $short_less = $this->input->get('short_less') == false ? -1 : $this->input->get('short_less');
         $short_more = $this->input->get('short_more') == false ? -1 : $this->input->get('short_more');
+        $short_seo_phrases = $this->input->get('short_seo_phrases');
         $short_duplicate_context = $this->input->get('short_duplicate_context');
         $short_misspelling = $this->input->get('short_misspelling');
         $long_less = $this->input->get('long_less') == false ? -1 : $this->input->get('long_less');
         $long_more = $this->input->get('long_more') == false ? -1 : $this->input->get('long_more');
+        $long_seo_phrases = $this->input->get('long_seo_phrases');
         $long_duplicate_context = $this->input->get('long_duplicate_context');
         $long_misspelling = $this->input->get('long_misspelling');
 
         $params = new stdClass();
-        $params->batch_id = $batch_id;
+        $params->batch_name = $batch_name;
         $params->txt_filter = $txt_filter;
         $params->date_from = $date_from;
         $params->date_to = $date_to;
-        $params->short_less = $short_less;
-        $params->short_more = $short_more;
-        $params->short_duplicate_context = $short_duplicate_context;
-        $params->short_misspelling = $short_misspelling;
-        $params->long_less = $long_less;
-        $params->long_more = $long_more;
-        $params->long_duplicate_context = $long_duplicate_context;
-        $params->long_misspelling = $long_misspelling;
+//        $params->short_duplicate_context = $short_duplicate_context;
+//        $params->short_misspelling = $short_misspelling;
+//        $params->long_duplicate_context = $long_duplicate_context;
+//        $params->long_misspelling = $long_misspelling;
 
         $results = $this->research_data_model->getInfoForAssess($params);
 
         $enable_exec = true;
-        // change '0' value to '-'
+        $result_table = array();
         foreach($results as $row) {
-            if($row->short_description_wc == '0') {
-                $row->short_description_wc = '-';
-            }
-            if($row->long_description_wc == '0') {
-                $row->long_description_wc = '-';
-            }
+            $short_description_wc = preg_match_all('/\b/', $row->short_description) / 2;
+            if ($short_more > -1)
+                if ($short_description_wc < $short_more)
+                    continue;
+            if ($short_less > -1)
+                if ($short_description_wc > $short_less)
+                    continue;
+
+            $long_description_wc = preg_match_all('/\b/', $row->long_description) / 2;
+            if ($long_more > -1)
+                if ($long_description_wc < $long_more)
+                    continue;
+            if ($long_more > -1)
+                if ($long_description_wc > $long_more)
+                    continue;
+
+            $result_row = new stdClass();
+            $result_row->id = $row->id;
+            $result_row->created = $row->created;
+            $result_row->product_name = $row->product_name;
+            $result_row->url = $row->url;
+            $result_row->short_description_wc = $short_description_wc;
+            $result_row->long_description_wc = $long_description_wc;
+            $result_row->seo_s = "";
+            $result_row->seo_l = "";
+
             if ($enable_exec) {
-                $cmd = $this->prepare_extract_phrases_cmd($row->short_description);
-                $result = exec($cmd, $output, $error);
+                if ($short_seo_phrases) {
+                    $cmd = $this->prepare_extract_phrases_cmd($row->short_description);
+                    $result = exec($cmd, $output, $error);
 
-                if ($error > 0) {
-                    $enable_exec = false;
-                    continue;
+                    if ($error > 0) {
+                        $enable_exec = false;
+                        continue;
+                    }
+                    $seo_lines = array();
+                    foreach ($output as $line) {
+                        $seo_lines[] = $line;
+                    }
+                    $result_row->seo_s = implode("</br>", $seo_lines);
                 }
-                $seo_lines = array();
-                foreach ($output as $line) {
-                    $seo_lines[] = $line;
-                }
-                $row->seo_s = implode("</br>", $seo_lines);
 
+                if ($long_seo_phrases) {
+                    $cmd = $this->prepare_extract_phrases_cmd($row->long_description);
+                    $result = exec($cmd, $output, $error);
 
-                $cmd = $this->prepare_extract_phrases_cmd($row->long_description);
-                $result = exec($cmd, $output, $error);
-
-                if ($error > 0) {
-                    $enable_exec = false;
-                    continue;
+                    if ($error > 0) {
+                        $enable_exec = false;
+                        continue;
+                    }
+                    $seo_lines = array();
+                    foreach ($output as $line) {
+                        $seo_lines[] = $line;
+                    }
+                    $result_row->seo_l = implode("</br>", $seo_lines);
                 }
-                $seo_lines = array();
-                foreach ($output as $line) {
-                    $seo_lines[] = $line;
-                }
-                $row->seo_l = implode("</br>", $seo_lines);
             }
+
+            $result_table[] = $result_row;
         }
 
         $this->output->set_content_type('application/json')
-            ->set_output(json_encode($results));
+            ->set_output(json_encode($result_table));
     }
 
     private function prepare_extract_phrases_cmd($text) {

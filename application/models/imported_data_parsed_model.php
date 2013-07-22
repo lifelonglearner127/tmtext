@@ -1060,17 +1060,22 @@ class Imported_data_parsed_model extends CI_Model {
             select
                 rd.id,
                 rd.batch_id,
-                rd.product_name,
+                CASE WHEN rd.product_name IS NULL OR rd.product_name = '' THEN kv.`value` ELSE rd.product_name END AS product_name,
                 rd.url
             from
                 research_data as rd
-            inner join batches as b ON b.id = rd.batch_id
+            INNER JOIN batches AS b ON
+                b.id = rd.batch_Id
+            INNER JOIN imported_data_parsed AS idp ON
+                idp.value = rd.url
+                AND `key` = 'URL'
+            INNER JOIN imported_data_parsed AS kv ON
+                kv.imported_data_id = idp.imported_data_id
+                AND kv.key = 'Product Name'
             where
-                concat(rd.product_name, rd.url) like $like
+                concat(rd.product_name, kv.`value`, rd.url) like $like
                 $status
                 $batch
-                and trim(rd.product_name) <> ''
-	            and trim(rd.url) <> ''
         ";
 
         $query = $this->db->query($sql_cmd);
@@ -1124,13 +1129,35 @@ class Imported_data_parsed_model extends CI_Model {
         $batch_id = $params->batch_id;
         $url = $this->db->escape($params->url);
         $sql_cmd = "
-            select
-                *
-            from
-                research_data as rd
-            where
-                rd.batch_id = $batch_id
-                and rd.url = $url
+            SELECT
+                r.imported_data_id AS id,
+                r.created AS created,
+                group_concat(r.product_name, '') AS product_name,
+                group_concat(r.long_description, '') AS long_description,
+                group_concat(r.short_description, '') AS short_description,
+                group_concat(r.URL, '') AS URL
+            FROM (
+                SELECT
+                    kv.imported_data_id,
+                    rd.created as created,
+                    rd.product_name as pn,
+                    case when kv.`key` = 'Product Name' then kv.`value` end as product_name,
+                    case when kv.`key` = 'Long_Description' then kv.`value` end as long_description,
+                    case when kv.`key` = 'Description' then kv.`value` end as short_description,
+                    case when kv.`key` = 'URL' then kv.`value` end as URL
+                FROM
+                    research_data AS rd
+                INNER JOIN batches AS b ON
+                    b.id = rd.batch_Id
+                    AND b.id = $batch_id
+                INNER JOIN imported_data_parsed AS idp ON
+                    idp.value = rd.url
+                    AND `key` = 'URL'
+                INNER JOIN imported_data_parsed AS kv ON
+                    kv.imported_data_id = idp.imported_data_id
+                WHERE
+                    rd.url = $url
+            ) AS r
             limit 0,1
         ";
 
