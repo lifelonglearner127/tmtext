@@ -29,7 +29,10 @@
 </div>
 
 <div id='hp_ajax_content' class='span12 body_section ml_disable mt_30'>
-	<div style='margin-bottom: 15px;'><span class='label label-success'><?php echo $ct_final; ?></span></div>
+	<div style='margin-bottom: 15px;'>
+		<span class='label label-success'>Selected date: <b id='current_date'><?php echo $ct_final; ?></b></span>
+		<span class='label label-success'>Selected week: <b id='current_week'><?php echo $week; ?></b></label>
+	</div>
 	<div class='ph_placeholder' data-week='1'>
 		<?php 
 			$items_count = 6;
@@ -84,10 +87,6 @@
 				    <?php } ?>
 					<div class='art_hp_item'>
 						<div id="art_img_<?php echo $v; ?>" class='art_img'>&nbsp;</div>
-						<!-- <div class='art_oview'>
-							<p class='h'>&nbsp;</p>
-							<p class='t'>&nbsp;</p>
-						</div> -->
 					</div>
 				</div>
 				<!-- lightbox holder (start) -->
@@ -159,6 +158,6 @@
 	    	}
 	    });
 	    // --- screens dropdowns selections scanner (end)
-	    
+
 	});
 </script>

@@ -1,4 +1,7 @@
-<div style='margin-bottom: 15px;'><span class='label label-success'><?php echo $ct_final; ?></span></div>
+<div style='margin-bottom: 15px;'>
+	<span class='label label-success'>Selected date: <b id='current_date'><?php echo $ct_final; ?></b></span>
+	<span class='label label-success'>Selected week: <b id='current_week'><?php echo $week; ?></b></label>
+</div>
 <div class='ph_placeholder' data-week="<?php echo $week; ?>">
 	<?php 
 		$items_count = 6;
@@ -114,5 +117,5 @@
     	}
     });
     // --- screens dropdowns selections scanner (end)
-	
+
 </script>

@@ -20,16 +20,19 @@ class Measure extends MY_Controller {
     public function index() {
         $this->data['customers_list'] = $this->customers_list_new();
         $this->data['user_id'] = $this->ion_auth->get_user_id();
+        $c_week = date("W", time());
+        $c_year = date("Y", time());
+        $this->data['ct_final'] = date("d.m.Y", time());
+        $this->data['c_week'] = $c_week;
+        $this->data['c_year'] = $c_year;
         // --------- TMP TIMELINE DATE STATUS (START) (TODO: MAKE IT DYNAMIC)
-        $week = 1;
-        $year = '2013';
-        $year_s = "01/01/2013";
-        // ---- figure out total date (start)
-        $i = ($week - 1)*7;
-        $total = strtotime($year_s) + 60*60*24*$i;
-        $ct_final = date('d.m.Y', $total);
-        // ---- figure out total date (end)
-        $this->data['ct_final'] = $ct_final;
+        // $week = 1;
+        // $year = '2013';
+        // $year_s = "01/01/2013";
+        // $i = ($week - 1)*7;
+        // $total = strtotime($year_s) + 60*60*24*$i;
+        // $ct_final = date('d.m.Y', $total);
+        // $this->data['ct_final'] = $ct_final;
         // --------- TMP TIMELINE DATE STATUS (END) (TODO: MAKE IT DYNAMIC)
         $this->render();
     }

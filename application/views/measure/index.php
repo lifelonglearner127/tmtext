@@ -15,8 +15,8 @@
 					<div class="span2">View Reports for:</div>
 					<div class="span2 w_100 ml_disable">
 						<select id='year_s' class='year_s' onchange="changeHomePageYersHandler()">
-							<?php for($i = 1980; $i <= 2013; $i++) { ?>
-							<?php $selected = ""; if($i == 2013) $selected = 'selected'; ?>
+							<?php for($i = 1980; $i <= $c_year; $i++) { ?>
+							<?php $selected = ""; if($i == $c_year) $selected = 'selected'; ?>
 							<option <?php echo $selected; ?> value="<?php echo $i; ?>"><?php echo $i; ?></option>
 							<?php } ?>
 						</select>
@@ -40,7 +40,10 @@
 			</div>
 			
 			<div id='hp_ajax_content' class='span12 body_section ml_disable mt_30'>
-				<div style='margin-bottom: 15px;'><span class='label label-success'><?php echo $ct_final; ?></span></div>
+				<div style='margin-bottom: 15px;'>
+					<span class='label label-success'>Current date: <b id='current_date'><?php echo $ct_final; ?></b></span>
+					<span class='label label-success'>Current week: <b id='current_week'><?php echo $c_week; ?></b></label>
+				</div>
 				<div class='ph_placeholder' data-week='1'>
 					<?php
 						$items_count = 6;
