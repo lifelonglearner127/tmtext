@@ -152,13 +152,13 @@
                         <button id="delete_site" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
                         <div class="clear-fix"></div>
                 </div>
-                <div class="rdmin_tag_editorow-fluid mt_10">
+                <div class="row-fluid mt_10">
                         <p>Url:</p>
                         <input type="text" id="site_url" name="site_url">
                         <div class="clear-fix"></div>
                 </div>
                 <div class="row-fluid">
-                    <div clasdmin_tag_editors="controls span7 mt_20">
+                    <div class="controls span7 mt_20">
                         <img id="site_logo" class="mt_10" src="../../img/no-logo.jpg" />
                         <div class="clear-fix"></div><br />
                         <button class="btn btn-success" id="sitelogo" style="display:none"><i class="icon-white icon-ok"></i>&nbsp;Import</button>
