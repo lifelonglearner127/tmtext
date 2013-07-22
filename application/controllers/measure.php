@@ -82,6 +82,7 @@ class Measure extends MY_Controller {
     }
 
     public function getwebshootbyurl() {
+        ini_set("max_execution_time", 0);
         $year = $this->input->post('year');
         $week = $this->input->post('week');
         $url = $this->input->post('url');
@@ -101,10 +102,13 @@ class Measure extends MY_Controller {
             $token = md5("$api_secret+$url");
             // $size_s = "200x150";
             // $size_l = "600x450";
-            $size_s = "800x600";
-            $size_l = "1200x1000";
+            // $size_s = "800x600";
+            // $size_l = "1200x1000";
+            $size_s = "w600";
+            $size_l = "w1260";
             $format = "png";
             // -- configs (end)
+            // http://api.webyshots.com/v1/shot/dc598f9ae119a97234ea/04921f81ebf1786b24ff0823ba1488b2/?url=google.com&dimension=w1260&format=png
             $res = array(
                 "s" => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_s&format=$format",
                 'l' => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_l&format=$format"
@@ -152,6 +156,7 @@ class Measure extends MY_Controller {
     }
 
     public function webshootcrawl() {
+        ini_set("max_execution_time", 0);
         $year = $this->input->post('year');
         $week = $this->input->post('week');
         $url = $this->input->post('url');
@@ -163,8 +168,10 @@ class Measure extends MY_Controller {
         $token = md5("$api_secret+$url");
         // $size_s = "200x150";
         // $size_l = "600x450";
-        $size_s = "800x600";
-        $size_l = "1200x1000";
+        // $size_s = "800x600";
+        // $size_l = "1200x1000";
+        $size_s = "w600";
+        $size_l = "w1260";
         $format = "png";
         // -- configs (end)
         $res = array(

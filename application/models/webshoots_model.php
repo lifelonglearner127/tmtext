@@ -111,7 +111,7 @@ class Webshoots_model extends CI_Model {
     }
 
     function getWebShootByUrl($url) {
-        $query = $this->db->where('url', $url)->order_by('stamp', 'asc')->get($this->tables['webshoots']);
+        $query = $this->db->where('url', $url)->order_by('stamp', 'desc')->get($this->tables['webshoots']);
         $query_res = $query->result();
         if(count($query_res) > 0) {
             $res = $query_res[0];
