@@ -67,6 +67,7 @@ class Research_data_model extends CI_Model {
            ->where_in('p.value', $urls);
         $query = $this->db->get();
         $results = $query->result();
+        
         $data = array();
         foreach($results as $result){
             $query = $this->db->where('imported_data_id', $result->imported_data_id)->get($this->tables['imported_data_parsed']);
@@ -85,8 +86,8 @@ class Research_data_model extends CI_Model {
             }
             array_push($data, array('imported_data_id'=>$result->imported_data_id, 'product_name'=>$result->value,
                'description'=>$description, 'long_description'=>$long_description, 'url'=>$url, 'product_name' =>$product_name, 'features' => $features ));
-            return $data;
         }
+        return $data;
         }else{
             return NULL;
         }
