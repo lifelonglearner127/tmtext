@@ -152,6 +152,9 @@
         <script>
             $("#measure_product_ind_wrap").html('');
             $("#compet_area_grid").html('');
+            $(".grid_switcher").hide();
+            $(".keywords_metrics_bl_res").hide();
+            $('li.keywords_metrics_bl_res, li.keywords_metrics_bl_res ~ li, ul.less_b_margin').hide();
             
         </script>
 <?php } ?>

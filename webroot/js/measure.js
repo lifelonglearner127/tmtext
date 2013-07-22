@@ -691,6 +691,9 @@ $(document).ready(function() {
            $("#measure_product_ind_wrap").html('');
             $("#compet_area_grid").html('');
             $("#an_sort_search_box").html('');
+            $(".grid_switcher").hide();
+            $(".keywords_metrics_bl_res").hide();
+            $('li.keywords_metrics_bl_res, li.keywords_metrics_bl_res ~ li, ul.less_b_margin').hide();
       }
       
     });
