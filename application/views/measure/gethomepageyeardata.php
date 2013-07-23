@@ -14,14 +14,63 @@
 		<div class='span6 ml_disable'>
 			<div class="pagination">
 				<ul id='timeline_ctr'>
-					<li class='page_prev'><a id="slide_prev_timeline" class='tl_full_left disabled' onclick="return false;" href="javascript:void(0)"><i class='icon-chevron-left icon-white'></i></a></li>
-					<li id='page_prev' class="page_prev disabled"><a onclick="prevLocaHomePageWeekData()" href="javascript:void(0)">&laquo;</a></li>
-					<?php for($i = 1; $i <= 7; $i++) { ?>
-						<?php if($i == 1) { $active = 'active'; } else { $active = ''; } ?>
-						<li data-week="<?php echo $i; ?>" class="page <?php echo $active; ?>"><a href="javascript:void(0)" onclick="locaHomePageWeekData('<?php echo $i; ?>')"><?php echo $i; ?></a></li>
+					<?php if($status == 'selected') { ?>
+						<li class='page_prev'><a id="slide_prev_timeline" class='tl_full_left disabled' onclick="return false;" href="javascript:void(0)"><i class='icon-chevron-left icon-white'></i></a></li>
+						<li id='page_prev' class="page_prev disabled"><a onclick="prevLocaHomePageWeekData()" href="javascript:void(0)">&laquo;</a></li>
+						<?php for($i = 1; $i <= 7; $i++) { ?>
+							<?php if($i == 1) { $active = 'active'; } else { $active = ''; } ?>
+							<li data-week="<?php echo $i; ?>" class="page <?php echo $active; ?>"><a href="javascript:void(0)" onclick="locaHomePageWeekData('<?php echo $i; ?>')"><?php echo $i; ?></a></li>
+						<?php } ?>
+						<li id='page_next' class='page_next'><a onclick="nextLocaHomePageWeekData()" href="javascript:void(0)">&raquo;</a></li>
+						<li class='page_next'><a id="slide_next_timeline" class='tl_full_left' onclick="slideTimeline('next')" href="javascript:void(0)"><i class='icon-chevron-right icon-white'></i></a></li>
+					<?php } else { ?>
+						<?php 
+							$intervals_count = ceil(52/7);
+							$intervals = array(
+								array(1, 2, 3, 4, 5, 6, 7),
+								array(8, 9, 10, 11, 12, 13, 14),
+								array(15, 16, 17, 18, 19, 20, 21),
+								array(22, 23, 24, 25, 26, 27, 28),
+								array(29, 30, 32, 32, 33, 34, 35),
+								array(36, 37, 38, 39, 40, 41, 42),
+								array(43, 44, 45, 46, 47, 48, 49),
+								array(50, 51, 52)
+							);
+							$key_int = 0;
+							foreach ($intervals as $key => $value) {
+								if(in_array($week, $value)) {
+									$key_int = $key;
+								}
+							}
+							$int_cell = $intervals[$key_int];
+							$int_cell_start = $int_cell[0];
+							$int_cell_end = $int_cell[count($int_cell) - 1];
+						?>
+						<?php if($key_int == 0) { ?>
+						<li class='page_prev'><a id="slide_prev_timeline" class='tl_full_left disabled' onclick="return false;" href="javascript:void(0)"><i class='icon-chevron-left icon-white'></i></a></li>
+						<?php } else { ?>
+						<li class='page_prev'><a id="slide_prev_timeline" class='tl_full_left' onclick="slideTimeline('prev')" href="javascript:void(0)"><i class='icon-chevron-left icon-white'></i></a></li>
+						<?php } ?>
+						<?php if($int_cell_start == $week) { ?>
+						<li id='page_prev' class="page_prev disabled"><a onclick="return false;" href="javascript:void(0)">&laquo;</a></li>
+						<?php } else { ?>
+						<li id='page_prev' class="page_prev"><a onclick="prevLocaHomePageWeekData()" href="javascript:void(0)">&laquo;</a></li>
+						<?php } ?>
+						<?php for($i = $int_cell_start; $i <= $int_cell_end; $i++) { ?>
+							<?php if($i == $week) { $active = 'active'; } else { $active = ''; } ?>
+							<li data-week="<?php echo $i; ?>" class="page <?php echo $active; ?>"><a href="javascript:void(0)" onclick="locaHomePageWeekData('<?php echo $i; ?>')"><?php echo $i; ?></a></li>
+						<?php } ?>
+						<?php if($int_cell_end == $week) { ?>
+						<li id='page_next' class='page_next disabled'><a onclick="return false;" href="javascript:void(0)">&raquo;</a></li>
+						<?php } else { ?>
+						<li id='page_next' class='page_next'><a onclick="nextLocaHomePageWeekData()" href="javascript:void(0)">&raquo;</a></li>
+						<?php } ?>
+						<?php if($key_int == 7) { ?>
+						<li class='page_next'><a id="slide_next_timeline" class='tl_full_left disabled' onclick="return false;" href="javascript:void(0)"><i class='icon-chevron-right icon-white'></i></a></li>
+						<?php } else { ?>
+						<li class='page_next'><a id="slide_next_timeline" class='tl_full_left' onclick="slideTimeline('next')" href="javascript:void(0)"><i class='icon-chevron-right icon-white'></i></a></li>
+						<?php } ?>
 					<?php } ?>
-					<li id='page_next' class='page_next'><a onclick="nextLocaHomePageWeekData()" href="javascript:void(0)">&raquo;</a></li>
-					<li class='page_next'><a id="slide_next_timeline" class='tl_full_left' onclick="slideTimeline('next')" href="javascript:void(0)"><i class='icon-chevron-right icon-white'></i></a></li>
 				</ul>
 			</div>
 		</div>
@@ -30,8 +79,8 @@
 
 <div id='hp_ajax_content' class='span12 body_section ml_disable mt_30'>
 	<div style='margin-bottom: 15px;'>
-		<span class='label label-success'>Selected date: <b id='current_date'><?php echo $ct_final; ?></b></span>
-		<span class='label label-success'>Selected week: <b id='current_week'><?php echo $week; ?></b></label>
+		<span class='label label-success'><?php if($status == 'selected') { ?>Selected date:<?php } else { ?>Current date:<?php } ?> <b id='current_date'><?php echo $ct_final; ?></b></span>
+		<span class='label label-success'><?php if($status == 'selected') { ?>Selected week:<?php } else { ?>Current week:<?php } ?> <b id='current_week'><?php echo $week; ?></b></label>
 	</div>
 	<div class='ph_placeholder' data-week='1'>
 		<?php 

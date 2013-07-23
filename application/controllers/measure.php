@@ -22,7 +22,7 @@ class Measure extends MY_Controller {
         $this->data['user_id'] = $this->ion_auth->get_user_id();
         $c_week = date("W", time());
         $c_year = date("Y", time());
-        $this->data['ct_final'] = date("d.m.Y", time());
+        $this->data['ct_final'] = date("m.d.Y", time());
         $this->data['c_week'] = $c_week;
         $this->data['c_year'] = $c_year;
         // --------- TMP TIMELINE DATE STATUS (START) (TODO: MAKE IT DYNAMIC)
@@ -213,18 +213,30 @@ class Measure extends MY_Controller {
     public function gethomepageyeardata() {
         $year = $this->input->post('year');
         $week = $this->input->post('week');
-        $year_s = "01/01/".$this->input->post('year');
-        // ---- figure out total date (start)
-        $i = ($week - 1)*7;
-        $total = strtotime($year_s) + 60*60*24*$i;
-        $ct_final = date('d.m.Y', $total);
-        // ---- figure out total date (end)
-        $data = array(
-            'year' => $year,
-            'week' => $week,
-            'ct_final' => $ct_final,
-            'customers_list' => $this->customers_list_new()
-        );
+        if($year == date('Y', time())) {
+            $c_week = date("W", time());
+            $c_year = date("Y", time());
+            $data = array(
+                'year' => $c_year,
+                'week' => $c_week,
+                'ct_final' => date("m.d.Y", time()),
+                'customers_list' => $this->customers_list_new(),
+                'status' => 'current'
+            );
+        } else {
+            $week = 1;
+            $year_s = "01/01/".$this->input->post('year');
+            $i = ($week - 1)*7;
+            $total = strtotime($year_s) + 60*60*24*$i;
+            $ct_final = date('m.d.Y', $total);
+            $data = array(
+                'year' => $year,
+                'week' => $week,
+                'ct_final' => $ct_final,
+                'customers_list' => $this->customers_list_new(),
+                'status' => 'selected'
+            );
+        }
         $this->load->view('measure/gethomepageyeardata', $data);
     }
 
@@ -235,7 +247,7 @@ class Measure extends MY_Controller {
         // ---- figure out total date (start)
         $i = ($week - 1)*7;
         $total = strtotime($year_s) + 60*60*24*$i;
-        $ct_final = date('d.m.Y', $total);
+        $ct_final = date('m.d.Y', $total);
         // ---- figure out total date (end)
         $data = array(
             'year' => $year,
