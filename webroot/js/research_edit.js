@@ -67,7 +67,7 @@ $(function() {
             {"bVisible": false}
         ]
     });
-    dataTable.fnSort([[1, 'asc']]);
+    dataTable.fnSort([[0, 'asc']]);
 
     $('#records tbody').click(function(event) {
         $(dataTable.fnSettings().aoData).each(function (){
