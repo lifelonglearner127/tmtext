@@ -1,4 +1,4 @@
-var readUrl = base_url + 'index.php/measure/get_product_price';
+    var readUrl = base_url + 'index.php/measure/get_product_price';
 
 $( function() {
     /* Pricing */

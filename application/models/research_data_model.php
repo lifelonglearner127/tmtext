@@ -268,6 +268,10 @@ union all
         return $query->result();
     }
 
+    function getPricesForBatch($batch_name) {
+
+    }
+
     function getLastRevision(){
         $query = $this->db->select('revision')->limit(1)->order_by("id", "desc")->get($this->tables['research_data']);
         return $query->result();

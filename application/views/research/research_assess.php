@@ -32,9 +32,9 @@
                 </h3>
                 <div class="boxes_content">
                     <div class="row-fluid">
-                        <div class="span6">
+                        <div class="span4">
                             Text:
-                            <input id="assess_filter_text" type="text" id="assess_filter_text" class="mt_10 w_286"/>
+                            <input id="assess_filter_text" type="text" id="assess_filter_text" class="mt_10" style="width: 150px;"/>
                             <button id="research_assess_filter" class="btn">Filter</button>
                         </div>
                         <div class="span6">
@@ -42,7 +42,13 @@
                             <input id="assess_filter_datefrom" type="text" class="mt_10" value="" style="width: 100px;"/>
                             &nbsp-&nbsp
                             <input id="assess_filter_dateto" type="text" class="mt_10" value="" style="width: 100px;"/>
-                            <button id="assess_filter_claear_dates" class="btn">Clear</button>
+                            <button id="assess_filter_clear_dates" class="btn">Clear</button>
+                        </div>
+                        <div class="span2 assess_filter_options">
+                            <label class="checkbox">
+                                <input id="research_assess_price_diff" type="checkbox" checked>
+                                Price Diff
+                            </label>
                         </div>
                     </div>
                     <div class="row-fluid assess_filter_options">
@@ -73,10 +79,6 @@
                                     <label class="checkbox">
                                         <input id="research_assess_short_duplicate_content" type="checkbox" checked>
                                         Duplicate content
-                                    </label>
-                                    <label class="checkbox">
-                                        <input id="research_assess_short_misspelling" type="checkbox" checked>
-                                        Misspellings
                                     </label>
                                 </div>
                             </div>
@@ -110,10 +112,6 @@
                                     <label class="checkbox">
                                         <input id="research_assess_long_duplicate_content" type="checkbox" checked>
                                         Duplicate content
-                                    </label>
-                                    <label class="checkbox">
-                                        <input id="research_assess_long_misspelling" type="checkbox" checked>
-                                        Misspellings
                                     </label>
                                 </div>
                             </div>
@@ -170,8 +168,8 @@
                         <label for="column_batch_name">Duplicate content</label>
                     </p>
                     <p>
-                        <input type="checkbox" id="column_misspelling" name="column_misspelling_name" <?php echo($columns['misspelling'] == 'true' ? 'checked="checked"' : ''); ?> />
-                        <label for="column_actions">Misspellings</label>
+                        <input type="checkbox" id="column_price_diff" name="column_price_diff" <?php echo($columns['price_diff'] == 'true' ? 'checked="checked"' : ''); ?> />
+                        <label for="column_actions">Price diff</label>
                     </p>
                 </form>
             </div>
@@ -182,7 +180,7 @@
             <div id="read" class="ui-tabs-panel ui-widget-content ui-corner-bottom">
                 <div id="records_wrapper" class="dataTables_wrapper">
                     <div class="span12">
-                        <table id="records">
+                        <table id="records" style="width: 100%;">
                             <thead>
                             <tr>
                                 <th><div class="draggable">Date</div></th>
@@ -193,15 +191,13 @@
                                 <th><div class="draggable">Word Count (L)</div></th>
                                 <th><div class="draggable">SEO Phrases (L)</div></th>
                                 <th><div class="draggable">Duplicate Content</div></th>
-                                <th><div class="draggable">Misspellings</div></th>
+                                <th><div class="draggable">Price diff</div></th>
                             </tr>
                             </thead>
                             <tbody></tbody>
                         </table>
 
                         <!-- Table doesnt work without this jQuery include yet -->
-                        <!-- <script type="text/javascript" src="<?php echo base_url();?>js/jquery-1.4.2.min.js"></script>
-                        <script type="text/javascript" src="<?php echo base_url();?>js/jquery-ui-1.8.2.min.js"></script> -->
                         <script type="text/javascript" src="<?php echo base_url();?>js/jquery-templ.js"></script>
                         <script type="text/javascript" src="<?php echo base_url();?>js/jquery.validate.min.js"></script>
                         <script type="text/javascript" src="<?php echo base_url();?>js/jquery.dataTables.min.js"></script>
@@ -217,7 +213,7 @@
                                 <td class="column_long_description_wc">${long_description_wc}</td>
                                 <td class="column_long_seo_phrases_long">${seo_l}</td>
                                 <td class="column_duplicate_content">?</td>
-                                <td class="column_misspelling">?</td>
+                                <td class="column_price_diff">${price_diff}</td>
                             </tr>
                         </script>
 

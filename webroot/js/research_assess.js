@@ -33,7 +33,7 @@ $(function () {
         }
     });
 
-    $('#assess_filter_claear_dates').live('click', function() {
+    $('#assess_filter_clear_dates').live('click', function() {
         $('#assess_filter_datefrom').val('');
         $('#assess_filter_dateto').val('');
     });
@@ -65,7 +65,7 @@ $(function () {
                     long_description_wc : $("#column_long_description_wc").attr('checked') == 'checked',
                     long_seo_phrases : $("#column_long_seo_phrases").attr('checked') == 'checked',
                     duplicate_content : $("#column_duplicate_content").attr('checked') == 'checked',
-                    misspelling : $("#column_misspelling").attr('checked') == 'checked'
+                    price_diff : $("#column_price_diff").attr('checked') == 'checked'
                 };
 
                 // save params to DB
@@ -107,7 +107,7 @@ function readAssessData() {
     var data = {};
 
     data.search_text =  $('#assess_filter_text').val();
-    data.batch_name = $('select[name="research_batches_assess"]').find('option:selected').text();
+    data.batch_name = $('select[name="research_batches"]').find('option:selected').text();
 
 //    if (!data.batch_name)
 //        return;
@@ -117,6 +117,10 @@ function readAssessData() {
     if (assess_filter_datefrom && assess_filter_dateto) {
         data.date_from = assess_filter_datefrom,
         data.date_to = assess_filter_dateto
+    }
+
+    if ($('#research_assess_price_diff').is(':checked')) {
+        data.price_diff = true;
     }
 
     if ($('#research_assess_short_check').is(':checked')) {
@@ -133,9 +137,6 @@ function readAssessData() {
         if ($('#research_assess_short_duplicate_content').is(':checked')) {
             data.short_duplicate_content = true;
         }
-        if ($('#research_assess_short_misspelling').is(':checked')) {
-            data.short_misspelling = true;
-        }
     }
 
     if ($('#research_assess_long_check').is(':checked')) {
@@ -151,9 +152,6 @@ function readAssessData() {
         }
         if ($('#research_assess_long_duplicate_content').is(':checked')) {
             data.long_duplicate_content = true;
-        }
-        if ($('#research_assess_long_misspelling').is(':checked')) {
-            data.long_misspelling = true;
         }
     }
 

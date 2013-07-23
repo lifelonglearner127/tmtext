@@ -222,7 +222,7 @@ class Research extends MY_Controller {
                 'long_description_wc'           => 'true',
                 'long_seo_phrases'              => 'true',
                 'duplicate_context'             => 'true',
-                'misspelling'                   => 'true',
+                'price_diff'                    => 'true',
             );
         }
         $this->data['columns'] = $columns;
@@ -252,16 +252,30 @@ class Research extends MY_Controller {
 
         $date_from = $this->input->get('date_from') == false ? '' : $this->input->get('date_from');
         $date_to = $this->input->get('date_to') == false ? '' : $this->input->get('date_to');
+        $price_diff = $this->input->get('price_diff');
         $short_less = $this->input->get('short_less') == false ? -1 : $this->input->get('short_less');
         $short_more = $this->input->get('short_more') == false ? -1 : $this->input->get('short_more');
         $short_seo_phrases = $this->input->get('short_seo_phrases');
         $short_duplicate_context = $this->input->get('short_duplicate_context');
-        $short_misspelling = $this->input->get('short_misspelling');
         $long_less = $this->input->get('long_less') == false ? -1 : $this->input->get('long_less');
         $long_more = $this->input->get('long_more') == false ? -1 : $this->input->get('long_more');
         $long_seo_phrases = $this->input->get('long_seo_phrases');
         $long_duplicate_context = $this->input->get('long_duplicate_context');
-        $long_misspelling = $this->input->get('long_misspelling');
+
+
+//        if(!empty($price_list['result'])) {
+//            foreach($price_list['result'] as $price) {
+//                $parsed_attributes = unserialize($price->parsed_attributes);
+//                $model = (!empty($parsed_attributes['model'])?$parsed_attributes['model']: $parsed_attributes['UPC/EAN/ISBN']);
+//                $output['aaData'][] = array(
+//                    $price->created,
+//                    '<a href ="'.$price->url.'">'.substr($price->url,0, 60).'</a>',
+//                    $model,
+//                    $price->product_name,
+//                    sprintf("%01.2f", $price->price),
+//                );
+//            }
+//        }
 
         $params = new stdClass();
         $params->batch_name = $batch_name;
@@ -274,6 +288,10 @@ class Research extends MY_Controller {
 //        $params->long_misspelling = $long_misspelling;
 
         $results = $this->research_data_model->getInfoForAssess($params);
+
+        if ($price_diff) {
+            $prices = $this->research_data_model->getPricesForBatch($batch_name);
+        }
 
         $enable_exec = true;
         $result_table = array();
@@ -303,6 +321,7 @@ class Research extends MY_Controller {
             $result_row->long_description_wc = $long_description_wc;
             $result_row->seo_s = "";
             $result_row->seo_l = "";
+            $result_row->price_diff = "";
 
             if ($enable_exec) {
                 if ($short_seo_phrases) {
@@ -334,6 +353,10 @@ class Research extends MY_Controller {
                     }
                     $result_row->seo_l = implode("</br>", $seo_lines);
                 }
+            }
+
+            if ($price_diff) {
+                $result_row->price_diff = "a";
             }
 
             $result_table[] = $result_row;
