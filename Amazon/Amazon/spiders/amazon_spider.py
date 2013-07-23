@@ -3,6 +3,8 @@ from scrapy.selector import HtmlXPathSelector
 from Amazon.items import AmazonItem
 from Amazon.items import ProductItem
 from scrapy.http import Request
+from scrapy.http import Response
+import re
 import sys
 
 ################################
@@ -12,7 +14,7 @@ import sys
 #
 ################################
 
-
+# crawls sitemap and extracts department and categories names and urls (as well as other info)
 class AmazonSpider(BaseSpider):
     name = "amazon"
     allowed_domains = ["amazon.com"]
@@ -64,7 +66,7 @@ class AmazonSpider(BaseSpider):
 
         return items
 
-
+# crawl bestsellers lists and extract product name, price, department etc
 class BestsellerSpider(BaseSpider):
     name = "bestseller"
     allowed_domains = ["amazon.com"]
@@ -80,13 +82,17 @@ class BestsellerSpider(BaseSpider):
         departments = []
 
         # extract department name and url for each department in menu
+        #TODO: manage exceptions: MP3
+        #                         lawn and garden is missing page 3
         for department_link in department_links:
             department = {"url" : department_link.select("@href").extract()[0], "text" : department_link.select("text()").extract()[0]}
             departments.append(department)
         
         # pass department urls to parsePage
         for department in departments:
-            yield Request(department['url'], callback = self.parsePage)
+            request = Request(department['url'], callback = self.parsePage)
+            request.meta['dept_name'] = department['text']
+            yield request
 
     # extract each page url for a department's bestseller list and pass it to parseDepartment
     def parsePage(self, response):
@@ -94,7 +100,9 @@ class BestsellerSpider(BaseSpider):
         page_urls = hxs.select("//div[@id='zg_paginationWrapper']//a/@href").extract()
 
         for page_url in page_urls:
-            yield Request(page_url, callback = self.parseDepartment)
+            request = Request(page_url, callback = self.parseDepartment)
+            request.meta['dept_name'] = response.meta['dept_name']
+            yield request
 
     # take a page of a department's bestsellers list and extract products
     def parseDepartment(self, response):
@@ -106,9 +114,8 @@ class BestsellerSpider(BaseSpider):
         for product in products:
             item = ProductItem()
 
-            #TODO: this name will always be incomplete (ends in "..."), add name on product page
             #TODO: the index for the title is sometimes out of range - sometimes it can't find that tag (remove the [0] to debug)
-            item['name'] = product.select("div[@class='zg_itemWrapper']//div[@class='zg_title']/a/text()").extract()
+            item['name'] = product.select("div[@class='zg_itemWrapper']//div[@class='zg_title']/a/text()").extract()[0]
             item['url'] = product.select("div[@class='zg_itemWrapper']//div[@class='zg_title']/a/@href").extract()[0].strip()
 
             #TODO: this needs to be refined, many prices etc
@@ -118,9 +125,33 @@ class BestsellerSpider(BaseSpider):
             # extract rank and ignore last character of te string (it's .)
             item['rank'] = product.select(".//span[@class='zg_rankNumber']/text()").extract()[0][:-1]
 
-            dept_name = hxs.select("//ul[@id='zg_browseRoot']//span[@class='zg_selected']/text()").extract()[0].strip()
-            item['department'] = dept_name
+            #dept_name = hxs.select("//ul[@id='zg_browseRoot']//span[@class='zg_selected']/text()").extract()[0].strip()
+            item['department'] = response.meta['dept_name']#dept_name
 
-            items.append(item)
+            # pass the item to the parseProduct function to extract info from product page
+            request = Request(item['url'], callback = self.parseProduct)
+            request.meta['item'] = item
 
-        return items
+            yield request
+
+
+            #items.append(item)
+
+        #return items
+
+
+    # extract info from product page
+    def parseProduct(self, response):
+        hxs = HtmlXPathSelector(response)
+
+        item = response.meta['item']
+        page_title = hxs.select("//title/text()").extract()[0]
+
+        # remove "Amazon.com" from title, to leave only the prouct's name
+        #TODO: handle exceptions: Amazon - Electronics...
+        m = re.match("(.*) - Amazon\.com", page_title)
+        if m:
+            page_title = m.group(1)
+        item['page_title'] = page_title
+
+        return item
