@@ -79,7 +79,7 @@ $(function() {
             batch_id: row.attr('batch_id'),
             url: row.attr('url')
         };
-        $.get(base_url + 'index.php/research/getResearchDataWithPaging', request, function(response) {
+        $.get(base_url + 'index.php/research/getResearchDataByURLandBatchId', request, function(response) {
             $('ul#product_descriptions').empty();
             $('ul#research_products').empty();
             $('ul#rel_keywords').empty();
@@ -88,7 +88,7 @@ $(function() {
 
 
             $('input[name="product_name"]').val(response.product_name);
-            $('input[name="url"]').val(response.url);
+            $('input[name="url"]').val(row.attr('url'));
             $('input[name="meta_title"]').val(response.meta_name);
             $('textarea[name="meta_description"]').val(response.meta_description);
             $('input[name="meta_keywords"]').val(response.meta_keywords);

@@ -131,7 +131,7 @@ class Research extends MY_Controller {
             ->set_output(json_encode($output));
     }
 
-    public function getResearchDataWithPaging() {
+    public function getResearchDataByURLandBatchId() {
         $params = new stdClass();
         $params->batch_id = intval($this->input->get('batch_id'));
         $params->url = $this->input->get('url');
@@ -495,7 +495,8 @@ class Research extends MY_Controller {
             } else {
                 $revision = $this->input->post('revision');
             }
-            $results = $this->research_data_model->getAllByProductName($product_name, $batch_id);
+            //$results = $this->research_data_model->getAllByProductName($product_name, $batch_id);
+            $results = $this->research_data_model->getProductByURL($url, $batch_id);
 
             if(empty($results)){
                 $data['research_data_id'] = $this->research_data_model->insert($batch_id, $url, $product_name, $keyword1, $keyword2,

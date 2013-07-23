@@ -1144,35 +1144,50 @@ class Imported_data_parsed_model extends CI_Model {
         $url = $this->db->escape($params->url);
         $sql_cmd = "
             SELECT
-                r.imported_data_id AS id,
-                r.created AS created,
-                group_concat(r.product_name, '') AS product_name,
-                group_concat(r.long_description, '') AS long_description,
-                group_concat(r.short_description, '') AS short_description,
-                group_concat(r.URL, '') AS URL
+                result.imported_data_id AS imported_data_id,
+                result.research_data_id AS research_data_id,
+                result.created AS created,
+                CASE WHEN result.product_name IS NULL OR TRIM(result.product_name) = '' THEN rd.product_name ELSE result.product_name END AS product_name,
+                CASE WHEN result.long_description IS NULL OR TRIM(result.long_description) = '' THEN rd.long_description ELSE result.long_description END AS long_description,
+                CASE WHEN result.short_description IS NULL OR TRIM(result.short_description) = '' THEN rd.short_description ELSE result.short_description END AS short_description,
+                CASE WHEN result.url IS NULL OR TRIM(result.url) = '' THEN rd.url ELSE result.url END AS url
             FROM (
                 SELECT
-                    kv.imported_data_id,
-                    rd.created as created,
-                    rd.product_name as pn,
-                    case when kv.`key` = 'Product Name' then kv.`value` end as product_name,
-                    case when kv.`key` = 'Long_Description' then kv.`value` end as long_description,
-                    case when kv.`key` = 'Description' then kv.`value` end as short_description,
-                    case when kv.`key` = 'URL' then kv.`value` end as URL
-                FROM
-                    research_data AS rd
-                INNER JOIN batches AS b ON
-                    b.id = rd.batch_Id
-                    AND b.id = $batch_id
-                INNER JOIN imported_data_parsed AS idp ON
-                    idp.value = rd.url
-                    AND `key` = 'URL'
-                INNER JOIN imported_data_parsed AS kv ON
-                    kv.imported_data_id = idp.imported_data_id
-                WHERE
-                    rd.url = $url
-            ) AS r
-            limit 0,1
+                    r.imported_data_id AS imported_data_id,
+                    r.research_data_id AS research_data_id,
+                    r.created AS created,
+                    group_concat(r.product_name, '') AS product_name,
+                    group_concat(r.long_description, '') AS long_description,
+                    group_concat(r.short_description, '') AS short_description,
+                    group_concat(r.URL, '') AS URL,
+                    group_concat(r.description1, '') AS description1
+                FROM (
+                    SELECT
+                        rd.id as research_data_id,
+                        kv.imported_data_id,
+                        rd.created as created,
+                        rd.product_name as pn,
+                        case when kv.`key` = 'Product Name' then kv.`value` end as product_name,
+                        case when kv.`key` = 'Long_Description' then kv.`value` end as long_description,
+                        case when kv.`key` = 'Description' then kv.`value` end as short_description,
+                        case when kv.`key` = 'URL' then kv.`value` end as URL,
+                        case when kv.`key` = 'Description 1' then kv.`value` end as description1
+                    FROM
+                        research_data AS rd
+                    INNER JOIN batches AS b ON
+                        b.id = rd.batch_Id
+                        AND b.id = $batch_id
+                    INNER JOIN imported_data_parsed AS idp ON
+                        idp.value = rd.url
+                        AND `key` = 'URL'
+                    INNER JOIN imported_data_parsed AS kv ON
+                        kv.imported_data_id = idp.imported_data_id
+                    WHERE
+                        rd.url = $url
+                ) AS r
+                limit 1
+            ) AS result
+            INNER JOIN research_data AS rd ON rd.id = result.research_data_id
         ";
 
         $query = $this->db->query($sql_cmd);

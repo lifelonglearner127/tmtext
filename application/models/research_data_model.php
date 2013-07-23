@@ -168,6 +168,15 @@ class Research_data_model extends CI_Model {
         return $query->result();
     }
 
+    function getProductByURL($url, $batch_id) {
+        $url = $url;
+        $batch_id = intval($batch_id);
+        $query = $this->db->where('url', $url)->where('batch_id', $batch_id)
+            ->limit(1)
+            ->get($this->tables['research_data']);
+        return $query->result();
+    }
+
    function getInfoFromResearchData($text, $batch_id)
    {
         $batch_first_str = "";
