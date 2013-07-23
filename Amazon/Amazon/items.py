@@ -11,7 +11,8 @@ class AmazonItem(Item):
 
 class ProductItem(Item):
 	url = Field() # url of product page
-	name = Field() # name of product - from bestsellers list and from product's page
+	list_name = Field() # name of product - from bestsellers list
+	product_name = Field() # name of product - from product page
 	page_title = Field() # title (title tag text) of product page
 	department = Field() # department of product - its name
 	price = Field() # price of product - a string like "29.5$"
