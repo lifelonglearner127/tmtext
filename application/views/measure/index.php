@@ -228,6 +228,7 @@
 		</div>
 	</div>
 	<div class="modal-footer">
+		<a href="javascript:void(0)" id="crawl_modal_sbm_btn" class="btn btn-success" onclick="startAllCrawl()">Crawl (refresh) all sites</a>
 		<a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
 	</div>
 </div>

@@ -60,9 +60,68 @@ class Measure extends MY_Controller {
         return $res;
     }
 
+    private function urlExists($url) {
+        if($url == NULL) return false;  
+        $ch = curl_init($url);  
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);  
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);  
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);  
+        $data = curl_exec($ch);  
+        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);  
+        curl_close($ch);  
+        if($httpcode>=200 && $httpcode<=302){  
+            return true;  
+        } else {  
+            return false;  
+        }  
+    }
+
     private function check_screen_crawl_status($url) {
         $this->load->model('webshoots_model');
         return $this->webshoots_model->checkScreenCrawlStatus($url);
+    }
+
+    public function webshootcrawlall() {
+        $customers = $this->customers_list_new();
+        $this->load->model('webshoots_model');
+        $uid = $this->ion_auth->get_user_id();
+        $week = date("W", time());
+        $year = date("Y", time());
+        $sites = array();
+        foreach ($customers as $k => $v) {
+            if($this->urlExists($v['name_val']))  $sites[] = $v['name_val'];
+        }
+        foreach ($sites as $url) {
+            $url = urlencode(trim($url));
+            // -- configs (start)
+            $api_key = "dc598f9ae119a97234ea";
+            $api_secret = "47c7248bc03fbd368362";
+            $token = md5("$api_secret+$url");
+            $size_s = "w600";
+            $size_l = "w1260";
+            $format = "png";
+            // -- configs (end)
+            $res = array(
+                "s" => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_s&format=$format",
+                'l' => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_l&format=$format"
+            );
+            $crawl_s = $this->upload_record_webshoot($res['s'], $url."_small");
+            $crawl_l = $this->upload_record_webshoot($res['l'], $url."_big");
+            $result = array(
+                'state' => false,
+                'url' => $url,
+                'small_crawl' => $crawl_s['path'],
+                'big_crawl' => $crawl_l['path'],
+                'dir_thumb' => $crawl_s['dir'],
+                'dir_img' => $crawl_l['dir'],
+                'uid' => $uid,
+                'year' => $year,
+                'week' => $week,
+                'pos' => 0
+            );
+            $insert_id = $this->webshoots_model->recordUpdateWebshoot($result);
+        }
+        $this->output->set_content_type('application/json')->set_output(true);
     }
 
     public function dropselectionscan() {
@@ -157,8 +216,10 @@ class Measure extends MY_Controller {
 
     public function webshootcrawl() {
         ini_set("max_execution_time", 0);
-        $year = $this->input->post('year');
-        $week = $this->input->post('week');
+        // $year = $this->input->post('year');
+        // $week = $this->input->post('week');
+        $week = date("W", time());
+        $year = date("Y", time());
         $url = $this->input->post('url');
         $url = urlencode(trim($url));
         $uid = $this->ion_auth->get_user_id();
