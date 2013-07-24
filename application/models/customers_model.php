@@ -51,4 +51,13 @@ class Customers_model extends CI_Model {
         return '';
     }
 
+    function  insert($customer_name, $customer_url, $logo)
+    {
+        $this->name = $customer_name;
+        $this->url = $customer_url;
+        $this->image_url = $logo;
+
+        $this->db->insert($this->tables['customers'], $this);
+        return $this->db->insert_id();
+    }
 }

@@ -310,7 +310,7 @@ $(document).ready(function () {
     });
 
 
-    $(document).on("click", "#validate", function(){
+    $(document).on("click", "#validate_item", function(){
         var vbutton = $(this);
         var description = $('#long_description').html();
         $('#long_description').trigger('change');
@@ -332,7 +332,7 @@ $(document).ready(function () {
 
     $(document).on("click", "button#save_in_batch", function(){
         $.post(base_url + 'index.php/research/save_in_batch', {
-            'batch': $('select[name="batches"]').find('option:selected').text(),
+            'batch': $('select[name="research_batches"]').find('option:selected').text(),
             'url': $('input[name="url"]').val(),
             'product_name': $('input[name="product_name"]').val(),
             'keyword1': $('input[name="primary"]').val(),

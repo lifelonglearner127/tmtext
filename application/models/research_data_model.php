@@ -24,7 +24,10 @@ class Research_data_model extends CI_Model {
         'research_data' => 'research_data',
         'batches' => 'batches',
         'users' => 'users',
-        'items' => 'items'
+        'items' => 'items',
+        'imported_data_parsed'=>'imported_data_parsed',
+        'imported_data'=>'imported_data'
+        
     );
 
     function __construct()
@@ -48,12 +51,51 @@ class Research_data_model extends CI_Model {
         return $query->row_array();
     }
     function get_by_batch_id($batch_id){
-        $query = $this->db->where('batch_id', $batch_id)
+        $query1 = $this->db->where('batch_id', $batch_id)
               ->get($this->tables['research_data']);
         
-        return $query->result_array();
+        $res= $query1->result_array();
+        $urls=array();
+        foreach($res as $val){
+            $urls[]=$val['url'];
+        }
+        if(count($urls)>0){
+        $this->db->select('p.imported_data_id, p.key, p.value')
+            ->from($this->tables['imported_data_parsed'].' as p')
+            ->join($this->tables['imported_data'].' as i', 'i.id = p.imported_data_id', 'left')
+            ->where('p.key', 'URL')
+           ->where_in('p.value', $urls);
+        $query = $this->db->get();
+        $results = $query->result();
+        
+        $data = array();
+        foreach($results as $result){
+            $query = $this->db->where('imported_data_id', $result->imported_data_id)->get($this->tables['imported_data_parsed']);
+            $res = $query->result_array();
+            $description = '';
+            $long_description = '';
+            $url = '';
+            foreach($res as $val){
+                if($val['key'] == 'URL'){ $url = $val['value']; }
+                if($val['key'] == 'Description'){ $description = $val['value']; }
+                if($val['key'] == 'Long_Description'){ $long_description = $val['value']; }
+
+	            if($val['key'] == 'Product Name') { $product_name = $val['value']; }
+            	if($val['key'] == 'Features') { $features = $val['value']; }
+
+            }
+            array_push($data, array('imported_data_id'=>$result->imported_data_id, 'product_name'=>$result->value,
+               'description'=>$description, 'long_description'=>$long_description, 'url'=>$url, 'product_name' =>$product_name, 'features' => $features ));
+        }
+        return $data;
+        }else{
+            return NULL;
+        }
+        
+        
+        
    }
-  //max
+  //Max
     function insert($batch_id, $url, $product_name, $keyword1, $keyword2, $keyword3, $meta_name,
                     $meta_description, $meta_keywords, $short_description, $short_description_wc, $long_description, $long_description_wc, $revision = 1)
     {
@@ -104,9 +146,13 @@ class Research_data_model extends CI_Model {
         $this->revision = $revision;
         $this->modified = date('Y-m-d h:i:s');
 
-        return $this->db->update($this->tables['research_data'],
+        unset($this->created);
+
+        $result = $this->db->update($this->tables['research_data'],
             $this,
             array('id' => $id));
+
+        return $result;
     }
 
     function getAllByProductName( $product_name, $batch_id='')
@@ -119,6 +165,15 @@ class Research_data_model extends CI_Model {
                 ->get($this->tables['research_data']);
         }
 
+        return $query->result();
+    }
+
+    function getProductByURL($url, $batch_id) {
+        $url = $url;
+        $batch_id = intval($batch_id);
+        $query = $this->db->where('url', $url)->where('batch_id', $batch_id)
+            ->limit(1)
+            ->get($this->tables['research_data']);
         return $query->result();
     }
 
@@ -158,130 +213,63 @@ union all
 
     function getInfoForAssess($params)
     {
-
-        $date_from = $params->date_from == '' ? '' : $this->db->escape($params->date_from);
-        $date_to = $params->date_to == '' ? '' : $this->db->escape($params->date_to);
-        $short_less = intval($params->short_less);
-        $short_more = intval($params->short_more);
-        //$params->short_duplicate_context
-        //$params->short_misspelling
-        $long_less = intval($params->long_less);
-        $long_more = intval($params->long_more);
-        //$params->long_duplicate_context
-        //$params->long_misspelling
-
-
-        if($params->batch_id != '') {
-            $batch_id_filter = " and batch_id = $params->batch_id";
-        }
-        $txt_filter = $this->db->escape('%'.$params->txt_filter.'%');
-
-        $date_from = date_parse($date_from);
-        $date_to = date_parse($date_to);
-        if ($date_from['year'] > 0 & $date_from['month'] > 0 & $date_from['day'] > 0 & $date_to['year'] > 0 & $date_to['month'] > 0 & $date_to['day'] > 0) {
-            $d_from = $this->db->escape($date_from['year'].'-'.$date_from['month'].'-'.$date_from['day']);
-            $d_to = $this->db->escape($date_to['year'].'-'.$date_to['month'].'-'.$date_to['day']);
-            $date_filter = ' and i.created>='.$d_from.' and i.created<='.$d_to;
-        }
-        if ($short_less > -1)
-            $short_less_filter = 'and i.short_description_wc<'.$short_less;
-        if ($short_more > -1)
-            $short_more_filter = 'and i.short_description_wc>'.$short_more;
-        if ($long_less > -1)
-            $long_less_filter = 'and i.long_description_wc<'.$long_less;
-        if ($long_more > -1)
-            $long_more_filter = 'and i.long_description_wc>'.$long_more;
-
+        $batch_name = $this->db->escape($params->batch_name);
+//        $date_from = $params->date_from == '' ? '' : $this->db->escape($params->date_from);
+//        $date_to = $params->date_to == '' ? '' : $this->db->escape($params->date_to);
+//        $txt_filter = $this->db->escape('%'.$params->txt_filter.'%');
+//
+//        $date_from = date_parse($date_from);
+//        $date_to = date_parse($date_to);
+//        if ($date_from['year'] > 0 & $date_from['month'] > 0 & $date_from['day'] > 0 & $date_to['year'] > 0 & $date_to['month'] > 0 & $date_to['day'] > 0) {
+//            $d_from = $this->db->escape($date_from['year'].'-'.$date_from['month'].'-'.$date_from['day']);
+//            $d_to = $this->db->escape($date_to['year'].'-'.$date_to['month'].'-'.$date_to['day']);
+//            $date_filter = ' and rd.created>='.$d_from.' and rd.created<='.$d_to;
+//        }
+//        if ($short_less > -1)
+//            $short_less_filter = 'and rd.short_description_wc<'.$short_less;
+//        if ($short_more > -1)
+//            $short_more_filter = 'and rd.short_description_wc>'.$short_more;
+//        if ($long_less > -1)
+//            $long_less_filter = 'and rd.long_description_wc<'.$long_less;
+//        if ($long_more > -1)
+//            $long_more_filter = 'and rd.long_description_wc>'.$long_more;
 
         $sql_cmd = "
-            select
-                i.id,
-                i.created,
-                i.product_name,
-                i.url,
-                i.short_description_wc,
-                i.long_description_wc
-            from (
+            SELECT
+                r.imported_data_id AS id,
+                r.created AS created,
+                group_concat(r.product_name, '') AS product_name,
+                group_concat(r.url, '') AS url,
+                group_concat(r.short_description, '') AS short_description,
+                group_concat(r.long_description, '') AS long_description
+            FROM (
                 SELECT
-                    rd.id,
-                    rd.batch_id,
-                    rd.url,
-                    rd.product_name,
-                    rd.keyword1,
-                    rd.keyword2,
-                    rd.keyword3,
-                    rd.meta_name,
-                    rd.meta_description,
-                    rd.meta_keywords,
-                    rd.short_description,
-                    rd.short_description_wc,
-                    rd.long_description,
-                    rd.long_description_wc,
-                    rd.created
-            #		u.email as user_id,
-            #		b.title as batch_name
+                    kv.imported_data_id,
+                    rd.created as created,
+                    case when kv.`key` = 'Product Name' then kv.`value` end as product_name,
+                    case when kv.`key` = 'URL' then kv.`value` end as url,
+                    case when kv.`key` = 'Description' then kv.`value` end as short_description,
+                    case when kv.`key` = 'Long_Description' then kv.`value` end as long_description
                 FROM
-                    research_data as rd
-            #	left join batches as b on rd.batch_id = b.id
-            #	left join users as u on rd.user_id = u.id
-            union all
-                SELECT
-                    i.id,
-                    i.batch_id,
-                    i.url,
-                    i.product_name,
-                    i.keyword1,
-                    i.keyword2,
-                    i.keyword3,
-                    i.meta_name,
-                    i.meta_description,
-                    i.meta_keywords,
-                    i.short_description,
-                    i.short_description_wc,
-                    i.long_description,
-                    i.long_description_wc,
-                    i.created
-            #		u.email as user_id,
-            #		b.title as batch_name
-                FROM
-                    items as i
-            #left join batches as b on i.batch_id = b.id
-            #left join users as u on i.user_id = u.id
-            ) as i
-            where
-                concat(
-                    i.url,
-                    i.product_name,
-                    i.keyword1,
-                    i.keyword2,
-                    i.keyword3,
-                    i.meta_name,
-                    i.meta_description,
-                    i.meta_keywords,
-                    i.short_description,
-                    i.short_description_wc,
-                    i.long_description,
-                    i.long_description_wc
-                ) like $txt_filter
-                $batch_id_filter
-                $date_filter
-                and (
-                    i.short_description_wc > -1
-                    $short_less_filter
-                    $short_more_filter
-                )
-            #	and sort description duplicate content
-            #	and sort description mis-spelling
-                and (
-                    i.long_description_wc > -1
-                    $long_less_filter
-                    $long_more_filter
-                )
-            #	and sort description duplicate content
-            #	and sort description mis-spelling
+                    research_data AS rd
+                INNER JOIN batches AS b ON
+                    b.id = rd.batch_Id
+                    AND b.title = $batch_name
+                INNER JOIN imported_data_parsed AS idp ON
+                    idp.value = rd.url
+                    AND `key` = 'URL'
+                INNER JOIN imported_data_parsed AS kv ON
+                    kv.imported_data_id = idp.imported_data_id
+            ) AS r
+            GROUP BY
+                r.imported_data_id
         ";
         $query = $this->db->query($sql_cmd);
         return $query->result();
+    }
+
+    function getPricesForBatch($batch_name) {
+
     }
 
     function getLastRevision(){

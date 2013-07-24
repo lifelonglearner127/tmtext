@@ -201,14 +201,8 @@ jQuery(document).ready(function($) {
 
                                     <div id="tabs" class="mt_10">
                                         <div id="read">
-                                            <table id="records">
-                                                <thead>
-                                                <tr>
-                                                    <th><div class="draggable">#</div></th>
-                                                    <th><div class="draggable">Product Name</div></th>
-                                                    <th><div class="draggable">URL</div></th>
-                                                </tr>
-                                                </thead>
+                                            <table id="records" style="width: 100%;">
+                                                <thead></thead>
                                                 <tbody></tbody>
                                             </table>
                                         </div>
@@ -227,13 +221,7 @@ jQuery(document).ready(function($) {
                                     <script type="text/javascript" src="<?php echo base_url();?>js/jquery.dataTables.min.js"></script>
                                     <script type="text/javascript" src="<?php echo base_url();?>js/jquery.json-2.4.min.js"></script>
 
-                                    <script type="text/template" id="readTemplate">
-                                        <tr>
-                                            <td class="column_count"></td>
-                                            <td class="column_product_name"></td>
-                                            <td class="column_url"></td>
-                                        </tr>
-                                    </script>
+
 
                                     <script type="text/javascript" src="<?php echo base_url();?>js/research_edit.js"></script>
                                 </div>
@@ -380,7 +368,7 @@ jQuery(document).ready(function($) {
                                         <p>Total words: <span id="research_total">0</span> words</p>
                                     </div>
                                     <div class="row-fluid mb_20">
-                                        <button id="validate" type="button" class="btn ml_10">Validate</button>
+                                        <button id="validate_item" type="button" class="btn ml_10">Validate</button>
                                         <button id="save_in_batch" type="button" class="btn ml_10 btn-success">Save</button>
                                         <button id="save_next" type="button" class="btn ml_10 btn-success">Save & Next</button>
                                     </div>

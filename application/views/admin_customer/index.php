@@ -37,10 +37,26 @@
 				});
 			}
 		});
-	});
+
+        $('button#save_customer').click(function(){
+            $.post(base_url + 'index.php/admin_customer/add_customer', {
+                'customer_name': $('input#customer_name').val(),
+                'customer_url': $('input[name="customer_url"]').val(),
+                'logo': $('input[name="customerlogo_file"]').val()
+            }, function(data){
+                $(".info-message").append(data.message);
+                $(".info-message").fadeOut(7000);
+                $('input#customer_name').val(''),
+                $('input[name="customer_url"]').val('')
+                $('img#customer_logo').attr({'src': base_url+'img/no-logo.jpg' });
+            });
+            return false;
+        });
+    });
 	</script>
 
 					<div id="info"><?php echo $message;?></div>
+                    <div class="info-message text-success"></div>
 					<div class="row-fluid">
 						<div class="span9">
 						    <?php echo form_open("admin_customer/save", array("class"=>"form-horizontal", "id"=>"customer_settings_save")); ?>
@@ -57,29 +73,29 @@
                                     </div>
                                 </div>
                                 <div class="row-fluid">
-                                    <div class="span6 admin_system_content">
+                                    <div class="span10 admin_system_content ">
                                         <div class="controls">
-                                    <span class="btn btn-success fileinput-button">
-                                        Add Logo
-                                        <i class="icon-plus icon-white"></i>
-                                        <input id="fileupload" type="file" name="files[]" multiple>
-                                    </span>
+                                            <img id="customer_logo" class="mt_10" src="../../img/no-logo.jpg" />
+                                            <div class="clear-fix"></div><br />
+                                            <span class="btn btn-success fileinput-button pull-left mr_10">
+                                                Add Logo
+                                                <i class="icon-plus icon-white"></i>
+                                                <input id="fileupload" type="file" name="files[]" multiple>
+                                            </span>
                                             <div id="progress" class="progress progress-success progress-striped">
                                                 <div class="bar"></div>
                                             </div>
                                             <div id="files"></div>
+                                            <input type="hidden" name="customerlogo_file" />
                                             <script>
                                                 $(function () {
-                                                    var url = '<?php echo site_url('admin_customer/upload_csv');?>';
+                                                    var url = '<?php echo site_url('admin_customer/upload_img');?>';
                                                     $('#fileupload').fileupload({
                                                         url: url,
                                                         dataType: 'json',
                                                         done: function (e, data) {
-                                                            $.each(data.result.files, function (index, file) {
-                                                                if (file.error == undefined) {
-                                                                    $('<p/>').text(file.name).appendTo('#files');
-                                                                }
-                                                            });
+                                                            $('input[name="customerlogo_file"]').val(data.result.files[0].name);
+                                                            $('img#customer_logo').attr({'src': base_url+'img/'+data.result.files[0].name });
                                                         },
                                                         progressall: function (e, data) {
                                                             var progress = parseInt(data.loaded / data.total * 100, 10);
@@ -88,7 +104,6 @@
                                                                 progress + '%'
                                                             );
                                                             if (progress == 100) {
-                                                                $('#upload_logo').trigger('click');
                                                             }
                                                         }
                                                     });
@@ -100,7 +115,7 @@
                                 <div class="row-fluid">
                                     <div class="control-group">
                                         <div class="controls">
-                                            <button id="upload_logo" class="btn btn-success"><i class="icon-white icon-ok"></i>&nbsp;Upload</button>
+                                            <button id="save_customer" class="btn btn-success"><i class="icon-white icon-ok"></i>&nbsp;Save</button>
                                         </div>
                                     </div>
                                 </div>

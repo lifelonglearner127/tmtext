@@ -20,6 +20,20 @@ class Measure extends MY_Controller {
     public function index() {
         $this->data['customers_list'] = $this->customers_list_new();
         $this->data['user_id'] = $this->ion_auth->get_user_id();
+        $c_week = date("W", time());
+        $c_year = date("Y", time());
+        $this->data['ct_final'] = date("m.d.Y", time());
+        $this->data['c_week'] = $c_week;
+        $this->data['c_year'] = $c_year;
+        // --------- TMP TIMELINE DATE STATUS (START) (TODO: MAKE IT DYNAMIC)
+        // $week = 1;
+        // $year = '2013';
+        // $year_s = "01/01/2013";
+        // $i = ($week - 1)*7;
+        // $total = strtotime($year_s) + 60*60*24*$i;
+        // $ct_final = date('d.m.Y', $total);
+        // $this->data['ct_final'] = $ct_final;
+        // --------- TMP TIMELINE DATE STATUS (END) (TODO: MAKE IT DYNAMIC)
         $this->render();
     }
 
@@ -46,27 +60,45 @@ class Measure extends MY_Controller {
         return $res;
     }
 
+    private function urlExists($url) {
+        if($url == NULL) return false;  
+        $ch = curl_init($url);  
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);  
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);  
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);  
+        $data = curl_exec($ch);  
+        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);  
+        curl_close($ch);  
+        if($httpcode>=200 && $httpcode<=302){  
+            return true;  
+        } else {  
+            return false;  
+        }  
+    }
+
     private function check_screen_crawl_status($url) {
         $this->load->model('webshoots_model');
         return $this->webshoots_model->checkScreenCrawlStatus($url);
     }
 
-    public function getwebshootbyurl() {
-        $url = $this->input->post('url');
+    public function webshootcrawlall() {
+        $customers = $this->customers_list_new();
         $this->load->model('webshoots_model');
-        $res = $this->webshoots_model->getWebShootByUrl($url);
-        if($res !== false) {
-            $result = $res;
-        } else { // --- crawl it
+        $uid = $this->ion_auth->get_user_id();
+        $week = date("W", time());
+        $year = date("Y", time());
+        $sites = array();
+        foreach ($customers as $k => $v) {
+            if($this->urlExists($v['name_val']))  $sites[] = $v['name_val'];
+        }
+        foreach ($sites as $url) {
             $url = urlencode(trim($url));
             // -- configs (start)
             $api_key = "dc598f9ae119a97234ea";
             $api_secret = "47c7248bc03fbd368362";
             $token = md5("$api_secret+$url");
-            // $size_s = "200x150";
-            // $size_l = "600x450";
-            $size_s = "800x600";
-            $size_l = "1200x1000";
+            $size_s = "w600";
+            $size_l = "w1260";
             $format = "png";
             // -- configs (end)
             $res = array(
@@ -81,10 +113,82 @@ class Measure extends MY_Controller {
                 'small_crawl' => $crawl_s['path'],
                 'big_crawl' => $crawl_l['path'],
                 'dir_thumb' => $crawl_s['dir'],
-                'dir_img' => $crawl_l['dir']
+                'dir_img' => $crawl_l['dir'],
+                'uid' => $uid,
+                'year' => $year,
+                'week' => $week,
+                'pos' => 0
+            );
+            $insert_id = $this->webshoots_model->recordUpdateWebshoot($result);
+        }
+        $this->output->set_content_type('application/json')->set_output(true);
+    }
+
+    public function dropselectionscan() {
+        $year = $this->input->post('year');
+        $week = $this->input->post('week');
+        $uid = $this->ion_auth->get_user_id();
+        $this->load->model('webshoots_model');
+        $res = array();
+        for($i = 1; $i <= 6; $i++) {
+            $mid = array(
+                'pos' => $i,
+                'cell' => $this->webshoots_model->getScreenCellSelection($i, $uid, $year, $week)
+            );
+            $res[] = $mid;
+        }
+        $this->output->set_content_type('application/json')->set_output(json_encode($res));
+    }
+
+    public function getwebshootbyurl() {
+        ini_set("max_execution_time", 0);
+        $year = $this->input->post('year');
+        $week = $this->input->post('week');
+        $url = $this->input->post('url');
+        $pos = $this->input->post('pos');
+        $uid = $this->ion_auth->get_user_id();
+        $this->load->model('webshoots_model');
+        $res = $this->webshoots_model->getWebShootByUrl($url);
+        if($res !== false) {
+            $screen_id = $res->id;
+            $this->webshoots_model->recordWebShootSelectionAttempt($screen_id, $uid, $pos, $year, $week, $res->img, $res->thumb, $res->stamp, $res->url); // --- webshoot selection record attempt
+            $result = $res;
+        } else { // --- crawl brand new screenshot
+            $url = urlencode(trim($url));
+            // -- configs (start)
+            $api_key = "dc598f9ae119a97234ea";
+            $api_secret = "47c7248bc03fbd368362";
+            $token = md5("$api_secret+$url");
+            // $size_s = "200x150";
+            // $size_l = "600x450";
+            // $size_s = "800x600";
+            // $size_l = "1200x1000";
+            $size_s = "w600";
+            $size_l = "w1260";
+            $format = "png";
+            // -- configs (end)
+            // http://api.webyshots.com/v1/shot/dc598f9ae119a97234ea/04921f81ebf1786b24ff0823ba1488b2/?url=google.com&dimension=w1260&format=png
+            $res = array(
+                "s" => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_s&format=$format",
+                'l' => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_l&format=$format"
+            );
+            $crawl_s = $this->upload_record_webshoot($res['s'], $url."_small");
+            $crawl_l = $this->upload_record_webshoot($res['l'], $url."_big");
+            $result = array(
+                'state' => false,
+                'url' => $url,
+                'small_crawl' => $crawl_s['path'],
+                'big_crawl' => $crawl_l['path'],
+                'dir_thumb' => $crawl_s['dir'],
+                'dir_img' => $crawl_l['dir'],
+                'uid' => $uid,
+                'year' => $year,
+                'week' => $week,
+                'pos' => $pos
             );
             $insert_id = $this->webshoots_model->recordUpdateWebshoot($result);
             $result = $this->webshoots_model->getWebshootDataById($insert_id);
+            $this->webshoots_model->recordWebShootSelectionAttempt($insert_id, $uid, $pos, $year, $week, $result->img, $result->thumb, $result->stamp, $result->url); // --- webshoot selection record attempt
         }
         $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }
@@ -111,16 +215,24 @@ class Measure extends MY_Controller {
     }
 
     public function webshootcrawl() {
+        ini_set("max_execution_time", 0);
+        // $year = $this->input->post('year');
+        // $week = $this->input->post('week');
+        $week = date("W", time());
+        $year = date("Y", time());
         $url = $this->input->post('url');
         $url = urlencode(trim($url));
+        $uid = $this->ion_auth->get_user_id();
         // -- configs (start)
         $api_key = "dc598f9ae119a97234ea";
         $api_secret = "47c7248bc03fbd368362";
         $token = md5("$api_secret+$url");
         // $size_s = "200x150";
         // $size_l = "600x450";
-        $size_s = "800x600";
-        $size_l = "1200x1000";
+        // $size_s = "800x600";
+        // $size_l = "1200x1000";
+        $size_s = "w600";
+        $size_l = "w1260";
         $format = "png";
         // -- configs (end)
         $res = array(
@@ -135,7 +247,11 @@ class Measure extends MY_Controller {
             'small_crawl' => $crawl_s['path'],
             'big_crawl' => $crawl_l['path'],
             'dir_thumb' => $crawl_s['dir'],
-            'dir_img' => $crawl_l['dir']
+            'dir_img' => $crawl_l['dir'],
+            'uid' => $uid,
+            'year' => $year,
+            'week' => $week,
+            'pos' => 0
         );
         $this->load->model('webshoots_model');
         $r = $this->webshoots_model->recordUpdateWebshoot($result);
@@ -143,23 +259,61 @@ class Measure extends MY_Controller {
         $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }
 
+    public function timelineblock() {
+        $first_cwp = $this->input->post('first_cwp');
+        $last_cwp = $this->input->post('last_cwp');
+        $state = $this->input->post('state');
+        $data = array(
+            'first_cwp' => $first_cwp,
+            'last_cwp' => $last_cwp,
+            'state' => $state
+        );
+        $this->load->view('measure/timelineblock', $data);
+    }
+
     public function gethomepageyeardata() {
         $year = $this->input->post('year');
         $week = $this->input->post('week');
-        $data = array(
-            'year' => $year,
-            'week' => $week,
-            'customers_list' => $this->customers_list_new()
-        );
+        if($year == date('Y', time())) {
+            $c_week = date("W", time());
+            $c_year = date("Y", time());
+            $data = array(
+                'year' => $c_year,
+                'week' => $c_week,
+                'ct_final' => date("m.d.Y", time()),
+                'customers_list' => $this->customers_list_new(),
+                'status' => 'current'
+            );
+        } else {
+            $week = 1;
+            $year_s = "01/01/".$this->input->post('year');
+            $i = ($week - 1)*7;
+            $total = strtotime($year_s) + 60*60*24*$i;
+            $ct_final = date('m.d.Y', $total);
+            $data = array(
+                'year' => $year,
+                'week' => $week,
+                'ct_final' => $ct_final,
+                'customers_list' => $this->customers_list_new(),
+                'status' => 'selected'
+            );
+        }
         $this->load->view('measure/gethomepageyeardata', $data);
     }
 
     public function gethomepageweekdata() {
         $year = $this->input->post('year');
         $week = $this->input->post('week');
+        $year_s = "01/01/".$this->input->post('year');
+        // ---- figure out total date (start)
+        $i = ($week - 1)*7;
+        $total = strtotime($year_s) + 60*60*24*$i;
+        $ct_final = date('m.d.Y', $total);
+        // ---- figure out total date (end)
         $data = array(
             'year' => $year,
             'week' => $week,
+            'ct_final' => $ct_final,
             'customers_list' => $this->customers_list_new()
         );
         $this->load->view('measure/gethomepageweekdata', $data);
@@ -172,8 +326,9 @@ class Measure extends MY_Controller {
         $this->load->model('batches_model');
         $batches = $this->batches_model->getAll();
         $batches_list = array(0 => 'No Batch');
+        //Max
         foreach($batches as $batch){
-            array_push($batches_list, $batch->title);
+            $batches_list[$batch->id]=$batch->title;
         }
         $this->data['batches_list'] = $batches_list;
         $this->render();
@@ -294,11 +449,10 @@ class Measure extends MY_Controller {
         };
         $this->output->set_content_type('application/json')->set_output(json_encode($response));
     }
-
+//Max
     public function gridview() {
         $im_data_id = $this->input->post('im_data_id');
-        $research_data_id= $this->input->post('research_data_id');//max
-        if(!$research_data_id){//max
+                 
         $data = array(
             'im_data_id' => $im_data_id,
             's_product' => array(),
@@ -312,7 +466,7 @@ class Measure extends MY_Controller {
             // --- GET SELECTED RPODUCT DATA (START)
             $this->load->model('imported_data_parsed_model');
             $data_import = $this->imported_data_parsed_model->getByImId($im_data_id);
-
+            
             if($data_import['description'] !== null && trim($data_import['description']) !== "") {
                 $data_import['description'] = preg_replace('/\s+/', ' ', $data_import['description']);
                 // $data_import['description'] = preg_replace('/[^A-Za-z0-9\. -!]/', ' ', $data_import['description']);
@@ -401,37 +555,15 @@ class Measure extends MY_Controller {
             }
             // --- GET SELECTED RPODUCT SEO DATA (TMP) (END)
         }
-        }//max
-        else{
-            $data = array(
-            'im_data_id' =>  $research_data_id,
-            's_product' => array(),
-            's_product_short_desc_count' => 0,
-            's_product_long_desc_count' => 0,
-            'seo' => array('short' => array(), 'long' => array()),
-            'same_pr' => array()
-        );
-         $this->load->model('research_data_model');
-        
-         $this->load->model('batches_model');
-         
-         $data_import = $this->research_data_model->get_by_id($research_data_id); 
-         
-         $data_import['customer']=$this->batches_model->getCustomerByBatchId($data_import['batch_id']);
-         
-         if($data_import){
-         $data['same_pr'][]=$data_import;
-         }  
-        }
-
+              //Max
         // -------- COMPARING V1 (START)
         $s_term = $this->input->post('s_term');
 
         // -------- COMPARING V1 (END)
-
+        
         $this->load->view('measure/gridview', $data);
     }
-
+    
     public function getcustomerslist_new() {
         $this->load->model('customers_model');
         $this->load->model('users_to_customers_model');
@@ -529,7 +661,7 @@ class Measure extends MY_Controller {
         } else {
             $data_import = $this->imported_data_parsed_model->getData($s, $sl, $cat_id);
         }
-
+        
         if (empty($data_import)) {
             $this->load->library('PageProcessor');
 			if ($this->pageprocessor->isURL($this->input->post('s'))) {
@@ -544,14 +676,17 @@ class Measure extends MY_Controller {
         $this->load->view('measure/searchmeasuredball', $data);
         }else{
             $this->load->model('research_data_model');
+            
             $result=$this->research_data_model->get_by_batch_id($batch_id);
+            
+            
             $data['search_results'] = $result;
-            $data['batches']='batches';
+            
             $this->load->view('measure/searchmeasuredball', $data);
            
         }
     }
-
+    
     public function attributesmeasure() {
 
         $s = $this->input->post('s');

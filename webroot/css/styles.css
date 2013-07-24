@@ -170,7 +170,11 @@ input[type=text] {
     font-weight: bold;
 }
 
-.reviewed {
+#records .row_selected {
+    background-color: #9FAFD1;
+}
+
+#records .reviewed {
     background-color: #d0e9c6;
 }
 

@@ -1,3 +1,17 @@
+.tl_full_left {
+	padding-top: 6px !important; 
+	padding-bottom: 7px !important;
+	background-color: #006DCC;
+    background-image: linear-gradient(to bottom, #0088CC, #0044CC);
+    background-repeat: repeat-x;
+    border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);
+}
+.tl_full_left.disabled, .tl_full_left.disabled:hover {
+	background-image: none;
+	background-color: rgba(0, 68, 204, 0.4);
+	cursor: default;
+}
+
 .ci_hp_modals .modal-header h3 {
 	font-size: 16px;
 	color: #666;
@@ -1672,6 +1686,6 @@ select#sites option{
     padding: 7px;
 }
 
-#site_logo{
+#site_logo, #customer_logo{
     max-height: 50px;
 }

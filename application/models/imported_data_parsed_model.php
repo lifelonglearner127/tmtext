@@ -1038,7 +1038,7 @@ class Imported_data_parsed_model extends CI_Model {
         return $resultArray;
     }
 
-    function getResearchDataWithPaging($params) {
+    function getResearchDataWithPaging() {
         $status = "";
         if ($this->input->get('status') == 'batches_edited')
             $status = "and rd.status = 'edited'";
@@ -1057,24 +1057,45 @@ class Imported_data_parsed_model extends CI_Model {
         }
 
         $sql_cmd = "
-            select
+            (select
                 rd.id,
-                rd.product_name,
+                rd.batch_id,
+                CASE WHEN rd.product_name IS NULL OR rd.product_name = '' THEN kv.`value` ELSE rd.product_name END AS product_name,
                 rd.url
             from
                 research_data as rd
-            left join batches as b ON b.id = rd.batch_id
+            INNER JOIN batches AS b ON
+                b.id = rd.batch_Id
+            INNER JOIN imported_data_parsed AS idp ON
+                idp.value = rd.url
+                AND `key` = 'URL'
+            INNER JOIN imported_data_parsed AS kv ON
+                kv.imported_data_id = idp.imported_data_id
+                AND kv.key = 'Product Name'
             where
-                concat(rd.product_name, rd.url) like $like
+                concat(rd.product_name, kv.`value`, rd.url) like $like
                 $status
                 $batch
+            ) union (
+            select
+                r.id,
+                r.batch_id,
+                r.product_name,
+                r.url
+            from
+                `research_data` r
+            INNER JOIN batches AS b ON
+                b.id = r.batch_Id
+            LEFT JOIN imported_data_parsed i ON r.url = i.value
+                and i.`key` = 'URL'
+            where i.imported_data_id IS NULL $batch
+            )
         ";
 
         $query = $this->db->query($sql_cmd);
 
         $total_rows = $query->num_rows();
         $display_length = intval($this->input->get('iDisplayLength', TRUE));
-
 
         $display_start = intval($this->input->get('iDisplayStart', TRUE));
         if (empty($display_start)) {
@@ -1084,9 +1105,6 @@ class Imported_data_parsed_model extends CI_Model {
         if (empty($display_length)) {
             $display_length  = $total_rows - $display_start;
         }
-
-
-
 
         $count_sorting_cols = intval($this->input->get('iSortingCols', TRUE));
 
@@ -1111,7 +1129,6 @@ class Imported_data_parsed_model extends CI_Model {
         $query = $this->db->query($sql_cmd);
         $result =  $query->result();
 
-
         $resultArray = array(
             'total_rows'            => $total_rows,
             'display_length'        => $display_length,
@@ -1120,6 +1137,62 @@ class Imported_data_parsed_model extends CI_Model {
         );
 
         return $resultArray;
+    }
+
+    function getResearchDataByURLandBatchId($params) {
+        $batch_id = $params->batch_id;
+        $url = $this->db->escape($params->url);
+        $sql_cmd = "
+            SELECT
+                result.imported_data_id AS imported_data_id,
+                result.research_data_id AS research_data_id,
+                result.created AS created,
+                CASE WHEN result.product_name IS NULL OR TRIM(result.product_name) = '' THEN rd.product_name ELSE result.product_name END AS product_name,
+                CASE WHEN result.long_description IS NULL OR TRIM(result.long_description) = '' THEN rd.long_description ELSE result.long_description END AS long_description,
+                CASE WHEN result.short_description IS NULL OR TRIM(result.short_description) = '' THEN rd.short_description ELSE result.short_description END AS short_description,
+                CASE WHEN result.url IS NULL OR TRIM(result.url) = '' THEN rd.url ELSE result.url END AS url
+            FROM (
+                SELECT
+                    r.imported_data_id AS imported_data_id,
+                    r.research_data_id AS research_data_id,
+                    r.created AS created,
+                    group_concat(r.product_name, '') AS product_name,
+                    group_concat(r.long_description, '') AS long_description,
+                    group_concat(r.short_description, '') AS short_description,
+                    group_concat(r.URL, '') AS URL,
+                    group_concat(r.description1, '') AS description1
+                FROM (
+                    SELECT
+                        rd.id as research_data_id,
+                        kv.imported_data_id,
+                        rd.created as created,
+                        rd.product_name as pn,
+                        case when kv.`key` = 'Product Name' then kv.`value` end as product_name,
+                        case when kv.`key` = 'Long_Description' then kv.`value` end as long_description,
+                        case when kv.`key` = 'Description' then kv.`value` end as short_description,
+                        case when kv.`key` = 'URL' then kv.`value` end as URL,
+                        case when kv.`key` = 'Description 1' then kv.`value` end as description1
+                    FROM
+                        research_data AS rd
+                    INNER JOIN batches AS b ON
+                        b.id = rd.batch_Id
+                        AND b.id = $batch_id
+                    INNER JOIN imported_data_parsed AS idp ON
+                        idp.value = rd.url
+                        AND `key` = 'URL'
+                    INNER JOIN imported_data_parsed AS kv ON
+                        kv.imported_data_id = idp.imported_data_id
+                    WHERE
+                        rd.url = $url
+                ) AS r
+                limit 1
+            ) AS result
+            INNER JOIN research_data AS rd ON rd.id = result.research_data_id
+        ";
+
+        $query = $this->db->query($sql_cmd);
+        $result =  $query->result();
+        return $result[0];
     }
 
     protected function getDataWithPagingTotalRows($value, $website = '', $category_id='') {
