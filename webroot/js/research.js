@@ -452,7 +452,7 @@ $(document).ready(function () {
         });
         return false;
     });*/
-
+    
     $(document).on("change", "select[name='batches']", function(){
         $.post(base_url + 'index.php/research/filterCustomerByBatch', { 'batch': $("select[name='batches']").find("option:selected").text()}, function(data){
             if(data != null){
@@ -468,7 +468,7 @@ $(document).ready(function () {
             }
         });
     });
-
+       
     $(document).on("change", "select[name='customersStyle']", function(){
         $.post(base_url + 'index.php/customer/getStyleByCustomer', { 'customer_name': $("select[name='customersStyle'] option:selected").text()}, function(data){
            $("textarea[name='style_guide']").val('');
