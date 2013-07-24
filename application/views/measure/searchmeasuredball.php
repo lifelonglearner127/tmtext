@@ -86,32 +86,13 @@
 		                    // ---- WORDS COUNTER (START)
 		                    var short_words_text = $.trim($("#details-short-desc").text());
 		                    var short_words_arr = short_words_text.split(" ");
-                                   //Max
-                                    var short_words_count=0;
-                                    var long_words_count=0;
-                                    if(short_words_arr[0] != ''){
-                                    
-                                        short_words_count = short_words_arr.length;
-                                        
-                                    }
+		                    var short_words_count = short_words_arr.length;
 		                    var long_words_text = $.trim($("#details-long-desc").text());
 		                    var long_words_arr = long_words_text.split(" ");
-                                    if(long_words_arr[0]!=''){
-                                       long_words_count = long_words_arr.length;
-                                       
-                                    }
-		                     var words_total = short_words_count + long_words_count;
-                                    if(short_words_count>0){
+		                    var long_words_count = long_words_arr.length;
+		                    var words_total = short_words_count + long_words_count;
 		                    $("li[data-status='words_an'] > span[data-st-id='short_desc']").text(short_words_count + " words");
-                                    }else{
-                                        $("li[data-status='words_an'] > span[data-st-id='short_desc']").text('none');
-                                    }
-                                    if(long_words_count>0){
 		                    $("li[data-status='words_an'] > span[data-st-id='long_desc']").text(long_words_count + " words");
-                                    }else{
-                                        $("li[data-status='words_an'] > span[data-st-id='long_desc']").text('none');
-                                    }
-                                 //Max  
 		                    $("li[data-status='words_an'] > span[data-st-id='total']").text(words_total + " words");
 		                    // $("li[data-status='words_an']").fadeOut();
 		                    // $("li[data-status='words_an']").fadeIn();
