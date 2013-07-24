@@ -16,12 +16,26 @@ jQuery(document).ready(function($) {
         <div class="measure-products">
             <div class="row-fluid mb_20">
                 <div class="span6">
-                    Batch:
+<!--                    Batch:-->
                     <div id="product_customers" class="customer_dropdown"></div>
-                    <?php  echo form_dropdown('product_batches', $batches_list, array(), 'class="mt_10 mr_10" id="batchess" style="width: 100px;"');//max ?>
+ <!--        Max        -->                   
+                    <?php  echo form_dropdown('product_batches', $batches_list, array(), 'class="mt_10 mr_10" id="batchess" style="width: 145px;"');//max ?>
                 </div>
+
+                <ul class='grid_switcher' data-status='grid-switch' style="margin-top: 10px;position: relative;left: 105px;">
+                        <li style="float: left;">
+                            
+                            <button class='btn' onclick="switchToListView();" id='grid_sw_list' type='button'><i class="icon-th-list"></i>&nbsp;List</button>
+                            <button class='btn' onclick="switchToGridView();" id='grid_sw_grid' type='button'><i class="icon-th-large"></i>&nbsp;Grid</button>
+                        </li>
+                        <li style="float: left; margin-top: 6px;margin-left: 8px;">
+                        	
+                        	<input style="position: relative;top: -3px;" id="strict_grid" type="checkbox" name="strict_grid" value="1"> Exact Match
+                        </li>
+                </ul>
+<!--      Max          -->
             </div>
-        </div>
+     </div>
         <div class="row-fluid">
             <?php // echo form_open('', array('id'=>'measureFormMetrics')); ?>
             <form id="measureFormMetrics" accept-charset="utf-8" method="post" action="javascript:void(0)">
@@ -59,17 +73,6 @@ jQuery(document).ready(function($) {
                     <div id='measure_tab_pr_content_body' class="item_section_content">&nbsp;</div>
                 </div>
                 <div class="span3 an_sv_right" id="attributes_metrics" style="margin-top: -5px; ">
-                    <ul class='grid_switcher' data-status='grid-switch'>
-                        <li>
-                            <h3>View:</h3>
-                            <button class='btn' onclick="switchToListView();" id='grid_sw_list' type='button'><i class="icon-th-list"></i>&nbsp;List</button>
-                            <button class='btn' onclick="switchToGridView();" id='grid_sw_grid' type='button'><i class="icon-th-large"></i>&nbsp;Grid</button>
-                        </li>
-                        <li>
-                        	<br/>
-                        	<input id="strict_grid" type="checkbox" name="strict_grid" value="1"> Exact Match
-                        </li>
-                    </ul>
                     <!-- <h3>Metrics</h3> -->
                     <ul>
                         <li><h3>Metrics</h3></li>
