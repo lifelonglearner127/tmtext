@@ -20,6 +20,7 @@
     <link href="<?php echo base_url();?>css/dd.css" rel="stylesheet">
     <link href="<?php echo base_url();?>css/home-page.css" rel="stylesheet">
     <link href="<?php echo base_url();?>css/bootstrap-lightbox.min.css" rel="stylesheet">
+    <link href="<?php echo base_url();?>css/anythingslider.css" rel="stylesheet">
 
 	<!--[if lt IE 9]>
 		<script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
@@ -36,6 +37,7 @@
 	<script src="<?php echo base_url();?>js/underscore.js"></script>
 	<script src="<?php echo base_url();?>js/bootstrap-lightbox.min.js"></script>
 	<script src="<?php echo base_url();?>js/moment.js"></script>
+	<script src="<?php echo base_url();?>js/jquery.anythingslider.min.js"></script>
     <script src="<?php echo base_url();?>js/jquery.scrollTo-1.4.3.1.js"></script>
     <script src="<?php echo base_url();?>js/jquery.fancybox.js"></script>
     <script src="<?php echo base_url();?>js/jquery.cookie.js"></script>

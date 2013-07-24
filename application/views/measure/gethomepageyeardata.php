@@ -80,8 +80,17 @@
 <div id='hp_ajax_content' class='span12 body_section ml_disable mt_30'>
 	<div style='margin-bottom: 10px;'>
 		<?php if($img_av !== false) { ?>
-			<button class='btn btn-primary'><i class='icon-eye-open icon-white'></i>&nbsp;View All Week Images</i></button>
+			<button onclick='openScreensModalSlider()' class='btn btn-primary'><i class='icon-eye-open icon-white'></i>&nbsp;View All Week Images</i></button>
 			<span class='label label-success'>images view available for this week</span>
+			<div class="modal hide fade screens_modal_slider" id='screens_modal_slider'>
+				<div class="modal-body">
+					<ul id='screens_slider'>
+						<?php foreach($img_av as $ka => $va) { ?>
+							<li><img src="<?php echo $va->img; ?>"></li>
+						<?php } ?>
+					</ul>
+				</div>
+			</div>
 		<?php } else { ?>
 			<button class='btn btn-primary disabled'><i class='icon-eye-open icon-white'></i>&nbsp;View All Week Images</i></button>
 			<span class='label label-important'>no available images for this week</span>

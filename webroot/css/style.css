@@ -1,3 +1,18 @@
+/* ---- InModal Screenshots Slider (start) */
+.screens_modal_slider {
+    background-color: transparent !important;
+    border: none !important;
+    border-radius: none !important;
+    box-shadow: none !important;
+}
+.screens_modal_slider .modal-body {
+    max-height: 100% !important;
+    overflow: hidden !important;
+}
+
+/* ---- InModal Screenshots Slider (end) */
+
+
 .tl_full_left {
     padding-top: 6px !important; 
     padding-bottom: 7px !important;
