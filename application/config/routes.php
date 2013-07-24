@@ -38,7 +38,7 @@
 |
 */
 
-$route['default_controller'] = "editor";
+$route['default_controller'] = "home";
 $route['404_override'] = '';
 
 $route['debugseophrases'] = 'auth/debug_seo_phrases';
