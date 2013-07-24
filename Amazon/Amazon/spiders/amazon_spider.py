@@ -116,20 +116,28 @@ class BestsellerSpider(BaseSpider):
 
             #TODO: the index for the title is sometimes out of range - sometimes it can't find that tag (remove the [0] to debug)
             item['list_name'] = product.select("div[@class='zg_itemWrapper']//div[@class='zg_title']/a/text()").extract()[0]
-
-            # name = product.select("div[@class='zg_itemWrapper']//div[@class='zg_title']/a/text()").extract()
             # if name:
-            #     item['name'] = name[0]
+            #     item['list_name'] = name[0]
             # else:
-            #     item['name'] = "nume"
-            item['url'] = product.select("div[@class='zg_itemWrapper']//div[@class='zg_title']/a/@href").extract()[0].strip()
+            #     item['list_name'] = "nume"
+            
+            #item['url'] = product.select("div[@class='zg_itemWrapper']//div[@class='zg_title']/a/@href").extract()[0].strip()
 
+            item['url'] = product.select("div[@class='zg_itemWrapper']//div[@class='zg_title']/a/@href").extract()[0].strip()
+            
             #TODO: this needs to be refined, many prices etc. extract all prices? new, used etc
-            price = product.select("div[@class='zg_itemWrapper']//strong[@class='price']/text()").extract()
+            prices = product.select("div[@class='zg_itemWrapper']//div[@class='zg_price']")
+
+            price = prices.select("strong[@class='price']/text()").extract()
+            listprice = prices.select("span[@class='listprice']/text()").extract()
 
             # some of the items don't have a price
             if price:
                 item['price'] = price[0]
+
+            # some items don't have a "list price"
+            if listprice:
+                item['listprice'] = listprice[0]
 
             # extract rank and ignore last character of the string (it's .)
             item['rank'] = product.select(".//span[@class='zg_rankNumber']/text()").extract()[0][:-1]
@@ -144,11 +152,6 @@ class BestsellerSpider(BaseSpider):
             yield request
 
 
-            #items.append(item)
-
-        #return items
-
-
     # extract info from product page
     def parseProduct(self, response):
         hxs = HtmlXPathSelector(response)
@@ -161,14 +164,14 @@ class BestsellerSpider(BaseSpider):
         # Remove "Amazon.com" from title, to leave only the prouct's name
 
         # handle all cases (titles come in different formats)
-        #TODO: handle exceptions: Amazon - Electronics... , Amazon.com: ...
+        
         # format 1
         m1 = re.match("(.*)[-:] Amazon\.com(.*)", page_title, re.UNICODE)
         if m1:
             page_title = m1.group(1).strip() + m1.group(2)
 
         # format 2
-        m2 = re.match("Amazon\.com: (.*)", page_title, re.UNICODE)
+        m2 = re.match("Amazon\.com ?: (.*)", page_title, re.UNICODE)
         if m2:
             page_title = m2.group(1)
 
@@ -185,8 +188,17 @@ class BestsellerSpider(BaseSpider):
         item['page_title'] = page_title
 
 
-        # find product name on product page
-        product_name = hxs.select("//span[@id='btAsinTitle']/text()").extract()[0]
-        item['product_name'] = product_name
+        # find product name on product page (4 possible formats)
+        product_name = hxs.select("//span[@id='btAsinTitle']/text()").extract()
+        if not product_name:
+            product_name = hxs.select("//h1[@id='title']/text()").extract()
+        if not product_name:
+            product_name = hxs.select("//h1[@class='parseasinTitle']/text()").extract()
+        if not product_name:
+            product_name = hxs.select("//h1[@class='parseasintitle']/text()").extract()
+        # if not product_name:
+        #     product_name = "nume"
+        # else:
+        item['product_name'] = product_name[0].strip()
 
         return item
