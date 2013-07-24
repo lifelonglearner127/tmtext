@@ -308,8 +308,8 @@ class Research extends MY_Controller {
             if ($long_more > -1)
                 if ($long_description_wc < $long_more)
                     continue;
-            if ($long_more > -1)
-                if ($long_description_wc > $long_more)
+            if ($long_less > -1)
+                if ($long_description_wc > $long_less)
                     continue;
 
             $result_row = new stdClass();
@@ -324,8 +324,9 @@ class Research extends MY_Controller {
             $result_row->price_diff = "";
 
             if ($enable_exec) {
-                if ($short_seo_phrases) {
+                if ($short_seo_phrases && !empty($row->short_description)) {
                     $cmd = $this->prepare_extract_phrases_cmd($row->short_description);
+                    $output = [];
                     $result = exec($cmd, $output, $error);
 
                     if ($error > 0) {
@@ -339,7 +340,8 @@ class Research extends MY_Controller {
                     $result_row->seo_s = implode("</br>", $seo_lines);
                 }
 
-                if ($long_seo_phrases) {
+                if ($long_seo_phrases && !empty($row->long_description)) {
+                    $output = [];
                     $cmd = $this->prepare_extract_phrases_cmd($row->long_description);
                     $result = exec($cmd, $output, $error);
 

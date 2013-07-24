@@ -223,7 +223,7 @@ union all
         $batch_name = $this->db->escape($params->batch_name);
 //        $date_from = $params->date_from == '' ? '' : $this->db->escape($params->date_from);
 //        $date_to = $params->date_to == '' ? '' : $this->db->escape($params->date_to);
-//        $txt_filter = $this->db->escape('%'.$params->txt_filter.'%');
+        $txt_filter = $this->db->escape('%'.$params->txt_filter.'%');
 //
 //        $date_from = date_parse($date_from);
 //        $date_to = date_parse($date_to);
@@ -267,6 +267,7 @@ union all
                     AND `key` = 'URL'
                 INNER JOIN imported_data_parsed AS kv ON
                     kv.imported_data_id = idp.imported_data_id
+                    AND kv.`value` like $txt_filter
             ) AS r
             GROUP BY
                 r.imported_data_id
