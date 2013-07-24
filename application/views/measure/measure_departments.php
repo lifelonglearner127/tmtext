@@ -99,7 +99,7 @@
                         </tr>
                         <tr>
                             <td>3</td>
-                            <td>Waltmart.com</td>
+                            <td>Walmart.com</td>
                             <td>78</td>
                         </tr>
                     </tbody>
