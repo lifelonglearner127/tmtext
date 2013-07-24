@@ -107,7 +107,10 @@ function switchToListView() {
     $("#compet_area_grid").hide();
     $("#attributes_metrics ul").show();
     $("#measure_product_ind_wrap").show();
+    $("#an_products_box").removeClass('grid_results_show');
+    $(".main span:first-child").removeClass('new_width');
     grid_status = 'list';
+    
 }
 //Max
 function switchToGridView() {
@@ -134,8 +137,11 @@ function switchToGridView() {
         // gridsCustomersListLoader();
     });
     
-    
+    $("#an_products_box").addClass('grid_results_show');
+    $(".main span:first-child").addClass('new_width');
+//    #grid_se_section_1 .c .c_content table 
     grid_status = 'grid';
+    
 }
 //Max
     // ------------- !!!! OLD STUFF (START) -------------
@@ -610,16 +616,9 @@ function keywordsAnalizer() {
 // --- KEYWORDS ANALYZER (END)
 
 $(document).ready(function() {
-    $("#an_search").live('click',function(){//max
+   $("#an_search").live('click',function(){//max
         
     });
-    $("#products li").live('click',function(){
-        var selsected_li= $(this);
-        $(this).remove();
-        $("#products").prepend(selsected_li);
-        $("#products").scrollTop(0);
-    });
-    //max
     $('title').text("Competitive Intelligence");
 
     $("#measureFormMetrics").submit(function(e) {

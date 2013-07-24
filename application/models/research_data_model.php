@@ -85,8 +85,9 @@ class Research_data_model extends CI_Model {
             }
             array_push($data, array('imported_data_id'=>$result->imported_data_id, 'product_name'=>$result->value,
                'description'=>$description, 'long_description'=>$long_description, 'url'=>$url, 'product_name' =>$product_name, 'features' => $features ));
-            return $data;
+              
         }
+         return $data;
         }else{
             return NULL;
         }

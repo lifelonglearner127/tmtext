@@ -393,6 +393,7 @@ class Measure extends MY_Controller {
                 $data_import['long_description'] = preg_replace('/\s+/', ' ', $data_import['long_description']);
                 // $data_import['long_description'] = preg_replace('/[^A-Za-z0-9\. -!]/', ' ', $data_import['long_description']);
                 $data['s_product_long_desc_count'] = count(explode(" ", $data_import['long_description']));
+               
             }
             $data['s_product'] = $data_import;
             // --- GET SELECTED RPODUCT DATA (END)

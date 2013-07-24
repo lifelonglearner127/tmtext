@@ -475,6 +475,9 @@ span[class*="hilite"] { background: yellow; }
 	min-height: 30px;
 	width: 280px;
 	padding: 5px;
+/*        //Max*/
+        margin-left: 3px;
+/*        //Max*/
 }
 #compet_area_grid .grid_se_section .c .preloader_grids_box {
 	display: block;
@@ -1689,3 +1692,24 @@ select#sites option{
 #site_logo{
     max-height: 50px;
 }
+/*Max*/
+.measure-products .customer_dropdown .dd {
+width: 155px!important;
+margin-right: 5px;
+}
+
+   .grid_results_show{  
+       width: 923px !important;
+	height: auto;
+        margin-top: -15px;
+   }
+   .new_width{
+       width: 399px !important;
+   }
+   
+   .not_min{
+       font-weight: bold;
+       color: red;
+   }
+   
+/*   //Max*/
