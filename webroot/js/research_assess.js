@@ -1,6 +1,55 @@
 var readAssessUrl = base_url + 'index.php/research/get_assess_info';
 
 $(function () {
+    function getAssessCustomerDropdown(){
+        var customers_list_ci = $.post(base_url + 'index.php/measure/getcustomerslist_new', { }, function(c_data) {
+            var jsn = $('#research_assess_customers').msDropDown({byJson:{data:c_data, name:'customers_list'}}).data("dd");
+            if(jsn != undefined){
+                jsn.on("change", function(res) {
+                    $.post(base_url + 'index.php/research/filterBatchByCustomer', { 'customer_name': res.target.value}, function(data){
+                        var research_assess_batches = $("select[name='research_assess_batches']");
+                        if(data.length>0){
+                            research_assess_batches.empty();
+                            for(var i=0; i<data.length; i++){
+                                research_assess_batches.append('<option>'+data[i]+'</option>');
+                            }
+                        } else if(data.length==0 && res.target.value !="All customers"){
+                            research_assess_batches.empty();
+                        }
+                        $('#research_assess_update').click();
+                    });
+               });
+            }
+        }, 'json');
+    }
+
+    getAssessCustomerDropdown();
+
+    $(document).on("change", 'select[name="research_assess_batches"]', function() {
+        var selectedBatch = $(this).find("option:selected").text();
+        $.post(base_url + 'index.php/research/filterCustomerByBatch', {
+                'batch': selectedBatch
+        }, function(data){
+            var oDropdown = $("#research_assess_customers").msDropdown().data("dd");
+            if(data != ''){
+                oDropdown.setIndexByValue(data);
+
+            } else {
+                oDropdown.setIndexByValue('All customers');
+            }
+            if (selectedBatch.length == 0)
+                oDropdown.setIndexByValue('All Customers');
+            $('#research_assess_update').click();
+        });
+    });
+
+    $('#research_assess_select_all').live('click', function() {
+        var isChecked = $(this).is(':checked');
+        $('div.boxes_content input[type="checkbox"]').each(function() {
+            $(this).attr('checked', isChecked).change();
+        });
+    });
+
     $('#assess_filter_datefrom').datepicker({
         format: 'mm-dd-yyyy'
     });
@@ -9,7 +58,7 @@ $(function () {
         format: 'mm-dd-yyyy'
     });
 
-    $('#research_assess_short_check').live('click', function() {
+    $('#research_assess_short_check').on('change', function() {
         var enabled = $(this).is(':checked');
         if (enabled) {
             $('#research_assess_short_params').find('checkbox').removeAttr('disabled');
@@ -21,7 +70,7 @@ $(function () {
         }
     });
 
-    $('#research_assess_long_check').live('click', function() {
+    $('#research_assess_long_check').on('change', function() {
         var enabled = $(this).is(':checked');
         if (enabled) {
             $('#research_assess_long_params').find('checkbox').removeAttr('disabled');
@@ -39,9 +88,6 @@ $(function () {
     });
 
     $('#research_assess_update').live('click', function() {
-    });
-
-    $('#research_assess_filter').live('click', function() {
         if (dataTable) {
             dataTable.fnDestroy();
             dataTable = undefined;
@@ -99,7 +145,7 @@ $(function () {
         $('#research_assess_choiceColumnDialog').parent().find('button:first').addClass("popupGreen");
     });
 
-    //readAssessData();
+    readAssessData();
 
 });
 
@@ -107,7 +153,7 @@ function readAssessData() {
     var data = {};
 
     data.search_text =  $('#assess_filter_text').val();
-    data.batch_name = $('select[name="research_batches"]').find('option:selected').text();
+    data.batch_name = $('select[name="research_assess_batches"]').find('option:selected').text();
 
 //    if (!data.batch_name)
 //        return;
