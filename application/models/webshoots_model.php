@@ -11,6 +11,17 @@ class Webshoots_model extends CI_Model {
         parent::__construct();
     }
 
+    public function getWeekAvailableScreens($week, $year) {
+        $query = $this->db->where(array('year' => $year, 'week' => $week))->order_by('stamp', 'desc')->limit(6)->get($this->tables['webshoots']);
+        $query_res = $query->result();
+        if(count($query_res) > 0) {
+            $res = $query_res;
+        } else {
+            $res = false;
+        }
+        return $res;
+    }
+
     function getScreenCellSelection($pos, $uid, $year, $week) {
         $res = false;
         $check_obj = array(

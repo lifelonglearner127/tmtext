@@ -18,6 +18,7 @@ class Measure extends MY_Controller {
     }
 
     public function index() {
+        $this->load->model('webshoots_model');
         $this->data['customers_list'] = $this->customers_list_new();
         $this->data['user_id'] = $this->ion_auth->get_user_id();
         $c_week = date("W", time());
@@ -25,15 +26,7 @@ class Measure extends MY_Controller {
         $this->data['ct_final'] = date("m.d.Y", time());
         $this->data['c_week'] = $c_week;
         $this->data['c_year'] = $c_year;
-        // --------- TMP TIMELINE DATE STATUS (START) (TODO: MAKE IT DYNAMIC)
-        // $week = 1;
-        // $year = '2013';
-        // $year_s = "01/01/2013";
-        // $i = ($week - 1)*7;
-        // $total = strtotime($year_s) + 60*60*24*$i;
-        // $ct_final = date('d.m.Y', $total);
-        // $this->data['ct_final'] = $ct_final;
-        // --------- TMP TIMELINE DATE STATUS (END) (TODO: MAKE IT DYNAMIC)
+        $this->data['img_av'] = $this->webshoots_model->getWeekAvailableScreens($c_week, $c_year);
         $this->render();
     }
 
@@ -269,6 +262,7 @@ class Measure extends MY_Controller {
     }
 
     public function gethomepageyeardata() {
+        $this->load->model('webshoots_model');
         $year = $this->input->post('year');
         $week = $this->input->post('week');
         if($year == date('Y', time())) {
@@ -279,7 +273,8 @@ class Measure extends MY_Controller {
                 'week' => $c_week,
                 'ct_final' => date("m.d.Y", time()),
                 'customers_list' => $this->customers_list_new(),
-                'status' => 'current'
+                'status' => 'current',
+                'img_av' => $this->webshoots_model->getWeekAvailableScreens($c_week, $year)
             );
         } else {
             $week = 1;
@@ -292,13 +287,15 @@ class Measure extends MY_Controller {
                 'week' => $week,
                 'ct_final' => $ct_final,
                 'customers_list' => $this->customers_list_new(),
-                'status' => 'selected'
+                'status' => 'selected',
+                'img_av' => $this->webshoots_model->getWeekAvailableScreens($week, $year)
             );
         }
         $this->load->view('measure/gethomepageyeardata', $data);
     }
 
     public function gethomepageweekdata() {
+        $this->load->model('webshoots_model');
         $year = $this->input->post('year');
         $week = $this->input->post('week');
         $year_s = "01/01/".$this->input->post('year');
@@ -311,7 +308,8 @@ class Measure extends MY_Controller {
             'year' => $year,
             'week' => $week,
             'ct_final' => $ct_final,
-            'customers_list' => $this->customers_list_new()
+            'customers_list' => $this->customers_list_new(),
+            'img_av' => $this->webshoots_model->getWeekAvailableScreens($week, $year)
         );
         $this->load->view('measure/gethomepageweekdata', $data);
     }

@@ -1,3 +1,12 @@
+<div style='margin-bottom: 10px;'>
+	<?php if($img_av !== false) { ?>
+		<button class='btn btn-primary'><i class='icon-eye-open icon-white'></i>&nbsp;View All Week Images</i></button>
+		<span class='label label-success'>images view available for this week</span>
+	<?php } else { ?>
+		<button class='btn btn-primary disabled'><i class='icon-eye-open icon-white'></i>&nbsp;View All Week Images</i></button>
+		<span class='label label-important'>no available images for this week</span>
+	<?php } ?>
+</div>
 <div style='margin-bottom: 15px;'>
 	<span class='label label-success'>Selected date: <b id='current_date'><?php echo $ct_final; ?></b></span>
 	<span class='label label-success'>Selected week: <b id='current_week'><?php echo $week; ?></b></label>
