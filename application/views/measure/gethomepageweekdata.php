@@ -1,4 +1,7 @@
-<div style='margin-bottom: 15px;'><span class='label label-success'><?php echo $ct_final; ?></span></div>
+<div style='margin-bottom: 15px;'>
+	<span class='label label-success'>Selected date: <b id='current_date'><?php echo $ct_final; ?></b></span>
+	<span class='label label-success'>Selected week: <b id='current_week'><?php echo $week; ?></b></label>
+</div>
 <div class='ph_placeholder' data-week="<?php echo $week; ?>">
 	<?php 
 		$items_count = 6;
@@ -88,11 +91,35 @@
 			var getwebshootbyurl = $.post(base_url + 'index.php/measure/getwebshootbyurl', send_data, function(data) {
 				$("#screen_lightbox_img_" + item_id).attr('src', data['img']);
 				$("#loader_over_" + item_id).remove();
-				$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox'><img style='cursor: pointer;' src='" + data['thumb'] + "'></a>");
+				// $("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox'><img style='cursor: pointer;' src='" + data['thumb'] + "'></a>");
+				// $("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox' style='background-image: url(" + data['img'] + ")'></a>");
+				$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox' style='background-image: url(" + data['thumb'] + "); background-position: top center; background-repeat: no-repeat;'></a>");
 				var t = moment(data['stamp']).format('MMMM Do, YYYY');
 				$("#crawl_date_" + item_id).text(t);
 			});
 			// ---- ATTEMPT TO GET SCREENSHOT (END)
 		}
 	}
+
+	// --- screens dropdowns selections scanner (start)
+    var send_data = {
+		year: $("#year_s > option:selected").val(),
+		week: $(".pagination ul li.page.active").data('week')
+	}
+    var drop_selection_scan = $.post(base_url + 'index.php/measure/dropselectionscan', send_data, function(data) {
+    	for(var i=0; i < data.length; i++) {
+    		if(data[i]['cell'] !== false) {
+    			var item_id = $(".hp_boot_drop[data-pos='" + data[i]['pos'] + "']").data('itemid'); 
+    			$("#screen_lightbox_img_" + item_id).attr('src', data[i]['cell']['img']);
+				// $("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox'><img style='cursor: pointer;' src='" + data[i]['cell']['thumb'] + "'></a>");
+				// $("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox' style='background-image: url(" + data[i]['cell']['img'] + ")'></a>");
+				$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox' style='background-image: url(" + data[i]['cell']['thumb'] + "); background-position: top center; background-repeat: no-repeat;'></a>");
+				var t = moment(data[i]['cell']['screen_stamp']).format('MMMM Do, YYYY');
+				$("#crawl_date_" + item_id).text(t);
+				$("#hp_boot_drop_" + item_id + " .btn_caret_sign").text(data[i]['cell']['site']);
+    		}
+    	}
+    });
+    // --- screens dropdowns selections scanner (end)
+
 </script>

@@ -1,18 +1,14 @@
-/* --- shrinktheweb.com API keys (start) --- */
-var stwaccesskeyid = "28c77fca6deb748";
-/* --- shrinktheweb.com API keys (end) --- */
-
-function test_screenshot() {
-	var customers_list = $.post(base_url + 'index.php/measure/testscreenshot', {}, function(data) {
+function startAllCrawl() {
+	$("#customers_screens_crawl_modal").modal('hide');
+	$("#loading_crawl_modal").modal('show');
+	var start_site_crawl = $.post(base_url + 'index.php/measure/webshootcrawlall', {}, function(data) {
+		$("#loading_crawl_modal").modal('hide');
 		console.log(data);
 	});
 }
 
 function openCrawlLaunchPanelModal() {
 	$("#customers_screens_crawl_modal").modal('show');
-}
-function startCrawl() {
-	console.log("start crawl");
 }
 
 function removeCrawlSiteFromList(id) {
@@ -30,7 +26,6 @@ function openCrawlLaunchPanelModal(close_preview) {
 		$("#preview_screenshot_modal").modal('hide');
 	}
 	$("#customers_screens_crawl_modal").modal('show');
-	// var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist_general', {}, function(c_data) {
 	var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist_crawl', {}, function(c_data) {
 		var tbl = "";
 		tbl += "<table id='cl_cp_tbl_crawls' class='table table-striped'>";
@@ -45,7 +40,6 @@ function openCrawlLaunchPanelModal(close_preview) {
 				tbl += "<tr data-id='" + c_data[i]['id']  + "'>";
 					tbl += "<td>" + c_data[i]['name'] + "</td>";
 					tbl += "<td>";
-					// tbl += "<a onclick=\"removeCrawlSiteFromList('" + c_data[i]['id'] + "');\" class='btn btn-danger'><i class='icon-remove-sign'></i>&nbspRemove</a>";
 					if(c_data[i]['crawl_st']) {
 						tbl += "<a style='margin-left: 10px;' onclick=\"previewScreenshotModal('" + c_data[i]['name'] + "');\" class='btn btn-primary'><i class='icon-refresh'></i>&nbsp;Refresh Screenshot</a>"
 					} else {

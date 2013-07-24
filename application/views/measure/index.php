@@ -15,8 +15,8 @@
 					<div class="span2">View Reports for:</div>
 					<div class="span2 w_100 ml_disable">
 						<select id='year_s' class='year_s' onchange="changeHomePageYersHandler()">
-							<?php for($i = 1980; $i <= 2013; $i++) { ?>
-							<?php $selected = ""; if($i == 2013) $selected = 'selected'; ?>
+							<?php for($i = 1980; $i <= $c_year; $i++) { ?>
+							<?php $selected = ""; if($i == $c_year) $selected = 'selected'; ?>
 							<option <?php echo $selected; ?> value="<?php echo $i; ?>"><?php echo $i; ?></option>
 							<?php } ?>
 						</select>
@@ -25,14 +25,52 @@
 					<div class='span6 ml_disable'>
 						<div class="pagination">
 							<ul id='timeline_ctr'>
+								<?php 
+									$intervals_count = ceil(52/7);
+									$intervals = array(
+										array(1, 2, 3, 4, 5, 6, 7),
+										array(8, 9, 10, 11, 12, 13, 14),
+										array(15, 16, 17, 18, 19, 20, 21),
+										array(22, 23, 24, 25, 26, 27, 28),
+										array(29, 30, 32, 32, 33, 34, 35),
+										array(36, 37, 38, 39, 40, 41, 42),
+										array(43, 44, 45, 46, 47, 48, 49),
+										array(50, 51, 52)
+									);
+									$key_int = 0;
+									foreach ($intervals as $key => $value) {
+										if(in_array($c_week, $value)) {
+											$key_int = $key;
+										}
+									}
+									$int_cell = $intervals[$key_int];
+									$int_cell_start = $int_cell[0];
+									$int_cell_end = $int_cell[count($int_cell) - 1];
+								?>
+								<?php if($key_int == 0) { ?>
 								<li class='page_prev'><a id="slide_prev_timeline" class='tl_full_left disabled' onclick="return false;" href="javascript:void(0)"><i class='icon-chevron-left icon-white'></i></a></li>
-								<li id='page_prev' class="page_prev disabled"><a onclick="prevLocaHomePageWeekData()" href="javascript:void(0)">&laquo;</a></li>
-								<?php for($i = 1; $i <= 7; $i++) { ?>
-									<?php if($i == 1) { $active = 'active'; } else { $active = ''; } ?>
+								<?php } else { ?>
+								<li class='page_prev'><a id="slide_prev_timeline" class='tl_full_left' onclick="slideTimeline('prev')" href="javascript:void(0)"><i class='icon-chevron-left icon-white'></i></a></li>
+								<?php } ?>
+								<?php if($int_cell_start == $c_week) { ?>
+								<li id='page_prev' class="page_prev disabled"><a onclick="return false;" href="javascript:void(0)">&laquo;</a></li>
+								<?php } else { ?>
+								<li id='page_prev' class="page_prev"><a onclick="prevLocaHomePageWeekData()" href="javascript:void(0)">&laquo;</a></li>
+								<?php } ?>
+								<?php for($i = $int_cell_start; $i <= $int_cell_end; $i++) { ?>
+									<?php if($i == $c_week) { $active = 'active'; } else { $active = ''; } ?>
 									<li data-week="<?php echo $i; ?>" class="page <?php echo $active; ?>"><a href="javascript:void(0)" onclick="locaHomePageWeekData('<?php echo $i; ?>')"><?php echo $i; ?></a></li>
 								<?php } ?>
+								<?php if($int_cell_end == $c_week) { ?>
+								<li id='page_next' class='page_next disabled'><a onclick="return false;" href="javascript:void(0)">&raquo;</a></li>
+								<?php } else { ?>
 								<li id='page_next' class='page_next'><a onclick="nextLocaHomePageWeekData()" href="javascript:void(0)">&raquo;</a></li>
+								<?php } ?>
+								<?php if($key_int == 7) { ?>
+								<li class='page_next'><a id="slide_next_timeline" class='tl_full_left disabled' onclick="return false;" href="javascript:void(0)"><i class='icon-chevron-right icon-white'></i></a></li>
+								<?php } else { ?>
 								<li class='page_next'><a id="slide_next_timeline" class='tl_full_left' onclick="slideTimeline('next')" href="javascript:void(0)"><i class='icon-chevron-right icon-white'></i></a></li>
+								<?php } ?>
 							</ul>
 						</div>
 					</div>
@@ -40,7 +78,10 @@
 			</div>
 			
 			<div id='hp_ajax_content' class='span12 body_section ml_disable mt_30'>
-				<div style='margin-bottom: 15px;'><span class='label label-success'><?php echo $ct_final; ?></span></div>
+				<div style='margin-bottom: 15px;'>
+					<span class='label label-success'>Current date: <b id='current_date'><?php echo $ct_final; ?></b></span>
+					<span class='label label-success'>Current week: <b id='current_week'><?php echo $c_week; ?></b></label>
+				</div>
 				<div class='ph_placeholder' data-week='1'>
 					<?php
 						$items_count = 6;
@@ -187,8 +228,8 @@
 		</div>
 	</div>
 	<div class="modal-footer">
+		<a href="javascript:void(0)" id="crawl_modal_sbm_btn" class="btn btn-success" onclick="startAllCrawl()">Crawl (refresh) all sites</a>
 		<a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
-		<!-- <a href="javascript:void(0)" id="crawl_modal_sbm_btn" class="btn btn-success" onclick="startCrawl()">Start all crawl</a> -->
 	</div>
 </div>
 
@@ -235,7 +276,9 @@
 			var getwebshootbyurl = $.post(base_url + 'index.php/measure/getwebshootbyurl', send_data, function(data) {
 				$("#screen_lightbox_img_" + item_id).attr('src', data['img']);
 				$("#loader_over_" + item_id).remove();
-				$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox'><img style='cursor: pointer;' src='" + data['thumb'] + "'></a>");
+				// $("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox'><img style='cursor: pointer;' src='" + data['thumb'] + "'></a>");
+				// $("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox' style='background-image: url(" + data['img'] + ")'></a>");
+				$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox' style='background-image: url(" + data['thumb'] + "); background-position: top center; background-repeat: no-repeat;'></a>");
 				var t = moment(data['stamp']).format('MMMM Do, YYYY');
 				$("#crawl_date_" + item_id).text(t);
 			});
@@ -259,9 +302,12 @@
         		if(data[i]['cell'] !== false) {
         			var item_id = $(".hp_boot_drop[data-pos='" + data[i]['pos'] + "']").data('itemid'); 
         			$("#screen_lightbox_img_" + item_id).attr('src', data[i]['cell']['img']);
-					$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox'><img style='cursor: pointer;' src='" + data[i]['cell']['thumb'] + "'></a>");
+					// $("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox'><img style='cursor: pointer;' src='" + data[i]['cell']['thumb'] + "'></a>");
+					// $("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox' style='background-image: url(" + data[i]['cell']['img'] + ")'></a>");
+					$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox' style='background-image: url(" + data[i]['cell']['thumb'] + "); background-position: top center; background-repeat: no-repeat;'></a>");
 					var t = moment(data[i]['cell']['screen_stamp']).format('MMMM Do, YYYY');
 					$("#crawl_date_" + item_id).text(t);
+					$("#hp_boot_drop_" + item_id + " .btn_caret_sign").text(data[i]['cell']['site']);
         		}
         	}
         });

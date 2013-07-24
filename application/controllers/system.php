@@ -42,7 +42,7 @@ class System extends MY_Controller {
 				);
 				if($check !== false) {
 					$mid['crawl_st'] = true;
-				} 
+				}
 				array_push($crawl, $mid);
 			}
 			if(count($crawl) > 1) { // --- all ok, so record collection to DB
@@ -622,7 +622,7 @@ class System extends MY_Controller {
     public function get_batch_review()
     {
         $this->load->model('batches_model');
-        $results = $this->batches_model->getAll();
+        $results = $this->batches_model->getBatchReview();
         $this->output->set_content_type('application/json')
             ->set_output(json_encode($results));
     }
@@ -663,6 +663,15 @@ class System extends MY_Controller {
 
     public function sites_view()
     {
+        $this->load->model('sites_model');
+        $sites = $this->sites_model->getAll();
+        $sitesArray = array();
+        foreach ($sites as $site) {
+            if(!in_array($customer->name, sitesArray)){
+                $sitesArray[$site->id] = $site->name;
+            }
+        }
+        $this->data['sites'] = $sitesArray;
         $this->render();
     }
 
@@ -808,5 +817,57 @@ class System extends MY_Controller {
 		saveSimilar($similar_to);
 		saveSimilar($similar_to2, 70);
  	}
+
+    public function get_site_info()
+    {
+        $this->load->model('sites_model');
+        $site_id = $this->input->post('site');
+        $site_info = $this->sites_model->get($site_id);
+        /* foreach($site_info as $site){
+             $site->image_url = $this->config->item('tmp_upload_dir').$site->image_url;
+         }*/
+        $this->output->set_content_type('application/json')->set_output(json_encode($site_info));
+    }
+
+    public function add_new_site()
+    {
+        $this->load->model('sites_model');
+        $response['id'] = $this->sites_model->insertSiteByName($this->input->post('site'));
+        $response['message'] =  'Site was added successfully';
+        $this->output->set_content_type('application/json')->set_output(json_encode($response));
+    }
+
+    public function delete_site()
+    {
+        $this->load->model('sites_model');
+        $this->sites_model->delete($this->input->post('site'));
+        $response['message'] =  'Site was deleted successfully';
+        $this->output->set_content_type('application/json')->set_output(json_encode($response));
+    }
+
+    public function update_site_logo()
+    {
+        $this->load->model('sites_model');
+        $this->sites_model->updateSite($this->input->post('id'), $this->input->post('logo'));
+        $response['message'] =  'Site was updated successfully';
+        $this->output->set_content_type('application/json')->set_output(json_encode($response));
+    }
+
+    public function update_site_info()
+    {
+        $this->load->model('sites_model');
+        $this->sites_model->update($this->input->post('id'), $this->input->post('site_name'),
+            $this->input->post('site_url'), $this->input->post('logo'));
+        $response['message'] =  'Site was updated successfully';
+        $this->output->set_content_type('application/json')->set_output(json_encode($response));
+    }
+
+    public function delete_sitelogo()
+    {
+        $this->load->model('sites_model');
+        $this->sites_model->updateSite($this->input->post('id'), $this->input->post('logo'));
+        $response['message'] =  'Site was deleted successfully';
+        $this->output->set_content_type('application/json')->set_output(json_encode($response));
+    }
 
 }

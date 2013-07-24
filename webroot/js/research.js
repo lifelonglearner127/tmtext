@@ -127,7 +127,7 @@ $(document).ready(function () {
     $('.hideShow').live("click", function(){
         $(this).parent().parent().toggleClass('hideBox');
     });
-    
+
     $(document).on("keydown keyup change focusout", 'textarea[name="short_description"]', function() {
         var number = 0;
         var matches = $(this).val().match(/\b/g);
@@ -468,7 +468,7 @@ $(document).ready(function () {
             }
         });
     });
-    
+
     $(document).on("change", "select[name='customersStyle']", function(){
         $.post(base_url + 'index.php/customer/getStyleByCustomer', { 'customer_name': $("select[name='customersStyle'] option:selected").text()}, function(data){
            $("textarea[name='style_guide']").val('');
@@ -582,6 +582,21 @@ jQuery(document).ready(function($) {
             });
             $('.info').append('<p class="alert-success">The batch was successfully deleted</p>').fadeOut(10000);
         }, 'json');
+
+        return false;
+    });
+
+    $(document).on("click", "button#import_from_sitemap", function(event) {
+    	event.preventDefault();
+        var batch_name = $('select[name="batches"]').find('option:selected').text();
+        var oDropdown = $("#customer_dr").msDropdown().data("dd");
+
+        $.post($(this).parents().find('form').attr( 'action' ).replace('save', 'sitemap_import'),
+        	{'customer_name': oDropdown.getData().data.value, 'batch_name': batch_name},
+        	function(data) {
+        		$('#import_sitemap').html('<p class="alert-success">'+data.message+'</p>');
+        	},
+        'json');
 
         return false;
     });

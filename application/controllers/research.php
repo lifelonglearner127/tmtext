@@ -131,7 +131,7 @@ class Research extends MY_Controller {
             ->set_output(json_encode($output));
     }
 
-    public function getResearchDataWithPaging() {
+    public function getResearchDataByURLandBatchId() {
         $params = new stdClass();
         $params->batch_id = intval($this->input->get('batch_id'));
         $params->url = $this->input->get('url');
@@ -222,7 +222,7 @@ class Research extends MY_Controller {
                 'long_description_wc'           => 'true',
                 'long_seo_phrases'              => 'true',
                 'duplicate_context'             => 'true',
-                'misspelling'                   => 'true',
+                'price_diff'                    => 'true',
             );
         }
         $this->data['columns'] = $columns;
@@ -239,80 +239,131 @@ class Research extends MY_Controller {
             $txt_filter = $this->input->get('search_text');
         }
 
-        $batch = $this->input->get('batch_name');
-        $batch_id = $this->batches_model->getIdByName($batch);
-        if($batch_id == false || $txt_filter != '') {
-            $batch_id = '';
-        }
+        $batch_name = $this->input->get('batch_name');
+//        if (empty($batch_name)) {
+//            $this->output->set_content_type('application/json')
+//                ->set_output("{}");
+//            return;
+//        }
+//        $batch_id = $this->batches_model->getIdByName($batch);
+//        if($batch_id == false || $txt_filter != '') {
+//            $batch_id = '';
+//        }
 
         $date_from = $this->input->get('date_from') == false ? '' : $this->input->get('date_from');
         $date_to = $this->input->get('date_to') == false ? '' : $this->input->get('date_to');
+        $price_diff = $this->input->get('price_diff');
         $short_less = $this->input->get('short_less') == false ? -1 : $this->input->get('short_less');
         $short_more = $this->input->get('short_more') == false ? -1 : $this->input->get('short_more');
+        $short_seo_phrases = $this->input->get('short_seo_phrases');
         $short_duplicate_context = $this->input->get('short_duplicate_context');
-        $short_misspelling = $this->input->get('short_misspelling');
         $long_less = $this->input->get('long_less') == false ? -1 : $this->input->get('long_less');
         $long_more = $this->input->get('long_more') == false ? -1 : $this->input->get('long_more');
+        $long_seo_phrases = $this->input->get('long_seo_phrases');
         $long_duplicate_context = $this->input->get('long_duplicate_context');
-        $long_misspelling = $this->input->get('long_misspelling');
+
+
+//        if(!empty($price_list['result'])) {
+//            foreach($price_list['result'] as $price) {
+//                $parsed_attributes = unserialize($price->parsed_attributes);
+//                $model = (!empty($parsed_attributes['model'])?$parsed_attributes['model']: $parsed_attributes['UPC/EAN/ISBN']);
+//                $output['aaData'][] = array(
+//                    $price->created,
+//                    '<a href ="'.$price->url.'">'.substr($price->url,0, 60).'</a>',
+//                    $model,
+//                    $price->product_name,
+//                    sprintf("%01.2f", $price->price),
+//                );
+//            }
+//        }
 
         $params = new stdClass();
-        $params->batch_id = $batch_id;
+        $params->batch_name = $batch_name;
         $params->txt_filter = $txt_filter;
         $params->date_from = $date_from;
         $params->date_to = $date_to;
-        $params->short_less = $short_less;
-        $params->short_more = $short_more;
-        $params->short_duplicate_context = $short_duplicate_context;
-        $params->short_misspelling = $short_misspelling;
-        $params->long_less = $long_less;
-        $params->long_more = $long_more;
-        $params->long_duplicate_context = $long_duplicate_context;
-        $params->long_misspelling = $long_misspelling;
+//        $params->short_duplicate_context = $short_duplicate_context;
+//        $params->short_misspelling = $short_misspelling;
+//        $params->long_duplicate_context = $long_duplicate_context;
+//        $params->long_misspelling = $long_misspelling;
 
         $results = $this->research_data_model->getInfoForAssess($params);
 
+        if ($price_diff) {
+            $prices = $this->research_data_model->getPricesForBatch($batch_name);
+        }
+
         $enable_exec = true;
-        // change '0' value to '-'
+        $result_table = array();
         foreach($results as $row) {
-            if($row->short_description_wc == '0') {
-                $row->short_description_wc = '-';
-            }
-            if($row->long_description_wc == '0') {
-                $row->long_description_wc = '-';
-            }
+            $short_description_wc = preg_match_all('/\b/', $row->short_description) / 2;
+            if ($short_more > -1)
+                if ($short_description_wc < $short_more)
+                    continue;
+            if ($short_less > -1)
+                if ($short_description_wc > $short_less)
+                    continue;
+
+            $long_description_wc = preg_match_all('/\b/', $row->long_description) / 2;
+            if ($long_more > -1)
+                if ($long_description_wc < $long_more)
+                    continue;
+            if ($long_more > -1)
+                if ($long_description_wc > $long_more)
+                    continue;
+
+            $result_row = new stdClass();
+            $result_row->id = $row->id;
+            $result_row->created = $row->created;
+            $result_row->product_name = $row->product_name;
+            $result_row->url = $row->url;
+            $result_row->short_description_wc = $short_description_wc;
+            $result_row->long_description_wc = $long_description_wc;
+            $result_row->seo_s = "";
+            $result_row->seo_l = "";
+            $result_row->price_diff = "";
+
             if ($enable_exec) {
-                $cmd = $this->prepare_extract_phrases_cmd($row->short_description);
-                $result = exec($cmd, $output, $error);
+                if ($short_seo_phrases) {
+                    $cmd = $this->prepare_extract_phrases_cmd($row->short_description);
+                    $result = exec($cmd, $output, $error);
 
-                if ($error > 0) {
-                    $enable_exec = false;
-                    continue;
+                    if ($error > 0) {
+                        $enable_exec = false;
+                        continue;
+                    }
+                    $seo_lines = array();
+                    foreach ($output as $line) {
+                        $seo_lines[] = $line;
+                    }
+                    $result_row->seo_s = implode("</br>", $seo_lines);
                 }
-                $seo_lines = array();
-                foreach ($output as $line) {
-                    $seo_lines[] = $line;
-                }
-                $row->seo_s = implode("</br>", $seo_lines);
 
+                if ($long_seo_phrases) {
+                    $cmd = $this->prepare_extract_phrases_cmd($row->long_description);
+                    $result = exec($cmd, $output, $error);
 
-                $cmd = $this->prepare_extract_phrases_cmd($row->long_description);
-                $result = exec($cmd, $output, $error);
-
-                if ($error > 0) {
-                    $enable_exec = false;
-                    continue;
+                    if ($error > 0) {
+                        $enable_exec = false;
+                        continue;
+                    }
+                    $seo_lines = array();
+                    foreach ($output as $line) {
+                        $seo_lines[] = $line;
+                    }
+                    $result_row->seo_l = implode("</br>", $seo_lines);
                 }
-                $seo_lines = array();
-                foreach ($output as $line) {
-                    $seo_lines[] = $line;
-                }
-                $row->seo_l = implode("</br>", $seo_lines);
             }
+
+            if ($price_diff) {
+                $result_row->price_diff = "a";
+            }
+
+            $result_table[] = $result_row;
         }
 
         $this->output->set_content_type('application/json')
-            ->set_output(json_encode($results));
+            ->set_output(json_encode($result_table));
     }
 
     private function prepare_extract_phrases_cmd($text) {
@@ -467,7 +518,8 @@ class Research extends MY_Controller {
             } else {
                 $revision = $this->input->post('revision');
             }
-            $results = $this->research_data_model->getAllByProductName($product_name, $batch_id);
+            //$results = $this->research_data_model->getAllByProductName($product_name, $batch_id);
+            $results = $this->research_data_model->getProductByURL($url, $batch_id);
 
             if(empty($results)){
                 $data['research_data_id'] = $this->research_data_model->insert($batch_id, $url, $product_name, $keyword1, $keyword2,
@@ -683,11 +735,6 @@ class Research extends MY_Controller {
     public function csv_import() {
         $this->load->model('batches_model');
         $this->load->model('customers_model');
-        $this->load->model('research_data_model');
-
-        $this->load->model('research_data_to_crawler_list_model');
-        $this->load->model('crawler_list_model');
-		$this->load->library('PageProcessor');
 
         $file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
         $_rows = array();
@@ -700,11 +747,32 @@ class Research extends MY_Controller {
             fclose($handle);
         }
         $batch_id = $this->batches_model->getIdByName($this->input->post('batch_name'));
-        $last_revision = $this->research_data_model->getLastRevision();
+
+        $added = $this->insert_rows($batch_id, $_rows);
+
+        $str = $added;
+        if($added==1){
+            $str .= ' record';
+        } else if($added>1){
+            $str .= ' records';
+        }
+
+        $response['message'] = $str .' added to batch';
+         $this->output->set_content_type('application/json')
+                ->set_output(json_encode($response));
+    }
+
+    private function insert_rows($batch_id, $_rows) {
+        $this->load->model('research_data_model');
+        $this->load->model('research_data_to_crawler_list_model');
+        $this->load->model('crawler_list_model');
+		$this->load->library('PageProcessor');
+
+    	$last_revision = $this->research_data_model->getLastRevision();
         $added = 0;
 
+        $this->research_data_model->db->trans_start();
         foreach($_rows as $_row){
-
             $res = $this->research_data_model->checkItemUrl($batch_id, $_row);
             if(empty($res)){
               $research_data_id = $this->research_data_model->insert($batch_id, $_row, '', '', '',
@@ -721,15 +789,30 @@ class Research extends MY_Controller {
 				}
             }
         }
-        $str = $added;
-        if($added==1){
-            $str .= ' record';
-        } else if($added>1){
-            $str .= ' records';
-        }
+        $this->research_data_model->db->trans_complete();
 
-        $response['message'] = $str .' added to batch';
-         $this->output->set_content_type('application/json')
+        return $added;
+    }
+
+    public function sitemap_import() {
+    	$this->load->model('batches_model');
+        $this->load->model('customers_model');
+		$this->load->library('SitemapProcessor');
+
+    	$batch_id =  $this->batches_model->getIdByName($this->input->post('batch_name'));
+    	$customer =  $this->customers_model->getByName($this->input->post('customer_name'));
+		if (!empty($customer['url']) && !empty($batch_id)) {
+			$urls = $this->sitemapprocessor->getURLs($customer['url']);
+		}
+
+		if (count($urls)>0) {
+			$added = $this->insert_rows($batch_id, $urls);
+			$response['message'] = $added .' added to batch';
+		} else {
+			$response['message'] = 'Can\'t find sitemap, robots.txt or urls';
+		}
+
+        $this->output->set_content_type('application/json')
                 ->set_output(json_encode($response));
     }
 

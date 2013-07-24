@@ -1686,6 +1686,6 @@ select#sites option{
     padding: 7px;
 }
 
-#site_logo{
+#site_logo, #customer_logo{
     max-height: 50px;
 }

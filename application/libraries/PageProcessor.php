@@ -681,10 +681,35 @@ class PageProcessor {
 
 		$description = implode(' ',$description);
 
-		return array(
+		foreach($this->nokogiri->get('#actualPriceRow #actualPriceValue .priceLarge') as $item) {
+			$p = str_replace(',','',$item['#text'][0]);
+			if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $p, $match)) {
+				$price = $match[1];
+			}
+		}
+
+		foreach($this->nokogiri->get('#priceBlock #listPriceValue.listprice') as $item) {
+			$p = str_replace(',','',$item['#text'][0]);
+			if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $p, $match)) {
+				$price_old = $match[1];
+			}
+		}
+
+		$result = array(
 			'Product Name' => $title,
 			'Description' => $description,
+			'Price' => $price,
+			'PriceOld' => $price_old
 		);
+
+
+		foreach ($result as $key => $value) {
+			if (empty($result[$key])) {
+				unset($result[$key]);
+			}
+		}
+
+		return $result;
 	}
 
 	public function attributes_amazon() {

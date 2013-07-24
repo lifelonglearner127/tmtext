@@ -27,7 +27,7 @@ class Webshoots_model extends CI_Model {
         return $res;
     }
 
-    function recordWebShootSelectionAttempt($screen_id, $uid, $pos, $year, $week, $img, $thumb, $screen_stamp) {
+    function recordWebShootSelectionAttempt($screen_id, $uid, $pos, $year, $week, $img, $thumb, $screen_stamp, $url) {
         $res = false;
         $check_obj = array(
             'pos' => $pos,
@@ -43,7 +43,8 @@ class Webshoots_model extends CI_Model {
                 'stamp' => date("Y-m-d H:i:s"),
                 'img' => $img,
                 'thumb' => $thumb,
-                'screen_stamp' => $screen_stamp  
+                'screen_stamp' => $screen_stamp, 
+                'site' => $url  
             );
             $this->db->update($this->tables['webshoots_select'], $update_object, $check_obj);
         } else { // --- new
@@ -56,7 +57,8 @@ class Webshoots_model extends CI_Model {
                 'img' => $img,
                 'thumb' => $thumb,
                 'stamp' => date("Y-m-d H:i:s"),
-                'screen_stamp' => $screen_stamp
+                'screen_stamp' => $screen_stamp,
+                'site' => $url
             );
             $this->db->insert($this->tables['webshoots_select'], $insert_object);
         }
@@ -109,7 +111,7 @@ class Webshoots_model extends CI_Model {
     }
 
     function getWebShootByUrl($url) {
-        $query = $this->db->where('url', $url)->order_by('stamp', 'asc')->get($this->tables['webshoots']);
+        $query = $this->db->where('url', $url)->order_by('stamp', 'desc')->get($this->tables['webshoots']);
         $query_res = $query->result();
         if(count($query_res) > 0) {
             $res = $query_res[0];

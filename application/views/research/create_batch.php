@@ -13,9 +13,34 @@
             Batch:
             <div id="customer_dr" class="customer_dropdown"></div>
             <?php echo form_dropdown('batches', $batches_list, array(), ' style="width: 145px;margin-left:20px"'); ?>
+            <script>
+                function doconfirm()
+                {
+                    var batch_name = $('select[name="batches"]').find('option:selected').text();
+                    job=confirm("You are about to delete batch "+batch_name+". Are you sure you want to delete this batch?");
+                    if(job!=true)
+                    {
+                        return false;
+                    } else {
+                        var oDropdown = $("#customer_dr").msDropdown().data("dd");
+                        $.post(base_url + 'index.php/research/delete_batch', {
+                            'batch_name': batch_name
+                        }, function(data) {
+                            oDropdown.setIndexByValue('All customers');
+                            $('select[name="batches"] option').each(function(){
+                                if($(this).text() == batch_name){
+                                    $(this).remove();
+                                }
+                            });
+                            $('.info').append('<p class="alert-success">The batch was successfully deleted</p>').fadeOut(10000);
+                        }, 'json');
+                    }
+                }
+            </script>
+            <button class="btn btn-danger" type="button" style="margin-left:5px" onclick="doconfirm()">Delete</button>
             <span class="ml_10">Add new:</span> <input type="text"  style="width:180px" name="new_batch">
             <button id="new_batch" class="btn" type="button" style="margin-left:5px">Create</button>
-            <button id="delete_batch" class="btn btn-danger" type="button" style="margin-left:5px">Delete</button>
+
         </div>
     </div>
 
@@ -68,6 +93,17 @@
     <div class="row-fluid">
         A CSV containing one URL or Manufacturer ID per line
     </div>
+    <div class="row-fluid mt_20">
+        <textarea class="span10" style="min-height: 100px"></textarea >
+        <button class="btn ml_10" id="csv_import_create_batch" ><i class="icon-white icon-ok"></i>&nbsp;Add to batch</button>
+        <button class="btn btn-danger ml_10 mt_10" id="csv_import_create_batch"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
+    </div>
+    <div class="row-fluid" style="display:none">
+ 		<div class="controls span7">
+        	<button class="btn btn-success ml_10" id="import_from_sitemap"><i class="icon-white icon-ok"></i>&nbsp;Import Sitemap</button>
+        	<div class="info ml_10" id="import_sitemap"></div>
+		</div>
+	</div>
     <div class="clear"></div>
     <?php echo form_close();?>
 </div>

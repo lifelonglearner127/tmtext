@@ -63,4 +63,30 @@ class Admin_Customer extends MY_Controller {
             'accept_file_types' => '/.+\.(jpg|gif|png)$/i',
         ));
     }
+
+    public function upload_img()
+    {
+        $this->load->library('UploadHandler');
+        $this->output->set_content_type('application/json');
+
+        $this->uploadhandler->upload(array(
+            'script_url' => site_url('admin_customer/upload_img'),
+            'upload_dir' => 'webroot/img/',
+            'param_name' => 'files',
+            'delete_type' => 'POST',
+            'accept_file_types' => '/.+\.(jpg|gif|png)$/i',
+        ));
+    }
+
+    public function add_customer()
+    {
+        $this->load->model('customers_model');
+        $response['message'] = '';
+        if($this->input->post('customer_name') != ''){
+            $this->customers_model->insert($this->input->post('customer_name'), $this->input->post('customer_url'), $this->input->post('logo'));
+            $response['message'] =  'Customer was added successfully';
+
+        }
+        $this->output->set_content_type('application/json')->set_output(json_encode($response));
+    }
 }

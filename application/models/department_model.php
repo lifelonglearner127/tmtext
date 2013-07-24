@@ -38,7 +38,9 @@ class Department_model extends CI_Model {
 
     function getAll()
     {
-        return $this->db->get($this->tables['departments'])
-        		->result();
+        $this->db->order_by("short_name", "asc");
+        $query = $this->db->get($this->tables['departments']);
+
+        return $query->result();
     }
 }

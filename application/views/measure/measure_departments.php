@@ -11,7 +11,32 @@
 			<div class='span12 head_section'>
 
 				<div class='head_line_2'>
-					<div class="span2">View Reports for:</div>
+					<!--div class="span2">View Reports for:</div-->
+                    <div class="span10">
+                        <style type="text/css">
+                            .temp_li{
+                                display: inline;
+                                font-size: 18px;
+                            }
+                            .rank_table{
+                                width: 660px;
+                                border: 2px solid #000;
+                            }
+                            .rank_table td, .rank_table th{
+                                border: 1px solid #000;
+                                padding:7px;
+                                color:#000;
+                            }
+                            .rank_table thead{
+                                background: #ccc;
+                            }
+                        </style>
+                        <ul class="ml_10">
+                            <li class="temp_li"><a href="#" style="text-decoration: underline;">Your Watchlists</a></li>
+                            <li class="temp_li ml_50"><a href="#">Best-sellers</a></li>
+                            <li class="temp_li ml_50"><a href="#">Entire site</a></li>
+                        </ul>
+                    </div>
 					<div class="span2 w_100 ml_disable">
 						<select id='year_s' class='year_s' onchange="changeHomePageYersHandler()">
 							<?php for($i = 1980; $i <= 2013; $i++) { ?>
@@ -20,7 +45,8 @@
 							<?php } ?>
 						</select>
 					</div>
-					<div class="span1 ml_disable">week:</div>
+
+					<!--div class="span1 ml_disable">week:</div>
 					<div class='span6 ml_disable'>
 						<div class="pagination">
 							<ul>
@@ -33,7 +59,7 @@
 								<li class='page_next'><a onclick="nextLocaHomePageWeekData()" href="javascript:void(0)">&raquo;</a></li>
 							</ul>
 						</div>
-					</div>
+					</div-->
 				</div>
 			</div>
 
@@ -53,7 +79,37 @@
 				<button id="category_next" type="button" class="btn ml_10" >Next</button>
 			</div>
 
-			<div id='hp_ajax_content' class='span12 body_section ml_disable mt_30'>
+            <div class='span12 mt_10'>
+                <table class="rank_table mt_30">
+                    <thead>
+                        <th>Rank</th>
+                        <th>Site</th>
+                        <th>Score</th>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>Amazon.com</td>
+                            <td>92</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>Staples.com</td>
+                            <td>85</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td>Waltmart.com</td>
+                            <td>78</td>
+                        </tr>
+                    </tbody>
+                <table>
+            </div>
+            <div class="clear"></div>
+            <img  src="../../img/marketing.jpg"  class="mt_30" >
+            <img  src="../../img/pricing.jpg"  class="mt_30 ml_120">
+            <img  src="../../img/inventory.jpg"  class="mt_30 ml_120">
+			<!--div id='hp_ajax_content' class='span12 body_section ml_disable mt_30'>
 				<div class='ph_placeholder' data-week='1'>
 					<?php
 					$items_count = 6;
@@ -104,7 +160,7 @@
 						</div>
 					<?php } ?>
 				</div>
-			</div>
+			</div-->
 		</div>
     </div>
 </div>
