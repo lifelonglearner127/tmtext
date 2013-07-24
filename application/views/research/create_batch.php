@@ -68,6 +68,12 @@
     <div class="row-fluid">
         A CSV containing one URL or Manufacturer ID per line
     </div>
+    <div class="row-fluid">
+ 		<div class="controls span7">
+        	<button class="btn btn-success ml_10" id="import_from_sitemap"><i class="icon-white icon-ok"></i>&nbsp;Import Sitemap</button>
+        	<div class="info ml_10" id="import_sitemap"></div>
+		</div>
+    </div>
     <div class="clear"></div>
     <?php echo form_close();?>
 </div>

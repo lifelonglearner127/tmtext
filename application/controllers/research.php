@@ -632,11 +632,6 @@ class Research extends MY_Controller {
     public function csv_import() {
         $this->load->model('batches_model');
         $this->load->model('customers_model');
-        $this->load->model('research_data_model');
-
-        $this->load->model('research_data_to_crawler_list_model');
-        $this->load->model('crawler_list_model');
-		$this->load->library('PageProcessor');
 
         $file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
         $_rows = array();
@@ -649,11 +644,32 @@ class Research extends MY_Controller {
             fclose($handle);
         }
         $batch_id = $this->batches_model->getIdByName($this->input->post('batch_name'));
-        $last_revision = $this->research_data_model->getLastRevision();
+
+        $added = $this->insert_rows($batch_id, $_rows);
+
+        $str = $added;
+        if($added==1){
+            $str .= ' record';
+        } else if($added>1){
+            $str .= ' records';
+        }
+
+        $response['message'] = $str .' added to batch';
+         $this->output->set_content_type('application/json')
+                ->set_output(json_encode($response));
+    }
+
+    private function insert_rows($batch_id, $_rows) {
+        $this->load->model('research_data_model');
+        $this->load->model('research_data_to_crawler_list_model');
+        $this->load->model('crawler_list_model');
+		$this->load->library('PageProcessor');
+
+    	$last_revision = $this->research_data_model->getLastRevision();
         $added = 0;
 
+        $this->research_data_model->db->trans_start();
         foreach($_rows as $_row){
-
             $res = $this->research_data_model->checkItemUrl($batch_id, $_row);
             if(empty($res)){
               $research_data_id = $this->research_data_model->insert($batch_id, $_row, '', '', '',
@@ -670,15 +686,30 @@ class Research extends MY_Controller {
 				}
             }
         }
-        $str = $added;
-        if($added==1){
-            $str .= ' record';
-        } else if($added>1){
-            $str .= ' records';
-        }
+        $this->research_data_model->db->trans_complete();
 
-        $response['message'] = $str .' added to batch';
-         $this->output->set_content_type('application/json')
+        return $added;
+    }
+
+    public function sitemap_import() {
+    	$this->load->model('batches_model');
+        $this->load->model('customers_model');
+		$this->load->library('SitemapProcessor');
+
+    	$batch_id =  $this->batches_model->getIdByName($this->input->post('batch_name'));
+    	$customer =  $this->customers_model->getByName($this->input->post('customer_name'));
+		if (!empty($customer['url']) && !empty($batch_id)) {
+			$urls = $this->sitemapprocessor->getURLs($customer['url']);
+		}
+
+		if (count($urls)>0) {
+			$added = $this->insert_rows($batch_id, $urls);
+			$response['message'] = $added .' added to batch';
+		} else {
+			$response['message'] = 'Can\'t find sitemap, robots.txt or urls';
+		}
+
+        $this->output->set_content_type('application/json')
                 ->set_output(json_encode($response));
     }
 
