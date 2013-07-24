@@ -362,7 +362,6 @@ $( function() {
 function readResearchData() {
     //display ajax loader animation
     $( '#ajaxLoadAni' ).fadeIn( 'slow' );
-
     $.ajax({
         url: readUrl,
         dataType: 'json',

@@ -1,9 +1,10 @@
 var readUrl = base_url + 'index.php/research/search_results_bathes';
 var pageInitialized = false;
 $(function() {
-    if(pageInitialized) return;
-        pageInitialized = true;
-
+    if(pageInitialized)
+        return;
+    pageInitialized = true;
+    
     $.fn.dataTableExt.oApi.fnReloadAjax = function ( oSettings, sNewSource, fnCallback, bStandingRedraw )
     {
         if ( typeof sNewSource != 'undefined' && sNewSource != null )
@@ -43,7 +44,49 @@ $(function() {
         }, oSettings );
     }
 
-    dataTable = $('#records').dataTable({
+    function getEditCustomerDropdown(){
+        var customers_list_ci = $.post(base_url + 'index.php/measure/getcustomerslist_new', { }, function(c_data) {
+            var jsn = $('#research_edit_customers').msDropDown({byJson:{data:c_data, name:'customers_list'}}).data("dd");
+            if(jsn != undefined){
+                jsn.on("change", function(res) {
+                    $.post(base_url + 'index.php/research/filterBatchByCustomer', { 'customer_name': res.target.value}, function(data){
+                        var research_edit_batches = $("select[name='research_edit_batches']");
+                        if(data.length>0){
+                            research_edit_batches.empty();
+                            for(var i=0; i<data.length; i++){
+                                research_edit_batches.append('<option>'+data[i]+'</option>');
+                            }
+                        } else if(data.length==0 && res.target.value !="All customers"){
+                            research_edit_batches.empty();
+                        }
+                        drawREProductsTable();
+                    });
+                });
+            }
+        }, 'json');
+    }
+
+    getEditCustomerDropdown();
+
+    $(document).on("change", 'select[name="research_edit_batches"]', function() {
+        var selectedBatch = $(this).find("option:selected").text();
+        $.post(base_url + 'index.php/research/filterCustomerByBatch', {
+            'batch': selectedBatch
+        }, function(data){
+            var oDropdown = $("#research_edit_customers").msDropdown().data("dd");
+            if(data != ''){
+                oDropdown.setIndexByValue(data);
+
+            } else {
+                oDropdown.setIndexByValue('All customers');
+            }
+            if (selectedBatch.length == 0)
+                oDropdown.setIndexByValue('All Customers');
+            drawREProductsTable();
+        });
+    });
+
+    var dataTable = $('#records').dataTable({
         "bJQueryUI": true,
         "bDestroy": true,
         "sPaginationType": "full_numbers",
@@ -62,7 +105,7 @@ $(function() {
         },
         "aoColumns": [
             {"sTitle" : "#", "sWidth": "5%", "bSortable": false},
-            {"sTitle" : "Product Name"},
+            {"sTitle" : "Product Name", "sWidth": "35%"},
             {"sTitle" : "URL"},
             {"bVisible": false}
         ]
@@ -86,7 +129,6 @@ $(function() {
             $('ul[data-st-id="short_desc_seo"]').empty();
             $('ul[data-st-id="long_desc_seo"]').empty();
 
-
             $('input[name="product_name"]').val(response.product_name);
             $('input[name="url"]').val(row.attr('url'));
             $('input[name="meta_title"]').val(response.meta_name);
@@ -106,20 +148,20 @@ $(function() {
         drawREProductsTable(this);
     });
 
-    $(document).on("change", 'select[name="research_batches"]', function() {
+    $(document).on("change", 'select[name="research_edit_batches"]', function() {
         drawREProductsTable();
     });
-});
 
-function drawREProductsTable(obj) {
-    if (obj) {
-        $(obj).parent().find('a').removeClass('active_link');
-        $(obj).addClass('active_link');
+    function drawREProductsTable(obj) {
+        if (obj) {
+            $(obj).parent().find('a').removeClass('active_link');
+            $(obj).addClass('active_link');
+        }
+        var link_id = $('div.research_edit_filter_links a[class=active_link]').attr('id');
+
+        var selected_batch =  $('select[name="research_edit_batches"]').find('option:selected').text();
+
+        var urlWithParams = readUrl + '?status=' + link_id + '&batch=' + selected_batch;
+        dataTable.fnReloadAjax(urlWithParams, null, null);
     }
-    var link_id = $('div.research_edit_filter_links a[class=active_link]').attr('id');
-
-    var selected_batch =  $('select[name="research_batches"]').find('option:selected').text();
-
-    var urlWithParams = readUrl + '?status=' + link_id + '&batch=' + selected_batch;
-    dataTable.fnReloadAjax(urlWithParams, null, null);
-}
+});

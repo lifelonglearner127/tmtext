@@ -41,15 +41,12 @@ class Measure extends MY_Controller {
         $file = file_get_contents($ext_url);
         $type = 'png';
         $dir = realpath(BASEPATH."../webroot/webshoots");
-        // $dir =  $_SERVER['DOCUMENT_ROOT']."/webroot/webshoots"; // for local server
-        // $dir =  BASEPATH."../webroot/webshoots";
-        // $dir = "/ebs/sites/client38/web49/web/producteditor/webroot/webshoots"; // for dev server
         if(!file_exists($dir)) {
             mkdir($dir);
             chmod($dir, 0777);
         }
         // --- NEW STUFF (TIMESTAMP BASED IMAGES NAMES) (START)
-        $url_name = $url_name."-".date('Y', time())."-".date('m', time())."-".date('d', time())."-".date('H', time())."-".date('i', time())."-".date('s', time());
+        $url_name = $url_name."-".date('Y-m-d-H-i-s', time());
         // --- NEW STUFF (TIMESTAMP BASED IMAGES NAMES) (END)
         $t = file_put_contents($dir."/$url_name.$type", $file);
         $path = base_url()."webshoots/$url_name.$type";
@@ -61,7 +58,7 @@ class Measure extends MY_Controller {
     }
 
     private function urlExists($url) {
-        if($url == NULL) return false;  
+        if($url === null || trim($url) === "") return false;  
         $ch = curl_init($url);  
         curl_setopt($ch, CURLOPT_TIMEOUT, 5);  
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);  

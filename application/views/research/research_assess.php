@@ -14,10 +14,10 @@
         <ul class="research_content connectedSortable" id="sortable1">
             <li class="boxes mt_10" id="related_keywords">
                 <h3>
-                    <span>
+                    <span class=''>
                         Batch:
-                        <div id="research_customers" class="customer_dropdown"></div>
-                        <?php echo form_dropdown('research_batches', $batches_list, array(), 'class="mt_10 mr_10" style="width: 100px;"'); ?>
+                        <div id="research_assess_customers" class="customer_dropdown"></div>
+                        <?php echo form_dropdown('research_assess_batches', $batches_list, array(), 'class="mt_10 mr_10" style="width: 175px;margin-left:20px"'); ?>
                     </span>
                     <span class=''>
                         or
@@ -26,16 +26,22 @@
                         Category:
                         <?php echo form_dropdown('category', $category_list, array(), 'class="category_list mt_10"'); ?>
                     </span>
-                    <a href="#" onclick="return false;" class="mr_10 hideShow">
-                        <img style="float: right;" src="<?php echo base_url();?>img/arrow.png" />
-                    </a>
+                    <div class="clear"></div>
+                    <span class=''>
+                        <label class="checkbox" style="display:inline;">
+                            <input id="research_assess_select_all" type="checkbox" style="float: none;margin-top: 0px;" checked>
+                            Select all:
+                        </label>
+                    </span>
+<!--                    <a href="#" onclick="return false;" class="hideShow float_r">-->
+<!--                        <img src="--><?php //echo base_url();?><!--img/arrow.png" />-->
+<!--                    </a>-->
                 </h3>
                 <div class="boxes_content">
                     <div class="row-fluid">
                         <div class="span4">
                             Text:
-                            <input id="assess_filter_text" type="text" id="assess_filter_text" class="mt_10" style="width: 150px;"/>
-                            <button id="research_assess_filter" class="btn">Filter</button>
+                            <input id="assess_filter_text" type="text" id="assess_filter_text" class="mt_10 w_100"/>
                         </div>
                         <div class="span6">
                             Date Range:

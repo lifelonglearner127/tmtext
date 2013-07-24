@@ -326,7 +326,7 @@ class Research extends MY_Controller {
             if ($enable_exec) {
                 if ($short_seo_phrases && !empty($row->short_description)) {
                     $cmd = $this->prepare_extract_phrases_cmd($row->short_description);
-                    $output = array();
+                    $output = [];
                     $result = exec($cmd, $output, $error);
 
                     if ($error > 0) {
@@ -341,7 +341,7 @@ class Research extends MY_Controller {
                 }
 
                 if ($long_seo_phrases && !empty($row->long_description)) {
-                    $output = array();
+                    $output = [];
                     $cmd = $this->prepare_extract_phrases_cmd($row->long_description);
                     $result = exec($cmd, $output, $error);
 
