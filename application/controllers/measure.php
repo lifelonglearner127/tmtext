@@ -325,11 +325,12 @@ class Measure extends MY_Controller {
         $this->data['customers_list'] = $this->category_customers_list();
         $this->load->model('batches_model');
         $batches = $this->batches_model->getAll();
-        $batches_list = array(0 => 'No Batch');
+        $batches_list = array(0 => 'Choose Batch');
         //Max
         foreach($batches as $batch){
-            $batches_list[$batch->id]=$batch->title;
+            $batches_list[$batch->title]=$batch->title;
         }
+        //Max
         $this->data['batches_list'] = $batches_list;
         $this->render();
     }
@@ -556,7 +557,7 @@ class Measure extends MY_Controller {
             }
             // --- GET SELECTED RPODUCT SEO DATA (TMP) (END)
         }
-              //Max
+              
         // -------- COMPARING V1 (START)
         $s_term = $this->input->post('s_term');
 

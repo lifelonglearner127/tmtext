@@ -57,7 +57,7 @@
                 $s_product_long_desc_count=0; 
                 $s_product_long_description='';
             }
-            
+             $words_count=$s_product_long_desc_count+$s_product_short_desc_count;
             
         //Max    
             
@@ -90,7 +90,9 @@
                                 </td>
                                 <?php if($j!=0){ ?>
                                 <td>
-                                    <p  class='short_product_name'> $<span class="product_price"><?php echo sprintf("%01.2f", floatval($last_price->price)); ?></span></p>
+<!--    //Max-->
+                                    <p  class='short_product_name'> <span <?php if(sprintf("%01.2f", floatval($last_price->price))==$min_price){ echo "style='font-weight: bold;'";} ?>class="product_price">$<?php echo sprintf("%01.2f", floatval($last_price->price)); ?></span></p>
+<!--    //Max                            -->
                                 </td>
                                 <?php
                                 }else{
@@ -108,21 +110,67 @@
                     }
                     ?>
 <!--                            //Max-->
-                    <span class='analysis_content_head'>Short Description<span class='short_desc_wc'>
-                        <?php if($s_product_short_desc_count>0) {echo  ' ('.$s_product_short_desc_count; ?> words</span>):</span><?php }
-                        else{
-                            ?> (none)</span></span>
-                           <?php
-                        }
-                    ?>
-                    <p  class='short_desc_con'><?php echo $s_product_description; ?></p>
-                    <span class='analysis_content_head'>Long Description<span class='long_desc_wc'><?php if( $s_product_long_desc_count>0){echo ' ('.$s_product_long_desc_count; ?> words</span>):</span><?php }else{ ?> (none)</span>
-                    <?php } ?>
+        <?php if($s_product_short_desc_count>0){ ?>
+                    <span class='analysis_content_head'><img style="height: 13px; width: 13px" src="<?php echo base_url() ?>/img/arrow-down.png"><?php if($s_product_description=='' || $s_product_long_description==''){ echo "Description";}else{ echo "Short Description"; } ?><span class='short_desc_wc'></span></span>
+                         <p>Words: <b><?php echo $words_count; ?></b></p>
+                         <?php if(count($vs['seo']['short']) > 0) { ?>
+                              <p>SEO: </p>
+                              <ul class='gr_seo_short_ph' style='margin-top: -30px;margin-left: 40px;font-weight: bold;'>
+                                <?php foreach ($vs['seo']['short'] as $key => $value) { ?>
+                                <?php $v_ph = $value['ph']; ?>
+                                
+                                <li >
+                                    <span style="font-size: 14px !important;"data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'short')" class='word_wrap_li_pr hover_en'>
+                                        <?php echo $value['ph']; ?>
+                                        <?php echo '('.$value['count'].')'; ?>
+                                    </span>
+<!--                                    <span class='word_wrap_li_sec' style="margin-top: -16px;margin-left: 5px;"></span>-->
+                                </li>
+                                <?php } ?>
+                                </ul>
+                            <?php } else { ?>
+                                
+                                <p>SEO: <span style="font-weight: bold;">None</span></p>
+                            <?php } ?>
+                         <p>Original: <b><?php  ?></b></p>
+                                                                          
+                         <p  class='short_desc_con'><?php echo $s_product_description; ?></p>
+        <?php }
+            if($s_product_long_desc_count>0){ 
+        ?>
+                    
+                    <span class='analysis_content_head'><img style="height: 13px; width: 13px" src="<?php echo base_url() ?>/img/arrow-down.png"><?php if($s_product_description=='' || $s_product_long_description==''){ echo "Description";}else{ echo "Long Description"; } ?><span class='long_desc_wc'></span></span>
+                     <p>Words: <b><?php echo $words_count; ?></b></p>
+                     <?php if(count($vs['seo']['long']) > 0) { ?>
+                              <p>SEO: </p>
+                              <ul class='gr_seo_short_ph' style='margin-top: -30px;margin-left: 40px;font-weight: bold;'>
+                                <?php foreach ($vs['seo']['long'] as $key => $value) { ?>
+                                <?php $v_ph = $value['ph']; ?>
+                                
+                                <li >
+                                    <span style="font-size: 14px !important;"data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'long')" class='word_wrap_li_pr hover_en'>
+                                        <?php echo $value['ph']; ?>
+                                        <?php echo '('.$value['count'].')'; ?>
+                                    </span>
+<!--                                    <span class='word_wrap_li_sec' style="margin-top: -16px;margin-left: 5px;"></span>-->
+                                </li>
+                                <?php } ?>
+                                </ul>
+                            <?php } else { ?>
+                                
+                                <p>SEO: <span style="font-weight: bold;">None</span></p>
+                            <?php } ?>
+                         <p>Original: <b><?php  ?></b></p>
+                        
+                    
 <!--                     //Max-->
-                    <p ><?php echo $s_product_long_description; ?></p>
+            <p ><?php echo $s_product_long_description; }?></p>
+           
+            
                 </div>
             </div>
-            <div class='grid_seo'>
+            
+<!--            <div class='grid_seo'>
                 <ul>
                     <li><a href='javascript:void()'>SEO Phrases:</a></li>
                 </ul>
@@ -158,11 +206,11 @@
                     <li style='margin-top: 5px;'>none</li>
                     <?php } ?>
                 </ul>
-                <!-- <ul>
+                 <ul>
                     <li><a href='javascript:void()'>Attributes used (<span class='gr_attr_count'>0</span>):</a></li>
                     <li class='gr_attr_con'>no attributes</li>
-                </ul> -->
-            </div>
+                </ul> 
+            </div>-->
         </div>
         <?php if ($i%3 == 0) { ?>
         <div style="clear:both"></div>

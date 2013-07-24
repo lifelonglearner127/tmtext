@@ -203,7 +203,7 @@ function afterAutocomplete(loadData){
 }
 
 jQuery(document).ready(function($) {
-
+    
     function getCustomerDropdown(){
         setTimeout(function() {
             var customers_list_ci = $.post(base_url + 'index.php/measure/getcustomerslist_new', { }, function(c_data) {
@@ -226,15 +226,17 @@ jQuery(document).ready(function($) {
                         } else if ($('.customer_dropdown').attr('id') == 'product_customers') {
                             $.post(base_url + 'index.php/research/filterBatchByCustomer', { 'customer_name': res.target.value}, function(data){
                                 if(data.length>0){
+                                    //Max
                                     $("select[name='product_batches']").empty();
-                                    $("select[name='product_batches']").append('<option>No Batch</option>');
+                                    $("select[name='product_batches']").append('<option value="0">Choose Batch</option>');
                                     for(var i=0; i<data.length; i++){
-                                        $("select[name='product_batches']").append('<option>'+data[i]+'</option>');
+                                       $("select[name='product_batches']").append('<option value="'+data[i]+'">'+data[i]+'</option>');
                                     }
                                 } else if(data.length==0 && res.target.value !="All customers"){
                                     $("select[name='product_batches']").empty();
-                                    $("select[name='product_batches']").append('<option>No Batch</option>');
+                                    $("select[name='product_batches']").append('<option value="0">Choose Batch</option>');
                                 }
+                                //Max
                             });
                         } else if ($('.customer_dropdown').attr('id') == 'customers') {
                             // get customer name here

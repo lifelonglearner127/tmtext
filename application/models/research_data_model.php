@@ -50,7 +50,14 @@ class Research_data_model extends CI_Model {
 
         return $query->row_array();
     }
-    function get_by_batch_id($batch_id){
+    //Max
+    function get_by_batch_id($batch_title){
+        
+        $query0=$this->db->where('title', $batch_title)
+              ->get('batches');
+         $res0= $query0->row_array();
+        $batch_id=$res0['id'];
+    //Max
         $query1 = $this->db->where('batch_id', $batch_id)
               ->get($this->tables['research_data']);
         

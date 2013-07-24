@@ -144,8 +144,8 @@
             });
 		});
 	</script>
-
-	<div id='an_sort_search_box' class='boxes_content' style='margin-bottom: 15px;'>
+<!--//Max-->
+	<div id='an_sort_search_box' class='boxes_content' style='margin-top: -20px;'>
 		<ul class='product_title'>
 			<li class='main'>
 				<span><b>Product Name</b></span>
@@ -153,7 +153,7 @@
 			</li>
 		</ul>
 		<ul id="products" class='products_an_search'>
-<!--                 Max-->
+
 			<?php foreach($search_results as $k => $v) { ?>
                                 <li data-status='standart' data-value="<?php echo $v['imported_data_id'];?>">
 					<span><?php echo $v['product_name']; ?></span>
