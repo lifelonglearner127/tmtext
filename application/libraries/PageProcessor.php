@@ -682,13 +682,15 @@ class PageProcessor {
 		$description = implode(' ',$description);
 
 		foreach($this->nokogiri->get('#actualPriceRow #actualPriceValue .priceLarge') as $item) {
-			if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $item['#text'][0], $match)) {
+			$p = str_replace(',','',$item['#text'][0]);
+			if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $p, $match)) {
 				$price = $match[1];
 			}
 		}
 
 		foreach($this->nokogiri->get('#priceBlock #listPriceValue.listprice') as $item) {
-			if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $item['#text'][0], $match)) {
+			$p = str_replace(',','',$item['#text'][0]);
+			if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $p, $match)) {
 				$price_old = $match[1];
 			}
 		}
