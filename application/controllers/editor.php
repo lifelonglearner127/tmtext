@@ -197,7 +197,7 @@ class Editor extends MY_Controller {
 
 	public function searchmeasuredb() {
                 $research_data_id=$this->input->post('research_data_id');
-               
+
 		$im_data_id = $this->input->post('im_data_id');
 		$data = array(
 			'search_flag' => '',
@@ -222,7 +222,7 @@ class Editor extends MY_Controller {
 			$data['search_results'] = $data_import;
 			$data['search_flag'] = 'db';
 		}
-               
+
 
 		$this->load->view('editor/searchmeasure', $data);
 	}
@@ -472,7 +472,7 @@ class Editor extends MY_Controller {
 		$this->output->set_content_type('application/json')
     			->set_output(json_encode($output));
 	}
-    
+
     public function home(){
         $this->render('home');
     }
