@@ -82,13 +82,14 @@ class BestsellerSpider(BaseSpider):
         departments = []
 
         # extract department name and url for each department in menu
+        #TODO: add info about availability
         #TODO: manage exceptions: MP3
         #                         lawn and garden is missing page 3
         for department_link in department_links:
             department = {"url" : department_link.select("@href").extract()[0], "text" : department_link.select("text()").extract()[0]}
             departments.append(department)
         
-        # pass department urls to parsePage
+        # pass department urls to parsePage (35 departments)
         for department in departments:
             request = Request(department['url'], callback = self.parsePage)
             request.meta['dept_name'] = department['text']
@@ -97,12 +98,22 @@ class BestsellerSpider(BaseSpider):
     # extract each page url for a department's bestseller list and pass it to parseDepartment
     def parsePage(self, response):
         hxs = HtmlXPathSelector(response)
-        page_urls = hxs.select("//div[@id='zg_paginationWrapper']//a/@href").extract()
+        
+        # for MP3 Downloads, rerun this method with its subcategories (MP3 Songs and MP3 Albums). also split it into paid and free?
+        if response.meta['dept_name'] == "MP3 Downloads":
+            subcategories = hxs.select("//ul[@id='zg_browseRoot']/ul/ul/li/a")
+            for subcategory in subcategories:
+                request = Request(subcategory.select("@href").extract()[0], callback = self.parsePage)
+                request.meta['dept_name'] = subcategory.select("text()").extract()[0]
+                yield request
 
-        for page_url in page_urls:
-            request = Request(page_url, callback = self.parseDepartment)
-            request.meta['dept_name'] = response.meta['dept_name']
-            yield request
+        else:
+            page_urls = hxs.select("//div[@id='zg_paginationWrapper']//a/@href").extract()
+
+            for page_url in page_urls:
+                request = Request(page_url, callback = self.parseDepartment)
+                request.meta['dept_name'] = response.meta['dept_name']
+                yield request
 
     # take a page of a department's bestsellers list and extract products
     def parseDepartment(self, response):
@@ -115,15 +126,20 @@ class BestsellerSpider(BaseSpider):
             item = ProductItem()
 
             #TODO: the index for the title is sometimes out of range - sometimes it can't find that tag (remove the [0] to debug)
-            item['list_name'] = product.select("div[@class='zg_itemWrapper']//div[@class='zg_title']/a/text()").extract()[0]
-            # if name:
-            #     item['list_name'] = name[0]
-            # else:
-            #     item['list_name'] = "nume"
-            
-            #item['url'] = product.select("div[@class='zg_itemWrapper']//div[@class='zg_title']/a/@href").extract()[0].strip()
+            list_name = product.select("div[@class='zg_itemWrapper']//div[@class='zg_title']/a/text()").extract()
+            if list_name:
+                item['list_name'] = list_name[0]
+            else:
+                # if there's no product name don't include this product in the list, move on to the next
+                continue
 
-            item['url'] = product.select("div[@class='zg_itemWrapper']//div[@class='zg_title']/a/@href").extract()[0].strip()
+            url = product.select("div[@class='zg_itemWrapper']//div[@class='zg_title']/a/@href").extract()
+            if url:
+                item['url'] = url[0].strip()
+            else:
+                # if there's no product url don't include this product in the list, move on to the next
+                # one of the products in Lawn & Garden is missing a name and url, also in Sports & Outdoors
+                continue
             
             #TODO: this needs to be refined, many prices etc. extract all prices? new, used etc
             prices = product.select("div[@class='zg_itemWrapper']//div[@class='zg_price']")
@@ -188,7 +204,7 @@ class BestsellerSpider(BaseSpider):
         item['page_title'] = page_title
 
 
-        # find product name on product page (4 possible formats)
+        # find product name on product page (5 possible formats)
         product_name = hxs.select("//span[@id='btAsinTitle']/text()").extract()
         if not product_name:
             product_name = hxs.select("//h1[@id='title']/text()").extract()
@@ -196,6 +212,10 @@ class BestsellerSpider(BaseSpider):
             product_name = hxs.select("//h1[@class='parseasinTitle']/text()").extract()
         if not product_name:
             product_name = hxs.select("//h1[@class='parseasintitle']/text()").extract()
+
+        # for the movies department it's only a h1
+        if not product_name:
+            product_name = hxs.select("//h1/text()").extract()
         # if not product_name:
         #     product_name = "nume"
         # else:
