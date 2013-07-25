@@ -33,10 +33,10 @@ function openScreensModalSlider() {
 	        return "" + index;
 	    },
 	    navigationSize: false,
-	    autoPlay: false,
+	    autoPlay: true,
 	    autoPlayLocked: false,
 	    autoPlayDelayed: false,
-	    pauseOnHover: true,
+	    pauseOnHover: false,
 	    stopAtEnd: false,
 	    playRtl: false,
 	    delay: 3000,
