@@ -625,9 +625,16 @@ function keywordsAnalizer() {
 // --- KEYWORDS ANALYZER (END)
 
 $(document).ready(function() {
+    //Max
     $("#an_search").live('click', function() {//max
-
+            var dropdown = $("select[name='customers_list']").msDropdown().data("dd");
+                        dropdown.destroy();
+                        $('#product_customers .ddcommon').remove();
+                        $("select[name='customers_list'] option[value='All Customers']").prop('selected', true);
+                 
+                        dropdown = $("select[name='customers_list']").msDropdown().data("dd");
     });
+    //Max
     $('title').text("Competitive Intelligence");
 
     $("#measureFormMetrics").submit(function(e) {
@@ -699,7 +706,7 @@ $(document).ready(function() {
                 $("select[name='customers_list'] option").each(function() {
 
                     if (data == $(this).val()) {
-                         var dropdown = $("select[name='customers_list']").msDropdown().data("dd");
+                        var dropdown = $("select[name='customers_list']").msDropdown().data("dd");
                         dropdown.destroy();
                         $('#product_customers .ddcommon').remove();
                         $(this).prop('selected', true);

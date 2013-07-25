@@ -373,12 +373,16 @@
     display: none;
     /*margin-left: 20px;*/
 }
+/*//Max*/
 .products_an_search {
-    height: 170px;
+    min-height: 30px;
+    max-height: 175px;
+    
     /*min-height: 30px;
     height: auto; */
     overflow: auto;
 }
+/*//Max*/
 .products_an_search li span {
     display: inline-block;
     overflow: hidden;
@@ -1732,4 +1736,8 @@ select#sites option{
 .batch_info ul li{
     display: inline;
     padding-left: 100px;
+}
+/*//Max*/
+.heading_text{
+    margin:0px;
 }

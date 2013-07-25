@@ -446,6 +446,21 @@ class Measure extends MY_Controller {
         $this->output->set_content_type('application/json')->set_output(json_encode($response));
     }
 //Max
+    
+    public function compare_text($first_text, $second_text){
+        $a= array_unique(explode(' ',$first_text));
+        $b= array_unique(explode(' ',$second_text));
+        $count=0;
+        foreach($a as $val  ){
+            if(in_array($val,$b)){
+                $count++;
+            }
+
+        }
+
+        $prc= $count/count($a)*100;
+        return $prc;
+    }
     public function gridview() {
         $im_data_id = $this->input->post('im_data_id');
                  
@@ -539,6 +554,61 @@ class Measure extends MY_Controller {
                     $three_last_prices = $this->imported_data_parsed_model->getLastPrices($imported_data_id);
                     $same_pr[$ks]['three_last_prices'] = $three_last_prices;
                 }
+      //Max          
+      foreach($same_pr as $ks => $vs) {
+         $maxshort=0;
+         $maxlong=0;
+         
+         foreach($same_pr as $ks1 => $vs1 ){
+             
+           if($ks!=$ks1){
+           if($vs['description']!=''){
+                if($vs1['description']!=''){
+                     $percent=$this->compare_text($vs['description'],$vs1['description']);
+                     if($percent>$maxshort){
+                     $maxshort=$percent;}
+                }
+            
+                if($vs1['long_description']!=''){
+                     $percent=$this->compare_text($vs['description'],$vs1['long_description']);
+                     if($percent>$maxshort){
+                     $maxshort=$percent;}
+                }
+                }
+            
+            if($vs['long_description']!=''){
+                if($vs1['description']!=''){
+                 $percent=$this->compare_text($vs['long_description'],$vs1['description']);
+                 if($percent>$maxlong){
+                 $maxlong=$percent;}
+                 }
+            
+                if($vs1['long_description']!=''){
+                     $percent=$this->compare_text($vs['long_description'],$vs1['long_description']);
+                     if($percent>$maxlong){
+                     $maxlong=$percent;}
+                }
+            }
+           }    
+            }
+            if($maxshort>90){
+                $vs['short_original']=round($maxshort,2).'%';
+                //$vs['short_original']="No";
+            }else{
+               $vs['short_original']=round($maxshort,2).'%'; 
+               //$vs['short_original']="Yes";
+            }
+            
+            if($maxlong>90){
+                $vs['long_original']=round($maxlong,2).'%';
+            }else{
+               $vs['long_original']=round($maxlong,2).'%'; 
+                 }
+              $same_pr[$ks]= $vs; 
+              
+            }
+            //Max                                              
+             
                 $data['same_pr'] = $same_pr;
 //            }
             // --- ATTEMPT TO GET 'SAME' FROM 'HUMAN INTERFACE' (products_compare table) (END)

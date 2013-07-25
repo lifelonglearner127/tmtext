@@ -7,7 +7,7 @@
     $min_price= 1000000000;
     $j=0;
      foreach($same_pr as $ks => $vs) {
-            foreach($vs['three_last_prices'] as $last_price){
+           foreach($vs['three_last_prices'] as $last_price){
                 $price=sprintf("%01.2f", floatval($last_price->price));
                 if($price<$min_price){
                     $min_price=$price;
@@ -21,7 +21,7 @@
             }
         }
     }
-       ?>
+ ?>
         
         <?php foreach($same_pr as $ks => $vs) { ?>
         <?php
@@ -57,7 +57,7 @@
                 $s_product_long_desc_count=0; 
                 $s_product_long_description='';
             }
-             $words_count=$s_product_long_desc_count+$s_product_short_desc_count;
+             
             
         //Max    
             
@@ -111,11 +111,11 @@
                     ?>
 <!--                            //Max-->
         <?php if($s_product_short_desc_count>0){ ?>
-                    <span class='analysis_content_head'><img style="height: 13px; width: 13px" src="<?php echo base_url() ?>/img/arrow-down.png"><?php if($s_product_description=='' || $s_product_long_description==''){ echo "Description";}else{ echo "Short Description"; } ?><span class='short_desc_wc'></span></span>
-                         <p>Words: <b><?php echo $words_count; ?></b></p>
+                    <span class='analysis_content_head'><img style="height: 9px;width: 9px;background: rgb(207, 207, 207);padding: 2px;margin-top: -3px;margin-right: 4px;" src="<?php echo base_url() ?>/img/arrow-down.png"><?php if($s_product_description=='' || $s_product_long_description==''){ echo "Description";}else{ echo "Short Description"; } ?><span class='short_desc_wc'></span></span>
+                         <p class="heading_text">Words: <b><?php echo $s_product_short_desc_count; ?></b></p>
                          <?php if(count($vs['seo']['short']) > 0) { ?>
-                              <p>SEO: </p>
-                              <ul class='gr_seo_short_ph' style='margin-top: -30px;margin-left: 40px;font-weight: bold;'>
+                              <p class="heading_text">SEO: </p>
+                              <ul class='gr_seo_short_ph' style='margin-top: -19px;margin-left: 40px;font-weight: bold;margin-bottom: 0px;'>
                                 <?php foreach ($vs['seo']['short'] as $key => $value) { ?>
                                 <?php $v_ph = $value['ph']; ?>
                                 
@@ -130,20 +130,20 @@
                                 </ul>
                             <?php } else { ?>
                                 
-                                <p>SEO: <span style="font-weight: bold;">None</span></p>
+                                <p class="heading_text">SEO: <span style="font-weight: bold;">None</span></p>
                             <?php } ?>
-                         <p>Original: <b><?php  ?></b></p>
+                         <p>Original content: <b><?php echo $vs['short_original'];  ?></b></p>
                                                                           
                          <p  class='short_desc_con'><?php echo $s_product_description; ?></p>
         <?php }
             if($s_product_long_desc_count>0){ 
         ?>
                     
-                    <span class='analysis_content_head'><img style="height: 13px; width: 13px" src="<?php echo base_url() ?>/img/arrow-down.png"><?php if($s_product_description=='' || $s_product_long_description==''){ echo "Description";}else{ echo "Long Description"; } ?><span class='long_desc_wc'></span></span>
-                     <p>Words: <b><?php echo $words_count; ?></b></p>
+                    <span class='analysis_content_head'><img style="height: 9px;width: 9px;background: rgb(207, 207, 207);padding: 2px;margin-top: -3px;margin-right: 4px;" src="<?php echo base_url() ?>/img/arrow-down.png"><?php if($s_product_description=='' || $s_product_long_description==''){ echo "Description";}else{ echo "Long Description"; } ?><span class='long_desc_wc'></span></span>
+                     <p class="heading_text">Words: <b><?php echo $s_product_long_desc_count; ?></b></p>
                      <?php if(count($vs['seo']['long']) > 0) { ?>
-                              <p>SEO: </p>
-                              <ul class='gr_seo_short_ph' style='margin-top: -30px;margin-left: 40px;font-weight: bold;'>
+                              <p class="heading_text">SEO: </p>
+                              <ul class='gr_seo_short_ph' style='margin-top: -19px;margin-left: 40px;font-weight: bold;margin-bottom: 0px;'>
                                 <?php foreach ($vs['seo']['long'] as $key => $value) { ?>
                                 <?php $v_ph = $value['ph']; ?>
                                 
@@ -158,9 +158,9 @@
                                 </ul>
                             <?php } else { ?>
                                 
-                                <p>SEO: <span style="font-weight: bold;">None</span></p>
+                                <p class="heading_text">SEO: <span style="font-weight: bold;">None</span></p>
                             <?php } ?>
-                         <p>Original: <b><?php  ?></b></p>
+                         <p>Original content: <b><?php echo $vs['long_original'];  ?></b></p>
                         
                     
 <!--                     //Max-->
