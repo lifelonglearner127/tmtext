@@ -484,7 +484,7 @@ $(document).ready(function () {
             'urls': $("textarea#urls").val()
         }, function(data){
             $('.info-message').append(data.message).fadeOut(10000);
-            console.log(data);
+            $("textarea#urls").val("");
         });
         return false;
     });
