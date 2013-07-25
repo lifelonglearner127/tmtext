@@ -517,7 +517,7 @@ $(document).ready(function () {
 
     $(document).on("click", "button#get_attributes", function(){
         $.post(base_url + 'index.php/research/getAttributes', { 'imported_data_id': $("li.current_selected").attr('id')}, function(data){
-            var str = '<ul>';
+            var str = '<ul class="ml_0">';
 
             for (var key in data.product_name){
                 str += '<li>'+key+': '+data.product_name[key]+'</li>';
