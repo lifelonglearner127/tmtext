@@ -27,7 +27,7 @@ function openScreensModalSlider() {
 	    enableKeyboard: true,
 	    startPanel: 1,
 	    changeBy: 1,
-	    hashTags: true,
+	    hashTags: false,
 	    infiniteSlides: true,
 	    navigationFormatter: function(index, panel) {
 	        return "" + index;
@@ -224,12 +224,35 @@ function openOverviewScreensCrawlModal() {
 }
 
 function submitEmailReportsConfig() {
+	// --- collect data (start)
+	var email_pattern = /^([a-z0-9_\-]+\.\+)*[a-z0-9_\-\+]+@([a-z0-9][a-z0-9\-]*[a-z0-9]\.)+[a-z]{2,4}$/i;
+	var recs_arr = [];
 	var recs = $.trim($("#email_rec").val());
+	if(recs !== "") {
+		recs_arr = recs.split(',');
+		var recs_arr_checked = [];
+		for(var i = 0; i < recs_arr.length; i++) {
+			if(email_pattern.test(recs_arr[i])) {
+				recs_arr_checked.push(recs_arr[i]);
+			}
+		}
+	}
 	var rec_day = $("#week_day_rep > option:selected").val();
-	$("#email_rec").val("");
-	$("#email_rec").blur("");
-	$("#configure_email_reports").modal('hide');
-	$("#configure_email_reports_success").modal('show');
+	// --- collect data (end)
+	var send_data = {
+		recs_arr: recs_arr_checked,
+		rec_day: rec_day
+	}
+	var rec = $.post(base_url + 'index.php/measure/rec_emails_reports_recipient', send_data, function(data) {
+		if(data) {
+			$("#email_rec").val("");
+			$("#email_rec").blur("");
+			$("#configure_email_reports").modal('hide');
+			$("#configure_email_reports_success").modal('show');
+		} else {
+			alert('Validation or internal server error');
+		}
+	});
 }
 
 function configureEmailReportsModal() {

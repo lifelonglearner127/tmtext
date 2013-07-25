@@ -4,11 +4,38 @@ class Webshoots_model extends CI_Model {
 
     var $tables = array(
     	'webshoots' => 'webshoots',
-        'webshoots_select' => 'webshoots_select'
+        'webshoots_select' => 'webshoots_select',
+        'ci_home_page_recipients' => 'ci_home_page_recipients'
     );
 
     function __construct() {
         parent::__construct();
+    }
+
+    public function rec_emails_reports_recipient($rec_day, $recs_arr) {
+        $res = false;
+        if(count($recs_arr) > 0) {
+            foreach ($recs_arr as $email) {
+                $check_query = $this->db->get_where($this->tables['ci_home_page_recipients'], array('email' => $email));
+                $check_query_res = $check_query->result();
+                if(count($check_query_res) > 0) { // --- update
+                    $update_object = array(
+                        'day' => $rec_day,
+                        'stamp' => date("Y-m-d H:i:s")
+                    );
+                    $this->db->update($this->tables['ci_home_page_recipients'], $update_object, array('email' => $email));
+                } else { // --- insert
+                    $insert_object = array(
+                        'email' => $email,
+                        'day' => $rec_day,
+                        'stamp' => date("Y-m-d H:i:s")
+                    );
+                    $this->db->insert($this->tables['ci_home_page_recipients'], $insert_object);
+                }
+            }
+            $res = true;
+        }   
+        return $res;
     }
 
     public function getWeekAvailableScreens($week, $year) {

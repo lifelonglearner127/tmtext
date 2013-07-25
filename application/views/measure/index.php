@@ -10,7 +10,7 @@
     	<div class="row-fluid home_pages">
 
     		<div class='span12 head_section'>
-	    		<p class='head_line1'>Home page reports are generated weekly. <a onclick="configureEmailReportsModal()" href="javascript:void(0)">Configure email reports.</a></p>
+	    		<p class='head_line1'>Home page reports are generated weekly. <a onclick="configureEmailReportsModal()" href="javascript:void(0)">Configure email reports.</a> <a class='btn btn-primary' onclick="viewRecipientsList()" href='javascript:void(0)'><i class='icon-tasks icon-white'></i>&nbsp;Recipients List</a></p>
 				<div class='head_line_2'>
 					<div class="span2">View Reports for:</div>
 					<div class="span2 w_100 ml_disable">
@@ -191,7 +191,7 @@
 		<h3>Reports Configuration Saved</h3>
 	</div>
 	<div class="modal-body">
-		<p>Email configuration successfully saved!</p>
+		<p>Email configuration successfully saved! Use 'Recipients List' button to view results.</p>
 	</div>
 	<div class="modal-footer">
 		<a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
@@ -206,9 +206,10 @@
 	<div class="modal-body">
 		<form action='' onsubmit="return false;" class="form-horizontal">
 			<div class="control-group">
-				<label class="control-label" for="email_rec">Email recipients:</label>
+				<label class="control-label" for="email_rec">Email recipient(s):</label>
 				<div class="controls">
 					<input type="text" style="width: 220px;" id="email_rec" name="email_rec" placeholder="recipients..">
+					<p class='help-block custom_help_block'>* separate emails by commas</p>
 				</div>
 			</div>
 			<div class="control-group">
