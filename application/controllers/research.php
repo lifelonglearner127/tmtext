@@ -294,21 +294,6 @@ class Research extends MY_Controller {
         $long_seo_phrases = $this->input->get('long_seo_phrases');
         $long_duplicate_context = $this->input->get('long_duplicate_context');
 
-
-//        if(!empty($price_list['result'])) {
-//            foreach($price_list['result'] as $price) {
-//                $parsed_attributes = unserialize($price->parsed_attributes);
-//                $model = (!empty($parsed_attributes['model'])?$parsed_attributes['model']: $parsed_attributes['UPC/EAN/ISBN']);
-//                $output['aaData'][] = array(
-//                    $price->created,
-//                    '<a href ="'.$price->url.'">'.substr($price->url,0, 60).'</a>',
-//                    $model,
-//                    $price->product_name,
-//                    sprintf("%01.2f", $price->price),
-//                );
-//            }
-//        }
-
         $params = new stdClass();
         $params->batch_name = $batch_name;
         $params->txt_filter = $txt_filter;
@@ -322,27 +307,38 @@ class Research extends MY_Controller {
         $results = $this->research_data_model->getInfoForAssess($params);
 
         if ($price_diff) {
-            $prices = $this->research_data_model->getPricesForBatch($batch_name);
+            //$prices = $this->research_data_model->getPricesForBatch($batch_name);
+            $this->load->model('imported_data_parsed_model');
         }
 
         $enable_exec = true;
         $result_table = array();
         foreach($results as $row) {
-            $short_description_wc = preg_match_all('/\b/', $row->short_description) / 2;
-            if ($short_more > -1)
-                if ($short_description_wc < $short_more)
+            //$short_description_wc = preg_match_all('/\b/', $row->short_description) / 2; // bug in PHP 5.3.10
+            $short_description_wc = (count(preg_split('/\b/', $row->short_description)) - 1) / 2;
+            if ($short_more > -1) {
+                if ($short_description_wc < $short_more) {
                     continue;
-            if ($short_less > -1)
-                if ($short_description_wc > $short_less)
+                }
+            }
+            if ($short_less > -1) {
+                if ($short_description_wc > $short_less) {
                     continue;
+                }
+            }
 
-            $long_description_wc = preg_match_all('/\b/', $row->long_description) / 2;
-            if ($long_more > -1)
-                if ($long_description_wc < $long_more)
+            //$long_description_wc = preg_match_all('/\b/', $row->long_description) / 2; // bug in PHP 5.3.10
+            $long_description_wc = (count(preg_split('/\b/', $row->long_description)) - 1) / 2;
+            if ($long_more > -1) {
+                if ($long_description_wc < $long_more) {
                     continue;
-            if ($long_less > -1)
-                if ($long_description_wc > $long_less)
+                }
+            }
+            if ($long_less > -1) {
+                if ($long_description_wc > $long_less) {
                     continue;
+                }
+            }
 
             $result_row = new stdClass();
             $result_row->id = $row->id;
@@ -353,12 +349,12 @@ class Research extends MY_Controller {
             $result_row->long_description_wc = $long_description_wc;
             $result_row->seo_s = "";
             $result_row->seo_l = "";
-            $result_row->price_diff = "";
+            $result_row->price_diff = "-";
 
             if ($enable_exec) {
                 if ($short_seo_phrases && !empty($row->short_description)) {
                     $cmd = $this->prepare_extract_phrases_cmd($row->short_description);
-//                    $output = [];
+                    $output = array();
                     $result = exec($cmd, $output, $error);
 
                     if ($error > 0) {
@@ -373,7 +369,7 @@ class Research extends MY_Controller {
                 }
 
                 if ($long_seo_phrases && !empty($row->long_description)) {
-//                    $output = [];
+                    $output = array();
                     $cmd = $this->prepare_extract_phrases_cmd($row->long_description);
                     $result = exec($cmd, $output, $error);
 
@@ -390,7 +386,34 @@ class Research extends MY_Controller {
             }
 
             if ($price_diff) {
-                $result_row->price_diff = "a";
+                $data_import = $this->imported_data_parsed_model->getByImId($row->id);
+                if (isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
+                    $own_prices = $this->imported_data_parsed_model->getLastPrices($row->id);
+                    if (!empty($own_prices)) {
+                        $own_price = floatval($own_prices[0]->price);
+                        $price_diff = "<nobr>Own price - ".$own_price."<br />";
+                        $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
+                        if (!empty($similar_items)) {
+                            foreach ($similar_items as $ks => $vs) {
+                                $similar_item_imported_data_id = $similar_items[$ks]['imported_data_id'];
+                                if ($row->id == $similar_item_imported_data_id) {
+                                    continue;
+                                }
+                                $three_last_prices = $this->imported_data_parsed_model->getLastPrices($similar_item_imported_data_id);
+                                if (!empty($three_last_prices)) {
+                                    $price_scatter = $own_price * 0.03;
+                                    $price_upper_range = $own_price + $price_scatter;
+                                    $price_lower_range = $own_price - $price_scatter;
+                                    $his_price = floatval($three_last_prices[0]->price);
+                                    if ($his_price > $price_upper_range || $his_price < $price_lower_range) {
+                                        $price_diff = $price_diff.$similar_items[$ks]['customer']." - ".$his_price."<br /></nobr>";
+                                        $result_row->price_diff = $price_diff;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             $result_table[] = $result_row;

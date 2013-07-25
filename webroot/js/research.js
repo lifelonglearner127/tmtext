@@ -550,7 +550,6 @@ $(document).ready(function () {
     $('select[name="research_batches"]').trigger('change');
 
     $(document).on("click", "button#new_batch", function(){
-        console.log(1111);
         var oDropdown = $("#customers").msDropdown().data("dd");
         if(oDropdown==undefined){
             var oDropdown = $("#customer_dr").msDropdown().data("dd");
