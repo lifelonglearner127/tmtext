@@ -918,7 +918,6 @@ class Research extends MY_Controller {
         $this->load->model('imported_data_attributes_model');
         $imported_data_id = $this->input->post('imported_data_id');
         $data = $this->imported_data_parsed_model->getByImId($imported_data_id);
-        var_dump($data);
         $res = array();
         foreach($data as $key => $value) {
             if ($key != 'url') {
@@ -931,7 +930,6 @@ class Research extends MY_Controller {
                 }
             }
         }
-        var_dump($res);
         $this->output->set_content_type('application/json')
             ->set_output(json_encode($res));
     }
