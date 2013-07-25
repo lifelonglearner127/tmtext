@@ -1,7 +1,9 @@
 from scrapy.spider import BaseSpider
 from scrapy.selector import HtmlXPathSelector
 from scrapy.http import Request
-from Toysrus.items import ToysrusItem
+from Toysrus.items import CategoryItem
+from Toysrus.items import ProductItem
+import re
 import sys
 import string
 
@@ -12,7 +14,7 @@ import string
 #
 ################################
 
-
+# scrape sitemap for departments and categories
 class ToysrusSpider(BaseSpider):
     name = "toysrus"
     allowed_domains = ["toysrus.com"]
@@ -54,7 +56,7 @@ class ToysrusSpider(BaseSpider):
             # extract immediate parent
             parent = link.select("parent::node()/parent::node()/parent::node()/a")
 
-            item = ToysrusItem()
+            item = CategoryItem()
 
             # add the current page url as a field
             item['page'] = response.url
@@ -68,3 +70,73 @@ class ToysrusSpider(BaseSpider):
             items.append(item)
 
         return items
+
+# scrape bestsellers list (from all categories)
+class BestsellerSpider(BaseSpider):
+    name = "bestseller"
+    allowed_domains = ["toysrus.com"]
+
+    start_urls = ['http://www.toysrus.com/family/index.jsp?categoryId=11049188&view=all']
+
+    def parse(self, response):
+        hxs = HtmlXPathSelector(response)
+        products = hxs.select("//div[@class='prodloop_cont']")
+
+        # keep counter to set rank of product
+        rank = 0
+
+        for product in products:
+            item = ProductItem()
+            rank += 1
+
+            item['rank'] = str(rank)
+            
+            # get product name in bestsellers list page
+            name = product.select("a[@class='prodtitle']/text()").extract()
+            item['list_name'] = name[0]
+
+            # get relative url of product page and add its root prefix
+            root_url = "http://www.toysrus.com"
+            url = product.select("a[@class='prodtitle']/@href").extract()
+            if url:
+                item['url'] = root_url + url[0]
+
+            # if there's no url move on to the next product
+            else:
+                continue
+
+            # get price ("our price")
+            price = product.select("div[@class='prodPrice familyPrices']/span[@class='ourPrice2']/text()").extract()
+            if price:
+                item['price'] = price[0]
+
+            # get list price
+            listprice = product.select("div[@class='prodPrice familyPrices']/span[@class='listPrice2']/text()").extract()
+            if listprice:
+                item['listprice'] = listprice[0]
+
+            # send the item to be parsed by parseProduct
+            request = Request(item['url'], callback = self.parseProduct)
+            request.meta['item'] = item
+
+            yield request
+
+    # extract info from product page: product name and page title
+    def parseProduct(self, response):
+        hxs = HtmlXPathSelector(response)
+        title = hxs.select("//title/text()").extract()
+        name = hxs.select("//h1/text()").extract()
+
+        item = response.meta['item']
+
+        page_title = title[0]
+
+        # remove site name from page title
+        m = re.match("(.*) - Toys ?\"?R\"? ?Us", page_title, re.UNICODE)
+        if m:
+            page_title = m.group(1).strip()
+
+        item['page_title'] = page_title
+        item['product_name'] = name[0]
+
+        return item
