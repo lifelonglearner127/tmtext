@@ -359,7 +359,7 @@ class Research extends MY_Controller {
 
                     if ($error > 0) {
                         $enable_exec = false;
-                        continue;
+                        //continue;
                     }
                     $seo_lines = array();
                     foreach ($output as $line) {
@@ -375,7 +375,7 @@ class Research extends MY_Controller {
 
                     if ($error > 0) {
                         $enable_exec = false;
-                        continue;
+                        //continue;
                     }
                     $seo_lines = array();
                     foreach ($output as $line) {
