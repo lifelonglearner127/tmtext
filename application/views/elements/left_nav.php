@@ -11,7 +11,7 @@ $menu = array(
     array('controller' => 'measure', 'name' => 'Competitive Intelligence'),
     array('controller' => 'research', 'name' => 'Research & Edit'),
     array('controller' => 'job_board', 'name' => 'Job Board'),
-    array('controller' => 'editor', 'name' => 'Create'),
+    //array('controller' => 'editor', 'name' => 'Create'),
     //array('controller' => 'validate', 'name' => 'Validate'),
 	array('controller' => 'customer', 'name' => 'Settings'),
 );

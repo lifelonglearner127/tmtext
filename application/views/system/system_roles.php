@@ -57,17 +57,6 @@
                                             ?>
                                         </div>
 										<div class="span1 admin_system_content">
-											<p>Create</p>
-											<div class="clear-fix"></div>
-											<?php
-											foreach ($user_groups as $user_group) {	?>
-												<input type="checkbox" name="editor_<?php echo $user_group->id;?>" <?php if(isset($checked[$user_group->id]['editor'])){print 'checked';}?> value="1"/>
-												<div class="clear-fix"></div>
-											<?php
-												}
-											 ?>
-										</div>
-										<div class="span1 admin_system_content">
 											<p>Settings</p>
 											<div class="clear-fix"></div>
 											<?php
