@@ -151,6 +151,38 @@ class Research extends MY_Controller {
         $this->render();
     }
 
+    public function getBatchInfo(){
+        $this->load->model('batches_model');
+        $this->load->model('research_data_model');
+        $batch_id = $this->batches_model->getIdByName($this->input->post('batch'));
+        if($batch_id != false){
+            $batch_info = $this->batches_model->get($batch_id);
+            $last_date = $this->research_data_model->getLastAddedDateItem($batch_id);
+            $result = array();
+            $result['created'] = mdate('%m/%d/%Y',strtotime($batch_info[0]->created));
+            $result['modified'] = mdate('%m/%d/%Y',strtotime($last_date[0]->modified));
+            $result['count_items'] = $this->research_data_model->countAll($batch_id);
+
+            $this->output->set_content_type('application/json')
+                ->set_output(json_encode($result));
+        }
+    }
+
+    public function addToBatch(){
+        $this->load->model('batches_model');
+        $batch_id = $this->batches_model->getIdByName($this->input->post('batch'));
+        if($batch_id != false){
+            $lines = explode("\n", $this->input->post('urls'));
+            if($this->insert_rows($batch_id, $lines)){
+                $response['message'] = 'Items were added successfully';
+            } else {
+                $response['message'] = 'error';
+            }
+            $this->output->set_content_type('application/json')
+                ->set_output(json_encode($response));
+        }
+    }
+
     public function research_batches(){
         $this->load->model('settings_model');
         $this->data['customer_list'] = $this->getCustomersByUserId();

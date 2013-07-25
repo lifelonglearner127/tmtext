@@ -1724,3 +1724,12 @@ select#sites option{
     font-weight: bold;
     color: red;
 }
+
+.batch_info ul li:first-child{
+    padding-left: 0px;
+}
+
+.batch_info ul li{
+    display: inline;
+    padding-left: 100px;
+}

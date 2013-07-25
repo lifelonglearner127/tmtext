@@ -467,8 +467,33 @@ $(document).ready(function () {
                 });
             }
         });
+        $.post(base_url + 'index.php/research/getBatchInfo', { 'batch': $("select[name='batches']").find("option:selected").text()}, function(data){
+            if(data.created != undefined){
+                $('.batch_info').html('<ul class="ml_0"><li>Created: '+data.created+'</li><li>Item Last Added: '+data.modified+'</li>' +
+                    '<li> Items: '+data.count_items+' </li></ul>');
+            }else{
+                $('.batch_info').html('');
+            }
+
+        });
     });
-       
+
+    $(document).on("click", "button#add_to_batch", function(){
+        $.post(base_url + 'index.php/research/addToBatch', {
+            'batch': $("select[name='batches']").find("option:selected").text(),
+            'urls': $("textarea#urls").val()
+        }, function(data){
+            $('.info-message').append(data.message).fadeOut(10000);
+            console.log(data);
+        });
+        return false;
+    });
+
+    $(document).on("click", "button#delete_from_batch", function(){
+        $("textarea#urls").val("");
+        return false;
+    });
+
     $(document).on("change", "select[name='customersStyle']", function(){
         $.post(base_url + 'index.php/customer/getStyleByCustomer', { 'customer_name': $("select[name='customersStyle'] option:selected").text()}, function(data){
            $("textarea[name='style_guide']").val('');
@@ -507,10 +532,7 @@ $(document).ready(function () {
         dataTable = undefined;
         readResearchData();
     });
-});
 
-
-jQuery(document).ready(function($) {
     $(document).on("change", 'select[name="research_batches"]', function() {
         $.post(base_url + 'index.php/research/filterCustomerByBatch', { 'batch': $("select[name='research_batches']").find("option:selected").text()}, function(data){
             var oDropdown = $("#research_customers").msDropdown().data("dd");
@@ -528,6 +550,7 @@ jQuery(document).ready(function($) {
     $('select[name="research_batches"]').trigger('change');
 
     $(document).on("click", "button#new_batch", function(){
+        console.log(1111);
         var oDropdown = $("#customers").msDropdown().data("dd");
         if(oDropdown==undefined){
             var oDropdown = $("#customer_dr").msDropdown().data("dd");

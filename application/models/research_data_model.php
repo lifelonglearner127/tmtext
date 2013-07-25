@@ -286,9 +286,24 @@ union all
     }
 
     function getAllByBatchId($batch_id){
-        $query = $this->db->where('batch_id', $batch_id)->get($this->tables['research_data']);
+        $query = $this->db->where('batch_id', $batch_id)->limit(1)->order_by("modified", "desc")->get($this->tables['research_data']);
         return $query->result();
     }
+
+    public function countAll($batch_id)
+    {
+        $this->db->select('id')->from($this->tables['research_data'])
+            ->where('batch_id', $batch_id);
+
+        return $this->db->count_all_results();
+    }
+
+    public function getLastAddedDateItem($batch_id)
+    {
+        $query = $this->db->where('batch_id', $batch_id)->limit(1)->get($this->tables['research_data']);
+        return $query->result();
+    }
+
 
     public function updateItem($id, $product_name, $url, $short_description, $long_description, $short_description_wc = 0, $long_description_wc = 0) {
         $data = array(

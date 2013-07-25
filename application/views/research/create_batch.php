@@ -45,6 +45,12 @@
     </div>
 
     <div class="row-fluid mt_20">
+        Items will be added to a batch if you choose an existing batch.
+        <div class="span11 batch_info mt_10">
+        </div>
+    </div>
+
+    <div class="row-fluid mt_10">
         <div class="admin_system_content">
             <div class="controls span7">
                 <button class="btn btn-success" id="csv_import_create_batch" style="display:none"><i class="icon-white icon-ok"></i>&nbsp;Import</button>
@@ -94,9 +100,9 @@
         A CSV containing one URL or Manufacturer ID per line
     </div>
     <div class="row-fluid mt_20">
-        <textarea class="span10" style="min-height: 100px"></textarea >
-        <button class="btn ml_10" id="csv_import_create_batch" ><i class="icon-white icon-ok"></i>&nbsp;Add to batch</button>
-        <button class="btn btn-danger ml_10 mt_10" id="csv_import_create_batch"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
+        <textarea id="urls" class="span10" style="min-height: 100px"></textarea >
+        <button class="btn ml_10" id="add_to_batch" ><i class="icon-white icon-ok"></i>&nbsp;Add to batch</button>
+        <button class="btn btn-danger ml_10 mt_10" id="delete_from_batch"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
     </div>
     <div class="row-fluid" style="display:none">
  		<div class="controls span7">
@@ -105,6 +111,7 @@
 		</div>
 	</div>
     <div class="clear"></div>
+    <div class="info-message text-success mt_10"></div>
     <?php echo form_close();?>
 </div>
 </div>
