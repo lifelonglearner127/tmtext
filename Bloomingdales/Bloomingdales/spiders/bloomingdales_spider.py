@@ -1,6 +1,6 @@
 from scrapy.spider import BaseSpider
 from scrapy.selector import HtmlXPathSelector
-from Bloomingdales.items import BloomingdalesItem
+from Bloomingdales.items import CategoryItem
 import sys
 
 ################################
@@ -26,7 +26,7 @@ class BloomingdalesSpider(BaseSpider):
         #TODO: add registry as special category?
 
         for link in links:
-            item = BloomingdalesItem()
+            item = CategoryItem()
             item['text'] = link.select('text()').extract()[0]
             item['url'] = link.select('@href').extract()[0]
             item['level'] = 0
