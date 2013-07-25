@@ -911,4 +911,28 @@ class Research extends MY_Controller {
         $this->output->set_content_type('application/json')
             ->set_output(json_encode($output));
     }
+
+    public function getAttributes() {
+        $this->load->model('imported_data_parsed_model');
+        $this->load->model('imported_data_model');
+        $this->load->model('imported_data_attributes_model');
+        $imported_data_id = $this->input->post('imported_data_id');
+        $data = $this->imported_data_parsed_model->getByImId($imported_data_id);
+        var_dump($data);
+        $res = array();
+        foreach($data as $key => $value) {
+            if ($key != 'url') {
+                $descCmd = str_replace($this->config->item('cmd_mask'), $value ,$this->config->item('tsv_cmd'));
+                if ($result = shell_exec($descCmd)) {
+                    $a = json_decode(json_encode(simplexml_load_string($result)),1);
+                    foreach ($a['description']['attributes']['attribute'] as $attribute) {
+                        $res[$key][$attribute['@attributes']['tagName']] = $attribute['@attributes']['value'];
+                    }
+                }
+            }
+        }
+        var_dump($res);
+        $this->output->set_content_type('application/json')
+            ->set_output(json_encode($res));
+    }
 }

@@ -514,9 +514,14 @@ $(document).ready(function () {
             $(this).parent().find('span').css('white-space', 'normal');
         }
     });
+
+    $(document).on("click", "button#get_attributes", function(){
+        $.post(base_url + 'index.php/research/getAttributes', { 'imported_data_id': $("li.current_selected").attr('id')}, function(data){
+
+        });
+    });
+
     /*----------------------------Research batches--------------------------------------------*/
-
-
 
     $(document).on("click", '#research_batches_save', function() {
         $.post(base_url + 'index.php/research/change_batch_name', { 'old_batch_name': $('select[name="research_batches"]').find('option:selected').text(),
