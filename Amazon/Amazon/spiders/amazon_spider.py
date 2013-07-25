@@ -1,6 +1,6 @@
 from scrapy.spider import BaseSpider
 from scrapy.selector import HtmlXPathSelector
-from Amazon.items import AmazonItem
+from Amazon.items import CategoryItem
 from Amazon.items import ProductItem
 from scrapy.http import Request
 from scrapy.http import Response
@@ -31,7 +31,7 @@ class AmazonSpider(BaseSpider):
         # add level 1 categories to items
 
         # first one is a special category ("Unlimited Instant Videos"), add it separately
-        special_item = AmazonItem()
+        special_item = CategoryItem()
         special_item['text'] = titles_level1[0].select('text()').extract()[0]
         special_item['level'] = 2
         special_item['special'] = 1
@@ -39,7 +39,7 @@ class AmazonSpider(BaseSpider):
 
         # the rest of the titles are not special
         for title in titles_level1[1:]:
-            item = AmazonItem()
+            item = CategoryItem()
             item['text'] = title.select('text()').extract()[0]
             item['level'] = 2
 
@@ -47,7 +47,7 @@ class AmazonSpider(BaseSpider):
 
         # add level 0 categories to items
         for link in links_level0:
-            item = AmazonItem()
+            item = CategoryItem()
             item['text'] = link.select('text()').extract()[0]
             root_url = "http://www.amazon.com"
             item['url'] = root_url + link.select('@href').extract()[0]
