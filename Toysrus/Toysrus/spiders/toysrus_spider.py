@@ -53,6 +53,8 @@ class ToysrusSpider(BaseSpider):
 
         for link in links:
 
+            #TODO: extract department
+
             # extract immediate parent
             parent = link.select("parent::node()/parent::node()/parent::node()/a")
 

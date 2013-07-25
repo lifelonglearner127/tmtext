@@ -2,7 +2,7 @@
 
 from scrapy.item import Item, Field
 
-class CaategoryItem(Item):
+class CategoryItem(Item):
     url = Field() # url of category
     text = Field() # name of category
     # parent_text = Field() # name of parent category
