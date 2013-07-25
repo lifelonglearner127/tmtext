@@ -1,7 +1,7 @@
 <div style='margin-bottom: 10px;'>
 	<?php if($img_av !== false) { ?>
 		<button onclick='openScreensModalSlider()' class='btn btn-primary'><i class='icon-eye-open icon-white'></i>&nbsp;Week Images Viewer</i></button>
-		<span class='label label-success'>images view available for this week</span>
+		<span class='label label-success'>images viewer available for this week</span>
 		<div class="modal hide fade screens_modal_slider" id='screens_modal_slider'>
 			<div class="modal-body">
 				<ul id='screens_slider'>
@@ -13,7 +13,7 @@
 		</div>
 	<?php } else { ?>
 		<button class='btn btn-primary disabled'><i class='icon-eye-open icon-white'></i>&nbsp;Week Images Viewer</i></button>
-		<span class='label label-important'>no available images for this week</span>
+		<span class='label label-important'>images viewer not available for this week</span>
 	<?php } ?>
 </div>
 <div style='margin-bottom: 15px;'>

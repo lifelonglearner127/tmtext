@@ -253,10 +253,12 @@ class Measure extends MY_Controller {
         $first_cwp = $this->input->post('first_cwp');
         $last_cwp = $this->input->post('last_cwp');
         $state = $this->input->post('state');
+        $week = date("W", time());
         $data = array(
             'first_cwp' => $first_cwp,
             'last_cwp' => $last_cwp,
-            'state' => $state
+            'state' => $state,
+            'week' => $week
         );
         $this->load->view('measure/timelineblock', $data);
     }

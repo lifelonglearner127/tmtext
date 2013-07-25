@@ -46,6 +46,7 @@
 									$int_cell = $intervals[$key_int];
 									$int_cell_start = $int_cell[0];
 									$int_cell_end = $int_cell[count($int_cell) - 1];
+									$block_next_sl = false;
 								?>
 								<?php if($key_int == 0) { ?>
 								<li class='page_prev'><a id="slide_prev_timeline" class='tl_full_left disabled' onclick="return false;" href="javascript:void(0)"><i class='icon-chevron-left icon-white'></i></a></li>
@@ -59,17 +60,27 @@
 								<?php } ?>
 								<?php for($i = $int_cell_start; $i <= $int_cell_end; $i++) { ?>
 									<?php if($i == $c_week) { $active = 'active'; } else { $active = ''; } ?>
-									<li data-week="<?php echo $i; ?>" class="page <?php echo $active; ?>"><a href="javascript:void(0)" onclick="locaHomePageWeekData('<?php echo $i; ?>')"><?php echo $i; ?></a></li>
+									<?php if($i <= $c_week) { ?>
+										<li data-week="<?php echo $i; ?>" class="page <?php echo $active; ?>"><a href="javascript:void(0)" onclick="locaHomePageWeekData('<?php echo $i; ?>')"><?php echo $i; ?></a></li>
+									<?php } else { ?>
+										<?php $block_next_sl = true; ?>
+										<li data-week="<?php echo $i; ?>" class="page disabled blocked"><a href="javascript:void(0)"><?php echo $i; ?></a></li>
+									<?php } ?>
 								<?php } ?>
-								<?php if($int_cell_end == $c_week) { ?>
-								<li id='page_next' class='page_next disabled'><a onclick="return false;" href="javascript:void(0)">&raquo;</a></li>
+								<?php if($block_next_sl) { ?>
+									<li id='page_next' class='page_next disabled'><a onclick="return false;" href="javascript:void(0)">&raquo;</a></li>
+									<li class='page_next'><a id="slide_next_timeline" class='tl_full_left disabled' onclick="return false;" href="javascript:void(0)"><i class='icon-chevron-right icon-white'></i></a></li>
 								<?php } else { ?>
-								<li id='page_next' class='page_next'><a onclick="nextLocaHomePageWeekData()" href="javascript:void(0)">&raquo;</a></li>
-								<?php } ?>
-								<?php if($key_int == 7) { ?>
-								<li class='page_next'><a id="slide_next_timeline" class='tl_full_left disabled' onclick="return false;" href="javascript:void(0)"><i class='icon-chevron-right icon-white'></i></a></li>
-								<?php } else { ?>
-								<li class='page_next'><a id="slide_next_timeline" class='tl_full_left' onclick="slideTimeline('next')" href="javascript:void(0)"><i class='icon-chevron-right icon-white'></i></a></li>
+									<?php if($int_cell_end == $c_week) { ?>
+									<li id='page_next' class='page_next disabled'><a onclick="return false;" href="javascript:void(0)">&raquo;</a></li>
+									<?php } else { ?>
+									<li id='page_next' class='page_next'><a onclick="nextLocaHomePageWeekData()" href="javascript:void(0)">&raquo;</a></li>
+									<?php } ?>
+									<?php if($key_int == 7) { ?>
+									<li class='page_next'><a id="slide_next_timeline" class='tl_full_left disabled' onclick="return false;" href="javascript:void(0)"><i class='icon-chevron-right icon-white'></i></a></li>
+									<?php } else { ?>
+									<li class='page_next'><a id="slide_next_timeline" class='tl_full_left' onclick="slideTimeline('next')" href="javascript:void(0)"><i class='icon-chevron-right icon-white'></i></a></li>
+									<?php } ?>
 								<?php } ?>
 							</ul>
 						</div>
@@ -81,7 +92,7 @@
 				<div style='margin-bottom: 10px;'>
 					<?php if($img_av !== false) { ?>
 						<button onclick='openScreensModalSlider()' class='btn btn-primary'><i class='icon-eye-open icon-white'></i>&nbsp;Week Images Viewer</i></button>
-						<span class='label label-success'>images view available for this week</span>
+						<span class='label label-success'>images viewer available for this week</span>
 						<div class="modal hide fade screens_modal_slider" id='screens_modal_slider'>
 							<div class="modal-body">
 								<ul id='screens_slider'>
@@ -93,7 +104,7 @@
 						</div>
 					<?php } else { ?>
 						<button class='btn btn-primary disabled'><i class='icon-eye-open icon-white'></i>&nbsp;Week Images Viewer</i></button>
-						<span class='label label-important'>no available images for this week</span>
+						<span class='label label-important'>images viewer not available for this week</span>
 					<?php } ?>
 				</div>
 				<div style='margin-bottom: 15px;'>
