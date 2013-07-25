@@ -251,7 +251,15 @@
 	</div>
 </div>
 
-<div class="modal hide fade ci_hp_modals" id='preview_screenshot_modal'>
+<!-- bootstrap lightbox holder (start) -->
+<div id="preview_screenshot_modal" class='lightbox hide fade' tabindex="-1" role="dialog" aria-hidden="true">
+	<div class='lightbox-content'>
+		<img id="sc_preview" src="">
+	</div>
+</div>
+<!-- bootstrap lightbox holder (end) -->
+
+<!-- <div class="modal hide fade ci_hp_modals" id='preview_screenshot_modal'>
 	<div class="modal-header">
 		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 		<h3>Screenshot Review</h3>
@@ -269,7 +277,7 @@
 	<div class="modal-body">
 		<p style='line-height: 24px;'><img src="<?php echo base_url() ?>/img/fancybox_loading.gif">&nbsp;&nbsp;Wait for it. Screenshot generating and saving ...</p>
 	</div>
-</div>
+</div> -->
 
 <!-- MODALS (END) -->
 
