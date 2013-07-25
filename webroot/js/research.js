@@ -518,15 +518,19 @@ $(document).ready(function () {
     $(document).on("click", "button#get_attributes", function(){
         $.post(base_url + 'index.php/research/getAttributes', { 'imported_data_id': $("li.current_selected").attr('id')}, function(data){
             var str = '<ul>';
+
             for (var key in data.product_name){
                 str += '<li>'+key+': '+data.product_name[key]+'</li>';
             }
+            str += '<li>Features:</li>';
             for (var key in data.features){
                 str += '<li>'+key+': '+data.features[key]+'</li>';
             }
+            str += '<li>Description:</li>';
             for (var key in data.description){
                 str += '<li>'+key+': '+data.description[key]+'</li>';
             }
+            str += '<li>Long Description:</li>';
             for (var key in data.long_description){
                 str += '<li>'+key+': '+data.long_description[key]+'</li>';
             }
