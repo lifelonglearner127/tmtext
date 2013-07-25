@@ -351,40 +351,6 @@ class Research extends MY_Controller {
             $result_row->seo_l = "";
             $result_row->price_diff = "-";
 
-            if ($enable_exec) {
-                if ($short_seo_phrases && !empty($row->short_description)) {
-                    $cmd = $this->prepare_extract_phrases_cmd($row->short_description);
-                    $output = array();
-                    $result = exec($cmd, $output, $error);
-
-                    if ($error > 0) {
-                        $enable_exec = false;
-                        //continue;
-                    }
-                    $seo_lines = array();
-                    foreach ($output as $line) {
-                        $seo_lines[] = $line;
-                    }
-                    $result_row->seo_s = implode("</br>", $seo_lines);
-                }
-
-                if ($long_seo_phrases && !empty($row->long_description)) {
-                    $output = array();
-                    $cmd = $this->prepare_extract_phrases_cmd($row->long_description);
-                    $result = exec($cmd, $output, $error);
-
-                    if ($error > 0) {
-                        $enable_exec = false;
-                        //continue;
-                    }
-                    $seo_lines = array();
-                    foreach ($output as $line) {
-                        $seo_lines[] = $line;
-                    }
-                    $result_row->seo_l = implode("</br>", $seo_lines);
-                }
-            }
-
             if ($price_diff) {
                 $data_import = $this->imported_data_parsed_model->getByImId($row->id);
                 if (isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
@@ -412,6 +378,40 @@ class Research extends MY_Controller {
                                 }
                             }
                         }
+                    }
+                }
+            }
+
+            if ($enable_exec) {
+                if ($short_seo_phrases && !empty($row->short_description)) {
+                    $cmd = $this->prepare_extract_phrases_cmd($row->short_description);
+                    $output = array();
+                    $result = exec($cmd, $output, $error);
+
+                    if ($error > 0) {
+                        $enable_exec = false;
+                    } else {
+                        $seo_lines = array();
+                        foreach ($output as $line) {
+                            $seo_lines[] = $line;
+                        }
+                        $result_row->seo_s = implode("</br>", $seo_lines);
+                    }
+                }
+
+                if ($long_seo_phrases && !empty($row->long_description) && $enable_exec) {
+                    $output = array();
+                    $cmd = $this->prepare_extract_phrases_cmd($row->long_description);
+                    $result = exec($cmd, $output, $error);
+
+                    if ($error > 0) {
+                        $enable_exec = false;
+                    } else {
+                        $seo_lines = array();
+                        foreach ($output as $line) {
+                            $seo_lines[] = $line;
+                        }
+                        $result_row->seo_l = implode("</br>", $seo_lines);
                     }
                 }
             }
