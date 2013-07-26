@@ -53,27 +53,37 @@ class BloomingdalesSpider(BaseSpider):
         #TODO: can't parse page 2 pf shoes
         #TODO: they're not ordered by bestseller
         pages = [
+                    # handbags
+                "http://www1.bloomingdales.com/shop/handbags/best-sellers?id=23173#fn=sortBy%3DBEST_SELLERS%26productsPerPage%3D96",\
                     # shoes
                 "http://www1.bloomingdales.com/shop/shoes/best-sellers?id=23268#fn=sortBy%3DBEST_SELLERS%26productsPerPage%3D96", \
                     # shoes page 2
-                "http://www1.bloomingdales.com/shop/shoes/best-sellers?id=23268&#fn=pageIndex%3D2%26sortBy%3DBEST_SELLERS%26productsPerPage%3D96"
-                    # handbags
-                "http://www1.bloomingdales.com/shop/handbags/best-sellers?id=23173&#fn=sortBy%3DBEST_SELLERS%26productsPerPage%3D96",\
+                "http://www1.bloomingdales.com/shop/shoes/best-sellers?id=23268#fn=pageIndex%3D2%26sortBy%3DBEST_SELLERS%26productsPerPage%3D96"
+                 
         ]
 
         # call parsePage for each of these pages
         for page_i in range(len(pages)):
             request = Request(pages[page_i], callback = self.parsePage)
-            if page_i == 2:
+            if page_i == 0:
                 department = "Handbags"
             else:
                 department = "Shoes"
+            #print "+++++++++++++++++" + pages[page_i]
             request.meta['department'] = department
             yield request
 
     def parsePage(self, response):
         hxs = HtmlXPathSelector(response)
         products = hxs.select("//div[@class='productThumbnail showQuickView']")
+
+
+
+
+        #sys.stderr.write("---------------------------------------------------" + response.url)
+
+        if not products:
+            return
         
         # counter to hold rank of product
         rank = 0
