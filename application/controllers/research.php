@@ -464,7 +464,7 @@ class Research extends MY_Controller {
                 continue;
             }
             $phrase = str_replace("\"", "", $line_array[0]);
-            $seo_phrases[] = [$number_repetitions, $phrase];
+            $seo_phrases[] = array($number_repetitions, $phrase);
         }
         if (empty($seo_phrases)) {
             return "None";
