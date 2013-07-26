@@ -232,8 +232,8 @@ function submitEmailReportsConfig() {
 		recs_arr = recs.split(',');
 		var recs_arr_checked = [];
 		for(var i = 0; i < recs_arr.length; i++) {
-			if(email_pattern.test(recs_arr[i])) {
-				recs_arr_checked.push(recs_arr[i]);
+			if(email_pattern.test($.trim(recs_arr[i]))) {
+				recs_arr_checked.push($.trim(recs_arr[i]));
 			}
 		}
 	}
