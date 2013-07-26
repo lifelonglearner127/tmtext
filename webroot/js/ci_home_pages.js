@@ -306,6 +306,16 @@ function detectNextPrevBtnPlace() {
 	}
 }
 
+function get_screenshots_slider_data(week, year) {
+	var send_data = {
+		week: week,
+		year: year
+	}
+	var sc_slider_data = $.post(base_url + 'index.php/measure/get_screenshots_slider_data', send_data, function(data) {
+		$("#screens_images_slider_wrap").html(data);
+	});
+}
+
 function get_home_page_week_data(week) {
 	var year = $("#year_s > option:selected").val();
 	var first_cwp = $(".pagination ul li.page:first").data('week');
@@ -330,10 +340,12 @@ function get_home_page_week_data(week) {
 }
 
 function locaHomePageWeekData(week) {
+	var year = $("#year_s > option:selected").val();
 	$(".pagination ul li").removeClass('active');
 	$(".pagination ul li[data-week=" + week + "]").addClass('active');
 	detectNextPrevBtnPlace();
 	get_home_page_week_data(week);
+	get_screenshots_slider_data(week, year);
 }
 
 function prevLocaHomePageWeekData() {
@@ -365,10 +377,7 @@ function slideTimeline(state) { // state: 'next', 'prev'
         success: function(res) {
         	$("#timeline_ctr").replaceWith(res);
         	get_home_page_week_data($("#timeline_ctr li.page.active").data('week'));
+        	get_screenshots_slider_data($("#timeline_ctr li.page.active").data('week'), $("#year_s > option:selected").val());
         }
   	});
 }
-
-
-
-

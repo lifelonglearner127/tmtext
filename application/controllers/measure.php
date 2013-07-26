@@ -263,6 +263,14 @@ class Measure extends MY_Controller {
         $this->output->set_content_type('application/json')->set_output(true);
     }
 
+    public function get_screenshots_slider_data() {
+        $this->load->model('webshoots_model');
+        $week = $this->input->post('week');
+        $year = $this->input->post('year');
+        $data['img_av'] = $this->webshoots_model->getWeekAvailableScreens($week, $year); 
+        $this->load->view('measure/get_screenshots_slider_data', $data);
+    }
+
     public function timelineblock() {
         $first_cwp = $this->input->post('first_cwp');
         $last_cwp = $this->input->post('last_cwp');
