@@ -790,32 +790,6 @@ function fixGridHeights() {
                     thisEl.find(v1).height(Array.max(heights));
                 });
             }
-
-
-//
-//
-//            var heights = $('div.p_name').map(function() {
-//                return $(this).height();
-//            }).get();
-//            $('div.p_name').height(Array.max(heights));
-//
-//            var heights = $('div.p_description').map(function() {
-//                return $(this).height();
-//            }).get();
-//            $('div.p_description').height(Array.max(heights));
-//
-//
-//            var heights = $('div.p_price').map(function() {
-//                return $(this).height();
-//            }).get();
-//            $('div.p_price').height(Array.max(heights));
-//
-//            var heights = $('div.p_seo').map(function() {
-//                return $(this).height();
-//            }).get();
-//            $('div.p_seo').height(Array.max(heights));
-
-
         });
     }
 }
