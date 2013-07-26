@@ -135,6 +135,7 @@ function switchToGridView() {
         $("#compet_area_grid").show();
         $(".preloader_grids_box").hide();
         $(".grid_se_section .c_content").show();
+        fixGridHeights();
         // gridsCustomersListLoader();
     });
 
@@ -627,12 +628,12 @@ function keywordsAnalizer() {
 $(document).ready(function() {
     //Max
     $("#an_search").live('click', function() {//max
-            var dropdown = $("select[name='customers_list']").msDropdown().data("dd");
-                        dropdown.destroy();
-                        $('#product_customers .ddcommon').remove();
-                        $("select[name='customers_list'] option[value='All Customers']").prop('selected', true);
-                 
-                        dropdown = $("select[name='customers_list']").msDropdown().data("dd");
+        var dropdown = $("select[name='customers_list']").msDropdown().data("dd");
+        dropdown.destroy();
+        $('#product_customers .ddcommon').remove();
+        $("select[name='customers_list'] option[value='All Customers']").prop('selected', true);
+
+        dropdown = $("select[name='customers_list']").msDropdown().data("dd");
     });
     //Max
     $('title').text("Competitive Intelligence");
@@ -702,7 +703,7 @@ $(document).ready(function() {
 
         $.post(base_url + 'index.php/research/filterCustomerByBatch', {'batch': $("#batchess").val()}, function(data) {
             if (data != null) {
-               
+
                 $("select[name='customers_list'] option").each(function() {
 
                     if (data == $(this).val()) {
@@ -766,4 +767,55 @@ if (auto_mode_search_str !== "") {
 }
 // ---- search string cookie (auto mode search launcher) (end)
 
+Array.max = function(array) {
+    return Math.max.apply(Math, array);
+};
 
+// Function to get the Min value in Array
+Array.min = function(array) {
+    return Math.min.apply(Math, array);
+};
+function fixGridHeights() {
+    var selectors = new Array('.p_url', '.p_name', '.p_price', '.p_seo', '.p_description');
+    var wrapper = $('.wrapper');
+    if (wrapper.length > 0) {
+        $.each(wrapper, function(k, v) {
+            var thisEl = $(this);
+            var section = thisEl.find('.grid_se_section');
+            if (section.length > 1) {
+                $.each(selectors, function(k1, v1) {
+                    var heights = thisEl.find(v1).map(function() {
+                        return $(this).height();
+                    }).get();
+                    thisEl.find(v1).height(Array.max(heights));
+                });
+            }
+
+
+//
+//
+//            var heights = $('div.p_name').map(function() {
+//                return $(this).height();
+//            }).get();
+//            $('div.p_name').height(Array.max(heights));
+//
+//            var heights = $('div.p_description').map(function() {
+//                return $(this).height();
+//            }).get();
+//            $('div.p_description').height(Array.max(heights));
+//
+//
+//            var heights = $('div.p_price').map(function() {
+//                return $(this).height();
+//            }).get();
+//            $('div.p_price').height(Array.max(heights));
+//
+//            var heights = $('div.p_seo').map(function() {
+//                return $(this).height();
+//            }).get();
+//            $('div.p_seo').height(Array.max(heights));
+
+
+        });
+    }
+}
