@@ -306,9 +306,9 @@ class Research extends MY_Controller {
 
         $results = $this->research_data_model->getInfoForAssess($params);
 
+        $this->load->model('imported_data_parsed_model');
         if ($price_diff) {
             //$prices = $this->research_data_model->getPricesForBatch($batch_name);
-            $this->load->model('imported_data_parsed_model');
         }
 
         $enable_exec = true;
@@ -316,6 +316,13 @@ class Research extends MY_Controller {
         foreach($results as $row) {
             //$short_description_wc = preg_match_all('/\b/', $row->short_description) / 2; // bug in PHP 5.3.10
             $short_description_wc = (count(preg_split('/\b/', $row->short_description)) - 1) / 2;
+            if (is_null($row->short_description_wc)) {
+                $this->imported_data_parsed_model->insert($row->imported_data_id, "Description_WC", $short_description_wc);
+            } else {
+                if (intval($row->short_description_wc) <> $short_description_wc) {
+                    $this->imported_data_parsed_model->updateValueByKey($row->imported_data_id, "Description_WC", $short_description_wc);
+                }
+            }
             if ($short_more > -1) {
                 if ($short_description_wc < $short_more) {
                     continue;
@@ -329,6 +336,14 @@ class Research extends MY_Controller {
 
             //$long_description_wc = preg_match_all('/\b/', $row->long_description) / 2; // bug in PHP 5.3.10
             $long_description_wc = (count(preg_split('/\b/', $row->long_description)) - 1) / 2;
+
+            if (is_null($row->long_description_wc)) {
+                $this->imported_data_parsed_model->insert($row->imported_data_id, "Long_Description_WC", $long_description_wc);
+            } else {
+                if (intval($row->long_description_wc) <> $long_description_wc) {
+                    $this->imported_data_parsed_model->updateValueByKey($row->imported_data_id, "Long_Description_WC", $long_description_wc);
+                }
+            }
             if ($long_more > -1) {
                 if ($long_description_wc < $long_more) {
                     continue;
@@ -342,19 +357,20 @@ class Research extends MY_Controller {
 
             $result_row = new stdClass();
             $result_row->id = $row->id;
+            $result_row->imported_data_id = $row->imported_data_id;
             $result_row->created = $row->created;
             $result_row->product_name = $row->product_name;
             $result_row->url = $row->url;
             $result_row->short_description_wc = $short_description_wc;
             $result_row->long_description_wc = $long_description_wc;
-            $result_row->seo_s = "";
-            $result_row->seo_l = "";
+            $result_row->seo_s = "None";
+            $result_row->seo_l = "None";
             $result_row->price_diff = "-";
 
             if ($price_diff) {
-                $data_import = $this->imported_data_parsed_model->getByImId($row->id);
+                $data_import = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
                 if (isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
-                    $own_prices = $this->imported_data_parsed_model->getLastPrices($row->id);
+                    $own_prices = $this->imported_data_parsed_model->getLastPrices($row->imported_data_id);
                     if (!empty($own_prices)) {
                         $own_price = floatval($own_prices[0]->price);
                         $price_diff = "<nobr>Own price - ".$own_price."<br />";
@@ -362,7 +378,7 @@ class Research extends MY_Controller {
                         if (!empty($similar_items)) {
                             foreach ($similar_items as $ks => $vs) {
                                 $similar_item_imported_data_id = $similar_items[$ks]['imported_data_id'];
-                                if ($row->id == $similar_item_imported_data_id) {
+                                if ($row->imported_data_id == $similar_item_imported_data_id) {
                                     continue;
                                 }
                                 $three_last_prices = $this->imported_data_parsed_model->getLastPrices($similar_item_imported_data_id);
@@ -382,36 +398,48 @@ class Research extends MY_Controller {
                 }
             }
 
-            if ($enable_exec) {
-                if ($short_seo_phrases && !empty($row->short_description)) {
-                    $cmd = $this->prepare_extract_phrases_cmd($row->short_description);
-                    $output = array();
-                    $result = exec($cmd, $output, $error);
+            if ($short_seo_phrases) {
+                if ($short_description_wc == $row->short_description_wc && !is_null($row->seo_s)) {
+                    $result_row->seo_s = $row->seo_s;
+                } else {
+                    if ($enable_exec) {
+                        $cmd = $this->prepare_extract_phrases_cmd($row->short_description);
+                        $output = array();
+                        $result = exec($cmd, $output, $error);
 
-                    if ($error > 0) {
-                        $enable_exec = false;
-                    } else {
-                        $seo_lines = array();
-                        foreach ($output as $line) {
-                            $seo_lines[] = $line;
+                        if ($error > 0) {
+                            $enable_exec = false;
+                        } else {
+                            $result_row->seo_s = $this->prepare_seo_phrases($output);
+                            if (is_null($row->seo_s)) {
+                                $this->imported_data_parsed_model->insert($row->imported_data_id, "seo_s", $result_row->seo_s);
+                            } else {
+                                $this->imported_data_parsed_model->updateValueByKey($row->imported_data_id, "seo_s", $result_row->seo_s);
+                            }
                         }
-                        $result_row->seo_s = implode("</br>", $seo_lines);
                     }
                 }
+            }
 
-                if ($long_seo_phrases && !empty($row->long_description) && $enable_exec) {
-                    $output = array();
-                    $cmd = $this->prepare_extract_phrases_cmd($row->long_description);
-                    $result = exec($cmd, $output, $error);
+            if ($long_seo_phrases) {
+                if ($long_description_wc == $row->long_description_wc && !is_null($row->seo_l)) {
+                    $result_row->seo_l = $row->seo_l;
+                } else {
+                    if ($enable_exec) {
+                        $cmd = $this->prepare_extract_phrases_cmd($row->long_description);
+                        $output = array();
+                        $result = exec($cmd, $output, $error);
 
-                    if ($error > 0) {
-                        $enable_exec = false;
-                    } else {
-                        $seo_lines = array();
-                        foreach ($output as $line) {
-                            $seo_lines[] = $line;
+                        if ($error > 0) {
+                            $enable_exec = false;
+                        } else {
+                            $result_row->seo_l = $this->prepare_seo_phrases($output);
+                            if (is_null($row->seo_l)) {
+                                $this->imported_data_parsed_model->insert($row->imported_data_id, "seo_l", $result_row->seo_l);
+                            } else {
+                                $this->imported_data_parsed_model->updateValueByKey($row->imported_data_id, "seo_l", $result_row->seo_l);
+                            }
                         }
-                        $result_row->seo_l = implode("</br>", $seo_lines);
                     }
                 }
             }
@@ -421,6 +449,35 @@ class Research extends MY_Controller {
 
         $this->output->set_content_type('application/json')
             ->set_output(json_encode($result_table));
+    }
+
+    private function prepare_seo_phrases($seo_lines) {
+        if (empty($seo_lines)) {
+            return "None";
+        }
+        $seo_phrases = array();
+        $result_phrases = array();
+        foreach ($seo_lines as $line) {
+            $line_array = explode(",", $line);
+            $number_repetitions = intval(str_replace("\"", "", $line_array[1]));
+            if ($number_repetitions < 2) {
+                continue;
+            }
+            $phrase = str_replace("\"", "", $line_array[0]);
+            $seo_phrases[] = [$number_repetitions, $phrase];
+        }
+        if (empty($seo_phrases)) {
+            return "None";
+        }
+        $lines_count = 0;
+        foreach ($seo_phrases as $seo_phrase) {
+            if ($lines_count > 2) {
+                break;
+            }
+            $result_phrases[] = $seo_phrase[1]." (".$seo_phrase[0].")";
+            $lines_count++;
+        }
+        return implode(" ", $result_phrases);
     }
 
     private function prepare_extract_phrases_cmd($text) {

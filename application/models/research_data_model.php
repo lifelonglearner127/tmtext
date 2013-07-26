@@ -243,20 +243,30 @@ union all
 
         $sql_cmd = "
             SELECT
-                r.imported_data_id AS id,
+                r.id AS id,
+	            r.imported_data_id AS imported_data_id,
                 r.created AS created,
                 group_concat(r.product_name, '') AS product_name,
                 group_concat(r.url, '') AS url,
                 group_concat(r.short_description, '') AS short_description,
-                group_concat(r.long_description, '') AS long_description
+                group_concat(r.long_description, '') AS long_description,
+                group_concat(r.short_description_wc, '') AS short_description_wc,
+                group_concat(r.long_description_wc, '') AS long_description_wc,
+                group_concat(r.seo_s, '') AS seo_s,
+                group_concat(r.seo_l, '') AS seo_l
             FROM (
                 SELECT
-                    kv.imported_data_id,
+                    kv.id,
+		            kv.imported_data_id,
                     rd.created as created,
                     case when kv.`key` = 'Product Name' then kv.`value` end as product_name,
                     case when kv.`key` = 'URL' then kv.`value` end as url,
                     case when kv.`key` = 'Description' then kv.`value` end as short_description,
-                    case when kv.`key` = 'Long_Description' then kv.`value` end as long_description
+                    case when kv.`key` = 'Long_Description' then kv.`value` end as long_description,
+                    case when kv.`key` = 'Description_WC' then kv.`value` end as short_description_wc,
+                    case when kv.`key` = 'Long_Description_WC' then kv.`value` end as long_description_wc,
+                    case when kv.`key` = 'seo_s' then kv.`value` end as seo_s,
+                    case when kv.`key` = 'seo_l' then kv.`value` end as seo_l
                 FROM
                     research_data AS rd
                 INNER JOIN batches AS b ON
