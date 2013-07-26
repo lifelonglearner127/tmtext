@@ -1,7 +1,10 @@
 from scrapy.spider import BaseSpider
 from scrapy.selector import HtmlXPathSelector
-from Overstock.items import OverstockItem
+from Overstock.items import CategoryItem
+from Overstock.items import ProductItem
+from scrapy.http import Request
 import sys
+import re
 
 ################################
 # Run with 
@@ -10,7 +13,7 @@ import sys
 #
 ################################
 
-
+# scrape sitemap and extract categories
 class OverstockSpider(BaseSpider):
     name = "overstock"
     allowed_domains = ["overstock.com"]
@@ -35,7 +38,7 @@ class OverstockSpider(BaseSpider):
             # extract grandparent of this link (first preceding sibling of the parent's parent node witch class='bullet1')
             grandparent = parent.select("parent::node()/preceding-sibling::*[@class='bullet1'][1]/a")
 
-            item = OverstockItem()
+            item = CategoryItem()
             item['text'] = link.select('text()').extract()[0]
             item['url'] = link.select('@href').extract()[0]
 
@@ -55,7 +58,7 @@ class OverstockSpider(BaseSpider):
             # extract immediate parent of this link (first preceding sibling (of the parent node) with class='bullet2')
             parent = link.select("parent::node()/preceding-sibling::*[@class='bullet1'][1]/a")
 
-            item = OverstockItem()
+            item = CategoryItem()
             item['text'] = link.select('text()').extract()[0]
             item['url'] = link.select('@href').extract()[0]
 
@@ -69,7 +72,7 @@ class OverstockSpider(BaseSpider):
 
         for link in grandparent_links:
 
-            item = OverstockItem()
+            item = CategoryItem()
             item['text'] = link.select('text()').extract()[0]
             item['url'] = link.select('@href').extract()[0]
 
@@ -78,3 +81,88 @@ class OverstockSpider(BaseSpider):
             items.append(item)
 
         return items
+
+
+# scrape bestsellers list and extract products
+class OverstockSpider(BaseSpider):
+    name = "bestseller"
+    allowed_domains = ["overstock.com"]
+    start_urls = [
+        "http://www.overstock.com/top-sellers",
+    ]
+
+    def parse(self, response):
+        hxs = HtmlXPathSelector(response)
+        
+        # extract tabs and their corresponding departments
+        tabs = hxs.select("//ul[@id='tab-set']/li/a")
+
+        departments = {}
+        for tab in tabs:
+            department_name = tab.select("text()").extract()[0]
+            tab_id = tab.select("@href").extract()[0].replace("#","")
+            departments[tab_id] = department_name
+
+        # for each deparment extract products from corresponding tab
+        for tab in departments:
+            
+            department = departments[tab]
+            
+            #TODO: misses Jewelry deparment in compound output
+            # if tab != "tab-5":
+            #     continue
+
+            products = hxs.select("//div[@id='%s']/div[@class='OProduct']" % tab)
+
+            # counter to keep track of products rank
+            rank = 0
+            for product in products:
+
+                item = ProductItem()
+                item['department'] = department
+
+                rank += 1
+                item['rank'] = str(rank)
+
+                product_link = product.select(".//div[@class='Oname']/a")
+
+                product_name = product_link.select("text()").extract()
+                product_url = product_link.select("@href").extract()
+
+                if product_name:
+                    item['list_name'] = product_name[0].strip()
+
+                if product_url:
+                    item['url'] = product_url[0]
+
+                    # if there's no url move on to next product
+                else:
+                    continue
+
+                #TODO: change price to USD
+                price = product.select(".//div[@class='Oprice']/span[@class='Ovalue']/span[@class='Ovalue']/text()").extract()
+                if price:
+                    item['price'] = price[0]
+
+                # pass the item to the parseProduct method
+                request = Request(item['url'], callback = self.parseProduct)
+                request.meta['item'] = item
+                yield request
+
+    def parseProduct(self, response):
+        hxs = HtmlXPathSelector(response)
+
+        item = response.meta['item']
+
+        product_name = hxs.select("//h1/text()").extract()[0]
+        page_title = hxs.select("//title/text()").extract()[0]
+
+        # remove site name "Overstock.com" prom page title suffix
+        m = re.match("(.*) \| Overstock\.com", page_title, re.UNICODE)
+        if m:
+            page_title = m.group(1).strip()
+
+        item['product_name'] = product_name
+        item['page_title'] = page_title
+
+        yield item           
