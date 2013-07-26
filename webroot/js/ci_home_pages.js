@@ -76,10 +76,6 @@ function startAllCrawl() {
 	});
 }
 
-function openCrawlLaunchPanelModal() {
-	$("#customers_screens_crawl_modal").modal('show');
-}
-
 function removeCrawlSiteFromList(id) {
 	$("#cl_cp_tbl_crawls tr[data-id='" + id + "']").remove();
 	if($("#cl_cp_tbl_crawls tr").length == 1) {
@@ -91,9 +87,6 @@ function removeCrawlSiteFromList(id) {
 }
 
 function openCrawlLaunchPanelModal(close_preview) {
-	// if(close_preview) {
-	// 	$("#preview_screenshot_modal").modal('hide');
-	// }
 	$("#customers_screens_crawl_modal").modal('show');
 	var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist_crawl', {}, function(c_data) {
 		var tbl = "";
@@ -147,32 +140,6 @@ function flatPreviewScreenshotModal(url) {
 	}
 }
 
-// function flatPreviewScreenshotModal(url) {
-// 	$("#customers_screens_crawl_modal").modal('hide');
-// 	$("#preview_screenshot_modal #sc_preview").css('width', '200');
-// 	$("#preview_screenshot_modal #sc_preview").css('height', '150px');
-// 	$("#preview_screenshot_modal").modal('show');
-// 	if(url === 'bloomingdales.com') { // --- static tmp screens for bloomingdales.com
-// 		var imagest = "";
-// 		var tmp_thumb = base_url + "img/bloomingdales_com_wide_half.png";
-// 		imagest += "<img id='s_img' onclick='openPreviewLarge()' src='" + tmp_thumb + "'>";
-// 		imagest += "<img id='l_img' style='display: none;' src='" + tmp_thumb + "'>";
-// 		$("#preview_screenshot_modal #sc_preview").html(imagest);
-// 	} else {
-// 		var send_data = {
-// 			url: url,
-// 			year: $("#year_s > option:selected").val(),
-// 			week: $(".pagination ul li.page.active").data('week')
-// 		}
-// 		var preview_img = $.post(base_url + 'index.php/measure/getwebshootdata', send_data, function(data) {
-// 			var imagest = "";
-// 			imagest += "<img id='s_img' onclick='openPreviewLarge()' src='" + data[0]['thumb'] + "'>";
-// 			imagest += "<img id='l_img' style='display: none;' src='" + data[0]['img'] + "'>";
-// 			$("#preview_screenshot_modal #sc_preview").html(imagest);
-// 		});
-// 	}
-// }
-
 function previewScreenshotModal(url) {
 	$("#customers_screens_crawl_modal").modal('hide');
 	if(url === 'bloomingdales.com') { // --- static tmp screens for bloomingdales.com
@@ -221,6 +188,10 @@ function openPreviewLarge() {
 
 function openOverviewScreensCrawlModal() {
 	$("#overview_screens_crawl_modal").modal('show');
+}
+
+function viewRecipientsList() {
+	$("#recipients_control_panel_modal").modal('show');
 }
 
 function submitEmailReportsConfig() {

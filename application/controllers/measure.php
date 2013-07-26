@@ -30,6 +30,7 @@ class Measure extends MY_Controller {
         $this->data['c_week'] = $c_week;
         $this->data['c_year'] = $c_year;
         $this->data['img_av'] = $this->webshoots_model->getWeekAvailableScreens($c_week, $c_year);
+        $this->data['rec'] = $this->webshoots_model->get_recipients_list();
         $this->render();
     }
 

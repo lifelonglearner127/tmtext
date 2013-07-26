@@ -18,8 +18,9 @@
     overflow: auto;
 }
 /* ---- InModal Screenshots Slider (end) */
-
-
+.recipients_control_panel_txt {
+    font-size: 13px;
+}
 .tl_full_left {
     padding-top: 6px !important; 
     padding-bottom: 7px !important;
@@ -48,15 +49,6 @@
 #customers_screens_crawl_modal {
     top: 40%;
 }
-/*#preview_screenshot_modal #sc_preview {
-    display: block;
-    margin: 0 auto;
-    width: 200px;
-    height: 150px;
-}
-#preview_screenshot_modal #sc_preview #s_img {
-    cursor: pointer;
-}*/
 /* --- SOME BOOTSTRAP WEIRD OVERRIDING (START) --- */
 .btn .caret {
     margin-top: 0px !important;

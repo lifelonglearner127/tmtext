@@ -241,6 +241,46 @@
 	</div>
 </div>
 
+<div class="modal hide fade ci_hp_modals crawl_launch_panel" id='recipients_control_panel_modal'>
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+		<h3>Recipients Control Panel</h3>
+	</div>
+	<div class="modal-body">
+		<div id="recipients_control_panel_body" class='recipients_control_panel_body'>
+			<?php if(count($rec) > 0) { ?>
+				<table class='table table-striped'>
+					<thead>
+						<tr>
+							<th>Recipients</th>
+							<th>Day</th>
+							<th>Controls</th>
+						</tr>
+					</thead>
+					<tbody>
+					<?php foreach($rec as $k => $v) { ?>
+						<tr data-id="<?php echo $v->id; ?>">
+							<td><span class='recipients_control_panel_txt'><?php echo $v->email; ?></span></td>
+							<td><span class='recipients_control_panel_txt'><?php echo $v->day; ?></span></td>
+							<td>
+								<button type='button' class='btn btn-success'><i class='icon-fire'></i></button>
+								<button type='button' class='btn btn-danger'><i class='icon-remove'></i></button>
+							</td>
+						</tr>
+					<?php } ?>
+					</tbody>
+				</table>
+			<?php } else { ?>
+			<p>no recipients</p>
+			<?php } ?>
+		</div>
+	</div>
+	<div class="modal-footer">
+		<a href="javascript:void(0)" class="btn btn-success">Send to all</a>
+		<a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
+	</div>
+</div>
+
 <div class="modal hide fade ci_hp_modals crawl_launch_panel" id='customers_screens_crawl_modal'>
 	<div class="modal-header">
 		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
