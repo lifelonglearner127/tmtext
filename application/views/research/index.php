@@ -312,6 +312,13 @@ jQuery(document).ready(function($) {
                                     <ul class='less_b_margin ml_0' data-st-id='long_desc_seo' data-status='seo_an'></ul>
                                 </div>
                             </li>
+                            <li class="boxes mt_10">
+                                <h3><a href="#" onclick="return false;" class="hideShow"><img style="width:12px;margin-right: 10px" src="<?php echo base_url();?>img/arrow-down.png" /></a>Attributes<a href="#" class="ml_10 research_arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
+                                <div class="boxes_content">
+                                    <button id="get_attributes" type="button" class="btn">Get Attributes</button>
+                                    <div id="research_attr" class="ml_0"></div>
+                                </div>
+                            </li>
                         </ul>
                     </div>
                     <div class="span6" id="research_edit" class="connectedMoved">

@@ -255,14 +255,24 @@ class Measure extends MY_Controller {
         $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }
 
+    public function rec_emails_reports_recipient() {
+        $recs_arr = $this->input->post('recs_arr');
+        $rec_day = $this->input->post('rec_day');
+        $this->load->model('webshoots_model');
+        $this->webshoots_model->rec_emails_reports_recipient($rec_day, $recs_arr);
+        $this->output->set_content_type('application/json')->set_output(true);
+    }
+
     public function timelineblock() {
         $first_cwp = $this->input->post('first_cwp');
         $last_cwp = $this->input->post('last_cwp');
         $state = $this->input->post('state');
+        $week = date("W", time());
         $data = array(
             'first_cwp' => $first_cwp,
             'last_cwp' => $last_cwp,
-            'state' => $state
+            'state' => $state,
+            'week' => $week
         );
         $this->load->view('measure/timelineblock', $data);
     }

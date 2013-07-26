@@ -10,7 +10,7 @@
     	<div class="row-fluid home_pages">
 
     		<div class='span12 head_section'>
-	    		<p class='head_line1'>Home page reports are generated weekly. <a onclick="configureEmailReportsModal()" href="javascript:void(0)">Configure email reports.</a></p>
+	    		<p class='head_line1'>Home page reports are generated weekly. <a onclick="configureEmailReportsModal()" href="javascript:void(0)">Configure email reports.</a> <a class='btn btn-primary' onclick="viewRecipientsList()" href='javascript:void(0)'><i class='icon-tasks icon-white'></i>&nbsp;Recipients List</a></p>
 				<div class='head_line_2'>
 					<div class="span2">View Reports for:</div>
 					<div class="span2 w_100 ml_disable">
@@ -46,6 +46,7 @@
 									$int_cell = $intervals[$key_int];
 									$int_cell_start = $int_cell[0];
 									$int_cell_end = $int_cell[count($int_cell) - 1];
+									$block_next_sl = false;
 								?>
 								<?php if($key_int == 0) { ?>
 								<li class='page_prev'><a id="slide_prev_timeline" class='tl_full_left disabled' onclick="return false;" href="javascript:void(0)"><i class='icon-chevron-left icon-white'></i></a></li>
@@ -59,17 +60,27 @@
 								<?php } ?>
 								<?php for($i = $int_cell_start; $i <= $int_cell_end; $i++) { ?>
 									<?php if($i == $c_week) { $active = 'active'; } else { $active = ''; } ?>
-									<li data-week="<?php echo $i; ?>" class="page <?php echo $active; ?>"><a href="javascript:void(0)" onclick="locaHomePageWeekData('<?php echo $i; ?>')"><?php echo $i; ?></a></li>
+									<?php if($i <= $c_week) { ?>
+										<li data-week="<?php echo $i; ?>" class="page <?php echo $active; ?>"><a href="javascript:void(0)" onclick="locaHomePageWeekData('<?php echo $i; ?>')"><?php echo $i; ?></a></li>
+									<?php } else { ?>
+										<?php $block_next_sl = true; ?>
+										<li data-week="<?php echo $i; ?>" class="page disabled blocked"><a href="javascript:void(0)"><?php echo $i; ?></a></li>
+									<?php } ?>
 								<?php } ?>
-								<?php if($int_cell_end == $c_week) { ?>
-								<li id='page_next' class='page_next disabled'><a onclick="return false;" href="javascript:void(0)">&raquo;</a></li>
+								<?php if($block_next_sl) { ?>
+									<li id='page_next' class='page_next disabled'><a onclick="return false;" href="javascript:void(0)">&raquo;</a></li>
+									<li class='page_next'><a id="slide_next_timeline" class='tl_full_left disabled' onclick="return false;" href="javascript:void(0)"><i class='icon-chevron-right icon-white'></i></a></li>
 								<?php } else { ?>
-								<li id='page_next' class='page_next'><a onclick="nextLocaHomePageWeekData()" href="javascript:void(0)">&raquo;</a></li>
-								<?php } ?>
-								<?php if($key_int == 7) { ?>
-								<li class='page_next'><a id="slide_next_timeline" class='tl_full_left disabled' onclick="return false;" href="javascript:void(0)"><i class='icon-chevron-right icon-white'></i></a></li>
-								<?php } else { ?>
-								<li class='page_next'><a id="slide_next_timeline" class='tl_full_left' onclick="slideTimeline('next')" href="javascript:void(0)"><i class='icon-chevron-right icon-white'></i></a></li>
+									<?php if($int_cell_end == $c_week) { ?>
+									<li id='page_next' class='page_next disabled'><a onclick="return false;" href="javascript:void(0)">&raquo;</a></li>
+									<?php } else { ?>
+									<li id='page_next' class='page_next'><a onclick="nextLocaHomePageWeekData()" href="javascript:void(0)">&raquo;</a></li>
+									<?php } ?>
+									<?php if($key_int == 7) { ?>
+									<li class='page_next'><a id="slide_next_timeline" class='tl_full_left disabled' onclick="return false;" href="javascript:void(0)"><i class='icon-chevron-right icon-white'></i></a></li>
+									<?php } else { ?>
+									<li class='page_next'><a id="slide_next_timeline" class='tl_full_left' onclick="slideTimeline('next')" href="javascript:void(0)"><i class='icon-chevron-right icon-white'></i></a></li>
+									<?php } ?>
 								<?php } ?>
 							</ul>
 						</div>
@@ -80,20 +91,20 @@
 			<div id='hp_ajax_content' class='span12 body_section ml_disable mt_30'>
 				<div style='margin-bottom: 10px;'>
 					<?php if($img_av !== false) { ?>
-						<button onclick='openScreensModalSlider()' class='btn btn-primary'><i class='icon-eye-open icon-white'></i>&nbsp;View All Week Images</i></button>
-						<span class='label label-success'>images view available for this week</span>
+						<button onclick='openScreensModalSlider()' class='btn btn-primary'><i class='icon-eye-open icon-white'></i>&nbsp;Week Images Viewer</i></button>
+						<span class='label label-success'>images viewer available for this week</span>
 						<div class="modal hide fade screens_modal_slider" id='screens_modal_slider'>
 							<div class="modal-body">
 								<ul id='screens_slider'>
 									<?php foreach($img_av as $ka => $va) { ?>
-										<li><img src="<?php echo $va->img; ?>"></li>
+										<li><div class='ss_slider_item_wrapper'><img src="<?php echo $va->img; ?>"></div></li>
 									<?php } ?>
 								</ul>
 							</div>
 						</div>
 					<?php } else { ?>
-						<button class='btn btn-primary disabled'><i class='icon-eye-open icon-white'></i>&nbsp;View All Week Images</i></button>
-						<span class='label label-important'>no available images for this week</span>
+						<button class='btn btn-primary disabled'><i class='icon-eye-open icon-white'></i>&nbsp;Week Images Viewer</i></button>
+						<span class='label label-important'>images viewer not available for this week</span>
 					<?php } ?>
 				</div>
 				<div style='margin-bottom: 15px;'>
@@ -180,7 +191,7 @@
 		<h3>Reports Configuration Saved</h3>
 	</div>
 	<div class="modal-body">
-		<p>Email configuration successfully saved!</p>
+		<p>Email configuration successfully saved! Use 'Recipients List' button to view results.</p>
 	</div>
 	<div class="modal-footer">
 		<a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
@@ -195,9 +206,10 @@
 	<div class="modal-body">
 		<form action='' onsubmit="return false;" class="form-horizontal">
 			<div class="control-group">
-				<label class="control-label" for="email_rec">Email recipients:</label>
+				<label class="control-label" for="email_rec">Email recipient(s):</label>
 				<div class="controls">
 					<input type="text" style="width: 220px;" id="email_rec" name="email_rec" placeholder="recipients..">
+					<p class='help-block custom_help_block'>* separate emails by commas</p>
 				</div>
 			</div>
 			<div class="control-group">
@@ -251,7 +263,15 @@
 	</div>
 </div>
 
-<div class="modal hide fade ci_hp_modals" id='preview_screenshot_modal'>
+<!-- bootstrap lightbox holder (start) -->
+<div id="preview_screenshot_modal" class='lightbox hide fade' tabindex="-1" role="dialog" aria-hidden="true">
+	<div class='lightbox-content'>
+		<img id="sc_preview" src="">
+	</div>
+</div>
+<!-- bootstrap lightbox holder (end) -->
+
+<!-- <div class="modal hide fade ci_hp_modals" id='preview_screenshot_modal'>
 	<div class="modal-header">
 		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 		<h3>Screenshot Review</h3>
@@ -269,7 +289,7 @@
 	<div class="modal-body">
 		<p style='line-height: 24px;'><img src="<?php echo base_url() ?>/img/fancybox_loading.gif">&nbsp;&nbsp;Wait for it. Screenshot generating and saving ...</p>
 	</div>
-</div>
+</div> -->
 
 <!-- MODALS (END) -->
 

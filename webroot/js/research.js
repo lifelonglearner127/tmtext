@@ -484,7 +484,7 @@ $(document).ready(function () {
             'urls': $("textarea#urls").val()
         }, function(data){
             $('.info-message').append(data.message).fadeOut(10000);
-            console.log(data);
+            $("textarea#urls").val("");
         });
         return false;
     });
@@ -514,9 +514,32 @@ $(document).ready(function () {
             $(this).parent().find('span').css('white-space', 'normal');
         }
     });
+
+    $(document).on("click", "button#get_attributes", function(){
+        $.post(base_url + 'index.php/research/getAttributes', { 'imported_data_id': $("li.current_selected").attr('id')}, function(data){
+            var str = '<ul class="ml_0 mt_10">';
+
+            for (var key in data.product_name){
+                str += '<li>'+key+': '+data.product_name[key]+'</li>';
+            }
+            str += '<li><b>Features:</b></li>';
+            for (var key in data.features){
+                str += '<li>'+key+': '+data.features[key]+'</li>';
+            }
+            str += '<li><b>Description:</b></li>';
+            for (var key in data.description){
+                str += '<li>'+key+': '+data.description[key]+'</li>';
+            }
+            str += '<li><b>Long Description:</b></li>';
+            for (var key in data.long_description){
+                str += '<li>'+key+': '+data.long_description[key]+'</li>';
+            }
+            str += '<ul>';
+            $('div#research_attr').html(str);
+        });
+    });
+
     /*----------------------------Research batches--------------------------------------------*/
-
-
 
     $(document).on("click", '#research_batches_save', function() {
         $.post(base_url + 'index.php/research/change_batch_name', { 'old_batch_name': $('select[name="research_batches"]').find('option:selected').text(),

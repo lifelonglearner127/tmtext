@@ -1,69 +1,69 @@
 function openScreensModalSlider() {
-	// $('#screens_slider').anythingSlider({
-	//     theme: 'default',
-	//     mode: 'horizontal',
-	//     expand: false,
-	//     resizeContents: true,
-	//     showMultiple: false,
-	//     easing: "swing",
-	//     buildArrows: true,
-	//     buildNavigation: true,
-	//     buildStartStop: true,
-	//     appendFowardTo: null,
-	//     appendBackTo: null,
-	//     appendControlsTo: null,
-	//     appendNavigationTo: null,
-	//     appendStartStopTo: null,
-	//     toggleArrows: false,
-	//     toggleControls: false,
-	//     startText: "Start",
-	//     stopText: "Stop",
-	//     forwardText: "&raquo;",
-	//     backText: "&laquo;",
-	//     tooltipClass: 'tooltip',
-	//     enableArrows: true,
-	//     enableNavigation: true,
-	//     enableStartStop: true,
-	//     enableKeyboard: true,
-	//     startPanel: 1,
-	//     changeBy: 1,
-	//     hashTags: true,
-	//     infiniteSlides: true,
-	//     navigationFormatter: function(index, panel) {
-	//         return "" + index;
-	//     },
-	//     navigationSize: false,
-	//     autoPlay: false,
-	//     autoPlayLocked: false,
-	//     autoPlayDelayed: false,
-	//     pauseOnHover: true,
-	//     stopAtEnd: false,
-	//     playRtl: false,
-	//     delay: 3000,
-	//     resumeDelay: 15000,
-	//     animationTime: 600,
-	//     delayBeforeAnimate  : 0,
-	//     onBeforeInitialize: function(e, slider) {},
-	//     onInitialized: function(e, slider) {},
-	//     onShowStart: function(e, slider) {},
-	//     onShowStop: function(e, slider) {},
-	//     onShowPause: function(e, slider) {},
-	//     onShowUnpause: function(e, slider) {},
-	//     onSlideInit: function(e, slider) {},
-	//     onSlideBegin: function(e, slider) {},
-	//     onSlideComplete: function(slider) {},
-	//     onSliderResize: function(e, slider) {},
-	//     clickForwardArrow: "click",
-	//     clickBackArrow: "click",
-	//     clickControls: "click focusin",
-	//     clickSlideshow: "click",
-	//     resumeOnVideoEnd: true,
-	//     resumeOnVisible: true,
-	//     addWmodeToObject: "opaque",
-	//     isVideoPlaying: function(base) {
-	//         return false;
-	//     }
-	// });
+	$('#screens_slider').anythingSlider({
+	    theme: 'default',
+	    mode: 'horizontal',
+	    expand: false,
+	    resizeContents: true,
+	    showMultiple: false,
+	    easing: "swing",
+	    buildArrows: true,
+	    buildNavigation: true,
+	    buildStartStop: true,
+	    appendFowardTo: null,
+	    appendBackTo: null,
+	    appendControlsTo: null,
+	    appendNavigationTo: null,
+	    appendStartStopTo: null,
+	    toggleArrows: false,
+	    toggleControls: false,
+	    startText: "Start",
+	    stopText: "Stop",
+	    forwardText: "&raquo;",
+	    backText: "&laquo;",
+	    tooltipClass: 'tooltip',
+	    enableArrows: true,
+	    enableNavigation: true,
+	    enableStartStop: true,
+	    enableKeyboard: true,
+	    startPanel: 1,
+	    changeBy: 1,
+	    hashTags: false,
+	    infiniteSlides: true,
+	    navigationFormatter: function(index, panel) {
+	        return "" + index;
+	    },
+	    navigationSize: false,
+	    autoPlay: true,
+	    autoPlayLocked: false,
+	    autoPlayDelayed: false,
+	    pauseOnHover: false,
+	    stopAtEnd: false,
+	    playRtl: false,
+	    delay: 3000,
+	    resumeDelay: 15000,
+	    animationTime: 600,
+	    delayBeforeAnimate  : 0,
+	    onBeforeInitialize: function(e, slider) {},
+	    onInitialized: function(e, slider) {},
+	    onShowStart: function(e, slider) {},
+	    onShowStop: function(e, slider) {},
+	    onShowPause: function(e, slider) {},
+	    onShowUnpause: function(e, slider) {},
+	    onSlideInit: function(e, slider) {},
+	    onSlideBegin: function(e, slider) {},
+	    onSlideComplete: function(slider) {},
+	    onSliderResize: function(e, slider) {},
+	    clickForwardArrow: "click",
+	    clickBackArrow: "click",
+	    clickControls: "click focusin",
+	    clickSlideshow: "click",
+	    resumeOnVideoEnd: true,
+	    resumeOnVisible: true,
+	    addWmodeToObject: "opaque",
+	    isVideoPlaying: function(base) {
+	        return false;
+	    }
+	});
 	$("#screens_modal_slider").modal('show');
 }
 
@@ -91,9 +91,9 @@ function removeCrawlSiteFromList(id) {
 }
 
 function openCrawlLaunchPanelModal(close_preview) {
-	if(close_preview) {
-		$("#preview_screenshot_modal").modal('hide');
-	}
+	// if(close_preview) {
+	// 	$("#preview_screenshot_modal").modal('hide');
+	// }
 	$("#customers_screens_crawl_modal").modal('show');
 	var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist_crawl', {}, function(c_data) {
 		var tbl = "";
@@ -130,15 +130,10 @@ function openCrawlLaunchPanelModal(close_preview) {
 
 function flatPreviewScreenshotModal(url) {
 	$("#customers_screens_crawl_modal").modal('hide');
-	$("#preview_screenshot_modal #sc_preview").css('width', '200');
-	$("#preview_screenshot_modal #sc_preview").css('height', '150px');
-	$("#preview_screenshot_modal").modal('show');
 	if(url === 'bloomingdales.com') { // --- static tmp screens for bloomingdales.com
-		var imagest = "";
 		var tmp_thumb = base_url + "img/bloomingdales_com_wide_half.png";
-		imagest += "<img id='s_img' onclick='openPreviewLarge()' src='" + tmp_thumb + "'>";
-		imagest += "<img id='l_img' style='display: none;' src='" + tmp_thumb + "'>";
-		$("#preview_screenshot_modal #sc_preview").html(imagest);
+		$("#preview_screenshot_modal #sc_preview").attr('src', tmp_thumb);
+		$('#preview_screenshot_modal').lightbox();
 	} else {
 		var send_data = {
 			url: url,
@@ -146,13 +141,37 @@ function flatPreviewScreenshotModal(url) {
 			week: $(".pagination ul li.page.active").data('week')
 		}
 		var preview_img = $.post(base_url + 'index.php/measure/getwebshootdata', send_data, function(data) {
-			var imagest = "";
-			imagest += "<img id='s_img' onclick='openPreviewLarge()' src='" + data[0]['thumb'] + "'>";
-			imagest += "<img id='l_img' style='display: none;' src='" + data[0]['img'] + "'>";
-			$("#preview_screenshot_modal #sc_preview").html(imagest);
+			$("#preview_screenshot_modal #sc_preview").attr('src', data[0]['img']);
+			$('#preview_screenshot_modal').lightbox();
 		});
 	}
 }
+
+// function flatPreviewScreenshotModal(url) {
+// 	$("#customers_screens_crawl_modal").modal('hide');
+// 	$("#preview_screenshot_modal #sc_preview").css('width', '200');
+// 	$("#preview_screenshot_modal #sc_preview").css('height', '150px');
+// 	$("#preview_screenshot_modal").modal('show');
+// 	if(url === 'bloomingdales.com') { // --- static tmp screens for bloomingdales.com
+// 		var imagest = "";
+// 		var tmp_thumb = base_url + "img/bloomingdales_com_wide_half.png";
+// 		imagest += "<img id='s_img' onclick='openPreviewLarge()' src='" + tmp_thumb + "'>";
+// 		imagest += "<img id='l_img' style='display: none;' src='" + tmp_thumb + "'>";
+// 		$("#preview_screenshot_modal #sc_preview").html(imagest);
+// 	} else {
+// 		var send_data = {
+// 			url: url,
+// 			year: $("#year_s > option:selected").val(),
+// 			week: $(".pagination ul li.page.active").data('week')
+// 		}
+// 		var preview_img = $.post(base_url + 'index.php/measure/getwebshootdata', send_data, function(data) {
+// 			var imagest = "";
+// 			imagest += "<img id='s_img' onclick='openPreviewLarge()' src='" + data[0]['thumb'] + "'>";
+// 			imagest += "<img id='l_img' style='display: none;' src='" + data[0]['img'] + "'>";
+// 			$("#preview_screenshot_modal #sc_preview").html(imagest);
+// 		});
+// 	}
+// }
 
 function previewScreenshotModal(url) {
 	$("#customers_screens_crawl_modal").modal('hide');
@@ -205,12 +224,35 @@ function openOverviewScreensCrawlModal() {
 }
 
 function submitEmailReportsConfig() {
+	// --- collect data (start)
+	var email_pattern = /^([a-z0-9_\-]+\.\+)*[a-z0-9_\-\+]+@([a-z0-9][a-z0-9\-]*[a-z0-9]\.)+[a-z]{2,4}$/i;
+	var recs_arr = [];
 	var recs = $.trim($("#email_rec").val());
+	if(recs !== "") {
+		recs_arr = recs.split(',');
+		var recs_arr_checked = [];
+		for(var i = 0; i < recs_arr.length; i++) {
+			if(email_pattern.test(recs_arr[i])) {
+				recs_arr_checked.push(recs_arr[i]);
+			}
+		}
+	}
 	var rec_day = $("#week_day_rep > option:selected").val();
-	$("#email_rec").val("");
-	$("#email_rec").blur("");
-	$("#configure_email_reports").modal('hide');
-	$("#configure_email_reports_success").modal('show');
+	// --- collect data (end)
+	var send_data = {
+		recs_arr: recs_arr_checked,
+		rec_day: rec_day
+	}
+	var rec = $.post(base_url + 'index.php/measure/rec_emails_reports_recipient', send_data, function(data) {
+		if(data) {
+			$("#email_rec").val("");
+			$("#email_rec").blur("");
+			$("#configure_email_reports").modal('hide');
+			$("#configure_email_reports_success").modal('show');
+		} else {
+			alert('Validation or internal server error');
+		}
+	});
 }
 
 function configureEmailReportsModal() {

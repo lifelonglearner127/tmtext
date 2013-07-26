@@ -4,12 +4,19 @@
     border: none !important;
     border-radius: none !important;
     box-shadow: none !important;
+    width: 902px !important;
+    left: 40% !important;
+    top: 35% !important;
 }
 .screens_modal_slider .modal-body {
     max-height: 100% !important;
     overflow: hidden !important;
 }
-
+.ss_slider_item_wrapper {
+    width: 100%;
+    height: 1680px;
+    overflow: auto;
+}
 /* ---- InModal Screenshots Slider (end) */
 
 
@@ -41,16 +48,15 @@
 #customers_screens_crawl_modal {
     top: 40%;
 }
-#preview_screenshot_modal #sc_preview {
+/*#preview_screenshot_modal #sc_preview {
     display: block;
     margin: 0 auto;
     width: 200px;
     height: 150px;
-    /*background: #333;*/
 }
 #preview_screenshot_modal #sc_preview #s_img {
     cursor: pointer;
-}
+}*/
 /* --- SOME BOOTSTRAP WEIRD OVERRIDING (START) --- */
 .btn .caret {
     margin-top: 0px !important;
