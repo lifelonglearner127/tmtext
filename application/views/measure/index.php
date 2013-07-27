@@ -247,36 +247,10 @@
 		<h3>Recipients Control Panel</h3>
 	</div>
 	<div class="modal-body">
-		<div id="recipients_control_panel_body" class='recipients_control_panel_body'>
-			<?php if(count($rec) > 0) { ?>
-				<table class='table table-striped'>
-					<thead>
-						<tr>
-							<th>Recipients</th>
-							<th>Day</th>
-							<th>Controls</th>
-						</tr>
-					</thead>
-					<tbody>
-					<?php foreach($rec as $k => $v) { ?>
-						<tr data-id="<?php echo $v->id; ?>">
-							<td><span class='recipients_control_panel_txt'><?php echo $v->email; ?></span></td>
-							<td><span class='recipients_control_panel_txt'><?php echo $v->day; ?></span></td>
-							<td>
-								<button type='button' class='btn btn-success'><i class='icon-fire'></i></button>
-								<button type='button' class='btn btn-danger'><i class='icon-remove'></i></button>
-							</td>
-						</tr>
-					<?php } ?>
-					</tbody>
-				</table>
-			<?php } else { ?>
-			<p>no recipients</p>
-			<?php } ?>
-		</div>
+		<div id="recipients_control_panel_body" class='recipients_control_panel_body'></div>
 	</div>
 	<div class="modal-footer">
-		<a href="javascript:void(0)" class="btn btn-success">Send to all</a>
+		<button type='button' href="javascript:void(0)" class="btn btn-success btn-rec-all-send">Send to all</button>
 		<a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
 	</div>
 </div>
@@ -358,6 +332,21 @@
 		}
 	}
 	$(document).ready(function() {
+		// ---- UI tooltips (start)
+		$(".btn-rec-all-send").tooltip({
+			placement: 'left',
+			title: 'Send Reports To All Recipients'
+		});
+		$(".btn-rec-ind-send").tooltip({
+			placement: 'bottom',
+			title: 'Send Report'
+		});
+		$(".btn-rec-remove").tooltip({
+			placement: 'right',
+			title: 'Remove'
+		});
+		// ---- UI tooltips (end)
+
 		$("#customers_screens_crawl").tooltip({
 			placement: 'bottom',
 			title: 'Open Crawl Launch Control Panel'

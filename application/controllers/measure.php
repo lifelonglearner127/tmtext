@@ -30,7 +30,7 @@ class Measure extends MY_Controller {
         $this->data['c_week'] = $c_week;
         $this->data['c_year'] = $c_year;
         $this->data['img_av'] = $this->webshoots_model->getWeekAvailableScreens($c_week, $c_year);
-        $this->data['rec'] = $this->webshoots_model->get_recipients_list();
+        // $this->data['rec'] = $this->webshoots_model->get_recipients_list();
         $this->render();
     }
 
@@ -74,6 +74,43 @@ class Measure extends MY_Controller {
     private function check_screen_crawl_status($url) {
         $this->load->model('webshoots_model');
         return $this->webshoots_model->checkScreenCrawlStatus($url);
+    }
+
+    public function get_emails_reports_recipient() {
+        $this->load->model('webshoots_model');
+        $data['rec'] = $this->webshoots_model->get_recipients_list();
+        $this->load->view('measure/get_emails_reports_recipient', $data);
+    }
+
+    public function send_recipient_report() {
+        $this->load->model('webshoots_model');
+        $id = $this->input->post('id');
+        $email = $this->input->post('email');
+        $day = $this->input->post('day');
+        // --------------- email sender (start) ---------------
+        // -- email config (start) --
+        $this->load->library('email');
+        $config['protocol'] = 'sendmail';
+        $config['mailpath'] = '/usr/sbin/sendmail';
+        $config['charset'] = 'UTF-8';
+        $config['wordwrap'] = TRUE;
+        $this->email->initialize($config);
+        // -- email config (end) --
+        $this->email->from('ishulgin8@gmail.com', "Content Solutions: $day");
+        $this->email->to("$email");
+        $this->email->subject('Test Report Email');
+        $this->email->message('Test Report');
+        $this->email->send();
+        $debug = $this->email->print_debugger();
+        $this->output->set_content_type('application/json')->set_output(json_encode($debug));
+        // --------------- email sender (end) -----------------
+    }
+
+    public function delete_recipient() {
+        $this->load->model('webshoots_model');
+        $id = $this->input->post('id');
+        $res = $this->webshoots_model->delete_reports_recipient($id);
+        $this->output->set_content_type('application/json')->set_output(json_encode($res));
     }
 
     public function webshootcrawlall() {
