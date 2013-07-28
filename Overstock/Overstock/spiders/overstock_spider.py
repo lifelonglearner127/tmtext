@@ -82,6 +82,14 @@ class OverstockSpider(BaseSpider):
 
         return items
 
+        
+
+################################
+# Run with 
+#
+# scrapy crawl bestseller
+#
+################################
 
 # scrape bestsellers list and extract products
 class OverstockSpider(BaseSpider):
@@ -108,9 +116,7 @@ class OverstockSpider(BaseSpider):
             
             department = departments[tab]
             
-            #TODO: misses Jewelry deparment in compound output
-            # if tab != "tab-5":
-            #     continue
+            # in compound output the Jewelry department is missing because it is a duplicate of Watches
 
             products = hxs.select("//div[@id='%s']/div[@class='OProduct']" % tab)
 

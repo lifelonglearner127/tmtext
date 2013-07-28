@@ -38,6 +38,13 @@ class BloomingdalesSpider(BaseSpider):
         return items
 
 
+################################
+# Run with 
+#
+# scrapy crawl bestseller
+#
+################################
+
 # scrape bestsellers list and retrieve products
 class BloomingdalesSpider(BaseSpider):
     name = "bestseller"

@@ -73,6 +73,14 @@ class ToysrusSpider(BaseSpider):
 
         return items
 
+
+################################
+# Run with 
+#
+# scrapy crawl bestseller
+#
+################################
+
 # scrape bestsellers list (from all categories)
 class BestsellerSpider(BaseSpider):
     name = "bestseller"

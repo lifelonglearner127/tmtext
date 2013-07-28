@@ -66,6 +66,14 @@ class AmazonSpider(BaseSpider):
 
         return items
 
+
+################################
+# Run with 
+#
+# scrapy crawl bestseller
+#
+################################
+
 # crawl bestsellers lists and extract product name, price, department etc
 class BestsellerSpider(BaseSpider):
     name = "bestseller"

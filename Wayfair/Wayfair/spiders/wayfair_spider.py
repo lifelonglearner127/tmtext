@@ -134,6 +134,13 @@ class WayfairSpider(BaseSpider):
         return items
 
 
+################################
+# Run with 
+#
+# scrapy crawl bestseller
+#
+################################
+
 # scrape bestsellers list and extract products
 class BestsellerSpider(BaseSpider):
     name = "bestseller"
