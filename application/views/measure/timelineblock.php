@@ -46,12 +46,13 @@
 			}
 		?>
 		<?php for($i = $start_it; $i <= $limit_it; $i++) { ?>
+			<?php if(count($webshoots_model->getWeekAvailableScreens($i, $year)) > 0) { $have_screen = 'have_screen'; } else { $have_screen = ''; } ?>
 			<?php if($i == $week) { $active = 'active'; } else { $active = ''; } ?>
 			<?php if($i <= $week) { ?>
-				<li data-week="<?php echo $i; ?>" class="page <?php echo $active; ?>"><a href="javascript:void(0)" onclick="locaHomePageWeekData('<?php echo $i; ?>')"><?php echo $i; ?></a></li>
+				<li data-week="<?php echo $i; ?>" class="page <?php echo $active; ?>"><a class="<?php echo $have_screen; ?>" href="javascript:void(0)" onclick="locaHomePageWeekData('<?php echo $i; ?>')"><?php echo $i; ?></a></li>
 			<?php } else { ?>
 				<?php $block_next_sl = true; ?>
-				<li data-week="<?php echo $i; ?>" class="page disabled blocked"><a href="javascript:void(0)"><?php echo $i; ?></a></li>
+				<li data-week="<?php echo $i; ?>" class="page disabled blocked"><a class="<?php echo $have_screen; ?>" href="javascript:void(0)"><?php echo $i; ?></a></li>
 			<?php } ?>
 		<?php } ?>
 

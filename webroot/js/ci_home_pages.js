@@ -374,7 +374,8 @@ function slideTimeline(state) { // state: 'next', 'prev'
         data: {
         	'first_cwp': first_cwp,
         	'last_cwp': last_cwp,
-        	'state': state
+        	'state': state,
+        	'year': $("#year_s > option:selected").val()
         },
         success: function(res) {
         	$("#timeline_ctr").replaceWith(res);

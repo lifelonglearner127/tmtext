@@ -311,15 +311,19 @@ class Measure extends MY_Controller {
     }
 
     public function timelineblock() {
+        $this->load->model('webshoots_model');
         $first_cwp = $this->input->post('first_cwp');
         $last_cwp = $this->input->post('last_cwp');
         $state = $this->input->post('state');
+        $year = $this->input->post('year');
         $week = date("W", time());
         $data = array(
             'first_cwp' => $first_cwp,
             'last_cwp' => $last_cwp,
             'state' => $state,
-            'week' => $week
+            'week' => $week,
+            'year' => $year,
+            'webshoots_model' => $this->webshoots_model
         );
         $this->load->view('measure/timelineblock', $data);
     }
