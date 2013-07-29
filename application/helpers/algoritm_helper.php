@@ -47,13 +47,23 @@ if (!function_exists('leven_algoritm')) {
 
 if (!function_exists('total_matches')) {
 
-    function total_matches($currindex, $arr) {
+    function total_matches($currindex, $arr, $short_or_long) {
         $percents = array();
         foreach ($arr as $key => $value) {
-            if ($key != $currindex) {
-                $percents[] = leven_algoritm($arr[$currindex], $value);
+              if ($key != $currindex) {
+                if(isset($value['short'])){
+                   
+                $percents[] = leven_algoritm($arr[$currindex][$short_or_long], $value['short']);
+                
+                }
+                if(isset($value['long'])){
+                
+                $percents[] = leven_algoritm($arr[$currindex][$short_or_long], $value['long']);
+                }
             }
+            
         }
+        
         if (!empty($percents)) {
             return max($percents);
         }

@@ -509,8 +509,8 @@ class Measure extends MY_Controller {
 
     public function compare_text($first_text, $second_text) {
 
-        $a = array_unique(explode(' ', $first_text));
-        $b = array_unique(explode(' ', $second_text));
+        $a =  (explode(' ', $first_text));
+        $b = (explode(' ', $second_text));
         $count = 0;
         foreach ($a as $val) {
             if (in_array($val, $b)) {
@@ -519,7 +519,7 @@ class Measure extends MY_Controller {
         }
 
         $prc = $count / count($a) * 100;
-        return $prc;
+        return 100-$prc;
     }
 
     public function gridview() {
@@ -605,43 +605,52 @@ class Measure extends MY_Controller {
 //            print_r($same_pr);
 //            print "</pre>";
 //            die();
-            $compare_description = array();
-            foreach ($same_pr as $key => $value) {
-                if (!empty($value['description'])) {
-                    $compare_description[$key] = $value['description'];
-                } 
-            }
-            foreach ($compare_description as $key => $value) {
-                $result = round(total_matches($key, $compare_description), 2);
-                if ($result > 90) {
-                    $same_pr[$key]['short_original'] = $result . '%';//'No'; //round($result, 2) . '%';
-                } elseif (!$result) {
-                    $same_pr[$key]['short_original'] = $result . '%';//'Yes';
-                } else {
-                    $same_pr[$key]['short_original'] = $result . '%';//'Yes';
-                }
-//                $same_pr[$key]= $vs;
-            }
+//            $compare_description = array();
+//            foreach ($same_pr as $key => $value) {
+//                if (!empty($value['description'])) {
+//                    $compare_description[$key]['short'] = $value['description'];
+//                } 
+//                if (!empty($value['long_description'])) {
+//                    $compare_description[$key]['long'] = $value['long_description'];
+//                }
+//            }
+//            $compare_description_short = array();
+//            foreach ($same_pr as $key => $value) {
+//                if (!empty($value['description'])) {
+//                    $compare_description_short[$key] = $value['description'];
+//                }
+//            }
+//            foreach ($compare_description_short as $key => $value) {
+//                $result = round(total_matches($key, $compare_description, "short"), 2);
+//                if ($result > 90) {
+//                    $same_pr[$key]['short_original'] = $result . '%';//'No'; //round($result, 2) . '%';
+//                } elseif (!$result) {
+//                    $same_pr[$key]['short_original'] = $result . '%';//'Yes';
+//                } else {
+//                    $same_pr[$key]['short_original'] = $result . '%';//'Yes';
+//                }
+////                $same_pr[$key]= $vs;
+//            }
+//
+//            $compare_description_long = array();
+//            foreach ($same_pr as $key => $value) {
+//                if (!empty($value['long_description'])) {
+//                    $compare_description_long[$key] = $value['long_description'];
+//                }
+//            }
+//            foreach ($compare_description_long as $key => $value) {
+//                $result = total_matches($key, $compare_description,'long');
+//                if ($result > 90) {
+//                    $same_pr[$key]['long_original'] = round($result, 2) . '%';
+//                } elseif (!$result) {
+//                    $same_pr[$key]['long_original'] = round($result, 2) . '%';//'Yes';
+//                } else {
+//                    $same_pr[$key]['long_original'] = round($result, 2) . '%';//'Yes';
+//                }
+////                $same_pr[$key]= $vs;
+//            }
 
-            $compare_description = array();
-            foreach ($same_pr as $key => $value) {
-                if (!empty($value['long_description'])) {
-                    $compare_description[$key] = $value['long_description'];
-                }
-            }
-            foreach ($compare_description as $key => $value) {
-                $result = total_matches($key, $compare_description);
-                if ($result > 90) {
-                    $same_pr[$key]['long_original'] = round($result, 2) . '%';
-                } elseif (!$result) {
-                    $same_pr[$key]['long_original'] = round($result, 2) . '%';//'Yes';
-                } else {
-                    $same_pr[$key]['long_original'] = round($result, 2) . '%';//'Yes';
-                }
-//                $same_pr[$key]= $vs;
-            }
-
-
+             
 
 //			if(count($same_pr) === 3) {
             foreach ($same_pr as $ks => $vs) {
@@ -656,62 +665,70 @@ class Measure extends MY_Controller {
 
 
 
-            //Max          
-//      foreach($same_pr as $ks => $vs) {
-//         $maxshort=0;
-//         $maxlong=0;
-//         
-//         foreach($same_pr as $ks1 => $vs1 ){
-//             
-//           if($ks!=$ks1){
-//           if($vs['description']!=''){
-//                if($vs1['description']!=''){
-//                     $percent=$this->compare_text($vs['description'],$vs1['description']);
-//                     if($percent>$maxshort){
-//                     $maxshort=$percent;}
-//                }
-//            
-//                if($vs1['long_description']!=''){
-//                     $percent=$this->compare_text($vs['description'],$vs1['long_description']);
-//                     if($percent>$maxshort){
-//                     $maxshort=$percent;}
-//                }
-//                }
-//            
-//            if($vs['long_description']!=''){
-//                if($vs1['description']!=''){
-//                 $percent=$this->compare_text($vs['long_description'],$vs1['description']);
-//                 if($percent>$maxlong){
-//                 $maxlong=$percent;}
-//                 }
-//            
-//                if($vs1['long_description']!=''){
-//                     $percent=$this->compare_text($vs['long_description'],$vs1['long_description']);
-//                     if($percent>$maxlong){
-//                     $maxlong=$percent;}
-//                }
-//            }
-//           }    
-//            }
-//            if($maxshort>90){
-//                $vs['short_original']=round($maxshort,2).'%';
-//                //$vs['short_original']="No";
-//            }else{
-//                $vs['short_original']=round($maxshort,2).'%'; 
-//               //$vs['short_original']="Yes";
-//            }
-//            
-//            if($maxlong>90){
-//                $vs['long_original']=round($maxlong,2).'%';
-//            }else{
-//               $vs['long_original']=round($maxlong,2).'%'; 
-//                 }
-//              $same_pr[$ks]= $vs; 
-//              
-//            }
-            //Max                                              
+       //     Max   
+      if(count($same_pr)!=1){
+      foreach($same_pr as $ks => $vs) {
+         $maxshort=0;
+         $maxlong=0;
+         
+         foreach($same_pr as $ks1 => $vs1 ){
+            
+           if($ks!=$ks1){
+           if($vs['description']!=''){
+                if($vs1['description']!=''){
+                     $percent=$this->compare_text($vs['description'],$vs1['description']);
+                     if($percent>$maxshort){
+                     $maxshort=$percent;}
+                }
+            
+                if($vs1['long_description']!=''){
+                     $percent=$this->compare_text($vs['description'],$vs1['long_description']);
+                     if($percent>$maxshort){
+                     $maxshort=$percent;}
+                }
+                }
+            
+            if($vs['long_description']!=''){
+                if($vs1['description']!=''){
+                 $percent=$this->compare_text($vs['long_description'],$vs1['description']);
+                 if($percent>$maxlong){
+                 $maxlong=$percent;}
+                 }
+            
+                if($vs1['long_description']!=''){
+                     $percent=$this->compare_text($vs['long_description'],$vs1['long_description']);
+                     if($percent>$maxlong){
+                     $maxlong=$percent;}
+                }
+            }
+           }    
+            
+      }
+            if($maxshort>90){
+                $vs['short_original']=round($maxshort,2).'%';
+                //$vs['short_original']="No";
+            }else{
+                $vs['short_original']=round($maxshort,2).'%'; 
+               //$vs['short_original']="Yes";
+            }
+            
+            if($maxlong>90){
+                $vs['long_original']=round($maxlong,2).'%';
+            }else{
+               $vs['long_original']=round($maxlong,2).'%'; 
+                 }
+              $same_pr[$ks]= $vs; 
+              
+            }
+            }else{
+                   $same_pr[0]['long_original']='100%';
+                   $same_pr[0]['short_original']='100%';
+              }
+         //   Max                                              
 
             $data['same_pr'] = $same_pr;
+            
+      
 //            }
             // --- ATTEMPT TO GET 'SAME' FROM 'HUMAN INTERFACE' (products_compare table) (END)
             // --- GET SELECTED RPODUCT SEO DATA (TMP) (START)
