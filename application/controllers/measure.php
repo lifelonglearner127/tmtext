@@ -566,13 +566,13 @@ class Measure extends MY_Controller {
                 } 
             }
             foreach ($compare_description as $key => $value) {
-                $result = total_matches($key, $compare_description);
+                $result = round(total_matches($key, $compare_description), 2);
                 if ($result > 90) {
-                    $same_pr[$key]['short_original'] = 'No'; //round($result, 2) . '%';
+                    $same_pr[$key]['short_original'] = $result . '%';//'No'; //round($result, 2) . '%';
                 } elseif (!$result) {
-                    $same_pr[$key]['short_original'] = 'Yes';
+                    $same_pr[$key]['short_original'] = $result . '%';//'Yes';
                 } else {
-                    $same_pr[$key]['short_original'] = 'Yes';
+                    $same_pr[$key]['short_original'] = $result . '%';//'Yes';
                 }
 //                $same_pr[$key]= $vs;
             }
@@ -586,11 +586,11 @@ class Measure extends MY_Controller {
             foreach ($compare_description as $key => $value) {
                 $result = total_matches($key, $compare_description);
                 if ($result > 90) {
-                    $same_pr[$key]['long_original'] = 'No'; //round($result, 2) . '%';
+                    $same_pr[$key]['long_original'] = round($result, 2) . '%';
                 } elseif (!$result) {
-                    $same_pr[$key]['long_original'] = 'Yes';
+                    $same_pr[$key]['long_original'] = round($result, 2) . '%';//'Yes';
                 } else {
-                    $same_pr[$key]['long_original'] = 'Yes';
+                    $same_pr[$key]['long_original'] = round($result, 2) . '%';//'Yes';
                 }
 //                $same_pr[$key]= $vs;
             }
