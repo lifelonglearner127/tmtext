@@ -453,7 +453,9 @@ class Research extends MY_Controller {
             $s_column_index = intval($this->input->get('iSortCol_0'));
             $s_column = $s_columns[$s_column_index];
             $this->sort_column = $s_column;
-            //$res = usort($result_table, $this->assess_sort);
+            $this->sort_direction = strtolower($this->input->get('sSortDir_0'));
+            $this->sort_type = is_numeric($result[0]->$s_column) ? "num" : "";
+            $res = usort($result_table, array("Research", "assess_sort"));
         }
 
         $total_rows = count($result_table);
@@ -505,9 +507,23 @@ class Research extends MY_Controller {
             ->set_output(json_encode($output));
     }
 
-//    private function assess_sort($a, $b) {
-//        return $a[$this->sort_column] -$b[$this->sort_column];
-//    }
+    private function assess_sort($a, $b) {
+        $column = $this->sort_column;
+        $key1 = $a->$column;
+        $key2 = $b->$column;
+
+        if ($this->sort_type == "num") {
+            $result = intval($key1) - intval($key2);
+        } else {
+            $result = strcmp(strval($key1), strval($key2));
+        }
+
+        if ($this->sort_direction == "asc") {
+            return $result;
+        } else {
+            return -$result;
+        }
+    }
 
     private function prepare_seo_phrases($seo_lines) {
         if (empty($seo_lines)) {
