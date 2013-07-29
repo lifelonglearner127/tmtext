@@ -33,7 +33,7 @@ class SearchSpider(BaseSpider):
 
 		# build list of urls = search pages for each site
 		search_pages = {"amazon" : ("http://www.amazon.com/s/ref=nb_sb_noss?url=search-alias%3Daps&field-keywords=" + self.search_query), \
-						# "walmart" : "http://www.walmart.com/search/search-ng.do?ic=16_0&Find=Find&search_query=%s&Find=Find&search_constraint=0" % self.search_query, \
+						"walmart" : "http://www.walmart.com/search/search-ng.do?ic=16_0&Find=Find&search_query=%s&Find=Find&search_constraint=0" % self.search_query, \
 						# "bloomingdales" : "http://www1.bloomingdales.com/shop/search?keyword=%s" % self.search_query, \
 						# "overstock" : "http://www.overstock.com/search?keywords=%s" % self.search_query, \
 						# "wayfair" : "http://www.wayfair.com/keyword.php?keyword=%s" % self.search_query, \
@@ -76,6 +76,20 @@ class SearchSpider(BaseSpider):
 				yield item
 
 		# walmart
+		if (site == 'walmart'):
+
+			results = hxs.select("//div[@class='prodInfo']/div[@class='prodInfoBox']/a[@class='prodLink ListItemLink']")
+			for result in results:
+				item = SearchItem()
+				item['site'] = site
+				item['product_name'] = result.select("text()").extract()[0]
+				rel_url = result.select("@href").extract()[0]
+				#TODO: maybe use urljoin
+				root_url = "http://www.walmart.com"
+				item['product_url'] = root_url + rel_url
+
+				yield item
+
 
 		# bloomingdales
 
