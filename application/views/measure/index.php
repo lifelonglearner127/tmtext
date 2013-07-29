@@ -322,10 +322,6 @@
 	}
 	$(document).ready(function() {
 		// ---- UI tooltips (start)
-		// $(".btn-rec-all-send").tooltip({
-		// 	placement: 'left',
-		// 	title: 'Send Reports To All Recipients'
-		// });
 		$(".btn-rec-ind-send").tooltip({
 			placement: 'bottom',
 			title: 'Send Report'

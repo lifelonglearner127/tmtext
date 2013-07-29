@@ -43,3 +43,28 @@
 		<button type='button' href="javascript:void(0)" class="btn btn-primary disabled btn-rec-all-send">Send to all</button>
 	<?php } ?>
 </div>
+
+<script type='text/javascript'>
+	$(document).ready(function() {
+		// --- 'Recipients Control Panel' UI (start)
+		var checked_count = $("input[type='checkbox'][name='send_report_ch']").length;
+		$("#send_report_ch_all").on('change', function(e) {
+			if($(e.target).is(":checked")) {
+				$("input[type='checkbox'][name'send_report_ch']").attr('checked', true);
+			} else {
+				$("input[type='checkbox'][name'send_report_ch']").removeAttr('checked');
+			}
+		});
+		$("input[type='checkbox'][name'send_report_ch']").on('change', function(e) {
+			setTimeout(function() {
+				var count_s = 0;
+				$("input[type='checkbox'][name='send_report_ch']").each(function(index, val) {
+					if($(val).is(':checked')) count_s++;
+				});
+				if(checked_count == count_s) $("#send_report_ch_all").attr('checked', true);
+				if(count_s == 0) $("#send_report_ch_all").removeAttr('checked'); 
+			}, 100);
+		});
+		// --- 'Recipients Control Panel' UI (end)
+	});
+</script>

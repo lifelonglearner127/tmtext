@@ -362,7 +362,6 @@ function nextLocaHomePageWeekData() {
 	locaHomePageWeekData(next_week_page);
 }
 
-
 function slideTimeline(state) { // state: 'next', 'prev'
 	var first_cwp = $(".pagination ul li.page:first").data('week');
 	var last_cwp = $(".pagination ul li.page:last").data('week');
