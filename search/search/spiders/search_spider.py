@@ -19,22 +19,30 @@ import re
 class SearchSpider(BaseSpider):
 
 	name = "search"
+	allowed_domains = ["amazon.com", "walmart.com", "bloomingdales.com", "overstock.com", "wayfair.com", "bestbuy.com", "toysrus.com",\
+					   "bjs.com", "sears.com"]
 
 	# pass product as argument to constructor - either product name or product url
 	def __init__(self, product_name = None, product_url = None):
 		self.search_query = ""
 		if product_name:
-			self.search_query = "+".join(product_name.split())
+			# put + instead of spaces, lowercase all words
+			self.search_query = "+".join([name.lower() for name in product_name.split()])
 		# if product_url:
 		# 	self.search_query = self.get_name(product_url)
-		self.start_urls = ["http://www.amazon.com/s/ref=nb_sb_noss?url=search-alias%3Daps&field-keywords=" + self.search_query]
+
+		# bloomingales scraper only works with this in the start_urls list
+		self.start_urls = ["http://www.amazon.com", "http://www.walmart.com", "http://www1.bloomingdales.com",\
+						   "http://www.overstock.com", "http://www.wayfair.com", "http://www.bestbuy.com", \
+						   "http://www.toysrus.com", "http://www.bjs.com", "http://www.sears.com"]
 
 	def parse(self, response):
 
 		# build list of urls = search pages for each site
-		search_pages = {"amazon" : ("http://www.amazon.com/s/ref=nb_sb_noss?url=search-alias%3Daps&field-keywords=" + self.search_query), \
+		search_pages = {
+						"amazon" : "http://www.amazon.com/s/ref=nb_sb_noss?url=search-alias%3Daps&field-keywords=" + self.search_query, \
 						"walmart" : "http://www.walmart.com/search/search-ng.do?ic=16_0&Find=Find&search_query=%s&Find=Find&search_constraint=0" % self.search_query, \
-						# "bloomingdales" : "http://www1.bloomingdales.com/shop/search?keyword=%s" % self.search_query, \
+						"bloomingdales" : "http://www1.bloomingdales.com/shop/search?keyword=%s" % self.search_query, \
 						# "overstock" : "http://www.overstock.com/search?keywords=%s" % self.search_query, \
 						# "wayfair" : "http://www.wayfair.com/keyword.php?keyword=%s" % self.search_query, \
 						# #TODO: check this URL
@@ -48,18 +56,21 @@ class SearchSpider(BaseSpider):
 
 		# pass them to parseResults
 		for site in search_pages:
-			print "URRLLLLLLLL", search_pages[site]
+			
 			request = Request(search_pages[site], callback = self.parseResults)
 			request.meta['site'] = site
 			yield request
 
 	# parse results page, handle each site separately
 	def parseResults(self, response):
+		
 		hxs = HtmlXPathSelector(response)
 
 		site = response.meta['site']
 
 		# handle parsing separately for each site
+
+		#TODO: parse multiple pages, can only parse first page so far
 
 		# amazon
 		if (site == 'amazon'):
@@ -92,6 +103,17 @@ class SearchSpider(BaseSpider):
 
 
 		# bloomingdales
+		if (site == 'bloomingdales'):
+
+			results = hxs.select("//div[@class='shortDescription']/a")
+			for result in results:
+				item = SearchItem()
+				item['site'] = site
+				item['product_name'] = result.select("text()").extract()[0]
+				item['product_url'] = result.select("@href").extract()[0]
+
+				yield item
+
 
 		# overstock
 
