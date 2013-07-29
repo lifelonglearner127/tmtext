@@ -193,6 +193,8 @@ class BestsellerSpider(BaseSpider):
             else:
                 continue
 
+            item['SKU'] = product.select("@data-sku").extract()[0]
+
             # compute global item rank using rank on current page and page number
             item['rank'] = str((page_nr - 1) * products_per_page + rank)
 
