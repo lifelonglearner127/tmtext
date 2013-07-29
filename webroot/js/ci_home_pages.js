@@ -211,11 +211,16 @@ function openOverviewScreensCrawlModal() {
 	$("#overview_screens_crawl_modal").modal('show');
 }
 
+function redirectToRecipientsListAfterAdd() {
+	$("#configure_email_reports_success").modal('hide');
+	viewRecipientsList();
+}
+
 function viewRecipientsList() {
 	$("#recipients_control_panel_modal").modal('show');
 	// --- refresh listing (start)
 	var rec = $.post(base_url + 'index.php/measure/get_emails_reports_recipient', {}, function(data) {
-		$("#recipients_control_panel_body").html(data);
+		$("#recipients_control_panel_modal").html(data);
 	});
 	// -- refresh listing (end)
 }

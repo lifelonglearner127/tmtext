@@ -88,14 +88,14 @@ class Measure extends MY_Controller {
         $email = $this->input->post('email');
         $day = $this->input->post('day');
         // --------------- email sender (start) ---------------
-        // -- email config (start) --
+        // -- email config (dev configurations) (start) --
         $this->load->library('email');
         $config['protocol'] = 'sendmail';
         $config['mailpath'] = '/usr/sbin/sendmail';
         $config['charset'] = 'UTF-8';
         $config['wordwrap'] = TRUE;
         $this->email->initialize($config);
-        // -- email config (end) --
+        // -- email config (dev configurations) (end) --
         $this->email->from('ishulgin8@gmail.com', "Content Solutions: $day");
         $this->email->to("$email");
         $this->email->subject('Test Report Email');

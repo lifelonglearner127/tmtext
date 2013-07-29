@@ -185,7 +185,7 @@
 		<h3>Reports Configuration Saved</h3>
 	</div>
 	<div class="modal-body">
-		<p>Email configuration successfully saved! Use 'Recipients List' button to view results.</p>
+		<p><span>Email configuration successfully saved!</span> <span>Use</span> <a href='javascript:void(0)' onclick='redirectToRecipientsListAfterAdd()' >'Recipients List'</a> <span>button to view results.</span></p>
 	</div>
 	<div class="modal-footer">
 		<a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
@@ -241,19 +241,7 @@
 	</div>
 </div>
 
-<div class="modal hide fade ci_hp_modals crawl_launch_panel" id='recipients_control_panel_modal'>
-	<div class="modal-header">
-		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-		<h3>Recipients Control Panel</h3>
-	</div>
-	<div class="modal-body">
-		<div id="recipients_control_panel_body" class='recipients_control_panel_body'></div>
-	</div>
-	<div class="modal-footer">
-		<button type='button' href="javascript:void(0)" class="btn btn-success btn-rec-all-send">Send to all</button>
-		<a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
-	</div>
-</div>
+<div class="modal hide fade ci_hp_modals crawl_launch_panel" id='recipients_control_panel_modal'></div>
 
 <div class="modal hide fade ci_hp_modals crawl_launch_panel" id='customers_screens_crawl_modal'>
 	<div class="modal-header">
@@ -333,10 +321,10 @@
 	}
 	$(document).ready(function() {
 		// ---- UI tooltips (start)
-		$(".btn-rec-all-send").tooltip({
-			placement: 'left',
-			title: 'Send Reports To All Recipients'
-		});
+		// $(".btn-rec-all-send").tooltip({
+		// 	placement: 'left',
+		// 	title: 'Send Reports To All Recipients'
+		// });
 		$(".btn-rec-ind-send").tooltip({
 			placement: 'bottom',
 			title: 'Send Report'

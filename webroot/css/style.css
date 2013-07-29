@@ -1,4 +1,7 @@
 /* ---- InModal Screenshots Slider (start) */
+.bold {
+    font-weight: bold;
+}
 .screens_modal_slider {
     background-color: transparent !important;
     border: none !important;
