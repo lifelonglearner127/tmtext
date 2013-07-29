@@ -232,14 +232,17 @@ union all
 //            $d_to = $this->db->escape($date_to['year'].'-'.$date_to['month'].'-'.$date_to['day']);
 //            $date_filter = ' and rd.created>='.$d_from.' and rd.created<='.$d_to;
 //        }
-//        if ($short_less > -1)
-//            $short_less_filter = 'and rd.short_description_wc<'.$short_less;
-//        if ($short_more > -1)
-//            $short_more_filter = 'and rd.short_description_wc>'.$short_more;
-//        if ($long_less > -1)
-//            $long_less_filter = 'and rd.long_description_wc<'.$long_less;
-//        if ($long_more > -1)
-//            $long_more_filter = 'and rd.long_description_wc>'.$long_more;
+
+//        $count_sorting_cols = intval($this->input->get('iSortingCols', TRUE));
+//        if($count_sorting_cols > 0) {
+//            $columns_name_string = $this->input->get('sColumns', TRUE);
+//            $sort_col_n = intval($this->input->get('iSortCol_0', TRUE));
+//            $sort_direction_n = $this->input->get('sSortDir_0', TRUE);
+//            $columns_names = explode(",", $columns_name_string);
+//            if(!empty($columns_names[$sort_col_n]) && !empty($sort_direction_n)) {
+//                $order_column_name = $columns_names[$sort_col_n];
+//            }
+//        }
 
         $sql_cmd = "
             SELECT
@@ -282,12 +285,15 @@ union all
             GROUP BY
                 r.imported_data_id
         ";
+
+//        if(!empty($order_column_name)) {
+//            $sql_cmd = $sql_cmd." order by $order_column_name $sort_direction_n";
+//        }
+
         $query = $this->db->query($sql_cmd);
-        return $query->result();
-    }
+        $result =  $query->result();
 
-    function getPricesForBatch($batch_name) {
-
+        return $result;
     }
 
     function getLastRevision(){

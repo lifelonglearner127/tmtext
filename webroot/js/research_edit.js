@@ -4,7 +4,7 @@ $(function() {
     if(pageInitialized)
         return;
     pageInitialized = true;
-    
+
     $.fn.dataTableExt.oApi.fnReloadAjax = function ( oSettings, sNewSource, fnCallback, bStandingRedraw )
     {
         if ( typeof sNewSource != 'undefined' && sNewSource != null )
@@ -91,7 +91,7 @@ $(function() {
         "bDestroy": true,
         "sPaginationType": "full_numbers",
         "bProcessing": true,
-        //"bServerSide": true,
+        "bServerSide": true,
         //"sAjaxSource": readUrl,
         "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
             $(nRow).attr("batch_id", aData[3]);
@@ -143,7 +143,7 @@ $(function() {
 
     drawREProductsTable();
 
-    $("div.research_edit_filter_links a").live("click", function(event) {
+    $("div.research_edit_filter_links a").on("click", function(event) {
         event.preventDefault();
         drawREProductsTable(this);
     });

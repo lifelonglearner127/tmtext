@@ -186,19 +186,19 @@
             <div id="read" class="ui-tabs-panel ui-widget-content ui-corner-bottom">
                 <div id="records_wrapper" class="dataTables_wrapper">
                     <div class="span12">
-                        <table id="records" style="width: 100%;">
+                        <table id="tblAssess" class="tblDataTable">
                             <thead>
-                            <tr>
-                                <th><div class="draggable">Date</div></th>
-                                <th><div class="draggable">Product Name</div></th>
-                                <th><div class="draggable">URL</div></th>
-                                <th><div class="draggable">Word Count (S)</div></th>
-                                <th><div class="draggable">SEO Phrases (S)</div></th>
-                                <th><div class="draggable">Word Count (L)</div></th>
-                                <th><div class="draggable">SEO Phrases (L)</div></th>
-                                <th><div class="draggable">Duplicate Content</div></th>
-                                <th><div class="draggable">Price diff</div></th>
-                            </tr>
+<!--                            <tr>-->
+<!--                                <th style="width: 20%;">Date</th>-->
+<!--                                <th><div class="draggable">Product Name</div></th>-->
+<!--                                <th><div class="draggable">URL</div></th>-->
+<!--                                <th><div class="draggable">Word Count (S)</div></th>-->
+<!--                                <th><div class="draggable">SEO Phrases (S)</div></th>-->
+<!--                                <th><div class="draggable">Word Count (L)</div></th>-->
+<!--                                <th><div class="draggable">SEO Phrases (L)</div></th>-->
+<!--                                <th><div class="draggable">Duplicate Content</div></th>-->
+<!--                                <th><div class="draggable">Price diff</div></th>-->
+<!--                            </tr>-->
                             </thead>
                             <tbody></tbody>
                         </table>
@@ -209,19 +209,19 @@
                         <script type="text/javascript" src="<?php echo base_url();?>js/jquery.dataTables.min.js"></script>
                         <script type="text/javascript" src="<?php echo base_url();?>js/jquery.json-2.4.min.js"></script>
 
-                        <script type="text/template" id="readTemplate">
-                            <tr id="${id}">
-                                <td class="column_editor">${created}</td>
-                                <td class="column_product_name">${product_name}</td>
-                                <td class="column_url">${url}</td>
-                                <td class="column_short_description_wc">${short_description_wc}</td>
-                                <td class="column_short_seo_phrases_short">${seo_s}</td>
-                                <td class="column_long_description_wc">${long_description_wc}</td>
-                                <td class="column_long_seo_phrases_long">${seo_l}</td>
-                                <td class="column_duplicate_content">?</td>
-                                <td class="column_price_diff">${price_diff}</td>
-                            </tr>
-                        </script>
+<!--                        <script type="text/template" id="readTemplate">-->
+<!--                            <tr id="${id}">-->
+<!--                                <td class="column_editor">${created}</td>-->
+<!--                                <td class="column_product_name">${product_name}</td>-->
+<!--                                <td class="column_url">${url}</td>-->
+<!--                                <td class="column_short_description_wc">${short_description_wc}</td>-->
+<!--                                <td class="column_short_seo_phrases_short">${seo_s}</td>-->
+<!--                                <td class="column_long_description_wc">${long_description_wc}</td>-->
+<!--                                <td class="column_long_seo_phrases_long">${seo_l}</td>-->
+<!--                                <td class="column_duplicate_content">?</td>-->
+<!--                                <td class="column_price_diff">${price_diff}</td>-->
+<!--                            </tr>-->
+<!--                        </script>-->
 
 
                         <script type="text/javascript" src="<?php echo base_url();?>js/research_assess.js"></script>

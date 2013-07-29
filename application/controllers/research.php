@@ -282,15 +282,15 @@ class Research extends MY_Controller {
 //            $batch_id = '';
 //        }
 
-        $date_from = $this->input->get('date_from') == false ? '' : $this->input->get('date_from');
-        $date_to = $this->input->get('date_to') == false ? '' : $this->input->get('date_to');
+        $date_from = $this->input->get('date_from') == 'undefined' ? '' : $this->input->get('date_from');
+        $date_to = $this->input->get('date_to') == 'undefined' ? '' : $this->input->get('date_to');
         $price_diff = $this->input->get('price_diff');
-        $short_less = $this->input->get('short_less') == false ? -1 : $this->input->get('short_less');
-        $short_more = $this->input->get('short_more') == false ? -1 : $this->input->get('short_more');
+        $short_less = $this->input->get('short_less') == 'undefined' ? -1 : $this->input->get('short_less');
+        $short_more = $this->input->get('short_more') == 'undefined' ? -1 : $this->input->get('short_more');
         $short_seo_phrases = $this->input->get('short_seo_phrases');
         $short_duplicate_context = $this->input->get('short_duplicate_context');
-        $long_less = $this->input->get('long_less') == false ? -1 : $this->input->get('long_less');
-        $long_more = $this->input->get('long_more') == false ? -1 : $this->input->get('long_more');
+        $long_less = $this->input->get('long_less') == 'undefined' ? -1 : $this->input->get('long_less');
+        $long_more = $this->input->get('long_more') == 'undefined' ? -1 : $this->input->get('long_more');
         $long_seo_phrases = $this->input->get('long_seo_phrases');
         $long_duplicate_context = $this->input->get('long_duplicate_context');
 
@@ -366,6 +366,7 @@ class Research extends MY_Controller {
             $result_row->seo_s = "None";
             $result_row->seo_l = "None";
             $result_row->price_diff = "-";
+            $result_row->duplicate_context = "-";
 
             if ($price_diff) {
                 $data_import = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
@@ -447,9 +448,66 @@ class Research extends MY_Controller {
             $result_table[] = $result_row;
         }
 
+        $s_columns = explode(',', $this->input->get('sColumns'));
+        if (!empty($s_columns)) {
+            $s_column_index = intval($this->input->get('iSortCol_0'));
+            $s_column = $s_columns[$s_column_index];
+            $this->sort_column = $s_column;
+            //$res = usort($result_table, $this->assess_sort);
+        }
+
+        $total_rows = count($result_table);
+        $display_length = intval($this->input->get('iDisplayLength', TRUE));
+
+        $display_start = intval($this->input->get('iDisplayStart', TRUE));
+        if (empty($display_start)) {
+            $display_start = 0;
+        }
+
+        if (empty($display_length)) {
+            $display_length  = $total_rows - $display_start;
+        }
+
+        $echo = intval($this->input->get('sEcho'));
+
+        $output = array(
+            "sEcho"                     => $echo,
+            "iTotalRecords"             => $total_rows,
+            "iTotalDisplayRecords"      => $total_rows,
+            "iDisplayLength"            => $display_length,
+            "aaData"                    => array()
+        );
+
+        if(!empty($result_table)) {
+            $c = 0;
+            foreach($result_table as $data_row) {
+                if ($c >= $display_start) {
+                    $output['aaData'][] = array(
+                        $data_row->created,
+                        $data_row->product_name,
+                        $data_row->url,
+                        $data_row->short_description_wc,
+                        $data_row->seo_s,
+                        $data_row->long_description_wc,
+                        $data_row->seo_l,
+                        $data_row->duplicate_context,
+                        $data_row->price_diff,
+                    );
+                }
+                if ($c >= ($display_start + $display_length - 1)) {
+                    break;
+                }
+                $c++;
+            }
+        }
+
         $this->output->set_content_type('application/json')
-            ->set_output(json_encode($result_table));
+            ->set_output(json_encode($output));
     }
+
+//    private function assess_sort($a, $b) {
+//        return $a[$this->sort_column] -$b[$this->sort_column];
+//    }
 
     private function prepare_seo_phrases($seo_lines) {
         if (empty($seo_lines)) {

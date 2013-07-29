@@ -52,6 +52,24 @@ input[type=text] {
     margin: 8px;
 }
 
+.tblDataTable {
+    font-size: 1em;
+    width: 100%;
+}
+
+.tblDataTable .even {
+    background: #EAEAEA;
+}
+
+.tblDataTable tr:hover {
+    background: #CCCCCC;
+}
+
+.tblDataTable td {
+    padding: 6px;
+    margin: 8px;
+}
+
 #delConfDialog, #msgDialog, #updateDialog {
     font-size: 1em;
 }
@@ -175,6 +193,18 @@ input[type=text] {
 }
 
 #records .reviewed {
+    background-color: #d0e9c6;
+}
+
+.tblDataTable th {
+    font-weight: bold;
+}
+
+.tblDataTable .row_selected {
+    background-color: #9FAFD1;
+}
+
+.tblDataTable .reviewed {
     background-color: #d0e9c6;
 }
 

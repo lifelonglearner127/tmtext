@@ -1,6 +1,45 @@
 var readAssessUrl = base_url + 'index.php/research/get_assess_info';
-
+var pageRDInitialized = false;
 $(function () {
+    if(pageRDInitialized)
+        return;
+    pageRDInitialized = true;
+
+    var research_assess_choiceColumnDialog = $('#research_assess_choiceColumnDialog');
+
+    var tblAssess = $('#tblAssess').dataTable({
+        "bJQueryUI": true,
+        "bDestroy": true,
+        "sPaginationType": "full_numbers",
+        "bProcessing": true,
+        "bServerSide": true,
+        "sAjaxSource": readAssessUrl,
+        "fnServerData": function (sSource, aoData, fnCallback) {
+            aoData = buildTableParams(aoData);
+            $.getJSON( sSource, aoData, function (json) {
+                fnCallback(json)
+            });
+        },
+        "aLengthMenu": [[3, 10, 25, 50, -1], [3, 10, 25, 50, "All"]],
+        "iDisplayLength": 3,
+        "oLanguage": {
+            "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
+            "sInfoEmpty": "Showing 0 to 0 of 0 records",
+            "sInfoFiltered": ""
+        },
+        "aoColumns": [
+            {"sTitle" : "Date", "sName":"created", "sWidth": "5%"},
+            {"sTitle" : "Product Name", "sName":"product_name", "sWidth": "25%"},
+            {"sTitle" : "URL", "sName":"url", "sWidth": "30%"},
+            {"sTitle" : "Word Count (S)", "sName":"short_description_wc", "sWidth": "5%"},
+            {"sTitle" : "SEO Phrases (S)", "sName":"seo_s", "sWidth": "10%"},
+            {"sTitle" : "Word Count (L)", "sName":"long_description_wc", "sWidth": "5%"},
+            {"sTitle" : "SEO Phrases (L)", "sName":"seo_l", "sWidth": "10%"},
+            {"sTitle" : "Duplicate Content", "sName":"duplicate_context", "sWidth": "5%"},
+            {"sTitle" : "Price diff", "sName":"price_diff", "sWidth": "10%"}
+        ]
+    });
+
     function getAssessCustomerDropdown(){
         var customers_list_ci = $.post(base_url + 'index.php/measure/getcustomerslist_new', { }, function(c_data) {
             var jsn = $('#research_assess_customers').msDropDown({byJson:{data:c_data, name:'customers_list'}}).data("dd");
@@ -23,8 +62,6 @@ $(function () {
         }, 'json');
     }
 
-    getAssessCustomerDropdown();
-
     $(document).on("change", 'select[name="research_assess_batches"]', function() {
         var selectedBatch = $(this).find("option:selected").text();
         $.post(base_url + 'index.php/research/filterCustomerByBatch', {
@@ -33,7 +70,6 @@ $(function () {
             var oDropdown = $("#research_assess_customers").msDropdown().data("dd");
             if(data != ''){
                 oDropdown.setIndexByValue(data);
-
             } else {
                 oDropdown.setIndexByValue('All customers');
             }
@@ -43,10 +79,10 @@ $(function () {
         });
     });
 
-    $('#research_assess_select_all').live('click', function() {
+    $('#research_assess_select_all').on('click', function() {
         var isChecked = $(this).is(':checked');
         $('div.boxes_content input[type="checkbox"]').each(function() {
-            $(this).attr('checked', isChecked).change();
+            $(this).attr('checked', isChecked);
         });
     });
 
@@ -82,21 +118,16 @@ $(function () {
         }
     });
 
-    $('#assess_filter_clear_dates').live('click', function() {
+    $('#assess_filter_clear_dates').on('click', function() {
         $('#assess_filter_datefrom').val('');
         $('#assess_filter_dateto').val('');
     });
 
-    $('#research_assess_update').live('click', function() {
-        if (dataTable) {
-            dataTable.fnDestroy();
-            dataTable = undefined;
-        }
+    $('#research_assess_update').on('click', function() {
         readAssessData();
     });
 
-    // choice column dialog
-    $('#research_assess_choiceColumnDialog').dialog({
+    research_assess_choiceColumnDialog.dialog({
         autoOpen: false,
         modal: true,
         buttons: {
@@ -124,9 +155,7 @@ $(function () {
                     },
                     success : function( data ) {
                         if(data == true) {
-                            dataTable.fnDestroy();
-                            dataTable = undefined;
-                            readAssessData();
+                            hideColumns();
                         }
                     }
                 });
@@ -140,111 +169,84 @@ $(function () {
         width: '180px'
     });
 
-    $('#research_batches_columns').live('click', function() {
-        $('#research_assess_choiceColumnDialog').dialog('open');
-        $('#research_assess_choiceColumnDialog').parent().find('button:first').addClass("popupGreen");
+    $('#research_batches_columns').on('click', function() {
+        research_assess_choiceColumnDialog.dialog('open');
+        research_assess_choiceColumnDialog.parent().find('button:first').addClass("popupGreen");
     });
 
-    readAssessData();
-
-});
-
-function readAssessData() {
-    var data = {};
-
-    data.search_text =  $('#assess_filter_text').val();
-    data.batch_name = $('select[name="research_assess_batches"]').find('option:selected').text();
-
-//    if (!data.batch_name)
-//        return;
-
-    var assess_filter_datefrom = $('#assess_filter_datefrom').val();
-    var assess_filter_dateto = $('#assess_filter_dateto').val();
-    if (assess_filter_datefrom && assess_filter_dateto) {
-        data.date_from = assess_filter_datefrom,
-        data.date_to = assess_filter_dateto
+    function hideColumns() {
+        var columns_checkboxes = research_assess_choiceColumnDialog.find('input[type=checkbox]');
+        $(columns_checkboxes).each(function(i) {
+            if($(this).attr('checked') == 'checked') {
+                tblAssess.fnSetColumnVis(i, true, true);
+            } else {
+                tblAssess.fnSetColumnVis(i, false, true);
+            }
+        });
     }
 
-    if ($('#research_assess_price_diff').is(':checked')) {
-        data.price_diff = true;
-    }
+    function buildTableParams(existingParams) {
+        var assessRequestParams = {};
 
-    if ($('#research_assess_short_check').is(':checked')) {
-        if ($('#research_assess_short_less_check').is(':checked')) {
-            data.short_less = $('#research_assess_short_less').val();
-        }
-        if ($('#research_assess_short_more_check').is(':checked')) {
-            data.short_more = $('#research_assess_short_more').val();
-        }
+        assessRequestParams.search_text =  $('#assess_filter_text').val();
+        assessRequestParams.batch_name = $('select[name="research_assess_batches"]').find('option:selected').text();
 
-        if ($('#research_assess_short_seo_phrases').is(':checked')) {
-            data.short_seo_phrases = true;
-        }
-        if ($('#research_assess_short_duplicate_content').is(':checked')) {
-            data.short_duplicate_content = true;
-        }
-    }
-
-    if ($('#research_assess_long_check').is(':checked')) {
-        if ($('#research_assess_long_less_check').is(':checked')) {
-            data.long_less = $('#research_assess_long_less').val();
-        }
-        if ($('#research_assess_long_more_check').is(':checked')) {
-            data.long_more = $('#research_assess_long_more').val();
+        var assess_filter_datefrom = $('#assess_filter_datefrom').val();
+        var assess_filter_dateto = $('#assess_filter_dateto').val();
+        if (assess_filter_datefrom && assess_filter_dateto) {
+            assessRequestParams.date_from = assess_filter_datefrom,
+                assessRequestParams.date_to = assess_filter_dateto
         }
 
-        if ($('#research_assess_long_seo_phrases').is(':checked')) {
-            data.long_seo_phrases = true;
+        if ($('#research_assess_price_diff').is(':checked')) {
+            assessRequestParams.price_diff = true;
         }
-        if ($('#research_assess_long_duplicate_content').is(':checked')) {
-            data.long_duplicate_content = true;
-        }
-    }
 
-    //display ajax loader animation
-    $( '#ajaxLoadAni' ).fadeIn( 'slow' );
-    $.ajax({
-        url: readAssessUrl,
-        dataType: 'json',
-        data : data,
-        success: function( response ) {
-
-            //clear old rows
-            $( '#records > tbody' ).html( '' );
-
-            //append new rows
-            $( '#readTemplate' ).render( response ).appendTo( "#records > tbody" );
-
-            //apply dataTable to #records table and save its object in dataTable variable
-            if( typeof dataTable == 'undefined' ){
-                dataTable = $( '#records' ).dataTable({"bJQueryUI": true, "bDestroy": true,
-                    "oLanguage": {
-                        "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
-                        "sInfoEmpty": "Showing 0 to 0 of 0 records",
-                        "sInfoFiltered": ""
-                    },
-                    "aoColumns": [
-                        null, null, null, null, null, null, null, null, null
-                    ]
-                });
+        if ($('#research_assess_short_check').is(':checked')) {
+            if ($('#research_assess_short_less_check').is(':checked')) {
+                assessRequestParams.short_less = $('#research_assess_short_less').val();
+            }
+            if ($('#research_assess_short_more_check').is(':checked')) {
+                assessRequestParams.short_more = $('#research_assess_short_more').val();
             }
 
-//            dataTable.fnFilter(
-//                $('select[name="research_batches"]').find('option:selected').text(),
-//                8
-//            );
-
-            // get visible columns status
-            var columns_checkboxes = $('#research_assess_choiceColumnDialog input[type=checkbox]');
-
-            $(columns_checkboxes).each(function(i) {
-                if($(this).attr('checked') != 'checked') {
-                    dataTable.fnSetColumnVis( i, false, true );
-                }
-            });
-
-            //hide ajax loader animation here...
-            $( '#ajaxLoadAni' ).fadeOut( 'slow' );
+            if ($('#research_assess_short_seo_phrases').is(':checked')) {
+                assessRequestParams.short_seo_phrases = true;
+            }
+            if ($('#research_assess_short_duplicate_content').is(':checked')) {
+                assessRequestParams.short_duplicate_content = true;
+            }
         }
-    });
-}
+
+        if ($('#research_assess_long_check').is(':checked')) {
+            if ($('#research_assess_long_less_check').is(':checked')) {
+                assessRequestParams.long_less = $('#research_assess_long_less').val();
+            }
+            if ($('#research_assess_long_more_check').is(':checked')) {
+                assessRequestParams.long_more = $('#research_assess_long_more').val();
+            }
+
+            if ($('#research_assess_long_seo_phrases').is(':checked')) {
+                assessRequestParams.long_seo_phrases = true;
+            }
+            if ($('#research_assess_long_duplicate_content').is(':checked')) {
+                assessRequestParams.long_duplicate_content = true;
+            }
+        }
+
+        for (var p in assessRequestParams) {
+            existingParams.push({"name": p, "value": assessRequestParams[p]});
+        }
+
+        return existingParams;
+    }
+
+    function readAssessData() {
+        tblAssess.fnDraw();
+        hideColumns();
+    }
+
+    hideColumns();
+
+    getAssessCustomerDropdown();
+});
