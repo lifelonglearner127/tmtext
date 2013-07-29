@@ -18,8 +18,9 @@
 						<li class='page_prev'><a id="slide_prev_timeline" class='tl_full_left disabled' onclick="return false;" href="javascript:void(0)"><i class='icon-chevron-left icon-white'></i></a></li>
 						<li id='page_prev' class="page_prev disabled"><a onclick="prevLocaHomePageWeekData()" href="javascript:void(0)">&laquo;</a></li>
 						<?php for($i = 1; $i <= 7; $i++) { ?>
+							<?php if(count($webshoots_model->getWeekAvailableScreens($i, $year)) > 0) { $have_screen = 'have_screen'; } else { $have_screen = ''; } ?>
 							<?php if($i == 1) { $active = 'active'; } else { $active = ''; } ?>
-							<li data-week="<?php echo $i; ?>" class="page <?php echo $active; ?>"><a href="javascript:void(0)" onclick="locaHomePageWeekData('<?php echo $i; ?>')"><?php echo $i; ?></a></li>
+							<li data-week="<?php echo $i; ?>" class="page <?php echo $active; ?>"><a class="<?php echo $have_screen; ?>" href="javascript:void(0)" onclick="locaHomePageWeekData('<?php echo $i; ?>')"><?php echo $i; ?></a></li>
 						<?php } ?>
 						<li id='page_next' class='page_next'><a onclick="nextLocaHomePageWeekData()" href="javascript:void(0)">&raquo;</a></li>
 						<li class='page_next'><a id="slide_next_timeline" class='tl_full_left' onclick="slideTimeline('next')" href="javascript:void(0)"><i class='icon-chevron-right icon-white'></i></a></li>
@@ -58,12 +59,13 @@
 						<li id='page_prev' class="page_prev"><a onclick="prevLocaHomePageWeekData()" href="javascript:void(0)">&laquo;</a></li>
 						<?php } ?>
 						<?php for($i = $int_cell_start; $i <= $int_cell_end; $i++) { ?>
+							<?php if(count($webshoots_model->getWeekAvailableScreens($i, $year)) > 0) { $have_screen = 'have_screen'; } else { $have_screen = ''; } ?>
 							<?php if($i == $week) { $active = 'active'; } else { $active = ''; } ?>
 							<?php if($i <= $week) { ?>
-								<li data-week="<?php echo $i; ?>" class="page <?php echo $active; ?>"><a href="javascript:void(0)" onclick="locaHomePageWeekData('<?php echo $i; ?>')"><?php echo $i; ?></a></li>
+								<li data-week="<?php echo $i; ?>" class="page <?php echo $active; ?>"><a class="<?php echo $have_screen; ?>" href="javascript:void(0)" onclick="locaHomePageWeekData('<?php echo $i; ?>')"><?php echo $i; ?></a></li>
 							<?php } else { ?>
 								<?php $block_next_sl = true; ?>
-								<li data-week="<?php echo $i; ?>" class="page disabled blocked"><a href="javascript:void(0)"><?php echo $i; ?></a></li>
+								<li data-week="<?php echo $i; ?>" class="page disabled blocked"><a class="<?php echo $have_screen; ?>" href="javascript:void(0)"><?php echo $i; ?></a></li>
 							<?php } ?>
 						<?php } ?>
 						<?php if($block_next_sl) { ?>

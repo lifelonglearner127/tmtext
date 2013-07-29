@@ -30,6 +30,7 @@ class Measure extends MY_Controller {
         $this->data['c_week'] = $c_week;
         $this->data['c_year'] = $c_year;
         $this->data['img_av'] = $this->webshoots_model->getWeekAvailableScreens($c_week, $c_year);
+        $this->data['webshoots_model'] = $this->webshoots_model;
         // $this->data['rec'] = $this->webshoots_model->get_recipients_list();
         $this->render();
     }
@@ -336,7 +337,8 @@ class Measure extends MY_Controller {
                 'ct_final' => date("m.d.Y", time()),
                 'customers_list' => $this->customers_list_new(),
                 'status' => 'current',
-                'img_av' => $this->webshoots_model->getWeekAvailableScreens($c_week, $year)
+                'img_av' => $this->webshoots_model->getWeekAvailableScreens($c_week, $year),
+                'webshoots_model' => $this->webshoots_model
             );
         } else {
             $week = 1;
@@ -350,7 +352,8 @@ class Measure extends MY_Controller {
                 'ct_final' => $ct_final,
                 'customers_list' => $this->customers_list_new(),
                 'status' => 'selected',
-                'img_av' => $this->webshoots_model->getWeekAvailableScreens($week, $year)
+                'img_av' => $this->webshoots_model->getWeekAvailableScreens($week, $year),
+                'webshoots_model' => $this->webshoots_model
             );
         }
         $this->load->view('measure/gethomepageyeardata', $data);
