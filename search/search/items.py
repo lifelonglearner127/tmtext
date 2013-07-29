@@ -3,4 +3,6 @@
 from scrapy.item import Item, Field
 
 class SearchItem(Item):
-    name = Field()
+    product_name = Field() # name of the search result product
+    site = Field() # site result was found on
+    product_url = Field() # url of result product page
