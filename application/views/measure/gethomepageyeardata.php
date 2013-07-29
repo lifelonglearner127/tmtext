@@ -85,14 +85,9 @@
 				</ul>
 			</div>
 		</div>
-	</div>
-</div>
-
-<div id='hp_ajax_content' class='span12 body_section ml_disable mt_30'>
-	<div style='margin-bottom: 10px;'>
+		<div id="screens_images_slider_wrap" class='span2'>
 		<?php if($img_av !== false) { ?>
-			<button onclick='openScreensModalSlider()' class='btn btn-primary'><i class='icon-eye-open icon-white'></i>&nbsp;Week Images Viewer</i></button>
-			<span class='label label-success'>images viewer available for this week</span>
+			<button onclick='openScreensModalSlider()' class='btn btn-primary'><i class='icon-eye-open icon-white'></i>&nbsp;View All</button>
 			<div class="modal hide fade screens_modal_slider" id='screens_modal_slider'>
 				<div class="modal-body">
 					<ul id='screens_slider'>
@@ -103,14 +98,13 @@
 				</div>
 			</div>
 		<?php } else { ?>
-			<button class='btn btn-primary disabled'><i class='icon-eye-open icon-white'></i>&nbsp;Week Images Viewer</i></button>
-			<span class='label label-important'>images viewer not available for this week</span>
+			<button class='btn btn-primary disabled'><i class='icon-eye-open icon-white'></i>&nbsp;View All</button>
 		<?php } ?>
+		</div>
 	</div>
-	<div style='margin-bottom: 15px;'>
-		<span class='label label-success'><?php if($status == 'selected') { ?>Selected date:<?php } else { ?>Current date:<?php } ?> <b id='current_date'><?php echo $ct_final; ?></b></span>
-		<span class='label label-success'><?php if($status == 'selected') { ?>Selected week:<?php } else { ?>Current week:<?php } ?> <b id='current_week'><?php echo $week; ?></b></label>
-	</div>
+</div>
+
+<div id='hp_ajax_content' class='span12 body_section ml_disable mt_30'>
 	<div class='ph_placeholder' data-week='1'>
 		<?php 
 			$items_count = 6;

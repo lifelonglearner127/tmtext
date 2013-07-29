@@ -12,6 +12,15 @@ class Webshoots_model extends CI_Model {
         parent::__construct();
     }
 
+    public function delete_reports_recipient($id) {
+        return $this->db->delete($this->tables['ci_home_page_recipients'], array('id' => $id)); 
+    }
+
+    public function get_recipients_list() {
+        $query = $this->db->where(array())->order_by('stamp', 'desc')->get($this->tables['ci_home_page_recipients']);
+        return $query->result();
+    }
+
     public function rec_emails_reports_recipient($rec_day, $recs_arr) {
         $res = false;
         if(count($recs_arr) > 0) {

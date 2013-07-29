@@ -85,14 +85,9 @@
 							</ul>
 						</div>
 					</div>
-				</div>
-			</div>
-			
-			<div id='hp_ajax_content' class='span12 body_section ml_disable mt_30'>
-				<div style='margin-bottom: 10px;'>
+					<div id="screens_images_slider_wrap" class='span2'>
 					<?php if($img_av !== false) { ?>
-						<button onclick='openScreensModalSlider()' class='btn btn-primary'><i class='icon-eye-open icon-white'></i>&nbsp;Week Images Viewer</i></button>
-						<span class='label label-success'>images viewer available for this week</span>
+						<button onclick='openScreensModalSlider()' class='btn btn-primary'><i class='icon-eye-open icon-white'></i>&nbsp;View All</button>
 						<div class="modal hide fade screens_modal_slider" id='screens_modal_slider'>
 							<div class="modal-body">
 								<ul id='screens_slider'>
@@ -103,14 +98,13 @@
 							</div>
 						</div>
 					<?php } else { ?>
-						<button class='btn btn-primary disabled'><i class='icon-eye-open icon-white'></i>&nbsp;Week Images Viewer</i></button>
-						<span class='label label-important'>images viewer not available for this week</span>
+						<button class='btn btn-primary disabled'><i class='icon-eye-open icon-white'></i>&nbsp;View All</button>
 					<?php } ?>
+					</div>
 				</div>
-				<div style='margin-bottom: 15px;'>
-					<span class='label label-success'>Current date: <b id='current_date'><?php echo $ct_final; ?></b></span>
-					<span class='label label-success'>Current week: <b id='current_week'><?php echo $c_week; ?></b></label>
-				</div>
+			</div>
+			
+			<div id='hp_ajax_content' class='span12 body_section ml_disable mt_30'>
 				<div class='ph_placeholder' data-week='1'>
 					<?php
 						$items_count = 6;
@@ -247,6 +241,20 @@
 	</div>
 </div>
 
+<div class="modal hide fade ci_hp_modals crawl_launch_panel" id='recipients_control_panel_modal'>
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+		<h3>Recipients Control Panel</h3>
+	</div>
+	<div class="modal-body">
+		<div id="recipients_control_panel_body" class='recipients_control_panel_body'></div>
+	</div>
+	<div class="modal-footer">
+		<button type='button' href="javascript:void(0)" class="btn btn-success btn-rec-all-send">Send to all</button>
+		<a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
+	</div>
+</div>
+
 <div class="modal hide fade ci_hp_modals crawl_launch_panel" id='customers_screens_crawl_modal'>
 	<div class="modal-header">
 		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
@@ -324,6 +332,21 @@
 		}
 	}
 	$(document).ready(function() {
+		// ---- UI tooltips (start)
+		$(".btn-rec-all-send").tooltip({
+			placement: 'left',
+			title: 'Send Reports To All Recipients'
+		});
+		$(".btn-rec-ind-send").tooltip({
+			placement: 'bottom',
+			title: 'Send Report'
+		});
+		$(".btn-rec-remove").tooltip({
+			placement: 'right',
+			title: 'Remove'
+		});
+		// ---- UI tooltips (end)
+
 		$("#customers_screens_crawl").tooltip({
 			placement: 'bottom',
 			title: 'Open Crawl Launch Control Panel'

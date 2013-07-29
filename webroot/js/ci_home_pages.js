@@ -67,17 +67,34 @@ function openScreensModalSlider() {
 	$("#screens_modal_slider").modal('show');
 }
 
+function sendRecipientReport(id, email, day) {
+	var send_data = {
+		id: id,
+		email: email,
+		day: day
+	};
+	var send_recipient_report = $.post(base_url + 'index.php/measure/send_recipient_report', send_data, function(data) {
+		$("#recipients_control_panel_modal").modal('hide');
+	});
+}
+
+function deleteRecipient(id) {
+	if(confirm('Are you sure?')) {
+		var send_data = {
+			id: id
+		};
+		var remove_rec = $.post(base_url + 'index.php/measure/delete_recipient', send_data, function(data) {
+			$("#recipients_control_panel_modal").modal('hide');
+		});
+	}
+}
+
 function startAllCrawl() {
 	$("#customers_screens_crawl_modal").modal('hide');
 	$("#loading_crawl_modal").modal('show');
 	var start_site_crawl = $.post(base_url + 'index.php/measure/webshootcrawlall', {}, function(data) {
 		$("#loading_crawl_modal").modal('hide');
-		console.log(data);
 	});
-}
-
-function openCrawlLaunchPanelModal() {
-	$("#customers_screens_crawl_modal").modal('show');
 }
 
 function removeCrawlSiteFromList(id) {
@@ -91,9 +108,6 @@ function removeCrawlSiteFromList(id) {
 }
 
 function openCrawlLaunchPanelModal(close_preview) {
-	// if(close_preview) {
-	// 	$("#preview_screenshot_modal").modal('hide');
-	// }
 	$("#customers_screens_crawl_modal").modal('show');
 	var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist_crawl', {}, function(c_data) {
 		var tbl = "";
@@ -147,32 +161,6 @@ function flatPreviewScreenshotModal(url) {
 	}
 }
 
-// function flatPreviewScreenshotModal(url) {
-// 	$("#customers_screens_crawl_modal").modal('hide');
-// 	$("#preview_screenshot_modal #sc_preview").css('width', '200');
-// 	$("#preview_screenshot_modal #sc_preview").css('height', '150px');
-// 	$("#preview_screenshot_modal").modal('show');
-// 	if(url === 'bloomingdales.com') { // --- static tmp screens for bloomingdales.com
-// 		var imagest = "";
-// 		var tmp_thumb = base_url + "img/bloomingdales_com_wide_half.png";
-// 		imagest += "<img id='s_img' onclick='openPreviewLarge()' src='" + tmp_thumb + "'>";
-// 		imagest += "<img id='l_img' style='display: none;' src='" + tmp_thumb + "'>";
-// 		$("#preview_screenshot_modal #sc_preview").html(imagest);
-// 	} else {
-// 		var send_data = {
-// 			url: url,
-// 			year: $("#year_s > option:selected").val(),
-// 			week: $(".pagination ul li.page.active").data('week')
-// 		}
-// 		var preview_img = $.post(base_url + 'index.php/measure/getwebshootdata', send_data, function(data) {
-// 			var imagest = "";
-// 			imagest += "<img id='s_img' onclick='openPreviewLarge()' src='" + data[0]['thumb'] + "'>";
-// 			imagest += "<img id='l_img' style='display: none;' src='" + data[0]['img'] + "'>";
-// 			$("#preview_screenshot_modal #sc_preview").html(imagest);
-// 		});
-// 	}
-// }
-
 function previewScreenshotModal(url) {
 	$("#customers_screens_crawl_modal").modal('hide');
 	if(url === 'bloomingdales.com') { // --- static tmp screens for bloomingdales.com
@@ -223,6 +211,15 @@ function openOverviewScreensCrawlModal() {
 	$("#overview_screens_crawl_modal").modal('show');
 }
 
+function viewRecipientsList() {
+	$("#recipients_control_panel_modal").modal('show');
+	// --- refresh listing (start)
+	var rec = $.post(base_url + 'index.php/measure/get_emails_reports_recipient', {}, function(data) {
+		$("#recipients_control_panel_body").html(data);
+	});
+	// -- refresh listing (end)
+}
+
 function submitEmailReportsConfig() {
 	// --- collect data (start)
 	var email_pattern = /^([a-z0-9_\-]+\.\+)*[a-z0-9_\-\+]+@([a-z0-9][a-z0-9\-]*[a-z0-9]\.)+[a-z]{2,4}$/i;
@@ -232,8 +229,8 @@ function submitEmailReportsConfig() {
 		recs_arr = recs.split(',');
 		var recs_arr_checked = [];
 		for(var i = 0; i < recs_arr.length; i++) {
-			if(email_pattern.test(recs_arr[i])) {
-				recs_arr_checked.push(recs_arr[i]);
+			if(email_pattern.test($.trim(recs_arr[i]))) {
+				recs_arr_checked.push($.trim(recs_arr[i]));
 			}
 		}
 	}
@@ -306,6 +303,16 @@ function detectNextPrevBtnPlace() {
 	}
 }
 
+function get_screenshots_slider_data(week, year) {
+	var send_data = {
+		week: week,
+		year: year
+	}
+	var sc_slider_data = $.post(base_url + 'index.php/measure/get_screenshots_slider_data', send_data, function(data) {
+		$("#screens_images_slider_wrap").html(data);
+	});
+}
+
 function get_home_page_week_data(week) {
 	var year = $("#year_s > option:selected").val();
 	var first_cwp = $(".pagination ul li.page:first").data('week');
@@ -330,10 +337,12 @@ function get_home_page_week_data(week) {
 }
 
 function locaHomePageWeekData(week) {
+	var year = $("#year_s > option:selected").val();
 	$(".pagination ul li").removeClass('active');
 	$(".pagination ul li[data-week=" + week + "]").addClass('active');
 	detectNextPrevBtnPlace();
 	get_home_page_week_data(week);
+	get_screenshots_slider_data(week, year);
 }
 
 function prevLocaHomePageWeekData() {
@@ -365,10 +374,7 @@ function slideTimeline(state) { // state: 'next', 'prev'
         success: function(res) {
         	$("#timeline_ctr").replaceWith(res);
         	get_home_page_week_data($("#timeline_ctr li.page.active").data('week'));
+        	get_screenshots_slider_data($("#timeline_ctr li.page.active").data('week'), $("#year_s > option:selected").val());
         }
   	});
 }
-
-
-
-

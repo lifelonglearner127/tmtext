@@ -915,6 +915,12 @@ class Imported_data_parsed_model extends CI_Model {
         return $this->db->update($this->tables['imported_data_parsed'], $this, array('id' => $id));
     }
 
+    function updateValueByKey($imported_id, $key, $value) {
+        $params = new stdClass();
+        $params->value = $value;
+        return $this->db->update($this->tables['imported_data_parsed'], $params, array('imported_data_id' => $imported_id, 'key' => $key));
+    }
+
     function getData($value, $website = '', $category_id='', $limit= '', $key = 'Product Name', $strict = false){
 
         $this->db->select('p.imported_data_id, p.key, p.value')
