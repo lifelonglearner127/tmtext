@@ -1,6 +1,11 @@
 /* ---- InModal Screenshots Slider (start) */
+.pagination .page a.current_week {
+    background-color: #bdff9d;
+    font-weight: bold;
+}
 .pagination .page a.have_screen {
-    color: green;
+    color: #999999;
+    background-color: #a7c8ff;
     font-weight: bold;
 }
 .bold {
