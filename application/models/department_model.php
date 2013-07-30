@@ -43,4 +43,11 @@ class Department_model extends CI_Model {
 
         return $query->result();
     }
+
+    function getAllByCustomer($customer_id)
+    {
+        $query = $this->db->where('customer_id', $customer_id)->get($this->tables['departments']);
+
+        return $query->result();
+    }
 }

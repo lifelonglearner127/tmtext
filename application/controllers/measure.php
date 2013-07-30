@@ -436,12 +436,18 @@ class Measure extends MY_Controller {
         $this->load->model('department_model');
 
         foreach ($this->department_model->getAll() as $row) {
-            ;
             $this->data['departmens_list'][$row->id] = $row->short_name;
         }
 
         $this->data['customers_list'] = $this->customers_list_new();
         $this->render();
+    }
+    public function getDepartmentsByCustomer(){
+        $this->load->model('customers_model');
+        $this->load->model('department_members_model');
+        $customer = explode(".", $this->input->post('customer_name'));
+        $result = $this->department_members_model->getAllByCustomer(strtolower($customer[0]));
+        $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }
 
     public function measure_categories() {

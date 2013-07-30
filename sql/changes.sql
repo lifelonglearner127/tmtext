@@ -1,4 +1,13 @@
-# 07/17 Ruslan 
+# 07/30 Tatiana
+ALTER TABLE `department_members` ADD `customer_id` INT NOT NULL AFTER `site_id`;
+update `department_members` set `customer_id`=15 where `site`='amazon';
+update `department_members` set `customer_id`=13 where `site`='overstock';
+update `department_members` set `customer_id`=3 where `site`='bjs';
+update `department_members` set `customer_id`=1 where `site`='walmart';
+update `department_members` set `customer_id`=19 where `site`='bestbuy';
+update `department_members` set `customer_id`=21 where `site`='wayfair';
+
+# 07/17 Ruslan
 # data in another file
  
 CREATE TABLE IF NOT EXISTS `departments` (
