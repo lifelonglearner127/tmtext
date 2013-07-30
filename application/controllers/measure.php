@@ -720,9 +720,9 @@ class Measure extends MY_Controller {
            }    
             
       }
-
-            $vs['short_original']=100-round($maxshort,2).'%';
-            $vs['long_original']=100-round($maxlong,2).'%';
+                       
+                $vs['short_original']=100-round($maxshort,2).'%';
+                $vs['long_original']=100-round($maxlong,2).'%';
                                     
             
             if($k_lng==0){
