@@ -540,7 +540,7 @@ class Measure extends MY_Controller {
             'seo' => array('short' => array(), 'long' => array()),
             'same_pr' => array()
         );
-        if ($im_data_id !== null && is_numeric($im_data_id)) {
+       if ($im_data_id !== null && is_numeric($im_data_id)) {
 
             // --- GET SELECTED RPODUCT DATA (START)
             $this->load->model('imported_data_parsed_model');
@@ -560,7 +560,7 @@ class Measure extends MY_Controller {
             // --- GET SELECTED RPODUCT DATA (END)
             // --- ATTEMPT TO GET 'SAME' FROM 'HUMAN INTERFACE' (products_compare table) (START)
             $same_pr = $this->imported_data_parsed_model->getSameProductsHuman($im_data_id);
-
+           
             // get similar by parsed_attributes
             if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
                 $strict = $this->input->post('strict');
@@ -586,7 +586,7 @@ class Measure extends MY_Controller {
             $customers_list = array_unique($customers_list);
 
             if (empty($same_pr) && ($group_id = $this->similar_imported_data_model->findByImportedDataId($im_data_id))) {
-                if ($rows = $this->similar_imported_data_model->getImportedDataByGroupId($group_id)) {
+                   if ($rows = $this->similar_imported_data_model->getImportedDataByGroupId($group_id)) {
                     $data_similar = array();
 
                     foreach ($rows as $key => $row) {
