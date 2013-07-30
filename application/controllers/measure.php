@@ -83,6 +83,32 @@ class Measure extends MY_Controller {
         $this->load->view('measure/get_emails_reports_recipient', $data);
     }
 
+    public function send_recipient_report_selected() {
+        $selected_data = $this->input->post('selected_data');
+        // -- email config (dev configurations) (start) --
+        $this->load->library('email');
+        $config['protocol'] = 'sendmail';
+        $config['mailpath'] = '/usr/sbin/sendmail';
+        $config['charset'] = 'UTF-8';
+        $config['wordwrap'] = TRUE;
+        $this->email->initialize($config);
+        // -- email config (dev configurations) (end) --
+        foreach ($selected_data as $key => $value) {
+            // --- distint emails for each recepient (start)
+            $day = $v['day'];
+            $email = $v['email'];
+            $id = $v['id'];
+            $test = $value['id'];
+            $this->email->from('ishulgin8@gmail.com', "Content Solutions");
+            $this->email->to("$email");
+            $this->email->subject('Content Solutions Screenshots Report');
+            $this->email->message("Report screenshots in attachment. Preference day: $day.");
+            $this->email->send();
+            // --- distint emails for each recepient (end)
+        }
+        $this->output->set_content_type('application/json')->set_output(true);
+    }
+
     public function send_recipient_report() {
         $this->load->model('webshoots_model');
         $id = $this->input->post('id');
@@ -97,10 +123,10 @@ class Measure extends MY_Controller {
         $config['wordwrap'] = TRUE;
         $this->email->initialize($config);
         // -- email config (dev configurations) (end) --
-        $this->email->from('ishulgin8@gmail.com', "Content Solutions: $day");
+        $this->email->from('ishulgin8@gmail.com', "Content Solutions");
         $this->email->to("$email");
-        $this->email->subject('Test Report Email');
-        $this->email->message('Test Report');
+        $this->email->subject('Content Solutions Screenshots Report');
+        $this->email->message("Report screenshots in attachment. Preference day: $day.");
         $this->email->send();
         $debug = $this->email->print_debugger();
         $this->output->set_content_type('application/json')->set_output(json_encode($debug));

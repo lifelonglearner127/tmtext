@@ -1,3 +1,11 @@
+#loader_emailsend_modal .modal-body p {
+    color: #999999;
+    font-size: 24px;
+}
+#success_emailsend_modal .modal-body p {
+    color: #999999;
+    font-size: 18px;
+}
 .timelinetips_line {
     margin-bottom: 10px;
 }

@@ -67,6 +67,53 @@ function openScreensModalSlider() {
 	$("#screens_modal_slider").modal('show');
 }
 
+function sendEmailScreensToSelected() {
+	var selected_data = [];
+	var selected_items = $("input[type='checkbox'][name='send_report_ch']:checked").length;
+	if(selected_items > 0) {
+		$(".report_bean_line").each(function(index, value) {
+			var mid = {
+				'id': $(value).data('id'),
+				'email': $(value).data('email'),
+				'day': $(value).data('day')
+			};
+			selected_data.push(mid);
+		});
+		var send_data = {
+			selected_data: selected_data
+		};
+		$("#recipients_control_panel_modal").modal('hide');
+		$("#loader_emailsend_modal").modal('show');
+		var send_recipient_report_sel = $.post(base_url + 'index.php/measure/send_recipient_report_selected', send_data, function(data) {
+			$("#loader_emailsend_modal").modal('hide');
+			$("#success_emailsend_modal").modal('show');
+		});
+	} else {
+		alert('None of emails is selected');
+	}
+}
+
+function sendEmailScreensToAll() {
+	var selected_data = [];
+	$(".report_bean_line").each(function(index, value) {
+		var mid = {
+			'id': $(value).data('id'),
+			'email': $(value).data('email'),
+			'day': $(value).data('day')
+		};
+		selected_data.push(mid);
+	});
+	var send_data = {
+		selected_data: selected_data
+	};
+	$("#recipients_control_panel_modal").modal('hide');
+	$("#loader_emailsend_modal").modal('show');
+	var send_recipient_report_sel = $.post(base_url + 'index.php/measure/send_recipient_report_selected', send_data, function(data) {
+		$("#loader_emailsend_modal").modal('hide');
+		$("#success_emailsend_modal").modal('show');
+	});
+}
+
 function showTimelineTips() {
 	$("#timeline_tips_modal").modal('show');
 }

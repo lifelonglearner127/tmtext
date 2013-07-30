@@ -180,6 +180,18 @@
 </div>
 
 <!-- MODALS (START) -->
+<div class="modal hide fade ci_hp_modals" id='loader_emailsend_modal'>
+	<div class="modal-body">
+		<p><img src="<?php echo base_url();?>img/loader_scr.gif">&nbsp;&nbsp;&nbsp;Reports are sending, please wait for it.</p>
+	</div>
+</div>
+
+<div class="modal hide fade ci_hp_modals" id='success_emailsend_modal'>
+	<div class="modal-body">
+		<p>Reports are successfully sended.</p>
+	</div>
+</div>
+
 <div class="modal hide fade ci_hp_modals" id='configure_email_reports_success'>
 	<div class="modal-header">
 		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>

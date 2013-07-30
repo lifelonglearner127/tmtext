@@ -16,7 +16,7 @@
 				</thead>
 				<tbody>
 				<?php foreach($rec as $k => $v) { ?>
-					<tr data-id="<?php echo $v->id; ?>">
+					<tr class='report_bean_line' data-id="<?php echo $v->id; ?>" data-email="<?php echo $v->email; ?>" data-day="<?php echo $v->day; ?>">
 						<td><input type='checkbox' name="send_report_ch" id="send_report_ch_<?php echo $v->id; ?>"></td>
 						<td><span class='recipients_control_panel_txt'><?php echo $v->email; ?></span></td>
 						<td><span class='recipients_control_panel_txt'><?php echo $v->day; ?></span></td>
@@ -36,8 +36,8 @@
 <div class="modal-footer">
 	<a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
 	<?php if(count($rec) > 0) { ?>
-		<button type='button' href="javascript:void(0)" class="btn btn-success btn-rec-all-send">Send to selected</button>
-		<button type='button' href="javascript:void(0)" class="btn btn-primary btn-rec-all-send">Send to all</button>
+		<button type='button' href="javascript:void(0)" onclick="sendEmailScreensToSelected()" class="btn btn-success btn-rec-all-send">Send to selected</button>
+		<button type='button' href="javascript:void(0)" onclick="sendEmailScreensToAll()" class="btn btn-primary btn-rec-all-send">Send to all</button>
 	<?php } else { ?>
 		<button type='button' href="javascript:void(0)" class="btn btn-success disabled btn-rec-all-send">Send to selected</button>
 		<button type='button' href="javascript:void(0)" class="btn btn-primary disabled btn-rec-all-send">Send to all</button>
