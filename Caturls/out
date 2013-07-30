@@ -1,0 +1,29 @@
+2013-07-31 01:46:24+0300 [scrapy] INFO: Scrapy 0.16.5 started (bot: Caturls)
+2013-07-31 01:46:24+0300 [scrapy] DEBUG: Enabled extensions: LogStats, TelnetConsole, CloseSpider, WebService, CoreStats, SpiderState
+Traceback (most recent call last):
+  File "/home/ana/.local/bin/scrapy", line 4, in <module>
+    execute()
+  File "/home/ana/.local/lib/python2.7/site-packages/scrapy/cmdline.py", line 131, in execute
+    _run_print_help(parser, _run_command, cmd, args, opts)
+  File "/home/ana/.local/lib/python2.7/site-packages/scrapy/cmdline.py", line 76, in _run_print_help
+    func(*a, **kw)
+  File "/home/ana/.local/lib/python2.7/site-packages/scrapy/cmdline.py", line 138, in _run_command
+    cmd.run(args, opts)
+  File "/home/ana/.local/lib/python2.7/site-packages/scrapy/commands/crawl.py", line 43, in run
+    spider = self.crawler.spiders.create(spname, **opts.spargs)
+  File "/home/ana/.local/lib/python2.7/site-packages/scrapy/command.py", line 33, in crawler
+    self._crawler.configure()
+  File "/home/ana/.local/lib/python2.7/site-packages/scrapy/crawler.py", line 40, in configure
+    self.spiders = spman_cls.from_crawler(self)
+  File "/home/ana/.local/lib/python2.7/site-packages/scrapy/spidermanager.py", line 35, in from_crawler
+    sm = cls.from_settings(crawler.settings)
+  File "/home/ana/.local/lib/python2.7/site-packages/scrapy/spidermanager.py", line 31, in from_settings
+    return cls(settings.getlist('SPIDER_MODULES'))
+  File "/home/ana/.local/lib/python2.7/site-packages/scrapy/spidermanager.py", line 22, in __init__
+    for module in walk_modules(name):
+  File "/home/ana/.local/lib/python2.7/site-packages/scrapy/utils/misc.py", line 65, in walk_modules
+    submod = __import__(fullpath, {}, {}, [''])
+  File "/home/ana/code/nlp_reviews/scrapy/Caturls/Caturls/spiders/caturls_spider.py", line 66
+    def parsePage(self, response)
+                                ^
+SyntaxError: invalid syntax
