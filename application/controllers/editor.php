@@ -130,7 +130,7 @@ class Editor extends MY_Controller {
 
 		if (!empty($csv_rows)) {
 			$row = $csv_rows[0];
-			foreach ($row as $col) {
+                        foreach ($row as $col) {
 				if (preg_match("/^http:\/\/*/i",$col,$matches)) {
 					$row['url'] = $col;
 				} else if ( mb_strlen($col) <= 250) {
@@ -141,13 +141,13 @@ class Editor extends MY_Controller {
 			}
 
 			if (!empty($row['url']) && !empty($row['title'])) {
-				$data['search_results'][] =  '<a id="link_m_title" href="'.$row['url'].'">'.$row['title'].'</a><br/>'.$row['description'];
+                             $data['search_results'][] =  '<a id="link_m_title" href="'.$row['url'].'">'.$row['title'].'</a><br/>'.$row['description'];
 			} else if (!empty($row['description'])) {
 				$data['search_results'][] =  $row['description'];
 			}
-		}
-
-		$this->load->view('editor/searchmeasure', $data);
+               }
+                
+                $this->load->view('editor/searchmeasure', $data);
 	}
 
 	// public function searchmeasuredb() {
@@ -208,6 +208,7 @@ class Editor extends MY_Controller {
 		if ($im_data_id !== "0") {
 			$this->load->model('imported_data_parsed_model');
 			$data_import = $this->imported_data_parsed_model->getByImId($im_data_id);
+                        $data_import['price']=$this->imported_data_parsed_model->getLastPrices($im_data_id, 1);
 		} else {
             $this->load->library('PageProcessor');
 			if ($this->pageprocessor->isURL($this->input->post('search_data'))) {

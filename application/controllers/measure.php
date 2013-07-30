@@ -677,18 +677,21 @@ class Measure extends MY_Controller {
       foreach($same_pr as $ks => $vs) {
          $maxshort=0;
          $maxlong=0;
-         
+         $k_sh=0;
+         $k_lng=0;
          foreach($same_pr as $ks1 => $vs1 ){
             
            if($ks!=$ks1){
            if($vs['description']!=''){
                 if($vs1['description']!=''){
+                     $k_sh++;
                      $percent=$this->compare_text($vs['description'],$vs1['description']);
                      if($percent>$maxshort){
                      $maxshort=$percent;}
                 }
             
                 if($vs1['long_description']!=''){
+                    $k_sh++;
                      $percent=$this->compare_text($vs['description'],$vs1['long_description']);
                      if($percent>$maxshort){
                      $maxshort=$percent;}
@@ -696,13 +699,16 @@ class Measure extends MY_Controller {
                 }
             
             if($vs['long_description']!=''){
+                
                 if($vs1['description']!=''){
+                    $k_lng++;
                  $percent=$this->compare_text($vs['long_description'],$vs1['description']);
                  if($percent>$maxlong){
                  $maxlong=$percent;}
                  }
             
                 if($vs1['long_description']!=''){
+                    $k_lng++;
                      $percent=$this->compare_text($vs['long_description'],$vs1['long_description']);
                      if($percent>$maxlong){
                      $maxlong=$percent;}
@@ -711,6 +717,7 @@ class Measure extends MY_Controller {
            }    
             
       }
+            
             if($maxshort>90){
                 $vs['short_original']=round($maxshort,2).'%';
                 //$vs['short_original']="No";
@@ -727,6 +734,13 @@ class Measure extends MY_Controller {
               $same_pr[$ks]= $vs; 
               
             }
+            if($k_lng==0){
+                $vs['long_original']="100%";
+            }
+             if($k_sh==0){
+                $vs['short_original']="100%";
+            }
+            
             }else{
                    $same_pr[0]['long_original']='100%';
                    $same_pr[0]['short_original']='100%';
