@@ -12,6 +12,16 @@ class Webshoots_model extends CI_Model {
         parent::__construct();
     }
 
+    public function getLimitedScreens($limit) {
+        $res = array();
+        $query = $this->db->where(array())->order_by('stamp', 'desc')->limit($limit)->get($this->tables['webshoots']);
+        $query_res = $query->result();
+        if(count($query_res) > 0) {
+            $res = $query_res;
+        }
+        return $res;
+    }
+
     public function delete_reports_recipient($id) {
         return $this->db->delete($this->tables['ci_home_page_recipients'], array('id' => $id)); 
     }
