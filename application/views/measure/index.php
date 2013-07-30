@@ -174,7 +174,7 @@
 					<?php } ?>
 				</div>
 			</div>
-			<a id='customers_screens_crawl' onclick="openCrawlLaunchPanelModal()" class='btn btn-warning'><i class='icon-file'></i>&nbsp;Crawl sites screenshots interface</a>
+			<a id='customers_screens_crawl' onclick="openCrawlLaunchPanelModal()" class='btn btn-warning'><i class='icon-screenshot'></i>&nbsp;Update screenshots</a>
 		</div>
     </div>
 </div>
