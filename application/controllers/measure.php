@@ -731,9 +731,8 @@ class Measure extends MY_Controller {
             }else{
                $vs['long_original']=round($maxlong,2).'%'; 
                  }
-              $same_pr[$ks]= $vs; 
-              
-            }
+                          
+            
             if($k_lng==0){
                 $vs['long_original']="100%";
             }
@@ -741,6 +740,8 @@ class Measure extends MY_Controller {
                 $vs['short_original']="100%";
             }
             
+             $same_pr[$ks]= $vs; 
+            }
             }else{
                    $same_pr[0]['long_original']='100%';
                    $same_pr[0]['short_original']='100%';
