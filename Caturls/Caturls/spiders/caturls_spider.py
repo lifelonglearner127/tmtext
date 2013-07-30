@@ -8,6 +8,7 @@ from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 
 import time
+import re
 
 ################################
 # Run with 
@@ -18,7 +19,7 @@ import time
 
 
 # search for a product in all sites, using their search functions; give product as argument by its name or its page url
-class SearchSpider(BaseSpider):
+class CaturlsSpider(BaseSpider):
 
 	name = "producturls"
 	allowed_domains = ["staples.com"]
@@ -26,79 +27,92 @@ class SearchSpider(BaseSpider):
 	# store the cateory page url given as an argument into a field and add it to the start_urls list
 	def __init__(self, cat_page):
 		self.cat_page = cat_page
-		#self.start_urls = [cat_page]
-		self.start_urls = ["http://www.staples.com/Televisions/cat_CL142471"]
+		self.start_urls = [cat_page]
+		#self.start_urls = ["http://www.staples.com/Televisions/cat_CL142471"]
 		
 
 	def parse(self, response):
 
 		items = []
 
-		# use selenium to complete the zipcode form and get the first results page
-		driver = webdriver.Firefox()
-		driver.get("http://www.staples.com/Televisions/cat_CL142471")
+		# extract site domain
+		m = re.match("http://www\.([^\.]+)\.com.*", response.url)
+		if m:
+			site = m.group(1)
+		else:
+			sys.stderr.write('Can\'t extract domain from URL.\n')
+			return items
 
-		textbox = driver.find_element_by_name("zipCode")
-		textbox.send_keys("12345")
+		# handle staples televisions
+		if site == 'staples':
+			# use selenium to complete the zipcode form and get the first results page
+			driver = webdriver.Firefox()
+			driver.get(response.url)
 
-		button = driver.find_element_by_id("submitLink")
-		button.click()
+			# set a hardcoded value for zipcode
+			zipcode = "12345"
 
-		cookie = {"zipcode": "12345"}
-		driver.add_cookie(cookie)
+			textbox = driver.find_element_by_name("zipCode")
+			textbox.send_keys(zipcode)
 
-		time.sleep(5)
+			button = driver.find_element_by_id("submitLink")
+			button.click()
 
-		# convert html to "nice format"
-		text_html = driver.page_source.encode('utf-8')
-		#print "TEXT_HTML", text_html
-		html_str = str(text_html)
+			cookie = {"zipcode": zipcode}
+			driver.add_cookie(cookie)
 
-		# this is a hack that initiates a "TextResponse" object (taken from the Scrapy module)
-		resp_for_scrapy = TextResponse('none',200,{},html_str,[],None)
-		#resp_for_scrapy = TextResponse(html_str)
+			time.sleep(5)
 
-		# pass first page to parsePage function to extract products
-		items += self.parsePage(resp_for_scrapy)
+			# convert html to "nice format"
+			text_html = driver.page_source.encode('utf-8')
+			#print "TEXT_HTML", text_html
+			html_str = str(text_html)
 
-		# use selenium to get next page, while there is a next page
-		next_page = driver.find_element_by_xpath("//li[@class='pageNext']/a")
-		#while (next_page):
-		next_page.click()
-		time.sleep(5)
+			# this is a hack that initiates a "TextResponse" object (taken from the Scrapy module)
+			resp_for_scrapy = TextResponse('none',200,{},html_str,[],None)
+			#resp_for_scrapy = TextResponse(html_str)
 
-		# convert html to "nice format"
-		text_html = driver.page_source.encode('utf-8')
-		#print "TEXT_HTML", text_html
-		html_str = str(text_html)
+			# pass first page to parsePage function to extract products
+			items += self.parsePage(resp_for_scrapy)
 
-		# this is a hack that initiates a "TextResponse" object (taken from the Scrapy module)
-		resp_for_scrapy = TextResponse('none',200,{},html_str,[],None)
-		#resp_for_scrapy = TextResponse(html_str)
+			# use selenium to get next page, while there is a next page
+			next_page = driver.find_element_by_xpath("//li[@class='pageNext']/a")
+			while (next_page):
+				next_page.click()
+				time.sleep(5)
 
-		# pass first page to parsePage function to extract products
-		items += self.parsePage(resp_for_scrapy)
+				# convert html to "nice format"
+				text_html = driver.page_source.encode('utf-8')
+				#print "TEXT_HTML", text_html
+				html_str = str(text_html)
 
-			#next_page = driver.find_element_by_xpath("//li[@class='pageNext']/a")
+				# this is a hack that initiates a "TextResponse" object (taken from the Scrapy module)
+				resp_for_scrapy = TextResponse('none',200,{},html_str,[],None)
+				#resp_for_scrapy = TextResponse(html_str)
 
-		driver.close()
+				# pass first page to parsePage function to extract products
+				items += self.parsePage(resp_for_scrapy)
 
-		return items
+				next_page = None
+				#TODO: this doesn't work
+				# try:
+				# 	next_page = driver.find_element_by_xpath("//li[@class='pageNext']/a")
+				# 	break
+				# except NoSuchElementException:
+				# 	# if there are no more pages exit the loop
+				# 	driver.close()
+				# 	return items
 
-		#print "HTML_STR:", html_str
+			driver.close()
+
+			return items
 
 
 	def parsePage(self, response):
 
 		hxs = HtmlXPathSelector(response)
 
-		#print "URL:", response.url, resp_for_scrapy.url
-		#products = hxs.select("//ul[@class='productDetail']//div[@class='name']/h3/a[@class='url']")
 		products = hxs.select("//a[@class='url']")
-		#products = hxs.select("//body")
-		if not products:
-			print "NO PRODUCTS"
-
 		items = []
 
 		for product in products:
@@ -106,9 +120,6 @@ class SearchSpider(BaseSpider):
 			item = ProductItem()
 			root_url = "http://www.staples.com"
 			item['product_url'] = root_url + product.select("@href").extract()[0]
-			#item['product_url'] = product.select["@id"].extract()
-
-			#TODO implement pages
 			items.append(item)
 
 		return items
