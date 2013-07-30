@@ -515,9 +515,11 @@ class Measure extends MY_Controller {
 //Max
 
     public function compare_text($first_text, $second_text) {
-
-        $a =  (explode(' ', $first_text));
-        $b = (explode(' ', $second_text));
+        if($first_text===$second_text){
+            return 100;
+        }else{
+        $a = explode(' ', $first_text);
+        $b = explode(' ', $second_text);
         $count = 0;
         foreach ($a as $val) {
             if (in_array($val, $b)) {
@@ -526,7 +528,8 @@ class Measure extends MY_Controller {
         }
 
         $prc = $count / count($a) * 100;
-        return 100-$prc;
+        return $prc;
+        }
     }
 
     public function gridview() {
@@ -672,8 +675,8 @@ class Measure extends MY_Controller {
 
 
 
-       //     Max   
-      if(count($same_pr)!=1){
+       //     Max  
+   if(count($same_pr)!=1){
       foreach($same_pr as $ks => $vs) {
          $maxshort=0;
          $maxlong=0;
@@ -717,21 +720,10 @@ class Measure extends MY_Controller {
            }    
             
       }
-            
-            if($maxshort>90){
-                $vs['short_original']=round($maxshort,2).'%';
-                //$vs['short_original']="No";
-            }else{
-                $vs['short_original']=round($maxshort,2).'%'; 
-               //$vs['short_original']="Yes";
-            }
-            
-            if($maxlong>90){
-                $vs['long_original']=round($maxlong,2).'%';
-            }else{
-               $vs['long_original']=round($maxlong,2).'%'; 
-                 }
-                          
+
+            $vs['short_original']=100-round($maxshort,2).'%';
+            $vs['long_original']=100-round($maxlong,2).'%';
+                                    
             
             if($k_lng==0){
                 $vs['long_original']="100%";
