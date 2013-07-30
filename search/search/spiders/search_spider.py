@@ -40,14 +40,14 @@ class SearchSpider(BaseSpider):
 
 		# build list of urls = search pages for each site
 		search_pages = {
-						#"amazon" : "http://www.amazon.com/s/ref=nb_sb_noss?url=search-alias%3Daps&field-keywords=" + self.search_query, \
-						#"walmart" : "http://www.walmart.com/search/search-ng.do?ic=16_0&Find=Find&search_query=%s&Find=Find&search_constraint=0" % self.search_query, \
-						#"bloomingdales" : "http://www1.bloomingdales.com/shop/search?keyword=%s" % self.search_query, \
-						#"overstock" : "http://www.overstock.com/search?keywords=%s" % self.search_query, \
+						"amazon" : "http://www.amazon.com/s/ref=nb_sb_noss?url=search-alias%3Daps&field-keywords=" + self.search_query, \
+						"walmart" : "http://www.walmart.com/search/search-ng.do?ic=16_0&Find=Find&search_query=%s&Find=Find&search_constraint=0" % self.search_query, \
+						"bloomingdales" : "http://www1.bloomingdales.com/shop/search?keyword=%s" % self.search_query, \
+						"overstock" : "http://www.overstock.com/search?keywords=%s" % self.search_query, \
 						"wayfair" : "http://www.wayfair.com/keyword.php?keyword=%s" % self.search_query, \
 						# #TODO: check this URL
 						# "bestbuy" : "http://www.bestbuy.com/site/searchpage.jsp?_dyncharset=ISO-8859-1&_dynSessConf=-26268873911681169&id=pcat17071&type=page&st=%s&sc=Global&cp=1&nrp=15&sp=&qp=&list=n&iht=y&fs=saas&usc=All+Categories&ks=960&saas=saas" % self.search_query, \
-						# "toysrus": "http://www.toysrus.com/search/noResults.jsp?kw=%s" % self.search_query, \
+						"toysrus": "http://www.toysrus.com/search/index.jsp?kw=%s" % self.search_query, \
 						# #TODO: check the keywords, they give it as caps
 						# "bjs" : "http://www.bjs.com/webapp/wcs/stores/servlet/Search?catalogId=10201&storeId=10201&langId=-1&pageSize=40&currentPage=1&searchKeywords=%s&tASearch=&originalSearchKeywords=lg+life+is+good&x=-1041&y=-75" % self.search_query, \
 						# #TODO: check this url
@@ -132,9 +132,8 @@ class SearchSpider(BaseSpider):
 		# wayfair
 		if (site == 'wayfair'):
 
-			#results = hxs.select("//li[@class='productbox']/div[@class='superblock yui3-filter-wrap']/div[@class='sbprodimagewrap sb_img_container js-clipbar_drag product_hover ui-draggable']/a")
 			results = hxs.select("//li[@class='productbox']")
-			#results = hxs.select("//li[@class='productbox']//a")
+
 			for result in results:
 				product_link = result.select(".//a[@class='toplink']")
 				item = SearchItem()
@@ -148,7 +147,18 @@ class SearchSpider(BaseSpider):
 
 		# bestbuy
 
-		# toysrus 
+		# toysrus
+		if (site == 'toysrus'):
+			results = hxs.select("//a[@class='prodtitle']")
+
+			for result in results:
+				item = SearchItem()
+				item['site'] = site
+				item['product_name'] = result.select("text()").extract()[0]
+				item['product_url'] = result.select("@href").extract()[0]
+
+				yield item
+
 
 		# bjs
 
