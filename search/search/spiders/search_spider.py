@@ -155,12 +155,15 @@ class SearchSpider(BaseSpider):
 				item = SearchItem()
 				item['site'] = site
 				item['product_name'] = result.select("text()").extract()[0]
-				item['product_url'] = result.select("@href").extract()[0]
+				root_url = "http://www.toysrus.com"
+				item['product_url'] = root_url + result.select("@href").extract()[0]
 
 				yield item
 
 
-		# bjs
+		# # bjs
+		# if (site == 'bjs'):
+		# 	results = hxs.select()
 
 		# sears
 
