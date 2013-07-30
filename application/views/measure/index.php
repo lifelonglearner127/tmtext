@@ -10,7 +10,7 @@
     	<div class="row-fluid home_pages">
 
     		<div class='span12 head_section'>
-	    		<p class='head_line1'>Home page reports are generated weekly. <a onclick="configureEmailReportsModal()" href="javascript:void(0)">Configure email reports.</a> <a class='btn btn-primary' onclick="viewRecipientsList()" href='javascript:void(0)'><i class='icon-tasks icon-white'></i>&nbsp;Recipients List</a> <a class='btn btn-success' href='javascript:void(0)'><i class='icon-question-sign icon-white'></i>&nbsp;Tips</a></p>
+	    		<p class='head_line1'>Home page reports are generated weekly. <a onclick="configureEmailReportsModal()" href="javascript:void(0)">Configure email reports.</a> <a class='btn btn-primary' onclick="viewRecipientsList()" href='javascript:void(0)'><i class='icon-tasks icon-white'></i>&nbsp;Recipients List</a> <a class='btn btn-success' onclick="showTimelineTips()" href='javascript:void(0)'><i class='icon-question-sign icon-white'></i>&nbsp;Timeline Tips</a></p>
 				<div class='head_line_2'>
 					<div class="span2">View Reports for:</div>
 					<div class="span2 w_100 ml_disable">
@@ -260,6 +260,32 @@
 	</div>
 </div>
 
+<div class="modal hide fade ci_hp_modals crawl_launch_panel" id='timeline_tips_modal'>
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+		<h3>Timeline tips</h3>
+	</div>
+	<div class="modal-body">
+		<div class='cl_cp_crawl_modal'>
+			<div class='timelinetips_line'>
+				<img src="<?php echo base_url();?>img/timeline_tip_rweek.jpg">
+				<p>- regular week</p>
+			</div>
+			<div class='timelinetips_line'>
+				<img src="<?php echo base_url();?>img/timeline_tip_cweek.jpg">
+				<p>- current week</p>
+			</div>
+			<div class='timelinetips_line'>
+				<img src="<?php echo base_url();?>img/timeline_tip_fweek.jpg">
+				<p>- week which have at least one available screenshot</p>
+			</div>
+		</div>
+	</div>
+	<div class="modal-footer">
+		<a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
+	</div>
+</div>
+
 <!-- bootstrap lightbox holder (start) -->
 <div id="preview_screenshot_modal" class='lightbox hide fade' tabindex="-1" role="dialog" aria-hidden="true">
 	<div class='lightbox-content'>
@@ -268,58 +294,9 @@
 </div>
 <!-- bootstrap lightbox holder (end) -->
 
-<!-- <div class="modal hide fade ci_hp_modals" id='preview_screenshot_modal'>
-	<div class="modal-header">
-		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-		<h3>Screenshot Review</h3>
-	</div>
-	<div class="modal-body">
-		<div id="sc_preview">&nbsp;</div>
-	</div>
-	<div class="modal-footer">
-		<a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
-		<a href="javascript:void(0)" onclick="openCrawlLaunchPanelModal(true)" class="btn btn-success">Back to list</a>
-	</div>
-</div>
-
-<div class="modal hide fade" id='loading_crawl_modal'>
-	<div class="modal-body">
-		<p style='line-height: 24px;'><img src="<?php echo base_url() ?>/img/fancybox_loading.gif">&nbsp;&nbsp;Wait for it. Screenshot generating and saving ...</p>
-	</div>
-</div> -->
-
 <!-- MODALS (END) -->
 
 <script type="text/javascript">
-	// function clickScreenDrop(new_caret, item_id, pos) {
-	// 	$("#hp_boot_drop_" + item_id + " .btn_caret_sign").text(new_caret);
-	// 	if(new_caret === 'bloomingdales.com') { // --- static tmp screens for bloomingdales.com
-	// 		$("#screen_lightbox_img_" + item_id).attr('src', base_url + "img/bloomingdales_com_wide_half.png");
-	// 		var tmp_thumb = base_url + "img/bloomingdales_com_wide_half.png";
-	// 		$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox'><img style='cursor: pointer; height: 100%' src='" + tmp_thumb + "'></a>");
-	// 		var t = moment().format('MMMM Do, YYYY');
-	// 		$("#crawl_date_" + item_id).text(t);
-	// 	} else {
-	// 		// ---- ATTEMPT TO GET SCREENSHOT (START)
-	// 		$("#art_img_" + item_id).append("<div id='loader_over_" + item_id + "' class='loader_over'><img src='" + base_url + "img/loader_scr.gif'></div>");
-	// 		var send_data = {
-	// 			url: new_caret,
-	// 			year: $("#year_s > option:selected").val(),
-	// 			week: $(".pagination ul li.page.active").data('week'),
-	// 			pos: pos
-	// 		}
-	// 		var getwebshootbyurl = $.post(base_url + 'index.php/measure/getwebshootbyurl', send_data, function(data) {
-	// 			$("#screen_lightbox_img_" + item_id).attr('src', data['img']);
-	// 			$("#loader_over_" + item_id).remove();
-	// 			// $("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox'><img style='cursor: pointer;' src='" + data['thumb'] + "'></a>");
-	// 			// $("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox' style='background-image: url(" + data['img'] + ")'></a>");
-	// 			$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox' style='background-image: url(" + data['thumb'] + "); background-position: top center; background-repeat: no-repeat;'></a>");
-	// 			var t = moment(data['stamp']).format('MMMM Do, YYYY');
-	// 			$("#crawl_date_" + item_id).text(t);
-	// 		});
-	// 		// ---- ATTEMPT TO GET SCREENSHOT (END)
-	// 	}
-	// }
 	function clickScreenDrop(new_caret, item_id, pos) {
 		$("#hp_boot_drop_" + item_id + " .btn_caret_sign").text(new_caret);
 		// ---- ATTEMPT TO GET SCREENSHOT (START)

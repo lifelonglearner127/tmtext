@@ -1,4 +1,12 @@
-/* ---- InModal Screenshots Slider (start) */
+.timelinetips_line {
+    margin-bottom: 10px;
+}
+.timelinetips_line img, .timelinetips_line p {
+    display: inline-block;
+}
+.timelinetips_line p {
+    color: #666666;
+}
 .pagination .page a.current_week {
     color: #999999;
     background-color: #bdff9d;
@@ -12,6 +20,7 @@
 .bold {
     font-weight: bold;
 }
+/* ---- InModal Screenshots Slider (start) */
 .screens_modal_slider {
     background-color: transparent !important;
     border: none !important;

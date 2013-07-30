@@ -67,6 +67,10 @@ function openScreensModalSlider() {
 	$("#screens_modal_slider").modal('show');
 }
 
+function showTimelineTips() {
+	$("#timeline_tips_modal").modal('show');
+}
+
 function sendRecipientReport(id, email, day) {
 	var send_data = {
 		id: id,
