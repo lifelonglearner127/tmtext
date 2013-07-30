@@ -496,8 +496,10 @@ class Research extends MY_Controller {
                         $data_row->price_diff,
                     );
                 }
-                if ($c >= ($display_start + $display_length - 1)) {
-                    break;
+                if ($display_length > 0) {
+                    if ($c >= ($display_start + $display_length - 1)) {
+                        break;
+                    }
                 }
                 $c++;
             }

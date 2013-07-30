@@ -129,11 +129,6 @@
                     </div>
                 </div>
             </li>
-            <div class='span11'>
-                <div class="control-group w_375 float_r mt_20">
-                    <button id="research_batches_columns" class="btn btn-success ml_5 float_r">Columns...</button>
-                </div>
-            </div>
         </ul>
 
 
@@ -184,7 +179,7 @@
 
         <div class="row-fluid">
             <div id="read" class="ui-tabs-panel ui-widget-content ui-corner-bottom">
-                <div id="records_wrapper" class="dataTables_wrapper">
+                <div id="records_wrapper" class="dataTables_wrapper block_data_table">
                     <div class="span12">
                         <table id="tblAssess" class="tblDataTable">
                             <thead>

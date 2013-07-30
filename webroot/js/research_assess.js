@@ -20,8 +20,6 @@ $(function () {
                 fnCallback(json)
             });
         },
-        "aLengthMenu": [[3, 10, 25, 50, -1], [3, 10, 25, 50, "All"]],
-        "iDisplayLength": 3,
         "oLanguage": {
             "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
             "sInfoEmpty": "Showing 0 to 0 of 0 records",
@@ -39,6 +37,8 @@ $(function () {
             {"sTitle" : "Price diff", "sName":"price_diff", "sWidth": "10%"}
         ]
     });
+
+    $('<button id="research_batches_columns" class="btn btn-success ml_5 float_r">Columns...</button>').appendTo('div.dataTables_filter');
 
     function getAssessCustomerDropdown(){
         var customers_list_ci = $.post(base_url + 'index.php/measure/getcustomerslist_new', { }, function(c_data) {
