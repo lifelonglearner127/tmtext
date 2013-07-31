@@ -299,6 +299,10 @@
 				<img src="<?php echo base_url();?>img/timeline_tip_fweek.jpg">
 				<p>- week which have at least one available screenshot</p>
 			</div>
+			<div class='timelinetips_line'>
+				<img src="<?php echo base_url();?>img/timeline_tip_mweek.jpg">
+				<p>- week has available screenshot(s) and week is a current in a same time</p>
+			</div>
 		</div>
 	</div>
 	<div class="modal-footer">
