@@ -1774,3 +1774,8 @@ select#sites option{
 .heading_text{
     margin:0px;
 }
+
+.general label{
+    width: 90px;
+    float:left;
+}

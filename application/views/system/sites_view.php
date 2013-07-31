@@ -6,7 +6,6 @@
         <li class=""><a data-toggle="tab" href="<?php echo site_url('system/batch_review');?>">Batch Review</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_productsmatch');?>">Product Match</a></li>
         <li class="active"><a data-toggle="tab" href="<?php echo site_url('system/sites_view');?>">Sites</a></li>
-        <li class=""><a data-toggle="tab" href="<?php echo site_url('system/best_sellers');?>">Best Sellers</a></li>
     </ul>
     <div class="tab-content">
         <script type="text/javascript">
@@ -145,7 +144,7 @@
                     </div>
                 </div>
             </div>
-            <div class="span6 mb_40">
+            <div class="span6">
                 <div class="row-fluid">
                         <p>Name:</p>
                         <input type="text" id="site_name" name="site_name">
@@ -159,7 +158,7 @@
                         <div class="clear-fix"></div>
                 </div>
                 <div class="row-fluid">
-                    <div class="controls span7 mt_20">
+                    <div class="controls span12 mt_20">
                         <img id="site_logo" class="mt_10" src="../../img/no-logo.jpg" />
                         <div class="clear-fix"></div><br />
                         <button class="btn btn-success" id="sitelogo" style="display:none"><i class="icon-white icon-ok"></i>&nbsp;Import</button>
@@ -168,12 +167,12 @@
 									<i class="icon-plus icon-white"></i>
 									<input type="file" multiple="" name="files[]" id="fileupload">
 								</span>
-                        <div class="progress progress-success progress-striped span7" id="progress">
+                        <div class="progress progress-success progress-striped span6" id="progress">
                             <div class="bar"></div>
                         </div>
                         <div id="files"></div>
                         <input type="hidden" name="sitelogo_file" />
-                        <button id="delete_sitelogo" class="btn btn-danger pull-right" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
+                        <button id="delete_sitelogo" class="btn btn-danger ml_10" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
                     </div>
                     <div class="info ml_10 "></div>
                     <script>
@@ -229,6 +228,45 @@
                             });
                         });
                     </script>
+                </div>
+            </div>
+            <div class="span12 mt_20 general ml_0">
+                <div class="row-fluid">
+                    <label>Department:</label>
+                    <?php  echo form_dropdown('department', $departmens_list, null, 'class="inline_block lh_30 w_375 mb_reset"'); ?>
+                    <button id="upload_categories_departments" class="btn btn-primary" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Upload</button>
+                    <button id="delete_department" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
+                    <button id="delete_all_departments" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete All</button>
+                </div>
+                <div class="row-fluid mt_10">
+                    <label>Categories:</label>
+                    <?php echo form_dropdown('category', $category_list ); ?>
+                    <button id="delete_category" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
+                    <button id="delete_all_categories" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete All</button>
+                </div>
+            </div>
+            <div class="span12 mt_20 mb_40 general ml_0">
+                <div class="row-fluid">
+                    <h5>Best Sellers</h5>
+                    <label>Overall:</label>
+                    <?php  echo form_dropdown('department', $departmens_list, null, 'class="inline_block lh_30 w_375 mb_reset"'); ?>
+                    <button id="upload_categories_departments" class="btn btn-primary" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Upload</button>
+                    <button id="delete_department_categories" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
+                    <button id="delete_all_departments_categories" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete All</button>
+                </div>
+                <div class="row-fluid mt_10">
+                    <label>Department:</label>
+                    <?php  echo form_dropdown('department', $departmens_list, null, 'class="inline_block lh_30 w_375 mb_reset"'); ?>
+                    <button id="upload_categories_departments" class="btn btn-primary" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Upload</button>
+                    <button id="delete_department" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
+                    <button id="delete_all_departments" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete All</button>
+                </div>
+                <div class="row-fluid mt_10">
+                    <label>Categories:</label>
+                    <?php echo form_dropdown('category', $category_list ); ?>
+                    <button id="upload_categories_departments" class="btn btn-primary" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Upload</button>
+                    <button id="delete_category" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
+                    <button id="delete_all_categories" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete All</button>
                 </div>
             </div>
             <?php echo form_close();?>

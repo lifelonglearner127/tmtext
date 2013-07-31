@@ -661,9 +661,22 @@ class System extends MY_Controller {
         $this->render();
     }
 
+    public function category_list()
+    {
+        $this->load->model('category_model');
+        $categories = $this->category_model->getAll();
+        $category_list = array();
+        foreach($categories as $category){
+            array_push($category_list, $category->name);
+        }
+        return $category_list;
+
+    }
+
     public function sites_view()
     {
         $this->load->model('sites_model');
+        $this->load->model('department_model');
         $sites = $this->sites_model->getAll();
         $sitesArray = array();
         foreach ($sites as $site) {
@@ -671,7 +684,11 @@ class System extends MY_Controller {
                 $sitesArray[$site->id] = $site->name;
             }
         }
+        foreach ($this->department_model->getAll() as $row) {
+            $this->data['departmens_list'][$row->id] = $row->short_name;
+        }
         $this->data['sites'] = $sitesArray;
+        $this->data['category_list'] = $this->category_list();
         $this->render();
     }
 

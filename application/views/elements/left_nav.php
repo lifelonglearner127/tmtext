@@ -8,6 +8,7 @@
 // );
 
 $menu = array(
+    array('controller' => 'editor', 'name' => 'Batches'),
     array('controller' => 'measure', 'name' => 'Competitive Intelligence'),
     array('controller' => 'research', 'name' => 'Research & Edit'),
     array('controller' => 'job_board', 'name' => 'Job Board'),
