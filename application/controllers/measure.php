@@ -95,23 +95,22 @@ class Measure extends MY_Controller {
         $config['wordwrap'] = TRUE;
         $this->email->initialize($config);
         // -- email config (dev configurations) (end) --
-        foreach ($selected_data as $key => $value) {
+        foreach ($selected_data as $k => $v) {
             $day = $v['day'];
             $email = $v['email'];
             $id = $v['id'];
-            $test = $value['id'];
             $this->email->from('ishulgin8@gmail.com', "Content Solutions");
             $this->email->to("$email");
             $this->email->subject('Content Solutions Screenshots Report');
             $this->email->message("Report screenshots in attachment. Preference day: $day.");
             // --- test (debug) attachments (start)
-            // $debug_screens = $this->webshoots_model->getLimitedScreens(3);
-            // if(count($debug_screens) > 0) {
-            //     foreach ($debug_screens as $key => $value) {
-            //         $path = $value->dir_thumb;
-            //         $this->email->attach("$path");
-            //     }
-            // }
+            $debug_screens = $this->webshoots_model->getLimitedScreens(3);
+            if(count($debug_screens) > 0) {
+                foreach ($debug_screens as $key => $value) {
+                    $path = $value->dir_thumb;
+                    $this->email->attach("$path");
+                }
+            }
             // --- test (debug) attachments (end)
             $this->email->send();
         }
