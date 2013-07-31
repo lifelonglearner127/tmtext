@@ -71,7 +71,7 @@ class Crons extends MY_Controller {
     }
 
 	/**
-     * Cron Job for CI home tab screenshots  
+     * Cron Job for CI home tab screenshots generating 
      */
 	public function screenscron() {
 		$customers = $this->customers_list();
@@ -114,5 +114,47 @@ class Crons extends MY_Controller {
         }
 		echo "Cron Job Finished";
 	}
+
+    /**
+     * Cron Job for CI home tab screenshots reports mailer   
+     */
+    public function emailreports() {
+        $this->load->model('webshoots_model');
+        $current_day = lcfirst(date('l', time()));
+        $recs = $this->webshoots_model->get_recipients_list();
+        if(count($recs) > 0) {
+            // --- mailer config (start)
+            $this->load->library('email');
+            $config['protocol'] = 'sendmail';
+            $config['mailpath'] = '/usr/sbin/sendmail';
+            $config['charset'] = 'UTF-8';
+            $config['wordwrap'] = TRUE;
+            $this->email->initialize($config);
+            // --- mailer config (end)
+            foreach ($recs as $k => $v) {
+                if($v->day == $current_day) {
+                    $day = $v->day;
+                    $email = $v->email;
+                    $id = $v->id;
+                    $this->email->from('ishulgin8@gmail.com', "Content Solutions");
+                    $this->email->to("$email");
+                    $this->email->subject('Content Solutions Screenshots Report');
+                    $this->email->message("Report screenshots in attachment. Preference day: $day.");
+                    // --- test (debug) attachments (start)
+                    $debug_screens = $this->webshoots_model->getLimitedScreens(3);
+                    if(count($debug_screens) > 0) {
+                        foreach ($debug_screens as $key => $value) {
+                            $path = $value->dir_thumb;
+                            $this->email->attach("$path");
+                        }
+                    }
+                    // --- test (debug) attachments (end)
+                    $this->email->send();
+                    echo "Report sended to $v->email"."<br>";
+                }
+            }
+        }
+        echo "Cron Job Finished";
+    }
 
 }
