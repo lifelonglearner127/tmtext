@@ -1235,6 +1235,32 @@ class Imported_data_parsed_model extends CI_Model {
         return $query->row()->revision;
     }
 
+    function get_base_url($url)
+    {
+    $chars = preg_split('//', $url, -1, PREG_SPLIT_NO_EMPTY);
+
+    $slash = 3; // 3rd slash
+
+    $i = 0;
+
+    foreach($chars as $key => $char)
+    {
+        if($char == '/')
+        {
+           $j = $i++;
+        }
+
+        if($i == 3)
+        {
+           $pos = $key; break;
+        }
+    }
+ 
+$main_base = substr($url, 0, $pos);
+ 
+return $main_base.'/';
+}
+
     function getByParsedAttributes($search, $strict = false) {
 		if ($rows = $this->getData($search, null, null, null, 'parsed_attributes', $strict)) {
                 $customers_list = array();
@@ -1257,7 +1283,14 @@ class Imported_data_parsed_model extends CI_Model {
 					}
 				}
 				if($cus_val !== "") $rows[$key]['customer'] = $cus_val;
+                                foreach($rows as $key1 => $row1){
+                                       if($key1!=$key && $this->get_base_url($row['url'])== $this->get_base_url($row1['url'])){
+                                        unset($rows[$key]);
 			}
+                                }
+                               
+			}
+                        
                             return $rows;
 		}
     }
