@@ -11,6 +11,7 @@ class Measure extends MY_Controller {
         $this->load->library('form_validation');
         $this->load->library('helpers');
         $this->load->helper('algoritm');
+        $this->load->helper('comparebysimilarwordscount');
         $this->data['title'] = 'Measure';
 
 
@@ -588,7 +589,7 @@ class Measure extends MY_Controller {
             // --- GET SELECTED RPODUCT DATA (START)
             $this->load->model('imported_data_parsed_model');
             $data_import = $this->imported_data_parsed_model->getByImId($im_data_id);
-
+            
             if ($data_import['description'] !== null && trim($data_import['description']) !== "") {
                 $data_import['description'] = preg_replace('/\s+/', ' ', $data_import['description']);
                 // $data_import['description'] = preg_replace('/[^A-Za-z0-9\. -!]/', ' ', $data_import['description']);
@@ -612,6 +613,9 @@ class Measure extends MY_Controller {
 
             if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['UPC/EAN/ISBN'])) {
                 $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['UPC/EAN/ISBN']);
+            }
+            if (empty($same_pr) && isset($data_import['parsed_attributes']) && !isset($data_import['parsed_attributes']['model'])){
+                $same_pr = $this->imported_data_parsed_model->getByProductName($data_import['product_name'],$data_import['parsed_attributes']['manufacturer'],$strict);
             }
 
             // get similar for first row
