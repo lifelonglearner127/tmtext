@@ -105,13 +105,13 @@ class Measure extends MY_Controller {
             $this->email->subject('Content Solutions Screenshots Report');
             $this->email->message("Report screenshots in attachment. Preference day: $day.");
             // --- test (debug) attachments (start)
-            $debug_screens = $this->webshoots_model->getLimitedScreens(3);
-            if(count($debug_screens) > 0) {
-                foreach ($debug_screens as $key => $value) {
-                    $path = $value->dir_thumb;
-                    $this->email->attach("$path");
-                }
-            }
+            // $debug_screens = $this->webshoots_model->getLimitedScreens(3);
+            // if(count($debug_screens) > 0) {
+            //     foreach ($debug_screens as $key => $value) {
+            //         $path = $value->dir_thumb;
+            //         $this->email->attach("$path");
+            //     }
+            // }
             // --- test (debug) attachments (end)
             $this->email->send();
         }
