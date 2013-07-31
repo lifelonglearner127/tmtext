@@ -47,8 +47,15 @@ class ToysrusSpider(BaseSpider):
     # parse one page - extract items (categories)
     def parsePage(self, response):
         hxs = HtmlXPathSelector(response)
-        # currently selecting categories on 2 levels (either of these can be a bottom one), and the broadest categories only as parents in their fields
-        links = hxs.select("//div[@id='sitemapLinks']/ul/li/ul//a")
+        # selecting main level categories
+        links = hxs.select("//div[@id='sitemapLinks']/ul/li/ul/li/a")
+
+        # selecting lower level categories
+        low_links = hxs.select("//div[@id='sitemapLinks']/ul/li/ul/li/ul/li/a")
+
+        # selecting departments
+        
+
         items = []
 
         for link in links:
