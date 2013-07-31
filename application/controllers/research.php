@@ -918,7 +918,7 @@ class Research extends MY_Controller {
             'upload_dir' => $this->config->item('csv_upload_dir'),
             'param_name' => 'files',
             'delete_type' => 'POST',
-            'accept_file_types' => '/.+\.csv$/i',
+            'accept_file_types' => '/.+\.(csv|txt)$/i',
         ));
     }
 
