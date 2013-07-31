@@ -85,8 +85,8 @@ class Crons extends MY_Controller {
         foreach ($sites as $url) {
             $url = urlencode(trim($url));
             // -- configs (start)
-            $api_key = "dc598f9ae119a97234ea";
-            $api_secret = "47c7248bc03fbd368362";
+            $api_key = $this->config->item('webyshots_api_key');
+            $api_secret = $this->config->item('webyshots_api_secret');
             $token = md5("$api_secret+$url");
             $size_s = "w600";
             $size_l = "w1260";

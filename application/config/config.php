@@ -419,7 +419,8 @@ $config['important_attributes_min'] = array(
 	'MANU'
 );
 
-
+$config['webyshots_api_key'] = "dc598f9ae119a97234ea";
+$config['webyshots_api_secret'] = "47c7248bc03fbd368362";
 
 // allow the local environment to override the settings
 if (file_exists(APPPATH.'config/config.local.php')) {
