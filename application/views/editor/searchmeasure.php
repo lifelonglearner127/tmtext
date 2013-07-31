@@ -14,8 +14,8 @@
 	?>
 	<div style="float: left; margin-top: 0px; width: 530px;" id='measure_product_ind_wrap'>
                	<div class="item_title" style="float: left; width: 520px; margin-bottom: 15px;"><b class='btag_elipsis an_search'><a href="<?php echo $pr_url; ?>"><?php echo $pr_title; ?></a></b></div>
-                <span class='analysis_content_head' style="width: 100%;float: left;margin-bottom: 15px;">Price: <span style="font-weight: normal;"><?php if(!empty($search_results['price'])){echo '$'.sprintf("%01.2f", floatval($search_results['price'][0]->price));}?></span></span>
-                    <?php // echo "<pre>";print_r($search_results); ?>
+                <?php if(!empty($search_results['price'])){ ?><span class='analysis_content_head' style="width: 100%;float: left;margin-bottom: 15px;">Price: <span style="font-weight: normal;"><?php echo '$'.sprintf("%01.2f", floatval($search_results['price'][0]->price));?></span></span>
+<?php } ?>
                 
 		<?php if($search_results['description'] !== null && $search_results['description'] !== "") { ?>
 		<span class='analysis_content_head'>Short Description:</span>
