@@ -6,6 +6,7 @@
     <li class=""><a data-toggle="tab" href="<?php echo site_url('site_crawler');?>">Site Crawler</a></li>
     <li class=""><a data-toggle="tab" href="<?php echo site_url('system/batch_review');?>">Batch Review</a></li>
     <li class=""><a data-toggle="tab" href="<?php echo site_url('system/sites_view');?>">Sites</a></li>
+    <li class=""><a data-toggle="tab" href="<?php echo site_url('system/best_sellers');?>">Best Sellers</a></li>
   </ul>
   <div class="tab-content">
     <div id="tab5" class="tab-pane active">

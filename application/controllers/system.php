@@ -870,4 +870,35 @@ class System extends MY_Controller {
         $this->output->set_content_type('application/json')->set_output(json_encode($response));
     }
 
+    public function best_sellers()
+    {
+        $this->load->model('department_model');
+
+        foreach ($this->department_model->getAll() as $row) {
+            $this->data['departmens_list'][$row->id] = $row->short_name;
+        }
+
+        $this->data['customers_list'] = $this->customers_list_new();
+        $this->render();
+    }
+
+    private function customers_list_new() {
+        $this->load->model('customers_model');
+        $output = array();
+        $customers_init_list = $this->customers_model->getAll();
+        if (count($customers_init_list) > 0) {
+            foreach ($customers_init_list as $key => $value) {
+                $mid = array(
+                    'id' => $value->id,
+                    'desc' => $value->description,
+                    'image_url' => $value->image_url,
+                    'name' => $value->name,
+                    'name_val' => strtolower($value->name)
+                );
+                $output[] = $mid;
+            }
+        }
+        return $output;
+    }
+
 }

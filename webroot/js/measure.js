@@ -735,6 +735,14 @@ $(document).ready(function() {
         }
 
     });
+
+    $('li.temp_li a').live('click', function(){
+       $('li.temp_li a').each(function(){
+           $(this).css({'text-decoration':'none'});
+       });
+       $(this).css({'text-decoration':'underline'});
+       return false;
+    });
 });//max
 // ---- new CI term typeahead (end) (NEW)
 
