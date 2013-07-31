@@ -214,44 +214,24 @@ function flatPreviewScreenshotModal(url) {
 
 function previewScreenshotModal(url) {
 	$("#customers_screens_crawl_modal").modal('hide');
-	if(url === 'bloomingdales.com') { // --- static tmp screens for bloomingdales.com
-		$("#loading_crawl_modal").modal('hide');
-		$("#preview_screenshot_modal #sc_preview").css('width', '200');
-		$("#preview_screenshot_modal #sc_preview").css('height', '150px');
-		$("#preview_screenshot_modal").modal('show');
-		var imagest = "";
-		var tmp_thumb = base_url + "img/bloomingdales_com_wide_half.png";
-		imagest += "<img id='s_img' onclick='openPreviewLarge()' src='" + tmp_thumb + "'>";
-		imagest += "<img id='l_img' style='display: none;' src='" + tmp_thumb + "'>";
-		$("#preview_screenshot_modal #sc_preview").html(imagest);
-	} else {
-		$("#loading_crawl_modal").modal('show');
-		var send_data = {
-			url: url,
-			year: $("#year_s > option:selected").val(),
-			week: $(".pagination ul li.page.active").data('week')
-		}
-		var start_site_crawl = $.post(base_url + 'index.php/measure/webshootcrawl', send_data, function(data) {
-			$("#loading_crawl_modal").modal('hide');
-			if(data['state']) {
-				$("#preview_screenshot_modal #sc_preview").css('width', '200');
-				$("#preview_screenshot_modal #sc_preview").css('height', '150px');
-				$("#preview_screenshot_modal").modal('show');
-				var imagest = "";
-				imagest += "<img id='s_img' onclick='openPreviewLarge()' src='" + data['small_crawl'] + "'>";
-				imagest += "<img id='l_img' style='display: none;' src='" + data['big_crawl'] + "'>";
-				$("#preview_screenshot_modal #sc_preview").html(imagest);
-			} else {
-				alert('Internal Server Error');
-			}
-		});
+	$("#loading_crawl_modal").modal('show');
+	var send_data = {
+		url: url,
+		year: $("#year_s > option:selected").val(),
+		week: $(".pagination ul li.page.active").data('week')
 	}
+	var start_site_crawl = $.post(base_url + 'index.php/measure/webshootcrawl', send_data, function(data) {
+		$("#loading_crawl_modal").modal('hide');
+		if(data['state']) {
+			flatPreviewScreenshotModal(url);
+		} else {
+			alert('Internal Server Error');
+		}
+	});
 }
 
 function openPreviewLarge() {
 	$("#s_img").fadeOut('fast', function() {
-		// $("#preview_screenshot_modal #sc_preview").css('width', '600px');
-		// $("#preview_screenshot_modal #sc_preview").css('height', '450px');
 		$("#preview_screenshot_modal #sc_preview").css('width', 'auto');
 		$("#preview_screenshot_modal #sc_preview").css('height', 'auto');
 		$("#l_img").fadeIn('fast');
