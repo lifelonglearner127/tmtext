@@ -49,14 +49,24 @@
 		// --- 'Recipients Control Panel' UI (start)
 		var checked_count = $("input[type='checkbox'][name='send_report_ch']").length;
 		$("#send_report_ch_all").on('change', function(e) {
+			$(".report_bean_line").removeClass('selected');
 			if($(e.target).is(":checked")) {
 				$("input[type='checkbox'][name'send_report_ch']").attr('checked', true);
+				$(".report_bean_line").addClass('selected');
 			} else {
 				$("input[type='checkbox'][name'send_report_ch']").removeAttr('checked');
+				$(".report_bean_line").removeClass('selected');
 			}
 		});
 		$("input[type='checkbox'][name'send_report_ch']").on('change', function(e) {
 			setTimeout(function() {
+				// ---- mark / unmark tr line as selected (start)
+				if($(e.target).is(":checked")) {
+					$(e.target).parent().parent().addClass('selected');
+				} else {
+					$(e.target).parent().parent().removeClass('selected');
+				}
+				// ---- mark / unmark tr line as selected (end)
 				var count_s = 0;
 				$("input[type='checkbox'][name='send_report_ch']").each(function(index, val) {
 					if($(val).is(':checked')) count_s++;

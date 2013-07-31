@@ -103,7 +103,7 @@ class Measure extends MY_Controller {
             $this->email->to("$email");
             $this->email->subject('Content Solutions Screenshots Report');
             $this->email->message("Report screenshots in attachment. Preference day: $day.");
-            // --- test (debug) attachments (start)
+            // --- attachments (start)
             $debug_screens = $this->webshoots_model->getLimitedScreens(3);
             if(count($debug_screens) > 0) {
                 foreach ($debug_screens as $key => $value) {
@@ -111,7 +111,7 @@ class Measure extends MY_Controller {
                     $this->email->attach("$path");
                 }
             }
-            // --- test (debug) attachments (end)
+            // --- attachments (end)
             $this->email->send();
         }
         $this->output->set_content_type('application/json')->set_output(json_encode($this->email->print_debugger()));

@@ -71,7 +71,7 @@ function sendEmailScreensToSelected() {
 	var selected_data = [];
 	var selected_items = $("input[type='checkbox'][name='send_report_ch']:checked").length;
 	if(selected_items > 0) {
-		$(".report_bean_line").each(function(index, value) {
+		$(".report_bean_line.selected").each(function(index, value) {
 			var mid = {
 				'id': $(value).data('id'),
 				'email': $(value).data('email'),
