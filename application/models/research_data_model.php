@@ -245,9 +245,9 @@ union all
 //        }
 
         $sql_cmd = "
-            SELECT
+            select
                 r.id AS id,
-	            r.imported_data_id AS imported_data_id,
+                r.imported_data_id AS imported_data_id,
                 r.created AS created,
                 group_concat(r.product_name, '') AS product_name,
                 group_concat(r.url, '') AS url,
@@ -257,10 +257,11 @@ union all
                 group_concat(r.long_description_wc, '') AS long_description_wc,
                 group_concat(r.seo_s, '') AS seo_s,
                 group_concat(r.seo_l, '') AS seo_l
-            FROM (
-                SELECT
+            from (
+                select
+                    b.title,
                     kv.id,
-		            kv.imported_data_id,
+                    kv.imported_data_id,
                     rd.created as created,
                     case when kv.`key` = 'Product Name' then kv.`value` end as product_name,
                     case when kv.`key` = 'URL' then kv.`value` end as url,
@@ -270,19 +271,18 @@ union all
                     case when kv.`key` = 'Long_Description_WC' then kv.`value` end as long_description_wc,
                     case when kv.`key` = 'seo_s' then kv.`value` end as seo_s,
                     case when kv.`key` = 'seo_l' then kv.`value` end as seo_l
-                FROM
-                    research_data AS rd
-                INNER JOIN batches AS b ON
-                    b.id = rd.batch_Id
-                    AND b.title = $batch_name
-                INNER JOIN imported_data_parsed AS idp ON
-                    idp.value = rd.url
-                    AND `key` = 'URL'
-                INNER JOIN imported_data_parsed AS kv ON
-                    kv.imported_data_id = idp.imported_data_id
-                    AND kv.`value` like $txt_filter
-            ) AS r
-            GROUP BY
+                from
+                    batches as b
+                inner join research_data as rd on
+                    rd.batch_Id = b.id
+                    and b.title = $batch_name
+                inner join research_data_to_crawler_list as rdtcl on rdtcl.research_data_id = rd.id
+                inner join crawler_list as cl on cl.id = rdtcl.crawler_list_id
+                inner join imported_data_parsed as kv on
+                    kv.imported_data_id = cl.imported_data_id
+                    and kv.`value` like $txt_filter
+            ) as r
+            group by
                 r.imported_data_id
         ";
 
