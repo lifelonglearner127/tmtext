@@ -25,6 +25,11 @@
     background-color: #a7c8ff;
     font-weight: bold;
 }
+.pagination .page a.mixed_screen {
+    color: #999999;
+    background-color: #43fff8 !important;
+    font-weight: bold;
+}
 .bold {
     font-weight: bold;
 }
