@@ -50,17 +50,21 @@ class ToysrusSpider(BaseSpider):
         # selecting main level categories
         links = hxs.select("//div[@id='sitemapLinks']/ul/li/ul/li/a")
 
-        # selecting lower level categories
+        # selecting low level categories
         low_links = hxs.select("//div[@id='sitemapLinks']/ul/li/ul/li/ul/li/a")
 
+        # selecting lower level categories
+        lower_links = hxs.select("//div[@id='sitemapLinks']/ul/li/ul/li/ul/li/ul/li/a")
+
         # selecting departments
-        
+        departments = hxs.select("//div[@id='sitemapLinks']/ul/li/a")
 
         items = []
 
-        for link in links:
+        root_url = "http://www.toysrus.com"
 
-            #TODO: extract department
+        # add categories
+        for link in links:
 
             # extract immediate parent
             parent = link.select("parent::node()/parent::node()/parent::node()/a")
@@ -70,13 +74,92 @@ class ToysrusSpider(BaseSpider):
             # add the current page url as a field
             item['page'] = response.url
 
-            item['text'] = link.select('text()').extract()
-            item['url'] = link.select('@href').extract()
+            item['text'] = link.select('text()').extract()[0]
+            # build this into an absolute url by removing ".." prefix and adding domain
+            item['url'] = root_url + link.select('@href').extract()[0][2:]
 
-            item['parent_text'] = parent.select('text()').extract()
-            item['parent_url'] = parent.select('@href').extract()
+            item['parent_text'] = parent.select('text()').extract()[0]
+            item['parent_url'] = root_url + parent.select('@href').extract()[0][2:]
+
+            # this is the main level of categories
+            item['level'] = 0
 
             items.append(item)
+
+
+        # add subcategories
+        for link in low_links:
+
+            # extract immediate parent
+            parent = link.select("parent::node()/parent::node()/parent::node()/a")
+
+            item = CategoryItem()
+
+            # add the current page url as a field
+            item['page'] = response.url
+
+            item['text'] = link.select('text()').extract()[0]
+            # build this into an absolute url by removing ".." prefix and adding domain
+            item['url'] = root_url + link.select('@href').extract()[0][2:]
+
+            item['parent_text'] = parent.select('text()').extract()[0]
+            item['parent_url'] = root_url + parent.select('@href').extract()[0][2:]
+
+            # extract grandparent
+            grandparent = parent.select("parent::node()/parent::node()/parent::node()/a")
+            item['grandparent_text'] = grandparent.select('text()').extract()[0]
+            item['grandparent_url'] = root_url + grandparent.select('@href').extract()[0][2:]
+
+            # these are subcategories
+            item['level'] = -1
+
+            items.append(item)
+
+        # add subsubcategories
+        for link in lower_links:
+
+            # extract immediate parent
+            parent = link.select("parent::node()/parent::node()/parent::node()/a")
+
+            item = CategoryItem()
+
+            # add the current page url as a field
+            item['page'] = response.url
+
+            item['text'] = link.select('text()').extract()[0]
+            # build this into an absolute url by removing ".." prefix and adding domain
+            item['url'] = root_url + link.select('@href').extract()[0][2:]
+
+            item['parent_text'] = parent.select('text()').extract()[0]
+            item['parent_url'] = root_url + parent.select('@href').extract()[0][2:]
+
+            # extract grandparent
+            grandparent = parent.select("parent::node()/parent::node()/parent::node()/a")
+            item['grandparent_text'] = grandparent.select('text()').extract()[0]
+            item['grandparent_url'] = root_url + grandparent.select('@href').extract()[0][2:]
+
+            # these are subsubcategories
+            item['level'] = -2
+
+            items.append(item)
+
+        # add departments
+        for link in departments:
+
+            item = CategoryItem()
+
+            # add the current page url as a field
+            item['page'] = response.url
+
+            item['text'] = link.select('text()').extract()[0]
+            # build this into an absolute url by removing ".." prefix and adding domain
+            item['url'] = root_url + link.select('@href').extract()[0][2:]
+
+            # these are departments
+            item['level'] = 1
+
+            items.append(item)
+
 
         return items
 
