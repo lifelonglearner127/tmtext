@@ -176,6 +176,53 @@
             </div>
         </div>
 
+        <div id="assessDetailsDialog" title="Details">
+            <p>
+                <label for="assessDetails_ProductName">Product Name:</label>
+                <input type="text" id="assessDetails_ProductName" readonly="true" />
+            </p>
+
+            <p>
+                <label for="assessDetails_url">URL:</label>
+                <input type="text" id="assessDetails_url" readonly="true" />
+                <a id="assess_open_url_btn" class="icon-hand-right" target="_blank"></a>
+            </p>
+
+            <p>
+                <label for="assessDetails_Price">Price:</label>
+                <input type="text" id="assessDetails_Price" readonly="true" />
+            </p>
+
+            <div class="parag">
+                <span class="labeler">
+                    <label for="assessDetails_ShortDescription">Short Description:</label>
+                </span>
+                <textarea id="assessDetails_ShortDescription" readonly="true"></textarea>
+                <div class="bottom-labeler">
+                    <label><span id="assessDetails_ShortDescriptionWC">0</span> words</label>
+                </div>
+            </div>
+
+            <p>
+                <label for="assessDetails_ShortSEO">Short SEO:</label>
+                <input type="text" id="assessDetails_ShortSEO" readonly="true" />
+            </p>
+
+            <div class="parag">
+                <span class="labeler">
+                    <label for="assessDetails_LongDescription">Long Description:</label>
+                </span>
+                <textarea id="assessDetails_LongDescription" readonly="true"></textarea>
+                <div class="bottom-labeler">
+                    <label><span id="assessDetails_LongDescriptionWC">0</span> words</label>
+                </div>
+            </div>
+
+            <p>
+                <label for="assessDetails_LongSEO">Long SEO:</label>
+                <input type="text" id="assessDetails_LongSEO" readonly="true" />
+            </p>
+        </div>
 
         <div class="row-fluid">
             <div id="read" class="ui-tabs-panel ui-widget-content ui-corner-bottom">
@@ -183,17 +230,6 @@
                     <div class="span12">
                         <table id="tblAssess" class="tblDataTable">
                             <thead>
-<!--                            <tr>-->
-<!--                                <th style="width: 20%;">Date</th>-->
-<!--                                <th><div class="draggable">Product Name</div></th>-->
-<!--                                <th><div class="draggable">URL</div></th>-->
-<!--                                <th><div class="draggable">Word Count (S)</div></th>-->
-<!--                                <th><div class="draggable">SEO Phrases (S)</div></th>-->
-<!--                                <th><div class="draggable">Word Count (L)</div></th>-->
-<!--                                <th><div class="draggable">SEO Phrases (L)</div></th>-->
-<!--                                <th><div class="draggable">Duplicate Content</div></th>-->
-<!--                                <th><div class="draggable">Price diff</div></th>-->
-<!--                            </tr>-->
                             </thead>
                             <tbody></tbody>
                         </table>
@@ -203,22 +239,6 @@
                         <script type="text/javascript" src="<?php echo base_url();?>js/jquery.validate.min.js"></script>
                         <script type="text/javascript" src="<?php echo base_url();?>js/jquery.dataTables.min.js"></script>
                         <script type="text/javascript" src="<?php echo base_url();?>js/jquery.json-2.4.min.js"></script>
-
-<!--                        <script type="text/template" id="readTemplate">-->
-<!--                            <tr id="${id}">-->
-<!--                                <td class="column_editor">${created}</td>-->
-<!--                                <td class="column_product_name">${product_name}</td>-->
-<!--                                <td class="column_url">${url}</td>-->
-<!--                                <td class="column_short_description_wc">${short_description_wc}</td>-->
-<!--                                <td class="column_short_seo_phrases_short">${seo_s}</td>-->
-<!--                                <td class="column_long_description_wc">${long_description_wc}</td>-->
-<!--                                <td class="column_long_seo_phrases_long">${seo_l}</td>-->
-<!--                                <td class="column_duplicate_content">?</td>-->
-<!--                                <td class="column_price_diff">${price_diff}</td>-->
-<!--                            </tr>-->
-<!--                        </script>-->
-
-
                         <script type="text/javascript" src="<?php echo base_url();?>js/research_assess.js"></script>
 
                     </div>

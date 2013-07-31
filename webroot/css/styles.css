@@ -267,3 +267,41 @@ label.checkbox {
     margin-top: 10px;
     width: 50px;
 }
+
+#assessDetailsDialog label{
+    display: inline-block;
+    text-align: right;
+    width: 150px;
+}
+#assessDetailsDialog .parag {
+    position:relative;
+}
+#assessDetailsDialog .parag span.labeler {
+    position: relative;
+    top: -31px;
+}
+#assessDetailsDialog .parag div.bottom-labeler {
+    left: 0;
+    position: absolute;
+    top: 20px
+}
+#assessDetailsDialog .parag div.bottom-labeler label {
+    font-size: 12px;
+}
+#assessDetailsDialog p {
+    margin:0px;
+}
+#assessDetailsDialog input, #assessDetailsDialog textarea, #assessDetailsDialog .uneditable-input {
+    width: 650px;
+    cursor: text;
+}
+#assessDetailsDialog textarea {
+    height: 80px;
+}
+#assessDetailsDialog .ui-dialog .ui-dialog-buttonpane button {
+    width: 100px;
+}
+#assessDetailsDialog a {
+    cursor: pointer;
+    margin-top: -7px;
+}

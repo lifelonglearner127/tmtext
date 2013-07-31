@@ -284,11 +284,9 @@ union all
             ) as r
             group by
                 r.imported_data_id
+            order by
+                r.created
         ";
-
-//        if(!empty($order_column_name)) {
-//            $sql_cmd = $sql_cmd." order by $order_column_name $sort_direction_n";
-//        }
 
         $query = $this->db->query($sql_cmd);
         $result =  $query->result();
