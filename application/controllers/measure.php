@@ -115,7 +115,7 @@ class Measure extends MY_Controller {
             // --- test (debug) attachments (end)
             $this->email->send();
         }
-        $this->output->set_content_type('application/json')->set_output(true);
+        $this->output->set_content_type('application/json')->set_output(json_encode($this->email->print_debugger()));
     }
 
     public function send_recipient_report() {
