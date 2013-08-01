@@ -26,9 +26,9 @@ jQuery(document).ready(function($) {
                         <li style="float: left;">
                             
                             <button class='btn' onclick="switchToListView();" id='grid_sw_list' type='button'><i class="icon-th-list"></i>&nbsp;List</button>
-                            <button class='btn' onclick="switchToGridView();" id='grid_sw_grid' type='button'><i class="icon-th-large"></i>&nbsp;Grid</button>
+                            <button class='btn' onclick="switchToGridView();" id='grid_sw_grid' type='button'><i class="icon-th-large"></i>&nbsp;Comparison</button>
                         </li>
-                        <li style="float: left; margin-top: 6px;margin-left: 8px;">
+                        <li style="float: left; margin-top: 6px;margin-left: 15px;">
                         	
                         	<input style="position: relative;top: -3px;" id="strict_grid" type="checkbox" name="strict_grid" value="1"> Exact Match
                         </li>
