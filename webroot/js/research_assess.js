@@ -1,11 +1,25 @@
 var readAssessUrl = base_url + 'index.php/research/get_assess_info';
-var pageRDInitialized = false;
-$(function () {
-    if(pageRDInitialized)
-        return;
-    pageRDInitialized = true;
 
+$(function () {
     var textToCopy;
+    var zeroTableDraw = true;
+
+    $.fn.dataTableExt.oApi.fnGetAllSColumnNames = function (oSettings) {
+        allColumns = [];
+        for( var i = 0; i < oSettings.aoColumns.length; i++) {
+            allColumns.push($.trim(oSettings.aoColumns[i].sName));
+        }
+        return allColumns;
+    }
+
+    $.fn.dataTableExt.oApi.fnGetSColumnIndexByName = function (oSettings, colname) {
+        for( var i = 0; i < oSettings.aoColumns.length; i++) {
+            if(oSettings.aoColumns[i].sName == $.trim(colname)) {
+                return i;
+            }
+        }
+        return -1;
+    }
 
     var tblAssess = $('#tblAssess').dataTable({
         "bJQueryUI": true,
@@ -25,6 +39,10 @@ $(function () {
             return nRow;
         },
         "fnDrawCallback": function(oSettings) {
+            if (zeroTableDraw) {
+                zeroTableDraw = false;
+                return;
+            }
             hideColumns();
         },
         "oLanguage": {
@@ -37,16 +55,49 @@ $(function () {
             {"sTitle" : "Product Name", "sName":"product_name", "sWidth": "25%"},
             {"sTitle" : "URL", "sName":"url", "sWidth": "30%"},
             {"sTitle" : "Word Count (S)", "sName":"short_description_wc", "sWidth": "5%"},
-            {"sTitle" : "SEO Phrases (S)", "sName":"seo_s", "sWidth": "10%"},
+            {"sTitle" : "SEO Phrases (S)", "sName":"short_seo_phrases", "sWidth": "10%"},
             {"sTitle" : "Word Count (L)", "sName":"long_description_wc", "sWidth": "5%"},
-            {"sTitle" : "SEO Phrases (L)", "sName":"seo_l", "sWidth": "10%"},
+            {"sTitle" : "SEO Phrases (L)", "sName":"long_seo_phrases", "sWidth": "10%"},
             {"sTitle" : "Duplicate Content", "sName":"duplicate_context", "sWidth": "5%"},
             {"sTitle" : "Price diff", "sName":"price_diff", "sWidth": "10%"},
-            {"bVisible": false}
+            {"sTitle" : "Recommendations", "sName":"recommendations", "sWidth": "45%", "bVisible": false},
+            {"sName":"add_data", "bVisible": false}
         ]
     });
 
-    $('<button id="research_batches_columns" class="btn btn-success ml_5 float_r">Columns...</button>').appendTo('div.dataTables_filter');
+    var tableCase = {
+        details: [
+            "created",
+            "product_name",
+            "url",
+            "short_description_wc",
+            "short_seo_phrases",
+            "long_description_wc",
+            "long_seo_phrases",
+            "duplicate_context",
+            "price_diff"
+        ],
+        recommendations: [
+            "product_name",
+            "url",
+            "recommendations"
+        ]
+    }
+
+    $('#research_batches_columns').appendTo('div.dataTables_filter');
+    $('#tblAssess_length').after($('#assess_tbl_show_case'));
+    $('#assess_tbl_show_case a').on('click', function(event) {
+        event.preventDefault();
+        assess_tbl_show_case(this);
+    });
+
+    function assess_tbl_show_case(obj) {
+        if (obj) {
+            $(obj).parent().find('a').removeClass('active_link');
+            $(obj).addClass('active_link');
+            hideColumns();
+        }
+    }
 
     $('#tblAssess tbody').click(function(event) {
         $('#ajaxLoadAni').fadeIn('slow');
@@ -57,10 +108,10 @@ $(function () {
         $('#assessDetails_Price').val(add_data.own_price);
         $('#assessDetails_ShortDescription').val(add_data.short_description);
         $('#assessDetails_ShortDescriptionWC').html(add_data.short_description_wc);
-        $('#assessDetails_ShortSEO').val(add_data.seo_s);
+        $('#assessDetails_ShortSEO').val(add_data.short_seo_phrases);
         $('#assessDetails_LongDescription').val(add_data.long_description);
         $('#assessDetails_LongDescriptionWC').html(add_data.long_description_wc);
-        $('#assessDetails_LongSEO').val(add_data.seo_l);
+        $('#assessDetails_LongSEO').val(add_data.long_seo_phrases);
 
         $('#assessDetailsDialog').dialog('open');
 
@@ -71,66 +122,66 @@ $(function () {
         autoOpen: false,
         modal: true,
         buttons: {
-            'Cancel': function() {
-                $(this).dialog('close');
+            'Cancel': {
+                text: 'Cancel',
+                click: function() {
+                    $(this).dialog('close');
+                }
             },
-            'Copy': function() {
-                copyToClipboard(textToCopy);
+            'Copy': {
+                text: 'Copy',
+                id: 'assessDetailsDialog_btnCopy',
+                click: function() {
+                    copyToClipboard(textToCopy);
+                }
             }
         },
         width: '850px'
     });
 
     $('#assessDetailsDialog input[type="text"], textarea').bind({
-        focus : function() {
+        focus: function() {
             this.select();
             textToCopy = this.value;
         },
-        mouseup : function() {
+        mouseup: function() {
             textToCopy = this.value;
             return false;
         }
     });
 
     function copyToClipboard(text) {
-        window.prompt ("Copy to clipboard: Ctrl+C, Enter", text);
+        window.prompt ("Copy to clipboard: Ctrl+C, Enter (or Esc)", text);
     }
 
-    function getAssessCustomerDropdown(){
-        var customers_list_ci = $.post(base_url + 'index.php/measure/getcustomerslist_new', { }, function(c_data) {
-            var jsn = $('#research_assess_customers').msDropDown({byJson:{data:c_data, name:'customers_list'}}).data("dd");
-            if(jsn != undefined){
-                jsn.on("change", function(res) {
-                    $.post(base_url + 'index.php/research/filterBatchByCustomer', { 'customer_name': res.target.value}, function(data){
-                        var research_assess_batches = $("select[name='research_assess_batches']");
-                        if(data.length>0){
-                            research_assess_batches.empty();
-                            for(var i=0; i<data.length; i++){
-                                research_assess_batches.append('<option>'+data[i]+'</option>');
-                            }
-                        } else if(data.length==0 && res.target.value !="All customers"){
-                            research_assess_batches.empty();
-                        }
-                        $('#research_assess_update').click();
-                    });
-               });
+    $('select[name="research_assess_customers"]').on("change", function(res) {
+        $.post(base_url + 'index.php/research/filterBatchByCustomer', { 'customer_name': res.target.value}, function(data){
+            var research_assess_batches = $("select[name='research_assess_batches']");
+            if(data.length>0){
+                research_assess_batches.empty();
+                for(var i=0; i<data.length; i++){
+                    research_assess_batches.append('<option>'+data[i]+'</option>');
+                }
+            } else if(data.length==0 && res.target.value !="All customers"){
+                research_assess_batches.empty();
             }
-        }, 'json');
-    }
+            $('#research_assess_update').click();
+        });
+    });
 
     $('select[name="research_assess_batches"]').on("change", function() {
         var selectedBatch = $(this).find("option:selected").text();
         $.post(base_url + 'index.php/research/filterCustomerByBatch', {
                 'batch': selectedBatch
         }, function(data){
-            var oDropdown = $("#research_assess_customers").msDropdown().data("dd");
+            var research_assess_customers = $('select[name="research_assess_customers"]');
             if(data != ''){
-                oDropdown.setIndexByValue(data);
+                research_assess_customers.val(data.toLowerCase()).prop('selected', true);
             } else {
-                oDropdown.setIndexByValue('All customers');
+                research_assess_customers.val('all customers').prop('selected', true);
             }
             if (selectedBatch.length == 0)
-                oDropdown.setIndexByValue('All Customers');
+                research_assess_customers.val('all customers').prop('selected', true);
             $('#research_assess_update').click();
         });
     });
@@ -230,15 +281,33 @@ $(function () {
         $('#research_assess_choiceColumnDialog').parent().find('button:first').addClass("popupGreen");
     });
 
+    var tblAllColumns = tblAssess.fnGetAllSColumnNames();
     function hideColumns() {
-        var columns_checkboxes = $('#research_assess_choiceColumnDialog').find('input[type=checkbox]');
-        $(columns_checkboxes).each(function(i) {
-            if($(this).attr('checked') == 'checked') {
-                tblAssess.fnSetColumnVis(i, true, false);
-            } else {
-                tblAssess.fnSetColumnVis(i, false, false);
-            }
+        var table_case = $('#assess_tbl_show_case a[class=active_link]').data('case');
+        var columns_checkboxes = $('#research_assess_choiceColumnDialog').find('input[type=checkbox]:checked');
+        var columns_checkboxes_checked = [];
+        $.each(columns_checkboxes, function(index, value) {
+            columns_checkboxes_checked.push($(value).prop('id').replace('column_', ''));
         });
+
+        if (table_case == 'recommendations') {
+            $.each(tblAllColumns, function(index, value) {
+                if ($.inArray(value, tableCase.recommendations) > -1) {
+                    tblAssess.fnSetColumnVis(index, true, false);
+                }
+                else {
+                    tblAssess.fnSetColumnVis(index, false, false);
+                }
+            });
+        } else if (table_case == 'details') {
+            $.each(tblAllColumns, function(index, value) {
+                if ($.inArray(value, columns_checkboxes_checked) > -1) {
+                    tblAssess.fnSetColumnVis(index, true, false);
+                } else {
+                    tblAssess.fnSetColumnVis(index, false, false);
+                }
+            });
+        }
     }
 
     function buildTableParams(existingParams) {
@@ -302,7 +371,5 @@ $(function () {
         hideColumns();
     }
 
-
-
-    getAssessCustomerDropdown();
+    hideColumns();
 });

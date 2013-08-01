@@ -11,12 +11,16 @@
 
         <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/smoothness/jquery-ui-1.8.2.custom.css" />
         <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/styles.css" />
-        <ul class="research_content connectedSortable" id="sortable1">
-            <li class="boxes mt_10" id="related_keywords">
+        <ul class="research_table_filter">
+            <li class="boxes mt_10">
                 <h3>
                     <span class=''>
                         Batch:
-                        <div id="research_assess_customers" class="customer_dropdown"></div>
+                        <select name="research_assess_customers" class="mt_10">
+                            <?php foreach($customer_list as $customer):?>
+                                <option value="<?php echo strtolower($customer); ?>"><?php echo $customer; ?></option>
+                            <?php endforeach;?>
+                        </select>
                         <?php echo form_dropdown('research_assess_batches', $batches_list, array(), 'class="mt_10 mr_10" style="width: 175px;margin-left:20px"'); ?>
                     </span>
                     <span class=''>
@@ -27,15 +31,9 @@
                         <?php echo form_dropdown('category', $category_list, array(), 'class="category_list mt_10"'); ?>
                     </span>
                     <div class="clear"></div>
-                    <span class=''>
-                        <label class="checkbox" style="display:inline;">
-                            <input id="research_assess_select_all" type="checkbox" style="float: none;margin-top: 0px;" checked>
-                            Select all:
-                        </label>
-                    </span>
-<!--                    <a href="#" onclick="return false;" class="hideShow float_r">-->
-<!--                        <img src="--><?php //echo base_url();?><!--img/arrow.png" />-->
-<!--                    </a>-->
+                    <a href="#" onclick="return false;" class="hideShow float_r">
+                        <img src="<?php echo base_url();?>img/arrow.png" />
+                    </a>
                 </h3>
                 <div class="boxes_content">
                     <div class="row-fluid">
@@ -43,14 +41,18 @@
                             Text:
                             <input id="assess_filter_text" type="text" id="assess_filter_text" class="mt_10 w_100"/>
                         </div>
-                        <div class="span6">
+                        <div class="span5">
                             Date Range:
-                            <input id="assess_filter_datefrom" type="text" class="mt_10" value="" style="width: 100px;"/>
+                            <input id="assess_filter_datefrom" type="text" class="mt_10" value="" style="width: 85px;"/>
                             &nbsp-&nbsp
-                            <input id="assess_filter_dateto" type="text" class="mt_10" value="" style="width: 100px;"/>
+                            <input id="assess_filter_dateto" type="text" class="mt_10" value="" style="width: 85px;"/>
                             <button id="assess_filter_clear_dates" class="btn">Clear</button>
                         </div>
-                        <div class="span2 assess_filter_options">
+                        <div class="span3 assess_filter_options">
+                            <label class="checkbox">
+                                <input id="research_assess_select_all" type="checkbox" checked>
+                                Select all:
+                            </label>
                             <label class="checkbox">
                                 <input id="research_assess_price_diff" type="checkbox" checked>
                                 Price Diff
@@ -233,9 +235,15 @@
                             </thead>
                             <tbody></tbody>
                         </table>
+                        <div id="assess_tbl_show_case" class="assess_tbl_show_case">
+                            Show:
+                            <a id="assess_tbl_show_case_recommendations" data-case="recommendations" title="Recommendations" href="#">Recommendations</a> |
+                            <a id="assess_tbl_show_case_details" data-case="details" title="Details" href="#" class="active_link">Details</a>
+                        </div>
+                        <button id="research_batches_columns" class="btn btn-success ml_5 float_r">Columns...</button>
 
                         <!-- Table doesnt work without this jQuery include yet -->
-                        <script type="text/javascript" src="<?php echo base_url();?>js/jquery-templ.js"></script>
+<!--                        <script type="text/javascript" src="--><?php //echo base_url();?><!--js/jquery-templ.js"></script>-->
                         <script type="text/javascript" src="<?php echo base_url();?>js/jquery.validate.min.js"></script>
                         <script type="text/javascript" src="<?php echo base_url();?>js/jquery.dataTables.min.js"></script>
                         <script type="text/javascript" src="<?php echo base_url();?>js/jquery.json-2.4.min.js"></script>

@@ -305,8 +305,40 @@ label.checkbox {
     cursor: pointer;
     margin-top: -7px;
 }
-
 .ui-dialog-buttonset button {
     width: 100px !important;
     height: 30px !important;
+}
+ul.research_table_filter {
+    margin: 0;
+    font-size: 12px;
+    padding-left: 0px;
+    padding-right: 0px;
+}
+ul.research_table_filter .boxes {
+     margin: 0px;
+}
+ul.research_table_filter .hideBox {
+    height: 50px !important;
+    min-height: 50px !important;
+}
+ul.research_table_filter .hideShow {
+    position:relative;
+    top:-34px;
+}
+.assess_tbl_show_case {
+    margin: 10px;
+    float: left;
+    text-align: center;
+    width: 300px
+}
+.assess_tbl_show_case a {
+    color: #0088CC;
+    text-decoration: none;
+    font-weight: 100;
+}
+
+.assess_tbl_show_case a.active_link {
+    font-weight: bold;
+    text-decoration: underline;
 }

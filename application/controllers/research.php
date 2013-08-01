@@ -493,12 +493,13 @@ class Research extends MY_Controller {
                         $data_row->product_name,
                         $data_row->url,
                         $data_row->short_description_wc,
-                        $data_row->seo_s,
+                        $data_row->short_seo_phrases,
                         $data_row->long_description_wc,
-                        $data_row->seo_l,
+                        $data_row->long_seo_phrases,
                         $data_row->duplicate_context,
                         $data_row->price_diff,
-                        json_encode($data_row)
+                        "Some Recommendations",
+                        json_encode($data_row),
                     );
                 }
                 if ($display_length > 0) {
@@ -890,7 +891,7 @@ class Research extends MY_Controller {
         $this->load->model('customers_model');
         $customer_id = $this->customers_model->getIdByName($this->input->post('customer_name'));
         $batches = $this->batches_model->getAllByCustomer($customer_id);
-        if($this->input->post('customer_name') ==  "All Customers"){
+        if(strtolower($this->input->post('customer_name')) ==  "all customers"){
             $batches = $this->batches_model->getAll();
         }
         $batches_list = array();
@@ -906,7 +907,7 @@ class Research extends MY_Controller {
     public function filterStyleByCustomer(){
         $this->load->model('customers_model');
         $this->load->model('style_guide_model');
-        if($this->input->post('customer_name')!=='All Customers'){
+        if(strtolower($this->input->post('customer_name')) ==  "all customers"){
             $customer_id = $this->customers_model->getIdByName($this->input->post('customer_name'));
             $style = $this->style_guide_model->getStyleByCustomerId($customer_id);
             $this->output->set_content_type('application/json')
