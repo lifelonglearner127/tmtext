@@ -68,7 +68,7 @@ $(function() {
 
     getEditCustomerDropdown();
 
-    $(document).on("change", 'select[name="research_edit_batches"]', function() {
+    $('select[name="research_edit_batches"]').on("change", function() {
         var selectedBatch = $(this).find("option:selected").text();
         $.post(base_url + 'index.php/research/filterCustomerByBatch', {
             'batch': selectedBatch
@@ -146,10 +146,6 @@ $(function() {
     $("div.research_edit_filter_links a").on("click", function(event) {
         event.preventDefault();
         drawREProductsTable(this);
-    });
-
-    $(document).on("change", 'select[name="research_edit_batches"]', function() {
-        drawREProductsTable();
     });
 
     function drawREProductsTable(obj) {

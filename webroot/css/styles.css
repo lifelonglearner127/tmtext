@@ -305,3 +305,8 @@ label.checkbox {
     cursor: pointer;
     margin-top: -7px;
 }
+
+.ui-dialog-buttonset button {
+    width: 100px !important;
+    height: 30px !important;
+}

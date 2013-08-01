@@ -5,8 +5,6 @@ $(function () {
         return;
     pageRDInitialized = true;
 
-    var research_assess_choiceColumnDialog = $('#research_assess_choiceColumnDialog');
-    var assessDetailsDialog = $('#assessDetailsDialog');
     var textToCopy;
 
     var tblAssess = $('#tblAssess').dataTable({
@@ -22,9 +20,12 @@ $(function () {
                 fnCallback(json)
             });
         },
-        "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
+        "fnRowCallback": function(nRow, aData, iDisplayIndex) {
             $(nRow).attr("add_data", aData[9]);
             return nRow;
+        },
+        "fnDrawCallback": function(oSettings) {
+            hideColumns();
         },
         "oLanguage": {
             "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
@@ -61,20 +62,20 @@ $(function () {
         $('#assessDetails_LongDescriptionWC').html(add_data.long_description_wc);
         $('#assessDetails_LongSEO').val(add_data.seo_l);
 
-        assessDetailsDialog.dialog('open');
+        $('#assessDetailsDialog').dialog('open');
 
         $('#ajaxLoadAni').fadeOut('slow');
     });
 
-    assessDetailsDialog.dialog({
+    $('#assessDetailsDialog').dialog({
         autoOpen: false,
         modal: true,
         buttons: {
-            'Copy': function() {
-                copyToClipboard(textToCopy);
-            },
             'Cancel': function() {
                 $(this).dialog('close');
+            },
+            'Copy': function() {
+                copyToClipboard(textToCopy);
             }
         },
         width: '850px'
@@ -117,7 +118,7 @@ $(function () {
         }, 'json');
     }
 
-    $(document).on("change", 'select[name="research_assess_batches"]', function() {
+    $('select[name="research_assess_batches"]').on("change", function() {
         var selectedBatch = $(this).find("option:selected").text();
         $.post(base_url + 'index.php/research/filterCustomerByBatch', {
                 'batch': selectedBatch
@@ -182,7 +183,7 @@ $(function () {
         readAssessData();
     });
 
-    research_assess_choiceColumnDialog.dialog({
+    $('#research_assess_choiceColumnDialog').dialog({
         autoOpen: false,
         modal: true,
         buttons: {
@@ -221,21 +222,21 @@ $(function () {
                 $(this).dialog('close');
             }
         },
-        width: '180px'
+        width: '250px'
     });
 
     $('#research_batches_columns').on('click', function() {
-        research_assess_choiceColumnDialog.dialog('open');
-        research_assess_choiceColumnDialog.parent().find('button:first').addClass("popupGreen");
+        $('#research_assess_choiceColumnDialog').dialog('open');
+        $('#research_assess_choiceColumnDialog').parent().find('button:first').addClass("popupGreen");
     });
 
     function hideColumns() {
-        var columns_checkboxes = research_assess_choiceColumnDialog.find('input[type=checkbox]');
+        var columns_checkboxes = $('#research_assess_choiceColumnDialog').find('input[type=checkbox]');
         $(columns_checkboxes).each(function(i) {
             if($(this).attr('checked') == 'checked') {
-                tblAssess.fnSetColumnVis(i, true, true);
+                tblAssess.fnSetColumnVis(i, true, false);
             } else {
-                tblAssess.fnSetColumnVis(i, false, true);
+                tblAssess.fnSetColumnVis(i, false, false);
             }
         });
     }
@@ -301,7 +302,7 @@ $(function () {
         hideColumns();
     }
 
-    hideColumns();
+
 
     getAssessCustomerDropdown();
 });

@@ -267,7 +267,7 @@ $( function() {
                 $(this).dialog('close');
             }
         },
-        width: '180px'
+        width: '250px'
     });
 
     $( document ).delegate( '#research_batches_columns', 'click', function() {
