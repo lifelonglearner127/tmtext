@@ -1344,8 +1344,8 @@ public function getByProductName($selected_product_name='',$manufacturer='',$str
                                 }
                                
 			}
-                        
-                            return $rows;
+                        sort($rows);
+                        return $rows;
 		}
         
         

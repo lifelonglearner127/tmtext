@@ -141,7 +141,7 @@ foreach ($same_pr as $ks => $vs) {
                                         <?php $v_ph = $value['ph']; ?>
 
                                         <li >
-                                            <span style="font-size: 14px !important;"data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'short')" class='word_wrap_li_pr hover_en'>
+                                            <span style="font-size: 14px !important;line-height: 21px;text-decoration: none;white-space: normal;"data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'short')" class='word_wrap_li_pr hover_en'>
                                                 <?php echo $value['ph']; ?>
                                                 <?php echo '(' . $value['count'] . ')'; ?>
                                             </span>
