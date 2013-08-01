@@ -158,6 +158,11 @@ class ToysrusSpider(BaseSpider):
             # these are departments
             item['level'] = 1
 
+            # if it starts with "Save " ("Save 50% on ...") or "Buy " or contains "...% off" or starts with a date (number/number), 
+            # mark it as special
+            special = re.match("(Save .*)|(Buy .*)|(.*[0-9]+\% off.*)|(.*[0-9]+/[0-9]+.*)", item['text'], re.UNICODE)
+            if special:
+                item['special'] = 1
             items.append(item)
 
 

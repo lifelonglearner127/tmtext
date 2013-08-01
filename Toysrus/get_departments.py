@@ -20,12 +20,13 @@ for line in output_all:
 
 	# get parameter of page as text after "=" symbol in "page" field of each item
 	level = item['level']
+	special = ('special' in item)
 
 	# if it's a department put it in the output file
-	if level == 1:
+	if level == 1 and not special:
 		# get category id
 		url = item['url']
-		print url
+		print item['text']
 		m = re.match("http://www\.toysrus\.com/s[a-z]*/index\.jsp\?categoryId=([0-9]+)&s=A-Description-TRUS&searchSort=TRUE", url)
 		cat_id = m.group(1)
 		output_departments.write(cat_id + "\n")
