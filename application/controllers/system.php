@@ -637,6 +637,43 @@ class System extends MY_Controller {
         $this->output->set_content_type('application/json')->set_output(json_encode($response));
     }
 
+    public function delete_department()
+    {
+        $this->load->model('department_members_model');
+        $department_id = $this->input->post('id');
+        $this->department_members_model->delete($department_id);
+
+        $response['message'] =  'Department was deleted successfully';
+        $this->output->set_content_type('application/json')->set_output(json_encode($response));
+    }
+
+    public function delete_category()
+    {
+        $this->load->model('site_categories_model');
+        $category_id = $this->input->post('id');
+        $this->site_categories_model->delete($category_id);
+
+        $response['message'] =  'Category was deleted successfully';
+        $this->output->set_content_type('application/json')->set_output(json_encode($response));
+    }
+
+    public function delete_all(){
+        $this->load->model('site_categories_model');
+        $this->load->model('department_members_model');
+        $type = $this->input->post('type');
+        $site_id = $this->input->post('site_id');
+        $site_name = explode(".", $this->input->post('site_name'));
+        if($type == 'categories'){
+            $this->site_categories_model->deleteAll($site_id);
+            $response['message'] =  'Categories was deleted successfully';
+        } elseif($type == 'departments'){
+            $this->department_members_model->deleteAll(strtolower($site_name[0]));
+            $response['message'] =  'Departments was deleted successfully';
+        }
+
+        $this->output->set_content_type('application/json')->set_output(json_encode($response));
+    }
+
 	public function upload_csv()
     {
 		$this->load->library('UploadHandler');
@@ -729,7 +766,7 @@ class System extends MY_Controller {
     public function sites_view()
     {
         $this->load->model('sites_model');
-        $this->load->model('department_model');
+        $this->load->model('department_members_model');
         $sites = $this->sites_model->getAll();
         $sitesArray = array();
         foreach ($sites as $site) {
@@ -737,9 +774,11 @@ class System extends MY_Controller {
                 $sitesArray[$site->id] = $site->name;
             }
         }
-        foreach ($this->department_model->getAll() as $row) {
-            $this->data['departmens_list'][$row->id] = $row->short_name;
+        $this->load->model('department_members_model');
+        foreach ($this->department_members_model->getAll() as $row) {
+            $this->data['departmens_list'][$row->id] = $row->text;
         }
+
         $this->data['sites'] = $sitesArray;
         $this->data['category_list'] = $this->category_list();
         $this->render();
@@ -938,18 +977,6 @@ class System extends MY_Controller {
         $this->sites_model->updateSite($this->input->post('id'), $this->input->post('logo'));
         $response['message'] =  'Site was deleted successfully';
         $this->output->set_content_type('application/json')->set_output(json_encode($response));
-    }
-
-    public function best_sellers()
-    {
-        $this->load->model('department_model');
-
-        foreach ($this->department_model->getAll() as $row) {
-            $this->data['departmens_list'][$row->id] = $row->short_name;
-        }
-
-        $this->data['customers_list'] = $this->customers_list_new();
-        $this->render();
     }
 
     private function customers_list_new() {

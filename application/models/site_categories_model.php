@@ -57,4 +57,9 @@ class Site_categories_model extends CI_Model {
         return $this->db->delete($this->tables['site_categories'], array('id' => $id));
     }
 
+    function deleteAll($site_id)
+    {
+        return $this->db->delete($this->tables['site_categories'], array('site_id' => $site_id));
+    }
+
 }

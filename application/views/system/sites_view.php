@@ -9,28 +9,57 @@
     </ul>
     <div class="tab-content">
         <script type="text/javascript">
+            function doconfirm(str)
+            {
+                var site_name = '';
+                if( $("#sites .btn_caret_sign").text() != ''){
+                    site_name = ' for ' +  $("#sites .btn_caret_sign").text();
+                }
+                job=confirm("You are about to delete all "+str+""+site_name+". Are you sure you want to do this?");
+                if(job!=true)
+                {
+                    return false;
+                } else {
+                   $.post(base_url + 'index.php/system/delete_all', {
+                        'site_name':  $("#sites .btn_caret_sign").text(),
+                        'site_id':  $("#sites .btn_caret_sign").attr('id'),
+                        'type': str
+                    }, function(data) {
+                        if(str=='categories'){
+                            $('select[name="category"]').empty();
+                        } else if(str == 'departments') {
+                            $('select[name="department"]').empty();
+                        }
+                        //$('.info').append('<p class="alert-success">The '+str+' was successfully deleted</p>').fadeOut(10000);
+                    }, 'json');
+                    return false;
+                }
+            }
             function selectOption(){
-                $('#sites option').click(function(){
-                        $.post(base_url + 'index.php/system/get_site_info', {'site': $(this).val()}, function(data){
-                            if(data.length > 0){
-                                if(data[0].name != ''){
-                                    $('input#site_name').val(data[0].name);
-                                }else{
-                                    $('input#site_name').val('');
-                                }
-                                if(data[0].url != ''){
-                                    $('input#site_url').val(data[0].url);
-                                }else{
-                                    $('input#site_url').val('');
-                                }
-                                if(data[0].image_url != ''){
-                                    $('img#site_logo').attr({'src': base_url+'img/'+data[0].image_url });
-                                } else {
-                                    $('img#site_logo').attr({'src': base_url+'img/no-logo.jpg' });
-                                }
+                $(".hp_boot_drop .dropdown-menu > li > a").bind('click', function(e) {
+                    var new_caret = $.trim($(this).text());
+                    $("#sites .btn_caret_sign").text(new_caret);
+                    $("#sites .btn_caret_sign").attr('id', $.trim($(this).data('value')));
+                    $.post(base_url + 'index.php/system/get_site_info', {'site': $(this).data('value') }, function(data){
+                        if(data.length > 0){
+                            if(data[0].name != ''){
+                                $('input#site_name').val(data[0].name);
+                            }else{
+                                $('input#site_name').val('');
                             }
-                        });
-                    $.post(base_url + 'index.php/measure/getDepartmentsByCustomer', {'customer_name': $(this).text()}, function(data) {
+                            if(data[0].url != ''){
+                                $('input#site_url').val(data[0].url);
+                            }else{
+                                $('input#site_url').val('');
+                            }
+                            if(data[0].image_url != ''){
+                                $('img#site_logo').attr({'src': base_url+'img/'+data[0].image_url });
+                            } else {
+                                $('img#site_logo').attr({'src': base_url+'img/no-logo.jpg' });
+                            }
+                        }
+                    });
+                    $.post(base_url + 'index.php/measure/getDepartmentsByCustomer', {'customer_name': new_caret}, function(data) {
                         $("select[name='department']").empty();
                         if(data.length > 0){
                             for(var i=0; i<data.length; i++){
@@ -38,7 +67,7 @@
                             }
                         }
                     });
-                    $.post(base_url + 'index.php/system/getCategoriesBySiteId', {'site_id': $(this).val()}, function(data) {
+                    $.post(base_url + 'index.php/system/getCategoriesBySiteId', {'site_id': $(this).data('value')}, function(data) {
                         $("select[name='category']").empty();
                         if(data.length > 0 ){
                             for(var i=0; i<data.length; i++){
@@ -54,7 +83,7 @@
                     $.post(base_url + 'index.php/system/add_new_site', {'site': $('#new_site').val()}, function(data){
                         $(".info-message").append(data.message);
                         $(".info-message").fadeOut(7000);
-                        $("#sites").append("<option value='"+data.id+"'>"+$('#new_site').val()+"</option>");
+                        $(".hp_boot_drop .dropdown-menu").append('<li><a href="javascript:void(0)" data-value="'+data.id+'" data-item="'+data.id+'">'+$('#new_site').val()+'</a></li>');
                         selectOption();
                         $('#new_site').val('');
                     });
@@ -64,8 +93,13 @@
             });
 
             $('button#delete_site').click(function(){
-                $.post(base_url + 'index.php/system/delete_site', {'site': $('select#sites').find('option:selected').val()}, function(data){
-                    $('select#sites').find('option:selected').remove();
+                $.post(base_url + 'index.php/system/delete_site', {'site':  $("#sites .btn_caret_sign").attr('id') }, function(data){
+                    $("#sites .btn_caret_sign").text('[Choose site]');
+                    $(".hp_boot_drop .dropdown-menu li a").each(function(){
+                        if($(this).data('value') == $("#sites .btn_caret_sign").attr('id')){
+                            $(this).remove();
+                        }
+                    })
                     $('input#new_site').val('');
                     $('input#site_name').val('');
                     $('input#site_url').val('');
@@ -78,7 +112,7 @@
 
             $('button#sitelogo').click(function(){
                 $.post(base_url + 'index.php/system/update_site_logo', {
-                    'id': $('select#sites').find('option:selected').val(),
+                    'id':  $("#sites .btn_caret_sign").attr('id'),
                     'logo': $('input[name="sitelogo_file"]').val()
                 }, function(data){
                 });
@@ -87,22 +121,39 @@
 
             $('button#update_site_info').click(function(){
                 $.post(base_url + 'index.php/system/update_site_info', {
-                    'id': $('select#sites').find('option:selected').val(),
+                    'id': $("#sites .btn_caret_sign").attr('id'),
                     'logo': $('input[name="sitelogo_file"]').val(),
                     'site_name': $('input[name="site_name"]').val(),
                     'site_url': $('input[name="site_url"]').val()
                 }, function(data){
-                    $('select#sites').find('option:selected').text($('input[name="site_name"]').val());
+                    $("#sites .btn_caret_sign").text($('input[name="site_name"]').val());
                 });
                 return false;
             });
 
             $('button#delete_sitelogo').click(function(){
                 $.post(base_url + 'index.php/system/delete_sitelogo', {
-                    'id': $('select#sites').find('option:selected').val(),
+                    'id':  $("#sites .btn_caret_sign").attr('id'),
                     'logo': 'no-logo.jpg'
                 }, function(data){
                     $('img#site_logo').attr({'src': base_url+'img/no-logo.jpg' });
+                });
+                return false;
+            });
+
+            $('button#delete_department').click(function(){
+                $.post(base_url + 'index.php/system/delete_department', {
+                    'id': $('select[name="department"]').find('option:selected').val()
+                }, function(data){
+                    $('select[name="department"]').find('option:selected').remove();
+                });
+                return false;
+            });
+            $('button#delete_category').click(function(){
+                $.post(base_url + 'index.php/system/delete_category', {
+                    'id': $('select[name="category"]').find('option:selected').val()
+                }, function(data){
+                    $('select[name="category"]').find('option:selected').remove();
                 });
                 return false;
             });
@@ -136,6 +187,8 @@
                 }
             });
         </script>
+
+
         <div class="tab-pane active">
             <div class="info-message text-success"></div>
             <?php echo form_open("system/save_new_site", array("class"=>"form-horizontal", "id"=>"system_save_new_site"));?>
@@ -147,15 +200,22 @@
                         <div class="clear-fix"></div>
                 </div>
                 <div class="row-fluid mt_10">
-                    <div class="aclist">
-                        <p>Sites:</p>
-                        <select id="sites" data-placeholder="Click to select sites" multiple name="sites[]">
-                            <?php
-                            foreach ($sites as $key => $value) {
-                                print '<option value="'.$key.'">'.$value.'</option>';
-                            }
-                            ?>
-                        </select>
+                    <div class="aclist general">
+                        <label>Sites:</label>
+                        <?php
+                            if(count($sites) > 0) { ?>
+                                <div id="sites" class="btn-group hp_boot_drop mr_10">
+                                    <button class="btn btn-danger btn_caret_sign" id="" onclick="return false;">[ Choose site ]</button>
+                                    <button class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
+                                        <span class="caret"></span>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <?php foreach($sites as $key => $value) { ?>
+                                            <li><a data-item="<?php echo $key; ?>" data-value="<?php echo $key; ?>" href="javascript:void(0)"><?php echo $value; ?></a></li>
+                                        <?php } ?>
+                                    </ul>
+                                </div>
+                            <?php } ?>
                         <div class="clear-fix"></div>
                     </div>
                 </div>
@@ -200,7 +260,7 @@
                                 done: function (e, data) {
                                     $('input[name="sitelogo_file"]').val(data.result.files[0].name);
                                     $.post(base_url + 'index.php/system/update_site_logo', {
-                                        'id': $('select#sites').find('option:selected').val(),
+                                        'id':  $("#sites .btn_caret_sign").attr('id'),
                                         'logo': $('input[name="sitelogo_file"]').val()
                                     }, function(data){
 
@@ -211,7 +271,7 @@
                                          }
                                     });*/
                                     $('button#sitelogo').trigger('click');
-                                    $.post(base_url + 'index.php/system/get_site_info', {'site': $('select#sites').find('option:selected').val()}, function(data){
+                                    $.post(base_url + 'index.php/system/get_site_info', {'site':  $("#sites .btn_caret_sign").attr('id')}, function(data){
                                         if(data.length > 0){
                                             if(data[0].name != ''){
                                                 $('input#site_name').val(data[0].name);
@@ -270,10 +330,25 @@
 
                                     var url = base_url+'index.php/system/save_departments_categories';
                                     $.post(url, { 'choosen_file': $('input[name="choosen_file"]').val(),
-                                            'site_id': $('select#sites').find('option:selected').val(),
-                                            'site_name': $('select#sites').find('option:selected').text()
+                                            'site_id':  $("#sites .btn_caret_sign").attr('id'),
+                                            'site_name':  $("#sites .btn_caret_sign").text()
                                         }, function(data) {
-                                            //$('<p/>').text(data.message).appendTo('#files1');
+                                            $.post(base_url + 'index.php/measure/getDepartmentsByCustomer', {'customer_name':  $("#sites .btn_caret_sign").text()}, function(data) {
+                                                $("select[name='department']").empty();
+                                                if(data.length > 0){
+                                                    for(var i=0; i<data.length; i++){
+                                                        $("select[name='department']").append("<option value='"+data[i].id+"'>"+data[i].text+"</option>");
+                                                    }
+                                                }
+                                            });
+                                            $.post(base_url + 'index.php/system/getCategoriesBySiteId', {'site_id': $("#sites .btn_caret_sign").attr('id')}, function(data) {
+                                                $("select[name='category']").empty();
+                                                if(data.length > 0 ){
+                                                    for(var i=0; i<data.length; i++){
+                                                        $("select[name='category']").append("<option value='"+data[i].id+"'>"+data[i].text+"</option>");
+                                                    }
+                                                }
+                                            });
                                     }, 'json');
                                 }
                             });
@@ -281,13 +356,13 @@
                     </script>
 
                     <button id="delete_department" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
-                    <button id="delete_all_departments" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete All</button>
+                    <button class="btn btn-danger" onclick="doconfirm('departments');return false;"><i class="icon-white icon-ok"></i>&nbsp;Delete All</button>
                 </div>
                 <div class="row-fluid mt_10">
                     <label>Categories:</label>
                     <?php echo form_dropdown('category', $category_list ); ?>
                     <button id="delete_category" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
-                    <button id="delete_all_categories" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete All</button>
+                    <button id="delete_all_categories" class="btn btn-danger" onclick="doconfirm('categories');return false;"><i class="icon-white icon-ok"></i>&nbsp;Delete All</button>
                 </div>
             </div>
             <div class="span12 mt_20 mb_40 general ml_0">
@@ -304,17 +379,26 @@
                     <?php  echo form_dropdown('department', $departmens_list, null, 'class="inline_block lh_30 w_375 mb_reset"'); ?>
                     <button id="upload_categories_departments" class="btn btn-primary" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Upload</button>
                     <button id="delete_department" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
-                    <button id="delete_all_departments" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete All</button>
+                    <button id="delete_all_departments" class="btn btn-danger" onclick="doconfirm('departments');return false;"><i class="icon-white icon-ok"></i>&nbsp;Delete All</button>
                 </div>
                 <div class="row-fluid mt_10">
                     <label>Categories:</label>
                     <?php echo form_dropdown('category', $category_list ); ?>
                     <button id="upload_categories_departments" class="btn btn-primary" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Upload</button>
                     <button id="delete_category" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
-                    <button id="delete_all_categories" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete All</button>
+                    <button id="delete_all_categories" class="btn btn-danger"  onclick="doconfirm('categories');return false;"><i class="icon-white icon-ok"></i>&nbsp;Delete All</button>
                 </div>
             </div>
             <?php echo form_close();?>
         </div>
     </div>
 </div>
+
+<script type="text/javascript">
+    $(function() {
+        $(".hp_boot_drop .dropdown-menu > li > a").bind('click', function(e) {
+            var new_caret = $.trim($(this).text());
+            $("#sites .btn_caret_sign").text(new_caret);
+        });
+    });
+</script>
