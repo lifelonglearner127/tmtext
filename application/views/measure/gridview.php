@@ -123,7 +123,7 @@ foreach ($same_pr as $ks => $vs) {
                     ?>
                 </div>
                 <!--                            //Max-->
-                <div class="p_description">
+                <div class="p_description" style="overflow:hidden;">
                     <?php if ($s_product_short_desc_count > 0) { ?>
                         <span class='analysis_content_head'><img style="height: 9px;width: 9px;background: rgb(207, 207, 207);padding: 2px;margin-top: -3px;margin-right: 4px;" src="<?php echo base_url() ?>/img/arrow-down.png"><?php
                             if ($s_product_description == '' || $s_product_long_description == '') {
@@ -201,7 +201,13 @@ foreach ($same_pr as $ks => $vs) {
                         echo '<p>' . $s_product_long_description . '</p>';
                     }
                     ?>
+                        <?php if($ks>0){ ?>
+                <input style="float: right; margin-top: 0;" type="button" value="Not a Match">
+                <?php }
+                    ?>
                 </div>
+                
+                                
             </div>
 
             <!--            <div class='grid_seo'>
