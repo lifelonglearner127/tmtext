@@ -1381,7 +1381,8 @@ public function getByProductName($selected_product_name='',$manufacturer='',$str
                                 }
                                
 			}
-                        
+                        sort($rows);
+
                             return $rows;
 		}
     }
