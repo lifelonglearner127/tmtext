@@ -20,37 +20,58 @@ class SearsSpider(BaseSpider):
     start_urls = ['http://www.sears.com/shc/s/smv_10153_12605']
 
     
-    def parsep(self, response):
+    def parse(self, response):
 
         hxs = HtmlXPathSelector(response)
+        #TODO: add departments with no subcategories!!
 
         # get urls of pages for each category
         urls = hxs.select("//div[@class='siteMapSubCell']//ul/li/a/@href").extract()
 
+        # add departments to items
+        departments = hxs.select("//div[@class='siteMapSubCell']//h4/a")
+        items = []
+        for department in departments:
+            item = SearsItem()
+            item['text'] = department.select('text()').extract()[0]
+            item['url'] = department.select('@href').extract()[0]
+            item['level'] = 1
+            items.append(item)
+
         # parse each page in urls list with parsePage
         # build urls by adding the prefix of the main page url
+        first = True
         root_url = "http://www.sears.com/shc/s"
         for url in urls:
-            yield Request(root_url + "/" + url, callback = self.parsePage)
+            request = Request(root_url + "/" + url, callback = self.parsePage)
+            # send these only once (the first time)
+            if first:
+                request.meta['items'] = items
+                first = False
+            else:
+                request.meta['items'] = []
+            yield request
 
     # parse one page - extract items (categories)
-    def parse(self, response):
+    def parsePage(self, response):
         # currently selects only lowest level links, and their parents inside their fields
         hxs = HtmlXPathSelector(response)
 
-        #TODO: add pages as separate categories as well?
         #TODO: add special categories if any
 
         # select lowest level categories
-        links = hxs.select("//div[@class='siteMapSubCat']//ul//li")
+        links = hxs.select("//div[@class='siteMapSubCat']/ul/li/a")
         # select parent categories
-        parent_links = hxs.select("//div[@class='siteMapSubCat']//h4//a")
+        parent_links = hxs.select("//div[@class='siteMapSubCat']/h4/a")
 
         # extract page name by getting text in url after "=" symbol
         # example url: smv_10153_12605?vName=Appliances
+        
         page_name = response.url.split("=")[1]
 
-        items = []
+        # get partial list from previous function (containing departments)
+        items = response.meta['items']
+        root_url = "http://www.sears.com"
 
         for link in links:
             item = SearsItem()
@@ -61,21 +82,37 @@ class SearsSpider(BaseSpider):
             item['grandparent_url'] = response.url
 
             # extract parent category element
-            parent = link.select("parent::node()/preceding-sibling::node()[2]/a")
-            item['parent_text'] = parent.select('text()').extract()
-            item['parent_url'] = parent.select('@href').extract()
+            parent = link.select("./parent::node()/parent::node()/preceding-sibling::node()[2]/a")
+            parent_text = parent.select('text()').extract()
+            parent_url = parent.select('@href').extract()
+            if parent_text and parent_url:
+                item['parent_text'] = parent_text[0]
+                item['parent_url'] = root_url + parent_url[0]
+            # if you can't find a parent here go to first of the previous columns that has a parent
+            else:
+                parent = link.select("./parent::node()/parent::node()/parent::node()/preceding-sibling::node()[2]/h4[last()]")
+                parent_text = parent.select("a/text()").extract()
+                parent_url = parent.select("a/@href").extract()
+                index = 3
+                while not parent_text:
+                    parent = link.select("./parent::node()/parent::node()/parent::node()/preceding-sibling::node()[%d]/h4[last()]" % index)
+                    index += 1
+                    parent_text = parent.select("a/text()").extract()
+                    parent_url = parent.select("a/@href").extract()
+                item['parent_text'] = parent_text[0]
+                item['parent_url'] = root_url + parent_url[0]
 
             item['text'] = link.select('text()').extract()[0]
-            item['url'] = link.select('a/@href').extract()[0]
+            item['url'] = root_url + link.select('@href').extract()[0]
 
-            # the bottom level categories are considered to be below the main level category as they are very detailed
+            # these are subcategories
             item['level'] = -1
             items.append(item)
 
         for link in parent_links:
             item = SearsItem()
             item['text'] = link.select('text()').extract()[0]
-            item['url'] = link.select('@href').extract()[0]
+            item['url'] = root_url + link.select('@href').extract()[0]
 
             item['page_text'] = page_name
             item['page_url'] = response.url
@@ -86,5 +123,15 @@ class SearsSpider(BaseSpider):
             item['level'] = 0
 
             items.append(item)
+
+        # # add the page name as a department
+        # item = SearsItem()
+        # item['text'] = page_name
+        # item['url'] = response.url
+        # item['page_text'] = page_name
+        # item['page_url'] = response.url
+        # item['level'] = 1
+
+        # items.append(item)
 
         return items
