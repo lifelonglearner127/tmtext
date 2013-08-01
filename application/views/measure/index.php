@@ -59,13 +59,21 @@
 								<li id='page_prev' class="page_prev"><a onclick="prevLocaHomePageWeekData()" href="javascript:void(0)">&laquo;</a></li>
 								<?php } ?>
 								<?php for($i = $int_cell_start; $i <= $int_cell_end; $i++) { ?>
-									<?php if(count($webshoots_model->getWeekAvailableScreens($i, $c_year)) > 0) { $have_screen = 'have_screen'; } else { $have_screen = ''; } ?>
+									<?php 
+										$week_screens_count = count($webshoots_model->getWeekAvailableScreens($i, $c_year));
+										if($week_screens_count > 0 && $i == $c_week) {
+											$mixed_screen = ' mixed_screen';
+										} else {
+											$mixed_screen = '';
+										}
+									?>
+									<?php if($week_screens_count > 0) { $have_screen = 'have_screen'; } else { $have_screen = ''; } ?>
 									<?php if($i == $c_week) { $active = 'active'; $link_active = ' current_week'; } else { $active = ''; $link_active = ''; } ?>
 									<?php if($i <= $c_week) { ?>
-										<li data-week="<?php echo $i; ?>" class="page <?php echo $active; ?>"><a class="<?php echo $have_screen.$link_active; ?>" href="javascript:void(0)" onclick="locaHomePageWeekData('<?php echo $i; ?>')"><?php echo $i; ?></a></li>
+										<li data-week="<?php echo $i; ?>" class="page <?php echo $active; ?>"><a class="<?php echo $have_screen.$link_active.$mixed_screen; ?>" href="javascript:void(0)" onclick="locaHomePageWeekData('<?php echo $i; ?>')"><?php echo $i; ?></a></li>
 									<?php } else { ?>
 										<?php $block_next_sl = true; ?>
-										<li data-week="<?php echo $i; ?>" class="page disabled blocked"><a class="<?php echo $have_screen.$link_active; ?>" href="javascript:void(0)"><?php echo $i; ?></a></li>
+										<li data-week="<?php echo $i; ?>" class="page disabled blocked"><a class="<?php echo $have_screen.$link_active.$mixed_screen; ?>" href="javascript:void(0)"><?php echo $i; ?></a></li>
 									<?php } ?>
 								<?php } ?>
 								<?php if($block_next_sl) { ?>
@@ -180,6 +188,12 @@
 </div>
 
 <!-- MODALS (START) -->
+<div class="modal hide fade ci_hp_modals" id='loading_crawl_modal'>
+	<div class="modal-body">
+		<p><img src="<?php echo base_url();?>img/loader_scr.gif">&nbsp;&nbsp;&nbsp;Screenshot is generating, please wait for it.</p>
+	</div>
+</div>
+
 <div class="modal hide fade ci_hp_modals" id='loader_emailsend_modal'>
 	<div class="modal-body">
 		<p><img src="<?php echo base_url();?>img/loader_scr.gif">&nbsp;&nbsp;&nbsp;Reports are sending, please wait for it.</p>
@@ -290,6 +304,10 @@
 			<div class='timelinetips_line'>
 				<img src="<?php echo base_url();?>img/timeline_tip_fweek.jpg">
 				<p>- week which have at least one available screenshot</p>
+			</div>
+			<div class='timelinetips_line'>
+				<img src="<?php echo base_url();?>img/timeline_tip_mweek.jpg">
+				<p>- week has available screenshot(s) and week is a current in a same time</p>
 			</div>
 		</div>
 	</div>

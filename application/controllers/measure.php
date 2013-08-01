@@ -11,8 +11,8 @@ class Measure extends MY_Controller {
         $this->load->library('form_validation');
         $this->load->library('helpers');
         $this->load->helper('algoritm');
+        $this->load->helper('comparebysimilarwordscount');
         $this->data['title'] = 'Measure';
-
 
         if (!$this->ion_auth->logged_in()) {
             //redirect them to the login page
@@ -94,16 +94,15 @@ class Measure extends MY_Controller {
         $config['wordwrap'] = TRUE;
         $this->email->initialize($config);
         // -- email config (dev configurations) (end) --
-        foreach ($selected_data as $key => $value) {
+        foreach ($selected_data as $k => $v) {
             $day = $v['day'];
             $email = $v['email'];
             $id = $v['id'];
-            $test = $value['id'];
             $this->email->from('ishulgin8@gmail.com', "Content Solutions");
             $this->email->to("$email");
             $this->email->subject('Content Solutions Screenshots Report');
             $this->email->message("Report screenshots in attachment. Preference day: $day.");
-            // --- test (debug) attachments (start)
+            // --- attachments (start)
             $debug_screens = $this->webshoots_model->getLimitedScreens(3);
             if(count($debug_screens) > 0) {
                 foreach ($debug_screens as $key => $value) {
@@ -111,10 +110,10 @@ class Measure extends MY_Controller {
                     $this->email->attach("$path");
                 }
             }
-            // --- test (debug) attachments (end)
+            // --- attachments (end)
             $this->email->send();
         }
-        $this->output->set_content_type('application/json')->set_output(true);
+        $this->output->set_content_type('application/json')->set_output(json_encode($this->email->print_debugger()));
     }
 
     public function send_recipient_report() {
@@ -135,9 +134,17 @@ class Measure extends MY_Controller {
         $this->email->to("$email");
         $this->email->subject('Content Solutions Screenshots Report');
         $this->email->message("Report screenshots in attachment. Preference day: $day.");
+        // --- attachments (start)
+        $debug_screens = $this->webshoots_model->getLimitedScreens(3);
+        if(count($debug_screens) > 0) {
+            foreach ($debug_screens as $key => $value) {
+                $path = $value->dir_thumb;
+                $this->email->attach("$path");
+            }
+        }
+        // --- attachments (end)
         $this->email->send();
-        $debug = $this->email->print_debugger();
-        $this->output->set_content_type('application/json')->set_output(json_encode($debug));
+        $this->output->set_content_type('application/json')->set_output(json_encode($this->email->print_debugger()));
         // --------------- email sender (end) -----------------
     }
 
@@ -162,8 +169,8 @@ class Measure extends MY_Controller {
         foreach ($sites as $url) {
             $url = urlencode(trim($url));
             // -- configs (start)
-            $api_key = "dc598f9ae119a97234ea";
-            $api_secret = "47c7248bc03fbd368362";
+            $api_key = $this->config->item('webyshots_api_key');
+            $api_secret = $this->config->item('webyshots_api_secret');
             $token = md5("$api_secret+$url");
             $size_s = "w600";
             $size_l = "w1260";
@@ -224,18 +231,13 @@ class Measure extends MY_Controller {
         } else { // --- crawl brand new screenshot
             $url = urlencode(trim($url));
             // -- configs (start)
-            $api_key = "dc598f9ae119a97234ea";
-            $api_secret = "47c7248bc03fbd368362";
+            $api_key = $this->config->item('webyshots_api_key');
+            $api_secret = $this->config->item('webyshots_api_secret');
             $token = md5("$api_secret+$url");
-            // $size_s = "200x150";
-            // $size_l = "600x450";
-            // $size_s = "800x600";
-            // $size_l = "1200x1000";
             $size_s = "w600";
             $size_l = "w1260";
             $format = "png";
             // -- configs (end)
-            // http://api.webyshots.com/v1/shot/dc598f9ae119a97234ea/04921f81ebf1786b24ff0823ba1488b2/?url=google.com&dimension=w1260&format=png
             $res = array(
                 "s" => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_s&format=$format",
                 'l' => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_l&format=$format"
@@ -284,21 +286,15 @@ class Measure extends MY_Controller {
 
     public function webshootcrawl() {
         ini_set("max_execution_time", 0);
-        // $year = $this->input->post('year');
-        // $week = $this->input->post('week');
         $week = date("W", time());
         $year = date("Y", time());
         $url = $this->input->post('url');
         $url = urlencode(trim($url));
         $uid = $this->ion_auth->get_user_id();
         // -- configs (start)
-        $api_key = "dc598f9ae119a97234ea";
-        $api_secret = "47c7248bc03fbd368362";
+        $api_key = $this->config->item('webyshots_api_key');
+        $api_secret = $this->config->item('webyshots_api_secret');
         $token = md5("$api_secret+$url");
-        // $size_s = "200x150";
-        // $size_l = "600x450";
-        // $size_s = "800x600";
-        // $size_l = "1200x1000";
         $size_s = "w600";
         $size_l = "w1260";
         $format = "png";
@@ -588,7 +584,7 @@ class Measure extends MY_Controller {
             // --- GET SELECTED RPODUCT DATA (START)
             $this->load->model('imported_data_parsed_model');
             $data_import = $this->imported_data_parsed_model->getByImId($im_data_id);
-
+            
             if ($data_import['description'] !== null && trim($data_import['description']) !== "") {
                 $data_import['description'] = preg_replace('/\s+/', ' ', $data_import['description']);
                 // $data_import['description'] = preg_replace('/[^A-Za-z0-9\. -!]/', ' ', $data_import['description']);
@@ -612,6 +608,9 @@ class Measure extends MY_Controller {
 
             if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['UPC/EAN/ISBN'])) {
                 $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['UPC/EAN/ISBN']);
+            }
+            if (empty($same_pr) && isset($data_import['parsed_attributes']) && !isset($data_import['parsed_attributes']['model'])){
+                $same_pr = $this->imported_data_parsed_model->getByProductName($data_import['product_name'],$data_import['parsed_attributes']['manufacturer'],$strict);
             }
 
             // get similar for first row

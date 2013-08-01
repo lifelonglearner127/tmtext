@@ -25,6 +25,11 @@
     background-color: #a7c8ff;
     font-weight: bold;
 }
+.pagination .page a.mixed_screen {
+    color: #999999;
+    background-color: #43fff8 !important;
+    font-weight: bold;
+}
 .bold {
     font-weight: bold;
 }
@@ -1749,7 +1754,7 @@ select#sites option{
     margin-top: -15px;
 }
 .new_width{
-    width: 399px !important;
+    width:407 !important;
 }
 
 .not_min{
@@ -1768,4 +1773,9 @@ select#sites option{
 /*//Max*/
 .heading_text{
     margin:0px;
+}
+
+.general label{
+    width: 90px;
+    float:left;
 }

@@ -6,6 +6,8 @@ $(function () {
     pageRDInitialized = true;
 
     var research_assess_choiceColumnDialog = $('#research_assess_choiceColumnDialog');
+    var assessDetailsDialog = $('#assessDetailsDialog');
+    var textToCopy;
 
     var tblAssess = $('#tblAssess').dataTable({
         "bJQueryUI": true,
@@ -19,6 +21,10 @@ $(function () {
             $.getJSON( sSource, aoData, function (json) {
                 fnCallback(json)
             });
+        },
+        "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
+            $(nRow).attr("add_data", aData[9]);
+            return nRow;
         },
         "oLanguage": {
             "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
@@ -34,11 +40,60 @@ $(function () {
             {"sTitle" : "Word Count (L)", "sName":"long_description_wc", "sWidth": "5%"},
             {"sTitle" : "SEO Phrases (L)", "sName":"seo_l", "sWidth": "10%"},
             {"sTitle" : "Duplicate Content", "sName":"duplicate_context", "sWidth": "5%"},
-            {"sTitle" : "Price diff", "sName":"price_diff", "sWidth": "10%"}
+            {"sTitle" : "Price diff", "sName":"price_diff", "sWidth": "10%"},
+            {"bVisible": false}
         ]
     });
 
     $('<button id="research_batches_columns" class="btn btn-success ml_5 float_r">Columns...</button>').appendTo('div.dataTables_filter');
+
+    $('#tblAssess tbody').click(function(event) {
+        $('#ajaxLoadAni').fadeIn('slow');
+        var add_data = JSON.parse($(event.target.parentNode).attr('add_data'));
+        $('#assessDetails_ProductName').val(add_data.product_name);
+        $('#assessDetails_url').val(add_data.url);
+        $('#assess_open_url_btn').attr('href', add_data.url);
+        $('#assessDetails_Price').val(add_data.own_price);
+        $('#assessDetails_ShortDescription').val(add_data.short_description);
+        $('#assessDetails_ShortDescriptionWC').html(add_data.short_description_wc);
+        $('#assessDetails_ShortSEO').val(add_data.seo_s);
+        $('#assessDetails_LongDescription').val(add_data.long_description);
+        $('#assessDetails_LongDescriptionWC').html(add_data.long_description_wc);
+        $('#assessDetails_LongSEO').val(add_data.seo_l);
+
+        assessDetailsDialog.dialog('open');
+
+        $('#ajaxLoadAni').fadeOut('slow');
+    });
+
+    assessDetailsDialog.dialog({
+        autoOpen: false,
+        modal: true,
+        buttons: {
+            'Copy': function() {
+                copyToClipboard(textToCopy);
+            },
+            'Cancel': function() {
+                $(this).dialog('close');
+            }
+        },
+        width: '850px'
+    });
+
+    $('#assessDetailsDialog input[type="text"], textarea').bind({
+        focus : function() {
+            this.select();
+            textToCopy = this.value;
+        },
+        mouseup : function() {
+            textToCopy = this.value;
+            return false;
+        }
+    });
+
+    function copyToClipboard(text) {
+        window.prompt ("Copy to clipboard: Ctrl+C, Enter", text);
+    }
 
     function getAssessCustomerDropdown(){
         var customers_list_ci = $.post(base_url + 'index.php/measure/getcustomerslist_new', { }, function(c_data) {

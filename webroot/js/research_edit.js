@@ -91,7 +91,7 @@ $(function() {
         "bDestroy": true,
         "sPaginationType": "full_numbers",
         "bProcessing": true,
-        "bServerSide": true,
+        //"bServerSide": true,
         //"sAjaxSource": readUrl,
         "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
             $(nRow).attr("batch_id", aData[3]);

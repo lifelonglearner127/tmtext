@@ -1,4 +1,27 @@
+# 07/31 Tatiana
+CREATE TABLE IF NOT EXISTS `site_categories` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `site_id` int(11) NOT NULL,
+  `text` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  `url` text COLLATE utf8_unicode_ci NOT NULL,
+  `special` int(11) NOT NULL,
+  `parent_text` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=269 ;
+
 # 07/30 Tatiana
+CREATE TABLE IF NOT EXISTS `best_sellers` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `date` datetime NOT NULL,
+  `page_title` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  `url` text COLLATE utf8_unicode_ci NOT NULL,
+  `price` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
+  `department` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  `list_name` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  `product_name` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
+
 ALTER TABLE `department_members` ADD `customer_id` INT NOT NULL AFTER `site_id`;
 update `department_members` set `customer_id`=15 where `site`='amazon';
 update `department_members` set `customer_id`=13 where `site`='overstock';

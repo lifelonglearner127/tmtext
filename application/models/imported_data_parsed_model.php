@@ -1235,6 +1235,123 @@ class Imported_data_parsed_model extends CI_Model {
         return $query->row()->revision;
     }
 
+    function get_base_url($url)
+    {
+    $chars = preg_split('//', $url, -1, PREG_SPLIT_NO_EMPTY);
+
+    $slash = 3; // 3rd slash
+
+    $i = 0;
+
+    foreach($chars as $key => $char)
+    {
+        if($char == '/')
+        {
+           $j = $i++;
+        }
+
+        if($i == 3)
+        {
+           $pos = $key; break;
+        }
+    }
+ 
+$main_base = substr($url, 0, $pos);
+ 
+return $main_base.'/';
+}
+
+public function getByProductName($selected_product_name='',$manufacturer='',$strict=false){
+   
+    $this->db->select('p.imported_data_id, p.key, p.value')
+            ->from($this->tables['imported_data_parsed'].' as p')
+            ->join($this->tables['imported_data'].' as i', 'i.id = p.imported_data_id', 'left')
+            ->where('p.key', 'Product Name');
+    
+    if ($strict) {
+        	$this->db->like('p.value', '"'.$manufacturer.'"');
+        }  else {
+        	$this->db->like('p.value', $manufacturer);
+        }
+    $query = $this->db->get();
+   
+     $results = $query->result();
+        
+        $data = array();
+        foreach($results as $result){
+            $query = $this->db->where('imported_data_id', $result->imported_data_id)->get($this->tables['imported_data_parsed']);
+            $res = $query->result_array();
+            $description = '';
+            $long_description = '';
+            $url = '';
+            $product_name='';
+            $is_similiar=0;
+            foreach($res as $val){
+                if($val['key'] == 'Product Name') { $product_name = $val['value'];
+                    if(leven_algoritm(strtolower($selected_product_name),strtolower($product_name ))>30){
+                        $is_similiar=1;
+                     }
+                     
+                }
+                        if($val['key'] == 'URL'){ $url = $val['value']; }
+                        if($val['key'] == 'Description'){ $description = $val['value']; }
+                        if($val['key'] == 'Long_Description'){ $long_description = $val['value']; }
+
+
+                    if($val['key'] == 'Features') { $features = $val['value']; }   
+                        
+                   
+                
+                
+                
+
+            }
+            if($is_similiar==1){
+            array_push($data, array('imported_data_id'=>$result->imported_data_id, 'product_name'=>$result->value,
+               'description'=>$description, 'long_description'=>$long_description, 'url'=>$url, 'product_name' =>$product_name, 'features' => $features ));
+            }
+        }
+//        echo "<pre>";
+//         print_r($data);
+        
+        
+        if ($data) {
+                $rows=$data;
+                $customers_list = array();
+	        $query_cus = $this->db->order_by('name', 'asc')->get($this->tables['customers']);
+	        $query_cus_res = $query_cus->result();
+	        if(count($query_cus_res) > 0) {
+	            foreach ($query_cus_res as $key => $value) {
+	                $n = strtolower($value->name);
+	                $customers_list[] = $n;
+	            }
+	        }
+	        $customers_list = array_unique($customers_list);
+
+
+	    	foreach ($rows as $key => $row) {
+				$cus_val = "";
+				foreach ($customers_list as $ki => $vi) {
+					if(strpos($rows[$key]['url'], "$vi") !== false) {
+						$cus_val  = $vi;
+					}
+				}
+				if($cus_val !== "") $rows[$key]['customer'] = $cus_val;
+                                foreach($rows as $key1 => $row1){
+                                       if($key1!=$key && $this->get_base_url($row['url'])== $this->get_base_url($row1['url'])){
+                                        unset($rows[$key]);
+			}
+                                }
+                               
+			}
+                        
+                            return $rows;
+		}
+        
+        
+        
+    
+}
     function getByParsedAttributes($search, $strict = false) {
 		if ($rows = $this->getData($search, null, null, null, 'parsed_attributes', $strict)) {
                 $customers_list = array();
@@ -1257,7 +1374,14 @@ class Imported_data_parsed_model extends CI_Model {
 					}
 				}
 				if($cus_val !== "") $rows[$key]['customer'] = $cus_val;
+                                foreach($rows as $key1 => $row1){
+                                       if($key1!=$key && $this->get_base_url($row['url'])== $this->get_base_url($row1['url'])){
+                                        unset($rows[$key]);
 			}
+                                }
+                               
+			}
+                        
                             return $rows;
 		}
     }

@@ -591,6 +591,52 @@ class System extends MY_Controller {
 		}
 	}
 
+    public function upload_departments_categories()
+    {
+        $this->load->library('UploadHandler');
+
+        $this->output->set_content_type('application/json');
+        $this->uploadhandler->upload(array(
+            'script_url' => site_url('system/upload_departments_categories'),
+            'upload_dir' => $this->config->item('csv_upload_dir'),
+            'param_name' => 'files',
+            'delete_type' => 'POST',
+            'accept_file_types' => '/.+\.(txt|jl)$/i',
+        ));
+    }
+
+    public function save_departments_categories()
+    {
+        $this->load->model('department_members_model');
+        $this->load->model('site_categories_model');
+        $site_id = $this->input->post('site_id');
+        $site_name = explode(".", strtolower($this->input->post('site_name')));
+        $file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
+        $_rows = array();
+        if (($handle = fopen($file, "r")) !== FALSE) {
+            while (($data = fgetcsv($handle, 1000, "\n")) !== FALSE) {
+                if(!is_null($data[0]) && $data[0]!=''){
+                    $_rows[] = json_decode($data[0]);
+                }
+            }
+            fclose($handle);
+        }
+        foreach($_rows as $row){
+            if($row->level == 0){
+                $special = 0;
+                if($row->special!='' && !is_null($row->special)){
+                    $special = $row->special;
+                }
+                $this->site_categories_model->insert($site_id, $row->text, $row->url, $special, $row->parent_text);
+            }
+            if($row->level == 1){
+                $this->department_members_model->insert($site_name[0], $site_id, $row->text);
+            }
+        }
+        $response['message'] =  'File was added successfully';
+        $this->output->set_content_type('application/json')->set_output(json_encode($response));
+    }
+
 	public function upload_csv()
     {
 		$this->load->library('UploadHandler');
@@ -661,9 +707,29 @@ class System extends MY_Controller {
         $this->render();
     }
 
+    public function getCategoriesBySiteId()
+    {
+        $this->load->model('site_categories_model');
+        $result = $this->site_categories_model->getAllBySiteId($this->input->post('site_id'));
+        $this->output->set_content_type('application/json')->set_output(json_encode($result));
+    }
+
+    public function category_list()
+    {
+        $this->load->model('site_categories_model');
+        $categories = $this->site_categories_model->getAll();
+        $category_list = array();
+        foreach($categories as $category){
+            array_push($category_list, $category->text);
+        }
+        return $category_list;
+
+    }
+
     public function sites_view()
     {
         $this->load->model('sites_model');
+        $this->load->model('department_model');
         $sites = $this->sites_model->getAll();
         $sitesArray = array();
         foreach ($sites as $site) {
@@ -671,7 +737,11 @@ class System extends MY_Controller {
                 $sitesArray[$site->id] = $site->name;
             }
         }
+        foreach ($this->department_model->getAll() as $row) {
+            $this->data['departmens_list'][$row->id] = $row->short_name;
+        }
         $this->data['sites'] = $sitesArray;
+        $this->data['category_list'] = $this->category_list();
         $this->render();
     }
 
@@ -868,6 +938,37 @@ class System extends MY_Controller {
         $this->sites_model->updateSite($this->input->post('id'), $this->input->post('logo'));
         $response['message'] =  'Site was deleted successfully';
         $this->output->set_content_type('application/json')->set_output(json_encode($response));
+    }
+
+    public function best_sellers()
+    {
+        $this->load->model('department_model');
+
+        foreach ($this->department_model->getAll() as $row) {
+            $this->data['departmens_list'][$row->id] = $row->short_name;
+        }
+
+        $this->data['customers_list'] = $this->customers_list_new();
+        $this->render();
+    }
+
+    private function customers_list_new() {
+        $this->load->model('customers_model');
+        $output = array();
+        $customers_init_list = $this->customers_model->getAll();
+        if (count($customers_init_list) > 0) {
+            foreach ($customers_init_list as $key => $value) {
+                $mid = array(
+                    'id' => $value->id,
+                    'desc' => $value->description,
+                    'image_url' => $value->image_url,
+                    'name' => $value->name,
+                    'name_val' => strtolower($value->name)
+                );
+                $output[] = $mid;
+            }
+        }
+        return $output;
     }
 
 }

@@ -30,6 +30,22 @@
                                 }
                             }
                         });
+                    $.post(base_url + 'index.php/measure/getDepartmentsByCustomer', {'customer_name': $(this).text()}, function(data) {
+                        $("select[name='department']").empty();
+                        if(data.length > 0){
+                            for(var i=0; i<data.length; i++){
+                                $("select[name='department']").append("<option value='"+data[i].id+"'>"+data[i].text+"</option>");
+                            }
+                        }
+                    });
+                    $.post(base_url + 'index.php/system/getCategoriesBySiteId', {'site_id': $(this).val()}, function(data) {
+                        $("select[name='category']").empty();
+                        if(data.length > 0 ){
+                            for(var i=0; i<data.length; i++){
+                                $("select[name='category']").append("<option value='"+data[i].id+"'>"+data[i].text+"</option>");
+                            }
+                        }
+                    });
                 });
             }
             selectOption();
@@ -144,7 +160,7 @@
                     </div>
                 </div>
             </div>
-            <div class="span6 mb_40">
+            <div class="span6">
                 <div class="row-fluid">
                         <p>Name:</p>
                         <input type="text" id="site_name" name="site_name">
@@ -158,7 +174,7 @@
                         <div class="clear-fix"></div>
                 </div>
                 <div class="row-fluid">
-                    <div class="controls span7 mt_20">
+                    <div class="controls span12 mt_20">
                         <img id="site_logo" class="mt_10" src="../../img/no-logo.jpg" />
                         <div class="clear-fix"></div><br />
                         <button class="btn btn-success" id="sitelogo" style="display:none"><i class="icon-white icon-ok"></i>&nbsp;Import</button>
@@ -167,12 +183,12 @@
 									<i class="icon-plus icon-white"></i>
 									<input type="file" multiple="" name="files[]" id="fileupload">
 								</span>
-                        <div class="progress progress-success progress-striped span7" id="progress">
+                        <div class="progress progress-success progress-striped span6" id="progress">
                             <div class="bar"></div>
                         </div>
                         <div id="files"></div>
                         <input type="hidden" name="sitelogo_file" />
-                        <button id="delete_sitelogo" class="btn btn-danger pull-right" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
+                        <button id="delete_sitelogo" class="btn btn-danger ml_10" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
                     </div>
                     <div class="info ml_10 "></div>
                     <script>
@@ -228,6 +244,74 @@
                             });
                         });
                     </script>
+                </div>
+            </div>
+            <div class="span12 mt_20 general ml_0">
+                <div class="row-fluid">
+                    <label>Department:</label>
+                    <?php  echo form_dropdown('department', $departmens_list, null, 'class="inline_block lh_30 w_375 mb_reset"'); ?>
+                    <button class="btn btn-success" id="csv_import_create_batch" style="display:none"><i class="icon-white icon-ok"></i>&nbsp;Import</button>
+								<span class="btn btn-success fileinput-button ml_10">
+									Upload
+									<i class="icon-plus icon-white"></i>
+									<input type="file" multiple="" name="files[]" id="fileupload1">
+								</span>
+                    <div id="files1" style="float:left"></div>
+                    <input type="hidden" name="choosen_file" />
+                    <div class="info ml_10" style="float:left"></div>
+                    <script>
+                        $(function () {
+                            var url = '<?php echo site_url('system/upload_departments_categories');?>';
+                            $('#fileupload1').fileupload({
+                                url: url,
+                                dataType: 'json',
+                                done: function (e, data) {
+                                    $('input[name="choosen_file"]').val(data.result.files[0].name);
+
+                                    var url = base_url+'index.php/system/save_departments_categories';
+                                    $.post(url, { 'choosen_file': $('input[name="choosen_file"]').val(),
+                                            'site_id': $('select#sites').find('option:selected').val(),
+                                            'site_name': $('select#sites').find('option:selected').text()
+                                        }, function(data) {
+                                            //$('<p/>').text(data.message).appendTo('#files1');
+                                    }, 'json');
+                                }
+                            });
+                        });
+                    </script>
+
+                    <button id="delete_department" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
+                    <button id="delete_all_departments" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete All</button>
+                </div>
+                <div class="row-fluid mt_10">
+                    <label>Categories:</label>
+                    <?php echo form_dropdown('category', $category_list ); ?>
+                    <button id="delete_category" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
+                    <button id="delete_all_categories" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete All</button>
+                </div>
+            </div>
+            <div class="span12 mt_20 mb_40 general ml_0">
+                <div class="row-fluid">
+                    <h5>Best Sellers</h5>
+                    <label>Overall:</label>
+                    <?php  echo form_dropdown('department', $departmens_list, null, 'class="inline_block lh_30 w_375 mb_reset"'); ?>
+                    <button id="upload_categories_departments" class="btn btn-primary" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Upload</button>
+                    <button id="delete_department_categories" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
+                    <button id="delete_all_departments_categories" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete All</button>
+                </div>
+                <div class="row-fluid mt_10">
+                    <label>Department:</label>
+                    <?php  echo form_dropdown('department', $departmens_list, null, 'class="inline_block lh_30 w_375 mb_reset"'); ?>
+                    <button id="upload_categories_departments" class="btn btn-primary" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Upload</button>
+                    <button id="delete_department" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
+                    <button id="delete_all_departments" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete All</button>
+                </div>
+                <div class="row-fluid mt_10">
+                    <label>Categories:</label>
+                    <?php echo form_dropdown('category', $category_list ); ?>
+                    <button id="upload_categories_departments" class="btn btn-primary" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Upload</button>
+                    <button id="delete_category" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
+                    <button id="delete_all_categories" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete All</button>
                 </div>
             </div>
             <?php echo form_close();?>

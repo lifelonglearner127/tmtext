@@ -109,7 +109,7 @@ function switchToListView() {
     $("#attributes_metrics ul").show();
     $("#measure_product_ind_wrap").show();
     $("#an_products_box").removeClass('grid_results_show');
-    $(".main span:first-child").removeClass('new_width');
+    $(".main span:first-child,#products li span:first-child ").removeClass('new_width');
     grid_status = 'list';
 
 }
@@ -140,7 +140,8 @@ function switchToGridView() {
     });
 
     $("#an_products_box").addClass('grid_results_show');
-    $(".main span:first-child").addClass('new_width');
+    $(".main span:first-child, #products li span:first-child ").addClass('new_width');
+    
 //    #grid_se_section_1 .c .c_content table 
     grid_status = 'grid';
 
@@ -734,6 +735,14 @@ $(document).ready(function() {
             $('li.keywords_metrics_bl_res, li.keywords_metrics_bl_res ~ li, ul.less_b_margin').hide();
         }
 
+    });
+
+    $('li.temp_li a').live('click', function(){
+       $('li.temp_li a').each(function(){
+           $(this).css({'text-decoration':'none'});
+       });
+       $(this).css({'text-decoration':'underline'});
+       return false;
     });
 });//max
 // ---- new CI term typeahead (end) (NEW)

@@ -361,12 +361,15 @@ class Research extends MY_Controller {
             $result_row->created = $row->created;
             $result_row->product_name = $row->product_name;
             $result_row->url = $row->url;
+            $result_row->short_description = $row->short_description;
+            $result_row->long_description = $row->long_description;
             $result_row->short_description_wc = $short_description_wc;
             $result_row->long_description_wc = $long_description_wc;
             $result_row->seo_s = "None";
             $result_row->seo_l = "None";
             $result_row->price_diff = "-";
             $result_row->duplicate_context = "-";
+            $result_row->own_price = "-";
 
             if ($price_diff) {
                 $data_import = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
@@ -374,7 +377,8 @@ class Research extends MY_Controller {
                     $own_prices = $this->imported_data_parsed_model->getLastPrices($row->imported_data_id);
                     if (!empty($own_prices)) {
                         $own_price = floatval($own_prices[0]->price);
-                        $price_diff = "<nobr>Own price - ".$own_price."<br />";
+                        $result_row->own_price = $own_price;
+                        $price_diff = "<nobr>Own price - ".$own_price."</nobr><br />";
                         $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
                         if (!empty($similar_items)) {
                             foreach ($similar_items as $ks => $vs) {
@@ -389,7 +393,7 @@ class Research extends MY_Controller {
                                     $price_lower_range = $own_price - $price_scatter;
                                     $his_price = floatval($three_last_prices[0]->price);
                                     if ($his_price > $price_upper_range || $his_price < $price_lower_range) {
-                                        $price_diff = $price_diff.$similar_items[$ks]['customer']." - ".$his_price."<br /></nobr>";
+                                        $price_diff = $price_diff."<nobr>".$similar_items[$ks]['customer']." - ".$his_price."</nobr><br />";
                                         $result_row->price_diff = $price_diff;
                                     }
                                 }
@@ -406,7 +410,7 @@ class Research extends MY_Controller {
                     if ($enable_exec) {
                         $cmd = $this->prepare_extract_phrases_cmd($row->short_description);
                         $output = array();
-                        $result = exec($cmd, $output, $error);
+                        exec($cmd, $output, $error);
 
                         if ($error > 0) {
                             $enable_exec = false;
@@ -429,7 +433,7 @@ class Research extends MY_Controller {
                     if ($enable_exec) {
                         $cmd = $this->prepare_extract_phrases_cmd($row->long_description);
                         $output = array();
-                        $result = exec($cmd, $output, $error);
+                        exec($cmd, $output, $error);
 
                         if ($error > 0) {
                             $enable_exec = false;
@@ -454,8 +458,8 @@ class Research extends MY_Controller {
             $s_column = $s_columns[$s_column_index];
             $this->sort_column = $s_column;
             $this->sort_direction = strtolower($this->input->get('sSortDir_0'));
-            $this->sort_type = is_numeric($result[0]->$s_column) ? "num" : "";
-            $res = usort($result_table, array("Research", "assess_sort"));
+            $this->sort_type = is_numeric($result_table[0]->$s_column) ? "num" : "";
+            usort($result_table, array("Research", "assess_sort"));
         }
 
         $total_rows = count($result_table);
@@ -467,7 +471,7 @@ class Research extends MY_Controller {
         }
 
         if (empty($display_length)) {
-            $display_length  = $total_rows - $display_start;
+            $display_length = $total_rows - $display_start;
         }
 
         $echo = intval($this->input->get('sEcho'));
@@ -494,6 +498,7 @@ class Research extends MY_Controller {
                         $data_row->seo_l,
                         $data_row->duplicate_context,
                         $data_row->price_diff,
+                        json_encode($data_row)
                     );
                 }
                 if ($display_length > 0) {
@@ -918,7 +923,7 @@ class Research extends MY_Controller {
             'upload_dir' => $this->config->item('csv_upload_dir'),
             'param_name' => 'files',
             'delete_type' => 'POST',
-            'accept_file_types' => '/.+\.csv$/i',
+            'accept_file_types' => '/.+\.(csv|txt)$/i',
         ));
     }
 

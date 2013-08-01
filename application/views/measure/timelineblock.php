@@ -46,13 +46,21 @@
 			}
 		?>
 		<?php for($i = $start_it; $i <= $limit_it; $i++) { ?>
-			<?php if(count($webshoots_model->getWeekAvailableScreens($i, $year)) > 0) { $have_screen = 'have_screen'; } else { $have_screen = ''; } ?>
+			<?php 
+				$week_screens_count = count($webshoots_model->getWeekAvailableScreens($i, $year));
+				if($week_screens_count > 0 && $i == $week) {
+					$mixed_screen = ' mixed_screen';
+				} else {
+					$mixed_screen = '';
+				}
+			?>
+			<?php if($week_screens_count > 0) { $have_screen = 'have_screen'; } else { $have_screen = ''; } ?>
 			<?php if($i == $week) { $active = 'active'; $link_active = ' current_week'; } else { $active = ''; $link_active = ''; } ?>
 			<?php if($i <= $week) { ?>
-				<li data-week="<?php echo $i; ?>" class="page <?php echo $active; ?>"><a class="<?php echo $have_screen.$link_active; ?>" href="javascript:void(0)" onclick="locaHomePageWeekData('<?php echo $i; ?>')"><?php echo $i; ?></a></li>
+				<li data-week="<?php echo $i; ?>" class="page <?php echo $active; ?>"><a class="<?php echo $have_screen.$link_active.$mixed_screen; ?>" href="javascript:void(0)" onclick="locaHomePageWeekData('<?php echo $i; ?>')"><?php echo $i; ?></a></li>
 			<?php } else { ?>
 				<?php $block_next_sl = true; ?>
-				<li data-week="<?php echo $i; ?>" class="page disabled blocked"><a class="<?php echo $have_screen.$link_active; ?>" href="javascript:void(0)"><?php echo $i; ?></a></li>
+				<li data-week="<?php echo $i; ?>" class="page disabled blocked"><a class="<?php echo $have_screen.$link_active.$mixed_screen; ?>" href="javascript:void(0)"><?php echo $i; ?></a></li>
 			<?php } ?>
 		<?php } ?>
 
@@ -63,13 +71,21 @@
 			$limit_it = $start_it + 7; 
 		?>
 		<?php for($i = $start_it; $i < $limit_it; $i++) { ?>
-			<?php if(count($webshoots_model->getWeekAvailableScreens($i, $year)) > 0) { $have_screen = 'have_screen'; } else { $have_screen = ''; } ?>
+			<?php 
+				$week_screens_count = count($webshoots_model->getWeekAvailableScreens($i, $year));
+				if($week_screens_count > 0 && $i == $week) {
+					$mixed_screen = ' mixed_screen';
+				} else {
+					$mixed_screen = '';
+				}
+			?>
+			<?php if($week_screens_count > 0) { $have_screen = 'have_screen'; } else { $have_screen = ''; } ?>
 			<?php if($i == $week) { $link_active = ' current_week'; } else { $link_active = ''; } ?>
 			<?php if($i == $start_it) { $active = 'active'; } else { $active = ''; } ?>
 			<?php if($i <= $week) { ?>
-				<li data-week="<?php echo $i; ?>" class="page <?php echo $active; ?>"><a class="<?php echo $have_screen.$link_active; ?>" href="javascript:void(0)" onclick="locaHomePageWeekData('<?php echo $i; ?>')"><?php echo $i; ?></a></li>
+				<li data-week="<?php echo $i; ?>" class="page <?php echo $active; ?>"><a class="<?php echo $have_screen.$link_active.$mixed_screen; ?>" href="javascript:void(0)" onclick="locaHomePageWeekData('<?php echo $i; ?>')"><?php echo $i; ?></a></li>
 			<?php } else { ?>
-				<li data-week="<?php echo $i; ?>" class="page disabled blocked"><a class="<?php echo $have_screen.$link_active; ?>" href="javascript:void(0)"><?php echo $i; ?></a></li>
+				<li data-week="<?php echo $i; ?>" class="page disabled blocked"><a class="<?php echo $have_screen.$link_active.$mixed_screen; ?>" href="javascript:void(0)"><?php echo $i; ?></a></li>
 			<?php } ?>
 		<?php } ?>
 

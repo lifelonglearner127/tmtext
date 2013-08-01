@@ -645,4 +645,21 @@ $(document).ready(function () {
 
         return false;
     });
+
+    $(document).on("change", 'select[name="batches"]', function() {
+        var selectedBatch = $(this).find("option:selected").text();
+        $.post(base_url + 'index.php/research/filterCustomerByBatch', {
+            'batch': selectedBatch
+        }, function(data){
+            var oDropdown = $("#customer_dr").msDropdown().data("dd");
+            if(data != ''){
+                oDropdown.setIndexByValue(data);
+
+            } else {
+                oDropdown.setIndexByValue('All customers');
+            }
+            if (selectedBatch.length == 0)
+                oDropdown.setIndexByValue('All Customers');
+        });
+    });
 });
