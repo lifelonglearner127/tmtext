@@ -71,13 +71,18 @@ class Crawler_List_model extends CI_Model {
     }
 
 
-    function getAllNew()
+    function getAllNew($limit)
     {
     	$CI =& get_instance();
 
     	$this->db->select('id, url, category_id')
     		->where('user_id',  $CI->ion_auth->get_user_id())
     		->where('status', 'new');
+
+    	if (isset($limit) && $limit>0) {
+    		$this->db->limit($limit);
+    	}
+
         $query = $this->db->get($this->tables['crawler_list']);
 
         return $query->result();

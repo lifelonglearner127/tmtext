@@ -984,6 +984,37 @@ class Research extends MY_Controller {
         return $added;
     }
 
+   private function insert_rows_batch($batch_id, $_rows) {
+        $this->load->model('research_data_model');
+        $this->load->model('research_data_to_crawler_list_model');
+        $this->load->model('crawler_list_model');
+		$this->load->library('PageProcessor');
+
+    	$last_revision = $this->research_data_model->getLastRevision();
+        $added = 0;
+
+        $this->research_data_model->db->trans_start();
+        foreach($_rows as $_row){
+            // Insert to crawler list
+            if ($this->pageprocessor->isURL($_row)) {
+				$research_data_id = $this->research_data_model->insert($batch_id, $_row, '', '', '','', '', '', '', '', 0, '', 0,  $last_revision);
+                $added += 1;
+
+				$crawler_list_id = $this->crawler_list_model->insert($_row, 0);
+				$this->research_data_to_crawler_list_model->insert($research_data_id, $crawler_list_id);
+			}
+
+			if ( $added % 100 == 0 ) {
+				$this->research_data_model->db->trans_complete();
+				$this->research_data_model->db->trans_start();
+			}
+        }
+        $this->research_data_model->db->trans_complete();
+
+        return $added;
+    }
+
+
     public function sitemap_import() {
     	$this->load->model('batches_model');
         $this->load->model('customers_model');
@@ -996,7 +1027,7 @@ class Research extends MY_Controller {
 		}
 
 		if (count($urls)>0) {
-			$added = $this->insert_rows($batch_id, $urls);
+			$added = $this->insert_rows_batch($batch_id, $urls);
 			$response['message'] = $added .' added to batch';
 		} else {
 			$response['message'] = 'Can\'t find sitemap, robots.txt or urls';

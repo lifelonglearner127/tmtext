@@ -64,7 +64,7 @@ class PageProcessor {
 	public function getDomainPart($url) {
 		$part = explode('/', str_ireplace(array('http://','https://'),'', $url));
 		if (!empty($part[0]) && strpos($part[0], '.') !== false) {
-			$part = explode('.', str_ireplace(array('www.','www1.'),'', $part[0]));
+			$part = explode('.', str_ireplace(array('www.','www1.','shop.'),'', $part[0]));
 		} else {
 			return false;
 		}
@@ -84,6 +84,13 @@ class PageProcessor {
 			foreach ($result as &$value) {
 				$value = trim($value);
 			}
+
+			foreach ($result as $k => $v) {
+				if (empty($result[$k])) {
+					unset($result[$k]);
+				}
+			}
+
         	return $result;
         }
 
@@ -811,6 +818,203 @@ class PageProcessor {
 			'Price' => $price,
 			'Features' => $features
 		);
+	}
+
+
+	public function process_nordstrom(){
+		foreach($this->nokogiri->get('.product-content h1') as $item) {
+			$title = $item['#text'][0];
+		}
+
+		foreach($this->nokogiri->get('#productdetails #pdList .content') as $item) {
+			foreach($item['#text'] as $i) {
+				$line = trim($i);
+				if (!empty($line)) {
+					$description[] = $line;
+				}
+			}
+		}
+
+		foreach($this->nokogiri->get('#productdetails #pdList .content .style-features li') as $item) {
+			foreach($item['#text'] as $i) {
+				$line = trim($i);
+				if (!empty($line)) {
+					$description[] = $line;
+				}
+			}
+		}
+
+		$description = implode(' ',$description);
+
+		foreach($this->nokogiri->get('li.price span.regular') as $item) {
+			$i = str_ireplace('sale: ','',$item['#text'][0]);
+			if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $i, $match)) {
+				$price = $match[1];
+			}
+		}
+
+		return array(
+			'Product Name' => $title,
+			'Description' => $description,
+			'Price' => $price
+		);
+	}
+
+	public function process_macys(){
+		foreach($this->nokogiri->get('#productDescription h1#productTitle') as $item) {
+			$title = $item['#text'][0];
+		}
+
+		foreach($this->nokogiri->get('#pdpTabs #prdDesc #longDescription') as $item) {
+			foreach($item['#text'] as $i) {
+				$line = trim($i);
+				if (!empty($line)) {
+					$description[] = $line;
+				}
+			}
+		}
+
+		foreach($this->nokogiri->get('#pdpTabs #prdDesc #bullets li') as $item) {
+			foreach($item['#text'] as $i) {
+				$line = trim($i);
+				if (!empty($line)) {
+					$description[] = $line;
+				}
+			}
+		}
+
+		foreach($this->nokogiri->get('#productDetails #longDescription') as $item) {
+			foreach($item['#text'] as $i) {
+				$line = trim($i);
+				if (!empty($line)) {
+					$description[] = $line;
+				}
+			}
+		}
+
+		$description = implode(' ',$description);
+
+		foreach($this->nokogiri->get('#productDescription #priceInfo span.priceSale') as $item) {
+			$i = str_ireplace(array('sale: ', 'now '),'',$item['#text'][0]);
+			if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $i, $match)) {
+				$price = $match[1];
+			}
+		}
+
+		if(!isset($price)) {
+			foreach($this->nokogiri->get('#productDescription #priceInfo span') as $item) {
+				$i = str_ireplace('was ','',$item['#text'][0]);
+				if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $i, $match)) {
+					$price = $match[1];
+				}
+			}
+		}
+
+
+		$result = array(
+			'Product Name' => $title,
+			'Description' => $description,
+			'Price' => $price,
+		);
+
+		foreach ($result as $key => $value) {
+			if (empty($result[$key])) {
+				unset($result[$key]);
+			}
+		}
+
+		return $result;
+	}
+
+	public function process_neimanmarcus(){
+		foreach($this->nokogiri->get('#productDetails h1') as $item) {
+			foreach($item['#text'] as $i) {
+				$line = trim($i);
+				if (!empty($line)) {
+					$title = $line;
+				}
+			}
+		}
+
+		foreach($this->nokogiri->get('#productDetails table .productCutline') as $item) {
+			foreach($item['#text'] as $i) {
+				$line = trim($i);
+				if (!empty($line)) {
+					$description[] = $line;
+				}
+			}
+		}
+
+		foreach($this->nokogiri->get('#productDetails table .productCutline ul li') as $item) {
+			foreach($item['#text'] as $i) {
+				$line = trim($i);
+				if (!empty($line)) {
+					$description[] = $line;
+				}
+			}
+		}
+
+		foreach($this->nokogiri->get('#productDetails table .suiteTop') as $item) {
+			foreach($item['#text'] as $i) {
+				$line = trim($i);
+				if (!empty($line)) {
+					$description[] = $line;
+				}
+			}
+		}
+
+		foreach($this->nokogiri->get('#productDetails table .suiteProducts .suiteProductCutline ul li') as $item) {
+			foreach($item['#text'] as $i) {
+				$line = trim($i);
+				if (!empty($line)) {
+					$description[] = $line;
+				}
+			}
+		}
+
+		$description = implode(' ',$description);
+
+		foreach($this->nokogiri->get('.lineItem .lineItemData .lineItemInfo') as $item) {
+			if (isset($item['h2'])) {
+				foreach($item['h2'] as $i){
+					if($i['#text'][0] == $title ) {
+						if (isset($item['span'])) {
+							if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $item['span'][0]['#text'][0], $match)) {
+								$price = $match[1];
+							}
+						}
+					}
+				}
+			}
+		}
+
+		If (!isset($price)) {
+			foreach($this->nokogiri->get('.lineItem .lineItemData .lineItemInfo .adornmentPriceElement .pos1override') as $item) {
+				if ($item['class'] == 'price pos1override') {
+					if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $item['#text'][0], $match)) {
+						$price += (int)$match[1];
+					}
+				}
+			}
+		}
+
+		If (!isset($price)) {
+			foreach($this->nokogiri->get('.lineItem .lineItemData .lineItemInfo .adornmentPriceElement .pos2') as $item) {
+				if ($item['class'] == 'price pos2') {
+					if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $item['#text'][0], $match)) {
+						$price += (int)$match[1];
+					}
+				}
+			}
+		}
+
+		$result = array(
+			'Product Name' => $title,
+			'Description' => $description,
+			'Price' => number_format($price,2, '.', ''),
+		);
+
+		return $result;
 	}
 }
 

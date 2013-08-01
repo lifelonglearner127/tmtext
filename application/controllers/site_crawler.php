@@ -156,7 +156,7 @@ class Site_Crawler extends MY_Controller {
 		$this->load->model('crawler_list_prices_model');
 		$this->load->library('PageProcessor');
 
-		$rows = $this->crawler_list_model->getAllNew();
+		$rows = $this->crawler_list_model->getAllNew(100);
 		foreach( $rows as $data) {
 			$this->crawler_list_model->updateStatus($data->id, 'lock');
 
@@ -190,7 +190,7 @@ class Site_Crawler extends MY_Controller {
 				$this->crawler_list_model->updateStatus($data->id, 'finished');
 				$this->crawler_list_model->updated($data->id);
 			} else {
-				$this->crawler_list_model->updateStatus($data->id, 'new');
+				$this->crawler_list_model->updateStatus($data->id, 'failed');
 			}
 		}
 	}
@@ -261,7 +261,7 @@ class Site_Crawler extends MY_Controller {
 		$this->load->model('crawler_list_prices_model');
 		$this->load->library('PageProcessor');
 
-		$rows = $this->crawler_list_model->getAll();
+		$rows = $this->crawler_list_model->getAll(100);
 		foreach( $rows as $data) {
 			$this->crawler_list_model->updateStatus($data->id, 'lock');
 

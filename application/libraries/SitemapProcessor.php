@@ -37,7 +37,6 @@ class SitemapProcessor {
 			if ($obj->getName() == 'sitemapindex') {
 				foreach ($obj->sitemap as $xml_sitemap) {
 					$real_xml = file_get_contents($this->pre_download($xml_sitemap->loc));
-					var_dump($real_xml); die();
 					$real_obj = new SimpleXMLElement($real_xml);
 					if ($real_obj->getName() == 'urlset') {
 						foreach ($real_obj->url as $url) {

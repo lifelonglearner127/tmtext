@@ -104,7 +104,7 @@
         <button class="btn ml_10" id="add_to_batch" ><i class="icon-white icon-ok"></i>&nbsp;Add to batch</button>
         <button class="btn btn-danger ml_10 mt_10" id="delete_from_batch"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
     </div>
-    <div class="row-fluid" style="display:none">
+    <div class="row-fluid mt_20">
  		<div class="controls span7">
         	<button class="btn btn-success ml_10" id="import_from_sitemap"><i class="icon-white icon-ok"></i>&nbsp;Import Sitemap</button>
         	<div class="info ml_10" id="import_sitemap"></div>
