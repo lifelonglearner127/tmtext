@@ -591,6 +591,52 @@ class System extends MY_Controller {
 		}
 	}
 
+    public function upload_departments_categories()
+    {
+        $this->load->library('UploadHandler');
+
+        $this->output->set_content_type('application/json');
+        $this->uploadhandler->upload(array(
+            'script_url' => site_url('system/upload_departments_categories'),
+            'upload_dir' => $this->config->item('csv_upload_dir'),
+            'param_name' => 'files',
+            'delete_type' => 'POST',
+            'accept_file_types' => '/.+\.(txt|jl)$/i',
+        ));
+    }
+
+    public function save_departments_categories()
+    {
+        $this->load->model('department_members_model');
+        $this->load->model('site_categories_model');
+        $site_id = $this->input->post('site_id');
+        $site_name = explode(".", strtolower($this->input->post('site_name')));
+        $file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
+        $_rows = array();
+        if (($handle = fopen($file, "r")) !== FALSE) {
+            while (($data = fgetcsv($handle, 1000, "\n")) !== FALSE) {
+                if(!is_null($data[0]) && $data[0]!=''){
+                    $_rows[] = json_decode($data[0]);
+                }
+            }
+            fclose($handle);
+        }
+        foreach($_rows as $row){
+            if($row->level == 0){
+                $special = 0;
+                if($row->special!='' && !is_null($row->special)){
+                    $special = $row->special;
+                }
+                $this->site_categories_model->insert($site_id, $row->text, $row->url, $special, $row->parent_text);
+            }
+            if($row->level == 1){
+                $this->department_members_model->insert($site_name[0], $site_id, $row->text);
+            }
+        }
+        $response['message'] =  'File was added successfully';
+        $this->output->set_content_type('application/json')->set_output(json_encode($response));
+    }
+
 	public function upload_csv()
     {
 		$this->load->library('UploadHandler');
@@ -661,13 +707,20 @@ class System extends MY_Controller {
         $this->render();
     }
 
+    public function getCategoriesBySiteId()
+    {
+        $this->load->model('site_categories_model');
+        $result = $this->site_categories_model->getAllBySiteId($this->input->post('site_id'));
+        $this->output->set_content_type('application/json')->set_output(json_encode($result));
+    }
+
     public function category_list()
     {
-        $this->load->model('category_model');
-        $categories = $this->category_model->getAll();
+        $this->load->model('site_categories_model');
+        $categories = $this->site_categories_model->getAll();
         $category_list = array();
         foreach($categories as $category){
-            array_push($category_list, $category->name);
+            array_push($category_list, $category->text);
         }
         return $category_list;
 

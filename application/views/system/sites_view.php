@@ -30,6 +30,22 @@
                                 }
                             }
                         });
+                    $.post(base_url + 'index.php/measure/getDepartmentsByCustomer', {'customer_name': $(this).text()}, function(data) {
+                        $("select[name='department']").empty();
+                        if(data.length > 0){
+                            for(var i=0; i<data.length; i++){
+                                $("select[name='department']").append("<option value='"+data[i].id+"'>"+data[i].text+"</option>");
+                            }
+                        }
+                    });
+                    $.post(base_url + 'index.php/system/getCategoriesBySiteId', {'site_id': $(this).val()}, function(data) {
+                        $("select[name='category']").empty();
+                        if(data.length > 0 ){
+                            for(var i=0; i<data.length; i++){
+                                $("select[name='category']").append("<option value='"+data[i].id+"'>"+data[i].text+"</option>");
+                            }
+                        }
+                    });
                 });
             }
             selectOption();
@@ -234,7 +250,36 @@
                 <div class="row-fluid">
                     <label>Department:</label>
                     <?php  echo form_dropdown('department', $departmens_list, null, 'class="inline_block lh_30 w_375 mb_reset"'); ?>
-                    <button id="upload_categories_departments" class="btn btn-primary" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Upload</button>
+                    <button class="btn btn-success" id="csv_import_create_batch" style="display:none"><i class="icon-white icon-ok"></i>&nbsp;Import</button>
+								<span class="btn btn-success fileinput-button ml_10">
+									Upload
+									<i class="icon-plus icon-white"></i>
+									<input type="file" multiple="" name="files[]" id="fileupload1">
+								</span>
+                    <div id="files1" style="float:left"></div>
+                    <input type="hidden" name="choosen_file" />
+                    <div class="info ml_10" style="float:left"></div>
+                    <script>
+                        $(function () {
+                            var url = '<?php echo site_url('system/upload_departments_categories');?>';
+                            $('#fileupload1').fileupload({
+                                url: url,
+                                dataType: 'json',
+                                done: function (e, data) {
+                                    $('input[name="choosen_file"]').val(data.result.files[0].name);
+
+                                    var url = base_url+'index.php/system/save_departments_categories';
+                                    $.post(url, { 'choosen_file': $('input[name="choosen_file"]').val(),
+                                            'site_id': $('select#sites').find('option:selected').val(),
+                                            'site_name': $('select#sites').find('option:selected').text()
+                                        }, function(data) {
+                                            //$('<p/>').text(data.message).appendTo('#files1');
+                                    }, 'json');
+                                }
+                            });
+                        });
+                    </script>
+
                     <button id="delete_department" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
                     <button id="delete_all_departments" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete All</button>
                 </div>

@@ -35,4 +35,13 @@ class Department_members_model extends CI_Model {
         $query = $this->db->query($sql);
         return $query->result();
     }
+
+    function insert($site_name, $site_id, $text)
+    {
+        $this->text = $text;
+        $this->site = $site_name;
+        $this->site_id = $site_id;
+        $this->db->insert($this->tables['department_members'], $this);
+        return $this->db->insert_id();
+    }
 }
