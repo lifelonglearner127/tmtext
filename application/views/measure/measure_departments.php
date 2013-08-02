@@ -3,6 +3,7 @@
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure');?>">Home Pages</a></li>
         <li class="active"><a data-toggle="tab" href="<?php echo site_url('measure/measure_departments');?>">Departments & Categories</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_products');?>">Products</a></li>
+        <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_social'); ?>">Social</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_pricing'); ?>">Pricing</a></li>
     </ul>
     <div class="tab-content">
@@ -84,7 +85,6 @@
                 <?php //var_dump($departmens_list);?>
                 <?php  echo form_dropdown('department', $departmens_list, null, 'class="inline_block lh_30 w_375 mb_reset"'); ?>
                 <!-- <input type="text" id="department" name="department" value="" class="inline_block lh_30 w_375 mb_reset" placeholder=""/>-->
-                <button id="department_show" type="button" class="btn ml_10" >Show</button>
                 <button id="department_next" type="button" class="btn ml_10" >Next</button>
                 <button id="department_go" type="button" class="btn ml_10" >Go</button>
             </div>
@@ -92,7 +92,6 @@
             <div style='margin-left: 0px;' class='span12 mt_10'>
                 <span class='inline_block lh_30 mr_10 span2'>Category:</span>
                 <?php  echo form_dropdown('category', $category_list, null, 'class="inline_block lh_30 w_375 mb_reset"'); ?>
-                <button id="category_show" type="button" class="btn ml_10" >Show</button>
                 <button id="category_next" type="button" class="btn ml_10" >Next</button>
                 <button id="category_go" type="button" class="btn ml_10" >Go</button>
             </div>
@@ -172,9 +171,6 @@
                 <table>
             </div-->
             <div class="clear"></div>
-            <img  src="../../img/marketing.jpg"  class="mt_30" >
-            <img  src="../../img/pricing.jpg"  class="mt_30 ml_120">
-            <img  src="../../img/inventory.jpg"  class="mt_30 ml_120">
 			<!--div id='hp_ajax_content' class='span12 body_section ml_disable mt_30'>
 				<div class='ph_placeholder' data-week='1'>
 					<?php
@@ -300,5 +296,11 @@
                 }
             }, 100);
         });
+
+        $('button#department_next').click(function(){
+            var opt = $('select[name="department"]').find('option:selected');
+            $('select[name="department"]').removeAttr('selected');
+            $('select[name="department"]').find(opt).next().attr('selected', 'selected');
+        })
 	});
 </script>

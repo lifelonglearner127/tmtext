@@ -432,6 +432,7 @@ class Measure extends MY_Controller {
         $this->load->model('department_model');
         $this->load->model('site_categories_model');
 
+        $this->data['departmens_list'][] = 'All';
         foreach ($this->department_model->getAll() as $row) {
             $this->data['departmens_list'][$row->id] = $row->short_name;
         }
@@ -442,6 +443,7 @@ class Measure extends MY_Controller {
         $this->data['customers_list'] = $this->customers_list_new();
         $this->render();
     }
+
     public function getDepartmentsByCustomer(){
         $this->load->model('department_members_model');
         $customer = explode(".", $this->input->post('customer_name'));
@@ -470,6 +472,10 @@ class Measure extends MY_Controller {
     }
 
     public function measure_categories() {
+        $this->render();
+    }
+
+    public function measure_social() {
         $this->render();
     }
 
