@@ -22,13 +22,16 @@ import re
 class CaturlsSpider(BaseSpider):
 
 	name = "producturls"
-	allowed_domains = ["staples.com"]
+	allowed_domains = ["staples.com", "bloomingdales.com"]
 
 	# store the cateory page url given as an argument into a field and add it to the start_urls list
 	def __init__(self, cat_page):
 		self.cat_page = cat_page
 		self.start_urls = [cat_page]
+		# staples televisions
 		#self.start_urls = ["http://www.staples.com/Televisions/cat_CL142471"]
+		# bloomingdales sneakers
+		#self.start_urls = ["http://www1.bloomingdales.com/shop/shoes/sneakers?id=17400"]
 		
 
 	def parse(self, response):
@@ -36,7 +39,7 @@ class CaturlsSpider(BaseSpider):
 		items = []
 
 		# extract site domain
-		m = re.match("http://www\.([^\.]+)\.com.*", response.url)
+		m = re.match("http://www1?\.([^\.]+)\.com.*", response.url)
 		if m:
 			site = m.group(1)
 		else:
@@ -91,7 +94,7 @@ class CaturlsSpider(BaseSpider):
 				#resp_for_scrapy = TextResponse(html_str)
 
 				# pass first page to parsePage function to extract products
-				items += self.parsePage(resp_for_scrapy)
+				items += self.parsePage_staples(resp_for_scrapy)
 
 				next_page = None
 				#TODO: this doesn't work
@@ -107,8 +110,62 @@ class CaturlsSpider(BaseSpider):
 
 			return items
 
+		# handle bloomingdales sneakers
+		if site == 'bloomingdales':
+			driver = webdriver.Firefox()
+        	driver.get(response.url)
 
-	def parsePage(self, response):
+        	 # use selenium to select USD currency
+       
+	        link = driver.find_element_by_xpath("//li[@id='bl_nav_account_flag']//a")
+	        link.click()
+	        time.sleep(5)
+	        button = driver.find_element_by_id("iShip_shipToUS")
+	        button.click()
+	        time.sleep(10)
+
+	        # convert html to "nice format"
+	        text_html = driver.page_source.encode('utf-8')
+	        html_str = str(text_html)
+
+	        # this is a hack that initiates a "TextResponse" object (taken from the Scrapy module)
+	        resp_for_scrapy = TextResponse('none',200,{},html_str,[],None)
+	       
+
+        	# parse first page with parsePage_bloomingdales function
+        	items += self.parsePage_bloomingdales(resp_for_scrapy)
+        	hxs = HtmlXPathSelector(resp_for_scrapy)
+
+        	# while there is a next page get it and pass it to parsePage_bloomingdales
+        	next_page_url = hxs.select("//li[@class='nextArrow']//a")
+	        while next_page_url:
+	            # use selenium to click on next page arrow and retrieve the resulted page if any
+	            next = driver.find_element_by_xpath("//li[@class='nextArrow']//a")
+	            next.click()
+
+	            time.sleep(5)
+
+	            # convert html to "nice format"
+	            text_html = driver.page_source.encode('utf-8')
+	            html_str = str(text_html)
+
+	            # this is a hack that initiates a "TextResponse" object (taken from the Scrapy module)
+	            resp_for_scrapy = TextResponse('none',200,{},html_str,[],None)
+
+	            # pass the page to parsePage function to extract products
+	            items += self.parsePage_bloomingdales(resp_for_scrapy)
+
+	            hxs = HtmlXPathSelector(resp_for_scrapy)
+	            next_page_url = hxs.select("//li[@class='nextArrow']//a")
+
+	        driver.close()
+	        
+	        return items
+
+			
+
+	# parse staples page and extract product URLs
+	def parsePage_staples(self, response):
 
 		hxs = HtmlXPathSelector(response)
 
@@ -122,4 +179,15 @@ class CaturlsSpider(BaseSpider):
 			item['product_url'] = root_url + product.select("@href").extract()[0]
 			items.append(item)
 
+		return items
+
+	# parse bloomingdales page and extract product URLs
+	def parsePage_bloomingdales(self, response):
+		hxs = HtmlXPathSelector(response)
+		items = []
+		products = hxs.select("//div[@class='shortDescription']")
+		for product in products:
+			item = ProductItem()
+			item['product_url'] = product.select("a/@href").extract()[0]
+			items.append(item)
 		return items

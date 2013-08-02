@@ -130,8 +130,6 @@ class BloomingdalesSpider(BaseSpider):
 
 
         next_page_url = hxs.select("//li[@class='nextArrow']//a")
-        if not next_page_url:
-            print "NO NEXT PAGE--------------------------------"
         while next_page_url:
             # use selenium to click on next page arrow and retrieve the resulted page if any
             next = driver.find_element_by_xpath("//li[@class='nextArrow']//a")
@@ -151,8 +149,6 @@ class BloomingdalesSpider(BaseSpider):
 
             hxs = HtmlXPathSelector(resp_for_scrapy)
             next_page_url = hxs.select("//li[@class='nextArrow']//a")
-            if next_page_url:
-                print "NEXT_PAGE_URL", next_page_url
 
         driver.close()
 
