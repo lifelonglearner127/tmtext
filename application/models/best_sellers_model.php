@@ -45,7 +45,7 @@ class Best_sellers_model extends CI_Model {
         return $query->result();
     }
 
-    function insert($site_id, $page_title, $url, $brand='', $rank='', $price='',
+    function insert($site_id, $page_title, $url, $brand='', $rank='', $department='', $price='',
                     $list_name='', $product_name='', $listprice='')
     {
         $this->site_id = $site_id;
@@ -53,6 +53,7 @@ class Best_sellers_model extends CI_Model {
         $this->url = $url;
         $this->brand = $brand;
         $this->rank = $rank;
+        $this->department = $department;
         $this->price = $price;
         $this->list_name = $list_name;
         $this->product_name = $product_name;

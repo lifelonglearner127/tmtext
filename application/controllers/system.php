@@ -719,16 +719,20 @@ class System extends MY_Controller {
             fclose($handle);
         }
         foreach($_rows as $row){
-            $listprice = '';
+            $listprice ='';
             $brand = '';
+            $department = '';
             if(!is_null($row->listprice)){
                 $listprice = $row->listprice;
             }
             if(!is_null( $row->brand)){
                 $brand = $row->brand;
             }
+            if(!is_null( $row->department)){
+                $department = $row->department;
+            }
             $this->best_sellers_model->insert($site_id, $row->page_title, $row->url, $brand,
-                $row->rank, $row->price, $row->list_name, $row->product_name, $listprice);
+                $row->rank, $department, $row->price, $row->list_name, $row->product_name, $listprice);
         }
         $response['message'] =  'File was added successfully';
         $this->output->set_content_type('application/json')->set_output(json_encode($response));
