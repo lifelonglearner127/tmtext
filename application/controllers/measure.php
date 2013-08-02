@@ -430,19 +430,42 @@ class Measure extends MY_Controller {
 
     public function measure_departments() {
         $this->load->model('department_model');
+        $this->load->model('site_categories_model');
 
         foreach ($this->department_model->getAll() as $row) {
             $this->data['departmens_list'][$row->id] = $row->short_name;
+        }
+        foreach ($this->site_categories_model->getAll() as $row) {
+            $this->data['category_list'][$row->id] = $row->text;
         }
 
         $this->data['customers_list'] = $this->customers_list_new();
         $this->render();
     }
     public function getDepartmentsByCustomer(){
-        $this->load->model('customers_model');
         $this->load->model('department_members_model');
         $customer = explode(".", $this->input->post('customer_name'));
         $result = $this->department_members_model->getAllByCustomer(strtolower($customer[0]));
+        $this->output->set_content_type('application/json')->set_output(json_encode($result));
+    }
+
+    public function getCategoriesByCustomer(){
+        $this->load->model('sites_model');
+        $this->load->model('site_categories_model');
+        $site_id = $this->sites_model->getIdByName($this->input->post('customer_name'));
+        $result = $this->site_categories_model->getAllBySiteId($site_id);
+        $this->output->set_content_type('application/json')->set_output(json_encode($result));
+    }
+
+    public function getUrlByDepartment(){
+        $this->load->model('department_members_model');
+        $result = $this->department_members_model->getUrlByDepartment($this->input->post('department_id'));
+        $this->output->set_content_type('application/json')->set_output(json_encode($result));
+    }
+
+    public function getUrlByCategory(){
+        $this->load->model('site_categories_model');
+        $result = $this->site_categories_model->getUrlByCategory($this->input->post('category_id'));
         $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }
 

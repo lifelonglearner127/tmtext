@@ -40,6 +40,12 @@ class Site_categories_model extends CI_Model {
         return $query->result();
     }
 
+    function getUrlByCategory($category_id){
+        $sql = "SELECT `url` FROM `site_categories` WHERE `id` = '".$category_id."'";
+        $query = $this->db->query($sql);
+        return $query->result();
+    }
+
     function insert($site_id, $text, $url, $special=0, $parent_text)
     {
         $this->text = $text;

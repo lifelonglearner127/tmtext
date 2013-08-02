@@ -87,13 +87,15 @@
 				<!-- <input type="text" id="department" name="department" value="" class="inline_block lh_30 w_375 mb_reset" placeholder=""/>-->
 				<button id="department_show" type="button" class="btn ml_10" >Show</button>
 				<button id="department_next" type="button" class="btn ml_10" >Next</button>
+                <button id="department_go" type="button" class="btn ml_10" >Go</button>
 			</div>
 
 			<div style='margin-left: 0px;' class='span12 mt_10'>
 				<span class='inline_block lh_30 mr_10 span2'>Category:</span>
-				<input type="text" id="category" name="category" value="" class="inline_block lh_30 w_375 mb_reset" placeholder=""/>
+                <?php  echo form_dropdown('category', $category_list, null, 'class="inline_block lh_30 w_375 mb_reset"'); ?>
 				<button id="category_show" type="button" class="btn ml_10" >Show</button>
 				<button id="category_next" type="button" class="btn ml_10" >Next</button>
+                <button id="category_go" type="button" class="btn ml_10" >Go</button>
 			</div>
 
             <div class='span12 mt_10'>
@@ -198,6 +200,33 @@
                     }
                 }
             });
+            $.post(base_url + 'index.php/measure/getCategoriesByCustomer', {'customer_name': new_caret}, function(data) {
+                $("select[name='category']").empty();
+                if(data.length > 0){
+                    for(var i=0; i<data.length; i++){
+                        $("select[name='category']").append("<option value='"+data[i].id+"'>"+data[i].text+"</option>");
+                    }
+                }
+            });
 		});
+        $('button#department_go').click(function(){
+            $.post(base_url + 'index.php/measure/getUrlByDepartment', {
+                'department_id': $('select[name="department"]').find("option:selected").val()
+            }, function(data) {
+               if(data[0].url!=''){
+                   window.open(data[0].url,'_blank');
+               }
+            });
+        });
+
+        $('button#category_go').click(function(){
+            $.post(base_url + 'index.php/measure/getUrlByCategory', {
+                'category_id': $('select[name="category"]').find("option:selected").val()
+            }, function(data) {
+                if(data[0].url!=''){
+                    window.open(data[0].url,'_blank');
+                }
+            });
+        });
 	});
 </script>

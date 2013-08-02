@@ -43,6 +43,12 @@ class Department_members_model extends CI_Model {
         return $query->result();
     }
 
+    function getUrlByDepartment($id){
+        $sql = "SELECT `url` FROM `department_members` WHERE id=".$id;
+        $query = $this->db->query($sql);
+        return $query->result();
+    }
+
     function insert($site_name, $site_id, $text)
     {
         $this->text = $text;
