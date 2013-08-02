@@ -6,6 +6,7 @@ from Toysrus.items import ProductItem
 import re
 import sys
 import string
+import datetime
 
 ################################
 # Run with 
@@ -314,6 +315,9 @@ class BestsellerSpider(BaseSpider):
 
         item['page_title'] = page_title
         item['product_name'] = name[0]
+
+        # add date
+        item['date'] = datetime.date.today().isoformat()
 
         return item
 

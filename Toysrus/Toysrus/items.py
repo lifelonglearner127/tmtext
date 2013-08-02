@@ -26,3 +26,4 @@ class ProductItem(Item):
 	SKU = Field() # SKU code of product (where available)
 	UPC = Field() # UPC code of product (where available)
 	bspage_url = Field() # url of the bestsellers page the product was found on (for department-wise bestsellers)
+	date = Field() # date when this was extracted
