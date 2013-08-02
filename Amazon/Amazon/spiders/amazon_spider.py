@@ -6,6 +6,7 @@ from scrapy.http import Request
 from scrapy.http import Response
 import re
 import sys
+import datetime
 
 ################################
 # Run with 
@@ -90,9 +91,8 @@ class BestsellerSpider(BaseSpider):
         departments = []
 
         # extract department name and url for each department in menu
-        #TODO: add info about availability
-        #TODO: manage exceptions: MP3
-        #                         lawn and garden is missing page 3
+        #TODO: add info about availability?
+        
         for department_link in department_links:
             department = {"url" : department_link.select("@href").extract()[0], "text" : department_link.select("text()").extract()[0]}
             departments.append(department)
@@ -169,6 +169,9 @@ class BestsellerSpider(BaseSpider):
             #dept_name = hxs.select("//ul[@id='zg_browseRoot']//span[@class='zg_selected']/text()").extract()[0].strip()
             item['department'] = response.meta['dept_name']#dept_name
 
+            # add url of bestsellers page this was found on
+            item['bspage_url'] = response.url
+
             # pass the item to the parseProduct function to extract info from product page
             request = Request(item['url'], callback = self.parseProduct)
             request.meta['item'] = item
@@ -228,5 +231,8 @@ class BestsellerSpider(BaseSpider):
         #     product_name = "nume"
         # else:
         item['product_name'] = product_name[0].strip()
+
+        # add date
+        item['date'] = datetime.date.today().isoformat()
 
         return item
