@@ -5,6 +5,7 @@ from Walmart.items import ProductItem
 from scrapy.http import Request
 import sys
 import re
+import datetime
 
 ################################
 # Run with 
@@ -149,6 +150,8 @@ class BestsellerSpider(BaseSpider):
             if listprice:
                 item['listprice'] = listprice[0]
 
+            item['bspage_url'] = response.url
+
             # pass the item to the parseProduct method
             request = Request(item['url'], callback = self.parseProduct)
             request.meta['item'] = item
@@ -186,5 +189,8 @@ class BestsellerSpider(BaseSpider):
         #     page_title = m3.group(1).strip()
 
         item['page_title'] = page_title
+
+        # add date
+        item['date'] = datetime.date.today().isoformat()
 
         yield item
