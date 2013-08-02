@@ -40,14 +40,14 @@
                         <?php
                         if($this->ion_auth->is_admin($this->ion_auth->get_user_id())){
                             if(count($customers_list) > 0) { ?>
-                                <div id="hp_boot_drop_<?php echo $v; ?>" class="btn-group <?php echo $dropup; ?> hp_boot_drop pull-right mr_10">
-                                    <button class="btn btn-danger btn_caret_sign">[ Choose site ]</button>
+                                <div id="hp_boot_drop" class="btn-group <?php echo $dropup; ?> hp_boot_drop pull-right mr_10">
+                                    <button class="btn btn-danger btn_caret_sign" >[ Choose site ]</button>
                                     <button class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
                                         <span class="caret"></span>
                                     </button>
                                     <ul class="dropdown-menu">
                                         <?php foreach($customers_list as $val) { ?>
-                                            <li><a data-item="<?php echo $v; ?>" data-value="<?php echo $val['name_val']; ?>" href="javascript:void(0)"><?php echo $val['name']; ?></a></li>
+                                            <li><a data-item="<?php echo $val['id']; ?>" data-value="<?php echo $val['name_val']; ?>" href="javascript:void(0)"><?php echo $val['name']; ?></a></li>
                                         <?php } ?>
                                     </ul>
                                 </div>
@@ -234,7 +234,10 @@
 		$(".hp_boot_drop .dropdown-menu > li > a").bind('click', function(e) {
 			var new_caret = $.trim($(this).text());
 			var item_id = $(this).data('item');
-			$("#hp_boot_drop_" + item_id + " .btn_caret_sign").text(new_caret);
+            $("#hp_boot_drop .btn_caret_sign").text(new_caret);
+            dataTable.fnDestroy();
+            dataTable = undefined;
+            readBestSellers();
             $.post(base_url + 'index.php/measure/getDepartmentsByCustomer', {'customer_name': new_caret}, function(data) {
                 $("select[name='department']").empty();
                 if(data.length > 0){

@@ -40,7 +40,7 @@ class Best_sellers_model extends CI_Model {
     }
 
     function getAllBySiteId($site_id){
-        $sql = "SELECT `id`, `page_title` FROM `best_sellers` WHERE `site_id` = '".$site_id."' ORDER BY `page_title` ASC";
+        $sql = "SELECT * FROM `best_sellers` WHERE `site_id` = '".$site_id."' ORDER BY `page_title` ASC";
         $query = $this->db->query($sql);
         return $query->result();
     }

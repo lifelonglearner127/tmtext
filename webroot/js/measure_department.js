@@ -145,7 +145,8 @@ function readBestSellers() {
     $.ajax({
         url: readUrl,
         dataType: 'json',
-        data:{},
+        type: "POST",
+        data:{ 'site': $(".btn_caret_sign").text() },
         success: function( response ) {
             for( var i in response ) {
                 response[ i ].updateLink = updateUrl + '/' + response[ i ].id;

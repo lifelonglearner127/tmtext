@@ -1096,8 +1096,14 @@ class Measure extends MY_Controller {
     public function get_best_sellers()
     {
         $this->load->model('best_sellers_model');
-        $output = $this->best_sellers_model->getAll();
-
+        $this->load->model('sites_model');
+        $site_id = '';
+        if($this->input->post('site')!=''){
+            $site_id = $this->sites_model->getIdByName($this->input->post('site'));
+            $output = $this->best_sellers_model->getAllBySiteId($site_id);
+        } else{
+            $output = $this->best_sellers_model->getAll();
+        }
         $this->output->set_content_type('application/json')
             ->set_output(json_encode($output));
     }
