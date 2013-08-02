@@ -6,6 +6,7 @@ from scrapy.http import Request
 from scrapy.http import TextResponse
 from selenium import webdriver
 import re
+import datetime
 import time
 import sys
 
@@ -194,6 +195,8 @@ class BloomingdalesSpider(BaseSpider):
             yield request
 
     def parseProduct(self, response):
+
+        #TODO: add date
         hxs = HtmlXPathSelector(response)
         product_name = hxs.select("//h1[@id='productTitle']/text()").extract()[0]
 
@@ -208,5 +211,8 @@ class BloomingdalesSpider(BaseSpider):
 
         item['page_title'] = page_title
         item['product_name'] = product_name
+
+        # add date
+        item['date'] = datetime.date.today().isoformat()
 
         return item
