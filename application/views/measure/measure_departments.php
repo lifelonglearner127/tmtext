@@ -6,12 +6,12 @@
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_pricing'); ?>">Pricing</a></li>
     </ul>
     <div class="tab-content">
-		<div class="row-fluid home_pages">
 
-			<div class='span12 head_section'>
+        <div class="row-fluid home_pages">
+            <div class='span12 head_section'>
 
-				<div class='head_line_2'>
-					<!--div class="span2">View Reports for:</div-->
+                <div class='head_line_2'>
+                    <!--div class="span2">View Reports for:</div-->
                     <div class="span10">
                         <style type="text/css">
                             .temp_li{
@@ -37,8 +37,8 @@
                             <li class="temp_li ml_50"><a href="#">Entire site</a></li>
                         </ul>
                         <?php
-                            if($this->ion_auth->is_admin($this->ion_auth->get_user_id())){
-                                if(count($customers_list) > 0) { ?>
+                        if($this->ion_auth->is_admin($this->ion_auth->get_user_id())){
+                            if(count($customers_list) > 0) { ?>
                                 <div id="hp_boot_drop_<?php echo $v; ?>" class="btn-group <?php echo $dropup; ?> hp_boot_drop pull-right mr_10">
                                     <button class="btn btn-danger btn_caret_sign">[ Choose site ]</button>
                                     <button class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
@@ -51,23 +51,23 @@
                                     </ul>
                                 </div>
                             <?php }
-                            }
+                        }
                         ?>
                     </div>
-					<div class="span2 w_100 ml_disable">
-						<select id='year_s' class='year_s' onchange="changeHomePageYersHandler()">
-							<?php for($i = 1980; $i <= 2013; $i++) { ?>
-								<?php $selected = ""; if($i == 2013) $selected = 'selected'; ?>
-								<option <?php echo $selected; ?> value="<?php echo $i; ?>"><?php echo $i; ?></option>
-							<?php } ?>
-						</select>
-					</div>
+                    <div class="span2 w_100 ml_disable">
+                        <select id='year_s' class='year_s' onchange="changeHomePageYersHandler()">
+                            <?php for($i = 1980; $i <= 2013; $i++) { ?>
+                                <?php $selected = ""; if($i == 2013) $selected = 'selected'; ?>
+                                <option <?php echo $selected; ?> value="<?php echo $i; ?>"><?php echo $i; ?></option>
+                            <?php } ?>
+                        </select>
+                    </div>
 
-					<!--div class="span1 ml_disable">week:</div>
-					<div class='span6 ml_disable'>
-						<div class="pagination">
-							<ul>
-								<li class="page_prev disabled"><a onclick="prevLocaHomePageWeekData()" href="javascript:void(0)">&laquo;</a></li>
+                    <!--div class="span1 ml_disable">week:</div>
+                    <div class='span6 ml_disable'>
+                        <div class="pagination">
+                            <ul>
+                                <li class="page_prev disabled"><a onclick="prevLocaHomePageWeekData()" href="javascript:void(0)">&laquo;</a></li>
 								<li data-week='1' class="page active"><a href="javascript:void(0)" onclick="locaHomePageWeekData('1')">1</a></li>
 								<li data-week='2' class='page'><a href="javascript:void(0)" onclick="locaHomePageWeekData('2')">2</a></li>
 								<li data-week='3' class='page'><a href="javascript:void(0)" onclick="locaHomePageWeekData('3')">3</a></li>
@@ -77,28 +77,75 @@
 							</ul>
 						</div>
 					</div-->
-				</div>
-			</div>
-
-			<div style='margin-left: 0px;' class='span12 mt_10'>
-				<span class='inline_block lh_30 mr_10 span2'>Department:</span>
-				<?php //var_dump($departmens_list);?>
-				<?php  echo form_dropdown('department', $departmens_list, null, 'class="inline_block lh_30 w_375 mb_reset"'); ?>
-				<!-- <input type="text" id="department" name="department" value="" class="inline_block lh_30 w_375 mb_reset" placeholder=""/>-->
-				<button id="department_show" type="button" class="btn ml_10" >Show</button>
-				<button id="department_next" type="button" class="btn ml_10" >Next</button>
+                </div>
+            </div>
+            <div style='margin-left: 0px;' class='span12 mt_10'>
+                <span class='inline_block lh_30 mr_10 span2'>Department:</span>
+                <?php //var_dump($departmens_list);?>
+                <?php  echo form_dropdown('department', $departmens_list, null, 'class="inline_block lh_30 w_375 mb_reset"'); ?>
+                <!-- <input type="text" id="department" name="department" value="" class="inline_block lh_30 w_375 mb_reset" placeholder=""/>-->
+                <button id="department_show" type="button" class="btn ml_10" >Show</button>
+                <button id="department_next" type="button" class="btn ml_10" >Next</button>
                 <button id="department_go" type="button" class="btn ml_10" >Go</button>
-			</div>
+            </div>
 
-			<div style='margin-left: 0px;' class='span12 mt_10'>
-				<span class='inline_block lh_30 mr_10 span2'>Category:</span>
+            <div style='margin-left: 0px;' class='span12 mt_10'>
+                <span class='inline_block lh_30 mr_10 span2'>Category:</span>
                 <?php  echo form_dropdown('category', $category_list, null, 'class="inline_block lh_30 w_375 mb_reset"'); ?>
-				<button id="category_show" type="button" class="btn ml_10" >Show</button>
-				<button id="category_next" type="button" class="btn ml_10" >Next</button>
+                <button id="category_show" type="button" class="btn ml_10" >Show</button>
+                <button id="category_next" type="button" class="btn ml_10" >Next</button>
                 <button id="category_go" type="button" class="btn ml_10" >Go</button>
-			</div>
+            </div>
+            <div class="clear"></div>
+        </div>
+		<div class="row-fluid home_pages">
+            <!-- Table for results -->
+                    <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/smoothness/jquery-ui-1.8.2.custom.css" />
+                    <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/styles.css" />
+                    <div class="table_results">
+                        <div id="tabs" class="mt_10">
 
-            <div class='span12 mt_10'>
+                            <div id="read">
+                                <table id="records">
+                                    <thead>
+                                    <tr>
+                                        <th>Rank</th>
+                                        <th>Product Name</th>
+                                        <th>URL</th>
+                                        <th><div class="draggable">Actions</div></th>
+                                    </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+
+                        </div> <!-- end tabs -->
+
+                        <div id="ajaxLoadAni">
+                            <span>Loading...</span>
+                        </div>                     <!-- message dialog box -->
+                        <div id="msgDialog"><p></p></div>
+
+                        <script type="text/javascript" src="<?php echo base_url();?>js/jquery-templ.js"></script>
+                        <script type="text/javascript" src="<?php echo base_url();?>js/jquery.validate.min.js"></script>
+                        <script type="text/javascript" src="<?php echo base_url();?>js/jquery.dataTables.min.js"></script>
+
+                        <script type="text/template" id="readTemplate">
+                            <tr id="${id}">
+                                <td>${rank}</td>
+                                <td>${product_name}</td>
+                                <td>${url}</td>
+                                <td nowrap><a class="updateBtn icon-edit" style="float:left;" href="${updateLink}"></a>
+                                    <a class="deleteBtn icon-remove ml_5" href="${deleteLink}"></a>
+                                </td>
+                            </tr>
+                        </script>
+
+                        <script type="text/javascript" src="<?php echo base_url();?>js/measure_department.js"></script>
+                    </div>
+            <!-- End of table for results -->
+
+            <!--div class='span12 mt_10'>
                 <table class="rank_table mt_30">
                     <thead>
                         <th>Rank</th>
@@ -123,7 +170,7 @@
                         </tr>
                     </tbody>
                 <table>
-            </div>
+            </div-->
             <div class="clear"></div>
             <img  src="../../img/marketing.jpg"  class="mt_30" >
             <img  src="../../img/pricing.jpg"  class="mt_30 ml_120">

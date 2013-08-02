@@ -34,7 +34,7 @@ class Best_sellers_model extends CI_Model {
 
     function getAll()
     {
-        $sql = "SELECT `id`, `page_title` FROM `best_sellers` group by `page_title` ORDER BY `page_title` ASC";
+        $sql = "SELECT * FROM `best_sellers` group by `page_title` ORDER BY `page_title` ASC";
         $query = $this->db->query($sql);
         return $query->result();
     }

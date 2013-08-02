@@ -1042,4 +1042,13 @@ class Measure extends MY_Controller {
                 ->set_output(json_encode($data));
     }
 
+    public function get_best_sellers()
+    {
+        $this->load->model('best_sellers_model');
+        $output = $this->best_sellers_model->getAll();
+
+        $this->output->set_content_type('application/json')
+            ->set_output(json_encode($output));
+    }
+
 }

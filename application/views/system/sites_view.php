@@ -221,8 +221,7 @@
                         <div class="clear-fix"></div>
                 </div>
                 <div class="row-fluid mt_10">
-                    <div class="aclist general">
-                        <label>Sites:</label>
+                    <div class="aclis">
                         <?php
                             if(count($sites) > 0) { ?>
                                 <div id="sites" class="btn-group hp_boot_drop mr_10">
