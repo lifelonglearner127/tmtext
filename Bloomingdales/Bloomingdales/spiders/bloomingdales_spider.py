@@ -59,21 +59,13 @@ class BloomingdalesSpider(BaseSpider):
 
     def parse(self, response):
 
-        # list of bestsellers pages, product ordered by bestseller
-
-        #TODO: can't parse page 2 pf shoes
-        #TODO: they're not ordered by bestseller
-        #TODO: add date
+        # list of bestsellers pages
         pages = [
                     # handbags
                 "http://www1.bloomingdales.com/shop/handbags/best-sellers?id=23173",\
                     # shoes
                 "http://www1.bloomingdales.com/shop/shoes/best-sellers?id=23268", \
-                #     # shoes page 2
-                # #"http://www1.bloomingdales.com/shop/shoes/best-sellers?id=23268#fn=pageIndex%3D2%26sortBy%3DBEST_SELLERS%26productsPerPage%3D96"
-                # "http://www1.bloomingdales.com/shop/shoes/best-sellers?id=23268&pageIndex=2"
-                 
-        ]
+                ]
 
         # call parsePage for each of these pages
         for page_i in range(len(pages)):
@@ -88,10 +80,22 @@ class BloomingdalesSpider(BaseSpider):
 
     def parseDept(self, response):
         department = response.meta['department']
-        hxs = HtmlXPathSelector(response)
+        
         items = []
 
-        # # use selenium to select the sorting option
+        ## set up proxy
+        # PROXY_HOST = "64.71.156.216"
+        # PROXY_PORT = "8181"
+        # fp = webdriver.FirefoxProfile()
+        # # Direct = 0, Manual = 1, PAC = 2, AUTODETECT = 4, SYSTEM = 5
+        # fp.set_preference("network.proxy.type", 1)
+
+        # fp.set_preference("network.proxy.http", PROXY_HOST)
+        # fp.set_preference("network.proxy.http_port", PROXY_PORT)
+
+        # driver = webdriver.Firefox(firefox_profile=fp)
+
+        # use selenium to select the sorting option
         driver = webdriver.Firefox()
         driver.get(response.url)
 
@@ -111,6 +115,7 @@ class BloomingdalesSpider(BaseSpider):
 
         time.sleep(5)
 
+
         # convert html to "nice format"
         text_html = driver.page_source.encode('utf-8')
         html_str = str(text_html)
@@ -121,11 +126,15 @@ class BloomingdalesSpider(BaseSpider):
         # pass first page to parsePage function to extract products
         items += self.parsePage(resp_for_scrapy, department)
 
+        hxs = HtmlXPathSelector(resp_for_scrapy)
 
-        next_page_url = hxs.select("//li[@class='nextArrow']/div/a")
+
+        next_page_url = hxs.select("//li[@class='nextArrow']//a")
+        if not next_page_url:
+            print "NO NEXT PAGE--------------------------------"
         while next_page_url:
             # use selenium to click on next page arrow and retrieve the resulted page if any
-            next = driver.find_element_by_xpath("//li[@class='nextArrow']/div/a")
+            next = driver.find_element_by_xpath("//li[@class='nextArrow']//a")
             next.click()
 
             time.sleep(5)
@@ -141,7 +150,7 @@ class BloomingdalesSpider(BaseSpider):
             items += self.parsePage(resp_for_scrapy, department)
 
             hxs = HtmlXPathSelector(resp_for_scrapy)
-            next_page_url = hxs.select("//li[@class='nextArrow']/div/a")
+            next_page_url = hxs.select("//li[@class='nextArrow']//a")
             if next_page_url:
                 print "NEXT_PAGE_URL", next_page_url
 
@@ -183,10 +192,9 @@ class BloomingdalesSpider(BaseSpider):
 
             #TODO: add net price?
 
-            #TODO: parse price to leave only int value? (eliminate "USD")
-            price = product.select(".//div[@class='prices']//span[@class='priceBig']/text()").extract()
-            if price:
-                item['price'] = price[0]
+            # price = product.select(".//div[@class='prices']//span[@class='priceBig']/text()").extract()
+            # if price:
+            #     item['price'] = price[0]
 
             # call parseProduct method on each product]
             request = Request(item['url'], callback = self.parseProduct)
@@ -211,6 +219,10 @@ class BloomingdalesSpider(BaseSpider):
 
         item['page_title'] = page_title
         item['product_name'] = product_name
+
+        price = hxs.select("//span[@class='priceBig']/text()").extract()
+        if price:
+            item['price'] = price[0]
 
         # add date
         item['date'] = datetime.date.today().isoformat()
