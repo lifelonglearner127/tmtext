@@ -720,10 +720,14 @@ class System extends MY_Controller {
         }
         foreach($_rows as $row){
             $listprice = '';
+            $brand = '';
             if(!is_null($row->listprice)){
                 $listprice = $row->listprice;
             }
-            $this->best_sellers_model->insert($site_id, $row->page_title, $row->url, $row->brand,
+            if(!is_null( $row->brand)){
+                $brand = $row->brand;
+            }
+            $this->best_sellers_model->insert($site_id, $row->page_title, $row->url, $brand,
                 $row->rank, $row->price, $row->list_name, $row->product_name, $listprice);
         }
         $response['message'] =  'File was added successfully';
