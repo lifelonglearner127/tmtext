@@ -4,6 +4,25 @@ $(function () {
     var textToCopy;
     var zeroTableDraw = true;
 
+    var tableCase = {
+        details: [
+            "created",
+            "product_name",
+            "url",
+            "short_description_wc",
+            "short_seo_phrases",
+            "long_description_wc",
+            "long_seo_phrases",
+            "duplicate_context",
+            "price_diff"
+        ],
+        recommendations: [
+            "product_name",
+            "url",
+            "recommendations"
+        ]
+    }
+
     $.fn.dataTableExt.oApi.fnGetAllSColumnNames = function (oSettings) {
         allColumns = [];
         for( var i = 0; i < oSettings.aoColumns.length; i++) {
@@ -35,7 +54,7 @@ $(function () {
             });
         },
         "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-            $(nRow).attr("add_data", aData[9]);
+            $(nRow).attr("add_data", aData[10]);
             return nRow;
         },
         "fnDrawCallback": function(oSettings) {
@@ -64,25 +83,6 @@ $(function () {
             {"sName":"add_data", "bVisible": false}
         ]
     });
-
-    var tableCase = {
-        details: [
-            "created",
-            "product_name",
-            "url",
-            "short_description_wc",
-            "short_seo_phrases",
-            "long_description_wc",
-            "long_seo_phrases",
-            "duplicate_context",
-            "price_diff"
-        ],
-        recommendations: [
-            "product_name",
-            "url",
-            "recommendations"
-        ]
-    }
 
     $('#research_batches_columns').appendTo('div.dataTables_filter');
     $('#tblAssess_length').after($('#assess_tbl_show_case'));
@@ -236,6 +236,7 @@ $(function () {
 
     $('#research_assess_choiceColumnDialog').dialog({
         autoOpen: false,
+        resizable: false,
         modal: true,
         buttons: {
             'Save': function() {
@@ -287,7 +288,7 @@ $(function () {
         var columns_checkboxes = $('#research_assess_choiceColumnDialog').find('input[type=checkbox]:checked');
         var columns_checkboxes_checked = [];
         $.each(columns_checkboxes, function(index, value) {
-            columns_checkboxes_checked.push($(value).prop('id').replace('column_', ''));
+            columns_checkboxes_checked.push($(value).data('col_name'));
         });
 
         if (table_case == 'recommendations') {

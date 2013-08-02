@@ -335,10 +335,10 @@ ul.research_table_filter h3 {
     padding-left: 5px;
 }
 .assess_tbl_show_case {
-    margin: 10px;
+    margin-top: 6px;
     float: left;
     text-align: center;
-    width: 300px
+    width: 250px
 }
 .assess_tbl_show_case a {
     color: #0088CC;
@@ -356,4 +356,13 @@ div#tblAssess_processing {
     margin-top: -5px;
     position: absolute;
     text-align: center;
+}
+
+div.dataTables_filter label {
+    display: inline;
+}
+
+div.fg-toolbar label, div.fg-toolbar select, div.fg-toolbar input {
+    margin-top: 0px;
+    margin-bottom: 0px;
 }
