@@ -25,3 +25,4 @@ class ProductItem(Item):
 	rank = Field() # rank of the product in the bestsellers list
 	SKU = Field() # SKU code of product (where available)
 	UPC = Field() # UPC code of product (where available)
+	bspage_url = Field() # url of the bestsellers page the product was found on (for department-wise bestsellers)

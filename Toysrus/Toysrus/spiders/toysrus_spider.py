@@ -173,6 +173,8 @@ class ToysrusSpider(BaseSpider):
 # Run with 
 #
 # scrapy crawl bestseller
+#   or, for department-wise bestsellers
+# scrapy crawl bestseller -a dept_ids_file="<...>"
 #
 ################################
 
@@ -183,9 +185,36 @@ class BestsellerSpider(BaseSpider):
 
     start_urls = ['http://www.toysrus.com/family/index.jsp?categoryId=11049188&view=all']
 
+    def __init__(self, dept_ids_file=None):
+        self.dept_ids_file = dept_ids_file
+
     def parse(self, response):
+        # if there was a dept_ids_file passed as an argument, extract the department-wise bestsellers
+        if self.dept_ids_file:
+            urls = self.build_page_urls(self.dept_ids_file)
+
+            for url in urls:
+                yield Request(url, callback = self.parsePage)
+        else:
+            yield Request(response.url, callback = self.parsePage)
+
+
+    def parsePage(self, response):
+
         hxs = HtmlXPathSelector(response)
+
+        # products in overall bestsellers list
         products = hxs.select("//div[@class='prodloop_cont']")
+
+        # products in by-department bestsellers lists
+        products2 = hxs.select("//div[@class='topSellersView']")
+
+        # department name if any (for department-wise bestsellers pages)
+        dept_name = ""
+        department = hxs.select("//div[@id='breadCrumbs']/text()").extract()
+        if department:
+            # remove part before > and ignore first character from div content
+            dept_name = department[0].split(">")[-1][1:].strip()
 
         # keep counter to set rank of product
         rank = 0
@@ -226,6 +255,48 @@ class BestsellerSpider(BaseSpider):
 
             yield request
 
+        for product in products2:
+            item = ProductItem()
+
+            name = product.select(".//li[@class='productTitle']/a/text()").extract()
+            item['list_name'] = name[0]
+
+            root_url = "http://www.toysrus.com"
+            url = product.select(".//li[@class='productTitle']/a/@href").extract()
+            if url:
+                item['url'] = root_url + url[0]
+
+            # if there's no url move on to the next product
+            else:
+                continue
+
+            if dept_name:
+                item['department'] = dept_name
+
+            # eliminate final . from rank
+            item['rank'] = product.select(".//div[@class='itemNumber']/text()").extract()[0][:-1]
+
+            # add bestsellers page product was found on as a field
+            item['bspage_url'] = response.url
+
+            # get price ("our price")
+            price = product.select(".//li[@class='prodPrice familyPrices']/span[@class='ourPrice2']/text()").extract()
+            if price:
+                item['price'] = price[0]
+
+            # get list price
+            listprice = product.select(".//li[@class='prodPrice familyPrices']/span[@class='listPrice2']/text()").extract()
+            if listprice:
+                item['listprice'] = listprice[0]
+
+            # send the item to be parsed by parseProduct
+            request = Request(item['url'], callback = self.parseProduct)
+            request.meta['item'] = item
+
+            yield request
+
+
+
     # extract info from product page: product name and page title
     def parseProduct(self, response):
         hxs = HtmlXPathSelector(response)
@@ -245,3 +316,16 @@ class BestsellerSpider(BaseSpider):
         item['product_name'] = name[0]
 
         return item
+
+    # use department ids in file to build their corresponding bestsellers pages urls
+    def build_page_urls(self, dept_ids_file):
+        f = open(dept_ids_file, "r")
+
+        urls = []
+        for line in f:
+            url = "http://www.toysrus.com/viewall/index.jsp?categoryId=%d&viewAll=topSellers&pmc=1" % int(line)
+            urls.append(url)
+
+        f.close()
+
+        return urls
