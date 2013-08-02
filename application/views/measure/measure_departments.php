@@ -259,7 +259,7 @@
         $('button#department_go').click(function(e){
             // use success flag
             var success = false;
-            var url = '';
+            var department_url = '';
             e.preventDefault();
             $.post(base_url + 'index.php/measure/getUrlByDepartment', {
                 'department_id': $('select[name="department"]').find("option:selected").val()
@@ -267,13 +267,13 @@
                 if(data.length > 0){
                     window.success = true;
                     if(data[0].url!='' && data[0].url!=undefined){
-                        window.url = data[0].url;
+                        window.department_url = data[0].url;
                     }
                 }
             });
             setTimeout(function(){
                 if (window.success == true) { // and read the flag here
-                    window.open(window.url);
+                    window.open(window.department_url);
                 }
             }, 100);
 
@@ -282,7 +282,7 @@
         $('button#category_go').click(function(e){
             // use success flag
             var success = false;
-            var url = '';
+            var category_url = '';
             e.preventDefault();
             $.post(base_url + 'index.php/measure/getUrlByCategory', {
                 'category_id': $('select[name="category"]').find("option:selected").val()
@@ -290,13 +290,13 @@
                 if(data.length > 0){
                     window.success = true;
                     if(data[0].url!='' && data[0].url!=undefined){
-                        window.url = data[0].url;
+                        window.category_url = data[0].url;
                     }
                 }
             });
             setTimeout(function(){
                 if (window.success == true) { // and read the flag here
-                    window.open(window.url);
+                    window.open(window.category_url);
                 }
             }, 100);
         });
