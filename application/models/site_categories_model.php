@@ -46,7 +46,7 @@ class Site_categories_model extends CI_Model {
         return $query->result();
     }
 
-    function insert($site_id, $text, $url, $special=0, $parent_text)
+    function insert($site_id, $text, $url, $special=0, $parent_text='')
     {
         $this->text = $text;
         $this->url = $url;

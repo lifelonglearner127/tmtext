@@ -624,10 +624,26 @@ class System extends MY_Controller {
         foreach($_rows as $row){
             if($row->level == 0){
                 $special = 0;
+                $parent_text = '';
+                $text = '';
+                $url = '';
                 if($row->special!='' && !is_null($row->special)){
                     $special = $row->special;
                 }
-                $this->site_categories_model->insert($site_id, $row->text, $row->url, $special, $row->parent_text);
+                if($row->parent_text!='' && !is_null($row->parent_text)){
+                    $special = mb_convert_encoding(htmlentities($row->parent_text), 'UTF-8');
+                }
+                if(is_array($row->text)){
+                    $text = mb_convert_encoding(htmlentities($row->text[0]), 'UTF-8');
+                } else if(!is_array($row->text) && !is_null($row->text)){
+                    $text = $row->text;
+                }
+                if(is_array($row->url)){
+                    $url = $row->url[0];
+                } else {
+                    $url = $row->url;
+                }
+                $this->site_categories_model->insert($site_id, $text, $url, $special, $parent_text);
             }
             if($row->level == 1){
                 $this->department_members_model->insert($site_name[0], $site_id, $row->text);
