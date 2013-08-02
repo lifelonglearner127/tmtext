@@ -1,4 +1,4 @@
-
+var grid_id = 0;
 
 var editorGridViewBaseUrl = base_url + 'index.php/measure/gridview';
 // ---- search string cookie (auto mode search launcher) (start)
@@ -141,7 +141,7 @@ function switchToGridView() {
 
     $("#an_products_box").addClass('grid_results_show');
     $(".main span:first-child, #products li span:first-child ").addClass('new_width');
-    
+
 //    #grid_se_section_1 .c .c_content table 
     grid_status = 'grid';
 
@@ -628,6 +628,15 @@ function keywordsAnalizer() {
 
 $(document).ready(function() {
     //Max
+
+    $(".mismatch_image").live('click', function() {
+
+        var im_data_id = $(this).data('value');
+        var aaa = $.post(base_url + 'index.php/measure/report_mismatch', {group_id: group_id, im_data_id: im_data_id}, 'json').done(function(data) {
+        console.log(data);
+        });
+    });
+
     $("#an_search").live('click', function() {//max
         var dropdown = $("select[name='customers_list']").msDropdown().data("dd");
         dropdown.destroy();
@@ -737,12 +746,12 @@ $(document).ready(function() {
 
     });
 
-    $('li.temp_li a').live('click', function(){
-       $('li.temp_li a').each(function(){
-           $(this).css({'text-decoration':'none'});
-       });
-       $(this).css({'text-decoration':'underline'});
-       return false;
+    $('li.temp_li a').live('click', function() {
+        $('li.temp_li a').each(function() {
+            $(this).css({'text-decoration': 'none'});
+        });
+        $(this).css({'text-decoration': 'underline'});
+        return false;
     });
 });//max
 // ---- new CI term typeahead (end) (NEW)

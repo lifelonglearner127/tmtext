@@ -596,7 +596,14 @@ class Measure extends MY_Controller {
         return $prc;
         }
     }
+    public function report_mismatch(){
+        $group_id=$this->input->post('group_id');
+        $im_data_id=$this->input->post('im_data_id');
+        $this->load->model('similar_data_model');
+        $this->similar_data_model->update($group_id,$im_data_id,1);
+        $this->output->set_content_type('application/json')->set_output(json_encode("aaaaaaaa"));
 
+    }
     public function gridview() {
         $im_data_id = $this->input->post('im_data_id');
 
@@ -612,6 +619,8 @@ class Measure extends MY_Controller {
 
             // --- GET SELECTED RPODUCT DATA (START)
             $this->load->model('imported_data_parsed_model');
+            $this->load->model('similar_product_groups_model');
+            $this->load->model('similar_data_model');
             $data_import = $this->imported_data_parsed_model->getByImId($im_data_id);
             
             if ($data_import['description'] !== null && trim($data_import['description']) !== "") {
@@ -638,9 +647,45 @@ class Measure extends MY_Controller {
             if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['UPC/EAN/ISBN'])) {
                 $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['UPC/EAN/ISBN']);
             }
+            
             if (empty($same_pr) && isset($data_import['parsed_attributes']) && !isset($data_import['parsed_attributes']['model'])){
-                $same_pr = $this->imported_data_parsed_model->getByProductName($data_import['product_name'],$data_import['parsed_attributes']['manufacturer'],$strict);
+                if(!$this->similar_product_groups_model->checkIfgroupExists($im_data_id)){
+                    $same_pr = $this->imported_data_parsed_model->getByProductName($im_data_id,$data_import['product_name'],$data_import['parsed_attributes']['manufacturer'],$strict);
+            
+                }else{
+                    $this->load->model('similar_imported_data_model');
+                    $customers_list = array();
+                    $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('customers');
+                    $query_cus_res = $query_cus->result();
+                    if (count($query_cus_res) > 0) {
+                        foreach ($query_cus_res as $key => $value) {
+                            $n = strtolower($value->name);
+                            $customers_list[] = $n;
             }
+                    }
+            $customers_list = array_unique($customers_list);
+                   $rows=$this->similar_data_model->getByGroupId($im_data_id);
+                     $data_similar = array();
+
+                    foreach ($rows as $key => $row) {
+                        $data_similar[$key] = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
+                        $data_similar[$key]['imported_data_id'] = $row->imported_data_id;
+
+                        $cus_val = "";
+                        foreach ($customers_list as $ki => $vi) {
+                            if (strpos($data_similar[$key]['url'], "$vi") !== false) {
+                                $cus_val = $vi;
+                            }
+                        }
+                        if ($cus_val !== "")
+                            $data_similar[$key]['customer'] = $cus_val;
+                    }
+
+                    if (!empty($data_similar)) {
+                        $same_pr = $data_similar;
+                    }
+                }
+             }
 
             // get similar for first row
             $this->load->model('similar_imported_data_model');

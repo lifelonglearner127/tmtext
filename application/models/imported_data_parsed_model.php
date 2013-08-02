@@ -1261,7 +1261,7 @@ $main_base = substr($url, 0, $pos);
 return $main_base.'/';
 }
 
-public function getByProductName($selected_product_name='',$manufacturer='',$strict=false){
+public function getByProductName($im_data_id,$selected_product_name='',$manufacturer='',$strict=false){
    
     $this->db->select('p.imported_data_id, p.key, p.value')
             ->from($this->tables['imported_data_parsed'].' as p')
@@ -1277,7 +1277,7 @@ public function getByProductName($selected_product_name='',$manufacturer='',$str
    
      $results = $query->result();
         
-        $data = array();
+        $data1 = array();
         foreach($results as $result){
             $query = $this->db->where('imported_data_id', $result->imported_data_id)->get($this->tables['imported_data_parsed']);
             $res = $query->result_array();
@@ -1307,7 +1307,7 @@ public function getByProductName($selected_product_name='',$manufacturer='',$str
 
             }
             if($is_similiar==1){
-            array_push($data, array('imported_data_id'=>$result->imported_data_id, 'product_name'=>$result->value,
+            array_push($data1, array('imported_data_id'=>$result->imported_data_id, 'product_name'=>$result->value,
                'description'=>$description, 'long_description'=>$long_description, 'url'=>$url, 'product_name' =>$product_name, 'features' => $features ));
             }
         }
@@ -1315,8 +1315,8 @@ public function getByProductName($selected_product_name='',$manufacturer='',$str
 //         print_r($data);
         
         
-        if ($data) {
-                $rows=$data;
+        if ($data1) {
+                $rows=$data1;
                 $customers_list = array();
 	        $query_cus = $this->db->order_by('name', 'asc')->get($this->tables['customers']);
 	        $query_cus_res = $query_cus->result();
@@ -1345,6 +1345,15 @@ public function getByProductName($selected_product_name='',$manufacturer='',$str
                                
 			}
                         sort($rows);
+                       
+                        $ids=array();
+                        foreach($rows as $row){
+                            $ids[]=$row['imported_data_id'];
+                        }
+                        foreach($ids as $id){
+                            $this->db->insert('similar_data', array('group_id'=>$im_data_id, 'black_list'=>0, 'imported_data_id'=>$id));
+                        }
+                        $this->db->insert('similar_product_groups', array('group_id'=>$im_data_id));
                         return $rows;
 		}
         

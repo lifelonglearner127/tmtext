@@ -1779,3 +1779,16 @@ select#sites option{
     width: 90px;
     float:left;
 }
+.mismatch_image{
+    background: url("../img/signn.png") 0 0 no-repeat;
+    border: none;
+    width: 19px !important;
+    height: 19px;
+}
+.mismatch_image:hover{
+    cursor:pointer;
+    opacity:0.5;
+}
+.main{
+    background: #e2e2e4;
+}
