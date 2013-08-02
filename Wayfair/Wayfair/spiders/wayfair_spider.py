@@ -3,6 +3,7 @@ from scrapy.selector import HtmlXPathSelector
 from scrapy.http import Request
 from Wayfair.items import CategoryItem
 from Wayfair.items import ProductItem
+import datetime
 import sys
 import re
 
@@ -214,6 +215,9 @@ class BestsellerSpider(BaseSpider):
             price = product.select(".//div[@class='price secondarytext midtitle']/text() | .//div[@class='price noticetext midtitle']/text()").extract()
             if price:
                 item['price'] = price[0]
+
+            # add date
+            item['date'] = datetime.date.today().isoformat()
 
             # pass item to parseProduct method
             request = Request(item['url'], callback = self.parseProduct)

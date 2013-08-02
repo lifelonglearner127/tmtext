@@ -24,3 +24,4 @@ class ProductItem(Item):
 	rank = Field() # rank of the product in the bestsellers list
 	SKU = Field() # SKU code of product (where available)
 	UPC = Field() # UPC code of product (where available)
+	date = Field() # date when this was extracted
