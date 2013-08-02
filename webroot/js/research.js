@@ -607,6 +607,15 @@ $(document).ready(function () {
             'batch_name': $('select[name="batches"]').find('option:selected').text()
         }, function(data) {
             $('<p/>').text(data.message).appendTo('#files');
+            $.post(base_url + 'index.php/research/getBatchInfo', { 'batch': $("select[name='batches']").find("option:selected").text()}, function(data){
+                if(data.created != undefined){
+                    $('.batch_info').html('<ul class="ml_0"><li>Created: '+data.created+'</li><li>Item Last Added: '+data.modified+'</li>' +
+                        '<li> Items: '+data.count_items+' </li></ul>');
+                }else{
+                    $('.batch_info').html('');
+                }
+
+            });
         }, 'json');
 
         return false;
