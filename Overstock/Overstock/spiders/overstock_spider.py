@@ -5,6 +5,7 @@ from Overstock.items import ProductItem
 from scrapy.http import Request
 import sys
 import re
+import datetime
 
 ################################
 # Run with 
@@ -101,6 +102,8 @@ class OverstockSpider(BaseSpider):
 
     def parse(self, response):
         hxs = HtmlXPathSelector(response)
+
+        #TODO: !! select currency
         
         # extract tabs and their corresponding departments
         tabs = hxs.select("//ul[@id='tab-set']/li/a")
@@ -170,5 +173,8 @@ class OverstockSpider(BaseSpider):
 
         item['product_name'] = product_name
         item['page_title'] = page_title
+
+        # add date
+        item['date'] = datetime.date.today().isoformat()
 
         yield item           
