@@ -258,8 +258,8 @@ union all
                     group_concat(r.long_description, '') AS long_description,
                     group_concat(r.short_description_wc, '') AS short_description_wc,
                     group_concat(r.long_description_wc, '') AS long_description_wc,
-                    group_concat(r.seo_s, '') AS seo_s,
-                    group_concat(r.seo_l, '') AS seo_l
+                    group_concat(r.short_seo_phrases, '') AS short_seo_phrases,
+                    group_concat(r.long_seo_phrases, '') AS long_seo_phrases
                 from (
                     select
                         b.title,
@@ -272,8 +272,8 @@ union all
                         case when kv.`key` = 'Long_Description' then kv.`value` end as long_description,
                         case when kv.`key` = 'Description_WC' then kv.`value` end as short_description_wc,
                         case when kv.`key` = 'Long_Description_WC' then kv.`value` end as long_description_wc,
-                        case when kv.`key` = 'seo_s' then kv.`value` end as seo_s,
-                        case when kv.`key` = 'seo_l' then kv.`value` end as seo_l
+                        case when kv.`key` = 'short_seo_phrases' then kv.`value` end as short_seo_phrases,
+                        case when kv.`key` = 'long_seo_phrases' then kv.`value` end as long_seo_phrases
                     from
                         batches as b
                     inner join research_data as rd on

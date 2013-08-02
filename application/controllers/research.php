@@ -356,8 +356,8 @@ class Research extends MY_Controller {
             $result_row->long_description = $row->long_description;
             $result_row->short_description_wc = $short_description_wc;
             $result_row->long_description_wc = $long_description_wc;
-            $result_row->seo_s = "None";
-            $result_row->seo_l = "None";
+            $result_row->short_seo_phrases = "None";
+            $result_row->long_seo_phrases = "None";
             $result_row->price_diff = "-";
             $result_row->duplicate_context = "-";
             $result_row->own_price = "-";
@@ -395,8 +395,8 @@ class Research extends MY_Controller {
             }
 
             if ($short_seo_phrases) {
-                if ($short_description_wc == $row->short_description_wc && !is_null($row->seo_s)) {
-                    $result_row->seo_s = $row->seo_s;
+                if ($short_description_wc == $row->short_description_wc && !is_null($row->short_seo_phrases)) {
+                    $result_row->short_seo_phrases = $row->short_seo_phrases;
                 } else {
                     if ($enable_exec) {
                         $cmd = $this->prepare_extract_phrases_cmd($row->short_description);
@@ -406,11 +406,11 @@ class Research extends MY_Controller {
                         if ($error > 0) {
                             $enable_exec = false;
                         } else {
-                            $result_row->seo_s = $this->prepare_seo_phrases($output);
-                            if (is_null($row->seo_s)) {
-                                $this->imported_data_parsed_model->insert($row->imported_data_id, "seo_s", $result_row->seo_s);
+                            $result_row->short_seo_phrases = $this->prepare_seo_phrases($output);
+                            if (is_null($row->short_seo_phrases)) {
+                                $this->imported_data_parsed_model->insert($row->imported_data_id, "short_seo_phrases", $result_row->short_seo_phrases);
                             } else {
-                                $this->imported_data_parsed_model->updateValueByKey($row->imported_data_id, "seo_s", $result_row->seo_s);
+                                $this->imported_data_parsed_model->updateValueByKey($row->imported_data_id, "short_seo_phrases", $result_row->short_seo_phrases);
                             }
                         }
                     }
@@ -418,8 +418,8 @@ class Research extends MY_Controller {
             }
 
             if ($long_seo_phrases) {
-                if ($long_description_wc == $row->long_description_wc && !is_null($row->seo_l)) {
-                    $result_row->seo_l = $row->seo_l;
+                if ($long_description_wc == $row->long_description_wc && !is_null($row->long_seo_phrases)) {
+                    $result_row->long_seo_phrases = $row->long_seo_phrases;
                 } else {
                     if ($enable_exec) {
                         $cmd = $this->prepare_extract_phrases_cmd($row->long_description);
@@ -429,11 +429,11 @@ class Research extends MY_Controller {
                         if ($error > 0) {
                             $enable_exec = false;
                         } else {
-                            $result_row->seo_l = $this->prepare_seo_phrases($output);
-                            if (is_null($row->seo_l)) {
-                                $this->imported_data_parsed_model->insert($row->imported_data_id, "seo_l", $result_row->seo_l);
+                            $result_row->long_seo_phrases = $this->prepare_seo_phrases($output);
+                            if (is_null($row->long_seo_phrases)) {
+                                $this->imported_data_parsed_model->insert($row->imported_data_id, "long_seo_phrases", $result_row->long_seo_phrases);
                             } else {
-                                $this->imported_data_parsed_model->updateValueByKey($row->imported_data_id, "seo_l", $result_row->seo_l);
+                                $this->imported_data_parsed_model->updateValueByKey($row->imported_data_id, "long_seo_phrases", $result_row->long_seo_phrases);
                             }
                         }
                     }
@@ -484,9 +484,9 @@ class Research extends MY_Controller {
                         $data_row->product_name,
                         $data_row->url,
                         $data_row->short_description_wc,
-                        $data_row->seo_s,
+                        $data_row->short_seo_phrases,
                         $data_row->long_description_wc,
-                        $data_row->seo_l,
+                        $data_row->long_seo_phrases,
                         $data_row->duplicate_context,
                         $data_row->price_diff,
                         "Some Recommendations",
