@@ -121,6 +121,7 @@ $(function () {
     $('#assessDetailsDialog').dialog({
         autoOpen: false,
         modal: true,
+        resizable: false,
         buttons: {
             'Cancel': {
                 text: 'Cancel',

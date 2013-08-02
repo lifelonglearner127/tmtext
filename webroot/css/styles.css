@@ -366,3 +366,6 @@ div.fg-toolbar label, div.fg-toolbar select, div.fg-toolbar input {
     margin-top: 0px;
     margin-bottom: 0px;
 }
+#ui-datepicker-div {
+    display: none;
+}
