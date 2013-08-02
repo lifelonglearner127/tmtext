@@ -314,6 +314,8 @@ ul.research_table_filter {
     font-size: 12px;
     padding-left: 0px;
     padding-right: 0px;
+    border: 1px solid #CCCCCC;
+    border-radius: 5px 5px 5px 5px;
 }
 ul.research_table_filter .boxes {
      margin: 0px;
@@ -325,6 +327,12 @@ ul.research_table_filter .hideBox {
 ul.research_table_filter .hideShow {
     position:relative;
     top:-34px;
+}
+ul.research_table_filter h3 {
+    font-size: 14px;
+    background: none repeat scroll 0 0 #CCCCCC;
+    margin: 0;
+    padding-left: 5px;
 }
 .assess_tbl_show_case {
     margin: 10px;
@@ -341,4 +349,11 @@ ul.research_table_filter .hideShow {
 .assess_tbl_show_case a.active_link {
     font-weight: bold;
     text-decoration: underline;
+}
+
+div#tblAssess_processing {
+    width: 886px;
+    margin-top: -5px;
+    position: absolute;
+    text-align: center;
 }

@@ -1,24 +1,24 @@
 <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/smoothness/jquery-ui-1.8.2.custom.css" />
 <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/styles.css" />
 <ul class="research_table_filter">
-    <li class="boxes mt_10">
+    <li class="boxes">
         <h3>
-                    <span class=''>
-                        Batch:
-                        <select name="research_assess_customers" class="mt_10">
-                            <?php foreach($customer_list as $customer):?>
-                                <option value="<?php echo strtolower($customer); ?>"><?php echo $customer; ?></option>
-                            <?php endforeach;?>
-                        </select>
-                        <?php echo form_dropdown('research_assess_batches', $batches_list, array(), 'class="mt_10 mr_10" style="width: 175px;margin-left:20px"'); ?>
-                    </span>
-                    <span class=''>
-                        or
-                    </span>
-                    <span class=''>
-                        Category:
-                        <?php echo form_dropdown('category', $category_list, array(), 'class="category_list mt_10"'); ?>
-                    </span>
+            <span class=''>
+                Batch:
+                <select name="research_assess_customers" class="mt_10">
+                    <?php foreach($customer_list as $customer):?>
+                        <option value="<?php echo strtolower($customer); ?>"><?php echo $customer; ?></option>
+                    <?php endforeach;?>
+                </select>
+                <?php echo form_dropdown('research_assess_batches', $batches_list, array(), 'class="mt_10 mr_10" style="width: 175px;margin-left:20px"'); ?>
+            </span>
+            <span class=''>
+                or
+            </span>
+            <span class=''>
+                Category:
+                <?php echo form_dropdown('category', $category_list, array(), 'class="category_list mt_10"'); ?>
+            </span>
             <div class="clear"></div>
             <a href="#" onclick="return false;" class="hideShow float_r">
                 <img src="<?php echo base_url();?>img/arrow.png" />
