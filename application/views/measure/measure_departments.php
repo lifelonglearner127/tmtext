@@ -304,6 +304,11 @@
             var opt = $('select[name="department"]').find('option:selected');
             $('select[name="department"]').removeAttr('selected');
             $('select[name="department"]').find(opt).next().attr('selected', 'selected');
-        })
+        });
+
+        $(document).on('click', 'table#records tbody tr', function(e){
+            e.preventDefault();
+            window.open($(this).find('td:nth-child(3)').text());
+        });
 	});
 </script>
