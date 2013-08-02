@@ -8,10 +8,10 @@
 // );
 
 $menu = array(
-    array('controller' => '', 'name' => 'Batches'),
-    array('controller' => 'measure', 'name' => 'Competitive Intelligence'),
-    array('controller' => 'research', 'name' => 'Research & Edit'),
-    array('controller' => 'job_board', 'name' => 'Job Board'),
+    array('controller' => 'batches', 'name' => 'Batches'),
+    array('controller' => 'measure', 'name' => 'CI'),
+    array('controller' => 'assess', 'name' => 'Assess'),
+    array('controller' => 'research', 'name' => 'R&E'),
     //array('controller' => 'editor', 'name' => 'Create'),
     //array('controller' => 'validate', 'name' => 'Validate'),
 	array('controller' => 'customer', 'name' => 'Settings'),

@@ -1,8 +1,8 @@
 <div class="tabbable">
     <ul class="nav nav-tabs jq-system-tabs">
         <li class=""><a data-toggle="tab" href="<?php echo site_url('system');?>">General</a></li>
-        <li class=""><a data-toggle="tab" href="<?php echo site_url('system/sites_view');?>">Sites</a></li>
-        <li class="active"><a data-toggle="tab" href="<?php echo site_url('site_crawler');?>">Site Crawler</a></li>
+        <li class="active"><a data-toggle="tab" href="<?php echo site_url('system/sites_view');?>">Sites</a></li>
+        <li class=""><a data-toggle="tab" href="<?php echo site_url('site_crawler');?>">Site Crawler</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('system/batch_review');?>">Batch Review</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_compare');?>">Product Compare</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_productsmatch');?>">Product Match</a></li>
@@ -29,6 +29,8 @@
                             $('select[name="category"]').empty();
                         } else if(str == 'departments') {
                             $('select[name="department"]').empty();
+                        } else if(str == 'overall'){
+                            $('select[name="best_sellers"]').empty();
                         }
                         //$('.info').append('<p class="alert-success">The '+str+' was successfully deleted</p>').fadeOut(10000);
                     }, 'json');
@@ -72,6 +74,14 @@
                         if(data.length > 0 ){
                             for(var i=0; i<data.length; i++){
                                 $("select[name='category']").append("<option value='"+data[i].id+"'>"+data[i].text+"</option>");
+                            }
+                        }
+                    });
+                    $.post(base_url + 'index.php/system/getBestSellersBySiteId', {'site_id': $(this).data('value')}, function(data) {
+                        $("select[name='best_sellers']").empty();
+                        if(data.length > 0 ){
+                            for(var i=0; i<data.length; i++){
+                                $("select[name='best_sellers']").append("<option value='"+data[i].id+"'>"+data[i].page_title+"</option>");
                             }
                         }
                     });
@@ -137,6 +147,7 @@
                     'logo': 'no-logo.jpg'
                 }, function(data){
                     $('img#site_logo').attr({'src': base_url+'img/no-logo.jpg' });
+                    $('input[name="sitelogo_file"]').val('no-logo.jpg');
                 });
                 return false;
             });
@@ -149,11 +160,21 @@
                 });
                 return false;
             });
+
             $('button#delete_category').click(function(){
                 $.post(base_url + 'index.php/system/delete_category', {
                     'id': $('select[name="category"]').find('option:selected').val()
                 }, function(data){
                     $('select[name="category"]').find('option:selected').remove();
+                });
+                return false;
+            });
+
+            $('button#delete_overall').click(function(){
+                $.post(base_url + 'index.php/system/delete_overall', {
+                    'id': $('select[name="best_sellers"]').find('option:selected').val()
+                }, function(data){
+                    $('select[name="best_sellers"]').find('option:selected').remove();
                 });
                 return false;
             });
@@ -369,23 +390,79 @@
                 <div class="row-fluid">
                     <h5>Best Sellers</h5>
                     <label>Overall:</label>
-                    <?php  echo form_dropdown('department', $departmens_list, null, 'class="inline_block lh_30 w_375 mb_reset"'); ?>
-                    <button id="upload_categories_departments" class="btn btn-primary" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Upload</button>
-                    <button id="delete_department_categories" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
-                    <button id="delete_all_departments_categories" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete All</button>
+                    <?php  echo form_dropdown('best_sellers', $best_sellers_list, null, 'class="inline_block lh_30 w_375 mb_reset"'); ?>
+                    <span class="btn btn-success fileinput-button ml_10">Upload<i class="icon-plus icon-white"></i>
+                        <input type="file" multiple="" name="files[]" id="overall_fileupload">
+					</span>
+                    <div id="overall_files" style="float:left"></div>
+                    <input type="hidden" name="overall_choosen_file" />
+                    <script>
+                        $(function () {
+                            var url = '<?php echo site_url('system/upload_departments_categories');?>';
+                            $('#overall_fileupload').fileupload({
+                                url: url,
+                                dataType: 'json',
+                                done: function (e, data) {
+                                    $('input[name="overall_choosen_file"]').val(data.result.files[0].name);
+
+                                    var url = base_url+'index.php/system/save_best_sellers';
+                                    $.post(url, { 'overall_choosen_file': $('input[name="overall_choosen_file"]').val(),
+                                        'site_id':  $("#sites .btn_caret_sign").attr('id'),
+                                        'site_name':  $("#sites .btn_caret_sign").text()
+                                    }, function(data) {
+                                        $.post(base_url + 'index.php/measure/getDepartmentsByCustomer', {'customer_name':  $("#sites .btn_caret_sign").text()}, function(data) {
+                                            $("select[name='department']").empty();
+                                            if(data.length > 0){
+                                                for(var i=0; i<data.length; i++){
+                                                    $("select[name='department']").append("<option value='"+data[i].id+"'>"+data[i].text+"</option>");
+                                                }
+                                            }
+                                        });
+                                        $.post(base_url + 'index.php/system/getCategoriesBySiteId', {'site_id': $("#sites .btn_caret_sign").attr('id')}, function(data) {
+                                            $("select[name='category']").empty();
+                                            if(data.length > 0 ){
+                                                for(var i=0; i<data.length; i++){
+                                                    $("select[name='category']").append("<option value='"+data[i].id+"'>"+data[i].text+"</option>");
+                                                }
+                                            }
+                                        });
+                                        $.post(base_url + 'index.php/system/getBestSellersBySiteId', {'site_id':  $("#sites .btn_caret_sign").attr('id')}, function(data) {
+                                            $("select[name='best_sellers']").empty();
+                                            if(data.length > 0 ){
+                                                for(var i=0; i<data.length; i++){
+                                                    $("select[name='best_sellers']").append("<option value='"+data[i].id+"'>"+data[i].page_title+"</option>");
+                                                }
+                                            }
+                                        });
+                                    }, 'json');
+                                }
+                            });
+                        });
+                    </script>
+                    <button id="delete_overall" class="btn btn-danger"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
+                    <button id="delete_all_overall" class="btn btn-danger" onclick="doconfirm('overall'); return false;"><i class="icon-white icon-ok"></i>&nbsp;Delete All</button>
                 </div>
                 <div class="row-fluid mt_10">
                     <label>Department:</label>
                     <?php  echo form_dropdown('department', $departmens_list, null, 'class="inline_block lh_30 w_375 mb_reset"'); ?>
-                    <button id="upload_categories_departments" class="btn btn-primary" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Upload</button>
+                    <span class="btn btn-success fileinput-button ml_10">Upload<i class="icon-plus icon-white"></i>
+                        <input type="file" multiple="" name="best_sellers_department_files[]" id="best_sellers_department_fileupload">
+					</span>
+                    <div id="best_sellers_department_files" style="float:left"></div>
+                    <input type="hidden" name="best_sellers_department_choosen_file" />
                     <button id="delete_department" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
                     <button id="delete_all_departments" class="btn btn-danger" onclick="doconfirm('departments');return false;"><i class="icon-white icon-ok"></i>&nbsp;Delete All</button>
                 </div>
                 <div class="row-fluid mt_10">
                     <label>Categories:</label>
                     <?php echo form_dropdown('category', $category_list ); ?>
+                    <span class="btn btn-success fileinput-button ml_10">Upload<i class="icon-plus icon-white"></i>
+                        <input type="file" multiple="" name="best_sellers_category_files[]" id="best_sellers_category_fileupload">
+					</span>
+                    <div id="best_sellers_category_files" style="float:left"></div>
+                    <input type="hidden" name="best_sellers_category_choosen_file" />
                     <button id="upload_categories_departments" class="btn btn-primary" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Upload</button>
-                    <button id="delete_category" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
+                    <button id="delete_category" class="btn btn-danger" ><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
                     <button id="delete_all_categories" class="btn btn-danger"  onclick="doconfirm('categories');return false;"><i class="icon-white icon-ok"></i>&nbsp;Delete All</button>
                 </div>
             </div>

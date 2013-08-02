@@ -9,7 +9,7 @@ class System extends MY_Controller {
   		parent::__construct();
 
 		$this->data['title'] = 'System Settings';
-		$this->data['checked_controllers'] = array( 'measure', 'research', 'job_board', 'editor', 'customer');
+		$this->data['checked_controllers'] = array( 'batches','measure', 'assess', 'research', 'customer');
 		$this->data['admin_controllers'] = array('system', 'admin_customer', 'admin_editor', 'admin_tag_editor');
 
 
@@ -652,14 +652,23 @@ class System extends MY_Controller {
         $this->load->model('site_categories_model');
         $category_id = $this->input->post('id');
         $this->site_categories_model->delete($category_id);
-
         $response['message'] =  'Category was deleted successfully';
+        $this->output->set_content_type('application/json')->set_output(json_encode($response));
+    }
+
+    public function delete_overall()
+    {
+        $this->load->model('best_sellers_model');
+        $overall_id = $this->input->post('id');
+        $this->best_sellers_model->delete($overall_id);
+        $response['message'] =  'Overall was deleted successfully';
         $this->output->set_content_type('application/json')->set_output(json_encode($response));
     }
 
     public function delete_all(){
         $this->load->model('site_categories_model');
         $this->load->model('department_members_model');
+        $this->load->model('best_sellers_model');
         $type = $this->input->post('type');
         $site_id = $this->input->post('site_id');
         $site_name = explode(".", $this->input->post('site_name'));
@@ -669,8 +678,39 @@ class System extends MY_Controller {
         } elseif($type == 'departments'){
             $this->department_members_model->deleteAll(strtolower($site_name[0]));
             $response['message'] =  'Departments was deleted successfully';
+        } elseif($type == 'overall'){
+            $this->best_sellers_model->deleteAll($site_id);
+            $response['message'] =  'Overall was deleted successfully';
         }
 
+        $this->output->set_content_type('application/json')->set_output(json_encode($response));
+    }
+
+    public function save_best_sellers(){
+        $this->load->model('best_sellers_model');
+        $this->load->model('sites_model');
+
+        $site_id = $this->input->post('site_id');
+        $site_name = explode(".", strtolower($this->input->post('site_name')));
+        $file = $this->config->item('csv_upload_dir').$this->input->post('overall_choosen_file');
+        $_rows = array();
+        if (($handle = fopen($file, "r")) !== FALSE) {
+            while (($data = fgetcsv($handle, 1000, "\n")) !== FALSE) {
+                if(!is_null($data[0]) && $data[0]!=''){
+                    $_rows[] = json_decode($data[0]);
+                }
+            }
+            fclose($handle);
+        }
+        foreach($_rows as $row){
+            $listprice = '';
+            if(!is_null($row->listprice)){
+                $listprice = $row->listprice;
+            }
+            $this->best_sellers_model->insert($site_id, $row->page_title, $row->url, $row->brand,
+                $row->rank, $row->price, $row->list_name, $row->product_name, $listprice);
+        }
+        $response['message'] =  'File was added successfully';
         $this->output->set_content_type('application/json')->set_output(json_encode($response));
     }
 
@@ -751,6 +791,12 @@ class System extends MY_Controller {
         $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }
 
+    public function getBestSellersBySiteId(){
+        $this->load->model('best_sellers_model');
+        $result = $this->best_sellers_model->getAllBySiteId($this->input->post('site_id'));
+        $this->output->set_content_type('application/json')->set_output(json_encode($result));
+    }
+
     public function category_list()
     {
         $this->load->model('site_categories_model');
@@ -767,6 +813,8 @@ class System extends MY_Controller {
     {
         $this->load->model('sites_model');
         $this->load->model('department_members_model');
+        $this->load->model('best_sellers_model');
+
         $sites = $this->sites_model->getAll();
         $sitesArray = array();
         foreach ($sites as $site) {
@@ -774,9 +822,11 @@ class System extends MY_Controller {
                 $sitesArray[$site->id] = $site->name;
             }
         }
-        $this->load->model('department_members_model');
         foreach ($this->department_members_model->getAll() as $row) {
             $this->data['departmens_list'][$row->id] = $row->text;
+        }
+        foreach ($this->best_sellers_model->getAll() as $row) {
+            $this->data['best_sellers_list'][$row->id] = $row->page_title;
         }
 
         $this->data['sites'] = $sitesArray;

@@ -5,6 +5,7 @@ $menu = array(
 	/*array('controller' => 'admin_editor', 'name' => 'Editors'),*/
     array('controller' => 'admin_tag_editor', 'name' => 'Tag Editor'),
     /*array('controller' => 'site_crawler', 'name' => 'Site Crawler'),*/
+    array('controller' => 'job_board', 'name' => 'Job Board'),
 );
 
 ?>

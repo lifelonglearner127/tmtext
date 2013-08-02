@@ -23,8 +23,19 @@
 												}
 											 ?>
 										</div>
+                                        <div class="span1 admin_system_content">
+                                            <p>Batches</p>
+                                            <div class="clear-fix"></div>
+                                            <?php
+                                            foreach ($user_groups as $user_group) {	?>
+                                                <input type="checkbox" name="batches_<?php echo $user_group->id;?>" <?php if(isset($checked[$user_group->id]['batches'])){print 'checked';}?> value="1"/>
+                                                <div class="clear-fix"></div>
+                                            <?php
+                                            }
+                                            ?>
+                                        </div>
                                         <div class="span1 admin_system_content" style="width:85px;">
-                                            <p>Competitive</p>
+                                            <p>CI</p>
                                             <div class="clear-fix"></div>
                                             <?php
                                             foreach ($user_groups as $user_group) {	?>
@@ -34,8 +45,19 @@
                                             }
                                             ?>
                                         </div>
+                                        <div class="span1 admin_system_content">
+                                            <p>Assess</p>
+                                            <div class="clear-fix"></div>
+                                            <?php
+                                            foreach ($user_groups as $user_group) {	?>
+                                                <input type="checkbox" name="assess_<?php echo $user_group->id;?>" <?php if(isset($checked[$user_group->id]['assess'])){print 'checked';}?> value="1"/>
+                                                <div class="clear-fix"></div>
+                                            <?php
+                                            }
+                                            ?>
+                                        </div>
 										<div class="span1 admin_system_content">
-											<p>Edit</p>
+											<p>R&E</p>
 											<div class="clear-fix"></div>
 											<?php
 											foreach ($user_groups as $user_group) {	?>
@@ -45,7 +67,8 @@
 												}
 											 ?>
 										</div>
-                                        <div class="span1 admin_system_content">
+
+                                        <!--div class="span1 admin_system_content">
                                             <p>Job Board</p>
                                             <div class="clear-fix"></div>
                                             <?php
@@ -55,7 +78,7 @@
                                             <?php
                                             }
                                             ?>
-                                        </div>
+                                        </div-->
 										<div class="span1 admin_system_content">
 											<p>Settings</p>
 											<div class="clear-fix"></div>
@@ -79,12 +102,16 @@
                                                             <?php
                                                                 if($checked_controller=='editor'){
                                                                     echo 'Create';
+                                                                } else if($checked_controller=='batches'){
+                                                                    echo 'Batches';
                                                                 } else if($checked_controller=='measure'){
-                                                                    echo 'Competitive';
+                                                                    echo 'CI';
+                                                                } else if($checked_controller=='assess'){
+                                                                    echo 'Assess';
+                                                                } else if($checked_controller=='research'){
+                                                                    echo 'R&E';
                                                                 } else if($checked_controller=='customer'){
                                                                     echo 'Settings';
-                                                                } else if($checked_controller=='research'){
-                                                                    echo 'Edit';
                                                                 } else if($checked_controller=='job_board'){
                                                                     echo 'Job Board';
                                                                 }

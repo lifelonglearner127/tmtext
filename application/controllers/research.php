@@ -142,15 +142,6 @@ class Research extends MY_Controller {
             ->set_output(json_encode($research_data));
     }
 
-    public function create_batch(){
-
-        $this->data['customer_list'] = $this->getCustomersByUserId();
-        if(!empty($this->data['customer_list'])){
-            $this->data['batches_list'] = array('')+$this->batches_list();
-        }
-        $this->render();
-    }
-
     public function getBatchInfo(){
         $this->load->model('batches_model');
         $this->load->model('research_data_model');
