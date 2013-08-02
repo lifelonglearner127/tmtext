@@ -97,7 +97,7 @@ class OverstockSpider(BaseSpider):
     name = "bestseller"
     allowed_domains = ["overstock.com"]
     start_urls = [
-        "http://www.overstock.com/top-sellers",
+        'http://www.overstock.com/intlcountryselect?proceedasus=true&referer=http://www.overstock.com/top-sellers',
     ]
 
     def parse(self, response):
