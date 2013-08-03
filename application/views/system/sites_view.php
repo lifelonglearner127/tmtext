@@ -8,6 +8,7 @@
         <li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_productsmatch');?>">Product Match</a></li>
     </ul>
     <div class="tab-content">
+        <script src="<?php echo base_url();?>js/tinysort.js"></script>
         <script type="text/javascript">
             function doconfirm(str)
             {
@@ -89,14 +90,20 @@
             }
             selectOption();
             $('button#btn_new_site').click(function(){
+                                    
                 if($('#new_site').val() != ''){
+                    
                     $.post(base_url + 'index.php/system/add_new_site', {'site': $('#new_site').val()}, function(data){
                         $(".info-message").append(data.message);
                         $(".info-message").fadeOut(7000);
-                        $(".hp_boot_drop .dropdown-menu").append('<li><a href="javascript:void(0)" data-value="'+data.id+'" data-item="'+data.id+'">'+$('#new_site').val()+'</a></li>');
+                        $(".hp_boot_drop .dropdown-menu").append('<li><a href="javascript:void(0)" data-value="'+data.id+'" data-item="'+data.id+'"><span>'+$('#new_site').val()+'</span></a></li>');
                         selectOption();
+                         $(".hp_boot_drop .dropdown-menu li ").tsort('span',{order:'asc'});
+                        $('#site_name').val($('#new_site').val());
+                        $("#sites .btn_caret_sign").text($('#new_site').val());
                         $('#new_site').val('');
-                    });
+                        $('#site_url').val('');
+                       });
 
                 }
                 return false;
@@ -231,7 +238,7 @@
                                     </button>
                                     <ul class="dropdown-menu">
                                         <?php foreach($sites as $key => $value) { ?>
-                                            <li><a data-item="<?php echo $key; ?>" data-value="<?php echo $key; ?>" href="javascript:void(0)"><?php echo $value; ?></a></li>
+                                            <li><a data-item="<?php echo $key; ?>" data-value="<?php echo $key; ?>" href="javascript:void(0)"><span><?php echo $value; ?></span></a></li>
                                         <?php } ?>
                                     </ul>
                                 </div>

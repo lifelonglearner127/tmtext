@@ -604,6 +604,32 @@ class Measure extends MY_Controller {
         $this->output->set_content_type('application/json')->set_output(json_encode("aaaaaaaa"));
 
     }
+    
+    function get_base_url($url)
+    {
+    $chars = preg_split('//', $url, -1, PREG_SPLIT_NO_EMPTY);
+
+    $slash = 3; // 3rd slash
+
+    $i = 0;
+
+    foreach($chars as $key => $char)
+    {
+        if($char == '/')
+        {
+           $j = $i++;
+        }
+
+        if($i == 3)
+        {
+           $pos = $key; break;
+        }
+    }
+ 
+$main_base = substr($url, 0, $pos);
+ 
+return $main_base.'/';
+}
     public function gridview() {
         $im_data_id = $this->input->post('im_data_id');
 
@@ -640,15 +666,18 @@ class Measure extends MY_Controller {
            
             // get similar by parsed_attributes
             if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
+                
                 $strict = $this->input->post('strict');
                 $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], $strict);
             }
 
             if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['UPC/EAN/ISBN'])) {
+               
                 $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['UPC/EAN/ISBN']);
             }
             
             if (empty($same_pr) && isset($data_import['parsed_attributes']) && !isset($data_import['parsed_attributes']['model'])){
+                
                 if(!$this->similar_product_groups_model->checkIfgroupExists($im_data_id)){
                     $same_pr = $this->imported_data_parsed_model->getByProductName($im_data_id,$data_import['product_name'],$data_import['parsed_attributes']['manufacturer'],$strict);
             
@@ -851,9 +880,27 @@ class Measure extends MY_Controller {
                    $same_pr[0]['long_original']='100%';
                    $same_pr[0]['short_original']='100%';
               }
-         //   Max                                              
+         //   Max     
+              
+              
+?>
 
-            $data['same_pr'] = $same_pr;
+<?php
+//Max
+$selectedUrl =$this->input->post('selectedUrl');
+foreach ($same_pr as $ks => $vs) {
+    
+    if ($this->get_base_url($vs['url']) == $this->get_base_url($selectedUrl)) {
+        if ($ks != 0) {
+            $same_pr[] = $same_pr[0];
+            $same_pr[0] = $vs;
+            unset($same_pr[$ks]);
+            
+        }
+    }
+}
+
+  $data['same_pr'] = $same_pr;
             
       
 //            }

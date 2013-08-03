@@ -1,6 +1,7 @@
 <?php
 //if(count($same_pr) === 3) { 
-$selectedUrl = $_POST['selectedUrl'];
+//$selectedUrl = $_POST['selectedUrl'];
+//echo $selectedUrl;
 ?>
 <?php $i = 1; ?>
 <?php
@@ -8,17 +9,11 @@ $selectedUrl = $_POST['selectedUrl'];
 $min_price = 1000000000;
 $j = 0;
 foreach ($same_pr as $ks => $vs) {
+    
     foreach ($vs['three_last_prices'] as $last_price) {
         $price = sprintf("%01.2f", floatval($last_price->price));
         if ($price < $min_price) {
             $min_price = $price;
-        }
-    }
-    if ($vs['url'] == $selectedUrl) {
-        if ($ks != 0) {
-            $same_pr[] = $same_pr[0];
-            $same_pr[0] = $vs;
-            unset($same_pr[$ks]);
         }
     }
 }
@@ -163,9 +158,8 @@ foreach ($same_pr as $ks => $vs) {
                         <p  class='short_desc_con'><?php echo $s_product_description; ?></p>
                         <?php
                     }
-                    ?>
-                    <?php
-                    if ($s_product_long_desc_count > 0) {
+                    
+ elseif($s_product_long_desc_count > 0){
                         ?>
 
                         <span class='analysis_content_head'><img style="height: 9px;width: 9px;background: rgb(207, 207, 207);padding: 2px;margin-top: -3px;margin-right: 4px;" src="<?php echo base_url() ?>/img/arrow-down.png"><?php
@@ -203,6 +197,12 @@ foreach ($same_pr as $ks => $vs) {
                         <!--                     //Max-->
                         <?php
                         echo '<p>' . $s_product_long_description . '</p>';
+                    }else{
+                       ?>
+                        <span class='analysis_content_head'>Description: </span>
+                        <span>No description on site</span>
+                        
+                       <?php
                     }
                     ?>
 

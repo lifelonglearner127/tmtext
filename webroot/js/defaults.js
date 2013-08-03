@@ -620,23 +620,23 @@ jQuery(document).ready(function($) {
     $(document).on("click", ".left_nav_content li a, .right_nav_content li a", function(e){
         e.preventDefault();
         if($(this).parent().hasClass('active')){
-            if($(this).hasClass('jq-measure')){
-                $('title').text("Competitive Intelligence");
-            }
-            var editorCont = $('.main_content_editor').html();
-            if (editorCont.length == 0) {
-                var url = $(this).attr('href');
-                var posting = $.post(url+"?ajax=true", function(data) {
-                    var response_data = $.parseJSON( data );
-                    $('.main_content_editor').html(response_data.ajax_data);
-                    $('.main_content > .main_content_editor').html($('.main_content .main_content_editor .main_content_editor').html());
-                });
-            }
-            $('.main_content_other').css('display', 'none');
-            $('.main_content_editor').css('display', 'block');
-
-            $(".left_nav_content li, .right_nav_content li").removeClass('active');
-            $(this).parent('li').addClass('active');
+//            if($(this).hasClass('jq-measure')){
+//                $('title').text("Competitive Intelligence");
+//            }
+//            var editorCont = $('.main_content_editor').html();
+//            if (editorCont.length == 0) {
+//                var url = $(this).attr('href');
+//                var posting = $.post(url+"?ajax=true", function(data) {
+//                    var response_data = $.parseJSON( data );
+//                    $('.main_content_editor').html(response_data.ajax_data);
+//                    $('.main_content > .main_content_editor').html($('.main_content .main_content_editor .main_content_editor').html());
+//                });
+//            }
+//            $('.main_content_other').css('display', 'none');
+//            $('.main_content_editor').css('display', 'block');
+//
+//            $(".left_nav_content li, .right_nav_content li").removeClass('active');
+//            $(this).parent('li').addClass('active');
         }else{
             if($(this).hasClass('jq-validate')){
                 $('title').text("Validate");
