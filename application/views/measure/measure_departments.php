@@ -332,6 +332,11 @@
             var opt = $('select[name="department"]').find('option:selected');
             $('select[name="department"]').removeAttr('selected');
             $('select[name="department"]').find(opt).next().attr('selected', 'selected');
+            if(dataTable != undefined){
+                dataTable.fnDestroy();
+                dataTable = undefined;
+            }
+            readBestSellers();
         });
 
         $(document).on('click', 'table#records tbody tr', function(e){
