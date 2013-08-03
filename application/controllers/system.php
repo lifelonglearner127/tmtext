@@ -633,10 +633,10 @@ class System extends MY_Controller {
                 if(is_array($row->parent_text)){
                     $parent_text = $row->parent_text[0];
                 } else if(!is_array($row->parent_text) && !is_null($row->parent_text) && $row->parent_text!=''){
-                    $parent_text = mb_convert_encoding(htmlentities($row->parent_text), 'UTF-8');
+                    $parent_text = $row->parent_text;
                 }
                 if(is_array($row->text)){
-                    $text = mb_convert_encoding(htmlentities($row->text[0]), 'UTF-8');
+                    $text = $row->text[0];
                 } else if(!is_array($row->text) && !is_null($row->text)){
                     $text = $row->text;
                 }
@@ -654,10 +654,18 @@ class System extends MY_Controller {
                         $department_members_id = $check_id;
                     }
                 }
-                $this->site_categories_model->insert($site_id, $text, $url, $special, $parent_text, $department_members_id);
+                if($text != ''){
+                    $check_site = $this->site_categories_model->checkExist($site_id, $text);
+                    if($check_site == false){
+                        $this->site_categories_model->insert($site_id, $text, $url, $special, $parent_text, $department_members_id);
+                    }
+                }
             }
             if($row->level == 1){
-                $this->department_members_model->insert($site_name[0], $site_id, $row->text);
+                $check_id = $this->department_members_model->checkExist($site_name[0], $site_id, $row->text);
+                if($check_id == false){
+                    $this->department_members_model->insert($site_name[0], $site_id, $row->text);
+                }
             }
         }
         $response['message'] =  'File was added successfully';

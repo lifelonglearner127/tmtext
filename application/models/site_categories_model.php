@@ -72,4 +72,14 @@ class Site_categories_model extends CI_Model {
         return $this->db->delete($this->tables['site_categories'], array('site_id' => $site_id));
     }
 
+    function checkExist($site_id, $text)
+    {
+        $query =  $this->db->select('id')
+            ->from($this->tables['site_categories'])
+            ->where('site_id', $site_id)->where('text', trim($text))->limit(1)->get();
+        if($query->num_rows() > 0) {
+            return $query->row()->id;
+        }
+        return false;
+    }
 }
