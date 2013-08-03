@@ -712,7 +712,7 @@ $(document).ready(function() {
     $("#batchess").live('change', function() {//max
 
         $.post(base_url + 'index.php/research/filterCustomerByBatch', {'batch': $("#batchess").val()}, function(data) {
-            if (data != null) {
+            if (data !='') {
 
                 $("select[name='customers_list'] option").each(function() {
 
@@ -728,7 +728,13 @@ $(document).ready(function() {
                 });
             } else {
                 $("select[name='customers_list'] option").each(function() {
-                    $(this).removeAttr('selected');
+                    if($(this).val() == 'All Customers'){
+                        var dropdown = $("select[name='customers_list']").msDropdown().data("dd");
+                        dropdown.destroy();
+                        $('#product_customers .ddcommon').remove();
+                        $(this).prop('selected', true);
+                        dropdown = $("select[name='customers_list']").msDropdown().data("dd");
+                    }
                 });
             }
         });
