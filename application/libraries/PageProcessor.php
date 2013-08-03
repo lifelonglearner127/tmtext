@@ -271,10 +271,17 @@ class PageProcessor {
 			$title = $item['#text'][0];
 		}
 
+		foreach($this->nokogiri->get('#pricingWrap .youPay .pricing') as $item) {
+			if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $item['#text'][0], $match)) {
+				$price = $match[1];
+			}
+		}
+
 		return array(
 			'Product Name' => $title,
 			'Description' => $description,
-			'Long_Description' => $descriptionLong['#text'][0]
+			'Long_Description' => $descriptionLong['#text'][0],
+			'Price' => $price
 		);
 	}
 
