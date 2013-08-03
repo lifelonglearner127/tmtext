@@ -110,6 +110,7 @@
                                     <tr>
                                         <th>Rank</th>
                                         <th>Product Name</th>
+                                        <th>Department</th>
                                         <th>URL</th>
                                         <th><div class="draggable">Actions</div></th>
                                     </tr>
@@ -133,6 +134,7 @@
                             <tr id="${id}">
                                 <td>${rank}</td>
                                 <td>${product_name}</td>
+                                <td>${department}</td>
                                 <td>${url}</td>
                                 <td nowrap><a class="updateBtn icon-edit" style="float:left;" href="${updateLink}"></a>
                                     <a class="deleteBtn icon-remove ml_5" href="${deleteLink}"></a>
@@ -243,6 +245,7 @@
             $.post(base_url + 'index.php/measure/getDepartmentsByCustomer', {'customer_name': new_caret}, function(data) {
                 $("select[name='department']").empty();
                 if(data.length > 0){
+                    $("select[name='department']").append("<option value=''>All</option>");
                     for(var i=0; i<data.length; i++){
                         $("select[name='department']").append("<option value='"+data[i].id+"'>"+data[i].text+"</option>");
                     }
@@ -251,6 +254,7 @@
             $.post(base_url + 'index.php/measure/getCategoriesByCustomer', {'customer_name': new_caret}, function(data) {
                 $("select[name='category']").empty();
                 if(data.length > 0){
+                    $("select[name='category']").append("<option value=''>All</option>");
                     for(var i=0; i<data.length; i++){
                         $("select[name='category']").append("<option value='"+data[i].id+"'>"+data[i].text+"</option>");
                     }
@@ -265,6 +269,7 @@
             }, function(data) {
                 $("select[name='category']").empty();
                 if(data.length > 0){
+                    $("select[name='category']").append("<option value=''>All</option>");
                     for(var i=0; i<data.length; i++){
                         $("select[name='category']").append("<option value='"+data[i].id+"'>"+data[i].text+"</option>");
                     }
@@ -300,6 +305,7 @@
 
 
         });
+
         $('button#category_go').click(function(e){
             // use success flag
             var success = false;

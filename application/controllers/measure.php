@@ -1156,7 +1156,7 @@ foreach ($same_pr as $ks => $vs) {
         $department = '';
         if($this->input->post('site') != '' && $this->input->post('site') != '[ Choose site ]'){
             $site_id = $this->sites_model->getIdByName($this->input->post('site'));
-            if($this->input->post('department') != ''){
+            if($this->input->post('department') != '' && $this->input->post('department') != 'All'){
                 $department = $this->input->post('department');
             }
             $output = $this->best_sellers_model->getAllBySiteId($site_id, $department);
