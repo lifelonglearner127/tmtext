@@ -67,4 +67,15 @@ class Department_members_model extends CI_Model {
     {
         return $this->db->delete($this->tables['department_members'], array('site' => $site));
     }
+
+    function checkExist($site_name, $site_id, $text)
+    {
+        $query =  $this->db->select('id')
+            ->from($this->tables['department_members'])
+            ->where('site', trim($site_name))->where('site_id', trim($site_id))->where('text', trim($text))->limit(1)->get();
+        if($query->num_rows() > 0) {
+            return $query->row()->id;
+        }
+        return false;
+    }
 }

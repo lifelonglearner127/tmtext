@@ -429,12 +429,12 @@ class Measure extends MY_Controller {
     }
 
     public function measure_departments() {
-        $this->load->model('department_model');
+        $this->load->model('department_members_model');
         $this->load->model('site_categories_model');
 
         $this->data['departmens_list'][] = 'All';
-        foreach ($this->department_model->getAll() as $row) {
-            $this->data['departmens_list'][$row->id] = $row->short_name;
+        foreach ($this->department_members_model->getAll() as $row) {
+            $this->data['departmens_list'][$row->id] = $row->text;
         }
         foreach ($this->site_categories_model->getAll() as $row) {
             $this->data['category_list'][$row->id] = $row->text;
@@ -456,6 +456,15 @@ class Measure extends MY_Controller {
         $this->load->model('site_categories_model');
         $site_id = $this->sites_model->getIdByName($this->input->post('customer_name'));
         $result = $this->site_categories_model->getAllBySiteId($site_id);
+        $this->output->set_content_type('application/json')->set_output(json_encode($result));
+    }
+
+    public function getCategoriesByDepartment(){
+        $this->load->model('site_categories_model');
+        $this->load->model('sites_model');
+        $department_id = $this->input->post('department_id');
+        $site_id = $this->sites_model->getIdByName($this->input->post('site_name'));
+        $result = $this->site_categories_model->getAllBySiteId($site_id, $department_id);
         $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }
 
@@ -1144,10 +1153,13 @@ foreach ($same_pr as $ks => $vs) {
     {
         $this->load->model('best_sellers_model');
         $this->load->model('sites_model');
-        $site_id = '';
+        $department = '';
         if($this->input->post('site') != '' && $this->input->post('site') != '[ Choose site ]'){
             $site_id = $this->sites_model->getIdByName($this->input->post('site'));
-            $output = $this->best_sellers_model->getAllBySiteId($site_id);
+            if($this->input->post('department') != ''){
+                $department = $this->input->post('department');
+            }
+            $output = $this->best_sellers_model->getAllBySiteId($site_id, $department);
         } else{
             $output = $this->best_sellers_model->getAll();
         }

@@ -630,8 +630,10 @@ class System extends MY_Controller {
                 if($row->special!='' && !is_null($row->special)){
                     $special = $row->special;
                 }
-                if($row->parent_text!='' && !is_null($row->parent_text)){
-                    $special = mb_convert_encoding(htmlentities($row->parent_text), 'UTF-8');
+                if(is_array($row->parent_text)){
+                    $parent_text = $row->parent_text[0];
+                } else if(!is_array($row->parent_text) && !is_null($row->parent_text) && $row->parent_text!=''){
+                    $parent_text = mb_convert_encoding(htmlentities($row->parent_text), 'UTF-8');
                 }
                 if(is_array($row->text)){
                     $text = mb_convert_encoding(htmlentities($row->text[0]), 'UTF-8');
@@ -640,10 +642,19 @@ class System extends MY_Controller {
                 }
                 if(is_array($row->url)){
                     $url = $row->url[0];
-                } else {
+                } else if(!is_array($row->url) && !is_null($row->url)){
                     $url = $row->url;
                 }
-                $this->site_categories_model->insert($site_id, $text, $url, $special, $parent_text);
+                $department_members_id = 0;
+                if($parent_text!=''){
+                    $check_id = $this->department_members_model->checkExist($site_name[0], $site_id, $parent_text);
+                    if($check_id == false){
+                        $department_members_id = $this->department_members_model->insert($site_name[0], $site_id, $parent_text);
+                    } else {
+                        $department_members_id = $check_id;
+                    }
+                }
+                $this->site_categories_model->insert($site_id, $text, $url, $special, $parent_text, $department_members_id);
             }
             if($row->level == 1){
                 $this->department_members_model->insert($site_name[0], $site_id, $row->text);
@@ -722,6 +733,12 @@ class System extends MY_Controller {
             $listprice ='';
             $brand = '';
             $department = '';
+            $price = '';
+            $page_title = '';
+            $url = '';
+            $rank = '';
+            $list_name = '';
+            $product_name = '';
             if(!is_null($row->listprice)){
                 $listprice = $row->listprice;
             }
@@ -731,8 +748,28 @@ class System extends MY_Controller {
             if(!is_null( $row->department)){
                 $department = $row->department;
             }
-            $this->best_sellers_model->insert($site_id, $row->page_title, $row->url, $brand,
-                $row->rank, $department, $row->price, $row->list_name, $row->product_name, $listprice);
+            if(!is_null( $row->price)){
+                $price = $row->price;
+            }
+            if(!is_null( $row->page_title)){
+                $page_title = $row->page_title;
+            }
+            if(!is_null( $row->url)){
+                $url = $row->url;
+            }
+            if(!is_null( $row->rank)){
+                $rank = $row->rank;
+            }
+            if(!is_null( $row->list_name)){
+                $list_name = $row->list_name;
+            }
+            if(!is_null( $row->product_name)){
+                $product_name = $row->product_name;
+            }
+            if($page_title!=''){
+                $this->best_sellers_model->insert($site_id, $page_title, $url, $brand,
+                    $rank, $department, $price, $list_name, $product_name, $listprice);
+            }
         }
         $response['message'] =  'File was added successfully';
         $this->output->set_content_type('application/json')->set_output(json_encode($response));

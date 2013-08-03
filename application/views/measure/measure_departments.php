@@ -235,8 +235,10 @@
 			var new_caret = $.trim($(this).text());
 			var item_id = $(this).data('item');
             $("#hp_boot_drop .btn_caret_sign").text(new_caret);
-            dataTable.fnDestroy();
-            dataTable = undefined;
+            if(dataTable != undefined){
+                dataTable.fnDestroy();
+                dataTable = undefined;
+            }
             readBestSellers();
             $.post(base_url + 'index.php/measure/getDepartmentsByCustomer', {'customer_name': new_caret}, function(data) {
                 $("select[name='department']").empty();
@@ -255,6 +257,26 @@
                 }
             });
 		});
+
+        $("select[name='department']").change(function(){
+            $.post(base_url + 'index.php/measure/getCategoriesByDepartment', {
+                'department_id': $("select[name='department']").find('option:selected').val(),
+                'site_name': $('.btn_caret_sign').text()
+            }, function(data) {
+                $("select[name='category']").empty();
+                if(data.length > 0){
+                    for(var i=0; i<data.length; i++){
+                        $("select[name='category']").append("<option value='"+data[i].id+"'>"+data[i].text+"</option>");
+                    }
+                }
+                if(dataTable != undefined){
+                    dataTable.fnDestroy();
+                    dataTable = undefined;
+                }
+                readBestSellers();
+            });
+        });
+
         $('button#department_go').click(function(e){
             // use success flag
             var success = false;
@@ -262,7 +284,7 @@
             e.preventDefault();
             $.post(base_url + 'index.php/measure/getUrlByDepartment', {
                 'department_id': $('select[name="department"]').find("option:selected").val()
-            }, function(data) {
+            }, function(departmentdata) {
                 if(data.length > 0){
                     window.success = true;
                     if(data[0].url!='' && data[0].url!=undefined){

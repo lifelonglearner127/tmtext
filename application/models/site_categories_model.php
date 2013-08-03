@@ -34,8 +34,11 @@ class Site_categories_model extends CI_Model {
         return $query->result();
     }
 
-    function getAllBySiteId($site_id){
-        $sql = "SELECT `id`, `text` FROM `site_categories` WHERE `site_id` = '".$site_id."' ORDER BY `text` ASC";
+    function getAllBySiteId($site_id, $department_id=''){
+        if($department_id != ''){
+            $department_id = " and `department_members_id`='".$department_id."' ";
+        }
+        $sql = "SELECT `id`, `text` FROM `site_categories` WHERE `site_id` = '".$site_id."' ".$department_id." ORDER BY `text` ASC";
         $query = $this->db->query($sql);
         return $query->result();
     }
@@ -46,13 +49,14 @@ class Site_categories_model extends CI_Model {
         return $query->result();
     }
 
-    function insert($site_id, $text, $url, $special=0, $parent_text='')
+    function insert($site_id, $text, $url, $special=0, $parent_text='', $department_members_id = 0)
     {
         $this->text = $text;
         $this->url = $url;
         $this->site_id = $site_id;
         $this->special = $special;
         $this->parent_text = $parent_text;
+        $this->department_members_id = $department_members_id;
 
         $this->db->insert($this->tables['site_categories'], $this);
         return $this->db->insert_id();
