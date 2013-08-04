@@ -42,7 +42,7 @@ jQuery(document).ready(function($) {
             <form id="measureFormMetrics" accept-charset="utf-8" method="post" action="javascript:void(0)">
             <input type="text" name="compare_text" value="" id="compare_text" class="span8" placeholder="" autocomplete="off"/>
             <div id="ci_dropdown" class="website_dropdown"></div>
-                <select class='cats_an_select' id='cats_an' name='cats_an'>
+                <!--select class='cats_an_select' id='cats_an' name='cats_an'>
                     <?php if(count($category_list) > 0) { ?>
                         <?php foreach ($category_list as $key => $value) { ?>
                             <?php if($value->name == "All") { ?>
@@ -54,7 +54,8 @@ jQuery(document).ready(function($) {
                     <?php } else { ?>
                     <option value='all'>All Categories</option>
                     <?php } ?>
-                </select>
+                </select-->
+                <?php  echo form_dropdown('cats_an', $departmens_list, null, 'id="cat_an" class="inline_block lh_30 w_375 mb_reset" style="width:135px!important"'); ?>
                 <button type="submit" id="an_search" onclick="return startMeasureCompareV2()" class="btn btn-success pull-right">Search</button>
                 <!-- <button type="submit" id="an_search" class="btn btn-success pull-right">Search</button> -->
             <?php // echo form_close();?>

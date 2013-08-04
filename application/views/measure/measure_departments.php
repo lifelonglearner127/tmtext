@@ -282,6 +282,14 @@
             });
         });
 
+        $("select[name='category']").change(function(){
+            if(dataTable != undefined){
+                dataTable.fnDestroy();
+                dataTable = undefined;
+            }
+            readBestSellers();
+        });
+
         $('button#department_go').click(function(e){
             // use success flag
             var success = false;

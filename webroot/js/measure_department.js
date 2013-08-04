@@ -146,7 +146,7 @@ function readBestSellers() {
         url: readUrl,
         dataType: 'json',
         type: "POST",
-        data:{ 'site': $(".btn_caret_sign").text(), 'department': $('select[name="department"]').find('option:selected').text() },
+        data:{ 'site': $(".btn_caret_sign").text(), 'department': $('select[name="category"]').find('option:selected').text() },
         success: function( response ) {
             for( var i in response ) {
                 response[ i ].updateLink = updateUrl + '/' + response[ i ].id;

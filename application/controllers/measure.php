@@ -414,8 +414,12 @@ class Measure extends MY_Controller {
     }
 
     public function measure_products() {
-        $this->data['category_list'] = $this->category_full_list();
         $this->data['customers_list'] = $this->category_customers_list();
+        $this->load->model('department_members_model');
+        $this->data['departmens_list'][] = 'All';
+        foreach ($this->department_members_model->getAll() as $row) {
+            $this->data['departmens_list'][$row->id] = $row->text;
+        }
         $this->load->model('batches_model');
         $batches = $this->batches_model->getAll();
         $batches_list = array(0 => 'Choose Batch');
@@ -436,6 +440,7 @@ class Measure extends MY_Controller {
         foreach ($this->department_members_model->getAll() as $row) {
             $this->data['departmens_list'][$row->id] = $row->text;
         }
+        $this->data['category_list'][] = 'All';
         foreach ($this->site_categories_model->getAll() as $row) {
             $this->data['category_list'][$row->id] = $row->text;
         }
