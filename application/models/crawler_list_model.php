@@ -118,7 +118,6 @@ class Crawler_List_model extends CI_Model {
     	$this->db->select('cl.id, cl.url, c.name as name, cl.status, DATE(cl.updated) as updated')
     		->from($this->tables['crawler_list'].' as cl')
             ->join($this->tables['categories'].' as c', 'cl.category_id = c.id', 'left')
-    		->where('user_id',  $CI->ion_auth->get_user_id())
     		->order_by("cl.created", "desc")
     		->limit($limit, $start);
 
