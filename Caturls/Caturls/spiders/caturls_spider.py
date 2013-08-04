@@ -32,6 +32,8 @@ class CaturlsSpider(BaseSpider):
 		#self.start_urls = ["http://www.staples.com/Televisions/cat_CL142471"]
 		# bloomingdales sneakers
 		#self.start_urls = ["http://www1.bloomingdales.com/shop/shoes/sneakers?id=17400"]
+		# walmart televisions
+		#self.start_urls = ["http://www.walmart.com/cp/televisions-video/1060825?povid=P1171-C1110.2784+1455.2776+1115.2956-L13"]
 		
 
 	def parse(self, response):
