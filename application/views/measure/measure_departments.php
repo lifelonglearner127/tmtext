@@ -41,7 +41,7 @@
                         if($this->ion_auth->is_admin($this->ion_auth->get_user_id())){
                             if(count($customers_list) > 0) { ?>
                                 <div id="hp_boot_drop" class="btn-group <?php echo $dropup; ?> hp_boot_drop pull-right mr_10">
-                                    <button class="btn btn-danger btn_caret_sign" >[ Choose site ]</button>
+                                    <button class="btn btn-danger btn_caret_sign" >Amazon.com</button>
                                     <button class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
                                         <span class="caret"></span>
                                     </button>
@@ -110,7 +110,6 @@
                                     <tr>
                                         <th>Rank</th>
                                         <th>Product Name</th>
-                                        <th>Department</th>
                                         <th>URL</th>
                                         <th><div class="draggable">Actions</div></th>
                                     </tr>
@@ -134,7 +133,6 @@
                             <tr id="${id}">
                                 <td>${rank}</td>
                                 <td>${product_name}</td>
-                                <td>${department}</td>
                                 <td>${url}</td>
                                 <td nowrap><a class="updateBtn icon-edit" style="float:left;" href="${updateLink}"></a>
                                     <a class="deleteBtn icon-remove ml_5" href="${deleteLink}"></a>
@@ -233,7 +231,7 @@
 
 <script type="text/javascript">
 	$(document).ready(function() {
-		$(".hp_boot_drop .dropdown-menu > li > a").bind('click', function(e) {
+        $(".hp_boot_drop .dropdown-menu > li > a").bind('click', function(e) {
 			var new_caret = $.trim($(this).text());
 			var item_id = $(this).data('item');
             $("#hp_boot_drop .btn_caret_sign").text(new_caret);
@@ -261,7 +259,7 @@
                 }
             });
 		});
-        $(".hp_boot_drop .dropdown-menu > li:first-child > a").trigger('click');
+
         $("select[name='department']").change(function(){
             $.post(base_url + 'index.php/measure/getCategoriesByDepartment', {
                 'department_id': $("select[name='department']").find('option:selected').val(),
