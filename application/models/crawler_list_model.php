@@ -130,15 +130,18 @@ class Crawler_List_model extends CI_Model {
         return $query->result();
     }
 
-    function countAll()
+    function countAll($only_my=true)
     {
     	$CI =& get_instance();
 
     	$this->db->select('cl.id')
     		->from($this->tables['crawler_list'].' as cl')
             ->join($this->tables['categories'].' as c', 'cl.category_id = c.id', 'left')
-    		->where('user_id',  $CI->ion_auth->get_user_id())
     		->order_by("cl.created", "desc");
+
+    	if ($only_my) {
+    		$this->db->where('user_id',  $CI->ion_auth->get_user_id());
+    	}
 
         return $this->db->count_all_results();
     }
