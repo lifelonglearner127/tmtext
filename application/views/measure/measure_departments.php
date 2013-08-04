@@ -268,14 +268,15 @@
                 $("select[name='category']").empty();
                 if(data.length > 0){
                     $("select[name='category']").append("<option value=''>All</option>");
+                    var sel = '';
                     for(var i=0; i<data.length; i++){
                         if(i == 0){
-                            selected = "selected='selected'";
+                            sel = "selected='selected'";
                         }else{
-                            selected = '';
+                            sel= '';
                         }
 
-                        $("select[name='category']").append("<option value='"+data[i].id+"' "+selected+">"+data[i].text+"</option>");
+                        $("select[name='category']").append("<option value='"+data[i].id+"' "+sel+">"+data[i].text+"</option>");
                     }
                 }
                 if(dataTable != undefined){
