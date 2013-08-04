@@ -111,7 +111,7 @@ class Crawler_List_model extends CI_Model {
         return $query->result();
     }
 
-    function getAllLimit($limit, $start)
+    function getAllLimit($limit, $start, $only_my=true)
     {
     	$CI =& get_instance();
 
@@ -121,6 +121,10 @@ class Crawler_List_model extends CI_Model {
     		->where('user_id',  $CI->ion_auth->get_user_id())
     		->order_by("cl.created", "desc")
     		->limit($limit, $start);
+
+    	if ($only_my) {
+    		$this->db->where('user_id',  $CI->ion_auth->get_user_id());
+    	}
 
         $query = $this->db->get();
 
