@@ -83,7 +83,7 @@
             <div style='margin-left: 0px;' class='span12 mt_10'>
                 <span class='inline_block lh_30 mr_10 span2'>Department:</span>
                 <?php //var_dump($departmens_list);?>
-                <?php  echo form_dropdown('department', $departmens_list, null, 'class="inline_block lh_30 w_375 mb_reset"'); ?>
+                <?php  echo form_dropdown('department', $departmens_list, array(3), 'class="inline_block lh_30 w_375 mb_reset"'); ?>
                 <!-- <input type="text" id="department" name="department" value="" class="inline_block lh_30 w_375 mb_reset" placeholder=""/>-->
                 <button id="department_next" type="button" class="btn ml_10" >Next</button>
                 <button id="department_go" type="button" class="btn ml_10" >Go</button>
@@ -91,7 +91,7 @@
 
             <div style='margin-left: 0px;' class='span12 mt_10'>
                 <span class='inline_block lh_30 mr_10 span2'>Category:</span>
-                <?php  echo form_dropdown('category', $category_list, null, 'class="inline_block lh_30 w_375 mb_reset"'); ?>
+                <?php  echo form_dropdown('category', $category_list, array(15), 'class="inline_block lh_30 w_375 mb_reset"'); ?>
                 <button id="category_next" type="button" class="btn ml_10" >Next</button>
                 <button id="category_go" type="button" class="btn ml_10" >Go</button>
             </div>
@@ -261,7 +261,7 @@
                 }
             });
 		});
-
+        $(".hp_boot_drop .dropdown-menu > li:first-child > a").trigger('click');
         $("select[name='department']").change(function(){
             $.post(base_url + 'index.php/measure/getCategoriesByDepartment', {
                 'department_id': $("select[name='department']").find('option:selected').val(),
