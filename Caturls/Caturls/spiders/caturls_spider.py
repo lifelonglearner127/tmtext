@@ -22,7 +22,7 @@ import re
 class CaturlsSpider(BaseSpider):
 
 	name = "producturls"
-	allowed_domains = ["staples.com", "bloomingdales.com", "walmart.com", "amazon.com"]
+	allowed_domains = ["staples.com", "bloomingdales.com", "walmart.com", "amazon.com", "bestbuy.com"]
 
 	# store the cateory page url given as an argument into a field and add it to the start_urls list
 	def __init__(self, cat_page):
@@ -36,6 +36,8 @@ class CaturlsSpider(BaseSpider):
 		#self.start_urls = ["http://www.walmart.com/cp/televisions-video/1060825?povid=P1171-C1110.2784+1455.2776+1115.2956-L13"]
 		# amazon televisions
 		#self.start_urls = ["http://www.amazon.com/Televisions-Video/b/ref=sa_menu_tv?ie=UTF8&node=1266092011"]
+		# bestbuy televisions
+		#self.start_urls = ["http://www.bestbuy.com/site/Electronics/Televisions/pcmcat307800050023.c?id=pcmcat307800050023&abtest=tv_cat_page_redirect"]
 		
 
 	def parse(self, response):
@@ -183,6 +185,7 @@ class CaturlsSpider(BaseSpider):
 			else:
 				return Request(response.url, callback = self.parsePage_walmart)
 
+
 		# works for both product list pages and higher level pages with links in the left side menu to the product links page
 		if site == 'amazon':
 			hxs = HtmlXPathSelector(response)
@@ -198,6 +201,25 @@ class CaturlsSpider(BaseSpider):
 			# otherwise, try to parse current page as product list page
 			else:
 				return Request(response.url, callback = self.parsePage_amazon)
+
+		# works for both product list pages and higher level pages with links in the left side menu to the product links page
+		if site == 'bestbuy':
+			hxs = HtmlXPathSelector(response)
+
+			# try to see if it's not a product page but branches into further subcategories, select "See all..." page URL
+			seeall_list = hxs.select("//ul[@class='search']")
+			if seeall_list:
+				seeall = seeall_list[0].select("li[1]/a/@href").extract()
+				if seeall:
+					root_url = "http://www.bestbuy.com"
+					page_url = root_url + seeall[0]
+
+					# send the page to parsePage and extract product URLs
+					return Request(page_url, callback = self.parsePage_bestbuy)
+
+			# if you can't find the link to the product list page, try to parse this as the product list page
+			else:
+				return Request(response.url, callback = self.parsePage_bestbuy)
 
 
 	# parse staples page and extract product URLs
@@ -249,11 +271,9 @@ class CaturlsSpider(BaseSpider):
 	def parsePage_amazon(self, response):
 		hxs = HtmlXPathSelector(response)
 		product_links = hxs.select("//h3[@class='newaps']/a/@href")
-		nr=0
 		for product_link in product_links:
 			item = ProductItem()
 			item['product_url'] = product_link.extract()
-			nr+=1
 			yield item
 
 		# select next page, if any, parse it too with this method
@@ -262,3 +282,21 @@ class CaturlsSpider(BaseSpider):
 		if next_page:
 			page_url = root_url + next_page[0]
 			yield Request(url = page_url, callback = self.parsePage_amazon)
+
+	# parse bestbuy page and extract product URLs
+	def parsePage_bestbuy(self, response):
+		hxs = HtmlXPathSelector(response)
+		root_url = "http://www.bestbuy.com"
+
+		# extract product URLs
+		product_links = hxs.select("//div[@class='info-main']/h3/a/@href")
+		for product_link in product_links:
+			item = ProductItem()
+			item['product_url'] = root_url + product_link.extract()
+			yield item
+
+		# select next page, if any, parse it too with this method
+		next_page = hxs.select("//ul[@class='pagination']/li/a[@class='next']/@href").extract()
+		if next_page:
+			page_url = root_url + next_page[0]
+			yield Request(url = page_url, callback = self.parsePage_bestbuy)
