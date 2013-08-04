@@ -164,15 +164,22 @@ class CaturlsSpider(BaseSpider):
 
 			return items
 
+		# works for both product list pages and higher level pages with links in the left side menu to the product links page
 		if site == 'walmart':
 			hxs = HtmlXPathSelector(response)
-			# select "See all..." page URL
+
+			# try to see if it's not a product page but branches into further subcategories, select "See all..." page URL
 			#! this has a space after the div class, maybe in other pages it doesn't
-			seeall = hxs.select("//div[@class='CustomSecondaryNav ']//li[last()]/a/@href").extract()[0]
-			root_url = "http://www.walmart.com"
-			page_url = root_url + seeall
-			request = Request(page_url, callback = self.parsePage_walmart)
-			return request
+			seeall = hxs.select("//div[@class='CustomSecondaryNav ']//li[last()]/a/@href").extract()
+			if seeall:
+				root_url = "http://www.walmart.com"
+				page_url = root_url + seeall[0]
+				# send the page to parsePage and extract product URLs
+				request = Request(page_url, callback = self.parsePage_walmart)
+				return request
+			# if you can't find the link to the product list page, try to parse this as the product list page
+			else:
+				return Request(response.url, callback = self.parsePage_walmart)
 
 	# parse staples page and extract product URLs
 	def parsePage_staples(self, response):
@@ -204,13 +211,12 @@ class CaturlsSpider(BaseSpider):
 
 	# parse walmart page and extract product URLs
 	def parsePage_walmart(self, response):
-		print "URL", response.url
+		
 		items = []
 		hxs = HtmlXPathSelector(response)
 		root_url = "http://www.walmart.com"
 		product_links = hxs.select("//a[@class='prodLink ListItemLink']/@href")
-		if not product_links:
-			print "NO PRODUCTS"
+
 		for product_link in product_links:
 			item = ProductItem()
 			item['product_url'] = root_url + product_link.extract()
