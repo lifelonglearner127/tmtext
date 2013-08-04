@@ -216,6 +216,15 @@ class PageProcessor {
 
 		foreach($this->nokogiri->get('.contentMain .prodInfo .priceToday .salePrice') as $item) {
 			$price = $item['sup'][0]['#text'][0] . $item['#text'][0]. '.' . $item['sup'][1]['#text'][0];
+			$price = str_replace(',','',$price);
+			if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $price, $match)) {
+				$price = $match[1];
+			}
+		}
+
+		foreach($this->nokogiri->get('.contentMain .prodInfo .priceFinal .salePrice') as $item) {
+			$price = $item['sup'][0]['#text'][0] . $item['#text'][0]. '.' . $item['sup'][1]['#text'][0];
+			$price = str_replace(',','',$price);
 			if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $price, $match)) {
 				$price = $match[1];
 			}
@@ -706,6 +715,15 @@ class PageProcessor {
 			$p = str_replace(',','',$item['#text'][0]);
 			if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $p, $match)) {
 				$price_old = $match[1];
+			}
+		}
+
+		if (!isset($price)) {
+			foreach($this->nokogiri->get('#priceBlock #listPriceValue') as $item) {
+				$p = str_replace(',','',$item['#text'][0]);
+				if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $p, $match)) {
+					$price_old = $match[1];
+				}
 			}
 		}
 
