@@ -22,7 +22,7 @@ import re
 class CaturlsSpider(BaseSpider):
 
 	name = "producturls"
-	allowed_domains = ["staples.com", "bloomingdales.com", "walmart.com"]
+	allowed_domains = ["staples.com", "bloomingdales.com", "walmart.com", "amazon.com"]
 
 	# store the cateory page url given as an argument into a field and add it to the start_urls list
 	def __init__(self, cat_page):
@@ -34,6 +34,8 @@ class CaturlsSpider(BaseSpider):
 		#self.start_urls = ["http://www1.bloomingdales.com/shop/shoes/sneakers?id=17400"]
 		# walmart televisions
 		#self.start_urls = ["http://www.walmart.com/cp/televisions-video/1060825?povid=P1171-C1110.2784+1455.2776+1115.2956-L13"]
+		# amazon televisions
+		#self.start_urls = ["http://www.amazon.com/Televisions-Video/b/ref=sa_menu_tv?ie=UTF8&node=1266092011"]
 		
 
 	def parse(self, response):
@@ -181,6 +183,23 @@ class CaturlsSpider(BaseSpider):
 			else:
 				return Request(response.url, callback = self.parsePage_walmart)
 
+		# works for both product list pages and higher level pages with links in the left side menu to the product links page
+		if site == 'amazon':
+			hxs = HtmlXPathSelector(response)
+			# select first see more list ("All Televisions")
+			seeall = hxs.select("//p[@class='seeMore'][1]/a/@href").extract()
+			root_url = "http://www.amazon.com"
+
+			# if we can find see all link, follow it and pass it to parsePage to extract product URLs
+			if seeall:
+				page_url = root_url + seeall[0]
+				return Request(page_url, callback = self.parsePage_amazon)
+
+			# otherwise, try to parse current page as product list page
+			else:
+				return Request(response.url, callback = self.parsePage_amazon)
+
+
 	# parse staples page and extract product URLs
 	def parsePage_staples(self, response):
 
@@ -211,8 +230,6 @@ class CaturlsSpider(BaseSpider):
 
 	# parse walmart page and extract product URLs
 	def parsePage_walmart(self, response):
-		
-		items = []
 		hxs = HtmlXPathSelector(response)
 		root_url = "http://www.walmart.com"
 		product_links = hxs.select("//a[@class='prodLink ListItemLink']/@href")
@@ -220,10 +237,7 @@ class CaturlsSpider(BaseSpider):
 		for product_link in product_links:
 			item = ProductItem()
 			item['product_url'] = root_url + product_link.extract()
-			print item['product_url']
 			yield item
-			#items.append(item)
-
 
 		# select next page, if any, parse it too with this method
 		next_page = hxs.select("//a[@class='link-pageNum' and text()=' Next ']/@href").extract()
@@ -231,4 +245,20 @@ class CaturlsSpider(BaseSpider):
 			page_url = root_url + next_page[0]
 			yield Request(url = page_url, callback = self.parsePage_walmart)
 
-		#return items
+	# parse walmart page and extract product URLs
+	def parsePage_amazon(self, response):
+		hxs = HtmlXPathSelector(response)
+		product_links = hxs.select("//h3[@class='newaps']/a/@href")
+		nr=0
+		for product_link in product_links:
+			item = ProductItem()
+			item['product_url'] = product_link.extract()
+			nr+=1
+			yield item
+
+		# select next page, if any, parse it too with this method
+		root_url = "http://www.amazon.com"
+		next_page = hxs.select("//a[@title='Next Page']/@href").extract()
+		if next_page:
+			page_url = root_url + next_page[0]
+			yield Request(url = page_url, callback = self.parsePage_amazon)
