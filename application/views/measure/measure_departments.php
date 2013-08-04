@@ -269,7 +269,13 @@
                 if(data.length > 0){
                     $("select[name='category']").append("<option value=''>All</option>");
                     for(var i=0; i<data.length; i++){
-                        $("select[name='category']").append("<option value='"+data[i].id+"'>"+data[i].text+"</option>");
+                        if(i == 0){
+                            selected = "selected='selected'";
+                        }else{
+                            selected = '';
+                        }
+
+                        $("select[name='category']").append("<option value='"+data[i].id+"' "+selected+">"+data[i].text+"</option>");
                     }
                 }
                 if(dataTable != undefined){
@@ -338,6 +344,17 @@
             var opt = $('select[name="department"]').find('option:selected');
             $('select[name="department"]').removeAttr('selected');
             $('select[name="department"]').find(opt).next().attr('selected', 'selected');
+            if(dataTable != undefined){
+                dataTable.fnDestroy();
+                dataTable = undefined;
+            }
+            readBestSellers();
+        });
+
+        $('button#category_next').click(function(){
+            var opt = $('select[name="category"]').find('option:selected');
+            $('select[name="category"]').removeAttr('selected');
+            $('select[name="category"]').find(opt).next().attr('selected', 'selected');
             if(dataTable != undefined){
                 dataTable.fnDestroy();
                 dataTable = undefined;

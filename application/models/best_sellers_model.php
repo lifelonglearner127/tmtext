@@ -41,7 +41,7 @@ class Best_sellers_model extends CI_Model {
 
     function getAllBySiteId($site_id, $department = ''){
         if($department != ''){
-            $department = ' and `department`="'.$department.'"';
+            $department = ' and `department`="'.addslashes($department).'"';
         }
         $sql = "SELECT * FROM `best_sellers` WHERE `site_id` = '".$site_id."' ".$department." ORDER BY `page_title` ASC";
         $query = $this->db->query($sql);
