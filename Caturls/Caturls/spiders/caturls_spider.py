@@ -22,7 +22,7 @@ import re
 class CaturlsSpider(BaseSpider):
 
 	name = "producturls"
-	allowed_domains = ["staples.com", "bloomingdales.com"]
+	allowed_domains = ["staples.com", "bloomingdales.com", "walmart.com"]
 
 	# store the cateory page url given as an argument into a field and add it to the start_urls list
 	def __init__(self, cat_page):
@@ -113,56 +113,64 @@ class CaturlsSpider(BaseSpider):
 		# handle bloomingdales sneakers
 		if site == 'bloomingdales':
 			driver = webdriver.Firefox()
-        	driver.get(response.url)
-
-        	 # use selenium to select USD currency
-       
-	        link = driver.find_element_by_xpath("//li[@id='bl_nav_account_flag']//a")
-	        link.click()
-	        time.sleep(5)
-	        button = driver.find_element_by_id("iShip_shipToUS")
-	        button.click()
-	        time.sleep(10)
-
-	        # convert html to "nice format"
-	        text_html = driver.page_source.encode('utf-8')
-	        html_str = str(text_html)
-
-	        # this is a hack that initiates a "TextResponse" object (taken from the Scrapy module)
-	        resp_for_scrapy = TextResponse('none',200,{},html_str,[],None)
-	       
-
-        	# parse first page with parsePage_bloomingdales function
-        	items += self.parsePage_bloomingdales(resp_for_scrapy)
-        	hxs = HtmlXPathSelector(resp_for_scrapy)
-
-        	# while there is a next page get it and pass it to parsePage_bloomingdales
-        	next_page_url = hxs.select("//li[@class='nextArrow']//a")
-	        while next_page_url:
-	            # use selenium to click on next page arrow and retrieve the resulted page if any
-	            next = driver.find_element_by_xpath("//li[@class='nextArrow']//a")
-	            next.click()
-
-	            time.sleep(5)
-
-	            # convert html to "nice format"
-	            text_html = driver.page_source.encode('utf-8')
-	            html_str = str(text_html)
-
-	            # this is a hack that initiates a "TextResponse" object (taken from the Scrapy module)
-	            resp_for_scrapy = TextResponse('none',200,{},html_str,[],None)
-
-	            # pass the page to parsePage function to extract products
-	            items += self.parsePage_bloomingdales(resp_for_scrapy)
-
-	            hxs = HtmlXPathSelector(resp_for_scrapy)
-	            next_page_url = hxs.select("//li[@class='nextArrow']//a")
-
-	        driver.close()
-	        
-	        return items
-
+			driver.get(response.url)
 			
+			# use selenium to select USD currency
+			link = driver.find_element_by_xpath("//li[@id='bl_nav_account_flag']//a")
+			link.click()
+			time.sleep(5)
+			button = driver.find_element_by_id("iShip_shipToUS")
+			button.click()
+			time.sleep(10)
+
+			# convert html to "nice format"
+			text_html = driver.page_source.encode('utf-8')
+			html_str = str(text_html)
+
+			# this is a hack that initiates a "TextResponse" object (taken from the Scrapy module)
+			resp_for_scrapy = TextResponse('none',200,{},html_str,[],None)
+
+			# parse first page with parsePage_bloomingdales function
+			items += self.parsePage_bloomingdales(resp_for_scrapy)
+			hxs = HtmlXPathSelector(resp_for_scrapy)
+
+			# while there is a next page get it and pass it to parsePage_bloomingdales
+			next_page_url = hxs.select("//li[@class='nextArrow']//a")
+			
+			while next_page_url:
+
+			# use selenium to click on next page arrow and retrieve the resulted page if any
+				next = driver.find_element_by_xpath("//li[@class='nextArrow']//a")
+				next.click()
+
+				time.sleep(5)
+
+				# convert html to "nice format"
+				text_html = driver.page_source.encode('utf-8')
+				html_str = str(text_html)
+
+				# this is a hack that initiates a "TextResponse" object (taken from the Scrapy module)
+				resp_for_scrapy = TextResponse('none',200,{},html_str,[],None)
+
+				# pass the page to parsePage function to extract products
+				items += self.parsePage_bloomingdales(resp_for_scrapy)
+
+				hxs = HtmlXPathSelector(resp_for_scrapy)
+				next_page_url = hxs.select("//li[@class='nextArrow']//a")
+
+			driver.close()
+
+			return items
+
+		if site == 'walmart':
+			hxs = HtmlXPathSelector(response)
+			# select "See all..." page URL
+			#! this has a space after the div class, maybe in other pages it doesn't
+			seeall = hxs.select("//div[@class='CustomSecondaryNav ']//li[last()]/a/@href").extract()[0]
+			root_url = "http://www.walmart.com"
+			page_url = root_url + seeall
+			request = Request(page_url, callback = self.parsePage_walmart)
+			return request
 
 	# parse staples page and extract product URLs
 	def parsePage_staples(self, response):
@@ -191,3 +199,28 @@ class CaturlsSpider(BaseSpider):
 			item['product_url'] = product.select("a/@href").extract()[0]
 			items.append(item)
 		return items
+
+	# parse walmart page and extract product URLs
+	def parsePage_walmart(self, response):
+		print "URL", response.url
+		items = []
+		hxs = HtmlXPathSelector(response)
+		root_url = "http://www.walmart.com"
+		product_links = hxs.select("//a[@class='prodLink ListItemLink']/@href")
+		if not product_links:
+			print "NO PRODUCTS"
+		for product_link in product_links:
+			item = ProductItem()
+			item['product_url'] = root_url + product_link.extract()
+			print item['product_url']
+			yield item
+			#items.append(item)
+
+
+		# select next page, if any, parse it too with this method
+		next_page = hxs.select("//a[@class='link-pageNum' and text()=' Next ']/@href").extract()
+		if next_page:
+			page_url = root_url + next_page[0]
+			yield Request(url = page_url, callback = self.parsePage_walmart)
+
+		#return items
