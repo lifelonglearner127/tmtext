@@ -29,11 +29,11 @@
 			<div class="row-fluid">
 				<div class="search_area uneditable-input span10" onClick="this.contentEditable='false';" style="cursor: text; width: 765px; height: 250px; overflow : auto;" id="Add_List">
 				</div>
-				<span class="btn btn-success fileinput-button ml_15">
+				<span id="system_sitecrawler_btnFileUpload" class="btn btn-success fileinput-button ml_15">
 					Upload
 					<i class="icon-plus icon-white"></i>
-					<input id="fileupload" type="file" name="files[]">
 				</span>
+                <input id="fileupload" type="file" name="files[]" style="display: none;">
 				<script>
 				$(function () {
 					var url = '<?php echo site_url('site_crawler/upload');?>';
@@ -47,6 +47,9 @@
 							checkAddList();
 						}
 					});
+                    $('#system_sitecrawler_btnFileUpload').click(function(){
+                        $('#fileupload').trigger('click');
+                    })
 				});
 				</script>
 
@@ -111,7 +114,7 @@ function checkAddList(){
 	}
 }
 
-function closeInputs() {
+function closeInputs(event) {
 	if($(event.target).parents().index($('#Add_List')) == -1) {
         $("#Add_List > div >input").each(function(i,e){
             if (!$(this).parent('div').hasClass('new')){
@@ -129,20 +132,39 @@ function closeInputs() {
 }
 
 $(function () {
+    $.fn.setCursorToTextEnd = function() {
+        $initialVal = this.val();
+        this.val('');
+        this.val($initialVal);
+    };
+
+    $('html').click(function(event) {
+        if(!$(event.target).is('#current_list_delete')){
+            $('#current_list_delete').attr('disabled', 'disabled');
+            $('#Current_List li').removeClass('active');
+        }
+    });
+
     setTimeout(function(){
         $('title').text("Site Crawler");
     }, 10);
     $(document).click(function(event) {
-    	closeInputs();
+        closeInputs(event);
     });
 
     $(document).on('change', '#Add_List > div.new > input',  function(){
         $(this).parent().removeClass('new');
     });
 
-    $(document).on("click", "#Add_List", function(){
-        if ($(this).find('input').val() == undefined) {
-			$(this).append("<div class='new'><input type='text' value=''></div>").focus();
+    $(document).on("click", "#Add_List", function(event){
+        if(event.target.tagName.toUpperCase() == 'DIV') {
+            if ($(event.target).hasClass('item')) {
+                return;
+            }
+        }
+        if ($(this).find('input').val() == undefined || $(this).find('div:last-child input').val().length != 0) {
+			$(this).append("<div class='new item'><input type='text' value=''></div>");
+            $(this).find('div:last-child input').focus();
         }
 	});
 
@@ -152,6 +174,8 @@ $(function () {
 
 		if ($(this).find('input').val() == undefined) {
 			$(this).html("<input type='text' value='"+$(this).text()+"'>");
+            $(this).find('input').focus();
+            $(this).find('input').setCursorToTextEnd();
 		}
 	});
 
@@ -186,15 +210,8 @@ $(function () {
 		loadCurrentList();
 	});
         
-        $('html').click(function() {
-            if(!$(event.target).is('#current_list_delete')){
-                $('#current_list_delete').attr('disabled', 'disabled');
-                $('#Current_List li').removeClass('active');
-            }
-        });
-
-	$(document).on("click", "button#add_url_list", function(){
-		closeInputs();
+	$(document).on("click", "button#add_url_list", function(event){
+		closeInputs(event);
 
 		var list = [];
 		$('#Add_List div').each(function(index, node) {
