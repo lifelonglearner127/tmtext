@@ -244,8 +244,14 @@
                 $("select[name='department']").empty();
                 if(data.length > 0){
                     $("select[name='department']").append("<option value=''>All</option>");
+                    var sel = '';
                     for(var i=0; i<data.length; i++){
-                        $("select[name='department']").append("<option value='"+data[i].id+"'>"+data[i].text+"</option>");
+                        if(i == 0){
+                            sel = "selected='selected'";
+                        }else{
+                            sel= '';
+                        }
+                        $("select[name='department']").append("<option value='"+data[i].id+"' "+sel+">"+data[i].text+"</option>");
                     }
                 }
             });
@@ -253,8 +259,14 @@
                 $("select[name='category']").empty();
                 if(data.length > 0){
                     $("select[name='category']").append("<option value=''>All</option>");
+                    var sel = '';
                     for(var i=0; i<data.length; i++){
-                        $("select[name='category']").append("<option value='"+data[i].id+"'>"+data[i].text+"</option>");
+                        if(i == 0){
+                            sel = "selected='selected'";
+                        }else{
+                            sel= '';
+                        }
+                        $("select[name='category']").append("<option value='"+data[i].id+"' "+sel+">"+data[i].text+"</option>");
                     }
                 }
             });
@@ -275,7 +287,6 @@
                         }else{
                             sel= '';
                         }
-
                         $("select[name='category']").append("<option value='"+data[i].id+"' "+sel+">"+data[i].text+"</option>");
                     }
                 }
