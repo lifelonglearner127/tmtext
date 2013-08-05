@@ -622,7 +622,7 @@ class System extends MY_Controller {
             fclose($handle);
         }
         foreach($_rows as $row){
-            if($row->level == 0){
+            if($row->level <= 0){
                 $special = 0;
                 $parent_text = '';
                 $text = '';
