@@ -645,6 +645,10 @@ class System extends MY_Controller {
                 } else if(!is_array($row->url) && !is_null($row->url)){
                     $url = $row->url;
                 }
+                if(substr_count($url, 'http://') == 0 && $this->input->post('site_name')!='[Choose site]'){
+                    $url = str_replace('..', '', $url);
+                    $url = 'http://'.strtolower($this->input->post('site_name')).$url;
+                }
                 $department_members_id = 0;
                 if($parent_text!=''){
                     $check_id = $this->department_members_model->checkExist($site_name[0], $site_id, $parent_text);
