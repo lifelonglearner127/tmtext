@@ -242,3 +242,8 @@
         </div>
     </div>
 </div>
+<script>
+            $(function() {
+                $('head').find('title').text('Assess');
+            });
+ </script>

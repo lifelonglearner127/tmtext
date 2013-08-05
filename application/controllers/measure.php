@@ -644,7 +644,7 @@ $main_base = substr($url, 0, $pos);
  
 return $main_base.'/';
 }
-    public function gridview() {
+     public function gridview() {
         $im_data_id = $this->input->post('im_data_id');
 
         $data = array(
@@ -655,14 +655,14 @@ return $main_base.'/';
             'seo' => array('short' => array(), 'long' => array()),
             'same_pr' => array()
         );
-       if ($im_data_id !== null && is_numeric($im_data_id)) {
+        if ($im_data_id !== null && is_numeric($im_data_id)) {
 
             // --- GET SELECTED RPODUCT DATA (START)
             $this->load->model('imported_data_parsed_model');
             $this->load->model('similar_product_groups_model');
             $this->load->model('similar_data_model');
             $data_import = $this->imported_data_parsed_model->getByImId($im_data_id);
-            
+
             if ($data_import['description'] !== null && trim($data_import['description']) !== "") {
                 $data_import['description'] = preg_replace('/\s+/', ' ', $data_import['description']);
                 // $data_import['description'] = preg_replace('/[^A-Za-z0-9\. -!]/', ' ', $data_import['description']);
@@ -677,59 +677,62 @@ return $main_base.'/';
             // --- GET SELECTED RPODUCT DATA (END)
             // --- ATTEMPT TO GET 'SAME' FROM 'HUMAN INTERFACE' (products_compare table) (START)
             $same_pr = $this->imported_data_parsed_model->getSameProductsHuman($im_data_id);
-           
+
             // get similar by parsed_attributes
             if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
-                
+
                 $strict = $this->input->post('strict');
                 $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], $strict);
             }
 
             if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['UPC/EAN/ISBN'])) {
-               
+
                 $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['UPC/EAN/ISBN']);
             }
-            
-            if (empty($same_pr) && isset($data_import['parsed_attributes']) && !isset($data_import['parsed_attributes']['model'])){
-                
-                if(!$this->similar_product_groups_model->checkIfgroupExists($im_data_id)){
-                    $same_pr = $this->imported_data_parsed_model->getByProductName($im_data_id,$data_import['product_name'],$data_import['parsed_attributes']['manufacturer'],$strict);
-            
-                }else{
-                    $this->load->model('similar_imported_data_model');
-                    $customers_list = array();
-                    $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('customers');
-                    $query_cus_res = $query_cus->result();
-                    if (count($query_cus_res) > 0) {
-                        foreach ($query_cus_res as $key => $value) {
-                            $n = strtolower($value->name);
-                            $customers_list[] = $n;
-            }
-                    }
-            $customers_list = array_unique($customers_list);
-                   $rows=$this->similar_data_model->getByGroupId($im_data_id);
-                     $data_similar = array();
 
-                    foreach ($rows as $key => $row) {
-                        $data_similar[$key] = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
-                        $data_similar[$key]['imported_data_id'] = $row->imported_data_id;
+            if (!$this->similar_product_groups_model->checkIfgroupExists($im_data_id)) {
+              
+                if (empty($same_pr) && !isset($data_import['parsed_attributes'])) {
 
-                        $cus_val = "";
-                        foreach ($customers_list as $ki => $vi) {
-                            if (strpos($data_similar[$key]['url'], "$vi") !== false) {
-                                $cus_val = $vi;
-                            }
-                        }
-                        if ($cus_val !== "")
-                            $data_similar[$key]['customer'] = $cus_val;
-                    }
+                    $same_pr = $this->imported_data_parsed_model->getByProductName($im_data_id, $data_import['product_name'], '', $strict);
+                }
+                if (empty($same_pr) && isset($data_import['parsed_attributes']) && !isset($data_import['parsed_attributes']['model'])) {
 
-                    if (!empty($data_similar)) {
-                        $same_pr = $data_similar;
+                    $same_pr = $this->imported_data_parsed_model->getByProductName($im_data_id, $data_import['product_name'], $data_import['parsed_attributes']['manufacturer'], $strict);
+                }
+            } else {
+                $this->load->model('similar_imported_data_model');
+                $customers_list = array();
+                $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('customers');
+                $query_cus_res = $query_cus->result();
+                if (count($query_cus_res) > 0) {
+                    foreach ($query_cus_res as $key => $value) {
+                        $n = strtolower($value->name);
+                        $customers_list[] = $n;
                     }
                 }
-             }
+                $customers_list = array_unique($customers_list);
+                $rows = $this->similar_data_model->getByGroupId($im_data_id);
+                $data_similar = array();
 
+                foreach ($rows as $key => $row) {
+                    $data_similar[$key] = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
+                    $data_similar[$key]['imported_data_id'] = $row->imported_data_id;
+
+                    $cus_val = "";
+                    foreach ($customers_list as $ki => $vi) {
+                        if (strpos($data_similar[$key]['url'], "$vi") !== false) {
+                            $cus_val = $vi;
+                        }
+                    }
+                    if ($cus_val !== "")
+                        $data_similar[$key]['customer'] = $cus_val;
+                }
+
+                if (!empty($data_similar)) {
+                    $same_pr = $data_similar;
+                }
+            }
             // get similar for first row
             $this->load->model('similar_imported_data_model');
 
@@ -745,7 +748,7 @@ return $main_base.'/';
             $customers_list = array_unique($customers_list);
 
             if (empty($same_pr) && ($group_id = $this->similar_imported_data_model->findByImportedDataId($im_data_id))) {
-                   if ($rows = $this->similar_imported_data_model->getImportedDataByGroupId($group_id)) {
+                if ($rows = $this->similar_imported_data_model->getImportedDataByGroupId($group_id)) {
                     $data_similar = array();
 
                     foreach ($rows as $key => $row) {
@@ -815,9 +818,6 @@ return $main_base.'/';
 //                }
 ////                $same_pr[$key]= $vs;
 //            }
-
-             
-
 //			if(count($same_pr) === 3) {
             foreach ($same_pr as $ks => $vs) {
                 $same_pr[$ks]['seo']['short'] = $this->helpers->measure_analyzer_start_v2(preg_replace('/\s+/', ' ', $vs['description']));
@@ -831,92 +831,89 @@ return $main_base.'/';
 
 
 
-       //     Max  
-   if(count($same_pr)!=1){
-      foreach($same_pr as $ks => $vs) {
-         $maxshort=0;
-         $maxlong=0;
-         $k_sh=0;
-         $k_lng=0;
-         foreach($same_pr as $ks1 => $vs1 ){
-            
-           if($ks!=$ks1){
-           if($vs['description']!=''){
-                if($vs1['description']!=''){
-                     $k_sh++;
-                     $percent=$this->compare_text($vs['description'],$vs1['description']);
-                     if($percent>$maxshort){
-                     $maxshort=$percent;}
-                }
-            
-                if($vs1['long_description']!=''){
-                    $k_sh++;
-                     $percent=$this->compare_text($vs['description'],$vs1['long_description']);
-                     if($percent>$maxshort){
-                     $maxshort=$percent;}
-                }
-                }
-            
-            if($vs['long_description']!=''){
-                
-                if($vs1['description']!=''){
-                    $k_lng++;
-                 $percent=$this->compare_text($vs['long_description'],$vs1['description']);
-                 if($percent>$maxlong){
-                 $maxlong=$percent;}
-                 }
-            
-                if($vs1['long_description']!=''){
-                    $k_lng++;
-                     $percent=$this->compare_text($vs['long_description'],$vs1['long_description']);
-                     if($percent>$maxlong){
-                     $maxlong=$percent;}
-                }
-            }
-           }    
-            
-      }
-                       
-                $vs['short_original']=100-round($maxshort,2).'%';
-                $vs['long_original']=100-round($maxlong,2).'%';
-                                    
-            
-            if($k_lng==0){
-                $vs['long_original']="100%";
-            }
-             if($k_sh==0){
-                $vs['short_original']="100%";
-            }
-            
-             $same_pr[$ks]= $vs; 
-            }
-            }else{
-                   $same_pr[0]['long_original']='100%';
-                   $same_pr[0]['short_original']='100%';
-              }
-         //   Max     
-              
-              
-?>
+            //     Max  
+            if (count($same_pr) != 1) {
+                foreach ($same_pr as $ks => $vs) {
+                    $maxshort = 0;
+                    $maxlong = 0;
+                    $k_sh = 0;
+                    $k_lng = 0;
+                    foreach ($same_pr as $ks1 => $vs1) {
 
-<?php
+                        if ($ks != $ks1) {
+                            if ($vs['description'] != '') {
+                                if ($vs1['description'] != '') {
+                                    $k_sh++;
+                                    $percent = $this->compare_text($vs['description'], $vs1['description']);
+                                    if ($percent > $maxshort) {
+                                        $maxshort = $percent;
+                                    }
+                                }
+
+                                if ($vs1['long_description'] != '') {
+                                    $k_sh++;
+                                    $percent = $this->compare_text($vs['description'], $vs1['long_description']);
+                                    if ($percent > $maxshort) {
+                                        $maxshort = $percent;
+                                    }
+                                }
+                            }
+
+                            if ($vs['long_description'] != '') {
+
+                                if ($vs1['description'] != '') {
+                                    $k_lng++;
+                                    $percent = $this->compare_text($vs['long_description'], $vs1['description']);
+                                    if ($percent > $maxlong) {
+                                        $maxlong = $percent;
+                                    }
+                                }
+
+                                if ($vs1['long_description'] != '') {
+                                    $k_lng++;
+                                    $percent = $this->compare_text($vs['long_description'], $vs1['long_description']);
+                                    if ($percent > $maxlong) {
+                                        $maxlong = $percent;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    $vs['short_original'] = 100 - round($maxshort, 2) . '%';
+                    $vs['long_original'] = 100 - round($maxlong, 2) . '%';
+
+
+                    if ($k_lng == 0) {
+                        $vs['long_original'] = "100%";
+                    }
+                    if ($k_sh == 0) {
+                        $vs['short_original'] = "100%";
+                    }
+
+                    $same_pr[$ks] = $vs;
+                }
+            } else {
+                $same_pr[0]['long_original'] = '100%';
+                $same_pr[0]['short_original'] = '100%';
+            }
+            //   Max     
 //Max
-$selectedUrl =$this->input->post('selectedUrl');
-foreach ($same_pr as $ks => $vs) {
-    
-    if ($this->get_base_url($vs['url']) == $this->get_base_url($selectedUrl)) {
-        if ($ks != 0) {
-            $same_pr[] = $same_pr[0];
-            $same_pr[0] = $vs;
-            unset($same_pr[$ks]);
-            
-        }
-    }
-}
+            $selectedUrl = $this->input->post('selectedUrl');
+            foreach ($same_pr as $ks => $vs) {
 
-  $data['same_pr'] = $same_pr;
-            
-      
+                if ($this->get_base_url($vs['url']) == $this->get_base_url($selectedUrl)) {
+                    if ($ks != 0) {
+                        $same_pr[] = $same_pr[0];
+                        $same_pr[0] = $vs;
+                        unset($same_pr[$ks]);
+                    }
+                }
+            }
+
+            $data['same_pr'] = $same_pr;
+
+
 //            }
             // --- ATTEMPT TO GET 'SAME' FROM 'HUMAN INTERFACE' (products_compare table) (END)
             // --- GET SELECTED RPODUCT SEO DATA (TMP) (START)
@@ -935,6 +932,7 @@ foreach ($same_pr as $ks => $vs) {
         // -------- COMPARING V1 (END)
 
         $this->load->view('measure/gridview', $data);
+
     }
 
     public function getcustomerslist_new() {

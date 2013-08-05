@@ -630,10 +630,10 @@ $(document).ready(function() {
     //Max
 
     $(".mismatch_image").live('click', function() {
-
+        $(this).closest('.grid_se_section').hide();
         var im_data_id = $(this).data('value');
         var aaa = $.post(base_url + 'index.php/measure/report_mismatch', {group_id: group_id, im_data_id: im_data_id}, 'json').done(function(data) {
-        console.log(data);
+       
         });
     });
 
@@ -750,7 +750,7 @@ $(document).ready(function() {
             $('li.keywords_metrics_bl_res, li.keywords_metrics_bl_res ~ li, ul.less_b_margin').hide();
         }
 
-    });
+         });
 
     $('li.temp_li a').live('click', function() {
         $('li.temp_li a').each(function() {

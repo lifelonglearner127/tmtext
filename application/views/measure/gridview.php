@@ -9,17 +9,35 @@
 $min_price = 1000000000;
 $j = 0;
 foreach ($same_pr as $ks => $vs) {
-    
-    foreach ($vs['three_last_prices'] as $last_price) {
+   
+    foreach ($vs['three_last_prices'] as $key => $last_price) {
+        
         $price = sprintf("%01.2f", floatval($last_price->price));
         if ($price < $min_price) {
             $min_price = $price;
         }
+        
+       
     }
+    
+ 
 }
 
 foreach ($same_pr as $ks => $vs) {
     //Max
+    foreach ($vs['three_last_prices'] as $key => $last_price) {
+         if(count($vs['three_last_prices'])>1){
+         foreach ($vs['three_last_prices'] as $key1 => $last_price1) {
+             if(($key1!=$key) && (date("m/d/Y", strtotime($last_price->created))=== date("m/d/Y", strtotime($last_price1->created)))){
+                 
+                 unset($vs['three_last_prices'][$key1]);
+                
+             }
+             
+         }
+         }
+    }
+                
     $customer = $vs['customer'];
     $class_left = "";
     if ($i % 3 != 1)
@@ -58,7 +76,7 @@ foreach ($same_pr as $ks => $vs) {
     ?>
 
 
-    <div id="grid_se_section_<?php echo $i; ?>" class='grid_se_section <?php echo $class_left; ?> '>
+    <div id="grid_se_section_<?php echo $i; ?>"  class='grid_se_section <?php echo $class_left; ?> '>
         <div class='h'>
             <input type="hidden" name='dd_customer' value="<?php echo $customer; ?>">
             <div id="an_grd_view_drop_gr<?php echo $i; ?>" class='an_grd_view_drop'></div>

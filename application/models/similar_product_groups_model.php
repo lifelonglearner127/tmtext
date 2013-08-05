@@ -24,7 +24,7 @@ class Similar_product_groups_model extends CI_Model {
    public function checkIfgroupExists($group_id){
        $query = $this->db->where('group_id', $group_id)
               ->get($this->tables['similar_product_groups']);
-   if($query->num_rows() > 0){
+     if($query->num_rows() > 0){
        return true;
    }
    return false;

@@ -103,4 +103,9 @@
         </div>
         <div class="clear"></div>
         <div class="info-message text-success mt_10"></div>
+        <script>
+            $(function() {
+                $('head').find('title').text('Batches');
+            });
+        </script>
         <?php echo form_close();?>
