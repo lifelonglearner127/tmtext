@@ -293,6 +293,15 @@ group_id = "<?php echo $same_pr[0]['imported_data_id']; ?>";
 
 </script>
 <script type='text/javascript'>
+    
+    function inArray(needle, haystack) {
+    var length = haystack.length;
+    for(var i = 0; i < length; i++) {
+        if(haystack[i] == needle)
+            return true;
+    }
+    return false;
+  }
     var count =<?php echo count($same_pr); ?>;
     var ddData_grids = [];
     function gridsCustomersListLoader() {
@@ -305,7 +314,13 @@ group_id = "<?php echo $same_pr[0]['imported_data_id']; ?>";
 
         setTimeout(function() {
             var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist_new', {}, function(c_data) {
-                for (var i = 1; i <= count; i++) {
+//            var customers= [];
+//             $.each(c_data, function(index, val) {
+//               if(!inArray(val.value,customers)){
+//                   
+//               }
+//            });   
+            for (var i = 1; i <= count; i++) {
                     var grid1 = $('#an_grd_view_drop_gr' + i).msDropDown({byJson: {data: c_data}}).data("dd");
                     if (grid1 != undefined) {
                         grid1.setIndexByValue(ddData_grids[i]);

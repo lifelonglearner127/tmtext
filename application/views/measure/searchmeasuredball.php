@@ -8,7 +8,8 @@
 
             $(document).click(function(e) {
                 if ($(e.target).hasClass('products_an_search') || $(e.target).parents('.products_an_search').length > 0) {
-                    $('.products_an_search').addClass('active');
+                $('select').blur();        
+            $('.products_an_search').addClass('active');
                 } else {
                     $('.products_an_search').removeClass('active');
                 }
@@ -72,7 +73,7 @@
                         var blockTop = $('.products_an_search').offset().top;
                         var scrollPos = lineTop - blockTop;
                         $('.products_an_search').scrollTop((currentLine + 1)*23);
-                        console.log(lineTop +'-'+ blockTop +'-'+ scrollPos);
+                        //console.log(lineTop +'-'+ blockTop +'-'+ scrollPos);
                     }
                 }
             });
