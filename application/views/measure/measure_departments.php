@@ -239,7 +239,6 @@
                 dataTable.fnDestroy();
                 dataTable = undefined;
             }
-            readBestSellers();
             $.post(base_url + 'index.php/measure/getDepartmentsByCustomer', {'customer_name': new_caret}, function(data) {
                 $("select[name='department']").empty();
                 if(data.length > 0){
@@ -269,7 +268,9 @@
                         $("select[name='category']").append("<option value='"+data[i].id+"' "+sel+">"+data[i].text+"</option>");
                     }
                 }
+                readBestSellers();
             });
+
 		});
 
         $("select[name='department']").change(function(){
