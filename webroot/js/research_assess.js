@@ -79,7 +79,7 @@ $(function () {
             {"sTitle" : "SEO Phrases (L)", "sName":"long_seo_phrases", "sWidth": "10%"},
             {"sTitle" : "Duplicate Content", "sName":"duplicate_context", "sWidth": "5%"},
             {"sTitle" : "Price diff", "sName":"price_diff", "sWidth": "10%"},
-            {"sTitle" : "Recommendations", "sName":"recommendations", "sWidth": "45%", "bVisible": false},
+            {"sTitle" : "Recommendations", "sName":"recommendations", "sWidth": "45%", "bVisible": false, "bSortable": false},
             {"sName":"add_data", "bVisible": false}
         ]
     });
@@ -101,7 +101,7 @@ $(function () {
 
     $('#tblAssess tbody').click(function(event) {
         $('#ajaxLoadAni').fadeIn('slow');
-        var add_data = JSON.parse($(event.target.parentNode).attr('add_data'));
+        var add_data = JSON.parse($(event.target).parents('tr').attr('add_data'));
         $('#assessDetails_ProductName').val(add_data.product_name);
         $('#assessDetails_url').val(add_data.url);
         $('#assess_open_url_btn').attr('href', add_data.url);

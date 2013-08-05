@@ -361,6 +361,7 @@ class Research extends MY_Controller {
             $result_row->price_diff = "-";
             $result_row->duplicate_context = "-";
             $result_row->own_price = "-";
+            $result_row->competitors_prices = array();
 
             if ($price_diff) {
                 $data_import = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
@@ -369,7 +370,7 @@ class Research extends MY_Controller {
                     if (!empty($own_prices)) {
                         $own_price = floatval($own_prices[0]->price);
                         $result_row->own_price = $own_price;
-                        $price_diff = "<nobr>Own price - ".$own_price."</nobr><br />";
+                        $price_diff_exists = "<nobr>Own price - ".$own_price."</nobr><br />";
                         $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
                         if (!empty($similar_items)) {
                             foreach ($similar_items as $ks => $vs) {
@@ -384,8 +385,9 @@ class Research extends MY_Controller {
                                     $price_lower_range = $own_price - $price_scatter;
                                     $his_price = floatval($three_last_prices[0]->price);
                                     if ($his_price > $price_upper_range || $his_price < $price_lower_range) {
-                                        $price_diff = $price_diff."<nobr>".$similar_items[$ks]['customer']." - ".$his_price."</nobr><br />";
-                                        $result_row->price_diff = $price_diff;
+                                        $price_diff_exists = $price_diff_exists."<nobr>".$similar_items[$ks]['customer']." - ".$his_price."</nobr><br />";
+                                        $result_row->price_diff = $price_diff_exists;
+                                        $result_row->competitors_prices[] = $his_price;
                                     }
                                 }
                             }
@@ -479,6 +481,23 @@ class Research extends MY_Controller {
             $c = 0;
             foreach($result_table as $data_row) {
                 if ($c >= $display_start) {
+                    $recommendations = array();
+                    if ($data_row->short_description_wc < 50 || $data_row->long_description_wc < 100) {
+                        $recommendations[] = '<li>Increase descriptions word count</li>';
+                    }
+                    if ($data_row->short_seo_phrases != 'None' || $data_row->long_seo_phrases != 'None') {
+                        $recommendations[] = '<li>SEO optimize product content</li>';
+                    }
+                    //$recommendations[] = '<li>Add unique content</li>';
+                    if ($price_diff && !empty($data_row->competitors_prices)) {
+                        if (min($data_row->competitors_prices) < $data_row->own_price) {
+                            $recommendations[] = '<li>Lower price to be competitive</li>';
+                        }
+                    }
+                    //$recommendations[] = '<li>Add product to inventory</li>';
+
+                    $recommendations_html = '<ul class="assess_recommendations">'.implode('', $recommendations).'</ul>';
+
                     $output['aaData'][] = array(
                         $data_row->created,
                         $data_row->product_name,
@@ -489,7 +508,7 @@ class Research extends MY_Controller {
                         $data_row->long_seo_phrases,
                         $data_row->duplicate_context,
                         $data_row->price_diff,
-                        "Some Recommendations",
+                        $recommendations_html,
                         json_encode($data_row),
                     );
                 }
