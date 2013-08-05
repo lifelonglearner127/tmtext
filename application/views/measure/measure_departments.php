@@ -15,21 +15,12 @@
                     <!--div class="span2">View Reports for:</div-->
                     <div class="span10">
                         <style type="text/css">
+                            .tab-content{
+                                min-height:400px;
+                            }
                             .temp_li{
                                 display: inline;
                                 font-size: 18px;
-                            }
-                            .rank_table{
-                                width: 660px;
-                                border: 2px solid #000;
-                            }
-                            .rank_table td, .rank_table th{
-                                border: 1px solid #000;
-                                padding:7px;
-                                color:#000;
-                            }
-                            .rank_table thead{
-                                background: #ccc;
                             }
                         </style>
                         <ul class="ml_10 pull-left" style="float:left">
@@ -82,7 +73,6 @@
             </div>
             <div style='margin-left: 0px;' class='span12 mt_10'>
                 <span class='inline_block lh_30 mr_10 span2'>Department:</span>
-                <?php //var_dump($departmens_list);?>
                 <?php  echo form_dropdown('department', $departmens_list, array(3), 'class="inline_block lh_30 w_375 mb_reset"'); ?>
                 <!-- <input type="text" id="department" name="department" value="" class="inline_block lh_30 w_375 mb_reset" placeholder=""/>-->
                 <button id="department_next" type="button" class="btn ml_10" >Next</button>
@@ -143,33 +133,6 @@
                         <script type="text/javascript" src="<?php echo base_url();?>js/measure_department.js"></script>
                     </div>
             <!-- End of table for results -->
-
-            <!--div class='span12 mt_10'>
-                <table class="rank_table mt_30">
-                    <thead>
-                        <th>Rank</th>
-                        <th>Site</th>
-                        <th>Score</th>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>1</td>
-                            <td>Amazon.com</td>
-                            <td>92</td>
-                        </tr>
-                        <tr>
-                            <td>2</td>
-                            <td>Staples.com</td>
-                            <td>85</td>
-                        </tr>
-                        <tr>
-                            <td>3</td>
-                            <td>Waltmart.com</td>
-                            <td>78</td>
-                        </tr>
-                    </tbody>
-                <table>
-            </div-->
             <div class="clear"></div>
 			<!--div id='hp_ajax_content' class='span12 body_section ml_disable mt_30'>
 				<div class='ph_placeholder' data-week='1'>

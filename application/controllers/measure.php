@@ -437,7 +437,7 @@ class Measure extends MY_Controller {
         $this->load->model('site_categories_model');
 
         $this->data['departmens_list'][] = 'All';
-        foreach ($this->department_members_model->getAll() as $row) {
+        foreach ($this->department_members_model->getAllByCustomer('amazon') as $row) {
             $this->data['departmens_list'][$row->id] = $row->text;
         }
         $this->data['category_list'][] = 'All';
