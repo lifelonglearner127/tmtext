@@ -26,7 +26,7 @@
 						</td>
 					</tr>
 				<?php } ?>
-                <tr class="new_row">
+                <tr id="new_row" class="new_row">
                     <td>&nbsp;</td>
                     <td><input type="text" id="recipients_rec" name="recipients_rec" placeholder="recipients.."></td>
                     <td><select id="recipients_week_day" name="recipients_week_day">
