@@ -60,12 +60,12 @@
                         <div class="span4">
                             <input id="research_assess_short_less_check" type="checkbox" checked>
                             &#60;
-                            <input id="research_assess_short_less" type="text" value="200"/>
+                            <input id="research_assess_short_less" type="text" value="20"/>
                             words
                             &nbsp &nbsp &nbsp
                             <input id="research_assess_short_more_check" type="checkbox" checked>
                             &#62;
-                            <input id="research_assess_short_more" type="text" value="10"/>
+                            <input id="research_assess_short_more" type="text" value="50"/>
                             words
                         </div>
                         <div class="span5" style="height: 50px;">
@@ -93,12 +93,12 @@
                         <div class="span4">
                             <input id="research_assess_long_less_check" type="checkbox" checked>
                             &#60;
-                            <input id="research_assess_long_less" type="text" value="200"/>
+                            <input id="research_assess_long_less" type="text" value="100"/>
                             words
                             &nbsp &nbsp &nbsp
                             <input id="research_assess_long_more_check" type="checkbox" checked>
                             &#62;
-                            <input id="research_assess_long_more" type="text" value="10"/>
+                            <input id="research_assess_long_more" type="text" value="200"/>
                             words
                         </div>
                         <div class="span5">
