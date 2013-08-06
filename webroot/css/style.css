@@ -1792,3 +1792,6 @@ select#sites option{
 .main{
     background: #e2e2e4;
 }
+.site_crawler_content h3 small{
+    color:#555555;
+}
