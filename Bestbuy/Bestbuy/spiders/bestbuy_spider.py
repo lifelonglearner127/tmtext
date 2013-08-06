@@ -117,11 +117,11 @@ class BestsellerSpider(BaseSpider):
     ]
 
     def __init__(self, max_products = 100):
-        # maximum number of bestseller products per category (148 categories)
+        # maximum number of bestseller products per category (54 categories)
         self.max_products = int(max_products)
 
     def parse(self, response):
-        # extract departments then pass them to be parsed for categories (there are 148 total categories)
+        # extract departments then pass them to be parsed for categories
         hxs = HtmlXPathSelector(response)
         department_links = hxs.select("//div[@class='narrowcontent']/ul[@class='search']/li/a")
         root_url = "http://www.bestbuy.com"
