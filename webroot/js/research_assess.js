@@ -63,6 +63,7 @@ $(function () {
                 return;
             }
             hideColumns();
+            hilightPrices();
         },
         "oLanguage": {
             "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
@@ -78,7 +79,7 @@ $(function () {
             {"sTitle" : "Word Count (L)", "sName":"long_description_wc", "sWidth": "5%"},
             {"sTitle" : "SEO Phrases (L)", "sName":"long_seo_phrases", "sWidth": "10%"},
             {"sTitle" : "Duplicate Content", "sName":"duplicate_context", "sWidth": "5%"},
-            {"sTitle" : "Price diff", "sName":"price_diff", "sWidth": "10%"},
+            {"sTitle" : "Price", "sName":"price_diff", "sWidth": "10%"},
             {"sTitle" : "Recommendations", "sName":"recommendations", "sWidth": "45%", "bVisible": false, "bSortable": false},
             {"sName":"add_data", "bVisible": false}
         ]
@@ -97,6 +98,13 @@ $(function () {
             $(obj).addClass('active_link');
             hideColumns();
         }
+    }
+
+    function hilightPrices() {
+        $('#tblAssess td input:hidden').each(function() {
+            $(this).parent().css('background-color', 'red');
+            $(this).parent().css('color', 'white');
+        });
     }
 
     $('#tblAssess tbody').click(function(event) {

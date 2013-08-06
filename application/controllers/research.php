@@ -363,6 +363,10 @@ class Research extends MY_Controller {
             $result_row->own_price = "-";
             $result_row->competitors_prices = array();
 
+            $own_site = parse_url($result_row->url)['host'];
+            if (!$own_site)
+                $own_site = substr($result_row->url, 0, 20);
+
             if ($price_diff) {
                 $data_import = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
                 if (isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
@@ -370,7 +374,8 @@ class Research extends MY_Controller {
                     if (!empty($own_prices)) {
                         $own_price = floatval($own_prices[0]->price);
                         $result_row->own_price = $own_price;
-                        $price_diff_exists = "<nobr>Own price - ".$own_price."</nobr><br />";
+                        $price_diff_exists = "<input type='hidden'/>";
+                        $price_diff_exists = $price_diff_exists."<nobr>".$own_site." - $".$own_price."</nobr><br />";
                         $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
                         if (!empty($similar_items)) {
                             foreach ($similar_items as $ks => $vs) {
@@ -385,7 +390,7 @@ class Research extends MY_Controller {
                                     $price_lower_range = $own_price - $price_scatter;
                                     $his_price = floatval($three_last_prices[0]->price);
                                     if ($his_price > $price_upper_range || $his_price < $price_lower_range) {
-                                        $price_diff_exists = $price_diff_exists."<nobr>".$similar_items[$ks]['customer']." - ".$his_price."</nobr><br />";
+                                        $price_diff_exists = $price_diff_exists."<nobr>".$similar_items[$ks]['customer']." - $".$his_price."</nobr><br />";
                                         $result_row->price_diff = $price_diff_exists;
                                         $result_row->competitors_prices[] = $his_price;
                                     }
