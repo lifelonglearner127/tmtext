@@ -295,6 +295,7 @@ function capitaliseFirstLetter(string)
 }
 
 function submitEmailReportsConfig() {
+    $('tr.no_recipients').remove();
     // --- collect data (start)
     var email_pattern = /^([a-z0-9_\-]+\.\+)*[a-z0-9_\-\+]+@([a-z0-9][a-z0-9\-]*[a-z0-9]\.)+[a-z]{2,4}$/i;
     var recs_arr = [];
@@ -347,6 +348,24 @@ function submitEmailReportsConfig() {
                     $("#recipients_control_panel_modal").modal('hide');
                 });
             });
+            var checked_count = $("input[type='checkbox'][name='send_report_ch']").length;
+            $("input[type='checkbox'][name'send_report_ch']").on('change', function(e) {
+                setTimeout(function() {
+                    // ---- mark / unmark tr line as selected (start)
+                    if($(e.target).is(":checked")) {
+                        $(e.target).parent().parent().addClass('selected');
+                    } else {
+                        $(e.target).parent().parent().removeClass('selected');
+                    }
+                    // ---- mark / unmark tr line as selected (end)
+                    var count_s = 0;
+                    $("input[type='checkbox'][name='send_report_ch']").each(function(index, val) {
+                        if($(val).is(':checked')) count_s++;
+                    });
+                    if(checked_count == count_s) $("#send_report_ch_all").attr('checked', true);
+                    if(count_s == 0) $("#send_report_ch_all").removeAttr('checked');
+                }, 100);
+            });
         } else {
             alert('Validation or internal server error');
         }
@@ -356,18 +375,20 @@ function submitEmailReportsConfig() {
 var num=0;
 function newRecipient() {
     num++;
-    $('table.table-striped').append('<tr id="new_row_'+num+'">' +
-        '<td>&nbsp;</td><td><input type="text" placeholder="recipients.." name="new_recipients_'+num+'">' +
-        '</td><td><select name="new_week_day_rep_'+num+'">' +
-        '<option value="monday" selected>Monday</option>' +
-        '<option value="tuesday">Tuesday</option>' +
-        '<option value="wednesday">Wednesday</option>' +
-        '<option value="thursday">Thursday</option>' +
-        '<option value="friday">Friday</option>' +
-        '<option value="saturday">Saturday</option>' +
-        '<option value="sunday">Sunday</option></select></td>' +
-        '<td><a href="javascript:void(0)" class="btn btn-success new_rec" id="new_rec'+num+'">' +
-        '<i class="icon-plus"></i></a></td></tr>');
+        $('tr.no_recipients').remove();
+        $('table.table-striped').append('<tr id="new_row_'+num+'">' +
+            '<td>&nbsp;</td><td><input type="text" placeholder="recipients.." name="new_recipients_'+num+'">' +
+            '</td><td><select name="new_week_day_rep_'+num+'">' +
+            '<option value="monday" selected>Monday</option>' +
+            '<option value="tuesday">Tuesday</option>' +
+            '<option value="wednesday">Wednesday</option>' +
+            '<option value="thursday">Thursday</option>' +
+            '<option value="friday">Friday</option>' +
+            '<option value="saturday">Saturday</option>' +
+            '<option value="sunday">Sunday</option></select></td>' +
+            '<td><a href="javascript:void(0)" class="btn btn-success new_rec" id="new_rec'+num+'">' +
+            '<i class="icon-plus"></i></a></td></tr>');
+
 
         $("#new_rec"+num).click(function(){
             // --- collect data (start)

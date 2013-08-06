@@ -16,7 +16,7 @@
 				</thead>
 				<tbody>
 				<?php foreach($rec as $k => $v) { ?>
-					<tr class='report_bean_line ready_res' data-id="<?php echo $v->id; ?>" data-email="<?php echo $v->email; ?>" data-day="<?php echo $v->day; ?>">
+					<tr class='report_bean_line' data-id="<?php echo $v->id; ?>" data-email="<?php echo $v->email; ?>" data-day="<?php echo $v->day; ?>">
 						<td><input type='checkbox' name="send_report_ch" id="send_report_ch_<?php echo $v->id; ?>"></td>
 						<td><span class='recipients_control_panel_txt'><?php echo $v->email; ?></span></td>
 						<td><span class='recipients_control_panel_txt'><?php echo ucfirst($v->day); ?></span></td>
@@ -43,19 +43,44 @@
 				</tbody>
 			</table>
 		<?php } else { ?>
-		<p class='bold'>no recipients for reports sending</p>
+            <table class='table table-striped'>
+                <thead>
+                <tr>
+                    <th><input type='checkbox' name="send_report_ch_all" id="send_report_ch_all"></th>
+                    <th>Recipients</th>
+                    <th>Day</th>
+                    <th>Controls</th>
+                </tr>
+                </thead>
+                <tbody>
+                    <tr class="no_recipients">
+                        <td colspan="4" style="text-align: center;" >
+		                    <p class='bold'>no recipients for reports sending</p>
+                        </td>
+                    </tr>
+                    <tr id="new_row" class="new_row">
+                        <td>&nbsp;</td>
+                        <td><input type="text" id="recipients_rec" name="recipients_rec" placeholder="recipients.."></td>
+                        <td><select id="recipients_week_day" name="recipients_week_day">
+                                <option value='monday' selected>Monday</option>
+                                <option value='tuesday'>Tuesday</option>
+                                <option value='wednesday'>Wednesday</option>
+                                <option value='thursday'>Thursday</option>
+                                <option value="friday">Friday</option>
+                                <option value='saturday'>Saturday</option>
+                                <option value='sunday'>Sunday</option>
+                            </select></td>
+                        <td><a href="javascript:void(0)" class="btn btn-success" onclick="submitEmailReportsConfig()"><i class='icon-plus'></i></a></td>
+                    </tr>
+                </tbody>
+            </table>
 		<?php } ?>
 	</div>
 </div>
 <div class="modal-footer">
     <button onclick="newRecipient()" type='button' class="btn">New row</button>
-	<?php if(count($rec) > 0) { ?>
-		<button type='button' href="javascript:void(0)" onclick="sendEmailScreensToSelected()" class="btn btn-success btn-rec-all-send">Send to selected</button>
-		<button type='button' href="javascript:void(0)" onclick="sendEmailScreensToAll()" class="btn btn-primary btn-rec-all-send">Send to all</button>
-	<?php } else { ?>
-		<button type='button' href="javascript:void(0)" class="btn btn-success disabled btn-rec-all-send">Send to selected</button>
-		<button type='button' href="javascript:void(0)" class="btn btn-primary disabled btn-rec-all-send">Send to all</button>
-	<?php } ?>
+	<button type='button' href="javascript:void(0)" onclick="sendEmailScreensToSelected()" class="btn btn-success btn-rec-all-send">Send to selected</button>
+	<button type='button' href="javascript:void(0)" onclick="sendEmailScreensToAll()" class="btn btn-primary btn-rec-all-send">Send to all</button>
 </div>
 
 <script type='text/javascript'>
