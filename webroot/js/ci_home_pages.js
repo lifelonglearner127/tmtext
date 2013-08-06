@@ -258,7 +258,7 @@ function viewRecipientsList() {
 	// -- refresh listing (end)
 }
 
-function submitEmailReportsConfig() {
+/*function submitEmailReportsConfig() {
 	// --- collect data (start)
 	var email_pattern = /^([a-z0-9_\-]+\.\+)*[a-z0-9_\-\+]+@([a-z0-9][a-z0-9\-]*[a-z0-9]\.)+[a-z]{2,4}$/i;
 	var recs_arr = [];
@@ -288,6 +288,85 @@ function submitEmailReportsConfig() {
 			alert('Validation or internal server error');
 		}
 	});
+}*/
+function capitaliseFirstLetter(string)
+{
+    return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+function submitEmailReportsConfig() {
+    // --- collect data (start)
+    var email_pattern = /^([a-z0-9_\-]+\.\+)*[a-z0-9_\-\+]+@([a-z0-9][a-z0-9\-]*[a-z0-9]\.)+[a-z]{2,4}$/i;
+    var recs_arr = [];
+    var recs = $.trim($('input[name="recipients_rec"]').val());
+    if(recs !== "") {
+        recs_arr = recs.split(',');
+        var recs_arr_checked = [];
+        for(var i = 0; i < recs_arr.length; i++) {
+            if(email_pattern.test($.trim(recs_arr[i]))) {
+                recs_arr_checked.push($.trim(recs_arr[i]));
+            }
+        }
+    }
+    var rec_day = $("#recipients_week_day > option:selected").val();
+    // --- collect data (end)
+    var send_data = {
+        recs_arr: recs_arr_checked,
+        rec_day: rec_day
+    }
+    var rec = $.post(base_url + 'index.php/measure/rec_emails_reports_recipient', send_data, function(data) {
+        if(data.length > 0) {
+            for(var i=0; i<data.length; i++){
+                $("<tr class='report_bean_line' data-id="+data[i][0].id+" data-email="+data[i][0].email+" data-day="+data[i][0].day+" >" +
+                    "<td><input type='checkbox' name='send_report_ch' id='send_report_ch_"+data[i][0].id+"'>" +
+                    "</td><td><span class='recipients_control_panel_txt'>"+data[i][0].email+"</span></td>" +
+                    "<td><span class='recipients_control_panel_txt'>"+capitaliseFirstLetter(data[i][0].day)+"</span></td>" +
+                    "<td><button type='button' class='btn btn-success btn-rec-ind-send fire_rec' id="+data[i][0].id+"><i class='icon-fire'></i></button>" +
+                    "<button type='button' class='btn btn-danger btn-rec-remove delete_rec' id='"+data[i][0].id+"'><i class='icon-remove'></i></button>" +
+                    "</td></tr>").insertAfter('.ready_res');
+            }
+            $('input[name="recipients_rec"]').val('');
+            $('input[name="recipients_rec"]').blur('');
+            $('.delete_rec').click(function(){
+                if(confirm('Are you sure?')) {
+                    var send_data = {
+                        id: $('#delete_rec').attr('id')
+                    };
+                    var remove_rec = $.post(base_url + 'index.php/measure/delete_recipient', send_data, function(data) {
+                        $("#recipients_control_panel_modal").modal('hide');
+                    });
+                }
+            });
+            $('.fire_rec').click(function(){
+                var send_data = {
+                    id: $('.fire_rec').attr('id'),
+                    email: $(this).parent().parent().data('email'),
+                    day: $(this).parent().parent().data('day')
+                };
+                var send_recipient_report = $.post(base_url + 'index.php/measure/send_recipient_report', send_data, function(data) {
+                    $("#recipients_control_panel_modal").modal('hide');
+                });
+            });
+        } else {
+            alert('Validation or internal server error');
+        }
+    });
+
+}
+var num=0;
+function newRecipient() {
+    num++;
+    $('table.table-striped').append('<tr class="new_row"><td>&nbsp;</td><td><input type="text" placeholder="recipients.." name="new_recipients_'+num+'">' +
+        '</td><td><select name="new_week_day_rep_'+num+'">' +
+        '<option value="monday" selected>Monday</option>' +
+        '<option value="tuesday">Tuesday</option>' +
+        '<option value="wednesday">Wednesday</option>' +
+        '<option value="thursday">Thursday</option>' +
+        '<option value="friday">Friday</option>' +
+        '<option value="saturday">Saturday</option>' +
+        '<option value="sunday">Sunday</option></select></td>' +
+        '<td><a href="javascript:void(0)" class="btn btn-success new_rec" id="new_rec'+num+'">' +
+        '<i class="icon-plus"></i></a></td></tr>');
 }
 
 function configureEmailReportsModal() {

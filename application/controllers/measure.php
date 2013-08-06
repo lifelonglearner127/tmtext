@@ -328,8 +328,8 @@ class Measure extends MY_Controller {
         $recs_arr = $this->input->post('recs_arr');
         $rec_day = $this->input->post('rec_day');
         $this->load->model('webshoots_model');
-        $this->webshoots_model->rec_emails_reports_recipient($rec_day, $recs_arr);
-        $this->output->set_content_type('application/json')->set_output(true);
+        $result = $this->webshoots_model->rec_emails_reports_recipient($rec_day, $recs_arr);
+        $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }
 
     public function get_screenshots_slider_data() {

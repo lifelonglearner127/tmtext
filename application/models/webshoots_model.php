@@ -34,6 +34,7 @@ class Webshoots_model extends CI_Model {
     public function rec_emails_reports_recipient($rec_day, $recs_arr) {
         $res = false;
         if(count($recs_arr) > 0) {
+            $result = array();
             foreach ($recs_arr as $email) {
                 $check_query = $this->db->get_where($this->tables['ci_home_page_recipients'], array('email' => $email));
                 $check_query_res = $check_query->result();
@@ -50,9 +51,13 @@ class Webshoots_model extends CI_Model {
                         'stamp' => date("Y-m-d H:i:s")
                     );
                     $this->db->insert($this->tables['ci_home_page_recipients'], $insert_object);
+                    $query = $this->db->where('id', $this->db->insert_id())
+                        ->limit(1)
+                        ->get($this->tables['ci_home_page_recipients']);
+                    array_push($result, $query->result());
                 }
             }
-            $res = true;
+            $res = $result;
         }   
         return $res;
     }
