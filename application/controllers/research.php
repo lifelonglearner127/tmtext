@@ -455,7 +455,21 @@ class Research extends MY_Controller {
             $s_column_index = intval($this->input->get('iSortCol_0'));
             $s_column = $s_columns[$s_column_index];
             $this->sort_column = $s_column;
-            $this->sort_direction = strtolower($this->input->get('sSortDir_0'));
+            $sort_direction = strtolower($this->input->get('sSortDir_0'));
+            if ($s_column == 'price_diff') {
+                if ($sort_direction == 'asc') {
+                    $this->sort_direction = 'desc';
+                }
+                else
+                if ($sort_direction == 'desc') {
+                    $this->sort_direction = 'asc';
+                }
+                else {
+                    $this->sort_direction = 'asc';
+                }
+            } else {
+                $this->sort_direction = $sort_direction;
+            }
             $this->sort_type = is_numeric($result_table[0]->$s_column) ? "num" : "";
             usort($result_table, array("Research", "assess_sort"));
         }
