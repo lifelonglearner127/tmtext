@@ -338,7 +338,7 @@ ul.research_table_filter h3 {
     margin-top: 6px;
     float: left;
     text-align: center;
-    width: 250px
+    width: 450px
 }
 .assess_tbl_show_case a {
     color: #0088CC;
@@ -381,4 +381,7 @@ ul.assess_recommendations li {
 td.highlightPrices {
     background-color: red;
     color: white;
+}
+.dataTables_wrapper select {
+    width: 70px;
 }

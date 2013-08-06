@@ -37,14 +37,14 @@
                     <input id="assess_filter_dateto" type="text" class="mt_10" value="" style="width: 85px;"/>
                     <button id="assess_filter_clear_dates" class="btn">Clear</button>
                 </div>
-                <div class="span3 assess_filter_options">
+                <div class="assess_filter_options">
                     <label class="checkbox">
-                        <input id="research_assess_select_all" type="checkbox" checked>
-                        Select all:
+                        <input id="research_assess_select_all" type="checkbox">
+                        Select All
                     </label>
                     <label class="checkbox">
                         <input id="research_assess_price_diff" type="checkbox" checked>
-                        Price Diff
+                        Price Difference
                     </label>
                 </div>
             </div>
@@ -58,12 +58,12 @@
                     </div>
                     <div id="research_assess_short_params">
                         <div class="span4">
-                            <input id="research_assess_short_less_check" type="checkbox" checked>
+                            <input id="research_assess_short_less_check" type="checkbox">
                             &#60;
                             <input id="research_assess_short_less" type="text" value="20"/>
                             words
                             &nbsp &nbsp &nbsp
-                            <input id="research_assess_short_more_check" type="checkbox" checked>
+                            <input id="research_assess_short_more_check" type="checkbox">
                             &#62;
                             <input id="research_assess_short_more" type="text" value="50"/>
                             words
@@ -91,12 +91,12 @@
                     </div>
                     <div id="research_assess_long_params">
                         <div class="span4">
-                            <input id="research_assess_long_less_check" type="checkbox" checked>
+                            <input id="research_assess_long_less_check" type="checkbox">
                             &#60;
                             <input id="research_assess_long_less" type="text" value="100"/>
                             words
                             &nbsp &nbsp &nbsp
-                            <input id="research_assess_long_more_check" type="checkbox" checked>
+                            <input id="research_assess_long_more_check" type="checkbox">
                             &#62;
                             <input id="research_assess_long_more" type="text" value="200"/>
                             words
@@ -115,7 +115,7 @@
                 </div>
             </div>
             <div>
-                <button id="research_assess_update" class="btn">Update</button>
+                <button id="research_assess_update" class="btn btn-success">Update</button>
                 <button id="research_assess_export" class="btn">Export</button>
             </div>
         </div>
@@ -229,7 +229,7 @@
                     <a id="assess_tbl_show_case_recommendations" data-case="recommendations" title="Recommendations" href="#">Recommendations</a> |
                     <a id="assess_tbl_show_case_details" data-case="details" title="Details" href="#" class="active_link">Details</a>
                 </div>
-                <button id="research_batches_columns" class="btn btn-success ml_5 float_r">Columns...</button>
+                <button id="research_batches_columns" class="btn ml_5 float_r">Columns...</button>
 
                 <!-- Table doesnt work without this jQuery include yet -->
                 <!--                        <script type="text/javascript" src="--><?php //echo base_url();?><!--js/jquery-templ.js"></script>-->
