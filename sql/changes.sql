@@ -410,3 +410,10 @@ UPDATE  `groups` SET  `auth_rules` = 'a:8:{s:14:"admin_customer";a:1:{s:5:"index
 
 # 05/12 
 ALTER TABLE  `saved_descriptions` CHANGE  `key`  `parent_id` INT UNSIGNED NOT NULL DEFAULT  '0';
+
+
+#08/06 Max
+DROP TABLE `similar_product_groups`;
+CREATE TABLE  `tmeditor`.`similar_product_groups` (
+`id` INT NOT NULL
+) ENGINE = MYISAM ;
