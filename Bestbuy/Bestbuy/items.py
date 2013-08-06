@@ -21,6 +21,7 @@ class ProductItem(Item):
 	category = Field() # category of product - its name
 	price = Field() # price of product - a string like "29.5$"
 	listprice = Field() # "list price" of product - a string like "29.5$"
+	regprice = Field() # "regular price" of product (without sale) - a string like "29.5$"
 	rank = Field() # rank of the product in the bestsellers list
 	SKU = Field() # SKU code of product (where available)
 	UPC = Field() # UPC code of product (where available)

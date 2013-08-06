@@ -100,6 +100,14 @@ class BestbuySpider(BaseSpider):
 
         return items
 
+
+################################
+# Run with 
+#
+# scrapy crawl bestbuy [-a max_products=<number>]
+#
+################################
+
 # crawl bestsellers pages and extract products info
 class BestsellerSpider(BaseSpider):
     name = "bestseller"
@@ -108,8 +116,12 @@ class BestsellerSpider(BaseSpider):
         "http://www.bestbuy.com/site/Electronics/Top-Rated-Products/pcmcat140900050011.c?id=pcmcat140900050011"
     ]
 
+    def __init__(self, max_products = 100):
+        # maximum number of bestseller products per category (148 categories)
+        self.max_products = int(max_products)
+
     def parse(self, response):
-        # extract departments then pass them to be parsed for categories
+        # extract departments then pass them to be parsed for categories (there are 148 total categories)
         hxs = HtmlXPathSelector(response)
         department_links = hxs.select("//div[@class='narrowcontent']/ul[@class='search']/li/a")
         root_url = "http://www.bestbuy.com"
@@ -126,7 +138,11 @@ class BestsellerSpider(BaseSpider):
     def parseDepartment(self, response):
         # extract categories then pass them to be parsed for categories
         hxs = HtmlXPathSelector(response)
-        category_links = hxs.select("//div[@class='narrowcontent']/ul[@class='search']/li/a")
+
+        # select last list in menu
+        categories_list = hxs.select("//div[@class='narrowcontent']")[-1]
+        category_links = categories_list.select("ul[@class='search']/li/a")
+        
         root_url = "http://www.bestbuy.com"
 
         for category_link in category_links:
@@ -146,6 +162,9 @@ class BestsellerSpider(BaseSpider):
         root_url = "http://www.bestbuy.com"
         products_per_page = 15
 
+        max_products = self.max_products
+        root_url = "http://www.bestbuy.com"
+
         # find page number by adding 1 to the previous one
         if 'page_nr' not in response.meta:
             page_nr = 1
@@ -162,19 +181,62 @@ class BestsellerSpider(BaseSpider):
             item['rank'] = str(rank)
             product_link = product.select("div[@class='info-main']/h3/a")
             item['list_name'] = product_link.select("text()").extract()[0].strip()
-            item['url'] = product_link.select("@href").extract()[0]
+            url = product_link.select("@href").extract()
+            if url:
+                item['url'] = root_url + url[0]
             item['department'] = response.meta['department']
             item['category'] = response.meta['category']
             item['bspage_url'] = response.url
-            yield item
+            item['date'] = datetime.date.today().isoformat()
+
+            item['SKU'] = product.select(".//strong[@class='sku']/text()").extract()[0]
+
+            #TODO: extract product model?
+
+            saleprice = product.select("div[@class='info-side']/div/h4[@class='price sale']/span/text()").extract()
+            if saleprice:
+                item['price'] = saleprice[0]
+
+            # regular price
+            regprice = product.select("div[@class='info-side']/h4[@class='price regular']/span/text()").extract()
+            if regprice:
+                item['regprice'] = regprice[0]
+
+            if rank > max_products:
+                break
+
+            if not url:
+                yield item
+            else:
+                # send this product page to be parsed by parseProduct
+                # ! duplicates are removed: products that are in more than one category will appear in only one of them
+                #TODO: include duplicates if they are from different categories?
+                yield Request(item['url'], callback = self.parseProduct, meta = {"item":item})
 
 
-        # # select next page, if any, parse it too with this method
-        # next_page = hxs.select("//ul[@class='pagination']/li/a[@class='next']/@href").extract()
-        # if next_page:
-        #     page_url = root_url + next_page[0]
-        #     request = Request(url = page_url, callback = self.parsePage)
-        #     request.meta['department'] = response.meta['department']
-        #     request.meta['category'] = response.meta['category']
-        #     request.meta['page_nr'] = page_nr
-        #     yield request
+        # select next page, if any, parse it too with this method
+        if rank < max_products:
+            next_page = hxs.select("//ul[@class='pagination']/li/a[@class='next']/@href").extract()
+            if next_page:
+                page_url = root_url + next_page[0]
+                request = Request(url = page_url, callback = self.parsePage)
+                request.meta['department'] = response.meta['department']
+                request.meta['category'] = response.meta['category']
+                request.meta['page_nr'] = page_nr
+                yield request
+
+
+    # parse product page and extract product info
+    def parseProduct(self, response):
+        hxs = HtmlXPathSelector(response)
+        item = response.meta['item']
+
+        page_title = hxs.select("//title/text()").extract()[0].strip()
+        # remove "- Best Buy" suffix from page title
+        m = re.match("(.*) - Best Buy", page_title, re.UNICODE)
+        if m:
+            page_title = m.group(1)
+        item['product_name'] = hxs.select("//h1/text()").extract()[0].strip()
+
+        yield item
+
