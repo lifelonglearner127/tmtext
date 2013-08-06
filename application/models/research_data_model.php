@@ -292,8 +292,7 @@ union all
                             imported_data_parsed as idp
                         group by
                             idp.imported_data_id,
-                            idp.`key`,
-                            idp.`value`
+                            idp.`key`
                     )  as kv on kv.imported_data_id = cl.imported_data_id
                 ) as r
                 group by
