@@ -378,3 +378,7 @@ ul.assess_recommendations li {
     padding: 0;
     line-height: 14px;
 }
+td.highlightPrices {
+    background-color: red;
+    color: white;
+}

@@ -63,7 +63,7 @@ $(function () {
                 return;
             }
             hideColumns();
-            hilightPrices();
+            highlightPrices();
         },
         "oLanguage": {
             "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
@@ -100,10 +100,9 @@ $(function () {
         }
     }
 
-    function hilightPrices() {
+    function highlightPrices() {
         $('#tblAssess td input:hidden').each(function() {
-            $(this).parent().css('background-color', 'red');
-            $(this).parent().css('color', 'white');
+            $(this).parent().addClass('highlightPrices');
         });
     }
 
