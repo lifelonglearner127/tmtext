@@ -281,8 +281,20 @@ union all
                         and b.title = $batch_name
                     inner join research_data_to_crawler_list as rdtcl on rdtcl.research_data_id = rd.id
                     inner join crawler_list as cl on cl.id = rdtcl.crawler_list_id
-                    inner join imported_data_parsed as kv on
-                        kv.imported_data_id = cl.imported_data_id
+                    inner join (
+                        select
+                            idp.id,
+                            idp.imported_data_id,
+                            idp.`key` as `key`,
+                            idp.`value` as `value`,
+                            max(revision) as revision
+                        from
+                            imported_data_parsed as idp
+                        group by
+                            idp.imported_data_id,
+                            idp.`key`,
+                            idp.`value`
+                    )  as kv on kv.imported_data_id = cl.imported_data_id
                 ) as r
                 group by
                     r.imported_data_id

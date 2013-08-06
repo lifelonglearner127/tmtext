@@ -987,10 +987,11 @@ class Research extends MY_Controller {
 
                 // Insert to crawler list
 	            if ($research_data_id && $this->pageprocessor->isURL($_row)) {
-					if (!$this->crawler_list_model->getByUrl($_row)) {
+                    $crawler_list_id = $this->crawler_list_model->getByUrl($_row);
+                    if (!$crawler_list_id) {
 						$crawler_list_id = $this->crawler_list_model->insert($_row, 0);
-						$this->research_data_to_crawler_list_model->insert($research_data_id, $crawler_list_id);
 					}
+                    $this->research_data_to_crawler_list_model->insert($research_data_id, $crawler_list_id);
 					// add part if url already in crawler_list
 				}
             }
