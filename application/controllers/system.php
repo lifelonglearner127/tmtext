@@ -621,8 +621,6 @@ class System extends MY_Controller {
             }
             fclose($handle);
         }
-        var_dump($_rows);
-        die;
         foreach($_rows as $row){
             if($row->level <= 0){
                 $special = 0;
