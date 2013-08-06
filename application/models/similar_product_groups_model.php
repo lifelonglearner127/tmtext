@@ -17,12 +17,12 @@ class Similar_product_groups_model extends CI_Model {
     
     public function insert($group_id){
         
-        $this->group_id= $group_id;
+        $this->id= $group_id;
         $this->db->insert($this->tables['similar_product_groups'], $this);
         return $this->db->insert_id();
    }
    public function checkIfgroupExists($group_id){
-       $query = $this->db->where('group_id', $group_id)
+       $query = $this->db->where('id', $group_id)
               ->get($this->tables['similar_product_groups']);
      if($query->num_rows() > 0){
        return true;

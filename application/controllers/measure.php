@@ -610,7 +610,12 @@ class Measure extends MY_Controller {
         return $prc;
         }
     }
+    public function similar_groups(){
+        $this->load->model('imported_data_parsed_model');
+        $this->imported_data_parsed_model->similiarity_cron();
+    }
     public function report_mismatch(){
+        
         $group_id=$this->input->post('group_id');
         $im_data_id=$this->input->post('im_data_id');
         $this->load->model('similar_data_model');
