@@ -258,40 +258,50 @@ function viewRecipientsList() {
 	// -- refresh listing (end)
 }
 
-/*function submitEmailReportsConfig() {
-	// --- collect data (start)
-	var email_pattern = /^([a-z0-9_\-]+\.\+)*[a-z0-9_\-\+]+@([a-z0-9][a-z0-9\-]*[a-z0-9]\.)+[a-z]{2,4}$/i;
-	var recs_arr = [];
-	var recs = $.trim($("#email_rec").val());
-	if(recs !== "") {
-		recs_arr = recs.split(',');
-		var recs_arr_checked = [];
-		for(var i = 0; i < recs_arr.length; i++) {
-			if(email_pattern.test($.trim(recs_arr[i]))) {
-				recs_arr_checked.push($.trim(recs_arr[i]));
-			}
-		}
-	}
-	var rec_day = $("#week_day_rep > option:selected").val();
-	// --- collect data (end)
-	var send_data = {
-		recs_arr: recs_arr_checked,
-		rec_day: rec_day
-	}
-	var rec = $.post(base_url + 'index.php/measure/rec_emails_reports_recipient', send_data, function(data) {
-		if(data) {
-			$("#email_rec").val("");
-			$("#email_rec").blur("");
-			$("#configure_email_reports").modal('hide');
-			$("#configure_email_reports_success").modal('show');
-		} else {
-			alert('Validation or internal server error');
-		}
-	});
-}*/
 function capitaliseFirstLetter(string)
 {
     return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+function internalRecipientFunc(){
+    $('.delete_rec').click(function(){
+        if(confirm('Are you sure?')) {
+            var send_data = {
+                id: $('#delete_rec').attr('id')
+            };
+            var remove_rec = $.post(base_url + 'index.php/measure/delete_recipient', send_data, function(data) {
+                $("#recipients_control_panel_modal").modal('hide');
+            });
+        }
+    });
+    $('.fire_rec').click(function(){
+        var send_data = {
+            id: $('.fire_rec').attr('id'),
+            email: $(this).parent().parent().data('email'),
+            day: $(this).parent().parent().data('day')
+        };
+        var send_recipient_report = $.post(base_url + 'index.php/measure/send_recipient_report', send_data, function(data) {
+            $("#recipients_control_panel_modal").modal('hide');
+        });
+    });
+    var checked_count = $("input[type='checkbox'][name='send_report_ch']").length;
+    $("input[type='checkbox'][name'send_report_ch']").on('change', function(e) {
+        setTimeout(function() {
+            // ---- mark / unmark tr line as selected (start)
+            if($(e.target).is(":checked")) {
+                $(e.target).parent().parent().addClass('selected');
+            } else {
+                $(e.target).parent().parent().removeClass('selected');
+            }
+            // ---- mark / unmark tr line as selected (end)
+            var count_s = 0;
+            $("input[type='checkbox'][name='send_report_ch']").each(function(index, val) {
+                if($(val).is(':checked')) count_s++;
+            });
+            if(checked_count == count_s) $("#send_report_ch_all").attr('checked', true);
+            if(count_s == 0) $("#send_report_ch_all").removeAttr('checked');
+        }, 100);
+    });
 }
 
 function submitEmailReportsConfig() {
@@ -328,44 +338,7 @@ function submitEmailReportsConfig() {
             }
             $('input[name="recipients_rec"]').val('');
             $('input[name="recipients_rec"]').blur('');
-            $('.delete_rec').click(function(){
-                if(confirm('Are you sure?')) {
-                    var send_data = {
-                        id: $('#delete_rec').attr('id')
-                    };
-                    var remove_rec = $.post(base_url + 'index.php/measure/delete_recipient', send_data, function(data) {
-                        $("#recipients_control_panel_modal").modal('hide');
-                    });
-                }
-            });
-            $('.fire_rec').click(function(){
-                var send_data = {
-                    id: $('.fire_rec').attr('id'),
-                    email: $(this).parent().parent().data('email'),
-                    day: $(this).parent().parent().data('day')
-                };
-                var send_recipient_report = $.post(base_url + 'index.php/measure/send_recipient_report', send_data, function(data) {
-                    $("#recipients_control_panel_modal").modal('hide');
-                });
-            });
-            var checked_count = $("input[type='checkbox'][name='send_report_ch']").length;
-            $("input[type='checkbox'][name'send_report_ch']").on('change', function(e) {
-                setTimeout(function() {
-                    // ---- mark / unmark tr line as selected (start)
-                    if($(e.target).is(":checked")) {
-                        $(e.target).parent().parent().addClass('selected');
-                    } else {
-                        $(e.target).parent().parent().removeClass('selected');
-                    }
-                    // ---- mark / unmark tr line as selected (end)
-                    var count_s = 0;
-                    $("input[type='checkbox'][name='send_report_ch']").each(function(index, val) {
-                        if($(val).is(':checked')) count_s++;
-                    });
-                    if(checked_count == count_s) $("#send_report_ch_all").attr('checked', true);
-                    if(count_s == 0) $("#send_report_ch_all").removeAttr('checked');
-                }, 100);
-            });
+            internalRecipientFunc();
         } else {
             alert('Validation or internal server error');
         }
@@ -422,26 +395,7 @@ function newRecipient() {
                             "<button type='button' class='btn btn-danger btn-rec-remove delete_rec' id='"+data[i][0].id+"'><i class='icon-remove'></i></button>" +
                             "</td></tr>").insertBefore('#new_row');
                     }
-                    $('.delete_rec').click(function(){
-                        if(confirm('Are you sure?')) {
-                            var send_data = {
-                                id: $('#delete_rec').attr('id')
-                            };
-                            var remove_rec = $.post(base_url + 'index.php/measure/delete_recipient', send_data, function(data) {
-                                $("#recipients_control_panel_modal").modal('hide');
-                            });
-                        }
-                    });
-                    $('.fire_rec').click(function(){
-                        var send_data = {
-                            id: $('.fire_rec').attr('id'),
-                            email: $(this).parent().parent().data('email'),
-                            day: $(this).parent().parent().data('day')
-                        };
-                        var send_recipient_report = $.post(base_url + 'index.php/measure/send_recipient_report', send_data, function(data) {
-                            $("#recipients_control_panel_modal").modal('hide');
-                        });
-                    });
+                    internalRecipientFunc();
                 } else {
                     alert('Validation or internal server error');
                 }
