@@ -338,7 +338,7 @@ ul.research_table_filter h3 {
     margin-top: 6px;
     float: left;
     text-align: center;
-    width: 450px
+    width: 450px;
 }
 .assess_tbl_show_case a {
     color: #0088CC;
@@ -384,4 +384,17 @@ td.highlightPrices {
 }
 .dataTables_wrapper select {
     width: 70px;
+}
+.boxes {
+    background: none repeat scroll 0 0 #FFFFFF;
+    border: 1px solid #AAAAAA;
+}
+ul.ui-sortable {
+    margin: 0px;
+}
+.ui-sortable h3 {
+    background: none repeat scroll 0 0 #CCCCCC;
+    font-size: 20px;
+    margin: 0;
+    padding-left: 10px;
 }

@@ -254,56 +254,61 @@ class Research extends MY_Controller {
     }
 
     public function get_assess_info(){
-        $this->load->model('research_data_model');
-        $this->load->model('batches_model');
-
         $txt_filter = '';
         if($this->input->get('search_text') != ''){
             $txt_filter = $this->input->get('search_text');
         }
 
         $batch_name = $this->input->get('batch_name');
-//        if (empty($batch_name)) {
-//            $this->output->set_content_type('application/json')
-//                ->set_output("{}");
-//            return;
-//        }
-//        $batch_id = $this->batches_model->getIdByName($batch);
-//        if($batch_id == false || $txt_filter != '') {
-//            $batch_id = '';
-//        }
 
-        $date_from = $this->input->get('date_from') == 'undefined' ? '' : $this->input->get('date_from');
-        $date_to = $this->input->get('date_to') == 'undefined' ? '' : $this->input->get('date_to');
-        $price_diff = $this->input->get('price_diff');
-        $short_less = $this->input->get('short_less') == 'undefined' ? -1 : $this->input->get('short_less');
-        $short_more = $this->input->get('short_more') == 'undefined' ? -1 : $this->input->get('short_more');
-        $short_seo_phrases = $this->input->get('short_seo_phrases');
-        $short_duplicate_context = $this->input->get('short_duplicate_context');
-        $long_less = $this->input->get('long_less') == 'undefined' ? -1 : $this->input->get('long_less');
-        $long_more = $this->input->get('long_more') == 'undefined' ? -1 : $this->input->get('long_more');
-        $long_seo_phrases = $this->input->get('long_seo_phrases');
-        $long_duplicate_context = $this->input->get('long_duplicate_context');
+        $build_assess_params = new stdClass();
+        $build_assess_params->date_from = $this->input->get('date_from') == 'undefined' ? '' : $this->input->get('date_from');
+        $build_assess_params->date_to = $this->input->get('date_to') == 'undefined' ? '' : $this->input->get('date_to');
+        $build_assess_params->price_diff = $this->input->get('price_diff');
+        $build_assess_params->short_less = $this->input->get('short_less') == 'undefined' ? -1 : $this->input->get('short_less');
+        $build_assess_params->short_more = $this->input->get('short_more') == 'undefined' ? -1 : $this->input->get('short_more');
+        $build_assess_params->short_seo_phrases = $this->input->get('short_seo_phrases');
+        $build_assess_params->short_duplicate_context = $this->input->get('short_duplicate_context');
+        $build_assess_params->long_less = $this->input->get('long_less') == 'undefined' ? -1 : $this->input->get('long_less');
+        $build_assess_params->long_more = $this->input->get('long_more') == 'undefined' ? -1 : $this->input->get('long_more');
+        $build_assess_params->long_seo_phrases = $this->input->get('long_seo_phrases');
+        $build_assess_params->long_duplicate_context = $this->input->get('long_duplicate_context');
+        $build_assess_params->all_columns = $this->input->get('sColumns');
+        $build_assess_params->sort_columns = $this->input->get('iSortCol_0');
+        $build_assess_params->sort_dir = $this->input->get('sSortDir_0');
 
         $params = new stdClass();
         $params->batch_name = $batch_name;
         $params->txt_filter = $txt_filter;
-        $params->date_from = $date_from;
-        $params->date_to = $date_to;
-//        $params->short_duplicate_context = $short_duplicate_context;
-//        $params->short_misspelling = $short_misspelling;
-//        $params->long_duplicate_context = $long_duplicate_context;
-//        $params->long_misspelling = $long_misspelling;
+        $params->date_from = $build_assess_params->date_from;
+        $params->date_to = $build_assess_params->date_to;
 
+        $results = $this->get_data_for_assess($params);
+
+        $output = $this->build_asses_table($results, $build_assess_params);
+
+        $this->output->set_content_type('application/json')
+            ->set_output(json_encode($output));
+    }
+
+    private function get_data_for_assess($params) {
+        $this->load->model('research_data_model');
         $results = $this->research_data_model->getInfoForAssess($params);
+        return $results;
+    }
 
+    private function build_asses_table($results, $build_assess_params) {
+        $this->load->model('batches_model');
         $this->load->model('imported_data_parsed_model');
-        if ($price_diff) {
-            //$prices = $this->research_data_model->getPricesForBatch($batch_name);
-        }
 
         $enable_exec = true;
         $result_table = array();
+        $report = array();
+        $pricing_details = array();
+        $items_priced_higher_than_competitors = 0;
+        $items_have_more_than_50_percent_duplicate_content = 0;
+        $items_unoptimized_product_content = 0;
+        $items_short_products_content = 0;
         foreach($results as $row) {
             //$short_description_wc = preg_match_all('/\b/', $row->short_description) / 2; // bug in PHP 5.3.10
             $short_description_wc = (count(preg_split('/\b/', $row->short_description)) - 1) / 2;
@@ -312,16 +317,6 @@ class Research extends MY_Controller {
             } else {
                 if (intval($row->short_description_wc) <> $short_description_wc) {
                     $this->imported_data_parsed_model->updateValueByKey($row->imported_data_id, "Description_WC", $short_description_wc);
-                }
-            }
-            if ($short_more > -1) {
-                if ($short_description_wc < $short_more) {
-                    continue;
-                }
-            }
-            if ($short_less > -1) {
-                if ($short_description_wc > $short_less) {
-                    continue;
                 }
             }
 
@@ -333,16 +328,6 @@ class Research extends MY_Controller {
             } else {
                 if (intval($row->long_description_wc) <> $long_description_wc) {
                     $this->imported_data_parsed_model->updateValueByKey($row->imported_data_id, "Long_Description_WC", $long_description_wc);
-                }
-            }
-            if ($long_more > -1) {
-                if ($long_description_wc < $long_more) {
-                    continue;
-                }
-            }
-            if ($long_less > -1) {
-                if ($long_description_wc > $long_less) {
-                    continue;
                 }
             }
 
@@ -368,7 +353,7 @@ class Research extends MY_Controller {
                 $own_site = "own site";
             $own_site = str_replace("www.", "", $own_site);
 
-            if ($price_diff) {
+            if ($build_assess_params->price_diff) {
                 $data_import = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
                 if (isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
                     $own_prices = $this->imported_data_parsed_model->getLastPrices($row->imported_data_id);
@@ -389,11 +374,14 @@ class Research extends MY_Controller {
                                     $price_scatter = $own_price * 0.03;
                                     $price_upper_range = $own_price + $price_scatter;
                                     $price_lower_range = $own_price - $price_scatter;
-                                    $his_price = floatval($three_last_prices[0]->price);
-                                    if ($his_price > $price_upper_range || $his_price < $price_lower_range) {
-                                        $price_diff_exists = $price_diff_exists."<nobr>".$similar_items[$ks]['customer']." - $".$his_price."</nobr><br />";
+                                    $competitor_price = floatval($three_last_prices[0]->price);
+                                    if ($competitor_price < $own_price) {
+                                        $items_priced_higher_than_competitors++;
+                                    }
+                                    if ($competitor_price > $price_upper_range || $competitor_price < $price_lower_range) {
+                                        $price_diff_exists = $price_diff_exists."<nobr>".$similar_items[$ks]['customer']." - $".$competitor_price."</nobr><br />";
                                         $result_row->price_diff = $price_diff_exists;
-                                        $result_row->competitors_prices[] = $his_price;
+                                        $result_row->competitors_prices[] = $competitor_price;
                                     }
                                 }
                             }
@@ -402,7 +390,7 @@ class Research extends MY_Controller {
                 }
             }
 
-            if ($short_seo_phrases) {
+            if ($build_assess_params->short_seo_phrases) {
                 if ($short_description_wc == $row->short_description_wc && !is_null($row->short_seo_phrases)) {
                     $result_row->short_seo_phrases = $row->short_seo_phrases;
                 } else {
@@ -425,7 +413,7 @@ class Research extends MY_Controller {
                 }
             }
 
-            if ($long_seo_phrases) {
+            if ($build_assess_params->long_seo_phrases) {
                 if ($long_description_wc == $row->long_description_wc && !is_null($row->long_seo_phrases)) {
                     $result_row->long_seo_phrases = $row->long_seo_phrases;
                 } else {
@@ -448,26 +436,73 @@ class Research extends MY_Controller {
                 }
             }
 
+            if ($result_row->short_seo_phrases == 'None' && $result_row->long_seo_phrases == 'None') {
+                $items_unoptimized_product_content++;
+            }
+            if ($result_row->short_description_wc < 50 || $result_row->long_description_wc < 100) {
+                $items_short_products_content++;
+            }
+
+            if ($build_assess_params->short_more > -1) {
+                if ($short_description_wc < $build_assess_params->short_more) {
+                    continue;
+                }
+            }
+            if ($build_assess_params->short_less > -1) {
+                if ($short_description_wc > $build_assess_params->short_less) {
+                    continue;
+                }
+            }
+            if ($build_assess_params->long_more > -1) {
+                if ($long_description_wc < $build_assess_params->long_more) {
+                    continue;
+                }
+            }
+            if ($build_assess_params->long_less > -1) {
+                if ($long_description_wc > $build_assess_params->long_less) {
+                    continue;
+                }
+            }
+
             $result_table[] = $result_row;
         }
 
-        $s_columns = explode(',', $this->input->get('sColumns'));
-        if (!empty($s_columns)) {
-            $s_column_index = intval($this->input->get('iSortCol_0'));
+        $report['summary']['total_items'] = count($result_table);
+        $report['summary']['items_priced_higher_than_competitors'] = $items_priced_higher_than_competitors;
+        $report['summary']['items_have_more_than_50_percent_duplicate_content'] = $items_have_more_than_50_percent_duplicate_content;
+        $report['summary']['items_unoptimized_product_content'] = $items_unoptimized_product_content;
+        $report['summary']['items_short_products_content'] = $items_short_products_content;
+
+        if ($items_priced_higher_than_competitors > 0) {
+            $report['recommendations']['items_priced_higher_than_competitors'] = 'Reduce pricing on '.$items_priced_higher_than_competitors.' item(s)';
+        }
+        if ($items_have_more_than_50_percent_duplicate_content == 0) {
+            $report['recommendations']['items_have_more_than_50_percent_duplicate_content'] = 'Create original product content';
+        }
+        if ($items_unoptimized_product_content > 0) {
+            $report['recommendations']['items_unoptimized_product_content'] = 'Optimize product content';
+        }
+        if ($items_short_products_content > 0) {
+            $report['recommendations']['items_short_products_content'] = 'Increase product description lengths';
+        }
+
+        if ($build_assess_params->all_columns) {
+            $s_columns = explode(',', $build_assess_params->all_columns);
+            $s_column_index = intval($build_assess_params->sort_columns);
             $s_column = $s_columns[$s_column_index];
             $this->sort_column = $s_column;
-            $sort_direction = strtolower($this->input->get('sSortDir_0'));
+            $sort_direction = strtolower($build_assess_params->sort_dir);
             if ($s_column == 'price_diff') {
                 if ($sort_direction == 'asc') {
                     $this->sort_direction = 'desc';
                 }
                 else
-                if ($sort_direction == 'desc') {
-                    $this->sort_direction = 'asc';
-                }
-                else {
-                    $this->sort_direction = 'asc';
-                }
+                    if ($sort_direction == 'desc') {
+                        $this->sort_direction = 'asc';
+                    }
+                    else {
+                        $this->sort_direction = 'asc';
+                    }
             } else {
                 $this->sort_direction = $sort_direction;
             }
@@ -512,7 +547,7 @@ class Research extends MY_Controller {
                         $recommendations[] = '<li>SEO optimize product content</li>';
                     }
                     //$recommendations[] = '<li>Add unique content</li>';
-                    if ($price_diff && !empty($data_row->competitors_prices)) {
+                    if ($build_assess_params->price_diff && !empty($data_row->competitors_prices)) {
                         if (min($data_row->competitors_prices) < $data_row->own_price) {
                             $recommendations[] = '<li>Lower price to be competitive</li>';
                         }
@@ -542,10 +577,57 @@ class Research extends MY_Controller {
                 }
                 $c++;
             }
+            $output['ExtraData']['report'] = $report;
         }
 
-        $this->output->set_content_type('application/json')
-            ->set_output(json_encode($output));
+        return $output;
+    }
+
+    public function assess_download_pdf() {
+        $params = new stdClass();
+        $params->batch_name = $this->input->get('batch_name');
+        $results = $this->get_data_for_assess($params);
+
+        $build_assess_params = new stdClass();
+        $build_assess_params->price_diff = true;
+        $build_assess_params->short_less = -1;
+        $build_assess_params->short_more = -1;
+        $build_assess_params->short_seo_phrases = true;
+        $build_assess_params->short_duplicate_context = true;
+        $build_assess_params->long_less = -1;
+        $build_assess_params->long_more = -1;
+        $build_assess_params->long_seo_phrases = true;
+        $build_assess_params->long_duplicate_context = true;
+
+        $output = $this->build_asses_table($results, $build_assess_params);
+        $report = $output['ExtraData']['report'];
+        $this->load->library('pdf');
+        $pdf = $this->pdf->load();
+        $pdf->SetHeader('Batch - '.$params->batch_name);
+        $pdf->WriteHTML('<table width="100%" border="1" cellspacing="0" cellpadding="0" style="border-collapse: collapse;border-spacing: 0;">');
+
+        $pdf->WriteHTML('<tr><td colspan="2" style="background-color: #dddddd;text-align: center;font-weight: bold;">Summary</td></tr>');
+        $pdf->WriteHTML('<tr><td>Total Items</td><td>'.$report['summary']['total_items'].'</td></tr>');
+        $pdf->WriteHTML('<tr><td>Items priced higher than competitors</td><td>'.$report['summary']['items_priced_higher_than_competitors'].'</td></tr>');
+        $pdf->WriteHTML('<tr><td>Items have more than 50% duplicate content</td><td>'.$report['summary']['items_have_more_than_50_percent_duplicate_content'].'</td></tr>');
+        $pdf->WriteHTML('<tr><td>Items have unoptimized product content</td><td>'.$report['summary']['items_unoptimized_product_content'].'</td></tr>');
+        $pdf->WriteHTML('<tr><td>Items have product context that is too short</td><td>'.$report['summary']['items_short_products_content'].'</td></tr>');
+        $pdf->WriteHTML('<tr><td colspan="2" style="background-color: #dddddd;text-align: center;font-weight: bold;">Recommendations</td></tr>');
+        if ($report['recommendations']['items_priced_higher_than_competitors']) {
+            $pdf->WriteHTML('<tr><td colspan="2">'.$report['recommendations']['items_priced_higher_than_competitors'].'</td></tr>');
+        }
+        if ($report['recommendations']['items_have_more_than_50_percent_duplicate_content']) {
+            $pdf->WriteHTML('<tr><td colspan="2">'.$report['recommendations']['items_have_more_than_50_percent_duplicate_content'].'</td></tr>');
+        }
+        if ($report['recommendations']['items_short_products_content']) {
+            $pdf->WriteHTML('<tr><td colspan="2">'.$report['recommendations']['items_short_products_content'].'</td></tr>');
+        }
+        if ($report['recommendations']['items_unoptimized_product_content']) {
+            $pdf->WriteHTML('<tr><td colspan="2">'.$report['recommendations']['items_unoptimized_product_content'].'</td></tr>');
+        }
+
+        $pdf->WriteHTML('</table>');
+        $pdf->Output();
     }
 
     private function assess_sort($a, $b) {

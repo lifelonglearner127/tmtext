@@ -226,14 +226,71 @@
                 </table>
                 <div id="assess_tbl_show_case" class="assess_tbl_show_case">
                     Show:
+                    <a id="assess_tbl_show_case_report" data-case="report" title="Report" href="#">Report</a> |
                     <a id="assess_tbl_show_case_recommendations" data-case="recommendations" title="Recommendations" href="#">Recommendations</a> |
                     <a id="assess_tbl_show_case_details" data-case="details" title="Details" href="#" class="active_link">Details</a>
                 </div>
                 <button id="research_batches_columns" class="btn ml_5 float_r">Columns...</button>
+                <div id="assess_report" style="display: none;">
+                    <ul class="ui-sortable">
+                        <li class="boxes ui-resizable">
+                            <h3>
+                                <span>
+                                    <a class="hideShow" onclick="return false;" href="#">
+                                        <img src="http://tmeditor/img/arrow-down.png" style="width:12px;margin-right: 10px">
+                                    </a>
+                                    Summary
+                                </span>
+                                <span style="margin-left: 270px;">
+                                    <a id="assess_report_download_pdf" target="_blank">Download PDF</a>
+                                </span>
+                                <a class="ml_10 research_arrow" href="#">
+                                    <img src="http://tmeditor//webroot/img/arrow.png">
+                                </a>
+                            </h3>
+                            <div class="boxes_content" style="height: 200px;padding:0px;">
+                                <div class="mt_10 ml_15">
+                                    <button class="btn mr_10" disabled="disabled">#</button><span id="assess_report_total_items" class="mr_10"></span>total items
+                                </div>
+                                <div class="mt_10 ml_15">
+                                    <button class="btn mr_10" disabled="disabled">$</button><span id="assess_report_items_priced_higher_than_competitors" class="mr_10"></span>items priced higher than competitors
+                                </div>
+                                <div class="mt_10 ml_15">
+                                    <button class="btn mr_10" disabled="disabled">D</button><span id="assess_report_items_have_more_than_50_percent_duplicate_content" class="mr_10"></span>items have more than 50% duplicate content
+                                </div>
+                                <div class="mt_10 ml_15">
+                                    <button class="btn mr_10" disabled="disabled">SEO</button><span id="assess_report_items_unoptimized_product_content" class="mr_10"></span>items have unoptimized product content
+                                </div>
+                                <div class="mt_10 ml_15">
+                                    <button class="btn mr_10" disabled="disabled"><i class="icon-arrow-down"></i></button><span id="assess_report_items_have_product_context_that_is_too_short" class="mr_10"></span>items have product context that is too short
+                                </div>
+                            </div>
+                        </li>
+                        <li class="boxes ui-resizable">
+                            <h3>
+                                <a class="hideShow" onclick="return false;" href="#">
+                                    <img src="http://tmeditor/img/arrow-down.png" style="width:12px;margin-right: 10px">
+                                </a>
+                                Recommendations
+                                <a class="ml_10 research_arrow" href="#">
+                                    <img src="http://tmeditor//webroot/img/arrow.png">
+                                </a>
+                            </h3>
+                        </li>
+                        <li class="boxes ui-resizable">
+                            <h3>
+                                <a class="hideShow" onclick="return false;" href="#">
+                                    <img src="http://tmeditor/img/arrow-down.png" style="width:12px;margin-right: 10px">
+                                </a>
+                                Pricing Details
+                                <a class="ml_10 research_arrow" href="#">
+                                    <img src="http://tmeditor//webroot/img/arrow.png">
+                                </a>
+                            </h3>
+                        </li>
+                    </ul>
+                </div>
 
-                <!-- Table doesnt work without this jQuery include yet -->
-                <!--                        <script type="text/javascript" src="--><?php //echo base_url();?><!--js/jquery-templ.js"></script>-->
-                <script type="text/javascript" src="<?php echo base_url();?>js/jquery.validate.min.js"></script>
                 <script type="text/javascript" src="<?php echo base_url();?>js/jquery.dataTables.min.js"></script>
                 <script type="text/javascript" src="<?php echo base_url();?>js/jquery.json-2.4.min.js"></script>
                 <script type="text/javascript" src="<?php echo base_url();?>js/research_assess.js"></script>

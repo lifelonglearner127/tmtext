@@ -49,8 +49,9 @@ $(function () {
         "sAjaxSource": readAssessUrl,
         "fnServerData": function (sSource, aoData, fnCallback) {
             aoData = buildTableParams(aoData);
-            $.getJSON( sSource, aoData, function (json) {
-                fnCallback(json)
+            $.getJSON(sSource, aoData, function (json) {
+                buildReport(json.ExtraData.report);
+                fnCallback(json);
             });
         },
         "fnRowCallback": function(nRow, aData, iDisplayIndex) {
@@ -104,6 +105,14 @@ $(function () {
         $('#tblAssess td input:hidden').each(function() {
             $(this).parent().addClass('highlightPrices');
         });
+    }
+
+    function buildReport(report) {
+        $('#assess_report_total_items').html(report.summary.total_items);
+        $('#assess_report_items_priced_higher_than_competitors').html(report.summary.items_priced_higher_than_competitors);
+        $('#assess_report_items_have_more_than_50_percent_duplicate_content').html(report.summary.items_have_more_than_50_percent_duplicate_content);
+        $('#assess_report_items_unoptimized_product_content').html(report.summary.items_unoptimized_product_content);
+        $('#assess_report_items_have_product_context_that_is_too_short').html(report.summary.items_short_products_content);
     }
 
     $('#tblAssess tbody').click(function(event) {
@@ -298,7 +307,9 @@ $(function () {
         $.each(columns_checkboxes, function(index, value) {
             columns_checkboxes_checked.push($(value).data('col_name'));
         });
-
+        $('#tblAssess').show();
+        $('#tblAssess').parent().find('div.ui-corner-bl').show();
+        $('#assess_report').hide();
         if (table_case == 'recommendations') {
             $.each(tblAllColumns, function(index, value) {
                 if ($.inArray(value, tableCase.recommendations) > -1) {
@@ -316,6 +327,12 @@ $(function () {
                     tblAssess.fnSetColumnVis(index, false, false);
                 }
             });
+        } else if (table_case == 'report') {
+            $('#tblAssess').hide();
+            $('#tblAssess').parent().find('div.ui-corner-bl').hide();
+            $('#assess_report').show();
+            var batch_name = $('select[name="research_assess_batches"]').find('option:selected').text()
+            $('#assess_report_download_pdf').attr('href', base_url + 'index.php/research/assess_download_pdf?batch_name=' + batch_name);
         }
     }
 
