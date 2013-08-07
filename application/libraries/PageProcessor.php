@@ -152,6 +152,8 @@ class PageProcessor {
 			$price .= $item['#text'][0];
 		}
 
+		$price = str_replace(',','',$price);
+
 		if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $price, $match)) {
 				$price = $match[1];
 		}
