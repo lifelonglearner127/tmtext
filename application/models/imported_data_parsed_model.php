@@ -1272,7 +1272,10 @@ class Imported_data_parsed_model extends CI_Model {
         return $main_base . '/';
     }
     public function similiarity_cron(){
-         
+       
+        $this->load->model('similar_product_groups_model');
+        $existing_groups=$this->similar_product_groups_model->get_all();
+        
         $this->db->select('imported_data_id, key, value')
                 ->where('key', 'Product Name')
                 ->or_where('key', 'parsed_attributes')
@@ -1297,22 +1300,23 @@ class Imported_data_parsed_model extends CI_Model {
         }
         
         $for_group=array();
-    
+        $i=0;
         foreach($data as $key => $val){
-           if(!isset($val['parsed_attributes'])|| !isset($val['parsed_attributes']['model'])){
+           if($i<15 && !in_array($key,$existing_groups) && (!isset($val['parsed_attributes'])|| !isset($val['parsed_attributes']['model']))){
                $for_group[$key]=$val;
+               $i++;
            }
         }
 
         $groups=array();
-
+        
         foreach($for_group as $im_data_id => $val){
             $urls=array();
             foreach($data as $key => $val1){
                if($key!=$im_data_id && $this->get_base_url($val1['url'])!=$this->get_base_url($val['url'])){
                     if(!in_array($this->get_base_url($val1['url']),$urls)) { 
                            
-                       if(leven_algoritm(strtolower($val1['product_name']), strtolower($val['product_name']))>30){   
+                       if(leven_algoritm(strtolower($val1['product_name']), strtolower($val['product_name']))>32){   
                            $urls[]=$this->get_base_url($val1['url']); 
                            $groups[$im_data_id][]=$key;
                         }
@@ -1323,8 +1327,7 @@ class Imported_data_parsed_model extends CI_Model {
             
             $groups[$im_data_id][]=$im_data_id;
         }
-       $this->db->truncate('similar_product_groups');
-       $this->db->truncate('similar_data');
+//      
        foreach($groups as $im_data_id => $val){
            
             $this->db->insert('similar_product_groups', array('id' => $im_data_id));
@@ -1362,7 +1365,7 @@ class Imported_data_parsed_model extends CI_Model {
             foreach ($res as $val) {
                 if ($val['key'] == 'Product Name') {
                     $product_name = $val['value'];
-                    if (leven_algoritm(strtolower($selected_product_name), strtolower($product_name)) > 30) {
+                    if (leven_algoritm(strtolower($selected_product_name), strtolower($product_name)) > 32) {
                         $is_similiar = 1;
                     }
                 }

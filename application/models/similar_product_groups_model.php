@@ -9,12 +9,20 @@ class Similar_product_groups_model extends CI_Model {
         'similar_product_groups' => 'similar_product_groups',
         
     );
-
+    
     function __construct()
     {
         parent::__construct();
     }
-    
+     public function get_all(){
+         $query = $this->db->get($this->tables['similar_product_groups']);
+         $res=$query->result_array();
+         $result=array();
+         foreach($res as $val){
+             $result[]=$val['id'];
+         }
+         return $result;
+     }
     public function insert($group_id){
         
         $this->id= $group_id;
