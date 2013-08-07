@@ -507,7 +507,7 @@ class Research extends MY_Controller {
                     /*if ($data_row->short_seo_phrases != 'None' || $data_row->long_seo_phrases != 'None') {
                            $recommendations[] = '<li>SEO optimize product content</li>';
                        }*/
-                    if ($data_row->short_seo_phrases == 'None' || $data_row->long_seo_phrases == 'None') {
+                    if ($data_row->short_seo_phrases == 'None' && $data_row->long_seo_phrases == 'None') {
                         $recommendations[] = '<li>SEO optimize product content</li>';
                     }
                     //$recommendations[] = '<li>Add unique content</li>';
