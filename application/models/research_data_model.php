@@ -228,7 +228,12 @@ union all
 
     function getInfoForAssess($params)
     {
-        $batch_name = $this->db->escape($params->batch_name);
+        $batch_name = $params->batch_name;
+
+        if($batch_name != ''){
+            $batch_name = " and b.title =".$this->db->escape($batch_name)." ";
+        }
+
 //        $date_from = $params->date_from == '' ? '' : $this->db->escape($params->date_from);
 //        $date_to = $params->date_to == '' ? '' : $this->db->escape($params->date_to);
         $txt_filter = $this->db->escape('%'.$params->txt_filter.'%');
@@ -286,7 +291,7 @@ union all
                         batches as b
                     inner join research_data as rd on
                         rd.batch_Id = b.id
-                        and b.title = $batch_name
+                        $batch_name
                     inner join research_data_to_crawler_list as rdtcl on rdtcl.research_data_id = rd.id
                     inner join crawler_list as cl on cl.id = rdtcl.crawler_list_id
                     inner join (
