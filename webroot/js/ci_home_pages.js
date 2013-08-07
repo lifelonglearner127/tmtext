@@ -285,7 +285,7 @@ function internalRecipientFunc(){
         });
     });
     var checked_count = $("input[type='checkbox'][name='send_report_ch']").length;
-    $("input[type='checkbox'][name'send_report_ch']").on('change', function(e) {
+    $("input[type='checkbox'][name='send_report_ch']").on('change', function(e) {
         setTimeout(function() {
             // ---- mark / unmark tr line as selected (start)
             if($(e.target).is(":checked")) {
