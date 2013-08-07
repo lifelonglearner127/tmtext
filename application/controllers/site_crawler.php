@@ -262,7 +262,13 @@ class Site_Crawler extends MY_Controller {
 		$this->load->model('crawler_list_prices_model');
 		$this->load->library('PageProcessor');
 
-		$rows = $this->crawler_list_model->getAll(1000, false);
+		if ($this->input->post('id')) {
+			$id = (int) str_replace('id_', '', $this->input->post('id'));
+			$rows = $this->crawler_list_model->get($id);
+		} else {
+			$rows = $this->crawler_list_model->getAll(1000, false);
+		}
+
 		foreach( $rows as $data) {
 			$this->crawler_list_model->updateStatus($data->id, 'lock');
 

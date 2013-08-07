@@ -67,6 +67,7 @@
 				<button id="current_list_delete" class="btn new_btn btn-danger mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
 				<button id="crawl_new" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Crawl New</button>
 				<button id="crawl_all" class="btn new_btn btn-success mt_10 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Crawl All</button>
+				<button id="current_crawl" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Crawl</button>
 			</div>
 			<div class="row-fluid">
 				<div id="Current_List_Pager"></div>
@@ -139,17 +140,21 @@ $(function () {
     };
 
     $('html').click(function(event) {
-        if(!$(event.target).is('#current_list_delete')){
+        if(!$(event.target).is('#current_list_delete') && !$(event.target).is('#current_crawl')){
             $('#current_list_delete').attr('disabled', 'disabled');
             $('#Current_List li').removeClass('active');
+            $('#current_crawl').attr('disabled', 'disabled');
         }
     });
 
     setTimeout(function(){
         $('title').text("Site Crawler");
     }, 10);
+
     $(document).click(function(event) {
-        closeInputs(event);
+    	if(!$(event.target).is('#current_list_delete') && !$(event.target).is('#current_crawl')){
+        	closeInputs(event);
+    	}
     });
 
     $(document).on('change', '#Add_List > div.new > input',  function(){
@@ -197,8 +202,9 @@ $(function () {
                 $('#Current_List li').removeClass('active');
                 $(this).addClass('active');
 		$('#current_list_delete').removeAttr('disabled');
+		$('#current_crawl').removeAttr('disabled');
 	});
-        
+
 	$(document).on("click", "#add_list_delete", function(){
 		$('#Add_List > div.active').remove();
 		$('#add_list_delete').attr('disabled', 'disabled');
@@ -209,7 +215,13 @@ $(function () {
 		$.post('<?php echo site_url('site_crawler/delete');?>', {id: $('#Current_List > ul > li.active').attr('id')}, function(data) {});
 		loadCurrentList();
 	});
-        
+
+	$(document).on("click", 'button#current_crawl', function(){
+		$('button#current_crawl').attr('disabled', 'disabled');
+		$.post('<?php echo site_url('site_crawler/crawl_all');?>', {id: $('#Current_List > ul > li.active').attr('id')}, function(data) {});
+
+	});
+
 	$(document).on("click", "button#add_url_list", function(event){
 		closeInputs(event);
 
