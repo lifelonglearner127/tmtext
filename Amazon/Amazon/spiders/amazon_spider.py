@@ -85,6 +85,11 @@ class BestsellerSpider(BaseSpider):
 
     # get main pages for department bestseller pages and pass them to the parsePage function
     def parse(self, response):
+        # currently extracting all from bestsellers menu (only departments level)
+        # and from manually building URLs from each sitemap department (doesn't work for all)
+        #TODO: extract lower levels from bestsellers menu
+        #TODO: some more matching between sitemap departments names and bestsellers menu names
+
         hxs = HtmlXPathSelector(response)
         department_links = hxs.select("//ul[@id='zg_browseRoot']/ul/li/a")
 
@@ -103,6 +108,77 @@ class BestsellerSpider(BaseSpider):
             request.meta['dept_name'] = department['text']
             yield request
 
+        # get departments from sitemap and search for bestsellers for each
+        sitemap_url = "http://www.amazon.com/gp/site-directory/ref=sa_menu_top_fullstore"
+        yield Request(sitemap_url, callback = self.getDepartmentsBs)
+
+
+    # get bestsellers pages for sitemap departments, if found
+    # (by passing department pages to getDepartmentBs to get bestsellers list for each)
+    def getDepartmentsBs(self, response):
+        hxs = HtmlXPathSelector(response)
+        department_links = hxs.select("//div[@id='siteDirectory']//table//a")
+
+        departments = []
+        root_url = "http://www.amazon.com"
+
+        for department_link in department_links:
+            department = {"url" : root_url + department_link.select("@href").extract()[0], "text" : department_link.select("text()").extract()[0]}
+            departments.append(department)
+
+        # pass department urls to getDepartmentBs to get bestsellers for a particular department
+        for department in departments:
+            request = Request(department['url'], callback = self.getDepartmentBs)
+            request.meta['dept_name'] = department['text']
+            yield request
+
+    # get bestsellers page for one department
+    # receive a request to its page, and get bestsellers list if found, pass it to parsePage
+    def getDepartmentBs(self, response):
+        hxs = HtmlXPathSelector(response)
+
+        dept_name = response.meta['dept_name']
+        root_url = "http://www.amazon.com"
+
+        # # searching for bestsellers tab in the menu doesn't really work (it leads to the parent's bestsellers)
+        # menuitems = hxs.select("//div[@id='nav-bar-inner']//li[@class='nav-subnav-item']/a")
+        # for menuitem in menuitems:
+
+        #     # if we find a menu item with the text "Best Sellers", pass that link to be parsed
+        #     name = menuitem.select("text()").extract()[0].strip()
+        #     if name == 'Best Sellers':
+        #         url = root_url + menuitem.select("@href").extract()[0]
+        #         department = {"text" : dept_name, "url" : url}
+
+        #         request = Request(department['url'], callback = self.parsePage)
+        #         request.meta['dept_name'] = department['text']
+        #         yield request
+
+        #         break
+
+        # try to build URLs similar to this "http://www.amazon.com/Best-Sellers-Books-Audiobooks/zgbs/books/368395011"
+        # by replacing the number with each category's number
+
+        # extract category number
+        template_url = "http://www.amazon.com/Best-Sellers-Books-Audiobooks/zgbs/books/368395011"
+        m_source = re.match("(.*)\&node=([0-9]+)", response.url)
+        if m_source:
+            m_dest = re.match("(.*)/([0-9]+)", template_url)
+            if m_dest:
+                str_source = m_source.group(2)
+                str_dest = m_dest.group(2)
+                page_url = template_url.replace(str_dest, str_source)
+
+                request = Request(page_url, callback = self.parsePage)
+                request.meta['dept_name'] = dept_name
+                yield request
+
+            else:
+                print "NOT MATCHED", template_url
+        else:
+            print "NOT MATCHED", response.url
+
+
     # extract each page url for a department's bestseller list and pass it to parseDepartment
     def parsePage(self, response):
         hxs = HtmlXPathSelector(response)
@@ -110,9 +186,13 @@ class BestsellerSpider(BaseSpider):
         # for MP3 Downloads, rerun this method with its subcategories (MP3 Songs and MP3 Albums). also split it into paid and free?
         if response.meta['dept_name'] == "MP3 Downloads":
             subcategories = hxs.select("//ul[@id='zg_browseRoot']/ul/ul/li/a")
-            for subcategory in subcategories:
+            # only select first subcategory (paid albums)
+            for subcategory in [subcategories[0]]:
                 request = Request(subcategory.select("@href").extract()[0], callback = self.parsePage)
-                request.meta['dept_name'] = subcategory.select("text()").extract()[0]
+
+                # match between bestsellers menu name and sitemap name
+                dept_name = "MP3 Music Store"
+                request.meta['dept_name'] = dept_name#subcategory.select("text()").extract()[0]
                 yield request
 
         else:
