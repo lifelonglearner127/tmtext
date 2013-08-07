@@ -232,6 +232,13 @@ class PageProcessor {
 			}
 		}
 
+		foreach($this->nokogiri->get('.mainContent .prodInfo .priceBox .pricemapa del') as $item) {
+			$priceOld = str_replace(',','',$item['#text'][0]);
+			if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $priceOld, $match)) {
+				$priceOld = $match[1];
+			}
+		}
+
 		foreach($this->nokogiri->get('#DetailedSpecs table.prodSpec tr') as $item) {
 			$i = trim($item['th'][0]['#text'][0]);
 			$j = trim($item['td'][0]['#text'][0]);
@@ -247,6 +254,7 @@ class PageProcessor {
 			'Product Name' => $title['#text'][0],
 			'Description' => $description,
 			'Price' => $price,
+			'PriceOld' => $priceOld,
 			'Features' => $features
 		);
 	}
