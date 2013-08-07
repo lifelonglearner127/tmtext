@@ -304,24 +304,35 @@ group_id = "<?php echo $same_pr[0]['imported_data_id']; ?>";
   }
     var count =<?php echo count($same_pr); ?>;
     var ddData_grids = [];
+    var customers= [];
     function gridsCustomersListLoader() {
 
         for (var i = 1; i <= count + 1; i++) {
+            
             //ddData_grids[i]['ddData_grid']=[];
             ddData_grids[i] = $("#grid_se_section_" + i + " input[type='hidden'][name='dd_customer']").val();
-
+            if($("#grid_se_section_" + i + " input[type='hidden'][name='dd_customer']").val()!=undefined){
+                                
+                customers.push($("#grid_se_section_" + i + " input[type='hidden'][name='dd_customer']").val());
+            }
         }
-
+        var newc_data=[];
         setTimeout(function() {
+           selected_customers=[];
             var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist_new', {}, function(c_data) {
-//            var customers= [];
-//             $.each(c_data, function(index, val) {
-//               if(!inArray(val.value,customers)){
-//                   
-//               }
-//            });   
+            var j=0;
+            for (var key in c_data){
+                 
+               if(inArray(c_data[key].value,customers)){
+                  //console.log(c_data[key].value);
+                  console.log(c_data[key]);
+                  newc_data[j]=c_data[key]; 
+                  j++;
+               }
+            };
+         
             for (var i = 1; i <= count; i++) {
-                    var grid1 = $('#an_grd_view_drop_gr' + i).msDropDown({byJson: {data: c_data}}).data("dd");
+                    var grid1 = $('#an_grd_view_drop_gr' + i).msDropDown({byJson: {data: newc_data}}).data("dd");
                     if (grid1 != undefined) {
                         grid1.setIndexByValue(ddData_grids[i]);
                     }

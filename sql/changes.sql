@@ -417,3 +417,9 @@ DROP TABLE `similar_product_groups`;
 CREATE TABLE  `tmeditor`.`similar_product_groups` (
 `id` INT NOT NULL
 ) ENGINE = MYISAM ;
+
+
+#08/07 Max
+ALTER TABLE  `similar_product_groups` ADD UNIQUE (
+`id`
+)
