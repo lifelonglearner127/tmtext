@@ -58,12 +58,12 @@ $(function () {
             return nRow;
         },
         "fnDrawCallback": function(oSettings) {
+            highlightPrices();
             if (zeroTableDraw) {
                 zeroTableDraw = false;
                 return;
             }
             hideColumns();
-            highlightPrices();
         },
         "oLanguage": {
             "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",

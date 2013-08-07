@@ -365,7 +365,8 @@ class Research extends MY_Controller {
 
             $own_site = parse_url($result_row->url,  PHP_URL_HOST);
             if (!$own_site)
-                $own_site = substr($result_row->url, 0, 20);
+                $own_site = "own site";
+            $own_site = str_replace("www.", "", $own_site);
 
             if ($price_diff) {
                 $data_import = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
