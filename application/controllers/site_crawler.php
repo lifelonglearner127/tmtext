@@ -132,6 +132,11 @@ class Site_Crawler extends MY_Controller {
 		$this->load->model('crawler_list_model');
 		$this->load->library('pagination');
 
+        $search_crawl_data = '';
+        if($this->input->get('search_crawl_data') != ''){
+            $search_crawl_data = $this->input->get('search_crawl_data');
+        }
+
 		$config = array(
 			'base_url' => site_url('site_crawler/all_urls'),
 			'total_rows' => $this->crawler_list_model->countAll(false),
@@ -145,7 +150,7 @@ class Site_Crawler extends MY_Controller {
 		$this->output->set_content_type('application/json');
 		echo json_encode(array(
             'total' => $this->crawler_list_model->countAll(false),
-			'new_urls' => $this->crawler_list_model->getAllLimit($config["per_page"], $page, false),
+			'new_urls' => $this->crawler_list_model->getAllLimit($config["per_page"], $page, false, $search_crawl_data),
 			'pager' => $this->pagination->create_links()
 		));
 	}

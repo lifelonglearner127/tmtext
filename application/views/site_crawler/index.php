@@ -57,8 +57,11 @@
 				<button id="add_url_list" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Add</button>
 				<button id="add_list_delete" class="btn new_btn btn-danger mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
 			</div>
-			<h3>Current list: <small></small></h3>
-			<div class="row-fluid">
+			<h3 class="span3">Current list: <small></small></h3>
+            <input type="text" class="span6 pull-left mt_15" name="search_crawl_data" >
+            <button id="apply_search_data" class="btn new_btn btn-success mt_15 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Apply</button>
+            <button id="clear_search_data" class="btn new_btn btn-success mt_15 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Clear</button>
+			<div class="row-fluid mt_5">
 				<div class="search_area uneditable-input span10" style="cursor: text; width: 765px; height: 250px; overflow : auto;" id="Current_List">
 				<ul>
 					<lh><span>Status</span><span>Last Crawled</span><span>Category</span><span>URL</span></lh>
@@ -78,8 +81,12 @@
 <script>
 function loadCurrentList(url){
 	url = typeof url !== 'undefined' ? url: '<?php echo site_url('site_crawler/all_urls');?>';
-
-	$.get(url, function(data) {
+    var search_crawl_data = '';
+    if($('input[name="search_crawl_data"]').val() != ''){
+        search_crawl_data = $('input[name="search_crawl_data"]').val();
+    }
+	$.get(url, {'search_crawl_data': search_crawl_data}, function(data) {
+        console.log(data);
 		$('#Current_List ul li').remove();
 
 		if(data.new_urls.length > 0) {
@@ -256,6 +263,17 @@ $(function () {
 		event.preventDefault();
 		loadCurrentList($(this).attr('href'));
 	});
+
+    $(document).on("click", "button#clear_search_data", function(){
+        $('input[name="search_crawl_data"]').val('');
+        loadCurrentList();
+    });
+
+    $(document).on("click", "button#apply_search_data", function(){
+        if($('input[name="search_crawl_data"]').val()!=''){
+            loadCurrentList();
+        }
+    });
 
 	jQuery(document).ready(function($) {
 		loadCurrentList();

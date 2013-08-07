@@ -111,7 +111,7 @@ class Crawler_List_model extends CI_Model {
         return $query->result();
     }
 
-    function getAllLimit($limit, $start, $only_my=true)
+    function getAllLimit($limit, $start, $only_my=true, $search_crawl_data='')
     {
     	$CI =& get_instance();
 
@@ -124,6 +124,9 @@ class Crawler_List_model extends CI_Model {
     	if ($only_my) {
     		$this->db->where('user_id',  $CI->ion_auth->get_user_id());
     	}
+        if($search_crawl_data != ''){
+            $this->db->like('cl.url', $search_crawl_data)->or_like('c.name', $search_crawl_data)->or_like('cl.status', $search_crawl_data)->or_like('DATE(cl.updated)', $search_crawl_data);
+        }
 
         $query = $this->db->get();
 
