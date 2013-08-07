@@ -76,6 +76,14 @@ class Research_data_model extends CI_Model {
         $results = $query->result();
         
         $data = array();
+        $urls=array();
+        foreach($results as $kay => $result){
+        if($result->key=='URL' && !in_array($result->value,$urls )){
+             $urls[]= $result->value;   
+        }else{
+            unset($results[$kay]);
+        }
+         }
         foreach($results as $result){
             $query = $this->db->where('imported_data_id', $result->imported_data_id)->get($this->tables['imported_data_parsed']);
             $res = $query->result_array();

@@ -1272,11 +1272,17 @@ class Imported_data_parsed_model extends CI_Model {
         return $main_base . '/';
     }
     public function similiarity_cron(){
-        $f_res = array();
-        $this->db->select('imported_data_id, key, value');
+         
+        $this->db->select('imported_data_id, key, value')
+                ->where('key', 'Product Name')
+                ->or_where('key', 'parsed_attributes')
+                ->or_where('key', 'URL');
+        
         $query = $this->db->get($this->tables['imported_data_parsed']);
         $results = $query->result();
+      
         $data = array();
+        
         foreach ($results as $result) {
             if ($result->key === 'URL') {
                 $data[$result->imported_data_id]['url'] = $result->value;
@@ -1289,6 +1295,7 @@ class Imported_data_parsed_model extends CI_Model {
                 $data[$result->imported_data_id]['parsed_attributes'] = unserialize($result->value);
             }
         }
+        
         $for_group=array();
     
         foreach($data as $key => $val){
@@ -1296,21 +1303,17 @@ class Imported_data_parsed_model extends CI_Model {
                $for_group[$key]=$val;
            }
         }
+
         $groups=array();
-//        similar_text(strtolower($val1['product_name']), strtolower($val['product_name']), $prcnt);    
-//                        if ($prcnt > 37) {
-//                           $groups[$im_data_id][]=$key;
-//                        }
-//                        $this->db->truncate('similar_product_groups');
-//                        $this->db->truncate('similar_data');
+
         foreach($for_group as $im_data_id => $val){
             $urls=array();
             foreach($data as $key => $val1){
                if($key!=$im_data_id && $this->get_base_url($val1['url'])!=$this->get_base_url($val['url'])){
                     if(!in_array($this->get_base_url($val1['url']),$urls)) { 
-                        $urls[]=$this->get_base_url($val1['url']);    
+                           
                        if(leven_algoritm(strtolower($val1['product_name']), strtolower($val['product_name']))>30){   
-                        
+                           $urls[]=$this->get_base_url($val1['url']); 
                            $groups[$im_data_id][]=$key;
                         }
                     }
