@@ -650,6 +650,7 @@ $main_base = substr($url, 0, $pos);
 return $main_base;
 }
      public function gridview() {
+       $data['mismatch_button']=false;
         $im_data_id = $this->input->post('im_data_id');
 
         $data = array(
@@ -694,14 +695,15 @@ return $main_base;
 
                 $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['UPC/EAN/ISBN']);
             }
-
+            if(empty($same_pr) && !isset($data_import['parsed_attributes']['model'])){
+            $data['mismatch_button']=true;
             if (!$this->similar_product_groups_model->checkIfgroupExists($im_data_id)) {
               
-                if (empty($same_pr) && !isset($data_import['parsed_attributes'])) {
+                if (!isset($data_import['parsed_attributes'])) {
 
                     $same_pr = $this->imported_data_parsed_model->getByProductName($im_data_id, $data_import['product_name'], '', $strict);
                 }
-                if (empty($same_pr) && isset($data_import['parsed_attributes']) && !isset($data_import['parsed_attributes']['model'])) {
+                if (isset($data_import['parsed_attributes']) ) {
 
                     $same_pr = $this->imported_data_parsed_model->getByProductName($im_data_id, $data_import['product_name'], $data_import['parsed_attributes']['manufacturer'], $strict);
                 }
@@ -737,6 +739,7 @@ return $main_base;
                 if (!empty($data_similar)) {
                     $same_pr = $data_similar;
                 }
+            }
             }
             // get similar for first row
             $this->load->model('similar_imported_data_model');
