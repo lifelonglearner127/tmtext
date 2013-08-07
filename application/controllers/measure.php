@@ -647,7 +647,7 @@ class Measure extends MY_Controller {
  
 $main_base = substr($url, 0, $pos);
  
-return $main_base.'/';
+return $main_base;
 }
      public function gridview() {
         $im_data_id = $this->input->post('im_data_id');
@@ -825,6 +825,15 @@ return $main_base.'/';
 //            }
 //			if(count($same_pr) === 3) {
             foreach ($same_pr as $ks => $vs) {
+                if($vs['customer']==''){
+                $this->load->model('sites_model'); 
+                   if($this->get_base_url($vs['url'])=='http://shop.nordstrom.com'){
+                      $same_pr[$ks]['customer']='nordstrom' ;
+                   }else{
+                   $same_pr[$ks]['customer']=  strtolower($this->sites_model->get_name_by_url($this->get_base_url($vs['url'])));
+                   }
+                   
+                   }
                 $same_pr[$ks]['seo']['short'] = $this->helpers->measure_analyzer_start_v2(preg_replace('/\s+/', ' ', $vs['description']));
                 $same_pr[$ks]['seo']['long'] = $this->helpers->measure_analyzer_start_v2(preg_replace('/\s+/', ' ', $vs['long_description']));
 

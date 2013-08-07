@@ -38,7 +38,16 @@ class Sites_model extends CI_Model {
         }
         return '';
     }
+    function get_name_by_url($url){
+        $query = $this->db->where('url', $url)
+            ->limit(1)
+            ->get($this->tables['sites']);
 
+        if($query->num_rows() > 0) {
+            return $query->row()->name;
+        }
+        return '';
+    }
     function insertSiteByName($name)
     {
         $this->name = $name;

@@ -318,14 +318,15 @@ group_id = "<?php echo $same_pr[0]['imported_data_id']; ?>";
         }
         var newc_data=[];
         setTimeout(function() {
-           selected_customers=[];
-            var customers_list = $.post(base_url + 'index.php/measure/getcustomerslist_new', {}, function(c_data) {
+            selected_customers=[];
+            var customers_list = $.post(base_url + 'index.php/measure/getsiteslist_new', { }, function(c_data) {
+            console.log(c_data);
             var j=0;
             for (var key in c_data){
                  
                if(inArray(c_data[key].value,customers)){
                   //console.log(c_data[key].value);
-                  console.log(c_data[key]);
+                  console.log(c_data[key].value);
                   newc_data[j]=c_data[key]; 
                   j++;
                }
