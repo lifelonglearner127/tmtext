@@ -161,6 +161,7 @@ class ToysrusSpider(BaseSpider):
 
             # if it starts with "Save " ("Save 50% on ...") or "Buy " or contains "...% off" or starts with a date (number/number), 
             # mark it as special
+            #TODO: there are still some "Save up to..." items
             special = re.match("(Save .*)|(Buy .*)|(.*[0-9]+\% off.*)|(.*[0-9]+/[0-9]+.*)", item['text'], re.UNICODE)
             if special:
                 item['special'] = 1
@@ -212,6 +213,8 @@ class BestsellerSpider(BaseSpider):
 
         # department name if any (for department-wise bestsellers pages)
         dept_name = ""
+
+        #TODO: some items don't have the department field. check in nodepts_toysrus.txt
         department = hxs.select("//div[@id='breadCrumbs']/text()").extract()
         if department:
             # remove part before > and ignore first character from div content
