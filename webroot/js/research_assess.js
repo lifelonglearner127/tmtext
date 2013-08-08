@@ -129,7 +129,7 @@ $(function () {
         $('#assess_report_items_priced_higher_than_competitors').html(report.summary.items_priced_higher_than_competitors);
         $('#assess_report_items_have_more_than_50_percent_duplicate_content').html(report.summary.items_have_more_than_50_percent_duplicate_content);
         $('#assess_report_items_unoptimized_product_content').html(report.summary.items_unoptimized_product_content);
-        $('#assess_report_items_have_product_content_that_is_too_short').html(report.summary.items_short_products_content);
+        $('#assess_report_items_have_product_context_that_is_too_short').html(report.summary.items_short_products_content);
     }
 
     $('#tblAssess tbody').click(function(event) {
