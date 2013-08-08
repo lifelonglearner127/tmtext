@@ -58,9 +58,7 @@ $(function () {
             "fnServerData": function (sSource, aoData, fnCallback) {
                     aoData = buildTableParams(aoData);
                     $.getJSON(sSource, aoData, function (json) {
-                        if(json.ExtraData !=undefined){
-                            buildReport(json.ExtraData.report);
-                        }
+                        buildReport(json);
                         fnCallback(json);
                         tblAssess.fnProcessingIndicator( false );
                     });
@@ -118,7 +116,14 @@ $(function () {
         });
     }
 
-    function buildReport(report) {
+    function buildReport(data) {
+        console.log(data.ExtraData);
+        if (data.ExtraData == undefined) {
+            reportPanel(false);
+            return;
+        }
+
+        var report = data.ExtraData.report;
         $('#assess_report_total_items').html(report.summary.total_items);
         $('#assess_report_items_priced_higher_than_competitors').html(report.summary.items_priced_higher_than_competitors);
         $('#assess_report_items_have_more_than_50_percent_duplicate_content').html(report.summary.items_have_more_than_50_percent_duplicate_content);
@@ -318,10 +323,8 @@ $(function () {
         $.each(columns_checkboxes, function(index, value) {
             columns_checkboxes_checked.push($(value).data('col_name'));
         });
-        $('#tblAssess').show();
-        $('#tblAssess').parent().find('div.ui-corner-bl').show();
-        $('#assess_report').hide();
         if (table_case == 'recommendations') {
+            reportPanel(false);
             $.each(tblAllColumns, function(index, value) {
                 if ($.inArray(value, tableCase.recommendations) > -1) {
                     tblAssess.fnSetColumnVis(index, true, false);
@@ -331,6 +334,7 @@ $(function () {
                 }
             });
         } else if (table_case == 'details') {
+            reportPanel(false);
             $.each(tblAllColumns, function(index, value) {
                 if ($.inArray(value, columns_checkboxes_checked) > -1) {
                     tblAssess.fnSetColumnVis(index, true, false);
@@ -339,11 +343,22 @@ $(function () {
                 }
             });
         } else if (table_case == 'report') {
+            reportPanel(true);
+            var batch_name = $('select[name="research_assess_batches"]').find('option:selected').text()
+            $('#assess_report_download_pdf').attr('href', base_url + 'index.php/research/assess_download_pdf?batch_name=' + batch_name);
+        }
+    }
+
+    function reportPanel(visible) {
+        console.log(visible);
+        if (visible) {
             $('#tblAssess').hide();
             $('#tblAssess').parent().find('div.ui-corner-bl').hide();
             $('#assess_report').show();
-            var batch_name = $('select[name="research_assess_batches"]').find('option:selected').text()
-            $('#assess_report_download_pdf').attr('href', base_url + 'index.php/research/assess_download_pdf?batch_name=' + batch_name);
+        } else {
+            $('#tblAssess').show();
+            $('#tblAssess').parent().find('div.ui-corner-bl').show();
+            $('#assess_report').hide();
         }
     }
 
@@ -406,7 +421,6 @@ $(function () {
     function readAssessData() {
         do_query = true;
         tblAssess.fnDraw();
-        hideColumns();
     }
 
     hideColumns();

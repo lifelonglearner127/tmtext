@@ -248,21 +248,21 @@
                                     <img src="http://tmeditor//webroot/img/arrow.png">
                                 </a>
                             </h3>
-                            <div class="boxes_content" style="height: 200px;padding:0px;">
+                            <div class="boxes_content" style="padding:0px;">
                                 <div class="mt_10 ml_15">
-                                    <button class="btn mr_10" disabled="disabled">#</button><span id="assess_report_total_items" class="mr_10"></span>total items
+                                    <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_number.png"><span id="assess_report_total_items" class="mr_10"></span>total items</div>
                                 </div>
                                 <div class="mt_10 ml_15">
-                                    <button class="btn mr_10" disabled="disabled">$</button><span id="assess_report_items_priced_higher_than_competitors" class="mr_10"></span>items priced higher than competitors
+                                    <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_dollar.png"><span id="assess_report_items_priced_higher_than_competitors" class="mr_10"></span>items priced higher than competitors</div>
                                 </div>
                                 <div class="mt_10 ml_15">
-                                    <button class="btn mr_10" disabled="disabled">D</button><span id="assess_report_items_have_more_than_50_percent_duplicate_content" class="mr_10"></span>items have more than 50% duplicate content
+                                    <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_D.png"><span id="assess_report_items_have_more_than_50_percent_duplicate_content" class="mr_10"></span>items have more than 50% duplicate content</div>
                                 </div>
                                 <div class="mt_10 ml_15">
-                                    <button class="btn mr_10" disabled="disabled">SEO</button><span id="assess_report_items_unoptimized_product_content" class="mr_10"></span>items have unoptimized product content
+                                    <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_seo.png"><span id="assess_report_items_unoptimized_product_content" class="mr_10"></span>items have unoptimized product content</div>
                                 </div>
-                                <div class="mt_10 ml_15">
-                                    <button class="btn mr_10" disabled="disabled"><i class="icon-arrow-down"></i></button><span id="assess_report_items_have_product_context_that_is_too_short" class="mr_10"></span>items have product context that is too short
+                                <div class="mt_10 mb_10 ml_15">
+                                    <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_arrow_down.png"><span id="assess_report_items_have_product_context_that_is_too_short" class="mr_10"></span>items have product context that is too short</div>
                                 </div>
                             </div>
                         </li>

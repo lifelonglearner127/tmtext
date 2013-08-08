@@ -398,3 +398,17 @@ ul.ui-sortable {
     margin: 0;
     padding-left: 10px;
 }
+#assess_report div.boxes_content {
+    font-size: 14px;
+}
+#assess_report div.boxes_content img {
+    width:35px;
+    height:35px;
+    margin-right: 10px;
+}
+#assess_report div.boxes_content span {
+    width:50px;
+}
+.mb_10{
+    margin-bottom:10px !important;
+}

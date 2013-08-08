@@ -600,6 +600,18 @@ class Research extends MY_Controller {
         $params->batch_name = $this->input->get('batch_name');
         $results = $this->get_data_for_assess($params);
 
+        $this->load->model('batches_model');
+        $customer = $this->batches_model->getAllCustomerDataByBatch($params->batch_name);
+        $batch = $this->batches_model->getByName($params->batch_name);
+        $batch_created = new DateTime($batch->created);
+
+        $css_path = APPPATH.".."."/webroot/css/";
+        $img_path = APPPATH.".."."/webroot/img/";
+        $own_logo = $img_path."content-analytics.png";
+        $customer_logo = $img_path.$customer->image_url;
+
+        $html = '';
+
         $build_assess_params = new stdClass();
         $build_assess_params->price_diff = true;
         $build_assess_params->short_less = -1;
@@ -613,32 +625,109 @@ class Research extends MY_Controller {
 
         $output = $this->build_asses_table($results, $build_assess_params);
         $report = $output['ExtraData']['report'];
-        $this->load->library('pdf');
-        $pdf = $this->pdf->load();
-        $pdf->SetHeader('Batch - '.$params->batch_name);
-        $pdf->WriteHTML('<table width="100%" border="1" cellspacing="0" cellpadding="0" style="border-collapse: collapse;border-spacing: 0;">');
 
-        $pdf->WriteHTML('<tr><td colspan="2" style="background-color: #dddddd;text-align: center;font-weight: bold;">Summary</td></tr>');
-        $pdf->WriteHTML('<tr><td>Total Items</td><td>'.$report['summary']['total_items'].'</td></tr>');
-        $pdf->WriteHTML('<tr><td>Items priced higher than competitors</td><td>'.$report['summary']['items_priced_higher_than_competitors'].'</td></tr>');
-        $pdf->WriteHTML('<tr><td>Items have more than 50% duplicate content</td><td>'.$report['summary']['items_have_more_than_50_percent_duplicate_content'].'</td></tr>');
-        $pdf->WriteHTML('<tr><td>Items have unoptimized product content</td><td>'.$report['summary']['items_unoptimized_product_content'].'</td></tr>');
-        $pdf->WriteHTML('<tr><td>Items have product context that is too short</td><td>'.$report['summary']['items_short_products_content'].'</td></tr>');
-        $pdf->WriteHTML('<tr><td colspan="2" style="background-color: #dddddd;text-align: center;font-weight: bold;">Recommendations</td></tr>');
+        $header = '<table border=0 width=100%>';
+        $header = $header.'<tr>';
+        $header = $header.'<td style="text-align: left;">';
+        $header = $header.'<img src="'.$own_logo.'" />';
+        $header = $header.'</td>';
+        $header = $header.'<td style="text-align: right;">';
+        $header = $header.'<img src="'.$customer_logo.'" />';
+        $header = $header.'</td>';
+        $header = $header.'</tr>';
+        $header = $header.'</table>';
+        $header = $header.'<hr color="#C31233" height="10">';
+
+        $html = $html.$header;
+
+        //$pdf->WriteHTML('Batch - '.$params->batch_name);
+
+        $html = $html.'<table width="100%" border="0">';
+        $html = $html.'<tr><td style="text-align: left;font-weight: bold; font-style: italic;">Batch - '.$params->batch_name.'</td><td style="text-align: right;font-weight: bold; font-style: italic;">'.$batch_created->format('F j, Y').'</td></tr>';
+
+        $html = $html.'<tr><td colspan="2"><hr height="3"></td></tr>';
+
+        $html = $html.'<tr><td colspan="2">';
+
+        $html = $html.'<table class="report" border="1" cellspacing="0" cellpadding="0" style="border-collapse: collapse;border-spacing: 0;">';
+
+        $html = $html.'<tr><td colspan="2" style="background-color: #dddddd;text-align: center;font-weight: bold;">Summary</td></tr>';
+
+        $html = $html.'<tr><td>';
+        $html = $html.'<div class=""><img class="icon" src="'.$img_path.'assess_report_number.png">Total Items</div></td>';
+        $html = $html.'<td>'.$report['summary']['total_items'];
+        $html = $html.'</td></tr>';
+
+        $html = $html.'<tr><td>';
+        $html = $html.'<div class=""><img class="icon" src="'.$img_path.'assess_report_dollar.png">Items priced higher than competitors</div></td>';
+        $html = $html.'<td>'.$report['summary']['items_priced_higher_than_competitors'];
+        $html = $html.'</td></tr>';
+
+        $html = $html.'<tr><td>';
+        $html = $html.'<div class=""><img class="icon" src="'.$img_path.'assess_report_D.png">Items have more than 50% duplicate content</div></td>';
+        $html = $html.'<td>'.$report['summary']['items_have_more_than_50_percent_duplicate_content'];
+        $html = $html.'</td></tr>';
+
+        $html = $html.'<tr><td>';
+        $html = $html.'<div class=""><img class="icon" src="'.$img_path.'assess_report_seo.png">Items have unoptimized product content</div></td>';
+        $html = $html.'<td>'.$report['summary']['items_unoptimized_product_content'];
+        $html = $html.'</td></tr>';
+
+        $html = $html.'<tr><td>';
+        $html = $html.'<div class=""><img class="icon" src="'.$img_path.'assess_report_arrow_down.png">Items have product content that is too short</div></td>';
+        $html = $html.'<td>'.$report['summary']['items_short_products_content'];
+        $html = $html.'</td></tr>';
+
+        $html = $html.'</table>';
+
+        $html = $html.'<table class="report recommendations" border="1" cellspacing="0" cellpadding="0" style="border-collapse: collapse;border-spacing: 0;">';
+
+        $html = $html.'<tr><td style="background-color: #dddddd;text-align: center;font-weight: bold;">Recommendations</td></tr>';
         if ($report['recommendations']['items_priced_higher_than_competitors']) {
-            $pdf->WriteHTML('<tr><td colspan="2">'.$report['recommendations']['items_priced_higher_than_competitors'].'</td></tr>');
+            $html = $html.'<tr><td>';
+            $html = $html.'<div class=""><img class="icon" src="'.$img_path.'assess_report_dollar.png">';
+            $html = $html.$report['recommendations']['items_priced_higher_than_competitors'].'</div>';
+            $html = $html.'</td></tr>';
         }
         if ($report['recommendations']['items_have_more_than_50_percent_duplicate_content']) {
-            $pdf->WriteHTML('<tr><td colspan="2">'.$report['recommendations']['items_have_more_than_50_percent_duplicate_content'].'</td></tr>');
+            $html = $html.'<tr><td>';
+            $html = $html.'<div class=""><img class="icon" src="'.$img_path.'assess_report_D.png">';
+            $html = $html.$report['recommendations']['items_have_more_than_50_percent_duplicate_content'].'</div>';
+            $html = $html.'</td></tr>';
         }
         if ($report['recommendations']['items_short_products_content']) {
-            $pdf->WriteHTML('<tr><td colspan="2">'.$report['recommendations']['items_short_products_content'].'</td></tr>');
+            $html = $html.'<tr><td>';
+            $html = $html.'<div class=""><img class="icon" src="'.$img_path.'assess_report_seo.png">';
+            $html = $html.$report['recommendations']['items_short_products_content'].'</div>';
+            $html = $html.'</td></tr>';
         }
         if ($report['recommendations']['items_unoptimized_product_content']) {
-            $pdf->WriteHTML('<tr><td colspan="2">'.$report['recommendations']['items_unoptimized_product_content'].'</td></tr>');
+            $html = $html.'<tr><td>';
+            $html = $html.'<div class=""><img class="icon" src="'.$img_path.'assess_report_arrow_up.png">';
+            $html = $html.$report['recommendations']['items_unoptimized_product_content'].'</div>';
+            $html = $html.'</td></tr>';
         }
 
-        $pdf->WriteHTML('</table>');
+        $html = $html.'</table>';
+
+        $html = $html.'<tr><td>';
+        $html = $html.'</table>';
+
+
+        $this->load->library('pdf');
+        $pdf = $this->pdf->load();
+//        include APPPATH.'third_party/mpdf/mpdf.php';
+//        $pdf = new mPDF('', 'A5', 0, '', 10, 10, 10, 10, 8, 8);
+        $stylesheet = file_get_contents($css_path.'assess_report.css');
+
+        $pdf->showImageErrors = true;
+
+        $pdf->WriteHTML($stylesheet, 1);
+
+        $pdf->WriteHTML($html, 2);
+
+        $pdf->SetHTMLFooter('<div style="font-size: 10px;">Copyright © 2013 Content Solutions, Inc.</div>');
+
         $pdf->Output();
     }
 

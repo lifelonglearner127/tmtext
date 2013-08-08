@@ -228,11 +228,12 @@ union all
 
     function getInfoForAssess($params)
     {
-        $batch_name = $params->batch_name;
-
-        if($batch_name != ''){
-            $batch_name = " and b.title =".$this->db->escape($batch_name)." ";
+        if(empty($params->batch_name)){
+            $batch_name = '';
+        } else {
+            $batch_name = $params->batch_name;
         }
+        $batch_name = " and b.title =".$this->db->escape($batch_name)." ";
 
 //        $date_from = $params->date_from == '' ? '' : $this->db->escape($params->date_from);
 //        $date_to = $params->date_to == '' ? '' : $this->db->escape($params->date_to);
