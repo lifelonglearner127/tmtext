@@ -1272,7 +1272,7 @@ class Imported_data_parsed_model extends CI_Model {
         return $main_base . '/';
     }
     public function similiarity_cron(){
-       
+     
         $this->load->model('similar_product_groups_model');
         $existing_groups=$this->similar_product_groups_model->get_all();
         
@@ -1302,7 +1302,7 @@ class Imported_data_parsed_model extends CI_Model {
         $for_group=array();
         $i=0;
         foreach($data as $key => $val){
-           if($i<15 && !in_array($key,$existing_groups) && (!isset($val['parsed_attributes'])|| !isset($val['parsed_attributes']['model']))){
+           if($i<5 && !in_array($key,$existing_groups) && (!isset($val['parsed_attributes'])|| !isset($val['parsed_attributes']['model']))){
                $for_group[$key]=$val;
                $i++;
            }
@@ -1311,12 +1311,13 @@ class Imported_data_parsed_model extends CI_Model {
         $groups=array();
         
         foreach($for_group as $im_data_id => $val){
-            $urls=array();
+            $urls=array($this->get_base_url($val['url']));
             foreach($data as $key => $val1){
+                
                if($key!=$im_data_id && $this->get_base_url($val1['url'])!=$this->get_base_url($val['url'])){
                     if(!in_array($this->get_base_url($val1['url']),$urls)) { 
                            
-                       if(leven_algoritm(strtolower($val1['product_name']), strtolower($val['product_name']))>32){   
+                       if(leven_algoritm(strtolower($val1['product_name']), strtolower($val['product_name']))>37){   
                            $urls[]=$this->get_base_url($val1['url']); 
                            $groups[$im_data_id][]=$key;
                         }
@@ -1328,21 +1329,25 @@ class Imported_data_parsed_model extends CI_Model {
             $groups[$im_data_id][]=$im_data_id;
         }
 //      
+        $this->load->model('similar_product_groups_model');
        foreach($groups as $im_data_id => $val){
            
+           if(!$this->similar_product_groups_model->checkIfgroupExists($im_data_id)){
             $this->db->insert('similar_product_groups', array('id' => $im_data_id));
            
             foreach ($val as $id) {
                 $this->db->insert('similar_data', array('group_id' => $im_data_id, 'black_list' => 0, 'imported_data_id' => $id));
             }
+          }
        } 
     }
     public function getByProductName($im_data_id, $selected_product_name = '', $manufacturer = '', $strict = false) {
-
+       
         $this->db->select('p.imported_data_id, p.key, p.value')
                 ->from($this->tables['imported_data_parsed'] . ' as p')
                 ->join($this->tables['imported_data'] . ' as i', 'i.id = p.imported_data_id', 'left')
-                ->where('p.key', 'Product Name');
+                ->where('p.key', 'Product Name')
+                ->or_where('p.key', 'URL');
 
         if ($strict) {
             $this->db->like('p.value', '"' . $manufacturer . '"');
@@ -1352,25 +1357,64 @@ class Imported_data_parsed_model extends CI_Model {
         $query = $this->db->get();
 
         $results = $query->result();
-
-        $data1 = array();
-        foreach ($results as $result) {
-            $query = $this->db->where('imported_data_id', $result->imported_data_id)->get($this->tables['imported_data_parsed']);
+        $data=array();
+        $for_groups=array();
+         foreach ($results as $result) {
+            if ($result->key === 'URL') {
+                if($result->imported_data_id==$im_data_id){
+                         $selected_url=$result->value;
+                    }
+                $data[$result->imported_data_id]['url'] = $result->value;
+                
+            }
+            if ($result->key === 'Product Name') {
+                $data[$result->imported_data_id]['product_name'] = $result->value;
+            }
+                        
+       }
+      
+        $urls=array($this->get_base_url($selected_url));
+        foreach($data as $key => $val1){
+           
+           if(isset($val1['product_name'])&& isset($val1['url'])){
+               
+                    if($key==$im_data_id){
+                          $for_groups[]=$key;
+                    }else{
+                    if(!in_array($this->get_base_url($val1['url']),$urls)) { 
+                           
+                       if(leven_algoritm(strtolower($val1['product_name']), strtolower($selected_product_name))>36){   
+                           $urls[]=$this->get_base_url($val1['url']); 
+                           $for_groups[]=$key;
+                        }
+                    }
+                   }
+           } 
+            }
+      
+             
+      $data1=array();
+     
+        foreach ($for_groups as $result) {
+            $query = $this->db->where('imported_data_id', $result)->get($this->tables['imported_data_parsed']);
             $res = $query->result_array();
             $description = '';
             $long_description = '';
             $url = '';
             $product_name = '';
-            $is_similiar = 0;
+            
             foreach ($res as $val) {
                 if ($val['key'] == 'Product Name') {
                     $product_name = $val['value'];
-                    if (leven_algoritm(strtolower($selected_product_name), strtolower($product_name)) > 32) {
-                        $is_similiar = 1;
-                    }
+//                    if (leven_algoritm(strtolower($selected_product_name), strtolower($product_name)) > 35) {
+//                        $is_similiar = 1;
+//                    }
                 }
                 if ($val['key'] == 'URL') {
                     $url = $val['value'];
+                    if($val['imported_data_id']==$im_data_id){
+                         $selected_url=$url;
+                    }
                 }
                 if ($val['key'] == 'Description') {
                     $description = $val['value'];
@@ -1384,15 +1428,12 @@ class Imported_data_parsed_model extends CI_Model {
                     $features = $val['value'];
                 }
             }
-            if ($is_similiar == 1) {
-                array_push($data1, array('imported_data_id' => $result->imported_data_id, 'product_name' => $result->value,
+            //if ($is_similiar == 1) {
+                array_push($data1, array('imported_data_id' => $result, 
                     'description' => $description, 'long_description' => $long_description, 'url' => $url, 'product_name' => $product_name, 'features' => $features));
-            }
+           // }
         }
-//        echo "<pre>";
-//         print_r($data);
-
-
+      
         if ($data1) {
             $rows = $data1;
             $customers_list = array();
@@ -1416,24 +1457,17 @@ class Imported_data_parsed_model extends CI_Model {
                 }
                 if ($cus_val !== "")
                     $rows[$key]['customer'] = $cus_val;
-                foreach ($rows as $key1 => $row1) {
-                    if ($key1 != $key && $row['product_name'] != $selected_product_name && $this->get_base_url($row['url']) == $this->get_base_url($row1['url'])) {
-                        unset($rows[$key]);
-                    }
-                }
+                
+                
             }
-            sort($rows);
-
+           
             $ids = array();
            $this->load->model('similar_product_groups_model');
            if(!$this->similar_product_groups_model->checkIfgroupExists($im_data_id)){
-           
-            foreach ($rows as $row) {
-                $ids[] = $row['imported_data_id'];
-            }
+                                  
             $this->db->insert('similar_product_groups', array('id' => $im_data_id));
            
-            foreach ($ids as $id) {
+            foreach ($for_groups as $id) {
                 $this->db->insert('similar_data', array('group_id' => $im_data_id, 'black_list' => 0, 'imported_data_id' => $id));
             }
            }
