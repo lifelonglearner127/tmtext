@@ -3,6 +3,7 @@ var readAssessUrl = base_url + 'index.php/research/get_assess_info';
 $(function () {
     var textToCopy;
     var zeroTableDraw = true;
+    var do_query = false;
 
     var tableCase = {
         details: [
@@ -40,51 +41,61 @@ $(function () {
         return -1;
     }
 
-    var tblAssess = $('#tblAssess').dataTable({
-        "bJQueryUI": true,
-        "bDestroy": true,
-        "sPaginationType": "full_numbers",
-        "bProcessing": true,
-        "bServerSide": true,
-        "sAjaxSource": readAssessUrl,
-        "fnServerData": function (sSource, aoData, fnCallback) {
-            aoData = buildTableParams(aoData);
-            $.getJSON(sSource, aoData, function (json) {
-                buildReport(json.ExtraData.report);
-                fnCallback(json);
-            });
-        },
-        "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-            $(nRow).attr("add_data", aData[10]);
-            return nRow;
-        },
-        "fnDrawCallback": function(oSettings) {
-            highlightPrices();
-            if (zeroTableDraw) {
-                zeroTableDraw = false;
-                return;
-            }
-            hideColumns();
-        },
-        "oLanguage": {
-            "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
-            "sInfoEmpty": "Showing 0 to 0 of 0 records",
-            "sInfoFiltered": ""
-        },
-        "aoColumns": [
-            {"sTitle" : "Date", "sName":"created", "sWidth": "5%"},
-            {"sTitle" : "Product Name", "sName":"product_name", "sWidth": "25%"},
-            {"sTitle" : "URL", "sName":"url", "sWidth": "30%"},
-            {"sTitle" : "Word Count (S)", "sName":"short_description_wc", "sWidth": "5%"},
-            {"sTitle" : "SEO Phrases (S)", "sName":"short_seo_phrases", "sWidth": "10%"},
-            {"sTitle" : "Word Count (L)", "sName":"long_description_wc", "sWidth": "5%"},
-            {"sTitle" : "SEO Phrases (L)", "sName":"long_seo_phrases", "sWidth": "10%"},
-            {"sTitle" : "Duplicate Content", "sName":"duplicate_context", "sWidth": "5%"},
-            {"sTitle" : "Price", "sName":"price_diff", "sWidth": "10%"},
-            {"sTitle" : "Recommendations", "sName":"recommendations", "sWidth": "45%", "bVisible": false, "bSortable": false},
-            {"sName":"add_data", "bVisible": false}
-        ]
-    });
+    $.fn.dataTableExt.oApi.fnProcessingIndicator = function ( oSettings, onoff ) {
+        if ( typeof( onoff ) == 'undefined' ) {
+            onoff = true;
+        }
+        this.oApi._fnProcessingDisplay( oSettings, onoff );
+    };
+
+        var tblAssess = $('#tblAssess').dataTable({
+            "bJQueryUI": true,
+            "bDestroy": true,
+            "sPaginationType": "full_numbers",
+            "bProcessing": true,
+            "bServerSide": true,
+            "sAjaxSource": readAssessUrl,
+            "fnServerData": function (sSource, aoData, fnCallback) {
+                    aoData = buildTableParams(aoData);
+                    $.getJSON(sSource, aoData, function (json) {
+                        if(json.ExtraData !=undefined){
+                            buildReport(json.ExtraData.report);
+                        }
+                        fnCallback(json);
+                        tblAssess.fnProcessingIndicator( false );
+                    });
+            },
+            "fnRowCallback": function(nRow, aData, iDisplayIndex) {
+                $(nRow).attr("add_data", aData[10]);
+                return nRow;
+            },
+            "fnDrawCallback": function(oSettings) {
+                highlightPrices();
+                if (zeroTableDraw) {
+                    zeroTableDraw = false;
+                    return;
+                }
+                hideColumns();
+            },
+            "oLanguage": {
+                "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
+                "sInfoEmpty": "Showing 0 to 0 of 0 records",
+                "sInfoFiltered": ""
+            },
+            "aoColumns": [
+                {"sTitle" : "Date", "sName":"created", "sWidth": "5%"},
+                {"sTitle" : "Product Name", "sName":"product_name", "sWidth": "25%"},
+                {"sTitle" : "URL", "sName":"url", "sWidth": "30%"},
+                {"sTitle" : "Word Count (S)", "sName":"short_description_wc", "sWidth": "5%"},
+                {"sTitle" : "SEO Phrases (S)", "sName":"short_seo_phrases", "sWidth": "10%"},
+                {"sTitle" : "Word Count (L)", "sName":"long_description_wc", "sWidth": "5%"},
+                {"sTitle" : "SEO Phrases (L)", "sName":"long_seo_phrases", "sWidth": "10%"},
+                {"sTitle" : "Duplicate Content", "sName":"duplicate_context", "sWidth": "5%"},
+                {"sTitle" : "Price", "sName":"price_diff", "sWidth": "10%"},
+                {"sTitle" : "Recommendations", "sName":"recommendations", "sWidth": "45%", "bVisible": false, "bSortable": false},
+                {"sName":"add_data", "bVisible": false}
+            ]
+        });
 
     $('#research_batches_columns').appendTo('div.dataTables_filter');
     $('#tblAssess_length').after($('#assess_tbl_show_case'));
@@ -393,6 +404,7 @@ $(function () {
     }
 
     function readAssessData() {
+        do_query = true;
         tblAssess.fnDraw();
         hideColumns();
     }

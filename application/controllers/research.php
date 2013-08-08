@@ -260,35 +260,47 @@ class Research extends MY_Controller {
         }
 
         $batch_name = $this->input->get('batch_name');
+        if($batch_name == ''){
+            $output = array(
+                "sEcho"                     => 1,
+                "iTotalRecords"             => 0,
+                "iTotalDisplayRecords"      => 0,
+                "iDisplayLength"            => 10,
+                "aaData"                    => array()
+            );
 
-        $build_assess_params = new stdClass();
-        $build_assess_params->date_from = $this->input->get('date_from') == 'undefined' ? '' : $this->input->get('date_from');
-        $build_assess_params->date_to = $this->input->get('date_to') == 'undefined' ? '' : $this->input->get('date_to');
-        $build_assess_params->price_diff = $this->input->get('price_diff');
-        $build_assess_params->short_less = $this->input->get('short_less') == 'undefined' ? -1 : $this->input->get('short_less');
-        $build_assess_params->short_more = $this->input->get('short_more') == 'undefined' ? -1 : $this->input->get('short_more');
-        $build_assess_params->short_seo_phrases = $this->input->get('short_seo_phrases');
-        $build_assess_params->short_duplicate_context = $this->input->get('short_duplicate_context');
-        $build_assess_params->long_less = $this->input->get('long_less') == 'undefined' ? -1 : $this->input->get('long_less');
-        $build_assess_params->long_more = $this->input->get('long_more') == 'undefined' ? -1 : $this->input->get('long_more');
-        $build_assess_params->long_seo_phrases = $this->input->get('long_seo_phrases');
-        $build_assess_params->long_duplicate_context = $this->input->get('long_duplicate_context');
-        $build_assess_params->all_columns = $this->input->get('sColumns');
-        $build_assess_params->sort_columns = $this->input->get('iSortCol_0');
-        $build_assess_params->sort_dir = $this->input->get('sSortDir_0');
+            $this->output->set_content_type('application/json')
+                ->set_output(json_encode($output));
+        } else {
+            $build_assess_params = new stdClass();
+            $build_assess_params->date_from = $this->input->get('date_from') == 'undefined' ? '' : $this->input->get('date_from');
+            $build_assess_params->date_to = $this->input->get('date_to') == 'undefined' ? '' : $this->input->get('date_to');
+            $build_assess_params->price_diff = $this->input->get('price_diff');
+            $build_assess_params->short_less = $this->input->get('short_less') == 'undefined' ? -1 : $this->input->get('short_less');
+            $build_assess_params->short_more = $this->input->get('short_more') == 'undefined' ? -1 : $this->input->get('short_more');
+            $build_assess_params->short_seo_phrases = $this->input->get('short_seo_phrases');
+            $build_assess_params->short_duplicate_context = $this->input->get('short_duplicate_context');
+            $build_assess_params->long_less = $this->input->get('long_less') == 'undefined' ? -1 : $this->input->get('long_less');
+            $build_assess_params->long_more = $this->input->get('long_more') == 'undefined' ? -1 : $this->input->get('long_more');
+            $build_assess_params->long_seo_phrases = $this->input->get('long_seo_phrases');
+            $build_assess_params->long_duplicate_context = $this->input->get('long_duplicate_context');
+            $build_assess_params->all_columns = $this->input->get('sColumns');
+            $build_assess_params->sort_columns = $this->input->get('iSortCol_0');
+            $build_assess_params->sort_dir = $this->input->get('sSortDir_0');
 
-        $params = new stdClass();
-        $params->batch_name = $batch_name;
-        $params->txt_filter = $txt_filter;
-        $params->date_from = $build_assess_params->date_from;
-        $params->date_to = $build_assess_params->date_to;
+            $params = new stdClass();
+            $params->batch_name = $batch_name;
+            $params->txt_filter = $txt_filter;
+            $params->date_from = $build_assess_params->date_from;
+            $params->date_to = $build_assess_params->date_to;
 
-        $results = $this->get_data_for_assess($params);
+            $results = $this->get_data_for_assess($params);
 
-        $output = $this->build_asses_table($results, $build_assess_params);
+            $output = $this->build_asses_table($results, $build_assess_params);
 
-        $this->output->set_content_type('application/json')
-            ->set_output(json_encode($output));
+            $this->output->set_content_type('application/json')
+                ->set_output(json_encode($output));
+        }
     }
 
     private function get_data_for_assess($params) {
