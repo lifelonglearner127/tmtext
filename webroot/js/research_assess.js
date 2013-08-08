@@ -13,7 +13,7 @@ $(function () {
             "short_seo_phrases",
             "long_description_wc",
             "long_seo_phrases",
-            "duplicate_context",
+            "duplicate_content",
             "price_diff"
         ],
         recommendations: [
@@ -89,7 +89,7 @@ $(function () {
                 {"sTitle" : "SEO Phrases (S)", "sName":"short_seo_phrases", "sWidth": "10%"},
                 {"sTitle" : "Word Count (L)", "sName":"long_description_wc", "sWidth": "5%"},
                 {"sTitle" : "SEO Phrases (L)", "sName":"long_seo_phrases", "sWidth": "10%"},
-                {"sTitle" : "Duplicate Content", "sName":"duplicate_context", "sWidth": "5%"},
+                {"sTitle" : "Duplicate Content", "sName":"duplicate_content", "sWidth": "5%"},
                 {"sTitle" : "Price", "sName":"price_diff", "sWidth": "10%"},
                 {"sTitle" : "Recommendations", "sName":"recommendations", "sWidth": "45%", "bVisible": false, "bSortable": false},
                 {"sName":"add_data", "bVisible": false}
@@ -129,7 +129,7 @@ $(function () {
         $('#assess_report_items_priced_higher_than_competitors').html(report.summary.items_priced_higher_than_competitors);
         $('#assess_report_items_have_more_than_50_percent_duplicate_content').html(report.summary.items_have_more_than_50_percent_duplicate_content);
         $('#assess_report_items_unoptimized_product_content').html(report.summary.items_unoptimized_product_content);
-        $('#assess_report_items_have_product_context_that_is_too_short').html(report.summary.items_short_products_content);
+        $('#assess_report_items_have_product_content_that_is_too_short').html(report.summary.items_short_products_content);
     }
 
     $('#tblAssess tbody').click(function(event) {
