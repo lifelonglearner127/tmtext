@@ -242,7 +242,7 @@
                                     Summary
                                 </span>
                                 <span style="margin-left: 270px;">
-                                    <a id="assess_report_download_pdf" target="_blank">download pdf</a>
+                                    <a id="assess_report_download_pdf" target="_blank">Download PDF</a>
                                 </span>
                                 <a class="ml_10 research_arrow" href="#">
                                     <img src="http://tmeditor//webroot/img/arrow.png">
