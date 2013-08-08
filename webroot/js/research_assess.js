@@ -3,7 +3,6 @@ var readAssessUrl = base_url + 'index.php/research/get_assess_info';
 $(function () {
     var textToCopy;
     var zeroTableDraw = true;
-    var do_query = false;
 
     var tableCase = {
         details: [
@@ -60,7 +59,9 @@ $(function () {
                     $.getJSON(sSource, aoData, function (json) {
                         buildReport(json);
                         fnCallback(json);
-                        tblAssess.fnProcessingIndicator( false );
+                        setTimeout(function(){
+                            tblAssess.fnProcessingIndicator( false );
+                        }, 100);
                     });
             },
             "fnRowCallback": function(nRow, aData, iDisplayIndex) {
@@ -195,7 +196,7 @@ $(function () {
                 for(var i=0; i<data.length; i++){
                     research_assess_batches.append('<option>'+data[i]+'</option>');
                 }
-            } else if(data.length==0 && res.target.value !="All customers"){
+            } else if(data.length==0 && res.target.value !="select customer"){
                 research_assess_batches.empty();
             }
             $('#research_assess_update').click();
@@ -211,10 +212,10 @@ $(function () {
             if(data != ''){
                 research_assess_customers.val(data.toLowerCase()).prop('selected', true);
             } else {
-                research_assess_customers.val('all customers').prop('selected', true);
+                research_assess_customers.val('select customer').prop('selected', true);
             }
             if (selectedBatch.length == 0)
-                research_assess_customers.val('all customers').prop('selected', true);
+                research_assess_customers.val('select customer').prop('selected', true);
             $('#research_assess_update').click();
         });
     });
@@ -419,7 +420,6 @@ $(function () {
     }
 
     function readAssessData() {
-        do_query = true;
         tblAssess.fnDraw();
     }
 
