@@ -58,7 +58,7 @@
 				<button id="add_list_delete" class="btn new_btn btn-danger mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
 			</div>
 			<h3 class="span3">Current list: <small></small></h3>
-            <input type="text" class="span6 pull-left mt_15" name="search_crawl_data" >
+            <input type="text" class="span4 pull-left mt_15" name="search_crawl_data" >
             <button id="apply_search_data" class="btn new_btn btn-success mt_15 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Apply</button>
             <button id="clear_search_data" class="btn new_btn btn-success mt_15 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Clear</button>
 			<div class="row-fluid mt_5">
