@@ -195,7 +195,7 @@ $(function () {
                 for(var i=0; i<data.length; i++){
                     research_assess_batches.append('<option>'+data[i]+'</option>');
                 }
-            } else if(data.length==0 && res.target.value !="All customers"){
+            } else if(data.length==0 && res.target.value !="select customer"){
                 research_assess_batches.empty();
             }
             $('#research_assess_update').click();
@@ -211,10 +211,10 @@ $(function () {
             if(data != ''){
                 research_assess_customers.val(data.toLowerCase()).prop('selected', true);
             } else {
-                research_assess_customers.val('all customers').prop('selected', true);
+                research_assess_customers.val('select customer').prop('selected', true);
             }
             if (selectedBatch.length == 0)
-                research_assess_customers.val('all customers').prop('selected', true);
+                research_assess_customers.val('select customer').prop('selected', true);
             $('#research_assess_update').click();
         });
     });

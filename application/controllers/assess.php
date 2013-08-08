@@ -52,7 +52,7 @@ class Assess extends MY_Controller {
     {
         $this->load->model('batches_model');
         $batches = $this->batches_model->getAll();
-        $batches_list = array();
+        $batches_list = array(''=>'Select batch');
         foreach($batches as $batch){
             array_push($batches_list, $batch->title);
         }
@@ -79,7 +79,7 @@ class Assess extends MY_Controller {
             if(count($customers) == 0){
                 $customer_list = array();
             }else{
-                $customer_list = array(''=>'All Customers');
+                $customer_list = array(''=>'Select customer');
             }
             foreach($customers as $customer){
                 array_push($customer_list, $customer->name);
@@ -88,7 +88,7 @@ class Assess extends MY_Controller {
             if(count($customers) == 0){
                 $customers = $this->customers_model->getAll();
             }
-            $customer_list = array(''=>'All Customers');
+            $customer_list = array(''=>'Select customer');
             foreach($customers as $customer){
                 array_push($customer_list, $customer->name);
             }
