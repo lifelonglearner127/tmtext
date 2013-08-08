@@ -3,7 +3,6 @@ var readAssessUrl = base_url + 'index.php/research/get_assess_info';
 $(function () {
     var textToCopy;
     var zeroTableDraw = true;
-    var do_query = false;
 
     var tableCase = {
         details: [
@@ -60,7 +59,9 @@ $(function () {
                     $.getJSON(sSource, aoData, function (json) {
                         buildReport(json);
                         fnCallback(json);
-                        tblAssess.fnProcessingIndicator( false );
+                        setTimeout(function(){
+                            tblAssess.fnProcessingIndicator( false );
+                        }, 100);
                     });
             },
             "fnRowCallback": function(nRow, aData, iDisplayIndex) {
@@ -419,7 +420,6 @@ $(function () {
     }
 
     function readAssessData() {
-        do_query = true;
         tblAssess.fnDraw();
     }
 
