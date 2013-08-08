@@ -247,8 +247,42 @@ jQuery(document).ready(function($) {
         <!--- REAL CONTENT SECTION (END) -->
 
         <script type='text/javascript'>
+            // ---- search string cookie (auto mode search launcher) (start)
+            var auto_mode_search_str = "";
+            var auto_mode_product_batch ="";
+            var auto_mode_status_view = "";
+            var cookie_search_str = $.cookie('com_intel_search_str');
+            var product_batch = $.cookie('product_batch');
+            var status_view = $.cookie('status_view');
+            if (typeof(cookie_search_str) !== 'undefined' && cookie_search_str !== null && cookie_search_str !== "") {
+                auto_mode_search_str = cookie_search_str;
+            }
+            if (typeof(product_batch) !== 'undefined' && product_batch !== null && product_batch !== "") {
+                auto_mode_product_batch = product_batch;
+            }
+            if (typeof(status_view) !== 'undefined' && status_view !== null && status_view !== "") {
+                auto_mode_status_view = status_view;
+            }
+            if (auto_mode_search_str !== "") {
+                $("#compare_text").val(auto_mode_search_str);
+                setTimeout(function() {
+                    $("#an_search").removeAttr('disabled');
+                    startMeasureCompareV2();
+                }, 2500);
+            }
+            if(auto_mode_product_batch!==""){
+                $('select#batchess').val(auto_mode_product_batch).prop('selected',true);
+                show_from_butches();
+            }
+            if(auto_mode_status_view!==""){
+                if(auto_mode_status_view == 'list'){
+                    switchToListView();
+                } else {
+                    switchToGridView();
+                }
+            }
 
-
+            // ---- search string cookie (auto mode search launcher) (end)
         </script>
 </div>
 </div>

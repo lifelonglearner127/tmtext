@@ -111,7 +111,13 @@ function switchToListView() {
     $("#an_products_box").removeClass('grid_results_show');
     $(".main span:first-child,#products li span:first-child ").removeClass('new_width');
     grid_status = 'list';
-
+    var status_view = $.cookie('status_view');
+    if (typeof(status_view) !== 'undefined') {
+        $.removeCookie('status_view', {path: '/'}); // destroy
+        $.cookie('status_view', grid_status , {expires: 7, path: '/'}); // re-create
+    } else {
+        $.cookie('status_view', grid_status, {expires: 7, path: '/'}); // create
+    }
 }
 //Max
 function switchToGridView() {
@@ -144,7 +150,13 @@ function switchToGridView() {
 
 //    #grid_se_section_1 .c .c_content table 
     grid_status = 'grid';
-
+    var status_view = $.cookie('status_view');
+    if (typeof(status_view) !== 'undefined') {
+       $.removeCookie('status_view', {path: '/'}); // destroy
+       $.cookie('status_view', grid_status , {expires: 7, path: '/'}); // re-create
+    } else {
+       $.cookie('status_view', grid_status, {expires: 7, path: '/'}); // create
+    }
 }
 //Max
 // ------------- !!!! OLD STUFF (START) -------------
@@ -269,6 +281,15 @@ function startMeasureCompareV2() {
 }
 function show_from_butches() {//max
     var batch_id = $("#batchess").val();
+    if (batch_id !== "" && batch_id != 0) {
+        var product_batch = $.cookie('product_batch');
+        if (typeof(product_batch) !== 'undefined') {
+            $.removeCookie('product_batch', {path: '/'}); // destroy
+            $.cookie('product_batch', batch_id, {expires: 7, path: '/'}); // re-create
+        } else {
+            $.cookie('product_batch', batch_id, {expires: 7, path: '/'}); // create
+        }
+    }
 
     var searcher_all = $.post(editorSearchAllBaseUrl, {batch_id: batch_id}, 'html').done(function(data) {
         $("#an_products_box").html(data);

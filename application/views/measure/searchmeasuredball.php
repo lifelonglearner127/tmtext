@@ -92,13 +92,17 @@
                 var im_data_id = $(this).attr('data-value');
 
                 startMeasureCompare(im_data_id);
+                var ci_product_item_view = $.cookie('ci_product_item_view');
+                if (typeof(ci_product_item_view) !== 'undefined') {
+                    $.removeCookie('ci_product_item_view', {path: '/'}); // destroy
+                    $.cookie('ci_product_item_view', im_data_id , {expires: 7, path: '/'}); // re-create
+                } else {
+                    $.cookie('ci_product_item_view', im_data_id, {expires: 7, path: '/'}); // create
+                }
 
                 //Max
                 // ---- START DISTINCT PRODUCT METRICS (END)
             });
-            setTimeout(function() {
-                $('#products li:eq(0)').trigger('click');
-            }, 500);
             //max
 
             function startMeasureCompare(im_data_id) {
@@ -215,7 +219,39 @@
                 } else {
                     $(this).parent().find('span').css('white-space', 'normal');
                 }
+                var im_data_id = $(this).parent().attr('data-value');
+                var ci_product_item_view = $.cookie('ci_product_item_view');
+                if (typeof(ci_product_item_view) !== 'undefined') {
+                    $.removeCookie('ci_product_item_view', {path: '/'}); // destroy
+                    $.cookie('ci_product_item_view', im_data_id , {expires: 7, path: '/'}); // re-create
+                } else {
+                    $.cookie('ci_product_item_view', im_data_id, {expires: 7, path: '/'}); // create
+                }
             });
+
+            var auto_mode_item_view = "";
+            var product_item_view = $.cookie('ci_product_item_view');
+
+            if (typeof(product_item_view) !== 'undefined' && product_item_view !== null && product_item_view !== "") {
+                auto_mode_item_view = product_item_view ;
+            }
+            setTimeout(function() {
+                if(auto_mode_item_view!==""){
+                    $("#products li").each(function() {
+                        $(this).css({'background': 'none'});
+                        $(this).attr('data-status', 'standart');
+                    });
+                    $("#products li").each(function() {
+                        if($(this).attr('data-value')==auto_mode_item_view) {
+                            $(this).css({'background': '#CAEAFF'});
+                            $(this).attr('data-status', 'selected');
+                            startMeasureCompare(auto_mode_item_view);
+                        }
+                    });
+                } else {
+                    $('#products li:eq(0)').trigger('click');
+                }
+            }, 500);
         });
     </script>
     <!--//Max-->
