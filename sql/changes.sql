@@ -1,3 +1,11 @@
+# 08/08 Tatiana
+CREATE TABLE IF NOT EXISTS `brands` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  `created` datetime NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=81 ;
+
 # 07/31 Tatiana
 CREATE TABLE IF NOT EXISTS `site_categories` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,

@@ -20,6 +20,7 @@ class Brand extends MY_Controller {
     public function index()
     {
         $this->data['customer_list'] = $this->getCustomersByUserId();
+        $this->data['brands_list'] = $this->brands_list();
         $this->render();
     }
 
@@ -48,5 +49,16 @@ class Brand extends MY_Controller {
         }
         return $customer_list;
 
+    }
+
+    public function brands_list()
+    {
+        $this->load->model('brands_model');
+        $brands = $this->brands_model->getAll();
+        $brands_list = array(''=>'Clorox');
+        foreach($brands as $brand){
+            array_push($brands_list, $brand->name);
+        }
+        return $brands_list;
     }
 }
