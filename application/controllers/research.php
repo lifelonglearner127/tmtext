@@ -593,8 +593,8 @@ class Research extends MY_Controller {
         $batch = $this->batches_model->getByName($params->batch_name);
         $batch_created = new DateTime($batch->created);
 
-        $css_path = $_SERVER['DOCUMENT_ROOT']."/webroot/css/";
-        $img_path = $_SERVER['DOCUMENT_ROOT']."/webroot/img/";
+        $css_path = APPPATH.".."."/webroot/css/";
+        $img_path = APPPATH.".."."/webroot/img/";
         $own_logo = $img_path."content-analytics.png";
         $customer_logo = $img_path.$customer->image_url;
 
