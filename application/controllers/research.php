@@ -708,6 +708,8 @@ class Research extends MY_Controller {
 //        $pdf = new mPDF('', 'A5', 0, '', 10, 10, 10, 10, 8, 8);
         $stylesheet = file_get_contents($css_path.'assess_report.css');
 
+        $pdf->showImageErrors = true;
+
         $pdf->WriteHTML($stylesheet, 1);
 
         $pdf->WriteHTML($html, 2);
