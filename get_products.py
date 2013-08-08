@@ -3,9 +3,12 @@
 # extract products from a certain output file, that belong to a certain category/department
 # and write their respective category ids to a file
 
+# usage: site given as first argument, category as second argument
+
 import json
 import codecs
 import re
+import sys
 from pprint import pprint
 
 def get_products(filename, category):
@@ -28,8 +31,9 @@ def get_products(filename, category):
 	output_all.close()
 	return products
 
-filename = "sample_output/walmart_bestsellers_dept.jl"
-category = "Baby"
+site = sys.argv[1]
+category = sys.argv[2]
+filename = "sample_output/" + site + "_bestsellers_dept.jl"
 prods = get_products(filename, category)
 
 pprint(prods)
