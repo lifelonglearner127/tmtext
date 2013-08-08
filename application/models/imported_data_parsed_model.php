@@ -1524,4 +1524,20 @@ class Imported_data_parsed_model extends CI_Model {
         return $query->result();
     }
 
+    function PriceOld($id){
+       
+       $query =$this->db->where('imported_data_id', $id)
+                 ->where('key', 'PriceOld') 
+               ->get($this->tables['imported_data_parsed']);
+        $res=$query->row_array();
+        if ($query->num_rows() > 0){
+        return  $res['value'];
+        }
+        return  false;
+        
+    }
+    
+    
 }
+ 
+

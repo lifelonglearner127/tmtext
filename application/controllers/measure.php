@@ -844,6 +844,11 @@ return $main_base;
                 $imported_data_id = $same_pr[$ks]['imported_data_id'];
                 $three_last_prices = $this->imported_data_parsed_model->getLastPrices($imported_data_id);
                 $same_pr[$ks]['three_last_prices'] = $three_last_prices;
+//                if(!empty($three_last_prices)){
+//                    $same_pr[$ks]['three_last_prices'] = $three_last_prices;
+//                }else{
+//                     echo $this->imported_data_parsed_model->PriceOld($imported_data_id).'_aaa';
+//                }
             }
 
 
