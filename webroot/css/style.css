@@ -1798,3 +1798,7 @@ select#sites option{
 .site_crawler_content h3 small{
     color:#555555;
 }
+#assess_report_download_pdf{
+    font-weight: normal;
+    font-size: 16px;
+}
