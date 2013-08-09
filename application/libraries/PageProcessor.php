@@ -148,7 +148,7 @@ class PageProcessor {
 		}
 
 		$price = '';
-		foreach($this->nokogiri->get('.PricingInfo .camelPrice span') as $item) {
+		foreach($this->nokogiri->get('.PricingInfo .camelPriceSAC span') as $item) {
 			$price .= $item['#text'][0];
 		}
 
