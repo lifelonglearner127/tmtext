@@ -129,6 +129,10 @@ class PageProcessor {
 			$description[] = $item['#text'][0];
 		}
 
+		foreach($this->nokogiri->get('.ql-details-short-desc p') as $item) {
+			$description[] = $item['#text'][0];
+		}
+
 		foreach($this->nokogiri->get('#prodInfoSpaceBottom div') as $item) {
 			if ($item['itemprop'] == 'description') {
 				foreach($item['div'] as $i) {
