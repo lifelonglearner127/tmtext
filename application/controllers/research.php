@@ -458,13 +458,17 @@ class Research extends MY_Controller {
                 $duplicate_long_percent_total = 0;
                 if (count($dc) > 1) {
                     foreach ($dc as $ks => $vs) {
+                        $shor_percent = 0;
+                        $long_percent = 0;
                         if ($build_assess_params->short_duplicate_content) {
                             $duplicate_short_percent_total += 100 - $vs['short_original'];
-                            $duplicate_customers_short = $duplicate_customers_short.'<nobr>'.$vs['customer'].' - '.float(100 -$vs['short_original']).'%</nobr><br />';
+                            $shorty_percent = 100 - $vs['short_original'];
+                            $duplicate_customers_short = $duplicate_customers_short.'<nobr>'.$vs['customer'].' - '.$shorty_percent.'%</nobr><br />';
                         }
                         if ($build_assess_params->short_duplicate_content) {
                             $duplicate_long_percent_total += 100 - $vs['long_original'];
-                            $duplicate_customers_long = $duplicate_customers_long.'<nobr>'.$vs['customer'].' - '.float(100 -$vs['long_original']).'%</nobr><br />';
+                            $long_percent = 100 - $vs['long_original'];
+                            $duplicate_customers_long = $duplicate_customers_long.'<nobr>'.$vs['customer'].' - '.$long_percent.'%</nobr><br />';
                         }
                     }
 
