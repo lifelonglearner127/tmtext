@@ -20,7 +20,7 @@ var editorGridViewBaseUrl = base_url + 'index.php/measure/gridview';
 var measureAnalyzerAttrBaseUrl = base_url + "index.php/measure/attributesmeasure";
 
 // --- GRIDS (START)
-var grid_status = 'list';
+var grid_status = 'grid';
 
 function startGridsBoxesContentAnalyzer(s) {
     if (s !== "") {

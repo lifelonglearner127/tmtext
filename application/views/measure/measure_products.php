@@ -25,9 +25,8 @@ jQuery(document).ready(function($) {
 
                 <ul class='grid_switcher' data-status='grid-switch' style="margin-top: 10px;position: relative;left: 105px;">
                         <li style="float: left;">
-                            
-                            <button class='btn' onclick="switchToListView();" id='grid_sw_list' type='button'><i class="icon-th-list"></i>&nbsp;List</button>
                             <button class='btn' onclick="switchToGridView();" id='grid_sw_grid' type='button'><i class="icon-th-large"></i>&nbsp;Comparison</button>
+                            <button class='btn' onclick="switchToListView();" id='grid_sw_list' type='button'><i class="icon-th-list"></i>&nbsp;List</button>
                         </li>
                         <li style="float: left; margin-top: 6px;margin-left: 15px;">
                         	
