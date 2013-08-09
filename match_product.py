@@ -2,7 +2,7 @@
 
 # given two sites and categories/departments, check if there are any common products
 # usage:
-#		python match_product.py site1 category1 site2 category2
+#		python match_product.py site1 category1 site2 category2 [method (1/2)] [param]
 
 import codecs
 import re
@@ -50,6 +50,8 @@ def normalize(orig_text):
 	# we need to keep 19" as one word for ex
 
 	#TODO: maybe keep numbers like "50 1/2" together too somehow (originally they're "50-1/2")
+	#TODO: maybe handle numbers separately. sometimes we want / to split (in words), and . not to (in numbers)
+	# define a better regex above, or here at splitting
 	tokens = text.split()
 	clean = [token.lower() for token in tokens if token.lower() not in stopset and len(token) > 0]
 	#print "clean", orig_text, clean
@@ -114,7 +116,8 @@ def match(products1, products2, nrproduct, param=0.65):
 
 
 # second approach: rank them with tf-idf, bag of words
-def match2(products1, products2, nrprod, threshold=0):
+# threshold: minimum score (0-1). 0.5-0.65 works good
+def match2(products1, products2, nrprod, threshold=0.5):
 
 	product_names1 = [item['product_name'] for item in products1]
 	product_names2 = [item['product_name'] for item in products2]
@@ -122,16 +125,14 @@ def match2(products1, products2, nrprod, threshold=0):
 	# use names from both sets to calculate tf-idf
 	train_set = product_names1 + product_names2
 	# use second set of products to search for best match
-	test_set = product_names2
+	test_set = [product_names1[nrprod]] + product_names2
 
 	stopWords = stopwords.words('english')
 
-	#TODO: customize the normalization. keep " signs, transform -Inch to "
-
-	count_vectorizer = CountVectorizer(min_df=1, stop_words=stopWords)
+	count_vectorizer = CountVectorizer(min_df=1, stop_words=stopWords, analyzer=normalize)
 	count_vectorizer.fit_transform(train_set)
 
-	pprint(count_vectorizer.vocabulary_)
+	#pprint(count_vectorizer.vocabulary_)
 
 	freq_term_matrix = count_vectorizer.transform(test_set)
 	#print freq_term_matrix.todense()
@@ -146,16 +147,20 @@ def match2(products1, products2, nrprod, threshold=0):
 	product = products1[nrprod]
 	products_found = []
 
+	index = 0
+
 	# compute tfidf vector for each pair of products and sort them by their dot product
 	for product2 in products2:
-		v1 = numpy.array(product['product_name']).tolist()
-		v2 = numpy.array(product2['product_name']).tolist()
+		index += 1
+		v1 = numpy.array(tf_idf_matrix)[0].tolist()
+		v2 = numpy.array(tf_idf_matrix)[index].tolist()
 		#print dot(v1, v2)
 
 		#TODO: normalize this. cosine similarity?
-		score = dot(v1,v2)
+		#good normalization?
+		score = dot(v1,v2)#/(len(product['product_name'])*len(product2['product_name']))
 
-		if dot(v1,v2) > threshold:
+		if score > threshold:
 			products_found.append((product2, score))
 
 	# sort products_found by their score
@@ -171,18 +176,29 @@ site1 = sys.argv[1]
 category1 = sys.argv[2]
 site2 = sys.argv[3]
 category2 = sys.argv[4]
+if (len(sys.argv) >= 6):
+	method = int(sys.argv[5])
+if (len(sys.argv) >= 7):
+	param = int(sys.argv[6])
 
 products1 = get_products("sample_output/" + site1 + "_bestsellers_dept.jl", category1)
 products2 = get_products("sample_output/" + site2 + "_bestsellers_dept.jl", category2)
 
-for nrprod in range(10,15):#(len(products1)):
-	(prod, res) = match2(products1, products2, nrprod, 3)
+param = 0.65
+method = 1
+
+for nrprod in range(len(products1)):
+	if method == 1:
+		(prod, res) = match(products1, products2, nrprod, param)
+	if method == 2:
+		(prod, res) = match2(products1, products2, nrprod, param)
 	if res:
-		print prod['product_name']
+		print "PRODUCT: ", prod['product_name']
+		print "MATCHES: "
 		for product in res:
-			print '-', product[0]['product_name'], "SCORE:", product[1]
-		# for product in res:
-		# 	print product[0]
+			print '-', re.sub("\s+", " ", product[0]['product_name']), "; SCORE:", product[1]
+		for product in res:
+			print product[0]
 		print '--------------------------------'
 		results += 1
 
