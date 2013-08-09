@@ -260,7 +260,8 @@ class Research extends MY_Controller {
         }
 
         $batch_name = $this->input->get('batch_name');
-        if($batch_name == ''){
+
+        if($batch_name == '' || $batch_name == 'Select batch'){
             $output = array(
                 "sEcho"                     => 1,
                 "iTotalRecords"             => 0,
@@ -458,11 +459,11 @@ class Research extends MY_Controller {
                 if (count($dc) > 1) {
                     foreach ($dc as $ks => $vs) {
                         if ($build_assess_params->short_duplicate_content) {
-                            $duplicate_short_percent_total += 100 - $vs['short_original'];
+                            $duplicate_short_percent_total = 100 - $vs['short_original'];
                             $duplicate_customers_short = $duplicate_customers_short.'<nobr>'.$vs['customer'].' - '.$vs['short_original'].'%</nobr><br />';
                         }
                         if ($build_assess_params->short_duplicate_content) {
-                            $duplicate_long_percent_total += 100 - $vs['long_original'];
+                            $duplicate_long_percent_total = 100 - $vs['long_original'];
                             $duplicate_customers_long = $duplicate_customers_long.'<nobr>'.$vs['customer'].' - '.$vs['long_original'].'%</nobr><br />';
                         }
                     }
