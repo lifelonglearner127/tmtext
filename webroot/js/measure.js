@@ -729,9 +729,9 @@ $(document).ready(function() {
             }, 300);
         }
     });
-
+    
     $("#batchess").live('change', function() {//max
-
+       
         $.post(base_url + 'index.php/research/filterCustomerByBatch', {'batch': $("#batchess").val()}, function(data) {
             if (data !='') {
 
@@ -760,8 +760,17 @@ $(document).ready(function() {
             }
         });
         if ($("#batchess").val() !== '0') {
+             console.log('mtnumaaaaaa');
             //alert($("#batchess").val());
             show_from_butches();
+            $('#products li:eq(0)').css({'background': '#CAEAFF'});
+            $('#products li:eq(0)').attr('data-status', 'selected');
+            $('.products_an_search').addClass('active');
+            setTimeout(function() {
+                   $('#products li:eq(0)').trigger('click');
+                   
+            }, 500);
+            
         } else {
             $("#measure_product_ind_wrap").html('');
             $("#compet_area_grid").html('');
