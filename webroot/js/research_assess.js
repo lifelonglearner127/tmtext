@@ -57,7 +57,9 @@ $(function () {
             "fnServerData": function (sSource, aoData, fnCallback) {
                     aoData = buildTableParams(aoData);
                     $.getJSON(sSource, aoData, function (json) {
-                        buildReport(json);
+                        if (json.ExtraData != undefined) {
+                            buildReport(json);
+                        }
                         fnCallback(json);
                         setTimeout(function(){
                             tblAssess.fnProcessingIndicator( false );
@@ -118,7 +120,6 @@ $(function () {
     }
 
     function buildReport(data) {
-        console.log(data.ExtraData);
         if (data.ExtraData == undefined) {
             reportPanel(false);
             return;

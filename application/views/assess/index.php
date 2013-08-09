@@ -219,19 +219,19 @@
     <div id="read" class="ui-tabs-panel ui-widget-content ui-corner-bottom">
         <div id="records_wrapper" class="dataTables_wrapper block_data_table">
             <div class="span12">
-                <table id="tblAssess" class="tblDataTable">
+                <table id="tblAssess" class="tblDataTable" >
                     <thead>
                     </thead>
                     <tbody></tbody>
                 </table>
                 <div id="assess_tbl_show_case" class="assess_tbl_show_case">
                     Show:
-                    <a id="assess_tbl_show_case_report" data-case="report" title="Report" href="#">Report</a> |
+                    <a id="assess_tbl_show_case_report" data-case="report" title="Report" href="#" class="active_link">Report</a> |
                     <a id="assess_tbl_show_case_recommendations" data-case="recommendations" title="Recommendations" href="#">Recommendations</a> |
-                    <a id="assess_tbl_show_case_details" data-case="details" title="Details" href="#" class="active_link">Details</a>
+                    <a id="assess_tbl_show_case_details" data-case="details" title="Details" href="#">Details</a>
                 </div>
                 <button id="research_batches_columns" class="btn ml_5 float_r">Columns...</button>
-                <div id="assess_report" style="display: none;">
+                <div id="assess_report">
                     <ul class="ui-sortable">
                         <li class="boxes ui-resizable">
                             <h3>
