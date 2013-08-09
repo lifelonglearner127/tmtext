@@ -831,40 +831,33 @@ class Research extends MY_Controller {
 
         $html = $html.$header;
 
-        $html = $html.'<table width="100%" border="0">';
+        $html = $html.'<table width=100% border=0>';
         $html = $html.'<tr><td style="text-align: left;font-weight: bold; font-style: italic;">Batch - '.$params->batch_name.'</td><td style="text-align: right;font-weight: bold; font-style: italic;">'.$batch_created->format('F j, Y').'</td></tr>';
-
         $html = $html.'<tr><td colspan="2"><hr height="3"></td></tr>';
+        $html = $html.'</table>';
 
-        $html = $html.'<tr><td colspan="2">';
+        $html = $html.'<table class="report" border="1" cellspacing="0" cellpadding="0">';
 
-        $html = $html.'<table class="report" border="1" cellspacing="0" cellpadding="0" style="border-collapse: collapse;border-spacing: 0;">';
-
-        $html = $html.'<tr><td colspan="2" style="background-color: #dddddd;text-align: center;font-weight: bold;">Summary</td></tr>';
+        $html = $html.'<tr><td style="background-color: #dddddd;text-align: center;font-weight: bold;">Summary</td></tr>';
 
         $html = $html.'<tr><td>';
-        $html = $html.'<div class=""><img class="icon" src="'.$img_path.'assess_report_number.png">Total Items</div></td>';
-        $html = $html.'<td>'.$report['summary']['total_items'];
+        $html = $html.'<div class=""><img class="icon" src="'.$img_path.'assess_report_number.png">'.$report['summary']['total_items'].' total Items</div>';
         $html = $html.'</td></tr>';
 
         $html = $html.'<tr><td>';
-        $html = $html.'<div class=""><img class="icon" src="'.$img_path.'assess_report_dollar.png">Items priced higher than competitors</div></td>';
-        $html = $html.'<td>'.$report['summary']['items_priced_higher_than_competitors'];
+        $html = $html.'<div class=""><img class="icon" src="'.$img_path.'assess_report_dollar.png">'.$report['summary']['items_priced_higher_than_competitors'].' items priced higher than competitors</div>';
         $html = $html.'</td></tr>';
 
         $html = $html.'<tr><td>';
-        $html = $html.'<div class=""><img class="icon" src="'.$img_path.'assess_report_D.png">Items have more than 50% duplicate content</div></td>';
-        $html = $html.'<td>'.$report['summary']['items_have_more_than_50_percent_duplicate_content'];
+        $html = $html.'<div class=""><img class="icon" src="'.$img_path.'assess_report_D.png">'.$report['summary']['items_have_more_than_50_percent_duplicate_content'].' items have more than 50% duplicate content</div>';
         $html = $html.'</td></tr>';
 
         $html = $html.'<tr><td>';
-        $html = $html.'<div class=""><img class="icon" src="'.$img_path.'assess_report_seo.png">Items have unoptimized product content</div></td>';
-        $html = $html.'<td>'.$report['summary']['items_unoptimized_product_content'];
+        $html = $html.'<div class=""><img class="icon" src="'.$img_path.'assess_report_seo.png">'.$report['summary']['items_unoptimized_product_content'].' items have unoptimized product content</div>';
         $html = $html.'</td></tr>';
 
         $html = $html.'<tr><td>';
-        $html = $html.'<div class=""><img class="icon" src="'.$img_path.'assess_report_arrow_down.png">Items have product content that is too short</div></td>';
-        $html = $html.'<td>'.$report['summary']['items_short_products_content'];
+        $html = $html.'<div class=""><img class="icon" src="'.$img_path.'assess_report_arrow_down.png">'.$report['summary']['items_short_products_content'].' items have product content that is too short</div>';
         $html = $html.'</td></tr>';
 
         $html = $html.'</table>';

@@ -1,10 +1,16 @@
+body {
+    font-family: Arial;
+    font-size: 16px;
+}
 img.icon {
     width:20px;
     height:20px;
     margin-right:10px;
 }
 .report {
-    width: 500px;
+    width: 900px;
+    border-collapse: collapse;
+    border-spacing: 0;
 }
 .recommendations {
     margin-top: 20px;
