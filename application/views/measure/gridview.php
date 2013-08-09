@@ -171,7 +171,7 @@ foreach ($same_pr as $ks => $vs) {
                                 <p class="heading_text">SEO: <span style="font-weight: bold;">None</span></p>
                             <?php } ?>
                         </div>
-                        <p>Original content: <b><?php echo isset($vs['short_original']) ? $vs['short_original'] : ''; ?></b></p>
+                        <p>Duplicate content: <b><?php echo isset($vs['short_original']) ? $vs['short_original'] : ''; ?></b></p>
 
                         <p  class='short_desc_con'><?php echo $s_product_description; ?></p>
                         <?php
@@ -209,7 +209,7 @@ foreach ($same_pr as $ks => $vs) {
                                 <p class="heading_text">SEO: <span style="font-weight: bold;">None</span></p>
                             <?php } ?>
                         </div>
-                        <p>Original content: <b><?php echo isset($vs['long_original']) ? $vs['long_original'] : ''; ?></b></p>
+                        <p>Duplicate content: <b><?php echo isset($vs['long_original']) ? $vs['long_original'] : ''; ?></b></p>
 
 
                         <!--                     //Max-->
