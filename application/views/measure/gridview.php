@@ -107,7 +107,7 @@ foreach ($same_pr as $ks => $vs) {
                             ?>
                             <tr>
                                 <td>
-                                    <p class='short_product_name'><?php echo date("m/d/Y", strtotime($last_price->created)); ?>: </p>
+                                    <p class='short_product_name'><?php if($last_price->created!=''){echo date("m/d/Y", strtotime($last_price->created)).':';} ?> </p>
                                 </td>
                                 <?php if ($j != 0) { ?>
                                     <td>
