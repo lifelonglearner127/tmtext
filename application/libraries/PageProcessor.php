@@ -776,6 +776,15 @@ class PageProcessor {
 			}
 		}
 
+		foreach($this->nokogiri->get('.attrG .pdTab table tr') as $item) {
+			if (stripos($item['td'][0]['#text'][0], 'brand name') !==false ) {
+				$result['manufacturer'] =  trim($item['td'][1]['#text'][0]);
+			}
+			if (stripos($item['td'][0]['#text'][0], 'item model number') !==false ) {
+				$result['model'] =  trim($item['td'][1]['#text'][0]);
+			}
+		}
+
 		return $result;
 	}
 
