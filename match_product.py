@@ -60,7 +60,7 @@ def normalize(orig_text):
 # exceeds a cerain threshold
 # weigh non-dictionary words with double weight
 # use param to calculate the threshold (0-1) (0.7 or 0.6 is good)
-def match(products1, products2, nrproduct, param):
+def match(products1, products2, nrproduct, param=0.65):
 	product = ''
 
 	product = products1[nrproduct]
@@ -112,7 +112,56 @@ def match(products1, products2, nrproduct, param):
 
 	return product, products_found
 
+
 # second approach: rank them with tf-idf, bag of words
+def match2(products1, products2, nrprod, threshold=0):
+
+	product_names1 = [item['product_name'] for item in products1]
+	product_names2 = [item['product_name'] for item in products2]
+
+	# use names from both sets to calculate tf-idf
+	train_set = product_names1 + product_names2
+	# use second set of products to search for best match
+	test_set = product_names2
+
+	stopWords = stopwords.words('english')
+
+	#TODO: customize the normalization. keep " signs, transform -Inch to "
+
+	count_vectorizer = CountVectorizer(min_df=1, stop_words=stopWords)
+	count_vectorizer.fit_transform(train_set)
+
+	pprint(count_vectorizer.vocabulary_)
+
+	freq_term_matrix = count_vectorizer.transform(test_set)
+	#print freq_term_matrix.todense()
+
+	tfidf = TfidfTransformer(norm="l2")
+	tfidf.fit(freq_term_matrix)
+
+	tf_idf_matrix = tfidf.transform(freq_term_matrix)
+	tf_idf_matrix = tf_idf_matrix.todense()
+	#print tf_idf_matrix
+
+	product = products1[nrprod]
+	products_found = []
+
+	# compute tfidf vector for each pair of products and sort them by their dot product
+	for product2 in products2:
+		v1 = numpy.array(product['product_name']).tolist()
+		v2 = numpy.array(product2['product_name']).tolist()
+		#print dot(v1, v2)
+
+		#TODO: normalize this. cosine similarity?
+		score = dot(v1,v2)
+
+		if dot(v1,v2) > threshold:
+			products_found.append((product2, score))
+
+	# sort products_found by their score
+	products_found = sorted(products_found, key = lambda x: x[1], reverse = True)
+
+	return product, products_found
 
 
 # third approach: check common ngrams (is order important?)
@@ -126,14 +175,14 @@ category2 = sys.argv[4]
 products1 = get_products("sample_output/" + site1 + "_bestsellers_dept.jl", category1)
 products2 = get_products("sample_output/" + site2 + "_bestsellers_dept.jl", category2)
 
-for nrprod in range(len(products1)):
-	(prod, res) = match(products1, products2, nrprod, 0.65)
+for nrprod in range(10,15):#(len(products1)):
+	(prod, res) = match2(products1, products2, nrprod, 3)
 	if res:
 		print prod['product_name']
 		for product in res:
 			print '-', product[0]['product_name'], "SCORE:", product[1]
-		for product in res:
-			print product[0]
+		# for product in res:
+		# 	print product[0]
 		print '--------------------------------'
 		results += 1
 
