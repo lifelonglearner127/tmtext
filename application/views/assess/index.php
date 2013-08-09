@@ -1,7 +1,7 @@
 <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/smoothness/jquery-ui-1.8.2.custom.css" />
 <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/styles.css" />
 <ul class="research_table_filter">
-    <li class="boxes">
+    <li class="boxes hideBox">
         <h3>
             <span class=''>
                 Batch:
