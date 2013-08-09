@@ -463,12 +463,16 @@ class Research extends MY_Controller {
                         if ($build_assess_params->short_duplicate_content) {
                             $duplicate_short_percent_total += 100 - $vs['short_original'];
                             $shorty_percent = 100 - $vs['short_original'];
-                            $duplicate_customers_short = $duplicate_customers_short.'<nobr>'.$vs['customer'].' - '.$shorty_percent.'%</nobr><br />';
+                            if($shorty_percent > 0){
+                                $duplicate_customers_short = $duplicate_customers_short.'<nobr>'.$vs['customer'].' - '.$shorty_percent.'%</nobr><br />';
+                            }
                         }
                         if ($build_assess_params->short_duplicate_content) {
                             $duplicate_long_percent_total += 100 - $vs['long_original'];
                             $long_percent = 100 - $vs['long_original'];
-                            $duplicate_customers_long = $duplicate_customers_long.'<nobr>'.$vs['customer'].' - '.$long_percent.'%</nobr><br />';
+                            if($long_percent > 0){
+                                $duplicate_customers_long = $duplicate_customers_long.'<nobr>'.$vs['customer'].' - '.$long_percent.'%</nobr><br />';
+                            }
                         }
                     }
 
@@ -854,7 +858,7 @@ class Research extends MY_Controller {
         $html = $html.'</td></tr>';
 
         $html = $html.'<tr><td>';
-        $html = $html.'<div class=""><img class="icon" src="'.$img_path.'assess_report_D.png">'.$report['summary']['items_have_more_than_50_percent_duplicate_content'].' items have more than 50% duplicate content</div>';
+        $html = $html.'<div class=""><img class="icon" src="'.$img_path.'assess_report_D.png">'.$report['summary']['items_have_more_than_50_percent_duplicate_content'].' items have more than 20% duplicate content</div>';
         $html = $html.'</td></tr>';
 
         $html = $html.'<tr><td>';
