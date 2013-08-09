@@ -303,6 +303,10 @@ class Site_Crawler extends MY_Controller {
 					$this->imported_data_parsed_model->insert($imported_id, $key, $value, $revision);
 				}
 
+				if (($attributes = $this->pageprocessor->attributes()) !== false) {
+					$this->imported_data_parsed_model->insert($imported_id, 'parsed_attributes', serialize($attributes), $revision);
+				}
+
 				$this->crawler_list_model->updateStatus($data->id, 'finished');
 				$this->crawler_list_model->updated($data->id);
 			} else {
