@@ -316,7 +316,6 @@ class Research extends MY_Controller {
         $this->load->model('imported_data_parsed_model');
 
         $customer_name = $this->batches_model->getCustomerByName($batch_name);
-        var_dump($customer_name);
         $enable_exec = true;
         $result_table = array();
         $report = array();
@@ -462,7 +461,7 @@ class Research extends MY_Controller {
 
                     foreach ($dc as $ks => $vs) {
                         var_dump($batch_name.'--------'.$vs['customer']);
-                        if($batch_name == $vs['customer']){
+                        if(strtolower($customer_name[0]->name) == $vs['customer']){
                             var_dump(111);
                             $short_percent = 0;
                             $long_percent = 0;
