@@ -363,9 +363,6 @@ class Research extends MY_Controller {
             $result_row->own_price = "-";
             $result_row->competitors_prices = array();
 
-            var_dump($result_row);
-            var_dump($build_assess_params);
-
             $own_site = parse_url($result_row->url,  PHP_URL_HOST);
             if (!$own_site)
                 $own_site = "own site";
@@ -508,8 +505,8 @@ class Research extends MY_Controller {
                 $items_short_products_content++;
             }
 
-            if (($result_row->short_description_wc <= 20 && $build_assess_params->long_less == false) ||
-                ($result_row->long_description_wc <= 100 && $build_assess_params->short_less == false)){
+            if (($result_row->short_description_wc <= 20 && $build_assess_params->long_less == -1) ||
+                ($result_row->long_description_wc <= 100 && $build_assess_params->short_less == -1)){
                 $items_short_products_content++;
             }
 
@@ -536,7 +533,7 @@ class Research extends MY_Controller {
 
             $result_table[] = $result_row;
         }
-        var_dump($items_short_products_content);
+
         $report['summary']['total_items'] = count($result_table);
         $report['summary']['items_priced_higher_than_competitors'] = $items_priced_higher_than_competitors;
         $report['summary']['items_have_more_than_20_percent_duplicate_content'] = $items_have_more_than_20_percent_duplicate_content;
@@ -919,9 +916,6 @@ class Research extends MY_Controller {
         $html = $html.'<tr><td>';
         $html = $html.'</table>';
 
-        var_dump($report);
-        var_dump($report['summary']);
-        die;
         $this->load->library('pdf');
         $pdf = $this->pdf->load();
 //        include APPPATH.'third_party/mpdf/mpdf.php';
