@@ -1350,7 +1350,7 @@ class Imported_data_parsed_model extends CI_Model {
         foreach ($groups as $im_data_id => $val) {
 
             if (!$this->similar_product_groups_model->checkIfgroupExists($im_data_id)) {
-                $this->db->insert('similar_product_groups', array('id' => $im_data_id));
+                $this->db->insert('similar_product_groups', array('ipd_id' => $im_data_id));
 
                 foreach ($val as $id) {
                     $this->db->insert('similar_data', array('group_id' => $im_data_id, 'black_list' => 0, 'imported_data_id' => $id));
@@ -1491,7 +1491,7 @@ class Imported_data_parsed_model extends CI_Model {
             $this->load->model('similar_product_groups_model');
             if (!$this->similar_product_groups_model->checkIfgroupExists($im_data_id)) {
 
-                $this->db->insert('similar_product_groups', array('id' => $im_data_id));
+                $this->db->insert('similar_product_groups', array('ipd_id' => $im_data_id));
 
                 foreach ($for_groups as $id) {
                     $this->db->insert('similar_data', array('group_id' => $im_data_id, 'black_list' => 0, 'imported_data_id' => $id));

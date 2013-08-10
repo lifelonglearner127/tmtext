@@ -431,3 +431,30 @@ CREATE TABLE  `tmeditor`.`similar_product_groups` (
 ALTER TABLE  `similar_product_groups` ADD UNIQUE (
 `id`
 )
+
+#08/11 Max
+
+DROP TABLE IF EXISTS `similar_product_groups`;
+
+CREATE TABLE `similar_product_groups` (
+  `ipd_id` int(10) unsigned NOT NULL,
+  UNIQUE KEY `fk_imp_id` (`ipd_id`),
+  CONSTRAINT `fk_imp_id_group_id` FOREIGN KEY (`ipd_id`) REFERENCES `imported_data` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+
+
+DROP TABLE IF EXISTS `similar_data`;
+
+CREATE TABLE `similar_data` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `imported_data_id` int(11) NOT NULL,
+  `group_id` int(10) unsigned NOT NULL,
+  `black_list` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fk_group_id` (`group_id`),
+  CONSTRAINT `fk_group_id` FOREIGN KEY (`group_id`) REFERENCES `imported_data` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB AUTO_INCREMENT=948 DEFAULT CHARSET=utf8;
+
+

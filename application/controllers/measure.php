@@ -904,23 +904,30 @@ return $main_base;
                             }
                         }
                     }
-
-                    $vs['short_original'] =  round($maxshort, 2) . '%';
-                    $vs['long_original'] =  round($maxlong, 2) . '%';
-
+                    if($maxshort!='0'){
+                        $vs['short_original'] =  round($maxshort, 2) . '%';
+                    }else{
+                        $vs['short_original']= "Insufficient data";
+                    }
+                   
+                    if($maxshort!='0'){
+                        $vs['long_original'] =  round($maxlong, 2) . '%';
+                    }else{
+                        $vs['long_original']= "Insufficient data";
+                    }
 
                     if ($k_lng == 0) {
-                        $vs['long_original'] = "0%";
+                        $vs['long_original'] = "Insufficient data";
                     }
                     if ($k_sh == 0) {
-                        $vs['short_original'] = "0%";
+                        $vs['short_original'] = "Insufficient data";
                     }
 
                     $same_pr[$ks] = $vs;
                 }
             } else {
-                $same_pr[0]['long_original'] = '0%';
-                $same_pr[0]['short_original'] = '0%';
+                $same_pr[0]['long_original'] = 'Insufficient data';
+                $same_pr[0]['short_original'] = 'Insufficient data';
             }
             //   Max     
 //Max
