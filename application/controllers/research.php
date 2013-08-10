@@ -363,6 +363,9 @@ class Research extends MY_Controller {
             $result_row->own_price = "-";
             $result_row->competitors_prices = array();
 
+            var_dump($result_row);
+            var_dump($build_assess_params);
+
             $own_site = parse_url($result_row->url,  PHP_URL_HOST);
             if (!$own_site)
                 $own_site = "own site";
