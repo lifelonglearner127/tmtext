@@ -310,7 +310,7 @@ class Research extends MY_Controller {
         return $results;
     }
 
-    private function build_asses_table($results, $build_assess_params, $batch_name) {
+    private function build_asses_table($results, $build_assess_params, $batch_name='') {
         $duplicate_content_range = 25;
         $this->load->model('batches_model');
         $this->load->model('imported_data_parsed_model');
@@ -477,7 +477,7 @@ class Research extends MY_Controller {
                                     $duplicate_customers_long = $duplicate_customers_long.'<nobr>'.$vs['customer'].' - '.$long_percent.'%</nobr><br />';
                                 }
                             }
-                            if($short_percent >= 20 || $lon_percent >= 20){
+                            if($short_percent >= 20 || $long_percent >= 20){
                                 $items_have_more_than_20_percent_duplicate_content += 1;
                             }
                         }
@@ -836,7 +836,7 @@ class Research extends MY_Controller {
         $build_assess_params->long_seo_phrases = true;
         $build_assess_params->long_duplicate_content = true;
 
-        $output = $this->build_asses_table($results, $build_assess_params, $batch);
+        $output = $this->build_asses_table($results, $build_assess_params, $params->batch_name);
         $report = $output['ExtraData']['report'];
 
         $header = '<table border=0 width=100%>';
