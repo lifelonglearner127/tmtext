@@ -500,11 +500,13 @@ class Research extends MY_Controller {
                 $items_unoptimized_product_content++;
             }
 
-            if (($result_row->short_description_wc < 20 && $build_assess_params->short_less == 20) && ($result_row->long_description_wc < 100 && $build_assess_params->long_less==100)) {
+            if (($result_row->short_description_wc < 20 && $build_assess_params->short_less == 20) &&
+                ($result_row->long_description_wc < 100 && $build_assess_params->long_less==100)) {
                 $items_short_products_content++;
             }
 
-            if (($result_row->short_description_wc <= 20 && $build_assess_params->long_less == false) || ($result_row->long_description_wc <= 100 && $build_assess_params->short_less == false)){
+            if (($result_row->short_description_wc <= 20 && $build_assess_params->long_less == false) ||
+                ($result_row->long_description_wc <= 100 && $build_assess_params->short_less == false)){
                 $items_short_products_content++;
             }
 
@@ -531,7 +533,7 @@ class Research extends MY_Controller {
 
             $result_table[] = $result_row;
         }
-
+        var_dump($items_short_products_content);
         $report['summary']['total_items'] = count($result_table);
         $report['summary']['items_priced_higher_than_competitors'] = $items_priced_higher_than_competitors;
         $report['summary']['items_have_more_than_20_percent_duplicate_content'] = $items_have_more_than_20_percent_duplicate_content;
