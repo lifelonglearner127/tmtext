@@ -915,6 +915,7 @@ class Research extends MY_Controller {
         $html = $html.'</table>';
 
         var_dump($report);
+        var_dump($report['summary']);
         die;
         $this->load->library('pdf');
         $pdf = $this->pdf->load();
