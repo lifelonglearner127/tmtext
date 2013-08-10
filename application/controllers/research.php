@@ -465,14 +465,14 @@ class Research extends MY_Controller {
                             $long_percent = 0;
                             if ($build_assess_params->short_duplicate_content) {
                                 $duplicate_short_percent_total += 100 - $vs['short_original'];
-                                $short_percent = 100 - $vs['short_original'];
+                                $short_percent = 100 - round($vs['short_original'], s1);
                                 if($short_percent > 0){
                                     $duplicate_customers_short = $duplicate_customers_short.'<nobr>'.$vs['customer'].' - '.$short_percent.'%</nobr><br />';
                                 }
                             }
                             if ($build_assess_params->short_duplicate_content) {
                                 $duplicate_long_percent_total += 100 - $vs['long_original'];
-                                $long_percent = 100 - $vs['long_original'];
+                                $long_percent = 100 - round($vs['long_original'], 1);
                                 if($long_percent > 0){
                                     $duplicate_customers_long = $duplicate_customers_long.'<nobr>'.$vs['customer'].' - '.$long_percent.'%</nobr><br />';
                                 }
@@ -482,9 +482,15 @@ class Research extends MY_Controller {
                             }
                         }
                     }
+                    if($duplicate_customers_short!=''){
 
-                    $duplicate_customers = 'Duplicate short<br />'.$duplicate_customers_short;
-                    $duplicate_customers = $duplicate_customers.'Duplicate long<br />'.$duplicate_customers_long;
+                    }
+                    if($duplicate_customers_short !=''){
+                        $duplicate_customers = 'Duplicate short<br />'.$duplicate_customers_short;
+                    }
+                    if($duplicate_customers_long!=''){
+                        $duplicate_customers = $duplicate_customers.'Duplicate long<br />'.$duplicate_customers_long;
+                    }
 
                     if ($duplicate_short_percent_total > $duplicate_content_range || $duplicate_long_percent_total > $duplicate_content_range) {
                         $duplicate_customers = "<input type='hidden'/>".$duplicate_customers;
