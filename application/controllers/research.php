@@ -315,6 +315,8 @@ class Research extends MY_Controller {
         $this->load->model('batches_model');
         $this->load->model('imported_data_parsed_model');
 
+        $customer_name = $this->batches_model->getCustomerByName($batch_name);
+        var_dump($customer_name);
         $enable_exec = true;
         $result_table = array();
         $report = array();

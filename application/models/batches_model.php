@@ -36,13 +36,14 @@ class Batches_model extends CI_Model {
         return $query->result();
     }
 
-    function getAllWithCustomer()
+    function getCustomerByName($batch_name)
     {
-        $query = $this->db->select('*')
-        ->from($this->tables['batches'].' as b')
-        ->join($this->tables['customers'].' as c', 'b.customer_id = c.id', 'left')
-        ->order_by("b.title", "asc")
-        ->get();
+        $query = $this->db->select('c.name')
+            ->from($this->tables['batches'].' as b')
+            ->join($this->tables['customers'].' as c', 'b.customer_id = c.id', 'left')
+            ->where('b.title', $batch_name)
+            ->limit(1)
+            ->get();
 
         return $query->result();
     }
