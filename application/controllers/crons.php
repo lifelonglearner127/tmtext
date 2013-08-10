@@ -157,4 +157,21 @@ class Crons extends MY_Controller {
         echo "Cron Job Finished";
     }
 
+    public function do_stats(){
+        $this->load->model('batches_model');
+        $this->load->model('research_data_model');
+        $this->load->model('statistics_model');
+        $this->statistics_model->truncate();
+        $batches = $this->batches_model->getAll();
+        foreach($batches as $batch){
+            $data = $this->research_data_model->do_stats($batch->title);
+            foreach($data as $obj){
+                $this->statistics_model->insert($obj->rid, $obj->imported_data_id, $obj->batch_name,
+                    $obj->product_name, $obj->url, $obj->short_description, $obj->long_description,
+                    $obj->short_description_wc, $obj->long_description_wc,
+                    $obj->short_seo_phrases, $obj->long_seo_phrases);
+            }
+        }
+    }
+
 }

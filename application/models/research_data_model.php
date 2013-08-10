@@ -375,4 +375,71 @@ union all
         return $query->result();
     }
 
+    function do_stats($batch_name)
+    {
+        $sql_cmd = "
+            select
+                *
+            from (
+                select
+                    r.id AS rid,
+                    r.imported_data_id AS imported_data_id,
+                    r.created AS created,
+                    r.title as batch_name,
+                    group_concat(r.product_name, '') AS product_name,
+                    group_concat(r.url, '') AS url,
+                    group_concat(r.short_description, '') AS short_description,
+                    group_concat(r.long_description, '') AS long_description,
+                    group_concat(r.short_description_wc, '') AS short_description_wc,
+                    group_concat(r.long_description_wc, '') AS long_description_wc,
+                    group_concat(r.short_seo_phrases, '') AS short_seo_phrases,
+                    group_concat(r.long_seo_phrases, '') AS long_seo_phrases
+                from (
+                    select
+                        b.title,
+                        kv.id,
+                        kv.imported_data_id,
+                        rd.created as created,
+                        case when kv.`key` = 'Product Name' then kv.`value` end as product_name,
+                        case when kv.`key` = 'URL' then kv.`value` end as url,
+                        case when kv.`key` = 'Description' then kv.`value` end as short_description,
+                        case when kv.`key` = 'Long_Description' then kv.`value` end as long_description,
+                        case when kv.`key` = 'Description_WC' then kv.`value` end as short_description_wc,
+                        case when kv.`key` = 'Long_Description_WC' then kv.`value` end as long_description_wc,
+                        case when kv.`key` = 'short_seo_phrases' then kv.`value` end as short_seo_phrases,
+                        case when kv.`key` = 'long_seo_phrases' then kv.`value` end as long_seo_phrases
+                    from
+                        batches as b
+                    inner join research_data as rd on
+                        rd.batch_Id = b.id
+                        and b.title =".$this->db->escape($batch_name)."
+                    inner join research_data_to_crawler_list as rdtcl on rdtcl.research_data_id = rd.id
+                    inner join crawler_list as cl on cl.id = rdtcl.crawler_list_id
+                    inner join (
+                        select
+                            idp.id,
+                            idp.imported_data_id,
+                            idp.`key` as `key`,
+                            idp.`value` as `value`,
+                            max(revision) as revision
+                        from
+                            imported_data_parsed as idp
+                        group by
+                            idp.imported_data_id,
+                            idp.`key`
+                    )  as kv on kv.imported_data_id = cl.imported_data_id
+                ) as r
+                group by
+                    r.imported_data_id
+            ) as rr
+            order by
+                rr.created
+        ";
+
+        $query = $this->db->query($sql_cmd);
+        $result =  $query->result();
+
+        return $result;
+    }
+
 }
