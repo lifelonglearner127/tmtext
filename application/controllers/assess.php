@@ -51,10 +51,10 @@ class Assess extends MY_Controller {
     public function batches_list()
     {
         $this->load->model('batches_model');
-        $batches = $this->batches_model->getAll();
+        $batches = $this->batches_model->getAllWithCustomer();
         $batches_list = array(''=>'Select batch');
         foreach($batches as $batch){
-            array_push($batches_list, $batch->title);
+           $batches_list[strtolower($batch->name)] = $batch->title;
         }
         return $batches_list;
     }

@@ -297,7 +297,7 @@ class Research extends MY_Controller {
 
             $results = $this->get_data_for_assess($params);
 
-            $output = $this->build_asses_table($results, $build_assess_params);
+            $output = $this->build_asses_table($results, $build_assess_params, $batch_name);
 
             $this->output->set_content_type('application/json')
                 ->set_output(json_encode($output));
@@ -310,7 +310,7 @@ class Research extends MY_Controller {
         return $results;
     }
 
-    private function build_asses_table($results, $build_assess_params) {
+    private function build_asses_table($results, $build_assess_params, $batch_name) {
         $duplicate_content_range = 25;
         $this->load->model('batches_model');
         $this->load->model('imported_data_parsed_model');
@@ -458,20 +458,22 @@ class Research extends MY_Controller {
                 $duplicate_long_percent_total = 0;
                 if (count($dc) > 1) {
                     foreach ($dc as $ks => $vs) {
-                        $shor_percent = 0;
-                        $long_percent = 0;
-                        if ($build_assess_params->short_duplicate_content) {
-                            $duplicate_short_percent_total += 100 - $vs['short_original'];
-                            $shorty_percent = 100 - $vs['short_original'];
-                            if($shorty_percent > 0){
-                                $duplicate_customers_short = $duplicate_customers_short.'<nobr>'.$vs['customer'].' - '.$shorty_percent.'%</nobr><br />';
+                        if($batch_name == $vs['customer']){
+                            $short_percent = 0;
+                            $long_percent = 0;
+                            if ($build_assess_params->short_duplicate_content) {
+                                $duplicate_short_percent_total += 100 - $vs['short_original'];
+                                $short_percent = 100 - $vs['short_original'];
+                                if($short_percent > 0){
+                                    $duplicate_customers_short = $duplicate_customers_short.'<nobr>'.$vs['customer'].' - '.$short_percent.'%</nobr><br />';
+                                }
                             }
-                        }
-                        if ($build_assess_params->short_duplicate_content) {
-                            $duplicate_long_percent_total += 100 - $vs['long_original'];
-                            $long_percent = 100 - $vs['long_original'];
-                            if($long_percent > 0){
-                                $duplicate_customers_long = $duplicate_customers_long.'<nobr>'.$vs['customer'].' - '.$long_percent.'%</nobr><br />';
+                            if ($build_assess_params->short_duplicate_content) {
+                                $duplicate_long_percent_total += 100 - $vs['long_original'];
+                                $long_percent = 100 - $vs['long_original'];
+                                if($long_percent > 0){
+                                    $duplicate_customers_long = $duplicate_customers_long.'<nobr>'.$vs['customer'].' - '.$long_percent.'%</nobr><br />';
+                                }
                             }
                         }
                     }
@@ -823,7 +825,7 @@ class Research extends MY_Controller {
         $build_assess_params->long_seo_phrases = true;
         $build_assess_params->long_duplicate_content = true;
 
-        $output = $this->build_asses_table($results, $build_assess_params);
+        $output = $this->build_asses_table($results, $build_assess_params, $batch);
         $report = $output['ExtraData']['report'];
 
         $header = '<table border=0 width=100%>';
