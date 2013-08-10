@@ -179,7 +179,7 @@ category2 = sys.argv[4]
 if (len(sys.argv) >= 6):
 	method = int(sys.argv[5])
 if (len(sys.argv) >= 7):
-	param = int(sys.argv[6])
+	param = float(sys.argv[6])
 
 products1 = get_products("sample_output/" + site1 + "_bestsellers_dept.jl", category1)
 products2 = get_products("sample_output/" + site2 + "_bestsellers_dept.jl", category2)
