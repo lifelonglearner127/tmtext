@@ -465,7 +465,7 @@ class Research extends MY_Controller {
                             $long_percent = 0;
                             if ($build_assess_params->short_duplicate_content) {
                                 $duplicate_short_percent_total += 100 - $vs['short_original'];
-                                $short_percent = 100 - round($vs['short_original'], s1);
+                                $short_percent = 100 - round($vs['short_original'], 1);
                                 if($short_percent > 0){
                                     $duplicate_customers_short = $duplicate_customers_short.'<nobr>'.$vs['customer'].' - '.$short_percent.'%</nobr><br />';
                                 }
