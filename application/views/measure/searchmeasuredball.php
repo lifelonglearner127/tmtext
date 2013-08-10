@@ -94,8 +94,14 @@
                     $(this).css({'background': 'none'});
                     $(this).attr('data-status', 'standart');
                 });
+                 $("#products li span").each(function() {
+                    $(this).css('white-space', 'nowrap');
+                   
+                });
+                
                 $(this).css({'background': '#CAEAFF'});
                 $(this).attr('data-status', 'selected');
+                $(this).find('span').css('white-space', 'normal');
                 // ---- START DISTINCT PRODUCT METRICS (START)
                 var im_data_id = $(this).attr('data-value');
 
