@@ -505,8 +505,8 @@ class Research extends MY_Controller {
                 $items_short_products_content++;
             }
 
-            if (($result_row->short_description_wc <= 20 && $build_assess_params->long_less == -1) ||
-                ($result_row->long_description_wc <= 100 && $build_assess_params->short_less == -1)){
+            if (($result_row->short_description_wc <= 20 && ($build_assess_params->long_less == -1 || $build_assess_params->long_less == false)) ||
+                ($result_row->long_description_wc <= 100 && $build_assess_params->short_less == -1 || $build_assess_params->short_less == false)){
                 $items_short_products_content++;
             }
 
