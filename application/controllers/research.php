@@ -820,7 +820,7 @@ class Research extends MY_Controller {
         $this->load->model('batches_model');
         $customer = $this->batches_model->getAllCustomerDataByBatch($params->batch_name);
         $batch = $this->batches_model->getByName($params->batch_name);
-        $batch_created = new DateTime($batch->created);
+        $batch_created = new DateTime(date('Y-m-d H:i:s'));
 
         $css_path = APPPATH.".."."/webroot/css/";
         $img_path = APPPATH.".."."/webroot/img/";
