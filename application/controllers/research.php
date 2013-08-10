@@ -478,12 +478,9 @@ class Research extends MY_Controller {
                                 }
                             }
                             if($short_percent >= 20 || $long_percent >= 20){
-                                ++$items_have_more_than_20_percent_duplicate_content;
+                                $items_have_more_than_20_percent_duplicate_content += 1;
                             }
                         }
-                    }
-                    if($duplicate_customers_short!=''){
-
                     }
                     if($duplicate_customers_short !=''){
                         $duplicate_customers = 'Duplicate short<br />'.$duplicate_customers_short;
@@ -917,7 +914,8 @@ class Research extends MY_Controller {
         $html = $html.'<tr><td>';
         $html = $html.'</table>';
 
-
+        var_dump($report);
+        die;
         $this->load->library('pdf');
         $pdf = $this->pdf->load();
 //        include APPPATH.'third_party/mpdf/mpdf.php';
