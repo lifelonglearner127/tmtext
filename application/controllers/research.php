@@ -457,8 +457,11 @@ class Research extends MY_Controller {
                 $duplicate_short_percent_total = 0;
                 $duplicate_long_percent_total = 0;
                 if (count($dc) > 1) {
+
                     foreach ($dc as $ks => $vs) {
+                        var_dump($batch_name.'--------'.$vs['customer']);
                         if($batch_name == $vs['customer']){
+                            var_dump(111);
                             $short_percent = 0;
                             $long_percent = 0;
                             if ($build_assess_params->short_duplicate_content) {
