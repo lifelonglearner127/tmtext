@@ -478,7 +478,7 @@ class Research extends MY_Controller {
                                 }
                             }
                             if($short_percent >= 20 || $long_percent >= 20){
-                                $items_have_more_than_20_percent_duplicate_content += 1;
+                                ++$items_have_more_than_20_percent_duplicate_content;
                             }
                         }
                     }
