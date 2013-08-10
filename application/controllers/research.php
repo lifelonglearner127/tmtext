@@ -321,7 +321,7 @@ class Research extends MY_Controller {
         $report = array();
         $pricing_details = array();
         $items_priced_higher_than_competitors = 0;
-        $items_have_more_than_50_percent_duplicate_content = 0;
+        $items_have_more_than_20_percent_duplicate_content = 0;
         $items_unoptimized_product_content = 0;
         $items_short_products_content = 0;
         foreach($results as $row) {
@@ -477,6 +477,9 @@ class Research extends MY_Controller {
                                     $duplicate_customers_long = $duplicate_customers_long.'<nobr>'.$vs['customer'].' - '.$long_percent.'%</nobr><br />';
                                 }
                             }
+                            if($short_percent >= 20 || $lon_percent >= 20){
+                                $items_have_more_than_20_percent_duplicate_content += 1;
+                            }
                         }
                     }
 
@@ -528,15 +531,15 @@ class Research extends MY_Controller {
 
         $report['summary']['total_items'] = count($result_table);
         $report['summary']['items_priced_higher_than_competitors'] = $items_priced_higher_than_competitors;
-        $report['summary']['items_have_more_than_50_percent_duplicate_content'] = $items_have_more_than_50_percent_duplicate_content;
+        $report['summary']['items_have_more_than_20_percent_duplicate_content'] = $items_have_more_than_20_percent_duplicate_content;
         $report['summary']['items_unoptimized_product_content'] = $items_unoptimized_product_content;
         $report['summary']['items_short_products_content'] = $items_short_products_content;
 
         if ($items_priced_higher_than_competitors > 0) {
             $report['recommendations']['items_priced_higher_than_competitors'] = 'Reduce pricing on '.$items_priced_higher_than_competitors.' item(s)';
         }
-        if ($items_have_more_than_50_percent_duplicate_content == 0) {
-            $report['recommendations']['items_have_more_than_50_percent_duplicate_content'] = 'Create original product content';
+        if ($items_have_more_than_20_percent_duplicate_content == 0) {
+            $report['recommendations']['items_have_more_than_20_percent_duplicate_content'] = 'Create original product content';
         }
         if ($items_unoptimized_product_content > 0) {
             $report['recommendations']['items_unoptimized_product_content'] = 'Optimize product content';
@@ -862,7 +865,7 @@ class Research extends MY_Controller {
         $html = $html.'</td></tr>';
 
         $html = $html.'<tr><td>';
-        $html = $html.'<div class=""><img class="icon" src="'.$img_path.'assess_report_D.png">'.$report['summary']['items_have_more_than_50_percent_duplicate_content'].' items have more than 20% duplicate content</div>';
+        $html = $html.'<div class=""><img class="icon" src="'.$img_path.'assess_report_D.png">'.$report['summary']['items_have_more_than_20_percent_duplicate_content'].' items have more than 20% duplicate content</div>';
         $html = $html.'</td></tr>';
 
         $html = $html.'<tr><td>';
@@ -884,10 +887,10 @@ class Research extends MY_Controller {
             $html = $html.$report['recommendations']['items_priced_higher_than_competitors'].'</div>';
             $html = $html.'</td></tr>';
         }
-        if ($report['recommendations']['items_have_more_than_50_percent_duplicate_content']) {
+        if ($report['recommendations']['items_have_more_than_20_percent_duplicate_content']) {
             $html = $html.'<tr><td>';
             $html = $html.'<div class=""><img class="icon" src="'.$img_path.'assess_report_D.png">';
-            $html = $html.$report['recommendations']['items_have_more_than_50_percent_duplicate_content'].'</div>';
+            $html = $html.$report['recommendations']['items_have_more_than_20_percent_duplicate_content'].'</div>';
             $html = $html.'</td></tr>';
         }
         if ($report['recommendations']['items_short_products_content']) {
