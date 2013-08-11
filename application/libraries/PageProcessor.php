@@ -716,7 +716,26 @@ class PageProcessor {
 			}
 		}
 
+		if (empty($description)) {
+			foreach($this->nokogiri->get('.content .productDescriptionWrapper') as $item) {
+				$line = trim($item['#text'][0]);
+				if (!empty($line)) {
+					$description[] = $line;
+				}
+			}
+		}
+
 		$description = implode(' ',$description);
+
+		if (empty($descriptionLong)) {
+			foreach($this->nokogiri->get('.content .productDescriptionWrapper p') as $item) {
+				$line = trim($item['#text'][0]);
+				if (!empty($line)) {
+					$descriptionLong[] = $line;
+				}
+			}
+		}
+		$descriptionLong = implode(' ',$descriptionLong);
 
 		foreach($this->nokogiri->get('#actualPriceRow #actualPriceValue .priceLarge') as $item) {
 			$p = str_replace(',','',$item['#text'][0]);
@@ -744,6 +763,7 @@ class PageProcessor {
 		$result = array(
 			'Product Name' => $title,
 			'Description' => $description,
+			'Long_Description' => $descriptionLong,
 			'Price' => $price,
 			'PriceOld' => $price_old
 		);
