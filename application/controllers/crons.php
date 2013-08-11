@@ -165,13 +165,18 @@ class Crons extends MY_Controller {
         $batches = $this->batches_model->getAll();
         foreach($batches as $batch){
             $data = $this->research_data_model->do_stats($batch->title);
-            foreach($data as $obj){
-                $this->statistics_model->insert($obj->rid, $obj->imported_data_id, $obj->batch_name,
-                    $obj->product_name, $obj->url, $obj->short_description, $obj->long_description,
-                    $obj->short_description_wc, $obj->long_description_wc,
-                    $obj->short_seo_phrases, $obj->long_seo_phrases);
+            if(count($data) > 0){
+                foreach($data as $obj){
+                    $this->statistics_model->insert($obj->rid, $obj->imported_data_id, $obj->batch_name,
+                        $obj->product_name, $obj->url, $obj->short_description, $obj->long_description,
+                        $obj->short_description_wc, $obj->long_description_wc,
+                        $obj->short_seo_phrases, $obj->long_seo_phrases);
+                }
+            } else {
+                echo "Statistic data for batch is empty";
             }
         }
+        echo "Cron Job Finished";
     }
 
 }
