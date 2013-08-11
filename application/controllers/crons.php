@@ -1,6 +1,6 @@
 <?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 
-class Crons extends MY_Controller {
+class Crons extends CI_Controller {
 
 	function __construct() {
   		parent::__construct();
