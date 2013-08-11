@@ -73,7 +73,7 @@
                                 $('#csv_import_create_batch').trigger('click');
                                 setTimeout(function(){
                                     $('#progress .bar').css({'background':'none'});
-                                }, 10);
+                                }, 100);
                             },
                             progressall: function (e, data) {
                                 var progress = parseInt(data.loaded / data.total * 100, 10);
