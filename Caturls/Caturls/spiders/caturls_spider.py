@@ -82,7 +82,7 @@ class CaturlsSpider(BaseSpider):
 			#resp_for_scrapy = TextResponse(html_str)
 
 			# pass first page to parsePage function to extract products
-			items += self.parsePage(resp_for_scrapy)
+			items += self.parsePage_staples(resp_for_scrapy)
 
 			# use selenium to get next page, while there is a next page
 			next_page = driver.find_element_by_xpath("//li[@class='pageNext']/a")
@@ -102,7 +102,12 @@ class CaturlsSpider(BaseSpider):
 				# pass first page to parsePage function to extract products
 				items += self.parsePage_staples(resp_for_scrapy)
 
+				hxs = HtmlXPathSelector(resp_for_scrapy)
+				next = hxs.select("//li[@class='pageNext']/a")
 				next_page = None
+				if next:
+					next_page = driver.find_element_by_xpath("//li[@class='pageNext']/a")
+
 				#TODO: this doesn't work
 				# try:
 				# 	next_page = driver.find_element_by_xpath("//li[@class='pageNext']/a")
