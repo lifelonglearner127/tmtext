@@ -163,6 +163,9 @@ class Crons extends MY_Controller {
         $this->load->model('statistics_model');
         $this->statistics_model->truncate();
         $batches = $this->batches_model->getAll();
+        $file = 'debug_cli.txt';
+        // Open the file to get existing content
+        $current = file_get_contents($file);
         foreach($batches as $batch){
             $data = $this->research_data_model->do_stats($batch->title);
             if(count($data) > 0){
@@ -173,9 +176,10 @@ class Crons extends MY_Controller {
                         $obj->short_seo_phrases, $obj->long_seo_phrases);
                 }
             } else {
-                echo "Statistic data for batch is empty";
+                $current .= $batch->title." - batch doesn't have statistic data\n";
             }
         }
+        file_put_contents($file, $current);
         echo "Cron Job Finished";
     }
 
