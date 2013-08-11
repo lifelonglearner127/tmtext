@@ -28,10 +28,17 @@ $STDOUT = fopen("php://stdout", "w");
 fwrite($STDOUT, "Output #1.");
 fclose($STDOUT);
 
-$file = 'debug_cli.txt';
-// Open the file to get existing content
-$current = file_get_contents($file);
-$current .= "Test\n";
-file_put_contents($file, $current);
+print_r($argv);
+print_r(arguments($argv));
+
+function arguments ( $args )
+{
+    while ( $arg = array_shift($args) ){
+        var_dump($arg);
+    }
+}
+
+
+
 
 include_once('index.php');
