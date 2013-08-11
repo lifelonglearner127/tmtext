@@ -614,7 +614,7 @@ $(document).ready(function () {
             'customer_name': oDropdown.getData().data.value,
             'batch_name': $('select[name="batches"]').find('option:selected').text()
         }, function(data) {
-            $('<p/>').text(data.message).appendTo('#files');
+            $('#files').html('<p>'+data.message+'</p>');
             $.post(base_url + 'index.php/research/getBatchInfo', { 'batch': $("select[name='batches']").find("option:selected").text()}, function(data){
                 if(data.created != undefined){
                     $('.batch_info').html('<ul class="ml_0"><li>Created: '+data.created+'</li><li>Item Last Added: '+data.modified+'</li>' +
