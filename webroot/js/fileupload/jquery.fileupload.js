@@ -76,7 +76,7 @@
             // in a sequential order:
             sequentialUploads: false,
             // To limit the number of concurrent uploads,
-            // set the following option to an integer greater than 0:
+            // set the following option to an intege$('#progress .bar').hide();r greater than 0:
             limitConcurrentUploads: undefined,
             // Set the following option to true to force iframe transport uploads:
             forceIframeTransport: false,

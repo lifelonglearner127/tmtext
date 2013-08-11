@@ -63,6 +63,9 @@
                         $('#fileupload').fileupload({
                             url: url,
                             dataType: 'json',
+                            start:function(e, data){
+                                $('#progress .bar').show();
+                            },
                             done: function (e, data) {
                                 $('input[name="choosen_file"]').val(data.result.files[0].name);
                                 $.each(data.result.files, function (index, file) {
@@ -72,8 +75,10 @@
                                 });
                                 $('#csv_import_create_batch').trigger('click');
                                 setTimeout(function(){
-                                    $('#progress .bar').css({'background':'none'});
+                                    //$('#progress .bar').css({'width':'0%'});
+                                    $('#progress .bar').hide();
                                 }, 1000);
+
                             },
                             progressall: function (e, data) {
                                 var progress = parseInt(data.loaded / data.total * 100, 10);
