@@ -458,3 +458,12 @@ CREATE TABLE `similar_data` (
 ) ENGINE=InnoDB AUTO_INCREMENT=948 DEFAULT CHARSET=utf8;
 
 
+CREATE TABLE IF NOT EXISTS `reports` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(50) NOT NULL,
+  `body` text NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=2 ;
+
+INSERT INTO `reports` (`id`, `name`, `body`) VALUES
+(1, 'Assess', '<h1>eCommerce Report Prepared for #customer name#</h1>\n#date#<br />\n<h2>Overview</h2>\n<p>The Content Analytics eCommerce Product Report provides you with detailed insight into:</p>\n<ul>\n• On-site content marketing effectiveness for selected products and product categories<br />\n• Pricing competitiveness<br />\n• Product selection vis a vis competitors on a category by category and best-seller basis<br />\n<p>No more investing time and effort to optimize your product content only to have visitors bounce because your prices\naren’t competitive. Understand how your product catalog compares so you can offer the best selection possible.</p>\n<p>Additional reports are available for Departments & Categories, Home Pages, and selected Brands.</p>\n<b>On-site content marketing effectiveness</b><br />\nFocus on products and pages most in need of content optimization using detailed analysis of duplicate content, SEO\nkeyword density, and product description length<br /><br />\n<b>Pricing competitiveness</b><br />\nPrice is one of the main reasons that users bounce off eCommerce sites. With our price analysis you can ensure your\nproducts are priced neither too high--nor too low.<br /><br />\n<b>Product selection</b><br />\nCompeting in a given category? We monitor competitor sites so you can ensure you carry the proper mix of products in\na given category, especially those products that are best-sellers on other sites.<br /><br />');
