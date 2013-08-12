@@ -1126,10 +1126,11 @@ class System extends MY_Controller {
     }
 
     public function system_reports_get_all() {
+        echo 'as';
+        die();
         $this->load->model('reports_model');
         $response['data'] = $this->reports_model->get_all_report_names();
-        //$this->output->set_content_type('application/json')->set_output(json_encode($response));
-        $this->output->set_content_type('application/json')->set_output('{"data":[{"id":"8","name":"Assess"}]}');
+        $this->output->set_content_type('application/json')->set_output(json_encode($response));
     }
 
     public function system_reports_get_body() {
