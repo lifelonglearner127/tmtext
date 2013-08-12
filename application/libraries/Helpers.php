@@ -289,8 +289,66 @@ class Helpers {
     }
     // -- FILTER  OUT SUBSETS (END)
     // die(var_dump($log));
+       return $res_stack;
+  }
+  
+  public function measure_analyzer_start_v2_product_name($product_name,$clean_t) { // !!! NEW ONE !!!
+    $product_name = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $product_name);
+    $clean_t = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $clean_t);
+    // $clean_t = trim(str_replace('.', ' ', $clean_t));
+    $text = $clean_t;
+
+    // ---- convert to array (start)
+    
+    $words = explode(" ", $text); // !!! LOOP TARGET !!!
+    $orig = explode(" ", $clean_t);
+    $overall_words_count = count($words);
+    // ---- convert to array (end)
+
+    $res_stack = array();
+    // $log = array();
+    foreach($words as $key =>  $val){
+            // --- CHECK OUT STRING DUPLICATIONS
+            $r = $this->keywords_appearence_count(strtolower($text), strtolower($val));
+            if($r > 1 && preg_match('/'.strtolower($val).'/',strtolower($product_name )) && strlen($val)>1) {
+                $mid = array(
+                    "ph" => trim($val),
+                    "count" => $r,
+                    "ph_length" => strlen($val)  
+                );
+                $res_stack[] = $mid;
+            }
+    }
+    //echo "<pre>";
+   // print_r($res_stack);
+    // --- sort final result (start)
+    $ph_length = array();
+    foreach ($res_stack as $key => $row) {
+        // $ph_length[$key] = $row['ph_length'];
+        $ph_length[$key] = $row['count'];
+    }
+    array_multisort($ph_length, SORT_DESC, $res_stack);
+    // --- sort final result (end)
+  
+    $res_stack = array_unique($res_stack, SORT_REGULAR);
+    foreach($res_stack as $key => $val){
+        foreach($res_stack as $key1 => $val1){
+            if($key!=$key1){
+                if($val['ph']==$val1['ph']){
+                    unset($res_stack[$key1]);
+                }
+            }
+        }
+    }
     return $res_stack;
   }
+  
+  
+  
+  
+  
+  
+  
 
   public function measure_analyzer_start($clean_t) {
     // --- analyzer config (start)
