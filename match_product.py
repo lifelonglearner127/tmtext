@@ -171,6 +171,9 @@ def match2(products1, products2, nrprod, threshold=0.5):
 
 # third approach: check common ngrams (is order important?)
 
+param = 0.65
+method = 1
+
 results = 0
 site1 = sys.argv[1]
 category1 = sys.argv[2]
@@ -183,9 +186,6 @@ if (len(sys.argv) >= 7):
 
 products1 = get_products("sample_output/" + site1 + "_bestsellers_dept.jl", category1)
 products2 = get_products("sample_output/" + site2 + "_bestsellers_dept.jl", category2)
-
-param = 0.65
-method = 1
 
 for nrprod in range(len(products1)):
 	if method == 1:
