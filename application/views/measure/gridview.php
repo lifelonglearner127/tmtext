@@ -1,5 +1,5 @@
 <?php
-//if(count($same_pr) === 3) { 
+//if(count($same_pr) === 3) {
 //$selectedUrl = $_POST['selectedUrl'];
 //echo $selectedUrl;
 ?>
@@ -9,18 +9,18 @@
 $min_price = 1000000000;
 $j = 0;
 foreach ($same_pr as $ks => $vs) {
-   
+
     foreach ($vs['three_last_prices'] as $key => $last_price) {
-        
+
         $price = sprintf("%01.2f", floatval($last_price->price));
         if ($price < $min_price) {
             $min_price = $price;
         }
-        
-       
+
+
     }
-    
- 
+
+
 }
 
 foreach ($same_pr as $ks => $vs) {
@@ -29,15 +29,15 @@ foreach ($same_pr as $ks => $vs) {
          if(count($vs['three_last_prices'])>1){
          foreach ($vs['three_last_prices'] as $key1 => $last_price1) {
              if(($key1!=$key) && (date("m/d/Y", strtotime($last_price->created))=== date("m/d/Y", strtotime($last_price1->created)))){
-                 
+
                  unset($vs['three_last_prices'][$key1]);
-                
+
              }
-             
+
          }
          }
     }
-                
+
     $customer = $vs['customer'];
     $class_left = "";
     if ($i % 3 != 1)
@@ -72,7 +72,7 @@ foreach ($same_pr as $ks => $vs) {
     if ($i % 3 == 1) {
         echo '<div class="wrapper">';
     }
-    //Max    
+    //Max
     ?>
 
 
@@ -128,7 +128,7 @@ foreach ($same_pr as $ks => $vs) {
                                                 echo "class='not_min'";
                                             }
                                             ?> class="product_price"><?php echo '$' . sprintf("%01.2f", floatval($last_price->price)); ?></span></p>
-                                    </td> 
+                                    </td>
                                     <?php
                                 }
                                 ?>
@@ -176,8 +176,8 @@ foreach ($same_pr as $ks => $vs) {
                         <p  class='short_desc_con'><?php echo $s_product_description; ?></p>
                         <?php
                     }
-                    
- elseif($s_product_long_desc_count > 0){
+
+ if($s_product_long_desc_count > 0){
                         ?>
 
                         <span class='analysis_content_head'><img style="height: 9px;width: 9px;background: rgb(207, 207, 207);padding: 2px;margin-top: -3px;margin-right: 4px;" src="<?php echo base_url() ?>/img/arrow-down.png"><?php
@@ -219,7 +219,7 @@ foreach ($same_pr as $ks => $vs) {
                        ?>
                         <span class='analysis_content_head'>Description: </span>
                         <span>No description on site</span>
-                        
+
                        <?php
                     }
                     ?>
@@ -262,7 +262,7 @@ foreach ($same_pr as $ks => $vs) {
                              <ul>
                                 <li><a href='javascript:void()'>Attributes used (<span class='gr_attr_count'>0</span>):</a></li>
                                 <li class='gr_attr_con'>no attributes</li>
-                            </ul> 
+                            </ul>
                         </div>-->
         </div>
         <?php if ($i % 3 == 0) { ?>
@@ -287,13 +287,13 @@ if (($i - 1) % 3 != 0) {
 
 <script type="text/javascript">
 group_id = "<?php echo $same_pr[0]['imported_data_id']; ?>";
-                                                
+
 
 
 
 </script>
 <script type='text/javascript'>
-    
+
     function inArray(needle, haystack) {
     var length = haystack.length;
     for(var i = 0; i < length; i++) {
@@ -308,11 +308,11 @@ group_id = "<?php echo $same_pr[0]['imported_data_id']; ?>";
     function gridsCustomersListLoader() {
 
         for (var i = 1; i <= count + 1; i++) {
-            
+
             //ddData_grids[i]['ddData_grid']=[];
             ddData_grids[i] = $("#grid_se_section_" + i + " input[type='hidden'][name='dd_customer']").val();
             if($("#grid_se_section_" + i + " input[type='hidden'][name='dd_customer']").val()!=undefined){
-                                
+
                 customers.push($("#grid_se_section_" + i + " input[type='hidden'][name='dd_customer']").val());
             }
         }
@@ -323,14 +323,14 @@ group_id = "<?php echo $same_pr[0]['imported_data_id']; ?>";
             //console.log(c_data);
             var j=0;
             for (var key in c_data){
-                 
+
                if(inArray(c_data[key].value,customers)){
                   //console.log(c_data[key].value);
-                  newc_data[j]=c_data[key]; 
+                  newc_data[j]=c_data[key];
                   j++;
                }
             };
-         
+
             for (var i = 1; i <= count; i++) {
                     var grid1 = $('#an_grd_view_drop_gr' + i).msDropDown({byJson: {data: newc_data}}).data("dd");
                     if (grid1 != undefined) {

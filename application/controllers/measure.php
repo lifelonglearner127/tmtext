@@ -336,7 +336,7 @@ class Measure extends MY_Controller {
         $this->load->model('webshoots_model');
         $week = $this->input->post('week');
         $year = $this->input->post('year');
-        $data['img_av'] = $this->webshoots_model->getWeekAvailableScreens($week, $year); 
+        $data['img_av'] = $this->webshoots_model->getWeekAvailableScreens($week, $year);
         $this->load->view('measure/get_screenshots_slider_data', $data);
     }
 
@@ -615,7 +615,7 @@ class Measure extends MY_Controller {
         $this->imported_data_parsed_model->similiarity_cron();
     }
     public function report_mismatch(){
-        
+
         $group_id=$this->input->post('group_id');
         $im_data_id=$this->input->post('im_data_id');
         $this->load->model('similar_data_model');
@@ -623,7 +623,7 @@ class Measure extends MY_Controller {
         $this->output->set_content_type('application/json')->set_output(json_encode("aaaaaaaa"));
 
     }
-    
+
     function get_base_url($url)
     {
     $chars = preg_split('//', $url, -1, PREG_SPLIT_NO_EMPTY);
@@ -644,9 +644,9 @@ class Measure extends MY_Controller {
            $pos = $key; break;
         }
     }
- 
+
 $main_base = substr($url, 0, $pos);
- 
+
 return $main_base;
 }
      public function gridview() {
@@ -698,7 +698,7 @@ return $main_base;
             if(empty($same_pr) && !isset($data_import['parsed_attributes']['model'])){
             $data['mismatch_button']=true;
             if (!$this->similar_product_groups_model->checkIfgroupExists($im_data_id)) {
-              
+
                 if (!isset($data_import['parsed_attributes'])) {
 
                     $same_pr = $this->imported_data_parsed_model->getByProductName($im_data_id, $data_import['product_name'], '', $strict);
@@ -786,7 +786,7 @@ return $main_base;
 //            foreach ($same_pr as $key => $value) {
 //                if (!empty($value['description'])) {
 //                    $compare_description[$key]['short'] = $value['description'];
-//                } 
+//                }
 //                if (!empty($value['long_description'])) {
 //                    $compare_description[$key]['long'] = $value['long_description'];
 //                }
@@ -829,13 +829,13 @@ return $main_base;
 //			if(count($same_pr) === 3) {
             foreach ($same_pr as $ks => $vs) {
                 if($vs['customer']==''){
-                $this->load->model('sites_model'); 
+                $this->load->model('sites_model');
                    if($this->get_base_url($vs['url'])=='http://shop.nordstrom.com'){
                       $same_pr[$ks]['customer']='nordstrom' ;
                    }else{
                    $same_pr[$ks]['customer']=  strtolower($this->sites_model->get_name_by_url($this->get_base_url($vs['url'])));
                    }
-                   
+
                    }
                 $same_pr[$ks]['seo']['short'] = $this->helpers->measure_analyzer_start_v2(preg_replace('/\s+/', ' ', $vs['description']));
                 $same_pr[$ks]['seo']['long'] = $this->helpers->measure_analyzer_start_v2(preg_replace('/\s+/', ' ', $vs['long_description']));
@@ -851,12 +851,12 @@ return $main_base;
                 }else{
                     $same_pr[$ks]['three_last_prices'] = array();
                 }
-                                   
+
             }
 
 
 
-            //     Max  
+            //     Max
             if (count($same_pr) != 1) {
                 foreach ($same_pr as $ks => $vs) {
                     $maxshort = 0;
@@ -909,7 +909,7 @@ return $main_base;
                     }else{
                         $vs['short_original']= "Insufficient data";
                     }
-                   
+
                     if($maxshort!='0'){
                         $vs['long_original'] =  round($maxlong, 2) . '%';
                     }else{
@@ -929,7 +929,7 @@ return $main_base;
                 $same_pr[0]['long_original'] = 'Insufficient data';
                 $same_pr[0]['short_original'] = 'Insufficient data';
             }
-            //   Max     
+            //   Max
 //Max
             $selectedUrl = $this->input->post('selectedUrl');
             foreach ($same_pr as $ks => $vs) {
