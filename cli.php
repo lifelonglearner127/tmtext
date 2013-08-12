@@ -24,21 +24,5 @@ define('CMD', 1);
 unset($argv[0]); // but not the first one, which is the file that is executed (cli.php)
 $_SERVER['QUERY_STRING'] =  $_SERVER['PATH_INFO'] = $_SERVER['REQUEST_URI'] = '/' . implode('/', $argv) . '/';
 
-$STDOUT = fopen("php://stdout", "w");
-fwrite($STDOUT, "Output #1.");
-fclose($STDOUT);
-
-print_r($argv);
-print_r(arguments($argv));
-
-function arguments ( $args )
-{
-    while ( $arg = array_shift($args) ){
-        var_dump($arg);
-    }
-}
-
-
-
 
 include_once('index.php');
