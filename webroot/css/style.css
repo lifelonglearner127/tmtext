@@ -1,3 +1,10 @@
+.label_custom_regular {
+    background-color: transparent !important;
+    color: #000 !important;
+}
+.span_lh_30 {
+    line-height: 30px;
+}
 #loader_emailsend_modal .modal-body p {
     color: #999999;
     font-size: 24px;

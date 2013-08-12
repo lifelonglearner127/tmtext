@@ -103,3 +103,25 @@
 	<?php } ?>
 </ul>
 
+<script type="text/javascript">
+	$(document).ready(function() {
+		// ---- timeline tooltips (start)
+		$("#timeline_ctr .page:not(.disabled) a:not(.have_screen, .current_week, .mixed_screen)").tooltip({
+			placement: 'bottom',
+			title: 'regular week / no screenshots'
+		});
+		$("#timeline_ctr .page:not(.disabled) a.current_week:not(.have_screen, .mixed_screen)").tooltip({
+			placement: 'bottom',
+			title: 'current week / no screenshots'
+		});
+		$("#timeline_ctr .page:not(.disabled) a.have_screen:not(.current_week, .mixed_screen)").tooltip({
+			placement: 'bottom',
+			title: 'regular week / available screenshots'
+		});
+		$("#timeline_ctr .page:not(.disabled) a.mixed_screen").tooltip({
+			placement: 'bottom',
+			title: 'current week / available screenshots'
+		});
+		// ---- timeline tooltips (end)
+	});
+</script>

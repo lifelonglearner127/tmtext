@@ -1,7 +1,7 @@
 <div class='span12 head_section'>
-	<p class='head_line1'>Home page reports are generated weekly. <a onclick="configureEmailReportsModal()" href="javascript:void(0)">Configure email reports.</a> <a class='btn btn-primary' onclick="viewRecipientsList()" href='javascript:void(0)'><i class='icon-tasks icon-white'></i>&nbsp;Recipients List</a> <a class='btn btn-success' onclick="showTimelineTips()" href='javascript:void(0)'><i class='icon-question-sign icon-white'></i>&nbsp;Timeline Tips</a></p>
+	<p class='head_line1'>Home page reports are generated weekly. <a onclick="viewRecipientsList()" href='javascript:void(0)'>Configure Recipients</a></p>
 	<div class='head_line_2'>
-		<div class="span2">View Reports for:</div>
+		<div class="span2 span_lh_30">View Reports for:</div>
 		<div class="span2 w_100 ml_disable">
 			<select id='year_s' class='year_s' onchange="changeHomePageYersHandler()">
 				<?php for($i = 1980; $i <= 2013; $i++) { ?>
@@ -10,7 +10,7 @@
 				<?php } ?>
 			</select>
 		</div>
-		<div class="span1 ml_disable">week:</div>
+		<div class="span1 ml_disable span_lh_30">week:</div>
 		<div class='span6 ml_disable'>
 			<div class="pagination">
 				<ul id='timeline_ctr'>
@@ -165,7 +165,7 @@
 						    	<?php } ?>
 						    </ul>
 					    </div>
-					    <span id="crawl_date_<?php echo $v; ?>" class="label label-info">date</span>
+					    <span id="crawl_date_<?php echo $v; ?>" class="label label-info label_custom_regular">date</span>
 				    <?php } ?>
 					<div class='art_hp_item'>
 						<div id="art_img_<?php echo $v; ?>" class='art_img'>&nbsp;</div>

@@ -116,10 +116,6 @@ function sendEmailScreensToAll() {
 	});
 }
 
-function showTimelineTips() {
-	$("#timeline_tips_modal").modal('show');
-}
-
 function sendRecipientReport(id, email, day) {
 	var send_data = {
 		id: id,

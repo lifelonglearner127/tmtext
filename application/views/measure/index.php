@@ -11,9 +11,9 @@
     	<div class="row-fluid home_pages">
 
     		<div class='span12 head_section'>
-	    		<p class='head_line1'>Home page reports are generated weekly. <a class='btn btn-primary' onclick="viewRecipientsList()" href='javascript:void(0)'><i class='icon-tasks icon-white'></i>&nbsp;Configure Recipients</a> <a class='btn btn-success' onclick="showTimelineTips()" href='javascript:void(0)'><i class='icon-question-sign icon-white'></i>&nbsp;Timeline Tips</a></p>
+	    		<p class='head_line1'>Home page reports are generated weekly. <a onclick="viewRecipientsList()" href='javascript:void(0)'>Configure Recipients</a></p>
 				<div class='head_line_2'>
-					<div class="span2">View Reports for:</div>
+					<div class="span2 span_lh_30">View Reports for:</div>
 					<div class="span2 w_100 ml_disable">
 						<select id='year_s' class='year_s' onchange="changeHomePageYersHandler()">
 							<?php for($i = 1980; $i <= $c_year; $i++) { ?>
@@ -22,7 +22,7 @@
 							<?php } ?>
 						</select>
 					</div>
-					<div class="span1 ml_disable">week:</div>
+					<div class="span1 ml_disable span_lh_30">week:</div>
 					<div class='span6 ml_disable'>
 						<div class="pagination">
 							<ul id='timeline_ctr'>
@@ -165,7 +165,7 @@
 									    	<?php } ?>
 									    </ul>
 								    </div>
-								    <span id="crawl_date_<?php echo $v; ?>" class="label label-info">date</span>
+								    <span id="crawl_date_<?php echo $v; ?>" class="label label-info label_custom_regular">date</span>
 							    <?php } ?>
 								<div class='art_hp_item'>
 									<div id="art_img_<?php echo $v; ?>" class='art_img'>&nbsp;</div>
@@ -287,36 +287,6 @@
 	</div>
 </div>
 
-<div class="modal hide fade ci_hp_modals crawl_launch_panel" id='timeline_tips_modal'>
-	<div class="modal-header">
-		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-		<h3>Timeline tips</h3>
-	</div>
-	<div class="modal-body">
-		<div class='cl_cp_crawl_modal'>
-			<div class='timelinetips_line'>
-				<img src="<?php echo base_url();?>img/timeline_tip_rweek.jpg">
-				<p>- regular week</p>
-			</div>
-			<div class='timelinetips_line'>
-				<img src="<?php echo base_url();?>img/timeline_tip_cweek.jpg">
-				<p>- current week</p>
-			</div>
-			<div class='timelinetips_line'>
-				<img src="<?php echo base_url();?>img/timeline_tip_fweek.jpg">
-				<p>- week which have at least one available screenshot</p>
-			</div>
-			<div class='timelinetips_line'>
-				<img src="<?php echo base_url();?>img/timeline_tip_mweek.jpg">
-				<p>- week has available screenshot(s) and week is a current in a same time</p>
-			</div>
-		</div>
-	</div>
-	<div class="modal-footer">
-		<a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
-	</div>
-</div>
-
 <!-- bootstrap lightbox holder (start) -->
 <div id="preview_screenshot_modal" class='lightbox hide fade' tabindex="-1" role="dialog" aria-hidden="true">
 	<div class='lightbox-content'>
@@ -354,6 +324,26 @@
 		// ---- ATTEMPT TO GET SCREENSHOT (END)
 	}
 	$(document).ready(function() {
+		
+		// ---- timeline tooltips (start)
+		$("#timeline_ctr .page:not(.disabled) a:not(.have_screen, .current_week, .mixed_screen)").tooltip({
+			placement: 'bottom',
+			title: 'regular week / no screenshots'
+		});
+		$("#timeline_ctr .page:not(.disabled) a.current_week:not(.have_screen, .mixed_screen)").tooltip({
+			placement: 'bottom',
+			title: 'current week / no screenshots'
+		});
+		$("#timeline_ctr .page:not(.disabled) a.have_screen:not(.current_week, .mixed_screen)").tooltip({
+			placement: 'bottom',
+			title: 'regular week / available screenshots'
+		});
+		$("#timeline_ctr .page:not(.disabled) a.mixed_screen").tooltip({
+			placement: 'bottom',
+			title: 'current week / available screenshots'
+		});
+		// ---- timeline tooltips (end)
+
 		// ---- UI tooltips (start)
 		$(".disabled-view-all").tooltip({
 			placement: 'bottom',
