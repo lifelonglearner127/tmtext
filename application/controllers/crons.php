@@ -160,7 +160,7 @@ class Crons extends MY_Controller {
     }
 
     public function do_stats(){
-        $tmp_dir = sys_get_temp_dir();
+        $tmp_dir = '/tmp/';
         if ( file_exists($tmp_dir.".locked") )
         { exit;}
         touch($tmp_dir.".locked");
