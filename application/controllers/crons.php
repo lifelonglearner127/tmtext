@@ -158,7 +158,6 @@ class Crons extends MY_Controller {
     }
 
     public function do_stats(){
-        die('sss');
         $this->load->model('batches_model');
         $this->load->model('research_data_model');
         $this->load->model('statistics_model');
