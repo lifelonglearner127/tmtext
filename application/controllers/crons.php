@@ -7,7 +7,8 @@ class Crons extends MY_Controller {
   		$this->load->library('ion_auth');
 		$this->ion_auth->add_auth_rules(array(
   			'index' => true,
-  			'screenscron' => true
+  			'screenscron' => true,
+            'do_stats' => true
   		));
  	}
 
