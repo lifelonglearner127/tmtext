@@ -97,7 +97,7 @@ class Crons extends MY_Controller {
             $res = array(
                 "s" => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_s&format=$format",
                 'l' => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_l&format=$format"
-            );
+            );brary(array('session','ion_auth'));
             $crawl_s = $this->upload_record_webshoot($res['s'], $url."_small");
             $crawl_l = $this->upload_record_webshoot($res['l'], $url."_big");
             $result = array(
@@ -186,6 +186,7 @@ class Crons extends MY_Controller {
     }
 
     public function hello(){
+        print_r('aaa');
         echo 'Hello world!';
     }
 

@@ -23,6 +23,5 @@ define('CMD', 1);
 // manually set the URI path based on command line arguments.
 unset($argv[0]); // but not the first one, which is the file that is executed (cli.php)
 $_SERVER['QUERY_STRING'] =  $_SERVER['PATH_INFO'] = $_SERVER['REQUEST_URI'] = '/' . implode('/', $argv) . '/';
-print_r($_SERVER['QUERY_STRING']);
 
 include_once('index.php');
