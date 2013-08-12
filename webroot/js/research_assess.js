@@ -157,8 +157,8 @@ $(function () {
         modal: true,
         resizable: false,
         buttons: {
-            'Cancel': {
-                text: 'Cancel',
+            'Close': {
+                text: 'Close',
                 click: function() {
                     $(this).dialog('close');
                 }

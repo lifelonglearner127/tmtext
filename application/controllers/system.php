@@ -1121,4 +1121,42 @@ class System extends MY_Controller {
         return $output;
     }
 
+    public function system_reports() {
+        $this->render();
+    }
+
+    public function system_reports_get_all() {
+        $this->load->model('reports_model');
+        $response['data'] = $this->reports_model->get_all_report_names();
+        $this->output->set_content_type('application/json')->set_output(json_encode($response));
+    }
+
+    public function system_reports_get_body() {
+        $this->load->model('reports_model');
+        $id = $this->input->get('id');
+        $response['data'] = $this->reports_model->get_by_id($id);
+        $this->output->set_content_type('application/json')->set_output(json_encode($response));
+    }
+
+    public function system_reports_create() {
+        $this->load->model('reports_model');
+        $name = $this->input->post('name');
+        $id = $this->reports_model->insert($name);
+        $response['id'] = $id;
+        $this->output->set_content_type('application/json')->set_output(json_encode($response));
+    }
+
+    public function system_reports_delete() {
+        $this->load->model('reports_model');
+        $id = $this->input->post('id');
+        $this->reports_model->delete($id);
+    }
+
+    public function system_reports_update() {
+        $this->load->model('reports_model');
+        $id = $this->input->post('id');
+        $body = $this->input->post('body');
+        $response['success'] = $this->reports_model->update($id, $body);
+        $this->output->set_content_type('application/json')->set_output(json_encode($response));
+    }
 }

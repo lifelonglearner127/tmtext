@@ -827,6 +827,11 @@ class Research extends MY_Controller {
         $own_logo = $img_path."content-analytics.png";
         $customer_logo = $img_path.$customer->image_url;
 
+        $this->load->model('reports_model');
+        $report_cover = $this->reports_model->get_by_name('Assess')->body;
+        $report_cover = str_replace('#date#', date('F j, Y'), $report_cover);
+        $report_cover = str_replace('#customer name#', $customer->name, $report_cover);
+
         $html = '';
 
         $build_assess_params = new stdClass();
@@ -854,6 +859,11 @@ class Research extends MY_Controller {
         $header = $header.'</tr>';
         $header = $header.'</table>';
         $header = $header.'<hr color="#C31233" height="10">';
+
+        $html = $html.$header;
+        $html = $html.$report_cover;
+        $html = $html.'<pagebreak />';
+
 
         $html = $html.$header;
 
