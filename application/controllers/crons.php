@@ -178,6 +178,5 @@ class Crons extends MY_Controller {
                    echo $batch->title." - batch doesn't have statistic data\n";
                 }
         }
-        echo "Cron Job Finished";
     }
 }
