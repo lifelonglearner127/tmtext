@@ -142,6 +142,13 @@ function switchToGridView() {
         $(".preloader_grids_box").hide();
         $(".grid_se_section .c_content").show();
         fixGridHeights();
+        $(".grid_se_section .c").each(function(){
+            if($(".grid_se_section .c").height()>800){
+            $(".grid_se_section .c").css('height','800');    
+            $(".grid_se_section .c").css('overflow-y','auto');
+             $(".grid_se_section .c").css('overflow-x','hidden');
+            }
+        });
         // gridsCustomersListLoader();
     });
 
@@ -649,7 +656,6 @@ function keywordsAnalizer() {
 
 $(document).ready(function() {
     //Max
-
     $(".mismatch_image").live('click', function() {
         $(this).closest('.grid_se_section').hide();
         var im_data_id = $(this).data('value');
@@ -760,7 +766,7 @@ $(document).ready(function() {
             }
         });
         if ($("#batchess").val() !== '0') {
-             console.log('mtnumaaaaaa');
+             
             //alert($("#batchess").val());
             show_from_butches();
             $('#products li:eq(0)').css({'background': '#CAEAFF'});
@@ -846,4 +852,5 @@ function fixGridHeights() {
             }
         });
     }
+    
 }

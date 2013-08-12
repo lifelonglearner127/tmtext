@@ -310,7 +310,7 @@ class Helpers {
     foreach($words as $key =>  $val){
             // --- CHECK OUT STRING DUPLICATIONS
             $r = $this->keywords_appearence_count(strtolower($text), strtolower($val));
-            if($r > 1 && preg_match('/'.strtolower($val).'/',strtolower($product_name )) && strlen($val)>1) {
+            if($r > 1 && preg_match('/'.strtolower($val).'/',strtolower($product_name )) && strlen($val)>2) {
                 $mid = array(
                     "ph" => trim($val),
                     "count" => $r,
@@ -334,7 +334,7 @@ class Helpers {
     foreach($res_stack as $key => $val){
         foreach($res_stack as $key1 => $val1){
             if($key!=$key1){
-                if($val['ph']==$val1['ph']){
+                if(strtolower($val['ph'])==strtolower($val1['ph'])){
                     unset($res_stack[$key1]);
                 }
             }

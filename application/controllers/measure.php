@@ -644,8 +644,11 @@ class Measure extends MY_Controller {
            $pos = $key; break;
         }
     }
-
-$main_base = substr($url, 0, $pos);
+if(preg_match('/www/',$url)){
+$main_base = substr($url, 11, $pos-11);
+}else{
+   $main_base = substr($url, 7, $pos-7); 
+}
 
 return $main_base;
 }
@@ -833,6 +836,8 @@ return $main_base;
                    if($this->get_base_url($vs['url'])=='http://shop.nordstrom.com'){
                       $same_pr[$ks]['customer']='nordstrom' ;
                    }else{
+                       //echo $this->get_base_url($vs['url']);
+                       //echo 'bbb'.strtolower($this->sites_model->get_name_by_url($this->get_base_url($vs['url']))).'aaaaaaaaa';
                    $same_pr[$ks]['customer']=  strtolower($this->sites_model->get_name_by_url($this->get_base_url($vs['url'])));
                    }
 
