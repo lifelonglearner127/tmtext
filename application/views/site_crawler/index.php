@@ -57,14 +57,14 @@
 				<button id="add_url_list" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Add</button>
 				<button id="add_list_delete" class="btn new_btn btn-danger mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
 			</div>
-			<h3 class="span3">Current list: <br/><small></small></h3>
+			<h3 class="span3 current_list_title">Current list: <br/><small nowrap></small></h3>
             <input type="text" class="span4 pull-left mt_15" name="search_crawl_data" >
             <button id="apply_search_data" class="btn new_btn btn-success mt_15 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Apply</button>
             <button id="clear_search_data" class="btn new_btn btn-success mt_15 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Clear</button>
 			<div class="row-fluid mt_5">
 				<div class="search_area uneditable-input span10" style="cursor: text; width: 765px; height: 250px; overflow : auto;" id="Current_List">
 				<ul>
-					<lh><span>Status</span><span>Last Crawled</span><span>Category</span><span>URL</span></lh>
+					<lh><span>ID</span><span>Status</span><span>Last Crawled</span><span>Category</span><span>URL</span></lh>
 				</ul>
 				</div>
 				<button id="current_list_delete" class="btn new_btn btn-danger mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
@@ -106,8 +106,13 @@ function loadCurrentList(url){
   	  		} else {
   	  			updated = node.updated;
   	  		}
-            $("h3 small").html(data.total + ' Total -- '+ data.new+ ' New');
-			$('#Current_List ul').append("<li id=\"id_"+node.id+"\"><span>"+node.status+"</span><span>"+updated+"</span><span>"+category+"</span><span class=\"url ellipsis\">"+node.url+"</span></li>");
+            if(node.imported_data_id == null){
+                imported_data_id = '';
+            }else{
+                imported_data_id = node.imported_data_id;
+            }
+            $("h3 small").html(data.total + ' items Total -- '+ data.new+ ' New');
+			$('#Current_List ul').append("<li id=\"id_"+node.id+"\"><span>"+imported_data_id+"</span><span>"+node.status+"</span><span>"+updated+"</span><span>"+category+"</span><span class=\"url ellipsis\">"+node.url+"</span></li>");
 		});
 
   		$('#Current_List_Pager').html(data.pager);

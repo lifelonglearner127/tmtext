@@ -96,8 +96,8 @@
 						</div>
 					</div>
 					<div id="screens_images_slider_wrap" class='span2'>
-					<?php if($img_av !== false) { ?>
-						<button onclick='openScreensModalSlider()' class='btn btn-primary'><i class='icon-eye-open icon-white'></i>&nbsp;View All</button>
+					<?php if(count($img_av) !== 0) { ?>
+						<button onclick='openScreensModalSlider()' class='btn btn-primary enabled-view-all'><i class='icon-eye-open icon-white'></i>&nbsp;View All</button>
 						<div class="modal hide fade screens_modal_slider" id='screens_modal_slider'>
 							<div class="modal-body">
 								<ul id='screens_slider'>
@@ -108,7 +108,7 @@
 							</div>
 						</div>
 					<?php } else { ?>
-						<button class='btn btn-primary disabled'><i class='icon-eye-open icon-white'></i>&nbsp;View All</button>
+						<button class='btn btn-primary disabled-view-all disabled'><i class='icon-eye-open icon-white'></i>&nbsp;View All</button>
 					<?php } ?>
 					</div>
 				</div>
@@ -355,6 +355,10 @@
 	}
 	$(document).ready(function() {
 		// ---- UI tooltips (start)
+		$(".disabled-view-all").tooltip({
+			placement: 'bottom',
+			title: 'No images on current/selected week'
+		});
 		$(".btn-rec-ind-send").tooltip({
 			placement: 'bottom',
 			title: 'Send Report'
