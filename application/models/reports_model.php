@@ -57,6 +57,6 @@ class Reports_model extends CI_Model {
             ->limit(1)
             ->get($this->tables['reports']);
 
-        return $query->result()[0];
+        return $query->result();
     }
 }
