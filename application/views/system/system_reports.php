@@ -73,7 +73,6 @@
 
         $('#system_reports_preview').click(function() {
             var html_body = $('#system_reports_body').val().trim();
-            console.log(html_body);
             $('#system_reports_body_preview').html(html_body);
             $('#system_reports_pnl_preview').show();
             $('#system_reports_pnl_edit').hide();
@@ -96,7 +95,6 @@
                 'body' : body
             };
             $.post(base_url + 'index.php/system/system_reports_update', data, function(data){
-                console.log(data);
             });
         });
 
@@ -119,7 +117,6 @@
                 'id' : id
             };
             $.get(base_url + 'index.php/system/system_reports_get_body', data, function(data){
-                console.log(data.data);
                 var body = data.data[0].body;
                 $('#system_reports_body').val(body);
                 $('#system_reports_body').focus();
