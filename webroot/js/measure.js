@@ -142,7 +142,7 @@ function switchToGridView() {
         $(".preloader_grids_box").hide();
         $(".grid_se_section .c_content").show();
         fixGridHeights();
-        $(".grid_se_section .for_scroll").each(function() {
+        $(".grid_se_section .c_content").each(function() {
             if ($(".grid_se_section .c_content").height() > 800) {
                 $(".grid_se_section .c_content").css('height', '800');
                 $(".grid_se_section .c_content").css('overflow-y', 'auto');
