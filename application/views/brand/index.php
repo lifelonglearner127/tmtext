@@ -43,12 +43,12 @@
     </div>
 </div>
 <div class="row-fluid span12 mt_10">
-    <div class="span3">Number of Result</div>
+    <div class="span3">Number of Results</div>
     <div class="span4">5,932</div>
     <div class="span4">311</div>
 </div>
 <div class="row-fluid span12 mt_10">
-    <div class="span3">Number of Review</div>
+    <div class="span3">Number of Reviews</div>
     <div class="span4">17</div>
     <div class="span4">4,577</div>
 </div>
@@ -58,7 +58,7 @@
     <div class="span4">4 Stars</div>
 </div>
 <div class="row-fluid span12 mt_10">
-    <div class="span3">Average number of Review per item</div>
+    <div class="span3">Avg Reviews Per Item</div>
     <div class="span4">457</div>
     <div class="span4">218</div>
 </div>
@@ -80,12 +80,12 @@
     </div>
 </div>
 <div class="row-fluid span12 mt_10">
-    <div class="span3">Best-Sellers -Avg. # of Review</div>
+    <div class="span3">Best Sellers - Avg # of Reviews</div>
     <div class="span4">193</div>
     <div class="span4">467</div>
 </div>
 <div class="row-fluid span12 mt_10">
-    <div class="span3">Best-Sellers -Avg review</div>
+    <div class="span3">Best Sellers - Avg Review</div>
     <div class="span4">4,5 Stars</div>
     <div class="span4">3,5 Stars</div>
 </div>

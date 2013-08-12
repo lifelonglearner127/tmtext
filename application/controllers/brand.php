@@ -33,7 +33,7 @@ class Brand extends MY_Controller {
             if(count($customers) == 0){
                 $customer_list = array();
             }else{
-                $customer_list = array(''=>'Select customer');
+                $customer_list = array(''=>'Select Site');
             }
             foreach($customers as $customer){
                 array_push($customer_list, $customer->name);
@@ -42,7 +42,7 @@ class Brand extends MY_Controller {
             if(count($customers) == 0){
                 $customers = $this->customers_model->getAll();
             }
-            $customer_list = array(''=>'Select customer');
+            $customer_list = array(''=>'Select Site');
             foreach($customers as $customer){
                 array_push($customer_list, $customer->name);
             }
