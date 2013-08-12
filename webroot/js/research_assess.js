@@ -206,6 +206,11 @@ $(function () {
 
     $('select[name="research_assess_batches"]').on("change", function() {
         var selectedBatch = $(this).find("option:selected").text();
+        if (selectedBatch == 'Select batch') {
+            $('#assess_report_download_pdf').hide();
+        } else {
+            $('#assess_report_download_pdf').show();
+        }
         $.post(base_url + 'index.php/research/filterCustomerByBatch', {
                 'batch': selectedBatch
         }, function(data){
@@ -346,7 +351,7 @@ $(function () {
             });
         } else if (table_case == 'report') {
             reportPanel(true);
-            var batch_name = $('select[name="research_assess_batches"]').find('option:selected').text()
+            var batch_name = $('select[name="research_assess_batches"]').find('option:selected').text();
             $('#assess_report_download_pdf').attr('href', base_url + 'index.php/research/assess_download_pdf?batch_name=' + batch_name);
         }
     }
@@ -425,4 +430,5 @@ $(function () {
     }
 
     hideColumns();
+    $('#assess_report_download_pdf').hide();
 });
