@@ -160,23 +160,33 @@ class Crons extends MY_Controller {
     }
 
     public function do_stats(){
-        $this->load->model('batches_model');
-        $this->load->model('research_data_model');
-        $this->load->model('statistics_model');
-        $this->statistics_model->truncate();
-        $batches = $this->batches_model->getAll();
-        foreach($batches as $batch){
-                $data = $this->research_data_model->do_stats($batch->title);
-                if(count($data) > 0){
-                    foreach($data as $obj){
-                        $this->statistics_model->insert($obj->rid, $obj->imported_data_id, $obj->batch_name,
-                            $obj->product_name, $obj->url, $obj->short_description, $obj->long_description,
-                            $obj->short_description_wc, $obj->long_description_wc,
-                            $obj->short_seo_phrases, $obj->long_seo_phrases);
+        $tmp_dir = sys_get_temp_dir().'/';
+        if ( file_exists($tmp_dir.".locked") )
+        { exit;}
+
+        touch($tmp_dir.".locked");
+        try {
+            $this->load->model('batches_model');
+            $this->load->model('research_data_model');
+            $this->load->model('statistics_model');
+            $this->statistics_model->truncate();
+            $batches = $this->batches_model->getAll();
+            foreach($batches as $batch){
+                    $data = $this->research_data_model->do_stats($batch->title);
+                    if(count($data) > 0){
+                        foreach($data as $obj){
+                            $this->statistics_model->insert($obj->rid, $obj->imported_data_id, $obj->batch_name,
+                                $obj->product_name, $obj->url, $obj->short_description, $obj->long_description,
+                                $obj->short_description_wc, $obj->long_description_wc,
+                                $obj->short_seo_phrases, $obj->long_seo_phrases);
+                        }
                     }
-                } else {
-                   echo $batch->title." - batch doesn't have statistic data\n";
-                }
+            }
+            echo "Cron Job Finished";
+        } catch (Exception $e) {
+            echo 'Ошибка',  $e->getMessage(), "\n";
+        } finally {
+            unlink($tmp_dir.".locked");
         }
     }
 }
