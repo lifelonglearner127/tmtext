@@ -1,0 +1,9 @@
+set([u'Bedding',
+     u'Clothing',
+     u'Electronics',
+     u'Entertainment',
+     u'Furniture',
+     u'Home & Garden',
+     u'Sports',
+     u'Watches',
+     u'Worldstock'])
