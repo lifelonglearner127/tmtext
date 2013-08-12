@@ -143,8 +143,8 @@ function switchToGridView() {
         $(".grid_se_section .c_content").show();
         fixGridHeights();
         $(".grid_se_section .c_content").each(function() {
-            if ($(".grid_se_section .c_content").height() > 800) {
-                $(".grid_se_section .c_content").css('height', '800');
+            if ($(".grid_se_section .c_content").height() > 700) {
+                $(".grid_se_section .c_content").css('height', '700');
                 $(".grid_se_section .c_content").css('overflow-y', 'auto');
                 $(".grid_se_section .c_content").css('overflow-x', 'hidden');
                 $(".grid_se_section .c_content .p_description").css('height','auto');
