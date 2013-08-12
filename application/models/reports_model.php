@@ -34,16 +34,12 @@ class Reports_model extends CI_Model {
     }
 
     function get_all_report_names() {
-//        $query = $this->db
-//            ->select('id, name')
-//            ->order_by("name", "asc")
-//            ->get($this->tables['reports']);
-//
-//        return $query->result();
-        return array(
-            'id' => 1,
-            'name' => 'test'
-        );
+        $query = $this->db
+            ->select('id, name')
+            ->order_by("name", "asc")
+            ->get($this->tables['reports']);
+
+        return $query->result();
     }
 
     function get_by_id($id) {
