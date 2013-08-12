@@ -150,6 +150,7 @@ class Site_Crawler extends MY_Controller {
 		$this->output->set_content_type('application/json');
 		echo json_encode(array(
             'total' => $this->crawler_list_model->countAll(false),
+			'new' => $this->crawler_list_model->countNew(false),
 			'new_urls' => $this->crawler_list_model->getAllLimit($config["per_page"], $page, false, $search_crawl_data),
 			'pager' => $this->pagination->create_links()
 		));

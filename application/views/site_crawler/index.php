@@ -57,7 +57,7 @@
 				<button id="add_url_list" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Add</button>
 				<button id="add_list_delete" class="btn new_btn btn-danger mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
 			</div>
-			<h3 class="span3">Current list: <small></small></h3>
+			<h3 class="span3">Current list: <br/><small></small></h3>
             <input type="text" class="span4 pull-left mt_15" name="search_crawl_data" >
             <button id="apply_search_data" class="btn new_btn btn-success mt_15 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Apply</button>
             <button id="clear_search_data" class="btn new_btn btn-success mt_15 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Clear</button>
@@ -106,7 +106,7 @@ function loadCurrentList(url){
   	  		} else {
   	  			updated = node.updated;
   	  		}
-            $("h3 small").html(data.total + " items");
+            $("h3 small").html(data.total + ' Total -- '+ data.new+ ' New');
 			$('#Current_List ul').append("<li id=\"id_"+node.id+"\"><span>"+node.status+"</span><span>"+updated+"</span><span>"+category+"</span><span class=\"url ellipsis\">"+node.url+"</span></li>");
 		});
 
