@@ -299,7 +299,7 @@ class Helpers {
     $text = $clean_t;
 
     // ---- convert to array (start)
-    
+    $praduct_name_words=  explode(" ", strtolower($product_name));
     $words = explode(" ", $text); // !!! LOOP TARGET !!!
     $orig = explode(" ", $clean_t);
     $overall_words_count = count($words);
@@ -310,7 +310,8 @@ class Helpers {
     foreach($words as $key =>  $val){
             // --- CHECK OUT STRING DUPLICATIONS
             $r = $this->keywords_appearence_count(strtolower($text), strtolower($val));
-            if($r > 1 && preg_match('/'.strtolower($val).'/',strtolower($product_name )) && strlen($val)>2) {
+            //if($r > 1 && preg_match('/'.strtolower($val).'/',strtolower($product_name )) && strlen($val)>2) {
+             if($r > 1 && in_array(strtolower($val),$praduct_name_words) && strlen($val)>2) {  
                 $mid = array(
                     "ph" => trim($val),
                     "count" => $r,

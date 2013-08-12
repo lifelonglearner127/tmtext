@@ -114,7 +114,7 @@ function switchToListView() {
     var status_view = $.cookie('status_view');
     if (typeof(status_view) !== 'undefined') {
         $.removeCookie('status_view', {path: '/'}); // destroy
-        $.cookie('status_view', grid_status , {expires: 7, path: '/'}); // re-create
+        $.cookie('status_view', grid_status, {expires: 7, path: '/'}); // re-create
     } else {
         $.cookie('status_view', grid_status, {expires: 7, path: '/'}); // create
     }
@@ -142,11 +142,12 @@ function switchToGridView() {
         $(".preloader_grids_box").hide();
         $(".grid_se_section .c_content").show();
         fixGridHeights();
-        $(".grid_se_section .c").each(function(){
-            if($(".grid_se_section .c").height()>800){
-            $(".grid_se_section .c").css('height','800');    
-            $(".grid_se_section .c").css('overflow-y','auto');
-             $(".grid_se_section .c").css('overflow-x','hidden');
+        $(".grid_se_section .for_scroll").each(function() {
+            if ($(".grid_se_section .c_content").height() > 800) {
+                $(".grid_se_section .c_content").css('height', '800');
+                $(".grid_se_section .c_content").css('overflow-y', 'auto');
+                $(".grid_se_section .c_content").css('overflow-x', 'hidden');
+                $(".grid_se_section .c_content .p_description").css('height','auto');
             }
         });
         // gridsCustomersListLoader();
@@ -159,10 +160,10 @@ function switchToGridView() {
     grid_status = 'grid';
     var status_view = $.cookie('status_view');
     if (typeof(status_view) !== 'undefined') {
-       $.removeCookie('status_view', {path: '/'}); // destroy
-       $.cookie('status_view', grid_status , {expires: 7, path: '/'}); // re-create
+        $.removeCookie('status_view', {path: '/'}); // destroy
+        $.cookie('status_view', grid_status, {expires: 7, path: '/'}); // re-create
     } else {
-       $.cookie('status_view', grid_status, {expires: 7, path: '/'}); // create
+        $.cookie('status_view', grid_status, {expires: 7, path: '/'}); // create
     }
 }
 //Max
@@ -660,7 +661,7 @@ $(document).ready(function() {
         $(this).closest('.grid_se_section').hide();
         var im_data_id = $(this).data('value');
         var aaa = $.post(base_url + 'index.php/measure/report_mismatch', {group_id: group_id, im_data_id: im_data_id}, 'json').done(function(data) {
-       
+
         });
     });
 
@@ -735,11 +736,11 @@ $(document).ready(function() {
             }, 300);
         }
     });
-    
+
     $("#batchess").live('change', function() {//max
-       
+
         $.post(base_url + 'index.php/research/filterCustomerByBatch', {'batch': $("#batchess").val()}, function(data) {
-            if (data !='') {
+            if (data != '') {
 
                 $("select[name='customers_list'] option").each(function() {
 
@@ -755,7 +756,7 @@ $(document).ready(function() {
                 });
             } else {
                 $("select[name='customers_list'] option").each(function() {
-                    if($(this).val() == 'All Customers'){
+                    if ($(this).val() == 'All Customers') {
                         var dropdown = $("select[name='customers_list']").msDropdown().data("dd");
                         dropdown.destroy();
                         $('#product_customers .ddcommon').remove();
@@ -766,17 +767,17 @@ $(document).ready(function() {
             }
         });
         if ($("#batchess").val() !== '0') {
-             
+
             //alert($("#batchess").val());
             show_from_butches();
             $('#products li:eq(0)').css({'background': '#CAEAFF'});
             $('#products li:eq(0)').attr('data-status', 'selected');
             $('.products_an_search').addClass('active');
             setTimeout(function() {
-                   $('#products li:eq(0)').trigger('click');
-                   
+                $('#products li:eq(0)').trigger('click');
+
             }, 500);
-            
+
         } else {
             $("#measure_product_ind_wrap").html('');
             $("#compet_area_grid").html('');
@@ -786,7 +787,7 @@ $(document).ready(function() {
             $('li.keywords_metrics_bl_res, li.keywords_metrics_bl_res ~ li, ul.less_b_margin').hide();
         }
 
-         });
+    });
 
     $('li.temp_li a').live('click', function() {
         $('li.temp_li a').each(function() {
@@ -852,5 +853,5 @@ function fixGridHeights() {
             }
         });
     }
-    
+
 }
