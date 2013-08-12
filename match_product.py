@@ -42,6 +42,7 @@ def normalize(orig_text):
 	text = orig_text
 	# other preprocessing: -Inch = "
 	text = re.sub("\-Inch", "\"", text)
+	text = re.sub("\-inch", "\"", text)
 	#! including ' as an exception keeps things like women's a single word. also doesn't find it as a word in wordnet -> too high a priority
 	# excluding it leads to women's->women (s is a stopword)
 	text = re.sub("([^\w\"/])|(u')", " ", text)
@@ -197,8 +198,8 @@ for nrprod in range(len(products1)):
 		print "MATCHES: "
 		for product in res:
 			print '-', re.sub("\s+", " ", product[0]['product_name']), "; SCORE:", product[1]
-		for product in res:
-			print product[0]
+		# for product in res:
+		# 	print product[0]
 		print '--------------------------------'
 		results += 1
 

@@ -23,14 +23,10 @@ class SearchSpider(BaseSpider):
 					   "bjs.com", "sears.com"]
 
 	# pass product as argument to constructor - either product name or product url
-	def __init__(self, product_name = None, product_url = None):
-		self.search_query = ""
-		if product_name:
-			# put + instead of spaces, lowercase all words
-			self.search_query = "+".join([name.lower() for name in product_name.split()])
-		# if product_url:
-		# 	self.search_query = self.get_name(product_url)
-
+	def __init__(self, product_name = None, product_url = None, target_site = None):
+		self.product_url = product_url
+		self.product_name = product_name
+		self.target_site = target_site
 		# bloomingales scraper only works with this in the start_urls list
 		self.start_urls = ["http://www.amazon.com", "http://www.walmart.com", "http://www1.bloomingdales.com",\
 						   "http://www.overstock.com", "http://www.wayfair.com", "http://www.bestbuy.com", \
@@ -54,12 +50,29 @@ class SearchSpider(BaseSpider):
 						# "sears" : "http://www.sears.com/search=%s" % self.search_query}
 						}
 
-		# pass them to parseResults
-		for site in search_pages:
-			
-			request = Request(search_pages[site], callback = self.parseResults)
-			request.meta['site'] = site
-			yield request
+		# if we have product names, pass them to parseResults
+		# if we have product URLs, pass them to parseURL to extract product names (which will pass them to parseResults)
+		for site in [target_site]:#search_pages:
+			self.search_query = ""
+
+			if self.product_name:
+				# put + instead of spaces, lowercase all words
+				self.search_query = "+".join([name.lower() for name in product_name.split()])
+				request = Request(search_pages[site], callback = self.parseResults)
+				request.meta['site'] = site
+				yield request
+
+			if self.product_url:
+				# extract site domain
+				m = re.match("http://www1?\.([^\.]+)\.com.*", self.product_url)
+				origin_site = ""
+				if m:
+					origin_site = m.group(1)
+				else:
+					sys.stderr.write('Can\'t extract domain from URL.\n')
+				request = Request(search_pages[site], callback = self.parseURL)
+				request.meta['site'] = origin_site
+				yield request
 
 	# parse results page, handle each site separately
 	def parseResults(self, response):
