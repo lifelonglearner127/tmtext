@@ -904,13 +904,13 @@ return $main_base;
                             }
                         }
                     }
-                    if($maxshort!='0'){
+                    if($maxshort!=0){
                         $vs['short_original'] =  round($maxshort, 2) . '%';
                     }else{
                         $vs['short_original']= "Insufficient data";
                     }
 
-                    if($maxshort!='0'){
+                    if($maxlong!=0){
                         $vs['long_original'] =  round($maxlong, 2) . '%';
                     }else{
                         $vs['long_original']= "Insufficient data";
