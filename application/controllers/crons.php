@@ -185,8 +185,7 @@ class Crons extends MY_Controller {
             echo "Cron Job Finished";
         } catch (Exception $e) {
             echo 'Ошибка',  $e->getMessage(), "\n";
-        } finally {
-            unlink($tmp_dir.".locked");
         }
+        unlink($tmp_dir.".locked");
     }
 }
