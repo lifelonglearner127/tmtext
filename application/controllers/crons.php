@@ -183,4 +183,8 @@ class Crons extends MY_Controller {
         echo "Cron Job Finished";
     }
 
+    public function hello(){
+        echo 'Hello world!';
+    }
+
 }
