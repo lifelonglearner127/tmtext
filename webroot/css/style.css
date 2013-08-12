@@ -1538,7 +1538,7 @@ label.dd-selected-text, label.dd-option-text{
 
 #Current_List ul li span:last-child, #Current_List ul lh span:last-child {
     border-right: 0px;
-    width: 58%;
+    width: 45%;
 }
 
 .ellipsis {
@@ -1795,8 +1795,12 @@ select#sites option{
 .main{
     background: #e2e2e4;
 }
+.current_list_title{
+    width:225px!important;
+}
 .site_crawler_content h3 small{
     color:#555555;
+    width:100px;
 }
 #assess_report_download_pdf{
     font-weight: normal;

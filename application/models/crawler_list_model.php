@@ -115,11 +115,9 @@ class Crawler_List_model extends CI_Model {
     {
     	$CI =& get_instance();
 
-    	$this->db->select('cl.id, cl.url, c.name as name, cl.status, DATE(cl.updated) as updated')
+    	$this->db->select('cl.id, cl.imported_data_id, cl.url, c.name as name, cl.status, DATE(cl.updated) as updated')
     		->from($this->tables['crawler_list'].' as cl')
-            ->join($this->tables['categories'].' as c', 'cl.category_id = c.id', 'left')
-    		->order_by("cl.created", "desc")
-    		->limit($limit, $start);
+            ->join($this->tables['categories'].' as c', 'cl.category_id = c.id', 'left');
 
     	if ($only_my) {
     		$this->db->where('user_id',  $CI->ion_auth->get_user_id());
@@ -128,12 +126,12 @@ class Crawler_List_model extends CI_Model {
             $this->db->like('cl.url', $search_crawl_data)->or_like('c.name', $search_crawl_data)->or_like('cl.status', $search_crawl_data)->or_like('DATE(cl.updated)', $search_crawl_data);
         }
 
-        $query = $this->db->get();
+        $query = $this->db->order_by("cl.created", "desc")->limit($limit, $start)->get();
 
         return $query->result();
     }
 
-    function countAll($only_my=true)
+    function countAll($only_my=true, $search_crawl_data='')
     {
     	$CI =& get_instance();
 
@@ -145,6 +143,9 @@ class Crawler_List_model extends CI_Model {
     	if ($only_my) {
     		$this->db->where('user_id',  $CI->ion_auth->get_user_id());
     	}
+        if($search_crawl_data != ''){
+            $this->db->like('cl.url', $search_crawl_data)->or_like('c.name', $search_crawl_data)->or_like('cl.status', $search_crawl_data)->or_like('DATE(cl.updated)', $search_crawl_data);
+        }
 
         return $this->db->count_all_results();
     }
