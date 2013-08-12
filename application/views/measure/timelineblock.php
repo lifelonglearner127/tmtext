@@ -106,7 +106,7 @@
 <script type="text/javascript">
 	$(document).ready(function() {
 		// ---- timeline tooltips (start)
-		$("#timeline_ctr .page:not(.disabled) a:not(.have_screen, .current_week, .mixed_screen)").tooltip({
+		$("#timeline_ctr .page:not(.disabled, .active) a:not(.have_screen, .current_week, .mixed_screen)").tooltip({
 			placement: 'bottom',
 			title: 'regular week / no screenshots'
 		});
@@ -121,6 +121,10 @@
 		$("#timeline_ctr .page:not(.disabled) a.mixed_screen").tooltip({
 			placement: 'bottom',
 			title: 'current week / available screenshots'
+		});
+		$("#timeline_ctr .page.active:not(.disabled) a:not(.have_screen, .current_week, .mixed_screen)").tooltip({
+			placement: 'bottom',
+			title: 'selected week / no screenshots'
 		});
 		// ---- timeline tooltips (end)
 	});

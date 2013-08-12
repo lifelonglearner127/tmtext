@@ -483,6 +483,34 @@ function get_home_page_week_data(week) {
   	});
 }
 
+function redetectTimelineTooltips() {
+	$("#timeline_ctr .page:not(.disabled, .active) a:not(.have_screen, .current_week, .mixed_screen)").tooltip('destroy');
+	$("#timeline_ctr .page:not(.disabled) a.current_week:not(.have_screen, .mixed_screen)").tooltip('destroy');
+	$("#timeline_ctr .page:not(.disabled) a.have_screen:not(.current_week, .mixed_screen)").tooltip('destroy');
+	$("#timeline_ctr .page:not(.disabled) a.mixed_screen").tooltip('destroy');
+	$("#timeline_ctr .page.active:not(.disabled) a:not(.have_screen, .current_week, .mixed_screen)").tooltip('destroy');
+	$("#timeline_ctr .page:not(.disabled, .active) a:not(.have_screen, .current_week, .mixed_screen)").tooltip({
+		placement: 'bottom',
+		title: 'regular week / no screenshots'
+	});
+	$("#timeline_ctr .page:not(.disabled) a.current_week:not(.have_screen, .mixed_screen)").tooltip({
+		placement: 'bottom',
+		title: 'current week / no screenshots'
+	});
+	$("#timeline_ctr .page:not(.disabled) a.have_screen:not(.current_week, .mixed_screen)").tooltip({
+		placement: 'bottom',
+		title: 'regular week / available screenshots'
+	});
+	$("#timeline_ctr .page:not(.disabled) a.mixed_screen").tooltip({
+		placement: 'bottom',
+		title: 'current week / available screenshots'
+	});
+	$("#timeline_ctr .page.active:not(.disabled) a:not(.have_screen, .current_week, .mixed_screen)").tooltip({
+		placement: 'bottom',
+		title: 'selected week / no screenshots'
+	});
+}
+
 function locaHomePageWeekData(week) {
 	var year = $("#year_s > option:selected").val();
 	$(".pagination ul li").removeClass('active');
@@ -490,6 +518,9 @@ function locaHomePageWeekData(week) {
 	detectNextPrevBtnPlace();
 	get_home_page_week_data(week);
 	get_screenshots_slider_data(week, year);
+	setTimeout(function() {
+		redetectTimelineTooltips();
+	}, 500);
 }
 
 function prevLocaHomePageWeekData() {
