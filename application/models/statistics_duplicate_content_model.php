@@ -26,7 +26,7 @@ class Statistics_duplicate_content_model extends CI_Model {
     }
 
     function insert( $imported_data_id, $product_name, $description, $long_description, $url,
-                     $features, $customer, $long_original, $short_original)
+                     $features, $parsed_attributes, $customer, $long_original, $short_original)
     {
         $this->imported_data_id = $imported_data_id;
         $this->product_name = $product_name;
@@ -34,6 +34,7 @@ class Statistics_duplicate_content_model extends CI_Model {
         $this->long_description = (string)$long_description;
         $this->url = $url;
         $this->features = (string)$features;
+        $this->parsed_attributes = (string)$parsed_attributes;
         $this->customer = (string)$customer;
         $this->long_original = $long_original;
         $this->short_original = $short_original;

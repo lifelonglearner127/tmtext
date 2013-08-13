@@ -187,7 +187,8 @@ class Crons extends MY_Controller {
                             foreach($res as $val){
                                 $this->statistics_duplicate_content_model->insert($obj->imported_data_id, $val['product_name'],
                                     $val['description'], $val['long_description'], $val['url'],
-                                    $val['features'], $val['customer'], $val['long_original'], $val['short_original']);
+                                    $val['features'], $val['parsed_attributes'], $val['customer'],
+                                    $val['long_original'], $val['short_original']);
                             }
                             echo $batch->title."----".$obj->imported_data_id."=Done";
                         }
