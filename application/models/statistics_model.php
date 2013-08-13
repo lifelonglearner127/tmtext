@@ -48,4 +48,22 @@ class Statistics_model extends CI_Model {
         return $this->db->insert_id();
     }
 
+    function getStatsData($params)
+    {
+        if(empty($params->batch_name)){
+            $batch_name = '';
+        } else {
+            $batch_name = $params->batch_name;
+        }
+        $txt_filter = $params->txt_filter;
+
+        $query = $this->db->where('batch_name', $batch_name)
+            ->like('product_name', $txt_filter)
+            ->get($this->tables['statistics']);
+
+        $result =  $query->result();
+
+        return $result;
+    }
+
 }
