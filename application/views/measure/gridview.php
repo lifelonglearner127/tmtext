@@ -23,8 +23,8 @@ foreach ($same_pr as $ks => $vs) {
 
 }
 ?>
-
-<!--<table border="2" style="display: block;" >
+<img src="<?php echo base_url() ?>/img/table-icone.png" style="height: 25px;width: 25px; margin-bottom: 5px;">
+<table id="table_view" border="2" style="display: none;" >
     <tr>
         <td></td>
         <td id="drop_1">
@@ -79,7 +79,7 @@ foreach ($same_pr as $ks => $vs) {
         <td></td>
         <td></td>
     </tr>
-</table>-->
+</table>
 
 
 <?php
@@ -424,9 +424,11 @@ $(".an_grd_view_drop select").live('change', function(){
       $(this).closest('.grid_se_section').find('.grid').html(grid_listings[$(this).val()]);
       $(this).closest('.grid_se_section').find('.grid .c > img').css('display', 'none');
       $(this).closest('.grid_se_section').find('.grid .c > .c_content').css('display', 'block');
+               
       fixGridHeights();
       $(".grid_se_section .c_content").each(function() {
-            if ($(".grid_se_section .c_content").height() > 700) {
+          
+            if ($(".grid_se_section .c_content").height() >= 700) {
                 $(".grid_se_section .c_content").css('height', '700');
                 $(".grid_se_section .c_content").css('overflow-y', 'auto');
                 $(".grid_se_section .c_content").css('overflow-x', 'hidden');
