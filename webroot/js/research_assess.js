@@ -426,6 +426,7 @@ $(function () {
     }
 
     function readAssessData() {
+        $("#tblAssess tr").remove();
         tblAssess.fnDraw();
     }
 
