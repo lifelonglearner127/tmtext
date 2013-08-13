@@ -291,6 +291,21 @@ $(function () {
         readAssessData();
     });
 
+    $('#assess_report_download_panel > a').click(function(){
+        var type_doc = $(this).data('type');
+        assess_report_download(type_doc);
+    });
+
+    function assess_report_download(type_doc) {
+        var batch_name = $("select[name='research_assess_batches']").find("option:selected").text();
+        var batch_id = $("select[name='research_assess_batches']").find("option:selected").val();
+        var url = base_url
+            + 'index.php/research/assess_report_download?batch_name=' + batch_name
+            + '&type_doc=' + type_doc
+            + '&batch_id=' + batch_id
+        window.open(url);
+    }
+
     $('#research_assess_choiceColumnDialog').dialog({
         autoOpen: false,
         resizable: false,
@@ -428,7 +443,7 @@ $(function () {
         } else if (table_case == 'report') {
             reportPanel(true);
             var batch_name = $('select[name="research_assess_batches"]').find('option:selected').text();
-            $('#assess_report_download_panel').attr('href', base_url + 'index.php/research/assess_download_pdf?batch_name=' + batch_name);
+            //$('#assess_report_download_pdf').attr('href', base_url + 'index.php/research/assess_download_pdf?batch_name=' + batch_name);
         }
     }
 

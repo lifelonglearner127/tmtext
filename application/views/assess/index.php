@@ -273,9 +273,10 @@
                                 </span>
                                 <span id="assess_report_download_panel" style="margin-left: 160px;">
                                     Download
-                                    <a id="assess_report_download_pdf" target="_blank">PDF</a> |
-                                    <a id="assess_report_download_doc" target="_blank">DOC</a>
+                                    <a id="assess_report_download_pdf" target="_blank" data-type="pdf">PDF</a> |
+                                    <a id="assess_report_download_doc" target="_blank" data-type="doc">DOC</a>
                                     <button id="assess_report_options_dialog_button" class="btn ml_15"><i class="icon-wrench"></i></button>
+                                    <button id="test">test</button>
                                 </span>
                                 <a class="ml_10 research_arrow" href="#">
                                     <img src="<?php echo base_url();?>img/arrow.png">

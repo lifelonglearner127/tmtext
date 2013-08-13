@@ -656,15 +656,30 @@ class Research extends MY_Controller {
         return $output;
     }
 
-    public function assess_download_pdf() {
+    public function assess_report_download() {
         $params = new stdClass();
         $params->batch_name = $this->input->get('batch_name');
         $results = $this->get_data_for_assess($params);
 
+        $batch_id = $this->input->get('batch_id');
+        $type_doc = $this->input->get('type_doc');
+
         $this->load->model('batches_model');
         $customer = $this->batches_model->getAllCustomerDataByBatch($params->batch_name);
-        $batch = $this->batches_model->getByName($params->batch_name);
-        $batch_created = new DateTime(date('Y-m-d H:i:s'));
+        //$batch = $this->batches_model->getByName($batch_id);
+        $user_id = $this->ion_auth->get_user_id();
+        $key = 'research_assess_report_options';
+        $existing_settings = $this->settings_model->get_value($user_id, $key);
+        $batch_report_settings = $existing_settings[$batch_id];
+        if (empty($batch_report_settings)) {
+            $assess_report_page_layout = 1;
+        } else {
+            if (!empty($batch_report_settings->assess_report_page_layout)) {
+                $assess_report_page_layout = $batch_report_settings->assess_report_page_layout;
+            }
+        }
+
+        $current_date = new DateTime(date('Y-m-d H:i:s'));
 
         $css_path = APPPATH.".."."/webroot/css/";
         $img_path = APPPATH.".."."/webroot/img/";
@@ -713,7 +728,7 @@ class Research extends MY_Controller {
         $html = $html.$header;
 
         $html = $html.'<table width=100% border=0>';
-        $html = $html.'<tr><td style="text-align: left;font-weight: bold; font-style: italic;">Batch - '.$params->batch_name.'</td><td style="text-align: right;font-weight: bold; font-style: italic;">'.$batch_created->format('F j, Y').'</td></tr>';
+        $html = $html.'<tr><td style="text-align: left;font-weight: bold; font-style: italic;">Batch - '.$params->batch_name.'</td><td style="text-align: right;font-weight: bold; font-style: italic;">'.$current_date->format('F j, Y').'</td></tr>';
         $html = $html.'<tr><td colspan="2"><hr height="3"></td></tr>';
         $html = $html.'</table>';
 
@@ -776,10 +791,16 @@ class Research extends MY_Controller {
         $html = $html.'<tr><td>';
         $html = $html.'</table>';
 
+        $layout = 'Letter-L';
+        if (!empty($assess_report_page_layout)) {
+            if ($assess_report_page_layout == 2) {
+                $layout = 'Letter';
+            }
+        }
+
         $this->load->library('pdf');
         $pdf = $this->pdf->load();
-//        include APPPATH.'third_party/mpdf/mpdf.php';
-//        $pdf = new mPDF('', 'A5', 0, '', 10, 10, 10, 10, 8, 8);
+        $pdf = new mPDF('', $layout, 0, '', 10, 10, 10, 10, 8, 8);
         $stylesheet = file_get_contents($css_path.'assess_report.css');
 
 //        $pdf->showImageErrors = true;
