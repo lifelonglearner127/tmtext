@@ -469,14 +469,14 @@ class Research extends MY_Controller {
                                 $duplicate_short_percent_total += 100 - $vs->short_original;
                                 $short_percent = 100 - round($vs->short_original, 1);
                                 if($short_percent > 0){
-                                    $duplicate_customers_short = $duplicate_customers_short.'<nobr>'.$vs->customer.' - '.$short_percent.'%</nobr><br />';
+                                    $duplicate_customers_short = $duplicate_customers_short.'<nobr>'.$customer_name[0]->name.' - '.$short_percent.'%</nobr><br />';
                                 }
                             }
                             if ($build_assess_params->long_duplicate_content) {
                                 $duplicate_long_percent_total += 100 - $vs->long_original;
                                 $long_percent = 100 - round($vs->long_original, 1);
                                 if($long_percent > 0){
-                                    $duplicate_customers_long = $duplicate_customers_long.'<nobr>'.$vs->customer.' - '.$long_percent.'%</nobr><br />';
+                                    $duplicate_customers_long = $duplicate_customers_long.'<nobr>'.$customer_name[0]->name.' - '.$long_percent.'%</nobr><br />';
                                 }
                             }
                             if($short_percent >= 20 || $long_percent >= 20){
