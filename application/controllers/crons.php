@@ -185,7 +185,7 @@ class Crons extends MY_Controller {
                                 $obj->short_seo_phrases, $obj->long_seo_phrases);
                             $res = $this->check_duplicate_content($obj->imported_data_id);
                             foreach($res as $val){
-                                $this->statistics_duplicate_content_model->insert($obj->imported_data_id, $val['product_name'],
+                                $this->statistics_duplicate_content_model->insert($val['imported_data_id'], $val['product_name'],
                                     $val['description'], $val['long_description'], $val['url'],
                                     $val['features'], $val['customer'],
                                     $val['long_original'], $val['short_original']);

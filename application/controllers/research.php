@@ -462,7 +462,7 @@ class Research extends MY_Controller {
                 if (count($dc) > 1) {
 
                     foreach ($dc as $vs) {
-                        if(strtolower($customer_name[0]->name) == $vs->customer){
+                        //if(strtolower($customer_name[0]->name) == $vs->customer){
                             $short_percent = 0;
                             $long_percent = 0;
                             if ($build_assess_params->short_duplicate_content) {
@@ -482,7 +482,7 @@ class Research extends MY_Controller {
                             if($short_percent >= 20 || $long_percent >= 20){
                                 $items_have_more_than_20_percent_duplicate_content += 1;
                             }
-                        }
+                        //}
                     }
                     if($duplicate_customers_short !=''){
                         $duplicate_customers = 'Duplicate short<br />'.$duplicate_customers_short;
