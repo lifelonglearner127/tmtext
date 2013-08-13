@@ -22,7 +22,67 @@ foreach ($same_pr as $ks => $vs) {
 
 
 }
+?>
 
+<!--<table border="2" style="display: block;" >
+    <tr>
+        <td></td>
+        <td id="drop_1">
+            
+        </td>
+        <td id="drop_2">
+             
+        </td>
+    </tr>
+    <tr>
+        <td><b>URL</b></td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
+        <td><b>Product</b></td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
+        <td><b>Price</b></td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
+        <td><b>Short Description</b></td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>SEO Keywords</td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>Dublicate Content</td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
+         <td><b>Long Description</b></td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>SEO Keywords</td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>Dublicate Content</td>
+        <td></td>
+        <td></td>
+    </tr>
+</table>-->
+
+
+<?php
 foreach ($same_pr as $ks => $vs) {
     //Max
     foreach ($vs['three_last_prices'] as $key => $last_price) {
@@ -44,9 +104,9 @@ foreach ($same_pr as $ks => $vs) {
         $class_left = 'left';
     // $s_product_description = $vs['description'];
     //           $s_product_long_description = $vs['long_description'];
-//            $s_product_short_desc_count = count(explode(" ", $s_product_description));
-//            echo "<pre>";
-//           print_r(explode(" ", trim($s_product_long_description )));
+    //            $s_product_short_desc_count = count(explode(" ", $s_product_description));
+    //            echo "<pre>";
+    //           print_r(explode(" ", trim($s_product_long_description )));
     //           $s_product_long_desc_count = count(explode(" ", $s_product_long_description));
 
 
@@ -78,10 +138,11 @@ foreach ($same_pr as $ks => $vs) {
 
     <div id="grid_se_section_<?php echo $i; ?>"  class='grid_se_section <?php echo $class_left; ?> '>
      
-        <div class='h'>
+        <div id="h_<?php echo $i; ?>" class='h'>
             <input type="hidden" name='dd_customer' value="<?php echo $customer; ?>">
             <div id="an_grd_view_drop_gr<?php echo $i; ?>" class='an_grd_view_drop'></div>
         </div>
+        <div id="<?php echo $customer;?>" class="grid">
         <div class='c'>
             <img class='preloader_grids_box' src="<?php echo base_url() ?>/img/grids_boxes_preloader.gif">
         <div class='c_content'>
@@ -275,7 +336,7 @@ if($s_product_long_desc_count > 0){
             <?php
         }
         ?>
-            
+    </div>      
     </div>
     <?php
     if ($i % 3 == 0) {
@@ -323,7 +384,7 @@ group_id = "<?php echo $same_pr[0]['imported_data_id']; ?>";
             }
         }
         var newc_data=[];
-        console.log(customers);
+        
         setTimeout(function() {
             selected_customers=[];
             var customers_list = $.post(base_url + 'index.php/measure/getsiteslist_new', { }, function(c_data) {
@@ -349,5 +410,39 @@ group_id = "<?php echo $same_pr[0]['imported_data_id']; ?>";
         }, 100);
     }
     gridsCustomersListLoader();
+//    $("#drop_1").html($("#h_1").html());
+    
+//    $("#drop_2").html($("#h_2").html());
+grid_listings=[];
+$(".grid").each(function(){
+    var site=$(this).attr('id');
+    grid_listings[site]= $(this).html();
+    
+});
+$(".an_grd_view_drop select").live('change', function(){
+   
+      $(this).closest('.grid_se_section').find('.grid').html(grid_listings[$(this).val()]);
+      $(this).closest('.grid_se_section').find('.grid .c > img').css('display', 'none');
+      $(this).closest('.grid_se_section').find('.grid .c > .c_content').css('display', 'block');
+      fixGridHeights();
+      $(".grid_se_section .c_content").each(function() {
+            if ($(".grid_se_section .c_content").height() > 700) {
+                $(".grid_se_section .c_content").css('height', '700');
+                $(".grid_se_section .c_content").css('overflow-y', 'auto');
+                $(".grid_se_section .c_content").css('overflow-x', 'hidden');
+                $(".grid_se_section .c_content .p_description").css('height','auto');
+            }
+        });
+});
+//$(".an_grd_view_drop select").each(function(){
+//   $(this).live('change',function(){
+//       console.log('stegh em');
+//       var url= $(this).val();
+//       console.log(listings[url]);
+//   });
+   
+   //$(".an_grd_view_drop .grid").html(listings[url]);
+//});
+ 
 </script>
 

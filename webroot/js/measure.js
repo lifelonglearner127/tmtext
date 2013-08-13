@@ -837,7 +837,7 @@ Array.min = function(array) {
     return Math.min.apply(Math, array);
 };
 function fixGridHeights() {
-    var selectors = new Array('.p_url', '.p_name', '.p_price', '.p_seo', '.p_description');
+    var selectors = new Array('.p_url', '.p_name', '.p_price','.p_description');
     var wrapper = $('.wrapper');
     if (wrapper.length > 0) {
         $.each(wrapper, function(k, v) {

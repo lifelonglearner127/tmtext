@@ -12,6 +12,7 @@ class Measure extends MY_Controller {
         $this->load->library('helpers');
         $this->load->helper('algoritm');
         $this->load->helper('comparebysimilarwordscount');
+        $this->load->helper('baseurl');
         $this->data['title'] = 'Measure';
 
         if (!$this->ion_auth->logged_in()) {

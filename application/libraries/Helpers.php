@@ -293,7 +293,7 @@ class Helpers {
   }
   
   public function measure_analyzer_start_v2_product_name($product_name,$clean_t) { // !!! NEW ONE !!!
-    $product_name = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $product_name);
+    $product_name = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $product_name);  
     $clean_t = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $clean_t);
     // $clean_t = trim(str_replace('.', ' ', $clean_t));
     $text = $clean_t;
@@ -304,25 +304,52 @@ class Helpers {
     $orig = explode(" ", $clean_t);
     $overall_words_count = count($words);
     // ---- convert to array (end)
-
+    $balck_list= array('gives you','lets you', 'in a');
     $res_stack = array();
     // $log = array();
-    foreach($praduct_name_words as $key =>  $val){
-            // --- CHECK OUT STRING DUPLICATIONS
-            $r = $this->keywords_appearence_count(strtolower($text), strtolower($val));
-            //if($r > 1 && preg_match('/'.strtolower($val).'/',strtolower($product_name )) && strlen($val)>2) {
-             if($r > 1 && strlen($val)>2) {  
-                $mid = array(
-                    "ph" => trim($val),
-                    "count" => $r,
-                    "ph_length" => strlen($val)  
-                );
-                $res_stack[] = $mid;
+    for($l = 6; $l >= 1; $l--) {
+        for($i = 0, $j = $l; $j < $overall_words_count; $i++, $j++) {
+            // --- PREPARE PHRASE STRING FOR CHECK
+            $w = "";
+            for($k = $i; $k <= $j; $k++ ) {
+                $w = $w.$words[$k]." "; 
             }
-    }
-    //echo "<pre>";
-   // print_r($res_stack);
-    // --- sort final result (start)
+            $w = substr($w, 0, strlen($w)-1);
+            $w = trim($w);
+            // --- CHECK OUT STRING DUPLICATIONS
+            $r = $this->keywords_appearence_count(strtolower($text), strtolower($w));
+            // --- debug logger (start)
+            // $r_exp = $this->keywords_appearence_count_expV2(strtolower($text), strtolower($w));
+            // $mid_debug = array(
+            //   's_ph' => $w,
+            //   'count' => $r,
+            //   'count_exp' => $r_exp
+            // );
+            // $log[] = $mid_debug;
+            // --- debug logger (end)
+            $WW=trim(strtolower($w));
+            if(!preg_match("/$WW/",  strtolower($product_name))){
+                if($r > 3 && count(explode(" ", trim($w))) > 1 && !in_array($WW,$balck_list)) {
+                    $mid = array(
+                        "ph" => trim($w),
+                        "count" => $r,
+                        "ph_length" => strlen($w)  
+                    );
+                    $res_stack[] = $mid;
+                }
+            }else{
+                if($r > 1 && count(explode(" ", trim($w))) > 1) {
+                    $mid = array(
+                        "ph" => trim($w),
+                        "count" => $r,
+                        "ph_length" => strlen($w)  
+                    );
+                    $res_stack[] = $mid;
+                }
+            }
+        }
+    } 
+   // --- sort final result (start)
     $ph_length = array();
     foreach ($res_stack as $key => $row) {
         // $ph_length[$key] = $row['ph_length'];
@@ -330,7 +357,46 @@ class Helpers {
     }
     array_multisort($ph_length, SORT_DESC, $res_stack);
     // --- sort final result (end)
-  
+
+    $res_stack = array_unique($res_stack, SORT_REGULAR);
+
+    // -- FILTER  OUT SUBSETS (START)
+    if(count($res_stack) > 1) {
+        foreach ($res_stack as $key => $value) {
+            $inv_str = $value['ph'];
+            // ----  CHECK OUT VALUE (START)
+            foreach ($res_stack as $ka => $va) {
+                if(($va['ph'] !== $inv_str) && strlen($va['ph']) > strlen($inv_str) && strpos($va['ph'], $inv_str) !== false) {
+                    unset($res_stack[$key]);
+                } 
+            }
+            // ----  CHECK OUT VALUE (END)
+        }
+    }   
+      
+    foreach($praduct_name_words as $key =>  $val){
+            $isset=false;
+            foreach($res_stack as $k => $ph){
+                if( $this->keywords_appearence_count(strtolower($ph['ph']), strtolower($val))>0){
+                    $isset=true;
+                     break;
+                }                 
+            }
+            // --- CHECK OUT STRING DUPLICATIONS
+            if(!$isset){
+                $r = $this->keywords_appearence_count(strtolower($text), strtolower($val));
+                //if($r > 1 && preg_match('/'.strtolower($val).'/',strtolower($product_name )) && strlen($val)>2) {
+                 if($r > 1 && strlen($val)>2) {  
+                    $mid = array(
+                        "ph" => trim($val),
+                        "count" => $r,
+                        "ph_length" => strlen($val)  
+                    );
+                    $res_stack[] = $mid;
+                }
+            }
+    }  
+      
     $res_stack = array_unique($res_stack, SORT_REGULAR);
     foreach($res_stack as $key => $val){
         foreach($res_stack as $key1 => $val1){
