@@ -240,7 +240,9 @@ $( function() {
                     long_description : $("#column_long_description").attr('checked') == 'checked',
                     long_description_wc : $("#column_long_description_wc").attr('checked') == 'checked',
                     batch_name : $("#column_batch_name").attr('checked') == 'checked',
-                    actions : $("#column_actions").attr('checked') == 'checked'
+                    actions : $("#column_actions").attr('checked') == 'checked',
+                    kw_long : $("#column_kw_long").attr('checked') == 'checked',
+                    kw_short : $("#column_kw_short").attr('checked') == 'checked'
                 };
 
                 // save params to DB

@@ -149,6 +149,14 @@
                                 <input type="checkbox" id="column_actions" name="column_actions_name" <?php echo($columns['actions'] == 'true' ? 'checked="checked"' : ''); ?> />
                                 <label for="column_actions">Actions</label>
                             </p>
+                            <p>
+                                <input type="checkbox" id="column_kw_long" name="column_kw_long_name" <?php echo($columns['kw_long'] == 'true' ? 'checked="checked"' : ''); ?> />
+                                <label for="column_kw_long">Long description keywords</label>
+                            </p>
+                            <p>
+                                <input type="checkbox" id="column_kw_short" name="column_kw_short_name" <?php echo($columns['kw_short'] == 'true' ? 'checked="checked"' : ''); ?> />
+                                <label for="column_kw_short">Short description keywords</label>
+                            </p>
                         </form>
                     </div>
                 </div>
