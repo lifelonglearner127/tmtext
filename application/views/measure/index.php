@@ -165,7 +165,7 @@
 									    	<?php } ?>
 									    </ul>
 								    </div>
-								    <span id="crawl_date_<?php echo $v; ?>" class="label label-info label_custom_regular">date</span>
+								    <span id="crawl_date_<?php echo $v; ?>" class="label label-info label_custom_regular">&nbsp;</span>
 							    <?php } ?>
 								<div class='art_hp_item'>
 									<div id="art_img_<?php echo $v; ?>" class='art_img'>&nbsp;</div>

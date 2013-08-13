@@ -1,3 +1,6 @@
+.pagination > ul > .page.active > a {
+    background-image: url("../img/timeline_outline.png") !important;
+}
 .label_custom_regular {
     background-color: transparent !important;
     color: #000 !important;
