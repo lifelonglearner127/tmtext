@@ -54,7 +54,7 @@
 </div>
 <div class="row-fluid span12 mt_10">
     <div class="span3">Average Review</div>
-    <div class="span4">4,5 Stars</div>
+    <div class="span4">4.5 Stars</div>
     <div class="span4">4 Stars</div>
 </div>
 <div class="row-fluid span12 mt_10">
@@ -86,6 +86,6 @@
 </div>
 <div class="row-fluid span12 mt_10">
     <div class="span3">Best Sellers - Avg Review</div>
-    <div class="span4">4,5 Stars</div>
-    <div class="span4">3,5 Stars</div>
+    <div class="span4">4.5 Stars</div>
+    <div class="span4">3.5 Stars</div>
 </div>
