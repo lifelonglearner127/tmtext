@@ -54,7 +54,7 @@ class Assess extends MY_Controller {
         $batches = $this->batches_model->getAll();
         $batches_list = array(''=>'Select batch');
         foreach($batches as $batch){
-            array_push($batches_list, $batch->title);
+            $batches_list[$batch->id] = $batch->title;
         }
         return $batches_list;
     }
@@ -95,5 +95,38 @@ class Assess extends MY_Controller {
         }
         return $customer_list;
 
+    }
+
+    public function research_assess_report_options_get(){
+//        $this->load->model('sites_model');
+//        $this->sites_model->getAll();
+        $user_id = $this->ion_auth->get_user_id();
+        $key = 'research_assess_report_options';
+        $batch_id = $this->input->get('batch_id');
+        $existing_settings = $this->settings_model->get_value($user_id, $key);
+        $batch_settings = $existing_settings[$batch_id];
+        echo json_encode($batch_settings);
+    }
+
+    public function research_assess_report_options_set(){
+        $this->load->model('settings_model');
+        $this->load->model('batches_model');
+        $user_id = $this->ion_auth->get_user_id();
+        $key = 'research_assess_report_options';
+        $description = 'Assess -> Report Options';
+        $posted_settings = json_decode($this->input->post('data'));
+
+        // get existing settings
+        $existing_settings = $this->settings_model->get_value($user_id, $key);
+        if (!$existing_settings) {
+            $new_settings[$posted_settings->batch_id] = $posted_settings;
+        } else {
+            $existing_settings = $existing_settings;
+            $existing_settings[$posted_settings->batch_id] = $posted_settings;
+            $new_settings = $existing_settings;
+        }
+
+        $res = $this->settings_model->replace($user_id, $key, $new_settings, $description);
+        echo json_encode($res);
     }
 }

@@ -10,7 +10,11 @@
                         <option value="<?php echo strtolower($customer); ?>"><?php echo $customer; ?></option>
                     <?php endforeach;?>
                 </select>
-                <?php echo form_dropdown('research_assess_batches', $batches_list, array(), 'class="mt_10 mr_10" style="width: 175px;margin-left:20px"'); ?>
+                <select name="research_assess_batches" class="mt_10 mr_10 ml_20" style="width: 175px;">
+                    <?php foreach($batches_list as $ks => $vs):?>
+                        <option value="<?php echo $ks; ?>"><?php echo $vs; ?></option>
+                    <?php endforeach;?>
+                </select>
             </span>
             <span class=''>
                 or
@@ -215,6 +219,32 @@
     </p>
 </div>
 
+<div id="assess_report_options_dialog" title="Report Options" >
+    <form id="assess_report_options_form">
+        <table style="width:100%;">
+            <tr>
+                <td>Layout:</td>
+                <td>
+                    <select id="assess_report_page_layout" name="assess_report_page_layout" style="width: 100%;" class="mt_5">
+                        <option value="1">Landscape</option>
+                        <option value="2">Portrait</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td style="vertical-align: top;">Competitors:</td>
+                <td>
+                    <select id="assess_report_competitors" name="assess_report_competitors" style="width: 100%;height: 150px;" multiple="">
+                        <option value="1" selected="selected">walmart</option>
+                        <option value="2">amazon</option>
+                        <option value="3" selected="selected">bjs</option>
+                    </select>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+
 <div class="row-fluid">
     <div id="read" class="ui-tabs-panel ui-widget-content ui-corner-bottom">
         <div id="records_wrapper" class="dataTables_wrapper block_data_table">
@@ -237,15 +267,18 @@
                             <h3>
                                 <span>
                                     <a class="hideShow" onclick="return false;" href="#">
-                                        <img src="http://tmeditor/img/arrow-down.png" style="width:12px;margin-right: 10px">
+                                        <img src="<?php echo base_url();?>img/arrow-down.png" style="width:12px;margin-right: 10px">
                                     </a>
                                     Summary
                                 </span>
-                                <span style="margin-left: 270px;">
-                                    <a id="assess_report_download_pdf" target="_blank">Download PDF</a>
+                                <span id="assess_report_download_panel" style="margin-left: 160px;">
+                                    Download
+                                    <a id="assess_report_download_pdf" target="_blank">PDF</a> |
+                                    <a id="assess_report_download_doc" target="_blank">DOC</a>
+                                    <button id="assess_report_options_dialog_button" class="btn ml_15"><i class="icon-wrench"></i></button>
                                 </span>
                                 <a class="ml_10 research_arrow" href="#">
-                                    <img src="http://tmeditor//webroot/img/arrow.png">
+                                    <img src="<?php echo base_url();?>img/arrow.png">
                                 </a>
                             </h3>
                             <div class="boxes_content" style="padding:0px;">
@@ -269,22 +302,22 @@
                         <li class="boxes ui-resizable">
                             <h3>
                                 <a class="hideShow" onclick="return false;" href="#">
-                                    <img src="http://tmeditor/img/arrow-down.png" style="width:12px;margin-right: 10px">
+                                    <img src="<?php echo base_url();?>img/arrow-down.png" style="width:12px;margin-right: 10px">
                                 </a>
                                 Recommendations
                                 <a class="ml_10 research_arrow" href="#">
-                                    <img src="http://tmeditor//webroot/img/arrow.png">
+                                    <img src="<?php echo base_url();?>img/arrow.png">
                                 </a>
                             </h3>
                         </li>
                         <li class="boxes ui-resizable">
                             <h3>
                                 <a class="hideShow" onclick="return false;" href="#">
-                                    <img src="http://tmeditor/img/arrow-down.png" style="width:12px;margin-right: 10px">
+                                    <img src="<?php echo base_url();?>img/arrow-down.png" style="width:12px;margin-right: 10px">
                                 </a>
                                 Pricing Details
                                 <a class="ml_10 research_arrow" href="#">
-                                    <img src="http://tmeditor//webroot/img/arrow.png">
+                                    <img src="<?php echo base_url();?>img/arrow.png">
                                 </a>
                             </h3>
                         </li>

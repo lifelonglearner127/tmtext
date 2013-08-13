@@ -412,3 +412,12 @@ ul.ui-sortable {
 .mb_10{
     margin-bottom:10px !important;
 }
+#assess_report_download_panel {
+    font-size: 14px;
+}
+#assess_report_download_panel a {
+    font-weight: normal;
+    font-size: 16px;
+    color:#0088CC;
+    cursor: pointer;
+}
