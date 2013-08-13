@@ -350,6 +350,7 @@ class Research extends MY_Controller {
             $result_row = new stdClass();
             $result_row->id = $row->id;
             $result_row->imported_data_id = $row->imported_data_id;
+            $result_row->research_data_id = $row->research_data_id;
             $result_row->created = $row->created;
             $result_row->product_name = $row->product_name;
             $result_row->url = $row->url;

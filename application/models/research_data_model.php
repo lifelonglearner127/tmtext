@@ -265,6 +265,7 @@ union all
                 select
                     r.id AS id,
                     r.imported_data_id AS imported_data_id,
+                    r.research_data_id AS research_data_id,
                     r.created AS created,
                     group_concat(r.product_name, '') AS product_name,
                     group_concat(r.url, '') AS url,
@@ -279,6 +280,7 @@ union all
                         b.title,
                         kv.id,
                         kv.imported_data_id,
+                        rd.id as research_data_id,
                         rd.created as created,
                         case when kv.`key` = 'Product Name' then kv.`value` end as product_name,
                         case when kv.`key` = 'URL' then kv.`value` end as url,
@@ -384,6 +386,7 @@ union all
                 select
                     r.id AS rid,
                     r.imported_data_id AS imported_data_id,
+                    r.research_data_id AS research_data_id,
                     r.created AS created,
                     r.title as batch_name,
                     group_concat(r.product_name, '') AS product_name,
@@ -399,6 +402,7 @@ union all
                         b.title,
                         kv.id,
                         kv.imported_data_id,
+                        rd.id as research_data_id,
                         rd.created as created,
                         case when kv.`key` = 'Product Name' then kv.`value` end as product_name,
                         case when kv.`key` = 'URL' then kv.`value` end as url,

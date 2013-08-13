@@ -150,6 +150,20 @@ $(function () {
         $('#assess_report_items_have_product_context_that_is_too_short').html(report.summary.items_short_products_content);
     }
 
+    $(document).on('change', '#assessDetailsDialog_chkIncludeInReport', function(){
+        var isChecked = $(this).is(':checked');
+        var data = {
+
+        };
+        $.post(
+            base_url + 'index.php/research/filterBatchByCustomer',
+            data,
+            function(data){
+
+            }
+        );
+    });
+
     $('#tblAssess tbody').click(function(event) {
         $('#ajaxLoadAni').fadeIn('slow');
         var add_data = JSON.parse($(event.target).parents('tr').attr('add_data'));
@@ -164,6 +178,7 @@ $(function () {
         $('#assessDetails_LongDescriptionWC').html(add_data.long_description_wc);
         $('#assessDetails_LongSEO').val(add_data.long_seo_phrases);
 
+        $('#assessDetailsDialog').parent().find('.ui-dialog-buttonpane button[id="assessDetailsDialog_btnIncludeInReport"]').replaceWith('<div id="assess_details_dialog_opstions"><label><input id="assessDetailsDialog_chkIncludeInReport" type="checkbox">Include in report</label></div></div>');
         $('#assessDetailsDialog').dialog('open');
 
         $('#ajaxLoadAni').fadeOut('slow');
@@ -186,6 +201,9 @@ $(function () {
                 click: function() {
                     copyToClipboard(textToCopy);
                 }
+            },
+            '': {
+                id: 'assessDetailsDialog_btnIncludeInReport'
             }
         },
         width: '850px'
@@ -368,8 +386,9 @@ $(function () {
 
             }
         );
+        $('#assess_report_options_dialog').parent().find('.ui-dialog-buttonpane button[id="assess_report_options_dialog_save"]').addClass("btn btn-success");
+        $('#assess_report_options_dialog').parent().find('.ui-dialog-buttonpane button[id="assess_report_options_dialog_cancel"]').addClass("btn");
         $('#assess_report_options_dialog').dialog('open');
-        //$('#assess_report_options_dialog').parent().find('.ui-dialog-buttonpane button:last').addClass("popupGreen");
     });
 
     $('#assess_report_options_dialog').dialog({
@@ -377,7 +396,15 @@ $(function () {
         resizable: false,
         modal: true,
         buttons: {
+            'Cancel': {
+                id: 'assess_report_options_dialog_cancel',
+                text: 'Cancel',
+                click: function() {
+                    $(this).dialog('close');
+                }
+            },
             'Save': {
+                id: 'assess_report_options_dialog_save',
                 text: 'Save',
                 click: function() {
 //                    var competitors = $('#assess_report_competitors :selected');
@@ -395,12 +422,6 @@ $(function () {
                         data
                     );
 
-                    $(this).dialog('close');
-                }
-            },
-            'Cancel': {
-                text: 'Cancel',
-                click: function() {
                     $(this).dialog('close');
                 }
             }

@@ -421,3 +421,19 @@ ul.ui-sortable {
     color:#0088CC;
     cursor: pointer;
 }
+#assess_details_dialog_opstions {
+    height: 20px;
+    left: -150px;
+    position: relative;
+    top: -29px;
+}
+#assess_details_dialog_opstions label{
+    margin: 0px !important;
+    padding: 0px !important;
+    min-height: 0px !important;
+}
+#assess_details_dialog_opstions input[type=checkbox] {
+    margin: 0px !important;
+    padding: 0px !important;
+    min-height: 0px !important;
+}
