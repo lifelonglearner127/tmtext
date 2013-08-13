@@ -187,7 +187,7 @@ class Crons extends MY_Controller {
                             foreach($res as $val){
                                 $this->statistics_duplicate_content_model->insert($obj->imported_data_id, $val['product_name'],
                                     $val['description'], $val['long_description'], $val['url'],
-                                    $val['features'], $val['parsed_attributes'], $val['customer'],
+                                    $val['features'], $val['customer'],
                                     $val['long_original'], $val['short_original']);
                             }
                             echo $batch->title."----".$obj->imported_data_id."=Done";
@@ -236,7 +236,6 @@ class Crons extends MY_Controller {
                     $same_pr = $this->imported_data_parsed_model->getByProductName($imported_data_id, $data_import['product_name'], '', $strict);
                 }
                 if (isset($data_import['parsed_attributes']) ) {
-
                     $same_pr = $this->imported_data_parsed_model->getByProductName($imported_data_id, $data_import['product_name'], $data_import['parsed_attributes']['manufacturer'], $strict);
                 }
             } else {
@@ -337,7 +336,6 @@ class Crons extends MY_Controller {
             $same_pr[0]['long_original'] = 100;
             $same_pr[0]['short_original'] = 100;
         }
-
         return $same_pr;
     }
 
