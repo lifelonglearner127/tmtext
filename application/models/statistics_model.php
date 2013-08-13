@@ -26,13 +26,14 @@ class Statistics_model extends CI_Model {
         return $this->db->query($sql_cmd);
     }
 
-    function insert($rid, $imported_data_id, $batch_name,
+    function insert($rid, $imported_data_id, $research_data_id, $batch_name,
                     $product_name, $url, $short_description, $long_description,
                     $short_description_wc, $long_description_wc,
                     $short_seo_phrases, $long_seo_phrases)
     {
         $this->rid = $rid;
         $this->imported_data_id = $imported_data_id;
+        $this->research_data_id = $research_data_id;
         $this->batch_name = $batch_name;
         $this->product_name = $product_name;
         $this->url = $url;
