@@ -176,7 +176,6 @@ class Crons extends MY_Controller {
             $this->statistics_duplicate_content_model->truncate();
             $batches = $this->batches_model->getAll();
             foreach($batches as $batch){
-                    if($batch->title == 'Walmart TVs'){
                         $data = $this->research_data_model->do_stats($batch->title);
                         if(count($data) > 0){
                             $imdata_ids = array();
@@ -186,7 +185,6 @@ class Crons extends MY_Controller {
                                     $obj->product_name, $obj->url, $obj->short_description, $obj->long_description,
                                     $obj->short_description_wc, $obj->long_description_wc,
                                     $obj->short_seo_phrases, $obj->long_seo_phrases);
-                                var_dump($insert_id);
                                 array_push($imdata_ids , $obj->imported_data_id);
                             }
                             foreach($imdata_ids as $imdata_id){
@@ -200,7 +198,6 @@ class Crons extends MY_Controller {
                                 echo $batch->title."----".$obj->imported_data_id."=Done";
                             }
                         }
-                    }
             }
             echo "Cron Job Finished";
         } catch (Exception $e) {
