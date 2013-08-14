@@ -145,6 +145,7 @@ class Research extends MY_Controller {
     public function getBatchInfo(){
         $this->load->model('batches_model');
         $this->load->model('research_data_model');
+        $this->load->model('statistics_model');
         $batch_id = $this->batches_model->getIdByName($this->input->post('batch'));
         if($batch_id != false){
             $batch_info = $this->batches_model->get($batch_id);
@@ -152,7 +153,12 @@ class Research extends MY_Controller {
             $result = array();
             $result['created'] = mdate('%m/%d/%Y',strtotime($batch_info[0]->created));
             $result['modified'] = mdate('%m/%d/%Y',strtotime($last_date[0]->modified));
-            $result['count_items'] = $this->research_data_model->countAll($batch_id);
+
+            $params = new stdClass();
+            $params->batch_name = $this->input->post('batch');
+            $params->txt_filter = '';
+            $res = $this->statistics_model->countAll($params);
+            $result['count_items'] = count($res);
 
             $this->output->set_content_type('application/json')
                 ->set_output(json_encode($result));
