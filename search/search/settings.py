@@ -10,7 +10,7 @@ BOT_NAME = 'search'
 
 SPIDER_MODULES = ['search.spiders']
 NEWSPIDER_MODULE = 'search.spiders'
-ITEM_PIPELINES = ['search.pipelines.SearchPipeline']
+ITEM_PIPELINES = ['search.pipelines.URLsPipeline']
 
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
