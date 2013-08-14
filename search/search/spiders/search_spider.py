@@ -5,6 +5,8 @@ from search.items import SearchItem
 import urllib
 import re
 
+from selenium import webdriver
+
 ################################
 # Run with 
 #
@@ -32,32 +34,40 @@ class SearchSpider(BaseSpider):
 						   "http://www.overstock.com", "http://www.wayfair.com", "http://www.bestbuy.com", \
 						   "http://www.toysrus.com", "http://www.bjs.com", "http://www.sears.com"]
 
-	def parse(self, response):
-
+	def build_search_pages(search_query):
 		# build list of urls = search pages for each site
 		search_pages = {
-						"amazon" : "http://www.amazon.com/s/ref=nb_sb_noss?url=search-alias%3Daps&field-keywords=" + self.search_query, \
-						"walmart" : "http://www.walmart.com/search/search-ng.do?ic=16_0&Find=Find&search_query=%s&Find=Find&search_constraint=0" % self.search_query, \
-						"bloomingdales" : "http://www1.bloomingdales.com/shop/search?keyword=%s" % self.search_query, \
-						"overstock" : "http://www.overstock.com/search?keywords=%s" % self.search_query, \
-						"wayfair" : "http://www.wayfair.com/keyword.php?keyword=%s" % self.search_query, \
+						"amazon" : "http://www.amazon.com/s/ref=nb_sb_noss?url=search-alias%3Daps&field-keywords=" + search_query, \
+						"walmart" : "http://www.walmart.com/search/search-ng.do?ic=16_0&Find=Find&search_query=%s&Find=Find&search_constraint=0" % search_query, \
+						"bloomingdales" : "http://www1.bloomingdales.com/shop/search?keyword=%s" % search_query, \
+						"overstock" : "http://www.overstock.com/search?keywords=%s" % search_query, \
+						"wayfair" : "http://www.wayfair.com/keyword.php?keyword=%s" % search_query, \
 						# #TODO: check this URL
-						# "bestbuy" : "http://www.bestbuy.com/site/searchpage.jsp?_dyncharset=ISO-8859-1&_dynSessConf=-26268873911681169&id=pcat17071&type=page&st=%s&sc=Global&cp=1&nrp=15&sp=&qp=&list=n&iht=y&fs=saas&usc=All+Categories&ks=960&saas=saas" % self.search_query, \
-						"toysrus": "http://www.toysrus.com/search/index.jsp?kw=%s" % self.search_query, \
+						# "bestbuy" : "http://www.bestbuy.com/site/searchpage.jsp?_dyncharset=ISO-8859-1&_dynSessConf=-26268873911681169&id=pcat17071&type=page&st=%s&sc=Global&cp=1&nrp=15&sp=&qp=&list=n&iht=y&fs=saas&usc=All+Categories&ks=960&saas=saas" % search_query, \
+						"toysrus": "http://www.toysrus.com/search/index.jsp?kw=%s" % search_query, \
 						# #TODO: check the keywords, they give it as caps
-						# "bjs" : "http://www.bjs.com/webapp/wcs/stores/servlet/Search?catalogId=10201&storeId=10201&langId=-1&pageSize=40&currentPage=1&searchKeywords=%s&tASearch=&originalSearchKeywords=lg+life+is+good&x=-1041&y=-75" % self.search_query, \
+						# "bjs" : "http://www.bjs.com/webapp/wcs/stores/servlet/Search?catalogId=10201&storeId=10201&langId=-1&pageSize=40&currentPage=1&searchKeywords=%s&tASearch=&originalSearchKeywords=lg+life+is+good&x=-1041&y=-75" % search_query, \
 						# #TODO: check this url
-						# "sears" : "http://www.sears.com/search=%s" % self.search_query}
+						# "sears" : "http://www.sears.com/search=%s" % search_query}
 						}
+
+		return search_pages
+
+	def build_search_query(product_name):
+		# put + instead of spaces, lowercase all words
+		search_query = "+".join([name.lower() for name in product_name.split()])
+		return search_query
+
+	def parse(self, response):
 
 		# if we have product names, pass them to parseResults
 		# if we have product URLs, pass them to parseURL to extract product names (which will pass them to parseResults)
 		for site in [target_site]:#search_pages:
-			self.search_query = ""
+			search_query = ""
 
 			if self.product_name:
 				# put + instead of spaces, lowercase all words
-				self.search_query = "+".join([name.lower() for name in product_name.split()])
+				search_query = "+".join([name.lower() for name in product_name.split()])
 				request = Request(search_pages[site], callback = self.parseResults)
 				request.meta['site'] = site
 				yield request
@@ -74,6 +84,51 @@ class SearchSpider(BaseSpider):
 				request.meta['site'] = origin_site
 				yield request
 
+	# parse a product page (given its URL) and extract product's name
+	def parseURL(self, response):
+		if site == 'staples'
+			# use selenium to complete the zipcode form and get the product page
+			driver = webdriver.Firefox()
+			driver.get(response.url)
+
+			# set a hardcoded value for zipcode
+			zipcode = "12345"
+
+			textbox = driver.find_element_by_name("zipCode")
+			textbox.send_keys(zipcode)
+
+			button = driver.find_element_by_id("submitLink")
+			button.click()
+
+			cookie = {"zipcode": zipcode}
+			driver.add_cookie(cookie)
+
+			time.sleep(5)
+
+			# convert html to "nice format"
+			text_html = driver.page_source.encode('utf-8')
+			#print "TEXT_HTML", text_html
+			html_str = str(text_html)
+
+			# this is a hack that initiates a "TextResponse" object (taken from the Scrapy module)
+			resp_for_scrapy = TextResponse('none',200,{},html_str,[],None)
+
+			# extract product name
+			hxs = HtmlXPathSelector(resp_for_scrapy)
+
+			product_name = hxs.select("//h1/text()").extract()[0]
+
+			product_model = ""
+			model_node = hxs.select("//p[@class='itemModel']/text()").extract()[0]
+			m = re.match(".*Model:(.*)", model_node)
+			if m:
+				product_model = m.group(1)
+
+			query = build_search_query(product_name)
+			#UNDER CONSTRUCITON
+			request = Request(url, callback, method, headers, body, cookies, meta, encoding, priority, dont_filter, errback)
+
+
 	# parse results page, handle each site separately
 	def parseResults(self, response):
 		
@@ -84,6 +139,8 @@ class SearchSpider(BaseSpider):
 		# handle parsing separately for each site
 
 		#TODO: parse multiple pages, can only parse first page so far
+
+		#TODO: parse alternative results (if no results found for search query, but for similar ones)
 
 		# amazon
 		if (site == 'amazon'):
