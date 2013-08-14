@@ -157,7 +157,7 @@ class Research extends MY_Controller {
             $params = new stdClass();
             $params->batch_name = $this->input->post('batch');
             $params->txt_filter = '';
-            $res = $this->statistics_model->countAll($params);
+            $res = $this->statistics_model->getStatsData($params);
             $result['count_items'] = count($res);
 
             $this->output->set_content_type('application/json')
@@ -319,6 +319,8 @@ class Research extends MY_Controller {
     }
 
     private function build_asses_table($results, $build_assess_params, $batch_name='') {
+        var_dump(count($results));
+        die;
         $duplicate_content_range = 25;
         $this->load->model('batches_model');
         $this->load->model('imported_data_parsed_model');
