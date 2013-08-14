@@ -1,3 +1,6 @@
+# 08/14 Anna
+ALTER TABLE `research_data` ADD `include_in_assess_report` TINYINT(1) NOT NULL DEFAULT '0' AFTER `modified`;
+
 # 08/08 Tatiana
 CREATE TABLE IF NOT EXISTS `brands` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
