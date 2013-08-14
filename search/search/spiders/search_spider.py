@@ -6,8 +6,8 @@ from search.items import SearchItem
 import urllib
 import re
 
-from selenium import webdriver
-import time
+# from selenium import webdriver
+# import time
 
 ################################
 # Run with 
@@ -90,38 +90,8 @@ class SearchSpider(BaseSpider):
 	# parse a product page (given its URL) and extract product's name
 	def parseURL(self, response):
 		site = response.meta['site']
+		hxs = HtmlXPathSelector(response)
 		if site == 'staples':
-			# # use selenium to complete the zipcode form and get the product page
-			# driver = webdriver.Firefox()
-			# driver.get(response.url)
-
-			# # set a hardcoded value for zipcode
-			# zipcode = "12345"
-
-			# textbox = driver.find_element_by_name("zipCode")
-			# textbox.send_keys(zipcode)
-
-			# button = driver.find_element_by_id("submitLink")
-			# button.click()
-
-			# cookie = {"zipcode": zipcode}
-			# driver.add_cookie(cookie)
-
-			# time.sleep(5)
-
-			# # convert html to "nice format"
-			# text_html = driver.page_source.encode('utf-8')
-			# #print "TEXT_HTML", text_html
-			# html_str = str(text_html)
-
-			# # this is a hack that initiates a "TextResponse" object (taken from the Scrapy module)
-			# resp_for_scrapy = TextResponse('none',200,{},html_str,[],None)
-
-			# driver.close()
-
-			# # extract product name
-			# hxs = HtmlXPathSelector(resp_for_scrapy)
-			hxs = HtmlXPathSelector(response)
 
 			product_name = hxs.select("//h1/text()").extract()[0]
 
