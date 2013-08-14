@@ -319,8 +319,6 @@ class Research extends MY_Controller {
     }
 
     private function build_asses_table($results, $build_assess_params, $batch_name='') {
-        var_dump(count($results));
-        die;
         $duplicate_content_range = 25;
         $this->load->model('batches_model');
         $this->load->model('imported_data_parsed_model');
