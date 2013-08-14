@@ -73,6 +73,7 @@
 		$("#art_img_" + item_id).append("<div id='loader_over_" + item_id + "' class='loader_over'><img src='" + base_url + "img/loader_scr.gif'></div>");
 		var send_data = {
 			url: new_caret,
+			label: new_label,
 			year: $("#year_s > option:selected").val(),
 			week: $(".pagination ul li.page.active").data('week'),
 			pos: pos
