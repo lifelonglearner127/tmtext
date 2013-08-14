@@ -1,8 +1,7 @@
 var readAssessUrl = base_url + 'index.php/research/get_assess_info';
 
 $(function () {
-    $.fn.serializeObject = function()
-    {
+    $.fn.serializeObject = function(){
         var o = {};
         var a = this.serializeArray();
         $.each(a, function() {
@@ -151,17 +150,16 @@ $(function () {
     }
 
     $(document).on('change', '#assessDetailsDialog_chkIncludeInReport', function(){
-        var batch_id = $("select[name='research_assess_batches']").find("option:selected").val();
-
-        var isChecked = $(this).is(':checked');
+        var research_data_id = $('#assessDetailsDialog_chkIncludeInReport').attr('research_data_id');
+        var include_in_report = $(this).is(':checked');
         var data = {
-
+            research_data_id:research_data_id,
+            include_in_report:include_in_report
         };
         $.post(
-            base_url + 'index.php/research/include_in_report',
+            base_url + 'index.php/assess/include_in_report',
             data,
             function(data){
-
             }
         );
     });
@@ -180,11 +178,30 @@ $(function () {
         $('#assessDetails_LongDescriptionWC').html(add_data.long_description_wc);
         $('#assessDetails_LongSEO').val(add_data.long_seo_phrases);
 
-        //$(this).attr('checked', isChecked);
         var chk_include_in_report = '<div id="assess_details_dialog_options"><label><input id="assessDetailsDialog_chkIncludeInReport" type="checkbox">Include in report</label></div>';
-        $('#assessDetailsDialog').parent().find('.ui-dialog-buttonpane button[id="assessDetailsDialog_btnIncludeInReport"]').replaceWith(chk_include_in_report);
+        var assessDetailsDialog_replace_element = $('#assessDetailsDialog').parent().find('.ui-dialog-buttonpane button[id="assessDetailsDialog_btnIncludeInReport"]');
+        if (assessDetailsDialog_replace_element.length > 0) {
+            assessDetailsDialog_replace_element.replaceWith(chk_include_in_report);
+        }
 
-        $('#assessDetailsDialog').dialog('open');
+        var data = {
+            research_data_id: add_data.research_data_id
+        };
+        var checked = false;
+        $.get(
+            base_url + 'index.php/assess/include_in_assess_report_check',
+            data,
+            function(data) {
+                checked = data.checked;
+                var assessDetailsDialog_chkIncludeInReport = $('#assessDetailsDialog_chkIncludeInReport');
+                assessDetailsDialog_chkIncludeInReport.removeAttr('checked');
+                if (checked == true) {
+                    assessDetailsDialog_chkIncludeInReport.attr('checked', 'checked');
+                }
+                assessDetailsDialog_chkIncludeInReport.attr('research_data_id', add_data.research_data_id);
+                $('#assessDetailsDialog').dialog('open');
+            }
+        );
 
         $('#ajaxLoadAni').fadeOut('slow');
     });
@@ -226,7 +243,7 @@ $(function () {
     });
 
     function copyToClipboard(text) {
-        window.prompt ("Copy to clipboard: Ctrl+C, Enter (or Esc)", text);
+        window.prompt("Copy to clipboard: Ctrl+C, Enter (or Esc)", text);
     }
 
     $('select[name="research_assess_customers"]').on("change", function(res) {
@@ -481,7 +498,6 @@ $(function () {
     }
 
     function reportPanel(visible) {
-        console.log(visible);
         if (visible) {
             $('#tblAssess').hide();
             $('#tblAssess').parent().find('div.ui-corner-bl').hide();

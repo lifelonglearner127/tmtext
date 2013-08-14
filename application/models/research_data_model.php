@@ -446,4 +446,32 @@ union all
         return $result;
     }
 
+    public function include_in_assess_report($research_data_id, $is_include){
+        if ($is_include == true) {
+            $is_include = 1;
+        } else {
+            $is_include = 0;
+        }
+        $data = array(
+            'include_in_assess_report' => $is_include
+        );
+        $this->db->update('research_data', $data, array('id' => $research_data_id));
+    }
+
+    public function include_in_assess_report_check($research_data_id){
+        $query = $this->db
+            ->select('include_in_assess_report')
+            ->from($this->tables['research_data'])
+            ->where('id', $research_data_id)
+            ->limit(1)
+            ->get();
+        $result = $query->result();
+        $check = false;
+        if (count($result) > 0) {
+            if ($result[0]->include_in_assess_report == 1) {
+                $check = true;
+            }
+        }
+        return $check;
+    }
 }

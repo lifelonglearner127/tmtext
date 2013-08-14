@@ -144,7 +144,17 @@ class Assess extends MY_Controller {
         echo json_encode($res);
     }
 
-    public function include_in_report(){
+    public function include_in_assess_report_check(){
+        $research_data_id = $this->input->get('research_data_id');
+        $this->load->model('research_data_model');
+        $result['checked'] = $this->research_data_model->include_in_assess_report_check($research_data_id);
+        $this->output->set_content_type('application/json')->set_output(json_encode($result));
+    }
 
+    public function include_in_report(){
+        $research_data_id = $this->input->post('research_data_id');
+        $include_in_report = trim(strtolower($this->input->post('include_in_report'))) === 'true' ? true : false;
+        $this->load->model('research_data_model');
+        $this->research_data_model->include_in_assess_report($research_data_id, $include_in_report);
     }
 }
