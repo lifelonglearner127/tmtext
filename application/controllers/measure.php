@@ -189,7 +189,6 @@ class Measure extends MY_Controller {
             foreach ($urls as $k => $v) {
                 // ---- snap it and update crawler_list table (start)
                 $url = preg_replace('#^https?://#', '', $v['url']);
-                $url = preg_replace('#^www.#', '', $url);
                 $url = urlencode(trim($url));
                 die("STOP!");
                 // $url = urlencode(trim('www.staples.com/VIZIO-E500D-A0-50-inch-Diagonal-1080p-LED-HD-Television/product_IM1QZ5844'));
