@@ -59,10 +59,14 @@ class Statistics_model extends CI_Model {
         }
         $txt_filter = $params->txt_filter;
 
+        /*$query = $this->db->where('batch_name', $batch_name)
+            ->like('product_name', $txt_filter)
+            ->get($this->tables['statistics']);*/
+
         $query = $this->db
             ->select('s.*, rd.include_in_assess_report')
             ->from($this->tables['statistics'].' as s')
-            ->join($this->tables['research_data'].' as rd', 'rd.id = s.research_data_id', 'inner')
+            ->join($this->tables['research_data'].' as rd', 'rd.id = s.research_data_id', 'left')
             ->where('s.batch_name2', $batch_name)->like('s.product_name', $txt_filter)
             ->get();
         $result =  $query->result();
