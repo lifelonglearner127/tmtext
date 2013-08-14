@@ -412,17 +412,13 @@ $(function () {
                 id: 'assess_report_options_dialog_cancel',
                 text: 'Cancel',
                 click: function() {
-                    $(this).dialog('close');
+                    assess_report_options_dialog_close();
                 }
             },
             'Save': {
                 id: 'assess_report_options_dialog_save',
                 text: 'Save',
                 click: function() {
-//                    var competitors = $('#assess_report_competitors :selected');
-//                    competitors.each(function(index) {
-//                        console.log(this.value);
-//                    });
                     var batch_id = $('select[name="research_assess_batches"] option:selected').val();
                     var assess_report_options_form = $('#assess_report_options_form').serializeObject();
                     assess_report_options_form.batch_id = batch_id;
@@ -433,13 +429,17 @@ $(function () {
                         base_url + 'index.php/assess/research_assess_report_options_set',
                         data
                     );
-
-                    $(this).dialog('close');
+                    assess_report_options_dialog_close();
                 }
             }
         },
         width: '450px'
     });
+
+    function assess_report_options_dialog_close(){
+        $('#assess_report_competitors').empty();
+        $('#assess_report_options_dialog').dialog('close');
+    }
 
     $('#research_batches_columns').on('click', function() {
         $('#research_assess_choiceColumnDialog').dialog('open');
