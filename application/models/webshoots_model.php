@@ -88,7 +88,7 @@ class Webshoots_model extends CI_Model {
         return $res;
     }
 
-    function recordWebShootSelectionAttempt($screen_id, $uid, $pos, $year, $week, $img, $thumb, $screen_stamp, $url) {
+    function recordWebShootSelectionAttempt($screen_id, $uid, $pos, $year, $week, $img, $thumb, $screen_stamp, $url, $label) {
         $res = false;
         $check_obj = array(
             'pos' => $pos,
@@ -105,7 +105,8 @@ class Webshoots_model extends CI_Model {
                 'img' => $img,
                 'thumb' => $thumb,
                 'screen_stamp' => $screen_stamp, 
-                'site' => $url  
+                'site' => $url, 
+                'label' => $label  
             );
             $this->db->update($this->tables['webshoots_select'], $update_object, $check_obj);
         } else { // --- new
@@ -119,7 +120,8 @@ class Webshoots_model extends CI_Model {
                 'thumb' => $thumb,
                 'stamp' => date("Y-m-d H:i:s"),
                 'screen_stamp' => $screen_stamp,
-                'site' => $url
+                'site' => $url,
+                'label' => $label
             );
             $this->db->insert($this->tables['webshoots_select'], $insert_object);
         }

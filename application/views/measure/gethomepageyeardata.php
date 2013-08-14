@@ -160,8 +160,8 @@
 						    </button>
 						    <ul class="dropdown-menu">
 						    	<?php foreach($customers_list as $val) { ?>
-						    		<?php $val_name = $val['name_val']; ?>
-						    		<li><a onclick="clickScreenDrop('<?php echo $val_name; ?>', '<?php echo $v; ?>', '<?php echo $pos; ?>')" data-pos="<?php echo $pos; ?>" data-item="<?php echo $v; ?>" data-value="<?php echo $val['name_val']; ?>" href="javascript:void(0)"><?php echo $val['name']; ?></a></li>
+						    		<?php $val_name = $val['name_val']; $c_url = $val['c_url']; ?>
+						    		<li><a onclick="clickScreenDrop('<?php echo $c_url; ?>', '<?php echo $v; ?>', '<?php echo $pos; ?>', '<?php echo $val_name; ?>')" data-pos="<?php echo $pos; ?>" data-item="<?php echo $v; ?>" data-value="<?php echo $val['name_val']; ?>" href="javascript:void(0)"><?php echo $val['name']; ?></a></li>
 						    	<?php } ?>
 						    </ul>
 					    </div>
@@ -188,8 +188,8 @@
 <!-- <a id='overview_screens_crawl' onclick="openOverviewScreensCrawlModal()" class='btn btn-success'><i class='icon-print'></i>&nbsp;Overview crawl results</a> -->
 
 <script type="text/javascript">
-	function clickScreenDrop(new_caret, item_id, pos) {
-		$("#hp_boot_drop_" + item_id + " .btn_caret_sign").text(new_caret);
+	function clickScreenDrop(new_caret, item_id, pos, new_label) {
+		$("#hp_boot_drop_" + item_id + " .btn_caret_sign").text(new_label);
 		// ---- ATTEMPT TO GET SCREENSHOT (START)
 		$("#art_img_" + item_id).append("<div id='loader_over_" + item_id + "' class='loader_over'><img src='" + base_url + "img/loader_scr.gif'></div>");
 		var send_data = {
@@ -254,7 +254,7 @@
 
 					var t = moment(data[i]['cell']['screen_stamp']).format('MMMM Do, YYYY');
 					$("#crawl_date_" + item_id).text(t);
-					$("#hp_boot_drop_" + item_id + " .btn_caret_sign").text(data[i]['cell']['site']);
+					$("#hp_boot_drop_" + item_id + " .btn_caret_sign").text(data[i]['cell']['label']);
 	    		}
 	    	}
 	    });

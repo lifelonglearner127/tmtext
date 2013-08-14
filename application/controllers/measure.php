@@ -222,6 +222,7 @@ class Measure extends MY_Controller {
         $week = $this->input->post('week');
         $url = $this->input->post('url');
         $pos = $this->input->post('pos');
+        $label = $this->input->post('label');
         $uid = $this->ion_auth->get_user_id();
         $this->load->model('webshoots_model');
         $res = $this->webshoots_model->getWebShootByUrl($url);
@@ -259,7 +260,7 @@ class Measure extends MY_Controller {
             );
             $insert_id = $this->webshoots_model->recordUpdateWebshoot($result);
             $result = $this->webshoots_model->getWebshootDataById($insert_id);
-            $this->webshoots_model->recordWebShootSelectionAttempt($insert_id, $uid, $pos, $year, $week, $result->img, $result->thumb, $result->stamp, $result->url); // --- webshoot selection record attempt
+            $this->webshoots_model->recordWebShootSelectionAttempt($insert_id, $uid, $pos, $year, $week, $result->img, $result->thumb, $result->stamp, $result->url, $label); // --- webshoot selection record attempt
         }
         $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }
@@ -547,12 +548,15 @@ class Measure extends MY_Controller {
         $customers_init_list = $this->customers_model->getAll();
         if (count($customers_init_list) > 0) {
             foreach ($customers_init_list as $key => $value) {
+                $c_url = preg_replace('#^https?://#', '', $value->url);
+                $c_url = preg_replace('#^www.#', '', $c_url);
                 $mid = array(
                     'id' => $value->id,
                     'desc' => $value->description,
                     'image_url' => $value->image_url,
                     'name' => $value->name,
-                    'name_val' => strtolower($value->name)
+                    'name_val' => $value->name,
+                    'c_url' => $c_url
                 );
                 $output[] = $mid;
             }
