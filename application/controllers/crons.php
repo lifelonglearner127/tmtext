@@ -184,19 +184,30 @@ class Crons extends MY_Controller {
                                     $obj->product_name, $obj->url, $obj->short_description, $obj->long_description,
                                     $obj->short_description_wc, $obj->long_description_wc,
                                     $obj->short_seo_phrases, $obj->long_seo_phrases);
-                                var_dump($insert_id);
+
                                 if($insert_id != false){
                                     $res = $this->check_duplicate_content( $obj->imported_data_id);
                                     foreach($res as $val){
-                                        $this->statistics_duplicate_content_model->insert($val['imported_data_id'], $val['product_name'],
-                                            $val['description'], $val['long_description'], $val['url'],
-                                            $val['features'], $val['customer'],
-                                            $val['long_original'], $val['short_original']);
+
                                     }
                                     echo $batch->title."----".$obj->imported_data_id."=Done";
                                 }
                             }
                         }
+                        $params = new stdClass();
+                        $params->batch_name = $batch->title;
+                        $params->txt_filter = '';
+                        $stat_data= $this->statistics_model->getStatsData($params);
+                        if(count($stat_data)>0){
+                            foreach($stat_data as $stat){
+                                $this->statistics_duplicate_content_model->insert($stat->imported_data_id, $stat->product_name,
+                                    $stat->description, $stat->long_description, $stat->url,
+                                    $stat->features, $stat->customer,
+                                    $stat->long_original, $stat->short_original);
+                            }
+                        }
+
+                        $params->url = $this->input->get('url');
             }
             echo "Cron Job Finished";
         } catch (Exception $e) {
@@ -249,8 +260,8 @@ class Crons extends MY_Controller {
                 $query_cus_res = $query_cus->result();
                 if (count($query_cus_res) > 0) {
                     foreach ($query_cus_res as $key => $value) {
-                        $n = strtolower($value->name);
-                        $customers_list[] = $n;
+                        $n = parse_url($value->url);
+                        $customers_list[] = $n['host'];
                     }
                 }
                 $customers_list = array_unique($customers_list);
