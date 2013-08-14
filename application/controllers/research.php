@@ -744,6 +744,24 @@ class Research extends MY_Controller {
         $report_cover = str_replace('#date#', date('F j, Y'), $report_cover);
         $report_cover = str_replace('#customer name#', $customer->name, $report_cover);
 
+        $layout = 'Letter-L';
+        if (!empty($assess_report_page_layout)) {
+            if ($assess_report_page_layout == 2) {
+                $layout = 'Letter';
+            }
+        }
+
+
+        $this->load->library('pdf');
+        $pdf = $this->pdf->load();
+        $pdf = new mPDF('', $layout, 0, '', 10, 10, 10, 10, 8, 8);
+//        $pdf->showImageErrors = true;
+        $pdf->debug = true;
+        $stylesheet = file_get_contents($css_path.'assess_report.css');
+        $pdf->WriteHTML($stylesheet, 1);
+        $pdf->SetHTMLFooter('<span style="font-size: 8px;">Copyright © 2013 Content Solutions, Inc.</span>');
+
+
         $html = '';
 
         $build_assess_params = new stdClass();
@@ -774,8 +792,11 @@ class Research extends MY_Controller {
 
         $html = $html.$header;
         $html = $html.$report_cover;
-        $html = $html.'<pagebreak />';
+        $pdf->WriteHTML($html);
+        //$html = $html.'<pagebreak />';
 
+        $pdf->AddPage();
+        $html = '';
 
         $html = $html.$header;
 
@@ -843,27 +864,11 @@ class Research extends MY_Controller {
         $html = $html.'<tr><td>';
         $html = $html.'</table>';
 
-        $layout = 'Letter-L';
-        if (!empty($assess_report_page_layout)) {
-            if ($assess_report_page_layout == 2) {
-                $layout = 'Letter';
-            }
-        }
+        $pdf->WriteHTML($html);
 
-        $this->load->library('pdf');
-        $pdf = $this->pdf->load();
-        $pdf = new mPDF('', $layout, 0, '', 10, 10, 10, 10, 8, 8);
-        $stylesheet = file_get_contents($css_path.'assess_report.css');
 
-//        $pdf->showImageErrors = true;
 
-        $pdf->WriteHTML($stylesheet, 1);
-
-        $pdf->WriteHTML($html, 2);
-
-        $pdf->SetHTMLFooter('<div style="font-size: 10px;">Copyright © 2013 Content Solutions, Inc.</div>');
-
-        $pdf->Output();
+        $pdf->Output('report.pdf', 'I');
     }
 
     private function assess_sort($a, $b) {

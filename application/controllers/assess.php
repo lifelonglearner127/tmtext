@@ -129,4 +129,8 @@ class Assess extends MY_Controller {
         $res = $this->settings_model->replace($user_id, $key, $new_settings, $description);
         echo json_encode($res);
     }
+
+    public function include_in_report(){
+
+    }
 }

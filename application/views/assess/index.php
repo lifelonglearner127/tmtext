@@ -47,7 +47,7 @@
                         Select All
                     </label>
                     <label class="checkbox">
-                        <input id="research_assess_price_diff" type="checkbox" checked>
+                        <input id="research_assess_price_diff" type="checkbox" >
                         Price Difference
                     </label>
                 </div>
@@ -275,7 +275,7 @@
                                     Download
                                     <a id="assess_report_download_pdf" target="_blank" data-type="pdf">PDF</a> |
                                     <a id="assess_report_download_doc" target="_blank" data-type="doc">DOC</a>
-                                    <button id="assess_report_options_dialog_button" class="btn ml_15"><i class="icon-wrench"></i></button>
+                                    <button id="assess_report_options_dialog_button" class="btn ml_15" title="Report Options"><img class="other-icon" src="<?php echo base_url();?>img/ico-gear.png" /></button>
                                 </span>
                                 <a class="ml_10 research_arrow" href="#">
                                     <img src="<?php echo base_url();?>img/arrow.png">

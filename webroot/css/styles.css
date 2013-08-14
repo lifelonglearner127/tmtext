@@ -421,19 +421,26 @@ ul.ui-sortable {
     color:#0088CC;
     cursor: pointer;
 }
-#assess_details_dialog_opstions {
+#assess_details_dialog_options {
     height: 20px;
     left: -150px;
     position: relative;
     top: -29px;
 }
-#assess_details_dialog_opstions label{
+#assess_details_dialog_options label{
     margin: 0px !important;
     padding: 0px !important;
     min-height: 0px !important;
 }
-#assess_details_dialog_opstions input[type=checkbox] {
+#assess_details_dialog_options input[type=checkbox] {
     margin: 0px !important;
     padding: 0px !important;
     min-height: 0px !important;
+}
+.other-icon {
+    height: 14px;
+    line-height: 14px;
+    margin-top: 1px;
+    vertical-align: text-top;
+    width: 14px;
 }

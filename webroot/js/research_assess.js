@@ -151,12 +151,14 @@ $(function () {
     }
 
     $(document).on('change', '#assessDetailsDialog_chkIncludeInReport', function(){
+        var batch_id = $("select[name='research_assess_batches']").find("option:selected").val();
+
         var isChecked = $(this).is(':checked');
         var data = {
 
         };
         $.post(
-            base_url + 'index.php/research/filterBatchByCustomer',
+            base_url + 'index.php/research/include_in_report',
             data,
             function(data){
 
@@ -178,7 +180,10 @@ $(function () {
         $('#assessDetails_LongDescriptionWC').html(add_data.long_description_wc);
         $('#assessDetails_LongSEO').val(add_data.long_seo_phrases);
 
-        $('#assessDetailsDialog').parent().find('.ui-dialog-buttonpane button[id="assessDetailsDialog_btnIncludeInReport"]').replaceWith('<div id="assess_details_dialog_opstions"><label><input id="assessDetailsDialog_chkIncludeInReport" type="checkbox">Include in report</label></div></div>');
+        //$(this).attr('checked', isChecked);
+        var chk_include_in_report = '<div id="assess_details_dialog_options"><label><input id="assessDetailsDialog_chkIncludeInReport" type="checkbox">Include in report</label></div>';
+        $('#assessDetailsDialog').parent().find('.ui-dialog-buttonpane button[id="assessDetailsDialog_btnIncludeInReport"]').replaceWith(chk_include_in_report);
+
         $('#assessDetailsDialog').dialog('open');
 
         $('#ajaxLoadAni').fadeOut('slow');
