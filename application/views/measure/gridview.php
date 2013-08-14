@@ -23,65 +23,6 @@ foreach ($same_pr as $ks => $vs) {
 
 }
 ?>
-<img src="<?php echo base_url() ?>/img/table-icone.png" style="height: 25px;width: 25px; margin-bottom: 5px;">
-<table id="table_view" border="2" style="display: none;" >
-    <tr>
-        <td></td>
-        <td id="drop_1">
-            
-        </td>
-        <td id="drop_2">
-             
-        </td>
-    </tr>
-    <tr>
-        <td><b>URL</b></td>
-        <td></td>
-        <td></td>
-    </tr>
-    <tr>
-        <td><b>Product</b></td>
-        <td></td>
-        <td></td>
-    </tr>
-    <tr>
-        <td><b>Price</b></td>
-        <td></td>
-        <td></td>
-    </tr>
-    <tr>
-        <td><b>Short Description</b></td>
-        <td></td>
-        <td></td>
-    </tr>
-    <tr>
-        <td>SEO Keywords</td>
-        <td></td>
-        <td></td>
-    </tr>
-    <tr>
-        <td>Dublicate Content</td>
-        <td></td>
-        <td></td>
-    </tr>
-    <tr>
-         <td><b>Long Description</b></td>
-        <td></td>
-        <td></td>
-    </tr>
-    <tr>
-        <td>SEO Keywords</td>
-        <td></td>
-        <td></td>
-    </tr>
-    <tr>
-        <td>Dublicate Content</td>
-        <td></td>
-        <td></td>
-    </tr>
-</table>
-
-
 <?php
 foreach ($same_pr as $ks => $vs) {
     //Max
@@ -445,6 +386,8 @@ $(".an_grd_view_drop select").live('change', function(){
    
    //$(".an_grd_view_drop .grid").html(listings[url]);
 //});
+ 
+ selectedCustomer();
  
 </script>
 

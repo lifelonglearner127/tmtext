@@ -83,17 +83,44 @@ function startGridsBoxesContentAnalyzer(s) {
 // }
 
 function viewIconsReset() {
-    $('#grid_sw_list, #grid_sw_grid').removeClass('btn-primary');
+    $('#grid_sw_list, #grid_sw_grid, #table_grid').removeClass('btn-primary');
     $('#grid_sw_list > i').removeClass('icon-white');
     $('#grid_sw_grid > i').removeClass('icon-white');
+    $('#table_grid > i').removeClass('icon-white');
 }
+function selectedCustomer(){
+    if($("#batchess").val()!== '0'){
+     
+     $.post(base_url + 'index.php/research/filterCustomerByBatch', {'batch': $("#batchess").val()}, function(data) {
+            if (data != '') {
+                  $("select[name='customers_list'] option").each(function() {
 
+                    if (data == $(this).val()) {
+                        var dropdown = $("select[name='customers_list']").msDropdown().data("dd");
+                        dropdown.destroy();
+                        $('#product_customers .ddcommon').remove();
+                        $(this).prop('selected', true);
+                        //$("select[name='customers_list']").val($(this).val());
+                        dropdown = $("select[name='customers_list']").msDropdown().data("dd");
+
+                    }
+                });
+            }
+    
+     });
+    
+    }
+}
 function initGrid() {
     viewIconsReset();
     if (grid_status === 'list') {
         $('#grid_sw_list').addClass('btn-primary');
         $('#grid_sw_list > i').addClass('icon-white');
-    } else if (grid_status === 'grid') {
+    }
+    if(grid_status === 'table'){
+        $('#table_grid').addClass('btn-primary');
+        $('#table_grid > i').addClass('icon-white');
+    }else if (grid_status === 'grid') {
         $('#grid_sw_grid').addClass('btn-primary');
         $('#grid_sw_grid > i').addClass('icon-white');
     }
@@ -119,7 +146,12 @@ function switchToListView() {
         $.cookie('status_view', grid_status, {expires: 7, path: '/'}); // create
     }
 }
-//Max
+function switchToTableView(){
+    viewIconsReset();
+    grid_status = 'table';
+    initGrid();
+    
+}
 function switchToGridView() {
 
     viewIconsReset();
@@ -656,8 +688,7 @@ function keywordsAnalizer() {
 // --- KEYWORDS ANALYZER (END)
 
 $(document).ready(function() {
-    //Max
-    $(".mismatch_image").live('click', function() {
+   $(".mismatch_image").live('click', function() {
         $(this).closest('.grid_se_section').hide();
         var im_data_id = $(this).data('value');
         var aaa = $.post(base_url + 'index.php/measure/report_mismatch', {group_id: group_id, im_data_id: im_data_id}, 'json').done(function(data) {

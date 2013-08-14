@@ -1812,3 +1812,8 @@ select#sites option{
     color:#555555;
     width:100px;
 }
+.icon-th-table{
+    background: url("../img/table-icone.png")0 0 no-repeat !important;
+    height: 14px;
+    width: 14px;
+}

@@ -5,15 +5,13 @@
         var alldata =<?php echo json_encode($search_results); ?>;
 
         $(document).ready(function() {
-            
+           selectedCustomer();  
             setTimeout(function() {
                    $('#products li:eq(0)').trigger('click');
                    
             }, 500);
             
     
-            
-            
             $(document).click(function(e) {
                 if ($(e.target).hasClass('products_an_search') || $(e.target).parents('.products_an_search').length > 0) {
                 $('select').blur();        

@@ -17,15 +17,16 @@ jQuery(document).ready(function($) {
         <div class="measure-products">
             <div class="row-fluid mb_20">
                 <div class="span6">
-<!--                    Batch:-->
+
                     <div id="product_customers" class="customer_dropdown"></div>
- <!--        Max        -->                   
+                 
                     <?php  echo form_dropdown('product_batches', $batches_list, array(), 'class="mt_10 mr_10" id="batchess" style="width: 145px;"');//max ?>
                 </div>
 
                 <ul class='grid_switcher' data-status='grid-switch' style="margin-top: 10px;position: relative;left: 105px;">
                         <li style="float: left;">
                             <button style="margin-right: 9px" class='btn' onclick="switchToGridView();" id='grid_sw_grid' type='button'><i class="icon-th-large"></i>&nbsp;Comparison</button>
+                            <button style="margin-right: 9px" class='btn' onclick="switchToTableView();" id='table_grid' type='button'><i class="icon-th-table"></i>&nbsp;Table</button>
                             <button class='btn' onclick="switchToListView();" id='grid_sw_list' type='button'><i class="icon-th-list"></i>&nbsp;List</button>
                         </li>
 <!--                        <li style="float: left; margin-top: 6px;margin-left: 15px;">
@@ -33,7 +34,7 @@ jQuery(document).ready(function($) {
                         	<input style="position: relative;top: -3px;" id="strict_grid" type="checkbox" name="strict_grid" value="1"> Exact Match
                         </li>-->
                 </ul>
-<!--      Max          -->
+
             </div>
      </div>
         <div class="row-fluid">
@@ -282,6 +283,6 @@ jQuery(document).ready(function($) {
             }
 
             // ---- search string cookie (auto mode search launcher) (end)
-        </script>
+       </script>
 </div>
 </div>
