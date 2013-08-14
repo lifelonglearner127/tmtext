@@ -98,13 +98,27 @@ class Assess extends MY_Controller {
     }
 
     public function research_assess_report_options_get(){
-//        $this->load->model('sites_model');
-//        $this->sites_model->getAll();
+        $this->load->model('sites_model');
+        $all_sites = $this->sites_model->getAll();
         $user_id = $this->ion_auth->get_user_id();
         $key = 'research_assess_report_options';
         $batch_id = $this->input->get('batch_id');
         $existing_settings = $this->settings_model->get_value($user_id, $key);
         $batch_settings = $existing_settings[$batch_id];
+        $competitors = array();
+        foreach ($all_sites as $k => $v){
+            if (in_array($v->id, $batch_settings->assess_report_competitors)) {
+                $selected = true;
+            } else {
+                $selected = false;
+            }
+            $competitors[] = array(
+                'id' => $v->id,
+                'name' => $v->name,
+                'selected' => $selected
+            );
+        }
+        $batch_settings->assess_report_competitors = $competitors;
         echo json_encode($batch_settings);
     }
 

@@ -234,7 +234,7 @@
             <tr>
                 <td style="vertical-align: top;">Competitors:</td>
                 <td>
-                    <select id="assess_report_competitors" name="assess_report_competitors" style="width: 100%;height: 150px;" multiple="">
+                    <select id="assess_report_competitors" name="assess_report_competitors" style="width: 100%;height: 250px;" multiple="">
                         <option value="1" selected="selected">walmart</option>
                         <option value="2">amazon</option>
                         <option value="3" selected="selected">bjs</option>

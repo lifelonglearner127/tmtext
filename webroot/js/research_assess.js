@@ -382,13 +382,20 @@ $(function () {
             data,
             function(data) {
                 var report_options = $.parseJSON(data);
-                console.log(report_options);
                 if (report_options != undefined) {
                     $('#assess_report_page_layout').val(report_options.assess_report_page_layout);
                 } else {
                     $('#assess_report_page_layout').val(1);
                 }
-
+                var assess_report_competitors = $('#assess_report_competitors');
+                assess_report_competitors.empty();
+                $.each(report_options.assess_report_competitors, function(index, value) {
+                    var selected = '';
+                    if (value.selected) {
+                        selected = 'selected="selected"';
+                    }
+                    assess_report_competitors.append('<option value="'+value.id+'" '+selected+'>'+value.name+'</option>');
+                });
             }
         );
         $('#assess_report_options_dialog').parent().find('.ui-dialog-buttonpane button[id="assess_report_options_dialog_save"]').addClass("btn btn-success");
@@ -431,7 +438,7 @@ $(function () {
                 }
             }
         },
-        width: '350px'
+        width: '450px'
     });
 
     $('#research_batches_columns').on('click', function() {
