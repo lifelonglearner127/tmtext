@@ -156,6 +156,52 @@ class Measure extends MY_Controller {
         $this->output->set_content_type('application/json')->set_output(json_encode($res));
     }
 
+    private function crawl_webshoot($call_url, $id) {
+        $file = file_get_contents($call_url);
+        $type = 'png';
+        $dir = realpath(BASEPATH . "../webroot/crawl_snaps");
+        if (!file_exists($dir)) {
+            mkdir($dir);
+            chmod($dir, 0777);
+        }
+        // --- NEW STUFF (TIMESTAMP BASED IMAGES NAMES) (START)
+        $url_name = $id . "-" . date('Y-m-d-H-i-s', time());
+        // --- NEW STUFF (TIMESTAMP BASED IMAGES NAMES) (END)
+        $t = file_put_contents($dir . "/$url_name.$type", $file);
+        $path = base_url() . "crawl_snaps/$url_name.$type";
+        $res = array(
+            'path' => $path,
+            'dir' => $dir . "/$url_name.$type",
+            'call' => $call_url
+        );
+        return $res;
+    }
+
+    public function crawlsnapshoot() {
+        $urls = $this->input->post('urls');
+        if(count($urls) > 0) {
+            // -- snaps configs (start)
+            $api_key = $this->config->item('webyshots_api_key');
+            $api_secret = $this->config->item('webyshots_api_secret');
+            $size = "w800";
+            $format = "png";
+            // -- snaps configs (end)
+            foreach ($urls as $k => $v) {
+                // ---- snap it and update crawler_list table (start)
+                $url = preg_replace('#^https?://#', '', $v['url']);
+                $url = preg_replace('#^www.#', '', $url);
+                $url = urlencode(trim($url));
+                die("STOP!");
+                // $url = urlencode(trim('www.staples.com/VIZIO-E500D-A0-50-inch-Diagonal-1080p-LED-HD-Television/product_IM1QZ5844'));
+                $token = md5("$api_secret+$url");
+                $call_url = "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size&format=$format";
+                $snap_res = $this->crawl_webshoot($call_url, $v['id']);
+                die(var_dump($snap_res));
+                // ---- snap it and update crawler_list table (end)
+            }
+        }
+    }
+
     public function webshootcrawlall() {
         $customers = $this->customers_list_new();
         $this->load->model('webshoots_model');

@@ -72,6 +72,7 @@
 				<button id="crawl_new" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Crawl New</button>
 				<button id="crawl_all" class="btn new_btn btn-success mt_10 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Crawl All</button>
 				<button id="current_crawl" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Crawl</button>
+				<button id="current_snapshot" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Snapshot</button>
 			</div>
 			<div class="row-fluid">
 				<div id="Current_List_Pager"></div>
@@ -113,7 +114,7 @@ function loadCurrentList(url){
                 imported_data_id = node.imported_data_id;
             }
             $("h3 small").html(data.total + ' items Total -- '+ data.new+ ' New');
-			$('#Current_List ul').append("<li id=\"id_"+node.id+"\"><span>"+imported_data_id+"</span><span>"+node.status+"</span><span>"+updated+"</span><span>"+category+"</span><span class=\"url ellipsis\">"+node.url+"</span></li>");
+			$('#Current_List ul').append("<li data-url=\""+node.url+"\" data-id=\""+node.id+"\" id=\"id_"+node.id+"\"><span>"+imported_data_id+"</span><span>"+node.status+"</span><span>"+updated+"</span><span>"+category+"</span><span class=\"url ellipsis\">"+node.url+"</span></li>");
 		});
 
   		$('#Current_List_Pager').html(data.pager);
@@ -152,11 +153,29 @@ $(function () {
         this.val($initialVal);
     };
 
+    $("#current_snapshot").click(function(e) {
+    	var urls = [];
+    	$("#Current_List > ul > li.active").each(function(index, value) {
+    		var mid = {
+    			id: $(value).data('id'),
+    			url: $(value).data('url')
+    		}
+    		urls.push(mid); 
+    	}); 
+    	var send_data = {
+    		urls: urls
+    	};
+    	$.post(base_url + 'index.php/measure/crawlsnapshoot', send_data, function(data) {
+    		console.log(data);
+    	});
+    });
+
     $('html').click(function(event) {
         if(!$(event.target).is('#current_list_delete') && !$(event.target).is('#current_crawl')){
             $('#current_list_delete').attr('disabled', 'disabled');
             $('#Current_List li').removeClass('active');
             $('#current_crawl').attr('disabled', 'disabled');
+            $('#current_snapshot').attr('disabled', 'disabled');
         }
     });
 
@@ -216,6 +235,7 @@ $(function () {
                 $(this).addClass('active');
 		$('#current_list_delete').removeAttr('disabled');
 		$('#current_crawl').removeAttr('disabled');
+		$('#current_snapshot').removeAttr('disabled');
 	});
 
 	$(document).on("click", "#add_list_delete", function(){
