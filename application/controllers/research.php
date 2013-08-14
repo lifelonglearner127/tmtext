@@ -469,26 +469,26 @@ class Research extends MY_Controller {
                            $short_percent = 0;
                            $long_percent = 0;
                            if ($build_assess_params->short_duplicate_content) {
-                               $duplicate_short_percent_total = 100 - $vs->short_original;
+                               $duplicate_short_percent_total = 100 - round($vs->short_original, 1);
                                $short_percent = 100 - round($vs->short_original, 1);
                                if($short_percent > 0){
                                    $duplicate_customers_short = '<nobr>'.$vs->customer.' - '.$short_percent.'%</nobr><br />';
                                }
                            }
                            if ($build_assess_params->long_duplicate_content) {
-                               $duplicate_long_percent_total = 100 - $vs->long_original;
+                               $duplicate_long_percent_total = 100 - round($vs->long_original, 1);
                                $long_percent = 100 - round($vs->long_original, 1);
                                if($long_percent > 0){
                                    $duplicate_customers_long = '<nobr>'.$vs->customer.' - '.$long_percent.'%</nobr><br />';
                                }
                            }
-                           if($short_percent >= 20 || $long_percent >= 20){
-                                   $items_have_more_than_20_percent_duplicate_content += 1;
-                           }
                        }
                    }
+                   if($duplicate_short_percent_total >= 20 || $duplicate_long_percent_total >= 20){
+                       $items_have_more_than_20_percent_duplicate_content += 1;
+                   }
                    if($duplicate_customers_short !=''){
-                       $duplicate_customers = $duplicate_short_percent_total.'--'. $duplicate_long_percent_total.'--Duplicate short<br />'.$duplicate_customers_short;
+                       $duplicate_customers = 'Duplicate short<br />'.$duplicate_customers_short;
                    }
                    if($duplicate_customers_long!=''){
                        $duplicate_customers = $duplicate_customers.'Duplicate long<br />'.$duplicate_customers_long;
