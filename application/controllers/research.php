@@ -327,6 +327,7 @@ class Research extends MY_Controller {
         $items_have_more_than_20_percent_duplicate_content = 0;
         $items_unoptimized_product_content = 0;
         $items_short_products_content = 0;
+        var_dump(count($results));
         foreach($results as $row) {
             //$short_description_wc = preg_match_all('/\b/', $row->short_description) / 2; // bug in PHP 5.3.10
             $short_description_wc = (count(preg_split('/\b/', $row->short_description)) - 1) / 2;
