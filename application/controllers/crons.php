@@ -178,24 +178,23 @@ class Crons extends MY_Controller {
             foreach($batches as $batch){
                         $data = $this->research_data_model->do_stats($batch->title);
                         if(count($data) > 0){
-                            $imdata_ids = array();
                             foreach($data as $obj){
                                 $insert_id = $this->statistics_model->insert($obj->rid, $obj->imported_data_id,
                                     $obj->research_data_id, $obj->batch_name,
                                     $obj->product_name, $obj->url, $obj->short_description, $obj->long_description,
                                     $obj->short_description_wc, $obj->long_description_wc,
                                     $obj->short_seo_phrases, $obj->long_seo_phrases);
-                                array_push($imdata_ids , $obj->imported_data_id);
-                            }
-                            foreach($imdata_ids as $imdata_id){
-                                $res = $this->check_duplicate_content($imdata_id);
-                                foreach($res as $val){
-                                    $this->statistics_duplicate_content_model->insert($val['imported_data_id'], $val['product_name'],
-                                        $val['description'], $val['long_description'], $val['url'],
-                                        $val['features'], $val['customer'],
-                                        $val['long_original'], $val['short_original']);
+                                var_dump($insert_id);
+                                if($insert_id != false){
+                                    $res = $this->check_duplicate_content( $obj->imported_data_id);
+                                    foreach($res as $val){
+                                        $this->statistics_duplicate_content_model->insert($val['imported_data_id'], $val['product_name'],
+                                            $val['description'], $val['long_description'], $val['url'],
+                                            $val['features'], $val['customer'],
+                                            $val['long_original'], $val['short_original']);
+                                    }
+                                    echo $batch->title."----".$obj->imported_data_id."=Done";
                                 }
-                                echo $batch->title."----".$obj->imported_data_id."=Done";
                             }
                         }
             }
