@@ -488,7 +488,7 @@ class Research extends MY_Controller {
                        }
                    }
                    if($duplicate_customers_short !=''){
-                       $duplicate_customers = $items_have_more_than_20_percent_duplicate_content.'--Duplicate short<br />'.$duplicate_customers_short;
+                       $duplicate_customers = $duplicate_short_percent_total.'--'. $duplicate_long_percent_total.'--Duplicate short<br />'.$duplicate_customers_short;
                    }
                    if($duplicate_customers_long!=''){
                        $duplicate_customers = $duplicate_customers.'Duplicate long<br />'.$duplicate_customers_long;
