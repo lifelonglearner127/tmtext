@@ -184,15 +184,7 @@ class Crons extends MY_Controller {
                                     $obj->product_name, $obj->url, $obj->short_description, $obj->long_description,
                                     $obj->short_description_wc, $obj->long_description_wc,
                                     $obj->short_seo_phrases, $obj->long_seo_phrases);
-
-                                if($insert_id != false){
-                                    $res = $this->check_duplicate_content( $obj->imported_data_id);
-                                    foreach($res as $val){
-
-                                    }
-                                    echo $batch->title."----".$obj->imported_data_id."=Done";
-                                }
-                            }
+                                    var_dump($insert_id);
                         }
                         $params = new stdClass();
                         $params->batch_name = $batch->title;
@@ -200,10 +192,17 @@ class Crons extends MY_Controller {
                         $stat_data= $this->statistics_model->getStatsData($params);
                         if(count($stat_data)>0){
                             foreach($stat_data as $stat){
-                                $this->statistics_duplicate_content_model->insert($stat->imported_data_id, $stat->product_name,
-                                    $stat->description, $stat->long_description, $stat->url,
-                                    $stat->features, $stat->customer,
-                                    $stat->long_original, $stat->short_original);
+                                $res_data = $this->check_duplicate_content($stat->imported_data_id);
+                                foreach($res_data as $val){
+                                    $this->statistics_duplicate_content_model->insert($val['imported_data_id'],
+                                        $val['product_name'], $val['description'],
+                                        $val['long_description'], $val['url'],
+                                        $val['features'], $val['customer'],
+                                        $val['long_original'], $val['short_original']);
+                                }
+                            }
+
+
                             }
                         }
 
