@@ -178,23 +178,24 @@ class Crons extends MY_Controller {
             foreach($batches as $batch){
                     if($batch->title == 'Walmart TVs'){
                         $data = $this->research_data_model->do_stats($batch->title);
-                        var_dump(count($data));
-                        die;
                         if(count($data) > 0){
                             foreach($data as $obj){
-                                $this->statistics_model->insert($obj->rid, $obj->imported_data_id, $obj->research_data_id, $obj->batch_name,
+                                $insert_id = $this->statistics_model->insert($obj->rid, $obj->imported_data_id,
+                                    $obj->research_data_id, $obj->batch_name,
                                     $obj->product_name, $obj->url, $obj->short_description, $obj->long_description,
                                     $obj->short_description_wc, $obj->long_description_wc,
                                     $obj->short_seo_phrases, $obj->long_seo_phrases);
-                                $res = $this->check_duplicate_content($obj->imported_data_id);
+                                var_dump($insert_id);
+                                /*$res = $this->check_duplicate_content($obj->imported_data_id);
                                 foreach($res as $val){
                                     $this->statistics_duplicate_content_model->insert($val['imported_data_id'], $val['product_name'],
                                         $val['description'], $val['long_description'], $val['url'],
                                         $val['features'], $val['customer'],
                                         $val['long_original'], $val['short_original']);
                                 }
-                                echo $batch->title."----".$obj->imported_data_id."=Done";
+                                echo $batch->title."----".$obj->imported_data_id."=Done";*/
                             }
+                            die;
                         }
                     }
             }
