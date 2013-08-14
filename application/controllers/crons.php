@@ -178,6 +178,8 @@ class Crons extends MY_Controller {
             foreach($batches as $batch){
                     if($batch->title == 'Walmart TVs'){
                         $data = $this->research_data_model->do_stats($batch->title);
+                        var_dump(count($data));
+                        die;
                         if(count($data) > 0){
                             foreach($data as $obj){
                                 $this->statistics_model->insert($obj->rid, $obj->imported_data_id, $obj->research_data_id, $obj->batch_name,
