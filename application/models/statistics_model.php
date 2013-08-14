@@ -67,7 +67,7 @@ class Statistics_model extends CI_Model {
             ->select('s.*, rd.include_in_assess_report')
             ->from($this->tables['statistics'].' as s')
             ->join($this->tables['research_data'].' as rd', 'rd.id = s.research_data_id', 'left')
-            ->where('s.batch_name2', $batch_name)->like('s.product_name', $txt_filter)
+            ->where('s.batch_name', $batch_name)->like('s.product_name', $txt_filter)
             ->get();
         $result =  $query->result();
         return $result;
