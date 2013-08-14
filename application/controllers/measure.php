@@ -228,7 +228,7 @@ class Measure extends MY_Controller {
         $res = $this->webshoots_model->getWebShootByUrl($url);
         if ($res !== false) {
             $screen_id = $res->id;
-            $this->webshoots_model->recordWebShootSelectionAttempt($screen_id, $uid, $pos, $year, $week, $res->img, $res->thumb, $res->stamp, $res->url); // --- webshoot selection record attempt
+            $this->webshoots_model->recordWebShootSelectionAttempt($screen_id, $uid, $pos, $year, $week, $res->img, $res->thumb, $res->stamp, $res->url, $label); // --- webshoot selection record attempt
             $result = $res;
         } else { // --- crawl brand new screenshot
             $url = urlencode(trim($url));
