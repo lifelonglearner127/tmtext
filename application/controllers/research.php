@@ -307,6 +307,8 @@ class Research extends MY_Controller {
     private function get_data_for_assess($params) {
         $this->load->model('statistics_model');
         $results = $this->statistics_model->getStatsData($params);
+        //$this->load->model('research_data_model');
+        //$results = $this->research_data_model->getInfoForAssess($params);
         return $results;
     }
 
@@ -454,29 +456,78 @@ class Research extends MY_Controller {
             }
 
             if ($build_assess_params->short_duplicate_content || $build_assess_params->long_duplicate_content) {
-                $dc = $this->statistics_duplicate_content_model->get($result_row->imported_data_id);
+               $dc = $this->statistics_duplicate_content_model->get($row->imported_data_id);
+               $duplicate_customers_short = '';
+               $duplicate_customers_long = '';
+               $duplicate_short_percent_total = 0;
+               $duplicate_long_percent_total = 0;
+               $customer_url = parse_url($customer_name[0]->url);
+               if (count($dc) > 1) {
+
+                   foreach ($dc as $vs) {
+                       if($customer_url['host'] == $vs->customer){
+                           $short_percent = 0;
+                           $long_percent = 0;
+                           if ($build_assess_params->short_duplicate_content) {
+                               $duplicate_short_percent_total += 100 - $vs->short_original;
+                               $short_percent = 100 - round($vs->short_original, 1);
+                               if($short_percent > 0){
+                                   $duplicate_customers_short = '<nobr>'.$vs->customer.' - '.$short_percent.'%</nobr><br />';
+                               }
+                           }
+                           if ($build_assess_params->long_duplicate_content) {
+                               $duplicate_long_percent_total += 100 - $vs->long_original;
+                               $long_percent = 100 - round($vs->long_original, 1);
+                               if($long_percent > 0){
+                                   $duplicate_customers_long = '<nobr>'.$vs->customer.' - '.$long_percent.'%</nobr><br />';
+                               }
+                           }
+                           if($short_percent >= 20 || $long_percent >= 20){
+                               $items_have_more_than_20_percent_duplicate_content += 1;
+                           }
+                       }
+                   }
+                   if($duplicate_customers_short !=''){
+                       $duplicate_customers = 'Duplicate short<br />'.$duplicate_customers_short;
+                   }
+                   if($duplicate_customers_long!=''){
+                       $duplicate_customers = $duplicate_customers.'Duplicate long<br />'.$duplicate_customers_long;
+                   }
+
+                   if ($duplicate_short_percent_total > $duplicate_content_range || $duplicate_long_percent_total > $duplicate_content_range) {
+                       $duplicate_customers = "<input type='hidden'/>".$duplicate_customers;
+                   }
+                   $result_row->duplicate_content = $duplicate_customers;
+               }
+           }
+
+
+            /*if ($build_assess_params->short_duplicate_content || $build_assess_params->long_duplicate_content) {
+                //$dc = $this->statistics_duplicate_content_model->get($row->imported_data_id);
+                $dc = $this->check_duplicate_content($result_row->imported_data_id);
                 $duplicate_customers_short = '';
                 $duplicate_customers_long = '';
                 $duplicate_short_percent_total = 0;
                 $duplicate_long_percent_total = 0;
+                $customer_url = parse_url($customer_name[0]->url);
                 if (count($dc) > 1) {
 
                     foreach ($dc as $vs) {
-                        if($vs->customer==''){
+                        if($customer_url['host'] == $vs['customer']){
                             $short_percent = 0;
                             $long_percent = 0;
                             if ($build_assess_params->short_duplicate_content) {
-                                $duplicate_short_percent_total += 100 - $vs->short_original;
-                                $short_percent = 100 - round($vs->short_original, 1);
+                                $duplicate_short_percent_total += 100 - $vs['short_original'];
+                                $short_percent = 100 - round($vs['short_original'], 1);
                                 if($short_percent > 0){
-                                    $duplicate_customers_short = $duplicate_customers_short.'<nobr>'.$customer_name[0]->name.' - '.$short_percent.'%</nobr><br />';
+                                    $duplicate_customers_short = $duplicate_customers_short.'<nobr>'.$vs['customer'].' - '.$short_percent.'%</nobr><br />';
                                 }
                             }
                             if ($build_assess_params->long_duplicate_content) {
-                                $duplicate_long_percent_total += 100 - $vs->long_original;
-                                $long_percent = 100 - round($vs->long_original, 1);
+                                $duplicate_long_percent_total += 100 - $vs['long_original'];
+                                $long_percent = 100 - round($vs['long_original'], 1);
                                 if($long_percent > 0){
-                                    $duplicate_customers_long = $duplicate_customers_long.'<nobr>'.$customer_name[0]->name.' - '.$long_percent.'%</nobr><br />';
+                                    $duplicate_customers_long = $duplicate_customers_long.'<nobr>'.$vs['customer'].' - '.$long_percent.'%</nobr><br />';
                                 }
                             }
                             if($short_percent >= 20 || $long_percent >= 20){
@@ -496,7 +547,7 @@ class Research extends MY_Controller {
                     }
                     $result_row->duplicate_content = $duplicate_customers;
                 }
-            }
+            }*/
 
             if ($result_row->short_seo_phrases == 'None' && $result_row->long_seo_phrases == 'None') {
                 $items_unoptimized_product_content++;

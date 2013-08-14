@@ -136,8 +136,8 @@ class Imported_data_parsed_model extends CI_Model {
         $query_cus_res = $query_cus->result();
         if (count($query_cus_res) > 0) {
             foreach ($query_cus_res as $key => $value) {
-                $n = strtolower($value->name);
-                $customers_list[] = $n;
+                $n = parse_url($value->url);
+                $customers_list[] = $n['host'];
             }
         }
         $customers_list = array_unique($customers_list);
@@ -189,8 +189,8 @@ class Imported_data_parsed_model extends CI_Model {
         $query_cus_res = $query_cus->result();
         if (count($query_cus_res) > 0) {
             foreach ($query_cus_res as $key => $value) {
-                $n = strtolower($value->name);
-                $customers_list[] = $n;
+                $n = parse_url($value->url);
+                $customers_list[] = $n['host'];
             }
         }
         $customers_list = array_unique($customers_list);
@@ -344,8 +344,8 @@ class Imported_data_parsed_model extends CI_Model {
         $query_cus_res = $query_cus->result();
         if (count($query_cus_res) > 0) {
             foreach ($query_cus_res as $key => $value) {
-                $n = strtolower($value->name);
-                $customers_list[] = $n;
+                $n = parse_url($value->url);
+                $customers_list[] = $n['host'];
             }
         }
         $customers_list = array_unique($customers_list);
@@ -494,8 +494,8 @@ class Imported_data_parsed_model extends CI_Model {
             $query_cus_res = $query_cus->result();
             if (count($query_cus_res) > 0) {
                 foreach ($query_cus_res as $key => $value) {
-                    $n = strtolower($value->name);
-                    $customers_list[] = $n;
+                    $n = parse_url($value->url);
+                    $customers_list[] = $n['host'];
                 }
             }
             $customers_list = array_unique($customers_list);
@@ -554,8 +554,8 @@ class Imported_data_parsed_model extends CI_Model {
         $query_cus_res = $query_cus->result();
         if (count($query_cus_res) > 0) {
             foreach ($query_cus_res as $key => $value) {
-                $n = strtolower($value->name);
-                $customers_list[] = $n;
+                $n = parse_url($value->url);
+                $customers_list[] = $n['host'];
             }
         }
         $customers_list = array_unique($customers_list);
@@ -684,8 +684,8 @@ class Imported_data_parsed_model extends CI_Model {
         $query_cus_res = $query_cus->result();
         if (count($query_cus_res) > 0) {
             foreach ($query_cus_res as $key => $value) {
-                $n = strtolower($value->name);
-                $customers_list[] = $n;
+                $n = parse_url($value->url);
+                $customers_list[] = $n['host'];
             }
         }
         $customers_list = array_unique($customers_list);
@@ -1469,8 +1469,8 @@ class Imported_data_parsed_model extends CI_Model {
             $query_cus_res = $query_cus->result();
             if (count($query_cus_res) > 0) {
                 foreach ($query_cus_res as $key => $value) {
-                    $n = strtolower($value->name);
-                    $customers_list[] = $n;
+                    $n = parse_url($value->url);
+                    $customers_list[] = $n['host'];
                 }
             }
             $customers_list = array_unique($customers_list);
@@ -1508,8 +1508,8 @@ class Imported_data_parsed_model extends CI_Model {
             $query_cus_res = $query_cus->result();
             if (count($query_cus_res) > 0) {
                 foreach ($query_cus_res as $key => $value) {
-                    $n = strtolower($value->name);
-                    $customers_list[] = $n;
+                    $n = parse_url($value->url);
+                    $customers_list[] = $n['host'];
                 }
             }
             $customers_list = array_unique($customers_list);
