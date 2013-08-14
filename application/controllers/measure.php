@@ -653,7 +653,7 @@ $main_base = substr($url, 11, $pos-11);
 
 return $main_base;
 }
-     public function gridview() {
+public function gridview() {
        $data['mismatch_button']=false;
         $im_data_id = $this->input->post('im_data_id');
 
@@ -970,6 +970,279 @@ return $main_base;
         // -------- COMPARING V1 (END)
 
         $this->load->view('measure/gridview', $data);
+
+    }
+    
+   
+    function tableview(){
+         $im_data_id = $this->input->post('im_data_id');
+
+        $data = array(
+            'im_data_id' => $im_data_id,
+            's_product' => array(),
+            's_product_short_desc_count' => 0,
+            's_product_long_desc_count' => 0,
+            'seo' => array('short' => array(), 'long' => array()),
+            'same_pr' => array()
+        );
+        if ($im_data_id !== null && is_numeric($im_data_id)) {
+
+            // --- GET SELECTED RPODUCT DATA (START)
+            $this->load->model('imported_data_parsed_model');
+            $this->load->model('similar_product_groups_model');
+            $this->load->model('similar_data_model');
+            $data_import = $this->imported_data_parsed_model->getByImId($im_data_id);
+
+            if ($data_import['description'] !== null && trim($data_import['description']) !== "") {
+                $data_import['description'] = preg_replace('/\s+/', ' ', $data_import['description']);
+                // $data_import['description'] = preg_replace('/[^A-Za-z0-9\. -!]/', ' ', $data_import['description']);
+                $data['s_product_short_desc_count'] = count(explode(" ", $data_import['description']));
+            }
+            if ($data_import['long_description'] !== null && trim($data_import['long_description']) !== "") {
+                $data_import['long_description'] = preg_replace('/\s+/', ' ', $data_import['long_description']);
+                // $data_import['long_description'] = preg_replace('/[^A-Za-z0-9\. -!]/', ' ', $data_import['long_description']);
+                $data['s_product_long_desc_count'] = count(explode(" ", $data_import['long_description']));
+            }
+            $data['s_product'] = $data_import;
+            // --- GET SELECTED RPODUCT DATA (END)
+            // --- ATTEMPT TO GET 'SAME' FROM 'HUMAN INTERFACE' (products_compare table) (START)
+            $same_pr = $this->imported_data_parsed_model->getSameProductsHuman($im_data_id);
+
+            // get similar by parsed_attributes
+            if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
+
+                $strict = $this->input->post('strict');
+                $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], $strict);
+            }
+
+            if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['UPC/EAN/ISBN'])) {
+
+                $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['UPC/EAN/ISBN']);
+            }
+            if(empty($same_pr) && !isset($data_import['parsed_attributes']['model'])){
+            $data['mismatch_button']=true;
+            if (!$this->similar_product_groups_model->checkIfgroupExists($im_data_id)) {
+
+                if (!isset($data_import['parsed_attributes'])) {
+
+                    $same_pr = $this->imported_data_parsed_model->getByProductName($im_data_id, $data_import['product_name'], '', $strict);
+                }
+                if (isset($data_import['parsed_attributes']) ) {
+
+                    $same_pr = $this->imported_data_parsed_model->getByProductName($im_data_id, $data_import['product_name'], $data_import['parsed_attributes']['manufacturer'], $strict);
+                }
+            } else {
+                $this->load->model('similar_imported_data_model');
+                $customers_list = array();
+                $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('customers');
+                $query_cus_res = $query_cus->result();
+                if (count($query_cus_res) > 0) {
+                    foreach ($query_cus_res as $key => $value) {
+                        $n = parse_url($value->url);
+                        $customers_list[] = $n['host'];
+                    }
+                }
+                $customers_list = array_unique($customers_list);
+                $rows = $this->similar_data_model->getByGroupId($im_data_id);
+                $data_similar = array();
+
+                foreach ($rows as $key => $row) {
+                    $data_similar[$key] = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
+                    $data_similar[$key]['imported_data_id'] = $row->imported_data_id;
+
+                    $cus_val = "";
+                    foreach ($customers_list as $ki => $vi) {
+                        if (strpos($data_similar[$key]['url'], "$vi") !== false) {
+                            $cus_val = $vi;
+                        }
+                    }
+                    if ($cus_val !== "")
+                        $data_similar[$key]['customer'] = $cus_val;
+                }
+
+                if (!empty($data_similar)) {
+                    $same_pr = $data_similar;
+                }
+            }
+            }
+            // get similar for first row
+            $this->load->model('similar_imported_data_model');
+
+            $customers_list = array();
+            $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('customers');
+            $query_cus_res = $query_cus->result();
+            if (count($query_cus_res) > 0) {
+                foreach ($query_cus_res as $key => $value) {
+                    $n = parse_url($value->url);
+                    $customers_list[] = $n['host'];
+                }
+            }
+            $customers_list = array_unique($customers_list);
+
+            if (empty($same_pr) && ($group_id = $this->similar_imported_data_model->findByImportedDataId($im_data_id))) {
+                if ($rows = $this->similar_imported_data_model->getImportedDataByGroupId($group_id)) {
+                    $data_similar = array();
+
+                    foreach ($rows as $key => $row) {
+                        $data_similar[$key] = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
+                        $data_similar[$key]['imported_data_id'] = $row->imported_data_id;
+
+                        $cus_val = "";
+                        foreach ($customers_list as $ki => $vi) {
+                            if (strpos($data_similar[$key]['url'], "$vi") !== false) {
+                                $cus_val = $vi;
+                            }
+                        }
+                        if ($cus_val !== "")
+                            $data_similar[$key]['customer'] = $cus_val;
+                    }
+
+                    if (!empty($data_similar)) {
+                        $same_pr = $data_similar;
+                    }
+                }
+            }
+
+            foreach ($same_pr as $ks => $vs) {
+                if($vs['customer']==''){
+                $this->load->model('sites_model');
+                   if($this->get_base_url($vs['url'])=='http://shop.nordstrom.com'){
+                      $same_pr[$ks]['customer']='nordstrom' ;
+                   }else{
+                       //echo $this->get_base_url($vs['url']);
+                       //echo 'bbb'.strtolower($this->sites_model->get_name_by_url($this->get_base_url($vs['url']))).'aaaaaaaaa';
+                   $same_pr[$ks]['customer']=  strtolower($this->sites_model->get_name_by_url($this->get_base_url($vs['url'])));
+                   }
+
+                   }
+                $same_pr[$ks]['seo']['short'] = $this->helpers-> measure_analyzer_start_v2_product_name($vs['product_name'],preg_replace('/\s+/', ' ', $vs['description']));
+                $same_pr[$ks]['seo']['long'] = $this->helpers->measure_analyzer_start_v2_product_name($vs['product_name'],preg_replace('/\s+/', ' ', $vs['long_description']));
+
+                // three last prices
+                $imported_data_id = $same_pr[$ks]['imported_data_id'];
+                $three_last_prices = $this->imported_data_parsed_model->getLastPrices($imported_data_id);
+                $same_pr[$ks]['three_last_prices'] = $three_last_prices;
+                if(!empty($three_last_prices)){
+                    $same_pr[$ks]['three_last_prices'] = $three_last_prices;
+                }elseif($this->imported_data_parsed_model->PriceOld($imported_data_id)){
+                     $same_pr[$ks]['three_last_prices']=array((object) array('price'=>$this->imported_data_parsed_model->PriceOld($imported_data_id), 'created'=>''));
+                }else{
+                    $same_pr[$ks]['three_last_prices'] = array();
+                }
+
+            }
+
+
+
+            //     Max
+            if (count($same_pr) != 1) {
+                foreach ($same_pr as $ks => $vs) {
+                    $maxshort = 0;
+                    $maxlong = 0;
+                    $k_sh = 0;
+                    $k_lng = 0;
+                    foreach ($same_pr as $ks1 => $vs1) {
+
+                        if ($ks != $ks1) {
+                            if ($vs['description'] != '') {
+                                if ($vs1['description'] != '') {
+                                    $k_sh++;
+                                    $percent = $this->compare_text($vs['description'], $vs1['description']);
+                                    if ($percent > $maxshort) {
+                                        $maxshort = $percent;
+                                    }
+                                }
+
+                                if ($vs1['long_description'] != '') {
+                                    $k_sh++;
+                                    $percent = $this->compare_text($vs['description'], $vs1['long_description']);
+                                    if ($percent > $maxshort) {
+                                        $maxshort = $percent;
+                                    }
+                                }
+                            }
+
+                            if ($vs['long_description'] != '') {
+
+                                if ($vs1['description'] != '') {
+                                    $k_lng++;
+                                    $percent = $this->compare_text($vs['long_description'], $vs1['description']);
+                                    if ($percent > $maxlong) {
+                                        $maxlong = $percent;
+                                    }
+                                }
+
+                                if ($vs1['long_description'] != '') {
+                                    $k_lng++;
+                                    $percent = $this->compare_text($vs['long_description'], $vs1['long_description']);
+                                    if ($percent > $maxlong) {
+                                        $maxlong = $percent;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if($maxshort!=0){
+                        $vs['short_original'] =  round($maxshort, 2) . '%';
+                    }else{
+                        $vs['short_original']= "Insufficient data";
+                    }
+
+                    if($maxlong!=0){
+                        $vs['long_original'] =  round($maxlong, 2) . '%';
+                    }else{
+                        $vs['long_original']= "Insufficient data";
+                    }
+
+                    if ($k_lng == 0) {
+                        $vs['long_original'] = "Insufficient data";
+                    }
+                    if ($k_sh == 0) {
+                        $vs['short_original'] = "Insufficient data";
+                    }
+
+                    $same_pr[$ks] = $vs;
+                }
+            } else {
+                $same_pr[0]['long_original'] = 'Insufficient data';
+                $same_pr[0]['short_original'] = 'Insufficient data';
+            }
+            //   Max
+//Max
+            $selectedUrl = $this->input->post('selectedUrl');
+            foreach ($same_pr as $ks => $vs) {
+
+                if ($this->get_base_url($vs['url']) == $this->get_base_url($selectedUrl)) {
+                    if ($ks != 0) {
+                        $same_pr[] = $same_pr[0];
+                        $same_pr[0] = $vs;
+                        unset($same_pr[$ks]);
+                    }
+                }
+            }
+
+            $data['same_pr'] = $same_pr;
+
+
+//            }
+            // --- ATTEMPT TO GET 'SAME' FROM 'HUMAN INTERFACE' (products_compare table) (END)
+            // --- GET SELECTED RPODUCT SEO DATA (TMP) (START)
+            if ($data_import['description'] !== null && trim($data_import['description']) !== "") {
+                $data['seo']['short'] = $this->helpers->measure_analyzer_start_v2($data_import['description']);
+            }
+            if ($data_import['long_description'] !== null && trim($data_import['long_description']) !== "") {
+                $data['seo']['long'] = $this->helpers->measure_analyzer_start_v2($data_import['long_description']);
+            }
+            // --- GET SELECTED RPODUCT SEO DATA (TMP) (END)
+        }
+
+        // -------- COMPARING V1 (START)
+        $s_term = $this->input->post('s_term');
+
+        // -------- COMPARING V1 (END)
+
+        $this->load->view('measure/tableview', $data);
+
 
     }
 

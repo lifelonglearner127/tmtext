@@ -214,7 +214,11 @@
 
                             if (grid_status === 'list') {
                                 switchToListView();
-                            } else if (grid_status === 'grid') {
+                            }
+                            if(grid_status === 'table'){
+                                 switchToTableView();
+                            }
+                            if (grid_status === 'grid') {
                                 switchToGridView();
                             }
 

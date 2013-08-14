@@ -1,6 +1,7 @@
 var grid_id = 0;
 
 var editorGridViewBaseUrl = base_url + 'index.php/measure/gridview';
+var editorTableViewBaseUrl = base_url + 'index.php/measure/tableview';
 // ---- search string cookie (auto mode search launcher) (start)
 // var auto_mode_search_str = "";
 // var cookie_search_str = $.cookie('com_intel_search_str');
@@ -150,6 +151,40 @@ function switchToTableView(){
     viewIconsReset();
     grid_status = 'table';
     initGrid();
+    
+    $("#attributes_metrics ul:not(.grid_switcher)").hide();
+    $("#measure_product_ind_wrap").hide();
+    // AJAX CALL TO GET GRID VIEW CONTENT (START) (NEW STUFF)
+    var im_data_id = $("#an_sort_search_box > #products > li[data-status='selected']").attr('data-value');
+
+    var strict = 0;
+    if ($("input[name='strict_grid']:checked").val() !== undefined) {
+        strict = 1;
+    }
+
+    var grid_view = $.post(editorTableViewBaseUrl, {selectedUrl: $('#products li[data-status=selected] span').eq(1).text(), im_data_id: im_data_id, s_term: $.trim($("#compare_text").val()), strict: strict}, 'html').done(function(data) {
+        $("#compet_area_grid").html(data);
+        $("#compet_area_grid").show();
+        $(".preloader_grids_box").hide();
+        $(".grid_se_section .c_content").show();
+        
+        // gridsCustomersListLoader();
+    });
+
+    $("#an_products_box").addClass('grid_results_show');
+    $(".main span:first-child, #products li span:first-child ").addClass('new_width');
+
+//    #grid_se_section_1 .c .c_content table 
+   
+    var status_view = $.cookie('status_view');
+    if (typeof(status_view) !== 'undefined') {
+        $.removeCookie('status_view', {path: '/'}); // destroy
+        $.cookie('status_view', grid_status, {expires: 7, path: '/'}); // re-create
+    } else {
+        $.cookie('status_view', grid_status, {expires: 7, path: '/'}); // create
+    }
+    
+    
     
 }
 function switchToGridView() {
