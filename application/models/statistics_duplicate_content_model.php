@@ -29,14 +29,14 @@ class Statistics_duplicate_content_model extends CI_Model {
                      $features, $customer, $long_original, $short_original)
     {
         $this->imported_data_id = $imported_data_id;
-        $this->product_name = $product_name;
+        $this->product_name = (string)$product_name;
         $this->description = (string)$description;
         $this->long_description = (string)$long_description;
-        $this->url = $url;
+        $this->url = (string)$url;
         $this->features = (string)$features;
         $this->customer = (string)$customer;
-        $this->long_original = $long_original;
-        $this->short_original = $short_original;
+        $this->long_original = (string)$long_original;
+        $this->short_original = (string)$short_original;
         $this->created = date('Y-m-d h:i:s');
 
         $this->db->insert($this->tables['statistics_duplicate_content'], $this);
