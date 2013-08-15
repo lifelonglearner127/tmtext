@@ -28,6 +28,7 @@ jQuery(document).ready(function($) {
                             <button style="margin-right: 9px" class='btn' onclick="switchToGridView();" id='grid_sw_grid' type='button'><i class="icon-th-large"></i>&nbsp;Comparison</button>
                             <button style="margin-right: 9px" class='btn' onclick="switchToTableView();" id='table_grid' type='button'><i class="icon-th-table"></i>&nbsp;Table</button>
                             <button class='btn' onclick="switchToListView();" id='grid_sw_list' type='button'><i class="icon-th-list"></i>&nbsp;List</button>
+                            <img style="width:30px; heihgt: 30px;"src ="<?php echo base_url() ?>/img/ico-gear.png">
                         </li>
 <!--                        <li style="float: left; margin-top: 6px;margin-left: 15px;">
                         	

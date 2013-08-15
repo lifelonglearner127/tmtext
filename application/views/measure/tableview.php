@@ -43,7 +43,7 @@ foreach($customers as $val){
 ?>
  <style>
      #table_view td{
-         width: 400px ;
+         width: 360px ;
          text-align: center;
          word-break: break-all;
      }
@@ -52,7 +52,7 @@ foreach($customers as $val){
      }
      .h{
          
-         margin-left: 47px;
+         margin-left: 33px;
      }
  </style>
 <table  id="table_view" border="2" >
