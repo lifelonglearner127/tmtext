@@ -147,6 +147,7 @@ $(function () {
         $('#assess_report_items_have_more_than_20_percent_duplicate_content').html(report.summary.items_have_more_than_20_percent_duplicate_content);
         $('#assess_report_items_unoptimized_product_content').html(report.summary.items_unoptimized_product_content);
         $('#assess_report_items_have_product_context_that_is_too_short').html(report.summary.items_short_products_content);
+        $('#assess_report_download_panel').show();
     }
 
     $(document).on('change', '#assessDetailsDialog_chkIncludeInReport', function(){
@@ -562,11 +563,9 @@ $(function () {
     }
 
     function readAssessData() {
-        var selectedBatch = $(this).find("option:selected").text();
         $('#assess_report_download_panel').hide();
         $("#tblAssess tbody tr").remove();
         tblAssess.fnDraw();
-        $('#assess_report_download_panel').show();
     }
 
     hideColumns();
