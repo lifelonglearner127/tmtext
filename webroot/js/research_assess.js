@@ -263,11 +263,7 @@ $(function () {
 
     $('select[name="research_assess_batches"]').on("change", function() {
         var selectedBatch = $(this).find("option:selected").text();
-        if (selectedBatch == 'Select batch') {
-            $('#assess_report_download_panel').hide();
-        } else {
-            $('#assess_report_download_panel').show();
-        }
+        $('#assess_report_download_panel').hide();
         $.post(base_url + 'index.php/research/filterCustomerByBatch', {
                 'batch': selectedBatch
         }, function(data){
@@ -566,8 +562,11 @@ $(function () {
     }
 
     function readAssessData() {
+        var selectedBatch = $(this).find("option:selected").text();
+        $('#assess_report_download_panel').hide();
         $("#tblAssess tbody tr").remove();
         tblAssess.fnDraw();
+        $('#assess_report_download_panel').show();
     }
 
     hideColumns();
