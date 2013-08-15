@@ -191,7 +191,7 @@
 <!-- MODALS (START) -->
 <div class="modal hide fade ci_hp_modals" id='loading_crawl_modal'>
 	<div class="modal-body">
-		<p><img src="<?php echo base_url();?>img/loader_scr.gif">&nbsp;&nbsp;&nbsp;Screenshot is generating, please wait for it.</p>
+		<p><img src="<?php echo base_url();?>img/loader_scr.gif">&nbsp;&nbsp;&nbsp;Generating screenshot. Please wait...</p>
 	</div>
 </div>
 

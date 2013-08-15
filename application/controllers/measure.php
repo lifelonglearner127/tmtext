@@ -324,7 +324,9 @@ class Measure extends MY_Controller {
             $mid = array(
                 'id' => $v['id'],
                 'name' => $v['name'],
-                'crawl_st' => $this->check_screen_crawl_status($v['name'])
+                'url' => $v['c_url'],
+                // 'crawl_st' => $this->check_screen_crawl_status($v['name'])
+                'crawl_st' => $this->check_screen_crawl_status($v['c_url'])
             );
             $res[] = $mid;
         }
