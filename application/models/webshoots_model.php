@@ -24,7 +24,8 @@ class Webshoots_model extends CI_Model {
         $check_query = $this->db->get_where($this->tables['webshoots_select'], $check_obj);
         $check_query_res = $check_query->result();
         if(count($check_query_res) < 1) { // === no selection for this slot, so start auto-selection
-            $query_customer = $this->db->order_by('name', 'asc')->limit(1, $pos)->get($this->tables['customers']);
+            $s_pos = $pos - 1;
+            $query_customer = $this->db->order_by('url', 'asc')->limit(1, $s_pos)->get($this->tables['customers']);
             $query_customer_res = $query_customer->result();
             $candidate = $query_customer_res[0];
             $candidate_url = preg_replace('#^https?://#', '', $candidate->url);
@@ -58,7 +59,7 @@ class Webshoots_model extends CI_Model {
                 );
                 $this->db->insert($this->tables['webshoots_select'], $insert_object);
             }
-            $res = true; 
+            $res = $candidate->url; 
         } 
         return $res;
     }
