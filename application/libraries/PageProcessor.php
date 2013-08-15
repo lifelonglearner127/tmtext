@@ -64,7 +64,7 @@ class PageProcessor {
 	public function getDomainPart($url) {
 		$part = explode('/', str_ireplace(array('http://','https://'),'', $url));
 		if (!empty($part[0]) && strpos($part[0], '.') !== false) {
-			$part = explode('.', str_ireplace(array('www.','www1.','shop.'),'', $part[0]));
+			$part = explode('.', str_ireplace(array('www.','www1.','shop.','-'),'', $part[0]));
 		} else {
 			return false;
 		}
@@ -1083,6 +1083,48 @@ class PageProcessor {
 		);
 
 		return $result;
+	}
+
+	public function process_williamssonoma(){
+		foreach($this->nokogiri->get('.pip-info h1') as $item) {
+			$title = $item['#text'][0];
+		}
+
+		foreach($this->nokogiri->get('.pip-info .accordion-component') as $item) {
+			if (isset($item['dt']) && isset($item['dd'])) {
+				foreach ($item['dt'] as $k=>$i) {
+					if (strpos($i['#text'][0], 'Summary') !== false && isset($item['dd'][$k]['div'][0]['p'])) {
+						foreach ($item['dd'][$k]['div'][0]['p'][0]['#text'] as $d) {
+							$description[] = trim($d);
+						}
+					}
+				}
+			}
+		}
+
+		$description = implode(' ',$description);
+
+		foreach($this->nokogiri->get('.pip-info .accordion-component .accordion-body .accordion-contents ul li') as $item) {
+			$descriptionLong[] = trim($item["#text"][0]);
+		}
+
+		$descriptionLong = implode(' ',$descriptionLong);
+
+		foreach($this->nokogiri->get('.pip-info .product-price .currency') as $item) {
+			if(isset($item['span'][0]['class']) && isset($item['span'][1]['class']) && $item['span'][0]['class'] == 'currency-symbol' && $item['span'][1]['class']=='price-amount') {
+				$p = str_replace(',','',$item['span'][0]['#text'][0].$item['span'][1]['#text'][0]);
+				if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $p, $match)) {
+					$price = $match[1];
+				}
+			}
+		}
+
+		return array(
+			'Product Name' => $title,
+			'Description' => $description,
+			'Long_Description' => $descriptionLong,
+			'Price' => number_format($price,2, '.', '')
+		);
 	}
 }
 
