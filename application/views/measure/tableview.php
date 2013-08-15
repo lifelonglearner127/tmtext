@@ -1,7 +1,20 @@
 <script>
-   var customers=[];  
+   var customers=[]; 
+   var result_data = <?php echo json_encode($same_pr); ?>;
  </script>
 <?php if(!empty($same_pr)){
+//    echo "<pre>";
+//    print_r($same_pr);
+//   echo "<pre>";
+$count=count($same_pr);
+if(isset($same_pr['ind0'])&& isset($same_pr['ind1'])){
+    $ind0=$same_pr['ind0'];
+    $ind1=$same_pr['ind1'];
+}else{
+    $ind0=0;
+    $ind1=1;
+}
+
 $min_price = 1000000000;
 $j = 0;
 $customers=array();
@@ -45,17 +58,17 @@ foreach($customers as $val){
 <table  id="table_view" border="2" >
     <tr>
         <td class="table_titles"></td>
-        <td class="table_results" id="drop_1">
+        <td style="background: #D6D6D6;" class="table_results" id="drop_1">
             <div id="h_1" class='h'>
-               <input type="hidden" name='dd_customer' value="<?php echo $customers[0]; ?>">
+               <input type="hidden" name='dd_customer' value="<?php echo $customers[$ind0]; ?>">
                <div id="an_grd_view_drop_gr0" class='an_grd_view_drop'></div>
             </div>
         </td>
-         <?php if(count($same_pr)>1){?>
+         <?php if($count>1){?>
           
-            <td id="drop_2">
+            <td style="background: #D6D6D6;" id="drop_2">
                 <div id="h_1" class='h'>
-                    <input type="hidden" name='dd_customer' value="<?php echo $customers[1]; ?>">
+                    <input type="hidden" name='dd_customer' value="<?php echo $customers[$ind1]; ?>">
                     <div id="an_grd_view_drop_gr1" class='an_grd_view_drop'></div>
                </div>
 
@@ -65,42 +78,44 @@ foreach($customers as $val){
     <tr>
         <td class="table_titles"><b>URL</b></td>
         
-        <td><?php echo $same_pr[0]['url']; ?></td>
-         <?php if(count($same_pr)>1){?>
-          <td><?php echo  $same_pr[1]['url']; ?></td>
+        <td><a target="_blank" href="<?php echo $same_pr[$ind0]['url']; ?>"><?php echo $same_pr[$ind0]['url']; ?></a></td>
+         <?php if($count>1){?>
+          <td><a target="_blank" href="<?php echo $same_pr[$ind0]['url']; ?>"  ><?php echo  $same_pr[$ind1]['url']; ?></a></td>
          <?php }?>
     </tr>
     <tr>
         <td class="table_titles"><b>Product</b></td>
-        <td><?php echo $same_pr[0]['product_name']; ?></td>
-         <?php if(count($same_pr)>1){?>
-          <td><?php echo  $same_pr[1]['product_name']; ?></td>
+        <td><?php echo $same_pr[$ind0]['product_name']; ?></td>
+         <?php if($count>1){?>
+          <td><?php echo  $same_pr[$ind1]['product_name']; ?></td>
          <?php }?>
     </tr>
     <tr>
         <td class="table_titles"><b>Price</b></td>
         <td>
             <?php
-            if(isset($same_pr[0]['three_last_prices'][0])){
-            echo '$'.$same_pr[0]['three_last_prices'][0]->price;
+            if(isset($same_pr[$ind0]['three_last_prices'][0])){
+               $pr= $same_pr[$ind0]['three_last_prices'][0];
+                echo '$'.$pr->price;
+               
             }else{echo '-';}
             ?>
         </td>
-         <?php if(count($same_pr)>1){?>
+         <?php if($count>1){?>
           <td><?php 
-           if(isset($same_pr[1]['three_last_prices'][0])){
-            echo '$'.$same_pr[1]['three_last_prices'][0]->price;
+           if(isset($same_pr[$ind1]['three_last_prices'][0])){
+            echo '$'.$same_pr[$ind1]['three_last_prices'][0]->price;
             }else{echo '-';}
             ?>
           </td>
          <?php }?>
     </tr>
-    <tr>
+    <tr style="background: #e2e2e4;">
         <td class="table_titles"><b>Short Description</b></td>
         <td><?php 
                 
-                if ($same_pr[0]['description'] !== null && trim($same_pr[0]['description']) !== "") {
-                    $description = preg_replace('/\s+/', ' ', $same_pr[0]['description']);
+                if ($same_pr[$ind0]['description'] !== null && trim($same_pr[$ind0]['description']) !== "") {
+                    $description = preg_replace('/\s+/', ' ', $same_pr[$ind0]['description']);
                     $s_product_short_desc_count1 = count(explode(" ", $description));
                 }else{
                     $s_product_short_desc_count1=0;
@@ -112,11 +127,11 @@ foreach($customers as $val){
                 }
             ?>
         </td>
-        <?php if(count($same_pr)>1){?>
+        <?php if($count>1){?>
           <td >
               <?php 
-               if ($same_pr[1]['description'] !== null && trim($same_pr[1]['description']) !== "") {
-                    $description = preg_replace('/\s+/', ' ', $same_pr[1]['description']);
+               if ($same_pr[$ind1]['description'] !== null && trim($same_pr[$ind1]['description']) !== "") {
+                    $description = preg_replace('/\s+/', ' ', $same_pr[$ind1]['description']);
                     $s_product_short_desc_count2 = count(explode(" ", $description));
                 }else{
                     $s_product_short_desc_count2=0;
@@ -134,26 +149,26 @@ foreach($customers as $val){
         <td class="table_titles">SEO Keywords</td>
         <td>
             <?php
-           if (count($same_pr[0]['seo']['short']) > 0) {
-               $k=0;
-                foreach ($vs['seo']['short'] as $key => $value) {
+           if (count($same_pr[$ind0]['seo']['short']) > 0) {
+                $k=0;
+                foreach ($same_pr[$ind0]['seo']['short'] as $key => $value) {
                     $k++;
                     echo $value['ph']. '('.$value['count'].')';
-                    if($k<count($same_pr[0]['seo']['short'])){echo " - ";}
+                    if($k<count($same_pr[$ind0]['seo']['short'])){echo " - ";}
                 }
            }else{
                echo "None";
            }
             ?>
         </td>
-         <?php if(count($same_pr)>1){?>
+         <?php if($count>1){?>
           <td><?php
-          if (count($same_pr[1]['seo']['short']) > 0) {
+          if (count($same_pr[$ind1]['seo']['short']) > 0) {
               $k=0;
-                foreach ($same_pr[1]['seo']['short'] as $key => $value) {
+                foreach ($same_pr[$ind1]['seo']['short'] as $key => $value) {
                     $k++;
                     echo $value['ph']. '('.$value['count'].')';
-                    if($k<count($same_pr[1]['seo']['short'])){echo " - ";}
+                    if($k<count($same_pr[$ind1]['seo']['short'])){echo " - ";}
                 }
            }else{
                echo "None";
@@ -166,15 +181,15 @@ foreach($customers as $val){
         <td class="table_titles">Dublicate Content</td>
         <td><?php
             if($s_product_short_desc_count1 >0){
-               echo $same_pr[0]['short_original'];  
+               echo $same_pr[$ind0]['short_original'];  
             }else{
                 echo "-";
             } ?>
         </td>
-        <?php if(count($same_pr)>1){?>
+        <?php if($count>1){?>
           <td><?php
           if($s_product_short_desc_count2 >0){
-            echo  $same_pr[1]['short_original'];
+            echo  $same_pr[$ind1]['short_original'];
           }else{
               echo '-';
           }
@@ -182,13 +197,13 @@ foreach($customers as $val){
           </td>
         <?php }?>
     </tr>
-    <tr>
+    <tr style="background: #e2e2e4;">
          <td class="table_titles"><b>Long Description</b></td>
         <td>
             <?php 
                 
-                if ($same_pr[0]['long_description'] !== null && trim($same_pr[0]['long_description']) !== "") {
-                    $long_description = preg_replace('/\s+/', ' ', $same_pr[0]['long_description']);
+                if ($same_pr[$ind0]['long_description'] !== null && trim($same_pr[$ind0]['long_description']) !== "") {
+                    $long_description = preg_replace('/\s+/', ' ', $same_pr[$ind0]['long_description']);
                     $s_product_long_desc_count1 = count(explode(" ", $long_description));
                 }else{
                     $s_product_long_desc_count1=0;
@@ -200,11 +215,11 @@ foreach($customers as $val){
                 }
             ?>
         </td>
-        <?php if(count($same_pr)>1){?>
+        <?php if($count>1){?>
           <td>
               <?php 
-               if ($same_pr[1]['long_description'] !== null && trim($same_pr[1]['long_description']) !== "") {
-                    $long_description = preg_replace('/\s+/', ' ', $same_pr[1]['long_description']);
+               if ($same_pr[$ind1]['long_description'] !== null && trim($same_pr[$ind1]['long_description']) !== "") {
+                    $long_description = preg_replace('/\s+/', ' ', $same_pr[$ind1]['long_description']);
                     $s_product_long_desc_count2 = count(explode(" ", $long_description));
                 }else{
                     $s_product_long_desc_count2=0;
@@ -222,26 +237,26 @@ foreach($customers as $val){
         <td class="table_titles">SEO Keywords</td>
         <td>
             <?php
-           if (count($same_pr[0]['seo']['long']) > 0) {
+           if (count($same_pr[$ind0]['seo']['long']) > 0) {
                $k=0;
-                foreach ($same_pr[0]['seo']['long'] as $key => $value) {
+                foreach ($same_pr[$ind0]['seo']['long'] as $key => $value) {
                     $k++;
                     echo $value['ph']. '('.$value['count'].')';
-                    if($k<count($same_pr[0]['seo']['long'])){echo " - ";}
+                    if($k<count($same_pr[$ind0]['seo']['long'])){echo " - ";}
                 }
            }else{
                echo "None";
            }
             ?>
         </td>
-         <?php if(count($same_pr)>1){?>
+         <?php if($count>1){?>
           <td><?php
-          if (count($same_pr[1]['seo']['long']) > 0) {
+          if (count($same_pr[$ind1]['seo']['long']) > 0) {
               $k=0;
-                foreach ($same_pr[1]['seo']['long'] as $key => $value) {
+                foreach ($same_pr[$ind1]['seo']['long'] as $key => $value) {
                     $k++;
                     echo $value['ph']. '('.$value['count'].')';
-                    if($k<count($same_pr[1]['seo']['long'])){echo " - ";}
+                    if($k<count($same_pr[$ind1]['seo']['long'])){echo " - ";}
                 }
            }else{
                echo "None";
@@ -254,15 +269,15 @@ foreach($customers as $val){
         <td class="table_titles">Dublicate Content</td>
         <td><?php
             if($s_product_long_desc_count1 >0){
-               echo $same_pr[0]['long_original'];  
+               echo $same_pr[$ind0]['long_original'];  
             }else{
                 echo "-";
             } ?>
         </td>
-        <?php if(count($same_pr)>1){?>
+        <?php if($count>1){?>
           <td><?php
           if($s_product_long_desc_count2 >0){
-            echo  $same_pr[1]['long_original'];
+            echo  $same_pr[$ind1]['long_original'];
           }else{
               echo '-';
           }
@@ -275,7 +290,7 @@ foreach($customers as $val){
 
 
 <script>
-var count =<?php echo count($same_pr); ?>;
+var count =<?php echo $count; ?>;
     var ddData_grids = [];
 //    var customers= [];
   
@@ -294,15 +309,35 @@ var count =<?php echo count($same_pr); ?>;
                   j++;
                }
             };
-          console.log(customers);
-            for (var i = 0; i < 2; i++) {
+            
+           var drops=[];
+           drops.push("<?php echo $customers[$ind0]; ?>");
+           drops.push("<?php echo $customers[$ind1]; ?>");
+           for (var i = 0; i < 2; i++) {
                     var grid1 = $('#an_grd_view_drop_gr' + i).msDropDown({byJson: {data: newc_data}}).data("dd");
                     if (grid1 != undefined) {
-                        grid1.setIndexByValue(customers[i]);
+                        grid1.setIndexByValue(drops[i]);
                     }
                 }
 
             });
         }, 100);
-    
-       </script>
+        
+   $("#table_view .an_grd_view_drop select").live('change', function(){
+       var drop1=$("#an_grd_view_drop_gr0 select").val();
+       var drop2=$("#an_grd_view_drop_gr1 select").val();
+       $.each(customers,function(index, value){
+           if(value===drop1){
+               drop1=index;
+           }
+           if(value===drop2){
+               drop2=index;
+           }
+       });
+       console.log(drop1+' '+drop2);
+       var grid_view = $.post(editorTableViewBaseUrl, {ind0:drop1,ind1:drop2,result_data:result_data,selectedUrl: $('#products li[data-status=selected] span').eq(1).text()}, 'html').done(function(data) {
+       $("#compet_area_grid").html(data);  
+       });
+   });     
+     
+ </script>

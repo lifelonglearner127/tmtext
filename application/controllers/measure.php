@@ -1024,6 +1024,12 @@ public function gridview() {
     
    
     function tableview(){
+        if($same_pr=$this->input->post('result_data')){
+          $same_pr['ind0']=$this->input->post('ind0');
+          $same_pr['ind1']=$this->input->post('ind1');
+          $data['same_pr'] =$same_pr;
+          $this->load->view('measure/tableview', $data);  
+        }else{
          $im_data_id = $this->input->post('im_data_id');
 
         $data = array(
@@ -1291,7 +1297,7 @@ public function gridview() {
         // -------- COMPARING V1 (END)
 
         $this->load->view('measure/tableview', $data);
-
+        }
 
     }
 
