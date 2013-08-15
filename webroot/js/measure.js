@@ -1,5 +1,5 @@
 var grid_id = 0;
-
+ 
 var editorGridViewBaseUrl = base_url + 'index.php/measure/gridview';
 var editorTableViewBaseUrl = base_url + 'index.php/measure/tableview';
 // ---- search string cookie (auto mode search launcher) (start)
@@ -732,6 +732,8 @@ $(document).ready(function() {
     });
 
     $("#an_search").live('click', function() {//max
+        
+        $.removeCookie('product_batch', {path: '/'});
         var dropdown = $("select[name='customers_list']").msDropdown().data("dd");
         dropdown.destroy();
         $('#product_customers .ddcommon').remove();

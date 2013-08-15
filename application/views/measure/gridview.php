@@ -302,7 +302,7 @@ group_id = "<?php echo $same_pr[0]['imported_data_id']; ?>";
 </script>
 <script type='text/javascript'>
 
-    function inArray(needle, haystack) {
+ function inArray(needle, haystack) {
     var length = haystack.length;
     for(var i = 0; i < length; i++) {
         if(haystack[i] == needle)

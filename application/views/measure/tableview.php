@@ -1,5 +1,5 @@
 <script>
-   var customers=[]; 
+var customers=[]; 
    var result_data = <?php echo json_encode($same_pr); ?>;
  </script>
 <?php if(!empty($same_pr)){
@@ -290,19 +290,28 @@ foreach($customers as $val){
 
 
 <script>
-var count =<?php echo $count; ?>;
+    function inArray(needle, haystack) {
+    var length = haystack.length;
+    for(var i = 0; i < length; i++) {
+        if(haystack[i] == needle)
+            return true;
+    }
+    return false;
+  }
+//var count = <?php echo $count; ?>;
     var ddData_grids = [];
 //    var customers= [];
   
         var newc_data=[];
-        
+       
         setTimeout(function() {
             selected_customers=[];
             var customers_list = $.post(base_url + 'index.php/measure/getsiteslist_new', { }, function(c_data) {
             //console.log(c_data);
             var j=0;
+            
             for (var key in c_data){
-
+               console.log(customers);
                if(inArray(c_data[key].value,customers)){
                   //console.log(c_data[key].value);
                   newc_data[j]=c_data[key];
@@ -334,10 +343,9 @@ var count =<?php echo $count; ?>;
                drop2=index;
            }
        });
-       console.log(drop1+' '+drop2);
        var grid_view = $.post(editorTableViewBaseUrl, {ind0:drop1,ind1:drop2,result_data:result_data,selectedUrl: $('#products li[data-status=selected] span').eq(1).text()}, 'html').done(function(data) {
        $("#compet_area_grid").html(data);  
        });
    });     
-     
+        
  </script>

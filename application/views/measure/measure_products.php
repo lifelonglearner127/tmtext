@@ -277,7 +277,11 @@ jQuery(document).ready(function($) {
             if(auto_mode_status_view!==""){
                 if(auto_mode_status_view == 'list'){
                     switchToListView();
-                } else {
+                }
+                if(auto_mode_status_view == 'table'){
+                    switchToTableView();
+                }
+                if(auto_mode_status_view == 'grid') {
                     switchToGridView();
                 }
             }
