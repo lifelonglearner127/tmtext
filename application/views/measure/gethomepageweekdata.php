@@ -34,6 +34,9 @@
 					if($i == 3 && $k == 1) {
 						$pos = 6;
 					}
+					// ---- make auto-selection (if it is empty) (start)
+					$webshoots_model->screenAutoSelection($year, $week, $pos, $user_id);
+					// ---- make auto-selection (if it is empty) (end)
 				?>
 				<?php if(count($customers_list) > 0) { ?>
 				    <div data-pos="<?php echo $pos; ?>" data-itemid="<?php echo $v; ?>" id="hp_boot_drop_<?php echo $v; ?>" class="btn-group hp_boot_drop">

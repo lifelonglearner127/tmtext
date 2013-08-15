@@ -421,7 +421,8 @@ class Measure extends MY_Controller {
                 'customers_list' => $this->customers_list_new(),
                 'status' => 'current',
                 'img_av' => $this->webshoots_model->getWeekAvailableScreens($c_week, $year),
-                'webshoots_model' => $this->webshoots_model
+                'webshoots_model' => $this->webshoots_model,
+                'user_id' => $this->ion_auth->get_user_id()
             );
         } else {
             $week = 1;
@@ -436,7 +437,8 @@ class Measure extends MY_Controller {
                 'customers_list' => $this->customers_list_new(),
                 'status' => 'selected',
                 'img_av' => $this->webshoots_model->getWeekAvailableScreens($week, $year),
-                'webshoots_model' => $this->webshoots_model
+                'webshoots_model' => $this->webshoots_model,
+                'user_id' => $this->ion_auth->get_user_id()
             );
         }
         $this->load->view('measure/gethomepageyeardata', $data);
@@ -457,7 +459,9 @@ class Measure extends MY_Controller {
             'week' => $week,
             'ct_final' => $ct_final,
             'customers_list' => $this->customers_list_new(),
-            'img_av' => $this->webshoots_model->getWeekAvailableScreens($week, $year)
+            'img_av' => $this->webshoots_model->getWeekAvailableScreens($week, $year),
+            'webshoots_model' => $this->webshoots_model,
+            'user_id' => $this->ion_auth->get_user_id()
         );
         $this->load->view('measure/gethomepageweekdata', $data);
     }
