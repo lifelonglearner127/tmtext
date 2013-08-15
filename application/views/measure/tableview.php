@@ -48,7 +48,7 @@ foreach($customers as $val){
          text-align: center;
      }
       #table_view .table_titles{
-         width: 150px !important;
+         width: 170px !important;
      }
      .h{
          

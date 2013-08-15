@@ -1797,10 +1797,11 @@ select#sites option{
     border: none;
     width: 19px !important;
     height: 19px;
+    opacity:0.5;
 }
 .mismatch_image:hover{
     cursor:pointer;
-    opacity:0.5;
+    opacity: 1;
 }
 .main{
     background: #e2e2e4;
