@@ -3,7 +3,7 @@ from scrapy.selector import HtmlXPathSelector
 from scrapy.http import Request
 from scrapy.http import TextResponse
 from search.items import SearchItem
-import urllib
+#import urllib
 import re
 
 import nltk
@@ -16,9 +16,11 @@ from nltk.corpus import wordnet
 ################################
 # Run with 
 #
-# scrapy crawl search -a product_name="<name>" -a target_site="<site>" [-a output="<option(1/2)>"]
+# scrapy crawl search -a product_name="<name>" -a target_site="<site>" [-a output="<option(1/2)>"] [-a threshold=<value>]
 #      -- or --
-# scrapy crawl search -a product_url="<url>" -a target_site="<site>" [-a output="<option(1/2)>"]
+# scrapy crawl search -a product_url="<url>" -a target_site="<site>" [-a output="<option(1/2)>"] [-a threshold=<value>]
+#      -- or --
+# scrapy crawl search -a product_urls_file="<filename>" -a target_site="<site>" [-a output="<option(1/2)>"] [-a threshold=value]
 #
 ################################
 
@@ -38,7 +40,7 @@ class SearchSpider(BaseSpider):
 	#				target_site - the site to search on
 	#				output - integer(1/2) option indicating output type (either result URL (1), or result URL and source product URL (2))
 	#				threshold - parameter (0-1) for selecting results (the lower the value the more permissive the selection)
-	def __init__(self, product_name = None, product_url = None, product_urls_file = None, target_site = None, output = 1, threshold = 0.65):
+	def __init__(self, product_name = None, product_url = None, product_urls_file = None, target_site = None, output = 1, threshold = 0.4):
 		self.product_url = product_url
 		self.product_name = product_name
 		self.target_site = target_site
@@ -128,6 +130,7 @@ class SearchSpider(BaseSpider):
 		#print "DEBUG 2"
 
 		#TODO: !bug! some URLs from origin site don't get here
+		#TODO: try with more than one query
 
 		site = response.meta['site']
 		hxs = HtmlXPathSelector(response)
@@ -196,9 +199,6 @@ class SearchSpider(BaseSpider):
 			if results:
 				# from all results, select the product whose name is most similar with the original product's name
 				best_match = self.similar(origin_name, items, self.threshold)
-				# it's returned as a tuple so we need the first item
-				if best_match:
-					best_match = best_match[0]
 
 			if not best_match:
 				# if there are no results but the option was to include original product URL, create an item with just that
@@ -214,11 +214,11 @@ class SearchSpider(BaseSpider):
 
 
 
-			item = SearchItem()
-			item['site'] = site
-			#if 'origin_url' in response.meta:
-			item['origin_url'] = response.meta['origin_url']
-			return [item]
+			# item = SearchItem()
+			# item['site'] = site
+			# #if 'origin_url' in response.meta:
+			# item['origin_url'] = response.meta['origin_url']
+			# return [item]
 
 
 		# walmart
@@ -386,7 +386,9 @@ class SearchSpider(BaseSpider):
 
 			# return most similar product or None
 			if products_found:
-				result = products_found[0]
+				result = products_found[0][0]
+
+			print "MATCHES", product_name.encode("utf-8"), products_found, "\n-----------------------------------------\n"
 
 			return result
 
