@@ -334,26 +334,30 @@ class Research extends MY_Controller {
         $items_unoptimized_product_content = 0;
         $items_short_products_content = 0;
         foreach($results as $row) {
-            //$short_description_wc = preg_match_all('/\b/', $row->short_description) / 2; // bug in PHP 5.3.10
-            $short_description_wc = (count(preg_split('/\b/', $row->short_description)) - 1) / 2;
-            if (is_null($row->short_description_wc)) {
-                $this->imported_data_parsed_model->insert($row->imported_data_id, "Description_WC", $short_description_wc);
-            } else {
-                if (intval($row->short_description_wc) <> $short_description_wc) {
-                    $this->imported_data_parsed_model->updateValueByKey($row->imported_data_id, "Description_WC", $short_description_wc);
-                }
-            }
+//            //$short_description_wc = preg_match_all('/\b/', $row->short_description) / 2; // bug in PHP 5.3.10
+//            $short_description_wc = (count(preg_split('/\b/', $row->short_description)) - 1) / 2;
+//            if (is_null($row->short_description_wc)) {
+//                $this->imported_data_parsed_model->insert($row->imported_data_id, "Description_WC", $short_description_wc);
+//            } else {
+//                if (intval($row->short_description_wc) <> $short_description_wc) {
+//                    $this->imported_data_parsed_model->updateValueByKey($row->imported_data_id, "Description_WC", $short_description_wc);
+//                }
+//            }
+//
+//            //$long_description_wc = preg_match_all('/\b/', $row->long_description) / 2; // bug in PHP 5.3.10
+//            $long_description_wc = (count(preg_split('/\b/', $row->long_description)) - 1) / 2;
+//
+//            if (is_null($row->long_description_wc)) {
+//                $this->imported_data_parsed_model->insert($row->imported_data_id, "Long_Description_WC", $long_description_wc);
+//            } else {
+//                if (intval($row->long_description_wc) <> $long_description_wc) {
+//                    $this->imported_data_parsed_model->updateValueByKey($row->imported_data_id, "Long_Description_WC", $long_description_wc);
+//                }
+//            }
 
-            //$long_description_wc = preg_match_all('/\b/', $row->long_description) / 2; // bug in PHP 5.3.10
-            $long_description_wc = (count(preg_split('/\b/', $row->long_description)) - 1) / 2;
-
-            if (is_null($row->long_description_wc)) {
-                $this->imported_data_parsed_model->insert($row->imported_data_id, "Long_Description_WC", $long_description_wc);
-            } else {
-                if (intval($row->long_description_wc) <> $long_description_wc) {
-                    $this->imported_data_parsed_model->updateValueByKey($row->imported_data_id, "Long_Description_WC", $long_description_wc);
-                }
-            }
+            $long_description_wc = $row->long_description_wc;
+            $short_description_wc = $row->short_description_wc;
+            $items_priced_higher_than_competitors = $row->items_priced_higher_than_competitors;
 
             $result_row = new stdClass();
             $result_row->id = $row->id;
@@ -370,96 +374,100 @@ class Research extends MY_Controller {
             $result_row->long_seo_phrases = "None";
             $result_row->price_diff = "-";
             $result_row->duplicate_content = "-";
-            $result_row->own_price = "-";
-            $result_row->competitors_prices = array();
+            $result_row->own_price = $row->own_price;
+            $result_row->price_diff = $row->price_diff;
+            $result_row->competitors_prices = unserialize($row->competitors_prices);
 
-            $own_site = parse_url($result_row->url,  PHP_URL_HOST);
-            if (!$own_site)
-                $own_site = "own site";
-            $own_site = str_replace("www.", "", $own_site);
+//            $own_site = parse_url($result_row->url,  PHP_URL_HOST);
+//            if (!$own_site)
+//                $own_site = "own site";
+//            $own_site = str_replace("www.", "", $own_site);
+//
+//            if ($build_assess_params->price_diff) {
+//                $data_import = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
+//                if (isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
+//                    $own_prices = $this->imported_data_parsed_model->getLastPrices($row->imported_data_id);
+//                    if (!empty($own_prices)) {
+//                        $own_price = floatval($own_prices[0]->price);
+//                        $result_row->own_price = $own_price;
+//                        $price_diff_exists = "<input type='hidden'/>";
+//                        $price_diff_exists = $price_diff_exists."<nobr>".$own_site." - $".$own_price."</nobr><br />";
+//                        $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
+//                        if (!empty($similar_items)) {
+//                            foreach ($similar_items as $ks => $vs) {
+//                                $similar_item_imported_data_id = $similar_items[$ks]['imported_data_id'];
+//                                if ($row->imported_data_id == $similar_item_imported_data_id) {
+//                                    continue;
+//                                }
+//                                $three_last_prices = $this->imported_data_parsed_model->getLastPrices($similar_item_imported_data_id);
+//                                if (!empty($three_last_prices)) {
+//                                    $price_scatter = $own_price * 0.03;
+//                                    $price_upper_range = $own_price + $price_scatter;
+//                                    $price_lower_range = $own_price - $price_scatter;
+//                                    $competitor_price = floatval($three_last_prices[0]->price);
+//                                    if ($competitor_price < $own_price) {
+//                                        $items_priced_higher_than_competitors++;
+//                                    }
+//                                    if ($competitor_price > $price_upper_range || $competitor_price < $price_lower_range) {
+//                                        $price_diff_exists = $price_diff_exists."<nobr>".$similar_items[$ks]['customer']." - $".$competitor_price."</nobr><br />";
+//                                        $result_row->price_diff = $price_diff_exists;
+//                                        $result_row->competitors_prices[] = $competitor_price;
+//                                    }
+//                                }
+//                            }
+//                        }
+//                    }
+//                }
+//            }
 
-            if ($build_assess_params->price_diff) {
-                $data_import = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
-                if (isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
-                    $own_prices = $this->imported_data_parsed_model->getLastPrices($row->imported_data_id);
-                    if (!empty($own_prices)) {
-                        $own_price = floatval($own_prices[0]->price);
-                        $result_row->own_price = $own_price;
-                        $price_diff_exists = "<input type='hidden'/>";
-                        $price_diff_exists = $price_diff_exists."<nobr>".$own_site." - $".$own_price."</nobr><br />";
-                        $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
-                        if (!empty($similar_items)) {
-                            foreach ($similar_items as $ks => $vs) {
-                                $similar_item_imported_data_id = $similar_items[$ks]['imported_data_id'];
-                                if ($row->imported_data_id == $similar_item_imported_data_id) {
-                                    continue;
-                                }
-                                $three_last_prices = $this->imported_data_parsed_model->getLastPrices($similar_item_imported_data_id);
-                                if (!empty($three_last_prices)) {
-                                    $price_scatter = $own_price * 0.03;
-                                    $price_upper_range = $own_price + $price_scatter;
-                                    $price_lower_range = $own_price - $price_scatter;
-                                    $competitor_price = floatval($three_last_prices[0]->price);
-                                    if ($competitor_price < $own_price) {
-                                        $items_priced_higher_than_competitors++;
-                                    }
-                                    if ($competitor_price > $price_upper_range || $competitor_price < $price_lower_range) {
-                                        $price_diff_exists = $price_diff_exists."<nobr>".$similar_items[$ks]['customer']." - $".$competitor_price."</nobr><br />";
-                                        $result_row->price_diff = $price_diff_exists;
-                                        $result_row->competitors_prices[] = $competitor_price;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            $result_row->long_seo_phrases = $row->long_seo_phrases;
+            $result_row->short_seo_phrases = $row->short_seo_phrases;
 
-            if ($build_assess_params->short_seo_phrases) {
-                if ($short_description_wc == $row->short_description_wc && !is_null($row->short_seo_phrases)) {
-                    $result_row->short_seo_phrases = $row->short_seo_phrases;
-                } else {
-                    if ($enable_exec) {
-                        $cmd = $this->prepare_extract_phrases_cmd($row->short_description);
-                        $output = array();
-                        exec($cmd, $output, $error);
-
-                        if ($error > 0) {
-                            $enable_exec = false;
-                        } else {
-                            $result_row->short_seo_phrases = $this->prepare_seo_phrases($output);
-                            if (is_null($row->short_seo_phrases)) {
-                                $this->imported_data_parsed_model->insert($row->imported_data_id, "short_seo_phrases", $result_row->short_seo_phrases);
-                            } else {
-                                $this->imported_data_parsed_model->updateValueByKey($row->imported_data_id, "short_seo_phrases", $result_row->short_seo_phrases);
-                            }
-                        }
-                    }
-                }
-            }
-
-            if ($build_assess_params->long_seo_phrases) {
-                if ($long_description_wc == $row->long_description_wc && !is_null($row->long_seo_phrases)) {
-                    $result_row->long_seo_phrases = $row->long_seo_phrases;
-                } else {
-                    if ($enable_exec) {
-                        $cmd = $this->prepare_extract_phrases_cmd($row->long_description);
-                        $output = array();
-                        exec($cmd, $output, $error);
-
-                        if ($error > 0) {
-                            $enable_exec = false;
-                        } else {
-                            $result_row->long_seo_phrases = $this->prepare_seo_phrases($output);
-                            if (is_null($row->long_seo_phrases)) {
-                                $this->imported_data_parsed_model->insert($row->imported_data_id, "long_seo_phrases", $result_row->long_seo_phrases);
-                            } else {
-                                $this->imported_data_parsed_model->updateValueByKey($row->imported_data_id, "long_seo_phrases", $result_row->long_seo_phrases);
-                            }
-                        }
-                    }
-                }
-            }
+//            if ($build_assess_params->short_seo_phrases) {
+//                if ($short_description_wc == $row->short_description_wc && !is_null($row->short_seo_phrases)) {
+//                    $result_row->short_seo_phrases = $row->short_seo_phrases;
+//                } else {
+//                    if ($enable_exec) {
+//                        $cmd = $this->prepare_extract_phrases_cmd($row->short_description);
+//                        $output = array();
+//                        exec($cmd, $output, $error);
+//
+//                        if ($error > 0) {
+//                            $enable_exec = false;
+//                        } else {
+//                            $result_row->short_seo_phrases = $this->prepare_seo_phrases($output);
+//                            if (is_null($row->short_seo_phrases)) {
+//                                $this->imported_data_parsed_model->insert($row->imported_data_id, "short_seo_phrases", $result_row->short_seo_phrases);
+//                            } else {
+//                                $this->imported_data_parsed_model->updateValueByKey($row->imported_data_id, "short_seo_phrases", $result_row->short_seo_phrases);
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//
+//            if ($build_assess_params->long_seo_phrases) {
+//                if ($long_description_wc == $row->long_description_wc && !is_null($row->long_seo_phrases)) {
+//                    $result_row->long_seo_phrases = $row->long_seo_phrases;
+//                } else {
+//                    if ($enable_exec) {
+//                        $cmd = $this->prepare_extract_phrases_cmd($row->long_description);
+//                        $output = array();
+//                        exec($cmd, $output, $error);
+//
+//                        if ($error > 0) {
+//                            $enable_exec = false;
+//                        } else {
+//                            $result_row->long_seo_phrases = $this->prepare_seo_phrases($output);
+//                            if (is_null($row->long_seo_phrases)) {
+//                                $this->imported_data_parsed_model->insert($row->imported_data_id, "long_seo_phrases", $result_row->long_seo_phrases);
+//                            } else {
+//                                $this->imported_data_parsed_model->updateValueByKey($row->imported_data_id, "long_seo_phrases", $result_row->long_seo_phrases);
+//                            }
+//                        }
+//                    }
+//                }
+//            }
 
             if ($build_assess_params->short_duplicate_content || $build_assess_params->long_duplicate_content) {
                $dc = $this->statistics_duplicate_content_model->get($row->imported_data_id);
@@ -893,45 +901,6 @@ class Research extends MY_Controller {
         } else {
             return -$result;
         }
-    }
-
-    private function prepare_seo_phrases($seo_lines) {
-        if (empty($seo_lines)) {
-            return "None";
-        }
-        $seo_phrases = array();
-        $result_phrases = array();
-        foreach ($seo_lines as $line) {
-            $line_array = explode(",", $line);
-            $number_repetitions = intval(str_replace("\"", "", $line_array[1]));
-            if ($number_repetitions < 2) {
-                continue;
-            }
-            $phrase = str_replace("\"", "", $line_array[0]);
-            $seo_phrases[] = array($number_repetitions, $phrase);
-        }
-        if (empty($seo_phrases)) {
-            return "None";
-        }
-        $lines_count = 0;
-        foreach ($seo_phrases as $seo_phrase) {
-            if ($lines_count > 2) {
-                break;
-            }
-            $result_phrases[] = $seo_phrase[1]." (".$seo_phrase[0].")";
-            $lines_count++;
-        }
-        return implode(" ", $result_phrases);
-    }
-
-    private function prepare_extract_phrases_cmd($text) {
-        $text = str_replace("'", "\'", $text);
-        $text = str_replace("`", "\`", $text);
-        $text = str_replace('"', '\"', $text);
-        $text = "\"".$text."\"";
-        $cmd = str_replace($this->config->item('cmd_mask'), $text ,$this->config->item('extract_phrases'));
-        $cmd = $cmd." 2>&1";
-        return $cmd;
     }
 
     public function assess_save_columns_state() {

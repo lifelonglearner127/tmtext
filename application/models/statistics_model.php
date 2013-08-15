@@ -30,7 +30,9 @@ class Statistics_model extends CI_Model {
     function insert($rid, $imported_data_id, $research_data_id, $batch_name,
                     $product_name, $url, $short_description, $long_description,
                     $short_description_wc, $long_description_wc,
-                    $short_seo_phrases, $long_seo_phrases)
+                    $short_seo_phrases, $long_seo_phrases,
+                    $own_price, $price_diff, $competitors_prices, $items_priced_higher_than_competitors
+    )
     {
         $this->rid = $rid;
         $this->imported_data_id = $imported_data_id;
@@ -45,6 +47,10 @@ class Statistics_model extends CI_Model {
         $this->short_seo_phrases = (string)$short_seo_phrases;
         $this->long_seo_phrases = (string)$long_seo_phrases;
         $this->created = date('Y-m-d h:i:s');
+        $this->own_price = $own_price;
+        $this->price_diff = $price_diff;
+        $this->competitors_prices = $competitors_prices;
+        $this->items_priced_higher_than_competitors = $items_priced_higher_than_competitors;
 
         $this->db->insert($this->tables['statistics'], $this);
         return $this->db->insert_id();
