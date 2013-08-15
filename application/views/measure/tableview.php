@@ -106,7 +106,7 @@ foreach($customers as $val){
                     $s_product_short_desc_count1=0;
                 }
                 if( $s_product_short_desc_count1>0){
-                    echo $s_product_short_desc_count1;
+                    echo $s_product_short_desc_count1.' words';
                 }else{
                     echo '-';
                 }
@@ -122,7 +122,7 @@ foreach($customers as $val){
                     $s_product_short_desc_count2=0;
                 }
                 if( $s_product_short_desc_count2>0){
-                    echo $s_product_short_desc_count2;
+                    echo $s_product_short_desc_count2.' words';
                 }else{
                     echo '-';
                 }
@@ -150,7 +150,7 @@ foreach($customers as $val){
           <td><?php
           if (count($same_pr[1]['seo']['short']) > 0) {
               $k=0;
-                foreach ($vs['seo']['long'] as $key => $value) {
+                foreach ($same_pr[1]['seo']['short'] as $key => $value) {
                     $k++;
                     echo $value['ph']. '('.$value['count'].')';
                     if($k<count($same_pr[1]['seo']['short'])){echo " - ";}
@@ -194,7 +194,7 @@ foreach($customers as $val){
                     $s_product_long_desc_count1=0;
                 }
                 if( $s_product_long_desc_count1>0){
-                    echo $s_product_long_desc_count1;
+                    echo $s_product_long_desc_count1.' words';
                 }else{
                     echo '-';
                 }
@@ -210,7 +210,7 @@ foreach($customers as $val){
                     $s_product_long_desc_count2=0;
                 }
                 if( $s_product_long_desc_count2>0){
-                    echo $s_product_long_desc_count2;
+                    echo $s_product_long_desc_count2.' words';
                 }else{
                     echo '-';
                 }
@@ -278,13 +278,7 @@ foreach($customers as $val){
 var count =<?php echo count($same_pr); ?>;
     var ddData_grids = [];
 //    var customers= [];
-    function gridsCustomersListLoader() {
-//        <?php $j=0;?>
-//        for (var i = 0; i <count ; i++) {
-//                var customer = "<?php echo  $customers[$j]; ++$j; ?>";
-//                customers.push(customer);
-//           }
-        }
+  
         var newc_data=[];
         
         setTimeout(function() {
@@ -311,5 +305,4 @@ var count =<?php echo count($same_pr); ?>;
             });
         }, 100);
     
-    gridsCustomersListLoader();
-    </script>
+       </script>
