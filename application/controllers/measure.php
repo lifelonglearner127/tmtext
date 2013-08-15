@@ -883,7 +883,7 @@ public function gridview() {
             foreach ($same_pr as $ks => $vs) {
                 if($vs['customer']==''){
                 $this->load->model('sites_model');
-                   if($this->get_base_url($vs['url'])=='http://shop.nordstrom.com'){
+                   if($this->get_base_url($vs['url'])=='shop.nordstrom.com'){
                       $same_pr[$ks]['customer']='nordstrom' ;
                    }else{
                        //echo $this->get_base_url($vs['url']);
@@ -1161,7 +1161,7 @@ public function gridview() {
             foreach ($same_pr as $ks => $vs) {
                 if($vs['customer']==''){
                 $this->load->model('sites_model');
-                   if($this->get_base_url($vs['url'])=='http://shop.nordstrom.com'){
+                   if($this->get_base_url($vs['url'])=='shop.nordstrom.com'){
                       $same_pr[$ks]['customer']='nordstrom' ;
                    }else{
                        //echo $this->get_base_url($vs['url']);
