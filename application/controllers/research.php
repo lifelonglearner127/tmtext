@@ -157,8 +157,11 @@ class Research extends MY_Controller {
             $params = new stdClass();
             $params->batch_name = $this->input->post('batch');
             $params->txt_filter = '';
-            $res = $this->statistics_model->getStatsData($params);
-            $result['count_items'] = count($res);
+            $res = count($this->statistics_model->getStatsData($params));
+            if($res == 0){
+                $res = $this->research_data_model->countAll($batch_id);
+            }
+            $result['count_items'] = $res;
 
             $this->output->set_content_type('application/json')
                 ->set_output(json_encode($result));
@@ -375,7 +378,11 @@ class Research extends MY_Controller {
             $result_row->price_diff = "-";
             $result_row->duplicate_content = "-";
             $result_row->own_price = $row->own_price;
-            $result_row->price_diff = $row->price_diff;
+            $price_diff = unserialize($row->price_diff);
+            if(count($price_diff) > 1){
+                $result_row->price_diff = "<input type='hidden'><nobr>".$price_diff['own_site']." - $".$price_diff['own_price']."</nobr><br /><nobr>".
+                    $price_diff['customer']." - $".$price_diff['competitor_price']."</nobr><br />";
+            }
             $result_row->competitors_prices = unserialize($row->competitors_prices);
 
 //            $own_site = parse_url($result_row->url,  PHP_URL_HOST);
