@@ -232,10 +232,16 @@
                 </td>
             </tr>
             <tr>
-                <td style="vertical-align: top;">Competitors:</td>
+                <td style="vertical-align: top;">Competitors:<span style="color: red;"><sup>*</sup></span></td>
                 <td>
                     <select id="assess_report_competitors" name="assess_report_competitors" style="width: 100%;height: 250px;" multiple="">
                     </select>
+                </td>
+            </tr>
+            <tr>
+                <td></td>
+                <td>
+                    <span style="color: red;"><sup>*</sup></span><span style="font-size: 9px;">To select more than one item, press and hold down the Ctrl or Shift keys, and then click each item that you want to select.<span>
                 </td>
             </tr>
         </table>
@@ -268,16 +274,17 @@
                                     </a>
                                     Summary
                                 </span>
-                                <span id="assess_report_download_panel" style="margin-left: 160px;">
-                                    Download
-                                    <a id="assess_report_download_pdf" target="_blank" data-type="pdf">PDF</a> |
-                                    <a id="assess_report_download_doc" target="_blank" data-type="doc">DOC</a>
-                                    <button id="assess_report_options_dialog_button" class="btn ml_15" title="Report Options"><img class="other-icon" src="<?php echo base_url();?>img/ico-gear.png" /></button>
-                                </span>
                                 <a class="ml_10 research_arrow" href="#">
                                     <img src="<?php echo base_url();?>img/arrow.png">
                                 </a>
+                                <span id="assess_report_download_panel" style="float: right;width: 500px;">
+                                    Download
+                                    <a id="assess_report_download_pdf" target="_blank" data-type="pdf">PDF</a> |
+                                    <a id="assess_report_download_doc" target="_blank" data-type="doc">DOC</a>
+                                    <button id="assess_report_options_dialog_button" class="btn" style="float: right;margin-top: 7px;" title="Report Options"><img class="other-icon" src="<?php echo base_url();?>img/ico-gear.png" /></button>
+                                </span>
                             </h3>
+                            <div style="clear: both;"></div>
                             <div class="boxes_content" style="padding:0px;">
                                 <div class="mt_10 ml_15">
                                     <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_number.png"><span id="assess_report_total_items" class="mr_10"></span>total items</div>
