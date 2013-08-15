@@ -746,7 +746,7 @@ class Research extends MY_Controller {
 
         $this->load->model('reports_model');
         $report = $this->reports_model->get_by_name('Assess');
-        $report_cover = $report[0]->body;
+        $report_cover = $report[0]->cover_page_body;
         $report_cover = str_replace('#date#', date('F j, Y'), $report_cover);
         $report_cover = str_replace('#customer name#', $customer->name, $report_cover);
 
@@ -762,7 +762,7 @@ class Research extends MY_Controller {
         $pdf = $this->pdf->load();
         $pdf = new mPDF('', $layout, 0, '', 10, 10, 10, 10, 8, 8);
 //        $pdf->showImageErrors = true;
-        $pdf->debug = true;
+//        $pdf->debug = true;
         $stylesheet = file_get_contents($css_path.'assess_report.css');
         $pdf->WriteHTML($stylesheet, 1);
         $pdf->SetHTMLFooter('<span style="font-size: 8px;">Copyright © 2013 Content Solutions, Inc.</span>');

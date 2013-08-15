@@ -1,10 +1,6 @@
 <?php  if (!defined('BASEPATH')) exit('No direct script access allowed');
 
 class Reports_model extends CI_Model {
-    var $id = 0;
-    var $name = '';
-    var $body = '';
-
     var $tables = array(
         'reports' => 'reports',
     );
@@ -14,17 +10,16 @@ class Reports_model extends CI_Model {
     }
 
     function insert($name) {
-        $this->name = $name;
-        $this->db->insert($this->tables['reports'], $this);
+        $params = array(
+            'name' => $name
+        );
+        $this->db->insert($this->tables['reports'], $params);
         return $this->db->insert_id();
     }
 
-    function update($id, $body) {
-        $data = array(
-            'body' => $body,
-        );
+    function update($id, $params) {
         return $this->db->update($this->tables['reports'],
-            $data,
+            $params,
             array('id' => $id)
         );
     }

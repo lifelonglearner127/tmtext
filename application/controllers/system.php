@@ -1131,10 +1131,45 @@ class System extends MY_Controller {
         $this->output->set_content_type('application/json')->set_output(json_encode($response));
     }
 
-    public function system_reports_get_body() {
+    public function system_reports_get_options() {
         $this->load->model('reports_model');
         $id = $this->input->get('id');
-        $response['data'] = $this->reports_model->get_by_id($id);
+        $page = $this->input->get('page');
+        $report = $this->reports_model->get_by_id($id);
+        switch ($page) {
+            case 'cover':
+                $response = array(
+                    'page_name' => $report[0]->cover_page_name,
+                    'page_order' => $report[0]->cover_page_order,
+                    'page_layout' => $report[0]->cover_page_layout,
+                    'page_body' => $report[0]->cover_page_body,
+                );
+                break;
+            case 'recommendations':
+                $response = array(
+                    'page_name' => $report[0]->recommendations_page_name,
+                    'page_order' => $report[0]->recommendations_page_order,
+                    'page_layout' => $report[0]->recommendations_page_layout,
+                    'page_body' => $report[0]->recommendations_page_body,
+                );
+                break;
+            case 'about':
+                $response = array(
+                    'page_name' => $report[0]->about_page_name,
+                    'page_order' => $report[0]->about_page_order,
+                    'page_layout' => $report[0]->about_page_layout,
+                    'page_body' => $report[0]->about_page_body,
+                );
+                break;
+            default:
+                $response = array(
+                    'page_name' => $report[0]->cover_page_name,
+                    'page_order' => $report[0]->cover_page_order,
+                    'page_layout' => $report[0]->cover_page_layout,
+                    'page_body' => $report[0]->cover_page_body,
+                );
+                break;
+        }
         $this->output->set_content_type('application/json')->set_output(json_encode($response));
     }
 
@@ -1155,8 +1190,8 @@ class System extends MY_Controller {
     public function system_reports_update() {
         $this->load->model('reports_model');
         $id = $this->input->post('id');
-        $body = $this->input->post('body');
-        $response['success'] = $this->reports_model->update($id, $body);
+        $params = json_decode($this->input->post('params'));
+        $response['success'] = $this->reports_model->update($id, $params);
         $this->output->set_content_type('application/json')->set_output(json_encode($response));
     }
 }
