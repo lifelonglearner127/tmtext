@@ -3,14 +3,13 @@ var customers=[];
    var result_data = <?php echo json_encode($same_pr); ?>;
  </script>
 <?php if(!empty($same_pr)){
+$same_pr  = array_values($same_pr);
 //    echo "<pre>";
 //    print_r($same_pr);
 //   echo "<pre>";
+
 $count=count($same_pr);
-if(isset($same_pr['ind0'])&& isset($same_pr['ind1'])){
-    $ind0=$same_pr['ind0'];
-    $ind1=$same_pr['ind1'];
-}else{
+if(!isset($ind0)|| !isset($ind1)){
     $ind0=0;
     $ind1=1;
 }
@@ -46,6 +45,7 @@ foreach($customers as $val){
      #table_view td{
          width: 400px ;
          text-align: center;
+         word-break: break-all;
      }
       #table_view .table_titles{
          width: 170px !important;
@@ -96,7 +96,15 @@ foreach($customers as $val){
             <?php
             if(isset($same_pr[$ind0]['three_last_prices'][0])){
                $pr= $same_pr[$ind0]['three_last_prices'][0];
-                echo '$'.$pr->price;
+                
+                if($ind0==0 && $pr->price!=$min_price ){
+                    echo "<span style='color: red;'><b>$$pr->price</b></span>";
+                }
+                elseif($pr->price==$min_price){
+                    echo "<span><b>$$pr->price</b></span>";
+                }else{
+                    echo '$'.$pr->price;
+                }
                
             }else{echo '-';}
             ?>
@@ -104,8 +112,18 @@ foreach($customers as $val){
          <?php if($count>1){?>
           <td><?php 
            if(isset($same_pr[$ind1]['three_last_prices'][0])){
-            echo '$'.$same_pr[$ind1]['three_last_prices'][0]->price;
-            }else{echo '-';}
+                $pr= $same_pr[$ind1]['three_last_prices'][0];
+                
+                if($ind1==0 && $pr->price!=$min_price ){
+                    echo "<span style='color: red;'><b>$$pr->price</b></span>";
+                }
+                elseif($pr->price==$min_price){
+                    echo "<span><b>$$pr->price</b></span>";
+                }else{
+                    echo '$'.$pr->price;
+                }
+           
+           }else{echo '-';}
             ?>
           </td>
          <?php }?>
