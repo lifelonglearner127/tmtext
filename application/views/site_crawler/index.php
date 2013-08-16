@@ -136,7 +136,7 @@ function loadCurrentList(url){
 
             var snap_line = "";
             if(node.snap !== null && node.snap !== "") {
-            	snap_line = " (<a href='javascript:void(0)' onclick=\"showSnap('" + node.snap + "');\">snap</a>)";
+            	snap_line = " (<a href='javascript:void(0)' onclick=\"showSnap('" + node.snap + "');\">snapshot</a>)";
             }
 
 			$('#Current_List ul').append("<li id=\"id_"+node.id+"\"><span><input data-url=\""+node.url+"\" data-id=\""+node.id+"\" type=\"checkbox\" name=\"ids[]\" value=\""+node.id+"\"/></span><span>"+imported_data_id+"</span><span>"+node.status + snap_line + "</span><span>"+updated+"</span><span>"+category+"</span><span class=\"url ellipsis\">"+node.url+"</span></li>");
