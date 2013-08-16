@@ -232,6 +232,9 @@ class Research extends MY_Controller {
                 $batch_id = $this->batches_model->insert($batch, $customer_id);
             }
         }
+        $response['batch_id'] = $batch_id;
+        $this->output->set_content_type('application/json')
+            ->set_output(json_encode($response));
     }
 
     public function research_assess(){

@@ -597,7 +597,7 @@ $(document).ready(function () {
                         }
                     });
                     if(cat_exist == 0){
-                        $('select[name="batches"]').append('<option selected="selected">'+
+                        $('select[name="batches"]').append('<option value="'+data.batch_id+'" selected="selected">'+
                             $('input[name="new_batch"]').val()+'</option>');
                         return false;
                     }
