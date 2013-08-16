@@ -740,6 +740,7 @@ class Research extends MY_Controller {
 
     public function assess_report_download() {
         $params = new stdClass();
+        $params->batch_id = $this->input->get('batch_id');
         $params->batch_name = $this->input->get('batch_name');
         $results = $this->get_data_for_assess($params);
 
