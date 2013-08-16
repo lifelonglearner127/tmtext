@@ -303,28 +303,6 @@
                                 </div>
                             </div>
                         </li>
-                        <li class="boxes ui-resizable">
-                            <h3>
-                                <a class="hideShow" onclick="return false;" href="#">
-                                    <img src="<?php echo base_url();?>img/arrow-down.png" style="width:12px;margin-right: 10px">
-                                </a>
-                                Recommendations
-                                <a class="ml_10 research_arrow" href="#">
-                                    <img src="<?php echo base_url();?>img/arrow.png">
-                                </a>
-                            </h3>
-                        </li>
-                        <li class="boxes ui-resizable">
-                            <h3>
-                                <a class="hideShow" onclick="return false;" href="#">
-                                    <img src="<?php echo base_url();?>img/arrow-down.png" style="width:12px;margin-right: 10px">
-                                </a>
-                                Pricing Details
-                                <a class="ml_10 research_arrow" href="#">
-                                    <img src="<?php echo base_url();?>img/arrow.png">
-                                </a>
-                            </h3>
-                        </li>
                     </ul>
                 </div>
 
