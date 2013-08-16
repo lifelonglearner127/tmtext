@@ -24,6 +24,13 @@ class Crawler_List_model extends CI_Model {
         return $query->result();
     }
 
+    function getIds($ids) {
+    	$query = $this->db->where_in('id', $ids)
+                  ->get($this->tables['crawler_list']);
+
+        return $query->result();
+    }
+
     function insert($url, $category_id) {
 		$CI =& get_instance();
 

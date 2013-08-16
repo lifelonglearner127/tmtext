@@ -67,7 +67,7 @@
     font-size: 13px;
 }
 .tl_full_left {
-    padding-top: 6px !important; 
+    padding-top: 6px !important;
     padding-bottom: 7px !important;
     background-color: #006DCC;
     background-image: linear-gradient(to bottom, #0088CC, #0044CC);
@@ -145,7 +145,7 @@
     -webkit-border-radius: 8px;
     -moz-border-radius: 8px;
     -webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.055);
-    -moz-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.055); 
+    -moz-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.055);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.055);
     -webkit-transition: all 0.5s ease-in-out 0s;
     -moz-transition: all 0.5s ease-in-out 0s;
@@ -423,7 +423,7 @@
 .products_an_search {
     min-height: 30px;
     max-height: 175px;
-    
+
     /*min-height: 30px;
     height: auto; */
     overflow: auto;
@@ -540,7 +540,7 @@ span[class*="hilite"] { background: yellow; }
     min-height: 30px;
     width: 280px;
     padding: 5px;
-    margin-left: 3px;      
+    margin-left: 3px;
 }
 #compet_area_grid .grid_se_section .c .preloader_grids_box {
     display: block;
@@ -1538,6 +1538,10 @@ label.dd-selected-text, label.dd-option-text{
     height: 21px;
 }
 
+#Current_List ul li span input[type='checkbox']{
+    height: 15px;
+}
+
 #Current_List ul lh, #Current_List ul li  {
     border-bottom: 1px solid #ccc;
 }
@@ -1546,9 +1550,14 @@ label.dd-selected-text, label.dd-option-text{
     border-bottom: 0px;
 }
 
+#Current_List ul li span:first-child, #Current_List ul lh span:first-child {
+    border-right: 0px;
+    width: 5%;
+}
+
 #Current_List ul li span:last-child, #Current_List ul lh span:last-child {
     border-right: 0px;
-    width: 45%;
+    width: 38%;
 }
 
 .ellipsis {
@@ -1761,7 +1770,7 @@ select#sites option{
     margin-right: 5px;
 }
 
-.grid_results_show{  
+.grid_results_show{
     width: 923px !important;
     height: auto;
     margin-top: -15px;

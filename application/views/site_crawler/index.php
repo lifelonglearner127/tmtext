@@ -65,7 +65,7 @@
 			<div class="row-fluid mt_5">
 				<div class="search_area uneditable-input span10" style="cursor: text; width: 765px; height: 250px; overflow : auto;" id="Current_List">
 				<ul>
-					<lh><span>ID</span><span>Status</span><span>Last Crawled</span><span>Category</span><span>URL</span></lh>
+					<lh><span></span><span>ID</span><span>Status</span><span>Last Crawled</span><span>Category</span><span>URL</span></lh>
 				</ul>
 				</div>
 				<button id="current_list_delete" class="btn new_btn btn-danger mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
@@ -88,7 +88,7 @@ function loadCurrentList(url){
         search_crawl_data = $('input[name="search_crawl_data"]').val();
     }
 	$.get(url, {'search_crawl_data': search_crawl_data}, function(data) {
-        console.log(data);
+//        console.log(data);
 		$('#Current_List ul li').remove();
 
 		if(data.new_urls.length > 0) {
@@ -97,6 +97,7 @@ function loadCurrentList(url){
 			$("button#crawl_new").attr('disabled', 'disabled');
 		}
 
+		$("h3 small").html(data.total + ' items Total -- '+ data.new+ ' New');
   		$.each(data.new_urls, function (index, node) {
   	  		var category = '';
   	  		if (node.name != undefined) {
@@ -113,8 +114,8 @@ function loadCurrentList(url){
             }else{
                 imported_data_id = node.imported_data_id;
             }
-            $("h3 small").html(data.total + ' items Total -- '+ data.new+ ' New');
-			$('#Current_List ul').append("<li data-url=\""+node.url+"\" data-id=\""+node.id+"\" id=\"id_"+node.id+"\"><span>"+imported_data_id+"</span><span>"+node.status+"</span><span>"+updated+"</span><span>"+category+"</span><span class=\"url ellipsis\">"+node.url+"</span></li>");
+			$('#Current_List ul').append("<li data-url=\""+node.url+"\" data-id=\""+node.id+"\" id=\"id_"+node.id+"\"><span><input type=\"checkbox\" name=\"ids[]\" value=\""+node.id+"\"/></span><span>"+imported_data_id+"</span><span>"+node.status+"</span><span>"+updated+"</span><span>"+category+"</span><span class=\"url ellipsis\">"+node.url+"</span></li>");
+
 		});
 
   		$('#Current_List_Pager').html(data.pager);
@@ -131,14 +132,14 @@ function checkAddList(){
 
 function closeInputs(event) {
 	if($(event.target).parents().index($('#Add_List')) == -1) {
-        $("#Add_List > div >input").each(function(i,e){
+        $("#Add_List > div >input[type='text']").each(function(i,e){
             if (!$(this).parent('div').hasClass('new')){
             	$(this).parent().html($(this).val());
             }
         });
     }
     if($(event.target).parents().index($('#Current_List')) == -1) {
-        $("#Current_List > ul > li > span > input").each(function(){
+        $("#Current_List > ul > li > span > input[type='text']").each(function(){
             $(this).parent().html($(this).val());
             $.post('<?php echo site_url('site_crawler/update');?>', {id: $('#Current_List > ul > li.active').attr('id'), url:$(this).val()}, function(data) {});
         });
@@ -160,8 +161,8 @@ $(function () {
     			id: $(value).data('id'),
     			url: $(value).data('url')
     		}
-    		urls.push(mid); 
-    	}); 
+    		urls.push(mid);
+    	});
     	var send_data = {
     		urls: urls
     	};
@@ -174,8 +175,16 @@ $(function () {
         if(!$(event.target).is('#current_list_delete') && !$(event.target).is('#current_crawl')){
             $('#current_list_delete').attr('disabled', 'disabled');
             $('#Current_List li').removeClass('active');
-            $('#current_crawl').attr('disabled', 'disabled');
+//            $('#current_crawl').attr('disabled', 'disabled');
             $('#current_snapshot').attr('disabled', 'disabled');
+
+            var ids = [];
+    		$("#Current_List > ul > li input[name='ids[]']:checked").each(function () {
+    			ids.push(parseInt($(this).val()));
+    		});
+    		if (ids.length==0) {
+    			$('button#current_crawl').attr('disabled', 'disabled');
+    		}
         }
     });
 
@@ -250,9 +259,19 @@ $(function () {
 	});
 
 	$(document).on("click", 'button#current_crawl', function(){
-		$('button#current_crawl').attr('disabled', 'disabled');
-		$.post('<?php echo site_url('site_crawler/crawl_all');?>', {id: $('#Current_List > ul > li.active').attr('id')}, function(data) {});
+		//$('button#current_crawl').attr('disabled', 'disabled');
+		//$.post('<?php echo site_url('site_crawler/crawl_all');?>', {id: $('#Current_List > ul > li.active').attr('id')}, function(data) {});
 
+		var ids = [];
+		$("#Current_List > ul > li input[name='ids[]']:checked").each(function () {
+			ids.push(parseInt($(this).val()));
+		});
+
+		if (ids.length==0) {
+			$('button#current_crawl').attr('disabled', 'disabled');
+		} else {
+			$.post('<?php echo site_url('site_crawler/crawl_all');?>', {ids: ids}, function(data) {});
+		}
 	});
 
 	$(document).on("click", "button#add_url_list", function(event){

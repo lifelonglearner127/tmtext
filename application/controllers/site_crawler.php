@@ -271,6 +271,8 @@ class Site_Crawler extends MY_Controller {
 		if ($this->input->post('id')) {
 			$id = (int) str_replace('id_', '', $this->input->post('id'));
 			$rows = $this->crawler_list_model->get($id);
+		} else if ($this->input->post('ids')) {
+			$rows = $this->crawler_list_model->getIds($this->input->post('ids'));
 		} else {
 			$rows = $this->crawler_list_model->getAll(1000, false);
 		}
