@@ -175,13 +175,12 @@ class Crons extends MY_Controller {
             $this->load->model('imported_data_parsed_model');
             $this->statistics_model->truncate();
             $this->statistics_duplicate_content_model->truncate();
-            $batches = $this->batches_model->getAll();
+            $batches = $this->batches_model->getAll('id');
             $enable_exec = true;
             foreach($batches as $batch){
                 $data = $this->research_data_model->do_stats($batch->id);
                 if(count($data) > 0){
                     foreach($data as $obj){
-                        var_dump($obj->batch_id);
                             $own_price = 0;
                             $competitors_prices = array();
                             $price_diff = '';

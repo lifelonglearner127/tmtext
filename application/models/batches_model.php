@@ -28,9 +28,9 @@ class Batches_model extends CI_Model {
         return $query->result();
     }
 
-    function getAll()
+    function getAll($order = "title")
     {
-        $this->db->order_by("id", "asc");
+        $this->db->order_by($order, "asc");
         $query = $this->db->get($this->tables['batches']);
 
         return $query->result();
