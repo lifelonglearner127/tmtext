@@ -127,9 +127,7 @@ class SearchSpider(BaseSpider):
 
 	# parse a product page (given its URL) and extract product's name
 	def parseURL(self, response):
-		#print "DEBUG 2"
-
-		#TODO: !bug! some URLs from origin site don't get here
+		
 		#TODO: try with more than one query
 
 		site = response.meta['site']
@@ -142,22 +140,68 @@ class SearchSpider(BaseSpider):
 			model_nodes = hxs.select("//p[@class='itemModel']/text()").extract()
 			if model_nodes:
 				model_node = model_nodes[0]
+
+				#TODO: use model number in computin similarity and give it largest weight?
 				m = re.match(".*Model:(.*)", model_node)
 				if m:
 					product_model = m.group(1)
 
-			query = self.build_search_query(product_name)
-			search_pages = self.build_search_pages(query)
-			page = search_pages[self.target_site]
-			#print "PAGE", page, "ORIGIN", response.url
-			request = Request(page, callback = self.parseResults)
-			request.meta['site'] = self.target_site
-			# product page from source site
-			request.meta['origin_url'] = response.url
-			request.meta['origin_name'] = product_name
+		# create search queries and get the results using the target site's search function
+
+		if site == 'staples':
 			zipcode = "12345"
-			request.cookies = {"zipcode": zipcode}
-			yield request
+			cookies = {"zipcode": zipcode}
+		else:
+			cookies = {}
+
+		request = None
+
+		# # 1) Search by model number
+		# if product_model:
+		# 	query1 = self.build_search_query(product_name)
+		# 	search_pages1 = self.build_search_pages(query)
+		# 	page1 = search_pages[self.target_site]
+		# 	request1 = Request(page1, callback = self.parseResults, cookies)
+			
+		# 	request = request1
+
+
+		# 2) Search by product full name
+		query2 = self.build_search_query(product_name)
+		search_pages2 = self.build_search_pages(query2)
+		page2 = search_pages[self.target_site]
+		request2 = Request(page2, callback = self.parseResults, cookies)
+		request2.meta['site'] = self.target_site
+		# product page from source site
+		request2.meta['origin_url'] = response.url
+		request2.meta['origin_name'] = product_name
+
+		if not request:
+			request = request2
+			request.meta['pending_request'] = request3
+		else:
+			request.meta['pending_request'] = request2
+
+		request.meta['site'] = self.target_site
+		# product page from source site
+		request.meta['origin_url'] = response.url
+		request.meta['origin_name'] = product_name
+
+
+		# # 3) Search by parts of product's name
+		
+		# query = self.build_search_query(product_name)
+		# search_pages = self.build_search_pages(query)
+		
+		# page = search_pages[self.target_site]
+		# #print "PAGE", page, "ORIGIN", response.url
+		# request = Request(page, callback = self.parseResults)
+		request.meta['site'] = self.target_site
+		# product page from source site
+		request.meta['origin_url'] = response.url
+		request.meta['origin_name'] = product_name
+
+		yield request
 
 
 	# parse results page, handle each site separately
@@ -176,7 +220,7 @@ class SearchSpider(BaseSpider):
 
 		#TODO: parse multiple pages, can only parse first page so far
 
-		#TODO: parse alternative results (if no results found for search query, but for similar ones)
+		#TODO: parse alternative results (if no results found for search query, but for similar ones) - done?
 
 		# amazon
 		if (site == 'amazon'):
