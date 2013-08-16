@@ -38,8 +38,8 @@ class Statistics_model extends CI_Model {
         $this->imported_data_id = $imported_data_id;
         $this->research_data_id = $research_data_id;
         $this->batch_id = (int)$batch_id;
-        $this->product_name = $product_name;
-        $this->url = $url;
+        $this->product_name = (string)$product_name;
+        $this->url = (string)$url;
         $this->short_description = (string)$short_description;
         $this->long_description = (string)$long_description;
         $this->short_description_wc = (string)$short_description_wc;
@@ -47,9 +47,9 @@ class Statistics_model extends CI_Model {
         $this->short_seo_phrases = (string)$short_seo_phrases;
         $this->long_seo_phrases = (string)$long_seo_phrases;
         $this->created = date('Y-m-d h:i:s');
-        $this->own_price = $own_price;
-        $this->price_diff = $price_diff;
-        $this->competitors_prices = $competitors_prices;
+        $this->own_price = (string)$own_price;
+        $this->price_diff = (string)$price_diff;
+        $this->competitors_prices = (string)$competitors_prices;
         $this->items_priced_higher_than_competitors = $items_priced_higher_than_competitors;
 
         $this->db->insert($this->tables['statistics'], $this);
