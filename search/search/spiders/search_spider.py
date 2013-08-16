@@ -197,13 +197,6 @@ class SearchSpider(BaseSpider):
 				items.append(item)
 
 
-			# item = SearchItem()
-			# item['site'] = site
-			# #if 'origin_url' in response.meta:
-			# item['origin_url'] = response.meta['origin_url']
-			# return [item]
-
-
 		# walmart
 		if (site == 'walmart'):
 			items = []
@@ -279,29 +272,6 @@ class SearchSpider(BaseSpider):
 
 				items.append(item)
 
-		best_match = None
-
-		if items:
-			# from all results, select the product whose name is most similar with the original product's name
-			best_match = self.similar(origin_name, items, self.threshold)
-
-		# if not best_match:
-		# 	# if there are no results but the option was to include original product URL, create an item with just that
-		# 	if self.output == 2:
-		# 		item = SearchItem()
-		# 		item['site'] = site
-		# 		#if 'origin_url' in response.meta:
-		# 		item['origin_url'] = response.meta['origin_url']
-		# 		return [item]
-
-		# return [best_match]
-
-		item = SearchItem()
-		item['site'] = site
-		#if 'origin_url' in response.meta:
-		item['origin_url'] = response.meta['origin_url']
-		return [item]
-
 		# # bjs
 		# if (site == 'bjs'):
 		# 	results = hxs.select()
@@ -311,6 +281,29 @@ class SearchSpider(BaseSpider):
 		# # staples
 		# if (site == 'staples')
 
+
+		best_match = None
+
+		if items:
+			# from all results, select the product whose name is most similar with the original product's name
+			best_match = self.similar(origin_name, items, self.threshold)
+
+		if not best_match:
+			# if there are no results but the option was to include original product URL, create an item with just that
+			if self.output == 2:
+				item = SearchItem()
+				item['site'] = site
+				#if 'origin_url' in response.meta:
+				item['origin_url'] = response.meta['origin_url']
+				return [item]
+
+		return [best_match]
+
+		# item = SearchItem()
+		# item['site'] = site
+		# #if 'origin_url' in response.meta:
+		# item['origin_url'] = response.meta['origin_url']
+		# return [item]
 
 	# normalize text to list of lowercase words (no punctuation except for inches sign (") or /)
 	def normalize(self, orig_text):
