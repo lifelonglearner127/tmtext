@@ -306,7 +306,8 @@ class Crons extends MY_Controller {
                                 $short_seo_phrases, $long_seo_phrases,
                                 $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors
                             );
-                            if(gettype($insert_id ) == 'int'){
+                            var_dump($insert_id);
+                            if($insert_id){
                                 var_dump('--'.$obj->batch_id.'--');
                             } else {
                                 print "<pre>";
