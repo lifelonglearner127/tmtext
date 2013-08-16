@@ -176,6 +176,8 @@ class Crons extends MY_Controller {
             $this->statistics_model->truncate();
             $this->statistics_duplicate_content_model->truncate();
             $batches = $this->batches_model->getAll();
+            var_dump($batches);
+            die;
             $enable_exec = true;
             foreach($batches as $batch){
                 $data = $this->research_data_model->do_stats($batch->id);
