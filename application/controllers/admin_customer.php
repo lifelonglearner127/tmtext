@@ -12,19 +12,51 @@ class Admin_Customer extends MY_Controller {
  	}
 
 	public function index()
-	{
+	{                       
 		$this->data['message'] = $this->session->flashdata('message');
 		$this->data['user_settings'] = $this->user_settings;
-
-		$this->render();
+                $this->data['customers']= $this->getCustomersList();
+                $this->render();
 	}
-
+    function getCustomersList(){
+        
+       $this->load->model('customers_model');
+        $this->load->model('users_to_customers_model');
+//        $admin = $this->ion_auth->is_admin($this->ion_auth->get_user_id());
+//        $customers_init_list = $this->users_to_customers_model->getByUserId($this->ion_auth->get_user_id());
+//        if (count($customers_init_list) == 0 && $admin) {
+//            $customers_init_list = $this->customers_model->getAll();
+//        }
+        $customers_init_list = $this->customers_model->getAll();
+        if (count($customers_init_list) > 0) {
+            if (count($customers_init_list) != 1) {
+                $output[] = array('text' => 'Select Customer',
+                    'value' => 'Select Customer',
+                    'image' => '',
+                    'url' =>''
+                );
+            }
+            foreach ($customers_init_list as $key => $value) {
+                $output[] = array('text' => '',
+                    'value' => strtolower($value->name),
+                    'image' => base_url() . 'img/' . $value->image_url,
+                     'url' =>$value->url
+                );
+            }
+        } else {
+            $output[] = array('text' => 'No Customers',
+                'value' => 'No Customers',
+                'image' => ''
+            );
+        }
+        return $output;
+    }
     public function customer_list()
     {
         $this->render();
     }
-
-	public function save() {
+   
+   public function save() {
 		$this->form_validation->set_rules('user_settings[customer_name]', 'Customer name', 'required|xss_clean');
 		$this->form_validation->set_rules('user_settings[csv_directories]', 'CSV Directories', 'required|xss_clean');
 		$this->form_validation->set_rules('user_settings[title_length]', 'Default Title', 'required|integer|xss_clean');

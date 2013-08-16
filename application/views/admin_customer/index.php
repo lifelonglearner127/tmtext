@@ -39,8 +39,10 @@
 		});
 
         $('button#save_customer').click(function(){
+            
             $.post(base_url + 'index.php/admin_customer/add_customer', {
-                'customer_name': $('input#customer_name').val(),
+                //'customer_name': $('input#customer_name').val(),
+                'customer_name':$("#sites .btn_caret_sign").text(),
                 'customer_url': $('input[name="customer_url"]').val(),
                 'logo': $('input[name="customerlogo_file"]').val()
             }, function(data){
@@ -61,11 +63,32 @@
 						<div class="span9">
 						    <?php echo form_open("admin_customer/save", array("class"=>"form-horizontal", "id"=>"customer_settings_save")); ?>
 							    <div class="control-group">
-								    <label class="control-label" for="customer_name">Customer name:</label>
-								    <div class="controls">
-									    <input type="text" id="customer_name" name="user_settings[customer_name]" class="span12" value="<?php echo isset($user_settings['customer_name'])? $user_settings['customer_name']:'' ?>">
-								    </div>
+								    <p>New Customer :</p>
+								    
+                                                                    <div >
+									    <input  style="float: left; margin-right: 5px;" type="text" id="customer_name" name="user_settings[customer_name]" class="" value="<?php // echo isset($user_settings['customer_name'])? $user_settings['customer_name']:'' ?>">
+                                                                            <button id="add_new_customer" class="btn new_btn btn-primary"><i class="icon-white icon-file"></i>&nbsp;Add</button>
+                                                                    </div>
 							    </div>
+                                                            <div class="clear-fix"></div>
+                                                    
+                                                    <div class="aclis">
+                                                        
+                                                                <div style="margin-bottom: 15px;"id="sites" class="btn-group hp_boot_drop mr_10">
+                                                                    <button class="btn btn-danger btn_caret_sign" id="" onclick="return false;">[ Select Customer ]</button>
+                                                                    <button class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
+                                                                        <span class="caret"></span>
+                                                                    </button>
+                                                                    <ul class="dropdown-menu">
+                                                                        <?php foreach($customers as $key => $value) { ?>
+                                                                            <li><a data-item="<?php echo $value['url']; ?>" data-value="<?php echo $value['image'];; ?>" href="javascript:void(0)"><span class="<?php echo $value['value']; ?>"><?php echo $value['value']; ?></span></a></li>
+                                                                        <?php } ?>
+                                                                    </ul>
+                                                                </div>
+                                                           
+                                                        <div class="clear-fix"></div>
+                                                    </div>
+                                                    
                                 <div class="control-group">
                                     <label class="control-label" for="customer_name">Customer url:</label>
                                     <div class="controls">
@@ -119,10 +142,12 @@
                                         </div>
                                     </div>
                                 </div>
+                                                            <?php 
+                                                            ?>
 							    <div class="control-group">
 								    <label class="control-label" for="csv_directory">CSV Directory:</label>
 								    <div class="controls">
-									    <input type="text" id="csv_directory" name="user_settings[csv_directories]" class="span12" value="<?php echo isset($user_settings['csv_directories'])? $user_settings['csv_directories']:'' ?>">
+									    <input type="text" id="csv_directory" name="user_settings[csv_directories]" class="span12" value="<?php echo isset($user_settings['csv_directories'])? $user_settings['csv_directories']:'/ebs/sites/client38/web48/opt/trillionmonkeys.com/tm/data' ?>">
 								    </div>
 							    </div>
 <!-- 							    <div class="control-group">
@@ -146,14 +171,14 @@
 						    	<div class="control-group">
 								    <label class="control-label" for="title_length">Title length:</label>
 								    <div class="controls">
-									    <input type="text" id="title_length" name="user_settings[title_length]" class="span2" value="<?php echo isset($user_settings['title_length'])? $user_settings['title_length']:'' ?>">
+									    <input type="text" id="title_length" name="user_settings[title_length]" class="span2" value="<?php  echo "40";// echo isset($user_settings['title_length'])? $user_settings['title_length']:'' ?>">
 										<p class="title_max">characters max</p>
 								    </div>
 							    </div>
 							    <div class="control-group">
 								    <label class="control-label" for="description_length">Description length:</label>
 								    <div class="controls">
-									    <input type="text" id="description_length" name="user_settings[description_length]" class="span2" value="<?php echo isset($user_settings['description_length'])? $user_settings['description_length']:'' ?>">
+									    <input  type="text" id="description_length" name="user_settings[description_length]" class="span2" value="<?php echo "150"; // echo isset($user_settings['description_length'])? $user_settings['description_length']:'' ?>">
 										<p class="title_max">words max</p>
 								    </div>
 							    </div>
@@ -186,7 +211,7 @@
 						</div>
 						<div class="span3">
 							<div class="title_item_content">
-								<button class="btn new_btn btn-primary"><i class="icon-white icon-file"></i>&nbsp;New</button>
+<!--								<button class="btn new_btn btn-primary"><i class="icon-white icon-file"></i>&nbsp;New</button>-->
 								<ul id="trash" class="product_title_content trash">
 									<?php
 									foreach($this->config->item('all_product_titles') as $key=>$value) {
@@ -203,3 +228,65 @@
 					</div>
     </div>
 </div>
+<script>
+function selectOption(){
+                $(".hp_boot_drop .dropdown-menu > li > a").bind('click', function(e) {
+                    var new_caret = $.trim($(this).text());
+                    $("#sites .btn_caret_sign").text(new_caret);
+                    $("#sites .btn_caret_sign").attr('id', $.trim($(this).data('value')));
+                    var url='';
+                    
+                    if(new_caret!=='Select Customer'){
+                        
+                    $("span").each(function(){
+                        if($(this).hasClass(new_caret)){
+                            url=$(this).closest('a').attr('data-item');
+                             var image=$(this).closest('a').attr('data-value');
+                             $('#customer_url').val(url);
+                             $("#customer_logo").attr('src',image);
+                        }
+                    })
+//                      url=$("span[class='"+new_caret+"']").closest('a').attr('data-item');
+//                      var image=$("span[class='"+new_caret+"']").closest('a').attr('data-value');
+                      
+                    }else{
+                        $("#customer_logo").attr('src',"../../img/no-logo.jpg");
+                        $('#customer_url').val('');
+                    }
+                    
+                });
+            }
+            selectOption();
+            
+            
+            
+            
+            
+            $('#add_new_customer').click(function(){
+                                    
+                if($('#new_site').val() != ''){
+                    var customerName=$('#customer_name').val();
+                    $("#sites .btn_caret_sign").text(customerName);
+                    $(".hp_boot_drop .dropdown-menu").append('<li><a href="javascript:void(0)" data-value="" data-item=""><span>'+customerName+'</span></a></li>');
+                    selectOption();
+//                    $(".hp_boot_drop .dropdown-menu li ").tsort('span',{order:'asc'});
+                     $('#customer_name').val('');
+                    $('#customer_url').val('');
+                    
+
+                }
+                return false;
+            });
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            </script>
