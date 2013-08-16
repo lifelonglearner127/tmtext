@@ -172,7 +172,7 @@ class Measure extends MY_Controller {
         $res = array(
             'path' => $path,
             'dir' => $dir . "/$url_name.$type",
-            'img' => $url_name.$type
+            'img' => $url_name.".".$type
         );
         return $res;
     }
