@@ -9,6 +9,7 @@ from selenium.webdriver.common.keys import Keys
 
 import time
 import re
+import sys
 
 ################################
 # Run with 
@@ -22,7 +23,7 @@ import re
 class CaturlsSpider(BaseSpider):
 
 	name = "producturls"
-	allowed_domains = ["staples.com", "bloomingdales.com", "walmart.com", "amazon.com", "bestbuy.com"]
+	allowed_domains = ["staples.com", "bloomingdales.com", "walmart.com", "amazon.com", "bestbuy.com", "nordstrom.com"]
 
 	# store the cateory page url given as an argument into a field and add it to the start_urls list
 	def __init__(self, cat_page):
@@ -38,6 +39,8 @@ class CaturlsSpider(BaseSpider):
 		#self.start_urls = ["http://www.amazon.com/Televisions-Video/b/ref=sa_menu_tv?ie=UTF8&node=1266092011"]
 		# bestbuy televisions
 		#self.start_urls = ["http://www.bestbuy.com/site/Electronics/Televisions/pcmcat307800050023.c?id=pcmcat307800050023&abtest=tv_cat_page_redirect"]
+		# nordstrom sneakers
+		#self.start_urls = ["http://shop.nordstrom.com/c/womens-sneakers?dept=8000001&origin=topnav"]
 		
 
 	def parse(self, response):
@@ -45,9 +48,9 @@ class CaturlsSpider(BaseSpider):
 		items = []
 
 		# extract site domain
-		m = re.match("http://www1?\.([^\.]+)\.com.*", response.url)
+		m = re.match("http://((www1?)|(shop))\.([^\.]+)\.com.*", response.url)
 		if m:
-			site = m.group(1)
+			site = m.group(4)
 		else:
 			sys.stderr.write('Can\'t extract domain from URL.\n')
 			return items
@@ -227,6 +230,12 @@ class CaturlsSpider(BaseSpider):
 				return Request(response.url, callback = self.parsePage_bestbuy)
 
 
+		if site == 'nordstrom':
+			hxs = HtmlXPathSelector(response)
+
+			return Request(response.url, callback = self.parsePage_nordstrom)
+
+
 	# parse staples page and extract product URLs
 	def parsePage_staples(self, response):
 
@@ -305,3 +314,23 @@ class CaturlsSpider(BaseSpider):
 		if next_page:
 			page_url = root_url + next_page[0]
 			yield Request(url = page_url, callback = self.parsePage_bestbuy)
+
+	# parse nordstrom page and extract URLs
+	def parsePage_nordstrom(self, response):
+		hxs = HtmlXPathSelector(response)
+		root_url = "http://shop.nordstrom.com"
+
+		# extract product URLs
+		product_links = hxs.select("//div/a[@class='title']/@href")
+		for product_link in product_links:
+			item = ProductItem()
+			item['product_url'] = root_url + product_link.extract()
+			yield item
+
+		# select next page, if any, parse it too with this method
+		next_page = hxs.select("//ul[@class='arrows']/li[@class='next']/a/@href").extract()
+		if next_page:
+			page_url = next_page[0]
+			yield Request(url = page_url, callback = self.parsePage_nordstrom)
+
+
