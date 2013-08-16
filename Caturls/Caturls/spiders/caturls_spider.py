@@ -59,6 +59,10 @@ class CaturlsSpider(BaseSpider):
 
 		# handle staples televisions
 		if site == 'staples':
+			# zipcode = "12345"
+
+			# hxs = HtmlXPathSelector(response)
+			# return Request(self.cat_page, callback = self.parsePage_staples, cookies = {"zipcode" : zipcode}, meta = {"dont_redirect" : False})
 			# use selenium to complete the zipcode form and get the first results page
 			driver = webdriver.Firefox()
 			driver.get(response.url)

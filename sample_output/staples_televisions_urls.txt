@@ -17,7 +17,6 @@ http://www.staples.com/Naxa-1920-x-1080-NTD-2252-22-inch-Widescreen-LED-HD-Telev
 http://www.staples.com/Supersonic-1366-x-768-SC-1911-19-inch-Widescreen-LED-HD-Television/product_132969
 http://www.staples.com/Quantum-FX-1366-x-768-1312D-133-LED-Television-With-ATSC-NTSC/product_137741
 http://www.staples.com/SAMSUNG-1920-x-1080-Series-5300-40-inch-Full-HD-LED-Television/product_IM1KV8164
-http://www.staples.com/VIERA-1920-x-1080-Series-Class-DT50-469-Full-HD-LED-Television/product_IM1KV8949
 http://www.staples.com/HP-LD4220tm-42-inch-Diagonal-1080p-LCD-Television/product_IM1LC7551
 http://www.staples.com/LG-Electronics-27EC33V-B-27-inch-Diagonal-1080p-Desktop-Monitor/product_IM1RG4489
 http://www.staples.com/LG-Electronics-32LN541C-32-inch-Diagonal-720P-LED-HD-Television/product_IM1RA0426
@@ -36,7 +35,6 @@ http://www.staples.com/Samsung-LE46C-46-inch-Diagonal-1080p-LED-HD-Television/pr
 http://www.staples.com/Samsung-LE55C-55-inch-Diagonal-1080p-LED-HD-Television/product_IM1RD5155
 http://www.staples.com/Samsung-ME32C-32-inch-Diagonal-1080p-LED-HD-Television/product_IM1RD5142
 http://www.staples.com/Samsung-ME40C-40-inch-Diagonal-1080p-LED-HD-Television/product_IM1RD5143
-http://www.staples.com/Samsung-ME46C-46-inch-Diagonal-1080p-LED-HD-Television/product_IM1RD5148
 http://www.staples.com/Samsung-ME55C-55-inch-Diagonal-1080p-LED-HD-Television/product_IM1RD5157
 http://www.staples.com/Samsung-PE40C-40-inch-Diagonal-1080p-LED-HD-Television/product_IM1RD5144
 http://www.staples.com/Samsung-PE46C-46-inch-Diagonal-1080p-LED-HD-Television/product_IM1RD5149
@@ -44,9 +42,12 @@ http://www.staples.com/Samsung-PE55C-55-inch-Diagonal-1080p-LED-HD-Television/pr
 http://www.staples.com/Samsung-UD46C-46-inch-Diagonal-1080p-LED-HD-Television/product_IM1RB3799
 http://www.staples.com/Sansui-1366-x-768-32-inch-TFT-LED-LCD-3D-TV-Black/product_IM1NZ6272
 http://www.staples.com/Sansui-1920-x-1080-50-inch-Full-HD-LCD-3D-TV-Black/product_IM1KV8555
+http://www.staples.com/Sansui-1920-x-1080-50-inch-LED-LCD-3D-TV-Black/product_IM1QW2242
 http://www.staples.com/Sansui-Accu-1366-x-768-24-inch-LED-LCD-3D-TV-DVD/product_IM1QW2240
 http://www.staples.com/Sansui-Accu-1366-x-768-29-inch-TFT-LED-LCD-3D-TV/product_IM1NZ5395
+http://www.staples.com/Sansui-Accu-1366-x-768-32-inch-LED-LCD-3D-TV-DVD/product_IM1QW2241
 http://www.staples.com/Sansui-Accu-1366-x-768-39-inch-Full-HD-LED-LCD-3D/product_IM1NZ5396
+http://www.staples.com/Sansui-Accu-1920-x-1080-22-inch-LED-LCD-3D-TV-DVD/product_IM1DQ3606
 http://www.staples.com/Sharp-PN-K321-32-inch-Diagonal-2160p-LED-Television/product_IM1RB3775
 http://www.staples.com/VIZIO-E291-A1-29-inch-Diagonal-1080p-LED-HD-Television/product_IM1NZ7336
 http://www.staples.com/VIZIO-E500D-A0-50-inch-Diagonal-1080p-LED-HD-Television/product_IM1QZ5844
