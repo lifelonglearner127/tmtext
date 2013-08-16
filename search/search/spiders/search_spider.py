@@ -170,6 +170,8 @@ class SearchSpider(BaseSpider):
 		site = response.meta['site']
 		origin_name = response.meta['origin_name']
 
+		items = []
+
 		# handle parsing separately for each site
 
 		#TODO: parse multiple pages, can only parse first page so far
@@ -193,25 +195,6 @@ class SearchSpider(BaseSpider):
 					item['origin_url'] = response.meta['origin_url']
 
 				items.append(item)
-
-			best_match = None
-
-			if results:
-				# from all results, select the product whose name is most similar with the original product's name
-				best_match = self.similar(origin_name, items, self.threshold)
-
-			if not best_match:
-				# if there are no results but the option was to include original product URL, create an item with just that
-				if self.output == 2:
-					item = SearchItem()
-					item['site'] = site
-					#if 'origin_url' in response.meta:
-					item['origin_url'] = response.meta['origin_url']
-					return [item]
-
-			return [best_match]
-
-
 
 
 			# item = SearchItem()
@@ -242,7 +225,6 @@ class SearchSpider(BaseSpider):
 
 		#TODO: !! bloomingdales works sporadically
 		if (site == 'bloomingdales'):
-			items = []
 
 			results = hxs.select("//div[@class='shortDescription']/a")
 			for result in results:
@@ -256,7 +238,6 @@ class SearchSpider(BaseSpider):
 
 		# overstock
 		if (site == 'overstock'):
-			items = []
 
 			results = hxs.select("//li[@class='product']/div[@class='product-content']/a[@class='pro-thumb']")
 			for result in results:
@@ -269,7 +250,6 @@ class SearchSpider(BaseSpider):
 
 		# wayfair
 		if (site == 'wayfair'):
-			items = []
 
 			results = hxs.select("//li[@class='productbox']")
 
@@ -289,7 +269,6 @@ class SearchSpider(BaseSpider):
 		# toysrus
 		if (site == 'toysrus'):
 			results = hxs.select("//a[@class='prodtitle']")
-			items = []
 
 			for result in results:
 				item = SearchItem()
@@ -300,6 +279,28 @@ class SearchSpider(BaseSpider):
 
 				items.append(item)
 
+		best_match = None
+
+		if items:
+			# from all results, select the product whose name is most similar with the original product's name
+			best_match = self.similar(origin_name, items, self.threshold)
+
+		# if not best_match:
+		# 	# if there are no results but the option was to include original product URL, create an item with just that
+		# 	if self.output == 2:
+		# 		item = SearchItem()
+		# 		item['site'] = site
+		# 		#if 'origin_url' in response.meta:
+		# 		item['origin_url'] = response.meta['origin_url']
+		# 		return [item]
+
+		# return [best_match]
+
+		item = SearchItem()
+		item['site'] = site
+		#if 'origin_url' in response.meta:
+		item['origin_url'] = response.meta['origin_url']
+		return [item]
 
 		# # bjs
 		# if (site == 'bjs'):
