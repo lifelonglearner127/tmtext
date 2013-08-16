@@ -264,7 +264,24 @@ $(function () {
 
     $('select[name="research_assess_batches"]').on("change", function() {
         var selectedBatch = $(this).find("option:selected").text();
+        var selectedBatchId = $(this).find("option:selected").val();
         $('#assess_report_download_panel').hide();
+        if (selectedBatchId == '') {
+            var data = {
+                ExtraData:{
+                    report:{
+                        summary:{
+                            total_items:'',
+                            items_priced_higher_than_competitors:'',
+                            items_have_more_than_20_percent_duplicate_content:'',
+                            items_unoptimized_product_content:'',
+                            items_short_products_content:''
+                        }
+                    }
+                }
+            }
+            buildReport(data);
+        }
         $.post(base_url + 'index.php/research/filterCustomerByBatch', {
                 'batch': selectedBatch
         }, function(data){
