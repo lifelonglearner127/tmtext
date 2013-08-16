@@ -180,10 +180,7 @@ class Crons extends MY_Controller {
             foreach($batches as $batch){
                 var_dump($batch->id);
                 $data = $this->research_data_model->do_stats($batch->id);
-                if($batch->id==65){
-                    var_dump(count($data));
-                }
-                /*if(count($data) > 0){
+                if(count($data) > 0){
                     foreach($data as $obj){
 
                             $own_price = 0;
@@ -332,7 +329,7 @@ class Crons extends MY_Controller {
                     }
                 }
 
-                $params->url = $this->input->get('url');*/
+                $params->url = $this->input->get('url');
             }
             die;
             echo "Cron Job Finished";
