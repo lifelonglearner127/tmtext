@@ -181,6 +181,7 @@ class Crons extends MY_Controller {
                 $data = $this->research_data_model->do_stats($batch->id);
                 if($batch->id==58){
                     var_dump($batch->id.'----'.count($data));
+                    die;
                 }
                 if(count($data) > 0){
                     foreach($data as $obj){
