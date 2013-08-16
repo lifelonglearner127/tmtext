@@ -454,7 +454,7 @@ $(document).ready(function () {
     });*/
     
     $(document).on("change", "select[name='batches']", function(){
-        $.post(base_url + 'index.php/research/filterCustomerByBatch', { 'batch': $("select[name='batches']").find("option:selected").text()}, function(data){
+        $.post(base_url + 'index.php/research/filterCustomerByBatch', { 'batch_id': $("select[name='batches']").find("option:selected").text()}, function(data){
             if(data != null){
                 $("select[name='customers'] option").each(function(){
                     if(data==$(this).text()){
@@ -467,7 +467,7 @@ $(document).ready(function () {
                 });
             }
         });
-        $.post(base_url + 'index.php/research/getBatchInfo', { 'batch_id': data.batch_id}, function(data){
+        $.post(base_url + 'index.php/research/getBatchInfo', { 'batch_id': $("select[name='batches']").find("option:selected").val()}, function(data){
             if(data.created != undefined){
                 $('.batch_info').html('<ul class="ml_0"><li>Created: '+data.created+'</li><li>Item Last Added: '+data.modified+'</li>' +
                     '<li> Items: '+data.count_items+' </li></ul>');

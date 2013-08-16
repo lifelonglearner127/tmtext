@@ -174,6 +174,7 @@ class Research extends MY_Controller {
         $batch_id = $this->batches_model->getIdByName($this->input->post('batch'));
         if($batch_id != false){
             $lines = explode("\n", $this->input->post('urls'));
+            $response['batch_id'] = $batch_id;
             if($this->insert_rows($batch_id, $lines)){
                 $response['message'] = 'Items were added successfully';
             } else {
