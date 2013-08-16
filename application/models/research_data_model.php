@@ -379,10 +379,6 @@ union all
 
     function do_stats($batch_id)
     {
-        if($batch_id==58){
-            var_dump($batch_id);
-            die;
-        }
         $sql_cmd = "
             select
                 *
