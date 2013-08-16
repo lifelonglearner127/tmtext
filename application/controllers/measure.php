@@ -467,6 +467,9 @@ class Measure extends MY_Controller {
     }
 
     public function measure_products() {
+        $this->load->model('sites_model');
+        $sites = $this->sites_model->getAll();
+        $this->data['sites'] = $sites;
         $this->data['customers_list'] = $this->category_customers_list();
         $this->load->model('department_members_model');
         $this->data['departmens_list'][] = 'All';

@@ -28,15 +28,49 @@ jQuery(document).ready(function($) {
                             <button style="margin-right: 9px" class='btn' onclick="switchToGridView();" id='grid_sw_grid' type='button'><i class="icon-th-large"></i>&nbsp;Comparison</button>
                             <button style="margin-right: 9px" class='btn' onclick="switchToTableView();" id='table_grid' type='button'><i class="icon-th-table"></i>&nbsp;Table</button>
                             <button class='btn' onclick="switchToListView();" id='grid_sw_list' type='button'><i class="icon-th-list"></i>&nbsp;List</button>
-                            <img style="width:30px; heihgt: 30px;"src ="<?php echo base_url() ?>/img/ico-gear.png">
+                            <a href="#myModal" role="button"  data-toggle="modal"><img  style="width:30px; heihgt: 30px;"src ="<?php echo base_url() ?>/img/ico-gear.png"></a>
+                            
                         </li>
 <!--                        <li style="float: left; margin-top: 6px;margin-left: 15px;">
                         	
                         	<input style="position: relative;top: -3px;" id="strict_grid" type="checkbox" name="strict_grid" value="1"> Exact Match
                         </li>-->
                 </ul>
+                
 
-            </div>
+ 
+<!-- Modal -->
+<div id="myModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    <h3 id="myModalLabel">Display Options</h3>
+  </div>
+  <div class="modal-body">
+    <p>Only show items if there is a match on: </p>
+    <?php
+         unset($sites[0]);
+    ?>
+    <select multiple="multiple">
+                         <?php
+                         
+                            foreach($sites as $cite){
+                                
+                                 ?>
+                                 <option><?php echo $cite->name; ?></option>
+                                <?php
+                            }
+                         ?>
+    </select>
+    
+  </div>
+  <div class="modal-footer">
+    <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+    <button class="btn btn-primary">Save changes</button>
+  </div>
+</div>  
+                
+  
+ </div>
      </div>
         <div class="row-fluid">
             <?php // echo form_open('', array('id'=>'measureFormMetrics')); ?>
@@ -286,7 +320,7 @@ jQuery(document).ready(function($) {
                     switchToGridView();
                 }
             }
-
+$('#myModal').modal('hide')
             // ---- search string cookie (auto mode search launcher) (end)
        </script>
 </div>
