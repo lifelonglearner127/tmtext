@@ -73,6 +73,7 @@
 				<button id="crawl_all" class="btn new_btn btn-success mt_10 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Crawl All</button>
 				<button id="current_crawl" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Crawl</button>
 				<button id="current_snapshot" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Snapshot</button>
+				<p class='help-block'>* use checkboxes in table list to activate snapshot button</p>
 			</div>
 			<div class="row-fluid">
 				<div id="Current_List_Pager"></div>
@@ -80,6 +81,15 @@
 		</div>
 	  </div>
 </div>
+
+<!-- MODALS (START) -->
+<div class="modal hide fade ci_hp_modals" id='loading_crawl_snap_modal'>
+	<div class="modal-body">
+		<p><img src="<?php echo base_url();?>img/loader_scr.gif">&nbsp;&nbsp;&nbsp;Generating snapshots. Please wait...</p>
+	</div>
+</div>
+<!-- MODALS (END) -->
+
 <script>
 function loadCurrentList(url){
 	url = typeof url !== 'undefined' ? url: '<?php echo site_url('site_crawler/all_urls');?>';
@@ -114,7 +124,7 @@ function loadCurrentList(url){
             }else{
                 imported_data_id = node.imported_data_id;
             }
-			$('#Current_List ul').append("<li data-url=\""+node.url+"\" data-id=\""+node.id+"\" id=\"id_"+node.id+"\"><span><input type=\"checkbox\" name=\"ids[]\" value=\""+node.id+"\"/></span><span>"+imported_data_id+"</span><span>"+node.status+"</span><span>"+updated+"</span><span>"+category+"</span><span class=\"url ellipsis\">"+node.url+"</span></li>");
+			$('#Current_List ul').append("<li id=\"id_"+node.id+"\"><span><input data-url=\""+node.url+"\" data-id=\""+node.id+"\" type=\"checkbox\" name=\"ids[]\" value=\""+node.id+"\"/></span><span>"+imported_data_id+"</span><span>"+node.status+"</span><span>"+updated+"</span><span>"+category+"</span><span class=\"url ellipsis\">"+node.url+"</span></li>");
 
 		});
 
@@ -156,7 +166,7 @@ $(function () {
 
     $("#current_snapshot").click(function(e) {
     	var urls = [];
-    	$("#Current_List > ul > li.active").each(function(index, value) {
+    	$("#Current_List > ul > li input[type='checkbox']:checked").each(function(index, value) {
     		var mid = {
     			id: $(value).data('id'),
     			url: $(value).data('url')
@@ -166,8 +176,12 @@ $(function () {
     	var send_data = {
     		urls: urls
     	};
+    	console.log(send_data);
+    	$("#loading_crawl_snap_modal").modal('show');
     	$.post(base_url + 'index.php/measure/crawlsnapshoot', send_data, function(data) {
-    		console.log(data);
+    		$("#loading_crawl_snap_modal").modal('hide');
+    		$('#current_snapshot').attr('disabled', 'disabled');
+    		loadCurrentList();
     	});
     });
 
@@ -176,7 +190,11 @@ $(function () {
             $('#current_list_delete').attr('disabled', 'disabled');
             $('#Current_List li').removeClass('active');
 //            $('#current_crawl').attr('disabled', 'disabled');
-            $('#current_snapshot').attr('disabled', 'disabled');
+			if( $("#Current_List > ul > li input[type='checkbox']:checked").length > 0 ) {
+				$('#current_snapshot').removeAttr('disabled');
+			} else {
+				$('#current_snapshot').attr('disabled', 'disabled');
+			}
 
             var ids = [];
     		$("#Current_List > ul > li input[name='ids[]']:checked").each(function () {
@@ -244,7 +262,15 @@ $(function () {
                 $(this).addClass('active');
 		$('#current_list_delete').removeAttr('disabled');
 		$('#current_crawl').removeAttr('disabled');
-		$('#current_snapshot').removeAttr('disabled');
+		// $('#current_snapshot').removeAttr('disabled');
+	});
+
+	$(document).on("click", "#Current_List > ul > li input[type='checkbox']", function(e) {
+		if( $("#Current_List > ul > li input[type='checkbox']:checked").length > 0 ) {
+			$('#current_snapshot').removeAttr('disabled');
+		} else {
+			$('#current_snapshot').attr('disabled', 'disabled');
+		}
 	});
 
 	$(document).on("click", "#add_list_delete", function(){

@@ -6,11 +6,19 @@ class Webshoots_model extends CI_Model {
     	'webshoots' => 'webshoots',
         'webshoots_select' => 'webshoots_select',
         'ci_home_page_recipients' => 'ci_home_page_recipients',
-        'customers' => 'customers'
+        'customers' => 'customers',
+        'crawler_list' => 'crawler_list'
     );
 
     function __construct() {
         parent::__construct();
+    }
+
+    public function updateCrawlListWithSnap($id, $snap) {
+        $update_object = array(
+            'snap' => $snap
+        );
+        return $this->db->update($this->tables['crawler_list'], $update_object, array('id' => $id));
     }
 
     public function screenAutoSelection($year, $week, $pos, $uid) {
@@ -59,7 +67,7 @@ class Webshoots_model extends CI_Model {
                 );
                 $this->db->insert($this->tables['webshoots_select'], $insert_object);
             }
-            $res = $candidate->url; 
+            $res = true; 
         } 
         return $res;
     }
