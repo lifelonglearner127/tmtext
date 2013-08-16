@@ -36,12 +36,12 @@ class Batches_model extends CI_Model {
         return $query->result();
     }
 
-    function getCustomerByName($batch_name)
+    function getCustomerById($batch_id)
     {
         $query = $this->db->select('c.name, c.url')
             ->from($this->tables['batches'].' as b')
             ->join($this->tables['customers'].' as c', 'b.customer_id = c.id', 'left')
-            ->where('b.title', $batch_name)
+            ->where('b.id', $batch_id)
             ->limit(1)
             ->get();
 

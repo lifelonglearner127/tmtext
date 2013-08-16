@@ -377,7 +377,7 @@ union all
         return $query->result();
     }
 
-    function do_stats($batch_name)
+    function do_stats($batch_id)
     {
         $sql_cmd = "
             select
@@ -389,6 +389,7 @@ union all
                     r.research_data_id AS research_data_id,
                     r.created AS created,
                     r.title as batch_name,
+                    r.batch_id,
                     group_concat(r.product_name, '') AS product_name,
                     group_concat(r.url, '') AS url,
                     group_concat(r.short_description, '') AS short_description,
@@ -399,6 +400,7 @@ union all
                     group_concat(r.long_seo_phrases, '') AS long_seo_phrases
                 from (
                     select
+                        b.id as batch_id,
                         b.title,
                         kv.id,
                         kv.imported_data_id,
@@ -416,7 +418,7 @@ union all
                         batches as b
                     inner join research_data as rd on
                         rd.batch_Id = b.id
-                        and b.title =".$this->db->escape($batch_name)."
+                        and b.id =".$batch_id."
                     inner join research_data_to_crawler_list as rdtcl on rdtcl.research_data_id = rd.id
                     inner join crawler_list as cl on cl.id = rdtcl.crawler_list_id
                     inner join (

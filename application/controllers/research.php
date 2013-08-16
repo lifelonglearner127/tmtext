@@ -268,9 +268,9 @@ class Research extends MY_Controller {
             $txt_filter = $this->input->get('search_text');
         }
 
-        $batch_name = $this->input->get('batch_name');
+        $batch_id = $this->input->get('batch_id');
 
-        if($batch_name == '' || $batch_name == 'Select batch'){
+        if($batch_id == ''){
             $output = array(
                 "sEcho"                     => 1,
                 "iTotalRecords"             => 0,
@@ -299,14 +299,14 @@ class Research extends MY_Controller {
             $build_assess_params->sort_dir = $this->input->get('sSortDir_0');
 
             $params = new stdClass();
-            $params->batch_name = $batch_name;
+            $params->batch_id = $batch_id;
             $params->txt_filter = $txt_filter;
             $params->date_from = $build_assess_params->date_from;
             $params->date_to = $build_assess_params->date_to;
 
             $results = $this->get_data_for_assess($params);
 
-            $output = $this->build_asses_table($results, $build_assess_params, $batch_name);
+            $output = $this->build_asses_table($results, $build_assess_params, $batch_id);
 
             $this->output->set_content_type('application/json')
                 ->set_output(json_encode($output));
@@ -321,13 +321,13 @@ class Research extends MY_Controller {
         return $results;
     }
 
-    private function build_asses_table($results, $build_assess_params, $batch_name='') {
+    private function build_asses_table($results, $build_assess_params, $batch_id='') {
         $duplicate_content_range = 25;
         $this->load->model('batches_model');
         $this->load->model('imported_data_parsed_model');
         $this->load->model('statistics_duplicate_content_model');
 
-        $customer_name = $this->batches_model->getCustomerByName($batch_name);
+        $customer_name = $this->batches_model->getCustomerById($batch_id);
         $enable_exec = true;
         $result_table = array();
         $report = array();
@@ -380,9 +380,13 @@ class Research extends MY_Controller {
             $result_row->own_price = $row->own_price;
             $price_diff = unserialize($row->price_diff);
             if(count($price_diff) > 1){
-                $result_row->price_diff = "<input type='hidden'><nobr>".$price_diff['own_site']." - $".$price_diff['own_price']."</nobr><br /><nobr>".
-                    $price_diff['customer']." - $".$price_diff['competitor_price']."</nobr><br />";
+                $price_diff_res = "<input type='hidden'><nobr>".$price_diff['own_site']." - $".$price_diff['own_price']."</nobr><br />";
+                for($i=0; $i<count($price_diff['competitor_customer']); $i++){
+                    $price_diff_res .= "<nobr>".$price_diff['competitor_customer'][$i]." - $".$price_diff['competitor_price'][$i]."</nobr><br />";
+                }
+                $result_row->price_diff = $price_diff_res;
             }
+
             $result_row->competitors_prices = unserialize($row->competitors_prices);
 
 //            $own_site = parse_url($result_row->url,  PHP_URL_HOST);
@@ -522,7 +526,7 @@ class Research extends MY_Controller {
                }
            }
 
-
+            $items_priced_higher_than_competitors = $this->statistics_model->countAllItemsHigher($batch_id);
             /*if ($build_assess_params->short_duplicate_content || $build_assess_params->long_duplicate_content) {
                 //$dc = $this->statistics_duplicate_content_model->get($row->imported_data_id);
                 $dc = $this->check_duplicate_content($result_row->imported_data_id);
@@ -796,7 +800,7 @@ class Research extends MY_Controller {
         $build_assess_params->long_seo_phrases = true;
         $build_assess_params->long_duplicate_content = true;
 
-        $output = $this->build_asses_table($results, $build_assess_params, $params->batch_name);
+        $output = $this->build_asses_table($results, $build_assess_params, $params->batch_id);
         $report = $output['ExtraData']['report'];
 
         $header = '<table border=0 width=100%>';

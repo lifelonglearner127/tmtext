@@ -178,7 +178,7 @@ class Crons extends MY_Controller {
             $batches = $this->batches_model->getAll();
             $enable_exec = true;
             foreach($batches as $batch){
-                $data = $this->research_data_model->do_stats($batch->title);
+                $data = $this->research_data_model->do_stats($batch->id);
                 if(count($data) > 0){
                     foreach($data as $obj){
                         $own_price = 0;
@@ -202,8 +202,10 @@ class Crons extends MY_Controller {
                             if (!empty($own_prices)) {
                                 $own_price = floatval($own_prices[0]->price);
                                 $obj->own_price = $own_price;
-                                $price_diff_exists = "<input type='hidden'/>";
-                                $price_diff_exists = $price_diff_exists."<nobr>".$own_site." - $".$own_price."</nobr><br />";
+                                $price_diff_exists = array();//"<input type='hidden'/>";
+                                $price_diff_exists['id'] = $own_prices[0]->id;
+                                $price_diff_exists['own_site'] = $own_site;
+                                $price_diff_exists['own_price'] = floatval($own_price);
                                 $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
                                 if (!empty($similar_items)) {
                                     foreach ($similar_items as $ks => $vs) {
@@ -218,10 +220,11 @@ class Crons extends MY_Controller {
                                             $price_lower_range = $own_price - $price_scatter;
                                             $competitor_price = floatval($three_last_prices[0]->price);
                                             if ($competitor_price < $own_price) {
-                                                $items_priced_higher_than_competitors++;
+                                                $items_priced_higher_than_competitors = 1;
                                             }
                                             if ($competitor_price > $price_upper_range || $competitor_price < $price_lower_range) {
-                                                $price_diff_exists = $price_diff_exists."<nobr>".$similar_items[$ks]['customer']." - $".$competitor_price."</nobr><br />";
+                                                $price_diff_exists['competitor_customer'][] = $similar_items[$ks]['customer'];
+                                                $price_diff_exists['competitor_price'][] = $competitor_price;
                                                 $price_diff = $price_diff_exists;
                                                 $competitors_prices[] = $competitor_price;
                                             }
@@ -296,16 +299,16 @@ class Crons extends MY_Controller {
                         }
 
                         $insert_id = $this->statistics_model->insert($obj->rid, $obj->imported_data_id,
-                            $obj->research_data_id, $obj->batch_name,
+                            $obj->research_data_id, $obj->batch_id,
                             $obj->product_name, $obj->url, $obj->short_description, $obj->long_description,
                             $short_description_wc, $long_description_wc,
                             $short_seo_phrases, $long_seo_phrases,
-                            $own_price, $price_diff, serialize($competitors_prices), $items_priced_higher_than_competitors
+                            $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors
                         );
                         var_dump($insert_id);
                     }
                     $params = new stdClass();
-                    $params->batch_name = $batch->title;
+                    $params->batch_id = $batch->id;
                     $params->txt_filter = '';
                     $stat_data= $this->statistics_model->getStatsData($params);
                     if(count($stat_data)>0){

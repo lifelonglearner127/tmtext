@@ -27,7 +27,7 @@ class Statistics_model extends CI_Model {
         return $this->db->query($sql_cmd);
     }
 
-    function insert($rid, $imported_data_id, $research_data_id, $batch_name,
+    function insert($rid, $imported_data_id, $research_data_id, $batch_id,
                     $product_name, $url, $short_description, $long_description,
                     $short_description_wc, $long_description_wc,
                     $short_seo_phrases, $long_seo_phrases,
@@ -37,7 +37,7 @@ class Statistics_model extends CI_Model {
         $this->rid = $rid;
         $this->imported_data_id = $imported_data_id;
         $this->research_data_id = $research_data_id;
-        $this->batch_name = $batch_name;
+        $this->batch_id = (int)$batch_id;
         $this->product_name = $product_name;
         $this->url = $url;
         $this->short_description = (string)$short_description;
@@ -58,14 +58,14 @@ class Statistics_model extends CI_Model {
 
     function getStatsData($params)
     {
-        if(empty($params->batch_name)){
-            $batch_name = '';
+        if(empty($params->batch_id)){
+            $batch_id = '';
         } else {
-            $batch_name = $params->batch_name;
+            $batch_id = $params->batch_id;
         }
         $txt_filter = $params->txt_filter;
 
-        $query = $this->db->where('batch_name', $batch_name)
+        $query = $this->db->where('batch_id', $batch_id)
             ->like('product_name', $txt_filter)
             ->get($this->tables['statistics']);
 
@@ -77,6 +77,14 @@ class Statistics_model extends CI_Model {
             ->get();*/
         $result =  $query->result();
         return $result;
+    }
+
+    public function countAllItemsHigher($batch_id)
+    {
+            $this->db->select('id')->from($this->tables['statistics'])
+                ->where('batch_id', $batch_id)->where('items_priced_higher_than_competitors', '1');
+
+            return $this->db->count_all_results();
     }
 
 }
