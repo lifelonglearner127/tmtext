@@ -226,8 +226,8 @@
                 <td>Layout:</td>
                 <td>
                     <select id="assess_report_page_layout" name="assess_report_page_layout" style="width: 100%;" class="mt_5">
-                        <option value="1">Landscape</option>
-                        <option value="2">Portrait</option>
+                        <option value="L">Landscape</option>
+                        <option value="P">Portrait</option>
                     </select>
                 </td>
             </tr>

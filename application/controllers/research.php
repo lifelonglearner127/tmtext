@@ -738,7 +738,52 @@ class Research extends MY_Controller {
         return $output;
     }
 
+    private function get_report_presetted_pages($params){
+        $this->load->model('reports_model');
+        $report = $this->reports_model->get_by_name($params->report_name);
+        $report_pages = array();
+
+        $report_page = new stdClass();
+        $report_page->name = $report[0]->about_page_name;
+        $report_page->order = intval($report[0]->about_page_order);
+        $report_page->layout = $report[0]->about_page_layout;
+        $report_page->body = $report[0]->about_page_body;
+        $report_pages[] = $report_page;
+
+        $report_page = new stdClass();
+        $report_page->name = $report[0]->cover_page_name;
+        $report_page->order = intval($report[0]->cover_page_order);
+        $report_page->layout = $report[0]->cover_page_layout;
+        $report_page->body = $report[0]->cover_page_body;
+        $report_pages[] = $report_page;
+
+        $report_page = new stdClass();
+        $report_page->name = $report[0]->recommendations_page_name;
+        $report_page->order = intval($report[0]->recommendations_page_order);
+        $report_page->layout = $report[0]->recommendations_page_layout;
+        $report_page->body = $report[0]->recommendations_page_body;
+        $report_pages[] = $report_page;
+
+        // sort by page order
+        $this->sort_column = 'order';
+        $this->sort_type = 'num';
+        $this->sort_direction = 'asc';
+        usort($report_pages, array("Research", "assess_sort"));
+
+        // replace patterns (#date#, #customer name#... etc)
+        foreach($report_pages as $page){
+            $page_body = $page->body;
+            $page_body = str_replace('#date#', $params->current_date, $page_body);
+            $page_body = str_replace('#customer name#', $params->customer_name, $page_body);
+            $page->body = $page_body;
+        }
+
+        return $report_pages;
+    }
+
     public function assess_report_download() {
+        $report_name = 'Assess';
+
         $params = new stdClass();
         $params->batch_id = $this->input->get('batch_id');
         $params->batch_name = $this->input->get('batch_name');
@@ -750,50 +795,30 @@ class Research extends MY_Controller {
         $this->load->model('batches_model');
         $customer = $this->batches_model->getAllCustomerDataByBatch($params->batch_name);
         //$batch = $this->batches_model->getByName($batch_id);
+
+
+        // Report options (layout)
+        $assess_report_page_layout = 'Landscape';
         $user_id = $this->ion_auth->get_user_id();
         $key = 'research_assess_report_options';
         $existing_settings = $this->settings_model->get_value($user_id, $key);
         $batch_report_settings = $existing_settings[$batch_id];
-        if (empty($batch_report_settings)) {
-            $assess_report_page_layout = 1;
-        } else {
+        // if my report options pages layout is set
+        if (!empty($batch_report_settings)) {
             if (!empty($batch_report_settings->assess_report_page_layout)) {
                 $assess_report_page_layout = $batch_report_settings->assess_report_page_layout;
             }
         }
 
-        $current_date = new DateTime(date('Y-m-d H:i:s'));
-
-        $css_path = APPPATH.".."."/webroot/css/";
+        $current_date = date('F j, Y');//new DateTime(date('Y-m-d H:i:s'));
         $img_path = APPPATH.".."."/webroot/img/";
-        $own_logo = $img_path."content-analytics.png";
-        $customer_logo = $img_path.$customer->image_url;
+        $css_path = APPPATH.".."."/webroot/css/";
 
-        $this->load->model('reports_model');
-        $report = $this->reports_model->get_by_name('Assess');
-        $report_cover = $report[0]->cover_page_body;
-        $report_cover = str_replace('#date#', date('F j, Y'), $report_cover);
-        $report_cover = str_replace('#customer name#', $customer->name, $report_cover);
-
-        $layout = 'Letter-L';
-        if (!empty($assess_report_page_layout)) {
-            if ($assess_report_page_layout == 2) {
-                $layout = 'Letter';
-            }
-        }
-
-
-        $this->load->library('pdf');
-        $pdf = $this->pdf->load();
-        $pdf = new mPDF('', $layout, 0, '', 10, 10, 10, 10, 8, 8);
-//        $pdf->showImageErrors = true;
-//        $pdf->debug = true;
-        $stylesheet = file_get_contents($css_path.'assess_report.css');
-        $pdf->WriteHTML($stylesheet, 1);
-        $pdf->SetHTMLFooter('<span style="font-size: 8px;">Copyright © 2013 Content Solutions, Inc.</span>');
-
-
-        $html = '';
+        $get_report_presetted_pages_params = new stdClass();
+        $get_report_presetted_pages_params->report_name = $report_name;
+        $get_report_presetted_pages_params->customer_name = $customer->name;
+        $get_report_presetted_pages_params->current_date = $current_date;
+        $report_presetted_pages = $this->get_report_presetted_pages($get_report_presetted_pages_params);
 
         $build_assess_params = new stdClass();
         $build_assess_params->price_diff = true;
@@ -806,33 +831,84 @@ class Research extends MY_Controller {
         $build_assess_params->long_seo_phrases = true;
         $build_assess_params->long_duplicate_content = true;
 
-        $output = $this->build_asses_table($results, $build_assess_params, $params->batch_id);
-        $report = $output['ExtraData']['report'];
+        $assess_table = $this->build_asses_table($results, $build_assess_params, $params->batch_id);
+
+        $download_report_params = new stdClass();
+        $download_report_params->img_path = $img_path;
+        $download_report_params->css_path = $css_path;
+        $download_report_params->own_logo = $img_path."content-analytics.png";
+        $download_report_params->customer_logo = $img_path.$customer->image_url;
+        $download_report_params->batch_name = $params->batch_name;
+        $download_report_params->report_presetted_pages = $report_presetted_pages;
+        $download_report_params->assess_table = $assess_table['ExtraData']['report'];
+        $download_report_params->assess_report_page_layout = $assess_report_page_layout;
+
+        switch($type_doc) {
+            case 'pdf':
+                $this->download_pdf($download_report_params);
+                break;
+            case 'doc':
+                break;
+            case 'ppt':
+                break;
+            default:
+                break;
+        }
+    }
+
+    private function download_pdf($download_report_params) {
+        $css_file = $download_report_params->css_path.'assess_report.css';
+        $report_data = $download_report_params->assess_table;
+        $assess_report_page_layout = $download_report_params->assess_report_page_layout;
+
+        $layout = 'L';
+        if (!empty($assess_report_page_layout)) {
+            if ($assess_report_page_layout == 'P') {
+                $layout = 'P';
+            }
+        }
+
+
+        $this->load->library('pdf');
+        $pdf = $this->pdf->load();
+        $pdf = new mPDF('', 'Letter', 0, '', 10, 10, 10, 10, 8, 8);
+//        $pdf->showImageErrors = true;
+//        $pdf->debug = true;
+        $stylesheet = file_get_contents($css_file);
+        $pdf->WriteHTML($stylesheet, 1);
+        $pdf->SetHTMLFooter('<span style="font-size: 8px;">Copyright © 2013 Content Solutions, Inc.</span>');
+
+        $html = '';
 
         $header = '<table border=0 width=100%>';
         $header = $header.'<tr>';
         $header = $header.'<td style="text-align: left;">';
-        $header = $header.'<img src="'.$own_logo.'" />';
+        $header = $header.'<img src="'.$download_report_params->own_logo.'" />';
         $header = $header.'</td>';
         $header = $header.'<td style="text-align: right;">';
-        $header = $header.'<img src="'.$customer_logo.'" />';
+        $header = $header.'<img src="'.$download_report_params->customer_logo.'" />';
         $header = $header.'</td>';
         $header = $header.'</tr>';
         $header = $header.'</table>';
         $header = $header.'<hr color="#C31233" height="10">';
 
-        $html = $html.$header;
-        $html = $html.$report_cover;
-        $pdf->WriteHTML($html);
-        //$html = $html.'<pagebreak />';
+        foreach($download_report_params->report_presetted_pages as $page){
+            if ($page->order < 5000) {
+                $pdf->AddPage($page->layout);
+                $html = '';
+                $html = $html.$header;
+                $html = $html.$page->body;
+                $pdf->WriteHTML($html);
+            }
+        }
 
-        $pdf->AddPage();
+        $pdf->AddPage($layout);
         $html = '';
 
         $html = $html.$header;
 
         $html = $html.'<table width=100% border=0>';
-        $html = $html.'<tr><td style="text-align: left;font-weight: bold; font-style: italic;">Batch - '.$params->batch_name.'</td><td style="text-align: right;font-weight: bold; font-style: italic;">'.$current_date->format('F j, Y').'</td></tr>';
+        $html = $html.'<tr><td style="text-align: left;font-weight: bold; font-style: italic;">Batch - '.$download_report_params->batch_name.'</td><td style="text-align: right;font-weight: bold; font-style: italic;">'.$download_report_params->current_date.'</td></tr>';
         $html = $html.'<tr><td colspan="2"><hr height="3"></td></tr>';
         $html = $html.'</table>';
 
@@ -841,23 +917,23 @@ class Research extends MY_Controller {
         $html = $html.'<tr><td style="background-color: #dddddd;text-align: center;font-weight: bold;">Summary</td></tr>';
 
         $html = $html.'<tr><td>';
-        $html = $html.'<div class=""><img class="icon" src="'.$img_path.'assess_report_number.png">'.$report['summary']['total_items'].' total Items</div>';
+        $html = $html.'<div class=""><img class="icon" src="'.$download_report_params->img_path.'assess_report_number.png">'.$report_data['summary']['total_items'].' total Items</div>';
         $html = $html.'</td></tr>';
 
         $html = $html.'<tr><td>';
-        $html = $html.'<div class=""><img class="icon" src="'.$img_path.'assess_report_dollar.png">'.$report['summary']['items_priced_higher_than_competitors'].' items priced higher than competitors</div>';
+        $html = $html.'<div class=""><img class="icon" src="'.$download_report_params->img_path.'assess_report_dollar.png">'.$report_data['summary']['items_priced_higher_than_competitors'].' items priced higher than competitors</div>';
         $html = $html.'</td></tr>';
 
         $html = $html.'<tr><td>';
-        $html = $html.'<div class=""><img class="icon" src="'.$img_path.'assess_report_D.png">'.$report['summary']['items_have_more_than_20_percent_duplicate_content'].' items have more than 20% duplicate content</div>';
+        $html = $html.'<div class=""><img class="icon" src="'.$download_report_params->img_path.'assess_report_D.png">'.$report_data['summary']['items_have_more_than_20_percent_duplicate_content'].' items have more than 20% duplicate content</div>';
         $html = $html.'</td></tr>';
 
         $html = $html.'<tr><td>';
-        $html = $html.'<div class=""><img class="icon" src="'.$img_path.'assess_report_seo.png">'.$report['summary']['items_unoptimized_product_content'].' items have unoptimized product content</div>';
+        $html = $html.'<div class=""><img class="icon" src="'.$download_report_params->img_path.'assess_report_seo.png">'.$report_data['summary']['items_unoptimized_product_content'].' items have unoptimized product content</div>';
         $html = $html.'</td></tr>';
 
         $html = $html.'<tr><td>';
-        $html = $html.'<div class=""><img class="icon" src="'.$img_path.'assess_report_arrow_down.png">'.$report['summary']['items_short_products_content'].' items have product content that is too short</div>';
+        $html = $html.'<div class=""><img class="icon" src="'.$download_report_params->img_path.'assess_report_arrow_down.png">'.$report_data['summary']['items_short_products_content'].' items have product content that is too short</div>';
         $html = $html.'</td></tr>';
 
         $html = $html.'</table>';
@@ -865,28 +941,28 @@ class Research extends MY_Controller {
         $html = $html.'<table class="report recommendations" border="1" cellspacing="0" cellpadding="0" style="border-collapse: collapse;border-spacing: 0;">';
 
         $html = $html.'<tr><td style="background-color: #dddddd;text-align: center;font-weight: bold;">Recommendations</td></tr>';
-        if ($report['recommendations']['items_priced_higher_than_competitors']) {
+        if ($report_data['recommendations']['items_priced_higher_than_competitors']) {
             $html = $html.'<tr><td>';
-            $html = $html.'<div class=""><img class="icon" src="'.$img_path.'assess_report_dollar.png">';
-            $html = $html.$report['recommendations']['items_priced_higher_than_competitors'].'</div>';
+            $html = $html.'<div class=""><img class="icon" src="'.$download_report_params->img_path.'assess_report_dollar.png">';
+            $html = $html.$report_data['recommendations']['items_priced_higher_than_competitors'].'</div>';
             $html = $html.'</td></tr>';
         }
-        if ($report['recommendations']['items_have_more_than_20_percent_duplicate_content']) {
+        if ($report_data['recommendations']['items_have_more_than_20_percent_duplicate_content']) {
             $html = $html.'<tr><td>';
-            $html = $html.'<div class=""><img class="icon" src="'.$img_path.'assess_report_D.png">';
-            $html = $html.$report['recommendations']['items_have_more_than_20_percent_duplicate_content'].'</div>';
+            $html = $html.'<div class=""><img class="icon" src="'.$download_report_params->img_path.'assess_report_D.png">';
+            $html = $html.$report_data['recommendations']['items_have_more_than_20_percent_duplicate_content'].'</div>';
             $html = $html.'</td></tr>';
         }
-        if ($report['recommendations']['items_short_products_content']) {
+        if ($report_data['recommendations']['items_short_products_content']) {
             $html = $html.'<tr><td>';
-            $html = $html.'<div class=""><img class="icon" src="'.$img_path.'assess_report_seo.png">';
-            $html = $html.$report['recommendations']['items_short_products_content'].'</div>';
+            $html = $html.'<div class=""><img class="icon" src="'.$download_report_params->img_path.'assess_report_seo.png">';
+            $html = $html.$report_data['recommendations']['items_short_products_content'].'</div>';
             $html = $html.'</td></tr>';
         }
-        if ($report['recommendations']['items_unoptimized_product_content']) {
+        if ($report_data['recommendations']['items_unoptimized_product_content']) {
             $html = $html.'<tr><td>';
-            $html = $html.'<div class=""><img class="icon" src="'.$img_path.'assess_report_arrow_up.png">';
-            $html = $html.$report['recommendations']['items_unoptimized_product_content'].'</div>';
+            $html = $html.'<div class=""><img class="icon" src="'.$download_report_params->img_path.'assess_report_arrow_up.png">';
+            $html = $html.$report_data['recommendations']['items_unoptimized_product_content'].'</div>';
             $html = $html.'</td></tr>';
         }
 
@@ -897,7 +973,15 @@ class Research extends MY_Controller {
 
         $pdf->WriteHTML($html);
 
-
+        foreach($download_report_params->report_presetted_pages as $page){
+            if ($page->order > 5000) {
+                $pdf->AddPage($page->layout);
+                $html = '';
+                $html = $html.$header;
+                $html = $html.$page->body;
+                $pdf->WriteHTML($html);
+            }
+        }
 
         $pdf->Output('report.pdf', 'I');
     }

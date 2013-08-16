@@ -30,16 +30,16 @@
                         Page Name:
                         <input type="text" id="system_reports_page_name" class="mt_5 mr_10">
                         Page:
-                        <select id="system_reports_page_order" style="width: 120px;" class="mt_5 mr_10">
-                            <option value="First">First</option>
-                            <option value="Second">Second</option>
-                            <option value="Second to Last">Second to Last</option>
-                            <option value="Last">Last</option>
+                        <select id="system_reports_page_order" style="width: 150px;" class="mt_5 mr_10">
+                            <option value="1">First</option>
+                            <option value="2">Second</option>
+                            <option value="9998">Second to Last</option>
+                            <option value="9999">Last</option>
                         </select>
                         Layout:
-                        <select id="system_reports_page_layout" style="width: 120px;" class="mt_5 mr_10">
-                            <option value="Landscape">Landscape</option>
-                            <option value="Portrait">Portrait</option>
+                        <select id="system_reports_page_layout" style="width: 150px;" class="mt_5 mr_10">
+                            <option value="L">Landscape</option>
+                            <option value="P">Portrait</option>
                         </select>
                         <br />
                         <div id="system_reports_page_pnl_edit">
