@@ -179,6 +179,9 @@ class Crons extends MY_Controller {
             $enable_exec = true;
             foreach($batches as $batch){
                 $data = $this->research_data_model->do_stats($batch->id);
+                if($batch->id==58){
+                    var_dump($batch->id.'----'.count($data));
+                }
                 if(count($data) > 0){
                     foreach($data as $obj){
                         $own_price = 0;
