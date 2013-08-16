@@ -88,9 +88,18 @@
 		<p><img src="<?php echo base_url();?>img/loader_scr.gif">&nbsp;&nbsp;&nbsp;Generating snapshots. Please wait...</p>
 	</div>
 </div>
+<div class="modal hide fade ci_hp_modals" id='preview_crawl_snap_modal'>
+	<div class="modal-body">
+		<div class='snap_holder'>&nbsp;</div>
+	</div>
+</div>
 <!-- MODALS (END) -->
 
 <script>
+function showSnap(snap) {
+	$("#preview_crawl_snap_modal").modal('show');
+	$("#preview_crawl_snap_modal .snap_holder").html("<img src='/webshoots/" + snap + "'>");	
+}
 function loadCurrentList(url){
 	url = typeof url !== 'undefined' ? url: '<?php echo site_url('site_crawler/all_urls');?>';
     var search_crawl_data = '';
@@ -124,7 +133,13 @@ function loadCurrentList(url){
             }else{
                 imported_data_id = node.imported_data_id;
             }
-			$('#Current_List ul').append("<li id=\"id_"+node.id+"\"><span><input data-url=\""+node.url+"\" data-id=\""+node.id+"\" type=\"checkbox\" name=\"ids[]\" value=\""+node.id+"\"/></span><span>"+imported_data_id+"</span><span>"+node.status+"</span><span>"+updated+"</span><span>"+category+"</span><span class=\"url ellipsis\">"+node.url+"</span></li>");
+
+            var snap_line = "";
+            if(node.snap !== null && node.snap !== "") {
+            	snap_line = " (<a href='javascript:void(0)' onclick=\"showSnap('" + node.snap + "');\">snap</a>)";
+            }
+
+			$('#Current_List ul').append("<li id=\"id_"+node.id+"\"><span><input data-url=\""+node.url+"\" data-id=\""+node.id+"\" type=\"checkbox\" name=\"ids[]\" value=\""+node.id+"\"/></span><span>"+imported_data_id+"</span><span>"+node.status + snap_line + "</span><span>"+updated+"</span><span>"+category+"</span><span class=\"url ellipsis\">"+node.url+"</span></li>");
 
 		});
 
