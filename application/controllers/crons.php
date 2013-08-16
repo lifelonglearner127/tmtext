@@ -329,7 +329,6 @@ class Crons extends MY_Controller {
                 }
                 $params->url = $this->input->get('url');
             }
-            die;
             echo "Cron Job Finished";
         } catch (Exception $e) {
             echo 'Ошибка',  $e->getMessage(), "\n";
