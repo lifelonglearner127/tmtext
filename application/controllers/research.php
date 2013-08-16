@@ -839,6 +839,7 @@ class Research extends MY_Controller {
         $download_report_params->own_logo = $img_path."content-analytics.png";
         $download_report_params->customer_logo = $img_path.$customer->image_url;
         $download_report_params->batch_name = $params->batch_name;
+        $download_report_params->current_date = $current_date;
         $download_report_params->report_presetted_pages = $report_presetted_pages;
         $download_report_params->assess_table = $assess_table['ExtraData']['report'];
         $download_report_params->assess_report_page_layout = $assess_report_page_layout;
@@ -848,8 +849,6 @@ class Research extends MY_Controller {
                 $this->download_pdf($download_report_params);
                 break;
             case 'doc':
-                break;
-            case 'ppt':
                 break;
             default:
                 break;
@@ -914,54 +913,54 @@ class Research extends MY_Controller {
 
         $html = $html.'<table class="report" border="1" cellspacing="0" cellpadding="0">';
 
-        $html = $html.'<tr><td style="background-color: #dddddd;text-align: center;font-weight: bold;">Summary</td></tr>';
+        $html = $html.'<tr><td class="tableheader">Summary</td></tr>';
 
-        $html = $html.'<tr><td>';
-        $html = $html.'<div class=""><img class="icon" src="'.$download_report_params->img_path.'assess_report_number.png">'.$report_data['summary']['total_items'].' total Items</div>';
+        $html = $html.'<tr><td class="report_td">';
+        $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_number.png">'.$report_data['summary']['total_items'].' total Items</div>';
+        $html = $html.'</td></td></tr>';
+
+        $html = $html.'<tr><td class="report_td">';
+        $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_dollar.png">'.$report_data['summary']['items_priced_higher_than_competitors'].' items priced higher than competitors</div>';
         $html = $html.'</td></tr>';
 
-        $html = $html.'<tr><td>';
-        $html = $html.'<div class=""><img class="icon" src="'.$download_report_params->img_path.'assess_report_dollar.png">'.$report_data['summary']['items_priced_higher_than_competitors'].' items priced higher than competitors</div>';
+        $html = $html.'<tr><td class="report_td">';
+        $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_D.png">'.$report_data['summary']['items_have_more_than_20_percent_duplicate_content'].' items have more than 20% duplicate content</div>';
         $html = $html.'</td></tr>';
 
-        $html = $html.'<tr><td>';
-        $html = $html.'<div class=""><img class="icon" src="'.$download_report_params->img_path.'assess_report_D.png">'.$report_data['summary']['items_have_more_than_20_percent_duplicate_content'].' items have more than 20% duplicate content</div>';
+        $html = $html.'<tr><td class="report_td">';
+        $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_seo.png">'.$report_data['summary']['items_unoptimized_product_content'].' items have unoptimized product content</div>';
         $html = $html.'</td></tr>';
 
-        $html = $html.'<tr><td>';
-        $html = $html.'<div class=""><img class="icon" src="'.$download_report_params->img_path.'assess_report_seo.png">'.$report_data['summary']['items_unoptimized_product_content'].' items have unoptimized product content</div>';
-        $html = $html.'</td></tr>';
-
-        $html = $html.'<tr><td>';
-        $html = $html.'<div class=""><img class="icon" src="'.$download_report_params->img_path.'assess_report_arrow_down.png">'.$report_data['summary']['items_short_products_content'].' items have product content that is too short</div>';
+        $html = $html.'<tr><td class="report_td">';
+        $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_arrow_down.png">'.$report_data['summary']['items_short_products_content'].' items have product content that is too short</div>';
         $html = $html.'</td></tr>';
 
         $html = $html.'</table>';
 
-        $html = $html.'<table class="report recommendations" border="1" cellspacing="0" cellpadding="0" style="border-collapse: collapse;border-spacing: 0;">';
+        $html = $html.'<table class="report recommendations" border="1" cellspacing="0" cellpadding="0">';
 
-        $html = $html.'<tr><td style="background-color: #dddddd;text-align: center;font-weight: bold;">Recommendations</td></tr>';
+        $html = $html.'<tr><td class="tableheader">Recommendations</td></tr>';
         if ($report_data['recommendations']['items_priced_higher_than_competitors']) {
-            $html = $html.'<tr><td>';
-            $html = $html.'<div class=""><img class="icon" src="'.$download_report_params->img_path.'assess_report_dollar.png">';
+            $html = $html.'<tr><td class="report_td">';
+            $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_dollar.png">';
             $html = $html.$report_data['recommendations']['items_priced_higher_than_competitors'].'</div>';
             $html = $html.'</td></tr>';
         }
         if ($report_data['recommendations']['items_have_more_than_20_percent_duplicate_content']) {
-            $html = $html.'<tr><td>';
-            $html = $html.'<div class=""><img class="icon" src="'.$download_report_params->img_path.'assess_report_D.png">';
+            $html = $html.'<tr><td class="report_td">';
+            $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_D.png">';
             $html = $html.$report_data['recommendations']['items_have_more_than_20_percent_duplicate_content'].'</div>';
             $html = $html.'</td></tr>';
         }
         if ($report_data['recommendations']['items_short_products_content']) {
-            $html = $html.'<tr><td>';
-            $html = $html.'<div class=""><img class="icon" src="'.$download_report_params->img_path.'assess_report_seo.png">';
+            $html = $html.'<tr><td class="report_td">';
+            $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_seo.png">';
             $html = $html.$report_data['recommendations']['items_short_products_content'].'</div>';
             $html = $html.'</td></tr>';
         }
         if ($report_data['recommendations']['items_unoptimized_product_content']) {
-            $html = $html.'<tr><td>';
-            $html = $html.'<div class=""><img class="icon" src="'.$download_report_params->img_path.'assess_report_arrow_up.png">';
+            $html = $html.'<tr><td class="report_td">';
+            $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_arrow_up.png">';
             $html = $html.$report_data['recommendations']['items_unoptimized_product_content'].'</div>';
             $html = $html.'</td></tr>';
         }

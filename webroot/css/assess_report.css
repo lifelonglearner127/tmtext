@@ -8,10 +8,23 @@ img.icon {
     margin-right:10px;
 }
 .report {
-    width: 900px;
+    width: 100%;
     border-collapse: collapse;
     border-spacing: 0;
 }
 .recommendations {
     margin-top: 20px;
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+.tableheader {
+    background-color: #dddddd;
+    text-align: center;
+    font-weight: bold;
+    font-size: 20px;
+}
+.report_td {
+    padding-top: 7px;
+    padding-bottom: 7px;
+    vertical-align: middle;
 }
