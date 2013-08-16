@@ -182,7 +182,7 @@ class Crons extends MY_Controller {
                 $data = $this->research_data_model->do_stats($batch->id);
                 if(count($data) > 0){
                     foreach($data as $obj){
-
+                        if($obj->batch_id==65){
                             $own_price = 0;
                             $competitors_prices = array();
                             $price_diff = '';
@@ -328,7 +328,7 @@ class Crons extends MY_Controller {
 
                     }
                 }
-
+                }
                 $params->url = $this->input->get('url');
             }
             die;
