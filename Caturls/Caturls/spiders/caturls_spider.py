@@ -23,7 +23,7 @@ import sys
 class CaturlsSpider(BaseSpider):
 
 	name = "producturls"
-	allowed_domains = ["staples.com", "bloomingdales.com", "walmart.com", "amazon.com", "bestbuy.com", "nordstrom.com"]
+	allowed_domains = ["staples.com", "bloomingdales.com", "walmart.com", "amazon.com", "bestbuy.com", "nordstrom.com", "macys.com"]
 
 	# store the cateory page url given as an argument into a field and add it to the start_urls list
 	def __init__(self, cat_page):
@@ -41,6 +41,8 @@ class CaturlsSpider(BaseSpider):
 		#self.start_urls = ["http://www.bestbuy.com/site/Electronics/Televisions/pcmcat307800050023.c?id=pcmcat307800050023&abtest=tv_cat_page_redirect"]
 		# nordstrom sneakers
 		#self.start_urls = ["http://shop.nordstrom.com/c/womens-sneakers?dept=8000001&origin=topnav"]
+		# macy's sneakers
+		#self.start_urls = ["http://www1.macys.com/shop/shoes/sneakers?id=26499&edge=hybrid"]
 		
 
 	def parse(self, response):
@@ -235,6 +237,48 @@ class CaturlsSpider(BaseSpider):
 
 			return Request(response.url, callback = self.parsePage_nordstrom)
 
+		if site == 'macys':
+			driver = webdriver.Firefox()
+			driver.get(response.url)
+
+			hxs = HtmlXPathSelector(response)
+
+			# pass first page to parsePage function to extract products
+			items += self.parsePage_macys(response)
+
+			# use selenium to get next pages
+			#! gets pages by clicking on their number (may not work if there are a lot of pages)
+			curr_page = 1
+			curr_page += 1
+
+			next = hxs.select("//div[@class='pagination']/a[text()='" + str(curr_page) + "']")
+			next_page = None
+			if next:
+				next_page = driver.find_element_by_xpath("//div[@class='pagination']/a[text()='" + str(curr_page) + "']")
+
+			while (next_page):
+				curr_page += 1
+
+				# convert html to "nice format"
+				text_html = driver.page_source.encode('utf-8')
+				#print "TEXT_HTML", text_html
+				html_str = str(text_html)
+
+				# this is a hack that initiates a "TextResponse" object (taken from the Scrapy module)
+				resp_for_scrapy = TextResponse('none',200,{},html_str,[],None)
+
+				# pass first page to parsePage function to extract products
+				items += self.parsePage_macys(resp_for_scrapy)
+
+				next = hxs.select("//div[@class='pagination']/a[text()='" + str(curr_page) + "']")
+				next_page = None
+				if next:
+					next_page = driver.find_element_by_xpath("//div[@class='pagination']/a[text()='" + str(curr_page) + "']")
+
+			driver.close()
+
+			return items
+
 
 	# parse staples page and extract product URLs
 	def parsePage_staples(self, response):
@@ -332,5 +376,18 @@ class CaturlsSpider(BaseSpider):
 		if next_page:
 			page_url = next_page[0]
 			yield Request(url = page_url, callback = self.parsePage_nordstrom)
+
+
+	# parse macys page and extract URLs
+	def parsePage_macys(self, response):
+		hxs = HtmlXPathSelector(response)
+		root_url = "http://www1.macys.com"
+
+		# extract product URLs
+		product_links = hxs.select("//div[@class='shortDescription']/a/@href")
+		for product_link in product_links:
+			item = ProductItem()
+			item['product_url'] = root_url + product_link.extract()
+			yield item
 
 
