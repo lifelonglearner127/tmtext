@@ -47,7 +47,7 @@
                         Select All
                     </label>
                     <label class="checkbox">
-                        <input id="research_assess_price_diff" type="checkbox" >
+                        <input id="research_assess_price_diff" type="checkbox" checked>
                         Price Difference
                     </label>
                 </div>
