@@ -309,7 +309,15 @@ class Crons extends MY_Controller {
                             if(gettype($insert_id ) == 'int'){
                                 var_dump('--'.$obj->batch_id.'--');
                             } else {
-                                die('error');
+                                print "<pre>";
+                                print_r($obj->rid, $obj->imported_data_id,
+                                    $obj->research_data_id, $obj->batch_id,
+                                    $obj->product_name, $obj->url, $obj->short_description, $obj->long_description,
+                                    $short_description_wc, $long_description_wc,
+                                    $short_seo_phrases, $long_seo_phrases,
+                                    $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors);
+                                print "</pre>";
+                                die("error");
                             }
                     }
                     $params = new stdClass();
