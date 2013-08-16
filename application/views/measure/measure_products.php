@@ -50,25 +50,35 @@ jQuery(document).ready(function($) {
     <?php
          unset($sites[0]);
     ?>
-    <select multiple="multiple">
+    <form >
+    <select id="popup_sites" multiple="multiple">
                          <?php
                          
                             foreach($sites as $cite){
                                 
                                  ?>
-                                 <option><?php echo $cite->name; ?></option>
+                                 <option value="<?php echo $cite->name; ?>"><?php echo $cite->name; ?></option>
                                 <?php
                             }
                          ?>
     </select>
-    
+  </form> 
   </div>
   <div class="modal-footer">
     <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
-    <button class="btn btn-primary">Save changes</button>
+    <button id="popup_save"class="btn btn-primary">Save changes</button>
+     
   </div>
 </div>  
-                
+<script>
+    $("#popup_save").click(function(){
+       
+      selected_cites=$("#popup_sites").val();  
+      
+      show_from_butches();
+      $('#myModal').modal('hide');
+    });
+</script>              
   
  </div>
      </div>

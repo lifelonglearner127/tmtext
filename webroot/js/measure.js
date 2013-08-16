@@ -1,5 +1,5 @@
 var grid_id = 0;
- 
+var selected_cites;
 var editorGridViewBaseUrl = base_url + 'index.php/measure/gridview';
 var editorTableViewBaseUrl = base_url + 'index.php/measure/tableview';
 // ---- search string cookie (auto mode search launcher) (start)
@@ -365,8 +365,8 @@ function show_from_butches() {//max
             $.cookie('product_batch', batch_id, {expires: 7, path: '/'}); // create
         }
     }
-
-    var searcher_all = $.post(editorSearchAllBaseUrl, {batch_id: batch_id}, 'html').done(function(data) {
+   console.log(selected_cites);
+    var searcher_all = $.post(editorSearchAllBaseUrl, {selected_cites: selected_cites,batch_id: batch_id}, 'html').done(function(data) {
         $("#an_products_box").html(data);
         // $("#an_products_box").fadeOut();
         // $("#an_products_box").fadeIn();
