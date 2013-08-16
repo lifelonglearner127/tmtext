@@ -467,7 +467,7 @@ $(document).ready(function () {
                 });
             }
         });
-        $.post(base_url + 'index.php/research/getBatchInfo', { 'batch': $("select[name='batches']").find("option:selected").text()}, function(data){
+        $.post(base_url + 'index.php/research/getBatchInfo', { 'batch_id': data.batch_id}, function(data){
             if(data.created != undefined){
                 $('.batch_info').html('<ul class="ml_0"><li>Created: '+data.created+'</li><li>Item Last Added: '+data.modified+'</li>' +
                     '<li> Items: '+data.count_items+' </li></ul>');
@@ -485,7 +485,7 @@ $(document).ready(function () {
         }, function(data){
             $('.info-message').append(data.message).fadeOut(10000);
             $("textarea#urls").val("");
-            $.post(base_url + 'index.php/research/getBatchInfo', { 'batch': $("select[name='batches']").find("option:selected").text()}, function(data){
+            $.post(base_url + 'index.php/research/getBatchInfo', { 'batch_id': data.batch_id}, function(data){
                 if(data.created != undefined){
                     $('.batch_info').html('<ul class="ml_0"><li>Created: '+data.created+'</li><li>Item Last Added: '+data.modified+'</li>' +
                         '<li> Items: '+data.count_items+' </li></ul>');
@@ -616,7 +616,7 @@ $(document).ready(function () {
             'batch_name': $('select[name="batches"]').find('option:selected').text()
         }, function(data) {
             $('#files').html('<p>'+data.message+'</p>');
-            $.post(base_url + 'index.php/research/getBatchInfo', { 'batch': $("select[name='batches']").find("option:selected").text()}, function(data){
+            $.post(base_url + 'index.php/research/getBatchInfo', { 'batch_id': data.batch_id}, function(data){
                 if(data.created != undefined){
                     $('.batch_info').html('<ul class="ml_0"><li>Created: '+data.created+'</li><li>Item Last Added: '+data.modified+'</li>' +
                         '<li> Items: '+data.count_items+' </li></ul>');

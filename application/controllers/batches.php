@@ -32,7 +32,7 @@ class Batches extends MY_Controller {
         $batches = $this->batches_model->getAll();
         $batches_list = array();
         foreach($batches as $batch){
-            array_push($batches_list, $batch->title);
+            $batches_list[$batch->id]= $batch->title;
         }
         return $batches_list;
     }

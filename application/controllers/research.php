@@ -146,7 +146,7 @@ class Research extends MY_Controller {
         $this->load->model('batches_model');
         $this->load->model('research_data_model');
         $this->load->model('statistics_model');
-        $batch_id = $this->batches_model->getIdByName($this->input->post('batch'));
+        $batch_id = $this->input->post('batch_id');
         if($batch_id != false){
             $batch_info = $this->batches_model->get($batch_id);
             $last_date = $this->research_data_model->getLastAddedDateItem($batch_id);
@@ -155,13 +155,14 @@ class Research extends MY_Controller {
             $result['modified'] = mdate('%m/%d/%Y',strtotime($last_date[0]->modified));
 
             $params = new stdClass();
-            $params->batch_name = $this->input->post('batch');
+            $params->batch_id = $batch_id;
             $params->txt_filter = '';
-            $res = count($this->statistics_model->getStatsData($params));
-            if($res == 0){
-                $res = $this->research_data_model->countAll($batch_id);
+            $res = $this->statistics_model->getStatsData($params);
+            $num_rows = count($res);
+            if($num_rows == 0){
+                $num_rows = $this->research_data_model->countAll($batch_id);
             }
-            $result['count_items'] = $res;
+            $result['count_items'] =  $num_rows;
 
             $this->output->set_content_type('application/json')
                 ->set_output(json_encode($result));
@@ -1294,7 +1295,7 @@ class Research extends MY_Controller {
         } else if($added>1){
             $str .= ' records';
         }
-
+        $response['batch_id'] = $batch_id;
         $response['message'] = $str .' added to batch';
          $this->output->set_content_type('application/json')
                 ->set_output(json_encode($response));
