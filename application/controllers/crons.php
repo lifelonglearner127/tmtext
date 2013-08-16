@@ -181,7 +181,8 @@ class Crons extends MY_Controller {
                 $data = $this->research_data_model->do_stats($batch->id);
                 if(count($data) > 0){
                     foreach($data as $obj){
-                        $own_price = 0;
+                        var_dump($obj->batch_id);
+                        /*$own_price = 0;
                         $competitors_prices = array();
                         $price_diff = '';
                         $items_priced_higher_than_competitors = 0;
@@ -298,13 +299,13 @@ class Crons extends MY_Controller {
                             }
                         }
 
-                        /*$insert_id = $this->statistics_model->insert($obj->rid, $obj->imported_data_id,
+                        $insert_id = $this->statistics_model->insert($obj->rid, $obj->imported_data_id,
                             $obj->research_data_id, $obj->batch_id,
                             $obj->product_name, $obj->url, $obj->short_description, $obj->long_description,
                             $short_description_wc, $long_description_wc,
                             $short_seo_phrases, $long_seo_phrases,
                             $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors
-                        );*/
+                        )
                         var_dump($obj->batch_id.'---');
                         echo '<br>';
                         var_dump($obj->rid, $obj->imported_data_id,
@@ -328,7 +329,7 @@ class Crons extends MY_Controller {
                                     $val['features'], $val['customer'],
                                     $val['long_original'], $val['short_original']);
                             }
-                        }
+                        };*/
 
 
                         }
