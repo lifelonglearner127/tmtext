@@ -81,9 +81,11 @@
                                                                         <span class="caret"></span>
                                                                     </button>
                                                                     <ul class="dropdown-menu">
+                                                                        
                                                                         <?php foreach($customers as $key => $value) { ?>
                                                                             <li><a data-item="<?php echo $value['url']; ?>" data-value="<?php if($value['image']!='http://tmeditor.dev/img/'){echo $value['image'];}else{ echo "../../img/no-logo.jpg";} ?>" href="javascript:void(0)"><span class="<?php echo $value['value']; ?>"><?php echo $value['value']; ?></span></a></li>
                                                                         <?php } ?>
+                                                                            
                                                                     </ul>
                                                                 </div>
                                                            
@@ -270,7 +272,10 @@ function selectOption(){
                     $("#sites .btn_caret_sign").text(customerName);
                     $(".hp_boot_drop .dropdown-menu").append('<li><a href="javascript:void(0)" data-value="" data-item=""><span>'+customerName+'</span></a></li>');
                     selectOption();
+                    
                     $(".hp_boot_drop .dropdown-menu li ").tsort('span',{order:'asc'});
+                    $(".hp_boot_drop .dropdown-menu li:last").remove();                
+                    $(".hp_boot_drop .dropdown-menu").prepend('<li><a data-item="" data-value="" ><span>Select Customer</span></a></li>');
                     $('#customer_name').val('');
                     $('#customer_url').val('');
                     $("#customer_logo").attr('src',"../../img/no-logo.jpg");
@@ -281,6 +286,8 @@ function selectOption(){
             });
    $(document).ready(function(){
    $(".hp_boot_drop .dropdown-menu li ").tsort('span',{order:'asc'});
+   
+   $(".hp_boot_drop .dropdown-menu").prepend('<li><a data-item="" data-value="" href="javascript:void(0)"><span>Select Customer</span></a></li>');
    });
             
             </script>

@@ -851,11 +851,11 @@ function matches_count($im_data_id){
            
         $matched_sites=array();
         foreach($same_pr as $ks => $vs){
-           $matched_sites[]=$vs['customer'];
+           $matched_sites[]=strtolower($vs['customer']);
         }
         
         // -------- COMPARING V1 (START)
-        return $same_pr;
+        return $matched_sites;
         }
         
 }
@@ -1539,7 +1539,9 @@ public function gridview() {
 
     public function searchmeasuredball() {
         $selected_cites=$this->input->post('selected_cites');
-        
+        foreach($selected_cites as $key => $val){
+            $selected_cites[$key]=  strtolower( $val);
+        }
         $batch_id = $this->input->post('batch_id');
         if (!$batch_id) {
             $s = $this->input->post('s');
@@ -1577,14 +1579,18 @@ public function gridview() {
                 
                 foreach($result as $kay => $val){
                      $matches_sites=$this->matches_count($val['imported_data_id']);
-                    if(array_intersect($matches_sites,$selected_cites)){
+//                     print_r($selected_cites);
+//                     print_r($matches_sites);
+                     var_dump(count(array_intersect($matches_sites,$selected_cites)));
+                    if(count(array_intersect($matches_sites,$selected_cites)==0)){
                     
                         unset($result[$kay]);
                     }
                 }
             }
+            
             $data['search_results'] = $result;
-
+         
             $this->load->view('measure/searchmeasuredball', $data);
         }
     }

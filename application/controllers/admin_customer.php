@@ -29,13 +29,7 @@ class Admin_Customer extends MY_Controller {
 //        }
         $customers_init_list = $this->customers_model->getAll();
         if (count($customers_init_list) > 0) {
-            if (count($customers_init_list) != 1) {
-                $output[] = array('text' => 'Select Customer',
-                    'value' => 'Select Customer',
-                    'image' => '',
-                    'url' =>''
-                );
-            }
+            
             foreach ($customers_init_list as $key => $value) {
                 $output[] = array('text' => '',
                     'value' => strtolower($value->name),
@@ -57,7 +51,7 @@ class Admin_Customer extends MY_Controller {
     }
    
    public function save() {
-		$this->form_validation->set_rules('user_settings[customer_name]', 'Customer name', 'required|xss_clean');
+		$this->form_validation->set_rules('user_settings[customer_name]', 'Customer name', 'xss_clean');
 		$this->form_validation->set_rules('user_settings[csv_directories]', 'CSV Directories', 'required|xss_clean');
 		$this->form_validation->set_rules('user_settings[title_length]', 'Default Title', 'required|integer|xss_clean');
 		$this->form_validation->set_rules('user_settings[description_length]', 'Description Length', 'required|integer|xss_clean');
