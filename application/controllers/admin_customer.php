@@ -109,9 +109,15 @@ class Admin_Customer extends MY_Controller {
         $this->load->model('customers_model');
         $response['message'] = '';
         if($this->input->post('customer_name') != ''){
+             
+            if($this->customers_model->getByName($this->input->post('customer_name'))!=''){
+                $this->customers_model->update($this->input->post('customer_name'), $this->input->post('customer_url'), $this->input->post('logo'));
+                $response['message'] =  'Customer was updated successfully';
+                
+            }else{
             $this->customers_model->insert($this->input->post('customer_name'), $this->input->post('customer_url'), $this->input->post('logo'));
             $response['message'] =  'Customer was added successfully';
-
+            }
         }
         $this->output->set_content_type('application/json')->set_output(json_encode($response));
     }

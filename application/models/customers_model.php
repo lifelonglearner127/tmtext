@@ -60,4 +60,15 @@ class Customers_model extends CI_Model {
         $this->db->insert($this->tables['customers'], $this);
         return $this->db->insert_id();
     }
+    
+    function update($name,$customer_url, $logo){
+        $data = array(
+               'url' => $customer_url,
+               'image_url' => $logo,
+               
+            );
+
+        $this->db->where('name', $name);
+        $this->db->update($this->tables['customers'], $data); 
+    }
 }

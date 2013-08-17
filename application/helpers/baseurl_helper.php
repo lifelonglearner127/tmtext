@@ -2,8 +2,7 @@
 if ( ! function_exists('get_base_url'))
 {
  function get_base_url($url)
-    {
-    $chars = preg_split('//', $url, -1, PREG_SPLIT_NO_EMPTY);
+    {$chars = preg_split('//', $url, -1, PREG_SPLIT_NO_EMPTY);
 
     $slash = 3; // 3rd slash
 
@@ -21,5 +20,12 @@ if ( ! function_exists('get_base_url'))
            $pos = $key; break;
         }
     }
+if(preg_match('/www/',$url)){
+$main_base = substr($url, 11, $pos-11);
+}else{
+   $main_base = substr($url, 7, $pos-7); 
+}
+
+return $main_base;
     }
 }

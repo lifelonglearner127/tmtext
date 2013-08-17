@@ -1038,7 +1038,9 @@ public function gridview() {
 //            }
 //			if(count($same_pr) === 3) {
             foreach ($same_pr as $ks => $vs) {
+                
                 if($vs['customer']==''){
+                
                 $this->load->model('sites_model');
                    if($this->get_base_url($vs['url'])=='shop.nordstrom.com'){
                       $same_pr[$ks]['customer']='nordstrom' ;

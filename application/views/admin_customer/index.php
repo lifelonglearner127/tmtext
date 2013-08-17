@@ -39,22 +39,34 @@
 			}
 		});
 
-        $('button#save_customer').click(function(){
-            
+        $('button#save_customer, #bottom_save').click(function(){
+        
+            if($("#sites .btn_caret_sign").text()!='[ Select Customer ]'){
+            if($('input[name="customer_url"]').val()!=''){ 
+               
             $.post(base_url + 'index.php/admin_customer/add_customer', {
                 //'customer_name': $('input#customer_name').val(),
                 'customer_name':$("#sites .btn_caret_sign").text(),
                 'customer_url': $('input[name="customer_url"]').val(),
                 'logo': $('input[name="customerlogo_file"]').val()
             }, function(data){
-                $(".info-message").append(data.message);
+                
+                $(".info-message").html(data.message);
                 $(".info-message").fadeOut(7000);
                 $('input#customer_name').val(''),
-                $('input[name="customer_url"]').val('')
+                $('input[name="customer_url"]').val('');
                 $('img#customer_logo').attr({'src': base_url+'img/no-logo.jpg' });
             });
+            
+            }else{
+                 $(".info-message").append('Customer url is required');
+                
+                 
+            }
+            }
             return false;
         });
+        
     });
 	</script>
 
@@ -205,7 +217,7 @@
 							    </div>
 							    <div class="control-group">
 								    <div class="controls">
-									    <button type="submit" class="btn btn-success"><i class="icon-white icon-ok"></i>&nbsp;Save</button>
+									    <button id="bottom_save" type="submit" class="btn btn-success"><i class="icon-white icon-ok"></i>&nbsp;Save</button>
 									    <button type="submit" class="btn ml_20">Restore Default</button>
 									    <!--  <button type="submit" class="btn ml_50 btn-inverse">Delete</button> -->
 								    </div>
