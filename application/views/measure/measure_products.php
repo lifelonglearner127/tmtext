@@ -46,7 +46,8 @@ jQuery(document).ready(function($) {
     <h3 id="myModalLabel">Display Options</h3>
   </div>
   <div class="modal-body">
-    <p>Only show items if there is a match on: </p>
+    <input checked="checked" style="margin-top: -4px;"type="radio" name="show_results" value="all"><span>Show all results</span><br>
+    <input style="margin-top: -4px;"type="radio" name="show_results" value="matchon"><span>Only show items if there is a match on: <span><Br> 
     <?php
          unset($sites[0]);
     ?>
@@ -73,7 +74,24 @@ jQuery(document).ready(function($) {
 <script>
     $("#popup_save").click(function(){
        
-      selected_cites=$("#popup_sites").val();  
+      selected_cites=$("#popup_sites").val(); 
+      //$("input['name=show_results']").val();
+    
+     var status=$("input[name='show_results']").val();
+//    var status_showing_results = $.cookie('status_showing_results');
+//    
+//    if (typeof(status_showing_results) !== 'undefined') {
+//        $.removeCookie('status_showing_results', {path: '/'}); // destroy
+//        $.cookie('status_showing_results', status, {expires: 7, path: '/'}); // re-create
+//        //$.session.set("selected_cites",selected_cites);
+//        
+//    } else {
+//        $.cookie('status_showing_results', status, {expires: 7, path: '/'}); // create
+//        $.session.set("selected_cites",selected_cites);
+//    }
+      
+      
+      
       
       show_from_butches();
       $('#myModal').modal('hide');

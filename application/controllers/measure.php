@@ -1577,21 +1577,19 @@ public function gridview() {
             $this->load->model('research_data_model');
 
             $result = $this->research_data_model->get_by_batch_id($batch_id);
+           
             if($selected_cites!=NULL){
                 
                 foreach($result as $kay => $val){
                      $matches_sites=$this->matches_count($val['imported_data_id']);
-//                     print_r($selected_cites);
-//                     print_r($matches_sites);
-                     var_dump(count(array_intersect($matches_sites,$selected_cites)));
-                    if(count(array_intersect($matches_sites,$selected_cites)==0)){
+                     if(count(array_intersect($matches_sites,$selected_cites))==0){
                     
                         unset($result[$kay]);
                     }
                 }
             }
             
-            $data['search_results'] = $result;
+           $data['search_results'] = $result;
          
             $this->load->view('measure/searchmeasuredball', $data);
         }

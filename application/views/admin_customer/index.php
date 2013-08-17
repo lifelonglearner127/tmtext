@@ -59,7 +59,9 @@
             });
             
             }else{
-                 $(".info-message").append('Customer url is required');
+                 $(".info-message").fadeIn(1000);
+                 $(".info-message").html('Customer url is required');
+                
                 
                  
             }
