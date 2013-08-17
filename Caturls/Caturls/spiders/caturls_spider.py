@@ -312,7 +312,7 @@ class CaturlsSpider(BaseSpider):
 	# parse macy's category
 	def parse_macys(self, response):
 		
-		json_response = json.loads(response.body)
+		json_response = json.loads(unicode(response.body, errors='replace'))
 		product_ids = json_response['productIds']
 
 		# if there are any product ids parse them and go to the next page
