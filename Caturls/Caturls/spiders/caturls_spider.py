@@ -3,6 +3,8 @@ from scrapy.selector import HtmlXPathSelector
 from scrapy.http import Request
 from scrapy.http import TextResponse
 from Caturls.items import ProductItem
+from pprint import pprint
+
 
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
@@ -10,6 +12,7 @@ from selenium.webdriver.common.keys import Keys
 import time
 import re
 import sys
+import json
 
 ################################
 # Run with 
@@ -43,6 +46,8 @@ class CaturlsSpider(BaseSpider):
 		#self.start_urls = ["http://shop.nordstrom.com/c/womens-sneakers?dept=8000001&origin=topnav"]
 		# macy's sneakers
 		#self.start_urls = ["http://www1.macys.com/shop/shoes/sneakers?id=26499&edge=hybrid"]
+		# macy's blenders
+		#self.start_urls = ["http://www1.macys.com/shop/kitchen/blenders?id=46710&edge=hybrid"]
 		
 
 	def parse(self, response):
@@ -242,10 +247,31 @@ class CaturlsSpider(BaseSpider):
 			return Request(response.url, callback = self.parsePage_nordstrom)
 
 		if site == 'macys':
-			driver = webdriver.Firefox()
-			driver.get(response.url)
 
 			hxs = HtmlXPathSelector(response)
+			print hxs.select("//title/text()").extract()
+
+			# # if we are redirected to "This category is unavailable for international shipping" page, navigate to the category page
+			not_available = hxs.select("//div[@class='categoryNotAvailable_button']").extract()
+			if 1:#not_available:				
+				# redirect to parse_macys, but with cookie as a parameter
+
+				# extract category id
+				m = re.match("http://www1.macys.com/shop(.*)\?id=([0-9]+).*", self.cat_page)
+				cat_id = 0
+				if m:
+					cat_id = int(m.group(2))
+				productids_request = "http://www1.macys.com/catalog/category/facetedmeta?edge=hybrid&categoryId=%d&pageIndex=1&sortBy=ORIGINAL&productsPerPage=40&" % cat_id
+				return Request(productids_request, callback = self.parse_macys, headers = {"Cookie" : "shippingCountry=US"}, meta={'dont_merge_cookies': True, "cat_id" : cat_id, "page_nr" : 1})
+
+			driver = webdriver.Firefox()
+
+			cookie = {"shippingCountry": "US"}
+			driver.add_cookie(cookie)
+
+			time.sleep(5)
+
+			driver.get(response.url)
 
 			# pass first page to parsePage function to extract products
 			items += self.parsePage_macys(response)
@@ -255,34 +281,73 @@ class CaturlsSpider(BaseSpider):
 			curr_page = 1
 			curr_page += 1
 
-			next = hxs.select("//div[@class='pagination']/a[text()='" + str(curr_page) + "']")
-			next_page = None
-			if next:
-				next_page = driver.find_element_by_xpath("//div[@class='pagination']/a[text()='" + str(curr_page) + "']")
+			# next = hxs.select("//div[@class='pagination']/a[text()='" + str(curr_page) + "']")
+			# next_page = None
+			# if next:
+			# 	next_page = driver.find_element_by_xpath("//div[@class='pagination']/a[text()='" + str(curr_page) + "']")
 
-			while (next_page):
-				curr_page += 1
+			# while (next_page):
+			# 	curr_page += 1
 
-				# convert html to "nice format"
-				text_html = driver.page_source.encode('utf-8')
-				#print "TEXT_HTML", text_html
-				html_str = str(text_html)
+			# 	# convert html to "nice format"
+			# 	text_html = driver.page_source.encode('utf-8')
+			# 	#print "TEXT_HTML", text_html
+			# 	html_str = str(text_html)
 
-				# this is a hack that initiates a "TextResponse" object (taken from the Scrapy module)
-				resp_for_scrapy = TextResponse('none',200,{},html_str,[],None)
+			# 	# this is a hack that initiates a "TextResponse" object (taken from the Scrapy module)
+			# 	resp_for_scrapy = TextResponse('none',200,{},html_str,[],None)
 
-				# pass first page to parsePage function to extract products
-				items += self.parsePage_macys(resp_for_scrapy)
+			# 	# pass first page to parsePage function to extract products
+			# 	items += self.parsePage_macys(resp_for_scrapy)
 
-				next = hxs.select("//div[@class='pagination']/a[text()='" + str(curr_page) + "']")
-				next_page = None
-				if next:
-					next_page = driver.find_element_by_xpath("//div[@class='pagination']/a[text()='" + str(curr_page) + "']")
+			# 	next = hxs.select("//div[@class='pagination']/a[text()='" + str(curr_page) + "']")
+			# 	next_page = None
+			# 	if next:
+			# 		next_page = driver.find_element_by_xpath("//div[@class='pagination']/a[text()='" + str(curr_page) + "']")
 
-			driver.close()
+			# driver.close()
 
-			return items
+			# return items
 
+	# parse macy's category
+	def parse_macys(self, response):
+		
+		json_response = json.loads(response.body)
+		product_ids = json_response['productIds']
+
+		# if there are any product ids parse them and go to the next page
+		# (if there are no product ids it means the current page is empty and we stop)
+		if product_ids:
+			cat_id = response.meta['cat_id']
+
+			product_ids2 = [str(cat_id) + "_" + str(product_id) for product_id in product_ids]
+			product_ids_string = ",".join(product_ids2)
+
+			products_page = "http://www1.macys.com/shop/catalog/product/thumbnail/1?edge=hybrid&limit=none&suppressColorSwatches=false&categoryId=%d&ids=%s" % (cat_id, product_ids_string)
+			# parse products from this page
+			request = Request(products_page, callback = self.parsePage_macys, headers = {"Cookie" : "shippingCountry=US"}, meta={'dont_merge_cookies': True, "cat_id" : cat_id})
+			yield request
+
+			# send a new request for the next page
+			page = int(response.meta['page_nr']) + 1
+			next_page = re.sub("pageIndex=[0-9]+", "pageIndex=" + str(page), response.url)
+			request = Request(next_page, callback = self.parse_macys, headers = {"Cookie" : "shippingCountry=US"}, meta={'dont_merge_cookies': True, "cat_id" : cat_id, "page_nr" : page})
+			yield request
+
+	# parse macy's page and extract product URLs
+	def parsePage_macys(self, response):
+		hxs = HtmlXPathSelector(response)
+
+		products = hxs.select("//div[@class='shortDescription']/a")
+
+		items = []
+		root_url = "http://www1.macys.com"
+		for product in products:
+			item = ProductItem()
+			item['product_url'] = root_url + product.select("@href").extract()[0]
+			items.append(item)
+
+		return items
 
 	# parse staples page and extract product URLs
 	def parsePage_staples(self, response):
@@ -290,12 +355,12 @@ class CaturlsSpider(BaseSpider):
 		hxs = HtmlXPathSelector(response)
 
 		products = hxs.select("//a[@class='url']")
+		root_url = "http://www.staples.com"
 		items = []
 
 		for product in products:
 
 			item = ProductItem()
-			root_url = "http://www.staples.com"
 			item['product_url'] = root_url + product.select("@href").extract()[0]
 			items.append(item)
 
