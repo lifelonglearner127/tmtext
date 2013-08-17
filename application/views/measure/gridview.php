@@ -156,8 +156,8 @@ foreach ($same_pr as $ks => $vs) {
                         <p class="heading_text">Words: <b><?php echo $s_product_short_desc_count; ?></b></p>
                         <div class="p_seo">
                             <?php if (count($vs['seo']['short']) > 0) { ?>
-                                <p class="heading_text">SEO: </p>
-                                <ul class='gr_seo_short_ph' style='margin-top: -19px;margin-left: 40px;font-weight: bold;margin-bottom: 0px;'>
+                                <p class="heading_text">SEO Keywords: </p>
+                                <ul class='gr_seo_short_ph' style='margin-top: -19px;margin-left: 102px;font-weight: bold;margin-bottom: 0px;'>
                                     <?php foreach ($vs['seo']['short'] as $key => $value) { ?>
                                         <?php $v_ph = $value['ph']; ?>
 
@@ -172,7 +172,7 @@ foreach ($same_pr as $ks => $vs) {
                                 </ul>
                             <?php } else { ?>
 
-                                <p class="heading_text">SEO: <span style="font-weight: bold;">None</span></p>
+                                <p class="heading_text">SEO Keywords: <span style="font-weight: bold;">None</span></p>
                             <?php } ?>
                         </div>
                         <p>Duplicate content: <b><?php echo isset($vs['short_original']) ? $vs['short_original'] : ''; ?></b></p>
@@ -194,8 +194,8 @@ if($s_product_long_desc_count > 0){
                         <p class="heading_text">Words: <b><?php echo $s_product_long_desc_count; ?></b></p>
                         <div class="p_seo">
                             <?php if (count($vs['seo']['long']) > 0) { ?>
-                                <p class="heading_text">SEO: </p>
-                                <ul class='gr_seo_short_ph' style='margin-top: -19px;margin-left: 40px;font-weight: bold;margin-bottom: 0px;'>
+                                <p class="heading_text">SEO Keywords: </p>
+                                <ul class='gr_seo_short_ph' style='margin-top: -19px;margin-left: 102px;font-weight: bold;margin-bottom: 0px;'>
                                     <?php foreach ($vs['seo']['long'] as $key => $value) { ?>
                                         <?php $v_ph = $value['ph']; ?>
 
@@ -210,7 +210,7 @@ if($s_product_long_desc_count > 0){
                                 </ul>
                             <?php } else { ?>
 
-                                <p class="heading_text">SEO: <span style="font-weight: bold;">None</span></p>
+                                <p class="heading_text">SEO Keywords: <span style="font-weight: bold;">None</span></p>
                             <?php } ?>
                         </div>
                         <p>Duplicate content: <b><?php echo isset($vs['long_original']) ? $vs['long_original'] : ''; ?></b></p>
