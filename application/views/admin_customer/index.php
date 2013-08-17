@@ -50,17 +50,20 @@
                 'customer_url': $('input[name="customer_url"]').val(),
                 'logo': $('input[name="customerlogo_file"]').val()
             }, function(data){
-                
+                $(".info-message").fadeIn(1000);
                 $(".info-message").html(data.message);
                 $(".info-message").fadeOut(7000);
-                $('input#customer_name').val(''),
-                $('input[name="customer_url"]').val('');
+                if(data.message!="Customer was updated successfully"){
+                    $('input#customer_name').val(''),
+                    $('input[name="customer_url"]').val('');
+                }
                 $('img#customer_logo').attr({'src': base_url+'img/no-logo.jpg' });
             });
             
             }else{
                  $(".info-message").fadeIn(1000);
                  $(".info-message").html('Customer url is required');
+                 $(".info-message").fadeOut(7000);
                 
                 
                  
