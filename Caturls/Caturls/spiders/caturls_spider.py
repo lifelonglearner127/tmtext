@@ -26,7 +26,7 @@ import json
 class CaturlsSpider(BaseSpider):
 
 	name = "producturls"
-	allowed_domains = ["staples.com", "bloomingdales.com", "walmart.com", "amazon.com", "bestbuy.com", "nordstrom.com", "macys.com"]
+	allowed_domains = ["staples.com", "bloomingdales.com", "walmart.com", "amazon.com", "bestbuy.com", "nordstrom.com", "macys.com", "williams-sonoma.com"]
 
 	# store the cateory page url given as an argument into a field and add it to the start_urls list
 	def __init__(self, cat_page):
@@ -258,6 +258,12 @@ class CaturlsSpider(BaseSpider):
 			productids_request = "http://www1.macys.com/catalog/category/facetedmeta?edge=hybrid&categoryId=%d&pageIndex=1&sortBy=ORIGINAL&productsPerPage=40&" % cat_id
 			return Request(productids_request, callback = self.parse_macys, headers = {"Cookie" : "shippingCountry=US"}, meta={'dont_merge_cookies': True, "cat_id" : cat_id, "page_nr" : 1})
 
+		if site == 'williams-sonoma':
+			# get subcategories
+			#TODO
+
+			return Request(url = self.cat_page, callback = self.parsePage_sonoma)
+
 	# parse macy's category
 	def parse_macys(self, response):
 		
@@ -294,6 +300,22 @@ class CaturlsSpider(BaseSpider):
 		for product in products:
 			item = ProductItem()
 			item['product_url'] = root_url + product.select("@href").extract()[0]
+			items.append(item)
+
+		return items
+
+
+	# parse williams-sonoma page and extract product URLs
+	def parsePage_sonoma(self, response):
+		hxs = HtmlXPathSelector(response)
+		products = hxs.select("//li[@class='product-cell ']/a")
+		items = []
+
+		print "IAMHERE"
+
+		for product in products:
+			item = ProductItem()
+			item['product_url'] = product.select("@href").extract()[0]
 			items.append(item)
 
 		return items
