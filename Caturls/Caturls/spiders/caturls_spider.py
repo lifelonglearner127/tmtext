@@ -251,63 +251,12 @@ class CaturlsSpider(BaseSpider):
 			hxs = HtmlXPathSelector(response)
 			print hxs.select("//title/text()").extract()
 
-			# # if we are redirected to "This category is unavailable for international shipping" page, navigate to the category page
-			not_available = hxs.select("//div[@class='categoryNotAvailable_button']").extract()
-			if 1:#not_available:				
-				# redirect to parse_macys, but with cookie as a parameter
-
-				# extract category id
-				m = re.match("http://www1.macys.com/shop(.*)\?id=([0-9]+).*", self.cat_page)
-				cat_id = 0
-				if m:
-					cat_id = int(m.group(2))
-				productids_request = "http://www1.macys.com/catalog/category/facetedmeta?edge=hybrid&categoryId=%d&pageIndex=1&sortBy=ORIGINAL&productsPerPage=40&" % cat_id
-				return Request(productids_request, callback = self.parse_macys, headers = {"Cookie" : "shippingCountry=US"}, meta={'dont_merge_cookies': True, "cat_id" : cat_id, "page_nr" : 1})
-
-			driver = webdriver.Firefox()
-
-			cookie = {"shippingCountry": "US"}
-			driver.add_cookie(cookie)
-
-			time.sleep(5)
-
-			driver.get(response.url)
-
-			# pass first page to parsePage function to extract products
-			items += self.parsePage_macys(response)
-
-			# use selenium to get next pages
-			#! gets pages by clicking on their number (may not work if there are a lot of pages)
-			curr_page = 1
-			curr_page += 1
-
-			# next = hxs.select("//div[@class='pagination']/a[text()='" + str(curr_page) + "']")
-			# next_page = None
-			# if next:
-			# 	next_page = driver.find_element_by_xpath("//div[@class='pagination']/a[text()='" + str(curr_page) + "']")
-
-			# while (next_page):
-			# 	curr_page += 1
-
-			# 	# convert html to "nice format"
-			# 	text_html = driver.page_source.encode('utf-8')
-			# 	#print "TEXT_HTML", text_html
-			# 	html_str = str(text_html)
-
-			# 	# this is a hack that initiates a "TextResponse" object (taken from the Scrapy module)
-			# 	resp_for_scrapy = TextResponse('none',200,{},html_str,[],None)
-
-			# 	# pass first page to parsePage function to extract products
-			# 	items += self.parsePage_macys(resp_for_scrapy)
-
-			# 	next = hxs.select("//div[@class='pagination']/a[text()='" + str(curr_page) + "']")
-			# 	next_page = None
-			# 	if next:
-			# 		next_page = driver.find_element_by_xpath("//div[@class='pagination']/a[text()='" + str(curr_page) + "']")
-
-			# driver.close()
-
-			# return items
+			m = re.match("http://www1.macys.com/shop(.*)\?id=([0-9]+).*", self.cat_page)
+			cat_id = 0
+			if m:
+				cat_id = int(m.group(2))
+			productids_request = "http://www1.macys.com/catalog/category/facetedmeta?edge=hybrid&categoryId=%d&pageIndex=1&sortBy=ORIGINAL&productsPerPage=40&" % cat_id
+			return Request(productids_request, callback = self.parse_macys, headers = {"Cookie" : "shippingCountry=US"}, meta={'dont_merge_cookies': True, "cat_id" : cat_id, "page_nr" : 1})
 
 	# parse macy's category
 	def parse_macys(self, response):
