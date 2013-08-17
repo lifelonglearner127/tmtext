@@ -270,8 +270,6 @@ class CaturlsSpider(BaseSpider):
 			return Request(productids_request, callback = self.parse_macys, headers = {"Cookie" : "shippingCountry=US"}, meta={'dont_merge_cookies': True, "cat_id" : cat_id, "page_nr" : 1})
 
 		if site == 'williams-sonoma':
-			# get subcategories
-			#TODO
 
 			return Request(url = self.cat_page, callback = self.parsePage_sonoma)
 
