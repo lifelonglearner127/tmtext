@@ -48,6 +48,17 @@ class CaturlsSpider(BaseSpider):
 		#self.start_urls = ["http://www1.macys.com/shop/shoes/sneakers?id=26499&edge=hybrid"]
 		# macy's blenders
 		#self.start_urls = ["http://www1.macys.com/shop/kitchen/blenders?id=46710&edge=hybrid"]
+		# macy's coffee makers
+		#self.start_urls = ["http://www1.macys.com/shop/kitchen/coffee-makers?id=24733&edge=hybrid"]
+		# macy's mixers
+		#self.start_urls = ["http://www1.macys.com/shop/kitchen/mixers-accessories?id=46705&edge=hybrid"]
+		# williams-sonoma blenders
+		#self.start_urls = ["http://www.williams-sonoma.com/products/cuisinart-soup-maker-blender-sbc-1000/?pkey=cblenders&"]
+		# williams-sonoma mixers
+		#self.start_urls = ["http://www.williams-sonoma.com/shop/electrics/mixers-attachments/?cm_type=gnav"]
+		# williams-sonoma coffee makers
+		#self.start_urls = ["http://www.williams-sonoma.com/shop/electrics/coffee-makers/?cm_type=gnav"]
+
 		
 
 	def parse(self, response):
