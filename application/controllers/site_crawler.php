@@ -20,6 +20,15 @@ class Site_Crawler extends MY_Controller {
         }
         $this->data['category_list'] = $category_list;
 
+		$this->load->model('batches_model');
+        $batches = $this->batches_model->getAll();
+        $batches_list = array(''=>'None');
+        foreach($batches as $batch){
+            $batches_list[$batch->id] = $batch->title;
+        }
+
+        $this->data['batches_list'] = $batches_list;
+
 		$this->render();
 	}
 
@@ -137,9 +146,14 @@ class Site_Crawler extends MY_Controller {
             $search_crawl_data = $this->input->get('search_crawl_data');
         }
 
+        if ($this->input->get('batch_id')!=0) {
+        	$total = $this->crawler_list_model->countByBatch($this->input->get('batch_id'));
+        } else {
+        	$total = $this->crawler_list_model->countAll(false, $search_crawl_data);
+        }
 		$config = array(
 			'base_url' => site_url('site_crawler/all_urls'),
-			'total_rows' => $this->crawler_list_model->countAll(false, $search_crawl_data),
+			'total_rows' => $total,
 			'per_page' => 10,
 			'uri_segment' => 3
 		);
@@ -147,11 +161,17 @@ class Site_Crawler extends MY_Controller {
 		$this->pagination->initialize($config);
 		$page = ($this->uri->segment(3)) ? $this->uri->segment(3) : 0;
 
+		if ($this->input->get('batch_id')!=0) {
+        	$urls = $this->crawler_list_model->getByBatchLimit($config["per_page"], $page, $this->input->get('batch_id'));
+        } else {
+        	$urls = $this->crawler_list_model->getAllLimit($config["per_page"], $page, false, $search_crawl_data);
+        }
+
 		$this->output->set_content_type('application/json');
 		echo json_encode(array(
-            'total' => $this->crawler_list_model->countAll(false, $search_crawl_data),
+            'total' => $total,
 			'new' => $this->crawler_list_model->countNew(false),
-			'new_urls' => $this->crawler_list_model->getAllLimit($config["per_page"], $page, false, $search_crawl_data),
+			'new_urls' => $urls,
 			'pager' => $this->pagination->create_links()
 		));
 	}

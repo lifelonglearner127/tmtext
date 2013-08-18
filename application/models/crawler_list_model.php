@@ -187,5 +187,34 @@ class Crawler_List_model extends CI_Model {
         return $query->row();
     }
 
+    function getByBatchLimit($limit, $start, $batch_id)
+    {
+
+    	$this->db->select('cl.id, cl.imported_data_id, cl.url, cl.snap, c.name as name, cl.status, DATE(cl.updated) as updated')
+    		->from($this->tables['crawler_list'].' as cl')
+            ->join($this->tables['categories'].' as c', 'cl.category_id = c.id', 'left')
+			->join('research_data_to_crawler_list as rc', 'cl.id = rc.crawler_list_id' )
+			->join('research_data as rd', 'rd.id = rc.research_data_id')
+			->where('rd.batch_id',$batch_id);
+
+        $query = $this->db->order_by("cl.created", "desc")->limit($limit, $start)->get();
+
+        return $query->result();
+    }
+
+
+    function countByBatch($batch_id)
+    {
+
+    	$this->db->select('cl.id')
+    		->from($this->tables['crawler_list'].' as cl')
+            ->join($this->tables['categories'].' as c', 'cl.category_id = c.id', 'left')
+			->join('research_data_to_crawler_list as rc', 'cl.id = rc.crawler_list_id' )
+			->join('research_data as rd', 'rd.id = rc.research_data_id')
+			->where('rd.batch_id',$batch_id);
+
+        return $this->db->count_all_results();
+    }
+
 
 }

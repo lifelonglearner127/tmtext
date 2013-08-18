@@ -59,9 +59,17 @@
 				<button id="add_list_delete" class="btn new_btn btn-danger mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
 			</div>
 			<h3 class="span3 current_list_title">Current list: <br/><small nowrap></small></h3>
-            <input type="text" class="span4 pull-left mt_15" name="search_crawl_data" >
+
+            <select name="batch" class="span4 pull-left mt_15" style="width: 125px;" id="batches">
+				<?php foreach($batches_list as $ks => $vs):?>
+				<option value="<?php echo $ks; ?>"><?php echo $vs; ?></option>
+				<?php endforeach;?>
+			</select>
+
+            <input type="text" class="span3 pull-left mt_15" name="search_crawl_data" >
             <button id="apply_search_data" class="btn new_btn btn-success mt_15 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Apply</button>
             <button id="clear_search_data" class="btn new_btn btn-success mt_15 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Clear</button>
+
 			<div class="row-fluid mt_5">
 				<div class="search_area uneditable-input span10" style="cursor: text; width: 765px; height: 320px; overflow : auto;" id="Current_List">
 				<ul>
@@ -106,7 +114,13 @@ function loadCurrentList(url){
     if($('input[name="search_crawl_data"]').val() != ''){
         search_crawl_data = $('input[name="search_crawl_data"]').val();
     }
-	$.get(url, {'search_crawl_data': search_crawl_data}, function(data) {
+
+    var batch_id = 0;
+    if($('select[name="batch"]').val() != ''){
+    	batch_id = $('select[name="batch"]').val();
+    }
+
+	$.get(url, {'search_crawl_data': search_crawl_data, 'batch_id': batch_id}, function(data) {
 //        console.log(data);
 		$('#Current_List ul li').remove();
 
@@ -375,6 +389,10 @@ $(function () {
 		} else {
 			$('button#current_crawl').attr('disabled', 'disabled');
 		}
+	});
+
+	$(document).on('change', 'select#batches', function(){
+		loadCurrentList();
 	});
 });
 </script>
