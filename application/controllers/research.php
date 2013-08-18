@@ -1309,6 +1309,24 @@ class Research extends MY_Controller {
             ->set_output(json_encode($data));
     }
 
+    public function countAllItemsInBatch(){
+        $this->load->model('batches_model');
+        $this->load->model('statistics_model');
+        $this->load->model('research_data_model');
+        $batch = $this->input->post('batch');
+        $batch_id = $this->batches_model->getIdByName($batch);
+        $params = new stdClass();
+        $params->batch_id = $batch_id;
+        $params->txt_filter = '';
+        $res = $this->statistics_model->getStatsData($params);
+        $num_rows = count($res);
+        if($num_rows == 0){
+            $num_rows = $this->research_data_model->countAll($batch_id);
+        }
+        $this->output->set_content_type('application/json')
+            ->set_output(json_encode($num_rows));
+    }
+
     public function filterCustomerByBatch(){
         $this->load->model('batches_model');
         $batch = $this->input->post('batch');

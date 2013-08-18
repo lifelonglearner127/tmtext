@@ -21,6 +21,7 @@ jQuery(document).ready(function($) {
                     <div id="product_customers" class="customer_dropdown"></div>
                  
                     <?php  echo form_dropdown('product_batches', $batches_list, array(), 'class="mt_10 mr_10" id="batchess" style="width: 145px;"');//max ?>
+                    <span class="product_batches_items"></span>
                 </div>
 
                 <ul class='grid_switcher' data-status='grid-switch' style="margin-top: 10px;position: relative;left: 105px;">
@@ -313,15 +314,20 @@ jQuery(document).ready(function($) {
             // ---- search string cookie (auto mode search launcher) (start)
             var auto_mode_search_str = "";
             var auto_mode_product_batch ="";
+            var auto_mode_product_batch_items ="";
             var auto_mode_status_view = "";
             var cookie_search_str = $.cookie('com_intel_search_str');
             var product_batch = $.cookie('product_batch');
+            var product_batch_items = $.cookie('product_batch_items');
             var status_view = $.cookie('status_view');
             if (typeof(cookie_search_str) !== 'undefined' && cookie_search_str !== null && cookie_search_str !== "") {
                 auto_mode_search_str = cookie_search_str;
             }
             if (typeof(product_batch) !== 'undefined' && product_batch !== null && product_batch !== "") {
                 auto_mode_product_batch = product_batch;
+            }
+            if (typeof(product_batch_items) !== 'undefined' && product_batch_items !== null && product_batch_items !== "") {
+                auto_mode_product_batch_items = product_batch_items;
             }
             if (typeof(status_view) !== 'undefined' && status_view !== null && status_view !== "") {
                 auto_mode_status_view = status_view;
@@ -336,6 +342,9 @@ jQuery(document).ready(function($) {
             if(auto_mode_product_batch!==""){
                 $('select#batchess').val(auto_mode_product_batch).prop('selected',true);
                 show_from_butches();
+            }
+            if(auto_mode_product_batch_items!==""){
+                $("span.product_batches_items").html(auto_mode_product_batch_items);
             }
             if(auto_mode_status_view!==""){
                 if(auto_mode_status_view == 'list'){

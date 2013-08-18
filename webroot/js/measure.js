@@ -358,11 +358,15 @@ function show_from_butches() {//max
     var batch_id = $("#batchess").val();
     if (batch_id !== "" && batch_id != 0) {
         var product_batch = $.cookie('product_batch');
+        var product_batch_items = $.cookie('product_batch_items');
         if (typeof(product_batch) !== 'undefined') {
             $.removeCookie('product_batch', {path: '/'}); // destroy
+            $.removeCookie('product_batch_items', {path: '/'}); // destroy
             $.cookie('product_batch', batch_id, {expires: 7, path: '/'}); // re-create
+            $.cookie('product_batch_items',  $("span.product_batches_items").html(), {expires: 7, path: '/'}); // re-create
         } else {
             $.cookie('product_batch', batch_id, {expires: 7, path: '/'}); // create
+            $.cookie('product_batch_items', $("span.product_batches_items").html(), {expires: 7, path: '/'}); // create
         }
     }
    console.log(selected_cites);
@@ -734,6 +738,7 @@ $(document).ready(function() {
     $("#an_search").live('click', function() {//max
         
         $.removeCookie('product_batch', {path: '/'});
+        $.removeCookie('product_batch_items', {path: '/'});
         var dropdown = $("select[name='customers_list']").msDropdown().data("dd");
         dropdown.destroy();
         $('#product_customers .ddcommon').remove();
@@ -834,6 +839,13 @@ $(document).ready(function() {
                 });
             }
         });
+
+        $.post(base_url + 'index.php/research/countAllItemsInBatch', {'batch': $("#batchess").val()}, function(data) {
+            $("span.product_batches_items").html(data + ' items');
+            $.removeCookie('product_batch_items', {path: '/'}); // destroy
+            $.cookie('product_batch_items', data+ ' items', {expires: 7, path: '/'}); // re-create
+        });
+
         if ($("#batchess").val() !== '0') {
 
             //alert($("#batchess").val());
