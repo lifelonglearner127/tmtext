@@ -994,6 +994,26 @@ class PageProcessor {
 		return $result;
 	}
 
+	public function attributes_macys() {
+		$result = array();
+
+		foreach($this->nokogiri->get('#pdpTabs #prdDesc #longDescription') as $item) {
+			foreach($item['#text'] as $i) {
+				$line = trim($i);
+				if (!empty($line)) {
+					$line = stristr($line, 'model');
+					$line = str_ireplace(array('.', 'model'), '', $line);
+					$line = trim($line);
+					if (!empty($line)) {
+						$result['model'] = $line;
+					}
+				}
+			}
+		}
+
+		return $result;
+	}
+
 	public function process_neimanmarcus(){
 		foreach($this->nokogiri->get('#productDetails h1') as $item) {
 			foreach($item['#text'] as $i) {
@@ -1125,6 +1145,24 @@ class PageProcessor {
 			'Long_Description' => $descriptionLong,
 			'Price' => number_format($price,2, '.', '')
 		);
+	}
+
+	public function attributes_williamssonoma() {
+		$result = array();
+
+		foreach($this->nokogiri->get('.pip-info .accordion-component .accordion-body .accordion-contents ul li') as $item) {
+			$line = trim($item["#text"][0]);
+
+			if (!empty($line) && stristr($line, 'model')!== false) {
+				$line = str_ireplace(array('#', 'model'), '', $line);
+				$line = trim($line);
+				if (!empty($line)) {
+					$result['model'] = $line;
+				}
+			}
+		}
+
+		return $result;
 	}
 }
 
