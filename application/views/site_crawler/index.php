@@ -65,7 +65,7 @@
 			<div class="row-fluid mt_5">
 				<div class="search_area uneditable-input span10" style="cursor: text; width: 765px; height: 320px; overflow : auto;" id="Current_List">
 				<ul>
-					<lh><span></span><span>ID</span><span>Status</span><span>Last Crawled</span><span>Category</span><span>URL</span></lh>
+					<lh><span><input type="checkbox" value="" id="checkAll"/></span><span>ID</span><span>Status</span><span>Last Crawled</span><span>Category</span><span>URL</span></lh>
 				</ul>
 				</div>
 				<button id="current_list_delete" class="btn new_btn btn-danger mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
@@ -363,6 +363,18 @@ $(function () {
 
 	jQuery(document).ready(function($) {
 		loadCurrentList();
+	});
+
+	$(document).on('click', 'input#checkAll', function(){
+		$("#Current_List > ul > li input[type='checkbox']").each(function(index, value) {
+			$(this).attr('checked', $('input#checkAll').is(':checked'));
+    	});
+
+		if ($('input#checkAll').is(':checked')) {
+			$('button#current_crawl').removeAttr('disabled');
+		} else {
+			$('button#current_crawl').attr('disabled', 'disabled');
+		}
 	});
 });
 </script>
