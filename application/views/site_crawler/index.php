@@ -63,7 +63,7 @@
             <button id="apply_search_data" class="btn new_btn btn-success mt_15 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Apply</button>
             <button id="clear_search_data" class="btn new_btn btn-success mt_15 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Clear</button>
 			<div class="row-fluid mt_5">
-				<div class="search_area uneditable-input span10" style="cursor: text; width: 765px; height: 250px; overflow : auto;" id="Current_List">
+				<div class="search_area uneditable-input span10" style="cursor: text; width: 765px; height: 320px; overflow : auto;" id="Current_List">
 				<ul>
 					<lh><span></span><span>ID</span><span>Status</span><span>Last Crawled</span><span>Category</span><span>URL</span></lh>
 				</ul>
@@ -98,7 +98,7 @@
 <script>
 function showSnap(snap) {
 	$("#preview_crawl_snap_modal").modal('show');
-	$("#preview_crawl_snap_modal .snap_holder").html("<img src='/webshoots/" + snap + "'>");	
+	$("#preview_crawl_snap_modal .snap_holder").html("<img src='/webshoots/" + snap + "'>");
 }
 function loadCurrentList(url){
 	url = typeof url !== 'undefined' ? url: '<?php echo site_url('site_crawler/all_urls');?>';
