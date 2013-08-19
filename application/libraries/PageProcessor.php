@@ -1011,6 +1011,13 @@ class PageProcessor {
 			}
 		}
 
+		foreach($this->nokogiri->get('#productDescription h1#productTitle') as $item) {
+			$title = $item['#text'][0];
+
+			$arr = explode(' ',trim($title));
+			$result['manufacturer'] = $arr[0];
+		}
+
 		return $result;
 	}
 
@@ -1160,6 +1167,13 @@ class PageProcessor {
 					$result['model'] = $line;
 				}
 			}
+		}
+
+		foreach($this->nokogiri->get('.pip-info h1') as $item) {
+			$title = $item['#text'][0];
+
+			$arr = explode(' ',trim($title));
+			$result['manufacturer'] = $arr[0];
 		}
 
 		return $result;
