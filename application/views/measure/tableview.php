@@ -80,7 +80,7 @@ foreach($customers as $val){
         
         <td><a target="_blank" href="<?php echo $same_pr[$ind0]['url']; ?>"><?php echo $same_pr[$ind0]['url']; ?></a></td>
          <?php if($count>1){?>
-          <td><a target="_blank" href="<?php echo $same_pr[$ind0]['url']; ?>"  ><?php echo  $same_pr[$ind1]['url']; ?></a></td>
+          <td><a target="_blank" href="<?php echo $same_pr[$ind1]['url']; ?>"  ><?php echo  $same_pr[$ind1]['url']; ?></a></td>
          <?php }?>
     </tr>
     <tr>

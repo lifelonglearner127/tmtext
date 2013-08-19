@@ -44,12 +44,16 @@ class Sites_model extends CI_Model {
         $all=$query1->result_array();
         $name='';
         foreach($all as $val){
-            if(preg_match('/'.get_base_url($val['url']).'/',$url)){
+                        
+            $n = parse_url($val['url']);
+                
+            if( $n['host']==$url){
                 $name=$val['name'];
+              
             }
         }
-
-         return $name;
+       
+        return $name;
     }
     function insertSiteByName($name)
     {
