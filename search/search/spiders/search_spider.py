@@ -5,6 +5,7 @@ from scrapy.http import TextResponse
 from search.items import SearchItem
 #import urllib
 import re
+import itertools
 
 import nltk
 from nltk.corpus import stopwords
@@ -76,7 +77,8 @@ class SearchSpider(BaseSpider):
 
 	def build_search_query(self, product_name):
 		# put + instead of spaces, lowercase all words
-		search_query = "+".join(self.normalize(product_name))
+		pt = ProcessText()
+		search_query = "+".join(pt.normalize(product_name))
 		return search_query
 
 	def parse(self, response):
@@ -122,13 +124,10 @@ class SearchSpider(BaseSpider):
 				zipcode = "12345"
 				request.cookies = {"zipcode": zipcode}
 				request.meta['dont_redirect'] = True
-				#print "ZIPCODE", zipcode
 			yield request
 
 	# parse a product page (given its URL) and extract product's name
 	def parseURL(self, response):
-		
-		#TODO: try with more than one query
 
 		site = response.meta['site']
 		hxs = HtmlXPathSelector(response)
@@ -156,46 +155,35 @@ class SearchSpider(BaseSpider):
 
 		request = None
 
-		# # 1) Search by model number
-		# if product_model:
-		# 	query1 = self.build_search_query(product_name)
-		# 	search_pages1 = self.build_search_pages(query)
-		# 	page1 = search_pages[self.target_site]
-		# 	request1 = Request(page1, callback = self.parseResults, cookies)
+		# 1) Search by model number
+		if product_model:
+			query1 = self.build_search_query(product_name)
+			search_pages1 = self.build_search_pages(query)
+			page1 = search_pages[self.target_site]
+			request1 = Request(page1, callback = self.parseResults, cookies=cookies)
 			
-		# 	request = request1
+			request = request1
 
 
 		# 2) Search by product full name
 		query2 = self.build_search_query(product_name)
 		search_pages2 = self.build_search_pages(query2)
-		page2 = search_pages[self.target_site]
-		request2 = Request(page2, callback = self.parseResults, cookies)
-		request2.meta['site'] = self.target_site
-		# product page from source site
-		request2.meta['origin_url'] = response.url
-		request2.meta['origin_name'] = product_name
+		page2 = search_pages2[self.target_site]
+		request2 = Request(page2, callback = self.parseResults, cookies=cookies)
+
+		pending_requests = []
 
 		if not request:
 			request = request2
-			request.meta['pending_request'] = request3
 		else:
-			request.meta['pending_request'] = request2
+			pending_requests.append(request2)
 
-		request.meta['site'] = self.target_site
-		# product page from source site
-		request.meta['origin_url'] = response.url
-		request.meta['origin_name'] = product_name
+		# 3) Search by combinations of words in product's name
+		# create queries
 
 
-		# # 3) Search by parts of product's name
-		
-		# query = self.build_search_query(product_name)
-		# search_pages = self.build_search_pages(query)
-		
-		# page = search_pages[self.target_site]
-		# #print "PAGE", page, "ORIGIN", response.url
-		# request = Request(page, callback = self.parseResults)
+
+		request.meta['pending_requests'] = pending_requests
 		request.meta['site'] = self.target_site
 		# product page from source site
 		request.meta['origin_url'] = response.url
@@ -205,6 +193,14 @@ class SearchSpider(BaseSpider):
 
 
 	# parse results page, handle each site separately
+
+	# recieve requests for search pages with queries as:
+	# 1) product model (if available)
+	# 2) product name
+	# 3) parts of product's name
+
+	# accumulate results for each (sending the pending requests and the partial results as metadata),
+	# and lastly select the best result by selecting the best match between the original product's name and the result products' names
 	def parseResults(self, response):
 
 		#print "URL", response.url
@@ -214,8 +210,14 @@ class SearchSpider(BaseSpider):
 		site = response.meta['site']
 		origin_name = response.meta['origin_name']
 
-		items = []
+		# if this comes from a previous request, get last request's items and add to them the results
 
+		if 'items' in response.meta:
+			items = response.meta['items']
+		else:
+			items = []
+
+		
 		# handle parsing separately for each site
 
 		#TODO: parse multiple pages, can only parse first page so far
@@ -325,30 +327,47 @@ class SearchSpider(BaseSpider):
 		# # staples
 		# if (site == 'staples')
 
+		# if there is a pending request (current request used product model, and pending request is to use product name),
+		# continue with that one and send current results to it as metadata
+		if 'pending_requests' in response.meta:
+			# yield first request in queue and send the other ones as metadata
+			pending_requests = response.meta['pending_requests']
 
-		best_match = None
+			if pending_requests:
+				request = pending_requests[0]
+				request.meta['pending_requests'] = pending_requests[1:]
+				request.meta['items'] = items
 
-		if items:
-			# from all results, select the product whose name is most similar with the original product's name
-			best_match = self.similar(origin_name, items, self.threshold)
+				return request
 
-		if not best_match:
-			# if there are no results but the option was to include original product URL, create an item with just that
-			if self.output == 2:
-				item = SearchItem()
-				item['site'] = site
-				#if 'origin_url' in response.meta:
-				item['origin_url'] = response.meta['origin_url']
-				return [item]
+			# if there are no more pending requests, use cumulated items to find best match and send it as a result
+			else:
 
-		return [best_match]
+				best_match = None
 
-		# item = SearchItem()
-		# item['site'] = site
-		# #if 'origin_url' in response.meta:
-		# item['origin_url'] = response.meta['origin_url']
-		# return [item]
+				if items:
+					# from all results, select the product whose name is most similar with the original product's name
+					pt = ProcessText()
+					best_match = pt.similar(origin_name, items, self.threshold)
 
+				if not best_match:
+					# if there are no results but the option was to include original product URL, create an item with just that
+					if self.output == 2:
+						item = SearchItem()
+						item['site'] = site
+						#if 'origin_url' in response.meta:
+						item['origin_url'] = response.meta['origin_url']
+						return [item]
+
+				return [best_match]
+
+				# item = SearchItem()
+				# item['site'] = site
+				# #if 'origin_url' in response.meta:
+				# item['origin_url'] = response.meta['origin_url']
+				# return [item]
+
+class ProcessText():
 	# normalize text to list of lowercase words (no punctuation except for inches sign (") or /)
 	def normalize(self, orig_text):
 		text = orig_text
@@ -371,6 +390,20 @@ class SearchSpider(BaseSpider):
 		#print "clean", orig_text, clean
 
 		return clean
+
+	# create combinations of comb_length words from original text (after normalization and tokenization and filtering out dictionary words)
+	# return a list of all combinations
+	def words_combinations(self, orig_text, comb_length = 3):
+		norm_text = normalize(orig_text)
+
+		# only keep non dictionary words
+		norm_text_nondict = [word for word in norm_text if not wordnet.synsets(word) and len(word) > 1]
+
+		combs = itertools.combinations(range(len(norm_text)), comb_length)
+		words=[map(lambda c: norm_text_nondict[c], x) for x in list(combs)]
+
+		return words
+
 
 	# return most similar product from a list to a target product (by their names)
 	# if none is similar enough, return None
