@@ -8,8 +8,6 @@
     </ul>
     <div class="tab-content">
 
-	<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
-
 	<script>
 	$(function() {
 		$('head').find('title').text('Customers');
