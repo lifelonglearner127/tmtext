@@ -1317,44 +1317,25 @@ class Imported_data_parsed_model extends CI_Model {
 
                 if ($key != $im_data_id && $this->get_base_url($val1['url']) != $this->get_base_url($val['url'])) {
                     if (!in_array($this->get_base_url($val1['url']), $urls)) {
-                        if (isset($val['parsed_attributes']['manufacturer'] )) {
+                        if (isset($val['parsed_attributes']['manufacturer'])) {
                             if (preg_match('/' . $val['parsed_attributes']['manufacturer'] . '/', $val1['product_name'])) {
-                                if (leven_algoritm(strtolower($val1['product_name']), strtolower($val['product_name'])) > 40) {
+                                if (leven_algoritm(strtolower($val1['product_name']), strtolower($val['product_name'])) > 35) {
                                     $urls[] = $this->get_base_url($val1['url']);
                                     $groups[$im_data_id][] = $key;
                                 }
                             }
                         } else {
-                            if (isset($val1['parsed_attributes']['manufacturer']) && !isset($val1['parsed_attributes']['model'])) {
+                            if (isset($val1['parsed_attributes']['manufacturer'])) {
                                 if (preg_match('/' . $val1['parsed_attributes']['manufacturer'] . '/', $val['product_name'])) {
-                                    if (leven_algoritm(strtolower($val1['product_name']), strtolower($val['product_name'])) > 40) {
+                                    if (leven_algoritm(strtolower($val1['product_name']), strtolower($val['product_name'])) > 35) {
                                         $urls[] = $this->get_base_url($val1['url']);
                                         $groups[$im_data_id][] = $key;
                                     }
                                 }
-                            }elseif (isset($val1['parsed_attributes']['manufacturer']) && isset($val1['parsed_attributes']['model'])) {
-                          
-                                if (preg_match('/' . $val1['parsed_attributes']['manufacturer'] . '/', $val['product_name']) && preg_match('/' . $val1['parsed_attributes']['model'] . '/', $val['product_name'])) {
-                                    if (leven_algoritm(strtolower($val1['product_name']), strtolower($val['product_name'])) > 40) {
-                                        $urls[] = $this->get_base_url($val1['url']);
-                                        $groups[$im_data_id][] = $key;
-                                    }
-                                }
-                                
-                                
                             } else {
-                                if(isset($val1['parsed_attributes']['model'])) {
-                                 if (preg_match('/' . $val1['parsed_attributes']['model'] . '/', $val['product_name'])) {
-                                    if (leven_algoritm(strtolower($val1['product_name']), strtolower($val['product_name'])) > 40) {
-                                        $urls[] = $this->get_base_url($val1['url']);
-                                        $groups[$im_data_id][] = $key;
-                                    }
-                                }
-                                }else{
-                                if (leven_algoritm(strtolower($val1['product_name']), strtolower($val['product_name'])) > 40) {
+                                if (leven_algoritm(strtolower($val1['product_name']), strtolower($val['product_name'])) > 37) {
                                     $urls[] = $this->get_base_url($val1['url']);
                                     $groups[$im_data_id][] = $key;
-                                }
                                 }
                             }
                         }
@@ -1421,35 +1402,18 @@ class Imported_data_parsed_model extends CI_Model {
                     $for_groups[] = $key;
                 } else {
                     if (!in_array($this->get_base_url($val1['url']), $urls)) {
-                         if (isset($val1['parsed_attributes']['manufacturer']) && !isset($val1['parsed_attributes']['model'])) {
+                         if (isset($val1['parsed_attributes']['manufacturer'])) {
                              if (preg_match('/' . $val1['parsed_attributes']['manufacturer'] . '/', $selected_product_name)) {
-                                    if (leven_algoritm(strtolower($val1['product_name']), strtolower($selected_product_name)) > 40) {
+                                    if (leven_algoritm(strtolower($val1['product_name']), strtolower($selected_product_name)) > 35) {
                                         $urls[] = $this->get_base_url($val1['url']);
                                         $for_groups[] = $key;
                                     }
                                 }
-                         }elseif (isset($val1['parsed_attributes']['manufacturer']) && isset($val1['parsed_attributes']['model'])) {
-                            
-                             if (preg_match('/' . $val1['parsed_attributes']['manufacturer'] . '/', $selected_product_name) && preg_match('/' . $val1['parsed_attributes']['model'] . '/', $selected_product_name)) {
-                                    if (leven_algoritm(strtolower($val1['product_name']), strtolower($selected_product_name)) > 40) {
-                                        $urls[] = $this->get_base_url($val1['url']);
-                                        $for_groups[] = $key;
-                                    }
-                                }
-                        }else{
-                            if (isset($val1['parsed_attributes']['model'])) {
-                             if (preg_match('/' . $val1['parsed_attributes']['model'] . '/', $selected_product_name)) {
-                                    if (leven_algoritm(strtolower($val1['product_name']), strtolower($selected_product_name)) > 40) {
-                                        $urls[] = $this->get_base_url($val1['url']);
-                                        $for_groups[] = $key;
-                                    }
-                                }
-                           }else{
-                            if (leven_algoritm(strtolower($val1['product_name']), strtolower($selected_product_name)) > 40) {
+                         }else{
+                            if (leven_algoritm(strtolower($val1['product_name']), strtolower($selected_product_name)) > 35) {
                                 $urls[] = $this->get_base_url($val1['url']);
                                 $for_groups[] = $key;
                             }
-                           }
                          }   
                     }
                 }
