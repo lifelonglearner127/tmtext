@@ -1178,6 +1178,66 @@ class PageProcessor {
 
 		return $result;
 	}
+
+	public function process_pgestore(){
+		foreach($this->nokogiri->get('.productinfo h1.productname') as $item) {
+			$title = $item['#text'][0];
+		}
+
+		foreach($this->nokogiri->get('.productinfo #pdpTab1 .tabContent') as $item) {
+			$description[] = trim($item['#text'][0]);
+		}
+
+		foreach($this->nokogiri->get('.productinfo #pdpTab1 .tabContent ul li') as $item) {
+			$description[] = trim($item['#text'][0]);
+		}
+
+		$description = implode(' ',$description);
+
+		foreach($this->nokogiri->get('.productinfo #pdpTab2 .tabContent p') as $item) {
+			$descriptionLong[] = trim($item['#text'][0]);
+		}
+
+		$descriptionLong = implode(' ',$descriptionLong);
+
+		foreach($this->nokogiri->get('.productinfo .pricing .price div') as $item) {
+			if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $item['#text'][0], $match)) {
+				$price = $match[1];
+			}
+		}
+
+		return array(
+			'Product Name' => $title,
+			'Description' => $description,
+			'Long_Description' => $descriptionLong,
+			'Price' => number_format($price,2, '.', '')
+		);
+	}
+
+	public function attributes_pgestore() {
+		$result = array();
+
+		foreach($this->nokogiri->get('.productinfo #prodSku') as $item) {
+			$line = trim($item["#text"][0]);
+
+			if (!empty($line)) {
+				$result['model'] = $line;
+			}
+		}
+
+		foreach($this->nokogiri->get('.productinfo h1.productname') as $item) {
+			$title = $item['#text'][0];
+
+			$arr = explode(' ',trim($title));
+
+			if (in_array($arr[1], array('&', 'and')))
+				$result['manufacturer'] = $arr[0].' '.$arr[1].' '.$arr[2] ;
+			else
+				$result['manufacturer'] = $arr[0];
+		}
+
+		return $result;
+	}
 }
 
 ?>
