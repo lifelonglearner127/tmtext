@@ -95,7 +95,6 @@
                 if($('#new_site').val() != ''){
                     
                     $.post(base_url + 'index.php/system/add_new_site', {'site': $('#new_site').val()}, function(data){
-                        $("#sites .btn_caret_sign").attr('id', data.id);
                         $(".info-message").append(data.message);
                         $(".info-message").fadeOut(7000);
                         $(".hp_boot_drop .dropdown-menu").append('<li><a href="javascript:void(0)" data-value="'+data.id+'" data-item="'+data.id+'"><span>'+$('#new_site').val()+'</span></a></li>');
