@@ -208,24 +208,36 @@ class Measure extends MY_Controller {
         $week = date("W", time());
         $year = date("Y", time());
         $sites = array();
+        $primary_source_res = $this->urlExists('http://snapito.com');
+        if($primary_source_res) { // ===== PRIMARY SCREENCAPTURE API (http://snapito.com/)
+            $screen_api = 'snapito.com';
+        } else { 
+            $screen_api = 'webyshots.com';
+        }
         foreach ($customers as $k => $v) {
-            if ($this->urlExists($v['name_val']))
-                $sites[] = $v['name_val'];
+            if ($this->urlExists($v['c_url'])) $sites[] = $v['c_url'];
         }
         foreach ($sites as $url) {
-            $url = urlencode(trim($url));
-            // -- configs (start)
-            $api_key = $this->config->item('webyshots_api_key');
-            $api_secret = $this->config->item('webyshots_api_secret');
-            $token = md5("$api_secret+$url");
-            $size_s = "w600";
-            $size_l = "w1260";
-            $format = "png";
-            // -- configs (end)
-            $res = array(
-                "s" => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_s&format=$format",
-                'l' => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_l&format=$format"
-            );
+            $c_url = urlencode(trim($url));
+            if($screen_api == 'snapito.com') {
+                $api_key = $this->config->item('snapito_api_secret');
+                $format = "jpeg";
+                $res = array(
+                    "s" => "http://api.snapito.com/web/$api_key/mc/$c_url?type=$format",
+                    'l' => "http://api.snapito.com/web/$api_key/full/$c_url?type=$format"
+                );
+            } else {
+                $api_key = $this->config->item('webyshots_api_key');
+                $api_secret = $this->config->item('webyshots_api_secret');
+                $token = md5("$api_secret+$url");
+                $size_s = "w600";
+                $size_l = "w1260";
+                $format = "png";
+                $res = array(
+                    "s" => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$c_url&dimension=$size_s&format=$format",
+                    'l' => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$c_url&dimension=$size_l&format=$format"
+                );
+            }
             $crawl_s = $this->upload_record_webshoot($res['s'], $url . "_small");
             $crawl_l = $this->upload_record_webshoot($res['l'], $url . "_big");
             $result = array(
@@ -270,7 +282,7 @@ class Measure extends MY_Controller {
         $label = $this->input->post('label');
         $uid = $this->ion_auth->get_user_id();
         $this->load->model('webshoots_model');
-        $res = $this->webshoots_model->getWebShootByUrl($url);
+        $res = $this->webshoots_model->getWebShootByUrl($c_url);
         if ($res !== false) {
             $screen_id = $res->id;
             $this->webshoots_model->recordWebShootSelectionAttempt($screen_id, $uid, $pos, $year, $week, $res->img, $res->thumb, $res->stamp, $res->url, $label); // --- webshoot selection record attempt
