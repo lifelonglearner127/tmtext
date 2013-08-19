@@ -1002,7 +1002,8 @@ class PageProcessor {
 				$line = trim($i);
 				if (!empty($line)) {
 					$line = stristr($line, 'model');
-					$line = str_ireplace(array('.', 'model'), '', $line);
+					$arr = explode('.', $line);
+					$line = str_ireplace(array('.', 'model'), '', $arr[0]);
 					$line = trim($line);
 					if (!empty($line)) {
 						$result['model'] = $line;
@@ -1161,7 +1162,7 @@ class PageProcessor {
 			$line = trim($item["#text"][0]);
 
 			if (!empty($line) && stristr($line, 'model')!== false) {
-				$line = str_ireplace(array('#', 'model'), '', $line);
+				$line = str_ireplace(array('#', 'model number' ,'model', '.'), '', $line);
 				$line = trim($line);
 				if (!empty($line)) {
 					$result['model'] = $line;
