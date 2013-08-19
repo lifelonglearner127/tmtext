@@ -71,63 +71,81 @@ jQuery(document).ready(function($) {
     <button id="popup_save"class="btn btn-primary">Save changes</button>
      
   </div>
-</div>  
-<script>
-    
-    $("#popup_save").click(function(){
-       
-      selected_cites=$("#popup_sites").val(); 
-      //$("input['name=show_results']").val();
-    
-    var status=$("input[name='show_results']:checked").val();
-    
-    var status_showing_results = $.cookie('status_showing_results');
-    var selected_cites_cookie = $.cookie('selected_cites_cookie');
-   
-    if (typeof(status_showing_results) !== 'undefined') {
-        $.removeCookie('status_showing_results', {path: '/'}); // destroy
-        $.cookie('status_showing_results', status, {expires: 7, path: '/'}); // re-create
-        if(status!=='all'){
-            $.cookie("selected_cites_cookie", selected_cites);
-        }else{
-           
-                $.cookie("selected_cites_cookie",null);
-            
-        }
-        
-    } else {
-        $.cookie('status_showing_results', status, {expires: 7, path: '/'}); // create
-        if(status!=='all'){
-            $.cookie("selected_cites_cookie", selected_cites);
-        }else{
-           
-               $.cookie("selected_cites_cookie",null);
-            
-        }
-    }
-      batch_title= $("#batchess").val();
-      if(batch_title!=0){
-        show_from_butches();
-      }
-      
-      $('input[value="'+status_showing_results+'"]').attr('checked',true);
-      $('#myModal').modal('hide');
-    });
-    
-    
-    $(document).ready(function(){
-      status_showing_results = $.cookie('status_showing_results');
-      $('input[value="'+status_showing_results+'"]').attr('checked',true);
-      if(status_showing_results!=='all'){
-          selected_cites_cookie = $.cookie('selected_cites_cookie');
-          var dataarray=selected_cites_cookie.split(",");
-          $("#popup_sites").val(dataarray);
-   
-      }
-    });
-</script>              
-  
- </div>
+</div>
+                <!--script>
+
+                    $("#popup_save").click(function(){
+
+                        selected_cites=$("#popup_sites").val();
+                        //$("input['name=show_results']").val();
+                        console.log(selected_cites);
+//<<<<<<< Updated upstream
+                        var status=$("input[name='show_results']:checked").val();
+
+                        var status_showing_results = $.cookie('status_showing_results');
+                        var selected_cites_cookie = $.cookie('selected_cites_cookie');
+
+                        if (typeof(status_showing_results) !== 'undefined') {
+                            $.removeCookie('status_showing_results', {path: '/'}); // destroy
+                            $.cookie('status_showing_results', status, {expires: 7, path: '/'}); // re-create
+                            if(status!=='all'){
+                                $.cookie("selected_cites_cookie", selected_cites);
+                            }else{
+
+                                $.cookie("selected_cites_cookie",null);
+
+                            }
+
+                        } else {
+                            $.cookie('status_showing_results', status, {expires: 7, path: '/'}); // create
+                            if(status!=='all'){
+                                $.cookie("selected_cites_cookie", selected_cites);
+                            }else{
+
+                                $.cookie("selected_cites_cookie",null);
+
+                            }
+                        }
+                        batch_title= $("#batchess").val();
+                        if(batch_title!=0){
+                            show_from_butches();
+                        }
+                        ======
+                         var status=$("input[name='show_results']").val();
+                         //    var status_showing_results = $.cookie('status_showing_results');
+                         //
+                         //    if (typeof(status_showing_results) !== 'undefined') {
+                         //        $.removeCookie('status_showing_results', {path: '/'}); // destroy
+                         //        $.cookie('status_showing_results', status, {expires: 7, path: '/'}); // re-create
+                         //        //$.session.set("selected_cites",selected_cites);
+                         //
+                         //    } else {
+                         //        $.cookie('status_showing_results', status, {expires: 7, path: '/'}); // create
+                         //        $.session.set("f",selected_cites);
+                         //    }
+
+
+
+                         >>>>>>> Stashed changes
+
+                        $('input[value="'+status_showing_results+'"]').attr('checked',true);
+                        $('#myModal').modal('hide');
+                    });
+
+
+                    $(document).ready(function(){
+                        status_showing_results = $.cookie('status_showing_results');
+                        $('input[value="'+status_showing_results+'"]').attr('checked',true);
+                        if(status_showing_results!=='all'){
+                            selected_cites_cookie = $.cookie('selected_cites_cookie');
+                            var dataarray=selected_cites_cookie.split(",");
+                            $("#popup_sites").val(dataarray);
+
+                        }
+                    });
+                </script-->
+
+            </div>
      </div>
         <div class="row-fluid">
             <?php // echo form_open('', array('id'=>'measureFormMetrics')); ?>
