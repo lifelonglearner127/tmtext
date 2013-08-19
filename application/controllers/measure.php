@@ -181,20 +181,29 @@ class Measure extends MY_Controller {
         $this->load->model('webshoots_model');
         $urls = $this->input->post('urls');
         if(count($urls) > 0) {
-            // -- snaps configs (start)
-            $api_key = $this->config->item('webyshots_api_key');
-            $api_secret = $this->config->item('webyshots_api_secret');
-            $size = "w800";
+            $primary_source_res = $this->urlExists('http://snapito.com');
             $format = "png";
-            // -- snaps configs (end)
+            if($primary_source_res) { // ===== PRIMARY SCREENCAPTURE API (http://snapito.com/)
+                $screen_api = 'snapito.com';
+                $api_key = $this->config->item('snapito_api_secret');
+            } else { 
+                $screen_api = 'webyshots.com';
+                $api_key = $this->config->item('webyshots_api_key');
+                $api_secret = $this->config->item('webyshots_api_secret');
+                $size = "w800";
+            }
             foreach ($urls as $k => $v) {
                 // ---- snap it and update crawler_list table (start)
                 $url = preg_replace('#^https?://#', '', $v['url']);
                 $r_url = urlencode(trim($url));
-                $token = md5("$api_secret+$url");
-                $call_url = "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$r_url&dimension=$size&format=$format";
+                if($screen_api == 'snapito.com') {
+                    $call_url = "http://api.snapito.com/web/$api_key/full/$r_url?type=$format";
+                } else {
+                    $token = md5("$api_secret+$url");
+                    $call_url = "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$r_url&dimension=$size&format=$format";
+                }
                 $snap_res = $this->crawl_webshoot($call_url, $v['id']);
-                $this->webshoots_model->updateCrawlListWithSnap($v['id'], $snap_res['img']);
+                $this->webshoots_model->updateCrawlListWithSnap($v['id'], $snap_res['path']);
                 // ---- snap it and update crawler_list table (end)
             }
         }

@@ -106,7 +106,7 @@
 <script>
 function showSnap(snap) {
 	$("#preview_crawl_snap_modal").modal('show');
-	$("#preview_crawl_snap_modal .snap_holder").html("<img src='/webshoots/" + snap + "'>");
+	$("#preview_crawl_snap_modal .snap_holder").html("<img src='" + snap + "'>");
 }
 function loadCurrentList(url){
 	url = typeof url !== 'undefined' ? url: '<?php echo site_url('site_crawler/all_urls');?>';
@@ -208,6 +208,7 @@ $(function () {
     	console.log(send_data);
     	$("#loading_crawl_snap_modal").modal('show');
     	$.post(base_url + 'index.php/measure/crawlsnapshoot', send_data, function(data) {
+    		console.log(data);
     		$("#loading_crawl_snap_modal").modal('hide');
     		$('#current_snapshot').attr('disabled', 'disabled');
     		loadCurrentList();
