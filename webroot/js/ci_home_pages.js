@@ -173,9 +173,9 @@ function openCrawlLaunchPanelModal(close_preview) {
 					tbl += "<td>" + c_data[i]['name'] + "</td>";
 					tbl += "<td>";
 					if(c_data[i]['crawl_st']) {
-						tbl += "<a style='margin-left: 10px;' onclick=\"previewScreenshotModal('" + c_data[i]['url'] + "');\" class='btn btn-primary'><i class='icon-refresh'></i>&nbsp;Refresh Screenshot</a>"
+						tbl += "<a onclick=\"previewScreenshotModal('" + c_data[i]['url'] + "');\" class='btn btn-primary'><i class='icon-refresh'></i>&nbsp;Refresh Screenshot</a>"
 					} else {
-						tbl += "<a style='margin-left: 10px;' onclick=\"previewScreenshotModal('" + c_data[i]['url'] + "');\" class='btn btn-primary'><i class='icon-picture'></i>&nbsp;Crawl Screenshot</a>";
+						tbl += "<a onclick=\"previewScreenshotModal('" + c_data[i]['url'] + "');\" class='btn btn-primary'><i class='icon-picture'></i>&nbsp;Crawl Screenshot</a>";
 					}
 					if(c_data[i]['crawl_st']) {
 						tbl += "<a style='margin-left: 10px;' onclick=\"flatPreviewScreenshotModal('" + c_data[i]['url'] + "');\" class='btn btn-success'><i class='icon-ok'></i>&nbsp;Screenshot Ready</a>";
