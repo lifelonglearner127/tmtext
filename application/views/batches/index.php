@@ -1,9 +1,9 @@
         <?php echo form_open("research/save", array("class"=>"form-horizontal", "id"=>"create_batch_save"));?>
         <div class="row-fluid">
-            <div class="span11">
+            <div class="span12">
                 Batch:
-                <div id="customer_dr" class="customer_dropdown"></div>
-                <?php echo form_dropdown('batches', $batches_list, array(), ' style="width: 145px;margin-left:20px"'); ?>
+                <div id="product_customers" class="customer_dropdown" style="display: inline;width: 160px;"></div>
+                <?php echo form_dropdown('product_batches', $batches_list, array(), ' id="batchess" style="width: 145px;margin-left:20px"'); ?>
                 <script>
                     function doconfirm()
                     {
