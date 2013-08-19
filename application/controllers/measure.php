@@ -1241,7 +1241,7 @@ public function gridview() {
             } else {
                 $this->load->model('similar_imported_data_model');
                 $customers_list = array();
-                $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('customers');
+                $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('sites');
                 $query_cus_res = $query_cus->result();
                 if (count($query_cus_res) > 0) {
                     foreach ($query_cus_res as $key => $value) {
@@ -1276,7 +1276,7 @@ public function gridview() {
             $this->load->model('similar_imported_data_model');
 
             $customers_list = array();
-            $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('customers');
+            $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('sites');
             $query_cus_res = $query_cus->result();
             if (count($query_cus_res) > 0) {
                 foreach ($query_cus_res as $key => $value) {
@@ -1311,17 +1311,8 @@ public function gridview() {
             }
 
             foreach ($same_pr as $ks => $vs) {
-                if($vs['customer']==''){
                 $this->load->model('sites_model');
-                   if($this->get_base_url($vs['url'])=='shop.nordstrom.com'){
-                      $same_pr[$ks]['customer']='nordstrom' ;
-                   }else{
-                       //echo $this->get_base_url($vs['url']);
-                       //echo 'bbb'.strtolower($this->sites_model->get_name_by_url($this->get_base_url($vs['url']))).'aaaaaaaaa';
-                   $same_pr[$ks]['customer']=  strtolower($this->sites_model->get_name_by_url($this->get_base_url($vs['url'])));
-                   }
-
-                   }
+                $same_pr[$ks]['customer']=  strtolower($this->sites_model->get_name_by_url($same_pr[$ks]['customer']));
                 $same_pr[$ks]['seo']['short'] = $this->helpers-> measure_analyzer_start_v2_product_name($vs['product_name'],preg_replace('/\s+/', ' ', $vs['description']));
                 $same_pr[$ks]['seo']['long'] = $this->helpers->measure_analyzer_start_v2_product_name($vs['product_name'],preg_replace('/\s+/', ' ', $vs['long_description']));
 
