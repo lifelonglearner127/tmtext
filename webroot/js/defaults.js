@@ -238,7 +238,7 @@ jQuery(document).ready(function($) {
                                 }
                                 //Max
                             });
-                        } else if ($('.customer_dropdown').attr('id') == 'customers') {
+                        } else if ($('.customer_dropdown').attr('id') == 'customers' || $('.customer_dropdown').attr('id') == 'customer_dr') {
                             // get customer name here
                             var oDropdown = $("#customers").msDropdown().data("dd");
                             if(oDropdown==undefined){

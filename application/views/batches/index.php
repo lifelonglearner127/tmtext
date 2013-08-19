@@ -2,9 +2,11 @@
         <div class="row-fluid">
             <div class="span12">
                 Batch:
-                <div id="product_customers" class="customer_dropdown" style="display: inline;width: 160px;"></div>
-                <?php echo form_dropdown('product_batches', $batches_list, array(), ' id="batchess" style="width: 145px;margin-left:20px"'); ?>
-                <script>
+                <div class="span11">
+                    Batch:
+                    <div id="customer_dr" class="customer_dropdown"></div>
+                    <?php echo form_dropdown('batches', $batches_list, array(), ' style="width: 145px;margin-left:20px"'); ?>
+                    <script>
                     function doconfirm()
                     {
                         var batch_name = $('select[name="batches"]').find('option:selected').text();
