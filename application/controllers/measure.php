@@ -1525,8 +1525,12 @@ public function gridview() {
 
     public function searchmeasuredball() {
         $selected_cites=$this->input->post('selected_cites');
+        
+        if($selected_cites!='null'){
+        $selected_cites=explode(',',$selected_cites);
         foreach($selected_cites as $key => $val){
             $selected_cites[$key]=  strtolower( $val);
+        }
         }
         $batch_id = $this->input->post('batch_id');
         if (!$batch_id) {
@@ -1562,7 +1566,7 @@ public function gridview() {
 
             $result = $this->research_data_model->get_by_batch_id($batch_id);
            
-            if($selected_cites!=NULL){
+            if($selected_cites!='null'){
                 
                 foreach($result as $kay => $val){
                      $matches_sites=$this->matches_count($val['imported_data_id']);

@@ -47,7 +47,7 @@ jQuery(document).ready(function($) {
     <h3 id="myModalLabel">Display Options</h3>
   </div>
   <div class="modal-body">
-    <input checked="checked" style="margin-top: -4px;"type="radio" name="show_results" value="all"><span>Show all results</span><br>
+    <input  style="margin-top: -4px;"type="radio" name="show_results" value="all"><span>Show all results</span><br>
     <input style="margin-top: -4px;"type="radio" name="show_results" value="matchon"><span>Only show items if there is a match on: <span><Br> 
     <?php
          unset($sites[0]);
@@ -73,29 +73,57 @@ jQuery(document).ready(function($) {
   </div>
 </div>  
 <script>
+    
     $("#popup_save").click(function(){
        
       selected_cites=$("#popup_sites").val(); 
       //$("input['name=show_results']").val();
     
-     var status=$("input[name='show_results']").val();
-//    var status_showing_results = $.cookie('status_showing_results');
-//    
-//    if (typeof(status_showing_results) !== 'undefined') {
-//        $.removeCookie('status_showing_results', {path: '/'}); // destroy
-//        $.cookie('status_showing_results', status, {expires: 7, path: '/'}); // re-create
-//        //$.session.set("selected_cites",selected_cites);
-//        
-//    } else {
-//        $.cookie('status_showing_results', status, {expires: 7, path: '/'}); // create
-//        $.session.set("selected_cites",selected_cites);
-//    }
+    var status=$("input[name='show_results']:checked").val();
+    
+    var status_showing_results = $.cookie('status_showing_results');
+    var selected_cites_cookie = $.cookie('selected_cites_cookie');
+   
+    if (typeof(status_showing_results) !== 'undefined') {
+        $.removeCookie('status_showing_results', {path: '/'}); // destroy
+        $.cookie('status_showing_results', status, {expires: 7, path: '/'}); // re-create
+        if(status!=='all'){
+            $.cookie("selected_cites_cookie", selected_cites);
+        }else{
+           
+                $.cookie("selected_cites_cookie",null);
+            
+        }
+        
+    } else {
+        $.cookie('status_showing_results', status, {expires: 7, path: '/'}); // create
+        if(status!=='all'){
+            $.cookie("selected_cites_cookie", selected_cites);
+        }else{
+           
+               $.cookie("selected_cites_cookie",null);
+            
+        }
+    }
+      batch_title= $("#batchess").val();
+      if(batch_title!=0){
+        show_from_butches();
+      }
       
-      
-      
-      
-      show_from_butches();
+      $('input[value="'+status_showing_results+'"]').attr('checked',true);
       $('#myModal').modal('hide');
+    });
+    
+    
+    $(document).ready(function(){
+      status_showing_results = $.cookie('status_showing_results');
+      $('input[value="'+status_showing_results+'"]').attr('checked',true);
+      if(status_showing_results!=='all'){
+          selected_cites_cookie = $.cookie('selected_cites_cookie');
+          var dataarray=selected_cites_cookie.split(",");
+          $("#popup_sites").val(dataarray);
+   
+      }
     });
 </script>              
   
@@ -357,7 +385,7 @@ jQuery(document).ready(function($) {
                     switchToGridView();
                 }
             }
-$('#myModal').modal('hide')
+$('#myModal').modal('hide');
             // ---- search string cookie (auto mode search launcher) (end)
        </script>
 </div>
