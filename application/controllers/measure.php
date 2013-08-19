@@ -265,7 +265,7 @@ class Measure extends MY_Controller {
         ini_set("max_execution_time", 0);
         $year = $this->input->post('year');
         $week = $this->input->post('week');
-        $url = $this->input->post('url');
+        $c_url = $this->input->post('url');
         $pos = $this->input->post('pos');
         $label = $this->input->post('label');
         $uid = $this->ion_auth->get_user_id();
@@ -276,24 +276,32 @@ class Measure extends MY_Controller {
             $this->webshoots_model->recordWebShootSelectionAttempt($screen_id, $uid, $pos, $year, $week, $res->img, $res->thumb, $res->stamp, $res->url, $label); // --- webshoot selection record attempt
             $result = $res;
         } else { // --- crawl brand new screenshot
-            $url = urlencode(trim($url));
-            // -- configs (start)
-            $api_key = $this->config->item('webyshots_api_key');
-            $api_secret = $this->config->item('webyshots_api_secret');
-            $token = md5("$api_secret+$url");
-            $size_s = "w600";
-            $size_l = "w1260";
-            $format = "png";
-            // -- configs (end)
-            $res = array(
-                "s" => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_s&format=$format",
-                'l' => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_l&format=$format"
-            );
-            $crawl_s = $this->upload_record_webshoot($res['s'], $url . "_small");
-            $crawl_l = $this->upload_record_webshoot($res['l'], $url . "_big");
+            $primary_source_res = $this->urlExists('http://snapito.com');
+            if($primary_source_res) { // ===== PRIMARY SCREENCAPTURE API (http://snapito.com/)
+                $api_key = $this->config->item('snapito_api_secret');
+                $format = "jpeg";
+                $res = array(
+                    "s" => "http://api.snapito.com/web/$api_key/mc/$c_url?type=$format",
+                    'l' => "http://api.snapito.com/web/$api_key/full/$c_url?type=$format"
+                );
+            } else { // ===== SECONDARY SCREENCAPTURE API (http://webyshots.com)
+                $url = urlencode(trim($c_url));
+                $api_key = $this->config->item('webyshots_api_key');
+                $api_secret = $this->config->item('webyshots_api_secret');
+                $token = md5("$api_secret+$c_url");
+                $size_s = "w600";
+                $size_l = "w1260";
+                $format = "png";
+                $res = array(
+                    "s" => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_s&format=$format",
+                    'l' => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_l&format=$format"
+                );
+            }
+            $crawl_s = $this->upload_record_webshoot($res['s'], $c_url . "_small");
+            $crawl_l = $this->upload_record_webshoot($res['l'], $c_url . "_big");
             $result = array(
                 'state' => false,
-                'url' => $url,
+                'url' => $c_url,
                 'small_crawl' => $crawl_s['path'],
                 'big_crawl' => $crawl_l['path'],
                 'dir_thumb' => $crawl_s['dir'],
@@ -335,42 +343,70 @@ class Measure extends MY_Controller {
 
     public function webshootcrawl() {
         ini_set("max_execution_time", 0);
+        // === common params (start)
+        $this->load->model('webshoots_model');
         $week = date("W", time());
         $year = date("Y", time());
-        $url = $this->input->post('url');
-        $url = urlencode(trim($url));
+        $c_url = $this->input->post('url');
         $uid = $this->ion_auth->get_user_id();
-        // -- configs (start)
-        $api_key = $this->config->item('webyshots_api_key');
-        $api_secret = $this->config->item('webyshots_api_secret');
-        $token = md5("$api_secret+$url");
-        $size_s = "w600";
-        $size_l = "w1260";
-        $format = "png";
-        // -- configs (end)
-        $res = array(
-            "s" => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_s&format=$format",
-            'l' => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_l&format=$format"
-        );
-        $crawl_s = $this->upload_record_webshoot($res['s'], $url . "_small");
-        $crawl_l = $this->upload_record_webshoot($res['l'], $url . "_big");
-        $result = array(
-            'state' => false,
-            'url' => $url,
-            'small_crawl' => $crawl_s['path'],
-            'big_crawl' => $crawl_l['path'],
-            'dir_thumb' => $crawl_s['dir'],
-            'dir_img' => $crawl_l['dir'],
-            'uid' => $uid,
-            'year' => $year,
-            'week' => $week,
-            'pos' => 0
-        );
-        $this->load->model('webshoots_model');
-        $r = $this->webshoots_model->recordUpdateWebshoot($result);
-        if ($r > 0)
-            $result['state'] = true;
-        $this->output->set_content_type('application/json')->set_output(json_encode($result));
+        // === common params (end)
+        $primary_source_res = $this->urlExists('http://snapito.com');
+        if($primary_source_res) { // ===== PRIMARY SCREENCAPTURE API (http://snapito.com/)
+            $api_key = $this->config->item('snapito_api_secret');
+            $format = "jpeg";
+            $res = array(
+                "s" => "http://api.snapito.com/web/$api_key/mc/$c_url?type=$format",
+                'l' => "http://api.snapito.com/web/$api_key/full/$c_url?type=$format"
+            );
+            $crawl_s = $this->upload_record_webshoot($res['s'], $c_url . "_small");
+            $crawl_l = $this->upload_record_webshoot($res['l'], $c_url . "_big");
+            $result = array(
+                'state' => false,
+                'url' => $c_url,
+                'small_crawl' => $crawl_s['path'],
+                'big_crawl' => $crawl_l['path'],
+                'dir_thumb' => $crawl_s['dir'],
+                'dir_img' => $crawl_l['dir'],
+                'uid' => $uid,
+                'year' => $year,
+                'week' => $week,
+                'pos' => 0
+            );
+            $r = $this->webshoots_model->recordUpdateWebshoot($result);
+            if ($r > 0) $result['state'] = true;
+            $this->output->set_content_type('application/json')->set_output(json_encode($result));
+        } else { // ===== SECONDARY SCREENCAPTURE API (http://webyshots.com)
+            $url = urlencode(trim($c_url));
+            // -- configs (start)
+            $api_key = $this->config->item('webyshots_api_key');
+            $api_secret = $this->config->item('webyshots_api_secret');
+            $token = md5("$api_secret+$c_url");
+            $size_s = "w600";
+            $size_l = "w1260";
+            $format = "png";
+            // -- configs (end)
+            $res = array(
+                "s" => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_s&format=$format",
+                'l' => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_l&format=$format"
+            );
+            $crawl_s = $this->upload_record_webshoot($res['s'], $url . "_small");
+            $crawl_l = $this->upload_record_webshoot($res['l'], $url . "_big");
+            $result = array(
+                'state' => false,
+                'url' => $url,
+                'small_crawl' => $crawl_s['path'],
+                'big_crawl' => $crawl_l['path'],
+                'dir_thumb' => $crawl_s['dir'],
+                'dir_img' => $crawl_l['dir'],
+                'uid' => $uid,
+                'year' => $year,
+                'week' => $week,
+                'pos' => 0
+            );
+            $r = $this->webshoots_model->recordUpdateWebshoot($result);
+            if ($r > 0) $result['state'] = true;
+            $this->output->set_content_type('application/json')->set_output(json_encode($result));
+        }
     }
 
     public function rec_emails_reports_recipient() {
