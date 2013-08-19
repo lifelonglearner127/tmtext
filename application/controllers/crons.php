@@ -39,12 +39,15 @@ class Crons extends MY_Controller {
         $customers_init_list = $this->customers_model->getAll();
         if(count($customers_init_list) > 0) {
             foreach ($customers_init_list as $key => $value) {
+                $c_url = preg_replace('#^https?://#', '', $value->url);
+                $c_url = preg_replace('#^www.#', '', $c_url);
                 $mid = array(
                     'id' => $value->id,
                     'desc' => $value->description,
                     'image_url' => $value->image_url,
                     'name' => $value->name,
-                    'name_val' => strtolower($value->name)
+                    'name_val' => strtolower($value->name),
+                    'c_url' => $c_url
                 );
                 $output[] = $mid;
             }
@@ -81,23 +84,36 @@ class Crons extends MY_Controller {
         $week = date("W", time());
         $year = date("Y", time());
         $sites = array();
+        $primary_source_res = $this->urlExists('http://snapito.com');
+        if($primary_source_res) { // ===== PRIMARY SCREENCAPTURE API (http://snapito.com/)
+            $screen_api = 'snapito.com';
+        } else { // ===== PRIMARY SCREENCAPTURE API (http://webyshots.com/)
+            $screen_api = 'webyshots.com';
+        }
         foreach ($customers as $k => $v) {
-            if($this->urlExists($v['name_val'])) $sites[] = $v['name_val'];
+            if($this->urlExists($v['c_url'])) $sites[] = $v['c_url'];
         }
         foreach ($sites as $url) {
-            $url = urlencode(trim($url));
-            // -- configs (start)
-            $api_key = $this->config->item('webyshots_api_key');
-            $api_secret = $this->config->item('webyshots_api_secret');
-            $token = md5("$api_secret+$url");
-            $size_s = "w600";
-            $size_l = "w1260";
-            $format = "png";
-            // -- configs (end)
-            $res = array(
-                "s" => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_s&format=$format",
-                'l' => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_l&format=$format"
-            );brary(array('session','ion_auth'));
+            $c_url = urlencode(trim($url));
+            if($screen_api == 'snapito.com') {
+                $api_key = $this->config->item('snapito_api_secret');
+                $format = "jpeg";
+                $res = array(
+                    "s" => "http://api.snapito.com/web/$api_key/mc/$c_url?type=$format",
+                    'l' => "http://api.snapito.com/web/$api_key/full/$c_url?type=$format"
+                );
+            } else {
+                $api_key = $this->config->item('webyshots_api_key');
+                $api_secret = $this->config->item('webyshots_api_secret');
+                $token = md5("$api_secret+$url");
+                $size_s = "w600";
+                $size_l = "w1260";
+                $format = "png";
+                $res = array(
+                    "s" => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$c_url&dimension=$size_s&format=$format",
+                    'l' => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$c_url&dimension=$size_l&format=$format"
+                );
+            }
             $crawl_s = $this->upload_record_webshoot($res['s'], $url."_small");
             $crawl_l = $this->upload_record_webshoot($res['l'], $url."_big");
             $result = array(
