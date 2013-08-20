@@ -86,7 +86,9 @@ $(function () {
                             $('#assess_report_items_have_more_than_20_percent_duplicate_content').html("");
                             $('#assess_report_items_unoptimized_product_content').html("");
                             $('#assess_report_items_have_product_context_that_is_too_short').html("");
-                            $('#summary_message').html(" - Processing data. Check back soon.");
+                            if($('select[name="research_assess_batches"]').find('option:selected').val() != ""){
+                                $('#summary_message').html(" - Processing data. Check back soon.");
+                            }
                         }
                     });
             },
