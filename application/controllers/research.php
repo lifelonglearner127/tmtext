@@ -333,6 +333,7 @@ class Research extends MY_Controller {
         $this->load->model('statistics_duplicate_content_model');
 
         $customer_name = $this->batches_model->getCustomerById($batch_id);
+        $customer_url = parse_url($customer_name[0]->url);
         $enable_exec = true;
         $result_table = array();
         $report = array();
@@ -387,7 +388,9 @@ class Research extends MY_Controller {
             if(count($price_diff) > 1){
                 $price_diff_res = "<input type='hidden'><nobr>".$price_diff['own_site']." - $".$price_diff['own_price']."</nobr><br />";
                 for($i=0; $i<count($price_diff['competitor_customer']); $i++){
-                    $price_diff_res .= "<nobr>".$price_diff['competitor_customer'][$i]." - $".$price_diff['competitor_price'][$i]."</nobr><br />";
+                    if($customer_url["host"] != $price_diff['competitor_customer'][$i]){
+                        $price_diff_res .= "<nobr>".$price_diff['competitor_customer'][$i]." - $".$price_diff['competitor_price'][$i]."</nobr><br />";
+                    }
                 }
                 $result_row->price_diff = $price_diff_res;
             }
@@ -491,7 +494,6 @@ class Research extends MY_Controller {
                $duplicate_customers_long = '';
                $duplicate_short_percent_total = 0;
                $duplicate_long_percent_total = 0;
-               $customer_url = parse_url($customer_name[0]->url);
                if (count($dc) > 1) {
 
                    foreach ($dc as $vs) {
