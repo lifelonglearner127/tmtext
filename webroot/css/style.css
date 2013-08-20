@@ -1557,7 +1557,7 @@ label.dd-selected-text, label.dd-option-text{
 
 #Current_List ul li span:last-child, #Current_List ul lh span:last-child {
     border-right: 0px;
-    width: 38%;
+    width: 35%;
 }
 
 .ellipsis {
