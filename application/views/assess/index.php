@@ -304,7 +304,7 @@
                                 </div>
                             </div>
                         </li>
-                        <li class="boxes ui-resizable">
+                        <!--li class="boxes ui-resizable">
                             <h3>
                                 <span>
                                     <a class="hideShow" onclick="return false;" href="#">
@@ -318,7 +318,7 @@
                                 <div id="comparison_detail"></div>
                                 <div id="comparison_pagination"></div>
                             </div>
-                        </li>
+                        </li-->
                     </ul>
                 </div>
 
