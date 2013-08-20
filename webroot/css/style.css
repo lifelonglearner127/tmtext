@@ -1640,12 +1640,12 @@ label.dd-selected-text, label.dd-option-text{
     width:20px;
     height:20px;
     float: right;
-    background: rgb(117, 114, 114);
+    background: black;
     padding: 2px;margin-top: 7px;
     cursor:pointer;
 }
 .has_stiky_image :hover{
-   background: black !important; 
+   background: rgb(117, 114, 114); 
 }
 #customer_dr{
     display: inline;

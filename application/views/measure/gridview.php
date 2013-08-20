@@ -82,7 +82,7 @@ foreach ($same_pr as $ks => $vs) {
         <div class='has_stiky' id="h_<?php echo $i; ?>" class='h'>
             <input type="hidden" name='dd_customer' value="<?php echo $customer; ?>">
             <div id="an_grd_view_drop_gr<?php echo $i; ?>" class='an_grd_view_drop'></div>
-            <img class='has_stiky_image' src="<?php echo base_url() ?>/img/pin-icon.png" title='Click to unstick'>
+            <img class='has_stiky_image' src="<?php echo base_url() ?>/img/pin-icon.png" title='Click to make sticky'>
         </div>
         <?php }else{?>
         <div id="h_<?php echo $i; ?>" class='h'>
