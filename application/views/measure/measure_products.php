@@ -49,11 +49,9 @@ jQuery(document).ready(function($) {
   <div class="modal-body">
     <input  style="margin-top: -4px;"type="radio" name="show_results" value="all"><span>Show all results</span><br>
     <input style="margin-top: -4px;"type="radio" name="show_results" value="matchon"><span>Only show items if there is a match on: <span><Br> 
-    <?php
-         unset($sites[0]);
-    ?>
+    
     <form >
-    <select id="popup_sites" multiple="multiple">
+    <select size="10" id="popup_sites" multiple="multiple">
                          <?php
                          
                             foreach($sites as $cite){

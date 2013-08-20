@@ -814,7 +814,7 @@ function matches_count($im_data_id){
             } else {
                 $this->load->model('similar_imported_data_model');
                 $customers_list = array();
-                $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('customers');
+                $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('sites');
                 $query_cus_res = $query_cus->result();
                 if (count($query_cus_res) > 0) {
                     foreach ($query_cus_res as $key => $value) {
@@ -849,7 +849,7 @@ function matches_count($im_data_id){
             $this->load->model('similar_imported_data_model');
 
             $customers_list = array();
-            $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('customers');
+            $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('sites');
             $query_cus_res = $query_cus->result();
             if (count($query_cus_res) > 0) {
                 foreach ($query_cus_res as $key => $value) {
@@ -901,7 +901,7 @@ function matches_count($im_data_id){
                    }else{
                        //echo $this->get_base_url($vs['url']);
                        //echo 'bbb'.strtolower($this->sites_model->get_name_by_url($this->get_base_url($vs['url']))).'aaaaaaaaa';
-                   $same_pr[$ks]['customer']=  strtolower($this->sites_model->get_name_by_url($this->get_base_url($vs['url'])));
+                   $same_pr[$ks]['customer']=  strtolower($this->sites_model->get_name_by_url($same_pr[$ks]['customer']));
                    }
                 }
             }
@@ -1644,7 +1644,7 @@ public function gridview() {
                 
                 foreach($result as $kay => $val){
                      $matches_sites=$this->matches_count($val['imported_data_id']);
-                     if(count(array_intersect($matches_sites,$selected_cites))==0){
+                     if(count(array_intersect($matches_sites,$selected_cites))!=count($selected_cites)){
                     
                         unset($result[$kay]);
                     }

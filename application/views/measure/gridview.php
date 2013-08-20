@@ -78,11 +78,19 @@ foreach ($same_pr as $ks => $vs) {
 
 
     <div id="grid_se_section_<?php echo $i; ?>"  class='grid_se_section <?php echo $class_left; ?> '>
-     
+        <?php if($i>1){?>
+        <div class='has_stiky' id="h_<?php echo $i; ?>" class='h'>
+            <input type="hidden" name='dd_customer' value="<?php echo $customer; ?>">
+            <div id="an_grd_view_drop_gr<?php echo $i; ?>" class='an_grd_view_drop'></div>
+            <img class='has_stiky_image' src="<?php echo base_url() ?>/img/pin-icon.png" title='Click to unstick'>
+        </div>
+        <?php }else{?>
         <div id="h_<?php echo $i; ?>" class='h'>
             <input type="hidden" name='dd_customer' value="<?php echo $customer; ?>">
             <div id="an_grd_view_drop_gr<?php echo $i; ?>" class='an_grd_view_drop'></div>
+            
         </div>
+        <?php }?>
         <div id="<?php echo $customer;?>" class="grid">
         <div class='c'>
             <img class='preloader_grids_box' src="<?php echo base_url() ?>/img/grids_boxes_preloader.gif">
