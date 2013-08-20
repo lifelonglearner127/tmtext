@@ -1,4 +1,4 @@
-<table class="assess_comparisons" border="0" cellspacing="0" cellpadding="0" style="font-size: 25px;">
+<table class="assess_comparisons" border="0" cellspacing="0" cellpadding="0">
     <tr>
         <td class="row_first"></td>
         <td class="group row_second"><img class="img" src="<?php echo base_url()."img/".$comparison_data->left_product['logo']; ?>" /></td>
@@ -6,8 +6,8 @@
     </tr>
     <tr>
         <td style="font-size: 25px;" class="key_row_name row_name">URL</td>
-        <td><a href="<?php echo $comparison_data->left_product['url']; ?>" target="_blank"><?php echo $comparison_data->left_product['url']; ?></a></td>
-        <td><a href="<?php echo $comparison_data->right_product['url']; ?>" target="_blank"><?php echo $comparison_data->right_product['url']; ?></a></td>
+        <td><a class="url" href="<?php echo $comparison_data->left_product['url']; ?>" target="_blank"><?php echo $comparison_data->left_product['url']; ?></a></td>
+        <td><a class="url" href="<?php echo $comparison_data->right_product['url']; ?>" target="_blank"><?php echo $comparison_data->right_product['url']; ?></a></td>
     </tr>
     <tr>
         <td class="key_row_name row_name">Product</td>

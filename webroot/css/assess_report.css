@@ -36,19 +36,17 @@ img.icon {
     width:100%;
     text-align: center;
     font-family: Arial;
-    font-size: 25px;
+    font-size: 18px;
     border-collapse: collapse;
     border-spacing: 0;
 }
 .assess_comparisons td{
     border: 2px solid #000000;
-    padding: 5px;
+    padding: 10px;
     margin: 0px;
 }
-.assess_comparisons .img{
-    width:auto;
+img.img{
     max-width: 200px;
-    height: auto;
     max-height: 50px;
 }
 .assess_comparisons .red{
@@ -66,8 +64,11 @@ img.icon {
     font-weight: bold;
 }
 .row_first{
-    width:200px;
+    width:20%;
 }
 .row_second{
-    width:500px;
+    width:40%;
+}
+a.url{
+    font-size: 6px;
 }
