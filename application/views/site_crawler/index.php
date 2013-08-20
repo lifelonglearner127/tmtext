@@ -101,13 +101,18 @@
 	<div class="modal-body" style='overflow: hidden'>
 		<div class='snap_holder'>&nbsp;</div>
 	</div>
+	<div class="modal-footer">
+		<a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
+		<a href="javascript:void(0)" id="snap_modal_refresh" class="btn btn-success" onclick="return false">Refresh snapshot</a>
+	</div>
 </div>
 <!-- MODALS (END) -->
 
 <script>
-function showSnap(snap) {
+function showSnap(snap, id, url) {
 	$("#preview_crawl_snap_modal").modal('show');
 	$("#preview_crawl_snap_modal .snap_holder").html("<img src='" + snap + "'>");
+	$("#preview_crawl_snap_modal #snap_modal_refresh").attr("onclick", "snapshotIt('" + id + "', '" + url + "', true)");
 }
 
 function loadCurrentList(url) {
@@ -149,9 +154,9 @@ function loadCurrentList(url) {
                 imported_data_id = node.imported_data_id;
             }
 
-            var snap_line = "<a class='btn btn-primary btn-small btn-make-snap' href='javascript:void(0)' onclick=\"snapshotIt('" + node.id + "', '" + node.url + "');\"><i class='icon-screenshot icon-white'></i></a>";;
+            var snap_line = "<a class='btn btn-primary btn-small btn-make-snap' href='javascript:void(0)' onclick=\"snapshotIt('" + node.id + "', '" + node.url + "', false);\"><i class='icon-screenshot icon-white'></i></a>";;
             if(node.snap !== null && node.snap !== "") {
-            	snap_line = "<a class='btn btn-success btn-small btn-snap-done' href='javascript:void(0)' onclick=\"showSnap('" + node.snap + "');\"><i class='icon-ok icon-white'></i></a>";
+            	snap_line = "<a class='btn btn-success btn-small btn-snap-done' href='javascript:void(0)' onclick=\"showSnap('" + node.snap + "', '" + node.id + "', '" + node.url + "');\"><i class='icon-ok icon-white'></i></a>";
             }
 
 			$('#Current_List ul').append("<li id=\"id_"+node.id+"\"><span><input data-url=\""+node.url+"\" data-id=\""+node.id+"\" type=\"checkbox\" name=\"ids[]\" value=\""+node.id+"\"/></span><span style='width: 40px;'>" + snap_line + "</span><span style='width: 60px;'>"+imported_data_id+"</span><span>"+node.status + "</span><span>"+updated+"</span><span>"+category+"</span><span class=\"url ellipsis\">"+node.url+"</span></li>");
@@ -160,7 +165,7 @@ function loadCurrentList(url) {
 				placement: 'left',
 				title: 'Make Snapshoot'
 			});
-			
+
 			if(node.snap !== null && node.snap !== "") {
 				$(".btn-snap-done").tooltip({
 					placement: 'left',
@@ -199,7 +204,8 @@ function closeInputs(event) {
     checkAddList();
 }
 
-function snapshotIt(id, url) {
+function snapshotIt(id, url, modal_close) {
+	if(modal_close) $("#preview_crawl_snap_modal").modal('hide');
 	var urls = [];
 	var mid = {
 		id: id,
