@@ -148,46 +148,40 @@ $(function () {
         $('#assess_report_items_unoptimized_product_content').html(report.summary.items_unoptimized_product_content);
         $('#assess_report_items_have_product_context_that_is_too_short').html(report.summary.items_short_products_content);
 
-        var comparison_product = JSON.parse(report.comparison_product);
-
-
-        var table = '<table>'
-
-        $.each(comparison_product, function() {
-            table += '<tr><td>';
-
-            var product_table = '<table>'
-
-            product_table += '<tr>';
-            product_table += '<td>URL</td>';
-            product_table += '<td>'+this.left_product.url+'</td>';
-            product_table += '<td>'+this.right_product.url+'</td>';
-            product_table += '</tr>';
-
-            product_table += '<tr>';
-            product_table += '<td>Product</td>';
-            product_table += '<td>'+this.left_product.product+'</td>';
-            product_table += '<td>'+this.right_product.product+'</td>';
-            product_table += '</tr>';
-
-            product_table += '<tr>';
-            product_table += '<td>Price</td>';
-            product_table += '<td>'+this.left_product.price+'</td>';
-            product_table += '<td>'+this.right_product.price+'</td>';
-            product_table += '</tr>';
-
-            product_table += '</table>';
-
-            table += product_table;
-            table += '</td></tr>';
-            //console.log(this);
-        });
-
-        table += '</table>';
-        $('#product_comparison').html(table);
+        if (report.detail_comparisons_total > 0) {
+            comparison_details_load();
+            var comparison_pagination = report.comparison_pagination;
+            $('#comparison_pagination').html(comparison_pagination);
+        } else {
+            $('#comparison_detail').html('');
+            $('#comparison_pagination').html('');
+        }
 
         $('#assess_report_download_panel').show();
     }
+
+    function comparison_details_load(url){
+        var batch_id = $("select[name='research_assess_batches']").find("option:selected").val();
+        var data = {
+            batch_id:batch_id
+        };
+        if (url == undefined) {
+            url = base_url + 'index.php/research/comparison_detail';
+        }
+        $.post(
+            url,
+            data,
+            function(data) {
+                $('#comparison_detail').html(data.comparison_detail);
+                $('#comparison_pagination').html(data.comparison_pagination);
+            }
+        );
+    }
+
+    $(document).on('click', '#comparison_pagination a', function(event){
+        event.preventDefault();
+        comparison_details_load($(this).attr('href'));
+    });
 
     $(document).on('change', '#assessDetailsDialog_chkIncludeInReport', function(){
         var research_data_id = $('#assessDetailsDialog_chkIncludeInReport').attr('research_data_id');

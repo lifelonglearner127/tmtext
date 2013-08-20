@@ -314,7 +314,8 @@
                             </h3>
                             <div style="clear: both;"></div>
                             <div class="boxes_content" style="padding:0px;">
-                                <div id="product_comparison"></div>
+                                <div id="comparison_detail"></div>
+                                <div id="comparison_pagination"></div>
                             </div>
                         </li>
                     </ul>

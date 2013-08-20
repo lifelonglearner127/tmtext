@@ -199,10 +199,10 @@ class Crons extends MY_Controller {
                 $data = $this->research_data_model->do_stats($batch->id);
                 $conn = mysql_connect('localhost', 'c38trlmonk', '542piF88');
                 /* Make sure the connection is still alive, if not, try to reconnect */
-                if (!mysql_ping($conn)) {
-                    echo 'Lost connection, exiting after query #2';
-                    exit;
-                }
+//                if (!mysql_ping($conn)) {
+//                    echo 'Lost connection, exiting after query #2';
+//                    exit;
+//                }
                 if(count($data) > 0){
                     foreach($data as $obj){
                           $own_price = 0;
@@ -213,6 +213,7 @@ class Crons extends MY_Controller {
                           $long_description_wc = 0;
                           $short_seo_phrases = '?';
                           $long_seo_phrases = '?';
+                          $similar_products_competitors = array();
                           // Price difference
                           $own_site = parse_url($obj->url,  PHP_URL_HOST);
                           if (!$own_site)
@@ -248,6 +249,10 @@ class Crons extends MY_Controller {
                                           if ($obj->imported_data_id == $similar_item_imported_data_id) {
                                               continue;
                                           }
+                                          $similar_products_competitors[] = array(
+                                              'imported_data_id' => $similar_item_imported_data_id,
+                                              'customer' => $similar_items[$ks]['customer']
+                                          );
                                           $three_last_prices = $this->imported_data_parsed_model->getLastPrices($similar_item_imported_data_id);
                                           if (!empty($three_last_prices)) {
                                               $price_scatter = $own_price * 0.03;
@@ -357,7 +362,8 @@ class Crons extends MY_Controller {
                               $obj->product_name, $obj->url, $obj->short_description, $obj->long_description,
                               $short_description_wc, $long_description_wc,
                               $short_seo_phrases, $long_seo_phrases,
-                              $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors
+                              $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors,
+                              serialize($similar_products_competitors)
                           );
                           $time_end = microtime(true);
                           $time = $time_end - $time_start;

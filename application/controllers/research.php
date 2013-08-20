@@ -342,31 +342,17 @@ class Research extends MY_Controller {
         $this->load->model('statistics_model');
         $this->load->model('statistics_duplicate_content_model');
 
-        $this->load->model('sites_model');
-        $all_sites = $this->sites_model->getAll();
-        $user_id = $this->ion_auth->get_user_id();
-        $key = 'research_assess_report_options';
-        $existing_settings = $this->settings_model->get_value($user_id, $key);
-        $batch_settings = $existing_settings[$batch_id];
-        $competitors_sites_for_comparisons = array();
-        foreach ($all_sites as $k => $v){
-            if (in_array($v->id, $batch_settings->assess_report_competitors)) {
-                $competitors_sites_for_comparisons[] = strtolower($v->name);
-            }
-        }
-
-
         $customer_name = $this->batches_model->getCustomerById($batch_id);
         $customer_url = parse_url($customer_name[0]->url);
         $enable_exec = true;
         $result_table = array();
         $report = array();
-        $comparison_product_array = array();
         $pricing_details = array();
         $items_priced_higher_than_competitors = 0;
         $items_have_more_than_20_percent_duplicate_content = 0;
         $items_unoptimized_product_content = 0;
         $items_short_products_content = 0;
+        $detail_comparisons_total = 0;
         foreach($results as $row) {
 //            //$short_description_wc = preg_match_all('/\b/', $row->short_description) / 2; // bug in PHP 5.3.10
 //            $short_description_wc = (count(preg_split('/\b/', $row->short_description)) - 1) / 2;
@@ -424,31 +410,7 @@ class Research extends MY_Controller {
             $result_row->competitors_prices = unserialize($row->competitors_prices);
 
             if (intval($row->include_in_assess_report) > 0) {
-                $similar_products_competitors = unserialize($row->similar_products_competitors);
-                if (count($similar_products_competitors) > 0) {
-                    foreach ($similar_products_competitors as $product) {
-                        foreach ($competitors_sites_for_comparisons as $competitor_site) {
-                            if (strtolower(trim($competitor_site)) == strtolower(trim($product['customer']))) {
-                                $comparison_product_obj = new stdClass();
-                                $comparison_product = $this->statistics_model->product_comparisons_by_imported_data_id($product['imported_data_id']);
-
-                                $comparison_product_obj->left_product = array(
-                                    'url' => $row->url,
-                                    'product' => $row->product_name,
-                                    'price' => $row->price
-                                );
-
-                                $comparison_product_obj->right_product = array(
-                                    'url' => $comparison_product[0]->url,
-                                    'product' => $comparison_product[0]->product_name,
-                                    'price' => $comparison_product[0]->price
-                                );
-
-                                $comparison_product_array[] = $comparison_product_obj;
-                            }
-                        }
-                    }
-                }
+                $detail_comparisons_total += 1;
             }
 
 //            $own_site = parse_url($result_row->url,  PHP_URL_HOST);
@@ -696,7 +658,16 @@ class Research extends MY_Controller {
         if ($items_short_products_content > 0) {
             $report['recommendations']['items_short_products_content'] = 'Increase product description lengths';
         }
-        $report['comparison_product'] = json_encode($comparison_product_array);
+
+        $report['detail_comparisons_total'] = $detail_comparisons_total;
+
+        $this->load->library('pagination');
+        $config['base_url'] = $this->config->site_url().'/research/comparison_detail';
+        $config['total_rows'] = $detail_comparisons_total;
+        $config['per_page'] = '1';
+        $config['uri_segment'] = 3;
+        $this->pagination->initialize($config);
+        $report['comparison_pagination'] = $this->pagination->create_links();
 
         if ($build_assess_params->all_columns) {
             $s_columns = explode(',', $build_assess_params->all_columns);
@@ -838,6 +809,30 @@ class Research extends MY_Controller {
         return $report_pages;
     }
 
+    public function comparison_detail(){
+        $this->load->model('statistics_model');
+        $batch_id = $this->input->post('batch_id');
+
+        $comparison_data = $this->statistics_model->product_comparison($batch_id);
+
+        $page = intval($this->uri->segment(3));
+        $this->load->library('pagination');
+        $config['base_url'] = $this->config->site_url().'/research/comparison_detail';
+        $config['total_rows'] = count($comparison_data);
+        $config['per_page'] = '1';
+        $config['uri_segment'] = 3;
+        $this->pagination->initialize($config);
+
+        $data['comparison_data'] = $comparison_data[$page];
+        $comparison_details_view = $this->load->view('research/comparison_details', $data, true);
+
+        $comparison['comparison_pagination'] = $this->pagination->create_links();
+        $comparison['comparison_detail'] = $comparison_details_view;
+
+        $this->output->set_content_type('application/json')
+            ->set_output(json_encode($comparison));
+    }
+
     public function assess_report_download() {
         $report_name = 'Assess';
 
@@ -895,6 +890,7 @@ class Research extends MY_Controller {
         $download_report_params->css_path = $css_path;
         $download_report_params->own_logo = $img_path."content-analytics.png";
         $download_report_params->customer_logo = $img_path.$customer->image_url;
+        $download_report_params->batch_id = $params->batch_id;
         $download_report_params->batch_name = $params->batch_name;
         $download_report_params->current_date = $current_date;
         $download_report_params->report_presetted_pages = $report_presetted_pages;
@@ -1028,6 +1024,22 @@ class Research extends MY_Controller {
         $html = $html.'</table>';
 
         $pdf->WriteHTML($html);
+
+
+        $comparison_data_array = $this->statistics_model->product_comparison($download_report_params->batch_id);
+        if (count($comparison_data_array) > 0) {
+            foreach ($comparison_data_array as $comparison_data) {
+                $pdf->AddPage($layout);
+                $data['comparison_data'] = $comparison_data;
+                $comparison_details_view = $this->load->view('research/comparison_details_pdf', $data, true);
+                $html = $header;
+                $html = $html.'<span class="pdv_header">Product Detail View</span><br /><br />';
+                $html = $html.$comparison_details_view;
+                $pdf->WriteHTML($html);
+            }
+
+
+        }
 
         foreach($download_report_params->report_presetted_pages as $page){
             if ($page->order > 5000) {
