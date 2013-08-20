@@ -88,8 +88,7 @@
     font-size: 12px;
 }
 .ci_hp_modals.crawl_launch_panel .modal-body {
-    overflow: hidden;
-    max-height: 700px;
+    max-height: 550px;
 }
 #customers_screens_crawl_modal {
     top: 40%;
