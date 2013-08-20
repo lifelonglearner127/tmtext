@@ -157,14 +157,15 @@ foreach ($same_pr as $ks => $vs) {
                         <div class="p_seo">
                             <?php if (count($vs['seo']['short']) > 0) { ?>
                                 <p class="heading_text">SEO Keywords: </p>
-                                <ul class='gr_seo_short_ph' style='margin-top: -19px;margin-left: 102px;font-weight: bold;margin-bottom: 0px;'>
+                                <ul class='gr_seo_short_ph' style='margin:0px;font-weight: bold;'>
                                     <?php foreach ($vs['seo']['short'] as $key => $value) { ?>
+                                    
                                         <?php $v_ph = $value['ph']; ?>
 
                                         <li >
-                                            <span style="font-size: 14px !important;line-height: 21px;text-decoration: none;white-space: normal;"data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'short')" class='word_wrap_li_pr hover_en'>
+                                            <span style="white-space: normal;line-height: 20px;text-decoration: none;font-size: 14px !important;line-height: 21px;text-decoration: none;white-space: normal;"data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'short')" class='word_wrap_li_pr hover_en'>
                                                 <?php echo $value['ph']; ?>
-                                                <?php echo '(' . $value['count'] . ')'; ?>
+                                                <?php echo '(' . $value['count'] . ') - '.$value['prc'].'%'; ?>
                                             </span>
                         <!--                                    <span class='word_wrap_li_sec' style="margin-top: -16px;margin-left: 5px;"></span>-->
                                         </li>
@@ -195,14 +196,14 @@ if($s_product_long_desc_count > 0){
                         <div class="p_seo">
                             <?php if (count($vs['seo']['long']) > 0) { ?>
                                 <p class="heading_text">SEO Keywords: </p>
-                                <ul class='gr_seo_short_ph' style='margin-top: -19px;margin-left: 102px;font-weight: bold;margin-bottom: 0px;'>
+                                <ul class='gr_seo_short_ph' style='margin:0px;font-weight: bold;'>
                                     <?php foreach ($vs['seo']['long'] as $key => $value) { ?>
                                         <?php $v_ph = $value['ph']; ?>
 
                                         <li >
-                                            <span style="font-size: 14px !important;"data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'long')" class='word_wrap_li_pr hover_en'>
+                                            <span style="font-size: 14px !important;white-space: normal;line-height: 20px;text-decoration: none;"data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'long')" class='word_wrap_li_pr hover_en'>
                                                 <?php echo $value['ph']; ?>
-                                                <?php echo '(' . $value['count'] . ')'; ?>
+                                                <?php echo '(' . $value['count'] . ') - '.$value['prc'].'%'; ?>
                                             </span>
                         <!--                                    <span class='word_wrap_li_sec' style="margin-top: -16px;margin-left: 5px;"></span>-->
                                         </li>

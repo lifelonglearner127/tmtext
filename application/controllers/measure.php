@@ -1197,7 +1197,24 @@ public function gridview() {
 //Max
             $selectedUrl = $this->input->post('selectedUrl');
             foreach ($same_pr as $ks => $vs) {
-
+                if(!empty($vs['seo']['short'])){
+                foreach($vs['seo']['short'] as $key => $val){
+                   $words= count(explode(' ',$val['ph']));
+                   $desc_words_count=count(explode(' ',$vs['description']));
+                   $count=$val['count'];
+                   $same_pr[$ks]['seo']['short'][$key]['prc']=round($count*$words/$desc_words_count*100,2);
+                }
+                }
+                if(!empty($vs['seo']['long'])){
+                foreach($vs['seo']['long'] as $key => $val){
+                   
+                   $words= count(explode(' ',$val['ph']));
+                   $desc_words_count=count(explode(' ',$vs['long_description']));
+                   $count=$val['count'];
+                   $same_pr[$ks]['seo']['long'][$key]['prc']=round($count*$words/$desc_words_count*100,2);
+                }
+                }
+                
                 if ($this->get_base_url($vs['url']) == $this->get_base_url($selectedUrl)) {
                     if ($ks != 0) {
                         $same_pr[] = $same_pr[0];
@@ -1466,7 +1483,7 @@ public function gridview() {
 //Max
             $selectedUrl = $this->input->post('selectedUrl');
             foreach ($same_pr as $ks => $vs) {
-
+                
                 if ($this->get_base_url($vs['url']) == $this->get_base_url($selectedUrl)) {
                     if ($ks != 0) {
                         $same_pr[] = $same_pr[0];
@@ -1475,7 +1492,7 @@ public function gridview() {
                     }
                 }
             }
-
+           
             $data['same_pr'] = $same_pr;
 
 
