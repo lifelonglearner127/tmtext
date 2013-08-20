@@ -77,8 +77,7 @@ class SearchSpider(BaseSpider):
 
 	def build_search_query(self, product_name):
 		# put + instead of spaces, lowercase all words
-		pt = ProcessText()
-		search_query = "+".join(pt.normalize(product_name))
+		search_query = "+".join(ProcessText.normalize(product_name))
 		return search_query
 
 	def parse(self, response):
@@ -141,9 +140,14 @@ class SearchSpider(BaseSpider):
 				model_node = model_nodes[0]
 
 				#TODO: use model number in computin similarity and give it largest weight?
-				m = re.match(".*Model:(.*)", model_node)
+				#m = re.match("(.*)Model:(.*)", model_node.encode("utf-8"), re.UNICODE)
+				model_node = re.sub("\W", " ", model_node, re.UNICODE)
+				m = re.match("(.*)Model:(.*)", model_node.encode("utf-8"), re.UNICODE)
+				
+				
 				if m:
-					product_model = m.group(1)
+					product_model = m.group(2).strip()
+					print "MODEL: ", model_node.encode("utf-8")
 
 		# create search queries and get the results using the target site's search function
 
@@ -157,10 +161,12 @@ class SearchSpider(BaseSpider):
 
 		# 1) Search by model number
 		if product_model:
-			query1 = self.build_search_query(product_name)
-			search_pages1 = self.build_search_pages(query)
-			page1 = search_pages[self.target_site]
+			query1 = self.build_search_query(product_model)
+			search_pages1 = self.build_search_pages(query1)
+			page1 = search_pages1[self.target_site]
 			request1 = Request(page1, callback = self.parseResults, cookies=cookies)
+
+			print "QUERY (MODEL)", query1
 			
 			request = request1
 
@@ -170,6 +176,8 @@ class SearchSpider(BaseSpider):
 		search_pages2 = self.build_search_pages(query2)
 		page2 = search_pages2[self.target_site]
 		request2 = Request(page2, callback = self.parseResults, cookies=cookies)
+
+		print "QUERY (PRODUCT)", query2
 
 		pending_requests = []
 
@@ -181,7 +189,12 @@ class SearchSpider(BaseSpider):
 		# 3) Search by combinations of words in product's name
 		# create queries
 
-
+		for words in ProcessText.words_combinations(product_name):
+			query3 = self.build_search_query(" ".join(words))
+			search_pages3 = self.build_search_pages(query3)
+			print "QUERY", query3
+			page3 = search_pages3[self.target_site]
+			request3 = Request(page3, callback = self.parseResults, cookies=cookies)
 
 		request.meta['pending_requests'] = pending_requests
 		request.meta['site'] = self.target_site
@@ -327,6 +340,18 @@ class SearchSpider(BaseSpider):
 		# # staples
 		# if (site == 'staples')
 
+
+
+		# print stuff
+		print "PRODUCT: ", response.meta['origin_name'].encode("utf-8")
+		print "MATCHES: "
+		for item in items:
+			print item['product_name'].encode("utf-8")
+		print "-----results:"
+		print "------url:" + response.url
+		print "------products:", items
+
+
 		# if there is a pending request (current request used product model, and pending request is to use product name),
 		# continue with that one and send current results to it as metadata
 		if 'pending_requests' in response.meta:
@@ -338,7 +363,13 @@ class SearchSpider(BaseSpider):
 				request.meta['pending_requests'] = pending_requests[1:]
 				request.meta['items'] = items
 
+				request.meta['site'] = response.meta['site']
+				# product page from source site
+				request.meta['origin_url'] = response.meta['origin_url']
+				request.meta['origin_name'] = response.meta['origin_name']
+
 				return request
+
 
 			# if there are no more pending requests, use cumulated items to find best match and send it as a result
 			else:
@@ -347,8 +378,7 @@ class SearchSpider(BaseSpider):
 
 				if items:
 					# from all results, select the product whose name is most similar with the original product's name
-					pt = ProcessText()
-					best_match = pt.similar(origin_name, items, self.threshold)
+					best_match = ProcessText.similar(origin_name, items, self.threshold)
 
 				if not best_match:
 					# if there are no results but the option was to include original product URL, create an item with just that
@@ -369,7 +399,9 @@ class SearchSpider(BaseSpider):
 
 class ProcessText():
 	# normalize text to list of lowercase words (no punctuation except for inches sign (") or /)
-	def normalize(self, orig_text):
+
+	@staticmethod
+	def normalize(orig_text):
 		text = orig_text
 		# other preprocessing: -Inch = " - fitting for staples->amazon search
 		# TODO: suitable for all sites?
@@ -377,7 +409,11 @@ class ProcessText():
 
 		#! including ' as an exception keeps things like women's a single word. also doesn't find it as a word in wordnet -> too high a priority
 		# excluding it leads to women's->women (s is a stopword)
-		text = re.sub("([^\w\"/])|(u')", " ", text)
+
+		# replace 1/2 by .5 -> suitable for all sites?
+		text = re.sub(" 1/2", "\.5", text)
+		# also split by "/" after replacing "1/2"
+		text = re.sub("([^\w\"])|(u')", " ", text)
 		stopset = set(stopwords.words('english'))#["and", "the", "&", "for", "of", "on", "as", "to", "in"]
 		#tokens = nltk.WordPunctTokenizer().tokenize(text)
 		# we need to keep 19" as one word for ex
@@ -393,14 +429,26 @@ class ProcessText():
 
 	# create combinations of comb_length words from original text (after normalization and tokenization and filtering out dictionary words)
 	# return a list of all combinations
-	def words_combinations(self, orig_text, comb_length = 3):
-		norm_text = normalize(orig_text)
+	@staticmethod
+	def words_combinations(orig_text, comb_length = 3):
+		norm_text = ProcessText.normalize(orig_text)
+
+		# exceptions to include even if they appear in wordnet
+		exceptions = ['nt']
 
 		# only keep non dictionary words
-		norm_text_nondict = [word for word in norm_text if not wordnet.synsets(word) and len(word) > 1]
+		norm_text_nondict = [word for word in norm_text if (not wordnet.synsets(word) or word in exceptions) and len(word) > 1]
 
-		combs = itertools.combinations(range(len(norm_text)), comb_length)
+		combs = itertools.combinations(range(len(norm_text_nondict)), comb_length)
 		words=[map(lambda c: norm_text_nondict[c], x) for x in list(combs)]
+
+		# # add versions of the queries with different spelling
+		# extra = []
+		# for word_comb in words:
+		# 	for i in range(len(word_comb)):
+		# 		# " -> inch
+		# 		m = re.match("", string, flags)
+
 
 		return words
 
@@ -412,12 +460,13 @@ class ProcessText():
 	#			products2 - list of product items for products to search through
 	#			param - threshold for accepting a product name as similar or not (float between 0-1)
 	#TODO: import this from match_product, as a library function
-	def similar(self, product_name, products2, param):
+	@staticmethod
+	def similar(product_name, products2, param):
 		result = None
 		products_found = []
 		for product2 in products2:
-			words1 = set(self.normalize(product_name))
-			words2 = set(self.normalize(product2['product_name']))
+			words1 = set(ProcessText.normalize(product_name))
+			words2 = set(ProcessText.normalize(product2['product_name']))
 			common_words = words1.intersection(words2)
 
 			weights_common = []
@@ -459,7 +508,7 @@ class ProcessText():
 			if products_found:
 				result = products_found[0][0]
 
-			print "MATCHES", product_name.encode("utf-8"), products_found, "\n-----------------------------------------\n"
+			print "FINAL", product_name.encode("utf-8"), products_found, "\n-----------------------------------------\n"
 
 			return result
 
