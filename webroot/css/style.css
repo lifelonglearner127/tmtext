@@ -88,8 +88,7 @@
     font-size: 12px;
 }
 .ci_hp_modals.crawl_launch_panel .modal-body {
-    overflow: hidden;
-    max-height: 700px;
+    max-height: 550px;
 }
 #customers_screens_crawl_modal {
     top: 40%;
@@ -541,6 +540,7 @@ span[class*="hilite"] { background: yellow; }
     width: 280px;
     padding: 5px;
     margin-left: 3px;
+    overflow: hidden;
 }
 #compet_area_grid .grid_se_section .c .preloader_grids_box {
     display: block;
@@ -1557,7 +1557,7 @@ label.dd-selected-text, label.dd-option-text{
 
 #Current_List ul li span:last-child, #Current_List ul lh span:last-child {
     border-right: 0px;
-    width: 38%;
+    width: 35%;
 }
 
 .ellipsis {
@@ -1627,11 +1627,30 @@ label.dd-selected-text, label.dd-option-text{
 .an_grd_view_drop, .an_grd_view_drop .dd{
     width:290px!important;
 }
-
+.has_stiky{
+    overflow: hidden;
+    margin-bottom: 13px;
+}
+.has_stiky  .an_grd_view_drop, .has_stiky .an_grd_view_drop .dd{
+    width:250px!important;
+    float: left;
+}
+.has_stiky_image{
+    width:20px;
+    height:20px;
+    float: right;
+    background: black;
+    padding: 2px;margin-top: 7px;
+    cursor:pointer;
+}
+.has_stiky_image :hover{
+   background: rgb(117, 114, 114); 
+}
 #customer_dr{
     display: inline;
     width: 150px;
 }
+
 
 #customer_dr .dd{
     width:190px!important;

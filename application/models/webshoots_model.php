@@ -16,7 +16,8 @@ class Webshoots_model extends CI_Model {
 
     public function updateCrawlListWithSnap($id, $snap) {
         $update_object = array(
-            'snap' => $snap
+            'snap' => $snap,
+            'snap_date' => date("Y-m-d H:i:s")
         );
         return $this->db->update($this->tables['crawler_list'], $update_object, array('id' => $id));
     }

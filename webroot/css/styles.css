@@ -444,3 +444,37 @@ ul.ui-sortable {
     vertical-align: text-top;
     width: 14px;
 }
+.block_data_table table.assess_comparisons tbody td {
+    font-size: 14px;
+}
+.assess_comparisons{
+    width:100%;
+    text-align: center;
+}
+.block_data_table table.assess_comparisons td{
+    border: 2px solid #000000;
+}
+.assess_comparisons a{
+    color: #0000FF;
+    font-size: 12px;
+}
+#assess_report div.boxes_content table.assess_comparisons img{
+    width:auto;
+    max-width: 200px;
+    height: auto;
+    max-height: 50px;
+}
+.assess_comparisons .red{
+    background-color: #880000;
+    color: #ffffff;
+    font-weight: bold;
+}
+.assess_comparisons .group{
+    background-color: #dddddd;
+}
+.assess_comparisons .row_name{
+    text-align: left;
+}
+.assess_comparisons .key_row_name{
+    font-weight: bold;
+}

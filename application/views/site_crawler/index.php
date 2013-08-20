@@ -72,8 +72,9 @@
 
 			<div class="row-fluid mt_5">
 				<div class="search_area uneditable-input span10" style="cursor: text; width: 765px; height: 320px; overflow : auto;" id="Current_List">
+				<!-- <div id='current_list_tbl_holder'>&nbsp;</div> -->
 				<ul>
-					<lh><span><input type="checkbox" value="" id="checkAll"/></span><span>ID</span><span>Status</span><span>Last Crawled</span><span>Category</span><span>URL</span></lh>
+					<lh><span><input type="checkbox" style='margin-top: -6px;' value="" id="checkAll"/></span><span style='width: 40px;'>&nbsp;</span><span style='width: 60px;'>ID</span><span>Status</span><span>Last Crawled</span><span>Category</span><span>URL</span></lh>
 				</ul>
 				</div>
 				<button id="current_list_delete" class="btn new_btn btn-danger mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
@@ -100,15 +101,21 @@
 	<div class="modal-body" style='overflow: hidden'>
 		<div class='snap_holder'>&nbsp;</div>
 	</div>
+	<div class="modal-footer">
+		<a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
+		<a href="javascript:void(0)" id="snap_modal_refresh" class="btn btn-success" onclick="return false">Refresh snapshot</a>
+	</div>
 </div>
 <!-- MODALS (END) -->
 
 <script>
-function showSnap(snap) {
+function showSnap(snap, id, url) {
 	$("#preview_crawl_snap_modal").modal('show');
 	$("#preview_crawl_snap_modal .snap_holder").html("<img src='" + snap + "'>");
+	$("#preview_crawl_snap_modal #snap_modal_refresh").attr("onclick", "snapshotIt('" + id + "', '" + url + "', true)");
 }
-function loadCurrentList(url){
+
+function loadCurrentList(url) {
 	url = typeof url !== 'undefined' ? url: '<?php echo site_url('site_crawler/all_urls');?>';
     var search_crawl_data = '';
     if($('input[name="search_crawl_data"]').val() != ''){
@@ -121,7 +128,6 @@ function loadCurrentList(url){
     }
 
 	$.get(url, {'search_crawl_data': search_crawl_data, 'batch_id': batch_id}, function(data) {
-//        console.log(data);
 		$('#Current_List ul li').remove();
 
 		if(data.new_urls.length > 0) {
@@ -148,12 +154,24 @@ function loadCurrentList(url){
                 imported_data_id = node.imported_data_id;
             }
 
-            var snap_line = "";
+            var snap_line = "<a class='btn btn-primary btn-small btn-make-snap' href='javascript:void(0)' onclick=\"snapshotIt('" + node.id + "', '" + node.url + "', false);\"><i class='icon-screenshot icon-white'></i></a>";;
             if(node.snap !== null && node.snap !== "") {
-            	snap_line = " (<a href='javascript:void(0)' onclick=\"showSnap('" + node.snap + "');\">snapshot</a>)";
+            	snap_line = "<a class='btn btn-success btn-small btn-snap-done' href='javascript:void(0)' onclick=\"showSnap('" + node.snap + "', '" + node.id + "', '" + node.url + "');\"><i class='icon-ok icon-white'></i></a>";
             }
 
-			$('#Current_List ul').append("<li id=\"id_"+node.id+"\"><span><input data-url=\""+node.url+"\" data-id=\""+node.id+"\" type=\"checkbox\" name=\"ids[]\" value=\""+node.id+"\"/></span><span>"+imported_data_id+"</span><span>"+node.status + snap_line + "</span><span>"+updated+"</span><span>"+category+"</span><span class=\"url ellipsis\">"+node.url+"</span></li>");
+			$('#Current_List ul').append("<li id=\"id_"+node.id+"\"><span><input data-url=\""+node.url+"\" data-id=\""+node.id+"\" type=\"checkbox\" name=\"ids[]\" value=\""+node.id+"\"/></span><span style='width: 40px;'>" + snap_line + "</span><span style='width: 60px;'>"+imported_data_id+"</span><span>"+node.status + "</span><span>"+updated+"</span><span>"+category+"</span><span class=\"url ellipsis\">"+node.url+"</span></li>");
+
+			$(".btn-make-snap").tooltip({
+				placement: 'left',
+				title: 'Make Snapshoot'
+			});
+
+			if(node.snap !== null && node.snap !== "") {
+				$(".btn-snap-done").tooltip({
+					placement: 'left',
+					title: moment(node.snap_date).format('MMMM Do, YYYY')
+				});
+			}
 
 		});
 
@@ -186,6 +204,25 @@ function closeInputs(event) {
     checkAddList();
 }
 
+function snapshotIt(id, url, modal_close) {
+	if(modal_close) $("#preview_crawl_snap_modal").modal('hide');
+	var urls = [];
+	var mid = {
+		id: id,
+		url: url
+	}
+	urls.push(mid);
+	var send_data = {
+		urls: urls
+	};
+	$("#loading_crawl_snap_modal").modal('show');
+	$.post(base_url + 'index.php/measure/crawlsnapshoot', send_data, function(data) {
+		$("#loading_crawl_snap_modal").modal('hide');
+		$('#current_snapshot').attr('disabled', 'disabled');
+		loadCurrentList();
+	});
+}
+
 $(function () {
     $.fn.setCursorToTextEnd = function() {
         $initialVal = this.val();
@@ -205,7 +242,6 @@ $(function () {
     	var send_data = {
     		urls: urls
     	};
-    	console.log(send_data);
     	$("#loading_crawl_snap_modal").modal('show');
     	$.post(base_url + 'index.php/measure/crawlsnapshoot', send_data, function(data) {
     		console.log(data);

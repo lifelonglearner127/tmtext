@@ -273,6 +273,7 @@
                                         <img src="<?php echo base_url();?>img/arrow-down.png" style="width:12px;margin-right: 10px">
                                     </a>
                                     Summary
+                                    <span id="summary_message"></span>
                                 </span>
                                 <a class="ml_10 research_arrow" href="#">
                                     <img src="<?php echo base_url();?>img/arrow.png">
@@ -314,7 +315,8 @@
                             </h3>
                             <div style="clear: both;"></div>
                             <div class="boxes_content" style="padding:0px;">
-                                <div id="product_comparison"></div>
+                                <div id="comparison_detail"></div>
+                                <div id="comparison_pagination"></div>
                             </div>
                         </li>
                     </ul>

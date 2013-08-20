@@ -369,8 +369,13 @@ function show_from_butches() {//max
             $.cookie('product_batch_items', $("span.product_batches_items").html(), {expires: 7, path: '/'}); // create
         }
     }
-       selected_cites_cookie = $.cookie('selected_cites_cookie');
-       var searcher_all = $.post(editorSearchAllBaseUrl, {selected_cites: selected_cites_cookie,batch_id: batch_id}, 'html').done(function(data) {
+       
+      var selected_cites = $.cookie('selected_cites_cookie');
+      if(typeof(selected_cites)== 'undefined'){
+        selected_cites = null;
+      }
+      
+        var searcher_all = $.post(editorSearchAllBaseUrl, {selected_cites: selected_cites,batch_id: batch_id}, 'html').done(function(data) {
         $("#an_products_box").html(data);
         // $("#an_products_box").fadeOut();
         // $("#an_products_box").fadeIn();

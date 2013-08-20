@@ -49,11 +49,9 @@ jQuery(document).ready(function($) {
   <div class="modal-body">
     <input  style="margin-top: -4px;"type="radio" name="show_results" value="all"><span>Show all results</span><br>
     <input style="margin-top: -4px;"type="radio" name="show_results" value="matchon"><span>Only show items if there is a match on: <span><Br> 
-    <?php
-         unset($sites[0]);
-    ?>
+    
     <form >
-    <select id="popup_sites" multiple="multiple">
+    <select size="10" id="popup_sites" multiple="multiple">
                          <?php
                          
                             foreach($sites as $cite){
@@ -72,13 +70,13 @@ jQuery(document).ready(function($) {
      
   </div>
 </div>
-                <!--script>
-
+<script>
+$(document).ready(function(){
                     $("#popup_save").click(function(){
-
+                     
                         selected_cites=$("#popup_sites").val();
                         //$("input['name=show_results']").val();
-                        console.log(selected_cites);
+                        
 //<<<<<<< Updated upstream
                         var status=$("input[name='show_results']:checked").val();
 
@@ -110,41 +108,29 @@ jQuery(document).ready(function($) {
                         if(batch_title!=0){
                             show_from_butches();
                         }
-                        ======
-                         var status=$("input[name='show_results']").val();
-                         //    var status_showing_results = $.cookie('status_showing_results');
-                         //
-                         //    if (typeof(status_showing_results) !== 'undefined') {
-                         //        $.removeCookie('status_showing_results', {path: '/'}); // destroy
-                         //        $.cookie('status_showing_results', status, {expires: 7, path: '/'}); // re-create
-                         //        //$.session.set("selected_cites",selected_cites);
-                         //
-                         //    } else {
-                         //        $.cookie('status_showing_results', status, {expires: 7, path: '/'}); // create
-                         //        $.session.set("f",selected_cites);
-                         //    }
-
-
-
-                         >>>>>>> Stashed changes
-
-                        $('input[value="'+status_showing_results+'"]').attr('checked',true);
-                        $('#myModal').modal('hide');
+                        
+                       $('#myModal').modal('hide');
                     });
 
+                        status_showing_results= $.cookie('status_showing_results');
+                       
+                        if (typeof( status_showing_results) !== 'undefined' ){
+                          
+                            status_showing_results = $.cookie('status_showing_results');
 
-                    $(document).ready(function(){
-                        status_showing_results = $.cookie('status_showing_results');
-                        $('input[value="'+status_showing_results+'"]').attr('checked',true);
-                        if(status_showing_results!=='all'){
-                            selected_cites_cookie = $.cookie('selected_cites_cookie');
-                            var dataarray=selected_cites_cookie.split(",");
-                            $("#popup_sites").val(dataarray);
+                            $('input[value="'+status_showing_results+'"]').attr('checked',true);
+                            if(status_showing_results!=='all'){
+                                selected_cites_cookie = $.cookie('selected_cites_cookie');
+                                var dataarray=selected_cites_cookie.split(",");
+                                $("#popup_sites").val(dataarray);
 
+                            }
+                        }else{
+                          $('input[value="all"]').attr('checked',true);  
                         }
                     });
-                </script-->
-
+                </script>
+<!--//<<<<<<< Updated upstream-->
             </div>
      </div>
         <div class="row-fluid">

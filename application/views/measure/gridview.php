@@ -78,11 +78,19 @@ foreach ($same_pr as $ks => $vs) {
 
 
     <div id="grid_se_section_<?php echo $i; ?>"  class='grid_se_section <?php echo $class_left; ?> '>
-     
+        <?php if($i>1){?>
+        <div class='has_stiky' id="h_<?php echo $i; ?>" class='h'>
+            <input type="hidden" name='dd_customer' value="<?php echo $customer; ?>">
+            <div id="an_grd_view_drop_gr<?php echo $i; ?>" class='an_grd_view_drop'></div>
+            <img class='has_stiky_image' src="<?php echo base_url() ?>/img/pin-icon.png" title='Click to make sticky'>
+        </div>
+        <?php }else{?>
         <div id="h_<?php echo $i; ?>" class='h'>
             <input type="hidden" name='dd_customer' value="<?php echo $customer; ?>">
             <div id="an_grd_view_drop_gr<?php echo $i; ?>" class='an_grd_view_drop'></div>
+            
         </div>
+        <?php }?>
         <div id="<?php echo $customer;?>" class="grid">
         <div class='c'>
             <img class='preloader_grids_box' src="<?php echo base_url() ?>/img/grids_boxes_preloader.gif">
@@ -157,14 +165,15 @@ foreach ($same_pr as $ks => $vs) {
                         <div class="p_seo">
                             <?php if (count($vs['seo']['short']) > 0) { ?>
                                 <p class="heading_text">SEO Keywords: </p>
-                                <ul class='gr_seo_short_ph' style='margin-top: -19px;margin-left: 102px;font-weight: bold;margin-bottom: 0px;'>
+                                <ul class='gr_seo_short_ph' style='margin:0px;font-weight: bold;'>
                                     <?php foreach ($vs['seo']['short'] as $key => $value) { ?>
+                                    
                                         <?php $v_ph = $value['ph']; ?>
 
                                         <li >
-                                            <span style="font-size: 14px !important;line-height: 21px;text-decoration: none;white-space: normal;"data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'short')" class='word_wrap_li_pr hover_en'>
+                                            <span style="white-space: normal;line-height: 20px;text-decoration: none;font-size: 14px !important;line-height: 21px;text-decoration: none;white-space: normal;"data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'short')" class='word_wrap_li_pr hover_en'>
                                                 <?php echo $value['ph']; ?>
-                                                <?php echo '(' . $value['count'] . ')'; ?>
+                                                <?php echo '(' . $value['count'] . ') - '.$value['prc'].'%'; ?>
                                             </span>
                         <!--                                    <span class='word_wrap_li_sec' style="margin-top: -16px;margin-left: 5px;"></span>-->
                                         </li>
@@ -195,14 +204,14 @@ if($s_product_long_desc_count > 0){
                         <div class="p_seo">
                             <?php if (count($vs['seo']['long']) > 0) { ?>
                                 <p class="heading_text">SEO Keywords: </p>
-                                <ul class='gr_seo_short_ph' style='margin-top: -19px;margin-left: 102px;font-weight: bold;margin-bottom: 0px;'>
+                                <ul class='gr_seo_short_ph' style='margin:0px;font-weight: bold;'>
                                     <?php foreach ($vs['seo']['long'] as $key => $value) { ?>
                                         <?php $v_ph = $value['ph']; ?>
 
                                         <li >
-                                            <span style="font-size: 14px !important;"data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'long')" class='word_wrap_li_pr hover_en'>
+                                            <span style="font-size: 14px !important;white-space: normal;line-height: 20px;text-decoration: none;"data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'long')" class='word_wrap_li_pr hover_en'>
                                                 <?php echo $value['ph']; ?>
-                                                <?php echo '(' . $value['count'] . ')'; ?>
+                                                <?php echo '(' . $value['count'] . ') - '.$value['prc'].'%'; ?>
                                             </span>
                         <!--                                    <span class='word_wrap_li_sec' style="margin-top: -16px;margin-left: 5px;"></span>-->
                                         </li>
@@ -301,7 +310,20 @@ group_id = "<?php echo $same_pr[0]['imported_data_id']; ?>";
 
 </script>
 <script type='text/javascript'>
-
+    
+// function makeSticky(val){
+     $(".has_stiky_image").live('click',function(){
+         var sticky_url=$(this).closest('.grid_se_section').find('select').val();
+         $(this).css('background',' rgb(117, 114, 114)');
+         $(this).attr('title','Click to unstick');
+         $.cookie('sticky_url', sticky_url);
+     });
+     var sticky_url= $.cookie('sticky_url');
+       if(typeof(sticky_url)!=='undefined'){
+           
+       }
+   
+// }
  function inArray(needle, haystack) {
     var length = haystack.length;
     for(var i = 0; i < length; i++) {
@@ -377,16 +399,7 @@ $(".an_grd_view_drop select").live('change', function(){
             }
         });
 });
-//$(".an_grd_view_drop select").each(function(){
-//   $(this).live('change',function(){
-//       console.log('stegh em');
-//       var url= $(this).val();
-//       console.log(listings[url]);
-//   });
-   
-   //$(".an_grd_view_drop .grid").html(listings[url]);
-//});
- 
+
  selectedCustomer();
  
 </script>

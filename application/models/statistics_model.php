@@ -122,4 +122,126 @@ class Statistics_model extends CI_Model {
 
         return $result;
     }
+
+    function product_comparison($batch_id){
+        $this->load->model('sites_model');
+        $this->load->model('settings_model');
+
+        $all_sites = $this->sites_model->getAll();
+        $user_id = $this->ion_auth->get_user_id();
+        $key = 'research_assess_report_options';
+        $existing_settings = $this->settings_model->get_value($user_id, $key);
+        $batch_settings = $existing_settings[$batch_id];
+
+        $competitors_sites_for_comparisons = array();
+        $comparison_product_array = array();
+
+        foreach ($all_sites as $k => $v){
+            if (in_array($v->id, $batch_settings->assess_report_competitors)) {
+                $competitors_sites_for_comparisons[] = strtolower($v->name);
+            }
+        }
+
+        $marked = $this->products_comparisons_by_batch_id($batch_id);
+        foreach ($marked as $marked_product){
+            $similar_products_competitors = unserialize($marked_product->similar_products_competitors);
+            if (count($similar_products_competitors) > 0) {
+                foreach ($similar_products_competitors as $product) {
+                    foreach ($competitors_sites_for_comparisons as $competitor_site) {
+                        if (strtolower(trim($competitor_site)) == strtolower(trim($product['customer']))) {
+                            $comparison_product_obj = new stdClass();
+                            $comparison_product = $this->product_comparisons_by_imported_data_id($product['imported_data_id']);
+
+                            if (count($comparison_product) > 0) {
+                                $site = $this->get_site_by_url($all_sites, $marked_product->url);
+                                if (!$site) {
+                                    $own_logo = '';
+                                } else {
+                                    $own_logo = $site->image_url;
+                                }
+                                $site = $this->get_site_by_url($all_sites, $comparison_product[0]->url);
+                                if (!$site) {
+                                    $competitor_logo = '';
+                                } else {
+                                    $competitor_logo = $site->image_url;
+                                }
+
+                                if (intval($marked_product->short_description_wc) > 0) {
+                                    $own_short_description = $marked_product->short_description_wc.' words';
+                                } else {
+                                    $own_short_description = 'None';
+                                    $comparison_product_obj->red[] = 'short_description';
+                                }
+                                if (intval($comparison_product[0]->short_description_wc) > 0) {
+                                    $competitor_short_description = $comparison_product[0]->short_description_wc.' words';
+                                } else {
+                                    $competitor_short_description = 'None';
+                                }
+
+                                if (intval($marked_product->long_description_wc) > 0) {
+                                    $own_long_description = $marked_product->long_description_wc.' words';
+                                } else {
+                                    $own_long_description = 'None';
+                                    $comparison_product_obj->red[] = 'long_description';
+                                }
+                                if (intval($comparison_product[0]->long_description_wc) > 0) {
+                                    $competitor_long_description = $comparison_product[0]->long_description_wc.' words';
+                                } else {
+                                    $competitor_long_description = 'None';
+                                }
+
+                                $own_price = floatval($marked_product->own_price);
+                                $competitor_price = floatval($comparison_product[0]->own_price);
+                                if ($own_price > $competitor_price) {
+                                    $comparison_product_obj->red[] = 'price';
+                                }
+
+                                $comparison_product_obj->left_product = array(
+                                    'logo' => $own_logo,
+                                    'url' => $marked_product->url,
+                                    'product' => $marked_product->product_name,
+                                    'price' => $own_price,
+                                    'short_description' => $own_short_description,
+                                    'short_seo_keyword' => $marked_product->short_seo_phrases,
+                                    //'short_duplicate_content' => $marked_product->
+                                    'long_description' => $own_long_description,
+                                    'long_seo_keyword' => $marked_product->long_seo_phrases,
+                                    //'long_duplicate_content' => $marked_product->
+                                );
+
+                                $comparison_product_obj->right_product = array(
+                                    'logo' => $competitor_logo,
+                                    'url' => $comparison_product[0]->url,
+                                    'product' => $comparison_product[0]->product_name,
+                                    'price' => $competitor_price,
+                                    'short_description' => $competitor_short_description,
+                                    'short_seo_keyword' => $comparison_product[0]->short_seo_phrases,
+                                    //'short_duplicate_content' =>
+                                    'long_description' => $competitor_long_description,
+                                    'long_seo_keyword' => $comparison_product[0]->long_seo_phrases,
+                                    //'long_duplicate_content' =>
+                                );
+
+                                $comparison_product_array[] = $comparison_product_obj;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return $comparison_product_array;
+    }
+
+    private function get_site_by_url($all_sites, $site_url){
+        $search_host = parse_url(trim(strtolower($site_url)));
+        $search_host = str_replace('www.', '', $search_host['host']);
+        foreach ($all_sites as $k => $v){
+            $current_host = parse_url(trim(strtolower($v->url)));
+            $current_host = str_replace('www.', '', $current_host['host']);
+            if (strcasecmp($current_host, $search_host) == 0) {
+                return $v;
+            }
+        }
+        return false;
+    }
 }

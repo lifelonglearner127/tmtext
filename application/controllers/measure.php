@@ -172,8 +172,10 @@ class Measure extends MY_Controller {
         $res = array(
             'path' => $path,
             'dir' => $dir . "/$url_name.$type",
-            'img' => $url_name.".".$type
+            'img' => $url_name.".".$type,
+            'call' => $call_url
         );
+        // die(var_dump($res));
         return $res;
     }
 
@@ -814,7 +816,7 @@ function matches_count($im_data_id){
             } else {
                 $this->load->model('similar_imported_data_model');
                 $customers_list = array();
-                $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('customers');
+                $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('sites');
                 $query_cus_res = $query_cus->result();
                 if (count($query_cus_res) > 0) {
                     foreach ($query_cus_res as $key => $value) {
@@ -849,7 +851,7 @@ function matches_count($im_data_id){
             $this->load->model('similar_imported_data_model');
 
             $customers_list = array();
-            $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('customers');
+            $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('sites');
             $query_cus_res = $query_cus->result();
             if (count($query_cus_res) > 0) {
                 foreach ($query_cus_res as $key => $value) {
@@ -901,7 +903,7 @@ function matches_count($im_data_id){
                    }else{
                        //echo $this->get_base_url($vs['url']);
                        //echo 'bbb'.strtolower($this->sites_model->get_name_by_url($this->get_base_url($vs['url']))).'aaaaaaaaa';
-                   $same_pr[$ks]['customer']=  strtolower($this->sites_model->get_name_by_url($this->get_base_url($vs['url'])));
+                   $same_pr[$ks]['customer']=  strtolower($this->sites_model->get_name_by_url($same_pr[$ks]['customer']));
                    }
                 }
             }
@@ -1197,7 +1199,24 @@ public function gridview() {
 //Max
             $selectedUrl = $this->input->post('selectedUrl');
             foreach ($same_pr as $ks => $vs) {
-
+                if(!empty($vs['seo']['short'])){
+                foreach($vs['seo']['short'] as $key => $val){
+                   $words= count(explode(' ',$val['ph']));
+                   $desc_words_count=count(explode(' ',$vs['description']));
+                   $count=$val['count'];
+                   $same_pr[$ks]['seo']['short'][$key]['prc']=round($count*$words/$desc_words_count*100,2);
+                }
+                }
+                if(!empty($vs['seo']['long'])){
+                foreach($vs['seo']['long'] as $key => $val){
+                   
+                   $words= count(explode(' ',$val['ph']));
+                   $desc_words_count=count(explode(' ',$vs['long_description']));
+                   $count=$val['count'];
+                   $same_pr[$ks]['seo']['long'][$key]['prc']=round($count*$words/$desc_words_count*100,2);
+                }
+                }
+                
                 if ($this->get_base_url($vs['url']) == $this->get_base_url($selectedUrl)) {
                     if ($ks != 0) {
                         $same_pr[] = $same_pr[0];
@@ -1466,7 +1485,7 @@ public function gridview() {
 //Max
             $selectedUrl = $this->input->post('selectedUrl');
             foreach ($same_pr as $ks => $vs) {
-
+                
                 if ($this->get_base_url($vs['url']) == $this->get_base_url($selectedUrl)) {
                     if ($ks != 0) {
                         $same_pr[] = $same_pr[0];
@@ -1475,7 +1494,7 @@ public function gridview() {
                     }
                 }
             }
-
+           
             $data['same_pr'] = $same_pr;
 
 
@@ -1627,7 +1646,7 @@ public function gridview() {
                 
                 foreach($result as $kay => $val){
                      $matches_sites=$this->matches_count($val['imported_data_id']);
-                     if(count(array_intersect($matches_sites,$selected_cites))==0){
+                     if(count(array_intersect($matches_sites,$selected_cites))!=count($selected_cites)){
                     
                         unset($result[$kay]);
                     }
