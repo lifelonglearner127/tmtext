@@ -310,7 +310,20 @@ group_id = "<?php echo $same_pr[0]['imported_data_id']; ?>";
 
 </script>
 <script type='text/javascript'>
-
+    
+// function makeSticky(val){
+     $(".has_stiky_image").live('click',function(){
+         var sticky_url=$(this).closest('.grid_se_section').find('select').val();
+         $(this).css('background',' rgb(117, 114, 114)');
+         $(this).attr('title','Click to unstick');
+         $.cookie('sticky_url', sticky_url);
+     });
+     var sticky_url= $.cookie('sticky_url');
+       if(typeof(sticky_url)!=='undefined'){
+           
+       }
+   
+// }
  function inArray(needle, haystack) {
     var length = haystack.length;
     for(var i = 0; i < length; i++) {
@@ -386,16 +399,7 @@ $(".an_grd_view_drop select").live('change', function(){
             }
         });
 });
-//$(".an_grd_view_drop select").each(function(){
-//   $(this).live('change',function(){
-//       console.log('stegh em');
-//       var url= $(this).val();
-//       console.log(listings[url]);
-//   });
-   
-   //$(".an_grd_view_drop .grid").html(listings[url]);
-//});
- 
+
  selectedCustomer();
  
 </script>
