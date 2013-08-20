@@ -416,6 +416,7 @@ class Crons extends MY_Controller {
         $this->load->model('batches_model');
         $this->load->model('statistics_model');
         $this->load->model('statistics_duplicate_content_model');
+        $this->statistics_duplicate_content_model->truncate();
         $batches = $this->batches_model->getAll('id');
         foreach($batches as $batch){
             $time_start = microtime(true);
