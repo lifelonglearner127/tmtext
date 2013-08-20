@@ -219,6 +219,11 @@ class Crons extends MY_Controller {
                               $own_site = "own site";
                           $own_site = str_replace("www1.", "", str_replace("www.", "", $own_site));
 
+                            // Price difference
+                            $own_site = parse_url($obj->url,  PHP_URL_HOST);
+                            if (!$own_site)
+                                $own_site = "own site";
+                            $own_site = str_replace("www.", "", $own_site);
 
                           $time_start = microtime(true);
                           $data_import = $this->imported_data_parsed_model->getByImId($obj->imported_data_id);

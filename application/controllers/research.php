@@ -268,6 +268,15 @@ class Research extends MY_Controller {
     }
 
     public function get_assess_info(){
+        $this->load->model('imported_data_parsed_model');
+        $data_import = $this->imported_data_parsed_model->getByImId(244);
+        $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);//E500I-A1
+        if (!empty($similar_items)) {
+            foreach ($similar_items as $ks => $vs) {
+                $a = 0;
+            }
+        }
+
         $txt_filter = '';
         if($this->input->get('search_text') != ''){
             $txt_filter = $this->input->get('search_text');
@@ -330,13 +339,29 @@ class Research extends MY_Controller {
         $duplicate_content_range = 25;
         $this->load->model('batches_model');
         $this->load->model('imported_data_parsed_model');
+        $this->load->model('statistics_model');
         $this->load->model('statistics_duplicate_content_model');
+
+        $this->load->model('sites_model');
+        $all_sites = $this->sites_model->getAll();
+        $user_id = $this->ion_auth->get_user_id();
+        $key = 'research_assess_report_options';
+        $existing_settings = $this->settings_model->get_value($user_id, $key);
+        $batch_settings = $existing_settings[$batch_id];
+        $competitors_sites_for_comparisons = array();
+        foreach ($all_sites as $k => $v){
+            if (in_array($v->id, $batch_settings->assess_report_competitors)) {
+                $competitors_sites_for_comparisons[] = strtolower($v->name);
+            }
+        }
+
 
         $customer_name = $this->batches_model->getCustomerById($batch_id);
         $customer_url = parse_url($customer_name[0]->url);
         $enable_exec = true;
         $result_table = array();
         $report = array();
+        $comparison_product_array = array();
         $pricing_details = array();
         $items_priced_higher_than_competitors = 0;
         $items_have_more_than_20_percent_duplicate_content = 0;
@@ -395,7 +420,36 @@ class Research extends MY_Controller {
                 $result_row->price_diff = $price_diff_res;
             }
 
+
             $result_row->competitors_prices = unserialize($row->competitors_prices);
+
+            if (intval($row->include_in_assess_report) > 0) {
+                $similar_products_competitors = unserialize($row->similar_products_competitors);
+                if (count($similar_products_competitors) > 0) {
+                    foreach ($similar_products_competitors as $product) {
+                        foreach ($competitors_sites_for_comparisons as $competitor_site) {
+                            if (strtolower(trim($competitor_site)) == strtolower(trim($product['customer']))) {
+                                $comparison_product_obj = new stdClass();
+                                $comparison_product = $this->statistics_model->product_comparisons_by_imported_data_id($product['imported_data_id']);
+
+                                $comparison_product_obj->left_product = array(
+                                    'url' => $row->url,
+                                    'product' => $row->product_name,
+                                    'price' => $row->price
+                                );
+
+                                $comparison_product_obj->right_product = array(
+                                    'url' => $comparison_product[0]->url,
+                                    'product' => $comparison_product[0]->product_name,
+                                    'price' => $comparison_product[0]->price
+                                );
+
+                                $comparison_product_array[] = $comparison_product_obj;
+                            }
+                        }
+                    }
+                }
+            }
 
 //            $own_site = parse_url($result_row->url,  PHP_URL_HOST);
 //            if (!$own_site)
@@ -642,6 +696,7 @@ class Research extends MY_Controller {
         if ($items_short_products_content > 0) {
             $report['recommendations']['items_short_products_content'] = 'Increase product description lengths';
         }
+        $report['comparison_product'] = json_encode($comparison_product_array);
 
         if ($build_assess_params->all_columns) {
             $s_columns = explode(',', $build_assess_params->all_columns);

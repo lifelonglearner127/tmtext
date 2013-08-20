@@ -303,6 +303,20 @@
                                 </div>
                             </div>
                         </li>
+                        <li class="boxes ui-resizable">
+                            <h3>
+                                <span>
+                                    <a class="hideShow" onclick="return false;" href="#">
+                                        <img src="<?php echo base_url();?>img/arrow-down.png" style="width:12px;margin-right: 10px">
+                                    </a>
+                                    Product Comparisons
+                                </span>
+                            </h3>
+                            <div style="clear: both;"></div>
+                            <div class="boxes_content" style="padding:0px;">
+                                <div id="product_comparison"></div>
+                            </div>
+                        </li>
                     </ul>
                 </div>
 

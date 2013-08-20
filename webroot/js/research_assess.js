@@ -147,6 +147,45 @@ $(function () {
         $('#assess_report_items_have_more_than_20_percent_duplicate_content').html(report.summary.items_have_more_than_20_percent_duplicate_content);
         $('#assess_report_items_unoptimized_product_content').html(report.summary.items_unoptimized_product_content);
         $('#assess_report_items_have_product_context_that_is_too_short').html(report.summary.items_short_products_content);
+
+        var comparison_product = JSON.parse(report.comparison_product);
+
+
+        var table = '<table>'
+
+        $.each(comparison_product, function() {
+            table += '<tr><td>';
+
+            var product_table = '<table>'
+
+            product_table += '<tr>';
+            product_table += '<td>URL</td>';
+            product_table += '<td>'+this.left_product.url+'</td>';
+            product_table += '<td>'+this.right_product.url+'</td>';
+            product_table += '</tr>';
+
+            product_table += '<tr>';
+            product_table += '<td>Product</td>';
+            product_table += '<td>'+this.left_product.product+'</td>';
+            product_table += '<td>'+this.right_product.product+'</td>';
+            product_table += '</tr>';
+
+            product_table += '<tr>';
+            product_table += '<td>Price</td>';
+            product_table += '<td>'+this.left_product.price+'</td>';
+            product_table += '<td>'+this.right_product.price+'</td>';
+            product_table += '</tr>';
+
+            product_table += '</table>';
+
+            table += product_table;
+            table += '</td></tr>';
+            //console.log(this);
+        });
+
+        table += '</table>';
+        $('#product_comparison').html(table);
+
         $('#assess_report_download_panel').show();
     }
 

@@ -31,7 +31,7 @@ class Statistics_model extends CI_Model {
                     $product_name, $url, $short_description, $long_description,
                     $short_description_wc, $long_description_wc,
                     $short_seo_phrases, $long_seo_phrases,
-                    $own_price, $price_diff, $competitors_prices, $items_priced_higher_than_competitors
+                    $own_price, $price_diff, $competitors_prices, $items_priced_higher_than_competitors, $similar_products_competitors
     )
     {
         $this->rid = $rid;
@@ -51,6 +51,7 @@ class Statistics_model extends CI_Model {
         $this->price_diff = (string)$price_diff;
         $this->competitors_prices = (string)$competitors_prices;
         $this->items_priced_higher_than_competitors = $items_priced_higher_than_competitors;
+        $this->similar_products_competitors = $similar_products_competitors;
 
         $this->db->insert($this->tables['statistics'], $this);
         return $this->db->insert_id();
@@ -65,16 +66,16 @@ class Statistics_model extends CI_Model {
         }
         $txt_filter = $params->txt_filter;
 
-        $query = $this->db->where('batch_id', $batch_id)
-            ->like('product_name', $txt_filter)
-            ->get($this->tables['statistics']);
+//        $query = $this->db->where('batch_id', $batch_id)
+//            ->like('product_name', $txt_filter)
+//            ->get($this->tables['statistics']);
 
-        /*$query = $this->db
+        $query = $this->db
             ->select('s.*, rd.include_in_assess_report')
             ->from($this->tables['statistics'].' as s')
             ->join($this->tables['research_data'].' as rd', 'rd.id = s.research_data_id', 'left')
-            ->where('s.batch_name', $batch_name)->like('s.product_name', $txt_filter)
-            ->get();*/
+            ->where('s.batch_id', $batch_id)->like('s.product_name', $txt_filter)
+            ->get();
         $result =  $query->result();
         return $result;
     }
@@ -87,4 +88,38 @@ class Statistics_model extends CI_Model {
             return $this->db->count_all_results();
     }
 
+    function products_comparisons_by_batch_id($batch_id){
+        $batch_id = $this->db->escape($batch_id);
+        $sql_cmd = "
+        select
+            s.*
+        FROM
+            statistics as s
+        inner join research_data as rd on
+            rd.id = s.research_data_id
+            and rd.batch_id = $batch_id
+            and rd.include_in_assess_report = 1
+        ";
+        $query = $this->db->query($sql_cmd);
+        $result =  $query->result();
+
+        return $result;
+    }
+
+    function product_comparisons_by_imported_data_id($imported_data_id){
+        $imported_data_id = $this->db->escape($imported_data_id);
+        $sql_cmd = "
+        select
+            s.*
+        FROM
+            statistics as s
+        where
+            s.imported_data_id = $imported_data_id
+        limit 1
+        ";
+        $query = $this->db->query($sql_cmd);
+        $result =  $query->result();
+
+        return $result;
+    }
 }
