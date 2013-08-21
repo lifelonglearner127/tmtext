@@ -1194,4 +1194,17 @@ class System extends MY_Controller {
         $response['success'] = $this->reports_model->update($id, $params);
         $this->output->set_content_type('application/json')->set_output(json_encode($response));
     }
+    
+    public function system_logins() {
+		/*$this->load->model('logins_model');
+		$response['data'] = $this->logins_model->get_last_logins();
+        //$this->output->set_content_type('application/json')->set_output(json_encode($response));
+        $this->render();*/
+        echo "1";
+	}
+	
+	public function test(){
+		$this->load->view('test');
+		//echo "1"; die();
+	}
 }
