@@ -712,19 +712,31 @@ class Measure extends MY_Controller {
 //Max
 
     public function compare_text($first_text, $second_text) {
+        $arr=array();
+       $first_text = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $first_text); 
+       $second_text = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $second_text); 
+       $black_list_array=array('for', 'a', 'an' ,'and', 'to', 'into', 'of', 'is');
         if($first_text===$second_text){
             return 100;
         }else{
-        $a = explode(' ', $first_text);
-        $b = explode(' ', $second_text);
+        $first_all_words=explode(' ', strtolower($first_text));
+        $a = array_unique($first_all_words);
+        $b = array_unique(explode(' ', strtolower($second_text)));
+        foreach($a as $key=> $val){
+           if(in_array($val, $black_list_array)) {
+               
+               unset($a[$key]);
+           }
+        }
         $count = 0;
         foreach ($a as $val) {
             if (in_array($val, $b)) {
+                $arr[]=$val;
                 $count++;
             }
         }
 
-        $prc = $count / count($a) * 100;
+        $prc = $count / count($first_all_words) * 100;
         return $prc;
         }
     }
@@ -1204,7 +1216,10 @@ public function gridview() {
                    $words= count(explode(' ',$val['ph']));
                    $desc_words_count=count(explode(' ',$vs['description']));
                    $count=$val['count'];
-                   $same_pr[$ks]['seo']['short'][$key]['prc']=round($count*$words/$desc_words_count*100,2);
+                   $val['prc']=round($count*$words/$desc_words_count*100,2);
+                   $same_pr[$ks]['seo']['short'][$key]=$val;
+                   
+                   
                 }
                 }
                 if(!empty($vs['seo']['long'])){
@@ -1216,7 +1231,8 @@ public function gridview() {
                    $same_pr[$ks]['seo']['long'][$key]['prc']=round($count*$words/$desc_words_count*100,2);
                 }
                 }
-                
+            }
+             foreach ($same_pr as $ks => $vs) {
                 if ($this->get_base_url($vs['url']) == $this->get_base_url($selectedUrl)) {
                     if ($ks != 0) {
                         $same_pr[] = $same_pr[0];
