@@ -196,10 +196,11 @@ class Measure extends MY_Controller {
             }
             foreach ($urls as $k => $v) {
                 // ---- snap it and update crawler_list table (start)
+                $orig_url = $v['url'];
                 $url = preg_replace('#^https?://#', '', $v['url']);
                 $r_url = urlencode(trim($url));
                 if($screen_api == 'snapito.com') {
-                    $call_url = "http://api.snapito.com/web/$api_key/full/$r_url?type=$format";
+                    $call_url = "http://api.snapito.com/web/$api_key/full/$orig_url";
                 } else {
                     $token = md5("$api_secret+$url");
                     $call_url = "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$r_url&dimension=$size&format=$format";
