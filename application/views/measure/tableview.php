@@ -51,7 +51,7 @@ foreach($customers as $val){
          width: 170px !important;
      }
      .h{
-         
+         margin-bottom: 2px;
          margin-left: 33px;
      }
  </style>
