@@ -6,6 +6,9 @@ class PageProcessor {
 	private $html = '';
 	private $hostName = '';
 	private $nokogiri;
+	private $allowed_meta = array(
+					'name' => array('description', 'keywords')
+				);
 
 	public function __construct() {
 		$this->load->library('nokogiri', null, 'noko');
@@ -118,10 +121,25 @@ class PageProcessor {
 		$methodName = 'meta_'.$this->hostName;
 
 		if	( method_exists($this, $methodName) ) {
-        	return $this->$methodName();
+        	$result = $this->$methodName();
+        } else {
+        	$result = $this->nokogiri->get('meta')->toArray();
         }
 
-        return $this->nokogiri->get('meta')->toArray();
+        $results = array();
+        foreach ($result as $e) {
+        	foreach ($this->allowed_meta as $k=>$v) {
+        		if (isset($e[$k]) && in_array($e[$k], $v)) {
+					$results[$e[$k]] = trim($e['content']);
+        		}
+        	}
+        }
+
+        if (!empty($results)) {
+        	return $results;
+        } else {
+        	return false;
+        }
 	}
 
 	public function process_walmart() {
