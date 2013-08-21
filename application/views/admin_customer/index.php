@@ -43,7 +43,7 @@
             if($('input[name="customer_url"]').val()!=''){ 
                
             $.post(base_url + 'index.php/admin_customer/add_customer', {
-                //'customer_name': $('input#customer_name').val(),
+                
                 'customer_name':$("#sites .btn_caret_sign").text(),
                 'customer_url': $('input[name="customer_url"]').val(),
                 'logo': $('input[name="customerlogo_file"]').val()
@@ -52,10 +52,11 @@
                 $(".info-message").html(data.message);
                 $(".info-message").fadeOut(7000);
                 if(data.message!="Customer was updated successfully"){
-                    $('input#customer_name').val(''),
-                    $('input[name="customer_url"]').val('');
+                    $('input#customer_name').val('');
+                     //$('input[name="customer_url"]').val('');
+                    //$('img#customer_logo').attr({'src': base_url+'img/no-logo.jpg' });
                 }
-                $('img#customer_logo').attr({'src': base_url+'img/no-logo.jpg' });
+                
             });
             
             }else{

@@ -212,6 +212,10 @@ class Site_Crawler extends MY_Controller {
 					if (($attributes = $this->pageprocessor->attributes()) !== false) {
 						$this->imported_data_parsed_model->insert($imported_id, 'parsed_attributes', serialize($attributes));
 					}
+
+					if (($meta = $this->pageprocessor->meta()) !== false) {
+						$this->imported_data_parsed_model->insert($imported_id, 'parsed_meta', serialize($meta), $revision);
+					}
 				}
 
 				$this->crawler_list_model->updateStatus($data->id, 'finished');
@@ -328,6 +332,10 @@ class Site_Crawler extends MY_Controller {
 
 				if (($attributes = $this->pageprocessor->attributes()) !== false) {
 					$this->imported_data_parsed_model->insert($imported_id, 'parsed_attributes', serialize($attributes), $revision);
+				}
+
+				if (($meta = $this->pageprocessor->meta()) !== false) {
+					$this->imported_data_parsed_model->insert($imported_id, 'parsed_meta', serialize($meta), $revision);
 				}
 
 				$this->crawler_list_model->updateStatus($data->id, 'finished');

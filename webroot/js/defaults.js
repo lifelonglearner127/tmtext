@@ -255,17 +255,27 @@ jQuery(document).ready(function($) {
                             );
                             // populate batches dropdown
                             $.post(
-                                base_url + 'index.php/research/filterBatchByCustomer',
+                                base_url + 'index.php/research/filterBatchByCustomerName',
                                 { 'customer_name': customer_name},
                                 function(data){
                                    if(data.length>0){
                                         $("select[name='batches']").empty();
                                         for(var i=0; i<data.length; i++){
-                                            $("select[name='batches']").append('<option>'+data[i]+'</option>');
+                                            $("select[name='batches']").append('<option value="'+data[i]['id']+'">'+data[i]['title']+'</option>');
                                         }
+                                       $.post(base_url + 'index.php/research/getBatchInfo', { 'batch_id': data[0]['id']}, function(data){
+                                           if(data.created != undefined){
+                                               $('.batch_info').html('<ul class="ml_0"><li>Created: '+data.created+'</li><li>Item Last Added: '+data.modified+'</li>' +
+                                                   '<li> Items: '+data.count_items+' </li></ul>');
+                                           }else{
+                                               $('.batch_info').html('');
+                                           }
+
+                                       });
                                    } else if(data.length==0 && $("select[name='customers']").find("option:selected").text()!="All customers"){
                                        $("select[name='batches']").empty();
                                    }
+
                                 }
                         );
                         }

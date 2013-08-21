@@ -1620,20 +1620,30 @@ label.dd-selected-text, label.dd-option-text{
 }
 
 .ddcommon .ddTitle .ddTitleText img {
+    
     max-width: 100px;
     max-height: 25px;
 }
 
 .an_grd_view_drop, .an_grd_view_drop .dd{
     width:290px!important;
-}
+    height: 35px;
+   }
+  
 .has_stiky{
-    overflow: hidden;
-    margin-bottom: 13px;
+    /*overflow: hidden;*/
+    margin-bottom: 50px;
 }
 .has_stiky  .an_grd_view_drop, .has_stiky .an_grd_view_drop .dd{
     width:250px!important;
     float: left;
+    height: 35px;
+}
+.an_grd_view_drop .dd .ddTitle{
+    height: 35px;
+}
+.has_stiky .an_grd_view_drop .dd .ddTitle{
+      height: 35px;
 }
 .has_stiky_image{
     width:20px;

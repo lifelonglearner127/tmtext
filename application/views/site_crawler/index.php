@@ -168,9 +168,12 @@ function loadCurrentList(url) {
 			});
 
 			if(node.snap !== null && node.snap !== "") {
+				var hours = new Date(node.snap_date).getHours();
+				var minutes = new Date(node.snap_date).getMinutes();
+				var seconds = new Date(node.snap_date).getSeconds();
 				$(".btn-snap-done").tooltip({
 					placement: 'left',
-					title: moment(node.snap_date).format('MMMM Do, YYYY')
+					title: moment(node.snap_date).format('MMMM Do, YYYY') + ", " + hours + ":" + minutes + ":" + seconds
 				});
 			}
 
