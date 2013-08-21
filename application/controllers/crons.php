@@ -97,10 +97,9 @@ class Crons extends MY_Controller {
             $c_url = urlencode(trim($url));
             if($screen_api == 'snapito.com') {
                 $api_key = $this->config->item('snapito_api_secret');
-                $format = "jpeg";
                 $res = array(
-                    "s" => "http://api.snapito.com/web/$api_key/mc/$c_url?type=$format",
-                    'l' => "http://api.snapito.com/web/$api_key/full/$c_url?type=$format"
+                    "s" => "http://api.snapito.com/web/$api_key/mc/$url",
+                    'l' => "http://api.snapito.com/web/$api_key/full/$url"
                 );
             } else {
                 $api_key = $this->config->item('webyshots_api_key');
