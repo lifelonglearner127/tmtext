@@ -56,7 +56,7 @@ foreach ($same_pr as $ks => $vs) {
         $s_product_description = $vs['description'];
         $vs['description'] = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $vs['description']);
         $vs['description'] = preg_replace('/\s+/', ' ', $vs['description']);
-        $vs['description'] = preg_replace('/-/', ' ', $vs['description']);
+        $vs['description'] = preg_replace('/[a-zA-Z]-/', ' ', $vs['description']);
         
         // $data_import['description'] = preg_replace('/[^A-Za-z0-9\. -!]/', ' ', $data_import['description']);
         $s_product_short_desc_count = count(explode(" ", $vs['description']));
@@ -68,7 +68,7 @@ foreach ($same_pr as $ks => $vs) {
         $s_product_long_description = $vs['long_description'];
         $vs['long_description'] = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $vs['long_description']);
         $vs['long_description'] = preg_replace('/\s+/', ' ', $vs['long_description']);
-        $vs['long_description'] = preg_replace('/-/', ' ', $vs['long_description']);
+        $vs['long_description'] = preg_replace('/[a-zA-Z]-/', ' ', $vs['long_description']);
         
         // $data_import['long_description'] = preg_replace('/[^A-Za-z0-9\. -!]/', ' ', $data_import['long_description']);
         $s_product_long_desc_count = count(explode(" ", $vs['long_description']));
