@@ -435,6 +435,7 @@ class Crons extends MY_Controller {
                 if(count($stat_data)>0){
                     foreach($stat_data as $stat){
                         $time_start = microtime(true);
+                        sleep(20);
                         $res_data = $this->check_duplicate_content($stat->imported_data_id);
                         $time_end = microtime(true);
                         $time = $time_end - $time_start;
