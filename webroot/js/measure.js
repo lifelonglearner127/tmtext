@@ -1,5 +1,6 @@
 var grid_id = 0;
 var selected_cites;
+var rows_count=1;
 var editorGridViewBaseUrl = base_url + 'index.php/measure/gridview';
 var editorTableViewBaseUrl = base_url + 'index.php/measure/tableview';
 // ---- search string cookie (auto mode search launcher) (start)
@@ -921,7 +922,35 @@ Array.max = function(array) {
 Array.min = function(array) {
     return Math.min.apply(Math, array);
 };
+function fixSeoHeights() {
+    var selectorss = [];
+   
+    for(var i=1;i<=rows_count;i++){
+        selectorss.push(".p_seo"+i+'short');
+        selectorss.push(".p_seo"+i+'long');
+        
+    }
+    
+    var wrapper = $('.wrapper');
+    if (wrapper.length > 0) {
+        $.each(wrapper, function(k, v) {
+            var thisEl = $(this);
+            var section = thisEl.find('.grid_se_section');
+            if (section.length > 1) {
+                $.each(selectorss, function(k1, v1) {
+                    var heights = thisEl.find(v1).map(function() {
+                        return $(this).height();
+                    }).get();
+                    thisEl.find(v1).height(Array.max(heights));
+                });
+            }
+        });
+    }
+
+}
+
 function fixGridHeights() {
+    fixSeoHeights();
     var selectors = new Array('.p_url', '.p_name', '.p_price','.p_description');
     var wrapper = $('.wrapper');
     if (wrapper.length > 0) {

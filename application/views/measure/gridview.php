@@ -24,8 +24,9 @@ foreach ($same_pr as $ks => $vs) {
 }
 ?>
 <?php
+$row=1;
 foreach ($same_pr as $ks => $vs) {
-    //Max
+    $row=ceil($i/3);
     foreach ($vs['three_last_prices'] as $key => $last_price) {
          if(count($vs['three_last_prices'])>1){
          foreach ($vs['three_last_prices'] as $key1 => $last_price1) {
@@ -53,7 +54,10 @@ foreach ($same_pr as $ks => $vs) {
 
     if ($vs['description'] !== null && trim($vs['description']) !== "") {
         $s_product_description = $vs['description'];
+        $vs['description'] = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $vs['description']);
         $vs['description'] = preg_replace('/\s+/', ' ', $vs['description']);
+        $vs['description'] = preg_replace('/-/', ' ', $vs['description']);
+        
         // $data_import['description'] = preg_replace('/[^A-Za-z0-9\. -!]/', ' ', $data_import['description']);
         $s_product_short_desc_count = count(explode(" ", $vs['description']));
     } else {
@@ -62,7 +66,10 @@ foreach ($same_pr as $ks => $vs) {
     }
     if ($vs['long_description'] !== null && trim($vs['long_description']) !== "") {
         $s_product_long_description = $vs['long_description'];
+        $vs['long_description'] = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $vs['long_description']);
         $vs['long_description'] = preg_replace('/\s+/', ' ', $vs['long_description']);
+        $vs['long_description'] = preg_replace('/-/', ' ', $vs['long_description']);
+        
         // $data_import['long_description'] = preg_replace('/[^A-Za-z0-9\. -!]/', ' ', $data_import['long_description']);
         $s_product_long_desc_count = count(explode(" ", $vs['long_description']));
     } else {
@@ -162,7 +169,7 @@ foreach ($same_pr as $ks => $vs) {
                             }
                             ?><span class='short_desc_wc'></span></span>
                         <p class="heading_text">Words: <b><?php echo $s_product_short_desc_count; ?></b></p>
-                        <div class="p_seo">
+                        <div class="p_seo<?php echo $row; ?>short">
                             <?php if (count($vs['seo']['short']) > 0) { ?>
                                 <p class="heading_text">SEO Keywords: </p>
                                 <ul class='gr_seo_short_ph' style='margin:0px;font-weight: bold;'>
@@ -201,7 +208,7 @@ if($s_product_long_desc_count > 0){
                             }
                             ?><span class='long_desc_wc'></span></span>
                         <p class="heading_text">Words: <b><?php echo $s_product_long_desc_count; ?></b></p>
-                        <div class="p_seo">
+                        <div class="p_seo<?php if ($s_product_description == '') {echo $row.'short';}else{echo $row.'long'; }?>">
                             <?php if (count($vs['seo']['long']) > 0) { ?>
                                 <p class="heading_text">SEO Keywords: </p>
                                 <ul class='gr_seo_short_ph' style='margin:0px;font-weight: bold;'>
@@ -303,6 +310,7 @@ if (($i - 1) % 3 != 0) {
 ?>
 
 <script type="text/javascript">
+ rows_count="<?php echo $row=ceil(count($same_pr)/3);?>";
 group_id = "<?php echo $same_pr[0]['imported_data_id']; ?>";
 
 
@@ -400,7 +408,7 @@ $(".an_grd_view_drop select").live('change', function(){
         });
 });
 
- selectedCustomer();
- 
+selectedCustomer();
+
 </script>
 
