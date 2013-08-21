@@ -244,4 +244,34 @@ class Statistics_model extends CI_Model {
         }
         return false;
     }
+
+    public function batches_compare($own_batch_id, $compare_batch_id){
+        $query = $this->db->where('batch_id', $own_batch_id)
+            ->get($this->tables['statistics']);
+        $own_batch =  $query->result();
+
+        $query = $this->db->where('batch_id', $compare_batch_id)
+            ->get($this->tables['statistics']);
+        $compare_batch =  $query->result();
+
+        $absent_items = array();
+        foreach ($compare_batch as $compare_product){
+            foreach ($own_batch as $own_product){
+                $similar_products_competitors = unserialize($own_product->similar_products_competitors);
+                foreach ($similar_products_competitors as $similar_product){
+                    if ($similar_product['imported_data_id'] == $compare_product->imported_data_id){
+                        $a = 0;
+                        continue 3;
+                    }
+                }
+            }
+            $absent_items[] = array(
+                'product_name' => $compare_product->product_name,
+            );
+        }
+
+        asort($absent_items);
+
+        return $absent_items;
+    }
 }

@@ -268,21 +268,13 @@ class Research extends MY_Controller {
     }
 
     public function get_assess_info(){
-        $this->load->model('imported_data_parsed_model');
-        $data_import = $this->imported_data_parsed_model->getByImId(244);
-        $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);//E500I-A1
-        if (!empty($similar_items)) {
-            foreach ($similar_items as $ks => $vs) {
-                $a = 0;
-            }
-        }
-
         $txt_filter = '';
         if($this->input->get('search_text') != ''){
             $txt_filter = $this->input->get('search_text');
         }
 
         $batch_id = $this->input->get('batch_id');
+        $compare_batch_id = $this->input->get('compare_batch_id');
 
         if($batch_id == ''){
             $output = array(
@@ -311,6 +303,17 @@ class Research extends MY_Controller {
             $build_assess_params->all_columns = $this->input->get('sColumns');
             $build_assess_params->sort_columns = $this->input->get('iSortCol_0');
             $build_assess_params->sort_dir = $this->input->get('sSortDir_0');
+            if (intval($compare_batch_id) > 0) {
+                $build_assess_params->compare_batch_id = $compare_batch_id;
+            }
+            $user_id = $this->ion_auth->get_user_id();
+            $key = 'research_assess';
+            $columns = $this->settings_model->get_value($user_id, $key);
+            if ($columns['product_selection'] != null && $columns['product_selection'] == 'true'){
+                $build_assess_params->compare_batches = true;
+            } else {
+                $build_assess_params->compare_batches = false;
+            }
 
             $params = new stdClass();
             $params->batch_id = $batch_id;
@@ -344,7 +347,6 @@ class Research extends MY_Controller {
 
         $customer_name = $this->batches_model->getCustomerById($batch_id);
         $customer_url = parse_url($customer_name[0]->url);
-        $enable_exec = true;
         $result_table = array();
         $report = array();
         $pricing_details = array();
@@ -353,28 +355,15 @@ class Research extends MY_Controller {
         $items_unoptimized_product_content = 0;
         $items_short_products_content = 0;
         $detail_comparisons_total = 0;
-        foreach($results as $row) {
-//            //$short_description_wc = preg_match_all('/\b/', $row->short_description) / 2; // bug in PHP 5.3.10
-//            $short_description_wc = (count(preg_split('/\b/', $row->short_description)) - 1) / 2;
-//            if (is_null($row->short_description_wc)) {
-//                $this->imported_data_parsed_model->insert($row->imported_data_id, "Description_WC", $short_description_wc);
-//            } else {
-//                if (intval($row->short_description_wc) <> $short_description_wc) {
-//                    $this->imported_data_parsed_model->updateValueByKey($row->imported_data_id, "Description_WC", $short_description_wc);
-//                }
-//            }
-//
-//            //$long_description_wc = preg_match_all('/\b/', $row->long_description) / 2; // bug in PHP 5.3.10
-//            $long_description_wc = (count(preg_split('/\b/', $row->long_description)) - 1) / 2;
-//
-//            if (is_null($row->long_description_wc)) {
-//                $this->imported_data_parsed_model->insert($row->imported_data_id, "Long_Description_WC", $long_description_wc);
-//            } else {
-//                if (intval($row->long_description_wc) <> $long_description_wc) {
-//                    $this->imported_data_parsed_model->updateValueByKey($row->imported_data_id, "Long_Description_WC", $long_description_wc);
-//                }
-//            }
 
+        if ($build_assess_params->compare_batches == true && isset($build_assess_params->compare_batch_id)) {
+            $absent_items = $this->statistics_model->batches_compare($batch_id, $build_assess_params->compare_batch_id);
+            $own_batch = $this->batches_model->get($batch_id);
+            $compare_customer = $this->batches_model->getCustomerById($build_assess_params->compare_batch_id);
+            $compare_batch = $this->batches_model->get($build_assess_params->compare_batch_id);
+        }
+
+        foreach($results as $row) {
             $long_description_wc = $row->long_description_wc;
             $short_description_wc = $row->short_description_wc;
             $items_priced_higher_than_competitors = $row->items_priced_higher_than_competitors;
@@ -405,7 +394,7 @@ class Research extends MY_Controller {
                 }
                 $result_row->price_diff = $price_diff_res;
             }
-
+            $result_row->product_selection = "-";
 
             $result_row->competitors_prices = unserialize($row->competitors_prices);
 
@@ -413,96 +402,8 @@ class Research extends MY_Controller {
                 $detail_comparisons_total += 1;
             }
 
-//            $own_site = parse_url($result_row->url,  PHP_URL_HOST);
-//            if (!$own_site)
-//                $own_site = "own site";
-//            $own_site = str_replace("www.", "", $own_site);
-//
-//            if ($build_assess_params->price_diff) {
-//                $data_import = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
-//                if (isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
-//                    $own_prices = $this->imported_data_parsed_model->getLastPrices($row->imported_data_id);
-//                    if (!empty($own_prices)) {
-//                        $own_price = floatval($own_prices[0]->price);
-//                        $result_row->own_price = $own_price;
-//                        $price_diff_exists = "<input type='hidden'/>";
-//                        $price_diff_exists = $price_diff_exists."<nobr>".$own_site." - $".$own_price."</nobr><br />";
-//                        $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
-//                        if (!empty($similar_items)) {
-//                            foreach ($similar_items as $ks => $vs) {
-//                                $similar_item_imported_data_id = $similar_items[$ks]['imported_data_id'];
-//                                if ($row->imported_data_id == $similar_item_imported_data_id) {
-//                                    continue;
-//                                }
-//                                $three_last_prices = $this->imported_data_parsed_model->getLastPrices($similar_item_imported_data_id);
-//                                if (!empty($three_last_prices)) {
-//                                    $price_scatter = $own_price * 0.03;
-//                                    $price_upper_range = $own_price + $price_scatter;
-//                                    $price_lower_range = $own_price - $price_scatter;
-//                                    $competitor_price = floatval($three_last_prices[0]->price);
-//                                    if ($competitor_price < $own_price) {
-//                                        $items_priced_higher_than_competitors++;
-//                                    }
-//                                    if ($competitor_price > $price_upper_range || $competitor_price < $price_lower_range) {
-//                                        $price_diff_exists = $price_diff_exists."<nobr>".$similar_items[$ks]['customer']." - $".$competitor_price."</nobr><br />";
-//                                        $result_row->price_diff = $price_diff_exists;
-//                                        $result_row->competitors_prices[] = $competitor_price;
-//                                    }
-//                                }
-//                            }
-//                        }
-//                    }
-//                }
-//            }
-
             $result_row->long_seo_phrases = $row->long_seo_phrases;
             $result_row->short_seo_phrases = $row->short_seo_phrases;
-
-//            if ($build_assess_params->short_seo_phrases) {
-//                if ($short_description_wc == $row->short_description_wc && !is_null($row->short_seo_phrases)) {
-//                    $result_row->short_seo_phrases = $row->short_seo_phrases;
-//                } else {
-//                    if ($enable_exec) {
-//                        $cmd = $this->prepare_extract_phrases_cmd($row->short_description);
-//                        $output = array();
-//                        exec($cmd, $output, $error);
-//
-//                        if ($error > 0) {
-//                            $enable_exec = false;
-//                        } else {
-//                            $result_row->short_seo_phrases = $this->prepare_seo_phrases($output);
-//                            if (is_null($row->short_seo_phrases)) {
-//                                $this->imported_data_parsed_model->insert($row->imported_data_id, "short_seo_phrases", $result_row->short_seo_phrases);
-//                            } else {
-//                                $this->imported_data_parsed_model->updateValueByKey($row->imported_data_id, "short_seo_phrases", $result_row->short_seo_phrases);
-//                            }
-//                        }
-//                    }
-//                }
-//            }
-//
-//            if ($build_assess_params->long_seo_phrases) {
-//                if ($long_description_wc == $row->long_description_wc && !is_null($row->long_seo_phrases)) {
-//                    $result_row->long_seo_phrases = $row->long_seo_phrases;
-//                } else {
-//                    if ($enable_exec) {
-//                        $cmd = $this->prepare_extract_phrases_cmd($row->long_description);
-//                        $output = array();
-//                        exec($cmd, $output, $error);
-//
-//                        if ($error > 0) {
-//                            $enable_exec = false;
-//                        } else {
-//                            $result_row->long_seo_phrases = $this->prepare_seo_phrases($output);
-//                            if (is_null($row->long_seo_phrases)) {
-//                                $this->imported_data_parsed_model->insert($row->imported_data_id, "long_seo_phrases", $result_row->long_seo_phrases);
-//                            } else {
-//                                $this->imported_data_parsed_model->updateValueByKey($row->imported_data_id, "long_seo_phrases", $result_row->long_seo_phrases);
-//                            }
-//                        }
-//                    }
-//                }
-//            }
 
             if ($build_assess_params->short_duplicate_content || $build_assess_params->long_duplicate_content) {
                $dc = $this->statistics_duplicate_content_model->get($row->imported_data_id);
@@ -547,55 +448,9 @@ class Research extends MY_Controller {
                    }
                    $result_row->duplicate_content = $duplicate_customers;
                }
-           }
+            }
 
             $items_priced_higher_than_competitors = $this->statistics_model->countAllItemsHigher($batch_id);
-            /*if ($build_assess_params->short_duplicate_content || $build_assess_params->long_duplicate_content) {
-                //$dc = $this->statistics_duplicate_content_model->get($row->imported_data_id);
-                $dc = $this->check_duplicate_content($result_row->imported_data_id);
-                $duplicate_customers_short = '';
-                $duplicate_customers_long = '';
-                $duplicate_short_percent_total = 0;
-                $duplicate_long_percent_total = 0;
-                $customer_url = parse_url($customer_name[0]->url);
-                if (count($dc) > 1) {
-
-                    foreach ($dc as $vs) {
-                        if($customer_url['host'] == $vs['customer']){
-                            $short_percent = 0;
-                            $long_percent = 0;
-                            if ($build_assess_params->short_duplicate_content) {
-                                $duplicate_short_percent_total += 100 - $vs['short_original'];
-                                $short_percent = 100 - round($vs['short_original'], 1);
-                                if($short_percent > 0){
-                                    $duplicate_customers_short = $duplicate_customers_short.'<nobr>'.$vs['customer'].' - '.$short_percent.'%</nobr><br />';
-                                }
-                            }
-                            if ($build_assess_params->long_duplicate_content) {
-                                $duplicate_long_percent_total += 100 - $vs['long_original'];
-                                $long_percent = 100 - round($vs['long_original'], 1);
-                                if($long_percent > 0){
-                                    $duplicate_customers_long = $duplicate_customers_long.'<nobr>'.$vs['customer'].' - '.$long_percent.'%</nobr><br />';
-                                }
-                            }
-                            if($short_percent >= 20 || $long_percent >= 20){
-                                $items_have_more_than_20_percent_duplicate_content += 1;
-                            }
-                        }
-                    }
-                    if($duplicate_customers_short !=''){
-                        $duplicate_customers = 'Duplicate short<br />'.$duplicate_customers_short;
-                    }
-                    if($duplicate_customers_long!=''){
-                        $duplicate_customers = $duplicate_customers.'Duplicate long<br />'.$duplicate_customers_long;
-                    }
-
-                    if ($duplicate_short_percent_total > $duplicate_content_range || $duplicate_long_percent_total > $duplicate_content_range) {
-                        $duplicate_customers = "<input type='hidden'/>".$duplicate_customers;
-                    }
-                    $result_row->duplicate_content = $duplicate_customers;
-                }
-            }*/
 
             if ($result_row->short_seo_phrases == 'None' && $result_row->long_seo_phrases == 'None') {
                 $items_unoptimized_product_content++;
@@ -645,6 +500,13 @@ class Research extends MY_Controller {
         $report['summary']['items_have_more_than_20_percent_duplicate_content'] = $items_have_more_than_20_percent_duplicate_content;
         $report['summary']['items_unoptimized_product_content'] = $items_unoptimized_product_content;
         $report['summary']['items_short_products_content'] = $items_short_products_content;
+        if ($build_assess_params->compare_batches == true) {
+            $report['recommendations']['absent_items'] = $absent_items;
+            $report['summary']['absent_items_count'] = count($absent_items);
+            $report['summary']['own_batch_name'] = $own_batch[0]->title;
+            $report['summary']['compare_customer_name'] = $compare_customer[0]->name;
+            $report['summary']['compare_batch_name'] = $compare_batch[0]->title;
+        }
 
         if ($items_priced_higher_than_competitors > 0) {
             $report['recommendations']['items_priced_higher_than_competitors'] = 'Reduce pricing on '.$items_priced_higher_than_competitors.' item(s)';
@@ -749,6 +611,7 @@ class Research extends MY_Controller {
                         $data_row->long_seo_phrases,
                         $data_row->duplicate_content,
                         $data_row->price_diff,
+                        $data_row->product_selection,
                         $recommendations_html,
                         json_encode($data_row),
                     );
@@ -842,6 +705,7 @@ class Research extends MY_Controller {
         $results = $this->get_data_for_assess($params);
 
         $batch_id = $this->input->get('batch_id');
+        $compare_batch_id = $this->input->get('compare_batch_id');
         $type_doc = $this->input->get('type_doc');
 
         $this->load->model('batches_model');
@@ -882,6 +746,16 @@ class Research extends MY_Controller {
         $build_assess_params->long_more = -1;
         $build_assess_params->long_seo_phrases = true;
         $build_assess_params->long_duplicate_content = true;
+        if (intval($compare_batch_id) > 0) {
+            $build_assess_params->compare_batch_id = $compare_batch_id;
+        }
+        $key = 'research_assess';
+        $columns = $this->settings_model->get_value($user_id, $key);
+        if ($columns['product_selection'] != null && $columns['product_selection'] == 'true'){
+            $build_assess_params->compare_batches = true;
+        } else {
+            $build_assess_params->compare_batches = false;
+        }
 
         $assess_table = $this->build_asses_table($results, $build_assess_params, $params->batch_id);
 
@@ -988,6 +862,14 @@ class Research extends MY_Controller {
         $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_arrow_down.png">'.$report_data['summary']['items_short_products_content'].' items have product content that is too short</div>';
         $html = $html.'</td></tr>';
 
+        if (!empty($report_data['summary']['absent_items_count']) && intval($report_data['summary']['absent_items_count'] > 0)) {
+            $html = $html.'<tr><td class="report_td">';
+            $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_comparison.png">'.$report_data['summary']['absent_items_count'];
+            $html = $html.' items in '.$report_data['summary']['compare_customer_name'].' - '.$report_data['summary']['compare_batch_name'];
+            $html = $html.' are absent from '.$report_data['summary']['own_batch_name'];
+            $html = $html.'</div></td></tr>';
+        }
+
         $html = $html.'</table>';
 
         $html = $html.'<table class="report recommendations" border="1" cellspacing="0" cellpadding="0">';
@@ -1025,6 +907,16 @@ class Research extends MY_Controller {
 
         $pdf->WriteHTML($html);
 
+        if (count($report_data['recommendations']['absent_items']) > 0) {
+            $pdf->AddPage($layout);
+            $html = '<span class="h2">There is no match in the primary batch for the particular secondary batch item</span>';
+            $html = $html.'<table class="assess_absent">';
+            foreach ($report_data['recommendations']['absent_items'] as $item){
+                $html = $html.'<tr><td class="assess_absent_cell">'.$item['product_name'].'</td><td class="assess_absent_cell">Add item to product selection</td></tr>';
+            }
+            $html = $html.'</table>';
+            $pdf->WriteHTML($html);
+        }
 
         $comparison_data_array = $this->statistics_model->product_comparison($download_report_params->batch_id);
         if (count($comparison_data_array) > 0) {

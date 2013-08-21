@@ -41,6 +41,7 @@ class Assess extends MY_Controller {
                 'long_seo_phrases'              => 'true',
                 'duplicate_context'             => 'true',
                 'price_diff'                    => 'true',
+                'product_selection'             => 'false',
             );
         }
         $this->data['columns'] = $columns;
@@ -52,7 +53,7 @@ class Assess extends MY_Controller {
     {
         $this->load->model('batches_model');
         $batches = $this->batches_model->getAll();
-        $batches_list = array(''=>'Select batch');
+        $batches_list = array('0'=>'Select batch');
         foreach($batches as $batch){
             $batches_list[$batch->id] = $batch->title;
         }
@@ -80,7 +81,7 @@ class Assess extends MY_Controller {
             if(count($customers) == 0){
                 $customer_list = array();
             }else{
-                $customer_list = array(''=>'Select customer');
+                $customer_list = array('0'=>'Select customer');
             }
             foreach($customers as $customer){
                 $batches = $this->batches_model->getAllByCustomer($customer->customer_id);
@@ -92,7 +93,7 @@ class Assess extends MY_Controller {
             if(count($customers) == 0){
                 $customers = $this->customers_model->getAll();
             }
-            $customer_list = array(''=>'Select customer');
+            $customer_list = array('0'=>'Select customer');
             foreach($customers as $customer){
                 $batches = $this->batches_model->getAllByCustomer($customer->id);
                 if(count($batches) > 0){
@@ -163,5 +164,15 @@ class Assess extends MY_Controller {
         $include_in_report = trim(strtolower($this->input->post('include_in_report'))) === 'true' ? true : false;
         $this->load->model('research_data_model');
         $this->research_data_model->include_in_assess_report($research_data_id, $include_in_report);
+    }
+
+    public function customers_get_all(){
+        $output = $this->getCustomersByUserId();
+        $this->output->set_content_type('application/json')->set_output(json_encode($output));
+    }
+
+    public function batches_get_all(){
+        $output = $this->batches_list();
+        $this->output->set_content_type('application/json')->set_output(json_encode($output));
     }
 }
