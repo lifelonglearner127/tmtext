@@ -22,6 +22,9 @@
 						<th class="ui-state-default" tabindex="0" rowspan="1" colspan="1" aria-label="URL: activate to sort column ascending" style="width: 532px; height: 30px;">
 							<div class="DataTables_sort_wrapper">Email</div>
 						</th>
+						<th class="ui-state-default" tabindex="0" rowspan="1" colspan="1" aria-label="URL: activate to sort column ascending" style="width: 532px; height: 30px;">
+							<div class="DataTables_sort_wrapper">Date</div>
+						</th>
 					</tr>
 				</thead>                     
 					<tbody class="logins_list" role="alert" aria-live="polite" aria-relevant="all">
@@ -40,7 +43,12 @@
 					if( tr_class == 'odd' ) tr_class = 'even';
 					else	tr_class = 'odd';
 					
-					var logins = '<tr class="'+tr_class+'"><td>'+value.first_name+'</td><td>'+value.email+'</td></tr>';
+					var time = value.last_login
+					var curdate = new Date(null);
+					curdate.setTime( time*1000 );
+					var date_login = curdate.toLocaleString();
+					
+					var logins = '<tr class="'+tr_class+'"><td>'+value.first_name+'</td><td>'+value.email+'</td><td>'+date_login+'</td></tr>';
 					$('.logins_list').append(logins);
 				});
 			});

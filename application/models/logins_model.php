@@ -14,7 +14,7 @@ class Logins_model extends CI_Model {
 	function get_last_logins(){
 		$time_now = time();
 		$query = $this->db
-			->select('first_name, email')
+			->select('first_name, email, last_login')
 			->where('last_login <=', $time_now)
 			->order_by("last_login", "desc")
 			->limit(30)
