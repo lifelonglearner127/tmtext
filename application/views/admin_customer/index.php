@@ -90,7 +90,6 @@
                                                             <div class="clear-fix"></div>
                                                     
                                                     <div class="aclis">
-                                                        
                                                                 <div style="margin-bottom: 15px;"id="sites" class="btn-group hp_boot_drop mr_10">
                                                                     <button class="btn btn-danger btn_caret_sign" id="" onclick="return false;">[ Select Customer ]</button>
                                                                     <button class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
@@ -99,14 +98,18 @@
                                                                     <ul class="dropdown-menu">
                                                                         
                                                                         <?php foreach($customers as $key => $value) { ?>
-                                                                            <li><a data-item="<?php echo $value['url']; ?>" data-value="<?php if($value['image']!='http://tmeditor.dev/img/'){echo $value['image'];}else{ echo "../../img/no-logo.jpg";} ?>" href="javascript:void(0)"><span class="<?php echo $value['value']; ?>"><?php echo $value['value']; ?></span></a></li>
+                                                                            <!--<li><a data-item="<?php echo $value['url']; ?>" data-value="<?php if($value['image']!='http://tmeditor.dev/img/'){echo $value['image'];}else{ echo "../../img/no-logo.jpg";} ?>" href="javascript:void(0)"><span class="<?php echo $value['value']; ?>"><?php echo $value['value']; ?></span></a></li>-->
+                                                                            <li><a data-item="<?php echo $value['url']; ?>"  customer_id="<?php echo $value['id']; ?>" data-value="<?php if($value['image']!='http://tmeditor.dev/img/'){echo $value['image'];}else{ echo "../../img/no-logo.jpg";} ?>" href="javascript:void(0)"><span class="<?php echo $value['value']; ?>"><?php echo $value['value']; ?></span></a></li>
                                                                         <?php } ?>
                                                                             
                                                                     </ul>
                                                                 </div>
+                                                                
+                                                                <button class="btn btn-danger ml_10 mt_10" disabled id="delete_customer"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
                                                            
                                                         <div class="clear-fix"></div>
                                                     </div>
+                                                    
                                                     
                                 <div class="control-group">
                                     <label class="control-label" for="customer_name">Customer URL:</label> 
@@ -267,10 +270,17 @@ function selectOption(){
                     })
 //                      url=$("span[class='"+new_caret+"']").closest('a').attr('data-item');
 //                      var image=$("span[class='"+new_caret+"']").closest('a').attr('data-value');
+
+						$('#delete_customer').removeAttr("disabled");
+						customer_id = $(this).attr('customer_id');
+						customer_name = $(this).text();
+						$('#delete_customer').attr("customer_id",customer_id);
+						$('#delete_customer').attr("customer_name",customer_name);
                       
                     }else{
                         $("#customer_logo").attr('src',"../../img/no-logo.jpg");
                         $('#customer_url').val('');
+                        $('#delete_customer').attr("disabled","disabled");
                     }
                     
                 });
@@ -278,7 +288,17 @@ function selectOption(){
             selectOption();
             
             
-            
+            $('#delete_customer').click(function(){
+				customer_id = $(this).attr('customer_id');
+				customer_name = $(this).attr('customer_name');
+				if( confirm('You are about to delete customer "'+customer_name+'" OK?') ){
+					var data = {
+					   'customer_id' : customer_id
+				   };
+					$.post(base_url + 'index.php/admin_customer/delete_customer/', data, function(data){});
+					//$.get(base_url + 'index.php/admin_customer/delete_customer/'+customer_id+'', function(data){});
+				}
+			});
             
             
             $('#add_new_customer').click(function(){

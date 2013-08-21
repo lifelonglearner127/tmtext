@@ -1044,6 +1044,10 @@ body{
     margin-top:10px !important;
 }
 
+#delete_customer{
+	margin-top: -15px !important;
+}
+
 .mr_10{
     margin-right:10px;
 }

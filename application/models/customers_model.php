@@ -71,4 +71,8 @@ class Customers_model extends CI_Model {
         $this->db->where('name', $name);
         $this->db->update($this->tables['customers'], $data); 
     }
+    
+    function delete($id){
+		$this->db->delete($this->tables['customers'], array('id' => $id)); 
+	}
 }

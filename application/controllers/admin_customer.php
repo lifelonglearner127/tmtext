@@ -32,6 +32,7 @@ class Admin_Customer extends MY_Controller {
             
             foreach ($customers_init_list as $key => $value) {
                 $output[] = array('text' => '',
+                    'id' => strtolower($value->id),
                     'value' => strtolower($value->name),
                     'image' => base_url() . 'img/' . $value->image_url,
                      'url' =>$value->url
@@ -121,4 +122,10 @@ class Admin_Customer extends MY_Controller {
         }
         $this->output->set_content_type('application/json')->set_output(json_encode($response));
     }
+    
+    public function delete_customer(){
+		$this->load->model('customers_model');
+		$customer_id = $this->input->post('customer_id');
+		$this->customers_model->delete($customer_id);
+	}
 }
