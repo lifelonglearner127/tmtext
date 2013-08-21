@@ -962,6 +962,7 @@ class Imported_data_parsed_model extends CI_Model {
             $description = '';
             $long_description = '';
             $url = '';
+            $features = '';
             foreach ($res as $val) {
                 if ($val['key'] == 'URL') {
                     $url = $val['value'];
