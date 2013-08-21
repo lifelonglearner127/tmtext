@@ -199,7 +199,7 @@ class Measure extends MY_Controller {
                 $url = preg_replace('#^https?://#', '', $v['url']);
                 $r_url = urlencode(trim($url));
                 if($screen_api == 'snapito.com') {
-                    $call_url = "http://api.snapito.com/web/$api_key/full/$orig_url";
+                    $call_url = "http://api.snapito.com/web/$api_key/mc?freshness100000&url=$orig_url";
                 } else {
                     $token = md5("$api_secret+$url");
                     $call_url = "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$r_url&dimension=$size&format=$format";
@@ -379,6 +379,10 @@ class Measure extends MY_Controller {
                 "s" => "http://api.snapito.com/web/$api_key/mc/$c_url",
                 'l' => "http://api.snapito.com/web/$api_key/full/$c_url"
             );
+            // $res = array(
+            //     "s" => "http://api.snapito.com/web/$api_key/mc?freshness100000&url=$c_url",
+            //     'l' => "http://api.snapito.com/web/$api_key/mc?freshness100000&url=$c_url"
+            // );
             $crawl_s = $this->upload_record_webshoot($res['s'], $c_url . "_small");
             $crawl_l = $this->upload_record_webshoot($res['l'], $c_url . "_big");
             $result = array(
