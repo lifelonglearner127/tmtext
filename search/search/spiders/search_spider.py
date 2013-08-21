@@ -275,7 +275,8 @@ class SearchSpider(BaseSpider):
 				root_url = "http://www.walmart.com"
 				item['product_url'] = root_url + rel_url
 
-				
+				if 'origin_url' in response.meta:
+					item['origin_url'] = response.meta['origin_url']
 
 				items.append(item)
 
@@ -292,6 +293,9 @@ class SearchSpider(BaseSpider):
 				item['product_name'] = result.select("text()").extract()[0]
 				item['product_url'] = result.select("@href").extract()[0]
 
+				if 'origin_url' in response.meta:
+					item['origin_url'] = response.meta['origin_url']
+
 				items.append(item)
 
 
@@ -304,6 +308,9 @@ class SearchSpider(BaseSpider):
 				item['site'] = site
 				item['product_name'] = result.select("span[@class='pro-name']/text()").extract()[0]
 				item['product_url'] = result.select("@href").extract()[0]
+
+				if 'origin_url' in response.meta:
+					item['origin_url'] = response.meta['origin_url']
 
 				items.append(item)
 
@@ -321,6 +328,9 @@ class SearchSpider(BaseSpider):
 				#TODO: add brand?
 				#item['brand'] = result.select("div[@class='prodname']/div[@class='prodbrandname emphasis]/text()").extract()[0]
 
+				if 'origin_url' in response.meta:
+					item['origin_url'] = response.meta['origin_url']
+
 				items.append(item)
 
 		# bestbuy
@@ -335,6 +345,9 @@ class SearchSpider(BaseSpider):
 				item['product_name'] = result.select("text()").extract()[0]
 				root_url = "http://www.toysrus.com"
 				item['product_url'] = root_url + result.select("@href").extract()[0]
+
+				if 'origin_url' in response.meta:
+					item['origin_url'] = response.meta['origin_url']
 
 				items.append(item)
 
