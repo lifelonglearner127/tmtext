@@ -233,10 +233,9 @@ class Measure extends MY_Controller {
             $c_url = urlencode(trim($url));
             if($screen_api == 'snapito.com') {
                 $api_key = $this->config->item('snapito_api_secret');
-                $format = "jpeg";
                 $res = array(
-                    "s" => "http://api.snapito.com/web/$api_key/mc/$c_url?type=$format",
-                    'l' => "http://api.snapito.com/web/$api_key/full/$c_url?type=$format"
+                    "s" => "http://api.snapito.com/web/$api_key/mc/$url",
+                    'l' => "http://api.snapito.com/web/$api_key/full/$url"
                 );
             } else {
                 $api_key = $this->config->item('webyshots_api_key');
@@ -303,10 +302,9 @@ class Measure extends MY_Controller {
             $primary_source_res = $this->urlExists('http://snapito.com');
             if($primary_source_res) { // ===== PRIMARY SCREENCAPTURE API (http://snapito.com/)
                 $api_key = $this->config->item('snapito_api_secret');
-                $format = "jpeg";
                 $res = array(
-                    "s" => "http://api.snapito.com/web/$api_key/mc/$c_url?type=$format",
-                    'l' => "http://api.snapito.com/web/$api_key/full/$c_url?type=$format"
+                    "s" => "http://api.snapito.com/web/$api_key/mc/$c_url",
+                    'l' => "http://api.snapito.com/web/$api_key/full/$c_url"
                 );
             } else { // ===== SECONDARY SCREENCAPTURE API (http://webyshots.com)
                 $url = urlencode(trim($c_url));
@@ -377,10 +375,9 @@ class Measure extends MY_Controller {
         $primary_source_res = $this->urlExists('http://snapito.com');
         if($primary_source_res) { // ===== PRIMARY SCREENCAPTURE API (http://snapito.com/)
             $api_key = $this->config->item('snapito_api_secret');
-            $format = "jpeg";
             $res = array(
-                "s" => "http://api.snapito.com/web/$api_key/mc/$c_url?type=$format",
-                'l' => "http://api.snapito.com/web/$api_key/full/$c_url?type=$format"
+                "s" => "http://api.snapito.com/web/$api_key/mc/$c_url",
+                'l' => "http://api.snapito.com/web/$api_key/full/$c_url"
             );
             $crawl_s = $this->upload_record_webshoot($res['s'], $c_url . "_small");
             $crawl_l = $this->upload_record_webshoot($res['l'], $c_url . "_big");
