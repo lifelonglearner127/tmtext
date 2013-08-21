@@ -11,6 +11,7 @@
     	<div class="row-fluid home_pages">
 
     		<div class='span12 head_section'>
+    			<button class='btn btn-primary' onclick="testShrinktheweb()">Test shrinktheweb</button>
 	    		<p class='head_line1'>Home page reports are generated weekly. <a onclick="viewRecipientsList()" href='javascript:void(0)'>Configure Recipients</a></p>
 				<div class='head_line_2'>
 					<div class="span2 span_lh_30">View Reports for:</div>
@@ -192,6 +193,10 @@
 </div>
 
 <!-- MODALS (START) -->
+<div class="modal hide fade ci_hp_modals" id='shrinktheweb_crawl_modal'>
+	<div class="modal-body">&nbsp;</div>
+</div>
+
 <div class="modal hide fade ci_hp_modals" id='loading_crawl_modal'>
 	<div class="modal-body">
 		<p><img src="<?php echo base_url();?>img/loader_scr.gif">&nbsp;&nbsp;&nbsp;Generating screenshot. Please wait...</p>
