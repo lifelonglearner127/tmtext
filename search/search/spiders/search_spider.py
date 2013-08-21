@@ -264,11 +264,18 @@ class SearchSpider(BaseSpider):
 			for result in results:
 				item = SearchItem()
 				item['site'] = site
-				item['product_name'] = result.select("text()").extract()[0]
+				product_name = result.select("text()").extract()[0]
+				# append text that is in <span> if any
+				span_text = result.select("./span/text()")
+				for text in span_text:
+					product_name += " " + text.extract()
+				item['product_name'] = product_name
 				rel_url = result.select("@href").extract()[0]
 				#TODO: maybe use urljoin
 				root_url = "http://www.walmart.com"
 				item['product_url'] = root_url + rel_url
+
+				
 
 				items.append(item)
 
