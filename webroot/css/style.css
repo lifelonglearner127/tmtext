@@ -1629,8 +1629,8 @@ label.dd-selected-text, label.dd-option-text{
     width:290px!important;
 }
 .has_stiky{
-    overflow: hidden;
-    margin-bottom: 13px;
+    /*overflow: hidden;*/
+    margin-bottom: 50px;
 }
 .has_stiky  .an_grd_view_drop, .has_stiky .an_grd_view_drop .dd{
     width:250px!important;
