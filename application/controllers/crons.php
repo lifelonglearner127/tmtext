@@ -9,7 +9,7 @@ class Crons extends MY_Controller {
   			'index' => true,
   			'screenscron' => true,
             'do_stats' => true,
-            'hello'=>true
+            'duplicate_content'=>true
   		));
  	}
 
@@ -413,40 +413,55 @@ class Crons extends MY_Controller {
     }
 
     public function duplicate_content(){
-        $this->load->model('batches_model');
-        $this->load->model('statistics_model');
-        $this->load->model('statistics_duplicate_content_model');
-        $batches = $this->batches_model->getAll('id');
-        foreach($batches as $batch){
-            $time_start = microtime(true);
-            $params = new stdClass();
-            $params->batch_id = $batch->id;
-            $params->txt_filter = '';
-            $stat_data= $this->statistics_model->getStatsData($params);
-            $time_end = microtime(true);
-            $time = $time_end - $time_start;
-            echo "getStatsData - $time seconds\n";
-            if(count($stat_data)>0){
-                foreach($stat_data as $stat){
-                    $time_start = microtime(true);
-                    $res_data = $this->check_duplicate_content($stat->imported_data_id);
-                    $time_end = microtime(true);
-                    $time = $time_end - $time_start;
-                    echo "check_duplicate_content - $time seconds\n";
-                    foreach($res_data as $val){
+        set_time_limit(0);
+        $tmp_dir = sys_get_temp_dir().'/';
+        unlink($tmp_dir.".locked");
+        if ( file_exists($tmp_dir.".locked") )
+        { exit;}
+
+        touch($tmp_dir.".locked");
+        try {
+            $this->load->model('batches_model');
+            $this->load->model('statistics_model');
+            $this->load->model('statistics_duplicate_content_model');
+            $this->statistics_duplicate_content_model->truncate();
+            $batches = $this->batches_model->getAll('id');
+            foreach($batches as $batch){
+                $time_start = microtime(true);
+                $params = new stdClass();
+                $params->batch_id = $batch->id;
+                $params->txt_filter = '';
+                $stat_data= $this->statistics_model->getStatsData($params);
+                $time_end = microtime(true);
+                $time = $time_end - $time_start;
+                echo "getStatsData - $time seconds\n";
+                if(count($stat_data)>0){
+                    foreach($stat_data as $stat){
                         $time_start = microtime(true);
-                        $this->statistics_duplicate_content_model->insert($val['imported_data_id'],
-                            $val['product_name'], $val['description'],
-                            $val['long_description'], $val['url'],
-                            $val['features'], $val['customer'],
-                            $val['long_original'], $val['short_original']);
+                        $res_data = $this->check_duplicate_content($stat->imported_data_id);
                         $time_end = microtime(true);
                         $time = $time_end - $time_start;
-                        echo "insert statistics_duplicate_content - $time seconds\n";
-                    }
-                };
+                        echo "check_duplicate_content - $time seconds\n";
+                        foreach($res_data as $val){
+                            $time_start = microtime(true);
+                            $this->statistics_duplicate_content_model->insert($val['imported_data_id'],
+                                $val['product_name'], $val['description'],
+                                $val['long_description'], $val['url'],
+                                $val['features'], $val['customer'],
+                                $val['long_original'], $val['short_original']);
+                            $time_end = microtime(true);
+                            $time = $time_end - $time_start;
+                            echo "insert ".$val['imported_data_id']." statistics_duplicate_content - $time seconds\n";
+                        }
+                    };
+                }
             }
+            echo "Cron Job Finished";
+        } catch (Exception $e) {
+            echo 'Ошибка',  $e->getMessage(), "\n";
+            unlink($tmp_dir.".locked");
         }
+        unlink($tmp_dir.".locked");
     }
 
 

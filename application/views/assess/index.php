@@ -273,6 +273,7 @@
                                         <img src="<?php echo base_url();?>img/arrow-down.png" style="width:12px;margin-right: 10px">
                                     </a>
                                     Summary
+                                    <span id="summary_message"></span>
                                 </span>
                                 <a class="ml_10 research_arrow" href="#">
                                     <img src="<?php echo base_url();?>img/arrow.png">
@@ -303,7 +304,7 @@
                                 </div>
                             </div>
                         </li>
-                        <li class="boxes ui-resizable">
+                        <!--li class="boxes ui-resizable">
                             <h3>
                                 <span>
                                     <a class="hideShow" onclick="return false;" href="#">
@@ -317,7 +318,7 @@
                                 <div id="comparison_detail"></div>
                                 <div id="comparison_pagination"></div>
                             </div>
-                        </li>
+                        </li-->
                     </ul>
                 </div>
 

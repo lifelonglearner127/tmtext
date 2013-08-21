@@ -1404,6 +1404,24 @@ class Research extends MY_Controller {
             ->set_output(json_encode(strtolower($customer_name)));
     }
 
+    public function filterBatchByCustomerName(){
+        $this->load->model('batches_model');
+        $this->load->model('customers_model');
+        $customer_id = $this->customers_model->getIdByName($this->input->post('customer_name'));
+        $batches = $this->batches_model->getAllByCustomer($customer_id);
+        if(strtolower($this->input->post('customer_name')) ==  "all customers"){
+            $batches = $this->batches_model->getAll();
+        }
+        $batches_list = array();
+        if(!empty($batches)){
+            foreach($batches as $batch){
+                $batches_list[] = array('id' => $batch->id, 'title' => $batch->title);
+            }
+        }
+        $this->output->set_content_type('application/json')
+            ->set_output(json_encode($batches_list));
+    }
+
     public function filterBatchByCustomer(){
         $this->load->model('batches_model');
         $this->load->model('customers_model');

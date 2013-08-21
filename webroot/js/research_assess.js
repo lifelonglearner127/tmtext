@@ -80,6 +80,16 @@ $(function () {
                         setTimeout(function(){
                             tblAssess.fnProcessingIndicator( false );
                         }, 100);
+                        if(json.iTotalRecords == 0){
+                            $('#assess_report_total_items').html("");
+                            $('#assess_report_items_priced_higher_than_competitors').html("");
+                            $('#assess_report_items_have_more_than_20_percent_duplicate_content').html("");
+                            $('#assess_report_items_unoptimized_product_content').html("");
+                            $('#assess_report_items_have_product_context_that_is_too_short').html("");
+                            if($('select[name="research_assess_batches"]').find('option:selected').val() != ""){
+                                $('#summary_message').html(" - Processing data. Check back soon.");
+                            }
+                        }
                     });
             },
             "fnRowCallback": function(nRow, aData, iDisplayIndex) {
@@ -142,6 +152,7 @@ $(function () {
         }
 
         var report = data.ExtraData.report;
+        $('#summary_message').html("");
         $('#assess_report_total_items').html(report.summary.total_items);
         $('#assess_report_items_priced_higher_than_competitors').html(report.summary.items_priced_higher_than_competitors);
         $('#assess_report_items_have_more_than_20_percent_duplicate_content').html(report.summary.items_have_more_than_20_percent_duplicate_content);
@@ -281,12 +292,12 @@ $(function () {
     }
 
     $('select[name="research_assess_customers"]').on("change", function(res) {
-        $.post(base_url + 'index.php/research/filterBatchByCustomer', { 'customer_name': res.target.value}, function(data){
+        $.post(base_url + 'index.php/research/filterBatchByCustomerName', { 'customer_name': res.target.value}, function(data){
             var research_assess_batches = $("select[name='research_assess_batches']");
             if(data.length>0){
                 research_assess_batches.empty();
                 for(var i=0; i<data.length; i++){
-                    research_assess_batches.append('<option>'+data[i]+'</option>');
+                    research_assess_batches.append('<option value="'+data[i]['id']+'">'+data[i]['title']+'</option>');
                 }
             } else if(data.length==0 && res.target.value !="select customer"){
                 research_assess_batches.empty();

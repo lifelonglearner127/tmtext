@@ -71,6 +71,7 @@ class Assess extends MY_Controller {
     }
 
     public function getCustomersByUserId(){
+        $this->load->model('batches_model');
         $this->load->model('customers_model');
         $this->load->model('users_to_customers_model');
 
@@ -82,7 +83,10 @@ class Assess extends MY_Controller {
                 $customer_list = array(''=>'Select customer');
             }
             foreach($customers as $customer){
-                array_push($customer_list, $customer->name);
+                $batches = $this->batches_model->getAllByCustomer($customer->customer_id);
+                if(count($batches) > 0){
+                    array_push($customer_list, $customer->name);
+                }
             }
         }else{
             if(count($customers) == 0){
@@ -90,7 +94,10 @@ class Assess extends MY_Controller {
             }
             $customer_list = array(''=>'Select customer');
             foreach($customers as $customer){
-                array_push($customer_list, $customer->name);
+                $batches = $this->batches_model->getAllByCustomer($customer->id);
+                if(count($batches) > 0){
+                    array_push($customer_list, $customer->name);
+                }
             }
         }
         return $customer_list;

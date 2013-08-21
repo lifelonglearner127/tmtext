@@ -122,7 +122,7 @@ class Crawler_List_model extends CI_Model {
     {
     	$CI =& get_instance();
 
-    	$this->db->select('cl.id, cl.imported_data_id, cl.url, cl.snap, c.name as name, cl.status, DATE(cl.updated) as updated')
+    	$this->db->select('cl.id, cl.imported_data_id, cl.url, cl.snap, cl.snap_date, c.name as name, cl.status, DATE(cl.updated) as updated')
     		->from($this->tables['crawler_list'].' as cl')
             ->join($this->tables['categories'].' as c', 'cl.category_id = c.id', 'left');
 

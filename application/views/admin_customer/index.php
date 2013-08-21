@@ -108,7 +108,7 @@
                                                     </div>
                                                     
                                 <div class="control-group">
-                                    <label class="control-label" for="customer_name">Customer url:</label>
+                                    <label class="control-label" for="customer_name">Customer URL:</label> 
                                     <div class="controls">
                                         <input type="text" id="customer_url" name="customer_url" class="span12" value="">
                                     </div>

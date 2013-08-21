@@ -88,8 +88,7 @@
     font-size: 12px;
 }
 .ci_hp_modals.crawl_launch_panel .modal-body {
-    overflow: hidden;
-    max-height: 700px;
+    max-height: 550px;
 }
 #customers_screens_crawl_modal {
     top: 40%;
@@ -1558,7 +1557,7 @@ label.dd-selected-text, label.dd-option-text{
 
 #Current_List ul li span:last-child, #Current_List ul lh span:last-child {
     border-right: 0px;
-    width: 38%;
+    width: 35%;
 }
 
 .ellipsis {
