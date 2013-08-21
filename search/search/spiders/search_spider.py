@@ -267,6 +267,8 @@ class SearchSpider(BaseSpider):
 				product_name = result.select("text()").extract()[0]
 				# append text that is in <span> if any
 				span_text = result.select("./span/text()")
+
+				#TODO: use span text differently, as it is more important/relevant (bold) ?
 				for text in span_text:
 					product_name += " " + text.extract()
 				item['product_name'] = product_name
