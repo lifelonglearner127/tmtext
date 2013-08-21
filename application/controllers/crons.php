@@ -97,10 +97,9 @@ class Crons extends MY_Controller {
             $c_url = urlencode(trim($url));
             if($screen_api == 'snapito.com') {
                 $api_key = $this->config->item('snapito_api_secret');
-                $format = "jpeg";
                 $res = array(
-                    "s" => "http://api.snapito.com/web/$api_key/mc/$c_url?type=$format",
-                    'l' => "http://api.snapito.com/web/$api_key/full/$c_url?type=$format"
+                    "s" => "http://api.snapito.com/web/$api_key/mc/$url",
+                    'l' => "http://api.snapito.com/web/$api_key/full/$url"
                 );
             } else {
                 $api_key = $this->config->item('webyshots_api_key');
@@ -427,32 +426,28 @@ class Crons extends MY_Controller {
             $this->statistics_duplicate_content_model->truncate();
             $batches = $this->batches_model->getAll('id');
             foreach($batches as $batch){
-                $time_start = microtime(true);
                 $params = new stdClass();
                 $params->batch_id = $batch->id;
                 $params->txt_filter = '';
                 $stat_data= $this->statistics_model->getStatsData($params);
-                $time_end = microtime(true);
-                $time = $time_end - $time_start;
-                echo "getStatsData - $time seconds\n";
                 if(count($stat_data)>0){
                     foreach($stat_data as $stat){
                         $time_start = microtime(true);
                         $res_data = $this->check_duplicate_content($stat->imported_data_id);
                         $time_end = microtime(true);
                         $time = $time_end - $time_start;
-                        echo "check_duplicate_content - $time seconds\n";
+                        echo "block with check_duplicate_content - $time seconds\n";
+                        $time_start = $time_end;
                         foreach($res_data as $val){
-                            $time_start = microtime(true);
                             $this->statistics_duplicate_content_model->insert($val['imported_data_id'],
                                 $val['product_name'], $val['description'],
                                 $val['long_description'], $val['url'],
                                 $val['features'], $val['customer'],
                                 $val['long_original'], $val['short_original']);
-                            $time_end = microtime(true);
-                            $time = $time_end - $time_start;
-                            echo "insert ".$val['imported_data_id']." statistics_duplicate_content - $time seconds\n";
                         }
+                        $time_end = microtime(true);
+                        $time = $time_end - $time_start;
+                        echo "foreach insert - $time seconds\n";
                     };
                 }
             }
@@ -463,7 +458,6 @@ class Crons extends MY_Controller {
         }
         unlink($tmp_dir.".locked");
     }
-
 
     private function prepare_extract_phrases_cmd($text) {
         $text = str_replace("'", "\'", $text);

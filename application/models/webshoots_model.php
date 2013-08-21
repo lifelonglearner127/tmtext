@@ -15,6 +15,18 @@ class Webshoots_model extends CI_Model {
     }
 
     public function updateCrawlListWithSnap($id, $snap) {
+        // === destroy previous snap (start)
+        $check_obj = array(
+            'id' => $id
+        );
+        $check_query = $this->db->get_where($this->tables['crawler_list'], $check_obj);
+        $check_query_res = $check_query->result();
+        if(count($check_query_res) > 0) {
+            $prev_snap = $check_query_res[0];
+            $sn = $prev_snap->snap;
+            @unlink(realpath(BASEPATH . "../webroot/webshoots/$sn"));
+        }
+        // === destroy previous snap (end)
         $update_object = array(
             'snap' => $snap,
             'snap_date' => date("Y-m-d H:i:s")

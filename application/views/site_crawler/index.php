@@ -112,7 +112,8 @@
 <script>
 function showSnap(snap, id, url) {
 	$("#preview_crawl_snap_modal").modal('show');
-	$("#preview_crawl_snap_modal .snap_holder").html("<img src='" + snap + "'>");
+	var snap = "webshoots/" + snap;
+	$("#preview_crawl_snap_modal .snap_holder").html("<img src='" + base_url +  snap + "'>");
 	$("#preview_crawl_snap_modal #snap_modal_refresh").attr("onclick", "snapshotIt('" + id + "', '" + url + "', true)");
 }
 
