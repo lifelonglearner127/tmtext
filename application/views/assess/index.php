@@ -118,7 +118,15 @@
                     </div>
                 </div>
             </div>
-            <div>
+            <div style="float: left;">
+                Compare with:
+                <select id="research_assess_compare_batches_customer"></select>
+                <select id="research_assess_compare_batches_batch"></select>
+            </div>
+            <div style="float: left;" class="ml_5">
+                <button id="research_assess_compare_batches_reset" class="btn">Reset</button>
+            </div>
+            <div style="float: right;">
                 <button id="research_assess_update" class="btn btn-success">Update</button>
                 <button id="research_assess_export" class="btn">Export</button>
             </div>
@@ -166,6 +174,10 @@
             <p>
                 <input type="checkbox" id="column_price_diff" data-col_name="price_diff" name="column_price_diff" <?php echo($columns['price_diff'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="column_actions">Price diff</label>
+            </p>
+            <p>
+                <input type="checkbox" id="column_product_selection" data-col_name="product_selection" name="column_product_selection" <?php echo($columns['product_selection'] == 'true' ? 'checked="checked"' : ''); ?> />
+                <label for="column_actions">Product selection</label>
             </p>
         </form>
     </div>
@@ -301,6 +313,17 @@
                                 </div>
                                 <div class="mt_10 mb_10 ml_15">
                                     <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_arrow_down.png"><span id="assess_report_items_have_product_context_that_is_too_short" class="mr_10"></span>items have product content that is too short</div>
+                                </div>
+                                <div id="assess_report_compare_panel" class="mt_10 mb_10 ml_15">
+                                    <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_comparison.png">
+                                        <span id="assess_report_absent_items_count"></span>
+                                        items in
+                                        <span id="assess_report_compare_customer_name"></span>
+                                        -
+                                        <span id="assess_report_compare_batch_name"></span>
+                                        are absent from
+                                        <span id="assess_report_own_batch_name"></span>
+                                    </div>
                                 </div>
                             </div>
                         </li>

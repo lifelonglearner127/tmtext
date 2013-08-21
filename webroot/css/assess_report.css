@@ -2,6 +2,9 @@ body {
     font-family: Arial;
     font-size: 16px;
 }
+span.h2{
+    font-size: 30px;
+}
 img.icon {
     width:20px;
     height:20px;
@@ -71,4 +74,16 @@ img.img{
 }
 a.url{
     font-size: 6px;
+}
+.assess_absent{
+    width:100%;
+    text-align: left;
+    font-family: Arial;
+    font-size: 8px;
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+.assess_absent_cell {
+    border: 1px solid black;
+    padding: 2px;
 }

@@ -30,7 +30,8 @@ $(function () {
             "long_description_wc",
             "long_seo_phrases",
             "duplicate_content",
-            "price_diff"
+            "price_diff",
+            "product_selection"
         ],
         recommendations: [
             "product_name",
@@ -86,6 +87,7 @@ $(function () {
                             $('#assess_report_items_have_more_than_20_percent_duplicate_content').html("");
                             $('#assess_report_items_unoptimized_product_content').html("");
                             $('#assess_report_items_have_product_context_that_is_too_short').html("");
+                            $('#assess_report_compare_panel').hide();
                             if($('select[name="research_assess_batches"]').find('option:selected').val() != ""){
                                 $('#summary_message').html(" - Processing data. Check back soon.");
                             }
@@ -93,7 +95,7 @@ $(function () {
                     });
             },
             "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-                $(nRow).attr("add_data", aData[10]);
+                $(nRow).attr("add_data", aData[11]);
                 return nRow;
             },
             "fnDrawCallback": function(oSettings) {
@@ -119,6 +121,7 @@ $(function () {
                 {"sTitle" : "SEO Phrases (L)", "sName":"long_seo_phrases", "sWidth": "10%"},
                 {"sTitle" : "Duplicate Content", "sName":"duplicate_content", "sWidth": "5%"},
                 {"sTitle" : "Price", "sName":"price_diff", "sWidth": "10%"},
+                {"sTitle" : "Product Selection", "sName":"product_selection", "sWidth": "10%"},
                 {"sTitle" : "Recommendations", "sName":"recommendations", "sWidth": "45%", "bVisible": false, "bSortable": false},
                 {"sName":"add_data", "bVisible": false}
             ]
@@ -158,6 +161,15 @@ $(function () {
         $('#assess_report_items_have_more_than_20_percent_duplicate_content').html(report.summary.items_have_more_than_20_percent_duplicate_content);
         $('#assess_report_items_unoptimized_product_content').html(report.summary.items_unoptimized_product_content);
         $('#assess_report_items_have_product_context_that_is_too_short').html(report.summary.items_short_products_content);
+        if (report.summary.absent_items_count == undefined || report.summary.absent_items_count == 0) {
+            $('#assess_report_compare_panel').hide();
+        } else {
+            $('#assess_report_absent_items_count').html(report.summary.absent_items_count);
+            $('#assess_report_compare_customer_name').html(report.summary.compare_customer_name);
+            $('#assess_report_compare_batch_name').html(report.summary.compare_batch_name);
+            $('#assess_report_own_batch_name').html(report.summary.own_batch_name);
+            $('#assess_report_compare_panel').show();
+        }
 
         if (report.detail_comparisons_total > 0) {
             comparison_details_load();
@@ -292,8 +304,8 @@ $(function () {
     }
 
     $('select[name="research_assess_customers"]').on("change", function(res) {
+        var research_assess_batches = $("select[name='research_assess_batches']");
         $.post(base_url + 'index.php/research/filterBatchByCustomerName', { 'customer_name': res.target.value}, function(data){
-            var research_assess_batches = $("select[name='research_assess_batches']");
             if(data.length>0){
                 research_assess_batches.empty();
                 for(var i=0; i<data.length; i++){
@@ -304,6 +316,85 @@ $(function () {
             }
             $('#research_assess_update').click();
         });
+        var own_customer = $(this).val();
+        fill_lists_batches_compare(own_customer);
+    });
+
+    function fill_lists_batches_compare(own_customer) {
+        var research_assess_compare_batches_customer = $('#research_assess_compare_batches_customer');
+        var research_assess_compare_batches_batch = $('#research_assess_compare_batches_batch');
+        research_assess_compare_batches_customer.empty();
+        research_assess_compare_batches_batch.empty();
+        if (own_customer == 'Select customer') {
+            return;
+        }
+
+        $.get(
+            base_url + 'index.php/assess/customers_get_all',
+            {},
+            function(data){
+                research_assess_compare_batches_customer.empty();
+                if (data) {
+                    $.each(data, function(i, v){
+                        research_assess_compare_batches_customer.append('<option value="'+v.toLowerCase()+'">'+v+'</option>');
+                    });
+                    research_assess_compare_batches_customer.find('option[value="'+own_customer+'"]').remove();
+                }
+            }
+        );
+
+        $.get(
+            base_url + 'index.php/assess/batches_get_all',
+            {},
+            function(data){
+                research_assess_compare_batches_batch.empty();
+                if (data) {
+                    $.each(data, function(i, v){
+                        research_assess_compare_batches_batch.append('<option value="'+i+'">'+v+'</option>');
+                    });
+                    var own_batch_id = $("select[name='research_assess_batches']").find("option:selected").val();
+                    research_assess_compare_batches_batch.find('option[value="'+own_batch_id+'"]').remove();
+                }
+            }
+        );
+    }
+
+    $('#research_assess_compare_batches_customer').change(function(res){
+        var research_assess_compare_batches_batch = $("#research_assess_compare_batches_batch");
+        $.post(base_url + 'index.php/research/filterBatchByCustomerName', { 'customer_name': res.target.value}, function(data){
+            if(data.length>0){
+                research_assess_compare_batches_batch.empty();
+                for(var i=0; i<data.length; i++){
+                    research_assess_compare_batches_batch.append('<option value="'+data[i]['id']+'">'+data[i]['title']+'</option>');
+                }
+            } else if(data.length==0 && res.target.value !="select customer"){
+                research_assess_compare_batches_batch.empty();
+            }
+        });
+    });
+
+    $('#research_assess_compare_batches_batch').change(function(){
+        var selectedBatch = $(this).find("option:selected").text();
+        $.post(base_url + 'index.php/research/filterCustomerByBatch', {
+            'batch': selectedBatch
+        }, function(data){
+            var research_assess_compare_batches_customer = $('#research_assess_compare_batches_customer');
+            if(data != ''){
+                research_assess_compare_batches_customer.val(data.toLowerCase()).prop('selected', true);
+            } else {
+                research_assess_compare_batches_customer.val('select customer').prop('selected', true);
+            }
+            if (selectedBatch.length == 0)
+                research_assess_compare_batches_customer.val('select customer').prop('selected', true);
+        });
+    });
+
+    $('#research_assess_compare_batches_reset').click(function(){
+        var research_assess_compare_batches_customer = $('#research_assess_compare_batches_customer');
+        var research_assess_compare_batches_batch = $('#research_assess_compare_batches_batch');
+        research_assess_compare_batches_customer.val('select customer').prop('selected', true);
+        research_assess_compare_batches_batch.val('select batch').prop('selected', true);
+        $('#research_assess_update').click();
     });
 
     $('select[name="research_assess_batches"]').on("change", function() {
@@ -397,10 +488,12 @@ $(function () {
     function assess_report_download(type_doc) {
         var batch_name = $("select[name='research_assess_batches']").find("option:selected").text();
         var batch_id = $("select[name='research_assess_batches']").find("option:selected").val();
+        var compare_batch_id = $("#research_assess_compare_batches_batch").val();
         var url = base_url
             + 'index.php/research/assess_report_download?batch_name=' + batch_name
             + '&type_doc=' + type_doc
             + '&batch_id=' + batch_id
+            + '&compare_batch_id=' + compare_batch_id
         window.open(url);
     }
 
@@ -420,7 +513,8 @@ $(function () {
                     long_description_wc : $("#column_long_description_wc").attr('checked') == 'checked',
                     long_seo_phrases : $("#column_long_seo_phrases").attr('checked') == 'checked',
                     duplicate_content : $("#column_duplicate_content").attr('checked') == 'checked',
-                    price_diff : $("#column_price_diff").attr('checked') == 'checked'
+                    price_diff : $("#column_price_diff").attr('checked') == 'checked',
+                    product_selection : $("#column_product_selection").attr('checked') == 'checked'
                 };
 
                 // save params to DB
@@ -614,6 +708,11 @@ $(function () {
             if ($('#research_assess_long_duplicate_content').is(':checked')) {
                 assessRequestParams.long_duplicate_content = true;
             }
+        }
+
+        var research_assess_compare_batches_batch = $('#research_assess_compare_batches_batch').val();
+        if (research_assess_compare_batches_batch > -1) {
+            assessRequestParams.compare_batch_id = research_assess_compare_batches_batch;
         }
 
         for (var p in assessRequestParams) {
