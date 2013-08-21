@@ -169,7 +169,7 @@ foreach ($same_pr as $ks => $vs) {
                             }
                             ?><span class='short_desc_wc'></span></span>
                         <p class="heading_text">Words: <b><?php echo $s_product_short_desc_count; ?></b></p>
-                        <div class="p_seo<?php echo $row; ?>">
+                        <div class="p_seo<?php echo $row; ?>short">
                             <?php if (count($vs['seo']['short']) > 0) { ?>
                                 <p class="heading_text">SEO Keywords: </p>
                                 <ul class='gr_seo_short_ph' style='margin:0px;font-weight: bold;'>
@@ -208,7 +208,7 @@ if($s_product_long_desc_count > 0){
                             }
                             ?><span class='long_desc_wc'></span></span>
                         <p class="heading_text">Words: <b><?php echo $s_product_long_desc_count; ?></b></p>
-                        <div class="p_seo<?php echo $row;?>">
+                        <div class="p_seo<?php if ($s_product_description == '') {echo $row.'short';}else{echo $row.'long'; }?>">
                             <?php if (count($vs['seo']['long']) > 0) { ?>
                                 <p class="heading_text">SEO Keywords: </p>
                                 <ul class='gr_seo_short_ph' style='margin:0px;font-weight: bold;'>

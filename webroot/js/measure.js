@@ -926,7 +926,8 @@ function fixSeoHeights() {
     var selectorss = [];
    
     for(var i=1;i<=rows_count;i++){
-        selectorss.push(".p_seo"+i);
+        selectorss.push(".p_seo"+i+'short');
+        selectorss.push(".p_seo"+i+'long');
         
     }
     
