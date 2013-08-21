@@ -175,7 +175,6 @@ class Measure extends MY_Controller {
             'img' => $url_name.".".$type,
             'call' => $call_url
         );
-        // die(var_dump($res));
         return $res;
     }
 
@@ -206,7 +205,8 @@ class Measure extends MY_Controller {
                     $call_url = "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$r_url&dimension=$size&format=$format";
                 }
                 $snap_res = $this->crawl_webshoot($call_url, $v['id']);
-                $this->webshoots_model->updateCrawlListWithSnap($v['id'], $snap_res['path']);
+                // $this->webshoots_model->updateCrawlListWithSnap($v['id'], $snap_res['path']);
+                $this->webshoots_model->updateCrawlListWithSnap($v['id'], $snap_res['img']);
                 // ---- snap it and update crawler_list table (end)
             }
         }
