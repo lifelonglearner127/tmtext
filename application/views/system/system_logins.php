@@ -12,25 +12,41 @@
     
     <div class="tab-content">
         <div id="tab9" class="tab-pane active">
-			echo 111
+			<div>
+				<table id="records" style="width: 893px;" class="dataTable" aria-describedby="records_info">
+                    <thead>
+						<tr role="row">
+							<th class="ui-state-default" tabindex="0" rowspan="1" colspan="1" aria-label="Product Name: activate to sort column ascending" style="width: 308px;">
+								<div class="DataTables_sort_wrapper">First Name<span class="DataTables_sort_icon css_right ui-icon ui-icon-carat-2-n-s"></span></div>
+							</th>
+							<th class="ui-state-default" tabindex="0" rowspan="1" colspan="1" aria-label="URL: activate to sort column ascending" style="width: 532px;">
+								<div class="DataTables_sort_wrapper">Email<span class="DataTables_sort_icon css_right ui-icon ui-icon-carat-2-n-s"></span></div>
+							</th>
+						</tr>
+					</thead>                     
+                        <tbody class="logins_list" role="alert" aria-live="polite" aria-relevant="all">
+						</tbody>
+				</table>
+			</div>
 		</div>
 	</div>
     
     <script type="text/javascript">
 		$(function() {
-			function last_logins(id_selected) {
-				system_reports.empty();
-				$.get(base_url + 'index.php/system/system_reports_get_all', {}, function(data){
+			function last_logins() {
+				$.get(base_url + 'index.php/system/system_last_logins', {}, function(data){
+					var tr_class = 'even';
 					$.each(data.data, function(index, value){
-						system_reports.append('<option value="'+value.id+'">'+value.name+'</option>');
+						if( tr_class == 'odd' )
+							tr_class = 'even';
+						else
+							tr_class = 'odd';
+						var logins = '<tr class="'+tr_class+'"><td>'+value.first_name+'</td><td>'+value.email+'</td></tr>';
+						$('.logins_list').append(logins);
 					});
-					reports_get_by_id(system_reports.val());
 				});
-				if (id_selected) {
-					$('#system_reports option:eq('+id_selected+')').prop('selected', true);
-					reports_get_by_id(id_selected);
-				}
 			}
+			last_logins();
 		});
     </script>
     

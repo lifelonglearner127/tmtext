@@ -1196,15 +1196,12 @@ class System extends MY_Controller {
     }
     
     public function system_logins() {
-		/*$this->load->model('logins_model');
-		$response['data'] = $this->logins_model->get_last_logins();
-        //$this->output->set_content_type('application/json')->set_output(json_encode($response));
-        $this->render();*/
-        echo "1";
+        $this->render();
 	}
 	
-	public function test(){
-		$this->load->view('test');
-		//echo "1"; die();
+	public function system_last_logins() {
+		$this->load->model('logins_model');
+		$response['data'] = $this->logins_model->get_last_logins();
+        $this->output->set_content_type('application/json')->set_output(json_encode($response));
 	}
 }
