@@ -412,6 +412,8 @@ class Crons extends MY_Controller {
     }
 
     public function duplicate_content(){
+        error_reporting(E_ALL);
+        ini_set('display_errors', '1');
         set_time_limit(0);
         $tmp_dir = sys_get_temp_dir().'/';
         unlink($tmp_dir.".locked");
