@@ -70,8 +70,8 @@ function openScreensModalSlider() {
 function testShrinktheweb() {
 	var access_key = "28c77fca6deb748";
 	var secret_key = "f95ee";
-	var test_img = "<img src='http://images.shrinktheweb.com/xino.php?stwembed=1&stwxmax=320&stwymax=240&stwaccesskeyid=" + access_key + "&stwurl=http://www.overstock.com' />";	
-	// var test_img = "<img src='http://images.shrinktheweb.com/xino.php?stwembed=1&stwaccesskeyid=" + access_key + "&stwsize=sm&stwurl=http://www.overstock.com' />";
+	// var test_img = "<img src='http://images.shrinktheweb.com/xino.php?stwembed=1&stwxmax=320&stwymax=240&stwaccesskeyid=" + access_key + "&stwurl=http://www.overstock.com' />";	
+	var test_img = "<img src='http://images.shrinktheweb.com/xino.php?stwembed=1&stwaccesskeyid=" + access_key + "&stwsize=xlg&stwurl=http://www.overstock.com' />";
 	$("#shrinktheweb_crawl_modal").modal('show');
 	$("#shrinktheweb_crawl_modal .modal-body").html(test_img);
 }
