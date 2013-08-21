@@ -17,10 +17,10 @@
                     <thead>
 						<tr role="row">
 							<th class="ui-state-default" tabindex="0" rowspan="1" colspan="1" aria-label="Product Name: activate to sort column ascending" style="width: 308px;">
-								<div class="DataTables_sort_wrapper">First Name<span class="DataTables_sort_icon css_right ui-icon ui-icon-carat-2-n-s"></span></div>
+								<div class="DataTables_sort_wrapper">First Name</div>
 							</th>
-							<th class="ui-state-default" tabindex="0" rowspan="1" colspan="1" aria-label="URL: activate to sort column ascending" style="width: 532px;">
-								<div class="DataTables_sort_wrapper">Email<span class="DataTables_sort_icon css_right ui-icon ui-icon-carat-2-n-s"></span></div>
+							<th class="ui-state-default" tabindex="0" rowspan="1" colspan="1" aria-label="URL: activate to sort column ascending" style="width: 532px; height: 30px;">
+								<div class="DataTables_sort_wrapper">Email</div>
 							</th>
 						</tr>
 					</thead>                     
