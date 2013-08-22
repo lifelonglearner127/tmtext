@@ -230,8 +230,72 @@ jQuery(document).ready(function($) {
                                     $("select[name='product_batches']").empty();
                                     $("select[name='product_batches']").append('<option value="0">Choose Batch</option>');
                                     for(var i=0; i<data.length; i++){
-                                       $("select[name='product_batches']").append('<option value="'+data[i]+'">'+data[i]+'</option>');
+										select_batch = '';
+										if(i==0) select_batch = "selected='selected'";
+										
+                                        $("select[name='product_batches']").append('<option '+select_batch+' value="'+data[i]+'">'+data[i]+'</option>');
+                                       //$("select[name='product_batches']").append('<option value="'+data[i]+'">'+data[i]+'</option>');
                                     }
+                                    
+                                    //If user chooses a customer that only has one batch, automatically select that batch. Denis
+                                    //show_from_butches(); //we can use this string but we cant see amount batches items (as example 147 items), after batches dropdown list
+                                    
+									$.post(base_url + 'index.php/research/filterCustomerByBatch', {'batch': $("#batchess").val()}, function(data) {
+										if (data != '') {
+
+											$("select[name='customers_list'] option").each(function() {
+
+												if (data == $(this).val()) {
+													var dropdown = $("select[name='customers_list']").msDropdown().data("dd");
+													dropdown.destroy();
+													$('#product_customers .ddcommon').remove();
+													$(this).prop('selected', true);
+													//$("select[name='customers_list']").val($(this).val());
+													dropdown = $("select[name='customers_list']").msDropdown().data("dd");
+
+												}
+											});
+										} else {
+											$("select[name='customers_list'] option").each(function() {
+												if ($(this).val() == 'All Customers') {
+													var dropdown = $("select[name='customers_list']").msDropdown().data("dd");
+													dropdown.destroy();
+													$('#product_customers .ddcommon').remove();
+													$(this).prop('selected', true);
+													dropdown = $("select[name='customers_list']").msDropdown().data("dd");
+												}
+											});
+										}
+									});
+
+									$.post(base_url + 'index.php/research/countAllItemsInBatch', {'batch': $("#batchess").val()}, function(data) {
+										$("span.product_batches_items").html(data + ' items');
+										$.removeCookie('product_batch_items', {path: '/'}); // destroy
+										$.cookie('product_batch_items', data+ ' items', {expires: 7, path: '/'}); // re-create
+									});
+
+									if ($("#batchess").val() !== '0') {
+
+										//alert($("#batchess").val());
+										show_from_butches();
+										$('#products li:eq(0)').css({'background': '#CAEAFF'});
+										$('#products li:eq(0)').attr('data-status', 'selected');
+										$('.products_an_search').addClass('active');
+										setTimeout(function() {
+											$('#products li:eq(0)').trigger('click');
+
+										}, 500);
+
+									} else {
+										$("#measure_product_ind_wrap").html('');
+										$("#compet_area_grid").html('');
+										$("#an_sort_search_box").html('');
+										$(".grid_switcher").hide();
+										$(".keywords_metrics_bl_res").hide();
+										$('li.keywords_metrics_bl_res, li.keywords_metrics_bl_res ~ li, ul.less_b_margin').hide();
+									}
+									//----End automatically select that batch ---------------------------------------------------
+                                    
                                 } else if(data.length==0 && res.target.value !="All customers"){
                                     $("select[name='product_batches']").empty();
                                     $("select[name='product_batches']").append('<option value="0">Choose Batch</option>');
