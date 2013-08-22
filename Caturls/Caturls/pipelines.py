@@ -4,8 +4,8 @@
 # See: http://doc.scrapy.org/topics/item-pipeline.html
 
 class CaturlsPipeline(object):
-	def __init__(self):
-		self.file = open('product_urls.txt', 'wb')
+	def open_spider(self, spider):
+		self.file = open(spider.filename, 'wb')
 	
 	def process_item(self, item, spider):
 		line = item['product_url'] + "\n"

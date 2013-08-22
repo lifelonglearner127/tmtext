@@ -11,6 +11,7 @@ BOT_NAME = 'Caturls'
 SPIDER_MODULES = ['Caturls.spiders']
 NEWSPIDER_MODULE = 'Caturls.spiders'
 ITEM_PIPELINES = ['Caturls.pipelines.CaturlsPipeline']
+LOG_ENABLED = False
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'Caturls (+http://www.yourdomain.com)'

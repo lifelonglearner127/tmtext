@@ -17,7 +17,7 @@ import json
 ################################
 # Run with 
 #
-# scrapy crawl producturls -a cat_page="<url>"
+# scrapy crawl producturls -a cat_page="<url>" [-a filename="<filename>""]
 #
 ################################
 
@@ -29,9 +29,10 @@ class CaturlsSpider(BaseSpider):
 	allowed_domains = ["staples.com", "bloomingdales.com", "walmart.com", "amazon.com", "bestbuy.com", "nordstrom.com", "macys.com", "williams-sonoma.com"]
 
 	# store the cateory page url given as an argument into a field and add it to the start_urls list
-	def __init__(self, cat_page):
+	def __init__(self, cat_page, filename = "product_urls.txt"):
 		self.cat_page = cat_page
 		self.start_urls = [cat_page]
+		self.filename = filename
 		# staples televisions
 		#self.start_urls = ["http://www.staples.com/Televisions/cat_CL142471"]
 		# bloomingdales sneakers
