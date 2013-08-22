@@ -95,7 +95,7 @@ $(function () {
                     });
             },
             "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-                $(nRow).attr("add_data", aData[11]);
+                $(nRow).attr("add_data", aData[10]);
                 return nRow;
             },
             "fnDrawCallback": function(oSettings) {
@@ -121,7 +121,6 @@ $(function () {
                 {"sTitle" : "SEO Phrases (L)", "sName":"long_seo_phrases", "sWidth": "10%"},
                 {"sTitle" : "Duplicate Content", "sName":"duplicate_content", "sWidth": "5%"},
                 {"sTitle" : "Price", "sName":"price_diff", "sWidth": "10%"},
-                {"sTitle" : "Product Selection", "sName":"product_selection", "sWidth": "10%"},
                 {"sTitle" : "Recommendations", "sName":"recommendations", "sWidth": "45%", "bVisible": false, "bSortable": false},
                 {"sName":"add_data", "bVisible": false}
             ]
@@ -227,8 +226,12 @@ $(function () {
     });
 
     $('#tblAssess tbody').click(function(event) {
-        $('#ajaxLoadAni').fadeIn('slow');
         var add_data = JSON.parse($(event.target).parents('tr').attr('add_data'));
+        // if this product is absent product from second batch
+        if (add_data.id == undefined) {
+            return;
+        }
+        $('#ajaxLoadAni').fadeIn('slow');
         $('#assessDetails_ProductName').val(add_data.product_name);
         $('#assessDetails_url').val(add_data.url);
         $('#assess_open_url_btn').attr('href', add_data.url);
@@ -433,6 +436,8 @@ $(function () {
             }
             if (selectedBatch.length == 0)
                 research_assess_customers.val('select customer').prop('selected', true);
+            var own_customer = research_assess_customers.val();
+            fill_lists_batches_compare(own_customer);
             $('#research_assess_update').click();
         });
     });
@@ -518,8 +523,7 @@ $(function () {
                     long_description_wc : $("#column_long_description_wc").attr('checked') == 'checked',
                     long_seo_phrases : $("#column_long_seo_phrases").attr('checked') == 'checked',
                     duplicate_content : $("#column_duplicate_content").attr('checked') == 'checked',
-                    price_diff : $("#column_price_diff").attr('checked') == 'checked',
-                    product_selection : $("#column_product_selection").attr('checked') == 'checked'
+                    price_diff : $("#column_price_diff").attr('checked') == 'checked'
                 };
 
                 // save params to DB
@@ -720,7 +724,7 @@ $(function () {
         }
 
         var research_assess_compare_batches_batch = $('#research_assess_compare_batches_batch').val();
-        if (research_assess_compare_batches_batch > -1) {
+        if (research_assess_compare_batches_batch > 0) {
             assessRequestParams.compare_batch_id = research_assess_compare_batches_batch;
         }
 

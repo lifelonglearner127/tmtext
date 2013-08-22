@@ -305,15 +305,7 @@ class Research extends MY_Controller {
             $build_assess_params->sort_dir = $this->input->get('sSortDir_0');
             $build_assess_params->flagged = $this->input->get('flagged') == 'undefined' ? -1 : $this->input->get('flagged');
             if (intval($compare_batch_id) > 0) {
-                $build_assess_params->compare_batch_id = $compare_batch_id;
-            }
-            $user_id = $this->ion_auth->get_user_id();
-            $key = 'research_assess';
-            $columns = $this->settings_model->get_value($user_id, $key);
-            if ($columns['product_selection'] != null && $columns['product_selection'] == 'true'){
-                $build_assess_params->compare_batches = true;
-            } else {
-                $build_assess_params->compare_batches = false;
+                $build_assess_params->compare_batch_id = intval($compare_batch_id);
             }
 
             $params = new stdClass();
@@ -357,13 +349,6 @@ class Research extends MY_Controller {
         $items_short_products_content = 0;
         $detail_comparisons_total = 0;
 
-        if ($build_assess_params->compare_batches == true && isset($build_assess_params->compare_batch_id)) {
-            $absent_items = $this->statistics_model->batches_compare($batch_id, $build_assess_params->compare_batch_id);
-            $own_batch = $this->batches_model->get($batch_id);
-            $compare_customer = $this->batches_model->getCustomerById($build_assess_params->compare_batch_id);
-            $compare_batch = $this->batches_model->get($build_assess_params->compare_batch_id);
-        }
-
         foreach($results as $row) {
             $long_description_wc = $row->long_description_wc;
             $short_description_wc = $row->short_description_wc;
@@ -402,8 +387,6 @@ class Research extends MY_Controller {
             if ($build_assess_params->price_diff && $price_diff_show <= 0){
                 continue;
             }
-
-            $result_row->product_selection = "-";
 
             $result_row->competitors_prices = unserialize($row->competitors_prices);
 
@@ -531,18 +514,34 @@ class Research extends MY_Controller {
         $report['summary']['items_have_more_than_20_percent_duplicate_content'] = $items_have_more_than_20_percent_duplicate_content;
         $report['summary']['items_unoptimized_product_content'] = $items_unoptimized_product_content;
         $report['summary']['items_short_products_content'] = $items_short_products_content;
-        if ($build_assess_params->compare_batches == true) {
-            $report['recommendations']['absent_items'] = $absent_items;
-            $report['summary']['absent_items_count'] = count($absent_items);
-            $report['summary']['own_batch_name'] = $own_batch[0]->title;
-            $report['summary']['compare_customer_name'] = $compare_customer[0]->name;
-            $report['summary']['compare_batch_name'] = $compare_batch[0]->title;
+
+        // only if second batch select - get absent products, merge it with result_table
+        if (isset($build_assess_params->compare_batch_id) && $build_assess_params->compare_batch_id > 0) {
+            $absent_items = $this->statistics_model->batches_compare($batch_id, $build_assess_params->compare_batch_id);
+
+            foreach ($absent_items as $absent_item) {
+                $result_row = new stdClass();
+                $result_row->product_name = $absent_item['product_name'];
+                $result_row->url = $absent_item['url'];
+                $result_row->recommendations = $absent_item['recommendations'];
+                $result_table[] = $result_row;
+            }
+
+            $own_batch = $this->batches_model->get($batch_id);
+            $compare_customer = $this->batches_model->getCustomerById($build_assess_params->compare_batch_id);
+            $compare_batch = $this->batches_model->get($build_assess_params->compare_batch_id);
         }
+
+        $report['recommendations']['absent_items'] = $absent_items;
+        $report['summary']['absent_items_count'] = count($absent_items);
+        $report['summary']['own_batch_name'] = $own_batch[0]->title;
+        $report['summary']['compare_customer_name'] = $compare_customer[0]->name;
+        $report['summary']['compare_batch_name'] = $compare_batch[0]->title;
 
         if ($items_priced_higher_than_competitors > 0) {
             $report['recommendations']['items_priced_higher_than_competitors'] = 'Reduce pricing on '.$items_priced_higher_than_competitors.' item(s)';
         }
-        if ($items_have_more_than_20_percent_duplicate_content == 0) {
+        if ($items_have_more_than_20_percent_duplicate_content > 0) {
             $report['recommendations']['items_have_more_than_20_percent_duplicate_content'] = 'Create original product content';
         }
         if ($items_unoptimized_product_content > 0) {
@@ -612,25 +611,30 @@ class Research extends MY_Controller {
             $c = 0;
             foreach($result_table as $data_row) {
                 if ($c >= $display_start) {
-                    $recommendations = array();
-                    if ($data_row->short_description_wc < 50 || $data_row->long_description_wc < 100) {
-                        $recommendations[] = '<li>Increase descriptions word count</li>';
-                    }
-                    /*if ($data_row->short_seo_phrases != 'None' || $data_row->long_seo_phrases != 'None') {
-                           $recommendations[] = '<li>SEO optimize product content</li>';
-                       }*/
-                    if ($data_row->short_seo_phrases == 'None' && $data_row->long_seo_phrases == 'None') {
-                        $recommendations[] = '<li>SEO optimize product content</li>';
-                    }
-                    //$recommendations[] = '<li>Add unique content</li>';
-                    if ($build_assess_params->price_diff && !empty($data_row->competitors_prices)) {
-                        if (min($data_row->competitors_prices) < $data_row->own_price) {
-                            $recommendations[] = '<li>Lower price to be competitive</li>';
+                    if (isset($data_row->recommendations)) {
+                        // this is for absent product in selected batch only
+                        $recommendations_html = '<ul class="assess_recommendations"><li>'.$data_row->recommendations.'</li></ul>';
+                    } else {
+                        $recommendations = array();
+                        if ($data_row->short_description_wc < 50 || $data_row->long_description_wc < 100) {
+                            $recommendations[] = '<li>Increase descriptions word count</li>';
                         }
-                    }
-                    //$recommendations[] = '<li>Add product to inventory</li>';
+                        /*if ($data_row->short_seo_phrases != 'None' || $data_row->long_seo_phrases != 'None') {
+                               $recommendations[] = '<li>SEO optimize product content</li>';
+                           }*/
+                        if ($data_row->short_seo_phrases == 'None' && $data_row->long_seo_phrases == 'None') {
+                            $recommendations[] = '<li>SEO optimize product content</li>';
+                        }
+                        //$recommendations[] = '<li>Add unique content</li>';
+                        if ($build_assess_params->price_diff && !empty($data_row->competitors_prices)) {
+                            if (min($data_row->competitors_prices) < $data_row->own_price) {
+                                $recommendations[] = '<li>Lower price to be competitive</li>';
+                            }
+                        }
+                        //$recommendations[] = '<li>Add product to inventory</li>';
 
-                    $recommendations_html = '<ul class="assess_recommendations">'.implode('', $recommendations).'</ul>';
+                        $recommendations_html = '<ul class="assess_recommendations">'.implode('', $recommendations).'</ul>';
+                    }
 
                     $output['aaData'][] = array(
                         $data_row->created,
@@ -642,7 +646,6 @@ class Research extends MY_Controller {
                         $data_row->long_seo_phrases,
                         $data_row->duplicate_content,
                         $data_row->price_diff,
-                        $data_row->product_selection,
                         $recommendations_html,
                         json_encode($data_row),
                     );
@@ -780,13 +783,6 @@ class Research extends MY_Controller {
         if (intval($compare_batch_id) > 0) {
             $build_assess_params->compare_batch_id = $compare_batch_id;
         }
-        $key = 'research_assess';
-        $columns = $this->settings_model->get_value($user_id, $key);
-        if ($columns['product_selection'] != null && $columns['product_selection'] == 'true'){
-            $build_assess_params->compare_batches = true;
-        } else {
-            $build_assess_params->compare_batches = false;
-        }
 
         $assess_table = $this->build_asses_table($results, $build_assess_params, $params->batch_id);
 
@@ -873,25 +869,35 @@ class Research extends MY_Controller {
 
         $html = $html.'<tr><td class="tableheader">Summary</td></tr>';
 
-        $html = $html.'<tr><td class="report_td">';
-        $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_number.png">'.$report_data['summary']['total_items'].' total Items</div>';
-        $html = $html.'</td></td></tr>';
+        if (!empty($report_data['summary']['absent_items_count']) && intval($report_data['summary']['total_items'] > 0)) {
+            $html = $html.'<tr><td class="report_td">';
+            $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_number.png">'.$report_data['summary']['total_items'].' total Items</div>';
+            $html = $html.'</td></td></tr>';
+        }
 
-        $html = $html.'<tr><td class="report_td">';
-        $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_dollar.png">'.$report_data['summary']['items_priced_higher_than_competitors'].' items priced higher than competitors</div>';
-        $html = $html.'</td></tr>';
+        if (!empty($report_data['summary']['absent_items_count']) && intval($report_data['summary']['items_priced_higher_than_competitors'] > 0)) {
+            $html = $html.'<tr><td class="report_td">';
+            $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_dollar.png">'.$report_data['summary']['items_priced_higher_than_competitors'].' items priced higher than competitors</div>';
+            $html = $html.'</td></tr>';
+        }
 
-        $html = $html.'<tr><td class="report_td">';
-        $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_D.png">'.$report_data['summary']['items_have_more_than_20_percent_duplicate_content'].' items have more than 20% duplicate content</div>';
-        $html = $html.'</td></tr>';
+        if (!empty($report_data['summary']['absent_items_count']) && intval($report_data['summary']['items_have_more_than_20_percent_duplicate_content'] > 0)) {
+            $html = $html.'<tr><td class="report_td">';
+            $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_D.png">'.$report_data['summary']['items_have_more_than_20_percent_duplicate_content'].' items have more than 20% duplicate content</div>';
+            $html = $html.'</td></tr>';
+        }
 
-        $html = $html.'<tr><td class="report_td">';
-        $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_seo.png">'.$report_data['summary']['items_unoptimized_product_content'].' items have unoptimized product content</div>';
-        $html = $html.'</td></tr>';
+        if (!empty($report_data['summary']['absent_items_count']) && intval($report_data['summary']['items_unoptimized_product_content'] > 0)) {
+            $html = $html.'<tr><td class="report_td">';
+            $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_seo.png">'.$report_data['summary']['items_unoptimized_product_content'].' items have unoptimized product content</div>';
+            $html = $html.'</td></tr>';
+        }
 
-        $html = $html.'<tr><td class="report_td">';
-        $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_arrow_down.png">'.$report_data['summary']['items_short_products_content'].' items have product content that is too short</div>';
-        $html = $html.'</td></tr>';
+        if (!empty($report_data['summary']['absent_items_count']) && intval($report_data['summary']['items_short_products_content'] > 0)) {
+            $html = $html.'<tr><td class="report_td">';
+            $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_arrow_down.png">'.$report_data['summary']['items_short_products_content'].' items have product content that is too short</div>';
+            $html = $html.'</td></tr>';
+        }
 
         if (!empty($report_data['summary']['absent_items_count']) && intval($report_data['summary']['absent_items_count'] > 0)) {
             $html = $html.'<tr><td class="report_td">';
@@ -937,17 +943,6 @@ class Research extends MY_Controller {
         $html = $html.'</table>';
 
         $pdf->WriteHTML($html);
-
-        if (count($report_data['recommendations']['absent_items']) > 0) {
-            $pdf->AddPage($layout);
-            $html = '<span class="h2">There is no match in the primary batch for the particular secondary batch item</span>';
-            $html = $html.'<table class="assess_absent">';
-            foreach ($report_data['recommendations']['absent_items'] as $item){
-                $html = $html.'<tr><td class="assess_absent_cell">'.$item['product_name'].'</td><td class="assess_absent_cell">Add item to product selection</td></tr>';
-            }
-            $html = $html.'</table>';
-            $pdf->WriteHTML($html);
-        }
 
         $comparison_data_array = $this->statistics_model->product_comparison($download_report_params->batch_id);
         if (count($comparison_data_array) > 0) {

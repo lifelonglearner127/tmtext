@@ -1,7 +1,8 @@
 <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/smoothness/jquery-ui-1.8.2.custom.css" />
 <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/styles.css" />
 <ul class="research_table_filter">
-    <li class="boxes hideBox">
+<!--    hideBox-->
+    <li class="boxes ">
         <h3>
             <span class=''>
                 Batch:
@@ -168,10 +169,6 @@
             <p>
                 <input type="checkbox" id="column_price_diff" data-col_name="price_diff" name="column_price_diff" <?php echo($columns['price_diff'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="column_actions">Price diff</label>
-            </p>
-            <p>
-                <input type="checkbox" id="column_product_selection" data-col_name="product_selection" name="column_product_selection" <?php echo($columns['product_selection'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="column_actions">Product selection</label>
             </p>
         </form>
     </div>

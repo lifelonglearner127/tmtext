@@ -41,7 +41,6 @@ class Assess extends MY_Controller {
                 'long_seo_phrases'              => 'true',
                 'duplicate_context'             => 'true',
                 'price_diff'                    => 'true',
-                'product_selection'             => 'false',
             );
         }
         $this->data['columns'] = $columns;

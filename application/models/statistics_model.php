@@ -260,17 +260,18 @@ class Statistics_model extends CI_Model {
                 $similar_products_competitors = unserialize($own_product->similar_products_competitors);
                 foreach ($similar_products_competitors as $similar_product){
                     if ($similar_product['imported_data_id'] == $compare_product->imported_data_id){
-                        $a = 0;
                         continue 3;
                     }
                 }
             }
             $absent_items[] = array(
                 'product_name' => $compare_product->product_name,
+                'url' => $compare_product->url,
+                'recommendations' => 'Add item to product selection',
             );
         }
 
-        asort($absent_items);
+        //asort($absent_items);
 
         return $absent_items;
     }
