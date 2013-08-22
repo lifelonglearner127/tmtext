@@ -41,27 +41,14 @@ foreach($customers as $val){
 <?php }
   
 ?>
- <style>
-     #table_view td{
-         width: 360px ;
-         text-align: center;
-         word-break: break-all;
-     }
-      #table_view .table_titles{
-         width: 170px !important;
-     }
-     .h{
-         margin-bottom: 2px;
-         margin-left: 33px;
-     }
- </style>
+ 
 <table  id="table_view" border="2" >
     <tr>
-        <td class="table_titles"></td>
+        <td class="table_titles" style=" border-top: 1px solid white;border-left: 1px solid white;"></td>
         <td style="background: #D6D6D6;" class="table_results" id="drop_1">
             <div id="h_1" class='h'>
                <input type="hidden" name='dd_customer' value="<?php echo $customers[$ind0]; ?>">
-               <div id="an_grd_view_drop_gr0" class='an_grd_view_drop'></div>
+               <div id="an_grd_view_drop_gr0" class='an_grd_view_drop' style="display: block;margin: 0 auto;"></div>
             </div>
         </td>
          <?php if($count>1){?>
@@ -69,7 +56,7 @@ foreach($customers as $val){
             <td style="background: #D6D6D6;" id="drop_2">
                 <div id="h_1" class='h'>
                     <input type="hidden" name='dd_customer' value="<?php echo $customers[$ind1]; ?>">
-                    <div id="an_grd_view_drop_gr1" class='an_grd_view_drop'></div>
+                    <div id="an_grd_view_drop_gr1" class='an_grd_view_drop' style="display: block;margin: 0 auto;"></div>
                </div>
 
             </td>
@@ -78,9 +65,9 @@ foreach($customers as $val){
     <tr>
         <td class="table_titles"><b>URL</b></td>
         
-        <td><a target="_blank" href="<?php echo $same_pr[$ind0]['url']; ?>"><?php echo $same_pr[$ind0]['url']; ?></a></td>
+        <td><a style="font-size: 12px;text-decoration: underline;" target="_blank" href="<?php echo $same_pr[$ind0]['url']; ?>"><?php echo $same_pr[$ind0]['url']; ?></a></td>
          <?php if($count>1){?>
-          <td><a target="_blank" href="<?php echo $same_pr[$ind1]['url']; ?>"  ><?php echo  $same_pr[$ind1]['url']; ?></a></td>
+          <td><a style="font-size: 12px;text-decoration: underline;" target="_blank" href="<?php echo $same_pr[$ind1]['url']; ?>"  ><?php echo  $same_pr[$ind1]['url']; ?></a></td>
          <?php }?>
     </tr>
     <tr>
@@ -164,14 +151,14 @@ foreach($customers as $val){
          <?php }?>
     </tr>
     <tr>
-        <td class="table_titles">SEO Keywords</td>
+        <td class="table_subtitles">SEO Keywords</td>
         <td>
             <?php
            if (count($same_pr[$ind0]['seo']['short']) > 0) {
                 $k=0;
                 foreach ($same_pr[$ind0]['seo']['short'] as $key => $value) {
                     $k++;
-                    echo $value['ph']. '('.$value['count'].')';
+                    echo $value['ph']. ' ('.$value['count'].') ';
                     if($k<count($same_pr[$ind0]['seo']['short'])){echo " - ";}
                 }
            }else{
@@ -185,7 +172,7 @@ foreach($customers as $val){
               $k=0;
                 foreach ($same_pr[$ind1]['seo']['short'] as $key => $value) {
                     $k++;
-                    echo $value['ph']. '('.$value['count'].')';
+                    echo $value['ph']. ' ('.$value['count'].') ';
                     if($k<count($same_pr[$ind1]['seo']['short'])){echo " - ";}
                 }
            }else{
@@ -196,7 +183,7 @@ foreach($customers as $val){
          <?php }?>
     </tr>
     <tr>
-        <td class="table_titles">Dublicate Content</td>
+        <td class="table_subtitles">Dublicate Content</td>
         <td><?php
             if($s_product_short_desc_count1 >0){
                echo $same_pr[$ind0]['short_original'];  
@@ -252,14 +239,14 @@ foreach($customers as $val){
          <?php }?>
     </tr>
     <tr>
-        <td class="table_titles">SEO Keywords</td>
+        <td class="table_subtitles">SEO Keywords</td>
         <td>
             <?php
            if (count($same_pr[$ind0]['seo']['long']) > 0) {
                $k=0;
                 foreach ($same_pr[$ind0]['seo']['long'] as $key => $value) {
                     $k++;
-                    echo $value['ph']. '('.$value['count'].')';
+                    echo $value['ph']. ' ('.$value['count'].') ';
                     if($k<count($same_pr[$ind0]['seo']['long'])){echo " - ";}
                 }
            }else{
@@ -273,7 +260,7 @@ foreach($customers as $val){
               $k=0;
                 foreach ($same_pr[$ind1]['seo']['long'] as $key => $value) {
                     $k++;
-                    echo $value['ph']. '('.$value['count'].')';
+                    echo $value['ph']. ' ('.$value['count'].') ';
                     if($k<count($same_pr[$ind1]['seo']['long'])){echo " - ";}
                 }
            }else{
@@ -284,7 +271,7 @@ foreach($customers as $val){
          <?php }?>
     </tr>
     <tr>
-        <td class="table_titles">Dublicate Content</td>
+        <td class="table_subtitles">Dublicate Content</td>
         <td><?php
             if($s_product_long_desc_count1 >0){
                echo $same_pr[$ind0]['long_original'];  

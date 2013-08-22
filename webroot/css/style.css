@@ -1863,3 +1863,35 @@ select#sites option{
 .research_assess_flagged{
     display: none;
 }
+
+#table_view td{
+         width: 360px ;
+         text-align: center;
+       
+     }
+      #table_view .table_titles{
+         text-align: left;
+         padding: 7px 2px;
+         font-size: 14px;
+         width: 20%;
+     }
+    
+     .table_subtitles{
+         padding: 7px 10px;
+         font-size: 12px;
+         text-align: left !important;
+     }
+      #table_view .h{
+         margin-bottom: 2px;
+       
+     }
+     #table_view{
+         border: 1px solid black;
+         font-size: 14px;
+         display: block;
+         margin: 0 auto;
+       }
+     #table_view td{
+         border-right: 1px solid black;
+         border-bottom: 1px solid black;
+     }
