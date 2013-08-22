@@ -118,6 +118,7 @@ function showSnap(snap, id, url) {
 }
 
 function loadCurrentList(url) {
+	$("#checkAll").removeAttr('checked');
 	url = typeof url !== 'undefined' ? url: '<?php echo site_url('site_crawler/all_urls');?>';
     var search_crawl_data = '';
     if($('input[name="search_crawl_data"]').val() != ''){
@@ -427,8 +428,10 @@ $(function () {
     	});
 
 		if ($('input#checkAll').is(':checked')) {
+			$('button#current_snapshot').removeAttr('disabled');
 			$('button#current_crawl').removeAttr('disabled');
 		} else {
+			$('button#current_snapshot').attr('disabled', 'disabled');
 			$('button#current_crawl').attr('disabled', 'disabled');
 		}
 	});
