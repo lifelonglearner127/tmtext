@@ -1,7 +1,6 @@
         <?php echo form_open("research/save", array("class"=>"form-horizontal", "id"=>"create_batch_save"));?>
         <div class="row-fluid">
             <div class="span12">
-                Batch:
                 <div class="span11">
                     Batch:
                     <div id="customer_dr" class="customer_dropdown"></div>
