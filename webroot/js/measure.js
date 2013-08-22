@@ -855,9 +855,6 @@ $(document).ready(function() {
             $("span.product_batches_items").html(data + ' items');
             $.removeCookie('product_batch_items', {path: '/'}); // destroy
             $.cookie('product_batch_items', data+ ' items', {expires: 7, path: '/'}); // re-create
-            if( data == 0 ){
-			    $('.product_batches_items').empty();
-			}
         });
 
         if ($("#batchess").val() !== '0') {
@@ -879,6 +876,10 @@ $(document).ready(function() {
             $(".grid_switcher").hide();
             $(".keywords_metrics_bl_res").hide();
             $('li.keywords_metrics_bl_res, li.keywords_metrics_bl_res ~ li, ul.less_b_margin').hide();
+            
+			batchess_hidden = $('#batchess_hidden').html();
+			$('#batchess').html(batchess_hidden);
+			setTimeout(function() {$('.product_batches_items').empty(); }, 500);
         }
 
     });
