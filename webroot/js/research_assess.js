@@ -186,7 +186,7 @@ $(function () {
                 if (num_diff > 0) {
                     numeric_difference_caption = num_diff + ' fewer products in your selection than in the ' + secondary_company_name + ' selection';
                 } else {
-                    numeric_difference_caption = 'no difference';
+                    numeric_difference_caption = num_diff + ' items in your selection and in the ' + secondary_company_name + ' selection';
                 }
             }
             $('#assess_report_numeric_difference_caption').html(numeric_difference_caption);

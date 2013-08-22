@@ -306,7 +306,7 @@
                                 </div>
                                 <div id="assess_report_compare_panel" class="mt_10 mb_10 ml_15">
                                     <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_comparison.png">
-                                        <span id="assess_report_absent_items_count"></span>
+                                        <span id="assess_report_absent_items_count" class="mr_10"></span>
                                         items in
                                         <span id="assess_report_compare_customer_name"></span>
                                         -
