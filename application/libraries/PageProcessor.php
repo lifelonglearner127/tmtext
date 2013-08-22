@@ -117,7 +117,7 @@ class PageProcessor {
         return false;
 	}
 
-	public function meta() {
+	public function meta($full=false) {
 		$methodName = 'meta_'.$this->hostName;
 
 		if	( method_exists($this, $methodName) ) {
@@ -126,11 +126,18 @@ class PageProcessor {
         	$result = $this->nokogiri->get('meta')->toArray();
         }
 
+		if ($full) {
+			return $result;
+		}
+
         $results = array();
         foreach ($result as $e) {
         	foreach ($this->allowed_meta as $k=>$v) {
         		if (isset($e[$k]) && in_array(strtolower($e[$k]), $v)) {
-					$results[$e[$k]] = trim($e['content']);
+					$l = trim($e['content']);
+        			if (!empty($l)) {
+						$results[$e[$k]] = $l;
+        			}
         		}
         	}
         }
@@ -222,6 +229,28 @@ class PageProcessor {
 		foreach($this->nokogiri->get('meta') as $item){
 			if($item['itemprop'] == 'productID') {
 				$result['UPC/EAN/ISBN'] =  trim($item['content']);
+			}
+		}
+
+		foreach ($this->meta(true) as $m) {
+			if (isset($m['itemprop']) && isset($m['content']) && ($m['itemprop']=='model')){
+				$result['model_meta'] =  trim($m['content']);
+			}
+		}
+
+		if (isset($result['model']) || $result['model_meta']) {
+			foreach($this->nokogiri->get('h1.productTitle') as $item) {
+				$s = split(' ', $item['#text'][0]);
+				foreach($s as $j){
+					if (isset($result['model'])) {
+						similar_text($j,$result['model'],$percents);
+					} else {
+						similar_text($j,$result['model_meta'],$percents);
+					}
+					if($percents>85){
+						$result['model_title'] = $j;
+					}
+				}
 			}
 		}
 
