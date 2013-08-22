@@ -1,3 +1,4 @@
+<link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/assess_report.css" />
 <div class="tabbable">
     <ul class="nav nav-tabs jq-system-tabs">
         <li class=""><a data-toggle="tab" href="<?php echo site_url('system');?>">General</a></li>
@@ -43,8 +44,8 @@
                             <option value="P">Portrait</option>
                         </select>
                         <br />
+                        Replaced patterns: <b>#date#</b> - current data, <b>#customer name#</b> - customer name
                         <div id="system_reports_page_pnl_edit">
-                            Replaced patterns: <b>#date#</b> - current data, <b>#customer name#</b> - customer name
                             <textarea id="system_reports_page_body" style="width: 100%;height: 500px;"></textarea>
                             <button id="system_reports_page_preview" type="button" class="btn btn-primary"><i class="icon-white icon-eye-open"></i>Preview</button>
                             <button id="system_reports_page_save" type="button" class="btn btn-success"><i class="icon-white icon-ok"></i>Save</button>
