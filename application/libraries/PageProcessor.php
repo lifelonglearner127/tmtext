@@ -638,12 +638,26 @@ class PageProcessor {
 
 		if (empty($description)) {
 			foreach($this->nokogiri->get('#long-description') as $item) {
-				$line = trim($item['#text'][0]);
-				if (!empty($line)) {
-					$description[] = $line;
+				foreach($item['#text'] as $j) {
+					$line = trim($j);
+					if (!empty($line)) {
+						$description[] = $line;
+					}
 				}
 			}
 		}
+
+		if (empty($description)) {
+			foreach($this->nokogiri->get('#long-description p') as $item) {
+				foreach($item['#text'] as $j) {
+					$line = trim($j);
+					if (!empty($line)) {
+						$description[] = $line;
+					}
+				}
+			}
+		}
+
 
 		$description = implode(' ',$description);
 
