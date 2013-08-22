@@ -27,7 +27,7 @@ class Research_data_model extends CI_Model {
         'items' => 'items',
         'imported_data_parsed'=>'imported_data_parsed',
         'imported_data'=>'imported_data'
-        
+
     );
 
     function __construct()
@@ -52,7 +52,7 @@ class Research_data_model extends CI_Model {
     }
     //Max
     function get_by_batch_id($batch_title){
-        
+
         $query0=$this->db->where('title', $batch_title)
               ->get('batches');
          $res0= $query0->row_array();
@@ -60,7 +60,7 @@ class Research_data_model extends CI_Model {
     //Max
         $query1 = $this->db->where('batch_id', $batch_id)
               ->get($this->tables['research_data']);
-        
+
         $res= $query1->result_array();
         $urls=array();
         foreach($res as $val){
@@ -74,12 +74,12 @@ class Research_data_model extends CI_Model {
            ->where_in('p.value', $urls);
         $query = $this->db->get();
         $results = $query->result();
-        
+
         $data = array();
         $urls=array();
         foreach($results as $kay => $result){
         if($result->key=='URL' && !in_array($result->value,$urls )){
-             $urls[]= $result->value;   
+             $urls[]= $result->value;
         }else{
             unset($results[$kay]);
         }
@@ -106,9 +106,9 @@ class Research_data_model extends CI_Model {
         }else{
             return NULL;
         }
-        
-        
-        
+
+
+
    }
   //Max
     function insert($batch_id, $url, $product_name, $keyword1, $keyword2, $keyword3, $meta_name,
@@ -380,9 +380,6 @@ union all
     function do_stats($batch_id)
     {
         $sql_cmd = "
-            select
-                *
-            from (
                 select
                     r.id AS rid,
                     r.imported_data_id AS imported_data_id,
@@ -437,9 +434,6 @@ union all
                 ) as r
                 group by
                     r.imported_data_id
-            ) as rr
-            order by
-                rr.created
         ";
 
         $query = $this->db->query($sql_cmd);
