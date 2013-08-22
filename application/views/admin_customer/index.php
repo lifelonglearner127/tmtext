@@ -294,9 +294,10 @@ function selectOption(){
 				if( confirm('You are about to delete customer "'+customer_name+'" OK?') ){
 					var data = {
 					   'customer_id' : customer_id
-				   };
+				    };
 					$.post(base_url + 'index.php/admin_customer/delete_customer/', data, function(data){});
-					//$.get(base_url + 'index.php/admin_customer/delete_customer/'+customer_id+'', function(data){});
+				}else{
+					return false;
 				}
 			});
             
@@ -304,7 +305,11 @@ function selectOption(){
             $('#add_new_customer').click(function(){
                                     
                 if($('#new_site').val() != ''){
-                    var customerName=$('#customer_name').val();
+					var customerName=$('#customer_name').val();
+					
+					$('#delete_customer').attr("customer_name",customerName);
+					$('#delete_customer').removeAttr("disabled");
+                    
                     $("#sites .btn_caret_sign").text(customerName);
                     $(".hp_boot_drop .dropdown-menu").append('<li><a href="javascript:void(0)" data-value="" data-item=""><span>'+customerName+'</span></a></li>');
                     selectOption();
