@@ -1467,7 +1467,8 @@ public function gridview() {
                         }
                     }
                     if($maxshort!=0){
-                        $vs['short_original'] =  ceil($maxshort) . '%';
+                        //$vs['short_original'] =  ceil($maxshort) . '%';
+                        $vs['short_original'] =  round($maxshort, 0) . '%';
                     }else{
                         $vs['short_original']= "Insufficient data";
                     }
@@ -1479,7 +1480,7 @@ public function gridview() {
                     }
 
                     if ($k_lng == 0) {
-                        $vs['long_original'] = "Insufficient data";
+                        $vs['long_original'] = "Insufficient data1";
                     }
                     if ($k_sh == 0) {
                         $vs['short_original'] = "Insufficient data";

@@ -4,8 +4,8 @@ var customers=[];
  </script>
 <?php if(!empty($same_pr)){
 $same_pr  = array_values($same_pr);
-//    echo "<pre>";
-//    print_r($same_pr);
+ //   echo "<pre>";
+ //   print_r($same_pr);
 //   echo "<pre>";
 
 $count=count($same_pr);
@@ -186,7 +186,7 @@ foreach($customers as $val){
         <td class="table_subtitles">Dublicate Content</td>
         <td><?php
             if($s_product_short_desc_count1 >0){
-               echo $same_pr[$ind0]['short_original'];  
+				echo $same_pr[$ind0]['short_original'];
             }else{
                 echo "-";
             } ?>
