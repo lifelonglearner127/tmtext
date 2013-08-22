@@ -238,37 +238,9 @@ jQuery(document).ready(function($) {
                                     }
                                     
                                     //If user chooses a customer that only has one batch, automatically select that batch. Denis
-                                    //show_from_butches(); //we can use this string but we cant see amount batches items (as example 147 items), after batches dropdown list
+                                    show_from_butches();
                                     
-									$.post(base_url + 'index.php/research/filterCustomerByBatch', {'batch': $("#batchess").val()}, function(data) {
-										if (data != '') {
-
-											$("select[name='customers_list'] option").each(function() {
-
-												if (data == $(this).val()) {
-													var dropdown = $("select[name='customers_list']").msDropdown().data("dd");
-													dropdown.destroy();
-													$('#product_customers .ddcommon').remove();
-													$(this).prop('selected', true);
-													//$("select[name='customers_list']").val($(this).val());
-													dropdown = $("select[name='customers_list']").msDropdown().data("dd");
-
-												}
-											});
-										} else {
-											$("select[name='customers_list'] option").each(function() {
-												if ($(this).val() == 'All Customers') {
-													var dropdown = $("select[name='customers_list']").msDropdown().data("dd");
-													dropdown.destroy();
-													$('#product_customers .ddcommon').remove();
-													$(this).prop('selected', true);
-													dropdown = $("select[name='customers_list']").msDropdown().data("dd");
-												}
-											});
-										}
-									});
-
-									$.post(base_url + 'index.php/research/countAllItemsInBatch', {'batch': $("#batchess").val()}, function(data) {
+                                    $.post(base_url + 'index.php/research/countAllItemsInBatch', {'batch': $("#batchess").val()}, function(data) {
 										$("span.product_batches_items").html(data + ' items');
 										$.removeCookie('product_batch_items', {path: '/'}); // destroy
 										$.cookie('product_batch_items', data+ ' items', {expires: 7, path: '/'}); // re-create
