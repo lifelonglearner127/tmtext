@@ -129,7 +129,7 @@ class PageProcessor {
         $results = array();
         foreach ($result as $e) {
         	foreach ($this->allowed_meta as $k=>$v) {
-        		if (isset($e[$k]) && in_array($e[$k], $v)) {
+        		if (isset($e[$k]) && in_array(strtolower($e[$k]), $v)) {
 					$results[$e[$k]] = trim($e['content']);
         		}
         	}
@@ -156,6 +156,10 @@ class PageProcessor {
 				foreach($item['div'] as $i) {
 					if (isset($i['p']) && isset($i['p'][0]) && isset($i['p'][0]['#text'])) {
 						foreach ($i['p'][0]['#text'] as $j) {
+							$description[] = $j;
+						}
+					} elseif (isset($i['#text'])) {
+						foreach ($i['#text'] as $j) {
 							$description[] = $j;
 						}
 					}
