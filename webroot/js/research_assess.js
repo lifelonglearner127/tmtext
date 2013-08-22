@@ -138,6 +138,11 @@ $(function () {
         if (obj) {
             $(obj).parent().find('a').removeClass('active_link');
             $(obj).addClass('active_link');
+            if($(obj).text()=='Report'){
+                $(".research_assess_flagged").hide();
+            }else{
+                $(".research_assess_flagged").show();
+            }
             hideColumns();
         }
     }
@@ -672,6 +677,10 @@ $(function () {
         if (assess_filter_datefrom && assess_filter_dateto) {
             assessRequestParams.date_from = assess_filter_datefrom,
                 assessRequestParams.date_to = assess_filter_dateto
+        }
+
+        if ($('#research_assess_flagged').is(':checked')) {
+            assessRequestParams.flagged = true;
         }
 
         if ($('#research_assess_price_diff').is(':checked')) {

@@ -291,7 +291,7 @@ class Research extends MY_Controller {
             $build_assess_params = new stdClass();
             $build_assess_params->date_from = $this->input->get('date_from') == 'undefined' ? '' : $this->input->get('date_from');
             $build_assess_params->date_to = $this->input->get('date_to') == 'undefined' ? '' : $this->input->get('date_to');
-            $build_assess_params->price_diff = $this->input->get('price_diff');
+            $build_assess_params->price_diff = $this->input->get('price_diff') == 'undefined' ? -1 :$this->input->get('price_diff');
             $build_assess_params->short_less = $this->input->get('short_less') == 'undefined' ? -1 : $this->input->get('short_less');
             $build_assess_params->short_more = $this->input->get('short_more') == 'undefined' ? -1 : $this->input->get('short_more');
             $build_assess_params->short_seo_phrases = $this->input->get('short_seo_phrases');
@@ -303,6 +303,7 @@ class Research extends MY_Controller {
             $build_assess_params->all_columns = $this->input->get('sColumns');
             $build_assess_params->sort_columns = $this->input->get('iSortCol_0');
             $build_assess_params->sort_dir = $this->input->get('sSortDir_0');
+            $build_assess_params->flagged = $this->input->get('flagged') == 'undefined' ? -1 : $this->input->get('flagged');
             if (intval($compare_batch_id) > 0) {
                 $build_assess_params->compare_batch_id = $compare_batch_id;
             }
@@ -385,15 +386,23 @@ class Research extends MY_Controller {
             $result_row->duplicate_content = "-";
             $result_row->own_price = $row->own_price;
             $price_diff = unserialize($row->price_diff);
+            $price_diff_show = 0;
+
             if(count($price_diff) > 1){
                 $price_diff_res = "<input type='hidden'><nobr>".$price_diff['own_site']." - $".$price_diff['own_price']."</nobr><br />";
                 for($i=0; $i<count($price_diff['competitor_customer']); $i++){
                     if($customer_url["host"] != $price_diff['competitor_customer'][$i]){
+                        $price_diff_show += 1;
                         $price_diff_res .= "<nobr>".$price_diff['competitor_customer'][$i]." - $".$price_diff['competitor_price'][$i]."</nobr><br />";
                     }
                 }
                 $result_row->price_diff = $price_diff_res;
             }
+
+            if ($build_assess_params->price_diff && $price_diff_show <= 0){
+                continue;
+            }
+
             $result_row->product_selection = "-";
 
             $result_row->competitors_prices = unserialize($row->competitors_prices);
@@ -490,6 +499,28 @@ class Research extends MY_Controller {
                 if ($long_description_wc > $build_assess_params->long_less) {
                     continue;
                 }
+            }
+
+
+            $recomend = false;
+            if ($items_priced_higher_than_competitors > 0) {
+                $recomend = true;
+            }
+            if ($items_have_more_than_20_percent_duplicate_content == 0) {
+                $recomend = true;
+            }
+            if ($items_unoptimized_product_content > 0) {
+                $recomend = true;
+            }
+            if ($items_short_products_content > 0) {
+                $recomend = true;
+            }
+
+            if ($build_assess_params->flagged == -1 && $recomend == false) {
+                continue;
+            }
+            if ($build_assess_params->flagged == true && $recomend == false) {
+                continue;
             }
 
             $result_table[] = $result_row;

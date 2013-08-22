@@ -112,7 +112,7 @@
                 </script>
             </div>
         </div>
-        <div class="row-fluid">
+        <div class="row-fluid"> 
             A CSV containing one URL or Manufacturer ID per line
         </div>
         <div class="row-fluid mt_20">

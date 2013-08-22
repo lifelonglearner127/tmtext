@@ -16,13 +16,7 @@
                     <?php endforeach;?>
                 </select>
             </span>
-            <span class=''>
-                or
-            </span>
-            <span class=''>
-                Category:
-                <?php echo form_dropdown('category', $category_list, array(), 'class="category_list mt_10"'); ?>
-            </span>
+            <span class="research_assess_flagged"><input type="checkbox" id="research_assess_flagged" checked > Only show flagged items</span>
             <div class="clear"></div>
             <a href="#" onclick="return false;" class="hideShow float_r">
                 <img src="<?php echo base_url();?>img/arrow.png" />
@@ -48,7 +42,7 @@
                     </label>
                     <label class="checkbox">
                         <input id="research_assess_price_diff" type="checkbox" checked>
-                        Price Difference
+                        Priced Higher
                     </label>
                 </div>
             </div>

@@ -1860,3 +1860,6 @@ select#sites option{
     height: 14px;
     width: 14px;
 }
+.research_assess_flagged{
+    display: none;
+}
