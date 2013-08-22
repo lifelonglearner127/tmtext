@@ -29,6 +29,20 @@
                             }, 'json');
                         }
                     }
+                    function doupload()
+                    {
+                        var batch_name = $('select[name="batches"]').find('option:selected').text();
+                        if(batch_name == ''){
+                            job=confirm("You are about to upload a batch but no batch is selected. The uploaded URLs will be crawled but not associated with any specific batch. Are you sure you want to proceed?");
+                            if(job!=true)
+                            {
+                                return false;
+                            }else{
+                                $('#fileupload').trigger('click');
+                            }
+                        }
+                        return false;
+                    }
                 </script>
                 <button class="btn btn-danger" type="button" style="margin-left:5px" onclick="doconfirm()">Delete</button>
                 <span class="ml_10">Add new:</span> <input type="text"  style="width:180px" name="new_batch">
@@ -47,7 +61,8 @@
             <div class="admin_system_content">
                 <div class="controls span7">
                     <button class="btn btn-success" id="csv_import_create_batch" style="display:none"><i class="icon-white icon-ok"></i>&nbsp;Import</button>
-								<span class="btn btn-success fileinput-button ml_10 pull-left" style="">
+                                <span class="btn btn-success ml_10 pull-left" style="" onclick="doupload();">Upload<i class="icon-plus icon-white"></i></span>
+								<span class="btn btn-success fileinput-button ml_10 pull-left" style="display: none">
 									Upload
 									<i class="icon-plus icon-white"></i>
 									<input type="file" multiple="" name="files[]" id="fileupload">
