@@ -5,9 +5,12 @@
 
 class CaturlsPipeline(object):
 	def open_spider(self, spider):
-		self.file = open(spider.filename, 'wb')
+		self.file = open(spider.outfile, 'wb')
 	
 	def process_item(self, item, spider):
 		line = item['product_url'] + "\n"
 		self.file.write(line)
 		return item
+
+	def close_spider(self, spider):
+		self.file.close()

@@ -17,7 +17,7 @@ import json
 ################################
 # Run with 
 #
-# scrapy crawl producturls -a cat_page="<url>" [-a filename="<filename>""]
+# scrapy crawl producturls -a cat_page="<url>" [-a outfile="<filename>"]
 #
 ################################
 
@@ -29,10 +29,10 @@ class CaturlsSpider(BaseSpider):
 	allowed_domains = ["staples.com", "bloomingdales.com", "walmart.com", "amazon.com", "bestbuy.com", "nordstrom.com", "macys.com", "williams-sonoma.com"]
 
 	# store the cateory page url given as an argument into a field and add it to the start_urls list
-	def __init__(self, cat_page, filename = "product_urls.txt"):
+	def __init__(self, cat_page, outfile = "product_urls.txt"):
 		self.cat_page = cat_page
 		self.start_urls = [cat_page]
-		self.filename = filename
+		self.outfile = outfile
 		# staples televisions
 		#self.start_urls = ["http://www.staples.com/Televisions/cat_CL142471"]
 		# bloomingdales sneakers
@@ -261,7 +261,6 @@ class CaturlsSpider(BaseSpider):
 		if site == 'macys':
 
 			hxs = HtmlXPathSelector(response)
-			print hxs.select("//title/text()").extract()
 
 			m = re.match("http://www1.macys.com/shop(.*)\?id=([0-9]+).*", self.cat_page)
 			cat_id = 0
@@ -320,8 +319,6 @@ class CaturlsSpider(BaseSpider):
 		hxs = HtmlXPathSelector(response)
 		products = hxs.select("//li[@class='product-cell ']/a")
 		items = []
-
-		print "IAMHERE"
 
 		for product in products:
 			item = ProductItem()
