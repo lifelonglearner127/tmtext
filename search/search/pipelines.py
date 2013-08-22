@@ -16,7 +16,7 @@ class SearchPipeline(object):
 
 class URLsPipeline(object):
 	def open_spider(self, spider):
-		self.file = open(spider.filename, 'wb')
+		self.file = open(spider.outfile, 'wb')
 	
 	def process_item(self, item, spider):
 		option = int(spider.output)

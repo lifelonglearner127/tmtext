@@ -20,11 +20,11 @@ import sys
 ################################
 # Run with 
 #
-# scrapy crawl search -a product_name="<name>" -a target_site="<site>" [-a output="<option(1/2)>"] [-a threshold=<value>] [a file=<filename]
+# scrapy crawl search -a product_name="<name>" -a target_site="<site>" [-a output="<option(1/2)>"] [-a threshold=<value>] [a outfile="<filename>"]
 #      -- or --
-# scrapy crawl search -a product_url="<url>" -a target_site="<site>" [-a output="<option(1/2)>"] [-a threshold=<value>] [a file=<filename]
+# scrapy crawl search -a product_url="<url>" -a target_site="<site>" [-a output="<option(1/2)>"] [-a threshold=<value>] [a outfile="<filename>""]
 #      -- or --
-# scrapy crawl search -a product_urls_file="<filename>" -a target_site="<site>" [-a output="<option(1/2)>"] [-a threshold=value] [a file=<filename]
+# scrapy crawl search -a product_urls_file="<filename>" -a target_site="<site>" [-a output="<option(1/2)>"] [-a threshold=value] [a outfile="<filename>"]
 #
 ################################
 
@@ -44,14 +44,14 @@ class SearchSpider(BaseSpider):
 	#				target_site - the site to search on
 	#				output - integer(1/2) option indicating output type (either result URL (1), or result URL and source product URL (2))
 	#				threshold - parameter (0-1) for selecting results (the lower the value the more permissive the selection)
-	def __init__(self, product_name = None, product_url = None, product_urls_file = None, target_site = None, output = 1, threshold = 0.4, filename = "search_results.txt"):
+	def __init__(self, product_name = None, product_url = None, product_urls_file = None, target_site = None, output = 1, threshold = 0.4, outfile = "search_results.txt"):
 		self.product_url = product_url
 		self.product_name = product_name
 		self.target_site = target_site
 		self.output = int(output)
 		self.product_urls_file = product_urls_file
 		self.threshold = float(threshold)
-		self.filename = filename
+		self.outfile = outfile
 		# bloomingales scraper only works with this in the start_urls list
 		# self.start_urls = ["http://www.amazon.com", "http://www.walmart.com", "http://www1.bloomingdales.com",\
 		# 				   "http://www.overstock.com", "http://www.wayfair.com", "http://www.bestbuy.com", \
