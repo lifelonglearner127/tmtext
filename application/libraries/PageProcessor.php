@@ -755,6 +755,21 @@ class PageProcessor {
 		}
 		$descriptionLong = implode(' ',$descriptionLong);
 
+
+		foreach($this->nokogiri->get('.bucket .content ul li') as $item) {
+			$line = trim($item['#text'][0]);
+			if (!empty($line)) {
+				$features[] = $line;
+			}
+		}
+
+		$features = implode(' ',$features);
+
+		if (empty($description) && empty($descriptionLong) && !empty($features)) {
+			$description = $features;
+			unset($features);
+		}
+
 		foreach($this->nokogiri->get('#actualPriceRow #actualPriceValue .priceLarge') as $item) {
 			$p = str_replace(',','',$item['#text'][0]);
 			if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $p, $match)) {
@@ -782,6 +797,7 @@ class PageProcessor {
 			'Product Name' => $title,
 			'Description' => $description,
 			'Long_Description' => $descriptionLong,
+			'Features' => $features,
 			'Price' => $price,
 			'PriceOld' => $price_old
 		);
