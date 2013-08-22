@@ -39,6 +39,8 @@
                             }else{
                                 $('#fileupload').trigger('click');
                             }
+                        }else{
+                            $('#fileupload').trigger('click');
                         }
                         return false;
                     }
