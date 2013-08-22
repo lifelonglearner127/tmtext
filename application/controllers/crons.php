@@ -200,8 +200,9 @@ class Crons extends MY_Controller {
 
                 /* Make sure the connection is still alive, if not, try to reconnect */
                 if (!mysql_ping($conn)) {
-                    echo 'Lost connection, exiting after query #2';
-                    exit;
+                    //echo 'Lost connection, exiting after query #2';
+                    //exit;
+                    $conn = mysql_connect('localhost', 'c38trlmonk', '542piF88');
                 }
                 if(count($data) > 0){
                     foreach($data as $obj){
