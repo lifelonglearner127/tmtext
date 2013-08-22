@@ -2,6 +2,7 @@ from scrapy.spider import BaseSpider
 from scrapy.selector import HtmlXPathSelector
 from scrapy.http import Request
 from scrapy.http import TextResponse
+from scrapy.exceptions import CloseSpider
 from search.items import SearchItem
 #import urllib
 import re
@@ -11,17 +12,19 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.corpus import wordnet
 
+import sys
+
 # from selenium import webdriver
 # import time
 
 ################################
 # Run with 
 #
-# scrapy crawl search -a product_name="<name>" -a target_site="<site>" [-a output="<option(1/2)>"] [-a threshold=<value>]
+# scrapy crawl search -a product_name="<name>" -a target_site="<site>" [-a output="<option(1/2)>"] [-a threshold=<value>] [a file=<filename]
 #      -- or --
-# scrapy crawl search -a product_url="<url>" -a target_site="<site>" [-a output="<option(1/2)>"] [-a threshold=<value>]
+# scrapy crawl search -a product_url="<url>" -a target_site="<site>" [-a output="<option(1/2)>"] [-a threshold=<value>] [a file=<filename]
 #      -- or --
-# scrapy crawl search -a product_urls_file="<filename>" -a target_site="<site>" [-a output="<option(1/2)>"] [-a threshold=value]
+# scrapy crawl search -a product_urls_file="<filename>" -a target_site="<site>" [-a output="<option(1/2)>"] [-a threshold=value] [a file=<filename]
 #
 ################################
 
@@ -41,13 +44,14 @@ class SearchSpider(BaseSpider):
 	#				target_site - the site to search on
 	#				output - integer(1/2) option indicating output type (either result URL (1), or result URL and source product URL (2))
 	#				threshold - parameter (0-1) for selecting results (the lower the value the more permissive the selection)
-	def __init__(self, product_name = None, product_url = None, product_urls_file = None, target_site = None, output = 1, threshold = 0.4):
+	def __init__(self, product_name = None, product_url = None, product_urls_file = None, target_site = None, output = 1, threshold = 0.4, filename = "search_results.txt"):
 		self.product_url = product_url
 		self.product_name = product_name
 		self.target_site = target_site
 		self.output = int(output)
 		self.product_urls_file = product_urls_file
 		self.threshold = float(threshold)
+		self.filename = filename
 		# bloomingales scraper only works with this in the start_urls list
 		# self.start_urls = ["http://www.amazon.com", "http://www.walmart.com", "http://www1.bloomingdales.com",\
 		# 				   "http://www.overstock.com", "http://www.wayfair.com", "http://www.bestbuy.com", \
@@ -106,8 +110,6 @@ class SearchSpider(BaseSpider):
 				product_urls.append(line.strip())
 			f.close()
 
-		#print "DEBUG 1"
-
 		for product_url in product_urls:	
 			# extract site domain
 			m = re.match("http://www1?\.([^\.]+)\.com.*", product_url)
@@ -116,7 +118,7 @@ class SearchSpider(BaseSpider):
 				origin_site = m.group(1)
 			else:
 				sys.stderr.write('Can\'t extract domain from URL.\n')
-			#print "PRODUCT_URL", product_url
+			##print "PRODUCT_URL", product_url
 			request = Request(product_url, callback = self.parseURL)
 			request.meta['site'] = origin_site
 			if origin_site == 'staples':
@@ -130,11 +132,13 @@ class SearchSpider(BaseSpider):
 
 		site = response.meta['site']
 		hxs = HtmlXPathSelector(response)
+
+		product_model = ""
+
 		if site == 'staples':
 
 			product_name = hxs.select("//h1/text()").extract()[0]
 
-			product_model = ""
 			model_nodes = hxs.select("//p[@class='itemModel']/text()").extract()
 			if model_nodes:
 				model_node = model_nodes[0]
@@ -147,7 +151,7 @@ class SearchSpider(BaseSpider):
 				
 				if m:
 					product_model = m.group(2).strip()
-					print "MODEL: ", model_node.encode("utf-8")
+					#print "MODEL: ", model_node.encode("utf-8")
 
 		# create search queries and get the results using the target site's search function
 
@@ -166,9 +170,12 @@ class SearchSpider(BaseSpider):
 			page1 = search_pages1[self.target_site]
 			request1 = Request(page1, callback = self.parseResults, cookies=cookies)
 
-			print "QUERY (MODEL)", query1
+			#print "QUERY (MODEL)", query1
 			
 			request = request1
+
+		else:
+			raise CloseSpider("Unsupported site: " + site)
 
 
 		# 2) Search by product full name
@@ -177,7 +184,7 @@ class SearchSpider(BaseSpider):
 		page2 = search_pages2[self.target_site]
 		request2 = Request(page2, callback = self.parseResults, cookies=cookies)
 
-		print "QUERY (PRODUCT)", query2
+		#print "QUERY (PRODUCT)", query2
 
 		pending_requests = []
 
@@ -192,7 +199,7 @@ class SearchSpider(BaseSpider):
 		for words in ProcessText.words_combinations(product_name):
 			query3 = self.build_search_query(" ".join(words))
 			search_pages3 = self.build_search_pages(query3)
-			print "QUERY", query3
+			#print "QUERY", query3
 			page3 = search_pages3[self.target_site]
 			request3 = Request(page3, callback = self.parseResults, cookies=cookies)
 
@@ -216,7 +223,7 @@ class SearchSpider(BaseSpider):
 	# and lastly select the best result by selecting the best match between the original product's name and the result products' names
 	def parseResults(self, response):
 
-		#print "URL", response.url
+		##print "URL", response.url
 		
 		hxs = HtmlXPathSelector(response)
 
@@ -232,10 +239,6 @@ class SearchSpider(BaseSpider):
 
 		
 		# handle parsing separately for each site
-
-		#TODO: parse multiple pages, can only parse first page so far
-
-		#TODO: parse alternative results (if no results found for search query, but for similar ones) - done?
 
 		# amazon
 		if (site == 'amazon'):
@@ -364,14 +367,14 @@ class SearchSpider(BaseSpider):
 
 
 
-		# print stuff
-		print "PRODUCT: ", response.meta['origin_name'].encode("utf-8")
-		print "MATCHES: "
-		for item in items:
-			print item['product_name'].encode("utf-8")
-		print "-----results:"
-		print "------url:" + response.url
-		print "------products:", items
+		# #print stuff
+		#print "PRODUCT: ", response.meta['origin_name'].encode("utf-8")
+		#print "MATCHES: "
+		#for item in items:
+			#print item['product_name'].encode("utf-8")
+		#print "-----results:"
+		#print "------url:" + response.url
+		#print "------products:", items
 
 
 		# if there is a pending request (current request used product model, and pending request is to use product name),
@@ -413,12 +416,6 @@ class SearchSpider(BaseSpider):
 
 				return [best_match]
 
-				# item = SearchItem()
-				# item['site'] = site
-				# #if 'origin_url' in response.meta:
-				# item['origin_url'] = response.meta['origin_url']
-				# return [item]
-
 class ProcessText():
 	# normalize text to list of lowercase words (no punctuation except for inches sign (") or /)
 
@@ -437,15 +434,12 @@ class ProcessText():
 		# also split by "/" after replacing "1/2"
 		text = re.sub("([^\w\"])|(u')", " ", text)
 		stopset = set(stopwords.words('english'))#["and", "the", "&", "for", "of", "on", "as", "to", "in"]
-		#tokens = nltk.WordPunctTokenizer().tokenize(text)
-		# we need to keep 19" as one word for ex
-
+		
 		#TODO: maybe keep numbers like "50 1/2" together too somehow (originally they're "50-1/2")
 		#TODO: maybe handle numbers separately. sometimes we want / to split (in words), and . not to (in numbers)
 		# define a better regex above, or here at splitting
 		tokens = text.split()
 		clean = [token.lower() for token in tokens if token.lower() not in stopset and len(token) > 0]
-		#print "clean", orig_text, clean
 
 		return clean
 
@@ -468,12 +462,12 @@ class ProcessText():
 		# extra = []
 		# for word_comb in words:
 		# 	for i in range(len(word_comb)):
-		# 		# " -> inch
+		# 		# " -> -inch
 		# 		m = re.match("", string, flags)
+		#		# .5 ->  1/2
 
 
 		return words
-
 
 	# return most similar product from a list to a target product (by their names)
 	# if none is similar enough, return None
@@ -497,7 +491,7 @@ class ProcessText():
 					weights_common.append(2)
 				else:
 					weights_common.append(1)
-			#print common_words, weights_common
+			##print common_words, weights_common
 
 			weights1 = []
 			for word in words1:
@@ -513,24 +507,17 @@ class ProcessText():
 				else:
 					weights2.append(1)
 
-			#threshold = 0.5*(len(words1) + len(words2))/2
-
-			#print "common words, weight:", common_words, sum(weights_common)
-
 			threshold = param*(sum(weights1) + sum(weights2))/2
 
 			if sum(weights_common) >= threshold:
 				products_found.append((product2, sum(weights_common)))
-				# product_name += " ".join(list(words1))
-				# product_name2 += " ".join(list(words2))
-				# print product_name, product_name2
 			products_found = sorted(products_found, key = lambda x: x[1], reverse = True)
 
 			# return most similar product or None
 			if products_found:
 				result = products_found[0][0]
 
-			print "FINAL", product_name.encode("utf-8"), products_found, "\n-----------------------------------------\n"
+			#print "FINAL", product_name.encode("utf-8"), products_found, "\n-----------------------------------------\n"
 
 			return result
 

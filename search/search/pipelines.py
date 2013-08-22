@@ -15,8 +15,8 @@ class SearchPipeline(object):
 		return item
 
 class URLsPipeline(object):
-	def __init__(self):
-		self.file = open('search_results.txt', 'wb')
+	def open_spider(self, spider):
+		self.file = open(spider.filename, 'wb')
 	
 	def process_item(self, item, spider):
 		option = int(spider.output)
@@ -30,3 +30,6 @@ class URLsPipeline(object):
 			line += "\n"
 		self.file.write(line)
 		return item
+
+	def close_spider(self, spider):
+		self.file.close()
