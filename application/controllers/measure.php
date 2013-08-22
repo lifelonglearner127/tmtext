@@ -36,6 +36,18 @@ class Measure extends MY_Controller {
         $this->render();
     }
 
+    public function testwebthumb() {
+        $webthumb_user_id = 72956;
+        $api_key = "3783567e0b4e36855c85507ce437e86c";
+        $url = "http://overstock.com";
+        $c_date = gmdate('Ymd'); 
+        $hash = md5("$c_date+$url+$api_key"); 
+        $e_url = urlencode(trim($url));
+        $call = "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=medium";
+        $res = $this->upload_record_webshoot($call, 'tester');
+        $this->output->set_content_type('application/json')->set_output(json_encode($res));
+    }
+
     private function upload_record_webshoot($ext_url, $url_name) {
         $file = file_get_contents($ext_url);
         $type = 'png';
@@ -51,7 +63,8 @@ class Measure extends MY_Controller {
         $path = base_url() . "webshoots/$url_name.$type";
         $res = array(
             'path' => $path,
-            'dir' => $dir . "/$url_name.$type"
+            'dir' => $dir . "/$url_name.$type",
+            'call' => $ext_url
         );
         return $res;
     }

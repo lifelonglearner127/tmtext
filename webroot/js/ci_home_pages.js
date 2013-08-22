@@ -76,6 +76,12 @@ function openScreensModalSlider() {
 // 	$("#shrinktheweb_crawl_modal .modal-body").html(test_img);
 // }
 
+function testWebthumb() {
+	$.post(base_url + 'index.php/measure/testwebthumb', function(data) {
+		console.log(data);
+	});
+}
+
 function sendEmailScreensToSelected() {
 	var selected_data = [];
 	var selected_items = $("input[type='checkbox'][name='send_report_ch']:checked").length;
