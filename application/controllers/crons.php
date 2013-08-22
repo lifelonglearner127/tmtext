@@ -198,10 +198,10 @@ class Crons extends MY_Controller {
                 $data = $this->research_data_model->do_stats($batch->id);
                 $conn = mysql_connect('localhost', 'c38trlmonk', '542piF88');
                 /* Make sure the connection is still alive, if not, try to reconnect */
-//                if (!mysql_ping($conn)) {
-//                    echo 'Lost connection, exiting after query #2';
-//                    exit;
-//                }
+                if (!mysql_ping($conn)) {
+                    echo 'Lost connection, exiting after query #2';
+                    exit;
+                }
                 if(count($data) > 0){
                     foreach($data as $obj){
                           $own_price = 0;
@@ -435,8 +435,9 @@ class Crons extends MY_Controller {
                 if(count($stat_data)>0){
                     foreach($stat_data as $stat){
                         $time_start = microtime(true);
-                        sleep(20);
+                        sleep(2);
                         $res_data = $this->check_duplicate_content($stat->imported_data_id);
+                        sleep(2);
                         $time_end = microtime(true);
                         $time = $time_end - $time_start;
                         echo "block with check_duplicate_content - $time seconds\n";
