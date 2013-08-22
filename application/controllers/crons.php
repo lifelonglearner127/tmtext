@@ -432,6 +432,12 @@ class Crons extends MY_Controller {
                 $params->batch_id = $batch->id;
                 $params->txt_filter = '';
                 $stat_data= $this->statistics_model->getStatsData($params);
+                $conn = mysql_connect('localhost', 'c38trlmonk', '542piF88');
+                /* Make sure the connection is still alive, if not, try to reconnect */
+                if (!mysql_ping($conn)) {
+                    echo 'Lost connection, exiting after query #2';
+                    exit;
+                }
                 if(count($stat_data)>0){
                     foreach($stat_data as $stat){
                         $time_start = microtime(true);
