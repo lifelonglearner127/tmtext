@@ -315,6 +315,9 @@
                                         <span id="assess_report_own_batch_name"></span>
                                     </div>
                                 </div>
+                                <div id="assess_report_numeric_difference" class="mt_10 mb_10 ml_15">
+                                    <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_cart.png"><span id="assess_report_numeric_difference_caption" class="mr_10"></span></div>
+                                </div>
                             </div>
                         </li>
                         <!--li class="boxes ui-resizable">

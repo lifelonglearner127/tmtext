@@ -88,6 +88,7 @@ $(function () {
                             $('#assess_report_items_unoptimized_product_content').html("");
                             $('#assess_report_items_have_product_context_that_is_too_short').html("");
                             $('#assess_report_compare_panel').hide();
+                            $('#assess_report_numeric_difference').hide();
                             if($('select[name="research_assess_batches"]').find('option:selected').val() != ""){
                                 $('#summary_message').html(" - Processing data. Check back soon.");
                             }
@@ -173,6 +174,25 @@ $(function () {
             $('#assess_report_compare_batch_name').html(report.summary.compare_batch_name);
             $('#assess_report_own_batch_name').html(report.summary.own_batch_name);
             $('#assess_report_compare_panel').show();
+        }
+        var research_assess_compare_batches_batch = $('#research_assess_compare_batches_batch').val()
+        if (research_assess_compare_batches_batch != null && research_assess_compare_batches_batch != 0 && report.summary.compare_batch_total_items != undefined) {
+            var secondary_company_name = $('#research_assess_compare_batches_customer option:selected').text();
+            var num_diff = report.summary.compare_batch_total_items - report.summary.own_batch_total_items;
+            var numeric_difference_caption = '';
+            if (num_diff < 0) {
+                numeric_difference_caption = Math.abs(num_diff) + ' more products in your selection than in the ' + secondary_company_name + ' selection';
+            } else {
+                if (num_diff > 0) {
+                    numeric_difference_caption = num_diff + ' fewer products in your selection than in the ' + secondary_company_name + ' selection';
+                } else {
+                    numeric_difference_caption = 'no difference';
+                }
+            }
+            $('#assess_report_numeric_difference_caption').html(numeric_difference_caption);
+            $('#assess_report_numeric_difference').show();
+        } else {
+            $('#assess_report_numeric_difference').hide();
         }
 
         if (report.detail_comparisons_total > 0) {

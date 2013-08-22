@@ -530,6 +530,11 @@ class Research extends MY_Controller {
             $own_batch = $this->batches_model->get($batch_id);
             $compare_customer = $this->batches_model->getCustomerById($build_assess_params->compare_batch_id);
             $compare_batch = $this->batches_model->get($build_assess_params->compare_batch_id);
+
+            $own_batch_total_items = $this->statistics_model->total_items_in_batch($batch_id);
+            $compare_batch_total_items = $this->statistics_model->total_items_in_batch($build_assess_params->compare_batch_id);
+            $report['summary']['own_batch_total_items'] = $own_batch_total_items;
+            $report['summary']['compare_batch_total_items'] = $compare_batch_total_items;
         }
 
         $report['recommendations']['absent_items'] = $absent_items;

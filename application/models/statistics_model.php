@@ -275,4 +275,17 @@ class Statistics_model extends CI_Model {
 
         return $absent_items;
     }
+
+    public function total_items_in_batch($batch_id){
+        $this->load->model('research_data_model');
+        $params = new stdClass();
+        $params->batch_id = $batch_id;
+        $params->txt_filter = '';
+        $res = $this->getStatsData($params);
+        $num_rows = count($res);
+        if($num_rows == 0){
+            $num_rows = $this->research_data_model->countAll($batch_id);
+        }
+        return $num_rows;
+    }
 }
