@@ -318,21 +318,7 @@ group_id = "<?php echo $same_pr[0]['imported_data_id']; ?>";
 
 </script>
 <script type='text/javascript'>
-    
-// function makeSticky(val){
-     $(".has_stiky_image").live('click',function(){
-         var sticky_url=$(this).closest('.grid_se_section').find('select').val();
-         $(this).css('background',' rgb(117, 114, 114)');
-         $(this).attr('title','Click to unstick');
-         $.cookie('sticky_url', sticky_url);
-     });
-     var sticky_url= $.cookie('sticky_url');
-       if(typeof(sticky_url)!=='undefined'){
-           
-       }
-   
-// }
- function inArray(needle, haystack) {
+   function inArray(needle, haystack) {
     var length = haystack.length;
     for(var i = 0; i < length; i++) {
         if(haystack[i] == needle)
@@ -340,6 +326,25 @@ group_id = "<?php echo $same_pr[0]['imported_data_id']; ?>";
     }
     return false;
   }
+// function makeSticky(val){
+     var stick_urls=[];
+     $(".has_stiky_image").live('click',function(){
+         var sticky_url=$(this).closest('.grid_se_section').find('select').val();
+         $(this).css('background','black');
+         $(this).attr('title','Click to unstick');
+         if(!inArray(sticky_url,stick_urls)){
+            stick_urls.push(sticky_url);
+         }
+         $.cookie('sticky_url', stick_urls);
+         
+     });
+     var sticky_url= $.cookie('sticky_url');
+       if(typeof(sticky_url)!=='undefined'){
+           
+       }
+   
+// }
+ 
     var count =<?php echo count($same_pr); ?>;
     var ddData_grids = [];
     var customers= [];
