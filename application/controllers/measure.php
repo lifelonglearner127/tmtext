@@ -908,16 +908,10 @@ function matches_count($im_data_id){
                 }
             }
             foreach ($same_pr as $ks => $vs) {
-                if($vs['customer']==''){
+                
                 $this->load->model('sites_model');
-                   if($this->get_base_url($vs['url'])=='shop.nordstrom.com'){
-                      $same_pr[$ks]['customer']='nordstrom' ;
-                   }else{
-                       //echo $this->get_base_url($vs['url']);
-                       //echo 'bbb'.strtolower($this->sites_model->get_name_by_url($this->get_base_url($vs['url']))).'aaaaaaaaa';
                    $same_pr[$ks]['customer']=  strtolower($this->sites_model->get_name_by_url($same_pr[$ks]['customer']));
-                   }
-                }
+                
             }
            
         $matched_sites=array();
@@ -1616,6 +1610,7 @@ public function gridview() {
     }
 
     public function searchmeasuredball() {
+        $status_results=$this->input->post('status_results');
         $selected_cites=$this->input->post('selected_cites');
         
         if($selected_cites!='null'){
@@ -1650,14 +1645,34 @@ public function gridview() {
                     $data_import[0]['imported_data_id'] = 0;
                 }
             }
-
+              
             $data['search_results'] = $data_import;
             $this->load->view('measure/searchmeasuredball', $data);
         } else {
+            
             $this->load->model('research_data_model');
-
+            
             $result = $this->research_data_model->get_by_batch_id($batch_id);
-           
+            if($status_results=='no_match'){
+                foreach($result as $kay => $val){
+                     $matches_sites=$this->matches_count($val['imported_data_id']);
+                     if(count($matches_sites)>1){
+                    
+                        unset($result[$kay]);
+                    }
+                }
+            }
+            if($status_results=='one_match'){
+               
+                foreach($result as $kay => $val){
+                     $matches_sites=$this->matches_count($val['imported_data_id']);
+                     
+                     if(count($matches_sites)==1){
+                    
+                        unset($result[$kay]);
+                    }
+                }
+            }
             if($selected_cites!='null'){
                 
                 foreach($result as $kay => $val){

@@ -1,5 +1,6 @@
 var grid_id = 0;
 var selected_cites;
+var status_results;
 var rows_count=1;
 var editorGridViewBaseUrl = base_url + 'index.php/measure/gridview';
 var editorTableViewBaseUrl = base_url + 'index.php/measure/tableview';
@@ -371,12 +372,16 @@ function show_from_butches() {//max
         }
     }
        
-      var selected_cites = $.cookie('selected_cites_cookie');
+      selected_cites = $.cookie('selected_cites_cookie');
+      status_results=$.cookie('status_showing_results');
+      if(typeof(status_results)== 'undefined'){
+         status_results = 'all';
+      }
       if(typeof(selected_cites)== 'undefined'){
         selected_cites = null;
       }
       
-        var searcher_all = $.post(editorSearchAllBaseUrl, {selected_cites: selected_cites,batch_id: batch_id}, 'html').done(function(data) {
+        var searcher_all = $.post(editorSearchAllBaseUrl, {status_results: status_results,selected_cites: selected_cites,batch_id: batch_id}, 'html').done(function(data) {
         $("#an_products_box").html(data);
         // $("#an_products_box").fadeOut();
         // $("#an_products_box").fadeIn();

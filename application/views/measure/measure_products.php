@@ -47,11 +47,13 @@ jQuery(document).ready(function($) {
     <h3 id="myModalLabel">Display Options</h3>
   </div>
   <div class="modal-body">
-    <input  style="margin-top: -4px;"type="radio" name="show_results" value="all"><span>Show all results</span><br>
-    <input style="margin-top: -4px;"type="radio" name="show_results" value="matchon"><span>Only show items if there is a match on: <span><Br> 
+    <input  style="margin-top: -4px; margin-right: 3px;" type="radio" name="show_results" value="all"><span>Show all results</span><br>
+    <input style="margin-top: -4px;margin-right: 3px;" type="radio" name="show_results" value="one_match"><span>Show results for which there is at least one match <span><Br> 
+    <input style="margin-top: -4px;margin-right: 3px;" type="radio" name="show_results" value="no_match"><span>Show results for which there are no matches <span><Br> 
+    <input style="margin-top: -4px;margin-right: 3px;" type="radio" name="show_results" value="matchon"><span>Only show items if there is a match on: <span><Br> 
     
     <form >
-    <select size="10" id="popup_sites" multiple="multiple">
+    <select size="10" id="popup_sites" multiple="multiple" style="margin-left:15px;margin-top: 5px;">
                          <?php
                          
                             foreach($sites as $cite){
@@ -119,7 +121,7 @@ $(document).ready(function(){
                             status_showing_results = $.cookie('status_showing_results');
 
                             $('input[value="'+status_showing_results+'"]').attr('checked',true);
-                            if(status_showing_results!=='all'){
+                            if(status_showing_results=='matchon'){
                                 selected_cites_cookie = $.cookie('selected_cites_cookie');
                                 var dataarray=selected_cites_cookie.split(",");
                                 $("#popup_sites").val(dataarray);
