@@ -193,10 +193,11 @@ class Crons extends MY_Controller {
             $this->statistics_duplicate_content_model->truncate();
             $batches = $this->batches_model->getAll('id');
             $enable_exec = true;
+            $conn = mysql_connect('localhost', 'c38trlmonk', '542piF88');
             foreach($batches as $batch){
                 $batch_id = $batch->id;
                 $data = $this->research_data_model->do_stats($batch->id);
-                $conn = mysql_connect('localhost', 'c38trlmonk', '542piF88');
+
                 /* Make sure the connection is still alive, if not, try to reconnect */
                 if (!mysql_ping($conn)) {
                     echo 'Lost connection, exiting after query #2';
