@@ -196,14 +196,13 @@ class Crons extends MY_Controller {
             $conn = mysql_connect('localhost', 'c38trlmonk', '542piF88');
             foreach($batches as $batch){
                 $batch_id = $batch->id;
-                $data = $this->research_data_model->do_stats($batch->id);
-
                 /* Make sure the connection is still alive, if not, try to reconnect */
                 if (!mysql_ping($conn)) {
                     //echo 'Lost connection, exiting after query #2';
                     //exit;
                     $conn = mysql_connect('localhost', 'c38trlmonk', '542piF88');
                 }
+                $data = $this->research_data_model->do_stats($batch->id);
                 if(count($data) > 0){
                     foreach($data as $obj){
                           $own_price = 0;
