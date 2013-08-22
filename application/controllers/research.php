@@ -869,43 +869,43 @@ class Research extends MY_Controller {
 
         $html = $html.'<tr><td class="tableheader">Summary</td></tr>';
 
-        //if (!empty($report_data['summary']['absent_items_count']) && intval($report_data['summary']['total_items'] > 0)) {
+        //if (!empty($report_data['summary']['total_items']) && intval($report_data['summary']['total_items'] > 0)) {
             $html = $html.'<tr><td class="report_td">';
             $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_number.png">'.$report_data['summary']['total_items'].' total Items</div>';
             $html = $html.'</td></td></tr>';
         //}
 
-        //if (!empty($report_data['summary']['absent_items_count']) && intval($report_data['summary']['items_priced_higher_than_competitors'] > 0)) {
+        //if (!empty($report_data['summary']['items_priced_higher_than_competitors']) && intval($report_data['summary']['items_priced_higher_than_competitors'] > 0)) {
             $html = $html.'<tr><td class="report_td">';
             $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_dollar.png">'.$report_data['summary']['items_priced_higher_than_competitors'].' items priced higher than competitors</div>';
             $html = $html.'</td></tr>';
         //}
 
-        //if (!empty($report_data['summary']['absent_items_count']) && intval($report_data['summary']['items_have_more_than_20_percent_duplicate_content'] > 0)) {
+        //if (!empty($report_data['summary']['items_have_more_than_20_percent_duplicate_content']) && intval($report_data['summary']['items_have_more_than_20_percent_duplicate_content'] > 0)) {
             $html = $html.'<tr><td class="report_td">';
             $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_D.png">'.$report_data['summary']['items_have_more_than_20_percent_duplicate_content'].' items have more than 20% duplicate content</div>';
             $html = $html.'</td></tr>';
         //}
 
-        //if (!empty($report_data['summary']['absent_items_count']) && intval($report_data['summary']['items_unoptimized_product_content'] > 0)) {
+        //if (!empty($report_data['summary']['items_unoptimized_product_content']) && intval($report_data['summary']['items_unoptimized_product_content'] > 0)) {
             $html = $html.'<tr><td class="report_td">';
             $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_seo.png">'.$report_data['summary']['items_unoptimized_product_content'].' items have unoptimized product content</div>';
             $html = $html.'</td></tr>';
         //}
 
-        //if (!empty($report_data['summary']['absent_items_count']) && intval($report_data['summary']['items_short_products_content'] > 0)) {
+        //if (!empty($report_data['summary']['items_short_products_content']) && intval($report_data['summary']['items_short_products_content'] > 0)) {
             $html = $html.'<tr><td class="report_td">';
             $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_arrow_down.png">'.$report_data['summary']['items_short_products_content'].' items have product content that is too short</div>';
             $html = $html.'</td></tr>';
         //}
 
-        //if (!empty($report_data['summary']['absent_items_count']) && intval($report_data['summary']['absent_items_count'] > 0)) {
+        if (!empty($report_data['summary']['absent_items_count']) && intval($report_data['summary']['absent_items_count'] > 0)) {
             $html = $html.'<tr><td class="report_td">';
             $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_comparison.png">'.$report_data['summary']['absent_items_count'];
             $html = $html.' items in '.$report_data['summary']['compare_customer_name'].' - '.$report_data['summary']['compare_batch_name'];
             $html = $html.' are absent from '.$report_data['summary']['own_batch_name'];
             $html = $html.'</div></td></tr>';
-        //}
+        }
 
         $html = $html.'</table>';
 
