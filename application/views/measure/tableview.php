@@ -183,7 +183,7 @@ foreach($customers as $val){
          <?php }?>
     </tr>
     <tr>
-        <td class="table_subtitles">Dublicate Content</td>
+        <td class="table_subtitles">Duplicate Content</td>
         <td><?php
             if($s_product_short_desc_count1 >0){
 				echo $same_pr[$ind0]['short_original'];
@@ -271,7 +271,7 @@ foreach($customers as $val){
          <?php }?>
     </tr>
     <tr>
-        <td class="table_subtitles">Dublicate Content</td>
+        <td class="table_subtitles">Duplicate Content</td>
         <td><?php
             if($s_product_long_desc_count1 >0){
                echo $same_pr[$ind0]['long_original'];  

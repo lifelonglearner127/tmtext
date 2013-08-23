@@ -252,7 +252,7 @@ if($s_product_long_desc_count > 0){
 
 
             </div>
-            
+             <p style="color: rgb(117, 114, 114);">Id: <?php echo $vs['imported_data_id']; ?></p>
 
             <!--            <div class='grid_seo'>
                             <ul>

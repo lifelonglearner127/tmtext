@@ -956,8 +956,8 @@ public function gridview() {
             $this->load->model('similar_product_groups_model');
             $this->load->model('similar_data_model');
             $data_import = $this->imported_data_parsed_model->getByImId($im_data_id);
-
-            if ($data_import['description'] !== null && trim($data_import['description']) !== "") {
+            
+             if ($data_import['description'] !== null && trim($data_import['description']) !== "") {
                 $data_import['description'] = preg_replace('/\s+/', ' ', $data_import['description']);
                 // $data_import['description'] = preg_replace('/[^A-Za-z0-9\. -!]/', ' ', $data_import['description']);
                 $data['s_product_short_desc_count'] = count(explode(" ", $data_import['description']));

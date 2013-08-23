@@ -930,10 +930,13 @@ class Imported_data_parsed_model extends CI_Model {
     function getData($value, $website = '', $category_id = '', $limit = '', $key = 'Product Name', $strict = false) {
         $arr = explode('/', $value);
         $value = $arr[0];
-        $this->db->select('p.imported_data_id, p.key, p.value')
+        $this->db->select('p.imported_data_id, p.key, p.value, p.revision')
                 ->from($this->tables['imported_data_parsed'] . ' as p')
                 ->join($this->tables['imported_data'] . ' as i', 'i.id = p.imported_data_id', 'left')
                 ->where('p.key', $key);
+//                ->where(" (p.imported_data_id, p.revision) IN (SELECT imported_data_id, MAX(revision) as revision
+//                      FROM imported_data_parsed
+//                      GROUP BY imported_data_id )");
 
         if ($strict) {
             $this->db->like('p.value', '"' . $value . '"');
@@ -1359,7 +1362,26 @@ class Imported_data_parsed_model extends CI_Model {
             }
         }
     }
-
+    public function test($im_data_id){
+        
+        
+        
+//        $query = $this->db->query(
+//         "SELECT * 
+//              FROM imported_data_parsed 
+//                
+//              WHERE  (imported_data_id,revision)  IN 
+//                    ( SELECT imported_data_id, MAX(revision)
+//                      FROM imported_data_parsed
+//                      GROUP BY imported_data_id
+//              )    AND imported_data_parsed.imported_data_id=179
+//         ");
+//        $this->db->select('imported_data_id,key,value,revision')->where('imported_data_id',$im_data_id)->where;
+//        $query = $this->db->get('imported_data_parsed');
+//        echo "<pre>";
+//        print_r($query->result());
+        
+    }
     public function getByProductName($im_data_id, $selected_product_name = '', $manufacturer = '', $strict = false) {
 
         $this->db->select('p.imported_data_id, p.key, p.value')
