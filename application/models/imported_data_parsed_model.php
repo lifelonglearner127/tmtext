@@ -930,13 +930,13 @@ class Imported_data_parsed_model extends CI_Model {
     function getData($value, $website = '', $category_id = '', $limit = '', $key = 'Product Name', $strict = false) {
         $arr = explode('/', $value);
         $value = $arr[0];
-        $this->db->select('p.imported_data_id, p.key, p.value, p.revision')
+        $this->db->select('p.imported_data_id, p.key, p.value')
                 ->from($this->tables['imported_data_parsed'] . ' as p')
                 ->join($this->tables['imported_data'] . ' as i', 'i.id = p.imported_data_id', 'left')
                 ->where('p.key', $key);
-//                ->where(" (p.imported_data_id, p.revision) IN (SELECT imported_data_id, MAX(revision) as revision
+//                ->where_in('(p.imported_data_id, p.revision)',  "SELECT imported_data_id, MAX(revision) as revision
 //                      FROM imported_data_parsed
-//                      GROUP BY imported_data_id )");
+//                      GROUP BY imported_data_id");
 
         if ($strict) {
             $this->db->like('p.value', '"' . $value . '"');
