@@ -252,7 +252,15 @@ class SearchSpider(BaseSpider):
 				item = SearchItem()
 				item['site'] = site
 				item['product_name'] = result.select("span/text()").extract()[0]
-				item['product_url'] = result.select("@href").extract()[0]
+				product_url = result.select("@href").extract()[0]
+				
+				# remove the part after "/ref" containing details about the search query
+				m = re.match("(.*)/ref=(.*)", product_url)
+				if m:
+					product_url = m.group(1)
+
+				item['product_url'] = product_url
+
 				if 'origin_url' in response.meta:
 					item['origin_url'] = response.meta['origin_url']
 
