@@ -268,16 +268,13 @@
                 <button id="research_batches_columns" class="btn ml_5 float_r">Columns...</button>
                 <div id="assess_report">
                     <ul class="ui-sortable">
-                        <li class="boxes ui-resizable">
+                        <li class="boxes">
                             <h3>
                                 <span>
-                                    <a class="hideShow" onclick="return false;" href="#">
-                                        <img src="<?php echo base_url();?>img/arrow-down.png" style="width:12px;margin-right: 10px">
-                                    </a>
                                     Summary
                                     <span id="summary_message"></span>
                                 </span>
-                                <a class="ml_10 research_arrow" href="#">
+                                <a class="ml_10 research_arrow hideShow" onclick="return false;" href="#">
                                     <img src="<?php echo base_url();?>img/arrow.png">
                                 </a>
                                 <span id="assess_report_download_panel" style="float: right;width: 500px;">

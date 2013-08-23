@@ -265,13 +265,19 @@ class Statistics_model extends CI_Model {
                 }
             }
             $absent_items[] = array(
-                'product_name' => $compare_product->product_name,
+                'product_name' => str_replace("\n", "", $compare_product->product_name),
                 'url' => $compare_product->url,
                 'recommendations' => 'Add item to product selection',
             );
         }
 
         //asort($absent_items);
+
+//        $fp = fopen('absent.csv', 'w');
+//        foreach ($absent_items as $line) {
+//            fputcsv($fp, $line);
+//        }
+//        fclose($fp);
 
         return $absent_items;
     }
