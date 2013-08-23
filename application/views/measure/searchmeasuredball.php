@@ -243,6 +243,8 @@
                 } else {
                     $.cookie('ci_product_item_view', im_data_id, {expires: 7, path: '/'}); // create
                 }
+                
+                $.cookie('ci_product_item_view_selected', im_data_id, {expires: 7, path: '/'});
             });
 
             var auto_mode_item_view = "";

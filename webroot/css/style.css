@@ -1351,6 +1351,10 @@ p.show_ballons input{
     overflow: hidden;
 }
 
+#products{
+	position: relative;
+}
+
 #products, #research_products, .product_title{
     margin:0px;
     padding: 0px;

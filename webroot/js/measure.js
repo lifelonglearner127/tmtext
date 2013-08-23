@@ -200,11 +200,42 @@ function switchToGridView() {
     // AJAX CALL TO GET GRID VIEW CONTENT (START) (NEW STUFF)
     var im_data_id = $("#an_sort_search_box > #products > li[data-status='selected']").attr('data-value');
 
+	if( $.cookie('ci_product_item_view_selected') ){
+		var elem_scroll;
+		im_data_id = $.cookie('ci_product_item_view_selected');
+		$('#products').find('li').each(function(){
+			$(this).css('background-color', 'white');
+			$(this).attr('data-status', 'standart');
+			
+			$(this).find('span').each(function(){
+				$(this).css('white-space', 'nowrap');
+			});
+			
+			if( $(this).attr('data-value') == im_data_id ){
+				$(this).attr('data-status','selected');
+				$(this).find('span').each(function(){
+					$(this).css('white-space', 'normal');
+				});
+				$(this).attr('style','');
+				$(this).css({
+					'background-color': 'rgb(202, 234, 255)',
+					'background-position': 'initial initial',
+					'background-repeat': 'initial initial'
+				});
+				elem_scroll = $(this).position().top;
+				//alert(elem_scroll)
+				if( elem_scroll > 160 ){
+					setTimeout(function(){ $('#products').animate({scrollTop: parseInt(elem_scroll)},'slow') }, 1000);
+				}
+			}
+		});
+	}
+
     var strict = 0;
     if ($("input[name='strict_grid']:checked").val() !== undefined) {
         strict = 1;
     }
-
+	
     var grid_view = $.post(editorGridViewBaseUrl, {selectedUrl: $('#products li[data-status=selected] span').eq(1).text(), im_data_id: im_data_id, s_term: $.trim($("#compare_text").val()), strict: strict}, 'html').done(function(data) {
         $("#compet_area_grid").html(data);
         $("#compet_area_grid").show();
