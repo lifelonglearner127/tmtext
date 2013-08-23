@@ -466,7 +466,9 @@ class ProcessText():
 		combs = itertools.combinations(range(len(norm_text_nondict)), comb_length)
 		words=[map(lambda c: norm_text_nondict[c], x) for x in list(combs)]
 
+		# TODO:
 		# # add versions of the queries with different spelling
+		# first add all the tokens but with some words replaced (version of original normalized)
 		# extra = []
 		# for word_comb in words:
 		# 	for i in range(len(word_comb)):
@@ -499,16 +501,16 @@ class ProcessText():
 			#TODO: update these if they're not relevant for a new category or site
 
 			# for first word append weight 3
-			weights_common = [3]
+			weights_common = [4]
 			for word in list(common_words)[1:]:
 				weights_common.append(ProcessText.weight(word))
 			##print common_words, weights_common
 
-			weights1 = [3]
+			weights1 = [4]
 			for word in list(words1)[1:]:
 				weights1.append(ProcessText.weight(word))
 
-			weights2 = [3]
+			weights2 = [4]
 			for word in list(words2)[1:]:
 				weights2.append(ProcessText.weight(word))
 
@@ -537,7 +539,7 @@ class ProcessText():
 		nonwords = len(re.findall("\W", word))
 		
 		if letters > 1 and numbers > 1 and nonwords==0:
-			return 3
+			return 4
 
 		if not wordnet.synsets(word):
 			return 2
