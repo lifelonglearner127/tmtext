@@ -110,7 +110,7 @@ class Crons extends MY_Controller {
             $c_url = urlencode(trim($url));
             if($screen_api == 'snapito.com') {
                 $api_key = $this->config->item('snapito_api_secret');
-                if($url == 'overstock.com' || $url == 'bloomingdales.com' || $url == 'wayfair.com' || $url == 'walmart.com') {
+                if($url == 'overstock.com' || $url == 'bloomingdales.com' || $url == 'wayfair.com' || $url == 'walmart.com' || $url == 'macys.com' || $url == 'williams-sonoma.com' || $url == 'pgestore.com') {
                     $res = $this->webthumb_call($url);
                 } else {
                     $res = array(
