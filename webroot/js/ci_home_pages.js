@@ -208,21 +208,30 @@ function openCrawlLaunchPanelModal(close_preview) {
 
 function flatPreviewScreenshotModal(url) {
 	$("#customers_screens_crawl_modal").modal('hide');
-	if(url === 'bloomingdales.com') { // --- static tmp screens for bloomingdales.com
-		var tmp_thumb = base_url + "img/bloomingdales_com_wide_half.png";
-		$("#preview_screenshot_modal #sc_preview").attr('src', tmp_thumb);
-		$('#preview_screenshot_modal').lightbox();
-	} else {
-		var send_data = {
-			url: url,
-			year: $("#year_s > option:selected").val(),
-			week: $(".pagination ul li.page.active").data('week')
-		}
-		var preview_img = $.post(base_url + 'index.php/measure/getwebshootdata', send_data, function(data) {
-			$("#preview_screenshot_modal #sc_preview").attr('src', data[0]['img']);
-			$('#preview_screenshot_modal').lightbox();
-		});
+	// if(url === 'bloomingdales.com') {
+	// 	var tmp_thumb = base_url + "img/bloomingdales_com_wide_half.png";
+	// 	$("#preview_screenshot_modal #sc_preview").attr('src', tmp_thumb);
+	// 	$('#preview_screenshot_modal').lightbox();
+	// } else {
+	// 	var send_data = {
+	// 		url: url,
+	// 		year: $("#year_s > option:selected").val(),
+	// 		week: $(".pagination ul li.page.active").data('week')
+	// 	}
+	// 	var preview_img = $.post(base_url + 'index.php/measure/getwebshootdata', send_data, function(data) {
+	// 		$("#preview_screenshot_modal #sc_preview").attr('src', data[0]['img']);
+	// 		$('#preview_screenshot_modal').lightbox();
+	// 	});
+	// }
+	var send_data = {
+		url: url,
+		year: $("#year_s > option:selected").val(),
+		week: $(".pagination ul li.page.active").data('week')
 	}
+	var preview_img = $.post(base_url + 'index.php/measure/getwebshootdata', send_data, function(data) {
+		$("#preview_screenshot_modal #sc_preview").attr('src', data[0]['img']);
+		$('#preview_screenshot_modal').lightbox();
+	});
 }
 
 function previewScreenshotModal(url) {
