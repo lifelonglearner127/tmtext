@@ -233,7 +233,7 @@ union all
         } else {
             $batch_name = $params->batch_name;
         }
-        $batch_name = " and b.title =".$this->db->escape($batch_name)." ";
+        $batch_name = " where b.title =".$this->db->escape($batch_name)." ";
 
 //        $date_from = $params->date_from == '' ? '' : $this->db->escape($params->date_from);
 //        $date_to = $params->date_to == '' ? '' : $this->db->escape($params->date_to);
@@ -274,10 +274,10 @@ union all
                     group_concat(r.short_description_wc, '') AS short_description_wc,
                     group_concat(r.long_description_wc, '') AS long_description_wc,
                     group_concat(r.short_seo_phrases, '') AS short_seo_phrases,
-                    group_concat(r.long_seo_phrases, '') AS long_seo_phrases
+                    group_concat(r.long_seo_phrases, '') AS long_seo_phrases,
+                    max(revision)
                 from (
                     select
-                        b.title,
                         kv.id,
                         kv.imported_data_id,
                         rd.id as research_data_id,
@@ -289,27 +289,16 @@ union all
                         case when kv.`key` = 'Description_WC' then kv.`value` end as short_description_wc,
                         case when kv.`key` = 'Long_Description_WC' then kv.`value` end as long_description_wc,
                         case when kv.`key` = 'short_seo_phrases' then kv.`value` end as short_seo_phrases,
-                        case when kv.`key` = 'long_seo_phrases' then kv.`value` end as long_seo_phrases
+                        case when kv.`key` = 'long_seo_phrases' then kv.`value` end as long_seo_phrases,
+                        kv.revision
                     from
                         batches as b
                     inner join research_data as rd on
                         rd.batch_Id = b.id
-                        $batch_name
                     inner join research_data_to_crawler_list as rdtcl on rdtcl.research_data_id = rd.id
                     inner join crawler_list as cl on cl.id = rdtcl.crawler_list_id
-                    inner join (
-                        select
-                            idp.id,
-                            idp.imported_data_id,
-                            idp.`key` as `key`,
-                            idp.`value` as `value`,
-                            max(revision) as revision
-                        from
-                            imported_data_parsed as idp
-                        group by
-                            idp.imported_data_id,
-                            idp.`key`
-                    )  as kv on kv.imported_data_id = cl.imported_data_id
+                    inner join imported_data_parsed as kv on kv.imported_data_id = cl.imported_data_id
+                    $batch_name
                 ) as r
                 group by
                     r.imported_data_id
@@ -317,7 +306,7 @@ union all
             where
                 rr.product_name like $txt_filter
             order by
-                rr.created
+                rr.id
         ";
 
         $query = $this->db->query($sql_cmd);
