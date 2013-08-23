@@ -214,7 +214,7 @@
 			// 	$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox' style='background-image: url(" + data['thumb'] + "); background-position: top left; background-repeat: no-repeat;'></a>");
 			// }
 			$("#screen_lightbox_img_" + item_id).attr('src', data['img']);
-			$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox' style='background-image: url(" + data['thumb'] + "); background-position: top left; background-repeat: no-repeat;'></a>");
+			$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox' style='background-image: url(" + data['img'] + "); background-position: top left; background-repeat: no-repeat;'></a>");
 
 			var t = moment(data['stamp']).format('MMMM Do, YYYY');
 			$("#crawl_date_" + item_id).text(t);
@@ -261,7 +261,7 @@
 	    	// 		}
 
 	    			$("#screen_lightbox_img_" + item_id).attr('src', data[i]['cell']['img']);
-					$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox' style='background-image: url(" + data[i]['cell']['thumb'] + "); background-position: top left; background-repeat: no-repeat;'></a>");
+					$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox' style='background-image: url(" + data[i]['cell']['img'] + "); background-position: top left; background-repeat: no-repeat;'></a>");
 
 					var t = moment(data[i]['cell']['screen_stamp']).format('MMMM Do, YYYY');
 					$("#crawl_date_" + item_id).text(t);

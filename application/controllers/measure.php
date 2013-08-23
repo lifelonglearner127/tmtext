@@ -37,15 +37,28 @@ class Measure extends MY_Controller {
     }
 
     public function testwebthumb() {
-        $webthumb_user_id = 72956;
-        $api_key = "3783567e0b4e36855c85507ce437e86c";
+        $webthumb_user_id = $this->config->item('webthumb_user_id');;
+        $api_key = $this->config->item('webthumb_api_key');
         $url = "http://overstock.com";
-        $c_date = gmdate('Ymd'); 
-        $hash = md5("$c_date+$url+$api_key"); 
+        $c_date = gmdate('Ymd', time()); 
+        $hash = md5($c_date.$url.$api_key); 
         $e_url = urlencode(trim($url));
-        $call = "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=medium";
-        $res = $this->upload_record_webshoot($call, 'tester');
+        $call = "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=medium2";
+        // $res = $this->upload_record_webshoot($call, 'tester');
         $this->output->set_content_type('application/json')->set_output(json_encode($res));
+    }
+
+    private function webthumb_call($url) {
+        $webthumb_user_id = $this->config->item('webthumb_user_id');
+        $api_key = $this->config->item('webthumb_api_key');
+        $url = "http://$url";
+        $c_date = gmdate('Ymd', time()); 
+        $hash = md5($c_date.$url.$api_key); 
+        $e_url = urlencode(trim($url));
+        return $res = array(
+            "s" => "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=medium2",
+            'l' => "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=large"
+        );
     }
 
     private function upload_record_webshoot($ext_url, $url_name) {
@@ -246,10 +259,14 @@ class Measure extends MY_Controller {
             $c_url = urlencode(trim($url));
             if($screen_api == 'snapito.com') {
                 $api_key = $this->config->item('snapito_api_secret');
-                $res = array(
-                    "s" => "http://api.snapito.com/web/$api_key/mc/$url",
-                    'l' => "http://api.snapito.com/web/$api_key/full/$url"
-                );
+                if($url == 'overstock.com' || $url == 'bloomingdales.com' || $url == 'wayfair.com' || $url == 'walmart.com') {
+                    $res = $this->webthumb_call($url);
+                } else {
+                    $res = array(
+                        "s" => "http://api.snapito.com/web/$api_key/mc/$url",
+                        'l' => "http://api.snapito.com/web/$api_key/full/$url"
+                    );
+                }
             } else {
                 $api_key = $this->config->item('webyshots_api_key');
                 $api_secret = $this->config->item('webyshots_api_secret');
@@ -315,10 +332,14 @@ class Measure extends MY_Controller {
             $primary_source_res = $this->urlExists('http://snapito.com');
             if($primary_source_res) { // ===== PRIMARY SCREENCAPTURE API (http://snapito.com/)
                 $api_key = $this->config->item('snapito_api_secret');
-                $res = array(
-                    "s" => "http://api.snapito.com/web/$api_key/mc/$c_url",
-                    'l' => "http://api.snapito.com/web/$api_key/full/$c_url"
-                );
+                if($c_url == 'overstock.com' || $c_url == 'bloomingdales.com' || $c_url == 'wayfair.com' || $c_url == 'walmart.com') {
+                    $res = $this->webthumb_call($c_url);
+                } else {
+                    $res = array(
+                        "s" => "http://api.snapito.com/web/$api_key/mc/$c_url",
+                        'l' => "http://api.snapito.com/web/$api_key/full/$c_url"
+                    );
+                }
             } else { // ===== SECONDARY SCREENCAPTURE API (http://webyshots.com)
                 $url = urlencode(trim($c_url));
                 $api_key = $this->config->item('webyshots_api_key');
@@ -388,14 +409,14 @@ class Measure extends MY_Controller {
         $primary_source_res = $this->urlExists('http://snapito.com');
         if($primary_source_res) { // ===== PRIMARY SCREENCAPTURE API (http://snapito.com/)
             $api_key = $this->config->item('snapito_api_secret');
-            $res = array(
-                "s" => "http://api.snapito.com/web/$api_key/mc/$c_url",
-                'l' => "http://api.snapito.com/web/$api_key/full/$c_url"
-            );
-            // $res = array(
-            //     "s" => "http://api.snapito.com/web/$api_key/mc?freshness100000&url=$c_url",
-            //     'l' => "http://api.snapito.com/web/$api_key/mc?freshness100000&url=$c_url"
-            // );
+            if($c_url == 'overstock.com' || $c_url == 'bloomingdales.com' || $c_url == 'wayfair.com' || $c_url == 'walmart.com') {
+                $res = $this->webthumb_call($c_url);
+            } else {
+                $res = array(
+                    "s" => "http://api.snapito.com/web/$api_key/mc/$c_url",
+                    'l' => "http://api.snapito.com/web/$api_key/full/$c_url"
+                );
+            }
             $crawl_s = $this->upload_record_webshoot($res['s'], $c_url . "_small");
             $crawl_l = $this->upload_record_webshoot($res['l'], $c_url . "_big");
             $result = array(
