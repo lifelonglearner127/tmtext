@@ -379,6 +379,7 @@ union all
 
     function do_stats($batch_id)
     {
+        $this->db->reconnect();
         $sql_cmd = "select * from
             (   select
                     r.id AS rid,
