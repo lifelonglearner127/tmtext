@@ -493,27 +493,24 @@ class ProcessText():
 			words2 = set(ProcessText.normalize(product2['product_name']))
 			common_words = words1.intersection(words2)
 
-			weights_common = []
-			for word in common_words:
-				if not wordnet.synsets(word):
-					weights_common.append(2)
-				else:
-					weights_common.append(1)
+			# assign weigths - 1 to normal words, 2 to nondictionary words
+			# 3 to first word in text (assumed to be manufacturer)
+			# or if the word looks like a combination of letters and numbers (assumed to be model number)
+			#TODO: update these if they're not relevant for a new category or site
+
+			# for first word append weight 3
+			weights_common = [3]
+			for word in list(common_words)[1:]:
+				weights_common.append(ProcessText.weight(word))
 			##print common_words, weights_common
 
-			weights1 = []
-			for word in words1:
-				if not wordnet.synsets(word):
-					weights1.append(2)
-				else:
-					weights1.append(1)
+			weights1 = [3]
+			for word in list(words1)[1:]:
+				weights1.append(ProcessText.weight(word))
 
-			weights2 = []
-			for word in words2:
-				if not wordnet.synsets(word):
-					weights2.append(2)
-				else:
-					weights2.append(1)
+			weights2 = [3]
+			for word in list(words2)[1:]:
+				weights2.append(ProcessText.weight(word))
 
 			threshold = param*(sum(weights1) + sum(weights2))/2
 
@@ -528,6 +525,25 @@ class ProcessText():
 			#print "FINAL", product_name.encode("utf-8"), products_found, "\n-----------------------------------------\n"
 
 			return result
+
+	# compute weight to be used for a word for measuring similarity between two texts
+	@staticmethod
+	def weight(word):
+
+		# if there are more than 2 numbers and 2 letters and no non-word characters, 
+		# assume this is the model number and assign it a higher weight
+		letters = len(re.findall("[a-zA-Z]", word))
+		numbers = len(re.findall("[0-9]", word))
+		nonwords = len(re.findall("\W", word))
+		
+		if letters > 1 and numbers > 1 and nonwords==0:
+			return 3
+
+		if not wordnet.synsets(word):
+			return 2
+
+		return 1
+
 
 
 
