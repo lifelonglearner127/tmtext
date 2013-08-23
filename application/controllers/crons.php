@@ -33,6 +33,19 @@ class Crons extends MY_Controller {
         }  
     }
 
+    private function webthumb_call($url) {
+        $webthumb_user_id = $this->config->item('webthumb_user_id');
+        $api_key = $this->config->item('webthumb_api_key');
+        $url = "http://$url";
+        $c_date = gmdate('Ymd', time()); 
+        $hash = md5($c_date.$url.$api_key); 
+        $e_url = urlencode(trim($url));
+        return $res = array(
+            "s" => "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=medium2",
+            'l' => "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=large"
+        );
+    }
+
     private function customers_list() {
         $this->load->model('customers_model');
         $output = array();
@@ -97,10 +110,14 @@ class Crons extends MY_Controller {
             $c_url = urlencode(trim($url));
             if($screen_api == 'snapito.com') {
                 $api_key = $this->config->item('snapito_api_secret');
-                $res = array(
-                    "s" => "http://api.snapito.com/web/$api_key/mc/$url",
-                    'l' => "http://api.snapito.com/web/$api_key/full/$url"
-                );
+                if($url == 'overstock.com' || $url == 'bloomingdales.com' || $url == 'wayfair.com' || $url == 'walmart.com') {
+                    $res = $this->webthumb_call($url);
+                } else {
+                    $res = array(
+                        "s" => "http://api.snapito.com/web/$api_key/mc/$url",
+                        'l' => "http://api.snapito.com/web/$api_key/full/$url"
+                    );
+                }
             } else {
                 $api_key = $this->config->item('webyshots_api_key');
                 $api_secret = $this->config->item('webyshots_api_secret');

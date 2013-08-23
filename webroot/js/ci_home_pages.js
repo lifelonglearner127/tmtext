@@ -67,11 +67,11 @@ function openScreensModalSlider() {
 	$("#screens_modal_slider").modal('show');
 }
 
-function testWebthumb() {
-	$.post(base_url + 'index.php/measure/testwebthumb', function(data) {
-		console.log(data);
-	});
-}
+// function testWebthumb() {
+// 	$.post(base_url + 'index.php/measure/testwebthumb', function(data) {
+// 		console.log(data);
+// 	});
+// }
 
 function sendEmailScreensToSelected() {
 	var selected_data = [];

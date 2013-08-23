@@ -11,7 +11,7 @@
     	<div class="row-fluid home_pages">
 
     		<div class='span12 head_section'>
-    			<button class='btn btn-primary' onclick="testWebthumb()">Test webthumb</button>
+    			<!-- <button class='btn btn-primary' onclick="testWebthumb()">Test webthumb</button> -->
 	    		<p class='head_line1'>Home page reports are generated weekly. <a onclick="viewRecipientsList()" href='javascript:void(0)'>Configure Recipients</a></p>
 				<div class='head_line_2'>
 					<div class="span2 span_lh_30">View Reports for:</div>

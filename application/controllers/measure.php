@@ -36,17 +36,17 @@ class Measure extends MY_Controller {
         $this->render();
     }
 
-    public function testwebthumb() {
-        $webthumb_user_id = $this->config->item('webthumb_user_id');;
-        $api_key = $this->config->item('webthumb_api_key');
-        $url = "http://overstock.com";
-        $c_date = gmdate('Ymd', time()); 
-        $hash = md5($c_date.$url.$api_key); 
-        $e_url = urlencode(trim($url));
-        $call = "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=medium2";
-        // $res = $this->upload_record_webshoot($call, 'tester');
-        $this->output->set_content_type('application/json')->set_output(json_encode($res));
-    }
+    // public function testwebthumb() {
+    //     $webthumb_user_id = $this->config->item('webthumb_user_id');;
+    //     $api_key = $this->config->item('webthumb_api_key');
+    //     $url = "http://overstock.com";
+    //     $c_date = gmdate('Ymd', time()); 
+    //     $hash = md5($c_date.$url.$api_key); 
+    //     $e_url = urlencode(trim($url));
+    //     $call = "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=medium2";
+    //     $res = $this->upload_record_webshoot($call, 'tester');
+    //     $this->output->set_content_type('application/json')->set_output(json_encode($res));
+    // }
 
     private function webthumb_call($url) {
         $webthumb_user_id = $this->config->item('webthumb_user_id');
