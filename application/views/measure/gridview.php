@@ -154,7 +154,10 @@ foreach ($same_pr as $ks => $vs) {
                             <?php
                         }
                         echo '</table>';
-                    }
+                    }else{
+						echo "<span class='analysis_content_head'>Price:</span>";
+						echo "<p>Special or not listed</p>";
+					}
                     ?>
                 </div>
                 <!--                            //Max-->
