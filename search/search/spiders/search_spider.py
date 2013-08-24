@@ -110,7 +110,7 @@ class SearchSpider(BaseSpider):
 				product_urls.append(line.strip())
 			f.close()
 
-		for product_url in [product_urls[11]]:
+		for product_url in [product_urls[22]]:
 			# extract site domain
 			m = re.match("http://www1?\.([^\.]+)\.com.*", product_url)
 			origin_site = ""
@@ -471,7 +471,13 @@ class ProcessText():
 		# other preprocessing: -Inch = " - fitting for staples->amazon search
 		# TODO: suitable for all sites?
 		text = re.sub("[- ][iI]nch", "\"", text)
-		text = re.sub("(?<=[0-9])in","\"", text)
+		text2 = re.sub("(?<=[0-9])[iI][nN](?!=c)","\"", text)
+
+		
+		#print "BEFORE:", text.encode("utf-8"), " AFTER:", text2.encode("utf-8")
+
+		text=text2
+
 
 		#! including ' as an exception keeps things like women's a single word. also doesn't find it as a word in wordnet -> too high a priority
 		# excluding it leads to women's->women (s is a stopword)
@@ -488,7 +494,7 @@ class ProcessText():
 		tokens = text.split()
 		clean = [token.lower() for token in tokens if token.lower() not in stopset and len(token) > 1]
 
-		# if there is a supposed model number ambong the words, add it without the last letter as well, so as to match more possibilities
+		# if there is a supposed model number among the words, add it without the last letter as well, so as to match more possibilities
 		# (there is a case like this for un32eh5300f)
 
 		new_word = ""
@@ -574,6 +580,7 @@ class ProcessText():
 			threshold = param*(len(weights1) + len(weights2))/2
 			score = sum(weights_common)
 
+			print "WORDS: ", product_name.encode("utf-8"), product2['product_name'].encode("utf-8")
 			print "W1: ", words1
 			print "W2: ", words2
 			print "COMMON: ", common_words
