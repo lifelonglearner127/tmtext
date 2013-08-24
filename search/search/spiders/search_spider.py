@@ -14,6 +14,8 @@ from nltk.corpus import wordnet
 
 import sys
 
+__all__=['ProcessText']
+
 # from selenium import webdriver
 # import time
 
