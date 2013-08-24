@@ -110,7 +110,7 @@ class SearchSpider(BaseSpider):
 				product_urls.append(line.strip())
 			f.close()
 
-		for product_url in [product_urls[12]]:
+		for product_url in product_urls:
 			# extract site domain
 			m = re.match("http://www1?\.([^\.]+)\.com.*", product_url)
 			origin_site = ""
@@ -118,7 +118,7 @@ class SearchSpider(BaseSpider):
 				origin_site = m.group(1)
 			else:
 				sys.stderr.write('Can\'t extract domain from URL.\n')
-			print "PRODUCT_URL", product_url
+			#print "PRODUCT_URL", product_url
 			request = Request(product_url, callback = self.parseURL)
 			request.meta['site'] = origin_site
 			if origin_site == 'staples':
@@ -143,8 +143,6 @@ class SearchSpider(BaseSpider):
 			if model_nodes:
 				model_node = model_nodes[0]
 
-				#TODO: use model number in computin similarity and give it largest weight?
-				#m = re.match("(.*)Model:(.*)", model_node.encode("utf-8"), re.UNICODE)
 				model_node = re.sub("\W", " ", model_node, re.UNICODE)
 				m = re.match("(.*)Model:(.*)", model_node.encode("utf-8"), re.UNICODE)
 				
@@ -152,6 +150,9 @@ class SearchSpider(BaseSpider):
 				if m:
 					product_model = m.group(2).strip()
 					##print "MODEL: ", model_node.encode("utf-8")
+
+		else:
+			raise CloseSpider("Unsupported site: " + site)
 
 		# create search queries and get the results using the target site's search function
 
@@ -179,9 +180,6 @@ class SearchSpider(BaseSpider):
 			##print "QUERY (MODEL)", query1
 			
 			request = request1
-
-		else:
-			raise CloseSpider("Unsupported site: " + site)
 
 
 		# 2) Search by product full name
@@ -225,7 +223,9 @@ class SearchSpider(BaseSpider):
 		request.meta['site'] = self.target_site
 		# product page from source site
 		request.meta['origin_url'] = response.url
-		request.meta['origin_name'] = product_name
+
+		# include model in product name (if it was not there)
+		request.meta['origin_name'] = product_name + " " + product_model
 
 		yield request
 
@@ -437,7 +437,7 @@ class SearchSpider(BaseSpider):
 					# 	#print item['product_name'].encode("utf-8")
 					# #print '\n'
 
-					print "FINAL: ", best_match
+					#print "FINAL: ", best_match
 
 				#print "\n----------------------------------------------\n"
 
@@ -529,7 +529,7 @@ class ProcessText():
 	def similar(product_name, products2, param):
 		result = None
 		products_found = []
-		print "PR2:", len(products2)
+		#print "PR2:", len(products2)
 		for product2 in products2:
 			words1 = ProcessText.normalize(product_name)
 			words2 = ProcessText.normalize(product2['product_name'])
@@ -562,16 +562,16 @@ class ProcessText():
 			threshold = param*(len(weights1) + len(weights2))/2
 			score = sum(weights_common)
 
-			print "W1: ", words1
-			print "W2: ", words2
-			print "COMMON: ", common_words
-			print "WEIGHTS: ", weights1, weights2, weights_common
+			# print "W1: ", words1
+			# print "W2: ", words2
+			# print "COMMON: ", common_words
+			# print "WEIGHTS: ", weights1, weights2, weights_common
 
-			print "SCORE: ", score, "THRESHOLD: ", threshold
+			# print "SCORE: ", score, "THRESHOLD: ", threshold
 
 			if score >= threshold:
 				products_found.append((product2, sum(weights_common)))
-				
+
 		products_found = sorted(products_found, key = lambda x: x[1], reverse = True)
 
 		# return most similar product or None
