@@ -623,7 +623,8 @@ class ProcessText():
 		numbers = len(re.findall("[0-9]", word))
 		nonwords = len(re.findall("\W", word))
 		
-		if letters > 1 and numbers > 1 and nonwords==0:
+		if letters > 1 and numbers > 1 and nonwords==0 \
+		and not word.endswith("in") and not word.endswith("inch") and not word.endswith("hz"):
 			return True
 
 		return False
