@@ -1700,7 +1700,7 @@ public function gridview() {
                 
                 foreach($result as $kay => $val){
                      $matches_sites=$this->matches_count($val['imported_data_id']);
-                     if(count(array_intersect($matches_sites,$selected_cites))!=count($selected_cites)){
+                     if(count($matches_sites)!=count($selected_cites) || count(array_intersect($matches_sites,$selected_cites))!=count($selected_cites)){
                     
                         unset($result[$kay]);
                     }
