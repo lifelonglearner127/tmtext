@@ -13,7 +13,7 @@ NEWSPIDER_MODULE = 'search.spiders'
 ITEM_PIPELINES = ['search.pipelines.URLsPipeline']
 LOG_ENABLED = False
 LOG_STDOUT = True
-#DUPEFILTER_CLASS = 'scrapy.dupefilter.BaseDupeFilter'
+DUPEFILTER_CLASS = 'scrapy.dupefilter.BaseDupeFilter'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'search (+http://www.yourdomain.com)'

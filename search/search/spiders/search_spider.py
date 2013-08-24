@@ -110,7 +110,7 @@ class SearchSpider(BaseSpider):
 				product_urls.append(line.strip())
 			f.close()
 
-		for product_url in [product_urls[0]]:
+		for product_url in [product_urls[12]]:
 			# extract site domain
 			m = re.match("http://www1?\.([^\.]+)\.com.*", product_url)
 			origin_site = ""
@@ -118,7 +118,7 @@ class SearchSpider(BaseSpider):
 				origin_site = m.group(1)
 			else:
 				sys.stderr.write('Can\'t extract domain from URL.\n')
-			##print "PRODUCT_URL", product_url
+			print "PRODUCT_URL", product_url
 			request = Request(product_url, callback = self.parseURL)
 			request.meta['site'] = origin_site
 			if origin_site == 'staples':
@@ -151,7 +151,7 @@ class SearchSpider(BaseSpider):
 				
 				if m:
 					product_model = m.group(2).strip()
-					#print "MODEL: ", model_node.encode("utf-8")
+					##print "MODEL: ", model_node.encode("utf-8")
 
 		# create search queries and get the results using the target site's search function
 
@@ -163,7 +163,7 @@ class SearchSpider(BaseSpider):
 
 		request = None
 
-		#print "PRODUCT: ", product_name.encode("utf-8")
+		##print "PRODUCT: ", product_name.encode("utf-8")
 
 		# 1) Search by model number
 		if product_model:
@@ -176,7 +176,7 @@ class SearchSpider(BaseSpider):
 			#DEBUG
 			request1.meta['query'] = query1
 
-			#print "QUERY (MODEL)", query1
+			##print "QUERY (MODEL)", query1
 			
 			request = request1
 
@@ -194,14 +194,14 @@ class SearchSpider(BaseSpider):
 		#DEBUG
 		request2.meta['query'] = query2
 
-		#print "QUERY (PRODUCT)", query2
+		##print "QUERY (PRODUCT)", query2
 
 		pending_requests = []
 
 		if not request:
 			request = request2
-		else:
-			pending_requests.append(request2)
+		# else:
+		# 	pending_requests.append(request2)
 
 		# 3) Search by combinations of words in product's name
 		# create queries
@@ -209,7 +209,7 @@ class SearchSpider(BaseSpider):
 		for words in ProcessText.words_combinations(product_name):
 			query3 = self.build_search_query(" ".join(words))
 			search_pages3 = self.build_search_pages(query3)
-			#print "QUERY", query3
+			##print "QUERY", query3
 			page3 = search_pages3[self.target_site]
 			request3 = Request(page3, callback = self.parseResults, cookies=cookies)
 
@@ -219,6 +219,7 @@ class SearchSpider(BaseSpider):
 
 
 			pending_requests.append(request3)
+
 
 		request.meta['pending_requests'] = pending_requests
 		request.meta['site'] = self.target_site
@@ -240,7 +241,7 @@ class SearchSpider(BaseSpider):
 	# and lastly select the best result by selecting the best match between the original product's name and the result products' names
 	def parseResults(self, response):
 
-		#print "RESULTS URL", response.url
+		##print "RESULTS URL", response.url
 		
 		hxs = HtmlXPathSelector(response)
 
@@ -251,7 +252,7 @@ class SearchSpider(BaseSpider):
 
 		if 'items' in response.meta:
 			items = response.meta['items']
-			print "INITIAL ITEMS: ", items
+			##print "INITIAL ITEMS: ", items
 		else:
 			items = []
 
@@ -394,13 +395,13 @@ class SearchSpider(BaseSpider):
 
 
 
-		# print stuff
-		print "PRODUCT: ", response.meta['origin_name'].encode("utf-8")
-		print "QUERY: ", response.meta['query']
-		print "MATCHES: "
-		for item in items:
-			print item['product_name'].encode("utf-8")
-		print '\n'
+		# #print stuff
+		# print "PRODUCT: ", response.meta['origin_name'].encode("utf-8")
+		# print "QUERY: ", response.meta['query']
+		# print "MATCHES: "
+		# for item in items:
+		# 	print item['product_name'].encode("utf-8")
+		# print '\n'
 
 
 		# if there is a pending request (current request used product model, and pending request is to use product name),
@@ -431,14 +432,14 @@ class SearchSpider(BaseSpider):
 					# from all results, select the product whose name is most similar with the original product's name
 					best_match = ProcessText.similar(origin_name, items, self.threshold)
 
-					print "ALL MATCHES: "
-					for item in items:
-						print item['product_name'].encode("utf-8")
-					print '\n'
+					# #print "ALL MATCHES: "
+					# for item in items:
+					# 	#print item['product_name'].encode("utf-8")
+					# #print '\n'
 
 					print "FINAL: ", best_match
 
-				print "\n----------------------------------------------\n"
+				#print "\n----------------------------------------------\n"
 
 				if not best_match:
 					# if there are no results but the option was to include original product URL, create an item with just that
@@ -449,7 +450,17 @@ class SearchSpider(BaseSpider):
 						item['origin_url'] = response.meta['origin_url']
 						return [item]
 
-				return [best_match[0]]
+				return best_match
+
+		else:
+			
+			if self.output == 2:
+				item = SearchItem()
+				item['site'] = site
+				#if 'origin_url' in response.meta:
+				item['origin_url'] = response.meta['origin_url']
+				return [item]
+
 
 class ProcessText():
 	# normalize text to list of lowercase words (no punctuation except for inches sign (") or /)
@@ -518,6 +529,7 @@ class ProcessText():
 	def similar(product_name, products2, param):
 		result = None
 		products_found = []
+		print "PR2:", len(products2)
 		for product2 in products2:
 			words1 = ProcessText.normalize(product_name)
 			words2 = ProcessText.normalize(product2['product_name'])
@@ -559,15 +571,16 @@ class ProcessText():
 
 			if score >= threshold:
 				products_found.append((product2, sum(weights_common)))
-			products_found = sorted(products_found, key = lambda x: x[1], reverse = True)
+				
+		products_found = sorted(products_found, key = lambda x: x[1], reverse = True)
 
-			# return most similar product or None
-			if products_found:
-				result = products_found[0]#[0]
+		# return most similar product or None
+		if products_found:
+			result = products_found[0][0]
 
-			#print "FINAL", product_name.encode("utf-8"), products_found, "\n-----------------------------------------\n"
+		##print "FINAL", product_name.encode("utf-8"), products_found, "\n-----------------------------------------\n"
 
-			return result
+		return result
 
 	# compute weight to be used for a word for measuring similarity between two texts
 	@staticmethod
