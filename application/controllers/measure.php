@@ -213,7 +213,7 @@ class Measure extends MY_Controller {
                 $url = preg_replace('#^https?://#', '', $v['url']);
                 $r_url = urlencode(trim($url));
                 if($screen_api == 'snapito.com') {
-                    $call_url = "http://api.snapito.com/web/$api_key/mc?freshness100000&url=$orig_url";
+                    $call_url = "http://api.snapito.com/web/$api_key/mc/$orig_url";
                 } else {
                     $token = md5("$api_secret+$url");
                     $call_url = "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$r_url&dimension=$size&format=$format";
