@@ -110,7 +110,7 @@ class SearchSpider(BaseSpider):
 				product_urls.append(line.strip())
 			f.close()
 
-		for product_url in product_urls:	
+		for product_url in [product_urls[0]]:
 			# extract site domain
 			m = re.match("http://www1?\.([^\.]+)\.com.*", product_url)
 			origin_site = ""
@@ -163,12 +163,18 @@ class SearchSpider(BaseSpider):
 
 		request = None
 
+		#print "PRODUCT: ", product_name.encode("utf-8")
+
 		# 1) Search by model number
 		if product_model:
 			query1 = self.build_search_query(product_model)
 			search_pages1 = self.build_search_pages(query1)
 			page1 = search_pages1[self.target_site]
 			request1 = Request(page1, callback = self.parseResults, cookies=cookies)
+
+
+			#DEBUG
+			request1.meta['query'] = query1
 
 			#print "QUERY (MODEL)", query1
 			
@@ -183,6 +189,10 @@ class SearchSpider(BaseSpider):
 		search_pages2 = self.build_search_pages(query2)
 		page2 = search_pages2[self.target_site]
 		request2 = Request(page2, callback = self.parseResults, cookies=cookies)
+
+
+		#DEBUG
+		request2.meta['query'] = query2
 
 		#print "QUERY (PRODUCT)", query2
 
@@ -202,6 +212,13 @@ class SearchSpider(BaseSpider):
 			#print "QUERY", query3
 			page3 = search_pages3[self.target_site]
 			request3 = Request(page3, callback = self.parseResults, cookies=cookies)
+
+
+			#DEBUG
+			request3.meta['query'] = query3
+
+
+			pending_requests.append(request3)
 
 		request.meta['pending_requests'] = pending_requests
 		request.meta['site'] = self.target_site
@@ -223,7 +240,7 @@ class SearchSpider(BaseSpider):
 	# and lastly select the best result by selecting the best match between the original product's name and the result products' names
 	def parseResults(self, response):
 
-		##print "URL", response.url
+		#print "RESULTS URL", response.url
 		
 		hxs = HtmlXPathSelector(response)
 
@@ -234,6 +251,7 @@ class SearchSpider(BaseSpider):
 
 		if 'items' in response.meta:
 			items = response.meta['items']
+			print "INITIAL ITEMS: ", items
 		else:
 			items = []
 
@@ -243,7 +261,6 @@ class SearchSpider(BaseSpider):
 		# amazon
 		if (site == 'amazon'):
 			# amazon returns partial results as well so we can just search for the entire product name and select from there
-			items = []
 
 			#product = hxs.select("//div[@id='result_0']/h3/a/span/text()").extract()[0]
 			#TODO: refine this. get divs with id of the form result_<number>. not all of them have h3's (but this will exclude partial results?)
@@ -251,6 +268,8 @@ class SearchSpider(BaseSpider):
 			for result in results:
 				item = SearchItem()
 				item['site'] = site
+
+				#TODO: some of these product names are truncated ("..."); even though less relevant ones (special offers or so)
 				item['product_name'] = result.select("span/text()").extract()[0]
 				product_url = result.select("@href").extract()[0]
 				
@@ -375,14 +394,13 @@ class SearchSpider(BaseSpider):
 
 
 
-		# #print stuff
-		#print "PRODUCT: ", response.meta['origin_name'].encode("utf-8")
-		#print "MATCHES: "
-		#for item in items:
-			#print item['product_name'].encode("utf-8")
-		#print "-----results:"
-		#print "------url:" + response.url
-		#print "------products:", items
+		# print stuff
+		print "PRODUCT: ", response.meta['origin_name'].encode("utf-8")
+		print "QUERY: ", response.meta['query']
+		print "MATCHES: "
+		for item in items:
+			print item['product_name'].encode("utf-8")
+		print '\n'
 
 
 		# if there is a pending request (current request used product model, and pending request is to use product name),
@@ -413,6 +431,15 @@ class SearchSpider(BaseSpider):
 					# from all results, select the product whose name is most similar with the original product's name
 					best_match = ProcessText.similar(origin_name, items, self.threshold)
 
+					print "ALL MATCHES: "
+					for item in items:
+						print item['product_name'].encode("utf-8")
+					print '\n'
+
+					print "FINAL: ", best_match
+
+				print "\n----------------------------------------------\n"
+
 				if not best_match:
 					# if there are no results but the option was to include original product URL, create an item with just that
 					if self.output == 2:
@@ -422,7 +449,7 @@ class SearchSpider(BaseSpider):
 						item['origin_url'] = response.meta['origin_url']
 						return [item]
 
-				return [best_match]
+				return [best_match[0]]
 
 class ProcessText():
 	# normalize text to list of lowercase words (no punctuation except for inches sign (") or /)
@@ -432,7 +459,8 @@ class ProcessText():
 		text = orig_text
 		# other preprocessing: -Inch = " - fitting for staples->amazon search
 		# TODO: suitable for all sites?
-		#text = re.sub("\"", "-Inch", text)
+		text = re.sub("[- ][iI]nch", "\"", text)
+		text = re.sub("(?<=[0-9])in","\"", text)
 
 		#! including ' as an exception keeps things like women's a single word. also doesn't find it as a word in wordnet -> too high a priority
 		# excluding it leads to women's->women (s is a stopword)
@@ -491,38 +519,51 @@ class ProcessText():
 		result = None
 		products_found = []
 		for product2 in products2:
-			words1 = set(ProcessText.normalize(product_name))
-			words2 = set(ProcessText.normalize(product2['product_name']))
-			common_words = words1.intersection(words2)
+			words1 = ProcessText.normalize(product_name)
+			words2 = ProcessText.normalize(product2['product_name'])
+			common_words = set(words1).intersection(set(words2))
 
 			# assign weigths - 1 to normal words, 2 to nondictionary words
 			# 3 to first word in text (assumed to be manufacturer)
 			# or if the word looks like a combination of letters and numbers (assumed to be model number)
 			#TODO: update these if they're not relevant for a new category or site
 
-			# for first word append weight 3
-			weights_common = [4]
-			for word in list(common_words)[1:]:
-				weights_common.append(ProcessText.weight(word))
-			##print common_words, weights_common
+			weights_common = []
+			for word in list(common_words):
 
-			weights1 = [4]
-			for word in list(words1)[1:]:
+				# if they share the first word assume it's manufacturer and assign higher weight
+				if word == words1[0] and word == words2[0]:
+					weights_common.append(5)
+
+				else:
+					weights_common.append(ProcessText.weight(word))
+
+			weights1 = []
+			for word in list(words1):
 				weights1.append(ProcessText.weight(word))
 
-			weights2 = [4]
-			for word in list(words2)[1:]:
+			weights2 = []
+			for word in list(words2):
 				weights2.append(ProcessText.weight(word))
 
-			threshold = param*(sum(weights1) + sum(weights2))/2
+			#threshold = param*(sum(weights1) + sum(weights2))/2
+			threshold = param*(len(weights1) + len(weights2))/2
+			score = sum(weights_common)
 
-			if sum(weights_common) >= threshold:
+			print "W1: ", words1
+			print "W2: ", words2
+			print "COMMON: ", common_words
+			print "WEIGHTS: ", weights1, weights2, weights_common
+
+			print "SCORE: ", score, "THRESHOLD: ", threshold
+
+			if score >= threshold:
 				products_found.append((product2, sum(weights_common)))
 			products_found = sorted(products_found, key = lambda x: x[1], reverse = True)
 
 			# return most similar product or None
 			if products_found:
-				result = products_found[0][0]
+				result = products_found[0]#[0]
 
 			#print "FINAL", product_name.encode("utf-8"), products_found, "\n-----------------------------------------\n"
 
@@ -539,7 +580,7 @@ class ProcessText():
 		nonwords = len(re.findall("\W", word))
 		
 		if letters > 1 and numbers > 1 and nonwords==0:
-			return 4
+			return 5
 
 		if not wordnet.synsets(word):
 			return 2
