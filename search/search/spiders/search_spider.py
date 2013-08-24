@@ -110,7 +110,7 @@ class SearchSpider(BaseSpider):
 				product_urls.append(line.strip())
 			f.close()
 
-		for product_url in product_urls:
+		for product_url in [product_urls[11]]:
 			# extract site domain
 			m = re.match("http://www1?\.([^\.]+)\.com.*", product_url)
 			origin_site = ""
@@ -395,13 +395,13 @@ class SearchSpider(BaseSpider):
 
 
 
-		# #print stuff
-		# print "PRODUCT: ", response.meta['origin_name'].encode("utf-8")
-		# print "QUERY: ", response.meta['query']
-		# print "MATCHES: "
-		# for item in items:
-		# 	print item['product_name'].encode("utf-8")
-		# print '\n'
+		#print stuff
+		print "PRODUCT: ", response.meta['origin_name'].encode("utf-8")
+		print "QUERY: ", response.meta['query']
+		print "MATCHES: "
+		for item in items:
+			print item['product_name'].encode("utf-8")
+		print '\n'
 
 
 		# if there is a pending request (current request used product model, and pending request is to use product name),
@@ -437,9 +437,9 @@ class SearchSpider(BaseSpider):
 					# 	#print item['product_name'].encode("utf-8")
 					# #print '\n'
 
-					#print "FINAL: ", best_match
+					print "FINAL: ", best_match
 
-				#print "\n----------------------------------------------\n"
+				print "\n----------------------------------------------\n"
 
 				if not best_match:
 					# if there are no results but the option was to include original product URL, create an item with just that
@@ -486,7 +486,29 @@ class ProcessText():
 		#TODO: maybe handle numbers separately. sometimes we want / to split (in words), and . not to (in numbers)
 		# define a better regex above, or here at splitting
 		tokens = text.split()
-		clean = [token.lower() for token in tokens if token.lower() not in stopset and len(token) > 0]
+		clean = [token.lower() for token in tokens if token.lower() not in stopset and len(token) > 1]
+
+		# if there is a supposed model number ambong the words, add it without the last letter as well, so as to match more possibilities
+		# (there is a case like this for un32eh5300f)
+
+		new_word = ""
+		for word in clean:
+			if ProcessText.is_model_number(word):
+				new_word = word[:-1]
+		if new_word:
+			clean.append(new_word)
+
+
+		# TODO:
+		# # add versions of the queries with different spelling
+		# first add all the tokens but with some words replaced (version of original normalized)
+		# extra = []
+		# for word_comb in words:
+		# 	for i in range(len(word_comb)):
+		# 		# " -> -inch
+		# 		m = re.match("", string, flags)
+		#		# .5 ->  1/2
+
 
 		return clean
 
@@ -504,16 +526,6 @@ class ProcessText():
 
 		combs = itertools.combinations(range(len(norm_text_nondict)), comb_length)
 		words=[map(lambda c: norm_text_nondict[c], x) for x in list(combs)]
-
-		# TODO:
-		# # add versions of the queries with different spelling
-		# first add all the tokens but with some words replaced (version of original normalized)
-		# extra = []
-		# for word_comb in words:
-		# 	for i in range(len(word_comb)):
-		# 		# " -> -inch
-		# 		m = re.match("", string, flags)
-		#		# .5 ->  1/2
 
 
 		return words
@@ -562,12 +574,12 @@ class ProcessText():
 			threshold = param*(len(weights1) + len(weights2))/2
 			score = sum(weights_common)
 
-			# print "W1: ", words1
-			# print "W2: ", words2
-			# print "COMMON: ", common_words
-			# print "WEIGHTS: ", weights1, weights2, weights_common
+			print "W1: ", words1
+			print "W2: ", words2
+			print "COMMON: ", common_words
+			print "WEIGHTS: ", weights1, weights2, weights_common
 
-			# print "SCORE: ", score, "THRESHOLD: ", threshold
+			print "SCORE: ", score, "THRESHOLD: ", threshold
 
 			if score >= threshold:
 				products_found.append((product2, sum(weights_common)))
@@ -586,6 +598,18 @@ class ProcessText():
 	@staticmethod
 	def weight(word):
 
+		if ProcessText.is_model_number(word):
+			return 5
+
+		if not wordnet.synsets(word):
+			return 2
+
+		return 1
+
+	# check if word is a likely candidate to represent a model number
+	@staticmethod
+	def is_model_number(word):
+
 		# if there are more than 2 numbers and 2 letters and no non-word characters, 
 		# assume this is the model number and assign it a higher weight
 		letters = len(re.findall("[a-zA-Z]", word))
@@ -593,12 +617,9 @@ class ProcessText():
 		nonwords = len(re.findall("\W", word))
 		
 		if letters > 1 and numbers > 1 and nonwords==0:
-			return 5
+			return True
 
-		if not wordnet.synsets(word):
-			return 2
-
-		return 1
+		return False
 
 
 
