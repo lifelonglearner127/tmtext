@@ -5,14 +5,34 @@ from ..spiders.search_spider import ProcessText
 
 class ProcessText_test(unittest.TestCase):
 
-	def runTest(self):
-		text = "Sony BRAVIA KDL55HX750 55-Inch 240Hz 1080p 3D LED Internet TV, Black"
-		expected_res = ['sony', 'bravia', 'kdl55hx750', '55\"', '240hz', '1080p', '3d', 'led', 'internet', 'tv', 'black', 'kdl55hx75']
+	def test_similar(self):
+		text1 = self.p.normalize("one two three one")
+		text2 = self.p.normalize("someting one")
+
+		expected_res = 1
+
+		#res = self.p.normalize(text)
+		res = self.p.similar_names(text1, text2, 0.4)[0]
+		assert_equal(res, expected_res)
+
+	def test_normalize(self):
+		# text = "Sony BRAVIA KDL55HX750 55-Inch 240Hz 1080p 3D LED Internet TV, Black"
+		# expected_res = ['sony', 'bravia', 'kdl55hx750', '55\"', '240hz', '1080p', '3d', 'led', 'internet', 'tv', 'black', 'kdl55hx75']
+
+		# text = "UN75ES9000F"
+		# expected_res = ["un75es9000f", "un75es9000"]
 		
-		# text = "27in"
-		# expected_res = ["27\""]
+		text = "27in"
+		expected_res = ["27\""]
 
 		res = self.p.normalize(text)
+		assert_equal(res, expected_res)
+
+	def test_namewmodel(self):		
+		text = ["un75es9000f", "model", "stuff"]
+		expected_res = ["un75es9000", "model", "stuff"]
+
+		res = self.p.name_with_alt_modelnr(text)
 		assert_equal(res, expected_res)
 
 	def setUp(self):

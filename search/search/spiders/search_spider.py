@@ -110,7 +110,7 @@ class SearchSpider(BaseSpider):
 				product_urls.append(line.strip())
 			f.close()
 
-		for product_url in [product_urls[22]]:
+		for product_url in [product_urls[27]]:
 			# extract site domain
 			m = re.match("http://www1?\.([^\.]+)\.com.*", product_url)
 			origin_site = ""
@@ -459,6 +459,10 @@ class SearchSpider(BaseSpider):
 				item['site'] = site
 				#if 'origin_url' in response.meta:
 				item['origin_url'] = response.meta['origin_url']
+
+
+				print "FINAL: no items"
+
 				return [item]
 
 
@@ -494,17 +498,6 @@ class ProcessText():
 		tokens = text.split()
 		clean = [token.lower() for token in tokens if token.lower() not in stopset and len(token) > 1]
 
-		# if there is a supposed model number among the words, add it without the last letter as well, so as to match more possibilities
-		# (there is a case like this for un32eh5300f)
-
-		new_word = ""
-		for word in clean:
-			if ProcessText.is_model_number(word):
-				new_word = word[:-1]
-		if new_word:
-			clean.append(new_word)
-
-
 		# TODO:
 		# # add versions of the queries with different spelling
 		# first add all the tokens but with some words replaced (version of original normalized)
@@ -517,6 +510,29 @@ class ProcessText():
 
 
 		return clean
+
+	# get alternative model number
+
+	# without the last letters, so as to match more possibilities
+	# (there is are cases like this, for example un32eh5300f)
+	@staticmethod
+	def alt_modelnr(word):
+		m = re.match("(.*[0-9]+)[a-zA-Z]+", word)
+		if m:
+			new_word = m.group(1)
+			return new_word
+		return None
+
+	# build new tokenized list of words for a product name replacing the model number with the alternative one
+	@staticmethod
+	def name_with_alt_modelnr(words):
+		new_words = list(words)
+		# if there is a supposed model number among the words, replace it with its alternative
+		for i in range(len(words)):
+			if ProcessText.is_model_number(words[i]):
+				new_word = ProcessText.alt_modelnr(words[i])
+				new_words[i] = new_word
+		return new_words
 
 	# create combinations of comb_length words from original text (after normalization and tokenization and filtering out dictionary words)
 	# return a list of all combinations
@@ -549,49 +565,21 @@ class ProcessText():
 		products_found = []
 		#print "PR2:", len(products2)
 		for product2 in products2:
+
 			words1 = ProcessText.normalize(product_name)
 			words2 = ProcessText.normalize(product2['product_name'])
-			common_words = set(words1).intersection(set(words2))
 
-			# assign weigths - 1 to normal words, 2 to nondictionary words
-			# 3 to first word in text (assumed to be manufacturer)
-			# or if the word looks like a combination of letters and numbers (assumed to be model number)
-			#TODO: update these if they're not relevant for a new category or site
+			(score, threshold) = ProcessText.similar_names(words1, words2, param)
 
-			weights_common = []
-			for word in list(common_words):
-
-				# if they share the first word assume it's manufacturer and assign higher weight
-				if word == words1[0] and word == words2[0]:
-					weights_common.append(5)
-
-				else:
-					weights_common.append(ProcessText.weight(word))
-
-			weights1 = []
-			for word in list(words1):
-				weights1.append(ProcessText.weight(word))
-
-			weights2 = []
-			for word in list(words2):
-				weights2.append(ProcessText.weight(word))
-
-			#threshold = param*(sum(weights1) + sum(weights2))/2
-			threshold = param*(len(weights1) + len(weights2))/2
-			score = sum(weights_common)
-
-			print "WORDS: ", product_name.encode("utf-8"), product2['product_name'].encode("utf-8")
-			print "W1: ", words1
-			print "W2: ", words2
-			print "COMMON: ", common_words
-			print "WEIGHTS: ", weights1, weights2, weights_common
-
-			print "SCORE: ", score, "THRESHOLD: ", threshold
-
+			# try it with alternative model numbers as well
+			alt_words1
+			
 			if score >= threshold:
 				products_found.append((product2, sum(weights_common)))
 
 		products_found = sorted(products_found, key = lambda x: x[1], reverse = True)
+
+		#TODO: handle ties?
 
 		# return most similar product or None
 		if products_found:
@@ -601,12 +589,56 @@ class ProcessText():
 
 		return result
 
+
+	# compute similarity for two names given as token lists
+	@staticmethod
+	def similar_names(words1, words2, param):
+		common_words = set(words1).intersection(set(words2))
+
+		# assign weigths - 1 to normal words, 2 to nondictionary words
+		# 3 to first word in text (assumed to be manufacturer)
+		# or if the word looks like a combination of letters and numbers (assumed to be model number)
+		#TODO: update these if they're not relevant for a new category or site
+
+		weights_common = []
+		for word in list(common_words):
+
+			# if they share the first word assume it's manufacturer and assign higher weight
+			if word == words1[0] and word == words2[0]:
+				weights_common.append(4)
+
+			else:
+				weights_common.append(ProcessText.weight(word))
+
+		weights1 = []
+		for word in list(set(words1)):
+			weights1.append(ProcessText.weight(word))
+
+		weights2 = []
+		for word in list(set(words2)):
+			weights2.append(ProcessText.weight(word))
+
+		#threshold = param*(sum(weights1) + sum(weights2))/2
+		threshold = param*(len(weights1) + len(weights2))/2
+		score = sum(weights_common)
+
+		#print "WORDS: ", product_name.encode("utf-8"), product2['product_name'].encode("utf-8")
+		print "W1: ", words1
+		print "W2: ", words2
+		print "COMMON: ", common_words
+		print "WEIGHTS: ", weights1, weights2, weights_common
+
+		print "SCORE: ", score, "THRESHOLD: ", threshold
+
+		return (score, threshold)
+
+
 	# compute weight to be used for a word for measuring similarity between two texts
 	@staticmethod
 	def weight(word):
 
 		if ProcessText.is_model_number(word):
-			return 5
+			return 7
 
 		if not wordnet.synsets(word):
 			return 2
