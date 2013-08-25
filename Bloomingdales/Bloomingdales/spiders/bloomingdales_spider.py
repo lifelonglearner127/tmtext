@@ -28,18 +28,38 @@ class BloomingdalesSpider(BaseSpider):
     def parse(self, response):
         hxs = HtmlXPathSelector(response)
         links = hxs.select("//div[@class='sr_siteMap_container']/div[position()>2 and position()<5]//a")
-        items = []
+        root_url = "http://www1.bloomingdales.com"
 
         #TODO: add registry as special category?
 
         for link in links:
             item = CategoryItem()
             item['text'] = link.select('text()').extract()[0]
-            item['url'] = link.select('@href').extract()[0]
-            item['level'] = 0
-            items.append(item)
+            url = link.select('@href').extract()[0]
+            # if it's a relative URL complete it with the domain
+            if not url.startswith("http"):
+                url = root_url + url
 
-        return items
+            item['url'] = url
+            item['level'] = 1
+            yield item
+
+            # create request to extract subcategories for this category
+            yield Request(item['url'], callback = self.parseCategory, meta = {'parent' : item['text']})
+
+    # extract subcategories from each category
+    def parseCategory(self, response):
+        hxs = HtmlXPathSelector(response)
+        subcats = hxs.select("//li[@class='gn_left_nav2_standard']/a")
+        for subcat in subcats:
+            item = CategoryItem()
+            item['text'] = subcat.select('text()').extract()[0]
+            item['url'] = subcat.select('@href').extract()[0]
+            item['level'] = 2
+            item['parent_text'] = response.meta['parent']
+            item['parent_url'] = response.url
+
+            yield item
 
 
 ################################
@@ -50,7 +70,7 @@ class BloomingdalesSpider(BaseSpider):
 ################################
 
 # scrape bestsellers list and retrieve products
-class BloomingdalesSpider(BaseSpider):
+class BestsellersSpider(BaseSpider):
     name = "bestseller"
     allowed_domains = ["bloomingdales.com"]
     start_urls = [
