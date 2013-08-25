@@ -35,6 +35,14 @@ class ProcessText_test(unittest.TestCase):
 		res = self.p.name_with_alt_modelnr(text)
 		assert_equal(res, expected_res)
 
+	def test_altmodel(self):
+		text = "sw005"
+		expected_res = None
+
+		res = self.p.alt_modelnr(text)
+		assert_equal(res, expected_res)
+
+
 	def setUp(self):
 		self.p = ProcessText()
 

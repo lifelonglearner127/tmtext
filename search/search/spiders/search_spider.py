@@ -110,7 +110,7 @@ class SearchSpider(BaseSpider):
 				product_urls.append(line.strip())
 			f.close()
 
-		for product_url in [product_urls[27]]:
+		for product_url in [product_urls[28]]:
 			# extract site domain
 			m = re.match("http://www1?\.([^\.]+)\.com.*", product_url)
 			origin_site = ""
@@ -530,8 +530,10 @@ class ProcessText():
 		# if there is a supposed model number among the words, replace it with its alternative
 		for i in range(len(words)):
 			if ProcessText.is_model_number(words[i]):
-				new_word = ProcessText.alt_modelnr(words[i])
-				new_words[i] = new_word
+				alt_model = ProcessText.alt_modelnr(words[i])
+				if alt_model:
+					new_word = alt_model
+					new_words[i] = new_word
 		return new_words
 
 	# create combinations of comb_length words from original text (after normalization and tokenization and filtering out dictionary words)
@@ -571,11 +573,27 @@ class ProcessText():
 
 			(score, threshold) = ProcessText.similar_names(words1, words2, param)
 
-			# try it with alternative model numbers as well
-			alt_words1
+			# try it with alternative model numbers as well, and keep the one with highest score
+			alt_words1 = ProcessText.name_with_alt_modelnr(words1)
+			alt_words2 = ProcessText.name_with_alt_modelnr(words2)
+
+			if alt_words1:
+				(score1, threshold1) = ProcessText.similar_names(alt_words1, words2, param)
+				if score1 > score:
+					(score, threshold) = (score1, threshold1)
+
+			if (alt_words1 and alt_words2):
+				(score2, threshold2) = ProcessText.similar_names(alt_words1, alt_words2, param)
+				if score2 > score:
+					(score, threshold) = (score2, threshold2)
+
+			if alt_words2:
+				(score3, threshold3) = ProcessText.similar_names(words1, alt_words2, param)
+				if score3 > score:
+					(score, threshold) = (score3, threshold3)
 			
 			if score >= threshold:
-				products_found.append((product2, sum(weights_common)))
+				products_found.append((product2, score))
 
 		products_found = sorted(products_found, key = lambda x: x[1], reverse = True)
 
@@ -636,6 +654,8 @@ class ProcessText():
 	# compute weight to be used for a word for measuring similarity between two texts
 	@staticmethod
 	def weight(word):
+
+		#TODO: assign lower weight to alternative product numbers?
 
 		if ProcessText.is_model_number(word):
 			return 7
