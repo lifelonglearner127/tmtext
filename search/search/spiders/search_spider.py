@@ -520,7 +520,8 @@ class ProcessText():
 		m = re.match("(.*[0-9]+)[a-zA-Z]+", word)
 		if m:
 			new_word = m.group(1)
-			return new_word
+			if len(new_word) > 2:
+				return new_word
 		return None
 
 	# build new tokenized list of words for a product name replacing the model number with the alternative one
@@ -578,17 +579,18 @@ class ProcessText():
 			alt_words2 = ProcessText.name_with_alt_modelnr(words2)
 
 			if alt_words1:
-				(score1, threshold1) = ProcessText.similar_names(alt_words1, words2, param)
+				# compute weights differently if we used alternative model numbers
+				(score1, threshold1) = ProcessText.similar_names(alt_words1, words2, param, altModels=True)
 				if score1 > score:
 					(score, threshold) = (score1, threshold1)
 
 			if (alt_words1 and alt_words2):
-				(score2, threshold2) = ProcessText.similar_names(alt_words1, alt_words2, param)
+				(score2, threshold2) = ProcessText.similar_names(alt_words1, alt_words2, param, altModels=True)
 				if score2 > score:
 					(score, threshold) = (score2, threshold2)
 
 			if alt_words2:
-				(score3, threshold3) = ProcessText.similar_names(words1, alt_words2, param)
+				(score3, threshold3) = ProcessText.similar_names(words1, alt_words2, param, altModels=True)
 				if score3 > score:
 					(score, threshold) = (score3, threshold3)
 			
@@ -610,7 +612,7 @@ class ProcessText():
 
 	# compute similarity for two names given as token lists
 	@staticmethod
-	def similar_names(words1, words2, param):
+	def similar_names(words1, words2, param, altModels = False):
 		common_words = set(words1).intersection(set(words2))
 
 		# assign weigths - 1 to normal words, 2 to nondictionary words
@@ -626,15 +628,15 @@ class ProcessText():
 				weights_common.append(4)
 
 			else:
-				weights_common.append(ProcessText.weight(word))
+				weights_common.append(ProcessText.weight(word, altModels))
 
 		weights1 = []
 		for word in list(set(words1)):
-			weights1.append(ProcessText.weight(word))
+			weights1.append(ProcessText.weight(word, altModels))
 
 		weights2 = []
 		for word in list(set(words2)):
-			weights2.append(ProcessText.weight(word))
+			weights2.append(ProcessText.weight(word, altModels))
 
 		#threshold = param*(sum(weights1) + sum(weights2))/2
 		threshold = param*(len(weights1) + len(weights2))/2
@@ -653,12 +655,16 @@ class ProcessText():
 
 	# compute weight to be used for a word for measuring similarity between two texts
 	@staticmethod
-	def weight(word):
+	def weight(word, altModels = False):
 
 		#TODO: assign lower weight to alternative product numbers?
 
 		if ProcessText.is_model_number(word):
-			return 7
+			# return lower weight if this comes from words with alternative models (not original words as found on site)
+			if not altModels:
+				return 7
+			else:
+				return 6
 
 		if not wordnet.synsets(word):
 			return 2

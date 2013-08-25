@@ -22,8 +22,8 @@ class ProcessText_test(unittest.TestCase):
 		# text = "UN75ES9000F"
 		# expected_res = ["un75es9000f", "un75es9000"]
 		
-		text = "27in"
-		expected_res = ["27\""]
+		text = "SAMSUNG LARGE FORMAT ED32C 32IN LED 1366X768 4000:1 VGA"
+		expected_res = ['samsung', 'large', 'format', 'ed32c', '32\"', 'led', '1366x768', '4000', 'vga']
 
 		res = self.p.normalize(text)
 		assert_equal(res, expected_res)
