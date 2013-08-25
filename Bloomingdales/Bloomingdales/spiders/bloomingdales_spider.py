@@ -55,7 +55,7 @@ class BloomingdalesSpider(BaseSpider):
             item = CategoryItem()
             item['text'] = subcat.select('text()').extract()[0]
             item['url'] = subcat.select('@href').extract()[0]
-            item['level'] = 2
+            item['level'] = 0
             item['parent_text'] = response.meta['parent']
             item['parent_url'] = response.url
 
