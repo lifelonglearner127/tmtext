@@ -369,11 +369,11 @@ union all
     function do_stats($batch_id)
     {
         $this->db->reconnect();
-        $sql_cmd = "
-            select
-                *
-            from (
-                select
+        $sql_cmd = ""
+//            select
+//                *
+//            from (
+                ."select
                     r.id AS rid,
                     r.imported_data_id AS imported_data_id,
                     r.research_data_id AS research_data_id,
@@ -412,11 +412,11 @@ union all
                     where b.id =".$batch_id."
                 ) as r
                 group by
-                    r.imported_data_id
-            ) as rr
-            order by
-                rr.created
-        ";
+                    r.imported_data_id".
+//            ) as rr
+//            order by
+//                rr.created
+        "";
 
         $query = $this->db->query($sql_cmd);
         $result =  $query->result();

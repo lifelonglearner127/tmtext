@@ -16,29 +16,29 @@ class Crons extends MY_Controller {
  	public function index() {
 
 	}
-	
+
 	private function urlExists($url) {
-        if($url === null || trim($url) === "") return false;  
-        $ch = curl_init($url);  
-        curl_setopt($ch, CURLOPT_TIMEOUT, 5);  
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);  
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);  
-        $data = curl_exec($ch);  
-        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);  
-        curl_close($ch);  
-        if($httpcode>=200 && $httpcode<=302){  
-            return true;  
-        } else {  
-            return false;  
-        }  
+        if($url === null || trim($url) === "") return false;
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $data = curl_exec($ch);
+        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if($httpcode>=200 && $httpcode<=302){
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private function webthumb_call($url) {
         $webthumb_user_id = $this->config->item('webthumb_user_id');
         $api_key = $this->config->item('webthumb_api_key');
         $url = "http://$url";
-        $c_date = gmdate('Ymd', time()); 
-        $hash = md5($c_date.$url.$api_key); 
+        $c_date = gmdate('Ymd', time());
+        $hash = md5($c_date.$url.$api_key);
         $e_url = urlencode(trim($url));
         return $res = array(
             "s" => "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=medium2",
@@ -89,7 +89,7 @@ class Crons extends MY_Controller {
     }
 
 	/**
-     * Cron Job for CI home tab screenshots generating 
+     * Cron Job for CI home tab screenshots generating
      */
 	public function screenscron() {
 		$customers = $this->customers_list();
@@ -150,7 +150,7 @@ class Crons extends MY_Controller {
 	}
 
     /**
-     * Cron Job for CI home tab screenshots reports mailer   
+     * Cron Job for CI home tab screenshots reports mailer
      */
     public function emailreports() {
         $this->load->model('webshoots_model');
@@ -445,16 +445,24 @@ class Crons extends MY_Controller {
             $this->statistics_duplicate_content_model->truncate();
             $batches = $this->batches_model->getAll('id');
             $enable_exec = true;
-            $conn = mysql_connect('localhost', 'c38trlmonk', '542piF88');
+//            $conn = mysql_connect('localhost', 'c38trlmonk', '542piF88');
             foreach($batches as $batch){
                 $batch_id = $batch->id;
                 /* Make sure the connection is still alive, if not, try to reconnect */
-                if (!mysql_ping($conn)) {
+//                if (!mysql_ping($conn)) {
                     //echo 'Lost connection, exiting after query #2';
                     //exit;
-                    $conn = mysql_connect('localhost', 'c38trlmonk', '542piF88');
-                }
-                $data = $this->research_data_model->do_stats($batch->id);
+//                    $conn = mysql_connect('localhost', 'c38trlmonk', '542piF88');
+//                }
+
+                try {
+                	$data = $this->research_data_model->do_stats($batch->id);
+            	} catch (Exception $e) {
+		            echo 'Ошибка',  $e->getMessage(), "\n";
+		           	$this->statistics_model->db->close();
+					$this->statistics_model->db->initialize();
+                	$data = $this->research_data_model->do_stats($batch->id);
+		        }
                 if(count($data) > 0){
                     foreach($data as $obj){
                           $own_price = 0;
@@ -479,23 +487,50 @@ class Crons extends MY_Controller {
                             $own_site = str_replace("www.", "", $own_site);
 
                           $time_start = microtime(true);
-                          $data_import = $this->imported_data_parsed_model->getByImId($obj->imported_data_id);
-                          $time_end = microtime(true);
+
+                          try {
+                          	$data_import = $this->imported_data_parsed_model->getByImId($obj->imported_data_id);
+                          } catch (Exception $e) {
+				            echo 'Ошибка',  $e->getMessage(), "\n";
+				           	$this->statistics_model->db->close();
+							$this->statistics_model->db->initialize();
+							$data_import = $this->imported_data_parsed_model->getByImId($obj->imported_data_id);
+				          }
+
+				          $time_end = microtime(true);
                           $time = $time_end - $time_start;
-                          echo "data_import - $time seconds\n";
+//                          echo "data_import - $time seconds\n";
 
                           $time_start = microtime(true);
                           if (isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
-                              $own_prices = $this->imported_data_parsed_model->getLastPrices($obj->imported_data_id);
-                              if (!empty($own_prices)) {
+
+                          	  try {
+	                             $own_prices = $this->imported_data_parsed_model->getLastPrices($obj->imported_data_id);
+	                          } catch (Exception $e) {
+					             echo 'Ошибка',  $e->getMessage(), "\n";
+					           	 $this->statistics_model->db->close();
+								 $this->statistics_model->db->initialize();
+								 $own_prices = $this->imported_data_parsed_model->getLastPrices($obj->imported_data_id);
+					          }
+
+					          if (!empty($own_prices)) {
                                   $own_price = floatval($own_prices[0]->price);
                                   $obj->own_price = $own_price;
                                   $price_diff_exists = array();//"<input type='hidden'/>";
                                   $price_diff_exists['id'] = $own_prices[0]->id;
                                   $price_diff_exists['own_site'] = $own_site;
                                   $price_diff_exists['own_price'] = floatval($own_price);
-                                  $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
-                                  if (!empty($similar_items)) {
+
+                                  try {
+                                  	$similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
+                               	  } catch (Exception $e) {
+						            echo 'Ошибка',  $e->getMessage(), "\n";
+						           	$this->statistics_model->db->close();
+									$this->statistics_model->db->initialize();
+									$similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
+						          }
+
+						          if (!empty($similar_items)) {
                                       foreach ($similar_items as $ks => $vs) {
                                           $similar_item_imported_data_id = $similar_items[$ks]['imported_data_id'];
                                           if ($obj->imported_data_id == $similar_item_imported_data_id) {
@@ -505,7 +540,16 @@ class Crons extends MY_Controller {
                                               'imported_data_id' => $similar_item_imported_data_id,
                                               'customer' => $similar_items[$ks]['customer']
                                           );
-                                          $three_last_prices = $this->imported_data_parsed_model->getLastPrices($similar_item_imported_data_id);
+
+                                          try {
+                                          	$three_last_prices = $this->imported_data_parsed_model->getLastPrices($similar_item_imported_data_id);
+                                          } catch (Exception $e) {
+								            echo 'Ошибка',  $e->getMessage(), "\n";
+								           	$this->statistics_model->db->close();
+											$this->statistics_model->db->initialize();
+											$three_last_prices = $this->imported_data_parsed_model->getLastPrices($similar_item_imported_data_id);
+                                          }
+
                                           if (!empty($three_last_prices)) {
                                               $price_scatter = $own_price * 0.03;
                                               $price_upper_range = $own_price + $price_scatter;
@@ -527,35 +571,63 @@ class Crons extends MY_Controller {
                           }
                           $time_end = microtime(true);
                           $time = $time_end - $time_start;
-                          echo "price_diff - $time seconds\n";
+//                          echo "price_diff - $time seconds\n";
 
                           // WC Short
                           $time_start = microtime(true);
                           $short_description_wc = (count(preg_split('/\b/', $obj->short_description)) - 1) / 2;
                           if (is_null($obj->short_description_wc)) {
-                              $this->imported_data_parsed_model->insert($obj->imported_data_id, "Description_WC", $short_description_wc);
+                          	try {
+                              	$this->imported_data_parsed_model->insert($obj->imported_data_id, "Description_WC", $short_description_wc);
+                            } catch (Exception $e) {
+					            echo 'Ошибка',  $e->getMessage(), "\n";
+					           	$this->statistics_model->db->close();
+								$this->statistics_model->db->initialize();
+								$this->imported_data_parsed_model->insert($obj->imported_data_id, "Description_WC", $short_description_wc);
+                            }
                           } else {
                               if (intval($obj->short_description_wc) <> $short_description_wc) {
-                                  $this->imported_data_parsed_model->updateValueByKey($obj->imported_data_id, "Description_WC", $short_description_wc);
+                              	try {
+                                  	$this->imported_data_parsed_model->updateValueByKey($obj->imported_data_id, "Description_WC", $short_description_wc);
+                                } catch (Exception $e) {
+						            echo 'Ошибка',  $e->getMessage(), "\n";
+						           	$this->statistics_model->db->close();
+									$this->statistics_model->db->initialize();
+									$this->imported_data_parsed_model->updateValueByKey($obj->imported_data_id, "Description_WC", $short_description_wc);
+                                }
                               }
                           }
                           $time_end = microtime(true);
                           $time = $time_end - $time_start;
-                          echo "WC Short - $time seconds\n";
+//                          echo "WC Short - $time seconds\n";
 
                           // WC Long
                           $time_start = microtime(true);
                           $long_description_wc = (count(preg_split('/\b/', $obj->long_description)) - 1) / 2;
                           if (is_null($obj->long_description_wc)) {
-                              $this->imported_data_parsed_model->insert($obj->imported_data_id, "Long_Description_WC", $long_description_wc);
+                          	try {
+                              	$this->imported_data_parsed_model->insert($obj->imported_data_id, "Long_Description_WC", $long_description_wc);
+                            } catch (Exception $e) {
+					            echo 'Ошибка',  $e->getMessage(), "\n";
+					           	$this->statistics_model->db->close();
+								$this->statistics_model->db->initialize();
+								$this->imported_data_parsed_model->insert($obj->imported_data_id, "Long_Description_WC", $long_description_wc);
+                            }
                           } else {
                               if (intval($obj->long_description_wc) <> $long_description_wc) {
-                                  $this->imported_data_parsed_model->updateValueByKey($obj->imported_data_id, "Long_Description_WC", $long_description_wc);
+                              	try {
+                                  	$this->imported_data_parsed_model->updateValueByKey($obj->imported_data_id, "Long_Description_WC", $long_description_wc);
+	                            } catch (Exception $e) {
+						            echo 'Ошибка',  $e->getMessage(), "\n";
+						           	$this->statistics_model->db->close();
+									$this->statistics_model->db->initialize();
+									$this->imported_data_parsed_model->updateValueByKey($obj->imported_data_id, "Long_Description_WC", $long_description_wc);
+	                            }
                               }
                           }
                           $time_end = microtime(true);
                           $time = $time_end - $time_start;
-                          echo "WC Long - $time seconds\n";
+//                          echo "WC Long - $time seconds\n";
 
                           // SEO Short phrases
                           $time_start = microtime(true);
@@ -572,16 +644,30 @@ class Crons extends MY_Controller {
                                   } else {
                                       $short_seo_phrases = $this->prepare_seo_phrases($output);
                                       if (is_null($obj->short_seo_phrases)) {
-                                          $this->imported_data_parsed_model->insert($obj->imported_data_id, "short_seo_phrases", $short_seo_phrases);
+                                      	try {
+                                      		$this->imported_data_parsed_model->insert($obj->imported_data_id, "short_seo_phrases", $short_seo_phrases);
+                                        } catch (Exception $e) {
+								            echo 'Ошибка',  $e->getMessage(), "\n";
+								           	$this->statistics_model->db->close();
+											$this->statistics_model->db->initialize();
+                                          	$this->imported_data_parsed_model->insert($obj->imported_data_id, "short_seo_phrases", $short_seo_phrases);
+                                        }
                                       } else {
-                                          $this->imported_data_parsed_model->updateValueByKey($obj->imported_data_id, "short_seo_phrases", $short_seo_phrases);
+                                      	try {
+                                            $this->imported_data_parsed_model->updateValueByKey($obj->imported_data_id, "short_seo_phrases", $short_seo_phrases);
+                                        } catch (Exception $e) {
+								            echo 'Ошибка',  $e->getMessage(), "\n";
+								           	$this->statistics_model->db->close();
+											$this->statistics_model->db->initialize();
+											$this->imported_data_parsed_model->updateValueByKey($obj->imported_data_id, "short_seo_phrases", $short_seo_phrases);
+                                        }
                                       }
                                   }
                               }
                           }
                           $time_end = microtime(true);
                           $time = $time_end - $time_start;
-                          echo "SEO Short phrases - $time seconds\n";
+//                          echo "SEO Short phrases - $time seconds\n";
                           // SEO Long phrases
                           $time_start = microtime(true);
                           if ($long_description_wc == $obj->long_description_wc && !is_null($obj->long_seo_phrases)) {
@@ -597,30 +683,61 @@ class Crons extends MY_Controller {
                                   } else {
                                       $long_seo_phrases = $this->prepare_seo_phrases($output);
                                       if (is_null($obj->long_seo_phrases)) {
-                                          $this->imported_data_parsed_model->insert($obj->imported_data_id, "long_seo_phrases", $long_seo_phrases);
+                                      	  try {
+                                      	  	$this->imported_data_parsed_model->insert($obj->imported_data_id, "long_seo_phrases", $long_seo_phrases);
+                                          } catch (Exception $e) {
+									        echo 'Ошибка',  $e->getMessage(), "\n";
+									        $this->statistics_model->db->close();
+											$this->statistics_model->db->initialize();
+                                          	$this->imported_data_parsed_model->insert($obj->imported_data_id, "long_seo_phrases", $long_seo_phrases);
+                                          }
                                       } else {
-                                          $this->imported_data_parsed_model->updateValueByKey($obj->imported_data_id, "long_seo_phrases", $long_seo_phrases);
+                                      	try {
+                                            $this->imported_data_parsed_model->updateValueByKey($obj->imported_data_id, "long_seo_phrases", $long_seo_phrases);
+                                        } catch (Exception $e) {
+									        echo 'Ошибка',  $e->getMessage(), "\n";
+									        $this->statistics_model->db->close();
+											$this->statistics_model->db->initialize();
+											$this->imported_data_parsed_model->updateValueByKey($obj->imported_data_id, "long_seo_phrases", $long_seo_phrases);
+                                        }
                                       }
                                   }
                               }
                           }
                           $time_end = microtime(true);
                           $time = $time_end - $time_start;
-                          echo "SEO Long phrases - $time seconds\n";
+//                          echo "SEO Long phrases - $time seconds\n";
 
                           $time_start = microtime(true);
-                          $insert_id = $this->statistics_model->insert($obj->rid, $obj->imported_data_id,
-                              $obj->research_data_id, $obj->batch_id,
-                              $obj->product_name, $obj->url, $obj->short_description, $obj->long_description,
-                              $short_description_wc, $long_description_wc,
-                              $short_seo_phrases, $long_seo_phrases,
-                              $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors,
-                              serialize($similar_products_competitors)
-                          );
+
+                          try {
+	                          $insert_id = $this->statistics_model->insert($obj->rid, $obj->imported_data_id,
+	                              $obj->research_data_id, $batch->id,
+	                              $obj->product_name, $obj->url, $obj->short_description, $obj->long_description,
+	                              $short_description_wc, $long_description_wc,
+	                              $short_seo_phrases, $long_seo_phrases,
+	                              $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors,
+	                              serialize($similar_products_competitors)
+	                          );
+                          } catch (Exception $e) {
+						        echo 'Ошибка',  $e->getMessage(), "\n";
+						        $this->statistics_model->db->close();
+								$this->statistics_model->db->initialize();
+
+								$insert_id = $this->statistics_model->insert($obj->rid, $obj->imported_data_id,
+	                              $obj->research_data_id, $batch->id,
+	                              $obj->product_name, $obj->url, $obj->short_description, $obj->long_description,
+	                              $short_description_wc, $long_description_wc,
+	                              $short_seo_phrases, $long_seo_phrases,
+	                              $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors,
+	                              serialize($similar_products_competitors)
+	                          	);
+                          }
+
                           $time_end = microtime(true);
                           $time = $time_end - $time_start;
-                          echo "insert_id - $time seconds\n";
-                          var_dump($insert_id);
+//                          echo "insert_id - $time seconds\n";
+//                          var_dump($insert_id);
                           /*if($insert_id){
                               var_dump('--'.$obj->batch_id.'--');
                           } else {
@@ -634,6 +751,9 @@ class Crons extends MY_Controller {
                               print "</pre>";
                               die("error");
                           }*/
+
+                          echo '.';
+
                     }
                     /*$params = new stdClass();
                     $params->batch_id = $batch->id;
