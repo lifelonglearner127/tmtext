@@ -133,7 +133,8 @@ function deleteRecipient(id) {
 			id: id
 		};
 		var remove_rec = $.post(base_url + 'index.php/measure/delete_recipient', send_data, function(data) {
-			$("#recipients_control_panel_modal").modal('hide');
+			$("#recipients_control_panel_body > table tr[data-id='" + id + "']").remove();
+			// $("#recipients_control_panel_modal").modal('hide');
 		});
 	}
 }
