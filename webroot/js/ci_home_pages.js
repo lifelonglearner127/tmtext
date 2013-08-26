@@ -340,7 +340,7 @@ function submitEmailReportsConfig() {
                     "</td><td><span class='recipients_control_panel_txt'>"+data[i][0].email+"</span></td>" +
                     "<td><span class='recipients_control_panel_txt'>"+capitaliseFirstLetter(data[i][0].day)+"</span></td>" +
                     "<td nowrap><button type='button' class='btn btn-success btn-rec-ind-send fire_rec' id="+data[i][0].id+"><i class='icon-fire'></i></button>" +
-                    " <button type='button' class='btn btn-danger btn-rec-remove delete_rec' id='"+data[i][0].id+"'><i class='icon-remove'></i></button>" +
+                    " <button type='button' class='btn btn-danger btn-rec-remove' onclick=\"deleteRecipient('" + data[i][0].id + "');\" id='"+data[i][0].id+"'><i class='icon-remove'></i></button>" +
                     "</td></tr>").insertBefore('#new_row');
             }
             $('input[name="recipients_rec"]').val('');
@@ -399,7 +399,7 @@ function newRecipient() {
                             "</td><td><span class='recipients_control_panel_txt'>"+data[i][0].email+"</span></td>" +
                             "<td><span class='recipients_control_panel_txt'>"+capitaliseFirstLetter(data[i][0].day)+"</span></td>" +
                             "<td><button type='button' class='btn btn-success btn-rec-ind-send fire_rec' id="+data[i][0].id+"><i class='icon-fire'></i></button>" +
-                            "<button type='button' class='btn btn-danger btn-rec-remove delete_rec' id='"+data[i][0].id+"'><i class='icon-remove'></i></button>" +
+                            "<button type='button' class='btn btn-danger btn-rec-remove' onclick=\"deleteRecipient('" + data[i][0].id + "');\" id='"+data[i][0].id+"'><i class='icon-remove'></i></button>" +
                             "</td></tr>").insertBefore('#new_row');
                     }
                     internalRecipientFunc();
