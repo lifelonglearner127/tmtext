@@ -210,7 +210,7 @@
 
 <div class="modal hide fade ci_hp_modals" id='success_emailsend_modal'>
 	<div class="modal-body">
-		<p>Reports are successfully sended.</p>
+		<p>Report sent.</p>
 	</div>
 </div>
 

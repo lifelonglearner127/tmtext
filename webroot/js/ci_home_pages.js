@@ -85,7 +85,6 @@ function sendEmailScreensToSelected() {
 		$("#recipients_control_panel_modal").modal('hide');
 		$("#loader_emailsend_modal").modal('show');
 		var send_recipient_report_sel = $.post(base_url + 'index.php/measure/send_recipient_report_selected', send_data, function(data) {
-			console.log(data);
 			$("#loader_emailsend_modal").modal('hide');
 			$("#success_emailsend_modal").modal('show');
 		});
@@ -110,7 +109,6 @@ function sendEmailScreensToAll() {
 	$("#recipients_control_panel_modal").modal('hide');
 	$("#loader_emailsend_modal").modal('show');
 	var send_recipient_report_sel = $.post(base_url + 'index.php/measure/send_recipient_report_selected', send_data, function(data) {
-		console.log(data);
 		$("#loader_emailsend_modal").modal('hide');
 		$("#success_emailsend_modal").modal('show');
 	});
@@ -122,8 +120,11 @@ function sendRecipientReport(id, email, day) {
 		email: email,
 		day: day
 	};
+	$("#recipients_control_panel_modal").modal('hide');
+	$("#loader_emailsend_modal").modal('show');
 	var send_recipient_report = $.post(base_url + 'index.php/measure/send_recipient_report', send_data, function(data) {
-		$("#recipients_control_panel_modal").modal('hide');
+		$("#loader_emailsend_modal").modal('hide');
+		$("#success_emailsend_modal").modal('show');
 	});
 }
 
@@ -133,7 +134,8 @@ function deleteRecipient(id) {
 			id: id
 		};
 		var remove_rec = $.post(base_url + 'index.php/measure/delete_recipient', send_data, function(data) {
-			$("#recipients_control_panel_modal").modal('hide');
+			$("#recipients_control_panel_body > table tr[data-id='" + id + "']").remove();
+			// $("#recipients_control_panel_modal").modal('hide');
 		});
 	}
 }
