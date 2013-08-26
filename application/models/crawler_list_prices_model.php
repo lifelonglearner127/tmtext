@@ -97,7 +97,7 @@ class Crawler_List_Prices_model extends CI_Model {
             $this->db->where('idp.value like ' . $this->db->escape('%' . $search . '%'));
         }
         if(!empty($order_column_name)) {
-            $this->db->order_by($order_column_name, $sort_direction_n);
+            //$this->db->order_by($order_column_name, $sort_direction_n);
         }
         if(isset($display_start) && isset($display_length)) {
             $this->db->limit($display_length, $display_start);
