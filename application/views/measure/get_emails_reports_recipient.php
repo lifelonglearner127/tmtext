@@ -79,7 +79,7 @@
 </div>
 <div class="modal-footer">
     <button onclick="newRecipient()" type='button' class="btn">New row</button>
-	<button type='button' href="javascript:void(0)" onclick="sendEmailScreensToSelected()" class="btn btn-success btn-rec-all-send">Send to selected</button>
+	<button type='button' href="javascript:void(0)" onclick="sendEmailScreensToSelected()" class="btn btn-success btn-rec-all-send">Send now</button>
 	<button type='button' href="javascript:void(0)" onclick="sendEmailScreensToAll()" class="btn btn-primary btn-rec-all-send">Send to all</button>
 </div>
 
