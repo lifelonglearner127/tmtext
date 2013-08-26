@@ -261,7 +261,19 @@ class Measure extends MY_Controller {
                 $r_url = urlencode(trim($url));
                 $call_url = $this->webthumb_call_link($url);
                 $snap_res = $this->crawl_webshoot($call_url, $v['id']);
-                $this->webshoots_model->updateCrawlListWithSnap($v['id'], $snap_res['img'], $http_status);
+                // ==== check for empty image (start)
+                $image_up = $snap_res['img'];
+                $file_size = realpath(BASEPATH . "../webroot/webshoots/$image_up");
+                if($file_size !== false && $file_size > 2048) {
+                    $this->webshoots_model->updateCrawlListWithSnap($v['id'], $snap_res['img'], $http_status);
+                } else {
+                    @unlink(realpath(BASEPATH . "../webroot/webshoots/$image_up"));
+                    $call_url = $this->webthumb_call_link($url);
+                    $snap_res = $this->crawl_webshoot($call_url, $v['id']);
+                    $this->webshoots_model->updateCrawlListWithSnap($v['id'], $snap_res['img'], $http_status);
+                }
+                sleep(10);
+                // ==== check for empty image (end)
             }
         }
         $this->output->set_content_type('application/json')->set_output(true);
