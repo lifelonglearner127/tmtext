@@ -223,6 +223,7 @@ function snapshotIt(id, url, modal_close) {
 	};
 	$("#loading_crawl_snap_modal").modal('show');
 	$.post(base_url + 'index.php/measure/crawlsnapshoot', send_data, function(data) {
+		console.log(data);
 		$("#loading_crawl_snap_modal").modal('hide');
 		$('#current_snapshot').attr('disabled', 'disabled');
 		loadCurrentList();

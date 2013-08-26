@@ -170,9 +170,9 @@ class Crons extends MY_Controller {
                     $day = $v->day;
                     $email = $v->email;
                     $id = $v->id;
-                    $this->email->from('ishulgin8@gmail.com', "Content Solutions");
+                    $this->email->from('ishulgin8@gmail.com', "Content Solutions - Home Pages Report");
                     $this->email->to("$email");
-                    $this->email->subject('Content Solutions Screenshots Report');
+                    $this->email->subject('Content Solutions - Home Pages Report');
                     $this->email->message("Report screenshots in attachment. Preference day: $day.");
                     // --- test (debug) attachments (start)
                     $debug_screens = $this->webshoots_model->getLimitedScreens(3);

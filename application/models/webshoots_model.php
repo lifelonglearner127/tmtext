@@ -14,7 +14,7 @@ class Webshoots_model extends CI_Model {
         parent::__construct();
     }
 
-    public function updateCrawlListWithSnap($id, $snap) {
+    public function updateCrawlListWithSnap($id, $snap, $http_status) {
         // === destroy previous snap (start)
         $check_obj = array(
             'id' => $id
@@ -29,7 +29,8 @@ class Webshoots_model extends CI_Model {
         // === destroy previous snap (end)
         $update_object = array(
             'snap' => $snap,
-            'snap_date' => date("Y-m-d H:i:s")
+            'snap_date' => date("Y-m-d H:i:s"),
+            'snap_state' => $http_status
         );
         return $this->db->update($this->tables['crawler_list'], $update_object, array('id' => $id));
     }

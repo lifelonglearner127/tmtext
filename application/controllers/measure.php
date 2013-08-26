@@ -49,6 +49,17 @@ class Measure extends MY_Controller {
         );
     }
 
+    private function webthumb_call_link($url) {
+        $webthumb_user_id = $this->config->item('webthumb_user_id');
+        $api_key = $this->config->item('webthumb_api_key');
+        $url = "http://$url";
+        $c_date = gmdate('Ymd', time()); 
+        $hash = md5($c_date.$url.$api_key); 
+        $e_url = urlencode(trim($url));
+        $call = "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=large";
+        return $call;
+    }
+
     private function upload_record_webshoot($ext_url, $url_name) {
         $file = file_get_contents($ext_url);
         $type = 'png';
@@ -68,6 +79,19 @@ class Measure extends MY_Controller {
             'call' => $ext_url
         );
         return $res;
+    }
+
+    private function urlExistsCode($url) {
+        if ($url === null || trim($url) === "")
+            return false;
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $data = curl_exec($ch);
+        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        return $httpcode;
     }
 
     private function urlExists($url) {
@@ -113,9 +137,9 @@ class Measure extends MY_Controller {
             $day = $v['day'];
             $email = $v['email'];
             $id = $v['id'];
-            $this->email->from('ishulgin8@gmail.com', "Content Solutions");
+            $this->email->from('ishulgin8@gmail.com', "Content Solutions - Home Pages Report");
             $this->email->to("$email");
-            $this->email->subject('Content Solutions Screenshots Report');
+            $this->email->subject('Content Solutions - Home Pages Report');
             $this->email->message("Report screenshots in attachment. Preference day: $day.");
             // --- attachments (start)
             $debug_screens = $this->webshoots_model->getLimitedScreens(3);
@@ -145,9 +169,9 @@ class Measure extends MY_Controller {
         $config['wordwrap'] = TRUE;
         $this->email->initialize($config);
         // -- email config (dev configurations) (end) --
-        $this->email->from('ishulgin8@gmail.com', "Content Solutions");
+        $this->email->from('ishulgin8@gmail.com', "Content Solutions - Home Pages Report");
         $this->email->to("$email");
-        $this->email->subject('Content Solutions Screenshots Report');
+        $this->email->subject('Content Solutions - Home Pages Report');
         $this->email->message("Report screenshots in attachment. Preference day: $day.");
         // --- attachments (start)
         $debug_screens = $this->webshoots_model->getLimitedScreens(3);
@@ -192,36 +216,52 @@ class Measure extends MY_Controller {
         return $res;
     }
 
+    // public function crawlsnapshoot() {
+    //     $this->load->model('webshoots_model');
+    //     $urls = $this->input->post('urls');
+    //     if(count($urls) > 0) {
+    //         $primary_source_res = $this->urlExists('http://snapito.com');
+    //         $format = "png";
+    //         if($primary_source_res) { // ===== PRIMARY SCREENCAPTURE API (http://snapito.com/)
+    //             $screen_api = 'snapito.com';
+    //             $api_key = $this->config->item('snapito_api_secret');
+    //         } else { 
+    //             $screen_api = 'webyshots.com';
+    //             $api_key = $this->config->item('webyshots_api_key');
+    //             $api_secret = $this->config->item('webyshots_api_secret');
+    //             $size = "w800";
+    //         }
+    //         foreach ($urls as $k => $v) {
+    //             // ---- snap it and update crawler_list table (start)
+    //             $orig_url = $v['url'];
+    //             $url = preg_replace('#^https?://#', '', $v['url']);
+    //             $r_url = urlencode(trim($url));
+    //             if($screen_api == 'snapito.com') {
+    //                 $call_url = "http://api.snapito.com/web/$api_key/mc/$url";
+    //             } else {
+    //                 $token = md5("$api_secret+$url");
+    //                 $call_url = "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$r_url&dimension=$size&format=$format";
+    //             }
+    //             $snap_res = $this->crawl_webshoot($call_url, $v['id']);
+    //             $this->webshoots_model->updateCrawlListWithSnap($v['id'], $snap_res['img']);
+    //             // ---- snap it and update crawler_list table (end)
+    //         }
+    //     }
+    //     $this->output->set_content_type('application/json')->set_output(true);
+    // }
+
     public function crawlsnapshoot() {
         $this->load->model('webshoots_model');
         $urls = $this->input->post('urls');
         if(count($urls) > 0) {
-            $primary_source_res = $this->urlExists('http://snapito.com');
-            $format = "png";
-            if($primary_source_res) { // ===== PRIMARY SCREENCAPTURE API (http://snapito.com/)
-                $screen_api = 'snapito.com';
-                $api_key = $this->config->item('snapito_api_secret');
-            } else { 
-                $screen_api = 'webyshots.com';
-                $api_key = $this->config->item('webyshots_api_key');
-                $api_secret = $this->config->item('webyshots_api_secret');
-                $size = "w800";
-            }
             foreach ($urls as $k => $v) {
-                // ---- snap it and update crawler_list table (start)
+                $http_status = $this->urlExistsCode($v['url']);
                 $orig_url = $v['url'];
                 $url = preg_replace('#^https?://#', '', $v['url']);
                 $r_url = urlencode(trim($url));
-                if($screen_api == 'snapito.com') {
-                    $call_url = "http://api.snapito.com/web/$api_key/mc/$orig_url";
-                } else {
-                    $token = md5("$api_secret+$url");
-                    $call_url = "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$r_url&dimension=$size&format=$format";
-                }
+                $call_url = $this->webthumb_call_link($url);
                 $snap_res = $this->crawl_webshoot($call_url, $v['id']);
-                // $this->webshoots_model->updateCrawlListWithSnap($v['id'], $snap_res['path']);
-                $this->webshoots_model->updateCrawlListWithSnap($v['id'], $snap_res['img']);
-                // ---- snap it and update crawler_list table (end)
+                $this->webshoots_model->updateCrawlListWithSnap($v['id'], $snap_res['img'], $http_status);
             }
         }
         $this->output->set_content_type('application/json')->set_output(true);

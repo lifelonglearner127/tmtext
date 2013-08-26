@@ -422,8 +422,12 @@ $config['important_attributes_min'] = array(
 $config['webyshots_api_key'] = "dc598f9ae119a97234ea";
 $config['webyshots_api_secret'] = "47c7248bc03fbd368362";
 $config['snapito_api_secret'] = "cd6b7c5287da22c36a2adadb05618f4a8d488452";
-$config['webthumb_user_id'] = 72956;
-$config['webthumb_api_key'] = "3783567e0b4e36855c85507ce437e86c";
+// === My crdentials
+// $config['webthumb_user_id'] = 72956;
+// $config['webthumb_api_key'] = "3783567e0b4e36855c85507ce437e86c";
+// === David crdentials
+$config['webthumb_user_id'] = 73031;
+$config['webthumb_api_key'] = "246ff0f0c5e3b680abdd2c9542693384";
 
 // allow the local environment to override the settings
 if (file_exists(APPPATH.'config/config.local.php')) {
