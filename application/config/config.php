@@ -428,6 +428,15 @@ $config['snapito_api_secret'] = "cd6b7c5287da22c36a2adadb05618f4a8d488452";
 // === David crdentials
 $config['webthumb_user_id'] = 73031;
 $config['webthumb_api_key'] = "246ff0f0c5e3b680abdd2c9542693384";
+$config['webthumb_sites'] = array(
+	'overstock.com',
+	'bloomingdales.com',
+	'wayfair.com',
+	'walmart.com',
+	'macys.com',
+	'williams-sonoma.com',
+	'pgestore.com'
+);
 
 // allow the local environment to override the settings
 if (file_exists(APPPATH.'config/config.local.php')) {

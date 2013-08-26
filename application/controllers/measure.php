@@ -299,7 +299,7 @@ class Measure extends MY_Controller {
             $c_url = urlencode(trim($url));
             if($screen_api == 'snapito.com') {
                 $api_key = $this->config->item('snapito_api_secret');
-                if($url == 'overstock.com' || $url == 'bloomingdales.com' || $url == 'wayfair.com' || $url == 'walmart.com' || $url == 'macys.com' || $url == 'williams-sonoma.com' || $url == 'pgestore.com') {
+                if(in_array($url, $this->config->item('webthumb_sites'))) {
                     $res = $this->webthumb_call($url);
                 } else {
                     $res = array(
@@ -372,7 +372,7 @@ class Measure extends MY_Controller {
             $primary_source_res = $this->urlExists('http://snapito.com');
             if($primary_source_res) { // ===== PRIMARY SCREENCAPTURE API (http://snapito.com/)
                 $api_key = $this->config->item('snapito_api_secret');
-                if($c_url == 'overstock.com' || $c_url == 'bloomingdales.com' || $c_url == 'wayfair.com' || $c_url == 'walmart.com' || $c_url == 'macys.com' || $c_url == 'williams-sonoma.com' || $c_url == 'pgestore.com') {
+                if(in_array($c_url, $this->config->item('webthumb_sites'))) {
                     $res = $this->webthumb_call($c_url);
                 } else {
                     $res = array(
@@ -449,7 +449,7 @@ class Measure extends MY_Controller {
         $primary_source_res = $this->urlExists('http://snapito.com');
         if($primary_source_res) { // ===== PRIMARY SCREENCAPTURE API (http://snapito.com/)
             $api_key = $this->config->item('snapito_api_secret');
-            if($c_url == 'overstock.com' || $c_url == 'bloomingdales.com' || $c_url == 'wayfair.com' || $c_url == 'walmart.com' || $c_url == 'macys.com' || $c_url == 'williams-sonoma.com' || $c_url == 'pgestore.com') {
+            if(in_array($c_url, $this->config->item('webthumb_sites'))) {
                 $res = $this->webthumb_call($c_url);
             } else {
                 $res = array(
