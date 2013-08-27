@@ -14,6 +14,10 @@ class Webshoots_model extends CI_Model {
         parent::__construct();
     }
 
+    public function updateWebshootById($up_object, $id) {
+        return $this->db->update($this->tables['webshoots'], $up_object, array('id' => $id));
+    }
+
     public function updateCrawlListWithSnap($id, $snap, $http_status) {
         // === destroy previous snap (start)
         $check_obj = array(

@@ -367,6 +367,34 @@ class Measure extends MY_Controller {
         $this->load->model('webshoots_model');
         $res = $this->webshoots_model->getWebShootByUrl($c_url);
         if ($res !== false) {
+            $file_s = filesize($res->dir_img);
+            if($file_s === false || $file_s < 2048) { // === destroy bad image, crawl new one, update record in DB
+                @unlink($res->dir_img);
+                $call_url = $this->webthumb_call_link($c_url);
+                $crawl_l = $this->upload_record_webshoot($call_url, $c_url . "_big");
+                $file = $crawl_l['dir'];
+                $file_size = filesize($file);
+                if($file_size !== false && $file_size > 2048) { // === update
+                    $up_object = array(
+                        'img' => $crawl_l['path'],
+                        'thumb' => $crawl_l['path'],
+                        'dir_thumb' => $crawl_l['dir'],
+                        'dir_img' => $crawl_l['dir']
+                    );
+                    $this->webshoots_model->updateWebshootById($up_object, $res->id);
+                } else {
+                    @unlink($file);
+                    $call_url = $this->webthumb_call_link($c_url);
+                    $crawl_l = $this->upload_record_webshoot($call_url, $c_url . "_big");
+                    $up_object = array(
+                        'img' => $crawl_l['path'],
+                        'thumb' => $crawl_l['path'],
+                        'dir_thumb' => $crawl_l['dir'],
+                        'dir_img' => $crawl_l['dir']
+                    );
+                    $this->webshoots_model->updateWebshootById($up_object, $res->id);
+                }
+            } 
             $screen_id = $res->id;
             $this->webshoots_model->recordWebShootSelectionAttempt($screen_id, $uid, $pos, $year, $week, $res->img, $res->thumb, $res->stamp, $res->url, $label); // --- webshoot selection record attempt
             $result = $res;
