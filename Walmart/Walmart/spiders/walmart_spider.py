@@ -26,7 +26,8 @@ class WalmartSpider(BaseSpider):
         hxs = HtmlXPathSelector(response)
         links = hxs.select("//div[@class='MidContainer']/div[3]//a[@class='NavM']")
         parent_links = hxs.select("//div[@class='MidContainer']/div[3]//a[@class='NavXLBold']")
-        items = []
+
+        root_url = "http://www.walmart.com"
 
         for link in links:
             item = CategoryItem()
@@ -42,12 +43,20 @@ class WalmartSpider(BaseSpider):
                 item['parent_text'] = parents[-1].select('text()').extract()[0]
                 item['parent_url'] = parents[-1].select('@href').extract()[0]
 
+                item['parent_url'] = Utils.add_domain(item['parent_url'], root_url)
+
             item['text'] = link.select('text()').extract()[0]
             item['url'] = link.select('@href').extract()[0]
 
+            # add domain if relative URL
+            item['url'] = Utils.add_domain(item['url'], root_url)
+
             item['level'] = 0
 
-            items.append(item)
+            #yield item
+
+            # send category page to parseCategory function to extract description and number of products and add them to the item
+            yield Request(item['url'], callback = self.parseCategory, meta = {'item' : item})
 
         for link in parent_links:
             item = CategoryItem()
@@ -55,12 +64,46 @@ class WalmartSpider(BaseSpider):
             item['text'] = link.select('text()').extract()[0]
             item['url'] = link.select('@href').extract()[0]
 
+            # add domain if relative URL
+            item['url'] = Utils.add_domain(item['url'], root_url)
+
             item['level'] = 1
 
-            items.append(item)
+            #yield item
 
-        return items
+            # send category page to parseCategory function to extract description and number of products and add them to the item
+            yield Request(item['url'], callback = self.parseCategory, meta = {'item' : item})
 
+    # parse category page and extract description and number of products
+    def parseCategory(self, response):
+        hxs = HtmlXPathSelector(response)
+        item = response.meta['item']
+
+        description_holder = hxs.select("//div[@id='detailedPageDescriptionCopyBlock']")
+        
+        # try to find description title in <b> tag in the holder;
+        # if it's not find, try to find it in the first <p> if the description
+        # if fund there, exclude it from the description body
+        description_title = description_holder.select(".//b/text()").extract()
+        if description_title:
+            item['description_title'] = description_title[0]
+
+        description_texts = description_holder.select(".//text()[not(ancestor::b)]").extract()
+        # if the list is not empty and contains at least one non-whitespace item
+        if description_texts and reduce(lambda x,y: x or y, [line.strip() for line in description_texts]):
+            item['description_text'] = " ".join(description_texts).strip()
+
+        yield item
+
+
+class Utils():
+
+    # append domain name in front of relative URL if it's missing
+    @staticmethod
+    def add_domain(url, root_url):
+        if not re.match("http:.*", url):
+            url = root_url + url
+        return url
 
 # scrape bestsellers lists and extract products
 class BestsellerSpider(BaseSpider):
