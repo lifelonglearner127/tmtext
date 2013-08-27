@@ -926,16 +926,16 @@ class Imported_data_parsed_model extends CI_Model {
         $params->value = $value;
         return $this->db->update($this->tables['imported_data_parsed'], $params, array('imported_data_id' => $imported_id, 'key' => $key));
     }
-
+  
      function do_stats_ids(){
           $q=$this->db->select('key,description')->from('settings')->where('key','cron_duplicate');
         $res=$q->get()->row_array();
         $limit=30;
         $start=$res['description'];
-        if($start!=1){
-           $start =($start-1)*30;
-        }
-         $this->db->select('p.imported_data_id')
+        
+        $start =start*30+1;
+        
+        $this->db->select('p.imported_data_id')
             ->from($this->tables['imported_data_parsed'] . ' as p');
             
         $this->db->group_by('imported_data_id'); 
@@ -953,17 +953,17 @@ class Imported_data_parsed_model extends CI_Model {
         }else{
             $d = array(
             'key' => 'cron_job_offset' ,
-            'description' => '1' ,
+            'description' => '0' ,
                
          );
 
          $this->db->insert('settings', $d); 
-         $start=1; 
+         $start=0; 
         }
         $limit=30;
-        if($start!=1){
-           $start =($start-1)*30;
-        }
+        
+        $start =$start*30+1;
+        
         $this->db->select('p.imported_data_id')
             ->from($this->tables['imported_data_parsed'] . ' as p');
             

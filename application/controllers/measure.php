@@ -14,6 +14,7 @@ class Measure extends MY_Controller {
         $this->load->helper('comparebysimilarwordscount');
         $this->load->helper('baseurl');
         $this->data['title'] = 'Measure';
+        $this->load->model('statistics_model');
 
         if (!$this->ion_auth->logged_in()) {
             //redirect them to the login page
@@ -817,6 +818,7 @@ class Measure extends MY_Controller {
     public function similar_groups(){
         $this->load->model('imported_data_parsed_model');
         $this->imported_data_parsed_model->similiarity_cron();
+        
     }
     public function report_mismatch(){
 
@@ -857,7 +859,7 @@ $main_base = substr($url, 11, $pos-11);
 return $main_base;
 }
 function matches_count($im_data_id){
-     
+     if($this->statistics_model->getbyimpid($im_data_id)){
         $data = array(
             'im_data_id' => $im_data_id,
             's_product' => array(),
@@ -996,7 +998,21 @@ function matches_count($im_data_id){
         // -------- COMPARING V1 (START)
         return $matched_sites;
         }
-        
+     }else{
+         $matched_sites=array();
+         $res=$this->statistics_model->getbyimpid($im_data_id);
+         print_r( $res);
+         $matches=  unserialize($res['similar_products_competitors']);
+         foreach($matches as $val){
+             $matched_sites[]=$val['customer'];
+         }
+         return  $matched_sites;
+         
+                           
+     }   
+     
+         
+     
 }
 public function gridview() {
        $data['mismatch_button']=false;
