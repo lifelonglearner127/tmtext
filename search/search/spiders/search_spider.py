@@ -44,7 +44,7 @@ class SearchSpider(BaseSpider):
 	#				target_site - the site to search on
 	#				output - integer(1/2) option indicating output type (either result URL (1), or result URL and source product URL (2))
 	#				threshold - parameter (0-1) for selecting results (the lower the value the more permissive the selection)
-	def __init__(self, product_name = None, product_url = None, product_urls_file = None, target_site = None, output = 1, threshold = 0.4, outfile = "search_results.txt"):
+	def __init__(self, product_name = None, product_url = None, product_urls_file = None, target_site = None, output = 1, threshold = 1.0, outfile = "search_results.txt"):
 		self.product_url = product_url
 		self.product_name = product_name
 		self.target_site = target_site
@@ -112,6 +112,8 @@ class SearchSpider(BaseSpider):
 
 		for product_url in product_urls:
 			# extract site domain
+			#/ print "in parse: ", product_url
+
 			m = re.match("http://www1?\.([^\.]+)\.com.*", product_url)
 			origin_site = ""
 			if m:
@@ -129,6 +131,8 @@ class SearchSpider(BaseSpider):
 
 	# parse a product page (given its URL) and extract product's name
 	def parseURL(self, response):
+
+		#/ print "in parseURL: ", response.url
 
 		site = response.meta['site']
 		hxs = HtmlXPathSelector(response)
@@ -399,7 +403,7 @@ class SearchSpider(BaseSpider):
 		#/ print "PRODUCT: ", response.meta['origin_name'].encode("utf-8")
 		#/ print "QUERY: ", response.meta['query']
 		#/ print "MATCHES: "
-		for item in items:
+		#for item in items:
 			#/ print item['product_name'].encode("utf-8")
 		#/ print '\n'
 
