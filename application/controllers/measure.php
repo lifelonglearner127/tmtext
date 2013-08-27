@@ -859,7 +859,7 @@ $main_base = substr($url, 11, $pos-11);
 return $main_base;
 }
 function matches_count($im_data_id){
-     if($this->statistics_model->getbyimpid($im_data_id)){
+     if(!$this->statistics_model->getbyimpid($im_data_id)){
         $data = array(
             'im_data_id' => $im_data_id,
             's_product' => array(),
