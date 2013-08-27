@@ -91,7 +91,8 @@ class WalmartSpider(BaseSpider):
         description_texts = description_holder.select(".//text()[not(ancestor::b)]").extract()
         # if the list is not empty and contains at least one non-whitespace item
         if description_texts and reduce(lambda x,y: x or y, [line.strip() for line in description_texts]):
-            item['description_text'] = " ".join(description_texts).strip()
+            # replace all whitespace with one space, strip, and remove empty texts; then join them
+            item['description_text'] = " ".join([re.sub("\s+"," ", description_text.strip()) for description_text in description_texts if description_text.strip()])
 
         yield item
 
