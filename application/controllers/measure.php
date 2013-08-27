@@ -1001,7 +1001,6 @@ function matches_count($im_data_id){
      }else{
          $matched_sites=array();
          $res=$this->statistics_model->getbyimpid($im_data_id);
-         print_r( $res);
          $matches=  unserialize($res['similar_products_competitors']);
          foreach($matches as $val){
              $matched_sites[]=$val['customer'];
