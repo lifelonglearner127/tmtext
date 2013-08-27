@@ -508,7 +508,21 @@ $(function () {
 
     $('#research_assess_update').on('click', function() {
         readAssessData();
+        addColumn_url_class();
     });
+    
+    function addColumn_url_class(){
+		//Denis add class to URL column
+		if(  $("#column_url").attr('checked') == 'checked' ){
+			setTimeout(function(){
+				//console.log( $("#tblAssess").html() );
+				$("#tblAssess").find('tr').each(function(){
+					$(this).find('td:eq(2)').addClass('column_url');
+				});
+			}, 2000);
+		}
+		//----------------------
+	}
 
     $('#assess_report_download_panel > a').click(function(){
         var type_doc = $(this).data('type');
@@ -557,6 +571,7 @@ $(function () {
                     success : function( data ) {
                         if(data == true) {
                             hideColumns();
+                            addColumn_url_class();
                         }
                     }
                 });
