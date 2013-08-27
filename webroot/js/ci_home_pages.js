@@ -114,7 +114,7 @@ function sendEmailScreensToAll() {
 	});
 }
 
-function sendRecipientReport(id, email, day) {
+function sendRecipientReport(id, email, day, c_week, c_year, uid) {
 	var send_data = {
 		id: id,
 		email: email,
@@ -182,7 +182,7 @@ function openCrawlLaunchPanelModal(close_preview) {
                 if(c_data[i]['crawl_st']) {
 						tbl += "<a style='margin-left: 3px;' onclick=\"flatPreviewScreenshotModal('" + c_data[i]['url'] + "');\" class='btn btn-success'><i class='icon-ok'></i>&nbsp;Screenshot Ready</a>";
 					} else {
-						tbl += "<a style='margin-left: 3px;' class='btn btn-warning disabled'><i class='icon-thumbs-down'></i>&nbsp;No Screenshot</a>";
+						tbl += "<a style='margin-left: 3xpx;' class='btn btn-warning disabled'><i class='icon-thumbs-down'></i>&nbsp;No Screenshot</a>";
 					}
 					tbl += "</td>";
 				tbl += "</tr>";
@@ -259,7 +259,11 @@ function redirectToRecipientsListAfterAdd() {
 function viewRecipientsList() {
 	$("#recipients_control_panel_modal").modal('show');
 	// --- refresh listing (start)
-	var rec = $.post(base_url + 'index.php/measure/get_emails_reports_recipient', {}, function(data) {
+	var send_data = {
+		c_week: $(".pagination ul li.page.active").data('week'),
+		c_year: $("#year_s > option:selected").val()
+	};
+	var rec = $.post(base_url + 'index.php/measure/get_emails_reports_recipient', send_data, function(data) {
 		$("#recipients_control_panel_modal").html(data);
 	});
 	// -- refresh listing (end)

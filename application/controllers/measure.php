@@ -119,6 +119,11 @@ class Measure extends MY_Controller {
 
     public function get_emails_reports_recipient() {
         $this->load->model('webshoots_model');
+        $c_week = $this->input->post('c_week');
+        $c_year = $this->input->post('c_year');
+        $data['c_week'] = $c_week;
+        $data['c_year'] = $c_year;
+        $data['user_id'] = $this->ion_auth->get_user_id();
         $data['rec'] = $this->webshoots_model->get_recipients_list();
         $this->load->view('measure/get_emails_reports_recipient', $data);
     }
