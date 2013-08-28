@@ -403,7 +403,12 @@ class Crons extends MY_Controller {
                                           }
                                       }
                                       
-                                     $n = parse_url($data_import['url']);
+                                     
+                                  }
+                                                                                                        
+                              }
+                              
+                              $n = parse_url($data_import['url']);
                                      $customer=  strtolower($n['host']);
                                      $customer = str_replace("www1.", "",$customer);
                                      $customer =str_replace("www.", "", $customer);
@@ -414,9 +419,6 @@ class Crons extends MY_Controller {
                                          
                                               'customer' =>$customer
                                           ); 
-                                      
-                                  }
-                              }
                           }
                           else{
                               $im_data_id=$data_import['imported_data_id'];
