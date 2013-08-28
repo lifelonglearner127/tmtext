@@ -514,10 +514,20 @@ $(function () {
     function addColumn_url_class(){
 		//Denis add class to URL column
 		if(  $("#column_url").attr('checked') == 'checked' ){
+			
+			table = $('#assess_tbl_show_case').find('.active_link').data('case')
+			column = '';
+			if( table == 'recommendations' ){
+				column = 'td:eq(1)';
+			}else if( table == 'details' ){
+				column = 'td:eq(2)';
+			}
+			
 			setTimeout(function(){
 				//console.log( $("#tblAssess").html() );
 				$("#tblAssess").find('tr').each(function(){
-					$(this).find('td:eq(2)').addClass('column_url');
+					//$(this).find('td:eq(2)').addClass('column_url');
+					$(this).find(column).addClass('column_url');
 				});
 			}, 2000);
 		}
@@ -677,6 +687,7 @@ $(function () {
                     tblAssess.fnSetColumnVis(index, false, false);
                 }
             });
+            addColumn_url_class();
         } else if (table_case == 'details') {
             reportPanel(false);
             $.each(tblAllColumns, function(index, value) {
@@ -686,6 +697,7 @@ $(function () {
                     tblAssess.fnSetColumnVis(index, false, false);
                 }
             });
+            addColumn_url_class();
         } else if (table_case == 'report') {
             reportPanel(true);
             var batch_id = $('select[name="research_assess_batches"]').find('option:selected').val();

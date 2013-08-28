@@ -1900,4 +1900,4 @@ select#sites option{
          border-bottom: 1px solid black;
      }
      
-.column_url{word-break: break-word; width: 200px;}
+.column_url{word-break: break-word;}
