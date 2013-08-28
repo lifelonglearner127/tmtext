@@ -233,6 +233,31 @@ class Webshoots_model extends CI_Model {
         return $res;
     }
 
+    function selectionRefreshDecision($id) {
+        $ws_query = $this->db->get_where($this->tables['webshoots'], array('id' => $id));
+        $ws_query_res = $ws_query->result();
+        if(count($ws_query_res) > 0) {
+            $ws_item = $ws_query_res[0];
+            $s_object = array(
+                'uid' => $ws_item->uid,
+                'site' => $ws_item->url
+            );
+            $check_query = $this->db->get_where($this->tables['webshoots_select'], $s_object);
+            $check_query_res = $check_query->result();
+            if(count($check_query_res) > 0) {
+                foreach ($check_query_res as $k => $v) {
+                    $u_object = array(
+                        'screen_id' => $ws_item->id,
+                        'img' => $ws_item->img,
+                        'thumb' => $ws_item->thumb,
+                        'screen_stamp' => $ws_item->stamp
+                    );
+                    $this->db->update($this->tables['webshoots_select'], $u_object, array('id' => $v->id));
+                }
+            }
+        }
+    }
+
     function recordUpdateWebshoot($result) {
         $insert_object = array(
             'url' => $result['url'],

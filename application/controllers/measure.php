@@ -45,8 +45,8 @@ class Measure extends MY_Controller {
         $hash = md5($c_date.$url.$api_key); 
         $e_url = urlencode(trim($url));
         return $res = array(
-            "s" => "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=medium2",
-            'l' => "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=large"
+            "s" => "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=medium2&cache=1",
+            'l' => "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=large&cache=1"
         );
     }
 
@@ -57,7 +57,7 @@ class Measure extends MY_Controller {
         $c_date = gmdate('Ymd', time()); 
         $hash = md5($c_date.$url.$api_key); 
         $e_url = urlencode(trim($url));
-        $call = "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=large";
+        $call = "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=large&cache=1";
         return $call;
     }
 
@@ -383,7 +383,10 @@ class Measure extends MY_Controller {
                 'week' => $week,
                 'pos' => 0
             );
-            $this->webshoots_model->recordUpdateWebshoot($result);
+            $r = $this->webshoots_model->recordUpdateWebshoot($result);
+            // === webshots selection refresh attempt (start)
+            $this->webshoots_model->selectionRefreshDecision($r); 
+            // === webshots selection refresh attempt (end)
             sleep(10);
         }
         $this->output->set_content_type('application/json')->set_output(true);
@@ -680,6 +683,9 @@ class Measure extends MY_Controller {
             'pos' => 0
         );
         $r = $this->webshoots_model->recordUpdateWebshoot($result);
+        // === webshots selection refresh attempt (start)
+        $this->webshoots_model->selectionRefreshDecision($r); 
+        // === webshots selection refresh attempt (end)
         if ($r > 0) $result['state'] = true;
         $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }
