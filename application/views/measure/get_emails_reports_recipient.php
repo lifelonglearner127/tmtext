@@ -1,6 +1,10 @@
 <div class="modal-header">
 	<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 	<h3>Recipients Control Panel</h3>
+	<label class="checkbox">
+		<input type="checkbox" id='c_week_up_confirm' name='c_week_up_confirm' checked value="1">
+		Update screenshots to current week before sending
+	</label>
 </div>
 <div class="modal-body">
 	<input type='hidden' id="gerr_user_id" name="gerr_user_id" value="<?php echo $user_id; ?>">
@@ -82,7 +86,7 @@
 </div>
 <div class="modal-footer">
     <button onclick="newRecipient()" type='button' class="btn">New row</button>
-	<button type='button' href="javascript:void(0)" onclick="sendEmailScreensToSelected()" class="btn btn-success btn-rec-all-send">Send now</button>
+	<button type='button' id='send_now_btn' href="javascript:void(0)" onclick="sendEmailScreensToSelected()" disabled class="btn btn-success btn-rec-all-send disabled">Send now</button>
 	<button type='button' href="javascript:void(0)" onclick="sendEmailScreensToAll()" class="btn btn-primary btn-rec-all-send">Send to all</button>
 </div>
 
@@ -93,14 +97,18 @@
 		$("#send_report_ch_all").on('change', function(e) {
 			$(".report_bean_line").removeClass('selected');
 			if($(e.target).is(":checked")) {
-				$("input[type='checkbox'][name'send_report_ch']").attr('checked', true);
+				$("input[type='checkbox'][name='send_report_ch']").attr('checked', true);
 				$(".report_bean_line").addClass('selected');
+				$("#send_now_btn").removeAttr('disabled');
+				$("#send_now_btn").removeClass('disabled');
 			} else {
-				$("input[type='checkbox'][name'send_report_ch']").removeAttr('checked');
+				$("input[type='checkbox'][name='send_report_ch']").removeAttr('checked');
 				$(".report_bean_line").removeClass('selected');
+				$("#send_now_btn").attr('disabled', true);
+				$("#send_now_btn").addClass('disabled');
 			}
 		});
-		$("input[type='checkbox'][name'send_report_ch']").on('change', function(e) {
+		$("input[type='checkbox'][name='send_report_ch']").on('change', function(e) {
 			setTimeout(function() {
 				// ---- mark / unmark tr line as selected (start)
 				if($(e.target).is(":checked")) {
@@ -114,7 +122,14 @@
 					if($(val).is(':checked')) count_s++;
 				});
 				if(checked_count == count_s) $("#send_report_ch_all").attr('checked', true);
-				if(count_s == 0) $("#send_report_ch_all").removeAttr('checked'); 
+				if(count_s == 0) {
+					$("#send_report_ch_all").removeAttr('checked');
+					$("#send_now_btn").attr('disabled', true);
+					$("#send_now_btn").addClass('disabled');
+				} else {
+					$("#send_now_btn").removeAttr('disabled');
+					$("#send_now_btn").removeClass('disabled');
+				} 
 			}, 100);
 		});
 		// --- 'Recipients Control Panel' UI (end)
