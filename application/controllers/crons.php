@@ -372,12 +372,12 @@ class Crons extends MY_Controller {
                                           if ($obj->imported_data_id == $similar_item_imported_data_id) {
                                               continue;
                                           }
-                                          $n = parse_url( $vs['url']);
+                                          $n = parse_url($vs['url']);
                                           $customer=  strtolower($n['host']);
                                           $customer = str_replace("www1.", "",$customer);
                                           $customer =str_replace("www.", "", $customer);
                                           $customer=strtolower($this->sites_model->get_name_by_url($customer));
-
+                                          
                                             
                                           $similar_products_competitors[] = array(
                                               'imported_data_id' => $similar_item_imported_data_id,
@@ -445,9 +445,9 @@ class Crons extends MY_Controller {
                                 $data_similar = array();
 
                                 foreach ($rows as $key => $row) {
+                                    
                                     $data_similar= $this->imported_data_parsed_model->getByImId($row->imported_data_id);
                                     $n = parse_url($data_similar['url']);
-                                    
                                     $customer=  strtolower($n['host']);
                                     $customer = str_replace("www1.", "",$customer);
                                     $customer =str_replace("www.", "", $customer);
