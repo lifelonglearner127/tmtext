@@ -272,7 +272,7 @@
                             <h3>
                                 <span>
                                     Summary
-                                    <span id="summary_message"></span>
+                                    <!--<span id="summary_message"></span>-->
                                 </span>
                                 <a class="ml_10 research_arrow hideShow" onclick="return false;" href="#">
                                     <img src="<?php echo base_url();?>img/arrow.png">

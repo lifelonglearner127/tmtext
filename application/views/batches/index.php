@@ -4,8 +4,19 @@
                 <div class="span11">
                     Batch:
                     <div id="customer_dr" class="customer_dropdown"></div>
+                    <script> 
+                   
+                    $('button[name=cr]').toggle(function(){
+                        $('div #tcrawl').fadeIn(700);
+                    },function(){
+                        $('div #tcrawl').fadeOut(700);
+                    });
+                    </script>
+                    <button type="button" name="cr" class="btn btn-success ml_10">Crawl</button>
                     <?php echo form_dropdown('batches', $batches_list, array(), ' style="width: 145px;margin-left:20px"'); ?>
+
                     <script>
+                  
                     function doconfirm()
                     {
                         var batch_name = $('select[name="batches"]').find('option:selected').text();
@@ -47,12 +58,12 @@
                 </script>
                 <button class="btn btn-danger" type="button" style="margin-left:5px" onclick="doconfirm()">Delete</button>
                 <span class="ml_10">Add new:</span> <input type="text"  style="width:180px" name="new_batch">
-                <button id="new_batch" class="btn" type="button" style="margin-left:5px">Create</button>
+                <button id="new_batch" class="btn" type="button" style="margin-left:44px;margin-top:15px">Create</button>
 
             </div>
         </div>
 
-        <div class="row-fluid mt_20">
+        <div id ="tcrawl" class="row-fluid mt_20" style="display:none;">
             Items will be added to a batch if you choose an existing batch.
             <div class="span11 batch_info mt_10">
             </div>
@@ -135,3 +146,4 @@
             });
         </script>
         <?php echo form_close();?>
+       
