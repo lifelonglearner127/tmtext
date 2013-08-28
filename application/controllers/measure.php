@@ -363,7 +363,14 @@ class Measure extends MY_Controller {
         }
         foreach ($sites as $url) {
             $c_url = preg_replace('#^https?://#', '', $url);
-            $call_url = $this->webthumb_call_link($c_url);
+
+            if($c_url === 'bjs.com') {
+                $api_key = $this->config->item('snapito_api_secret');
+                $call_url = "http://api.snapito.com/web/$api_key/mc/$c_url";
+            } else {
+                $call_url = $this->webthumb_call_link($c_url);
+            }
+
             $crawl_l = $this->upload_record_webshoot($call_url, $c_url . "_big");
             $file = $crawl_l['dir'];
             $file_size = filesize($file);
@@ -561,7 +568,8 @@ class Measure extends MY_Controller {
     public function getwebshootdata() {
         $url = $this->input->post('url');
         $this->load->model('webshoots_model');
-        $res = $this->webshoots_model->getWebshootData($url);
+        $res = $this->webshoots_model->getWebshootDataStampDesc($url);
+        // $res = $this->webshoots_model->getWebshootData($url);
         $this->output->set_content_type('application/json')->set_output(json_encode($res));
     }
 
@@ -662,13 +670,20 @@ class Measure extends MY_Controller {
         $uid = $this->ion_auth->get_user_id();
         // === common params (end)
         $c_url = preg_replace('#^https?://#', '', $c_url);
-        $call_url = $this->webthumb_call_link($c_url);
+
+        if($c_url === 'bjs.com') {
+            $api_key = $this->config->item('snapito_api_secret');
+            $call_url = "http://api.snapito.com/web/$api_key/mc/$c_url";
+        } else {
+            $call_url = $this->webthumb_call_link($c_url);
+        }
         $crawl_l = $this->upload_record_webshoot($call_url, $c_url . "_big");
+
         $file = $crawl_l['dir'];
         $file_size = filesize($file);
-        if($file_size === false || $file_size < 2048) {
+        if($file_size === false || $file_size < 10000) {
             @unlink($file);
-            $crawl_l = $this->upload_record_webshoot($call_url, $c_url . "_big");
+            $crawl_l = $this->upload_record_webshoot($call_url, $c_url . "_big_s");
         }
         $result = array(
             'state' => false,

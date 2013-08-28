@@ -307,4 +307,14 @@ class Webshoots_model extends CI_Model {
         }
     }
 
+    function getWebshootDataStampDesc($url) {
+        $query = $this->db->where('url', $url)->order_by('stamp', 'desc')->get($this->tables['webshoots']);
+        $query_res = $query->result();
+        if(count($query_res) > 0) {
+            return $query_res;
+        } else {
+            return array();
+        }
+    }
+
 }
