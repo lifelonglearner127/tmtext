@@ -20,7 +20,18 @@ class Statistics_model extends CI_Model {
 
         return $query->result();
     }
+    function getbyimpid($imported_data_id){
+       
+        $query = $this->db->where('imported_data_id', $imported_data_id)
+              ->get('statistics_new');
 
+        $res=$query->row_array();
+        if(count($res>0)){
+            return $res;
+        }
+       
+        return false;
+    }
     function truncate()
     {
         $sql_cmd = "TRUNCATE TABLE `statistics`";

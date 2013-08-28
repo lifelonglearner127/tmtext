@@ -21,7 +21,7 @@
 						<td><span class='recipients_control_panel_txt'><?php echo $v->email; ?></span></td>
 						<td><span class='recipients_control_panel_txt'><?php echo ucfirst($v->day); ?></span></td>
 						<td nowrap>
-							<button type='button' onclick="sendRecipientReport('<?php echo $v->id; ?>', '<?php echo $v->email; ?>', '<?php echo $v->day; ?>')" class='btn btn-success btn-rec-ind-send'><i class='icon-fire'></i></button>
+							<button type='button' onclick="sendRecipientReport('<?php echo $v->id; ?>', '<?php echo $v->email; ?>', '<?php echo $v->day; ?>', '<?php echo $c_week ?>', '<?php echo $c_year ?>', '<?php echo $user_id ?>')" class='btn btn-success btn-rec-ind-send'><i class='icon-fire'></i></button>
 							<button type='button' onclick="deleteRecipient('<?php echo $v->id; ?>')" class='btn btn-danger btn-rec-remove'><i class='icon-remove'></i></button>
 						</td>
 					</tr>
