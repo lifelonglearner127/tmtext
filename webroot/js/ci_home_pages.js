@@ -86,7 +86,8 @@ function sendEmailScreensToSelected() {
 			selected_data: selected_data,
 			c_week: gerr_c_week,
 			c_year: gerr_c_year,
-			uid: gerr_user_id
+			uid: gerr_user_id,
+			c_week_up_confirm: $("#c_week_up_confirm").is(":checked")
 		};
 		$("#recipients_control_panel_modal").modal('hide');
 		$("#loader_emailsend_modal").modal('show');
@@ -116,7 +117,8 @@ function sendEmailScreensToAll() {
 		selected_data: selected_data,
 		c_week: gerr_c_week,
 		c_year: gerr_c_year,
-		uid: gerr_user_id
+		uid: gerr_user_id,
+		c_week_up_confirm: $("#c_week_up_confirm").is(":checked")
 	};
 	$("#recipients_control_panel_modal").modal('hide');
 	$("#loader_emailsend_modal").modal('show');

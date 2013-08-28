@@ -20,7 +20,7 @@ class Webshoots_model extends CI_Model {
             'year' => $c_year,
             'week' => $c_week
         );
-        $check_query = $this->db->where($check_obj)->order_by('stamp', 'desc')->limit(6)->get($this->tables['webshoots']);
+        $check_query = $this->db->where($check_obj)->order_by('stamp', 'desc')->get($this->tables['webshoots']);
         $res = $check_query->result();
         $images = array();
         if(count($res) > 0) {
