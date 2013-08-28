@@ -14,6 +14,16 @@ class Webshoots_model extends CI_Model {
         parent::__construct();
     }
 
+    public function getDistinctEmailScreens($c_week, $c_year, $uid) {
+        $check_obj = array(
+            'uid' => $uid,
+            'year' => $c_year,
+            'week' => $c_week
+        );
+        $check_query = $this->db->get_where($this->tables['webshoots'], $check_obj)->limit(6);
+        return $check_query->result();
+    }
+
     public function updateWebshootById($up_object, $id) {
         return $this->db->update($this->tables['webshoots'], $up_object, array('id' => $id));
     }

@@ -3,6 +3,9 @@
 	<h3>Recipients Control Panel</h3>
 </div>
 <div class="modal-body">
+	<input type='hidden' id="gerr_user_id" name="gerr_user_id" value="<?php echo $user_id; ?>">
+	<input type='hidden' id="gerr_c_week" name="gerr_c_week" value="<?php echo $c_week; ?>">
+	<input type='hidden' id="gerr_c_year" name="gerr_c_year" value="<?php echo $c_year; ?>">
 	<div id="recipients_control_panel_body" class='recipients_control_panel_body'>
 		<?php if(count($rec) > 0) { ?>
 			<table class='table table-striped'>

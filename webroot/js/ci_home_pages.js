@@ -68,6 +68,9 @@ function openScreensModalSlider() {
 }
 
 function sendEmailScreensToSelected() {
+	var gerr_user_id = $("#gerr_user_id").val();
+	var gerr_c_week = $("#gerr_c_week").val();
+	var gerr_c_year = $("#gerr_c_year").val();
 	var selected_data = [];
 	var selected_items = $("input[type='checkbox'][name='send_report_ch']:checked").length;
 	if(selected_items > 0) {
@@ -80,7 +83,10 @@ function sendEmailScreensToSelected() {
 			selected_data.push(mid);
 		});
 		var send_data = {
-			selected_data: selected_data
+			selected_data: selected_data,
+			c_week: gerr_c_week,
+			c_year: gerr_c_year,
+			uid: gerr_user_id
 		};
 		$("#recipients_control_panel_modal").modal('hide');
 		$("#loader_emailsend_modal").modal('show');
@@ -94,6 +100,9 @@ function sendEmailScreensToSelected() {
 }
 
 function sendEmailScreensToAll() {
+	var gerr_user_id = $("#gerr_user_id").val();
+	var gerr_c_week = $("#gerr_c_week").val();
+	var gerr_c_year = $("#gerr_c_year").val();
 	var selected_data = [];
 	$(".report_bean_line").each(function(index, value) {
 		var mid = {
@@ -104,7 +113,10 @@ function sendEmailScreensToAll() {
 		selected_data.push(mid);
 	});
 	var send_data = {
-		selected_data: selected_data
+		selected_data: selected_data,
+		c_week: gerr_c_week,
+		c_year: gerr_c_year,
+		uid: gerr_user_id
 	};
 	$("#recipients_control_panel_modal").modal('hide');
 	$("#loader_emailsend_modal").modal('show');
@@ -118,7 +130,10 @@ function sendRecipientReport(id, email, day, c_week, c_year, uid) {
 	var send_data = {
 		id: id,
 		email: email,
-		day: day
+		day: day,
+		c_week: c_week,
+		c_year: c_year,
+		uid: uid
 	};
 	$("#recipients_control_panel_modal").modal('hide');
 	$("#loader_emailsend_modal").modal('show');
@@ -286,10 +301,16 @@ function internalRecipientFunc(){
         }
     });
     $('.fire_rec').click(function(){
+    	var gerr_user_id = $("#gerr_user_id").val();
+		var gerr_c_week = $("#gerr_c_week").val();
+		var gerr_c_year = $("#gerr_c_year").val();
         var send_data = {
             id: $('.fire_rec').attr('id'),
             email: $(this).parent().parent().data('email'),
-            day: $(this).parent().parent().data('day')
+            day: $(this).parent().parent().data('day'),
+            c_week: gerr_c_week,
+			c_year: gerr_c_year,
+			uid: gerr_user_id
         };
         var send_recipient_report = $.post(base_url + 'index.php/measure/send_recipient_report', send_data, function(data) {
             $("#recipients_control_panel_modal").modal('hide');

@@ -166,6 +166,12 @@ class Measure extends MY_Controller {
         $id = $this->input->post('id');
         $email = $this->input->post('email');
         $day = $this->input->post('day');
+        $uid = $this->input->post('uid');
+        $c_week = $this->input->post('c_week');
+        $c_year = $this->input->post('c_year');
+        // $screens = $this->webshoots_model->getDistinctEmailScreens($c_week, $c_year, $uid);
+        // $this->output->set_content_type('application/json')->set_output(json_encode($screens));
+        // die(var_dump($screens));
         // --------------- email sender (start) ---------------
         // -- email config (dev configurations) (start) --
         $this->load->library('email');
