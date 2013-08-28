@@ -960,9 +960,9 @@ class Imported_data_parsed_model extends CI_Model {
          $this->db->insert('settings', $d); 
          $start=0; 
         }
-        $limit=30;
+        $limit=100;
         
-        $start =$start*30+1;
+        $start =$start*100+1;
         
         $this->db->select('p.imported_data_id')
             ->from($this->tables['imported_data_parsed'] . ' as p');
