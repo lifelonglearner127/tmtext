@@ -133,7 +133,8 @@ function sendRecipientReport(id, email, day, c_week, c_year, uid) {
 		day: day,
 		c_week: c_week,
 		c_year: c_year,
-		uid: uid
+		uid: uid,
+		c_week_up_confirm: $("#c_week_up_confirm").is(":checked")
 	};
 	$("#recipients_control_panel_modal").modal('hide');
 	$("#loader_emailsend_modal").modal('show');
@@ -347,7 +348,8 @@ function internalRecipientFunc(){
             day: $(this).parent().parent().data('day'),
             c_week: gerr_c_week,
 			c_year: gerr_c_year,
-			uid: gerr_user_id
+			uid: gerr_user_id,
+			c_week_up_confirm: $("#c_week_up_confirm").is(":checked")
         };
         var send_recipient_report = $.post(base_url + 'index.php/measure/send_recipient_report', send_data, function(data) {
             $("#recipients_control_panel_modal").modal('hide');

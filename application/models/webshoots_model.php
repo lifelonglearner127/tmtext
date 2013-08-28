@@ -20,8 +20,16 @@ class Webshoots_model extends CI_Model {
             'year' => $c_year,
             'week' => $c_week
         );
-        $check_query = $this->db->get_where($this->tables['webshoots'], $check_obj)->limit(6);
-        return $check_query->result();
+        $check_query = $this->db->where($check_obj)->order_by('stamp', 'desc')->limit(6)->get($this->tables['webshoots']);
+        $res = $check_query->result();
+        $images = array();
+        if(count($res) > 0) {
+            foreach ($res as $k => $v) {
+                $fs = filesize($v->dir_img); 
+                if($fs !== false && $fs > 10000) $images[] = $v->dir_img;
+            }
+        }
+        return $images;
     }
 
     public function updateWebshootById($up_object, $id) {
