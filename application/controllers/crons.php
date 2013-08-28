@@ -9,7 +9,8 @@ class Crons extends MY_Controller {
   			'index' => true,
   			'screenscron' => true,
             'do_stats' => true,
-            'duplicate_content'=>true
+            'duplicate_content'=>true,
+            'do_stats_new'=> true
   		));
  	}
 
