@@ -6,7 +6,6 @@ from scrapy.http import Request
 import sys
 import re
 import datetime
-import nltk
 
 ################################
 # Run with 
@@ -22,13 +21,12 @@ class WalmartSpider(BaseSpider):
     start_urls = [
         "http://www.walmart.com/cp/All-Departments/121828",
     ]
+    root_url = "http://www.walmart.com"
 
     def parse(self, response):
         hxs = HtmlXPathSelector(response)
         links = hxs.select("//div[@class='MidContainer']/div[3]//a[@class='NavM']")
         parent_links = hxs.select("//div[@class='MidContainer']/div[3]//a[@class='NavXLBold']")
-
-        root_url = "http://www.walmart.com"
 
         for link in links:
             item = CategoryItem()
@@ -44,13 +42,13 @@ class WalmartSpider(BaseSpider):
                 item['parent_text'] = parents[-1].select('text()').extract()[0]
                 item['parent_url'] = parents[-1].select('@href').extract()[0]
 
-                item['parent_url'] = Utils.add_domain(item['parent_url'], root_url)
+                item['parent_url'] = Utils.add_domain(item['parent_url'], self.root_url)
 
             item['text'] = link.select('text()').extract()[0]
             item['url'] = link.select('@href').extract()[0]
 
             # add domain if relative URL
-            item['url'] = Utils.add_domain(item['url'], root_url)
+            item['url'] = Utils.add_domain(item['url'], self.root_url)
 
             item['level'] = 0
 
@@ -66,7 +64,7 @@ class WalmartSpider(BaseSpider):
             item['url'] = link.select('@href').extract()[0]
 
             # add domain if relative URL
-            item['url'] = Utils.add_domain(item['url'], root_url)
+            item['url'] = Utils.add_domain(item['url'], self.root_url)
 
             item['level'] = 1
 
@@ -80,6 +78,8 @@ class WalmartSpider(BaseSpider):
         hxs = HtmlXPathSelector(response)
         item = response.meta['item']
 
+        # Extract description title, text and wordcount (if any)
+
         description_holder = hxs.select("//div[@id='detailedPageDescriptionCopyBlock']")
         
         # try to find description title in <b> tag in the holder;
@@ -89,6 +89,8 @@ class WalmartSpider(BaseSpider):
         if description_title:
             item['description_title'] = description_title[0]
 
+
+        #TODO: fix bug for ex http://www.walmart.com/cp/414099?povid=cat121828-env999999-moduleA072012-lLinkGNAV1_Baby_Nursery
         description_texts = description_holder.select(".//text()[not(ancestor::b)]").extract()
         # if the list is not empty and contains at least one non-whitespace item
         if description_texts and reduce(lambda x,y: x or y, [line.strip() for line in description_texts]):
@@ -101,7 +103,104 @@ class WalmartSpider(BaseSpider):
         else:
             item['description_wc'] = 0
 
-        yield item
+
+        # Extract number of items
+
+        # find if there are any products on this page
+        product_holders = hxs.select("//a[@class='prodLink ListItemLink']").extract()
+        if product_holders:
+            # parse every page and collect total number of products
+            print "URL ", response.url, " HAS PRODUCTS"
+            yield Request(response.url, callback = self.parsePage, meta = {'item' : item})
+
+        else:
+            # look for links to subcategory pages in menu
+            subcategories_links = hxs.select("//div[@class='G1001 LeftNavRM']/div[@class='yuimenuitemlabel browseInOuter leftnav-item leftnav-depth-1']/a[@class='browseIn']")
+            # new categories are subcategories of current one - calculate and store their level
+            parent_item = item
+            level = parent_item['level'] - 1
+            # if we found them, create new category for each and parse it from the beginning
+            if subcategories_links:
+
+                print "URL ", response.url, " CALLING PARSEPAGE"
+                for subcategory in subcategories_links:
+
+                    #TODO: for some of these there are See All... subcats, which lead to duplicates. see if we can just exclude all of those
+                    item = CategoryItem()
+                    item['text'] = subcategory.select("text()").extract()[0].strip()
+                    item['url'] = Utils.add_domain(subcategory.select("@href").extract()[0], self.root_url)
+                    item['level'] = level
+
+                    yield Request(item['url'], callback = self.parsePage, meta = {'item' : item, 'parent_item' : parent_item})
+
+            # if we can't find either products on the page or subcategory links
+            else:
+                print "URL", response.url, " NO SUBCATs"
+                item['nr_products'] = 0
+                #yield item
+
+
+    # parse a product page and calculate number of products, accumulate them from all pages
+    def parsePage(self, response):
+
+        print "IN PARSEPAGE"
+        hxs = HtmlXPathSelector(response)
+        item = response.meta['item']
+
+        if 'parent_item' in response.meta:
+            parent_item = response.meta['parent_item']
+            item['parent_text'] = parent_item['text']
+            item['parent_url'] = parent_item['url']
+            if 'parent_text' in parent_item:
+                item['grandparent_text'] = parent_item['parent_text']
+                item['grandparent_url'] = parent_item['parent_url']
+            if 'nr_products' not in parent_item:
+                parent_nr_products = 0
+            else:
+                parent_nr_products = parent_item['nr_products']
+
+        # initialize product URL list
+        if 'products' not in response.meta:
+            products = []
+        else:
+            products = response.meta['products']
+
+        # # if this is the first page, initialize number of products
+        # if 'nr_products' not in item:
+        #     old_nr_products = 0
+        # else:
+        #     old_nr_products = item['nr_products']
+
+        # find number of products on this page
+        product_links = hxs.select("//a[@class='prodLink ListItemLink']/@href").extract()
+
+        # gather all products in this (sub)category
+        products += product_links
+
+        #this_nr_products = len(product_links)
+
+        #item['nr_products'] = old_nr_products + this_nr_products
+        # if 'parent_item' in response.meta:
+        #     parent_item['nr_products'] = parent_nr_products + item['nr_products']
+        # find URL to next page, parse it as well
+        next_page = hxs.select("//a[@class='link-pageNum' and text()=' Next ']/@href").extract()
+        if next_page:
+            page_url = Utils.add_domain(next_page[0], self.root_url)
+            request = Request(url = page_url, callback = self.parsePage, meta = {'item' : item, 'products' : products})
+            if 'parent_item' in response.meta:
+                request.meta['parent_item'] = parent_item
+            yield request
+
+        # if no next page, return current results; and return parent category page
+        else:
+
+            item['nr_products'] = len(set(products))
+            yield item
+
+            # #TODO: this is not good - when should we yield parent category?
+            # if 'parent_item' in response.meta:
+            #     yield parent_item
+
 
 
 class Utils():
@@ -135,8 +234,7 @@ class BestsellerSpider(BaseSpider):
             dept = department.select("text()").extract()[0]
             dept_url = department.select("@href").extract()[0]
 
-            root_url = "http://www.walmart.com"
-            url = root_url + dept_url
+            url = self.root_url + dept_url
             request = Request(url, callback = self.parseDepartment)
             request.meta['department'] = dept
 
@@ -153,7 +251,6 @@ class BestsellerSpider(BaseSpider):
         #TODO: what if there is pagination? haven't encountered it so far
 
         products = hxs.select("//div[@class='prodInfo']")
-        root_url = "http://www.walmart.com"
 
         # counter to keep track of product's rank
         rank = 0
@@ -173,7 +270,7 @@ class BestsellerSpider(BaseSpider):
                 item['list_name'] = product_name[0]
 
             if product_url:
-                item['url'] = root_url + product_url[0]
+                item['url'] = self.root_url + product_url[0]
             else:
                 # if there's no url move on to the next product
                 continue
