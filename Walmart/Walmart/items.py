@@ -11,7 +11,7 @@ class CategoryItem(Item):
     special = Field() # is it a special category? (1 or nothing)
     description_text = Field() # text of category description (if any)
     description_title = Field() # title of category description (if any)
-    decription_wc = Field() # number of words in description text, 0 if no description
+    description_wc = Field() # number of words in description text, 0 if no description
     # keyword density x 2
     no_products = Field() # number of items in the category
 

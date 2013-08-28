@@ -6,6 +6,7 @@ from scrapy.http import Request
 import sys
 import re
 import datetime
+import nltk
 
 ################################
 # Run with 
@@ -93,6 +94,12 @@ class WalmartSpider(BaseSpider):
         if description_texts and reduce(lambda x,y: x or y, [line.strip() for line in description_texts]):
             # replace all whitespace with one space, strip, and remove empty texts; then join them
             item['description_text'] = " ".join([re.sub("\s+"," ", description_text.strip()) for description_text in description_texts if description_text.strip()])
+
+        if 'description_text' in item:
+            tokenized = filter(None, re.split("[\s\W]+", item['description_text']))
+            item['description_wc'] = len(tokenized)
+        else:
+            item['description_wc'] = 0
 
         yield item
 
