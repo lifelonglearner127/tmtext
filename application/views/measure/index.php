@@ -205,7 +205,7 @@
 
 <div class="modal hide fade ci_hp_modals" id='loader_emailsend_modal'>
 	<div class="modal-body">
-		<p><img src="<?php echo base_url();?>img/loader_scr.gif">&nbsp;&nbsp;&nbsp;Reports are sending, please wait for it.</p>
+		<p><img src="<?php echo base_url();?>img/loader_scr.gif">&nbsp;&nbsp;&nbsp;Sending report. Please wait...</p>
 	</div>
 </div>
 

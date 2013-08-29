@@ -146,7 +146,8 @@ class Measure extends MY_Controller {
             $day = $v['day'];
             $email = $v['email'];
             $id = $v['id'];
-            $this->email->from('ishulgin8@gmail.com', "Content Solutions - Home Pages Report");
+            $this->email->from('bayclimber@gmail.com', "Content Solutions - Home Pages Report");
+            // $this->email->from('ishulgin8@gmail.com', "Content Solutions - Home Pages Report");
             $this->email->to("$email");
             $this->email->subject('Content Solutions - Home Pages Report');
             $this->email->message("Report screenshots in attachment. Preference day: $day.");
@@ -164,6 +165,42 @@ class Measure extends MY_Controller {
         $this->output->set_content_type('application/json')->set_output(json_encode($this->email->print_debugger()));
     }
 
+    // public function send_recipient_report() {
+    //     $this->load->model('webshoots_model');
+    //     $id = $this->input->post('id');
+    //     $email = $this->input->post('email');
+    //     $day = $this->input->post('day');
+    //     $uid = $this->input->post('uid');
+    //     $c_week = $this->input->post('c_week');
+    //     $c_year = $this->input->post('c_year');
+    //     // --------------- email sender (start) ---------------
+    //     // -- email config (dev configurations) (start) --
+    //     $this->load->library('email');
+    //     $config['protocol'] = 'sendmail';
+    //     $config['mailpath'] = '/usr/sbin/sendmail';
+    //     $config['charset'] = 'UTF-8';
+    //     $config['wordwrap'] = TRUE;
+    //     $this->email->initialize($config);
+    //     // -- email config (dev configurations) (end) --
+    //     $this->email->from('bayclimber@gmail.com', "Content Solutions - Home Pages Report");
+    //     // $this->email->from('ishulgin8@gmail.com', "Content Solutions - Home Pages Report");
+    //     $this->email->to("$email");
+    //     $this->email->subject('Content Solutions - Home Pages Report');
+    //     $this->email->message("Report screenshots in attachment. Preference day: $day.");
+    //     // --- attachments (start)
+    //     $screens = $this->webshoots_model->getDistinctEmailScreens($c_week, $c_year, $uid);
+    //     if(count($screens) > 0) {
+    //         foreach ($screens as $key => $value) {
+    //             $path = $value;
+    //             $this->email->attach("$path");
+    //         }
+    //     }
+    //     // --- attachments (end)
+    //     $this->email->send();
+    //     $this->output->set_content_type('application/json')->set_output(json_encode($this->email->print_debugger()));
+    //     // --------------- email sender (end) -----------------
+    // }
+
     public function send_recipient_report() {
         $this->load->model('webshoots_model');
         $id = $this->input->post('id');
@@ -179,12 +216,14 @@ class Measure extends MY_Controller {
         $config['mailpath'] = '/usr/sbin/sendmail';
         $config['charset'] = 'UTF-8';
         $config['wordwrap'] = TRUE;
+        $config['mailtype'] = 'html';
         $this->email->initialize($config);
         // -- email config (dev configurations) (end) --
-        $this->email->from('ishulgin8@gmail.com', "Content Solutions - Home Pages Report");
+        $this->email->from('bayclimber@gmail.com', "Content Solutions - Home Pages Report");
         $this->email->to("$email");
         $this->email->subject('Content Solutions - Home Pages Report');
-        $this->email->message("Report screenshots in attachment. Preference day: $day.");
+        $msg = "<p>Report screenshots in attachment. Preference day: $day.</p>";
+        $this->email->message($msg);
         // --- attachments (start)
         $screens = $this->webshoots_model->getDistinctEmailScreens($c_week, $c_year, $uid);
         if(count($screens) > 0) {
