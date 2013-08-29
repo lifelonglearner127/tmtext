@@ -18,8 +18,9 @@ for line in f:
 	item = json.loads(line.strip())
 
 	if field in item:
-		fields.append(item[field])
+		fields.append(item[field].encode("utf-8", errors='ignore'))
 
-pprint(set(fields))
+for el in sorted(fields):
+	print el
 
 f.close()

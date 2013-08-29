@@ -58,7 +58,12 @@ class WalmartSpider(BaseSpider):
             #yield item
 
             # send category page to parseCategory function to extract description and number of products and add them to the item
-            yield Request(item['url'], callback = self.parseCategory, meta = {'item' : item})
+
+            # to avoid duplicates, only parse highest level categories. those should get to parsing lower level categories as well. see if there are any misses
+            #TODO: check this
+            item['nr_products'] = -1
+            yield item
+            #yield Request(item['url'], callback = self.parseCategory, meta = {'item' : item})
 
         for link in parent_links:
             item = CategoryItem()
@@ -84,7 +89,7 @@ class WalmartSpider(BaseSpider):
         # Extract description title, text and wordcount (if any)
 
         description_holder = hxs.select("//div[@id='detailedPageDescriptionCopyBlock']")
-        
+
         # try to find description title in <b> tag in the holder;
         # if it's not find, try to find it in the first <p> if the description
         # if fund there, exclude it from the description body
@@ -107,8 +112,8 @@ class WalmartSpider(BaseSpider):
             #TODO:
             # sometimes here there is no description title? there is description text but no description title?
 
-            if 'description_title' in item:
-                (item['keyword_count'], item['keyword_density']) = Utils.phrases_freq(item['description_title'], item['description_text'])
+            #if 'description_title' in item:
+            (item['keyword_count'], item['keyword_density']) = Utils.phrases_freq(item['description_title'], item['description_text'])
 
         else:
             item['description_wc'] = 0
@@ -122,7 +127,7 @@ class WalmartSpider(BaseSpider):
             # parse every page and collect total number of products
             print "URL ", response.url, " HAS PRODUCTS"
 
-            item['nr_products'] = 1
+            # item['nr_products'] = 1
             yield item
             #yield Request(response.url, callback = self.parsePage, meta = {'item' : item})
 
@@ -138,9 +143,12 @@ class WalmartSpider(BaseSpider):
                 print "URL ", response.url, " CALLING PARSEPAGE"
                 for subcategory in subcategories_links:
 
-                    #TODO: for some of these there are See All... subcats, which lead to duplicates. see if we can just exclude all of those
                     item = CategoryItem()
                     item['text'] = subcategory.select("text()").extract()[0].strip()
+
+                    # # take care of unicode
+                    # item['text'] = item['text'].encode("utf-8", errors=ignore)
+                    
                     item['url'] = Utils.add_domain(subcategory.select("@href").extract()[0], self.root_url)
                     item['level'] = level
 
@@ -151,10 +159,10 @@ class WalmartSpider(BaseSpider):
                     item['parent_text'] = parent_item['text']
                     item['parent_url'] = parent_item['url']
 
-                    #TODO: i don't even know this
-                    item['description_wc'] = 0
-                    yield item
-                    #yield Request(item['url'], callback = self.parseCategory, meta = {'item' : item})
+                    # #TODO: i don't even know this
+                    # item['description_wc'] = 0
+                    # yield item
+                    yield Request(item['url'], callback = self.parseCategory, meta = {'item' : item})
                 yield parent_item
                     #yield Request(item['url'], callback = self.parsePage, meta = {'item' : item, 'parent_item' : parent_item})
 
@@ -285,8 +293,9 @@ class Utils():
         # tokenize
         tokens = filter(None, re.split("[^\w\.,]+", text))
 
-        # lowercase and eliminate non-character words except for punctuation marks
-        tokens = [re.sub("[^\w,\.?!:]", "", token.lower()) for token in tokens]
+        # lowercase and eliminate non-character words. eliminating punctuation marks will make so that matches can cross sentence boundaries & stuff
+        #tokens = [re.sub("[^\w,\.?!:]", "", token.lower()) for token in tokens]
+        tokens = [re.sub("[^\w]", "", token.lower()) for token in tokens]
 
         #return " ".join(tokens)
         return tokens
