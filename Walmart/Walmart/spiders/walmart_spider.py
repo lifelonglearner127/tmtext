@@ -60,9 +60,9 @@ class WalmartSpider(BaseSpider):
             # send category page to parseCategory function to extract description and number of products and add them to the item
 
             # to avoid duplicates, only parse highest level categories. those should get to parsing lower level categories as well. see if there are any misses
-            #TODO: check this
-            item['nr_products'] = -1
-            yield item
+            # #TODO: check this
+            # item['nr_products'] = -1
+            # yield item
             #yield Request(item['url'], callback = self.parseCategory, meta = {'item' : item})
 
         for link in parent_links:
@@ -97,11 +97,11 @@ class WalmartSpider(BaseSpider):
         if description_title:
             item['description_title'] = description_title[0]
 
+        description_texts = description_holder.select("./div[position()<2]//p/text()[not(ancestor::b)] | ./p/text()[not(ancestor::b)]").extract()
 
-        #TODO: fix bug for ex http://www.walmart.com/cp/414099?povid=cat121828-env999999-moduleA072012-lLinkGNAV1_Baby_Nursery
-        description_texts = description_holder.select(".//text()[not(ancestor::b)]").extract()
         # if the list is not empty and contains at least one non-whitespace item
         if description_texts and reduce(lambda x,y: x or y, [line.strip() for line in description_texts]):
+
             # replace all whitespace with one space, strip, and remove empty texts; then join them
             item['description_text'] = " ".join([re.sub("\s+"," ", description_text.strip()) for description_text in description_texts if description_text.strip()])
 
@@ -109,10 +109,13 @@ class WalmartSpider(BaseSpider):
             tokenized = Utils.normalize_text(item['description_text'])
             item['description_wc'] = len(tokenized)
 
-            #TODO:
-            # sometimes here there is no description title? there is description text but no description title?
+            # sometimes here there is no description title because of malformed html
+            # if we can find description text but not description title, title is probably malformed - get first text in div instead
+            if 'description_title' not in item:
+                desc_texts = description_holder.select("./text()").extract()
+                desc_texts = [text for text in desc_texts if text.strip()]
+                item['description_title'] = desc_texts[0]
 
-            #if 'description_title' in item:
             (item['keyword_count'], item['keyword_density']) = Utils.phrases_freq(item['description_title'], item['description_text'])
 
         else:
@@ -125,7 +128,7 @@ class WalmartSpider(BaseSpider):
         product_holders = hxs.select("//a[@class='prodLink ListItemLink']").extract()
         if product_holders:
             # parse every page and collect total number of products
-            print "URL ", response.url, " HAS PRODUCTS"
+            #print "URL ", response.url, " HAS PRODUCTS"
 
             # item['nr_products'] = 1
             yield item
@@ -140,7 +143,7 @@ class WalmartSpider(BaseSpider):
             # if we found them, create new category for each and parse it from the beginning
             if subcategories_links:
 
-                print "URL ", response.url, " CALLING PARSEPAGE"
+                #print "URL ", response.url, " CALLING PARSEPAGE"
                 for subcategory in subcategories_links:
 
                     item = CategoryItem()
@@ -148,7 +151,7 @@ class WalmartSpider(BaseSpider):
 
                     # # take care of unicode
                     # item['text'] = item['text'].encode("utf-8", errors=ignore)
-                    
+
                     item['url'] = Utils.add_domain(subcategory.select("@href").extract()[0], self.root_url)
                     item['level'] = level
 
@@ -168,15 +171,15 @@ class WalmartSpider(BaseSpider):
 
             # if we can't find either products on the page or subcategory links
             else:
-                print "URL", response.url, " NO SUBCATs"
-                item['nr_products'] = 0
+                #print "URL", response.url, " NO SUBCATs"
+                item['nr_products'] = -2
                 yield item
 
 
     # parse a product page and calculate number of products, accumulate them from all pages
     def parsePage(self, response):
 
-        print "IN PARSEPAGE"
+        #print "IN PARSEPAGE"
         hxs = HtmlXPathSelector(response)
         item = response.meta['item']
 
