@@ -779,6 +779,10 @@ $(document).ready(function() {
 
     $("#an_search").live('click', function() {//max
         
+       var ci_product_item_view = $.cookie('ci_product_item_view_selected');
+       if (typeof(ci_product_item_view) !== 'undefined') {
+           $.removeCookie('ci_product_item_view_selected', {path: '/'}); // destroy
+       }
         $.removeCookie('product_batch', {path: '/'});
         $.removeCookie('product_batch_items', {path: '/'});
         var dropdown = $("select[name='customers_list']").msDropdown().data("dd");
@@ -853,7 +857,12 @@ $(document).ready(function() {
     });
 
     $("#batchess").live('change', function() {//max
-
+       
+       var ci_product_item_view = $.cookie('ci_product_item_view_selected');
+       if (typeof(ci_product_item_view) !== 'undefined') {
+           $.removeCookie('ci_product_item_view_selected', {path: '/'}); // destroy
+       }
+        
         $.post(base_url + 'index.php/research/filterCustomerByBatch', {'batch': $("#batchess").val()}, function(data) {
             if (data != '') {
 

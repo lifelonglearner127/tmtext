@@ -1087,12 +1087,14 @@ function matches_count($im_data_id){
             $data_import = $this->imported_data_parsed_model->getByImId($im_data_id);
 
             $same_pr = $this->imported_data_parsed_model->getSameProductsHuman($im_data_id);
-
+            
             // get similar by parsed_attributes
             if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
 
                 $strict = $this->input->post('strict');
                 $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], $strict);
+                
+                
             }
 
             if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['UPC/EAN/ISBN'])) {
@@ -1263,6 +1265,35 @@ public function gridview() {
 
                 $strict = $this->input->post('strict');
                 $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], $strict);
+                $rows = $this->similar_data_model->get_group_id($im_data_id);
+               
+                //echo "<pre>";
+               // print_r($rows);
+                if(count($rows)>0){
+                    
+                    foreach($same_pr as $val){
+                        foreach($rows as  $key =>$row){
+                           if($row['group_id']==$val['imported_data_id']){
+                               unset($rows[$key]);
+                           }
+                        }
+                    }
+                }
+                 if(count($rows)>0){
+                    $url=array();
+                    foreach($rows as $row){
+                        $data_similar= $this->imported_data_parsed_model->getByImId($row['group_id']);
+                        $data_similar['imported_data_id'] = $row['group_id'];
+                        $n = parse_url($data_similar['url']);
+                        $customer = $n['host'];
+                        $data_similar[$key]['customer'] = $customer;
+                         
+                        if (!in_array($customer,$url)){
+                            $url[]=$customer;
+                            $same_pr[]=$data_similar;
+                        }
+                    }
+                }
             }
 
             if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['UPC/EAN/ISBN'])) {
