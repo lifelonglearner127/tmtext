@@ -1431,7 +1431,7 @@ class Imported_data_parsed_model extends CI_Model {
                                     }
                                 }
                             } else {
-                                if (leven_algoritm(strtolower($val1['product_name']), strtolower($val['product_name'])) > 45) {
+                                if (leven_algoritm(strtolower($val1['product_name']), strtolower($val['product_name'])) > 40) {
                                     $urls[] = $this->get_base_url($val1['url']);
                                     $groups[$im_data_id][] = $key;
                                 }
