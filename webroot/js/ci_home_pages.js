@@ -141,6 +141,7 @@ function sendRecipientReport(id, email, day, c_week, c_year, uid) {
 	$("#recipients_control_panel_modal").modal('hide');
 	$("#loader_emailsend_modal").modal('show');
 	var send_recipient_report = $.post(base_url + 'index.php/measure/send_recipient_report', send_data, function(data) {
+		console.log(data);
 		$("#loader_emailsend_modal").modal('hide');
 		$("#success_emailsend_modal").modal('show');
 	});

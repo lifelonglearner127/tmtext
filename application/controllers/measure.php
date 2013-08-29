@@ -222,7 +222,9 @@ class Measure extends MY_Controller {
         $this->email->from('bayclimber@gmail.com', "Content Solutions - Home Pages Report");
         $this->email->to("$email");
         $this->email->subject('Content Solutions - Home Pages Report');
-        $msg = "<p>Report screenshots in attachment. Preference day: $day.</p>";
+        // $msg = "<p>Report screenshots in attachment. Preference day: $day.</p>";
+        $data_et['day'] = $day;
+        $msg = $this->load->view('measure/rec_report_email_template', $data_et, true);
         $this->email->message($msg);
         // --- attachments (start)
         if(count($screens) > 0) {
