@@ -14,19 +14,46 @@ class Webshoots_model extends CI_Model {
         parent::__construct();
     }
 
+    // public function getDistinctEmailScreens($c_week, $c_year, $uid) {
+    //     $check_obj = array(
+    //         'uid' => $uid,
+    //         'year' => $c_year,
+    //         'week' => $c_week
+    //     );
+    //     $check_query = $this->db->where($check_obj)->order_by('stamp', 'desc')->get($this->tables['webshoots']);
+    //     $res = $check_query->result();
+    //     $images = array();
+    //     if(count($res) > 0) {
+    //         foreach ($res as $k => $v) {
+    //             $fs = filesize($v->dir_img); 
+    //             if($fs !== false && $fs > 10000) $images[] = $v->dir_img;
+    //         }
+    //     }
+    //     return $images;
+    // }
+
     public function getDistinctEmailScreens($c_week, $c_year, $uid) {
+        $images = array();
         $check_obj = array(
             'uid' => $uid,
             'year' => $c_year,
             'week' => $c_week
         );
-        $check_query = $this->db->where($check_obj)->order_by('stamp', 'desc')->get($this->tables['webshoots']);
-        $res = $check_query->result();
-        $images = array();
-        if(count($res) > 0) {
-            foreach ($res as $k => $v) {
-                $fs = filesize($v->dir_img); 
-                if($fs !== false && $fs > 10000) $images[] = $v->dir_img;
+        $sel_query = $this->db->where($check_obj)->order_by('stamp', 'desc')->get($this->tables['webshoots_select']);
+        $sel_res = $sel_query->result();
+        if(count($sel_res) > 0) {
+            $screen_ids = array();
+            foreach ($sel_res as $ks => $vs) {
+                $screen_ids[] = $vs->screen_id;
+            }
+            $screen_ids = array_unique($screen_ids);
+            $shots_query = $this->db->where_in('id', $screen_ids)->get($this->tables['webshoots']);
+            $shots_res = $shots_query->result();
+            if(count($shots_res) > 0) {
+                foreach($shots_res as $k => $v) {
+                    $fs = filesize($v->dir_img); 
+                    if($fs !== false && $fs > 10000) $images[] = $v->dir_img;
+                }
             }
         }
         return $images;
