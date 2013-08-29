@@ -135,8 +135,8 @@ foreach ($same_pr as $ks => $vs) {
                                                 echo "style='font-weight: bold;'";
                                             }
                                             ?>class="product_price">$<?php echo sprintf("%01.2f", floatval($last_price->price)); ?></span></p>
-                                        <!--    //Max                            -->
-                                    </td>
+                                        <!--    //Max                           -->
+                                    </td> 
                                     <?php
                                 } else {
                                     ?>
