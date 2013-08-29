@@ -68,24 +68,18 @@
 				$('button#crawl').removeAttr("disabled");
 			});
 
-            $('button#crawl').toggle(function(){
-            	$('#Current_List > ul').fadeIn(400);
-            }, function(){
-            	$('#Current_List > ul').fadeOut(400);
-            });
-            $('#Current_List > ul').css({"display":"none"});
             
             </script>
 
 
 			<h3 class="span3 current_list_title">Crawl list: <br/><small nowrap></small></h3>
-			<button id="crawl" class="btn new_btn btn-success mt_15 ml_15">Crawl</button>
+			
             <select name="batch" class="span4 pull-left mt_15" style="width: 125px;" id="batches">
 				<?php foreach($batches_list as $ks => $vs):?>
 				<option value="<?php echo $ks; ?>"><?php echo $vs; ?></option>
 				<?php endforeach;?>
 			</select>
-			
+			<button id="crawl" class="btn new_btn btn-success mt_15 ml_15">Crawl</button>
             <input type="text" class="span3 pull-left mt_15" name="search_crawl_data" >
             <button id="apply_search_data" class="btn new_btn btn-success mt_15 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Apply</button>
             <button id="clear_search_data" class="btn new_btn btn-success mt_15 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Clear</button>
