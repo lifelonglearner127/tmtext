@@ -134,6 +134,7 @@ class Measure extends MY_Controller {
         $uid = $this->input->post('uid');
         $c_week = $this->input->post('c_week');
         $c_year = $this->input->post('c_year');
+        $screens = $this->webshoots_model->getDistinctEmailScreens($c_week, $c_year, $uid);
         // -- email config (dev configurations) (start) --
         $this->load->library('email');
         $config['protocol'] = 'sendmail';
@@ -147,15 +148,13 @@ class Measure extends MY_Controller {
             $email = $v['email'];
             $id = $v['id'];
             $this->email->from('bayclimber@gmail.com', "Content Solutions - Home Pages Report");
-            // $this->email->from('ishulgin8@gmail.com', "Content Solutions - Home Pages Report");
             $this->email->to("$email");
             $this->email->subject('Content Solutions - Home Pages Report');
             $this->email->message("Report screenshots in attachment. Preference day: $day.");
             // --- attachments (start)
-            $screens = $this->webshoots_model->getDistinctEmailScreens($c_week, $c_year, $uid);
             if(count($screens) > 0) {
                 foreach ($screens as $key => $value) {
-                    $path = $value;
+                    $path = $value['dir'];
                     $this->email->attach("$path");
                 }
             }
@@ -209,6 +208,7 @@ class Measure extends MY_Controller {
         $uid = $this->input->post('uid');
         $c_week = $this->input->post('c_week');
         $c_year = $this->input->post('c_year');
+        $screens = $this->webshoots_model->getDistinctEmailScreens($c_week, $c_year, $uid);
         // --------------- email sender (start) ---------------
         // -- email config (dev configurations) (start) --
         $this->load->library('email');
@@ -225,10 +225,9 @@ class Measure extends MY_Controller {
         $msg = "<p>Report screenshots in attachment. Preference day: $day.</p>";
         $this->email->message($msg);
         // --- attachments (start)
-        $screens = $this->webshoots_model->getDistinctEmailScreens($c_week, $c_year, $uid);
         if(count($screens) > 0) {
             foreach ($screens as $key => $value) {
-                $path = $value;
+                $path = $value['dir'];
                 $this->email->attach("$path");
             }
         }
