@@ -14,7 +14,8 @@ class CategoryItem(Item):
     description_text = Field() # text of category description (if any)
     description_title = Field() # title of category description (if any)
     description_wc = Field() # number of words in description text, 0 if no description
-    # keyword density x 2
+    keyword_count = Field()
+    keyword_density = Field()
     nr_products = Field() # number of items in the category
 
 
