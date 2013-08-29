@@ -368,7 +368,7 @@ union all
 
     function do_stats($batch_id)
     {
-        $this->db->reconnect();
+//        $this->db->reconnect();
         $sql_cmd = ""
 //            select
 //                *
@@ -378,14 +378,14 @@ union all
                     r.imported_data_id AS imported_data_id,
                     r.research_data_id AS research_data_id,
                     r.created AS created,
-                    group_concat(r.product_name, '') AS product_name,
-                    group_concat(r.url, '') AS url,
-                    group_concat(r.short_description, '') AS short_description,
-                    group_concat(r.long_description, '') AS long_description,
-                    group_concat(r.short_description_wc, '') AS short_description_wc,
-                    group_concat(r.long_description_wc, '') AS long_description_wc,
-                    group_concat(r.short_seo_phrases, '') AS short_seo_phrases,
-                    group_concat(r.long_seo_phrases, '') AS long_seo_phrases,
+                    group_concat(DISTINCT(r.product_name), '') AS product_name,
+                    group_concat(DISTINCT(r.url), '') AS url,
+                    group_concat(DISTINCT(r.short_description), '') AS short_description,
+                    group_concat(DISTINCT(r.long_description), '') AS long_description,
+                    group_concat(DISTINCT(r.short_description_wc), '') AS short_description_wc,
+                    group_concat(DISTINCT(r.long_description_wc), '') AS long_description_wc,
+                    group_concat(DISTINCT(r.short_seo_phrases), '') AS short_seo_phrases,
+                    group_concat(DISTINCT(r.long_seo_phrases), '') AS long_seo_phrases,
                     max(revision)
                 from (
                     select
