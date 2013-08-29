@@ -158,13 +158,6 @@ class Measure extends MY_Controller {
                     $this->email->attach("$path");
                 }
             }
-            // $debug_screens = $this->webshoots_model->getLimitedScreens(3);
-            // if(count($debug_screens) > 0) {
-            //     foreach ($debug_screens as $key => $value) {
-            //         $path = $value->dir_thumb;
-            //         $this->email->attach("$path");
-            //     }
-            // }
             // --- attachments (end)
             $this->email->send();
         }
@@ -200,13 +193,6 @@ class Measure extends MY_Controller {
                 $this->email->attach("$path");
             }
         }
-        // $debug_screens = $this->webshoots_model->getLimitedScreens(3);
-        // if(count($debug_screens) > 0) {
-        //     foreach ($debug_screens as $key => $value) {
-        //         $path = $value->dir_thumb;
-        //         $this->email->attach("$path");
-        //     }
-        // }
         // --- attachments (end)
         $this->email->send();
         $this->output->set_content_type('application/json')->set_output(json_encode($this->email->print_debugger()));
