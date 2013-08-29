@@ -378,8 +378,6 @@ class Crons extends MY_Controller {
                                           $customer =str_replace("www.", "", $customer);
                                           $customer=strtolower($this->sites_model->get_name_by_url($customer));
                                           $customer=strtolower($this->sites_model->get_name_by_url($customer));
-
-
                                           $similar_products_competitors[] = array(
                                               'imported_data_id' => $similar_item_imported_data_id,
                                               'customer' => $customer

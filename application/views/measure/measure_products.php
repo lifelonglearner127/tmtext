@@ -114,6 +114,7 @@ $(document).ready(function(){
                         batch_title= $("#batchess").val();
                         if(batch_title!=0){
                             show_from_butches();
+                            $('#products li:eq(0)').trigger('click');
                         }
                         
                        $('#myModal').modal('hide');

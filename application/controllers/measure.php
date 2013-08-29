@@ -1286,7 +1286,9 @@ public function gridview() {
                         $data_similar['imported_data_id'] = $row['group_id'];
                         $n = parse_url($data_similar['url']);
                         $customer = $n['host'];
-                        $data_similar[$key]['customer'] = $customer;
+                        $customer = str_replace("www1.", "",$customer);
+                        $customer =str_replace("www.", "", $customer);
+                        $data_similar['customer'] = $customer;
                          
                         if (!in_array($customer,$url)){
                             $url[]=$customer;
