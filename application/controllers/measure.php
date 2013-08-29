@@ -141,6 +141,7 @@ class Measure extends MY_Controller {
         $config['mailpath'] = '/usr/sbin/sendmail';
         $config['charset'] = 'UTF-8';
         $config['wordwrap'] = TRUE;
+        $config['mailtype'] = 'html';
         $this->email->initialize($config);
         // -- email config (dev configurations) (end) --
         foreach ($selected_data as $k => $v) {
@@ -150,7 +151,10 @@ class Measure extends MY_Controller {
             $this->email->from('bayclimber@gmail.com', "Content Solutions - Home Pages Report");
             $this->email->to("$email");
             $this->email->subject('Content Solutions - Home Pages Report');
-            $this->email->message("Report screenshots in attachment. Preference day: $day.");
+            $data_et['day'] = $day;
+            $data_et['screens'] = $screens;
+            $msg = $this->load->view('measure/rec_report_email_template', $data_et, true);
+            $this->email->message($msg);
             // --- attachments (start)
             if(count($screens) > 0) {
                 foreach ($screens as $key => $value) {
@@ -222,8 +226,8 @@ class Measure extends MY_Controller {
         $this->email->from('bayclimber@gmail.com', "Content Solutions - Home Pages Report");
         $this->email->to("$email");
         $this->email->subject('Content Solutions - Home Pages Report');
-        // $msg = "<p>Report screenshots in attachment. Preference day: $day.</p>";
         $data_et['day'] = $day;
+        $data_et['screens'] = $screens;
         $msg = $this->load->view('measure/rec_report_email_template', $data_et, true);
         $this->email->message($msg);
         // --- attachments (start)
