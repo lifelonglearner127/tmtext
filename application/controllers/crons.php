@@ -450,24 +450,14 @@ class Crons extends MY_Controller {
                          
                         if (!in_array($customer,$url)){
                             $url[]=$customer;
+                            $customer = str_replace("www1.", "",$customer);
+                            $customer =str_replace("www.", "", $customer);
                             $similar_products_competitors[]=array('imported_data_id'=>$row['group_id'],'customer' =>$customer);
                         }
                     }
                 }         
                                      
-                                     
-                                     
-                                     
-                                     
-                                     
-                                     
-                                     
-                                     
-                                     
-                                     
-                                     
-                                     
-                                     
+                                  
                           }
                           else{
                               $im_data_id=$data_import['imported_data_id'];
