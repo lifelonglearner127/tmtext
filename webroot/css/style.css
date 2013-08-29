@@ -1901,3 +1901,17 @@ select#sites option{
      }
      
 .column_url{word-break: break-word;}
+/*
+.short_product_name{font-weight: bold; width: 92%; float: left;}
+.assess_image{
+	float: left;
+	margin-right: 5px;
+}
+
+#compet_area_grid .short_product_name.ellipsis a{
+	font-size: 13px;
+	font-weight: normal;
+	text-decoration: underline;
+}
+
+.short_product_date{width: 100%; font-size: 13px;}*/
