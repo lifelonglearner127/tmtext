@@ -543,11 +543,16 @@ $(function () {
         var batch_name = $("select[name='research_assess_batches']").find("option:selected").text();
         var batch_id = $("select[name='research_assess_batches']").find("option:selected").val();
         var compare_batch_id = $("#research_assess_compare_batches_batch").val();
+        var price_diff = false;
+        if ($('#research_assess_price_diff').is(':checked')) {
+            price_diff = true;
+        }
         var url = base_url
             + 'index.php/research/assess_report_download?batch_name=' + batch_name
             + '&type_doc=' + type_doc
             + '&batch_id=' + batch_id
             + '&compare_batch_id=' + compare_batch_id
+            + '&price_diff=' + price_diff
         window.open(url);
     }
 

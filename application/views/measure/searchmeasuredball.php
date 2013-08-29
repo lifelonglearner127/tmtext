@@ -221,7 +221,7 @@
                             if (grid_status === 'grid') {
                                 switchToGridView();
                             }
-
+                        
                         }
 
                     }

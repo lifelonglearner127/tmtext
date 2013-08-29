@@ -45,8 +45,8 @@ class Measure extends MY_Controller {
         $hash = md5($c_date.$url.$api_key); 
         $e_url = urlencode(trim($url));
         return $res = array(
-            "s" => "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=medium2",
-            'l' => "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=large"
+            "s" => "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=medium2&cache=1",
+            'l' => "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=large&cache=1"
         );
     }
 
@@ -57,7 +57,7 @@ class Measure extends MY_Controller {
         $c_date = gmdate('Ymd', time()); 
         $hash = md5($c_date.$url.$api_key); 
         $e_url = urlencode(trim($url));
-        $call = "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=large";
+        $call = "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=large&cache=1";
         return $call;
     }
 
@@ -131,6 +131,10 @@ class Measure extends MY_Controller {
     public function send_recipient_report_selected() {
         $this->load->model('webshoots_model');
         $selected_data = $this->input->post('selected_data');
+        $uid = $this->input->post('uid');
+        $c_week = $this->input->post('c_week');
+        $c_year = $this->input->post('c_year');
+        $screens = $this->webshoots_model->getDistinctEmailScreens($c_week, $c_year, $uid);
         // -- email config (dev configurations) (start) --
         $this->load->library('email');
         $config['protocol'] = 'sendmail';
@@ -143,15 +147,14 @@ class Measure extends MY_Controller {
             $day = $v['day'];
             $email = $v['email'];
             $id = $v['id'];
-            $this->email->from('ishulgin8@gmail.com', "Content Solutions - Home Pages Report");
+            $this->email->from('bayclimber@gmail.com', "Content Solutions - Home Pages Report");
             $this->email->to("$email");
             $this->email->subject('Content Solutions - Home Pages Report');
             $this->email->message("Report screenshots in attachment. Preference day: $day.");
             // --- attachments (start)
-            $debug_screens = $this->webshoots_model->getLimitedScreens(3);
-            if(count($debug_screens) > 0) {
-                foreach ($debug_screens as $key => $value) {
-                    $path = $value->dir_thumb;
+            if(count($screens) > 0) {
+                foreach ($screens as $key => $value) {
+                    $path = $value['dir'];
                     $this->email->attach("$path");
                 }
             }
@@ -161,6 +164,42 @@ class Measure extends MY_Controller {
         $this->output->set_content_type('application/json')->set_output(json_encode($this->email->print_debugger()));
     }
 
+    // public function send_recipient_report() {
+    //     $this->load->model('webshoots_model');
+    //     $id = $this->input->post('id');
+    //     $email = $this->input->post('email');
+    //     $day = $this->input->post('day');
+    //     $uid = $this->input->post('uid');
+    //     $c_week = $this->input->post('c_week');
+    //     $c_year = $this->input->post('c_year');
+    //     // --------------- email sender (start) ---------------
+    //     // -- email config (dev configurations) (start) --
+    //     $this->load->library('email');
+    //     $config['protocol'] = 'sendmail';
+    //     $config['mailpath'] = '/usr/sbin/sendmail';
+    //     $config['charset'] = 'UTF-8';
+    //     $config['wordwrap'] = TRUE;
+    //     $this->email->initialize($config);
+    //     // -- email config (dev configurations) (end) --
+    //     $this->email->from('bayclimber@gmail.com', "Content Solutions - Home Pages Report");
+    //     // $this->email->from('ishulgin8@gmail.com', "Content Solutions - Home Pages Report");
+    //     $this->email->to("$email");
+    //     $this->email->subject('Content Solutions - Home Pages Report');
+    //     $this->email->message("Report screenshots in attachment. Preference day: $day.");
+    //     // --- attachments (start)
+    //     $screens = $this->webshoots_model->getDistinctEmailScreens($c_week, $c_year, $uid);
+    //     if(count($screens) > 0) {
+    //         foreach ($screens as $key => $value) {
+    //             $path = $value;
+    //             $this->email->attach("$path");
+    //         }
+    //     }
+    //     // --- attachments (end)
+    //     $this->email->send();
+    //     $this->output->set_content_type('application/json')->set_output(json_encode($this->email->print_debugger()));
+    //     // --------------- email sender (end) -----------------
+    // }
+
     public function send_recipient_report() {
         $this->load->model('webshoots_model');
         $id = $this->input->post('id');
@@ -169,9 +208,7 @@ class Measure extends MY_Controller {
         $uid = $this->input->post('uid');
         $c_week = $this->input->post('c_week');
         $c_year = $this->input->post('c_year');
-        // $screens = $this->webshoots_model->getDistinctEmailScreens($c_week, $c_year, $uid);
-        // $this->output->set_content_type('application/json')->set_output(json_encode($screens));
-        // die(var_dump($screens));
+        $screens = $this->webshoots_model->getDistinctEmailScreens($c_week, $c_year, $uid);
         // --------------- email sender (start) ---------------
         // -- email config (dev configurations) (start) --
         $this->load->library('email');
@@ -179,17 +216,20 @@ class Measure extends MY_Controller {
         $config['mailpath'] = '/usr/sbin/sendmail';
         $config['charset'] = 'UTF-8';
         $config['wordwrap'] = TRUE;
+        $config['mailtype'] = 'html';
         $this->email->initialize($config);
         // -- email config (dev configurations) (end) --
-        $this->email->from('ishulgin8@gmail.com', "Content Solutions - Home Pages Report");
+        $this->email->from('bayclimber@gmail.com', "Content Solutions - Home Pages Report");
         $this->email->to("$email");
         $this->email->subject('Content Solutions - Home Pages Report');
-        $this->email->message("Report screenshots in attachment. Preference day: $day.");
+        // $msg = "<p>Report screenshots in attachment. Preference day: $day.</p>";
+        $data_et['day'] = $day;
+        $msg = $this->load->view('measure/rec_report_email_template', $data_et, true);
+        $this->email->message($msg);
         // --- attachments (start)
-        $debug_screens = $this->webshoots_model->getLimitedScreens(3);
-        if(count($debug_screens) > 0) {
-            foreach ($debug_screens as $key => $value) {
-                $path = $value->dir_thumb;
+        if(count($screens) > 0) {
+            foreach ($screens as $key => $value) {
+                $path = $value['dir'];
                 $this->email->attach("$path");
             }
         }
@@ -363,7 +403,14 @@ class Measure extends MY_Controller {
         }
         foreach ($sites as $url) {
             $c_url = preg_replace('#^https?://#', '', $url);
-            $call_url = $this->webthumb_call_link($c_url);
+
+            if($c_url === 'bjs.com') {
+                $api_key = $this->config->item('snapito_api_secret');
+                $call_url = "http://api.snapito.com/web/$api_key/mc/$c_url";
+            } else {
+                $call_url = $this->webthumb_call_link($c_url);
+            }
+
             $crawl_l = $this->upload_record_webshoot($call_url, $c_url . "_big");
             $file = $crawl_l['dir'];
             $file_size = filesize($file);
@@ -383,7 +430,10 @@ class Measure extends MY_Controller {
                 'week' => $week,
                 'pos' => 0
             );
-            $this->webshoots_model->recordUpdateWebshoot($result);
+            $r = $this->webshoots_model->recordUpdateWebshoot($result);
+            // === webshots selection refresh attempt (start)
+            $this->webshoots_model->selectionRefreshDecision($r); 
+            // === webshots selection refresh attempt (end)
             sleep(10);
         }
         $this->output->set_content_type('application/json')->set_output(true);
@@ -558,7 +608,8 @@ class Measure extends MY_Controller {
     public function getwebshootdata() {
         $url = $this->input->post('url');
         $this->load->model('webshoots_model');
-        $res = $this->webshoots_model->getWebshootData($url);
+        $res = $this->webshoots_model->getWebshootDataStampDesc($url);
+        // $res = $this->webshoots_model->getWebshootData($url);
         $this->output->set_content_type('application/json')->set_output(json_encode($res));
     }
 
@@ -659,13 +710,20 @@ class Measure extends MY_Controller {
         $uid = $this->ion_auth->get_user_id();
         // === common params (end)
         $c_url = preg_replace('#^https?://#', '', $c_url);
-        $call_url = $this->webthumb_call_link($c_url);
+
+        if($c_url === 'bjs.com') {
+            $api_key = $this->config->item('snapito_api_secret');
+            $call_url = "http://api.snapito.com/web/$api_key/mc/$c_url";
+        } else {
+            $call_url = $this->webthumb_call_link($c_url);
+        }
         $crawl_l = $this->upload_record_webshoot($call_url, $c_url . "_big");
+
         $file = $crawl_l['dir'];
         $file_size = filesize($file);
-        if($file_size === false || $file_size < 2048) {
+        if($file_size === false || $file_size < 10000) {
             @unlink($file);
-            $crawl_l = $this->upload_record_webshoot($call_url, $c_url . "_big");
+            $crawl_l = $this->upload_record_webshoot($call_url, $c_url . "_big_s");
         }
         $result = array(
             'state' => false,
@@ -680,6 +738,9 @@ class Measure extends MY_Controller {
             'pos' => 0
         );
         $r = $this->webshoots_model->recordUpdateWebshoot($result);
+        // === webshots selection refresh attempt (start)
+        $this->webshoots_model->selectionRefreshDecision($r); 
+        // === webshots selection refresh attempt (end)
         if ($r > 0) $result['state'] = true;
         $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }
@@ -1076,12 +1137,14 @@ function matches_count($im_data_id){
             $data_import = $this->imported_data_parsed_model->getByImId($im_data_id);
 
             $same_pr = $this->imported_data_parsed_model->getSameProductsHuman($im_data_id);
-
+            
             // get similar by parsed_attributes
             if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
 
                 $strict = $this->input->post('strict');
                 $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], $strict);
+                
+                
             }
 
             if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['UPC/EAN/ISBN'])) {
@@ -1252,6 +1315,37 @@ public function gridview() {
 
                 $strict = $this->input->post('strict');
                 $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], $strict);
+                $rows = $this->similar_data_model->get_group_id($im_data_id);
+               
+                //echo "<pre>";
+               // print_r($rows);
+                if(count($rows)>0){
+                    
+                    foreach($same_pr as $val){
+                        foreach($rows as  $key =>$row){
+                           if($row['group_id']==$val['imported_data_id']){
+                               unset($rows[$key]);
+                           }
+                        }
+                    }
+                }
+                 if(count($rows)>0){
+                    $url=array();
+                    foreach($rows as $row){
+                        $data_similar= $this->imported_data_parsed_model->getByImId($row['group_id']);
+                        $data_similar['imported_data_id'] = $row['group_id'];
+                        $n = parse_url($data_similar['url']);
+                        $customer = $n['host'];
+                        $customer = str_replace("www1.", "",$customer);
+                        $customer =str_replace("www.", "", $customer);
+                        $data_similar['customer'] = $customer;
+                         
+                        if (!in_array($customer,$url)){
+                            $url[]=$customer;
+                            $same_pr[]=$data_similar;
+                        }
+                    }
+                }
             }
 
             if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['UPC/EAN/ISBN'])) {

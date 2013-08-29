@@ -1,0 +1,1 @@
+<p>Report screenshots in attachment. Preference day: <?php echo $day; ?>.</p>

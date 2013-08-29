@@ -41,5 +41,10 @@ class Similar_data_model extends CI_Model {
                                    
     }
     
-    
+    public function get_group_id($imp_data_id){
+        return $this->db->where('imported_data_id', $imp_data_id)
+                ->where('black_list', 0)
+    		->get($this->tables['similar_data'])
+    		->result_array();;
+    }
 }

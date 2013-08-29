@@ -214,8 +214,8 @@ class Crons extends MY_Controller {
         );
 
         $this->db->where('key', 'cron_duplicate');
-        $this->db->update('settings', $data); 
-            
+        $this->db->update('settings', $data);
+
         echo "ok";
     }
     public function do_stats_new(){
@@ -259,47 +259,47 @@ class Crons extends MY_Controller {
                             if (!$own_site)
                                 $own_site = "own site";
                             $own_site = str_replace("www.", "", $own_site);
-                            
+
                            $data_import= (array)$obj;
                           if ($data_import['description'] !== null && trim($data_import['description']) !== "") {
-                                
+
                                $data_import['description'] = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '',  $data_import['description']);
                                $data_import['description'] = preg_replace('/\s+/', ' ', $data_import['description']);
                                $data_import['description'] = preg_replace('/[a-zA-Z]-/', ' ', $data_import['description']);
                                $short_description_wc = count(explode(" ", $data_import['description']));
                             } else {
                                $short_description_wc  = 0;
-                                
+
                             }
                             if ($data_import['long_description'] !== null && trim($data_import['long_description']) !== "") {
-                                
+
                                $data_import['long_description'] = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '',  $data_import['long_description']);
                                $data_import['long_description'] = preg_replace('/\s+/', ' ', $data_import['long_description']);
                                $data_import['long_description'] = preg_replace('/[a-zA-Z]-/', ' ', $data_import['long_description']);
                                $long_description_wc = count(explode(" ", $data_import['long_description']));
                             } else {
                                $long_description_wc  = 0;
-                                
+
                             }
-                           
-                            
-                                     
-                            
+
+
+
+
                                   // SEO Short phrases
                         $time_start = microtime(true);
                         if ($short_description_wc != 0) {
-                             
+
                                  $short_seo_phrases =$this->helpers-> measure_analyzer_start_v2_product_name($data_import['product_name'],preg_replace('/\s+/', ' ', $data_import['description']));
                                     if(count($short_seo_phrases)>0){
-                                        
+
                                         foreach($short_seo_phrases as $key => $val){
                                             $words= count(explode(' ',$val['ph']));
                                             $desc_words_count=count(explode(' ',$data_import['description']));
                                             $count=$val['count'];
                                             $val['prc']=number_format($count*$words/$desc_words_count*100,2);
                                             $short_seo_phrases[$key]=$val;
-                                        }               
-                                        
+                                        }
+
                                         $short_seo_phrases=  serialize($short_seo_phrases);
                                     }else{
                                         $short_seo_phrases="None";
@@ -307,14 +307,14 @@ class Crons extends MY_Controller {
                         }else{
                             $short_seo_phrases='None';
                         }
-                        
+
                         $time_end = microtime(true);
                         $time = $time_end - $time_start;
                         echo "SEO Short phrases - $time seconds\n";
                         // SEO Long phrases
                         $time_start = microtime(true);
                         if ($long_description_wc != 0)  {
-                          
+
                              $long_seo_phrases =$this->helpers-> measure_analyzer_start_v2_product_name($data_import['product_name'],preg_replace('/\s+/', ' ', $data_import['long_description']));
                                     if(count(long_seo_phrases )>0){
                                          foreach($long_seo_phrases as $key => $val){
@@ -323,20 +323,20 @@ class Crons extends MY_Controller {
                                             $count=$val['count'];
                                             $val['prc']=number_format($count*$words/$desc_words_count*100,2);
                                             $long_seo_phrases[$key]=$val;
-                                        }   
+                                        }
                                         $long_seo_phrases =  serialize($long_seo_phrases );
                                     }else{
                                         $long_seo_phrases ="None";
                                     }
-                                                                                             
+
                         }else{
                             $long_seo_phrases='None';
                         }
                         $time_end = microtime(true);
                         $time = $time_end - $time_start;
                         echo "SEO Long phrases - $time seconds\n";
-                            
-                            
+
+
                           $time_start = microtime(true);
                           if (isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
 
@@ -372,9 +372,15 @@ class Crons extends MY_Controller {
                                           if ($obj->imported_data_id == $similar_item_imported_data_id) {
                                               continue;
                                           }
+                                          $n = parse_url($vs['url']);
+                                          $customer=  strtolower($n['host']);
+                                          $customer = str_replace("www1.", "",$customer);
+                                          $customer =str_replace("www.", "", $customer);
+                                          $customer=strtolower($this->sites_model->get_name_by_url($customer));
+                                          $customer=strtolower($this->sites_model->get_name_by_url($customer));
                                           $similar_products_competitors[] = array(
                                               'imported_data_id' => $similar_item_imported_data_id,
-                                              'customer' => $similar_items[$ks]['customer']
+                                              'customer' => $customer
                                           );
 
                                           try {
@@ -402,21 +408,55 @@ class Crons extends MY_Controller {
                                               }
                                           }
                                       }
-                                      
-                                     $n = parse_url($data_import['url']);
+
+
+                                  }
+
+                              }
+
+                              $n = parse_url($data_import['url']);
                                      $customer=  strtolower($n['host']);
                                      $customer = str_replace("www1.", "",$customer);
                                      $customer =str_replace("www.", "", $customer);
                                      $customer=strtolower($this->sites_model->get_name_by_url($customer));
-                                    
+
                                      $similar_products_competitors[] = array(
                                               'imported_data_id' => $data_import['imported_data_id'],
-                                         
+
                                               'customer' =>$customer
-                                          ); 
-                                      
-                                  }
-                              }
+                                          );
+                                     
+                                     
+                                     
+                    $rows = $this->similar_data_model->get_group_id($data_import['imported_data_id']);                
+                    if(count($rows)>0){
+                    
+                    foreach($similar_products_competitors as $val){
+                        foreach($rows as  $key =>$row){
+                           if($row['group_id']==$val['imported_data_id']){
+                               unset($rows[$key]);
+                           }
+                        }
+                    }
+                }
+                 if(count($rows)>0){
+                    $url=array();
+                    foreach($rows as $row){
+                        $data_similar= $this->imported_data_parsed_model->getByImId($row['group_id']);
+                        $n = parse_url($data_similar['url']);
+                        $customer = $n['host'];
+                        $data_similar[$key]['customer'] = $customer;
+                         
+                        if (!in_array($customer,$url)){
+                            $url[]=$customer;
+                            $customer = str_replace("www1.", "",$customer);
+                            $customer =str_replace("www.", "", $customer);
+                            $similar_products_competitors[]=array('imported_data_id'=>$row['group_id'],'customer' =>$customer);
+                        }
+                    }
+                }         
+                                     
+                                  
                           }
                           else{
                               $im_data_id=$data_import['imported_data_id'];
@@ -431,14 +471,14 @@ class Crons extends MY_Controller {
                                     $same_pr = $this->imported_data_parsed_model->getByProductName($im_data_id, $data_import['product_name'], $data_import['parsed_attributes']['manufacturer'], $strict);
                                 }
                             } else {
-                                                                
+
                                 $rows = $this->similar_data_model->getByGroupId($im_data_id);
                                 $data_similar = array();
 
                                 foreach ($rows as $key => $row) {
+
                                     $data_similar= $this->imported_data_parsed_model->getByImId($row->imported_data_id);
                                     $n = parse_url($data_similar['url']);
-                                    
                                     $customer=  strtolower($n['host']);
                                     $customer = str_replace("www1.", "",$customer);
                                     $customer =str_replace("www.", "", $customer);
@@ -454,7 +494,7 @@ class Crons extends MY_Controller {
 //                          echo "price_diff - $time seconds\n";
 
                           // WC Short
-                         
+
 
 
                          $time_start = microtime(true);
@@ -462,7 +502,7 @@ class Crons extends MY_Controller {
                           try {
 	                          $insert_id = $this->statistics_model->insert_new($obj->imported_data_id,
 	                              $obj->revision,
-	                              
+
 	                              $short_description_wc, $long_description_wc,
 	                              $short_seo_phrases, $long_seo_phrases,
 	                              $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors,
@@ -475,7 +515,7 @@ class Crons extends MY_Controller {
 
 					$insert_id = $this->statistics_model->insert_new($obj->imported_data_id,
 	                              $obj->revision,
-	                              
+
 	                              $short_description_wc, $long_description_wc,
 	                              $short_seo_phrases, $long_seo_phrases,
 	                              $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors,
@@ -486,10 +526,10 @@ class Crons extends MY_Controller {
                           $time = $time_end - $time_start;
 
                           echo '.';
-                          
-                                          
+
+
             }
-            
+
             $q=$this->db->select('key,description')->from('settings')->where('key','cron_job_offset');
             $res=$q->get()->row_array();
             $start=$res['description'];
@@ -499,17 +539,17 @@ class Crons extends MY_Controller {
             );
 
             $this->db->where('key', 'cron_job_offset');
-            $this->db->update('settings', $data); 
+            $this->db->update('settings', $data);
             }
         } catch (Exception $e) {
             echo 'Ошибка',  $e->getMessage(), "\n";
             unlink($tmp_dir.".locked");
         }
         unlink($tmp_dir.".locked");
-        
+
     }
-    
-    
+
+
     public function do_stats_test(){
         echo "Script start working";
         $tmp_dir = sys_get_temp_dir().'/';
@@ -1055,7 +1095,7 @@ class Crons extends MY_Controller {
 
                           $time_end = microtime(true);
                           $time = $time_end - $time_start;
-//                          echo "insert_id - $time seconds\n";
+                          echo "insert_id - $time seconds\n";
 //                          var_dump($insert_id);
                           /*if($insert_id){
                               var_dump('--'.$obj->batch_id.'--');
@@ -1101,11 +1141,11 @@ class Crons extends MY_Controller {
         unlink($tmp_dir.".locked");
     }
     function duplicate_content_new(){
-         
-        try {                            
-                                 
+
+        try {
+
                       $res_data = $this->check_duplicate_content($imported_data_id);
-                     
+
                         $time_end = microtime(true);
                         $time = $time_end - $time_start;
                         echo "block with check_duplicate_content - $time seconds\n";
@@ -1119,15 +1159,15 @@ class Crons extends MY_Controller {
                         $time_end = microtime(true);
                         $time = $time_end - $time_start;
                         echo "foreach insert - $time seconds\n";
-                    
-                
-                        
-            
+
+
+
+
         } catch (Exception $e) {
             echo 'Ошибка',  $e->getMessage(), "\n";
-            
+
         }
-       
+
     }
     public function duplicate_content(){
         error_reporting(E_ALL);
@@ -1364,16 +1404,16 @@ class Crons extends MY_Controller {
     }
 
     private function compare_text($first_text, $second_text) {
-       $first_text = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $first_text); 
-       $first_text = preg_replace('/[a-zA-Z]-/', ' ', $first_text); 
-       $second_text = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $second_text); 
-       $second_text = preg_replace('/[a-zA-Z]-/', ' ', $second_text); 
-      
+       $first_text = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $first_text);
+       $first_text = preg_replace('/[a-zA-Z]-/', ' ', $first_text);
+       $second_text = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $second_text);
+       $second_text = preg_replace('/[a-zA-Z]-/', ' ', $second_text);
+
         if($first_text===$second_text){
             return 100;
         }else{
         $a=explode(' ', strtolower($first_text));
-        
+
         $b =explode(' ', strtolower($second_text));
         $arr=  array_intersect($a, $b);
         $count = count($arr);

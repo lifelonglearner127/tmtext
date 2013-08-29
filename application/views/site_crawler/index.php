@@ -59,18 +59,31 @@
 				<button id="add_url_list" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Add</button>
 				<button id="add_list_delete" class="btn new_btn btn-danger mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
 			</div>
-			<h3 class="span3 current_list_title">Current list: <br/><small nowrap></small></h3>
 
+
+			<script>
+			$('button#crawl').attr("disabled","disabled");	
+
+			$('select[name="batch"]').change(function(){
+				$('button#crawl').removeAttr("disabled");
+			});
+
+            
+            </script>
+
+
+			<h3 class="span3 current_list_title">Crawl list: <br/><small nowrap></small></h3>
+			
             <select name="batch" class="span4 pull-left mt_15" style="width: 125px;" id="batches">
 				<?php foreach($batches_list as $ks => $vs):?>
 				<option value="<?php echo $ks; ?>"><?php echo $vs; ?></option>
 				<?php endforeach;?>
 			</select>
-
+			<button id="crawl" class="btn new_btn btn-success mt_15 ml_15">Crawl</button>
             <input type="text" class="span3 pull-left mt_15" name="search_crawl_data" >
             <button id="apply_search_data" class="btn new_btn btn-success mt_15 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Apply</button>
             <button id="clear_search_data" class="btn new_btn btn-success mt_15 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Clear</button>
-
+            
 			<div class="row-fluid mt_5">
 				<div class="search_area uneditable-input span10" style="cursor: text; width: 765px; height: 320px; overflow : auto;" id="Current_List">
 				<!-- <div id='current_list_tbl_holder'>&nbsp;</div> -->

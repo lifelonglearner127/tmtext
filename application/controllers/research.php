@@ -352,7 +352,9 @@ class Research extends MY_Controller {
         foreach($results as $row) {
             $long_description_wc = $row->long_description_wc;
             $short_description_wc = $row->short_description_wc;
-            $items_priced_higher_than_competitors = $row->items_priced_higher_than_competitors;
+            if ($build_assess_params->price_diff == true) {
+                $items_priced_higher_than_competitors += $row->items_priced_higher_than_competitors;
+            }
 
             $result_row = new stdClass();
             $result_row->id = $row->id;
@@ -443,7 +445,7 @@ class Research extends MY_Controller {
                }
             }
 
-            $items_priced_higher_than_competitors = $this->statistics_model->countAllItemsHigher($batch_id);
+            //$items_priced_higher_than_competitors = $this->statistics_model->countAllItemsHigher($batch_id);
 
             if ($result_row->short_seo_phrases == 'None' && $result_row->long_seo_phrases == 'None') {
                 $items_unoptimized_product_content++;
@@ -777,7 +779,6 @@ class Research extends MY_Controller {
         $report_presetted_pages = $this->get_report_presetted_pages($get_report_presetted_pages_params);
 
         $build_assess_params = new stdClass();
-        $build_assess_params->price_diff = true;
         $build_assess_params->short_less = -1;
         $build_assess_params->short_more = -1;
         $build_assess_params->short_seo_phrases = true;
@@ -786,6 +787,8 @@ class Research extends MY_Controller {
         $build_assess_params->long_more = -1;
         $build_assess_params->long_seo_phrases = true;
         $build_assess_params->long_duplicate_content = true;
+        $price_diff = $this->input->get('price_diff') == 'undefined' ? -1 :$this->input->get('price_diff');
+        $build_assess_params->price_diff = $price_diff === 'true' ? true : false;
         if (intval($compare_batch_id) > 0) {
             $build_assess_params->compare_batch_id = $compare_batch_id;
         }
