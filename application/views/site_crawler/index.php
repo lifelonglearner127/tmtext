@@ -79,13 +79,13 @@
 
 
 			<h3 class="span3 current_list_title">Crawl list: <br/><small nowrap></small></h3>
-
+			<button id="crawl" class="btn new_btn btn-success mt_15 ml_15">Crawl</button>
             <select name="batch" class="span4 pull-left mt_15" style="width: 125px;" id="batches">
 				<?php foreach($batches_list as $ks => $vs):?>
 				<option value="<?php echo $ks; ?>"><?php echo $vs; ?></option>
 				<?php endforeach;?>
 			</select>
-			<button id="crawl" class="btn new_btn btn-success mt_15 ml_15">Crawl</button>
+			
             <input type="text" class="span3 pull-left mt_15" name="search_crawl_data" >
             <button id="apply_search_data" class="btn new_btn btn-success mt_15 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Apply</button>
             <button id="clear_search_data" class="btn new_btn btn-success mt_15 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Clear</button>
@@ -100,7 +100,7 @@
 				<button id="current_list_delete" class="btn new_btn btn-danger mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
 				<button id="crawl_new" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Crawl New</button>
 				<button id="crawl_all" class="btn new_btn btn-success mt_10 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Crawl All</button>
-				<!--<button id="current_crawl" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Crawl</button>-->
+				<button id="current_crawl" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Crawl</button>
 				<button id="current_snapshot" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Snapshot</button>
 				<p class='help-block'>* use checkboxes in table list to activate snapshot button</p>
 			</div>
