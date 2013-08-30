@@ -10,7 +10,8 @@ class Crons extends MY_Controller {
   			'screenscron' => true,
             'do_stats' => true,
             'duplicate_content'=>true,
-            'do_stats_new'=> true
+            'do_stats_new'=> true,
+			'do_duplicate_content'=>true,
   		));
  	}
 
@@ -425,12 +426,12 @@ class Crons extends MY_Controller {
 
                                               'customer' =>$customer
                                           );
-                                     
-                                     
-                                     
-                    $rows = $this->similar_data_model->get_group_id($data_import['imported_data_id']);                
+
+
+
+                    $rows = $this->similar_data_model->get_group_id($data_import['imported_data_id']);
                     if(count($rows)>0){
-                    
+
                     foreach($similar_products_competitors as $val){
                         foreach($rows as  $key =>$row){
                            if($row['group_id']==$val['imported_data_id']){
@@ -446,7 +447,7 @@ class Crons extends MY_Controller {
                         $n = parse_url($data_similar['url']);
                         $customer = $n['host'];
                         $data_similar[$key]['customer'] = $customer;
-                         
+
                         if (!in_array($customer,$url)){
                             $url[]=$customer;
                             $customer = str_replace("www1.", "",$customer);
@@ -454,9 +455,9 @@ class Crons extends MY_Controller {
                             $similar_products_competitors[]=array('imported_data_id'=>$row['group_id'],'customer' =>$customer);
                         }
                     }
-                }         
-                                     
-                                  
+                }
+
+
                           }
                           else{
                               $im_data_id=$data_import['imported_data_id'];
@@ -1190,12 +1191,12 @@ class Crons extends MY_Controller {
                 $params->batch_id = $batch->id;
                 $params->txt_filter = '';
                 $stat_data= $this->statistics_model->getStatsData($params);
-                $conn = mysql_connect('localhost', 'c38trlmonk', '542piF88');
+//                $conn = mysql_connect('localhost', 'c38trlmonk', '542piF88');
                 /* Make sure the connection is still alive, if not, try to reconnect */
-                if (!mysql_ping($conn)) {
-                    echo 'Lost connection, exiting after query #2';
-                    exit;
-                }
+//                if (!mysql_ping($conn)) {
+//                    echo 'Lost connection, exiting after query #2';
+//                    exit;
+//                }
                 if(count($stat_data)>0){
                     foreach($stat_data as $stat){
                         $time_start = microtime(true);
