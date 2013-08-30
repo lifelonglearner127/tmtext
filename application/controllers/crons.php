@@ -237,9 +237,9 @@ class Crons extends MY_Controller {
         $this->load->library('helpers');
         $this->load->helper('algoritm');
         $this->load->model('sites_model');
-        $data=$this->imported_data_parsed_model->do_stats();
-        if(count($data>1)){
-            foreach($data as $obj){
+        $data_arr=$this->imported_data_parsed_model->do_stats();
+        if(count($data_arr>1)){
+            foreach($data_arr as $obj){
                 $own_price = 0;
                           $competitors_prices = array();
                           $price_diff = '';
@@ -547,11 +547,11 @@ class Crons extends MY_Controller {
             unlink($tmp_dir.".locked");
         }
         unlink($tmp_dir.".locked");
-        $data = $this->imported_data_parsed_model->do_stats();
+        $data_arr = $this->imported_data_parsed_model->do_stats();
         $q=$this->db->select('key,description')->from('settings')->where('key','cron_job_offset');
             $res=$q->get()->row_array();
             $start=$res['description'];
-        if (count($data > 1) &&  $start <22) {
+        if (count($data_arr > 1)) {
             shell_exec('wget -S -O- http://dev.contentsolutionsinc.com/producteditor/index.php/crons/do_stats_new > /dev/null 2>/dev/null &');
         }else{
             $data = array(
@@ -562,8 +562,8 @@ class Crons extends MY_Controller {
             $this->db->update('settings', $data);
             
             $this->load->library('email');
-            $this->email->from('max.kavelin@gmail.com', 'Max');
-            $this->email->to('max.kavelin@gmail.com'); 
+            $this->email->from('info@dev.contentsolutionsinc.com', '!!!!');
+            $this->email->to('bayclimber@gmail.com'); 
             $this->email->cc('max.kavelin@gmail.com'); 
             $this->email->subject('Cron job report');
             $this->email->message('Cron job for do_statistics_new is done');	
