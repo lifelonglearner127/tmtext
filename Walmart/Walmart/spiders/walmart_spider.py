@@ -96,7 +96,7 @@ class WalmartSpider(BaseSpider):
         if description_title:
             item['description_title'] = description_title[0]
 
-        description_texts = description_holder.select("./div[position()<2]//p/text()[not(ancestor::b)] | ./p/text()[not(ancestor::b)]").extract()
+        description_texts = description_holder.select("./div[position()<2]//p//text()[not(ancestor::b)] | ./p//text()[not(ancestor::b)]").extract()
 
         # if the list is not empty and contains at least one non-whitespace item
         if description_texts and reduce(lambda x,y: x or y, [line.strip() for line in description_texts]):
