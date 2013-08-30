@@ -405,31 +405,69 @@ function show_from_butches() {//max
        
       selected_cites = $.cookie('selected_cites_cookie');
       status_results=$.cookie('status_showing_results');
-      if(typeof(status_results)== 'undefined'){
+      if(typeof(status_results)==='undefined'){
          status_results = 'all';
       }
-      if(typeof(selected_cites)== 'undefined'){
+      if(typeof(selected_cites)=== 'undefined'){
         selected_cites = null;
       }
-      
-        var searcher_all = $.post(editorSearchAllBaseUrl, {status_results: status_results,selected_cites: selected_cites,batch_id: batch_id}, 'html').done(function(data) {
-        $("#an_products_box").html(data);
-        // $("#an_products_box").fadeOut();
-        // $("#an_products_box").fadeIn();
-        $("#an_products_box").show();
-        var w = $('ul#products li:first-child span:first-child').width();
-        $('#an_sort_search_box .product_title .main span:first-child').width(w);
-        setTimeout(function() {
-            // if($(".ui-autocomplete").is(':visible')) $(".ui-autocomplete").hide(); // OLD
-            if ($(".typeahead").is(':visible'))
-                $(".typeahead").hide(); // NEW
-        }, 1000);
-    });
+     
+      if((status_results)=== 'matchon'){
+         
+         var product_batch = $.cookie('product_batch');
+         if (typeof(product_batch) !== 'undefined') {
+                             
+                                 $.post(base_url + 'index.php/measure/filterSiteNameByCustomerName', {'batch': product_batch}, function(data) {
+                                  if(selected_cites.toLowerCase().indexOf(data)<0){
+                                       console.log(selected_cites=selected_cites+','+data.toLowerCase());
+                                       
+                                        reslults_for_batch(status_results,selected_cites,batch_id);
 
+                           }
+                                  
+                             
+                             });
+                      
+        }else{
+            if ($("#batchess").val() !== '0'){
+                $.post(base_url + 'index.php/measure/filterSiteNameByCustomerName', {'batch': $("#batchess").val()}, function(data) {
+                                
+                                if(selected_cites.toLowerCase().indexOf(data)<0){
+                                    console.log(selected_cites=selected_cites+','+data.toLowerCase());
+                                    
+                                     reslults_for_batch(status_results,selected_cites,batch_id);
+
+                                }
+                                                                                             
+                             });
+            }
+        }
+      }else{
+          
+           reslults_for_batch(status_results,selected_cites,batch_id);
+      }
+         
+       
     return false;
 
 }
 
+function reslults_for_batch(status_results,selected_cites,batch_id){
+    var searcher_all = $.post(editorSearchAllBaseUrl, {status_results: status_results,selected_cites: selected_cites,batch_id: batch_id}, 'html').done(function(data) {
+                                        $("#an_products_box").html(data);
+                                        // $("#an_products_box").fadeOut();
+                                        // $("#an_products_box").fadeIn();
+                                        $("#an_products_box").show();
+                                        var w = $('ul#products li:first-child span:first-child').width();
+                                        $('#an_sort_search_box .product_title .main span:first-child').width(w);
+                                        setTimeout(function() {
+                                            // if($(".ui-autocomplete").is(':visible')) $(".ui-autocomplete").hide(); // OLD
+                                            if ($(".typeahead").is(':visible'))
+                                                $(".typeahead").hide(); // NEW
+                                        }, 1000);
+                                    });
+
+}
 
 //max
 function removeTagsFromDescs() {

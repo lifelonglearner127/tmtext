@@ -81,7 +81,7 @@ class Measure extends MY_Controller {
         );
         return $res;
     }
-
+  
     private function urlExistsCode($url) {
         if ($url === null || trim($url) === "")
             return false;
@@ -1280,6 +1280,19 @@ function matches_count($im_data_id){
          
      
 }
+
+public function filterSiteNameByCustomerName(){
+    $this->load->model('customers_model');
+    $this->load->model('sites_model');
+    $this->load->model('batches_model');
+    $batch = $this->input->post('batch');
+    $customer_name = $this->batches_model->getCustomerByBatch($batch);
+    $customer=$this->customers_model->getByName($customer_name);
+    $customer_url=$n = parse_url($customer['url']);
+    $site= strtolower($this->sites_model->get_name_by_url($customer_url['host']));
+    echo $site;
+    
+}
 public function gridview() {
        $data['mismatch_button']=false;
         $im_data_id = $this->input->post('im_data_id');
@@ -1387,17 +1400,18 @@ public function gridview() {
                 foreach ($rows as $key => $row) {
                     $data_similar[$key] = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
                     $data_similar[$key]['imported_data_id'] = $row->imported_data_id;
-
+                   
                     $cus_val = "";
                     foreach ($customers_list as $ki => $vi) {
                         if (strpos($data_similar[$key]['url'], "$vi") !== false) {
                             $cus_val = $vi;
                         }
                     }
+                   
                     if ($cus_val !== "")
                         $data_similar[$key]['customer'] = $cus_val;
                 }
-
+                
                 if (!empty($data_similar)) {
                     $same_pr = $data_similar;
                 }
@@ -2175,7 +2189,7 @@ public function gridview() {
                             if ($vs['description'] != '') {
                                 if ($vs1['description'] != '') {
                                     $k_sh++;$percent = array();
-                                    $percent = $this->compare_text($vs['description'], $vs1['description']);echo var_dump($percent)."<br><br>";
+                                    $percent = $this->compare_text($vs['description'], $vs1['description']);
                                     if ($percent > $maxshort) {
                                         $maxshort = $percent;
                                     }
@@ -2418,10 +2432,11 @@ public function gridview() {
                     }
                 }
             }
-            if($selected_cites!='null'){
+            if($status_results=='matchon' && $selected_cites!='null'){
                 
                 foreach($result as $kay => $val){
-                     $matches_sites=$this->matches_count($val['imported_data_id']);
+                     $matches_sites=  array_unique($this->matches_count($val['imported_data_id']));
+                    
                      if(count($matches_sites)!=count($selected_cites) || count(array_intersect($matches_sites,$selected_cites))!=count($selected_cites)){
                     
                         unset($result[$kay]);

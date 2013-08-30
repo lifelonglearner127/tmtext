@@ -75,13 +75,10 @@ jQuery(document).ready(function($) {
 </div>
 <script>
 $(document).ready(function(){
-                    $("#popup_save").click(function(){
+                        $("#popup_save").click(function(){
                      
                         selected_cites=$("#popup_sites").val();
-                        var product_batch = $.cookie('product_batch');
-                        if (typeof(product_batch) !== 'undefined') {
-                            alert($("#batchess").val());
-                        }
+                        
                         //$("input['name=show_results']").val();
                         
 //<<<<<<< Updated upstream
