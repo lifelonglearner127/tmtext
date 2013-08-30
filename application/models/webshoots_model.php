@@ -73,7 +73,7 @@ class Webshoots_model extends CI_Model {
             foreach ($sel_res as $ks => $vs) {
                 $screen_ids[] = $vs->screen_id;
             }
-            $screen_ids = array_unique($screen_ids);
+            // $screen_ids = array_unique($screen_ids);
             $shots_query = $this->db->where_in('id', $screen_ids)->get($this->tables['webshoots']);
             $shots_res = $shots_query->result();
             if(count($shots_res) > 0) {
