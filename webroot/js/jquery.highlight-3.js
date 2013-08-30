@@ -46,10 +46,23 @@ $('.cmp-btn').live('click', function() {
        // $("#right").prop("checked") && (settings.strictly = true);
        // $("#case").prop("checked") && (settings.caseSensitive = true);
        // $("#remove").prop("checked") && (settings.remove = false);
-        pattern && $("p.compare").highlight(pattern, settings)
+        pattern && $("p.compare").highlight(pattern, settings);f1();
+        
  });
 
-//$('.cmp-btn').live('click', function() {
-   // var txt = $(this).parent().parent('.cmp-area').find('p.compare').text();
- //   short_long_dublicate(txt);
-//});
+function f1(){
+    var arr =[];
+    $(".highlight").each(function(index,val){
+         arr.push($(this).text());
+         arr = arr.sort();
+    });
+    for(var i = 0; i<= arr.length;i++){ 
+        if(arr[i] != arr[i+1] && arr[i] != arr[i-1]){
+            $(".highlight").each(function(index,val){
+                if($(this).text() == arr[i])
+                    $(this).removeAttr("class");
+           });
+           delete arr[i];
+        }
+    }
+} 
