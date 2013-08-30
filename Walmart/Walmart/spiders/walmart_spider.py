@@ -170,7 +170,7 @@ class WalmartSpider(BaseSpider):
                     item['level'] = level
 
                     #item['nr_products'] = 1
-                    parent_item['nr_products'] = 1
+                    #parent_item['nr_products'] = 1
 
                     # temporary
                     item['parent_text'] = parent_item['text']
