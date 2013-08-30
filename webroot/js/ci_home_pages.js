@@ -67,6 +67,18 @@ function openScreensModalSlider() {
 	$("#screens_modal_slider").modal('show');
 }
 
+function resetScreenDrop(uid, pos, year, week) {
+	var send_data = {
+		uid: uid,
+		pos: pos,
+		year: year,
+		week: week
+	};
+	$.post(base_url + 'index.php/measure/reset_screen_drop', send_data, function(data) {
+		console.log(data);
+	});
+}
+
 function sendEmailScreensToSelected() {
 	var gerr_user_id = $("#gerr_user_id").val();
 	var gerr_c_week = $("#gerr_c_week").val();

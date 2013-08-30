@@ -70,6 +70,23 @@ class Webshoots_model extends CI_Model {
         return $pos;
     }
 
+    public function resetScreenDrop($uid, $pos, $year, $week) {
+        $check_obj = array(
+            'uid' => $uid,
+            'year' => $year,
+            'week' => $week,
+            'pos' => $pos
+        );
+        $qr = $this->db->where($check_obj)->get($this->tables['webshoots_select']);
+        $qr_res = $qr->result();
+        if(count($qr_res) > 0) { // === TODO: just set pos value to 0 for existing selection
+            $r = $qr_res[0]; 
+        } else { // ==== TODO: probably insert new record
+
+        }
+        return true;
+    }
+
     public function getDistinctEmailScreens($c_week, $c_year, $uid) {
         $images = array();
         $check_obj = array(
@@ -95,7 +112,7 @@ class Webshoots_model extends CI_Model {
                         $mid = array(
                             'link' => $v->img,
                             'dir' => $v->dir_img,
-                            'pos' => $this->getScreenPosition($v->id)
+                            'pos' => $this->getScreenPosition($v->id) # ==== !!! CHECK IT, SOMETHING WRONG !!!
                         );
                         $images[] = $mid;
                     }

@@ -117,6 +117,16 @@ class Measure extends MY_Controller {
         return $this->webshoots_model->checkScreenCrawlStatus($url);
     }
 
+    public function reset_screen_drop() {
+        $this->load->model('webshoots_model');
+        $uid = $this->input->post('uid');
+        $pos = $this->input->post('pos');
+        $year = $this->input->post('year');
+        $week = $this->input->post('week');
+        $reset = $this->webshoots_model->resetScreenDrop($uid, $pos, $year, $week);
+        $this->output->set_content_type('application/json')->set_output(json_encode($reset));
+    }
+
     public function get_emails_reports_recipient() {
         $this->load->model('webshoots_model');
         $c_week = $this->input->post('c_week');

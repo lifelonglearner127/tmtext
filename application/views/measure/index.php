@@ -162,7 +162,7 @@
 									    	<span class="caret"></span>
 									    </button>
 									    <ul class="dropdown-menu">
-									    	<li><a onclick="resetScreenDrop('<?php echo $user_id; ?>', '<?php echo $pos; ?>', '<?php echo $c_year; ?>', '<?php echo $c_week; ?>')" href="javascript:void(0)">Choose Site</a></li>
+									    	<li><a onclick="resetScreenDrop('<?php echo $user_id; ?>', '<?php echo $pos; ?>', '<?php echo $c_year; ?>', '<?php echo $c_week; ?>')" href="javascript:void(0)">Choose site</a></li>
 									    	<?php foreach($customers_list as $val) { ?>
 									    		<?php $val_name = $val['name_val']; $c_url = $val['c_url'];  ?>
 									    		<li><a onclick="clickScreenDrop('<?php echo $c_url; ?>', '<?php echo $v; ?>', '<?php echo $pos; ?>', '<?php echo $val_name; ?>')" data-pos="<?php echo $pos; ?>" data-item="<?php echo $v; ?>" data-value="<?php echo $val['name_val']; ?>" href="javascript:void(0)"><?php echo $val['name']; ?></a></li>
