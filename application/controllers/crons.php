@@ -553,6 +553,23 @@ class Crons extends MY_Controller {
             $start=$res['description'];
         if (count($data > 1) &&  $start <22) {
             shell_exec('wget -S -O- http://dev.contentsolutionsinc.com/producteditor/index.php/crons/do_stats_new > /dev/null 2>/dev/null &');
+        }else{
+            $data = array(
+               'description' => 0
+            );
+            
+            $this->db->where('key', 'cron_job_offset');
+            $this->db->update('settings', $data);
+            
+            $this->load->library('email');
+            $this->email->from('max.kavelin@gmail.com', 'Max');
+            $this->email->to('max.kavelin@gmail.com'); 
+            $this->email->cc('max.kavelin@gmail.com'); 
+            $this->email->subject('Cron job report');
+            $this->email->message('Cron job for do_statistics_new is done');	
+            $this->email->send();
+            
+            
         }
 
     }
