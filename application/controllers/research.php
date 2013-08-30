@@ -518,7 +518,9 @@ class Research extends MY_Controller {
             $result_table[] = $result_row;
         }
 
-        $report['summary']['total_items'] = count($result_table);
+        $own_batch_total_items = $this->statistics_model->total_items_in_batch($batch_id);
+
+        $report['summary']['total_items'] = $own_batch_total_items;
         $report['summary']['items_priced_higher_than_competitors'] = $items_priced_higher_than_competitors;
         $report['summary']['items_have_more_than_20_percent_duplicate_content'] = $items_have_more_than_20_percent_duplicate_content;
         $report['summary']['items_unoptimized_product_content'] = $items_unoptimized_product_content;
@@ -540,7 +542,6 @@ class Research extends MY_Controller {
             $compare_customer = $this->batches_model->getCustomerById($build_assess_params->compare_batch_id);
             $compare_batch = $this->batches_model->get($build_assess_params->compare_batch_id);
 
-            $own_batch_total_items = $this->statistics_model->total_items_in_batch($batch_id);
             $compare_batch_total_items = $this->statistics_model->total_items_in_batch($build_assess_params->compare_batch_id);
             $report['summary']['own_batch_total_items'] = $own_batch_total_items;
             $report['summary']['compare_batch_total_items'] = $compare_batch_total_items;
