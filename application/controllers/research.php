@@ -386,13 +386,17 @@ class Research extends MY_Controller {
 
             if(count($price_diff) > 1){
                 $own_price = floatval($price_diff['own_price']);
-                $price_diff_res = "<nobr>".$price_diff['own_site']." - $".$price_diff['own_price']."</nobr><br />";
+                $own_site = str_replace('www.', '', $price_diff['own_site']);
+                $own_site = str_replace('www1.', '', $own_site);
+                $price_diff_res = "<nobr>".$own_site." - $".$price_diff['own_price']."</nobr><br />";
                 for($i=0; $i<count($price_diff['competitor_customer']); $i++){
                     if($customer_url["host"] != $price_diff['competitor_customer'][$i]){
                         if ($own_price > floatval($price_diff['competitor_price'][$i])) {
                             $result_row->lower_price_exist = true;
                             if ($build_assess_params->price_diff == true) {
-                                $price_diff_res .= "<input type='hidden'><nobr>".$price_diff['competitor_customer'][$i]." - $".$price_diff['competitor_price'][$i]."</nobr><br />";
+                                $competitor_site = str_replace('www.', '', $price_diff['competitor_customer'][$i]);
+                                $competitor_site = str_replace('www.', '', $competitor_site);
+                                $price_diff_res .= "<input type='hidden'><nobr>".$competitor_site." - $".$price_diff['competitor_price'][$i]."</nobr><br />";
                             }
                         }
                     }
