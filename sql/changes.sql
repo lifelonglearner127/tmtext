@@ -490,3 +490,22 @@ ADD CONSTRAINT `fk_imported_data_parsed_imported_data` FOREIGN KEY (imported_dat
 REFERENCES imported_data (id);
 
 ALTER TABLE  `imported_data_parsed` ADD INDEX (  `key` )
+
+
+#08/27 Max
+CREATE TABLE IF NOT EXISTS `statistics_new` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `imported_data_id` int(11) NOT NULL,
+  `created` datetime NOT NULL,
+  `revision` int(11) NOT NULL,
+  `short_description_wc` int(11) NOT NULL,
+  `long_description_wc` int(11) NOT NULL,
+  `short_seo_phrases` varchar(500) COLLATE utf8_unicode_ci NOT NULL,
+  `long_seo_phrases` varchar(500) COLLATE utf8_unicode_ci NOT NULL,
+  `own_price` float NOT NULL,
+  `competitors_prices` text COLLATE utf8_unicode_ci NOT NULL,
+  `price_diff` text COLLATE utf8_unicode_ci NOT NULL,
+  `items_priced_higher_than_competitors` int(11) NOT NULL,
+  `similar_products_competitors` text COLLATE utf8_unicode_ci NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;

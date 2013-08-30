@@ -1,3 +1,7 @@
+#cl_cp_tbl_crawls tr td {
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+}
 .pagination > ul > .page.active > a {
     background-image: url("../img/timeline_outline.png") !important;
 }
@@ -1897,6 +1901,24 @@ select#sites option{
          border-bottom: 1px solid black;
      }
      
+<<<<<<< HEAD
 .column_url{word-break: break-word; width: 200px;}
 span.highlight { background-color: yellow;}
 .cmp-btn{padding-right:5px;cursor:pointer;}
+=======
+.column_url{word-break: break-word;}
+/*
+.short_product_name{font-weight: bold; width: 92%; float: left;}
+.assess_image{
+	float: left;
+	margin-right: 5px;
+}
+
+#compet_area_grid .short_product_name.ellipsis a{
+	font-size: 13px;
+	font-weight: normal;
+	text-decoration: underline;
+}
+
+.short_product_date{width: 100%; font-size: 13px;}*/
+>>>>>>> 9636ed6f9390f1e598e297e2d5a114fdb5a65c73

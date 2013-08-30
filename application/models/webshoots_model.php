@@ -14,6 +14,88 @@ class Webshoots_model extends CI_Model {
         parent::__construct();
     }
 
+    // public function getDistinctEmailScreens($c_week, $c_year, $uid) {
+    //     $check_obj = array(
+    //         'uid' => $uid,
+    //         'year' => $c_year,
+    //         'week' => $c_week
+    //     );
+    //     $check_query = $this->db->where($check_obj)->order_by('stamp', 'desc')->get($this->tables['webshoots']);
+    //     $res = $check_query->result();
+    //     $images = array();
+    //     if(count($res) > 0) {
+    //         foreach ($res as $k => $v) {
+    //             $fs = filesize($v->dir_img); 
+    //             if($fs !== false && $fs > 10000) $images[] = $v->dir_img;
+    //         }
+    //     }
+    //     return $images;
+    // }
+
+    // public function getDistinctEmailScreens($c_week, $c_year, $uid) {
+    //     $images = array();
+    //     $check_obj = array(
+    //         'uid' => $uid,
+    //         'year' => $c_year,
+    //         'week' => $c_week
+    //     );
+    //     $sel_query = $this->db->where($check_obj)->order_by('stamp', 'desc')->get($this->tables['webshoots_select']);
+    //     $sel_res = $sel_query->result();
+    //     if(count($sel_res) > 0) {
+    //         $screen_ids = array();
+    //         foreach ($sel_res as $ks => $vs) {
+    //             $screen_ids[] = $vs->screen_id;
+    //         }
+    //         $screen_ids = array_unique($screen_ids);
+    //         $shots_query = $this->db->where_in('id', $screen_ids)->get($this->tables['webshoots']);
+    //         $shots_res = $shots_query->result();
+    //         if(count($shots_res) > 0) {
+    //             foreach($shots_res as $k => $v) {
+    //                 $fs = filesize($v->dir_img); 
+    //                 if($fs !== false && $fs > 10000) $images[] = $v->dir_img;
+    //             }
+    //         }
+    //     }
+    //     return $images;
+    // }
+
+    public function getDistinctEmailScreens($c_week, $c_year, $uid) {
+        $images = array();
+        $check_obj = array(
+            'uid' => $uid,
+            'year' => $c_year,
+            'week' => $c_week
+        );
+        $sel_query = $this->db->where($check_obj)->order_by('stamp', 'desc')->get($this->tables['webshoots_select']);
+        $sel_res = $sel_query->result();
+        if(count($sel_res) > 0) {
+            $screen_ids = array();
+            foreach ($sel_res as $ks => $vs) {
+                $screen_ids[] = $vs->screen_id;
+            }
+            // $screen_ids = array_unique($screen_ids);
+            $shots_query = $this->db->where_in('id', $screen_ids)->get($this->tables['webshoots']);
+            $shots_res = $shots_query->result();
+            if(count($shots_res) > 0) {
+                foreach($shots_res as $k => $v) {
+                    $fs = filesize($v->dir_img); 
+                    if($fs !== false && $fs > 10000) {
+                        $mid = array(
+                            'link' => $v->img,
+                            'dir' => $v->dir_img
+                        );
+                        $images[] = $mid;
+                    }
+                }
+            }
+        }
+        return $images;
+    }
+
+    public function updateWebshootById($up_object, $id) {
+        return $this->db->update($this->tables['webshoots'], $up_object, array('id' => $id));
+    }
+
     public function updateCrawlListWithSnap($id, $snap, $http_status) {
         // === destroy previous snap (start)
         $check_obj = array(
@@ -219,6 +301,31 @@ class Webshoots_model extends CI_Model {
         return $res;
     }
 
+    function selectionRefreshDecision($id) {
+        $ws_query = $this->db->get_where($this->tables['webshoots'], array('id' => $id));
+        $ws_query_res = $ws_query->result();
+        if(count($ws_query_res) > 0) {
+            $ws_item = $ws_query_res[0];
+            $s_object = array(
+                'uid' => $ws_item->uid,
+                'site' => $ws_item->url
+            );
+            $check_query = $this->db->get_where($this->tables['webshoots_select'], $s_object);
+            $check_query_res = $check_query->result();
+            if(count($check_query_res) > 0) {
+                foreach ($check_query_res as $k => $v) {
+                    $u_object = array(
+                        'screen_id' => $ws_item->id,
+                        'img' => $ws_item->img,
+                        'thumb' => $ws_item->thumb,
+                        'screen_stamp' => $ws_item->stamp
+                    );
+                    $this->db->update($this->tables['webshoots_select'], $u_object, array('id' => $v->id));
+                }
+            }
+        }
+    }
+
     function recordUpdateWebshoot($result) {
         $insert_object = array(
             'url' => $result['url'],
@@ -260,6 +367,16 @@ class Webshoots_model extends CI_Model {
 
     function getWebshootData($url) {
         $query = $this->db->get_where($this->tables['webshoots'], array('url' => $url));
+        $query_res = $query->result();
+        if(count($query_res) > 0) {
+            return $query_res;
+        } else {
+            return array();
+        }
+    }
+
+    function getWebshootDataStampDesc($url) {
+        $query = $this->db->where('url', $url)->order_by('stamp', 'desc')->get($this->tables['webshoots']);
         $query_res = $query->result();
         if(count($query_res) > 0) {
             return $query_res;

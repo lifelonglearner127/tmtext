@@ -14,6 +14,7 @@ class Measure extends MY_Controller {
         $this->load->helper('comparebysimilarwordscount');
         $this->load->helper('baseurl');
         $this->data['title'] = 'Measure';
+        $this->load->model('statistics_model');
 
         if (!$this->ion_auth->logged_in()) {
             //redirect them to the login page
@@ -44,8 +45,8 @@ class Measure extends MY_Controller {
         $hash = md5($c_date.$url.$api_key); 
         $e_url = urlencode(trim($url));
         return $res = array(
-            "s" => "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=medium2",
-            'l' => "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=large"
+            "s" => "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=medium2&cache=1",
+            'l' => "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=large&cache=1"
         );
     }
 
@@ -56,7 +57,7 @@ class Measure extends MY_Controller {
         $c_date = gmdate('Ymd', time()); 
         $hash = md5($c_date.$url.$api_key); 
         $e_url = urlencode(trim($url));
-        $call = "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=large";
+        $call = "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=large&cache=1";
         return $call;
     }
 
@@ -118,6 +119,11 @@ class Measure extends MY_Controller {
 
     public function get_emails_reports_recipient() {
         $this->load->model('webshoots_model');
+        $c_week = $this->input->post('c_week');
+        $c_year = $this->input->post('c_year');
+        $data['c_week'] = $c_week;
+        $data['c_year'] = $c_year;
+        $data['user_id'] = $this->ion_auth->get_user_id();
         $data['rec'] = $this->webshoots_model->get_recipients_list();
         $this->load->view('measure/get_emails_reports_recipient', $data);
     }
@@ -125,27 +131,34 @@ class Measure extends MY_Controller {
     public function send_recipient_report_selected() {
         $this->load->model('webshoots_model');
         $selected_data = $this->input->post('selected_data');
+        $uid = $this->input->post('uid');
+        $c_week = $this->input->post('c_week');
+        $c_year = $this->input->post('c_year');
+        $screens = $this->webshoots_model->getDistinctEmailScreens($c_week, $c_year, $uid);
         // -- email config (dev configurations) (start) --
         $this->load->library('email');
         $config['protocol'] = 'sendmail';
         $config['mailpath'] = '/usr/sbin/sendmail';
         $config['charset'] = 'UTF-8';
         $config['wordwrap'] = TRUE;
+        $config['mailtype'] = 'html';
         $this->email->initialize($config);
         // -- email config (dev configurations) (end) --
         foreach ($selected_data as $k => $v) {
             $day = $v['day'];
             $email = $v['email'];
             $id = $v['id'];
-            $this->email->from('ishulgin8@gmail.com', "Content Solutions - Home Pages Report");
+            $this->email->from('bayclimber@gmail.com', "Content Solutions - Home Pages Report");
             $this->email->to("$email");
             $this->email->subject('Content Solutions - Home Pages Report');
-            $this->email->message("Report screenshots in attachment. Preference day: $day.");
+            $data_et['day'] = $day;
+            $data_et['screens'] = $screens;
+            $msg = $this->load->view('measure/rec_report_email_template', $data_et, true);
+            $this->email->message($msg);
             // --- attachments (start)
-            $debug_screens = $this->webshoots_model->getLimitedScreens(3);
-            if(count($debug_screens) > 0) {
-                foreach ($debug_screens as $key => $value) {
-                    $path = $value->dir_thumb;
+            if(count($screens) > 0) {
+                foreach ($screens as $key => $value) {
+                    $path = $value['dir'];
                     $this->email->attach("$path");
                 }
             }
@@ -155,11 +168,51 @@ class Measure extends MY_Controller {
         $this->output->set_content_type('application/json')->set_output(json_encode($this->email->print_debugger()));
     }
 
+    // public function send_recipient_report() {
+    //     $this->load->model('webshoots_model');
+    //     $id = $this->input->post('id');
+    //     $email = $this->input->post('email');
+    //     $day = $this->input->post('day');
+    //     $uid = $this->input->post('uid');
+    //     $c_week = $this->input->post('c_week');
+    //     $c_year = $this->input->post('c_year');
+    //     // --------------- email sender (start) ---------------
+    //     // -- email config (dev configurations) (start) --
+    //     $this->load->library('email');
+    //     $config['protocol'] = 'sendmail';
+    //     $config['mailpath'] = '/usr/sbin/sendmail';
+    //     $config['charset'] = 'UTF-8';
+    //     $config['wordwrap'] = TRUE;
+    //     $this->email->initialize($config);
+    //     // -- email config (dev configurations) (end) --
+    //     $this->email->from('bayclimber@gmail.com', "Content Solutions - Home Pages Report");
+    //     // $this->email->from('ishulgin8@gmail.com', "Content Solutions - Home Pages Report");
+    //     $this->email->to("$email");
+    //     $this->email->subject('Content Solutions - Home Pages Report');
+    //     $this->email->message("Report screenshots in attachment. Preference day: $day.");
+    //     // --- attachments (start)
+    //     $screens = $this->webshoots_model->getDistinctEmailScreens($c_week, $c_year, $uid);
+    //     if(count($screens) > 0) {
+    //         foreach ($screens as $key => $value) {
+    //             $path = $value;
+    //             $this->email->attach("$path");
+    //         }
+    //     }
+    //     // --- attachments (end)
+    //     $this->email->send();
+    //     $this->output->set_content_type('application/json')->set_output(json_encode($this->email->print_debugger()));
+    //     // --------------- email sender (end) -----------------
+    // }
+
     public function send_recipient_report() {
         $this->load->model('webshoots_model');
         $id = $this->input->post('id');
         $email = $this->input->post('email');
         $day = $this->input->post('day');
+        $uid = $this->input->post('uid');
+        $c_week = $this->input->post('c_week');
+        $c_year = $this->input->post('c_year');
+        $screens = $this->webshoots_model->getDistinctEmailScreens($c_week, $c_year, $uid);
         // --------------- email sender (start) ---------------
         // -- email config (dev configurations) (start) --
         $this->load->library('email');
@@ -167,17 +220,20 @@ class Measure extends MY_Controller {
         $config['mailpath'] = '/usr/sbin/sendmail';
         $config['charset'] = 'UTF-8';
         $config['wordwrap'] = TRUE;
+        $config['mailtype'] = 'html';
         $this->email->initialize($config);
         // -- email config (dev configurations) (end) --
-        $this->email->from('ishulgin8@gmail.com', "Content Solutions - Home Pages Report");
+        $this->email->from('bayclimber@gmail.com', "Content Solutions - Home Pages Report");
         $this->email->to("$email");
         $this->email->subject('Content Solutions - Home Pages Report');
-        $this->email->message("Report screenshots in attachment. Preference day: $day.");
+        $data_et['day'] = $day;
+        $data_et['screens'] = $screens;
+        $msg = $this->load->view('measure/rec_report_email_template', $data_et, true);
+        $this->email->message($msg);
         // --- attachments (start)
-        $debug_screens = $this->webshoots_model->getLimitedScreens(3);
-        if(count($debug_screens) > 0) {
-            foreach ($debug_screens as $key => $value) {
-                $path = $value->dir_thumb;
+        if(count($screens) > 0) {
+            foreach ($screens as $key => $value) {
+                $path = $value['dir'];
                 $this->email->attach("$path");
             }
         }
@@ -264,7 +320,8 @@ class Measure extends MY_Controller {
                 // ==== check for empty image (start)
                 $image_up = $snap_res['img'];
                 $file_size = realpath(BASEPATH . "../webroot/webshoots/$image_up");
-                if($file_size !== false && $file_size > 2048) {
+                $fs = filesize($file_size);
+                if($fs !== false && $fs > 2048) {
                     $this->webshoots_model->updateCrawlListWithSnap($v['id'], $snap_res['img'], $http_status);
                 } else {
                     @unlink(realpath(BASEPATH . "../webroot/webshoots/$image_up"));
@@ -279,6 +336,65 @@ class Measure extends MY_Controller {
         $this->output->set_content_type('application/json')->set_output(true);
     }
 
+    // public function webshootcrawlall() {
+    //     $customers = $this->customers_list_new();
+    //     $this->load->model('webshoots_model');
+    //     $uid = $this->ion_auth->get_user_id();
+    //     $week = date("W", time());
+    //     $year = date("Y", time());
+    //     $sites = array();
+    //     $primary_source_res = $this->urlExists('http://snapito.com');
+    //     if($primary_source_res) { // ===== PRIMARY SCREENCAPTURE API (http://snapito.com/)
+    //         $screen_api = 'snapito.com';
+    //     } else { 
+    //         $screen_api = 'webyshots.com';
+    //     }
+    //     foreach ($customers as $k => $v) {
+    //         if ($this->urlExists($v['c_url'])) $sites[] = $v['c_url'];
+    //     }
+    //     foreach ($sites as $url) {
+    //         $c_url = urlencode(trim($url));
+    //         if($screen_api == 'snapito.com') {
+    //             $api_key = $this->config->item('snapito_api_secret');
+    //             if(in_array($url, $this->config->item('webthumb_sites'))) {
+    //                 $res = $this->webthumb_call($url);
+    //             } else {
+    //                 $res = array(
+    //                     "s" => "http://api.snapito.com/web/$api_key/mc/$url",
+    //                     'l' => "http://api.snapito.com/web/$api_key/full/$url"
+    //                 );
+    //             }
+    //         } else {
+    //             $api_key = $this->config->item('webyshots_api_key');
+    //             $api_secret = $this->config->item('webyshots_api_secret');
+    //             $token = md5("$api_secret+$url");
+    //             $size_s = "w600";
+    //             $size_l = "w1260";
+    //             $format = "png";
+    //             $res = array(
+    //                 "s" => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$c_url&dimension=$size_s&format=$format",
+    //                 'l' => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$c_url&dimension=$size_l&format=$format"
+    //             );
+    //         }
+    //         $crawl_s = $this->upload_record_webshoot($res['s'], $url . "_small");
+    //         $crawl_l = $this->upload_record_webshoot($res['l'], $url . "_big");
+    //         $result = array(
+    //             'state' => false,
+    //             'url' => $url,
+    //             'small_crawl' => $crawl_s['path'],
+    //             'big_crawl' => $crawl_l['path'],
+    //             'dir_thumb' => $crawl_s['dir'],
+    //             'dir_img' => $crawl_l['dir'],
+    //             'uid' => $uid,
+    //             'year' => $year,
+    //             'week' => $week,
+    //             'pos' => 0
+    //         );
+    //         $insert_id = $this->webshoots_model->recordUpdateWebshoot($result);
+    //     }
+    //     $this->output->set_content_type('application/json')->set_output(true);
+    // }
+
     public function webshootcrawlall() {
         $customers = $this->customers_list_new();
         $this->load->model('webshoots_model');
@@ -286,54 +402,43 @@ class Measure extends MY_Controller {
         $week = date("W", time());
         $year = date("Y", time());
         $sites = array();
-        $primary_source_res = $this->urlExists('http://snapito.com');
-        if($primary_source_res) { // ===== PRIMARY SCREENCAPTURE API (http://snapito.com/)
-            $screen_api = 'snapito.com';
-        } else { 
-            $screen_api = 'webyshots.com';
-        }
         foreach ($customers as $k => $v) {
             if ($this->urlExists($v['c_url'])) $sites[] = $v['c_url'];
         }
         foreach ($sites as $url) {
-            $c_url = urlencode(trim($url));
-            if($screen_api == 'snapito.com') {
+            $c_url = preg_replace('#^https?://#', '', $url);
+
+            if($c_url === 'bjs.com') {
                 $api_key = $this->config->item('snapito_api_secret');
-                if(in_array($url, $this->config->item('webthumb_sites'))) {
-                    $res = $this->webthumb_call($url);
-                } else {
-                    $res = array(
-                        "s" => "http://api.snapito.com/web/$api_key/mc/$url",
-                        'l' => "http://api.snapito.com/web/$api_key/full/$url"
-                    );
-                }
+                $call_url = "http://api.snapito.com/web/$api_key/mc/$c_url";
             } else {
-                $api_key = $this->config->item('webyshots_api_key');
-                $api_secret = $this->config->item('webyshots_api_secret');
-                $token = md5("$api_secret+$url");
-                $size_s = "w600";
-                $size_l = "w1260";
-                $format = "png";
-                $res = array(
-                    "s" => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$c_url&dimension=$size_s&format=$format",
-                    'l' => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$c_url&dimension=$size_l&format=$format"
-                );
+                $call_url = $this->webthumb_call_link($c_url);
             }
-            $crawl_s = $this->upload_record_webshoot($res['s'], $url . "_small");
-            $crawl_l = $this->upload_record_webshoot($res['l'], $url . "_big");
+
+            $crawl_l = $this->upload_record_webshoot($call_url, $c_url . "_big");
+            $file = $crawl_l['dir'];
+            $file_size = filesize($file);
+            if($file_size === false || $file_size < 2048) {
+                @unlink($file);
+                $crawl_l = $this->upload_record_webshoot($call_url, $c_url . "_big");
+            }
             $result = array(
                 'state' => false,
-                'url' => $url,
-                'small_crawl' => $crawl_s['path'],
+                'url' => $c_url,
+                'small_crawl' => $crawl_l['path'],
                 'big_crawl' => $crawl_l['path'],
-                'dir_thumb' => $crawl_s['dir'],
+                'dir_thumb' => $crawl_l['dir'],
                 'dir_img' => $crawl_l['dir'],
                 'uid' => $uid,
                 'year' => $year,
                 'week' => $week,
                 'pos' => 0
             );
-            $insert_id = $this->webshoots_model->recordUpdateWebshoot($result);
+            $r = $this->webshoots_model->recordUpdateWebshoot($result);
+            // === webshots selection refresh attempt (start)
+            $this->webshoots_model->selectionRefreshDecision($r); 
+            // === webshots selection refresh attempt (end)
+            sleep(10);
         }
         $this->output->set_content_type('application/json')->set_output(true);
     }
@@ -365,59 +470,150 @@ class Measure extends MY_Controller {
         $this->load->model('webshoots_model');
         $res = $this->webshoots_model->getWebShootByUrl($c_url);
         if ($res !== false) {
+            $file_s = filesize($res->dir_img);
+            if($file_s === false || $file_s < 2048) { // === destroy bad image, crawl new one, update record in DB
+                @unlink($res->dir_img);
+                $call_url = $this->webthumb_call_link($c_url);
+                $crawl_l = $this->upload_record_webshoot($call_url, $c_url . "_big");
+                $file = $crawl_l['dir'];
+                $file_size = filesize($file);
+                if($file_size !== false && $file_size > 2048) { // === update
+                    $up_object = array(
+                        'img' => $crawl_l['path'],
+                        'thumb' => $crawl_l['path'],
+                        'dir_thumb' => $crawl_l['dir'],
+                        'dir_img' => $crawl_l['dir']
+                    );
+                    $this->webshoots_model->updateWebshootById($up_object, $res->id);
+                } else {
+                    @unlink($file);
+                    $call_url = $this->webthumb_call_link($c_url);
+                    $crawl_l = $this->upload_record_webshoot($call_url, $c_url . "_big");
+                    $up_object = array(
+                        'img' => $crawl_l['path'],
+                        'thumb' => $crawl_l['path'],
+                        'dir_thumb' => $crawl_l['dir'],
+                        'dir_img' => $crawl_l['dir']
+                    );
+                    $this->webshoots_model->updateWebshootById($up_object, $res->id);
+                }
+            } 
             $screen_id = $res->id;
             $this->webshoots_model->recordWebShootSelectionAttempt($screen_id, $uid, $pos, $year, $week, $res->img, $res->thumb, $res->stamp, $res->url, $label); // --- webshoot selection record attempt
             $result = $res;
         } else { // --- crawl brand new screenshot
-            $primary_source_res = $this->urlExists('http://snapito.com');
-            if($primary_source_res) { // ===== PRIMARY SCREENCAPTURE API (http://snapito.com/)
-                $api_key = $this->config->item('snapito_api_secret');
-                if(in_array($c_url, $this->config->item('webthumb_sites'))) {
-                    $res = $this->webthumb_call($c_url);
-                } else {
-                    $res = array(
-                        "s" => "http://api.snapito.com/web/$api_key/mc/$c_url",
-                        'l' => "http://api.snapito.com/web/$api_key/full/$c_url"
-                    );
-                }
-            } else { // ===== SECONDARY SCREENCAPTURE API (http://webyshots.com)
-                $url = urlencode(trim($c_url));
-                $api_key = $this->config->item('webyshots_api_key');
-                $api_secret = $this->config->item('webyshots_api_secret');
-                $token = md5("$api_secret+$c_url");
-                $size_s = "w600";
-                $size_l = "w1260";
-                $format = "png";
-                $res = array(
-                    "s" => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_s&format=$format",
-                    'l' => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_l&format=$format"
+            $http_status = $this->urlExistsCode($c_url);
+            $c_url = preg_replace('#^https?://#', '', $c_url);
+            $call_url = $this->webthumb_call_link($c_url);
+            $crawl_l = $this->upload_record_webshoot($call_url, $c_url . "_big");
+            $file = $crawl_l['dir'];
+            $file_size = filesize($file);
+            if($file_size !== false && $file_size > 2048) {
+                $result = array(
+                    'state' => false,
+                    'url' => $c_url,
+                    'small_crawl' => $crawl_l['path'],
+                    'big_crawl' => $crawl_l['path'],
+                    'dir_thumb' => $crawl_l['dir'],
+                    'dir_img' => $crawl_l['dir'],
+                    'uid' => $uid,
+                    'year' => $year,
+                    'week' => $week,
+                    'pos' => $pos
                 );
+                $insert_id = $this->webshoots_model->recordUpdateWebshoot($result);
+                $result = $this->webshoots_model->getWebshootDataById($insert_id);
+                $this->webshoots_model->recordWebShootSelectionAttempt($insert_id, $uid, $pos, $year, $week, $result->img, $result->thumb, $result->stamp, $result->url, $label);
+            } else {
+                @unlink($file);
+                $call_url = $this->webthumb_call_link($c_url);
+                $crawl_l = $this->upload_record_webshoot($call_url, $c_url . "_big");
+                $result = array(
+                    'state' => false,
+                    'url' => $c_url,
+                    'small_crawl' => $crawl_l['path'],
+                    'big_crawl' => $crawl_l['path'],
+                    'dir_thumb' => $crawl_l['dir'],
+                    'dir_img' => $crawl_l['dir'],
+                    'uid' => $uid,
+                    'year' => $year,
+                    'week' => $week,
+                    'pos' => $pos
+                );
+                $insert_id = $this->webshoots_model->recordUpdateWebshoot($result);
+                $result = $this->webshoots_model->getWebshootDataById($insert_id);
+                $this->webshoots_model->recordWebShootSelectionAttempt($insert_id, $uid, $pos, $year, $week, $result->img, $result->thumb, $result->stamp, $result->url, $label);
             }
-            $crawl_s = $this->upload_record_webshoot($res['s'], $c_url . "_small");
-            $crawl_l = $this->upload_record_webshoot($res['l'], $c_url . "_big");
-            $result = array(
-                'state' => false,
-                'url' => $c_url,
-                'small_crawl' => $crawl_s['path'],
-                'big_crawl' => $crawl_l['path'],
-                'dir_thumb' => $crawl_s['dir'],
-                'dir_img' => $crawl_l['dir'],
-                'uid' => $uid,
-                'year' => $year,
-                'week' => $week,
-                'pos' => $pos
-            );
-            $insert_id = $this->webshoots_model->recordUpdateWebshoot($result);
-            $result = $this->webshoots_model->getWebshootDataById($insert_id);
-            $this->webshoots_model->recordWebShootSelectionAttempt($insert_id, $uid, $pos, $year, $week, $result->img, $result->thumb, $result->stamp, $result->url, $label); // --- webshoot selection record attempt
+
         }
         $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }
 
+    // public function getwebshootbyurl() {
+    //     ini_set("max_execution_time", 0);
+    //     $year = $this->input->post('year');
+    //     $week = $this->input->post('week');
+    //     $c_url = $this->input->post('url');
+    //     $pos = $this->input->post('pos');
+    //     $label = $this->input->post('label');
+    //     $uid = $this->ion_auth->get_user_id();
+    //     $this->load->model('webshoots_model');
+    //     $res = $this->webshoots_model->getWebShootByUrl($c_url);
+    //     if ($res !== false) {
+    //         $screen_id = $res->id;
+    //         $this->webshoots_model->recordWebShootSelectionAttempt($screen_id, $uid, $pos, $year, $week, $res->img, $res->thumb, $res->stamp, $res->url, $label); // --- webshoot selection record attempt
+    //         $result = $res;
+    //     } else { // --- crawl brand new screenshot
+    //         $primary_source_res = $this->urlExists('http://snapito.com');
+    //         if($primary_source_res) { // ===== PRIMARY SCREENCAPTURE API (http://snapito.com/)
+    //             $api_key = $this->config->item('snapito_api_secret');
+    //             if(in_array($c_url, $this->config->item('webthumb_sites'))) {
+    //                 $res = $this->webthumb_call($c_url);
+    //             } else {
+    //                 $res = array(
+    //                     "s" => "http://api.snapito.com/web/$api_key/mc/$c_url",
+    //                     'l' => "http://api.snapito.com/web/$api_key/full/$c_url"
+    //                 );
+    //             }
+    //         } else { // ===== SECONDARY SCREENCAPTURE API (http://webyshots.com)
+    //             $url = urlencode(trim($c_url));
+    //             $api_key = $this->config->item('webyshots_api_key');
+    //             $api_secret = $this->config->item('webyshots_api_secret');
+    //             $token = md5("$api_secret+$c_url");
+    //             $size_s = "w600";
+    //             $size_l = "w1260";
+    //             $format = "png";
+    //             $res = array(
+    //                 "s" => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_s&format=$format",
+    //                 'l' => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_l&format=$format"
+    //             );
+    //         }
+    //         $crawl_s = $this->upload_record_webshoot($res['s'], $c_url . "_small");
+    //         $crawl_l = $this->upload_record_webshoot($res['l'], $c_url . "_big");
+    //         $result = array(
+    //             'state' => false,
+    //             'url' => $c_url,
+    //             'small_crawl' => $crawl_s['path'],
+    //             'big_crawl' => $crawl_l['path'],
+    //             'dir_thumb' => $crawl_s['dir'],
+    //             'dir_img' => $crawl_l['dir'],
+    //             'uid' => $uid,
+    //             'year' => $year,
+    //             'week' => $week,
+    //             'pos' => $pos
+    //         );
+    //         $insert_id = $this->webshoots_model->recordUpdateWebshoot($result);
+    //         $result = $this->webshoots_model->getWebshootDataById($insert_id);
+    //         $this->webshoots_model->recordWebShootSelectionAttempt($insert_id, $uid, $pos, $year, $week, $result->img, $result->thumb, $result->stamp, $result->url, $label); // --- webshoot selection record attempt
+    //     }
+    //     $this->output->set_content_type('application/json')->set_output(json_encode($result));
+    // }
+
     public function getwebshootdata() {
         $url = $this->input->post('url');
         $this->load->model('webshoots_model');
-        $res = $this->webshoots_model->getWebshootData($url);
+        $res = $this->webshoots_model->getWebshootDataStampDesc($url);
+        // $res = $this->webshoots_model->getWebshootData($url);
         $this->output->set_content_type('application/json')->set_output(json_encode($res));
     }
 
@@ -437,6 +633,77 @@ class Measure extends MY_Controller {
         $this->output->set_content_type('application/json')->set_output(json_encode($res));
     }
 
+    // public function webshootcrawl() {
+    //     ini_set("max_execution_time", 0);
+    //     // === common params (start)
+    //     $this->load->model('webshoots_model');
+    //     $week = date("W", time());
+    //     $year = date("Y", time());
+    //     $c_url = $this->input->post('url');
+    //     $uid = $this->ion_auth->get_user_id();
+    //     // === common params (end)
+    //     $primary_source_res = $this->urlExists('http://snapito.com');
+    //     if($primary_source_res) { // ===== PRIMARY SCREENCAPTURE API (http://snapito.com/)
+    //         $api_key = $this->config->item('snapito_api_secret');
+    //         if(in_array($c_url, $this->config->item('webthumb_sites'))) {
+    //             $res = $this->webthumb_call($c_url);
+    //         } else {
+    //             $res = array(
+    //                 "s" => "http://api.snapito.com/web/$api_key/mc/$c_url",
+    //                 'l' => "http://api.snapito.com/web/$api_key/full/$c_url"
+    //             );
+    //         }
+    //         $crawl_s = $this->upload_record_webshoot($res['s'], $c_url . "_small");
+    //         $crawl_l = $this->upload_record_webshoot($res['l'], $c_url . "_big");
+    //         $result = array(
+    //             'state' => false,
+    //             'url' => $c_url,
+    //             'small_crawl' => $crawl_s['path'],
+    //             'big_crawl' => $crawl_l['path'],
+    //             'dir_thumb' => $crawl_s['dir'],
+    //             'dir_img' => $crawl_l['dir'],
+    //             'uid' => $uid,
+    //             'year' => $year,
+    //             'week' => $week,
+    //             'pos' => 0
+    //         );
+    //         $r = $this->webshoots_model->recordUpdateWebshoot($result);
+    //         if ($r > 0) $result['state'] = true;
+    //         $this->output->set_content_type('application/json')->set_output(json_encode($result));
+    //     } else { // ===== SECONDARY SCREENCAPTURE API (http://webyshots.com)
+    //         $url = urlencode(trim($c_url));
+    //         // -- configs (start)
+    //         $api_key = $this->config->item('webyshots_api_key');
+    //         $api_secret = $this->config->item('webyshots_api_secret');
+    //         $token = md5("$api_secret+$c_url");
+    //         $size_s = "w600";
+    //         $size_l = "w1260";
+    //         $format = "png";
+    //         // -- configs (end)
+    //         $res = array(
+    //             "s" => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_s&format=$format",
+    //             'l' => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_l&format=$format"
+    //         );
+    //         $crawl_s = $this->upload_record_webshoot($res['s'], $url . "_small");
+    //         $crawl_l = $this->upload_record_webshoot($res['l'], $url . "_big");
+    //         $result = array(
+    //             'state' => false,
+    //             'url' => $url,
+    //             'small_crawl' => $crawl_s['path'],
+    //             'big_crawl' => $crawl_l['path'],
+    //             'dir_thumb' => $crawl_s['dir'],
+    //             'dir_img' => $crawl_l['dir'],
+    //             'uid' => $uid,
+    //             'year' => $year,
+    //             'week' => $week,
+    //             'pos' => 0
+    //         );
+    //         $r = $this->webshoots_model->recordUpdateWebshoot($result);
+    //         if ($r > 0) $result['state'] = true;
+    //         $this->output->set_content_type('application/json')->set_output(json_encode($result));
+    //     }
+    // }
+
     public function webshootcrawl() {
         ini_set("max_execution_time", 0);
         // === common params (start)
@@ -446,66 +713,40 @@ class Measure extends MY_Controller {
         $c_url = $this->input->post('url');
         $uid = $this->ion_auth->get_user_id();
         // === common params (end)
-        $primary_source_res = $this->urlExists('http://snapito.com');
-        if($primary_source_res) { // ===== PRIMARY SCREENCAPTURE API (http://snapito.com/)
+        $c_url = preg_replace('#^https?://#', '', $c_url);
+
+        if($c_url === 'bjs.com') {
             $api_key = $this->config->item('snapito_api_secret');
-            if(in_array($c_url, $this->config->item('webthumb_sites'))) {
-                $res = $this->webthumb_call($c_url);
-            } else {
-                $res = array(
-                    "s" => "http://api.snapito.com/web/$api_key/mc/$c_url",
-                    'l' => "http://api.snapito.com/web/$api_key/full/$c_url"
-                );
-            }
-            $crawl_s = $this->upload_record_webshoot($res['s'], $c_url . "_small");
-            $crawl_l = $this->upload_record_webshoot($res['l'], $c_url . "_big");
-            $result = array(
-                'state' => false,
-                'url' => $c_url,
-                'small_crawl' => $crawl_s['path'],
-                'big_crawl' => $crawl_l['path'],
-                'dir_thumb' => $crawl_s['dir'],
-                'dir_img' => $crawl_l['dir'],
-                'uid' => $uid,
-                'year' => $year,
-                'week' => $week,
-                'pos' => 0
-            );
-            $r = $this->webshoots_model->recordUpdateWebshoot($result);
-            if ($r > 0) $result['state'] = true;
-            $this->output->set_content_type('application/json')->set_output(json_encode($result));
-        } else { // ===== SECONDARY SCREENCAPTURE API (http://webyshots.com)
-            $url = urlencode(trim($c_url));
-            // -- configs (start)
-            $api_key = $this->config->item('webyshots_api_key');
-            $api_secret = $this->config->item('webyshots_api_secret');
-            $token = md5("$api_secret+$c_url");
-            $size_s = "w600";
-            $size_l = "w1260";
-            $format = "png";
-            // -- configs (end)
-            $res = array(
-                "s" => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_s&format=$format",
-                'l' => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$url&dimension=$size_l&format=$format"
-            );
-            $crawl_s = $this->upload_record_webshoot($res['s'], $url . "_small");
-            $crawl_l = $this->upload_record_webshoot($res['l'], $url . "_big");
-            $result = array(
-                'state' => false,
-                'url' => $url,
-                'small_crawl' => $crawl_s['path'],
-                'big_crawl' => $crawl_l['path'],
-                'dir_thumb' => $crawl_s['dir'],
-                'dir_img' => $crawl_l['dir'],
-                'uid' => $uid,
-                'year' => $year,
-                'week' => $week,
-                'pos' => 0
-            );
-            $r = $this->webshoots_model->recordUpdateWebshoot($result);
-            if ($r > 0) $result['state'] = true;
-            $this->output->set_content_type('application/json')->set_output(json_encode($result));
+            $call_url = "http://api.snapito.com/web/$api_key/mc/$c_url";
+        } else {
+            $call_url = $this->webthumb_call_link($c_url);
         }
+        $crawl_l = $this->upload_record_webshoot($call_url, $c_url . "_big");
+
+        $file = $crawl_l['dir'];
+        $file_size = filesize($file);
+        if($file_size === false || $file_size < 10000) {
+            @unlink($file);
+            $crawl_l = $this->upload_record_webshoot($call_url, $c_url . "_big_s");
+        }
+        $result = array(
+            'state' => false,
+            'url' => $c_url,
+            'small_crawl' => $crawl_l['path'],
+            'big_crawl' => $crawl_l['path'],
+            'dir_thumb' => $crawl_l['dir'],
+            'dir_img' => $crawl_l['dir'],
+            'uid' => $uid,
+            'year' => $year,
+            'week' => $week,
+            'pos' => 0
+        );
+        $r = $this->webshoots_model->recordUpdateWebshoot($result);
+        // === webshots selection refresh attempt (start)
+        $this->webshoots_model->selectionRefreshDecision($r); 
+        // === webshots selection refresh attempt (end)
+        if ($r > 0) $result['state'] = true;
+        $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }
 
     public function rec_emails_reports_recipient() {
@@ -622,6 +863,30 @@ class Measure extends MY_Controller {
         $this->data['batches_list'] = $batches_list;
         $this->render();
     }
+    
+    // Denis measure/measure_products_test page-----------------------------------------
+    public function measure_products_test() {
+        $this->load->model('sites_model');
+        $sites = $this->sites_model->getAll();
+        $this->data['sites'] = $sites;
+        $this->data['customers_list'] = $this->category_customers_list();
+        $this->load->model('department_members_model');
+        $this->data['departmens_list'][] = 'All';
+        foreach ($this->department_members_model->getAll() as $row) {
+            $this->data['departmens_list'][$row->id] = $row->text;
+        }
+        $this->load->model('batches_model');
+        $batches = $this->batches_model->getAll();
+        $batches_list = array(0 => 'Choose Batch');
+        //Max
+        foreach ($batches as $batch) {
+            $batches_list[$batch->title] = $batch->title;
+        }
+        //Max
+        $this->data['batches_list'] = $batches_list;
+        $this->render();
+    }
+    //-----------------------------------------------
 
     public function measure_departments() {
         $this->load->model('department_members_model');
@@ -818,6 +1083,7 @@ class Measure extends MY_Controller {
     public function similar_groups(){
         $this->load->model('imported_data_parsed_model');
         $this->imported_data_parsed_model->similiarity_cron();
+        
     }
     public function report_mismatch(){
 
@@ -858,7 +1124,7 @@ $main_base = substr($url, 11, $pos-11);
 return $main_base;
 }
 function matches_count($im_data_id){
-     
+     if(!$this->statistics_model->getbyimpid($im_data_id)){
         $data = array(
             'im_data_id' => $im_data_id,
             's_product' => array(),
@@ -876,12 +1142,14 @@ function matches_count($im_data_id){
             $data_import = $this->imported_data_parsed_model->getByImId($im_data_id);
 
             $same_pr = $this->imported_data_parsed_model->getSameProductsHuman($im_data_id);
-
+            
             // get similar by parsed_attributes
             if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
 
                 $strict = $this->input->post('strict');
                 $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], $strict);
+                
+                
             }
 
             if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['UPC/EAN/ISBN'])) {
@@ -997,7 +1265,20 @@ function matches_count($im_data_id){
         // -------- COMPARING V1 (START)
         return $matched_sites;
         }
-        
+     }else{
+         $matched_sites=array();
+         $res=$this->statistics_model->getbyimpid($im_data_id);
+         $matches=  unserialize($res['similar_products_competitors']);
+         foreach($matches as $val){
+             $matched_sites[]=$val['customer'];
+         }
+         return  $matched_sites;
+         
+                           
+     }   
+     
+         
+     
 }
 public function gridview() {
        $data['mismatch_button']=false;
@@ -1039,6 +1320,37 @@ public function gridview() {
 
                 $strict = $this->input->post('strict');
                 $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], $strict);
+                $rows = $this->similar_data_model->get_group_id($im_data_id);
+               
+                //echo "<pre>";
+               // print_r($rows);
+                if(count($rows)>0){
+                    
+                    foreach($same_pr as $val){
+                        foreach($rows as  $key =>$row){
+                           if($row['group_id']==$val['imported_data_id']){
+                               unset($rows[$key]);
+                           }
+                        }
+                    }
+                }
+                 if(count($rows)>0){
+                    $url=array();
+                    foreach($rows as $row){
+                        $data_similar= $this->imported_data_parsed_model->getByImId($row['group_id']);
+                        $data_similar['imported_data_id'] = $row['group_id'];
+                        $n = parse_url($data_similar['url']);
+                        $customer = $n['host'];
+                        $customer = str_replace("www1.", "",$customer);
+                        $customer =str_replace("www.", "", $customer);
+                        $data_similar['customer'] = $customer;
+                         
+                        if (!in_array($customer,$url)){
+                            $url[]=$customer;
+                            $same_pr[]=$data_similar;
+                        }
+                    }
+                }
             }
 
             if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['UPC/EAN/ISBN'])) {
@@ -1355,6 +1667,343 @@ public function gridview() {
 
     }
     
+    //Denis gridview_test page ------------------
+    public function gridview_test() {
+       $data['mismatch_button']=false;
+        $im_data_id = $this->input->post('im_data_id');
+
+        $data = array(
+            'im_data_id' => $im_data_id,
+            's_product' => array(),
+            's_product_short_desc_count' => 0,
+            's_product_long_desc_count' => 0,
+            'seo' => array('short' => array(), 'long' => array()),
+            'same_pr' => array()
+        );
+        if ($im_data_id !== null && is_numeric($im_data_id)) {
+
+            // --- GET SELECTED RPODUCT DATA (START)
+            $this->load->model('imported_data_parsed_model');
+            $this->load->model('similar_product_groups_model');
+            $this->load->model('similar_data_model');
+            $data_import = $this->imported_data_parsed_model->getByImId($im_data_id);
+            
+             if ($data_import['description'] !== null && trim($data_import['description']) !== "") {
+                $data_import['description'] = preg_replace('/\s+/', ' ', $data_import['description']);
+                // $data_import['description'] = preg_replace('/[^A-Za-z0-9\. -!]/', ' ', $data_import['description']);
+                $data['s_product_short_desc_count'] = count(explode(" ", $data_import['description']));
+            }
+            if ($data_import['long_description'] !== null && trim($data_import['long_description']) !== "") {
+                $data_import['long_description'] = preg_replace('/\s+/', ' ', $data_import['long_description']);
+                // $data_import['long_description'] = preg_replace('/[^A-Za-z0-9\. -!]/', ' ', $data_import['long_description']);
+                $data['s_product_long_desc_count'] = count(explode(" ", $data_import['long_description']));
+            }
+            $data['s_product'] = $data_import;
+            // --- GET SELECTED RPODUCT DATA (END)
+            // --- ATTEMPT TO GET 'SAME' FROM 'HUMAN INTERFACE' (products_compare table) (START)
+            $same_pr = $this->imported_data_parsed_model->getSameProductsHuman($im_data_id);
+
+            // get similar by parsed_attributes
+            if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
+
+                $strict = $this->input->post('strict');
+                $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], $strict);
+            }
+
+            if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['UPC/EAN/ISBN'])) {
+
+                $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['UPC/EAN/ISBN']);
+            }
+            if(empty($same_pr) && !isset($data_import['parsed_attributes']['model'])){
+            $data['mismatch_button']=true;
+            if (!$this->similar_product_groups_model->checkIfgroupExists($im_data_id)) {
+
+                if (!isset($data_import['parsed_attributes'])) {
+
+                    $same_pr = $this->imported_data_parsed_model->getByProductName($im_data_id, $data_import['product_name'], '', $strict);
+                }
+                if (isset($data_import['parsed_attributes']) ) {
+
+                    $same_pr = $this->imported_data_parsed_model->getByProductName($im_data_id, $data_import['product_name'], $data_import['parsed_attributes']['manufacturer'], $strict);
+                }
+            } else {
+                $this->load->model('similar_imported_data_model');
+                $customers_list = array();
+                $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('sites');
+                $query_cus_res = $query_cus->result();
+                if (count($query_cus_res) > 0) {
+                    foreach ($query_cus_res as $key => $value) {
+                        $n = parse_url($value->url);
+                        $customers_list[] = $n['host'];
+                    }
+                }
+                $customers_list = array_unique($customers_list);
+                $rows = $this->similar_data_model->getByGroupId($im_data_id);
+                $data_similar = array();
+
+                foreach ($rows as $key => $row) {
+                    $data_similar[$key] = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
+                    $data_similar[$key]['imported_data_id'] = $row->imported_data_id;
+
+                    $cus_val = "";
+                    foreach ($customers_list as $ki => $vi) {
+                        if (strpos($data_similar[$key]['url'], "$vi") !== false) {
+                            $cus_val = $vi;
+                        }
+                    }
+                    if ($cus_val !== "")
+                        $data_similar[$key]['customer'] = $cus_val;
+                }
+
+                if (!empty($data_similar)) {
+                    $same_pr = $data_similar;
+                }
+            }
+            }
+            // get similar for first row
+            $this->load->model('similar_imported_data_model');
+
+            $customers_list = array();
+            $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('sites');
+            $query_cus_res = $query_cus->result();
+            if (count($query_cus_res) > 0) {
+                foreach ($query_cus_res as $key => $value) {
+                    $n = parse_url($value->url);
+                    $customers_list[] = $n['host'];
+                }
+            }
+            $customers_list = array_unique($customers_list);
+
+            if (empty($same_pr) && ($group_id = $this->similar_imported_data_model->findByImportedDataId($im_data_id))) {
+                if ($rows = $this->similar_imported_data_model->getImportedDataByGroupId($group_id)) {
+                    $data_similar = array();
+
+                    foreach ($rows as $key => $row) {
+                        $data_similar[$key] = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
+                        $data_similar[$key]['imported_data_id'] = $row->imported_data_id;
+
+                        $cus_val = "";
+                        foreach ($customers_list as $ki => $vi) {
+                            if (strpos($data_similar[$key]['url'], "$vi") !== false) {
+                                $cus_val = $vi;
+                            }
+                        }
+                        if ($cus_val !== "")
+                            $data_similar[$key]['customer'] = $cus_val;
+                    }
+
+                    if (!empty($data_similar)) {
+                        $same_pr = $data_similar;
+                    }
+                }
+            }
+//            print "<pre>";
+//            print_r($same_pr);
+//            print "</pre>";
+//            die();
+//            $compare_description = array();
+//            foreach ($same_pr as $key => $value) {
+//                if (!empty($value['description'])) {
+//                    $compare_description[$key]['short'] = $value['description'];
+//                }
+//                if (!empty($value['long_description'])) {
+//                    $compare_description[$key]['long'] = $value['long_description'];
+//                }
+//            }
+//            $compare_description_short = array();
+//            foreach ($same_pr as $key => $value) {
+//                if (!empty($value['description'])) {
+//                    $compare_description_short[$key] = $value['description'];
+//                }
+//            }
+//            foreach ($compare_description_short as $key => $value) {
+//                $result = round(total_matches($key, $compare_description, "short"), 2);
+//                if ($result > 90) {
+//                    $same_pr[$key]['short_original'] = $result . '%';//'No'; //round($result, 2) . '%';
+//                } elseif (!$result) {
+//                    $same_pr[$key]['short_original'] = $result . '%';//'Yes';
+//                } else {
+//                    $same_pr[$key]['short_original'] = $result . '%';//'Yes';
+//                }
+////                $same_pr[$key]= $vs;
+//            }
+//
+//            $compare_description_long = array();
+//            foreach ($same_pr as $key => $value) {
+//                if (!empty($value['long_description'])) {
+//                    $compare_description_long[$key] = $value['long_description'];
+//                }
+//            }
+//            foreach ($compare_description_long as $key => $value) {
+//                $result = total_matches($key, $compare_description,'long');
+//                if ($result > 90) {
+//                    $same_pr[$key]['long_original'] = round($result, 2) . '%';
+//                } elseif (!$result) {
+//                    $same_pr[$key]['long_original'] = round($result, 2) . '%';//'Yes';
+//                } else {
+//                    $same_pr[$key]['long_original'] = round($result, 2) . '%';//'Yes';
+//                }
+////                $same_pr[$key]= $vs;
+//            }
+//			if(count($same_pr) === 3) {
+            foreach ($same_pr as $ks => $vs) {
+                
+                $this->load->model('sites_model');
+                //echo $this->get_base_url($vs['url']);
+                 //echo 'bbb'.strtolower($this->sites_model->get_name_by_url($this->get_base_url($vs['url']))).'aaaaaaaaa';
+                
+                $same_pr[$ks]['customer']=  strtolower($this->sites_model->get_name_by_url($same_pr[$ks]['customer']));
+                $same_pr[$ks]['seo']['short'] = $this->helpers-> measure_analyzer_start_v2_product_name($vs['product_name'],preg_replace('/\s+/', ' ', $vs['description']));
+                $same_pr[$ks]['seo']['long'] = $this->helpers->measure_analyzer_start_v2_product_name($vs['product_name'],preg_replace('/\s+/', ' ', $vs['long_description']));
+
+                // three last prices
+                $imported_data_id = $same_pr[$ks]['imported_data_id'];
+                $three_last_prices = $this->imported_data_parsed_model->getLastPrices($imported_data_id);
+                $same_pr[$ks]['three_last_prices'] = $three_last_prices;
+                if(!empty($three_last_prices)){
+                    $same_pr[$ks]['three_last_prices'] = $three_last_prices;
+                }elseif($this->imported_data_parsed_model->PriceOld($imported_data_id)){
+                     $same_pr[$ks]['three_last_prices']=array((object) array('price'=>$this->imported_data_parsed_model->PriceOld($imported_data_id), 'created'=>''));
+                }else{
+                    $same_pr[$ks]['three_last_prices'] = array();
+                }
+
+            }
+
+
+
+            //     Max
+            if (count($same_pr) != 1) {
+                foreach ($same_pr as $ks => $vs) {
+                    $maxshort = 0;
+                    $maxlong = 0;
+                    $k_sh = 0;
+                    $k_lng = 0;
+                    foreach ($same_pr as $ks1 => $vs1) {
+
+                        if ($ks != $ks1) {
+                            if ($vs['description'] != '') {
+                                if ($vs1['description'] != '') {
+                                    $k_sh++;
+                                    $percent = $this->compare_text($vs['description'], $vs1['description']);
+                                    if ($percent > $maxshort) {
+                                        $maxshort = $percent;
+                                    }
+                                }
+
+                                if ($vs1['long_description'] != '') {
+                                    $k_sh++;
+                                    $percent = $this->compare_text($vs['description'], $vs1['long_description']);
+                                    if ($percent > $maxshort) {
+                                        $maxshort = $percent;
+                                    }
+                                }
+                            }
+
+                            if ($vs['long_description'] != '') {
+
+                                if ($vs1['description'] != '') {
+                                    $k_lng++;
+                                    $percent = $this->compare_text($vs['long_description'], $vs1['description']);
+                                    if ($percent > $maxlong) {
+                                        $maxlong = $percent;
+                                    }
+                                }
+
+                                if ($vs1['long_description'] != '') {
+                                    $k_lng++;
+                                    $percent = $this->compare_text($vs['long_description'], $vs1['long_description']);
+                                    if ($percent > $maxlong) {
+                                        $maxlong = $percent;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if($maxshort!=0){
+                        $vs['short_original'] =  ceil($maxshort) . '%';
+                    }else{
+                        $vs['short_original']= "Insufficient data";
+                    }
+
+                    if($maxlong!=0){
+                        $vs['long_original'] =  ceil($maxlong) . '%';
+                    }else{
+                        $vs['long_original']= "Insufficient data";
+                    }
+
+                    if ($k_lng == 0) {
+                        $vs['long_original'] = "Insufficient data";
+                    }
+                    if ($k_sh == 0) {
+                        $vs['short_original'] = "Insufficient data";
+                    }
+
+                    $same_pr[$ks] = $vs;
+                }
+            } else {
+                $same_pr[0]['long_original'] = 'Insufficient data';
+                $same_pr[0]['short_original'] = 'Insufficient data';
+            }
+            //   Max
+//Max
+            $selectedUrl = $this->input->post('selectedUrl');
+            foreach ($same_pr as $ks => $vs) {
+                if(!empty($vs['seo']['short'])){
+                foreach($vs['seo']['short'] as $key => $val){
+                   $words= count(explode(' ',$val['ph']));
+                   $desc_words_count=count(explode(' ',$vs['description']));
+                   $count=$val['count'];
+                   $val['prc']=round($count*$words/$desc_words_count*100,2);
+                   $same_pr[$ks]['seo']['short'][$key]=$val;
+                   
+                   
+                }
+                }
+                if(!empty($vs['seo']['long'])){
+                foreach($vs['seo']['long'] as $key => $val){
+                   
+                   $words= count(explode(' ',$val['ph']));
+                   $desc_words_count=count(explode(' ',$vs['long_description']));
+                   $count=$val['count'];
+                   $same_pr[$ks]['seo']['long'][$key]['prc']=round($count*$words/$desc_words_count*100,2);
+                }
+                }
+            }
+             foreach ($same_pr as $ks => $vs) {
+                if ($this->get_base_url($vs['url']) == $this->get_base_url($selectedUrl)) {
+                    if ($ks != 0) {
+                        $same_pr[] = $same_pr[0];
+                        $same_pr[0] = $vs;
+                        unset($same_pr[$ks]);
+                    }
+                }
+            }
+
+            $data['same_pr'] = $same_pr;
+
+
+//            }
+            // --- ATTEMPT TO GET 'SAME' FROM 'HUMAN INTERFACE' (products_compare table) (END)
+            // --- GET SELECTED RPODUCT SEO DATA (TMP) (START)
+            if ($data_import['description'] !== null && trim($data_import['description']) !== "") {
+                $data['seo']['short'] = $this->helpers->measure_analyzer_start_v2($data_import['description']);
+            }
+            if ($data_import['long_description'] !== null && trim($data_import['long_description']) !== "") {
+                $data['seo']['long'] = $this->helpers->measure_analyzer_start_v2($data_import['long_description']);
+            }
+            // --- GET SELECTED RPODUCT SEO DATA (TMP) (END)
+        }
+
+        // -------- COMPARING V1 (START)
+        $s_term = $this->input->post('s_term');
+
+        // -------- COMPARING V1 (END)
+
+        $this->load->view('measure/gridview_test', $data);
+
+    }
+   //End gridview_test page------------------------------------
    
     function tableview(){
         if($same_pr=$this->input->post('result_data')){

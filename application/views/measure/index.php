@@ -4,7 +4,7 @@
         <li class="active"><a data-toggle="tab" href="<?php echo site_url('measure');?>">Home Pages</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_departments');?>">Categories</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_products');?>">Products</a></li>
-        <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_social'); ?>">Social</a></li>
+        <!--<li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_social'); ?>">Social</a></li>-->
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_pricing');?>">Pricing</a></li>
     </ul>
     <div class="tab-content">
@@ -162,6 +162,7 @@
 									    	<span class="caret"></span>
 									    </button>
 									    <ul class="dropdown-menu">
+									    	<li><a onclick="resetScreenDrop('<?php echo $user_id; ?>', '<?php echo $pos; ?>', '<?php echo $c_year; ?>', '<?php echo $c_week; ?>')" href="javascript:void(0)">Choose Site</a></li>
 									    	<?php foreach($customers_list as $val) { ?>
 									    		<?php $val_name = $val['name_val']; $c_url = $val['c_url'];  ?>
 									    		<li><a onclick="clickScreenDrop('<?php echo $c_url; ?>', '<?php echo $v; ?>', '<?php echo $pos; ?>', '<?php echo $val_name; ?>')" data-pos="<?php echo $pos; ?>" data-item="<?php echo $v; ?>" data-value="<?php echo $val['name_val']; ?>" href="javascript:void(0)"><?php echo $val['name']; ?></a></li>
@@ -204,7 +205,7 @@
 
 <div class="modal hide fade ci_hp_modals" id='loader_emailsend_modal'>
 	<div class="modal-body">
-		<p><img src="<?php echo base_url();?>img/loader_scr.gif">&nbsp;&nbsp;&nbsp;Reports are sending, please wait for it.</p>
+		<p><img src="<?php echo base_url();?>img/loader_scr.gif">&nbsp;&nbsp;&nbsp;Sending report. Please wait...</p>
 	</div>
 </div>
 
@@ -389,18 +390,8 @@
         	for(var i=0; i < data.length; i++) {
         		if(data[i]['cell'] !== false) {
         			var item_id = $(".hp_boot_drop[data-pos='" + data[i]['pos'] + "']").data('itemid'); 
-
-      //   			if(data[i]['cell']['site'] === 'bloomingdales.com') {
-      //   				$("#screen_lightbox_img_" + item_id).attr('src', base_url + "img/bloomingdales_com_wide_half.png");
-						// var tmp_thumb = base_url + "img/bloomingdales_com_wide_half.png";
-						// $("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox'><img style='cursor: pointer; height: 100%' src='" + tmp_thumb + "'></a>");
-      //   			} else {
-      //   				$("#screen_lightbox_img_" + item_id).attr('src', data[i]['cell']['img']);
-						// $("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox' style='background-image: url(" + data[i]['cell']['thumb'] + "); background-position: top left; background-repeat: no-repeat;'></a>");
-      //   			}
         			$("#screen_lightbox_img_" + item_id).attr('src', data[i]['cell']['img']);
 					$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox' style='background-image: url(" + data[i]['cell']['img'] + "); background-position: top left; background-repeat: no-repeat;'></a>");
-					
 					var t = moment(data[i]['cell']['screen_stamp']).format('MMMM Do, YYYY');
 					$("#crawl_date_" + item_id).text(t);
 					$("#hp_boot_drop_" + item_id + " .btn_caret_sign").text(data[i]['cell']['label']);

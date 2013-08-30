@@ -68,6 +68,9 @@ function openScreensModalSlider() {
 }
 
 function sendEmailScreensToSelected() {
+	var gerr_user_id = $("#gerr_user_id").val();
+	var gerr_c_week = $("#gerr_c_week").val();
+	var gerr_c_year = $("#gerr_c_year").val();
 	var selected_data = [];
 	var selected_items = $("input[type='checkbox'][name='send_report_ch']:checked").length;
 	if(selected_items > 0) {
@@ -80,7 +83,11 @@ function sendEmailScreensToSelected() {
 			selected_data.push(mid);
 		});
 		var send_data = {
-			selected_data: selected_data
+			selected_data: selected_data,
+			c_week: gerr_c_week,
+			c_year: gerr_c_year,
+			uid: gerr_user_id,
+			c_week_up_confirm: $("#c_week_up_confirm").is(":checked")
 		};
 		$("#recipients_control_panel_modal").modal('hide');
 		$("#loader_emailsend_modal").modal('show');
@@ -94,6 +101,9 @@ function sendEmailScreensToSelected() {
 }
 
 function sendEmailScreensToAll() {
+	var gerr_user_id = $("#gerr_user_id").val();
+	var gerr_c_week = $("#gerr_c_week").val();
+	var gerr_c_year = $("#gerr_c_year").val();
 	var selected_data = [];
 	$(".report_bean_line").each(function(index, value) {
 		var mid = {
@@ -104,7 +114,11 @@ function sendEmailScreensToAll() {
 		selected_data.push(mid);
 	});
 	var send_data = {
-		selected_data: selected_data
+		selected_data: selected_data,
+		c_week: gerr_c_week,
+		c_year: gerr_c_year,
+		uid: gerr_user_id,
+		c_week_up_confirm: $("#c_week_up_confirm").is(":checked")
 	};
 	$("#recipients_control_panel_modal").modal('hide');
 	$("#loader_emailsend_modal").modal('show');
@@ -114,15 +128,20 @@ function sendEmailScreensToAll() {
 	});
 }
 
-function sendRecipientReport(id, email, day) {
+function sendRecipientReport(id, email, day, c_week, c_year, uid) {
 	var send_data = {
 		id: id,
 		email: email,
-		day: day
+		day: day,
+		c_week: c_week,
+		c_year: c_year,
+		uid: uid,
+		c_week_up_confirm: $("#c_week_up_confirm").is(":checked")
 	};
 	$("#recipients_control_panel_modal").modal('hide');
 	$("#loader_emailsend_modal").modal('show');
 	var send_recipient_report = $.post(base_url + 'index.php/measure/send_recipient_report', send_data, function(data) {
+		console.log(data);
 		$("#loader_emailsend_modal").modal('hide');
 		$("#success_emailsend_modal").modal('show');
 	});
@@ -144,6 +163,25 @@ function startAllCrawl() {
 	$("#customers_screens_crawl_modal").modal('hide');
 	$("#loading_crawl_modal").modal('show');
 	var start_site_crawl = $.post(base_url + 'index.php/measure/webshootcrawlall', {}, function(data) {
+		// --- screens dropdowns selections scanner (start)
+        var send_data = {
+			year: $("#year_s > option:selected").val(),
+			week: $(".pagination ul li.page.active").data('week')
+		}
+        var drop_selection_scan = $.post(base_url + 'index.php/measure/dropselectionscan', send_data, function(data) {
+        	for(var i=0; i < data.length; i++) {
+        		if(data[i]['cell'] !== false) {
+        			var item_id = $(".hp_boot_drop[data-pos='" + data[i]['pos'] + "']").data('itemid'); 
+        			$("#screen_lightbox_img_" + item_id).attr('src', data[i]['cell']['img']);
+					$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox' style='background-image: url(" + data[i]['cell']['img'] + "); background-position: top left; background-repeat: no-repeat;'></a>");
+					var t = moment(data[i]['cell']['screen_stamp']).format('MMMM Do, YYYY');
+					$("#crawl_date_" + item_id).text(t);
+					$("#hp_boot_drop_" + item_id + " .btn_caret_sign").text(data[i]['cell']['label']);
+        		}
+        	}
+        	$("#loading_crawl_modal").modal('hide');
+        });
+        // --- screens dropdowns selections scanner (end)
 		$("#loading_crawl_modal").modal('hide');
 	});
 }
@@ -180,9 +218,9 @@ function openCrawlLaunchPanelModal(close_preview) {
 					tbl += "<a onclick=\"previewScreenshotModal('" + c_data[i]['url'] + "');\" class='btn btn-primary'><i class='icon-picture'></i>&nbsp;Crawl Screenshot</a>";
                 }
                 if(c_data[i]['crawl_st']) {
-						tbl += "<a style='margin-left: 10px;' onclick=\"flatPreviewScreenshotModal('" + c_data[i]['url'] + "');\" class='btn btn-success'><i class='icon-ok'></i>&nbsp;Screenshot Ready</a>";
+						tbl += "<a style='margin-left: 3px;' onclick=\"flatPreviewScreenshotModal('" + c_data[i]['url'] + "');\" class='btn btn-success'><i class='icon-ok'></i>&nbsp;Screenshot Ready</a>";
 					} else {
-						tbl += "<a style='margin-left: 10px;' class='btn btn-warning disabled'><i class='icon-thumbs-down'></i>&nbsp;No Screenshot</a>";
+						tbl += "<a style='margin-left: 3xpx;' class='btn btn-warning disabled'><i class='icon-thumbs-down'></i>&nbsp;No Screenshot</a>";
 					}
 					tbl += "</td>";
 				tbl += "</tr>";
@@ -230,7 +268,25 @@ function previewScreenshotModal(url) {
 		week: $(".pagination ul li.page.active").data('week')
 	}
 	var start_site_crawl = $.post(base_url + 'index.php/measure/webshootcrawl', send_data, function(data) {
-		$("#loading_crawl_modal").modal('hide');
+		// --- screens dropdowns selections scanner (start)
+        var send_data = {
+			year: $("#year_s > option:selected").val(),
+			week: $(".pagination ul li.page.active").data('week')
+		}
+        var drop_selection_scan = $.post(base_url + 'index.php/measure/dropselectionscan', send_data, function(data) {
+        	for(var i=0; i < data.length; i++) {
+        		if(data[i]['cell'] !== false) {
+        			var item_id = $(".hp_boot_drop[data-pos='" + data[i]['pos'] + "']").data('itemid'); 
+        			$("#screen_lightbox_img_" + item_id).attr('src', data[i]['cell']['img']);
+					$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox' style='background-image: url(" + data[i]['cell']['img'] + "); background-position: top left; background-repeat: no-repeat;'></a>");
+					var t = moment(data[i]['cell']['screen_stamp']).format('MMMM Do, YYYY');
+					$("#crawl_date_" + item_id).text(t);
+					$("#hp_boot_drop_" + item_id + " .btn_caret_sign").text(data[i]['cell']['label']);
+        		}
+        	}
+        	$("#loading_crawl_modal").modal('hide');
+        });
+        // --- screens dropdowns selections scanner (end)
 		if(data['state']) {
 			flatPreviewScreenshotModal(url);
 		} else {
@@ -259,7 +315,11 @@ function redirectToRecipientsListAfterAdd() {
 function viewRecipientsList() {
 	$("#recipients_control_panel_modal").modal('show');
 	// --- refresh listing (start)
-	var rec = $.post(base_url + 'index.php/measure/get_emails_reports_recipient', {}, function(data) {
+	var send_data = {
+		c_week: $(".pagination ul li.page.active").data('week'),
+		c_year: $("#year_s > option:selected").val()
+	};
+	var rec = $.post(base_url + 'index.php/measure/get_emails_reports_recipient', send_data, function(data) {
 		$("#recipients_control_panel_modal").html(data);
 	});
 	// -- refresh listing (end)
@@ -282,10 +342,17 @@ function internalRecipientFunc(){
         }
     });
     $('.fire_rec').click(function(){
+    	var gerr_user_id = $("#gerr_user_id").val();
+		var gerr_c_week = $("#gerr_c_week").val();
+		var gerr_c_year = $("#gerr_c_year").val();
         var send_data = {
             id: $('.fire_rec').attr('id'),
             email: $(this).parent().parent().data('email'),
-            day: $(this).parent().parent().data('day')
+            day: $(this).parent().parent().data('day'),
+            c_week: gerr_c_week,
+			c_year: gerr_c_year,
+			uid: gerr_user_id,
+			c_week_up_confirm: $("#c_week_up_confirm").is(":checked")
         };
         var send_recipient_report = $.post(base_url + 'index.php/measure/send_recipient_report', send_data, function(data) {
             $("#recipients_control_panel_modal").modal('hide');

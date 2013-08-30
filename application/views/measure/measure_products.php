@@ -10,7 +10,7 @@ jQuery(document).ready(function($) {
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure');?>">Home Pages</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_departments');?>">Categories</a></li>
         <li class="active"><a data-toggle="tab" href="<?php echo site_url('measure/measure_products');?>">Products</a></li>
-        <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_social'); ?>">Social</a></li>
+        <!--<li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_social'); ?>">Social</a></li>-->
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_pricing'); ?>">Pricing</a></li>
     </ul>
     <div class="tab-content">
@@ -99,7 +99,8 @@ $(document).ready(function(){
 
                         } else {
                             $.cookie('status_showing_results', status, {expires: 7, path: '/'}); // create
-                            if(status!=='all'){
+                            
+                            if(status==='matchon'){
                                 $.cookie("selected_cites_cookie", selected_cites);
                             }else{
 
@@ -107,9 +108,13 @@ $(document).ready(function(){
 
                             }
                         }
+                        if(status!=='matchon'){
+                                $.cookie("selected_cites_cookie",null);
+                         }
                         batch_title= $("#batchess").val();
                         if(batch_title!=0){
                             show_from_butches();
+                            $('#products li:eq(0)').trigger('click');
                         }
                         
                        $('#myModal').modal('hide');

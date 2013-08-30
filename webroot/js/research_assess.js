@@ -144,6 +144,7 @@ $(function () {
                 $(".research_assess_flagged").show();
             }
             hideColumns();
+            highlightPrices();
         }
     }
 
@@ -514,10 +515,20 @@ $(function () {
     function addColumn_url_class(){
 		//Denis add class to URL column
 		if(  $("#column_url").attr('checked') == 'checked' ){
+			
+			table = $('#assess_tbl_show_case').find('.active_link').data('case')
+			column = '';
+			if( table == 'recommendations' ){
+				column = 'td:eq(1)';
+			}else if( table == 'details' ){
+				column = 'td:eq(2)';
+			}
+			
 			setTimeout(function(){
 				//console.log( $("#tblAssess").html() );
 				$("#tblAssess").find('tr').each(function(){
-					$(this).find('td:eq(2)').addClass('column_url');
+					//$(this).find('td:eq(2)').addClass('column_url');
+					$(this).find(column).addClass('column_url');
 				});
 			}, 2000);
 		}
@@ -533,11 +544,16 @@ $(function () {
         var batch_name = $("select[name='research_assess_batches']").find("option:selected").text();
         var batch_id = $("select[name='research_assess_batches']").find("option:selected").val();
         var compare_batch_id = $("#research_assess_compare_batches_batch").val();
+        var price_diff = false;
+        if ($('#research_assess_price_diff').is(':checked')) {
+            price_diff = true;
+        }
         var url = base_url
             + 'index.php/research/assess_report_download?batch_name=' + batch_name
             + '&type_doc=' + type_doc
             + '&batch_id=' + batch_id
             + '&compare_batch_id=' + compare_batch_id
+            + '&price_diff=' + price_diff
         window.open(url);
     }
 
@@ -677,6 +693,7 @@ $(function () {
                     tblAssess.fnSetColumnVis(index, false, false);
                 }
             });
+            addColumn_url_class();
         } else if (table_case == 'details') {
             reportPanel(false);
             $.each(tblAllColumns, function(index, value) {
@@ -686,6 +703,7 @@ $(function () {
                     tblAssess.fnSetColumnVis(index, false, false);
                 }
             });
+            addColumn_url_class();
         } else if (table_case == 'report') {
             reportPanel(true);
             var batch_id = $('select[name="research_assess_batches"]').find('option:selected').val();

@@ -352,7 +352,6 @@ class Research extends MY_Controller {
         foreach($results as $row) {
             $long_description_wc = $row->long_description_wc;
             $short_description_wc = $row->short_description_wc;
-            $items_priced_higher_than_competitors = $row->items_priced_higher_than_competitors;
 
             $result_row = new stdClass();
             $result_row->id = $row->id;
@@ -371,21 +370,30 @@ class Research extends MY_Controller {
             $result_row->duplicate_content = "-";
             $result_row->own_price = $row->own_price;
             $price_diff = unserialize($row->price_diff);
-            $price_diff_show = 0;
+            $result_row->lower_price_exist = false;
+
+            $items_priced_higher_than_competitors += $row->items_priced_higher_than_competitors;
+
+            if (floatval($row->own_price) <> false) {
+                $own_site = parse_url($row->url, PHP_URL_HOST);
+                $own_site = str_replace('www.', '', $own_site);
+                $result_row->price_diff = "<nobr>".$own_site." - $".$row->own_price."</nobr><br />";
+            }
 
             if(count($price_diff) > 1){
-                $price_diff_res = "<input type='hidden'><nobr>".$price_diff['own_site']." - $".$price_diff['own_price']."</nobr><br />";
+                $own_price = floatval($price_diff['own_price']);
+                $price_diff_res = "<nobr>".$price_diff['own_site']." - $".$price_diff['own_price']."</nobr><br />";
                 for($i=0; $i<count($price_diff['competitor_customer']); $i++){
                     if($customer_url["host"] != $price_diff['competitor_customer'][$i]){
-                        $price_diff_show += 1;
-                        $price_diff_res .= "<nobr>".$price_diff['competitor_customer'][$i]." - $".$price_diff['competitor_price'][$i]."</nobr><br />";
+                        if ($own_price > floatval($price_diff['competitor_price'][$i])) {
+                            $result_row->lower_price_exist = true;
+                            if ($build_assess_params->price_diff == true) {
+                                $price_diff_res .= "<input type='hidden'><nobr>".$price_diff['competitor_customer'][$i]." - $".$price_diff['competitor_price'][$i]."</nobr><br />";
+                            }
+                        }
                     }
                 }
                 $result_row->price_diff = $price_diff_res;
-            }
-
-            if ($build_assess_params->price_diff && $price_diff_show <= 0){
-                continue;
             }
 
             $result_row->competitors_prices = unserialize($row->competitors_prices);
@@ -443,7 +451,7 @@ class Research extends MY_Controller {
                }
             }
 
-            $items_priced_higher_than_competitors = $this->statistics_model->countAllItemsHigher($batch_id);
+            //$items_priced_higher_than_competitors = $this->statistics_model->countAllItemsHigher($batch_id);
 
             if ($result_row->short_seo_phrases == 'None' && $result_row->long_seo_phrases == 'None') {
                 $items_unoptimized_product_content++;
@@ -510,7 +518,9 @@ class Research extends MY_Controller {
             $result_table[] = $result_row;
         }
 
-        $report['summary']['total_items'] = count($result_table);
+        $own_batch_total_items = $this->statistics_model->total_items_in_batch($batch_id);
+
+        $report['summary']['total_items'] = $own_batch_total_items;
         $report['summary']['items_priced_higher_than_competitors'] = $items_priced_higher_than_competitors;
         $report['summary']['items_have_more_than_20_percent_duplicate_content'] = $items_have_more_than_20_percent_duplicate_content;
         $report['summary']['items_unoptimized_product_content'] = $items_unoptimized_product_content;
@@ -532,7 +542,6 @@ class Research extends MY_Controller {
             $compare_customer = $this->batches_model->getCustomerById($build_assess_params->compare_batch_id);
             $compare_batch = $this->batches_model->get($build_assess_params->compare_batch_id);
 
-            $own_batch_total_items = $this->statistics_model->total_items_in_batch($batch_id);
             $compare_batch_total_items = $this->statistics_model->total_items_in_batch($build_assess_params->compare_batch_id);
             $report['summary']['own_batch_total_items'] = $own_batch_total_items;
             $report['summary']['compare_batch_total_items'] = $compare_batch_total_items;
@@ -632,7 +641,7 @@ class Research extends MY_Controller {
                             $recommendations[] = '<li>SEO optimize product content</li>';
                         }
                         //$recommendations[] = '<li>Add unique content</li>';
-                        if ($build_assess_params->price_diff && !empty($data_row->competitors_prices)) {
+                        if ($data_row->lower_price_exist == true && !empty($data_row->competitors_prices)) {
                             if (min($data_row->competitors_prices) < $data_row->own_price) {
                                 $recommendations[] = '<li>Lower price to be competitive</li>';
                             }
@@ -777,7 +786,6 @@ class Research extends MY_Controller {
         $report_presetted_pages = $this->get_report_presetted_pages($get_report_presetted_pages_params);
 
         $build_assess_params = new stdClass();
-        $build_assess_params->price_diff = true;
         $build_assess_params->short_less = -1;
         $build_assess_params->short_more = -1;
         $build_assess_params->short_seo_phrases = true;
@@ -786,6 +794,8 @@ class Research extends MY_Controller {
         $build_assess_params->long_more = -1;
         $build_assess_params->long_seo_phrases = true;
         $build_assess_params->long_duplicate_content = true;
+        $price_diff = $this->input->get('price_diff') == 'undefined' ? -1 :$this->input->get('price_diff');
+        $build_assess_params->price_diff = $price_diff === 'true' ? true : false;
         if (intval($compare_batch_id) > 0) {
             $build_assess_params->compare_batch_id = $compare_batch_id;
         }
