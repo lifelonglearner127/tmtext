@@ -158,8 +158,15 @@ class WalmartSpider(BaseSpider):
                 parent_item = item
                 level = parent_item['level'] - 1
 
+
                 #print "URL ", response.url, " CALLING PARSEPAGE"
                 for subcategory in subcategories_links:
+
+                    # to avoid rescraping categories reached from links in menu and reaching levels of -9,
+                    # if level < -3 assume we've been there and skip
+
+                    if level < -3:
+                        continue
 
                     item = CategoryItem()
                     item['text'] = subcategory.select("text()").extract()[0].strip()
