@@ -169,7 +169,7 @@ class WalmartSpider(BaseSpider):
                     item['url'] = Utils.add_domain(subcategory.select("@href").extract()[0], self.root_url)
                     item['level'] = level
 
-                    item['nr_products'] = 1
+                    #item['nr_products'] = 1
                     parent_item['nr_products'] = 1
 
                     # temporary
@@ -191,7 +191,7 @@ class WalmartSpider(BaseSpider):
             # if we can't find either products on the page or subcategory links
             else:
                 #print "URL", response.url, " NO SUBCATs"
-                item['nr_products'] = 0
+                #item['nr_products'] = 0
                 yield item
 
 
