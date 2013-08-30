@@ -552,7 +552,7 @@ class Crons extends MY_Controller {
             $res=$q->get()->row_array();
             $start=$res['description'];
         if (count($data > 1) &&  $start <22) {
-            shell_exec('wget http://dev.contentsolutionsinc.com/producteditor/index.php/crons/do_stats_new > /dev/null 2>/dev/null &');
+            shell_exec('wget -S -O- http://dev.contentsolutionsinc.com/producteditor/index.php/crons/do_stats_new > /dev/null 2>/dev/null &');
         }
 
     }
