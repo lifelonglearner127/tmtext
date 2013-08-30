@@ -238,7 +238,7 @@ class Crons extends MY_Controller {
         $this->load->helper('algoritm');
         $this->load->model('sites_model');
         $data_arr=$this->imported_data_parsed_model->do_stats();
-        if(count($data_arr>1)){
+        if(count($data_arr)>1){
             foreach($data_arr as $obj){
                 $own_price = 0;
                           $competitors_prices = array();
@@ -551,7 +551,7 @@ class Crons extends MY_Controller {
         $q=$this->db->select('key,description')->from('settings')->where('key','cron_job_offset');
             $res=$q->get()->row_array();
             $start=$res['description'];
-        if (count($data_arr > 1 && $start< 22 )) {
+        if (count($data_arr) > 1) {
             shell_exec('wget -S -O- http://dev.contentsolutionsinc.com/producteditor/index.php/crons/do_stats_new > /dev/null 2>/dev/null &');
         }else{
             $data = array(
