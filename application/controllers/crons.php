@@ -239,6 +239,7 @@ class Crons extends MY_Controller {
             $this->load->model('research_data_model');
             $this->load->model('statistics_model');
             $this->load->model('statistics_duplicate_content_model');
+            $this->load->model('similar_imported_data_model');
             $this->load->model('similar_product_groups_model');
             $this->load->model('similar_data_model');
             $this->load->library('helpers');
