@@ -55,11 +55,10 @@ class WalmartSpider(BaseSpider):
 
             item['level'] = 0
 
+            # to avoid duplicates, only extract highest level categories in this function (so don't return if level 0)
             #yield item
 
-            # send category page to parseCategory function to extract description and number of products and add them to the item
-
-            # to avoid duplicates, only parse highest level categories. those should get to parsing lower level categories as well. see if there are any misses
+            
             # #TODO: check this
             # item['nr_products'] = -1
             # yield item
@@ -86,7 +85,7 @@ class WalmartSpider(BaseSpider):
         hxs = HtmlXPathSelector(response)
         item = response.meta['item']
 
-        # Extract description title, text and wordcount (if any)
+        # Extract description title, text, wordcount, and keyword density (if any)
 
         description_holder = hxs.select("//div[@id='detailedPageDescriptionCopyBlock']")
 
@@ -122,26 +121,41 @@ class WalmartSpider(BaseSpider):
             item['description_wc'] = 0
 
 
-        # Extract number of items
 
-        # find if there are any products on this page
-        product_holders = hxs.select("//a[@class='prodLink ListItemLink']").extract()
-        if product_holders:
-            # parse every page and collect total number of products
-            #print "URL ", response.url, " HAS PRODUCTS"
-
-            # item['nr_products'] = 1
+        # find if there is a wc field on the page
+        wc_field = hxs.select("//div[@class='mrl mod-toggleItemCount']/span/text()").extract()
+        if wc_field:
+            m = re.match("([0-9]+) Results", wc_field[0])
+            if m:
+                item['nr_products'] = int(m.group(1))
             yield item
-            #yield Request(response.url, callback = self.parsePage, meta = {'item' : item})
+        # # find if there are any products on this page
+        # product_holders = hxs.select("//a[@class='prodLink ListItemLink']").extract()
+        # if product_holders:
+        #     # parse every page and collect total number of products
+        #     #print "URL ", response.url, " HAS PRODUCTS"
+
+        #     # item['nr_products'] = 1
+        #     #yield item
+        #     yield Request(response.url, callback = self.parsePage, meta = {'item' : item})
 
         else:
             # look for links to subcategory pages in menu
             subcategories_links = hxs.select("//div[@class='G1001 LeftNavRM']/div[@class='yuimenuitemlabel browseInOuter leftnav-item leftnav-depth-1']/a[@class='browseIn']")
-            # new categories are subcategories of current one - calculate and store their level
-            parent_item = item
-            level = parent_item['level'] - 1
+
+            if not subcategories_links:
+            # # if we haven't found them, try to find subcategories in menu on the left under a "Shop by Category" header
+            #     subcategories_links = hxs.select("//div[@class='MainCopy']/div[@class='Header' and text()='\nShop by Category']/following-sibling::node()//a")
+
+            # if we haven't found them, try to find subcategories in menu on the left - get almost anything
+                subcategories_links = hxs.select("//div[@class='MainCopy']/div[@class='Header' and text()!='\nRelated Categories' and text()!='\nSpecial Offers']/following-sibling::node()//a")
+            
             # if we found them, create new category for each and parse it from the beginning
             if subcategories_links:
+
+                # new categories are subcategories of current one - calculate and store their level
+                parent_item = item
+                level = parent_item['level'] - 1
 
                 #print "URL ", response.url, " CALLING PARSEPAGE"
                 for subcategory in subcategories_links:
@@ -166,13 +180,18 @@ class WalmartSpider(BaseSpider):
                     # item['description_wc'] = 0
                     # yield item
                     yield Request(item['url'], callback = self.parseCategory, meta = {'item' : item})
+
+                # idea for sending parent and collecting nr products. send all of these subcats as a list in meta, pass it on, when list becomes empty, yield the parent
                 yield parent_item
                     #yield Request(item['url'], callback = self.parsePage, meta = {'item' : item, 'parent_item' : parent_item})
+
+
+
 
             # if we can't find either products on the page or subcategory links
             else:
                 #print "URL", response.url, " NO SUBCATs"
-                item['nr_products'] = -2
+                item['nr_products'] = 0
                 yield item
 
 
