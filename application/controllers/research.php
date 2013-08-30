@@ -786,12 +786,12 @@ class Research extends MY_Controller {
         $report_presetted_pages = $this->get_report_presetted_pages($get_report_presetted_pages_params);
 
         $build_assess_params = new stdClass();
-        $build_assess_params->short_less = -1;
-        $build_assess_params->short_more = -1;
-        $build_assess_params->short_seo_phrases = true;
+        $build_assess_params->short_less = $this->input->get('short_less') == 'undefined' ? -1 : $this->input->get('short_less');
+        $build_assess_params->short_more = $this->input->get('short_more') == 'undefined' ? -1 : $this->input->get('short_more');
+        $build_assess_params->short_seo_phrases = $this->input->get('short_seo_phrases');
         $build_assess_params->short_duplicate_content = true;
-        $build_assess_params->long_less = -1;
-        $build_assess_params->long_more = -1;
+        $build_assess_params->long_less = $this->input->get('long_less') == 'undefined' ? -1 : $this->input->get('long_less');
+        $build_assess_params->long_more = $this->input->get('long_more') == 'undefined' ? -1 : $this->input->get('long_more');
         $build_assess_params->long_seo_phrases = true;
         $build_assess_params->long_duplicate_content = true;
         $price_diff = $this->input->get('price_diff') == 'undefined' ? -1 :$this->input->get('price_diff');

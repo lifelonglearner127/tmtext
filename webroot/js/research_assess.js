@@ -542,7 +542,7 @@ $(function () {
 
     function assess_report_download(type_doc) {
         var batch_name = $("select[name='research_assess_batches']").find("option:selected").text();
-        var batch_id = $("select[name='research_assess_batches']").find("option:selected").val();
+        //var batch_id = $("select[name='research_assess_batches']").find("option:selected").val();
         var compare_batch_id = $("#research_assess_compare_batches_batch").val();
         var price_diff = false;
         if ($('#research_assess_price_diff').is(':checked')) {
@@ -551,9 +551,13 @@ $(function () {
         var url = base_url
             + 'index.php/research/assess_report_download?batch_name=' + batch_name
             + '&type_doc=' + type_doc
-            + '&batch_id=' + batch_id
+            //+ '&batch_id=' + batch_id
             + '&compare_batch_id=' + compare_batch_id
             + '&price_diff=' + price_diff
+        var assessRequestParams = collectionParams();
+        for (var p in assessRequestParams) {
+            url = url + '&'+p+'='+assessRequestParams[p];
+        }
         window.open(url);
     }
 
@@ -724,6 +728,16 @@ $(function () {
     }
 
     function buildTableParams(existingParams) {
+        var assessRequestParams = collectionParams();
+
+        for (var p in assessRequestParams) {
+            existingParams.push({"name": p, "value": assessRequestParams[p]});
+        }
+
+        return existingParams;
+    }
+
+    function collectionParams(){
         var assessRequestParams = {};
 
         assessRequestParams.search_text =  $('#assess_filter_text').val();
@@ -781,11 +795,7 @@ $(function () {
             assessRequestParams.compare_batch_id = research_assess_compare_batches_batch;
         }
 
-        for (var p in assessRequestParams) {
-            existingParams.push({"name": p, "value": assessRequestParams[p]});
-        }
-
-        return existingParams;
+        return assessRequestParams;
     }
 
     function readAssessData() {
