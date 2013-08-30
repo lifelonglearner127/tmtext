@@ -144,6 +144,7 @@ $(function () {
                 $(".research_assess_flagged").show();
             }
             hideColumns();
+            highlightPrices();
         }
     }
 
