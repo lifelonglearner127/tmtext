@@ -148,7 +148,8 @@ class WalmartSpider(BaseSpider):
             #     subcategories_links = hxs.select("//div[@class='MainCopy']/div[@class='Header' and text()='\nShop by Category']/following-sibling::node()//a")
 
             # if we haven't found them, try to find subcategories in menu on the left - get almost anything
-                subcategories_links = hxs.select("//div[@class='MainCopy']/div[@class='Header' and text()!='\nRelated Categories' and text()!='\nSpecial Offers']/following-sibling::node()//a")
+            #TODO: because of this there are some problems with the level, there are -6 which could be -2 (extracting same stuff from all sorts of related cats)
+                subcategories_links = hxs.select("//div[@class='MainCopy']/div[@class='Header' and text()!='\nRelated Categories' and text()!='\nSpecial Offers' and text()!='\nView Top Registry Items' and text()!='\nFeatured Content']/following-sibling::node()//a")
             
             # if we found them, create new category for each and parse it from the beginning
             if subcategories_links:
