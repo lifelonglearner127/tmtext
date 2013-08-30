@@ -346,7 +346,10 @@ class Research extends MY_Controller {
         $items_priced_higher_than_competitors = 0;
         $items_have_more_than_20_percent_duplicate_content = 0;
         $items_unoptimized_product_content = 0;
-        $items_short_products_content = 0;
+        $short_wc_total_not_0 = 0;
+        $long_wc_total_not_0 = 0;
+        $items_short_products_content_short = 0;
+        $items_long_products_content_short = 0;
         $detail_comparisons_total = 0;
 
         foreach($results as $row) {
@@ -457,19 +460,35 @@ class Research extends MY_Controller {
                 $items_unoptimized_product_content++;
             }
 
-            if (($result_row->short_description_wc < 20 && $build_assess_params->short_less == 20) &&
-                ($result_row->long_description_wc < 100 && $build_assess_params->long_less==100)) {
-                $items_short_products_content++;
+//            if (($result_row->short_description_wc < 20 && $build_assess_params->short_less == 20) &&
+//                ($result_row->long_description_wc < 100 && $build_assess_params->long_less==100)) {
+//                $items_short_products_content++;
+//            }
+//
+//            if (($result_row->short_description_wc <= 20 && $build_assess_params->long_less == false ) ||
+//                ($result_row->long_description_wc <= 100 && $build_assess_params->short_less == false)){
+//                $items_short_products_content++;
+//            }
+//
+//            if (($result_row->short_description_wc <= 20 && $build_assess_params->long_less == -1 ) ||
+//                ($result_row->long_description_wc <= 100 && $build_assess_params->short_less == -1)){
+//                $items_short_products_content++;
+//            }
+
+            if (intval($result_row->short_description_wc) > 0) {
+                $short_wc_total_not_0++;
             }
 
-            if (($result_row->short_description_wc <= 20 && $build_assess_params->long_less == false ) ||
-                ($result_row->long_description_wc <= 100 && $build_assess_params->short_less == false)){
-                $items_short_products_content++;
+            if (intval($result_row->long_description_wc) > 0) {
+                $long_wc_total_not_0++;
             }
 
-            if (($result_row->short_description_wc <= 20 && $build_assess_params->long_less == -1 ) ||
-                ($result_row->long_description_wc <= 100 && $build_assess_params->short_less == -1)){
-                $items_short_products_content++;
+            if (intval($result_row->short_description_wc) < 20) {
+                $items_short_products_content_short++;
+            }
+
+            if (intval($result_row->long_description_wc) < 100) {
+                $items_long_products_content_short++;
             }
 
             if ($build_assess_params->short_more > -1) {
@@ -504,7 +523,7 @@ class Research extends MY_Controller {
             if ($items_unoptimized_product_content > 0) {
                 $recomend = true;
             }
-            if ($items_short_products_content > 0) {
+            if ($items_short_products_content_short > 0 || $items_long_products_content_short > 0) {
                 $recomend = true;
             }
 
@@ -524,7 +543,10 @@ class Research extends MY_Controller {
         $report['summary']['items_priced_higher_than_competitors'] = $items_priced_higher_than_competitors;
         $report['summary']['items_have_more_than_20_percent_duplicate_content'] = $items_have_more_than_20_percent_duplicate_content;
         $report['summary']['items_unoptimized_product_content'] = $items_unoptimized_product_content;
-        $report['summary']['items_short_products_content'] = $items_short_products_content;
+        $report['summary']['items_short_products_content_short'] = $items_short_products_content_short;
+        $report['summary']['items_long_products_content_short'] = $items_long_products_content_short;
+        $report['summary']['short_wc_total_not_0'] = $short_wc_total_not_0;
+        $report['summary']['long_wc_total_not_0'] = $long_wc_total_not_0;
 
         // only if second batch select - get absent products, merge it with result_table
         if (isset($build_assess_params->compare_batch_id) && $build_assess_params->compare_batch_id > 0) {
@@ -562,8 +584,11 @@ class Research extends MY_Controller {
         if ($items_unoptimized_product_content > 0) {
             $report['recommendations']['items_unoptimized_product_content'] = 'Optimize product content';
         }
-        if ($items_short_products_content > 0) {
-            $report['recommendations']['items_short_products_content'] = 'Increase product description lengths';
+        if ($items_short_products_content_short > 0) {
+            $report['recommendations']['items_short_products_content_short'] = 'Increase short product description lengths';
+        }
+        if ($items_long_products_content_short > 0) {
+            $report['recommendations']['items_long_products_content_short'] = 'Increase long product description lengths';
         }
 
         $report['detail_comparisons_total'] = $detail_comparisons_total;
@@ -753,6 +778,9 @@ class Research extends MY_Controller {
         $params->batch_name = $this->input->get('batch_name');
         $results = $this->get_data_for_assess($params);
 
+        $this->load->model('statistics_model');
+        $a = $this->statistics_model->descriptions_wc_total($params->batch_id);
+
         $batch_id = $this->input->get('batch_id');
         $compare_batch_id = $this->input->get('compare_batch_id');
         $type_doc = $this->input->get('type_doc');
@@ -909,11 +937,18 @@ class Research extends MY_Controller {
             $html = $html.'</td></tr>';
         //}
 
-        //if (!empty($report_data['summary']['items_short_products_content']) && intval($report_data['summary']['items_short_products_content'] > 0)) {
+        if ($report_data['summary']['short_wc_total_not_0'] > 0 && $report_data['summary']['long_wc_total_not_0'] > 0) {
             $html = $html.'<tr><td class="report_td">';
-            $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_arrow_down.png">'.$report_data['summary']['items_short_products_content'].' items have product content that is too short</div>';
+            $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_arrow_down.png">'.$report_data['summary']['items_short_products_content_short'].' items have short descriptions that are too short</div>';
             $html = $html.'</td></tr>';
-        //}
+            $html = $html.'<tr><td class="report_td">';
+            $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_arrow_down.png">'.$report_data['summary']['items_long_products_content_short'].' items have long descriptions that are too short</div>';
+            $html = $html.'</td></tr>';
+        } else {
+            $html = $html.'<tr><td class="report_td">';
+            $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_arrow_down.png">items have descriptions that are too short</div>';
+            $html = $html.'</td></tr>';
+        }
 
         if (!empty($report_data['summary']['absent_items_count']) && intval($report_data['summary']['absent_items_count'] > 0)) {
             $html = $html.'<tr><td class="report_td">';

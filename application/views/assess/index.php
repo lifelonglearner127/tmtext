@@ -47,11 +47,11 @@
                 </div>
             </div>
             <div class="row-fluid assess_filter_options">
-                <div class="span12">
+                <div id="research_assess_filter_short_descriptions_panel" class="span12">
                     <div class="span3" style="height: 50px;">
                         <label class="checkbox">
                             <input id="research_assess_short_check" type="checkbox" checked>
-                            Short Descriptions:
+                            <span id="research_assess_filter_short_descriptions_label">Short Descriptions:</span>
                         </label>
                     </div>
                     <div id="research_assess_short_params">
@@ -80,11 +80,11 @@
                 </div>
             </div>
             <div class="row-fluid assess_filter_options">
-                <div class="span12">
+                <div id="research_assess_filter_long_descriptions_panel" class="span12">
                     <div class="span3" style="height: 50px;">
                         <label class="checkbox">
                             <input type="checkbox" id="research_assess_long_check" checked>
-                            Long Descriptions:
+                            <span id="research_assess_filter_long_descriptions_label">Long Descriptions:</span>
                         </label>
                     </div>
                     <div id="research_assess_long_params">
@@ -298,8 +298,18 @@
                                 <div class="mt_10 ml_15">
                                     <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_seo.png"><span id="assess_report_items_unoptimized_product_content" class="mr_10"></span>items have unoptimized product content</div>
                                 </div>
-                                <div class="mt_10 mb_10 ml_15">
-                                    <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_arrow_down.png"><span id="assess_report_items_have_product_context_that_is_too_short" class="mr_10"></span>items have product content that is too short</div>
+                                <div id="assess_report_items_1_descriptions_pnl">
+                                    <div class="mt_10 mb_10 ml_15">
+                                        <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_arrow_down.png"><span id="assess_report_items_have_product_descriptions_that_are_too_short" class="mr_10"></span>items have descriptions that are too short</div>
+                                    </div>
+                                </div>
+                                <div id="assess_report_items_2_descriptions_pnl" style="display: none;">
+                                    <div class="mt_10 mb_10 ml_15">
+                                        <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_arrow_down.png"><span id="assess_report_items_have_product_short_descriptions_that_are_too_short" class="mr_10"></span>items have short descriptions that are too short</div>
+                                    </div>
+                                    <div class="mt_10 mb_10 ml_15">
+                                        <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_arrow_down.png"><span id="assess_report_items_have_product_long_descriptions_that_are_too_short" class="mr_10"></span>items have long descriptions that are too short</div>
+                                    </div>
                                 </div>
                                 <div id="assess_report_compare_panel" class="mt_10 mb_10 ml_15">
                                     <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_comparison.png">

@@ -86,11 +86,16 @@ $(function () {
                             $('#assess_report_items_priced_higher_than_competitors').html("");
                             $('#assess_report_items_have_more_than_20_percent_duplicate_content').html("");
                             $('#assess_report_items_unoptimized_product_content').html("");
-                            $('#assess_report_items_have_product_context_that_is_too_short').html("");
+                            $('#assess_report_items_have_product_short_descriptions_that_are_too_short').html("");
+                            $('#assess_report_items_have_product_long_descriptions_that_are_too_short').html("");
                             $('#assess_report_compare_panel').hide();
                             $('#assess_report_numeric_difference').hide();
                             if($('select[name="research_assess_batches"]').find('option:selected').val() != ""){
                                 $('#summary_message').html(" - Processing data. Check back soon.");
+                                $('#research_assess_filter_short_descriptions_panel').show();
+                                $('#research_assess_filter_long_descriptions_panel').show();
+                                $('#assess_report_items_1_descriptions_pnl').show();
+                                $('#assess_report_items_2_descriptions_pnl').hide();
                             }
                         }
                     });
@@ -166,7 +171,33 @@ $(function () {
         $('#assess_report_items_priced_higher_than_competitors').html(report.summary.items_priced_higher_than_competitors);
         $('#assess_report_items_have_more_than_20_percent_duplicate_content').html(report.summary.items_have_more_than_20_percent_duplicate_content);
         $('#assess_report_items_unoptimized_product_content').html(report.summary.items_unoptimized_product_content);
-        $('#assess_report_items_have_product_context_that_is_too_short').html(report.summary.items_short_products_content);
+        if (report.summary.short_wc_total_not_0 > 0 && report.summary.long_wc_total_not_0 > 0) {
+            $('#assess_report_items_have_product_short_descriptions_that_are_too_short').html(report.summary.items_short_products_content_short);
+            $('#assess_report_items_have_product_long_descriptions_that_are_too_short').html(report.summary.items_long_products_content_short);
+            $('#assess_report_items_1_descriptions_pnl').hide();
+            $('#assess_report_items_2_descriptions_pnl').show();
+
+            $('#research_assess_filter_short_descriptions_label').html("Short Descriptions:");
+            $('#research_assess_filter_long_descriptions_label').html("Long Descriptions:");
+            $('#research_assess_filter_short_descriptions_panel').show();
+            $('#research_assess_filter_long_descriptions_panel').show();
+        } else {
+            $('#assess_report_items_1_descriptions_pnl').show();
+            $('#assess_report_items_2_descriptions_pnl').hide();
+
+            if (report.summary.short_wc_total_not_0 == 0) {
+                $('#research_assess_filter_long_descriptions_label').html("Descriptions:");
+                $('#research_assess_short_less_check').removeAttr('checked');
+                $('#research_assess_short_more_check').removeAttr('checked');
+                $('#research_assess_filter_short_descriptions_panel').hide();
+            }
+            if (report.summary.long_wc_total_not_0 == 0) {
+                $('#research_assess_filter_short_descriptions_label').html("Descriptions:");
+                $('#research_assess_long_less_check').removeAttr('checked');
+                $('#research_assess_long_more_check').removeAttr('checked');
+                $('#research_assess_filter_long_descriptions_panel').hide();
+            }
+        }
         if (report.summary.absent_items_count == undefined || report.summary.absent_items_count == 0) {
             $('#assess_report_compare_panel').hide();
         } else {
@@ -355,6 +386,12 @@ $(function () {
         research_assess_compare_batches_customer.empty();
         research_assess_compare_batches_batch.empty();
         if (own_customer == 'Select customer') {
+            return;
+        }
+
+        if (own_customer == 'select customer') {
+            research_assess_compare_batches_customer.empty();
+            research_assess_compare_batches_batch.empty();
             return;
         }
 
