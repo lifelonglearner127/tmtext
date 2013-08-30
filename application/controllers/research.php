@@ -772,7 +772,7 @@ class Research extends MY_Controller {
 
     public function assess_report_download() {
         $report_name = 'Assess';
-
+return;
         $params = new stdClass();
         $params->batch_id = $this->input->get('batch_id');
         $params->batch_name = $this->input->get('batch_name');
@@ -844,7 +844,7 @@ class Research extends MY_Controller {
 
         switch($type_doc) {
             case 'pdf':
-                //$this->download_pdf($download_report_params);
+                $this->download_pdf($download_report_params);
                 break;
             case 'doc':
                 break;
