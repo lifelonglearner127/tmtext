@@ -772,14 +772,11 @@ class Research extends MY_Controller {
 
     public function assess_report_download() {
         $report_name = 'Assess';
-return;
+
         $params = new stdClass();
         $params->batch_id = $this->input->get('batch_id');
         $params->batch_name = $this->input->get('batch_name');
         $results = $this->get_data_for_assess($params);
-
-        $this->load->model('statistics_model');
-        $a = $this->statistics_model->descriptions_wc_total($params->batch_id);
 
         $batch_id = $this->input->get('batch_id');
         $compare_batch_id = $this->input->get('compare_batch_id');
