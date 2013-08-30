@@ -59,12 +59,24 @@ class Webshoots_model extends CI_Model {
     //     return $images;
     // }
 
+    private function getScreenPosition($screen_id) {
+        $pos = 0;
+        $query = $this->db->where('screen_id', $screen_id)->get($this->tables['webshoots_select']);
+        $query_res = $query->result();
+        if(count($query_res) > 0) {
+            $r = $query_res[0];
+            $pos = $r->pos;
+        }
+        return $pos;
+    }
+
     public function getDistinctEmailScreens($c_week, $c_year, $uid) {
         $images = array();
         $check_obj = array(
             'uid' => $uid,
             'year' => $c_year,
-            'week' => $c_week
+            'week' => $c_week,
+            'pos !=' => 0
         );
         $sel_query = $this->db->where($check_obj)->order_by('stamp', 'desc')->get($this->tables['webshoots_select']);
         $sel_res = $sel_query->result();
@@ -82,7 +94,8 @@ class Webshoots_model extends CI_Model {
                     if($fs !== false && $fs > 10000) {
                         $mid = array(
                             'link' => $v->img,
-                            'dir' => $v->dir_img
+                            'dir' => $v->dir_img,
+                            'pos' => $this->getScreenPosition($v->id)
                         );
                         $images[] = $mid;
                     }

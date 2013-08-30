@@ -135,6 +135,15 @@ class Measure extends MY_Controller {
         $c_week = $this->input->post('c_week');
         $c_year = $this->input->post('c_year');
         $screens = $this->webshoots_model->getDistinctEmailScreens($c_week, $c_year, $uid);
+        // ==== sort assoc by pos (start)
+        if(count($screens) > 0) {
+            $sort = array();
+            foreach($screens as $k=>$v) {
+                $sort['pos'][$k] = $v['pos'];
+            }
+            array_multisort($sort['pos'], SORT_ASC, $screens);
+        }
+        // ==== sort assoc by pos (end)
         // -- email config (dev configurations) (start) --
         $this->load->library('email');
         $config['protocol'] = 'sendmail';
@@ -213,6 +222,15 @@ class Measure extends MY_Controller {
         $c_week = $this->input->post('c_week');
         $c_year = $this->input->post('c_year');
         $screens = $this->webshoots_model->getDistinctEmailScreens($c_week, $c_year, $uid);
+        // ==== sort assoc by pos (start)
+        if(count($screens) > 0) {
+            $sort = array();
+            foreach($screens as $k=>$v) {
+                $sort['pos'][$k] = $v['pos'];
+            }
+            array_multisort($sort['pos'], SORT_ASC, $screens);
+        }
+        // ==== sort assoc by pos (end)
         // --------------- email sender (start) ---------------
         // -- email config (dev configurations) (start) --
         $this->load->library('email');
