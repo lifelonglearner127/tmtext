@@ -352,9 +352,6 @@ class Research extends MY_Controller {
         foreach($results as $row) {
             $long_description_wc = $row->long_description_wc;
             $short_description_wc = $row->short_description_wc;
-            if ($build_assess_params->price_diff == true) {
-                $items_priced_higher_than_competitors += $row->items_priced_higher_than_competitors;
-            }
 
             $result_row = new stdClass();
             $result_row->id = $row->id;
@@ -373,22 +370,35 @@ class Research extends MY_Controller {
             $result_row->duplicate_content = "-";
             $result_row->own_price = $row->own_price;
             $price_diff = unserialize($row->price_diff);
-            $price_diff_show = 0;
+            //$price_diff_show = 0;
 
-            if(count($price_diff) > 1){
-                $price_diff_res = "<input type='hidden'><nobr>".$price_diff['own_site']." - $".$price_diff['own_price']."</nobr><br />";
-                for($i=0; $i<count($price_diff['competitor_customer']); $i++){
-                    if($customer_url["host"] != $price_diff['competitor_customer'][$i]){
-                        $price_diff_show += 1;
-                        $price_diff_res .= "<nobr>".$price_diff['competitor_customer'][$i]." - $".$price_diff['competitor_price'][$i]."</nobr><br />";
+            $items_priced_higher_than_competitors += $row->items_priced_higher_than_competitors;
+
+            if ($price_diff == '' && floatval($row->own_price) <> false) {
+                $own_site = parse_url($row->url, PHP_URL_HOST);
+                $own_site = str_replace('www.', '', $own_site);
+                $result_row->price_diff = "<nobr>".$own_site." - $".$row->own_price."</nobr><br />";
+            }
+
+            if ($build_assess_params->price_diff == true) {
+                if(count($price_diff) > 1){
+                    $own_price = floatval($price_diff['own_price']);
+                    $price_diff_res = "<nobr>".$price_diff['own_site']." - $".$price_diff['own_price']."</nobr><br />";
+                    for($i=0; $i<count($price_diff['competitor_customer']); $i++){
+                        if($customer_url["host"] != $price_diff['competitor_customer'][$i]){
+                            //$price_diff_show += 1;
+                            if ($own_price > floatval($price_diff['competitor_price'][$i])) {
+                                $price_diff_res .= "<input type='hidden'><nobr>".$price_diff['competitor_customer'][$i]." - $".$price_diff['competitor_price'][$i]."</nobr><br />";
+                            }
+                        }
                     }
+                    $result_row->price_diff = $price_diff_res;
                 }
-                $result_row->price_diff = $price_diff_res;
             }
 
-            if ($build_assess_params->price_diff && $price_diff_show <= 0){
-                continue;
-            }
+//            if ($build_assess_params->price_diff && $price_diff_show <= 0){
+//                continue;
+//            }
 
             $result_row->competitors_prices = unserialize($row->competitors_prices);
 
@@ -634,7 +644,7 @@ class Research extends MY_Controller {
                             $recommendations[] = '<li>SEO optimize product content</li>';
                         }
                         //$recommendations[] = '<li>Add unique content</li>';
-                        if ($build_assess_params->price_diff && !empty($data_row->competitors_prices)) {
+                        if (!empty($data_row->competitors_prices)) {
                             if (min($data_row->competitors_prices) < $data_row->own_price) {
                                 $recommendations[] = '<li>Lower price to be competitive</li>';
                             }
