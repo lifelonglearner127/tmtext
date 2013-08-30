@@ -380,6 +380,7 @@ class Research extends MY_Controller {
             if (floatval($row->own_price) <> false) {
                 $own_site = parse_url($row->url, PHP_URL_HOST);
                 $own_site = str_replace('www.', '', $own_site);
+                $own_site = str_replace('www1.', '', $own_site);
                 $result_row->price_diff = "<nobr>".$own_site." - $".$row->own_price."</nobr><br />";
             }
 
