@@ -801,6 +801,7 @@ class Measure extends MY_Controller {
         
         $b =explode(' ', strtolower($second_text));
         $arr=  array_intersect($a, $b);
+        $arr =array_unique($arr);
         $count = count($arr);
 //        foreach ($a as $val) {
 //            if (in_array($val, $b)) {
@@ -810,8 +811,8 @@ class Measure extends MY_Controller {
 //        }
 
         $prc = $count / count($a) * 100;
-        
-        return $prc;
+        $dubl_arr = array($prc,$arr);
+        return $dubl_arr;
         }
     }
     public function similar_groups(){
@@ -1207,6 +1208,8 @@ public function gridview() {
                 foreach ($same_pr as $ks => $vs) {
                     $maxshort = 0;
                     $maxlong = 0;
+                    $maxshorttext = 0;
+                    $maxlongtext = 0;
                     $k_sh = 0;
                     $k_lng = 0;
                     foreach ($same_pr as $ks1 => $vs1) {
@@ -1214,18 +1217,23 @@ public function gridview() {
                         if ($ks != $ks1) {
                             if ($vs['description'] != '') {
                                 if ($vs1['description'] != '') {
+                                    //echo 1;
                                     $k_sh++;
+                                   //$percent = array();
                                     $percent = $this->compare_text($vs['description'], $vs1['description']);
-                                    if ($percent > $maxshort) {
-                                        $maxshort = $percent;
+                                    if ($percent[0] > $maxshort) {
+                                        $maxshort = $percent[0];
+                                        $maxshorttext = $percent[1];
                                     }
                                 }
 
                                 if ($vs1['long_description'] != '') {
+                                   // echo 2;
                                     $k_sh++;
                                     $percent = $this->compare_text($vs['description'], $vs1['long_description']);
-                                    if ($percent > $maxshort) {
-                                        $maxshort = $percent;
+                                    if ($percent[0] > $maxshort) {
+                                        $maxshort = $percent[0];
+                                        $maxshorttext = $percent[1];
                                     }
                                 }
                             }
@@ -1233,18 +1241,22 @@ public function gridview() {
                             if ($vs['long_description'] != '') {
 
                                 if ($vs1['description'] != '') {
+                                    //echo 3
                                     $k_lng++;
                                     $percent = $this->compare_text($vs['long_description'], $vs1['description']);
-                                    if ($percent > $maxlong) {
-                                        $maxlong = $percent;
+                                    if ($percent[0] > $maxlong) {
+                                        $maxlong = $percent[0];
+                                        $maxlongtext = $percent[1];
                                     }
                                 }
 
                                 if ($vs1['long_description'] != '') {
+                                    //echo 4;
                                     $k_lng++;
                                     $percent = $this->compare_text($vs['long_description'], $vs1['long_description']);
-                                    if ($percent > $maxlong) {
-                                        $maxlong = $percent;
+                                    if ($percent[0] > $maxlong) {
+                                        $maxlong = $percent[0];
+                                        $maxlongtext = $percent[1];
                                     }
                                 }
                             }
@@ -1252,21 +1264,28 @@ public function gridview() {
                     }
                     if($maxshort!=0){
                         $vs['short_original'] =  ceil($maxshort) . '%';
+                        $vs['short_original_text'] = $maxshorttext;
+                        
                     }else{
                         $vs['short_original']= "Insufficient data";
+                        unset($vs['short_original_text']);
                     }
 
                     if($maxlong!=0){
                         $vs['long_original'] =  ceil($maxlong) . '%';
+                        $vs['long_original_text'] = $maxlongtext;
                     }else{
                         $vs['long_original']= "Insufficient data";
+                        unset($vs['long_original_text']);
                     }
 
                     if ($k_lng == 0) {
                         $vs['long_original'] = "Insufficient data";
+                        unset($vs['long_original_text']);
                     }
                     if ($k_sh == 0) {
                         $vs['short_original'] = "Insufficient data";
+                        unset($vs['short_original_text']);
                     }
 
                     $same_pr[$ks] = $vs;
@@ -1274,6 +1293,8 @@ public function gridview() {
             } else {
                 $same_pr[0]['long_original'] = 'Insufficient data';
                 $same_pr[0]['short_original'] = 'Insufficient data';
+                unset($vs['short_original_text']);
+                unset($vs['long_original_text']);
             }
             //   Max
 //Max
@@ -1504,8 +1525,8 @@ public function gridview() {
                         if ($ks != $ks1) {
                             if ($vs['description'] != '') {
                                 if ($vs1['description'] != '') {
-                                    $k_sh++;
-                                    $percent = $this->compare_text($vs['description'], $vs1['description']);
+                                    $k_sh++;$percent = array();
+                                    $percent = $this->compare_text($vs['description'], $vs1['description']);echo var_dump($percent)."<br><br>";
                                     if ($percent > $maxshort) {
                                         $maxshort = $percent;
                                     }

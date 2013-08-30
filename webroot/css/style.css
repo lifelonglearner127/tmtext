@@ -1122,9 +1122,6 @@ a.gray_out {
     padding-bottom: 0px;
 }
 
-.highlight {
-    background: #CAEAFF;
-}
 
 .desc_title {
     border: 1px solid #CCCCCC !important;
@@ -1901,3 +1898,5 @@ select#sites option{
      }
      
 .column_url{word-break: break-word; width: 200px;}
+span.highlight { background-color: yellow;}
+.cmp-btn{padding-right:5px;cursor:pointer;}
