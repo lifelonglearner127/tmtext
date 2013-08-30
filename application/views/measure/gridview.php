@@ -123,7 +123,6 @@ foreach ($same_pr as $ks => $vs) {
                                             if ($last_price->created != '') {
                                                 echo date("m/d/Y", strtotime($last_price->created)) . ':';
                                             }
-<<<<<<< HEAD
                                             ?> </p>
                                     </td>
                                     <?php if ($j != 0) { ?>
@@ -148,23 +147,15 @@ foreach ($same_pr as $ks => $vs) {
                                         </td>
                                         <?php
                                     }
-=======
-                                            ?>class="product_price">$<?php echo sprintf("%01.2f", floatval($last_price->price)); ?></span></p>
-                                        <!--    //Max                           -->
-                                    </td> 
-                                    <?php
-                                } else {
->>>>>>> 9636ed6f9390f1e598e297e2d5a114fdb5a65c73
                                     ?>
-                                </tr>
-                                <?php
+                                    <?php
+                                }
+                                echo '</table>';
+                            } else {
+                                echo "<span class='analysis_content_head'>Price:</span>";
+                                echo "<p>Special or not listed</p>";
                             }
-                            echo '</table>';
-                        } else {
-                            echo "<span class='analysis_content_head'>Price:</span>";
-                            echo "<p>Special or not listed</p>";
-                        }
-                        ?>
+                            ?>
                     </div>
                     <!--                            //Max-->
                     <div class="p_description" style="overflow:hidden;">
