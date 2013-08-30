@@ -150,7 +150,7 @@ class Measure extends MY_Controller {
             $id = $v['id'];
             $this->email->from('bayclimber@gmail.com', "Content Solutions - Home Pages Report");
             $this->email->to("$email");
-            $this->email->subject('Content Solutions - Home Pages Report');
+            $this->email->subject('Contalytics - Home Pages Report');
             $data_et['day'] = $day;
             $data_et['screens'] = $screens;
             $msg = $this->load->view('measure/rec_report_email_template', $data_et, true);
@@ -216,16 +216,18 @@ class Measure extends MY_Controller {
         // --------------- email sender (start) ---------------
         // -- email config (dev configurations) (start) --
         $this->load->library('email');
+
         $config['protocol'] = 'sendmail';
         $config['mailpath'] = '/usr/sbin/sendmail';
         $config['charset'] = 'UTF-8';
         $config['wordwrap'] = TRUE;
         $config['mailtype'] = 'html';
+        
         $this->email->initialize($config);
         // -- email config (dev configurations) (end) --
         $this->email->from('bayclimber@gmail.com', "Content Solutions - Home Pages Report");
         $this->email->to("$email");
-        $this->email->subject('Content Solutions - Home Pages Report');
+        $this->email->subject('Contalytics - Home Pages Report');
         $data_et['day'] = $day;
         $data_et['screens'] = $screens;
         $msg = $this->load->view('measure/rec_report_email_template', $data_et, true);

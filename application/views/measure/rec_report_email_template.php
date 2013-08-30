@@ -1,4 +1,4 @@
-<p>Report screenshots in attachment. Preference day: <?php echo $day; ?>.</p>
+<img src="<?php echo base_url() ?>/img/content_analytics_logo.jpg">
 <?php if(count($screens) > 0) { ?>
 	<?php 
 		$item_per_row = 2;
