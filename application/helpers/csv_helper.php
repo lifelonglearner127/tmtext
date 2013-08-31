@@ -97,5 +97,77 @@ if ( ! function_exists('query_to_csv'))
 	}
 }
 
+/**
+ * Parse from CSV
+ *
+ * return array containing data from csv
+ */
+if ( ! function_exists('csv_to_array'))
+{
+	function csv_to_array($csv = null, $header = array(), $delimiter = ',')
+	{
+            
+            if($csv != null && file_exists(dirname($_SERVER['SCRIPT_FILENAME']).'/webroot/uploads/'.$csv)) {
+                if (($handle = fopen(dirname($_SERVER['SCRIPT_FILENAME']).'/webroot/uploads/'.$csv, "r")) !== FALSE) {
+                        $first_line = true;
+                        while (($parsed = fgetcsv($handle, 2000, "$delimiter", "\"")) !== false) {
+                                $continue = false;
+                                // first line is a header?
+                                if ($first_line) {
+                                        $first_line = false;
+
+                                        foreach($parsed as &$col) {
+                                                if ( in_array(strtolower($col), $header) ) {
+                                                        $continue = true;
+                                                }
+                                                if (isset($header_replace[$col])) {
+                                                        $col = $header_replace[$col];
+                                                }
+                                        }
+
+                                }
+                                if ($continue) {
+                                        $header = $parsed;
+                                        continue;
+                                }
+
+                                $parsed_tmp = $parsed;
+                                foreach($parsed_tmp as &$col) {
+                                        $col = '"'.str_replace('"','\"', $col).'"';
+                                }
+                                $row = implode(',',$parsed_tmp);
+
+                                $key = sha1($row); $i++;
+                                if (!array_key_exists($key, $_rows)) {
+                                        $_rows[$key] = array(
+                                                'row'=>$row,
+                                        );
+                                        // add parsed data
+                                        if (!empty($header)) {
+                                                foreach( $header as $i=>$h ){
+                                                        if (!empty($h)) {
+                                                                $_rows[$key]['parsed'][$h] = $parsed[$i];
+                                                        }
+                                                }
+                                        }
+
+                                }
+                        }
+                }
+                fclose($handle);
+                
+                if(isset($_rows) && !empty($_rows)) {
+                    return $_rows;
+                }
+                    
+            }
+            
+            return array();
+            
+	}
+}
+
+
+
 /* End of file csv_helper.php */
 /* Location: ./system/helpers/csv_helper.php */

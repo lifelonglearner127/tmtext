@@ -20,8 +20,9 @@
                                     </div>
                                     <div class="span3">
                                         <select id="brand_types" name="brand_types">
-                                            <option value="Retail">Retail</option>
-                                            <option value="CPG">CPG</option>
+                                            <?php foreach($brand_types as $brand_type) { ?>
+                                                    <option value="<?php echo $brand_type->id; ?>"><?php echo $brand_type->name; ?></option>
+                                            <?php } ?>
                                         </select>
                                         <input type="hidden" name="brand_data_csv" id="brand_data_csv" value="" />
                                         <input type="hidden" name="company_data_csv" id="company_data_csv" value="" />
@@ -50,12 +51,22 @@
                                         </span>
                                     </div>
                                     <div class="clearfix"></div>
-                                    <div id="progress" class="progress progress-success progress-striped">
+                                    <div class="span4"></div>
+                                    <div id="progress" class="progress progress-success progress-striped span3">
                                                 <div class="bar"></div>
                                     </div>
                                     <div id="files"></div>
                                     <div class="clearfix"></div>
-                                    <div class=""><button id="brand_csv_import" class="btn btn-success"><i class="icon-white icon-ok"></i>&nbsp;Import</button></div>
+                                    <div class="span2">
+                                        <button id="brand_csv_import" class="btn btn-success"><i class="icon-white icon-ok"></i>&nbsp;Import</button>
+                                        <input type="reset" name="reset" id="reset" class="hide" />
+                                    </div>
+                                    <div class="span6 ">
+                                        <div class="alert alert-success hide import_success">
+                                            <strong>You have imported successfully!</strong>
+                                            
+                                        </div>
+                                    </div>
                                 </div>
                     <?php echo form_close();?>
                 </div>
@@ -92,13 +103,13 @@
                     'width',
                     progress + '%'
                 );
-                if (progress == 100) {
-                    //$('#brand_data_save').trigger('submit');
-                }
+                if (progress == 100) {}
             }
         });
         
         $('#brand_csv_import').click(function() {
+            var button = $(this);
+            button.attr('disabled', 'disabled');
             var url = $(this).parents().find('form').attr( 'action' ).replace('save', 'csv_import');
             
             $.ajax({
@@ -107,7 +118,11 @@
                 data: $('#brand_data_save').serialize(),
                 dataType: 'json',
                 success: function(data){
-                        alert('success');
+                        $('.import_success').show();
+                        $('#reset').trigger('click');
+                        $('#brand_data_csv').val('');
+                        $('#company_data_csv').val('');
+                        button.removeAttr('disabled');
                 }
             });
             return false;

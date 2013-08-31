@@ -63,6 +63,10 @@ class Brand extends MY_Controller {
     }
     
     public function import() {
+        $this->load->model('brand_types_model');
+        $brand_types = $this->brand_types_model->getAll();
+        $this->data['brand_types'] = $brand_types;
+        
         $this->render();
     }
     
@@ -80,60 +84,70 @@ class Brand extends MY_Controller {
     }
     
     public function csv_import() {
+        $this->load->helper('csv_helper');
+        $this->load->model('brands_model');
+        $this->load->model('company_model');
+        $this->load->model('brand_data_model');
+        $this->load->model('brand_data_summary_model');
+        
         $brand_type = $this->input->post('brand_types', null);
         $brand_data_csv = $this->input->post('brand_data_csv', null);
         $company_data_csv = $this->input->post('company_data_csv', null);
-        echo $brand_data_csv."\t".$company_data_csv."\t".$brand_type; exit;
         
-//        if($company_data_csv != '' && file_exists(dirname($this->get_server_var('SCRIPT_FILENAME')).'/webroot/uploads/'.$company_data_csv)) {
-//            if (($handle = fopen(dirname($this->get_server_var('SCRIPT_FILENAME')).'/webroot/uploads/'.$company_data_csv, "r")) !== FALSE) {
-//                    $first_line = true;
-//                    while (($parsed = fgetcsv($handle, 2000, ",", "\"")) !== false) {
-//                            $continue = false;
-//                            // first line is a header?
-//                            if ($first_line) {
-//                                    $first_line = false;
-//
-//                                    foreach($parsed as &$col) {
-//                                            if ( in_array(strtolower($col),array('url','product name', 'description')) ) {
-//                                                    $continue = true;
-//                                            }
-//                                            if (isset($header_replace[$col])) {
-//                                                    $col = $header_replace[$col];
-//                                            }
-//                                    }
-//
-//                            }
-//                            if ($continue) {
-//                                    $header = $parsed;
-//                                    continue;
-//                            }
-//
-//                            $parsed_tmp = $parsed;
-//                            foreach($parsed_tmp as &$col) {
-//                                    $col = '"'.str_replace('"','\"', $col).'"';
-//                            }
-//                            $row = implode(',',$parsed_tmp);
-//
-//                            $key = $this->imported_data_model->_get_key($row); $i++;
-//                            if (!array_key_exists($key, $_rows)) {
-//                                    $_rows[$key] = array(
-//                                            'row'=>$row,
-//                                            'category' => $category
-//                                    );
-//                                    // add parsed data
-//                                    if (!empty($header)) {
-//                                            foreach( $header as $i=>$h ){
-//                                                    if (!empty($h)) {
-//                                                            $_rows[$key]['parsed'][$h] = $parsed[$i];
-//                                                    }
-//                                            }
-//                                    }
-//
-//                            }
-//                    }
-//            }
-//            fclose($handle);
-//        }
+        $brandHeader = array('Date', 'Brand', 'Tweets', 'Followers', 'YT_Videos', 'YT_Views');
+        $companyHeader = array('IR500Rank', 'CompanyName', 'Twitter', 'Youtube', 'Brand');
+        
+        if($company_data_csv != null) {
+            $data = csv_to_array($company_data_csv, $companyHeader, ';');
+            
+            if(!empty($data)) {
+                $i = 1;
+                foreach($data as $key=>$value) {
+                    if($i > 1) { 
+                        $params = $value['parsed'];
+
+                        //Insert new company
+                        $company_id = $this->company_model->insert($params['CompanyName'], '', '', $params['IR500Rank'], $params['Twitter'], $params['Youtube']);
+
+                        //Update brands table set company_id=$company_id
+                        $brand = $this->brands_model->getByName($params['Brand']);
+                        if(!empty($brand) && $company_id) {
+                            $this->brands_model->update($brand->id, $brand->name, $company_id, $brand->brand_type);
+                        }
+                    }
+                    $i++;
+                }
+            }
+        }
+        
+        if($brand_data_csv != null && $brand_type != null) {
+            $data = csv_to_array($brand_data_csv, $brandHeader, ';');
+            
+            if(!empty($data)) {
+                $i = 1;
+                foreach($data as $key=>$value) {
+                    if($i > 1) { 
+                        $params = $value['parsed'];
+                        
+                        $brandName = $params['Brand'];
+                        $date = date('Y-m-d', strtotime($params['Date']));
+                        $tweets = $params['Tweets'];
+                        $followers = $params['Followers'];
+                        $youtube_videos = $params['YT_Videos'];
+                        $youtube_views = $params['YT_Views'];
+                        
+                        $brand = $this->brands_model->getByName($brandName);
+                        if(!empty($brand)) {
+                            $this->brands_model->update($brand->id, $brand->name, $brand->company_id, $brand_type);
+                            $this->brand_data_model->insert($brand->id, $date, $tweets, $followers, $youtube_videos, $youtube_views);
+                            $this->brand_data_summary_model->updateByBrandId($brand->id, $tweets, $youtube_videos, $youtube_views);
+                        }
+                    }
+                    $i++;
+                }
+            }
+        }
+        
+        
     }
 }

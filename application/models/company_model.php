@@ -3,8 +3,11 @@
 class Company_model extends CI_Model {
 
     var $name = '';
-	var $description = '';
-	var $image = '';
+    var $description = '';
+    var $image = '';
+    var $Youtube = '';
+    var $Twitter = '';
+    var $IR500Rank = '';
 
     var $tables = array(
         'companies' => 'companies'
@@ -24,21 +27,27 @@ class Company_model extends CI_Model {
         return $query->result();
     }
 
-    function insert($name, $image='', $description='')
+    function insert($name, $image='', $description='', $IR500Rank='', $Twitter='', $Youtube='')
     {
         $this->name = $name;
         $this->image = $image;
         $this->description = $description;
+        $this->IR500Rank = $IR500Rank;
+        $this->Twitter = $Twitter;
+        $this->Youtube = $Youtube;
 
         $this->db->insert($this->tables['companies'], $this);
         return $this->db->insert_id();
     }
 
-    function update($id, $name, $image, $description)
+    function update($id, $name, $image, $description, $IR500Rank='', $Twitter='', $Youtube='')
     {
         $this->name = $name;
         $this->image = $image;
         $this->description = $description;
+        $this->IR500Rank = $IR500Rank;
+        $this->Twitter = $Twitter;
+        $this->Youtube = $Youtube;
 
     	return $this->db->update($this->tables['companies'],
                 $this,

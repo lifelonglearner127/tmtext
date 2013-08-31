@@ -3,28 +3,57 @@ ALTER TABLE  `companies` ADD  `IR500Rank` INT NOT NULL DEFAULT  '0';
 ALTER TABLE  `companies` ADD  `Twitter` VARCHAR( 32 ) NULL DEFAULT NULL;
 ALTER TABLE  `companies` ADD  `Youtube` VARCHAR( 32 ) NULL DEFAULT NULL;
 ALTER TABLE  `brands` ADD  `company_id` INT NOT NULL;
-ALTER TABLE  `brands` ADD  `brand_type` INT NOT NULL
 
 CREATE TABLE IF NOT EXISTS `brand_data_summary` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `brand_id` int(11) NOT NULL DEFAULT '0',
+  `brand_id` int(11) unsigned NOT NULL,
   `total_tweets` int(11) NOT NULL DEFAULT '0',
   `total_youtube_videos` int(11) NOT NULL DEFAULT '0',
   `total_youtube_views` int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+  PRIMARY KEY (`id`),
+  KEY `brand_id` (`brand_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
 
 CREATE TABLE IF NOT EXISTS `brand_data` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `brand_id` int(11) NOT NULL,
+  `brand_id` int(11) unsigned NOT NULL,
   `date` date NOT NULL,
   `tweet_count` int(11) NOT NULL,
   `twitter_followers` int(11) NOT NULL,
   `youtube_video_count` int(11) NOT NULL,
   `youtube_view_count` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `brand_id` (`brand_id`),
+  KEY `brand_id_2` (`brand_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
+
+CREATE TABLE IF NOT EXISTS `brand_types` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(32) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
 
+INSERT INTO `brand_types` (`id`, `name`) VALUES
+(1, 'Retail'),
+(2, 'CPG');
+
+ALTER TABLE  `brands` ADD  `brand_type` INT NOT NULL;
+UPDATE `brands` SET `brand_type`='1' WHERE 1=1;
+UPDATE `brands` SET `brand_type`='2' WHERE `id`=1;
+
+ALTER TABLE  `brands` ENGINE = INNODB;
+ALTER TABLE  `brands` ADD INDEX (`brand_type`);
+ALTER TABLE  `brands` ADD INDEX (`company_id`);
+
+ALTER TABLE  `brands` ADD FOREIGN KEY (`brand_type`) REFERENCES  `brand_types` (
+`id`
+) ON DELETE NO ACTION ON UPDATE NO ACTION ;
+
+ALTER TABLE `brand_data`
+  ADD CONSTRAINT `brand_data_ibfk_1` FOREIGN KEY (`brand_id`) REFERENCES `brands` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE `brand_data_summary`
+  ADD CONSTRAINT `brand_data_summary_ibfk_1` FOREIGN KEY (`brand_id`) REFERENCES `brands` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 # 08/14 Anna
 ALTER TABLE `research_data` ADD `include_in_assess_report` TINYINT(1) NOT NULL DEFAULT '0' AFTER `modified`;
