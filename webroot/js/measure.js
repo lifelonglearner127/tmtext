@@ -421,9 +421,11 @@ function show_from_butches() {//max
                                   if(selected_cites.toLowerCase().indexOf(data)<0){
                                        console.log(selected_cites=selected_cites+','+data.toLowerCase());
                                        
-                                        reslults_for_batch(status_results,selected_cites,batch_id);
+                                       reslults_for_batch(status_results,selected_cites,batch_id);
 
-                           }
+                           }else{
+                                    reslults_for_batch(status_results,selected_cites,batch_id);
+                                }
                                   
                              
                              });
@@ -437,6 +439,8 @@ function show_from_butches() {//max
                                     
                                      reslults_for_batch(status_results,selected_cites,batch_id);
 
+                                }else{
+                                    reslults_for_batch(status_results,selected_cites,batch_id);
                                 }
                                                                                              
                              });
