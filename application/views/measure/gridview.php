@@ -129,8 +129,11 @@ foreach ($same_pr as $ks => $vs) {
                                         <td>
                                             <!--    //Max-->
                                             <p  class='short_product_name'> <span <?php
-                                                if (sprintf("%01.2f", floatval($last_price->price)) == $min_price) {
-                                                    echo "style='font-weight: bold;'";
+                                                if (sprintf("%01.2f", floatval($last_price->price)) == $min_price ) {
+													if( $bold != 1 ){
+														echo "style='font-weight: bold;'";
+														$bold = 1;
+													}
                                                 }
                                                 ?>class="product_price">$<?php echo sprintf("%01.2f", floatval($last_price->price)); ?></span></p>
                                             <!--    //Max                            -->
@@ -142,7 +145,12 @@ foreach ($same_pr as $ks => $vs) {
                                             <p  class='short_product_name'> <span <?php
                                                 if (sprintf("%01.2f", floatval($last_price->price)) > $min_price) {
                                                     echo "class='not_min'";
-                                                }
+                                                }elseif (sprintf("%01.2f", floatval($last_price->price)) == $min_price ) {
+													if( $bold != 1 ){
+														echo "style='font-weight: bold;'";
+														$bold = 1;
+													}
+												}
                                                 ?> class="product_price"><?php echo '$' . sprintf("%01.2f", floatval($last_price->price)); ?></span></p>
                                         </td>
                                         <?php
