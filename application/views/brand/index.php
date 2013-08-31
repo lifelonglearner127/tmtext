@@ -1,91 +1,109 @@
 <script>
     $(function() {
-        $('head').find('title').text('Brand Index');
+        $('head').find('title').text('Brand Rankings');
     });
 </script>
-<style type="text/css">
-    .outer_block{
-        border: 1px solid #333333;
-        float: left;
-        height: 10px;
-        margin-right: 20px;
-        margin-top: 3px;
-        width: 170px;
-        margin-left: 15px;
-    }
-    .inner_block{
-        background: #333333;
-        height: 10px;
-    }
-    .review_distr span{
-        float:left;
-    }
-</style>
-<div class="span12">
-    <?php echo form_dropdown('brand', $brands_list, array(), 'class="mt_10"'); ?>
-</div>
-<div class="row-fluid span12">
-    <div class="span3">
+<?php
+$pervious_month = date("m", strtotime("first day of previous month"));
+?>
+<div class="main_content_other"></div>
+<div class="tabbable">
+    <div class="tab-content">
+        <div class="tabbable">
+            <div class="tab-content block_data_table">
+                <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/smoothness/jquery-ui-1.8.2.custom.css" />
+                <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/styles.css" />
+                <!-- Table doesnt work without this jQuery include yet -->
+                <script type="text/javascript" src="<?php echo base_url();?>js/jquery-templ.js"></script>
+                <script type="text/javascript" src="<?php echo base_url();?>js/jquery.validate.min.js"></script>
+                <script type="text/javascript" src="<?php echo base_url();?>js/jquery.dataTables.min.js"></script>
+                <script type="text/javascript" src="<?php echo base_url();?>js/jquery.json-2.4.min.js"></script>
+                <script type="text/javascript">
+                    $(function() {
+                        $( ".draggable" ).draggable();
+                    });
+                </script>
+                <style type="text/css">
+                    #brand_ranking {width: 100%; font-size: 1em;}
+                    #brand_ranking th { font-weight: bold; }
+                    .brand_filters { margin: 10px 0; }
+                    .brand_filters select { float:left; margin-left: 5px; margin-top:5px; }
+                    .brand_filters .brand_types { width:150px; }
+                    .brand_filters .day { width:70px; }
+                    .brand_filters .month { width:120px; }
+                    .brand_filters .year { width:90px; }
+                </style>
+                <div>
+                    <h3 class="pull-left">The 100 Most Social</h3>
+                    <div class="brand_filters pull-left">
+                        <select name="brand_types" id="brand_types" class="brand_types">
+                            <?php foreach($brand_types as $brand_type) { ?>
+                                    <option value="<?php echo $brand_type->id; ?>"><?php echo $brand_type->name.' Brands'; ?></option>
+                            <?php } ?>
+                        </select>
+                        <select name="month" id="month" class="month">
+                            <?php foreach($months as $key=>$month) { ?>
+                                    <option value="<?php echo $key; ?>" <?php echo ($pervious_month == $key)?'selected="selected"':''; ?> >
+                                        <?php echo $month; ?>
+                                    </option>
+                            <?php } ?>
+                        </select>
+                        <select name="year" id="year" class="year">
+                            <?php foreach($years as $key=>$year) { ?> 
+                                    <option value="<?php echo $key; ?>"><?php echo $year; ?></option>
+                            <?php } ?>
+                        </select>
+                    </div>
+                </div>
+                <div class="clearfix"></div>
+                <div id="research_tab2" class="tab-pane active">
+                    <div class="row-fluid">
+                        <div id="ajaxLoadAni">
+                            <span>Loading...</span>
+                        </div>
+                        <div id="tabs" class="mt_10">
+                            <div id="read">
+                                <table id="brand_ranking">
+                                    <thead>
+                                    <tr>
+                                        <th><div class="draggable">Social Rank</div></th>
+                                        <th><div class="draggable">IR 500 Rank</div></th>
+                                        <th><div class="draggable">Brand</div></th>
+                                        <th><div class="draggable">Tweets</div></th>
+                                        <th><div class="draggable">All Tweets</div></th>
+                                        <th><div class="draggable">Followers</div></th>
+                                        <th><div class="draggable">Youtube Videos</div></th>
+                                        <th><div class="draggable">Views</div></th>
+                                        <th><div class="draggable">All Views</div></th>
+                                        <th><div class="draggable">Average</div></th>
+                                        <th><div class="draggable">All Videos</div></th>
+                                    </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                            <div id="create">
+                            </div>
+                        </div> <!-- end tabs -->
+
+                        <!-- message dialog box -->
+                        <div id="msgDialog"><p></p></div>
+
+                        <script type="text/template" id="readTemplate">
+                            <tr>
+                                <td class="column_created"></td>
+                                <td class="column_url"></td>
+                                <td class="column_model"></td>
+                                <td class="column_product_name"></td>
+                                <td class="column_price"></td>
+                            </tr>
+                        </script>
+
+                        <script type="text/javascript" src="<?php echo base_url();?>js/competitive_intelligence.js"></script>
+                    </div>
+                    <div class="clear mt_40"></div>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="span4">
-            <select name="brand_customer0" class="mt_10">
-                <?php foreach($customer_list as $customer):?>
-                    <option value="<?php echo strtolower($customer); ?>"><?php echo $customer; ?></option>
-                <?php endforeach;?>
-            </select>
-    </div>
-    <div class="span4">
-            <select name="brand_customer1" class="mt_10">
-                <?php foreach($customer_list as $customer):?>
-                    <option value="<?php echo strtolower($customer); ?>"><?php echo $customer; ?></option>
-                <?php endforeach;?>
-            </select>
-    </div>
-</div>
-<div class="row-fluid span12 mt_10">
-    <div class="span3">Number of Results</div>
-    <div class="span4">5,932</div>
-    <div class="span4">311</div>
-</div>
-<div class="row-fluid span12 mt_10">
-    <div class="span3">Number of Reviews</div>
-    <div class="span4">17</div>
-    <div class="span4">4,577</div>
-</div>
-<div class="row-fluid span12 mt_10">
-    <div class="span3">Average Review</div>
-    <div class="span4">4.5 Stars</div>
-    <div class="span4">4 Stars</div>
-</div>
-<div class="row-fluid span12 mt_10">
-    <div class="span3">Avg Reviews Per Item</div>
-    <div class="span4">457</div>
-    <div class="span4">218</div>
-</div>
-<div class="row-fluid span12 mt_10">
-    <div class="span3">Review distribution</div>
-    <div class="span4 review_distr">
-        <div class="mt_10"><span>5 Star</span> <div class="outer_block"><div class="inner_block" style="width:110px;"></div></div> 418</div>
-        <div class="mt_10"><span>4 Star</span> <div class="outer_block"><div class="inner_block" style="width:60px;"></div></div> 211</div>
-        <div class="mt_10"><span>3 Star</span> <div class="outer_block"><div class="inner_block" style="width:80px;"></div></div> 325</div>
-        <div class="mt_10"><span>2 Star</span> <div class="outer_block"><div class="inner_block" style="width:20px;"></div></div> 54</div>
-        <div class="mt_10"><span>1 Star</span> <div class="outer_block"><div class="inner_block" style="width:27px;"></div></div> 79</div>
-    </div>
-    <div class="span4 review_distr">
-        <div class="mt_10"><span>5 Star</span> <div class="outer_block"><div class="inner_block" style="width:135px;"></div></div> 511</div>
-        <div class="mt_10"><span>4 Star</span> <div class="outer_block"><div class="inner_block" style="width:35px;"></div></div> 109</div>
-        <div class="mt_10"><span>3 Star</span> <div class="outer_block"><div class="inner_block" style="width:45px;"></div></div> 163</div>
-        <div class="mt_10"><span>2 Star</span> <div class="outer_block"><div class="inner_block" style="width:8px;"></div></div> 15</div>
-        <div class="mt_10"><span>1 Star</span> <div class="outer_block"><div class="inner_block" style="width:59px;"></div></div> 208</div>
-    </div>
-</div>
-<div class="row-fluid span12 mt_10">
-    <div class="span3">Best Sellers - Avg # of Reviews</div>
-    <div class="span4">193</div>
-    <div class="span4">467</div>
-</div>
-<div class="row-fluid span12 mt_10">
-    <div class="span3">Best Sellers - Avg Review</div>
-    <div class="span4">4.5 Stars</div>
-    <div class="span4">3.5 Stars</div>
 </div>

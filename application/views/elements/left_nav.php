@@ -12,7 +12,7 @@ $menu = array(
     array('controller' => 'measure', 'name' => 'Competitive Intelligence'),
     array('controller' => 'assess', 'name' => 'Assess'),
     array('controller' => 'research', 'name' => 'Edit'),
-    array('controller' => 'brand', 'name' => 'Brand Index'),
+    array('controller' => 'brand', 'name' => 'Brand Rankings'),
     //array('controller' => 'editor', 'name' => 'Create'),
     //array('controller' => 'validate', 'name' => 'Validate'),
 	array('controller' => 'customer', 'name' => 'Settings'),

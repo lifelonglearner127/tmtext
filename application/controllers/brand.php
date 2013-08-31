@@ -19,8 +19,15 @@ class Brand extends MY_Controller {
 
     public function index()
     {
+        $this->load->model('brand_types_model');
+        $this->load->helper('functions_helper');
+        
         $this->data['customer_list'] = $this->getCustomersByUserId();
         $this->data['brands_list'] = $this->brands_list();
+        $this->data['brand_types'] = $this->brand_types_model->getAll();
+        $this->data['days'] = get_days();
+        $this->data['months'] = get_months();
+        $this->data['years'] = get_years();
         $this->render();
     }
 
@@ -60,6 +67,45 @@ class Brand extends MY_Controller {
             array_push($brands_list, $brand->name);
         }
         return $brands_list;
+    }
+    
+    public function rankings()
+    {
+        $this->load->model('brands_model');
+        
+        $brand_list = $this->brands_model->rankings();
+        
+        if (!empty($brand_list['total_rows'])) {
+            $total_rows = $brand_list['total_rows'];
+        } else {
+            $total_rows = 0;
+        }
+
+        $output = array(
+            "sEcho" => intval($_GET['sEcho']),
+            "iTotalRecords" => $total_rows,
+            "iTotalDisplayRecords" => $total_rows,
+            "iDisplayLength" => $brand_list['display_length'],
+            "aaData" => array()
+        );
+
+        if (!empty($brand_list['result'])) {
+            foreach ($brand_list['result'] as $brand_list) {
+//                $parsed_attributes = unserialize($price->parsed_attributes);
+//                $model = (!empty($parsed_attributes['model']) ? $parsed_attributes['model'] : $parsed_attributes['UPC/EAN/ISBN']);
+                $output['aaData'][] = array(
+                    $price->created,
+                    '<a href ="' . $price->url . '">' . substr($price->url, 0, 60) . '</a>',
+                    $model,
+                    $price->product_name,
+                    sprintf("%01.2f", $price->price),
+                );
+            }
+        }
+
+        $this->output->set_content_type('application/json')
+                ->set_output(json_encode($output));
+        
     }
     
     public function import() {
