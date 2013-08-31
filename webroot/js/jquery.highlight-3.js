@@ -39,7 +39,9 @@ $.fn.highlight = function (b, k) {
          b && h(this)
      })
  };
+ var cnt = 0;
 $('.cmp-btn').live('click', function() {
+    if(cnt == 0){
         var settings = {};
          var pattern = $(this).parent().parent('.cmp-area').find('p.compare').text();
        
@@ -47,7 +49,11 @@ $('.cmp-btn').live('click', function() {
        // $("#case").prop("checked") && (settings.caseSensitive = true);
        // $("#remove").prop("checked") && (settings.remove = false);
         pattern && $("p.compare").highlight(pattern, settings);f1();
-        
+    cnt = 1;    
+    }else{
+        $('.highlight').removeAttr("class");
+        cnt = 0;
+    }
  });
 
 function f1(){
@@ -66,3 +72,27 @@ function f1(){
         }
     }
 } 
+
+//
+//function generate_password(number)
+//  {
+//      var arr = [];
+//    arr = ['a','b','c','d','e','f',
+//            'g','h','i','j','k','l',
+//            'm','n','o','p','r','s',
+//            't','u','v','x','y','z',
+//            'A','B','C','D','E','F',
+//            'G','H','I','J','K','L',
+//            'M','N','O','P','R','S',
+//            'T','U','V','X','Y','Z',
+//            '1','2','3','4','5','6',
+//            '7','8','9','0']; 
+//    var pass = "#";
+//    for(var i = 0; i < number; i++)
+//    {
+//      // Вычисляем случайный индекс массива
+//      var index = Math.floor(Math.random( ) * (arr.length-1));
+//      pass += arr[index];
+//    }
+//    return pass;
+//  }  style="color:'+generate_password(6)+'"

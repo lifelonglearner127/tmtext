@@ -192,9 +192,12 @@ foreach ($same_pr as $ks => $vs) {
                                 <?php } ?>
                             </div>
                             <div class="cmp-area">
-                                <p><img class="cmp-btn" src="<?php echo base_url() ?>/img/icon.png" title='Click to see dublicates words'>Duplicate content: <b><?php echo isset($vs['short_original']) ? $vs['short_original'] : ''; ?> </b></p>
-
-                                <p  class="short_desc_con compare"><?php echo $s_product_description; ?></p>
+                                    <?php if(isset($vs['short_original'])&& $vs['short_original'] != "Insufficient data"){?>
+                                        <p><img class="cmp-btn" src="<?php echo base_url() ?>/img/icon.png" title='Click to see dublicates words'>Duplicate content: <b><?php echo $vs['short_original'];?> </b></p>
+                                    <?php }else{?>
+                                      <p>Duplicate content: <b><?php echo $vs['short_original'];?> </b></p>
+                                    <?php } ?>
+                                <p class="short_desc_con compare"><?php echo $s_product_description; ?></p>
                             </div>
                             <?php
                         }
@@ -236,9 +239,13 @@ foreach ($same_pr as $ks => $vs) {
                                     <p class="heading_text">SEO Keywords: <span style="font-weight: bold;">None</span></p>
                                 <?php } ?>
                             </div>
-                            <div class="cmp-area">
-                                <p><img  class="cmp-btn" src="<?php echo base_url() ?>/img/icon.png" title='Click to see dublicates words'>Duplicate content: <b><?php echo isset($vs['long_original']) ? $vs['long_original'] : ''; ?></b></p>
-
+                            <div class="cmp-area">                                
+                                     <?php if(isset($vs['long_original'])&& $vs['long_original'] != "Insufficient data"){?>
+                                        <p><img class="cmp-btn" src="<?php echo base_url() ?>/img/icon.png" title='Click to see dublicates words'>Duplicate content: <b><?php echo $vs['long_original'];?> </b></p>
+                                    <?php }else{?>
+                                        <p>Duplicate content: <b><?php echo $vs['long_original'];?> </b></p>
+                                    <?php } ?>
+                                
                                 <!--                     //Max-->
                                 <?php echo '<p class="compare">' . $s_product_long_description . '</p>'; ?>
 
