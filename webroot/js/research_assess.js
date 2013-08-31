@@ -196,6 +196,7 @@ $(function () {
                 $('#research_assess_long_less_check').removeAttr('checked');
                 $('#research_assess_long_more_check').removeAttr('checked');
                 $('#research_assess_filter_long_descriptions_panel').hide();
+                $('#assess_report_items_have_product_descriptions_that_are_too_short').html(report.summary.items_short_products_content_short);
             }
         }
         if (report.summary.absent_items_count == undefined || report.summary.absent_items_count == 0) {
