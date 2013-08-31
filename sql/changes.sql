@@ -1,3 +1,31 @@
+# 08/30 Viktor
+ALTER TABLE  `companies` ADD  `IR500Rank` INT NOT NULL DEFAULT  '0';
+ALTER TABLE  `companies` ADD  `Twitter` VARCHAR( 32 ) NULL DEFAULT NULL;
+ALTER TABLE  `companies` ADD  `Youtube` VARCHAR( 32 ) NULL DEFAULT NULL;
+ALTER TABLE  `brands` ADD  `company_id` INT NOT NULL;
+ALTER TABLE  `brands` ADD  `brand_type` INT NOT NULL
+
+CREATE TABLE IF NOT EXISTS `brand_data_summary` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `brand_id` int(11) NOT NULL DEFAULT '0',
+  `total_tweets` int(11) NOT NULL DEFAULT '0',
+  `total_youtube_videos` int(11) NOT NULL DEFAULT '0',
+  `total_youtube_views` int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+
+CREATE TABLE IF NOT EXISTS `brand_data` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `brand_id` int(11) NOT NULL,
+  `date` date NOT NULL,
+  `tweet_count` int(11) NOT NULL,
+  `twitter_followers` int(11) NOT NULL,
+  `youtube_video_count` int(11) NOT NULL,
+  `youtube_view_count` int(11) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+
+
 # 08/14 Anna
 ALTER TABLE `research_data` ADD `include_in_assess_report` TINYINT(1) NOT NULL DEFAULT '0' AFTER `modified`;
 
