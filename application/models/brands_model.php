@@ -94,11 +94,15 @@ class Brands_model extends CI_Model {
                 $order_column_name = $columns_names[$sort_col_n];
             }
         }
-
-        $this->db->select('SQL_CALC_FOUND_ROWS b.*, b.name', FALSE)
+                 
+        $columns = 'SQL_CALC_FOUND_ROWS b.*, b.name, c.IR500Rank, SUM(bd.tweet_count) AS tweets, SUM(bd.twitter_followers) AS followers, ';
+        $columns .= 'SUM(bd.youtube_video_count) AS videos, SUM(bd.youtube_view_count) AS views, ';
+        $columns .= 'bds.total_tweets, bds.total_youtube_videos, bds.total_youtube_views ';
+        $this->db->select($columns, FALSE)
             ->join($this->tables['companies'].' as c', 'b.company_id = c.id', 'left')
             ->join($this->tables['brand_data']. ' as bd', 'b.id = bd.brand_id')
-            ->join($this->tables['brand_data_summary']. ' as bds', 'b.id = bds.brand_id');
+            ->join($this->tables['brand_data_summary']. ' as bds', 'b.id = bds.brand_id')
+            ->group_by("b.id");
 
         $this->db->distinct();
         
@@ -125,8 +129,9 @@ class Brands_model extends CI_Model {
         }
         
         $query = $this->db->get($this->tables['brands'].' as b');
+//        echo $this->db->last_query(); exit;
         $results = $query->result();
-
+        
         // get total rows for this query
         $this->db->select('FOUND_ROWS() AS num_rows', FALSE);
         $res = $this->db->get();

@@ -50,7 +50,7 @@ $pervious_month = date("m", strtotime("first day of previous month"));
                         </select>
                         <select name="year" id="year" class="year">
                             <?php foreach($years as $key=>$year) { ?> 
-                                    <option value="<?php echo $key; ?>"><?php echo $year; ?></option>
+                                    <option value="<?php echo $year; ?>"><?php echo $year; ?></option>
                             <?php } ?>
                         </select>
                     </div>

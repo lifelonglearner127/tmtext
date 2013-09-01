@@ -50,25 +50,36 @@
                                                 <input id="fileupload_company" type="file" name="fileupload_company">
                                         </span>
                                     </div>
-                                    <div class="clearfix"></div>
-                                    <div class="span4"></div>
-                                    <div id="progress" class="progress progress-success progress-striped span3">
-                                                <div class="bar"></div>
-                                    </div>
-                                    <div id="files"></div>
-                                    <div class="clearfix"></div>
-                                    <div class="span2">
+                                    <div class="clearfix margin-top-50"></div>
+                                    <div class="span4">
                                         <button id="brand_csv_import" class="btn btn-success"><i class="icon-white icon-ok"></i>&nbsp;Import</button>
                                         <input type="reset" name="reset" id="reset" class="hide" />
                                     </div>
-                                    <div class="span6 ">
+                                    <div id="progress" class="progress progress-success progress-striped span3">
+                                            <div class="bar"></div>
+                                    </div>
+                                    <div id="files"></div>
+                                    <div class="clearfix"></div>
+                                    <div class="span6">
                                         <div class="alert alert-success hide import_success">
-                                            <strong>You have imported successfully!</strong>
+                                            <strong>Imported successfully!</strong>
                                             
                                         </div>
                                     </div>
                                 </div>
                     <?php echo form_close();?>
+                                <h3>Add Brand Type:</h3>
+                                <div class="row-fluid">
+                                    <?php echo form_open("brand/addtype", array("class"=>"form-horizontal", "id"=>"add_type"));?>
+                                    <div class="span3"><input type="text" name="brand_type" id="brand_type" value="" /></div>
+                                    <div class="span2"><button id='brand_type_btn' class="btn btn-success"><i class="icon-white icon-ok"></i>&nbsp;Add</button></div>        
+                                    <div class="span6">
+                                        <div class="alert alert-success hide add_success">
+                                            <strong>Added successfully!</strong>
+                                        </div>
+                                    </div>
+                                    <?php echo form_close();?>
+                                </div>
                 </div>
         </div>
 </div>
@@ -108,6 +119,9 @@
         });
         
         $('#brand_csv_import').click(function() {
+            if($('#brand_data_csv').val() == '' && $('#company_data_csv').val() == '') {
+                return false;
+            }
             var button = $(this);
             button.attr('disabled', 'disabled');
             var url = $(this).parents().find('form').attr( 'action' ).replace('save', 'csv_import');
@@ -125,6 +139,35 @@
                         button.removeAttr('disabled');
                 }
             });
+            
+            return false;
+        });
+        
+        $('#brand_type_btn').click(function() {
+            if($('#brand_type').val() == '') {
+                return false;
+            }
+            var button = $(this);
+            button.attr('disabled', 'disabled');
+            var url = $(this).parents().find('form').attr( 'action' );
+            
+            $.ajax({
+                type: "POST",
+                url: url,
+                data: $('#add_type').serialize(),
+                dataType: 'json',
+                success: function(data){
+                        if(data.value != '') {
+                            $('.add_success').show();
+                            $('#brand_type').val('');
+                            button.removeAttr('disabled');
+                            $('#brand_types').append('<option value="'+data.value+'">'+data.name+'<option>');
+                            $('option:selected', '#brand_types').removeAttr('selected');
+                            $("#brand_types option[value='"+data.value+"']").attr('selected', 'selected');
+                        }
+                }
+            });
+            
             return false;
         });
         

@@ -22,8 +22,8 @@ class Brand extends MY_Controller {
         $this->load->model('brand_types_model');
         $this->load->helper('functions_helper');
         
-        $this->data['customer_list'] = $this->getCustomersByUserId();
-        $this->data['brands_list'] = $this->brands_list();
+//        $this->data['customer_list'] = $this->getCustomersByUserId();
+//        $this->data['brands_list'] = $this->brands_list();
         $this->data['brand_types'] = $this->brand_types_model->getAll();
         $this->data['days'] = get_days();
         $this->data['months'] = get_months();
@@ -69,6 +69,21 @@ class Brand extends MY_Controller {
         return $brands_list;
     }
     
+    public function addtype()
+    {
+        $this->load->model('brand_types_model');
+        
+        $brand_type = $this->input->post('brand_type', null);
+        $output = array('value'=>'', 'name'=>$brand_type);
+        $id = $this->brand_types_model->insert($brand_type);
+        if($id) {
+            $output['value'] = $id;
+        }
+        
+        $this->output->set_content_type('application/json')
+                ->set_output(json_encode($output));
+    }
+    
     public function rankings()
     {
         $this->load->model('brands_model');
@@ -91,14 +106,21 @@ class Brand extends MY_Controller {
 
         if (!empty($brand_list['result'])) {
             foreach ($brand_list['result'] as $brand_list) {
+                $social_rank = 0.25 * $brand_list->tweets + 0.25 * $brand_list->followers + 0.25 * $brand_list->videos + 0.25 * $brand_list->views;
 //                $parsed_attributes = unserialize($price->parsed_attributes);
 //                $model = (!empty($parsed_attributes['model']) ? $parsed_attributes['model'] : $parsed_attributes['UPC/EAN/ISBN']);
                 $output['aaData'][] = array(
-                    $price->created,
-                    '<a href ="' . $price->url . '">' . substr($price->url, 0, 60) . '</a>',
-                    $model,
-                    $price->product_name,
-                    sprintf("%01.2f", $price->price),
+                    $social_rank,
+                    $brand_list->IR500Rank,
+                    $brand_list->name,
+                    $brand_list->tweets,
+                    $brand_list->total_tweets,
+                    $brand_list->followers,
+                    $brand_list->videos,
+                    $brand_list->views,
+                    $brand_list->total_youtube_views,
+                    round($brand_list->views / $brand_list->videos, 2),
+                    $brand_list->total_youtube_videos,
                 );
             }
         }

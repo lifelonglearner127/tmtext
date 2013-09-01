@@ -138,9 +138,9 @@ function readGridDataBrandRanking() {
 //    dataTable.fnFilter( $("#month").val(), 2 );
 //    dataTable.fnFilter( $("#year").val(), 3 );
     
-//    $("#brand_types").change( function() { dataTable.fnFilter( $("#brand_types").val(), 1 ); } );
-//    $("#month").change( function() { dataTable.fnFilter( $("#month").val(), 2 ); } );
-//    $("#year").change( function() { dataTable.fnFilter( $("#year").val(), 3 ); } );
+    $("#brand_types").change( function() { dataTable.fnFilter( $("#brand_types").val()+','+$("#month").val()+','+$("#year").val(), 1 ); } );
+    $("#month").change( function() { dataTable.fnFilter( $("#brand_types").val()+','+$("#month").val()+','+$("#year").val(), 1 ); } );
+    $("#year").change( function() { dataTable.fnFilter( $("#brand_types").val()+','+$("#month").val()+','+$("#year").val(), 1 ); } );
 
     //hide ajax loader animation here...
   //  $( '#ajaxLoadAni' ).fadeOut( 'slow' );
