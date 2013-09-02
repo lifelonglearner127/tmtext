@@ -664,44 +664,86 @@ class Research extends MY_Controller {
             $c = 0;
             foreach($result_table as $data_row) {
                 if ($c >= $display_start) {
-                    if (isset($data_row->recommendations)) {
-                        // this is for absent product in selected batch only
-                        $recommendations_html = '<ul class="assess_recommendations"><li>'.$data_row->recommendations.'</li></ul>';
-                    } else {
-                        $recommendations = array();
-                        if ($data_row->short_description_wc < $short_description_wc_lower_range || $data_row->long_description_wc < $long_description_wc_lower_range) {
-                            $recommendations[] = '<li>Increase descriptions word count</li>';
-                        }
-                        /*if ($data_row->short_seo_phrases != 'None' || $data_row->long_seo_phrases != 'None') {
-                               $recommendations[] = '<li>SEO optimize product content</li>';
-                           }*/
-                        if ($data_row->short_seo_phrases == 'None' && $data_row->long_seo_phrases == 'None') {
-                            $recommendations[] = '<li>SEO optimize product content</li>';
-                        }
-                        //$recommendations[] = '<li>Add unique content</li>';
-                        if ($data_row->lower_price_exist == true && !empty($data_row->competitors_prices)) {
-                            if (min($data_row->competitors_prices) < $data_row->own_price) {
-                                $recommendations[] = '<li>Lower price to be competitive</li>';
-                            }
-                        }
-                        //$recommendations[] = '<li>Add product to inventory</li>';
+                    if( isset($build_assess_params->flagged) && ( isset($data_row->recommendations) || ($data_row->short_description_wc < 50 || $data_row->long_description_wc < 100) || ($data_row->short_seo_phrases == 'None' && $data_row->long_seo_phrases == 'None') || ($data_row->lower_price_exist == true && !empty($data_row->competitors_prices)) ) ){
+						
+						if (isset($data_row->recommendations)) {
+							// this is for absent product in selected batch only
+							$recommendations_html = '<ul class="assess_recommendations"><li>'.$data_row->recommendations.'</li></ul>';
+						} else {
+							$recommendations = array();
+							if ($data_row->short_description_wc < 50 || $data_row->long_description_wc < 100) {
+								$recommendations[] = '<li>Increase descriptions word count</li>';
+							}
+							/*if ($data_row->short_seo_phrases != 'None' || $data_row->long_seo_phrases != 'None') {
+								   $recommendations[] = '<li>SEO optimize product content</li>';
+							   }*/
+							if ($data_row->short_seo_phrases == 'None' && $data_row->long_seo_phrases == 'None') {
+								$recommendations[] = '<li>SEO optimize product content</li>';
+							}
+							//$recommendations[] = '<li>Add unique content</li>';
+							if ($data_row->lower_price_exist == true && !empty($data_row->competitors_prices)) {
+								if (min($data_row->competitors_prices) < $data_row->own_price) {
+									$recommendations[] = '<li>Lower price to be competitive</li>';
+								}
+							}
+							//$recommendations[] = '<li>Add product to inventory</li>';
+							
+							$recommendations_html = '<ul class="assess_recommendations">'.implode('', $recommendations).'</ul>';
+						}
 
-                        $recommendations_html = '<ul class="assess_recommendations">'.implode('', $recommendations).'</ul>';
-                    }
+						$output['aaData'][] = array(
+							$data_row->created,
+							$data_row->product_name,
+							$data_row->url,
+							$data_row->short_description_wc,
+							$data_row->short_seo_phrases,
+							$data_row->long_description_wc,
+							$data_row->long_seo_phrases,
+							$data_row->duplicate_content,
+							$data_row->price_diff,
+							$recommendations_html,
+							json_encode($data_row),
+						);
+					}elseif(  $build_assess_params->flagged == false ){
+						if (isset($data_row->recommendations)) {
+							// this is for absent product in selected batch only
+							$recommendations_html = '<ul class="assess_recommendations"><li>'.$data_row->recommendations.'</li></ul>';
+						} else {
+							$recommendations = array();
+							if ($data_row->short_description_wc < 50 || $data_row->long_description_wc < 100) {
+								$recommendations[] = '<li>Increase descriptions word count</li>';
+							}
+							/*if ($data_row->short_seo_phrases != 'None' || $data_row->long_seo_phrases != 'None') {
+								   $recommendations[] = '<li>SEO optimize product content</li>';
+							   }*/
+							if ($data_row->short_seo_phrases == 'None' && $data_row->long_seo_phrases == 'None') {
+								$recommendations[] = '<li>SEO optimize product content</li>';
+							}
+							//$recommendations[] = '<li>Add unique content</li>';
+							if ($data_row->lower_price_exist == true && !empty($data_row->competitors_prices)) {
+								if (min($data_row->competitors_prices) < $data_row->own_price) {
+									$recommendations[] = '<li>Lower price to be competitive</li>';
+								}
+							}
+							//$recommendations[] = '<li>Add product to inventory</li>';
+							
+							$recommendations_html = '<ul class="assess_recommendations">'.implode('', $recommendations).'</ul>';
+						}
 
-                    $output['aaData'][] = array(
-                        $data_row->created,
-                        $data_row->product_name,
-                        $data_row->url,
-                        $data_row->short_description_wc,
-                        $data_row->short_seo_phrases,
-                        $data_row->long_description_wc,
-                        $data_row->long_seo_phrases,
-                        $data_row->duplicate_content,
-                        $data_row->price_diff,
-                        $recommendations_html,
-                        json_encode($data_row),
-                    );
+						$output['aaData'][] = array(
+							$data_row->created,
+							$data_row->product_name,
+							$data_row->url,
+							$data_row->short_description_wc,
+							$data_row->short_seo_phrases,
+							$data_row->long_description_wc,
+							$data_row->long_seo_phrases,
+							$data_row->duplicate_content,
+							$data_row->price_diff,
+							$recommendations_html,
+							json_encode($data_row),
+						);
+					}
                 }
                 if ($display_length > 0) {
                     if ($c >= ($display_start + $display_length - 1)) {

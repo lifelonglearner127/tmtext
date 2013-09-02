@@ -380,6 +380,10 @@ $(function () {
         var own_customer = $(this).val();
         fill_lists_batches_compare(own_customer);
     });
+    
+    $('#research_assess_flagged').live('click', function(){
+		$('#research_assess_update').click();
+	});
 
     function fill_lists_batches_compare(own_customer) {
         var research_assess_compare_batches_customer = $('#research_assess_compare_batches_customer');
