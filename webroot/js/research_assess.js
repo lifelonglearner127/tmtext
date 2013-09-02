@@ -197,7 +197,12 @@ $(function () {
                 $('#research_assess_long_more_check').removeAttr('checked');
                 $('#research_assess_filter_long_descriptions_panel').hide();
             }
-            $('#assess_report_items_have_product_descriptions_that_are_too_short').html(report.summary.total_items);
+            if(report.summary.short_wc_total_not_0 == 0 && report.summary.long_wc_total_not_0 != 0){
+                $('#assess_report_items_have_product_descriptions_that_are_too_short').html(report.summary.items_long_products_content_short);
+            }else if(report.summary.short_wc_total_not_0 != 0 && report.summary.long_wc_total_not_0 == 0){
+                $('#assess_report_items_have_product_descriptions_that_are_too_short').html(report.summary.items_short_products_content_short);
+            }
+
         }
         if (report.summary.absent_items_count == undefined || report.summary.absent_items_count == 0) {
             $('#assess_report_compare_panel').hide();

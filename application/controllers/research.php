@@ -491,11 +491,11 @@ class Research extends MY_Controller {
                 $long_wc_total_not_0++;
             }
 
-            if (intval($result_row->short_description_wc) < $short_description_wc_lower_range) {
+            if (intval($result_row->short_description_wc) <= $short_description_wc_lower_range) {
                 $items_short_products_content_short++;
             }
 
-            if (intval($result_row->long_description_wc) < $long_description_wc_lower_range) {
+            if (intval($result_row->long_description_wc) <= $long_description_wc_lower_range) {
                 $items_long_products_content_short++;
             }
 
