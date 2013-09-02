@@ -378,8 +378,6 @@ class Research extends MY_Controller {
             $price_diff = unserialize($row->price_diff);
             $result_row->lower_price_exist = false;
 
-            $items_priced_higher_than_competitors += $row->items_priced_higher_than_competitors;
-
             if (floatval($row->own_price) <> false) {
                 $own_site = parse_url($row->url, PHP_URL_HOST);
                 $own_site = str_replace('www.', '', $own_site);
@@ -392,6 +390,7 @@ class Research extends MY_Controller {
                 $own_site = str_replace('www.', '', $price_diff['own_site']);
                 $own_site = str_replace('www1.', '', $own_site);
                 $price_diff_res = "<nobr>".$own_site." - $".$price_diff['own_price']."</nobr><br />";
+                $flag_competitor = false;
                 for($i=0; $i<count($price_diff['competitor_customer']); $i++){
                     if($customer_url["host"] != $price_diff['competitor_customer'][$i]){
                         if ($own_price > floatval($price_diff['competitor_price'][$i])) {
@@ -403,6 +402,9 @@ class Research extends MY_Controller {
                             }
                         }
                     }
+                }
+                if ($result_row->lower_price_exist == true) {
+                    $items_priced_higher_than_competitors += $row->items_priced_higher_than_competitors;
                 }
                 $result_row->price_diff = $price_diff_res;
             }
