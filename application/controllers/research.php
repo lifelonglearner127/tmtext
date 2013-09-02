@@ -538,6 +538,9 @@ class Research extends MY_Controller {
             if ($build_assess_params->flagged == true && $recomend == false) {
                 continue;
             }
+            if ($result_row->lower_price_exist == false) {
+                continue;
+            }
 
             $result_table[] = $result_row;
         }
