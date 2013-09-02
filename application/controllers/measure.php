@@ -938,7 +938,7 @@ class Measure extends MY_Controller {
     public function getDepartmentsByCustomer(){
         $this->load->model('department_members_model');
         $customer = explode(".", $this->input->post('customer_name'));
-        $result = $this->department_members_model->getAllByCustomer(strtolower($customer[0]));
+        $result = $this->department_members_model->getAllByCustomer(addslashes(strtolower($customer[0])));
         $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }
 
