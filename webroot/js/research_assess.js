@@ -197,8 +197,7 @@ $(function () {
                 $('#research_assess_long_more_check').removeAttr('checked');
                 $('#research_assess_filter_long_descriptions_panel').hide();
             }
-            var c = report.summary.short_wc_total_not_0 + report.summary.long_wc_total_not_0;
-            $('#assess_report_items_have_product_descriptions_that_are_too_short').html(c);
+            $('#assess_report_items_have_product_descriptions_that_are_too_short').html(report.summary.total_items);
         }
         if (report.summary.absent_items_count == undefined || report.summary.absent_items_count == 0) {
             $('#assess_report_compare_panel').hide();
