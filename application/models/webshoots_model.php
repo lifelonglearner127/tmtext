@@ -95,7 +95,7 @@ class Webshoots_model extends CI_Model {
             'uid' => $uid,
             'year' => $c_year,
             'week' => $c_week,
-            'pos !=' => 0
+            'reset !=' => 1
         );
         $sel_query = $this->db->where($check_obj)->order_by('stamp', 'desc')->get($this->tables['webshoots_select']);
         $sel_res = $sel_query->result();
