@@ -352,6 +352,9 @@ class Research extends MY_Controller {
         $items_long_products_content_short = 0;
         $detail_comparisons_total = 0;
 
+        $short_description_wc_lower_range = $this->config->item('short_description_wc_lower_range');
+        $long_description_wc_lower_range = $this->config->item('long_description_wc_lower_range');
+
         foreach($results as $row) {
             $long_description_wc = $row->long_description_wc;
             $short_description_wc = $row->short_description_wc;
@@ -488,11 +491,11 @@ class Research extends MY_Controller {
                 $long_wc_total_not_0++;
             }
 
-            if (intval($result_row->short_description_wc) < 20) {
+            if (intval($result_row->short_description_wc) < $short_description_wc_lower_range) {
                 $items_short_products_content_short++;
             }
 
-            if (intval($result_row->long_description_wc) < 100) {
+            if (intval($result_row->long_description_wc) < $long_description_wc_lower_range) {
                 $items_long_products_content_short++;
             }
 
@@ -555,6 +558,8 @@ class Research extends MY_Controller {
         $report['summary']['items_long_products_content_short'] = $items_long_products_content_short;
         $report['summary']['short_wc_total_not_0'] = $short_wc_total_not_0;
         $report['summary']['long_wc_total_not_0'] = $long_wc_total_not_0;
+        $report['summary']['short_description_wc_lower_range'] = $short_description_wc_lower_range;
+        $report['summary']['long_description_wc_lower_range'] = $long_description_wc_lower_range;
 
         // only if second batch select - get absent products, merge it with result_table
         if (isset($build_assess_params->compare_batch_id) && $build_assess_params->compare_batch_id > 0) {
@@ -664,7 +669,7 @@ class Research extends MY_Controller {
                         $recommendations_html = '<ul class="assess_recommendations"><li>'.$data_row->recommendations.'</li></ul>';
                     } else {
                         $recommendations = array();
-                        if ($data_row->short_description_wc < 20 || $data_row->long_description_wc < 100) {
+                        if ($data_row->short_description_wc < $short_description_wc_lower_range || $data_row->long_description_wc < $long_description_wc_lower_range) {
                             $recommendations[] = '<li>Increase descriptions word count</li>';
                         }
                         /*if ($data_row->short_seo_phrases != 'None' || $data_row->long_seo_phrases != 'None') {
