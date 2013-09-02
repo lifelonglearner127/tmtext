@@ -2130,6 +2130,8 @@ public function gridview() {
                 foreach ($same_pr as $ks => $vs) {
                     $maxshort = 0;
                     $maxlong = 0;
+                    $maxshorttext = 0;
+                    $maxlongtext = 0;
                     $k_sh = 0;
                     $k_lng = 0;
                     foreach ($same_pr as $ks1 => $vs1) {
@@ -2137,18 +2139,23 @@ public function gridview() {
                         if ($ks != $ks1) {
                             if ($vs['description'] != '') {
                                 if ($vs1['description'] != '') {
-                                    $k_sh++;$percent = array();
+                                    //echo 1;
+                                    $k_sh++;
+                                   //$percent = array();
                                     $percent = $this->compare_text($vs['description'], $vs1['description']);
-                                    if ($percent > $maxshort) {
-                                        $maxshort = $percent;
+                                    if ($percent[0] > $maxshort) {
+                                        $maxshort = $percent[0];
+                                        
                                     }
                                 }
 
                                 if ($vs1['long_description'] != '') {
+                                   // echo 2;
                                     $k_sh++;
                                     $percent = $this->compare_text($vs['description'], $vs1['long_description']);
-                                    if ($percent > $maxshort) {
-                                        $maxshort = $percent;
+                                    if ($percent[0] > $maxshort) {
+                                        $maxshort = $percent[0];
+                                        
                                     }
                                 }
                             }
@@ -2156,41 +2163,51 @@ public function gridview() {
                             if ($vs['long_description'] != '') {
 
                                 if ($vs1['description'] != '') {
+                                    //echo 3
                                     $k_lng++;
                                     $percent = $this->compare_text($vs['long_description'], $vs1['description']);
-                                    if ($percent > $maxlong) {
-                                        $maxlong = $percent;
+                                    if ($percent[0] > $maxlong) {
+                                        $maxlong = $percent[0];
+                                        
                                     }
                                 }
 
                                 if ($vs1['long_description'] != '') {
+                                    //echo 4;
                                     $k_lng++;
                                     $percent = $this->compare_text($vs['long_description'], $vs1['long_description']);
-                                    if ($percent > $maxlong) {
-                                        $maxlong = $percent;
+                                    if ($percent[0] > $maxlong) {
+                                        $maxlong = $percent[0];
+                                        
                                     }
                                 }
                             }
                         }
                     }
                     if($maxshort!=0){
-                        //$vs['short_original'] =  ceil($maxshort) . '%';
-                        $vs['short_original'] =  round($maxshort, 0) . '%';
+                        $vs['short_original'] =  ceil($maxshort) . '%';
+                        
+                        
                     }else{
                         $vs['short_original']= "Insufficient data";
+                        
                     }
 
                     if($maxlong!=0){
                         $vs['long_original'] =  ceil($maxlong) . '%';
+                        
                     }else{
                         $vs['long_original']= "Insufficient data";
+                        
                     }
 
                     if ($k_lng == 0) {
-                        $vs['long_original'] = "Insufficient data1";
+                        $vs['long_original'] = "Insufficient data";
+                        
                     }
                     if ($k_sh == 0) {
                         $vs['short_original'] = "Insufficient data";
+                        
                     }
 
                     $same_pr[$ks] = $vs;
@@ -2198,6 +2215,7 @@ public function gridview() {
             } else {
                 $same_pr[0]['long_original'] = 'Insufficient data';
                 $same_pr[0]['short_original'] = 'Insufficient data';
+                
             }
             //   Max
 //Max
