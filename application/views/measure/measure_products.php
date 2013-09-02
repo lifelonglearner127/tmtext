@@ -65,7 +65,12 @@ jQuery(document).ready(function($) {
                             }
                          ?>
     </select>
+        <div id="for_text">
+            <p>Use Shift to select multiple consecutive sites</p>
+            <p>Use CTRL (Windows) or Command (Mac) to select multiple individual sites</p>
+        </div>
   </form> 
+            
   </div>
   <div class="modal-footer">
     <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>

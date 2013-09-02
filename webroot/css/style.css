@@ -1900,6 +1900,17 @@ select#sites option{
          border-right: 1px solid black;
          border-bottom: 1px solid black;
      }
+     #for_text{
+        overflow: hidden;
+        width: 280px;
+        float: right;
+        margin-top: 117px;
+}
+#for_text p{
+        float:left !important;
+        font-size: 13px;
+        color: #807F7F;
+}
      
 <<<<<<< HEAD
 .column_url{word-break: break-word; width: 200px;}
