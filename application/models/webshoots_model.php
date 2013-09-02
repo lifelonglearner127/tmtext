@@ -80,9 +80,11 @@ class Webshoots_model extends CI_Model {
         $qr = $this->db->where($check_obj)->get($this->tables['webshoots_select']);
         $qr_res = $qr->result();
         if(count($qr_res) > 0) { // === TODO: just set pos value to 0 for existing selection
-            $r = $qr_res[0]; 
-        } else { // ==== TODO: probably insert new record
-
+            $r = $qr_res[0];
+            $update_object = array(
+                'reset' => 1
+            );
+            $this->db->update($this->tables['webshoots_select'], $update_object, array('id' => $r->id));
         }
         return true;
     }
@@ -153,7 +155,8 @@ class Webshoots_model extends CI_Model {
             'pos' => $pos,
             'uid' => $uid,
             'year' => $year,
-            'week' => $week
+            'week' => $week,
+            'reset != ' => 1
         );
         $check_query = $this->db->get_where($this->tables['webshoots_select'], $check_obj);
         $check_query_res = $check_query->result();
@@ -292,7 +295,8 @@ class Webshoots_model extends CI_Model {
                 'thumb' => $thumb,
                 'screen_stamp' => $screen_stamp, 
                 'site' => $url, 
-                'label' => $label  
+                'label' => $label,
+                'reset' => 0
             );
             $this->db->update($this->tables['webshoots_select'], $update_object, $check_obj);
         } else { // --- new
