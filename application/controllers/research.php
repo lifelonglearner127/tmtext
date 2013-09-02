@@ -671,7 +671,8 @@ class Research extends MY_Controller {
 							$recommendations_html = '<ul class="assess_recommendations"><li>'.$data_row->recommendations.'</li></ul>';
 						} else {
 							$recommendations = array();
-							if ($data_row->short_description_wc < 50 || $data_row->long_description_wc < 100) {
+							if (intval($data_row->short_description_wc) <= $short_description_wc_lower_range &&
+                                intval($data_row->long_description_wc) <= $long_description_wc_lower_range) {
 								$recommendations[] = '<li>Increase descriptions word count</li>';
 							}
 							/*if ($data_row->short_seo_phrases != 'None' || $data_row->long_seo_phrases != 'None') {
@@ -710,9 +711,11 @@ class Research extends MY_Controller {
 							$recommendations_html = '<ul class="assess_recommendations"><li>'.$data_row->recommendations.'</li></ul>';
 						} else {
 							$recommendations = array();
-							if ($data_row->short_description_wc < 50 || $data_row->long_description_wc < 100) {
-								$recommendations[] = '<li>Increase descriptions word count</li>';
-							}
+                            if (intval($data_row->short_description_wc) <= $short_description_wc_lower_range &&
+                                intval($data_row->long_description_wc) <= $long_description_wc_lower_range) {
+                                $recommendations[] = '<li>Increase descriptions word count</li>';
+                            }
+
 							/*if ($data_row->short_seo_phrases != 'None' || $data_row->long_seo_phrases != 'None') {
 								   $recommendations[] = '<li>SEO optimize product content</li>';
 							   }*/
