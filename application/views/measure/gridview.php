@@ -70,37 +70,39 @@ foreach ($same_pr as $ks => $vs) {
             $s_product_long_desc_count = 0;
             $s_product_long_description = '';
         }
-
-        if ($i % 3 == 1) {
-            echo '<div class="wrapper">';
-        }
-    }else{
+    } else {
         $s_product_short_desc_count = $vs['short_description_wc'];
         $s_product_long_desc_count = $vs['long_description_wc'];
+        $s_product_description = $vs['short_description_wc'] != 0 ? $vs['description'] : '';
+        $s_product_long_description = $vs['long_description_wc'] != 0 ? $vs['long_description'] : '';
+    }
+
+    if ($i % 3 == 1) {
+        echo '<div class="wrapper">';
     }
     ?>
 
 
     <div id="grid_se_section_<?php echo $i; ?>"  class='grid_se_section <?php echo $class_left; ?> '>
-        <?php if ($i > 1) { ?>
+    <?php if ($i > 1) { ?>
             <div class='has_stiky' id="h_<?php echo $i; ?>" class='h'>
                 <input type="hidden" name='dd_customer' value="<?php echo $customer; ?>">
                 <div id="an_grd_view_drop_gr<?php echo $i; ?>" class='an_grd_view_drop'></div>
                 <img class='has_stiky_image' src="<?php echo base_url() ?>/img/pin-icon.png" title='Click to make sticky'>
             </div>
-        <?php } else { ?>
+    <?php } else { ?>
             <div id="h_<?php echo $i; ?>" class='h'>
                 <input type="hidden" name='dd_customer' value="<?php echo $customer; ?>">
                 <div id="an_grd_view_drop_gr<?php echo $i; ?>" class='an_grd_view_drop'></div>
 
             </div>
-        <?php } ?>
+    <?php } ?>
         <div id="<?php echo $customer; ?>" class="grid">
             <div class='c'>
                 <img class='preloader_grids_box' src="<?php echo base_url() ?>/img/grids_boxes_preloader.gif">
                 <div class='c_content'>
                     <div class="p_url">
-                        <?php if ($ks > 0 && $mismatch_button == true) { ?>
+    <?php if ($ks > 0 && $mismatch_button == true) { ?>
                             <input data-value="<?php echo $vs['imported_data_id']; ?>"class="mismatch_image" style="float: right; margin-top: 0;" type="button" value="" title="Report mismatch">
                         <?php }
                         ?>
@@ -114,51 +116,51 @@ foreach ($same_pr as $ks => $vs) {
                         <p style="min-height: 38px;" class='short_product_name'><?php echo $vs['product_name']; ?></p>
                     </div>
                     <div class="p_price">
-                        <?php
-                        if (!empty($vs['three_last_prices'])) {
-                            echo "<span class='analysis_content_head'>Price:</span>";
-                            echo '<table >';
-                            foreach ($vs['three_last_prices'] as $last_price) {
-                                ?>
+    <?php
+    if (!empty($vs['three_last_prices'])) {
+        echo "<span class='analysis_content_head'>Price:</span>";
+        echo '<table >';
+        foreach ($vs['three_last_prices'] as $last_price) {
+            ?>
                                 <tr>
                                     <td>
                                         <p class='short_product_name'><?php
-                                            if ($last_price->created != '') {
-                                                echo date("m/d/Y", strtotime($last_price->created)) . ':';
-                                            }
-                                            ?> </p>
+                    if ($last_price->created != '') {
+                        echo date("m/d/Y", strtotime($last_price->created)) . ':';
+                    }
+            ?> </p>
                                     </td>
-                                    <?php if ($j != 0) { ?>
+                                            <?php if ($j != 0) { ?>
                                         <td>
                                             <!--    //Max-->
                                             <p  class='short_product_name'> <span <?php
-                                                if (sprintf("%01.2f", floatval($last_price->price)) == $min_price) {
-                                                    if ($bold != 1) {
-                                                        echo "style='font-weight: bold;'";
-                                                        $bold = 1;
-                                                    }
-                                                }
+                                if (sprintf("%01.2f", floatval($last_price->price)) == $min_price) {
+                                    if ($bold != 1) {
+                                        echo "style='font-weight: bold;'";
+                                        $bold = 1;
+                                    }
+                                }
                                                 ?>class="product_price">$<?php echo sprintf("%01.2f", floatval($last_price->price)); ?></span></p>
                                             <!--    //Max                            -->
                                         </td>
-                                        <?php
-                                    } else {
-                                        ?>
+                <?php
+            } else {
+                ?>
                                         <td>
                                             <p  class='short_product_name'> <span <?php
-                                                if (sprintf("%01.2f", floatval($last_price->price)) > $min_price) {
-                                                    echo "class='not_min'";
-                                                } elseif (sprintf("%01.2f", floatval($last_price->price)) == $min_price) {
-                                                    if ($bold != 1) {
-                                                        echo "style='font-weight: bold;'";
-                                                        $bold = 1;
-                                                    }
-                                                }
-                                                ?> class="product_price"><?php echo '$' . sprintf("%01.2f", floatval($last_price->price)); ?></span></p>
+                        if (sprintf("%01.2f", floatval($last_price->price)) > $min_price) {
+                            echo "class='not_min'";
+                        } elseif (sprintf("%01.2f", floatval($last_price->price)) == $min_price) {
+                            if ($bold != 1) {
+                                echo "style='font-weight: bold;'";
+                                $bold = 1;
+                            }
+                        }
+                ?> class="product_price"><?php echo '$' . sprintf("%01.2f", floatval($last_price->price)); ?></span></p>
                                         </td>
-                                        <?php
-                                    }
-                                    ?>
+                                                    <?php
+                                                }
+                                                ?>
                                     <?php
                                 }
                                 echo '</table>';
@@ -170,107 +172,107 @@ foreach ($same_pr as $ks => $vs) {
                     </div>
                     <!--                            //Max-->
                     <div class="p_description" style="overflow:hidden;">
-                        <?php if ($s_product_short_desc_count > 0) { ?>
+    <?php if ($s_product_short_desc_count > 0) { ?>
                             <span class='analysis_content_head'><img style="height: 9px;width: 9px;background: rgb(207, 207, 207);padding: 2px;margin-top: -3px;margin-right: 4px;" src="<?php echo base_url() ?>/img/arrow-down.png"><?php
-                                if ($s_product_long_description == '') {
-                                    echo "Description";
-                                } else {
-                                    //echo $s_product_long_description."!!!!";
-                                    echo "Short Description";
-                                }
-                                ?><span class='short_desc_wc'></span></span>
+                            if ($s_product_long_description == '') {
+                                echo "Description";
+                            } else {
+                                //echo $s_product_long_description."!!!!";
+                                echo "Short Description";
+                            }
+                            ?><span class='short_desc_wc'></span></span>
                             <p class="heading_text">Words: <b><?php echo $s_product_short_desc_count; ?></b></p>
                             <div class="p_seo<?php echo $row; ?>short">
-                                <?php if (count($vs['seo']['short']) > 0) { ?>
+        <?php if (count($vs['seo']['short']) > 0) { ?>
                                     <p class="heading_text">SEO Keywords: </p>
                                     <ul class='gr_seo_short_ph' style='margin:0px;font-weight: bold;'>
-                                        <?php foreach ($vs['seo']['short'] as $key => $value) { ?>
+            <?php foreach ($vs['seo']['short'] as $key => $value) { ?>
 
                                             <?php $v_ph = $value['ph']; ?>
 
                                             <li >
                                                 <span style="white-space: normal;line-height: 20px;text-decoration: none;font-size: 14px !important;line-height: 21px;text-decoration: none;white-space: normal;"data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'short')" class='word_wrap_li_pr hover_en'>
-                                                    <?php echo $value['ph']; ?>
+                <?php echo $value['ph']; ?>
                                                     <?php echo '(' . $value['count'] . ') - ' . $value['prc'] . '%'; ?>
                                                 </span>
                             <!--                                    <span class='word_wrap_li_sec' style="margin-top: -16px;margin-left: 5px;"></span>-->
                                             </li>
-                                        <?php } ?>
+            <?php } ?>
                                     </ul>
-                                <?php } else { ?>
+                                    <?php } else { ?>
 
                                     <p class="heading_text">SEO Keywords: <span style="font-weight: bold;">None</span></p>
-                                <?php } ?>
+        <?php } ?>
                             </div>
                             <div class="cmp-area">
-                                <?php if (isset($vs['short_original']) && $vs['short_original'] != "Insufficient data") { ?>
+        <?php if (isset($vs['short_original']) && $vs['short_original'] != "Insufficient data") { ?>
                                     <p><img class="cmp-btn" src="<?php echo base_url() ?>/img/icon.png" title='Click to see dublicates words'>Duplicate content: <b><?php echo $vs['short_original']; ?> </b></p>
                                 <?php } else { ?>
                                     <p>Duplicate content: <b><?php echo $vs['short_original']; ?> </b></p>
                                 <?php } ?>
                                 <p class="short_desc_con compare"><?php echo $s_product_description; ?></p>
                             </div>
-                            <?php
-                        }
-                        if ($s_product_long_desc_count > 0) {
-                            ?>
+        <?php
+    }
+    if ($s_product_long_desc_count > 0) {
+        ?>
 
                             <span class='analysis_content_head'><img style="height: 9px;width: 9px;background: rgb(207, 207, 207);padding: 2px;margin-top: -3px;margin-right: 4px;" src="<?php echo base_url() ?>/img/arrow-down.png"><?php
-                                if ($s_product_description == '') {
-                                    echo "Description";
-                                } else {
-                                    echo "Long Description";
-                                }
-                                ?><span class='long_desc_wc'></span></span>
+                    if ($s_product_description == '') {
+                        echo "Description";
+                    } else {
+                        echo "Long Description";
+                    }
+        ?><span class='long_desc_wc'></span></span>
                             <p class="heading_text">Words: <b><?php echo $s_product_long_desc_count; ?></b></p>
                             <div class="p_seo<?php
-                            if ($s_product_description == '') {
-                                echo $row . 'short';
-                            } else {
-                                echo $row . 'long';
-                            }
-                            ?>">
-                                     <?php if (count($vs['seo']['long']) > 0) { ?>
+                        if ($s_product_description == '') {
+                            echo $row . 'short';
+                        } else {
+                            echo $row . 'long';
+                        }
+        ?>">
+                            <?php if (count($vs['seo']['long']) > 0) { ?>
                                     <p class="heading_text">SEO Keywords: </p>
                                     <ul class='gr_seo_short_ph' style='margin:0px;font-weight: bold;'>
-                                        <?php foreach ($vs['seo']['long'] as $key => $value) { ?>
+            <?php foreach ($vs['seo']['long'] as $key => $value) { ?>
                                             <?php $v_ph = $value['ph']; ?>
 
                                             <li >
                                                 <span style="font-size: 14px !important;white-space: normal;line-height: 20px;text-decoration: none;"data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'long')" class='word_wrap_li_pr hover_en'>
-                                                    <?php echo $value['ph']; ?>
+                <?php echo $value['ph']; ?>
                                                     <?php echo '(' . $value['count'] . ') - ' . $value['prc'] . '%'; ?>
                                                 </span>
                             <!--                                    <span class='word_wrap_li_sec' style="margin-top: -16px;margin-left: 5px;"></span>-->
                                             </li>
-                                        <?php } ?>
+            <?php } ?>
                                     </ul>
-                                <?php } else { ?>
+                                    <?php } else { ?>
 
                                     <p class="heading_text">SEO Keywords: <span style="font-weight: bold;">None</span></p>
-                                <?php } ?>
+        <?php } ?>
                             </div>
                             <div class="cmp-area">                                
-                                <?php if (isset($vs['long_original']) && $vs['long_original'] != "Insufficient data") { ?>
+        <?php if (isset($vs['long_original']) && $vs['long_original'] != "Insufficient data") { ?>
                                     <p><img class="cmp-btn" src="<?php echo base_url() ?>/img/icon.png" title='Click to see dublicates words'>Duplicate content: <b><?php echo $vs['long_original']; ?> </b></p>
                                 <?php } else { ?>
                                     <p>Duplicate content: <b><?php echo $vs['long_original']; ?> </b></p>
                                 <?php } ?>
 
                                 <!--                     //Max-->
-                                <?php echo '<p class="compare">' . $s_product_long_description . '</p>'; ?>
+        <?php echo '<p class="compare">' . $s_product_long_description . '</p>'; ?>
 
                             </div>
-                            <?php
-                        }
-                        if ($s_product_long_desc_count == 0 && $s_product_short_desc_count == 0) {
-                            ?>
+        <?php
+    }
+    if ($s_product_long_desc_count == 0 && $s_product_short_desc_count == 0) {
+        ?>
                             <span class='analysis_content_head'>Description: </span>
                             <span>No description on site</span>
 
-                            <?php
-                        }
-                        ?>
+        <?php
+    }
+    ?>
 
                     </div>
 
@@ -307,23 +309,23 @@ foreach ($same_pr as $ks => $vs) {
                                 </ul>
                                 <ul class='gr_seo_short_ph' style='margin-top: 5px;'>
                                     <li class='bold'>Short Description:</li>
-                <?php if (count($vs['seo']['short']) > 0) { ?>
+    <?php if (count($vs['seo']['short']) > 0) { ?>
                     <?php foreach ($vs['seo']['short'] as $key => $value) { ?>
                         <?php $v_ph = $value['ph']; ?>
                                                                                                                                                                                                                     <li style='margin-top: 5px;'>
                                                                                                                                                                                                                     <span data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'short')" class='word_wrap_li_pr hover_en'>
-                        <?php echo $value['ph']; ?>
+            <?php echo $value['ph']; ?>
                                                                                                                                                                                                                     </span>
                                                                                                                                                                                                                     <span class='word_wrap_li_sec'><?php echo $value['count']; ?></span>
                                                                                                                                                                                                                     </li>
-                    <?php } ?>
+        <?php } ?>
                 <?php } else { ?>
                                                                                                                                                                                                                 <li style='margin-top: 5px;'>none</li>
                 <?php } ?>
                                 </ul>
                                 <ul class='gr_seo_long_ph' style='margin-top: 5px;'>
                                     <li class='bold'>Long Description:</li>
-                <?php if (count($vs['seo']['long']) > 0) { ?>
+    <?php if (count($vs['seo']['long']) > 0) { ?>
                     <?php foreach ($vs['seo']['long'] as $key => $value) { ?>
                         <?php $v_ph = $value['ph']; ?>
                         <?php echo $value['ph']; ?>
@@ -338,7 +340,7 @@ foreach ($same_pr as $ks => $vs) {
                             </div>-->
             </div>
 
-            <?php if ($i % 3 == 0) { ?>
+    <?php if ($i % 3 == 0) { ?>
                 <div style="clear:both"></div>
                 <?php
             }

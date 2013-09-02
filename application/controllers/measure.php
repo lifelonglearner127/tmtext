@@ -1641,7 +1641,7 @@ public function gridview() {
             
             foreach ($same_pr as $ks => $vs) {
             
-                  if($res==$this->statistics_model->getbyimpid($vs['imported_data_id'])){
+                  if($res=$this->statistics_model->getbyimpid($vs['imported_data_id'])){
                       $same_pr[$ks]['short_description_wc']=$res['short_description_wc'];
                       $same_pr[$ks]['long_description_wc']= $res['long_description_wc']; 
                       $same_pr[$ks]['seo']['long']= $res['short_seo_phrases']!='None'? unserialize($res['short_seo_phrases']):array();
@@ -2211,6 +2211,18 @@ public function gridview() {
                         unset($same_pr[$ks]);
                     }
                 }
+            }
+            
+            foreach ($same_pr as $ks => $vs) {
+            
+                  if($res=$this->statistics_model->getbyimpid($vs['imported_data_id'])){
+                      
+                      $same_pr[$ks]['short_description_wc']=$res['short_description_wc'];
+                      $same_pr[$ks]['long_description_wc']= $res['long_description_wc']; 
+                      $same_pr[$ks]['seo']['long']= $res['short_seo_phrases']!='None'? unserialize($res['short_seo_phrases']):array();
+                      $same_pr[$ks]['seo']['long']= $res['long_seo_phrases']!='None'?unserialize($res['long_seo_phrases']):array();
+                                                
+                  }
             }
            
             $data['same_pr'] = $same_pr;

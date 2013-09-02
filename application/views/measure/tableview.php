@@ -120,8 +120,14 @@ foreach($customers as $val){
         <td><?php 
                 
                 if ($same_pr[$ind0]['description'] !== null && trim($same_pr[$ind0]['description']) !== "") {
-                    $description = preg_replace('/\s+/', ' ', $same_pr[$ind0]['description']);
-                    $s_product_short_desc_count1 = count(explode(" ", $description));
+                    
+                    if(!isset($same_pr[$ind0]['short_description_wc'])){
+                        $description = preg_replace('/\s+/', ' ', $same_pr[$ind0]['description']);
+                        $description = preg_replace('/[a-zA-Z]-/', ' ', $description);
+                        $s_product_short_desc_count1 = count(explode(" ", $description));
+                    }else{
+                         $s_product_short_desc_count1 =$same_pr[$ind0]['short_description_wc'];
+                    }
                 }else{
                     $s_product_short_desc_count1=0;
                 }
@@ -136,8 +142,13 @@ foreach($customers as $val){
           <td >
               <?php 
                if ($same_pr[$ind1]['description'] !== null && trim($same_pr[$ind1]['description']) !== "") {
-                    $description = preg_replace('/\s+/', ' ', $same_pr[$ind1]['description']);
-                    $s_product_short_desc_count2 = count(explode(" ", $description));
+                    if(!isset($same_pr[$ind1]['short_description_wc'])){ 
+                        $description = preg_replace('/\s+/', ' ', $same_pr[$ind1]['description']);
+                        $description = preg_replace('/[a-zA-Z]-/', ' ', $description);
+                        $s_product_short_desc_count2 = count(explode(" ", $description));
+                    }else{
+                        $s_product_short_desc_count2=$same_pr[$ind1]['short_description_wc'];
+                    }
                 }else{
                     $s_product_short_desc_count2=0;
                 }
@@ -208,8 +219,13 @@ foreach($customers as $val){
             <?php 
                 
                 if ($same_pr[$ind0]['long_description'] !== null && trim($same_pr[$ind0]['long_description']) !== "") {
-                    $long_description = preg_replace('/\s+/', ' ', $same_pr[$ind0]['long_description']);
-                    $s_product_long_desc_count1 = count(explode(" ", $long_description));
+                   if(!isset($same_pr[$ind0]['long_description_wc'])){ 
+                        $long_description = preg_replace('/\s+/', ' ', $same_pr[$ind0]['long_description']);
+                        $long_description= preg_replace('/[a-zA-Z]-/', ' ', $long_description);
+                        $s_product_long_desc_count1 = count(explode(" ", $long_description));
+                   }else{
+                       $s_product_long_desc_count1=$same_pr[$ind0]['long_description_wc'];
+                   }
                 }else{
                     $s_product_long_desc_count1=0;
                 }
@@ -224,8 +240,13 @@ foreach($customers as $val){
           <td>
               <?php 
                if ($same_pr[$ind1]['long_description'] !== null && trim($same_pr[$ind1]['long_description']) !== "") {
+                  if(!isset($same_pr[$ind1]['long_description_wc'])){   
                     $long_description = preg_replace('/\s+/', ' ', $same_pr[$ind1]['long_description']);
+                    $long_description=preg_replace('/[a-zA-Z]-/', ' ', $long_description);
                     $s_product_long_desc_count2 = count(explode(" ", $long_description));
+                  }else{
+                       $s_product_long_desc_count2 = $same_pr[$ind1]['long_description_wc'];
+                  }
                 }else{
                     $s_product_long_desc_count2=0;
                 }
