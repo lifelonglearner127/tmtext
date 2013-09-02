@@ -140,6 +140,15 @@ class Measure extends MY_Controller {
 
     public function send_recipient_report_selected() {
         $this->load->model('webshoots_model');
+
+        $email_report_config_sender = $this->webshoots_model->getEmailReportConfig('sender');
+        $attach_value = $this->webshoots_model->getEmailReportConfig('attach');
+        if($attach_value == 'yes') {
+            $attach_st = true;
+        } else {
+            $attach_st = false;
+        }
+
         $selected_data = $this->input->post('selected_data');
         $uid = $this->input->post('uid');
         $c_week = $this->input->post('c_week');
@@ -167,7 +176,7 @@ class Measure extends MY_Controller {
             $day = $v['day'];
             $email = $v['email'];
             $id = $v['id'];
-            $this->email->from('bayclimber@gmail.com', "Content Solutions - Home Pages Report");
+            $this->email->from("$email_report_config_sender", "Content Solutions - Home Pages Report");
             $this->email->to("$email");
             $this->email->subject('Contalytics - Home Pages Report');
             $data_et['day'] = $day;
@@ -175,10 +184,12 @@ class Measure extends MY_Controller {
             $msg = $this->load->view('measure/rec_report_email_template', $data_et, true);
             $this->email->message($msg);
             // --- attachments (start)
-            if(count($screens) > 0) {
-                foreach ($screens as $key => $value) {
-                    $path = $value['dir'];
-                    $this->email->attach("$path");
+            if($attach_st) {
+                if(count($screens) > 0) {
+                    foreach ($screens as $key => $value) {
+                        $path = $value['dir'];
+                        $this->email->attach("$path");
+                    }
                 }
             }
             // --- attachments (end)
@@ -187,44 +198,17 @@ class Measure extends MY_Controller {
         $this->output->set_content_type('application/json')->set_output(json_encode($this->email->print_debugger()));
     }
 
-    // public function send_recipient_report() {
-    //     $this->load->model('webshoots_model');
-    //     $id = $this->input->post('id');
-    //     $email = $this->input->post('email');
-    //     $day = $this->input->post('day');
-    //     $uid = $this->input->post('uid');
-    //     $c_week = $this->input->post('c_week');
-    //     $c_year = $this->input->post('c_year');
-    //     // --------------- email sender (start) ---------------
-    //     // -- email config (dev configurations) (start) --
-    //     $this->load->library('email');
-    //     $config['protocol'] = 'sendmail';
-    //     $config['mailpath'] = '/usr/sbin/sendmail';
-    //     $config['charset'] = 'UTF-8';
-    //     $config['wordwrap'] = TRUE;
-    //     $this->email->initialize($config);
-    //     // -- email config (dev configurations) (end) --
-    //     $this->email->from('bayclimber@gmail.com', "Content Solutions - Home Pages Report");
-    //     // $this->email->from('ishulgin8@gmail.com', "Content Solutions - Home Pages Report");
-    //     $this->email->to("$email");
-    //     $this->email->subject('Content Solutions - Home Pages Report');
-    //     $this->email->message("Report screenshots in attachment. Preference day: $day.");
-    //     // --- attachments (start)
-    //     $screens = $this->webshoots_model->getDistinctEmailScreens($c_week, $c_year, $uid);
-    //     if(count($screens) > 0) {
-    //         foreach ($screens as $key => $value) {
-    //             $path = $value;
-    //             $this->email->attach("$path");
-    //         }
-    //     }
-    //     // --- attachments (end)
-    //     $this->email->send();
-    //     $this->output->set_content_type('application/json')->set_output(json_encode($this->email->print_debugger()));
-    //     // --------------- email sender (end) -----------------
-    // }
-
     public function send_recipient_report() {
         $this->load->model('webshoots_model');
+
+        $email_report_config_sender = $this->webshoots_model->getEmailReportConfig('sender');
+        $attach_value = $this->webshoots_model->getEmailReportConfig('attach');
+        if($attach_value == 'yes') {
+            $attach_st = true;
+        } else {
+            $attach_st = false;
+        }
+
         $id = $this->input->post('id');
         $email = $this->input->post('email');
         $day = $this->input->post('day');
@@ -253,7 +237,7 @@ class Measure extends MY_Controller {
         
         $this->email->initialize($config);
         // -- email config (dev configurations) (end) --
-        $this->email->from('bayclimber@gmail.com', "Content Solutions - Home Pages Report");
+        $this->email->from("$email_report_config_sender", "Content Solutions - Home Pages Report");
         $this->email->to("$email");
         $this->email->subject('Contalytics - Home Pages Report');
         $data_et['day'] = $day;
@@ -261,10 +245,12 @@ class Measure extends MY_Controller {
         $msg = $this->load->view('measure/rec_report_email_template', $data_et, true);
         $this->email->message($msg);
         // --- attachments (start)
-        if(count($screens) > 0) {
-            foreach ($screens as $key => $value) {
-                $path = $value['dir'];
-                $this->email->attach("$path");
+        if($attach_st) {
+            if(count($screens) > 0) {
+                foreach ($screens as $key => $value) {
+                    $path = $value['dir'];
+                    $this->email->attach("$path");
+                }
             }
         }
         // --- attachments (end)

@@ -1,3 +1,10 @@
+.form_error.mt5 {
+    margin-top: 5px;
+}
+.form_error {
+    display: none;
+    color: red;
+}
 #cl_cp_tbl_crawls tr td {
     padding-left: 4px !important;
     padding-right: 4px !important;

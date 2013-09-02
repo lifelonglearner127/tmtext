@@ -17,11 +17,20 @@ class System extends MY_Controller {
 
  	}
 
-	public function index()
-	{
+	public function index() {
+		$this->load->model('webshoots_model');
 		$this->data['message'] = $this->session->flashdata('message');
-
+		$this->data['email_report_config_sender'] = $this->webshoots_model->getEmailReportConfig('sender');
+		$this->data['email_report_config_attach'] = $this->webshoots_model->getEmailReportConfig('attach');
 		$this->render();
+	}
+
+	public function update_home_pages_config() {
+		$this->load->model('webshoots_model');
+		$type = $this->input->post('type');
+		$value = $this->input->post('value');
+		$res = $this->webshoots_model->updateHomePagesConfig($type, $value);
+		$this->output->set_content_type('application/json')->set_output(true);
 	}
 
 	public function recordcollection() {

@@ -1,7 +1,44 @@
 <script type="text/javascript">
 	$(document).ready(function() {
 		$('head').find('title').text('System');
+
+		$("#email_report_config_attach").on("change", function(e) {
+			var check = $(e.target).is(':checked');
+			var value = 'no';
+			if(check) {
+				value = 'yes';
+			}
+			var send_data = {
+				type: 'attach',
+				value: value
+			};
+			$("#email_report_config_attach").attr('disabled', true);
+			$.post(base_url + 'index.php/system/update_home_pages_config', send_data, function(data) {
+				$("#email_report_config_attach").removeAttr('disabled');
+			});
+		});
+
 	});
+
+	function updateReportConfigSender() {
+		var email_pattern = /^([a-z0-9_\-]+\.)*[a-z0-9_\-]+@([a-z0-9][a-z0-9\-]*[a-z0-9]\.)+[a-z]{2,4}$/i;
+		var sender = $.trim($("#email_report_config_sender").val());
+		if(!email_pattern.test(sender)) {
+			$("#fe_ercs").text("Incorrect email format");
+	      	$("#fe_ercs").fadeOut("medium", function() {
+			    $("#fe_ercs").fadeIn("medium");
+		    });
+		} else {
+			var send_data = {
+				type: 'sender',
+				value: sender
+			};
+			$.post(base_url + 'index.php/system/update_home_pages_config', send_data, function(data) {
+				$("#email_report_config_sender").val(sender);
+			});
+		}
+		return false;
+	}
 </script>
 	<div class="tabbable">
 		<ul class="nav nav-tabs jq-system-tabs">
@@ -19,6 +56,22 @@
 			<div id="tab1" class="tab-pane active">
 
 				<div class="info-message"></div>
+
+				<h3>Home Pages:</h3>
+				<div class="row-fluid">
+					<form class="form-inline" method='post' action='' enctype="multipart/form-data">
+						<input type="text" id='email_report_config_sender' class="input-large" value="<?php echo $email_report_config_sender; ?>" placeholder="Email">
+						<button type="submit" onclick='return updateReportConfigSender();' class="btn btn-success">Update</button>
+						<p class='help-block form_error mt5' id='fe_ercs'>test</p>
+					</form>
+					<form class="form-inline" method='post' action='' enctype="multipart/form-data">
+						<label class="checkbox">
+							<?php if($email_report_config_attach == 'yes') { $checked = 'checked'; } else { $checked = ''; } ?>
+							<input id='email_report_config_attach' <?php echo $checked; ?> type="checkbox">&nbsp;&nbsp;Include image attachments
+						</label>
+					</form>
+				</div>		
+
 				<?php echo form_open("system/save", array("class"=>"form-horizontal", "id"=>"system_save"));?>
 					<h3>Original Descriptions:</h3>
 					<div class="row-fluid">

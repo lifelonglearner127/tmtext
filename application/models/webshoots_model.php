@@ -7,57 +7,13 @@ class Webshoots_model extends CI_Model {
         'webshoots_select' => 'webshoots_select',
         'ci_home_page_recipients' => 'ci_home_page_recipients',
         'customers' => 'customers',
-        'crawler_list' => 'crawler_list'
+        'crawler_list' => 'crawler_list',
+        'home_pages_config' => 'home_pages_config'
     );
 
     function __construct() {
         parent::__construct();
-    }
-
-    // public function getDistinctEmailScreens($c_week, $c_year, $uid) {
-    //     $check_obj = array(
-    //         'uid' => $uid,
-    //         'year' => $c_year,
-    //         'week' => $c_week
-    //     );
-    //     $check_query = $this->db->where($check_obj)->order_by('stamp', 'desc')->get($this->tables['webshoots']);
-    //     $res = $check_query->result();
-    //     $images = array();
-    //     if(count($res) > 0) {
-    //         foreach ($res as $k => $v) {
-    //             $fs = filesize($v->dir_img); 
-    //             if($fs !== false && $fs > 10000) $images[] = $v->dir_img;
-    //         }
-    //     }
-    //     return $images;
-    // }
-
-    // public function getDistinctEmailScreens($c_week, $c_year, $uid) {
-    //     $images = array();
-    //     $check_obj = array(
-    //         'uid' => $uid,
-    //         'year' => $c_year,
-    //         'week' => $c_week
-    //     );
-    //     $sel_query = $this->db->where($check_obj)->order_by('stamp', 'desc')->get($this->tables['webshoots_select']);
-    //     $sel_res = $sel_query->result();
-    //     if(count($sel_res) > 0) {
-    //         $screen_ids = array();
-    //         foreach ($sel_res as $ks => $vs) {
-    //             $screen_ids[] = $vs->screen_id;
-    //         }
-    //         $screen_ids = array_unique($screen_ids);
-    //         $shots_query = $this->db->where_in('id', $screen_ids)->get($this->tables['webshoots']);
-    //         $shots_res = $shots_query->result();
-    //         if(count($shots_res) > 0) {
-    //             foreach($shots_res as $k => $v) {
-    //                 $fs = filesize($v->dir_img); 
-    //                 if($fs !== false && $fs > 10000) $images[] = $v->dir_img;
-    //             }
-    //         }
-    //     }
-    //     return $images;
-    // }
+    } 
 
     private function getScreenPosition($screen_id) {
         $pos = 0;
@@ -68,6 +24,24 @@ class Webshoots_model extends CI_Model {
             $pos = $r->pos;
         }
         return $pos;
+    }
+
+    public function updateHomePagesConfig($type, $value) {
+        $update_object = array(
+            'value' => $value
+        );
+        return $this->db->update($this->tables['home_pages_config'], $update_object, array('type' => $type));
+    }
+
+    public function getEmailReportConfig($type) {
+        $res = '';
+        $query = $this->db->where('type', $type)->get($this->tables['home_pages_config']);
+        $qr_res = $query->result();
+        if(count($qr_res) > 0) {
+            $r = $qr_res[0];
+            $res = $r->value;
+        }
+        return $res;
     }
 
     public function resetScreenDrop($uid, $pos, $year, $week) {
