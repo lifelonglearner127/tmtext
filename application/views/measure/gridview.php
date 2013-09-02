@@ -45,36 +45,39 @@ foreach ($same_pr as $ks => $vs) {
     //           print_r(explode(" ", trim($s_product_long_description )));
     //           $s_product_long_desc_count = count(explode(" ", $s_product_long_description));
 
+    if (!isset($vs['short_description_wc'])) {
+        if ($vs['description'] !== null && trim($vs['description']) !== "") {
+            $s_product_description = $vs['description'];
+            $vs['description'] = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $vs['description']);
+            $vs['description'] = preg_replace('/\s+/', ' ', $vs['description']);
+            $vs['description'] = preg_replace('/[a-zA-Z]-/', ' ', $vs['description']);
 
-    if ($vs['description'] !== null && trim($vs['description']) !== "") {
-        $s_product_description = $vs['description'];
-        $vs['description'] = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $vs['description']);
-        $vs['description'] = preg_replace('/\s+/', ' ', $vs['description']);
-        $vs['description'] = preg_replace('/[a-zA-Z]-/', ' ', $vs['description']);
+            // $data_import['description'] = preg_replace('/[^A-Za-z0-9\. -!]/', ' ', $data_import['description']);
+            $s_product_short_desc_count = count(explode(" ", $vs['description']));
+        } else {
+            $s_product_short_desc_count = 0;
+            $s_product_description = '';
+        }
+        if ($vs['long_description'] !== null && trim($vs['long_description']) !== "") {
+            $s_product_long_description = $vs['long_description'];
+            $vs['long_description'] = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $vs['long_description']);
+            $vs['long_description'] = preg_replace('/\s+/', ' ', $vs['long_description']);
+            $vs['long_description'] = preg_replace('/[a-zA-Z]-/', ' ', $vs['long_description']);
 
-        // $data_import['description'] = preg_replace('/[^A-Za-z0-9\. -!]/', ' ', $data_import['description']);
-        $s_product_short_desc_count = count(explode(" ", $vs['description']));
-    } else {
-        $s_product_short_desc_count = 0;
-        $s_product_description = '';
+            // $data_import['long_description'] = preg_replace('/[^A-Za-z0-9\. -!]/', ' ', $data_import['long_description']);
+            $s_product_long_desc_count = count(explode(" ", $vs['long_description']));
+        } else {
+            $s_product_long_desc_count = 0;
+            $s_product_long_description = '';
+        }
+
+        if ($i % 3 == 1) {
+            echo '<div class="wrapper">';
+        }
+    }else{
+        $s_product_short_desc_count = $vs['short_description_wc'];
+        $s_product_long_desc_count = $vs['long_description_wc'];
     }
-    if ($vs['long_description'] !== null && trim($vs['long_description']) !== "") {
-        $s_product_long_description = $vs['long_description'];
-        $vs['long_description'] = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $vs['long_description']);
-        $vs['long_description'] = preg_replace('/\s+/', ' ', $vs['long_description']);
-        $vs['long_description'] = preg_replace('/[a-zA-Z]-/', ' ', $vs['long_description']);
-
-        // $data_import['long_description'] = preg_replace('/[^A-Za-z0-9\. -!]/', ' ', $data_import['long_description']);
-        $s_product_long_desc_count = count(explode(" ", $vs['long_description']));
-    } else {
-        $s_product_long_desc_count = 0;
-        $s_product_long_description = '';
-    }
-
-    if ($i % 3 == 1) {
-        echo '<div class="wrapper">';
-    }
-    //Max
     ?>
 
 
@@ -129,11 +132,11 @@ foreach ($same_pr as $ks => $vs) {
                                         <td>
                                             <!--    //Max-->
                                             <p  class='short_product_name'> <span <?php
-                                                if (sprintf("%01.2f", floatval($last_price->price)) == $min_price ) {
-													if( $bold != 1 ){
-														echo "style='font-weight: bold;'";
-														$bold = 1;
-													}
+                                                if (sprintf("%01.2f", floatval($last_price->price)) == $min_price) {
+                                                    if ($bold != 1) {
+                                                        echo "style='font-weight: bold;'";
+                                                        $bold = 1;
+                                                    }
                                                 }
                                                 ?>class="product_price">$<?php echo sprintf("%01.2f", floatval($last_price->price)); ?></span></p>
                                             <!--    //Max                            -->
@@ -145,12 +148,12 @@ foreach ($same_pr as $ks => $vs) {
                                             <p  class='short_product_name'> <span <?php
                                                 if (sprintf("%01.2f", floatval($last_price->price)) > $min_price) {
                                                     echo "class='not_min'";
-                                                }elseif (sprintf("%01.2f", floatval($last_price->price)) == $min_price ) {
-													if( $bold != 1 ){
-														echo "style='font-weight: bold;'";
-														$bold = 1;
-													}
-												}
+                                                } elseif (sprintf("%01.2f", floatval($last_price->price)) == $min_price) {
+                                                    if ($bold != 1) {
+                                                        echo "style='font-weight: bold;'";
+                                                        $bold = 1;
+                                                    }
+                                                }
                                                 ?> class="product_price"><?php echo '$' . sprintf("%01.2f", floatval($last_price->price)); ?></span></p>
                                         </td>
                                         <?php
@@ -200,11 +203,11 @@ foreach ($same_pr as $ks => $vs) {
                                 <?php } ?>
                             </div>
                             <div class="cmp-area">
-                                    <?php if(isset($vs['short_original'])&& $vs['short_original'] != "Insufficient data"){?>
-                                        <p><img class="cmp-btn" src="<?php echo base_url() ?>/img/icon.png" title='Click to see dublicates words'>Duplicate content: <b><?php echo $vs['short_original'];?> </b></p>
-                                    <?php }else{?>
-                                      <p>Duplicate content: <b><?php echo $vs['short_original'];?> </b></p>
-                                    <?php } ?>
+                                <?php if (isset($vs['short_original']) && $vs['short_original'] != "Insufficient data") { ?>
+                                    <p><img class="cmp-btn" src="<?php echo base_url() ?>/img/icon.png" title='Click to see dublicates words'>Duplicate content: <b><?php echo $vs['short_original']; ?> </b></p>
+                                <?php } else { ?>
+                                    <p>Duplicate content: <b><?php echo $vs['short_original']; ?> </b></p>
+                                <?php } ?>
                                 <p class="short_desc_con compare"><?php echo $s_product_description; ?></p>
                             </div>
                             <?php
@@ -248,12 +251,12 @@ foreach ($same_pr as $ks => $vs) {
                                 <?php } ?>
                             </div>
                             <div class="cmp-area">                                
-                                     <?php if(isset($vs['long_original'])&& $vs['long_original'] != "Insufficient data"){?>
-                                        <p><img class="cmp-btn" src="<?php echo base_url() ?>/img/icon.png" title='Click to see dublicates words'>Duplicate content: <b><?php echo $vs['long_original'];?> </b></p>
-                                    <?php }else{?>
-                                        <p>Duplicate content: <b><?php echo $vs['long_original'];?> </b></p>
-                                    <?php } ?>
-                                
+                                <?php if (isset($vs['long_original']) && $vs['long_original'] != "Insufficient data") { ?>
+                                    <p><img class="cmp-btn" src="<?php echo base_url() ?>/img/icon.png" title='Click to see dublicates words'>Duplicate content: <b><?php echo $vs['long_original']; ?> </b></p>
+                                <?php } else { ?>
+                                    <p>Duplicate content: <b><?php echo $vs['long_original']; ?> </b></p>
+                                <?php } ?>
+
                                 <!--                     //Max-->
                                 <?php echo '<p class="compare">' . $s_product_long_description . '</p>'; ?>
 

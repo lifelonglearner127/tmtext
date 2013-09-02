@@ -1484,55 +1484,7 @@ public function gridview() {
                     }
                 }
             }
-//            print "<pre>";
-//            print_r($same_pr);
-//            print "</pre>";
-//            die();
-//            $compare_description = array();
-//            foreach ($same_pr as $key => $value) {
-//                if (!empty($value['description'])) {
-//                    $compare_description[$key]['short'] = $value['description'];
-//                }
-//                if (!empty($value['long_description'])) {
-//                    $compare_description[$key]['long'] = $value['long_description'];
-//                }
-//            }
-//            $compare_description_short = array();
-//            foreach ($same_pr as $key => $value) {
-//                if (!empty($value['description'])) {
-//                    $compare_description_short[$key] = $value['description'];
-//                }
-//            }
-//            foreach ($compare_description_short as $key => $value) {
-//                $result = round(total_matches($key, $compare_description, "short"), 2);
-//                if ($result > 90) {
-//                    $same_pr[$key]['short_original'] = $result . '%';//'No'; //round($result, 2) . '%';
-//                } elseif (!$result) {
-//                    $same_pr[$key]['short_original'] = $result . '%';//'Yes';
-//                } else {
-//                    $same_pr[$key]['short_original'] = $result . '%';//'Yes';
-//                }
-////                $same_pr[$key]= $vs;
-//            }
-//
-//            $compare_description_long = array();
-//            foreach ($same_pr as $key => $value) {
-//                if (!empty($value['long_description'])) {
-//                    $compare_description_long[$key] = $value['long_description'];
-//                }
-//            }
-//            foreach ($compare_description_long as $key => $value) {
-//                $result = total_matches($key, $compare_description,'long');
-//                if ($result > 90) {
-//                    $same_pr[$key]['long_original'] = round($result, 2) . '%';
-//                } elseif (!$result) {
-//                    $same_pr[$key]['long_original'] = round($result, 2) . '%';//'Yes';
-//                } else {
-//                    $same_pr[$key]['long_original'] = round($result, 2) . '%';//'Yes';
-//                }
-////                $same_pr[$key]= $vs;
-//            }
-//			if(count($same_pr) === 3) {
+
             foreach ($same_pr as $ks => $vs) {
                 
                 $this->load->model('sites_model');
@@ -1686,6 +1638,21 @@ public function gridview() {
                     }
                 }
             }
+            
+            foreach ($same_pr as $ks => $vs) {
+            
+                  if($res==$this->statistics_model->getbyimpid($vs['imported_data_id'])){
+                      $same_pr[$ks]['short_description_wc']=$res['short_description_wc'];
+                      $same_pr[$ks]['long_description_wc']= $res['long_description_wc']; 
+                      $same_pr[$ks]['seo']['long']= $res['short_seo_phrases']!='None'? unserialize($res['short_seo_phrases']):array();
+                      $same_pr[$ks]['seo']['long']= $res['long_seo_phrases']!='None'?unserialize($res['long_seo_phrases']):array();
+                                                  
+                  }
+            }
+            
+            
+            
+            
 
             $data['same_pr'] = $same_pr;
 
@@ -1841,55 +1808,7 @@ public function gridview() {
                     }
                 }
             }
-//            print "<pre>";
-//            print_r($same_pr);
-//            print "</pre>";
-//            die();
-//            $compare_description = array();
-//            foreach ($same_pr as $key => $value) {
-//                if (!empty($value['description'])) {
-//                    $compare_description[$key]['short'] = $value['description'];
-//                }
-//                if (!empty($value['long_description'])) {
-//                    $compare_description[$key]['long'] = $value['long_description'];
-//                }
-//            }
-//            $compare_description_short = array();
-//            foreach ($same_pr as $key => $value) {
-//                if (!empty($value['description'])) {
-//                    $compare_description_short[$key] = $value['description'];
-//                }
-//            }
-//            foreach ($compare_description_short as $key => $value) {
-//                $result = round(total_matches($key, $compare_description, "short"), 2);
-//                if ($result > 90) {
-//                    $same_pr[$key]['short_original'] = $result . '%';//'No'; //round($result, 2) . '%';
-//                } elseif (!$result) {
-//                    $same_pr[$key]['short_original'] = $result . '%';//'Yes';
-//                } else {
-//                    $same_pr[$key]['short_original'] = $result . '%';//'Yes';
-//                }
-////                $same_pr[$key]= $vs;
-//            }
-//
-//            $compare_description_long = array();
-//            foreach ($same_pr as $key => $value) {
-//                if (!empty($value['long_description'])) {
-//                    $compare_description_long[$key] = $value['long_description'];
-//                }
-//            }
-//            foreach ($compare_description_long as $key => $value) {
-//                $result = total_matches($key, $compare_description,'long');
-//                if ($result > 90) {
-//                    $same_pr[$key]['long_original'] = round($result, 2) . '%';
-//                } elseif (!$result) {
-//                    $same_pr[$key]['long_original'] = round($result, 2) . '%';//'Yes';
-//                } else {
-//                    $same_pr[$key]['long_original'] = round($result, 2) . '%';//'Yes';
-//                }
-////                $same_pr[$key]= $vs;
-//            }
-//			if(count($same_pr) === 3) {
+
             foreach ($same_pr as $ks => $vs) {
                 
                 $this->load->model('sites_model');
@@ -2014,7 +1933,7 @@ public function gridview() {
                 }
                 }
             }
-             foreach ($same_pr as $ks => $vs) {
+           foreach ($same_pr as $ks => $vs) {
                 if ($this->get_base_url($vs['url']) == $this->get_base_url($selectedUrl)) {
                     if ($ks != 0) {
                         $same_pr[] = $same_pr[0];
@@ -2023,7 +1942,7 @@ public function gridview() {
                     }
                 }
             }
-
+           
             $data['same_pr'] = $same_pr;
 
 
