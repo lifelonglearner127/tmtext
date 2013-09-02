@@ -155,8 +155,7 @@ class Webshoots_model extends CI_Model {
             'pos' => $pos,
             'uid' => $uid,
             'year' => $year,
-            'week' => $week,
-            'reset != ' => 1
+            'week' => $week
         );
         $check_query = $this->db->get_where($this->tables['webshoots_select'], $check_obj);
         $check_query_res = $check_query->result();
@@ -169,32 +168,34 @@ class Webshoots_model extends CI_Model {
             $candidate_url = preg_replace('#^www.#', '', $candidate_url);
             // ---- check if we need to crawl url before auto-selection
             $candidate_name = $candidate->name;
-            if($candidate_url === 'sears.com') {
-                $candidate_url = 'wayfair.com';
-                $candidate_name = 'wayfair.com';
-            }
-            if($candidate_url == 'bloomingdales.com') {
-                $candidate_url = 'toysrus.com';
-                $candidate_name = 'toysrus.com';
-            }
+            // if($candidate_url === 'sears.com') {
+            //     $candidate_url = 'wayfair.com';
+            //     $candidate_name = 'wayfair.com';
+            // }
+            // if($candidate_url == 'bloomingdales.com') {
+            //     $candidate_url = 'toysrus.com';
+            //     $candidate_name = 'toysrus.com';
+            // }
             $query_url_check = $this->db->where('url', $candidate_url)->order_by('stamp', 'desc')->get($this->tables['webshoots']);
             $query_url_check_res = $query_url_check->result();
             if(count($query_url_check_res) > 0) { // --- just make auto-selection
                 $object_as = $query_url_check_res[0];
-                $insert_object = array(
-                    'screen_id' => $object_as->id,
-                    'uid' => $uid,
-                    'pos' => $pos,
-                    'year' => $year,
-                    'week' => $week,
-                    'img' => $object_as->img,
-                    'thumb' => $object_as->thumb,
-                    'stamp' => date("Y-m-d H:i:s"),
-                    'screen_stamp' => $object_as->stamp,
-                    'site' => $candidate_url,
-                    'label' => $candidate_name
-                );
-                $this->db->insert($this->tables['webshoots_select'], $insert_object);
+                if($object_as->reset == 0) {
+                    $insert_object = array(
+                        'screen_id' => $object_as->id,
+                        'uid' => $uid,
+                        'pos' => $pos,
+                        'year' => $year,
+                        'week' => $week,
+                        'img' => $object_as->img,
+                        'thumb' => $object_as->thumb,
+                        'stamp' => date("Y-m-d H:i:s"),
+                        'screen_stamp' => $object_as->stamp,
+                        'site' => $candidate_url,
+                        'label' => $candidate_name
+                    );
+                    $this->db->insert($this->tables['webshoots_select'], $insert_object);
+                }
             }
             $res = true; 
         } 
