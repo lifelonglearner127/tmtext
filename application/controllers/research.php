@@ -988,7 +988,7 @@ class Research extends MY_Controller {
 
         //if (!empty($report_data['summary']['items_unoptimized_product_content']) && intval($report_data['summary']['items_unoptimized_product_content'] > 0)) {
             $html = $html.'<tr><td class="report_td">';
-            $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_seo.png">'.$report_data['summary']['items_unoptimized_product_content'].' items have unoptimized product content</div>';
+            $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_seo.png">'.$report_data['summary']['items_unoptimized_product_content'].' items have non-keyword optimized product content</div>';
             $html = $html.'</td></tr>';
         //}
 
