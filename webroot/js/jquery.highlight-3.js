@@ -111,9 +111,9 @@ function generate_password(number)
     var pass = "#";
     for(var i = 0; i < number; i++)
     {
-      // Вычисляем случайный индекс массива
+ 
       var index = Math.floor(Math.random( ) * (arr.length-1));
       pass += arr[index];
     }
     return pass;
-  }  //style="color:'+generate_password(6)+'"
+  } 

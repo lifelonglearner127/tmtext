@@ -3,7 +3,7 @@
 //$selectedUrl = $_POST['selectedUrl'];
 //echo $selectedUrl;
 ?>
-<?php $i = 1; ?>
+<?php $i = 1;$bold = 0; ?>
 <?php
 //Max
 $min_price = 1000000000;
@@ -133,19 +133,19 @@ foreach ($same_pr as $ks => $vs) {
                                             <?php if ($j != 0) { ?>
                                         <td>
                                             <!--    //Max-->
-                                            <p  class='short_product_name'> <span <?php
-                                if (sprintf("%01.2f", floatval($last_price->price)) == $min_price) {
-                                    if ($bold != 1) {
-                                        echo "style='font-weight: bold;'";
-                                        $bold = 1;
-                                    }
-                                }
+                                            <p  class='short_product_name'> <span <?php 
+                                                if (sprintf("%01.2f", floatval($last_price->price)) == $min_price) {
+                                                    if ($bold != 1) {
+                                                        echo "style='font-weight: bold;'";
+                                                        $bold = 1;
+                                                    }
+                                                }
                                                 ?>class="product_price">$<?php echo sprintf("%01.2f", floatval($last_price->price)); ?></span></p>
                                             <!--    //Max                            -->
-                                        </td>
-                <?php
-            } else {
-                ?>
+                                         </td>
+                                                <?php
+                                            } else {
+                                                ?>
                                         <td>
                                             <p  class='short_product_name'> <span <?php
                         if (sprintf("%01.2f", floatval($last_price->price)) > $min_price) {

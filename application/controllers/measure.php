@@ -2111,12 +2111,13 @@ public function gridview() {
                 $same_pr[$ks]['customer']=  strtolower($this->sites_model->get_name_by_url($same_pr[$ks]['customer']));
                 $same_pr[$ks]['seo']['short'] = $this->helpers-> measure_analyzer_start_v2_product_name($vs['product_name'],preg_replace('/\s+/', ' ', $vs['description']));
                 $same_pr[$ks]['seo']['long'] = $this->helpers->measure_analyzer_start_v2_product_name($vs['product_name'],preg_replace('/\s+/', ' ', $vs['long_description']));
+                 $imported_data_id = $same_pr[$ks]['imported_data_id'];
                 //snap
                 $this->load->model('crawler_list_model');
                 $same_pr[$ks]['snap'] = $this->crawler_list_model->selectSnap($imported_data_id);
 
                 // three last prices
-                $imported_data_id = $same_pr[$ks]['imported_data_id'];
+
                 $three_last_prices = $this->imported_data_parsed_model->getLastPrices($imported_data_id);
                 $same_pr[$ks]['three_last_prices'] = $three_last_prices;
                 if(!empty($three_last_prices)){
