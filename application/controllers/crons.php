@@ -545,7 +545,7 @@ class Crons extends MY_Controller {
                             $price_diff_exists['id'] = $own_prices[0]->id;
                             $price_diff_exists['own_site'] = $own_site;
                             $price_diff_exists['own_price'] = floatval($own_price);
-                        }
+                        
                             try {
                                 $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
                             } catch (Exception $e) {
@@ -604,7 +604,41 @@ class Crons extends MY_Controller {
                                     }
                                 }
                             }
-                        
+                        }else{
+                             try {
+                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
+                            } catch (Exception $e) {
+                                echo 'РћС€РёР±РєР°', $e->getMessage(), "\n";
+                               
+                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
+                            }
+
+                            if (!empty($similar_items)) {
+                                foreach ($similar_items as $ks => $vs) {
+                                    $similar_item_imported_data_id = $similar_items[$ks]['imported_data_id'];
+                                    if ($obj->imported_data_id == $similar_item_imported_data_id) {
+                                        continue;
+                                    }
+//                                          $n = parse_url($vs['url']);
+//                                          $customer=  strtolower($n['host']);
+//                                          $customer = str_replace("www1.", "",$customer);
+//                                          $customer =str_replace("www.", "", $customer);
+                                    $customer = "";
+                                    foreach ($sites_list as $ki => $vi) {
+                                        if (strpos($vs['url'], "$vi") !== false) {
+                                            $customer = $vi;
+                                        }
+                                    }
+
+
+                                    $customer = strtolower($this->sites_model->get_name_by_url($customer));
+                                    $similar_products_competitors[] = array(
+                                        'imported_data_id' => $similar_item_imported_data_id,
+                                        'customer' => $customer
+                                    );
+                                }
+                            }
+                        }
 
 //                        $n = parse_url($data_import['url']);
 //                                     $customer=  strtolower($n['host']);
