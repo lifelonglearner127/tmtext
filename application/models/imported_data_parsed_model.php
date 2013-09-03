@@ -1061,8 +1061,10 @@ class Imported_data_parsed_model extends CI_Model {
        return $data;
     }
     function getData($value, $website = '', $category_id = '', $limit = '', $key = 'Product Name', $strict = false) {
-        $arr = explode('/', $value);
-        $value = $arr[0];
+        if(strlen($value)>4){
+            $arr = explode('/', $value);
+            $value = $arr[0];
+         }
         $this->db->select('p.imported_data_id, p.key, p.value')
                 ->from($this->tables['imported_data_parsed'] . ' as p')
                 ->join($this->tables['imported_data'] . ' as i', 'i.id = p.imported_data_id', 'left')
