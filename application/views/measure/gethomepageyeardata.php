@@ -230,7 +230,7 @@
 		// ---- UI tooltips (end)
 		$("#customers_screens_crawl").tooltip({
 			placement: 'bottom',
-			title: 'Open Crawl Launch Control Panel'
+			title: 'Open Screenshot Control Panel'
 		});
 		// --- screens dropdowns selections scanner (start)
 	    var send_data = {
