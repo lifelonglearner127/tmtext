@@ -814,7 +814,7 @@ class PageProcessor {
 		$descriptionLong = implode(' ',$descriptionLong);
 
 
-		foreach($this->nokogiri->get('.bucket .content ul li') as $item) {
+		foreach($this->nokogiri->get('#feature-bullets-btf .bucket .content ul li') as $item) {
 			$line = trim($item['#text'][0]);
 			if (!empty($line)) {
 				$features[] = $line;
@@ -896,6 +896,32 @@ class PageProcessor {
 				$result['model'] =  trim($item['td'][1]['#text'][0]);
 			}
 		}
+
+		foreach($this->nokogiri->get('.reviews #summaryContainer .acrCount a') as $item) {
+			$p = $item['#text'][0];
+			if (preg_match('/([0-9]+)/', $p, $match)) {
+				$result['review_count'] =  trim($match[1]);
+			}
+		}
+
+		foreach($this->nokogiri->get('#feature-bullets-btf .bucket .content ul li') as $item) {
+			$line = trim($item['#text'][0]);
+			if (!empty($line)) {
+				$features[] = $line;
+			}
+		}
+		$result['feature_count'] = count($features);
+
+//		foreach($this->nokogiri->get('#detail-bullets .bucket .content table tr td a') as $item) {
+//			var_dump($item);
+//			$line = trim($item['#text'][0]);
+//			if (!empty($line)) {
+//				$result['pdf'][] = array(
+//					'name' => $line
+//				);
+//			}
+//		}
+
 
 		return $result;
 	}

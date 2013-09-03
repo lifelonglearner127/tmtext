@@ -21,7 +21,7 @@ class Statistics_model extends CI_Model {
         return $query->result();
     }
     function getbyimpid($imported_data_id){
-       
+
         $query = $this->db->where('imported_data_id', $imported_data_id)
               ->get('statistics_new');
 
@@ -29,23 +29,37 @@ class Statistics_model extends CI_Model {
         if(count($res>0)){
             return $res;
         }
-       
+
         return false;
     }
+
+    function getbyImportedDataId($imported_data_id){
+
+        $query = $this->db->where('imported_data_id', $imported_data_id)
+              ->get($this->tables['statistics']);
+
+        $res=$query->row_array();
+        if(count($res>0)){
+            return $res;
+        }
+
+        return false;
+    }
+
     function truncate()
     {
         $sql_cmd = "TRUNCATE TABLE `statistics`";
         return $this->db->query($sql_cmd);
     }
     function insert_new( $imported_data_id,$revision,
-                   
+
                     $short_description_wc, $long_description_wc,
                     $short_seo_phrases, $long_seo_phrases,
                     $own_price, $price_diff, $competitors_prices, $items_priced_higher_than_competitors, $similar_products_competitors){
-        
+
         $this->imported_data_id = $imported_data_id;
         $this->revision = $revision;
-       
+
         $this->short_description_wc = (string)$short_description_wc;
         $this->long_description_wc = (string)$long_description_wc;
         $this->short_seo_phrases = (string)$short_seo_phrases;
@@ -59,7 +73,7 @@ class Statistics_model extends CI_Model {
 
         $this->db->insert('statistics_new', $this);
         return $this->db->insert_id();
-   
+
         }
     function insert($rid, $imported_data_id, $research_data_id, $batch_id,
                     $product_name, $url, $short_description, $long_description,

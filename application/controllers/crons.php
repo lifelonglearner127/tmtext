@@ -19,7 +19,7 @@ class Crons extends MY_Controller {
     }
 
     public function index() {
-        
+
     }
 
     private function urlExists($url) {
@@ -239,7 +239,7 @@ class Crons extends MY_Controller {
         $data_import = $this->imported_data_parsed_model->do_stats_new_test($id);
         $obj=$data_import[0];
         $data_import=(array)$data_import[0];
-        
+
        // print_r($data_import);
         $own_price = 0;
         $competitors_prices = array();
@@ -250,8 +250,8 @@ class Crons extends MY_Controller {
         $short_seo_phrases = '?';
         $long_seo_phrases = '?';
         $similar_products_competitors = array();
-        
-        
+
+
         $sites_list = array();
                 $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('sites');
                 $query_cus_res = $query_cus->result();
@@ -261,8 +261,8 @@ class Crons extends MY_Controller {
                         $sites_list[] = $n['host'];
                     }
                 }
-        
-       
+
+
          if (isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
 
                         try {
@@ -280,14 +280,14 @@ class Crons extends MY_Controller {
                             $price_diff_exists['own_site'] = $own_site;
                             $price_diff_exists['own_price'] = floatval($own_price);
                         }
-                            
+
                         echo '!!!!'.$data_import['parsed_attributes']['model'];
                         $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
-                           
- 
-        
+
+
+
                             if (!empty($similar_items)) {
-                              
+
                                 foreach ($similar_items as $ks => $vs) {
                                     $similar_item_imported_data_id = $similar_items[$ks]['imported_data_id'];
                                     if ($obj->imported_data_id == $similar_item_imported_data_id) {
@@ -337,7 +337,7 @@ class Crons extends MY_Controller {
                                     }
                                 }
                             }
-                        
+
 
 //                        $n = parse_url($data_import['url']);
 //                                     $customer=  strtolower($n['host']);
@@ -393,11 +393,11 @@ class Crons extends MY_Controller {
                             }
                         }
                     }
-        
-        
+
+
         print_r($similar_products_competitors);
-        
-       
+
+
     }
     public function do_stats_new() {
         echo "Script start working";
@@ -550,7 +550,7 @@ class Crons extends MY_Controller {
                                 $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
                             } catch (Exception $e) {
                                 echo 'РћС€РёР±РєР°', $e->getMessage(), "\n";
-                               
+
                                 $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
                             }
 
@@ -604,7 +604,7 @@ class Crons extends MY_Controller {
                                     }
                                 }
                             }
-                        
+
 
 //                        $n = parse_url($data_import['url']);
 //                                     $customer=  strtolower($n['host']);
@@ -992,7 +992,7 @@ class Crons extends MY_Controller {
         unlink($tmp_dir . ".locked");
     }
 
-    public function do_stats() {
+    public function do_stats($clear = false) {
         echo "Script start working";
         $tmp_dir = sys_get_temp_dir() . '/';
         unlink($tmp_dir . ".locked");
@@ -1007,8 +1007,11 @@ class Crons extends MY_Controller {
             $this->load->model('statistics_model');
             $this->load->model('statistics_duplicate_content_model');
             $this->load->model('imported_data_parsed_model');
-            $this->statistics_model->truncate();
-            $this->statistics_duplicate_content_model->truncate();
+
+            if ($clear) {
+	            $this->statistics_model->truncate();
+//	            $this->statistics_duplicate_content_model->truncate();
+            }
             $batches = $this->batches_model->getAll('id');
             $enable_exec = true;
 //            $conn = mysql_connect('localhost', 'c38trlmonk', '542piF88');
@@ -1031,6 +1034,11 @@ class Crons extends MY_Controller {
                 }
                 if (count($data) > 0) {
                     foreach ($data as $obj) {
+                    	// TODO: rewrite
+                    	if ($this->statistics_model->getbyImportedDataId($obj->imported_data_id)) {
+							continue;
+                    	}
+
                         $own_price = 0;
                         $competitors_prices = array();
                         $price_diff = '';
