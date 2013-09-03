@@ -186,6 +186,15 @@ class Crawler_List_model extends CI_Model {
 
         return $query->row();
     }
+    function selectSnap($imp_d_i)
+    {
+    	$this->db->select('snap,snap_date,snap_state')
+    		->limit(1)
+    		->where('imported_data_id', $imp_d_i);
+        $query = $this->db->get($this->tables['crawler_list']);
+
+        return $query->result();
+    }
 
     function getByBatchLimit($limit, $start, $batch_id)
     {

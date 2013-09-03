@@ -77,6 +77,36 @@ foreach($customers as $val){
           <td><?php echo  $same_pr[$ind1]['product_name']; ?></td>
          <?php }?>
     </tr>
+    
+    
+    <?php 
+    $pri= $same_pr[$ind0]['snap'][0];
+    $pri1= $same_pr[$ind1]['snap'][0];
+    $filename = './webroot/img/'.$pri->snap;
+    $filename1 ='./webroot/img/'.$pri1->snap;
+    $filename_img =  base_url().'img/'.$pri->snap;
+    $filename1_img =base_url().'img/'.$pri1->snap;
+
+    if (file_exists($filename) || file_exists($filename1)) {
+        if(isset($pri->snap) || isset($pri1->snap)){
+        ?>
+    <tr>
+        <td class="table_subtitles">screenshot</td>
+        <td>
+           <?php if(file_exists($filename)&& isset($pri->snap)){?>
+               <img src="<?php echo $filename_img ; ?>" style="width:250px;padding:30px;" title = 'screenshot'">
+           <?php }?>
+        </td>
+        <?php if($count>1){?>
+        <td>
+             <?php if(file_exists($filename1)&& isset($pri1->snap)){?>
+                <img src="<?php echo $filename1_img; ?>" style="width:250px;padding:30px;" title='screenshot'">
+             <?php } ?>
+         </td>
+         <?php }?>
+    </tr>
+    <?php }} ?>  
+    
     <tr>
         <td class="table_titles"><b>Price</b></td>
         <td>
