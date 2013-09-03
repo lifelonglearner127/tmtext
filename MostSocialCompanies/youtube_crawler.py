@@ -38,7 +38,7 @@ class CrawlUploads():
 
 		for channel in channels_response["items"]:
 			uploads_list_id = channel["contentDetails"]["relatedPlaylists"]["uploads"]
-			print "Videos in list %s" % uploads_list_id
+			#print "Videos in list %s" % uploads_list_id
 
 			next_page_token = ""
 
