@@ -1312,6 +1312,13 @@ public function filterSiteNameByCustomerName(){
 public function gridview() {
        $data['mismatch_button']=false;
         $im_data_id = $this->input->post('im_data_id');
+        $im_data_id = $this->input->post('im_data_id');
+        $show_from= $this->input->post('show_from');
+        if($show_from!='null'){
+            $show_from=explode(',',$show_from);
+            $show_from=array_map('strtolower',  $show_from);
+            
+        }
 
         $data = array(
             'im_data_id' => $im_data_id,
@@ -1620,6 +1627,16 @@ public function gridview() {
                     if ($ks != 0) {
                         $same_pr[] = $same_pr[0];
                         $same_pr[0] = $vs;
+                        unset($same_pr[$ks]);
+                    }
+                }
+            }
+            
+            
+            if($show_from!='null'){
+               
+                foreach ($same_pr as $ks => $vs) {
+                if (!in_array($vs['customer'],$show_from)) {
                         unset($same_pr[$ks]);
                     }
                 }
