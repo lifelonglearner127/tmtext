@@ -438,9 +438,6 @@ $config['webthumb_sites'] = array(
 	'pgestore.com'
 );
 
-$config['short_description_wc_lower_range'] = 20;
-$config['long_description_wc_lower_range'] = 100;
-
 // allow the local environment to override the settings
 if (file_exists(APPPATH.'config/config.local.php')) {
 	@require_once APPPATH.'config/config.local.php';

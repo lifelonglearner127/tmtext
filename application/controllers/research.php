@@ -292,12 +292,28 @@ class Research extends MY_Controller {
             $build_assess_params->date_from = $this->input->get('date_from') == 'undefined' ? '' : $this->input->get('date_from');
             $build_assess_params->date_to = $this->input->get('date_to') == 'undefined' ? '' : $this->input->get('date_to');
             $build_assess_params->price_diff = $this->input->get('price_diff') == 'undefined' ? -1 :$this->input->get('price_diff');
-            $build_assess_params->short_less = $this->input->get('short_less') == 'undefined' ? -1 : $this->input->get('short_less');
-            $build_assess_params->short_more = $this->input->get('short_more') == 'undefined' ? -1 : $this->input->get('short_more');
+            if ($this->input->get('short_less')) {
+                $build_assess_params->short_less = $this->input->get('short_less') == 'undefined' ? -1 : intval($this->input->get('short_less'));
+            } else {
+                $build_assess_params->short_less = -1;
+            }
+            if ($this->input->get('short_more')) {
+                $build_assess_params->short_more = $this->input->get('short_more') == 'undefined' ? -1 : intval($this->input->get('short_more'));
+            } else {
+                $build_assess_params->short_more = -1;
+            }
             $build_assess_params->short_seo_phrases = $this->input->get('short_seo_phrases');
             $build_assess_params->short_duplicate_content = $this->input->get('short_duplicate_content');
-            $build_assess_params->long_less = $this->input->get('long_less') == 'undefined' ? -1 : $this->input->get('long_less');
-            $build_assess_params->long_more = $this->input->get('long_more') == 'undefined' ? -1 : $this->input->get('long_more');
+            if ($this->input->get('long_less')) {
+                $build_assess_params->long_less = $this->input->get('long_less') == 'undefined' ? -1 : intval($this->input->get('long_less'));
+            } else {
+                $build_assess_params->long_less = -1;
+            }
+            if ($this->input->get('long_more')) {
+                $build_assess_params->long_more = $this->input->get('long_more') == 'undefined' ? -1 : intval($this->input->get('long_more'));
+            } else {
+                $build_assess_params->long_more = -1;
+            }
             $build_assess_params->long_seo_phrases = $this->input->get('long_seo_phrases');
             $build_assess_params->long_duplicate_content = $this->input->get('long_duplicate_content');
             $build_assess_params->all_columns = $this->input->get('sColumns');
@@ -351,9 +367,6 @@ class Research extends MY_Controller {
         $items_short_products_content_short = 0;
         $items_long_products_content_short = 0;
         $detail_comparisons_total = 0;
-
-        $short_description_wc_lower_range = $this->config->item('short_description_wc_lower_range');
-        $long_description_wc_lower_range = $this->config->item('long_description_wc_lower_range');
 
         foreach($results as $row) {
             $long_description_wc = $row->long_description_wc;
@@ -493,11 +506,11 @@ class Research extends MY_Controller {
                 $long_wc_total_not_0++;
             }
 
-            if (intval($result_row->short_description_wc) <= $short_description_wc_lower_range) {
+            if (intval($result_row->short_description_wc) <= $build_assess_params->short_less) {
                 $items_short_products_content_short++;
             }
 
-            if (intval($result_row->long_description_wc) <= $long_description_wc_lower_range) {
+            if (intval($result_row->long_description_wc) <= $build_assess_params->long_less) {
                 $items_long_products_content_short++;
             }
 
@@ -535,8 +548,8 @@ class Research extends MY_Controller {
 //            if ($items_short_products_content_short > 0 || $items_long_products_content_short > 0) {
 //                $recomend = true;
 //            }
-            if (intval($result_row->short_description_wc) <= $short_description_wc_lower_range &&
-                intval($result_row->long_description_wc) <= $long_description_wc_lower_range) {
+            if (intval($result_row->short_description_wc) <= $build_assess_params->short_less ||
+                intval($result_row->long_description_wc) <= $build_assess_params->long_less) {
                 $recomend = true;
             }
             if ($result_row->short_seo_phrases == 'None' && $result_row->long_seo_phrases == 'None') {
@@ -568,8 +581,8 @@ class Research extends MY_Controller {
         $report['summary']['items_long_products_content_short'] = $items_long_products_content_short;
         $report['summary']['short_wc_total_not_0'] = $short_wc_total_not_0;
         $report['summary']['long_wc_total_not_0'] = $long_wc_total_not_0;
-        $report['summary']['short_description_wc_lower_range'] = $short_description_wc_lower_range;
-        $report['summary']['long_description_wc_lower_range'] = $long_description_wc_lower_range;
+        $report['summary']['short_description_wc_lower_range'] = $build_assess_params->short_less;
+        $report['summary']['long_description_wc_lower_range'] = $build_assess_params->long_less;
 
         // only if second batch select - get absent products, merge it with result_table
         if (isset($build_assess_params->compare_batch_id) && $build_assess_params->compare_batch_id > 0) {
@@ -674,89 +687,45 @@ class Research extends MY_Controller {
             $c = 0;
             foreach($result_table as $data_row) {
                 if ($c >= $display_start) {
-                    if( isset($build_assess_params->flagged) && ( isset($data_row->recommendations) || ($data_row->short_description_wc < 50 || $data_row->long_description_wc < 100) || ($data_row->short_seo_phrases == 'None' && $data_row->long_seo_phrases == 'None') || ($data_row->lower_price_exist == true && !empty($data_row->competitors_prices)) ) ){
-						
-						if (isset($data_row->recommendations)) {
-							// this is for absent product in selected batch only
-							$recommendations_html = '<ul class="assess_recommendations"><li>'.$data_row->recommendations.'</li></ul>';
-						} else {
-							$recommendations = array();
-							if (intval($data_row->short_description_wc) <= $short_description_wc_lower_range &&
-                                intval($data_row->long_description_wc) <= $long_description_wc_lower_range) {
-								$recommendations[] = '<li>Increase descriptions word count</li>';
-							}
-							/*if ($data_row->short_seo_phrases != 'None' || $data_row->long_seo_phrases != 'None') {
-								   $recommendations[] = '<li>SEO optimize product content</li>';
-							   }*/
-							if ($data_row->short_seo_phrases == 'None' && $data_row->long_seo_phrases == 'None') {
-								$recommendations[] = '<li>SEO optimize product content</li>';
-							}
-							//$recommendations[] = '<li>Add unique content</li>';
-							if ($data_row->lower_price_exist == true && !empty($data_row->competitors_prices)) {
-								if (min($data_row->competitors_prices) < $data_row->own_price) {
-									$recommendations[] = '<li>Lower price to be competitive</li>';
-								}
-							}
-							//$recommendations[] = '<li>Add product to inventory</li>';
-							
-							$recommendations_html = '<ul class="assess_recommendations">'.implode('', $recommendations).'</ul>';
-						}
-
-						$output['aaData'][] = array(
-							$data_row->created,
-							$data_row->product_name,
-							$data_row->url,
-							$data_row->short_description_wc,
-							$data_row->short_seo_phrases,
-							$data_row->long_description_wc,
-							$data_row->long_seo_phrases,
-							$data_row->duplicate_content,
-							$data_row->price_diff,
-							$recommendations_html,
-							json_encode($data_row),
-						);
-					}elseif(  $build_assess_params->flagged == false ){
-						if (isset($data_row->recommendations)) {
-							// this is for absent product in selected batch only
-							$recommendations_html = '<ul class="assess_recommendations"><li>'.$data_row->recommendations.'</li></ul>';
-						} else {
-							$recommendations = array();
-                            if (intval($data_row->short_description_wc) <= $short_description_wc_lower_range &&
-                                intval($data_row->long_description_wc) <= $long_description_wc_lower_range) {
-                                $recommendations[] = '<li>Increase descriptions word count</li>';
+                    if (isset($data_row->recommendations)) {
+                        // this is for absent product in selected batch only
+                        $recommendations_html = '<ul class="assess_recommendations"><li>'.$data_row->recommendations.'</li></ul>';
+                    } else {
+                        $recommendations = array();
+                        if (intval($data_row->short_description_wc) <= $build_assess_params->short_less ||
+                            intval($data_row->long_description_wc) <= $build_assess_params->long_less) {
+                            $recommendations[] = '<li>Increase descriptions word count</li>';
+                        }
+                        /*if ($data_row->short_seo_phrases != 'None' || $data_row->long_seo_phrases != 'None') {
+                               $recommendations[] = '<li>SEO optimize product content</li>';
+                           }*/
+                        if ($data_row->short_seo_phrases == 'None' && $data_row->long_seo_phrases == 'None') {
+                            $recommendations[] = '<li>SEO optimize product content</li>';
+                        }
+                        //$recommendations[] = '<li>Add unique content</li>';
+                        if ($data_row->lower_price_exist == true && !empty($data_row->competitors_prices)) {
+                            if (min($data_row->competitors_prices) < $data_row->own_price) {
+                                $recommendations[] = '<li>Lower price to be competitive</li>';
                             }
+                        }
+                        //$recommendations[] = '<li>Add product to inventory</li>';
 
-							/*if ($data_row->short_seo_phrases != 'None' || $data_row->long_seo_phrases != 'None') {
-								   $recommendations[] = '<li>SEO optimize product content</li>';
-							   }*/
-							if ($data_row->short_seo_phrases == 'None' && $data_row->long_seo_phrases == 'None') {
-								$recommendations[] = '<li>SEO optimize product content</li>';
-							}
-							//$recommendations[] = '<li>Add unique content</li>';
-							if ($data_row->lower_price_exist == true && !empty($data_row->competitors_prices)) {
-								if (min($data_row->competitors_prices) < $data_row->own_price) {
-									$recommendations[] = '<li>Lower price to be competitive</li>';
-								}
-							}
-							//$recommendations[] = '<li>Add product to inventory</li>';
-							
-							$recommendations_html = '<ul class="assess_recommendations">'.implode('', $recommendations).'</ul>';
-						}
+                        $recommendations_html = '<ul class="assess_recommendations">'.implode('', $recommendations).'</ul>';
+                    }
 
-						$output['aaData'][] = array(
-							$data_row->created,
-							$data_row->product_name,
-							$data_row->url,
-							$data_row->short_description_wc,
-							$data_row->short_seo_phrases,
-							$data_row->long_description_wc,
-							$data_row->long_seo_phrases,
-							$data_row->duplicate_content,
-							$data_row->price_diff,
-							$recommendations_html,
-							json_encode($data_row),
-						);
-					}
+                    $output['aaData'][] = array(
+                        $data_row->created,
+                        $data_row->product_name,
+                        $data_row->url,
+                        $data_row->short_description_wc,
+                        $data_row->short_seo_phrases,
+                        $data_row->long_description_wc,
+                        $data_row->long_seo_phrases,
+                        $data_row->duplicate_content,
+                        $data_row->price_diff,
+                        $recommendations_html,
+                        json_encode($data_row),
+                    );
                 }
                 if ($display_length > 0) {
                     if ($c >= ($display_start + $display_length - 1)) {
@@ -765,8 +734,9 @@ class Research extends MY_Controller {
                 }
                 $c++;
             }
-            $output['ExtraData']['report'] = $report;
         }
+
+        $output['ExtraData']['report'] = $report;
 
         return $output;
     }

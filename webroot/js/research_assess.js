@@ -81,20 +81,22 @@ $(function () {
                         setTimeout(function(){
                             tblAssess.fnProcessingIndicator( false );
                         }, 100);
-                        if(json.iTotalRecords == 0){
+                        if($('select[name="research_assess_batches"]').find('option:selected').val() == "0"){
                             $('#assess_report_total_items').html("");
                             $('#assess_report_items_priced_higher_than_competitors').html("");
                             $('#assess_report_items_have_more_than_20_percent_duplicate_content').html("");
                             $('#assess_report_items_unoptimized_product_content').html("");
                             $('#assess_report_items_have_product_short_descriptions_that_are_too_short').html("");
                             $('#assess_report_items_have_product_long_descriptions_that_are_too_short').html("");
+                        }
+                        if(json.iTotalRecords == 0){
                             $('#assess_report_compare_panel').hide();
                             $('#assess_report_numeric_difference').hide();
                             if($('select[name="research_assess_batches"]').find('option:selected').val() != ""){
                                 $('#summary_message').html(" - Processing data. Check back soon.");
-                                $('#research_assess_filter_short_descriptions_panel').show();
-                                $('#research_assess_filter_long_descriptions_panel').show();
-                                $('#assess_report_items_1_descriptions_pnl').show();
+//                                $('#research_assess_filter_short_descriptions_panel').show();
+//                                $('#research_assess_filter_long_descriptions_panel').show();
+                                $('#assess_report_items_1_descriptions_pnl').hide();
                                 $('#assess_report_items_2_descriptions_pnl').hide();
                             }
                         }
@@ -171,9 +173,30 @@ $(function () {
         $('#assess_report_items_priced_higher_than_competitors').html(report.summary.items_priced_higher_than_competitors);
         $('#assess_report_items_have_more_than_20_percent_duplicate_content').html(report.summary.items_have_more_than_20_percent_duplicate_content);
         $('#assess_report_items_unoptimized_product_content').html(report.summary.items_unoptimized_product_content);
+        $('#research_assess_filter_short_descriptions_panel').show();
+        $('#research_assess_filter_long_descriptions_panel').show();
+        console.log('_not_0');
+        console.log(report.summary.short_wc_total_not_0);
+        console.log(report.summary.long_wc_total_not_0);
+        console.log('products_content_short');
+        console.log(report.summary.items_short_products_content_short);
+        console.log(report.summary.items_long_products_content_short);
         if (report.summary.short_wc_total_not_0 > 0 && report.summary.long_wc_total_not_0 > 0) {
             $('#assess_report_items_have_product_short_descriptions_that_are_too_short').html(report.summary.items_short_products_content_short);
             $('#assess_report_items_have_product_long_descriptions_that_are_too_short').html(report.summary.items_long_products_content_short);
+            if ($('#research_assess_short_less_check').is(':checked')) {
+                $('#assess_report_items_have_product_short_descriptions_that_are_less_than_value').html(report.summary.short_description_wc_lower_range);
+                $('#assess_report_items_2_descriptions_pnl_s').show();
+            } else {
+                $('#assess_report_items_2_descriptions_pnl_s').hide();
+            }
+            if ($('#research_assess_long_less_check').is(':checked')) {
+                $('#assess_report_items_have_product_long_descriptions_that_are_less_than_value').html(report.summary.long_description_wc_lower_range);
+                $('#assess_report_items_2_descriptions_pnl_l').show();
+            } else {
+                $('#assess_report_items_2_descriptions_pnl_l').hide();
+            }
+
             $('#assess_report_items_1_descriptions_pnl').hide();
             $('#assess_report_items_2_descriptions_pnl').show();
 
@@ -201,9 +224,25 @@ $(function () {
                 $('#assess_report_items_have_product_descriptions_that_are_too_short').html(report.summary.items_long_products_content_short);
             }else if(report.summary.short_wc_total_not_0 != 0 && report.summary.long_wc_total_not_0 == 0){
                 $('#assess_report_items_have_product_descriptions_that_are_too_short').html(report.summary.items_short_products_content_short);
+            }else if(report.summary.short_wc_total_not_0 == 0 && report.summary.long_wc_total_not_0 == 0){
+                $('#assess_report_items_1_descriptions_pnl').hide();
             }
-
+            if ($('#research_assess_short_less_check').is(':checked')) {
+                $('#assess_report_items_have_product_descriptions_that_are_less_than_value').html(report.summary.short_description_wc_lower_range);
+                $('#assess_report_items_2_descriptions_pnl_s').show();
+            } else if ($('#research_assess_short_less_check').is(':checked')){
+                $('#assess_report_items_have_product_descriptions_that_are_less_than_value').html(report.summary.long_description_wc_lower_range);
+                $('#assess_report_items_2_descriptions_pnl_s').show();
+            } else {
+                $('#assess_report_items_2_descriptions_pnl_s').hide();
+            }
         }
+
+        if (report.summary.items_long_products_content_short == 0 && report.summary.items_short_products_content_short == 0) {
+            $('#assess_report_items_1_descriptions_pnl').hide();
+            $('#assess_report_items_2_descriptions_pnl').hide();
+        }
+
         if (report.summary.absent_items_count == undefined || report.summary.absent_items_count == 0) {
             $('#assess_report_compare_panel').hide();
         } else {

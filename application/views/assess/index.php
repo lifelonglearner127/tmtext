@@ -300,15 +300,15 @@
                                 </div>
                                 <div id="assess_report_items_1_descriptions_pnl">
                                     <div class="mt_10 mb_10 ml_15">
-                                        <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_arrow_down.png"><span id="assess_report_items_have_product_descriptions_that_are_too_short" class="mr_10"></span>items have descriptions that are less than <?php echo $short_description_wc_lower_range; ?> words</div>
+                                        <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_arrow_down.png"><span id="assess_report_items_have_product_descriptions_that_are_too_short" class="mr_10"></span>items have descriptions that are less than <span id="assess_report_items_have_product_descriptions_that_are_less_than_value"></span> words</div>
                                     </div>
                                 </div>
                                 <div id="assess_report_items_2_descriptions_pnl" style="display: none;">
-                                    <div class="mt_10 mb_10 ml_15">
-                                        <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_arrow_down.png"><span id="assess_report_items_have_product_short_descriptions_that_are_too_short" class="mr_10"></span>items have short descriptions that are less than <?php echo $short_description_wc_lower_range; ?> words</div>
+                                    <div id="assess_report_items_2_descriptions_pnl_s" class="mt_10 mb_10 ml_15">
+                                        <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_arrow_down.png"><span id="assess_report_items_have_product_short_descriptions_that_are_too_short" class="mr_10"></span>items have short descriptions that are less than <span id="assess_report_items_have_product_short_descriptions_that_are_less_than_value"></span> words</div>
                                     </div>
-                                    <div class="mt_10 mb_10 ml_15">
-                                        <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_arrow_down.png"><span id="assess_report_items_have_product_long_descriptions_that_are_too_short" class="mr_10"></span>items have long descriptions that are less than <?php echo $long_description_wc_lower_range; ?> words</div>
+                                    <div id="assess_report_items_2_descriptions_pnl_l" class="mt_10 mb_10 ml_15">
+                                        <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_arrow_down.png"><span id="assess_report_items_have_product_long_descriptions_that_are_too_short" class="mr_10"></span>items have long descriptions that are less than <span id="assess_report_items_have_product_long_descriptions_that_are_less_than_value"></span> words</div>
                                     </div>
                                 </div>
                                 <div id="assess_report_compare_panel" class="mt_10 mb_10 ml_15">

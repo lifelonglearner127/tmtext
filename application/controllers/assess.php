@@ -45,9 +45,6 @@ class Assess extends MY_Controller {
         }
         $this->data['columns'] = $columns;
 
-        $this->data['short_description_wc_lower_range'] = $this->config->item('short_description_wc_lower_range');
-        $this->data['long_description_wc_lower_range'] = $this->config->item('long_description_wc_lower_range');
-
         $this->render();
     }
 
