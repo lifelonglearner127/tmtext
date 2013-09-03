@@ -3,6 +3,7 @@
 class Brands_model extends CI_Model {
 
     var $name = '';
+    var $created = '';
     var $company_id = 0;
     var $brand_type = 0;
     
@@ -11,6 +12,7 @@ class Brands_model extends CI_Model {
         'companies' => 'companies',
         'brand_data' => 'brand_data',
         'brand_data_summary' => 'brand_data_summary',
+        'brand_types' => 'brand_types',
     );
 
     function __construct()
@@ -42,21 +44,23 @@ class Brands_model extends CI_Model {
         return $query->row();
     }
     
-    function insert($name, $company_id=0, $brand_type=0)
+    function insert($name, $company_id=0, $brand_type=0, $created=0)
     {
         $this->name = $name;
         $this->company_id = $company_id;
         $this->brand_type = $brand_type;
+        $this->created = date('Y-m-d');
 
         $this->db->insert($this->tables['brands'], $this);
         return $this->db->insert_id();
     }
 
-    function update($id, $name, $company_id=0, $brand_type=0)
+    function update($id, $name, $company_id=0, $brand_type=0, $created)
     {
         $this->name = $name;
         $this->company_id = $company_id;
         $this->brand_type = $brand_type;
+        $this->created = $created;
 
     	return $this->db->update($this->tables['brands'],
                 $this,
@@ -95,13 +99,13 @@ class Brands_model extends CI_Model {
             }
         }
                  
-        $columns = 'SQL_CALC_FOUND_ROWS b.*, b.name, c.IR500Rank, SUM(bd.tweet_count) AS tweets, SUM(bd.twitter_followers) AS followers, ';
+        $columns = 'SQL_CALC_FOUND_ROWS b.*, b.name, bt.IR500Rank, SUM(bd.tweet_count) AS tweets, SUM(bd.twitter_followers) AS followers, SUM(bd.following) AS following, ';
         $columns .= 'SUM(bd.youtube_video_count) AS videos, SUM(bd.youtube_view_count) AS views, ';
         $columns .= 'bds.total_tweets, bds.total_youtube_videos, bds.total_youtube_views ';
         $this->db->select($columns, FALSE)
-            ->join($this->tables['companies'].' as c', 'b.company_id = c.id', 'left')
-            ->join($this->tables['brand_data']. ' as bd', 'b.id = bd.brand_id')
-            ->join($this->tables['brand_data_summary']. ' as bds', 'b.id = bds.brand_id')
+            ->join($this->tables['brand_types'].' as bt', 'b.brand_type = bt.id', 'inner')
+            ->join($this->tables['brand_data']. ' as bd', 'b.id = bd.brand_id', 'inner')
+            ->join($this->tables['brand_data_summary']. ' as bds', 'b.id = bds.brand_id', 'inner')
             ->group_by("b.id");
 
         $this->db->distinct();

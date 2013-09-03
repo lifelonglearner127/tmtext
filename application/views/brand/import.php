@@ -41,7 +41,7 @@
                                     </div>
                                     <div class="clearfix"></div>
                                     <div class="span4" style="margin-left:0px;">
-                                        <h4>Upload Company Data CSV:</h4>
+                                        <h4>Upload Social Data CSV:</h4>
                                     </div>
                                     <div class="span3">
                                         <span class="btn btn-success fileinput-button">

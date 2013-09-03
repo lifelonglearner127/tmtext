@@ -72,6 +72,7 @@ $pervious_month = date("m", strtotime("first day of previous month"));
                                         <th><div class="draggable">Tweets</div></th>
                                         <th><div class="draggable">All Tweets</div></th>
                                         <th><div class="draggable">Followers</div></th>
+                                        <th><div class="draggable">Following</div></th>
                                         <th><div class="draggable">Youtube Videos</div></th>
                                         <th><div class="draggable">Views</div></th>
                                         <th><div class="draggable">All Views</div></th>

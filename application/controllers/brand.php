@@ -116,6 +116,7 @@ class Brand extends MY_Controller {
                     $brand_list->tweets,
                     $brand_list->total_tweets,
                     $brand_list->followers,
+                    $brand_list->following,
                     $brand_list->videos,
                     $brand_list->views,
                     $brand_list->total_youtube_views,
@@ -157,16 +158,22 @@ class Brand extends MY_Controller {
         $this->load->model('company_model');
         $this->load->model('brand_data_model');
         $this->load->model('brand_data_summary_model');
+        $this->load->model('brand_types_model');
         
-        $brand_type = $this->input->post('brand_types', null);
+        $brand_type_id = $this->input->post('brand_types', null);
         $brand_data_csv = $this->input->post('brand_data_csv', null);
         $company_data_csv = $this->input->post('company_data_csv', null);
         
         $brandHeader = array('Date', 'Brand', 'Tweets', 'Followers', 'YT_Videos', 'YT_Views');
-        $companyHeader = array('IR500Rank', 'CompanyName', 'Twitter', 'Youtube', 'Brand');
+        $companyHeader = array('IR500Rank', 'Brand', 'Twitter', 'Youtube');
+        
+        $brand_type = $this->brand_types_model->get($brand_type_id);
+        if(empty($brand_type)) {
+            return;
+        }
         
         if($company_data_csv != null) {
-            $data = csv_to_array($company_data_csv, $companyHeader, ';');
+            $data = csv_to_array($company_data_csv, $companyHeader, ',');
             
             if(!empty($data)) {
                 $i = 1;
@@ -175,21 +182,22 @@ class Brand extends MY_Controller {
                         $params = $value['parsed'];
 
                         //Insert new company
-                        $company_id = $this->company_model->insert($params['CompanyName'], '', '', $params['IR500Rank'], $params['Twitter'], $params['Youtube']);
+//                        $company_id = $this->brand_types_model->insert($params['CompanyName'], '', '', $params['IR500Rank'], $params['Twitter'], $params['Youtube']);
+                        $this->brand_types_model->update($brand_type->id, $brand_type->name, $params['IR500Rank']);
 
                         //Update brands table set company_id=$company_id
-                        $brand = $this->brands_model->getByName($params['Brand']);
-                        if(!empty($brand) && $company_id) {
-                            $this->brands_model->update($brand->id, $brand->name, $company_id, $brand->brand_type);
-                        }
+//                        $brand = $this->brands_model->getByName($params['Brand']);
+//                        if(!empty($brand) && $company_id) {
+//                            $this->brands_model->update($brand->id, $brand->name, $company_id, $brand->brand_type);
+//                        }
                     }
                     $i++;
                 }
             }
         }
         
-        if($brand_data_csv != null && $brand_type != null) {
-            $data = csv_to_array($brand_data_csv, $brandHeader, ';');
+        if($brand_data_csv != null) {
+            $data = csv_to_array($brand_data_csv, $brandHeader, ',');
             
             if(!empty($data)) {
                 $i = 1;
@@ -199,17 +207,23 @@ class Brand extends MY_Controller {
                         
                         $brandName = $params['Brand'];
                         $date = date('Y-m-d', strtotime($params['Date']));
-                        $tweets = $params['Tweets'];
-                        $followers = $params['Followers'];
-                        $youtube_videos = $params['YT_Videos'];
-                        $youtube_views = $params['YT_Views'];
+                        $tweets = ($params['Tweets'] == null)?0:(int)$params['Tweets'];
+                        $followers = ($params['Followers'] == null)?0:(int)$params['Followers'];
+                        $youtube_videos = ($params['YT_Videos'] == null)?0:(int)$params['YT_Videos'];
+                        $youtube_views = ($params['YT_Views'] == null)?0:(int)$params['YT_Views'];
+                        $following = ($params['Following'] == null)?0:(int)$params['Following'];
                         
                         $brand = $this->brands_model->getByName($brandName);
                         if(!empty($brand)) {
-                            $this->brands_model->update($brand->id, $brand->name, $brand->company_id, $brand_type);
-                            $this->brand_data_model->insert($brand->id, $date, $tweets, $followers, $youtube_videos, $youtube_views);
-                            $this->brand_data_summary_model->updateByBrandId($brand->id, $tweets, $youtube_videos, $youtube_views);
+                            $this->brands_model->update($brand->id, $brand->name, $brand->company_id, $brand_type->id, $brand->created);
+                            $brand_id = $brand->id;
+                        } else {
+                            $brand_id = $this->brands_model->insert($params['Brand'], 0, $brand_type->id);
                         }
+                        
+                        $this->brand_data_model->insert($brand_id, $date, $tweets, $followers, $following, $youtube_videos, $youtube_views);
+                        $this->brand_data_summary_model->updateByBrandId($brand_id, $tweets, $youtube_videos, $youtube_views);
+                        
                     }
                     $i++;
                 }
