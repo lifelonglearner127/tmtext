@@ -303,7 +303,7 @@ class Research extends MY_Controller {
             $build_assess_params->all_columns = $this->input->get('sColumns');
             $build_assess_params->sort_columns = $this->input->get('iSortCol_0');
             $build_assess_params->sort_dir = $this->input->get('sSortDir_0');
-            $build_assess_params->flagged = $this->input->get('flagged') == 'undefined' ? -1 : $this->input->get('flagged');
+            $build_assess_params->flagged = $this->input->get('flagged') == 'true' ? true : $this->input->get('flagged');
             if (intval($compare_batch_id) > 0) {
                 $build_assess_params->compare_batch_id = intval($compare_batch_id);
             }
@@ -522,24 +522,32 @@ class Research extends MY_Controller {
                 }
             }
 
-
             $recomend = false;
-            if ($items_priced_higher_than_competitors > 0) {
+//            if ($items_priced_higher_than_competitors > 0) {
+//                $recomend = true;
+//            }
+//            if ($items_have_more_than_20_percent_duplicate_content == 0) {
+//                $recomend = true;
+//            }
+//            if ($items_unoptimized_product_content > 0) {
+//                $recomend = true;
+//            }
+//            if ($items_short_products_content_short > 0 || $items_long_products_content_short > 0) {
+//                $recomend = true;
+//            }
+            if (intval($result_row->short_description_wc) <= $short_description_wc_lower_range &&
+                intval($result_row->long_description_wc) <= $long_description_wc_lower_range) {
                 $recomend = true;
             }
-            if ($items_have_more_than_20_percent_duplicate_content == 0) {
+            if ($result_row->short_seo_phrases == 'None' && $result_row->long_seo_phrases == 'None') {
                 $recomend = true;
             }
-            if ($items_unoptimized_product_content > 0) {
-                $recomend = true;
-            }
-            if ($items_short_products_content_short > 0 || $items_long_products_content_short > 0) {
-                $recomend = true;
+            if ($result_row->lower_price_exist == true && !empty($result_row->competitors_prices)) {
+                if (min($result_row->competitors_prices) < $result_row->own_price) {
+                    $recomend = true;
+                }
             }
 
-            if ($build_assess_params->flagged == -1 && $recomend == false) {
-                continue;
-            }
             if ($build_assess_params->flagged == true && $recomend == false) {
                 continue;
             }

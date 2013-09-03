@@ -144,9 +144,9 @@ $(function () {
             $(obj).parent().find('a').removeClass('active_link');
             $(obj).addClass('active_link');
             if($(obj).text()=='Report'){
-                $(".research_assess_flagged").hide();
+                $(".research_assess_flagged").css('display','none');
             }else{
-                $(".research_assess_flagged").show();
+                $(".research_assess_flagged").css('display','inline');
             }
             hideColumns();
             highlightPrices();
