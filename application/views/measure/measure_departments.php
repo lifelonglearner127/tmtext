@@ -13,7 +13,7 @@
 
                 <div class='head_line_2'>
                     <!--div class="span2">View Reports for:</div-->
-                    <div class="span10">
+                    <div >
                         <style type="text/css">
                             .tab-content{
                                 min-height:400px;
@@ -23,16 +23,18 @@
                                 font-size: 18px;
                             }
                         </style>
-                        <ul class="ml_10 pull-left" style="float:left">
+                       <!-- <ul class="ml_10 pull-left" style="float:left">
                             <li class="temp_li"><a href="#" style="text-decoration: underline;">Your Watchlists</a></li>
                             <li class="temp_li ml_50"><a href="#">Best-sellers</a></li>
                             <li class="temp_li ml_50"><a href="#">Entire site</a></li>
                         </ul>
+						-->
+						
                         <?php
                         if($this->ion_auth->is_admin($this->ion_auth->get_user_id())){
                             if(count($customers_list) > 0) { ?>
-                                <div id="hp_boot_drop" class="btn-group <?php echo $dropup; ?> hp_boot_drop pull-right mr_10">
-                                    <button class="btn btn-danger btn_caret_sign" >Amazon.com</button>
+                                <div id="hp_boot_drop" style="float:left;" class="btn-group <?php echo $dropup; ?> hp_boot_drop  mr_10">
+                                    <button class="btn btn-danger btn_caret_sign" >Choose Site</button>
                                     <button class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
                                         <span class="caret"></span>
                                     </button>
@@ -46,15 +48,25 @@
                         }
                         ?>
                     </div>
-                    <div class="span2 w_100 ml_disable">
+					<div id="departmentDropdown"  class="btn-group">
+                                    <button class="btn btn-danger btn_caret_sign1" >Choose Department</button>
+                                    <button class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
+                                        <span class="caret"></span>
+                                    </button>
+                                    <ul class="dropdown-menu" >
+                                    </ul>
+                                </div>
+					
+					
+                   <!-- <div class="span2 w_100 ml_disable">
                         <select id='year_s' class='year_s' onchange="changeHomePageYersHandler()">
-                            <?php for($i = 1980; $i <= 2013; $i++) { ?>
-                                <?php $selected = ""; if($i == 2013) $selected = 'selected'; ?>
-                                <option <?php echo $selected; ?> value="<?php echo $i; ?>"><?php echo $i; ?></option>
-                            <?php } ?>
+                            // <?php for($i = 1980; $i <= 2013; $i++) { ?>
+                                // <?php $selected = ""; if($i == 2013) $selected = 'selected'; ?>
+                                // <option <?php echo $selected; ?> value="<?php echo $i; ?>"><?php echo $i; ?></option>
+                            // <?php } ?>
                         </select>
                     </div>
-
+                     
                     <!--div class="span1 ml_disable">week:</div>
                     <div class='span6 ml_disable'>
                         <div class="pagination">
@@ -202,6 +214,7 @@
                 dataTable.fnDestroy();
                 dataTable = undefined;
             }
+			/*****for select departament begin*****/
             $.post(base_url + 'index.php/measure/getDepartmentsByCustomer', {'customer_name': new_caret}, function(data) {
                 $("select[name='department']").empty();
                 if(data.length > 0){
@@ -216,6 +229,22 @@
                         $("select[name='department']").append("<option value='"+data[i].id+"' "+sel+">"+data[i].text+"</option>");
                     }
                 }
+            });
+			/*****for select departament end*****/
+			  $.post(base_url + 'index.php/measure/getDepartmentsByCustomer', {'customer_name': new_caret}, function(data) {
+                $("#departmentDropdown .dropdown-menu").empty();
+                if(data.length > 0){
+                    $("#departmentDropdown .dropdown-menu").append("<li><a data-item=\"\" data-value=\"All\" href=\"javascript:void(0);\">All</a></li>");
+                    for(var i=0; i<data.length; i++){
+                        if(i == 0){
+							$('#departmentDropdown .btn_caret_sign1').text(data[i].text);
+                        }
+						$("#departmentDropdown .dropdown-menu").append("<li><a data-item="+data[i].id+" data-value="+data[i].text+" href=\"javascript:void(0);\">"+data[i].text+"</a></li>");
+                        //$("select[name='department']").append("<option value='"+data[i].id+"' "+sel+">"+data[i].text+"</option>");
+                    }
+                } else {
+					$('#departmentDropdown .btn_caret_sign1').text('empty');
+				}
             });
             $.post(base_url + 'index.php/measure/getCategoriesByCustomer', {'customer_name': new_caret}, function(data) {
                 $("select[name='category']").empty();
@@ -236,11 +265,15 @@
 
 		});
 
-        $("select[name='department']").change(function(){
+		$("#departmentDropdown .dropdown-menu > li > a").live('click', function(e) {
+			var departmentValue = $.trim($(this).text());
+            $("#departmentDropdown .btn_caret_sign1").text(departmentValue);
             $.post(base_url + 'index.php/measure/getCategoriesByDepartment', {
-                'department_id': $("select[name='department']").find('option:selected').val(),
+                'department_id': $(this).data('item'),
                 'site_name': $('.btn_caret_sign').text()
             }, function(data) {
+				
+				console.log(data);
                 $("select[name='category']").empty();
                 if(data.length > 0){
                     $("select[name='category']").append("<option value=''>All</option>");
@@ -261,6 +294,37 @@
                 readBestSellers();
             });
         });
+		
+        $("select[name='department']").change(function(){
+            $.post(base_url + 'index.php/measure/getCategoriesByDepartment', {
+                'department_id': $("select[name='department']").find('option:selected').val(),
+                'site_name': $('.btn_caret_sign').text()
+            }, function(data) {
+				
+				console.log(data);
+                $("select[name='category']").empty();
+                if(data.length > 0){
+                    $("select[name='category']").append("<option value=''>All</option>");
+                    var sel = '';
+                    for(var i=0; i<data.length; i++){
+                        if(i == 0){
+                            sel = "selected='selected'";
+                        }else{
+                            sel= '';
+                        }
+                        $("select[name='category']").append("<option value='"+data[i].id+"' "+sel+">"+data[i].text+"</option>");
+                    }
+                }
+                if(dataTable != undefined){
+                    dataTable.fnDestroy();
+                    dataTable = undefined;
+                }
+                readBestSellers();
+            });
+        });
+		
+		
+		
 
         $("select[name='category']").change(function(){
             if(dataTable != undefined){

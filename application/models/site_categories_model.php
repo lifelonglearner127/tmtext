@@ -38,7 +38,7 @@ class Site_categories_model extends CI_Model {
         if($department_id != ''){
             $department_id = " and `department_members_id`='".$department_id."' ";
         }
-        $sql = "SELECT `id`, `text` FROM `site_categories` WHERE `site_id` = '".$site_id."' ".$department_id." ORDER BY `text` ASC";
+        $sql = "SELECT `id`, `text`, `nr_product`, `description_words` FROM `site_categories` WHERE `site_id` = '".$site_id."' ".$department_id." ORDER BY `text` ASC";
         $query = $this->db->query($sql);
         return $query->result();
     }
