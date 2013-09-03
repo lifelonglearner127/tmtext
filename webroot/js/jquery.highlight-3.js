@@ -48,10 +48,10 @@ $('.cmp-btn').live('click', function() {
        // $("#right").prop("checked") && (settings.strictly = true);
        // $("#case").prop("checked") && (settings.caseSensitive = true);
        // $("#remove").prop("checked") && (settings.remove = false);
-        pattern && $("p.compare").highlight(pattern, settings);f1();
+        pattern && $("p.compare").highlight(pattern, settings);f1();f2();
     cnt = 1;    
     }else{
-        $('.highlight').removeAttr("class");
+        $('.highlight').removeAttr("class").removeAttr("style");
         cnt = 0;
     }
  });
@@ -72,27 +72,48 @@ function f1(){
         }
     }
 } 
+function f2(){
+    var arr =[];
+    $(".highlight").each(function(index,val){
+         arr.push($(this).text());
+         arr = arr.sort();
+    });
+    var color = generate_password(6);
 
+    for(var i = 0; i<= arr.length;){
+        //var arr1 =[];
+        if(arr[i] == arr[i+1]){           
+         // arr1.push(arr[i]);
+            $(".highlight").each(function(index,val){
+                if($(this).text() == arr[i])
+                    $(this).attr("style",function() {
+                    return " background-color:" + color;
+                    });
+            });
+        i++  
+        }else{
+           // delete arr1;
+             color = generate_password(6);
+            
+            i++
+        }
+    }
+    
+}
 //
-//function generate_password(number)
-//  {
-//      var arr = [];
-//    arr = ['a','b','c','d','e','f',
-//            'g','h','i','j','k','l',
-//            'm','n','o','p','r','s',
-//            't','u','v','x','y','z',
-//            'A','B','C','D','E','F',
-//            'G','H','I','J','K','L',
-//            'M','N','O','P','R','S',
-//            'T','U','V','X','Y','Z',
-//            '1','2','3','4','5','6',
-//            '7','8','9','0']; 
-//    var pass = "#";
-//    for(var i = 0; i < number; i++)
-//    {
-//      // Вычисляем случайный индекс массива
-//      var index = Math.floor(Math.random( ) * (arr.length-1));
-//      pass += arr[index];
-//    }
-//    return pass;
-//  }  style="color:'+generate_password(6)+'"
+function generate_password(number)
+  {
+      var arr = [];
+    arr = [
+            'a','b','c','d','e','f',
+            '1','2','3','4','5','6',
+            '7','8','9','0']; 
+    var pass = "#";
+    for(var i = 0; i < number; i++)
+    {
+      // Вычисляем случайный индекс массива
+      var index = Math.floor(Math.random( ) * (arr.length-1));
+      pass += arr[index];
+    }
+    return pass;
+  }  //style="color:'+generate_password(6)+'"
