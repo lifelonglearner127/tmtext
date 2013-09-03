@@ -74,6 +74,28 @@ class Crons extends MY_Controller {
         return $output;
     }
 
+    private function customers_list_new() {
+        $this->load->model('customers_model');
+        $output = array();
+        $customers_init_list = $this->customers_model->getAll();
+        if (count($customers_init_list) > 0) {
+            foreach ($customers_init_list as $key => $value) {
+                $c_url = preg_replace('#^https?://#', '', $value->url);
+                $c_url = preg_replace('#^www.#', '', $c_url);
+                $mid = array(
+                    'id' => $value->id,
+                    'desc' => $value->description,
+                    'image_url' => $value->image_url,
+                    'name' => $value->name,
+                    'name_val' => $value->name,
+                    'c_url' => $c_url
+                );
+                $output[] = $mid;
+            }
+        }
+        return $output;
+    }
+
     private function upload_record_webshoot($ext_url, $url_name) {
         $file = file_get_contents($ext_url);
         $type = 'png';
@@ -89,69 +111,71 @@ class Crons extends MY_Controller {
         $path = base_url() . "webshoots/$url_name.$type";
         $res = array(
             'path' => $path,
-            'dir' => $dir . "/$url_name.$type"
+            'dir' => $dir . "/$url_name.$type",
+            'call' => $ext_url
         );
         return $res;
+    }
+
+    private function webthumb_call_link($url) {
+        $webthumb_user_id = $this->config->item('webthumb_user_id');
+        $api_key = $this->config->item('webthumb_api_key');
+        $url = "http://$url";
+        $c_date = gmdate('Ymd', time()); 
+        $hash = md5($c_date.$url.$api_key); 
+        $e_url = urlencode(trim($url));
+        $call = "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=large&cache=1";
+        return $call;
     }
 
     /**
      * Cron Job for CI home tab screenshots generating
      */
     public function screenscron() {
-        // $customers = $this->customers_list();
-        //       $this->load->model('webshoots_model');
-        //       $week = date("W", time());
-        //       $year = date("Y", time());
-        //       $sites = array();
-        //       $primary_source_res = $this->urlExists('http://snapito.com');
-        //       if($primary_source_res) { // ===== PRIMARY SCREENCAPTURE API (http://snapito.com/)
-        //           $screen_api = 'snapito.com';
-        //       } else { // ===== PRIMARY SCREENCAPTURE API (http://webyshots.com/)
-        //           $screen_api = 'webyshots.com';
-        //       }
-        //       foreach ($customers as $k => $v) {
-        //           if($this->urlExists($v['c_url'])) $sites[] = $v['c_url'];
-        //       }
-        //       foreach ($sites as $url) {
-        //           $c_url = urlencode(trim($url));
-        //           if($screen_api == 'snapito.com') {
-        //               $api_key = $this->config->item('snapito_api_secret');
-        //               if(in_array($url, $this->config->item('webthumb_sites'))) {
-        //                   $res = $this->webthumb_call($url);
-        //               } else {
-        //                   $res = array(
-        //                       "s" => "http://api.snapito.com/web/$api_key/mc/$url",
-        //                       'l' => "http://api.snapito.com/web/$api_key/full/$url"
-        //                   );
-        //               }
-        //           } else {
-        //               $api_key = $this->config->item('webyshots_api_key');
-        //               $api_secret = $this->config->item('webyshots_api_secret');
-        //               $token = md5("$api_secret+$url");
-        //               $size_s = "w600";
-        //               $size_l = "w1260";
-        //               $format = "png";
-        //               $res = array(
-        //                   "s" => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$c_url&dimension=$size_s&format=$format",
-        //                   'l' => "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$c_url&dimension=$size_l&format=$format"
-        //               );
-        //           }
-        //           $crawl_s = $this->upload_record_webshoot($res['s'], $url."_small");
-        //           $crawl_l = $this->upload_record_webshoot($res['l'], $url."_big");
-        //           $result = array(
-        //               'state' => false,
-        //               'url' => $url,
-        //               'small_crawl' => $crawl_s['path'],
-        //               'big_crawl' => $crawl_l['path'],
-        //               'dir_thumb' => $crawl_s['dir'],
-        //               'dir_img' => $crawl_l['dir'],
-        //               'uid' => 0,
-        //               'year' => $year,
-        //               'week' => $week,
-        //               'pos' => 0
-        //           );
-        //           $insert_id = $this->webshoots_model->recordUpdateWebshoot($result);
-        //       }
+        die("NEED TO TEST!");
+        $customers = $this->customers_list_new();
+        $this->load->model('webshoots_model');
+        $week = date("W", time());
+        $year = date("Y", time());
+        $sites = array();
+        foreach ($customers as $k => $v) {
+            if ($this->urlExists($v['c_url'])) $sites[] = $v['c_url'];
+        }
+        foreach ($sites as $url) {
+            $c_url = preg_replace('#^https?://#', '', $url);
+
+            if($c_url === 'bjs.com') {
+                $api_key = $this->config->item('snapito_api_secret');
+                $call_url = "http://api.snapito.com/web/$api_key/mc/$c_url";
+            } else {
+                $call_url = $this->webthumb_call_link($c_url);
+            }
+
+            $crawl_l = $this->upload_record_webshoot($call_url, $c_url . "_big");
+            $file = $crawl_l['dir'];
+            $file_size = filesize($file);
+            if($file_size === false || $file_size < 2048) {
+                @unlink($file);
+                $crawl_l = $this->upload_record_webshoot($call_url, $c_url . "_big");
+            }
+            $result = array(
+                'state' => false,
+                'url' => $c_url,
+                'small_crawl' => $crawl_l['path'],
+                'big_crawl' => $crawl_l['path'],
+                'dir_thumb' => $crawl_l['dir'],
+                'dir_img' => $crawl_l['dir'],
+                'uid' => 0,
+                'year' => $year,
+                'week' => $week,
+                'pos' => 0
+            );
+            $r = $this->webshoots_model->recordUpdateWebshoot($result);
+            // === webshots selection refresh attempt (start)
+            $this->webshoots_model->selectionRefreshDecision($r); 
+            // === webshots selection refresh attempt (end)
+            sleep(10);
+        }
         echo "Cron Job Finished";
     }
 
@@ -159,41 +183,61 @@ class Crons extends MY_Controller {
      * Cron Job for CI home tab screenshots reports mailer
      */
     public function emailreports() {
-        // $this->load->model('webshoots_model');
-        // $current_day = lcfirst(date('l', time()));
-        // $recs = $this->webshoots_model->get_recipients_list();
-        // if(count($recs) > 0) {
-        //     // --- mailer config (start)
-        //     $this->load->library('email');
-        //     $config['protocol'] = 'sendmail';
-        //     $config['mailpath'] = '/usr/sbin/sendmail';
-        //     $config['charset'] = 'UTF-8';
-        //     $config['wordwrap'] = TRUE;
-        //     $this->email->initialize($config);
-        //     // --- mailer config (end)
-        //     foreach ($recs as $k => $v) {
-        //         if($v->day == $current_day) {
-        //             $day = $v->day;
-        //             $email = $v->email;
-        //             $id = $v->id;
-        //             $this->email->from('ishulgin8@gmail.com', "Content Solutions - Home Pages Report");
-        //             $this->email->to("$email");
-        //             $this->email->subject('Content Solutions - Home Pages Report');
-        //             $this->email->message("Report screenshots in attachment. Preference day: $day.");
-        //             // --- test (debug) attachments (start)
-        //             $debug_screens = $this->webshoots_model->getLimitedScreens(3);
-        //             if(count($debug_screens) > 0) {
-        //                 foreach ($debug_screens as $key => $value) {
-        //                     $path = $value->dir_thumb;
-        //                     $this->email->attach("$path");
-        //                 }
-        //             }
-        //             // --- test (debug) attachments (end)
-        //             $this->email->send();
-        //             echo "Report sended to $v->email"."<br>";
-        //         }
-        //     }
-        // }
+        die("NEED TO TEST!");
+        $this->load->model('webshoots_model');
+        $current_day = lcfirst(date('l', time()));
+        $c_week = date("W", time());
+        $c_year = date("Y", time());
+        $recs = $this->webshoots_model->get_recipients_list();
+        $email_report_config_sender = $this->webshoots_model->getEmailReportConfig('sender');
+        $attach_value = $this->webshoots_model->getEmailReportConfig('attach');
+        if($attach_value == 'yes') {
+            $attach_st = true;
+        } else {
+            $attach_st = false;
+        }
+        if(count($recs) > 0) {
+            $this->load->library('email');
+            $config['protocol'] = 'sendmail';
+            $config['mailpath'] = '/usr/sbin/sendmail';
+            $config['charset'] = 'UTF-8';
+            $config['wordwrap'] = TRUE;
+            $config['mailtype'] = 'html';
+            $this->email->initialize($config);
+            foreach ($recs as $k => $v) {
+                $screens = $this->webshoots_model->getDistinctEmailScreensAnonim($c_week, $c_year);
+                // ==== sort assoc by pos (start)
+                if(count($screens) > 0) {
+                    $sort = array();
+                    foreach($screens as $k=>$v) {
+                        $sort['pos'][$k] = $v['pos'];
+                    }
+                    array_multisort($sort['pos'], SORT_ASC, $screens);
+                }
+                // ==== sort assoc by pos (end)
+                $day = $v->day;
+                $email = $v->email;
+                $this->email->from("$email_report_config_sender", "Content Solutions - Home Pages Report");
+                $this->email->to("$email");
+                $this->email->subject('Contalytics - Home Pages Report');
+                $data_et['day'] = $day;
+                $data_et['screens'] = $screens;
+                $msg = $this->load->view('measure/rec_report_email_template', $data_et, true);
+                $this->email->message($msg);
+                // --- attachments (start)
+                if($attach_st) {
+                    if(count($screens) > 0) {
+                        foreach ($screens as $key => $value) {
+                            $path = $value['dir'];
+                            $this->email->attach("$path");
+                        }
+                    }
+                }
+                // --- attachments (end)
+                $this->email->send();
+                echo "Report sended to $v->email"."<br>";
+            }
+        }
         echo "Cron Job Finished";
     }
 
