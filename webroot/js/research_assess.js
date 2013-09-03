@@ -175,12 +175,6 @@ $(function () {
         $('#assess_report_items_unoptimized_product_content').html(report.summary.items_unoptimized_product_content);
         $('#research_assess_filter_short_descriptions_panel').show();
         $('#research_assess_filter_long_descriptions_panel').show();
-        console.log('_not_0');
-        console.log(report.summary.short_wc_total_not_0);
-        console.log(report.summary.long_wc_total_not_0);
-        console.log('products_content_short');
-        console.log(report.summary.items_short_products_content_short);
-        console.log(report.summary.items_long_products_content_short);
         if (report.summary.short_wc_total_not_0 > 0 && report.summary.long_wc_total_not_0 > 0) {
             $('#assess_report_items_have_product_short_descriptions_that_are_too_short').html(report.summary.items_short_products_content_short);
             $('#assess_report_items_have_product_long_descriptions_that_are_too_short').html(report.summary.items_long_products_content_short);
