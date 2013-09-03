@@ -2,7 +2,17 @@
 
 from apiclient.discovery import build
 from optparse import OptionParser
-from datetime import datetime, MINYEAR, MAXYEAR
+from datetime import datetime, MINYEAR, MAXYEAR, timedelta
+
+from pprint import pprint
+
+class Utils:
+
+	# return a list of dates for all days in a date range
+	@staticmethod
+	def daterange(start_date, end_date):
+		for n in range(int ((end_date - start_date).days)):
+			yield start_date + timedelta(n)
 
 class CrawlUploads():
 	
@@ -32,22 +42,31 @@ class CrawlUploads():
 		#print "Channels:\n", "\n".join(channels), "\n"
 
 
-	# get uploaded videos from a certain channel (given by channel id) published between certain dates
-	def get_uploads(self, channel_id, min_date = datetime(MINYEAR, 1, 1), max_date = datetime(MAXYEAR, 12, 31)):
+	# get uploaded videos from a certain channel (given by channel username) published between certain dates
+	def get_uploads(self, channel_username, min_date = datetime(MINYEAR, 1, 1), max_date = datetime(MAXYEAR, 12, 31)):
+		channel_id = self.youtube_search_channel(channel_username)
+		if not channel_id:
+			return
+
 		channels_response = self.youtube.channels().list(part = "contentDetails", id = channel_id).execute()
 
 		for channel in channels_response["items"]:
 			uploads_list_id = channel["contentDetails"]["relatedPlaylists"]["uploads"]
 			#print "Videos in list %s" % uploads_list_id
 
-			next_page_token = ""
-
 			# can I rely on chronological order of videos?
-			cnt = 0
+			
 
+			ret = {}
+			for date in Utils.daterange(min_date, max_date):
+				ret[date.strftime("%b %d, %Y")] = 0
+
+			total_videos = 0
 			lasttime = min_date
 
-			print 'mindate ', min_date, ' maxdate ', max_date, ' lasttime ', lasttime
+			next_page_token = ""
+
+			#print 'mindate ', min_date, ' maxdate ', max_date, ' lasttime ', lasttime
 
 			# stop if we reached the minimum date (results are given in reverse chronological order)
 			while (next_page_token is not None) and (lasttime >= min_date):
@@ -60,6 +79,7 @@ class CrawlUploads():
 				for playlist_item in playlistitems_response["items"]:
 					title = playlist_item["snippet"]["title"]
 					video_id = playlist_item["snippet"]["resourceId"]["videoId"]
+					#views = playlist_item["statistics"]["viewCount"]
 
 					lasttime_iso = playlist_item["snippet"]["publishedAt"]
 					lasttime = datetime.strptime(lasttime_iso, "%Y-%m-%dT%H:%M:%S.000Z")
@@ -69,17 +89,20 @@ class CrawlUploads():
 
 					# check if the date is also smaller than max date
 					if lasttime <= max_date:
-						print "%s (%s)" % (title, video_id)
+						# print "%s (%s)" % (title, video_id)
 
-						print 'published at:', lasttime
-						cnt += 1
+						# print 'published at:', lasttime
+
+						ret[lasttime.strftime("%b %d, %Y")] += 1
+						total_videos += 1
 
 
 				next_page_token = playlistitems_response.get("tokenPagination", {}).get("nextPageToken")
 				#next_page_token = playlistitems_response.get("nextPageToken")
 
 
-    		print 'total: ', cnt
+			ret['YT_All_Videos'] = total_videos
+    		return ret
 
 
 
@@ -93,6 +116,4 @@ if __name__ == "__main__":
   # (options, args) = parser.parse_args()
 
   	crawler = CrawlUploads()
-  	chid = crawler.youtube_search_channel("Amazon")
-  	if chid:
-  		crawler.get_uploads(chid, min_date=datetime(2010, 1, 1), max_date=datetime(2011, 1, 1))
+  	pprint(crawler.get_uploads("Staples", min_date=datetime(2013, 4, 1), max_date=datetime(2013, 9, 1)))
