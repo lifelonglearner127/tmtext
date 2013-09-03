@@ -423,9 +423,9 @@ ul.ui-sortable {
 }
 #assess_details_dialog_options {
     height: 20px;
-    left: -150px;
+    left: -15px;
     position: relative;
-    top: -29px;
+    top: 5px;
 }
 #assess_details_dialog_options label{
     margin: 0px !important;
@@ -436,6 +436,9 @@ ul.ui-sortable {
     margin: 0px !important;
     padding: 0px !important;
     min-height: 0px !important;
+}
+.ui-dialog-buttonset{
+    width:100%;
 }
 .other-icon {
     height: 14px;

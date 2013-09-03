@@ -190,35 +190,53 @@
         <input type="text" id="assessDetails_Price" readonly="true" />
     </p>
 
-    <div class="parag">
-                <span class="labeler">
-                    <label for="assessDetails_ShortDescription">Short Description:</label>
-                </span>
-        <textarea id="assessDetails_ShortDescription" readonly="true"></textarea>
-        <div class="bottom-labeler">
-            <label><span id="assessDetails_ShortDescriptionWC">0</span> words</label>
+    <div id="assessDetails_short_and_long_description_panel">
+        <div class="parag">
+            <span class="labeler">
+                <label for="assessDetails_ShortDescription">Short Description:</label>
+            </span>
+            <textarea id="assessDetails_ShortDescription" readonly="true"></textarea>
+            <div class="bottom-labeler">
+                <label><span id="assessDetails_ShortDescriptionWC">0</span> words</label>
+            </div>
         </div>
-    </div>
 
-    <p>
-        <label for="assessDetails_ShortSEO">Short SEO:</label>
-        <input type="text" id="assessDetails_ShortSEO" readonly="true" />
-    </p>
+        <p>
+            <label for="assessDetails_ShortSEO">Short SEO:</label>
+            <input type="text" id="assessDetails_ShortSEO" readonly="true" />
+        </p>
 
-    <div class="parag">
-                <span class="labeler">
-                    <label for="assessDetails_LongDescription">Long Description:</label>
-                </span>
-        <textarea id="assessDetails_LongDescription" readonly="true"></textarea>
-        <div class="bottom-labeler">
-            <label><span id="assessDetails_LongDescriptionWC">0</span> words</label>
+        <div class="parag">
+            <span class="labeler">
+                <label for="assessDetails_LongDescription">Long Description:</label>
+            </span>
+            <textarea id="assessDetails_LongDescription" readonly="true"></textarea>
+            <div class="bottom-labeler">
+                <label><span id="assessDetails_LongDescriptionWC">0</span> words</label>
+            </div>
         </div>
-    </div>
 
-    <p>
-        <label for="assessDetails_LongSEO">Long SEO:</label>
-        <input type="text" id="assessDetails_LongSEO" readonly="true" />
-    </p>
+        <p>
+            <label for="assessDetails_LongSEO">Long SEO:</label>
+            <input type="text" id="assessDetails_LongSEO" readonly="true" />
+        </p>
+    </div>
+    <div id="assessDetails_description_panel">
+        <div class="parag">
+            <span class="labeler">
+                <label for="assessDetails_Description">Description:</label>
+            </span>
+            <textarea id="assessDetails_Description" readonly="true"></textarea>
+            <div class="bottom-labeler">
+                <label><span id="assessDetails_DescriptionWC">0</span> words</label>
+            </div>
+        </div>
+
+        <p>
+            <label for="assessDetails_SEO">SEO:</label>
+            <input type="text" id="assessDetails_SEO" readonly="true" />
+        </p>
+    </div>
 </div>
 
 <div id="assess_report_options_dialog" title="Report Options" >

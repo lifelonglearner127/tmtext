@@ -20,6 +20,11 @@ $(function () {
     var textToCopy;
     var zeroTableDraw = true;
 
+    var short_wc_total_not_0 = 0;
+    var long_wc_total_not_0 = 0;
+    var items_short_products_content_short = 0;
+    var items_long_products_content_short = 0;
+
     var tableCase = {
         details: [
             "created",
@@ -64,75 +69,75 @@ $(function () {
         this.oApi._fnProcessingDisplay( oSettings, onoff );
     };
 
-        var tblAssess = $('#tblAssess').dataTable({
-            "bJQueryUI": true,
-            "bDestroy": true,
-            "sPaginationType": "full_numbers",
-            "bProcessing": true,
-            "bServerSide": true,
-            "sAjaxSource": readAssessUrl,
-            "fnServerData": function (sSource, aoData, fnCallback) {
-                    aoData = buildTableParams(aoData);
-                    $.getJSON(sSource, aoData, function (json) {
-                        if (json.ExtraData != undefined) {
-                            buildReport(json);
-                        }
-                        fnCallback(json);
-                        setTimeout(function(){
-                            tblAssess.fnProcessingIndicator( false );
-                        }, 100);
-                        if($('select[name="research_assess_batches"]').find('option:selected').val() == "0"){
-                            $('#assess_report_total_items').html("");
-                            $('#assess_report_items_priced_higher_than_competitors').html("");
-                            $('#assess_report_items_have_more_than_20_percent_duplicate_content').html("");
-                            $('#assess_report_items_unoptimized_product_content').html("");
-                            $('#assess_report_items_have_product_short_descriptions_that_are_too_short').html("");
-                            $('#assess_report_items_have_product_long_descriptions_that_are_too_short').html("");
-                        }
-                        if(json.iTotalRecords == 0){
-                            $('#assess_report_compare_panel').hide();
-                            $('#assess_report_numeric_difference').hide();
-                            if($('select[name="research_assess_batches"]').find('option:selected').val() != ""){
-                                $('#summary_message').html(" - Processing data. Check back soon.");
+    var tblAssess = $('#tblAssess').dataTable({
+        "bJQueryUI": true,
+        "bDestroy": true,
+        "sPaginationType": "full_numbers",
+        "bProcessing": true,
+        "bServerSide": true,
+        "sAjaxSource": readAssessUrl,
+        "fnServerData": function (sSource, aoData, fnCallback) {
+                aoData = buildTableParams(aoData);
+                $.getJSON(sSource, aoData, function (json) {
+                    if (json.ExtraData != undefined) {
+                        buildReport(json);
+                    }
+                    fnCallback(json);
+                    setTimeout(function(){
+                        tblAssess.fnProcessingIndicator( false );
+                    }, 100);
+                    if($('select[name="research_assess_batches"]').find('option:selected').val() == "0"){
+                        $('#assess_report_total_items').html("");
+                        $('#assess_report_items_priced_higher_than_competitors').html("");
+                        $('#assess_report_items_have_more_than_20_percent_duplicate_content').html("");
+                        $('#assess_report_items_unoptimized_product_content').html("");
+                        $('#assess_report_items_have_product_short_descriptions_that_are_too_short').html("");
+                        $('#assess_report_items_have_product_long_descriptions_that_are_too_short').html("");
+                    }
+                    if(json.iTotalRecords == 0){
+                        $('#assess_report_compare_panel').hide();
+                        $('#assess_report_numeric_difference').hide();
+                        if($('select[name="research_assess_batches"]').find('option:selected').val() != ""){
+                            $('#summary_message').html(" - Processing data. Check back soon.");
 //                                $('#research_assess_filter_short_descriptions_panel').show();
 //                                $('#research_assess_filter_long_descriptions_panel').show();
-                                $('#assess_report_items_1_descriptions_pnl').hide();
-                                $('#assess_report_items_2_descriptions_pnl').hide();
-                            }
+                            $('#assess_report_items_1_descriptions_pnl').hide();
+                            $('#assess_report_items_2_descriptions_pnl').hide();
                         }
-                    });
-            },
-            "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-                $(nRow).attr("add_data", aData[10]);
-                return nRow;
-            },
-            "fnDrawCallback": function(oSettings) {
-                highlightPrices();
-                if (zeroTableDraw) {
-                    zeroTableDraw = false;
-                    return;
-                }
-                hideColumns();
-            },
-            "oLanguage": {
-                "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
-                "sInfoEmpty": "Showing 0 to 0 of 0 records",
-                "sInfoFiltered": ""
-            },
-            "aoColumns": [
-                {"sTitle" : "Date", "sName":"created", "sWidth": "5%"},
-                {"sTitle" : "Product Name", "sName":"product_name", "sWidth": "25%"},
-                {"sTitle" : "URL", "sName":"url", "sWidth": "30%"},
-                {"sTitle" : "Word Count (S)", "sName":"short_description_wc", "sWidth": "5%"},
-                {"sTitle" : "SEO Phrases (S)", "sName":"short_seo_phrases", "sWidth": "10%"},
-                {"sTitle" : "Word Count (L)", "sName":"long_description_wc", "sWidth": "5%"},
-                {"sTitle" : "SEO Phrases (L)", "sName":"long_seo_phrases", "sWidth": "10%"},
-                {"sTitle" : "Duplicate Content", "sName":"duplicate_content", "sWidth": "5%"},
-                {"sTitle" : "Price", "sName":"price_diff", "sWidth": "10%"},
-                {"sTitle" : "Recommendations", "sName":"recommendations", "sWidth": "45%", "bVisible": false, "bSortable": false},
-                {"sName":"add_data", "bVisible": false}
-            ]
-        });
+                    }
+                });
+        },
+        "fnRowCallback": function(nRow, aData, iDisplayIndex) {
+            $(nRow).attr("add_data", aData[10]);
+            return nRow;
+        },
+        "fnDrawCallback": function(oSettings) {
+            highlightPrices();
+            if (zeroTableDraw) {
+                zeroTableDraw = false;
+                return;
+            }
+            hideColumns();
+        },
+        "oLanguage": {
+            "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
+            "sInfoEmpty": "Showing 0 to 0 of 0 records",
+            "sInfoFiltered": ""
+        },
+        "aoColumns": [
+            {"sTitle" : "Date", "sName":"created", "sWidth": "5%"},
+            {"sTitle" : "Product Name", "sName":"product_name", "sWidth": "25%"},
+            {"sTitle" : "URL", "sName":"url", "sWidth": "30%"},
+            {"sTitle" : "Word Count (S)", "sName":"short_description_wc", "sWidth": "5%"},
+            {"sTitle" : "SEO Phrases (S)", "sName":"short_seo_phrases", "sWidth": "10%"},
+            {"sTitle" : "Word Count (L)", "sName":"long_description_wc", "sWidth": "5%"},
+            {"sTitle" : "SEO Phrases (L)", "sName":"long_seo_phrases", "sWidth": "10%"},
+            {"sTitle" : "Duplicate Content", "sName":"duplicate_content", "sWidth": "5%"},
+            {"sTitle" : "Price", "sName":"price_diff", "sWidth": "10%"},
+            {"sTitle" : "Recommendations", "sName":"recommendations", "sWidth": "45%", "bVisible": false, "bSortable": false},
+            {"sName":"add_data", "bVisible": false}
+        ]
+    });
 
     $('#research_batches_columns').appendTo('div.dataTables_filter');
     $('#tblAssess_length').after($('#assess_tbl_show_case'));
@@ -175,6 +180,10 @@ $(function () {
         $('#assess_report_items_unoptimized_product_content').html(report.summary.items_unoptimized_product_content);
         $('#research_assess_filter_short_descriptions_panel').show();
         $('#research_assess_filter_long_descriptions_panel').show();
+        short_wc_total_not_0 = report.summary.short_wc_total_not_0;
+        long_wc_total_not_0 = report.summary.long_wc_total_not_0;
+        items_short_products_content_short = report.summary.items_short_products_content_short;
+        items_long_products_content_short = report.summary.items_long_products_content_short;
         if (report.summary.short_wc_total_not_0 > 0 && report.summary.long_wc_total_not_0 > 0) {
             $('#assess_report_items_have_product_short_descriptions_that_are_too_short').html(report.summary.items_short_products_content_short);
             $('#assess_report_items_have_product_long_descriptions_that_are_too_short').html(report.summary.items_long_products_content_short);
@@ -327,17 +336,39 @@ $(function () {
         $('#assessDetails_url').val(add_data.url);
         $('#assess_open_url_btn').attr('href', add_data.url);
         $('#assessDetails_Price').val(add_data.own_price);
-        $('#assessDetails_ShortDescription').val(add_data.short_description);
-        $('#assessDetails_ShortDescriptionWC').html(add_data.short_description_wc);
-        $('#assessDetails_ShortSEO').val(add_data.short_seo_phrases);
-        $('#assessDetails_LongDescription').val(add_data.long_description);
-        $('#assessDetails_LongDescriptionWC').html(add_data.long_description_wc);
-        $('#assessDetails_LongSEO').val(add_data.long_seo_phrases);
+        if (short_wc_total_not_0 == 0 || long_wc_total_not_0 == 0) {
+            $('#assessDetails_short_and_long_description_panel').hide();
+            $('#assessDetails_description_panel').show();
 
-        var chk_include_in_report = '<div id="assess_details_dialog_options"><label><input id="assessDetailsDialog_chkIncludeInReport" type="checkbox">Include in report</label></div>';
+            if (short_wc_total_not_0 == 0) {
+                var description = add_data.long_description;
+                var description_wc = add_data.long_description_wc;
+                var seo_phrases = add_data.long_seo_phrases;
+            } else {
+                var description = add_data.short_description;
+                var description_wc = add_data.short_description_wc;
+                var seo_phrases = add_data.short_seo_phrases;
+            }
+            $('#assessDetails_Description').val(description);
+            $('#assessDetails_DescriptionWC').html(description_wc);
+            $('#assessDetails_SEO').val(seo_phrases);
+        } else {
+            $('#assessDetails_short_and_long_description_panel').show();
+            $('#assessDetails_description_panel').hide();
+
+            $('#assessDetails_ShortDescription').val(add_data.short_description);
+            $('#assessDetails_ShortDescriptionWC').html(add_data.short_description_wc);
+            $('#assessDetails_ShortSEO').val(add_data.short_seo_phrases);
+            $('#assessDetails_LongDescription').val(add_data.long_description);
+            $('#assessDetails_LongDescriptionWC').html(add_data.long_description_wc);
+            $('#assessDetails_LongSEO').val(add_data.long_seo_phrases);
+        }
+
+        var chk_include_in_report = '<div id="assess_details_dialog_options" style="float: right;"><label><input id="assessDetailsDialog_chkIncludeInReport" type="checkbox">&nbspInclude in report</label></div>';
+        var btn_delete_from_batch = '<button id="assess_details_delete_from_batch" class="btn btn-danger" style="float:left;">Delete</button>';
         var assessDetailsDialog_replace_element = $('#assessDetailsDialog').parent().find('.ui-dialog-buttonpane button[id="assessDetailsDialog_btnIncludeInReport"]');
         if (assessDetailsDialog_replace_element.length > 0) {
-            assessDetailsDialog_replace_element.replaceWith(chk_include_in_report);
+            assessDetailsDialog_replace_element.replaceWith(btn_delete_from_batch + chk_include_in_report);
         }
 
         var data = {
@@ -384,7 +415,7 @@ $(function () {
                 id: 'assessDetailsDialog_btnIncludeInReport'
             }
         },
-        width: '850px'
+        width: 850
     });
 
     $('#assessDetailsDialog input[type="text"], textarea').bind({
@@ -401,6 +432,25 @@ $(function () {
     function copyToClipboard(text) {
         window.prompt("Copy to clipboard: Ctrl+C, Enter (or Esc)", text);
     }
+
+    $(document).on('click', '#assess_details_delete_from_batch', function(){
+        if(confirm('Are you sure you want to delete this item?')){
+            var batch_id = $("select[name='research_assess_batches']").find("option:selected").val();
+            var research_data_id = $('#assessDetailsDialog_chkIncludeInReport').attr('research_data_id');
+            var data = {
+                batch_id:batch_id,
+                research_data_id:research_data_id
+            };
+            $.post(
+                base_url + 'index.php/assess/delete_from_batch',
+                data,
+                function(){
+                    $('#assessDetailsDialog').dialog('close');
+                    readAssessData();
+                }
+            );
+        }
+    });
 
     $('select[name="research_assess_customers"]').on("change", function(res) {
         var research_assess_batches = $("select[name='research_assess_batches']");

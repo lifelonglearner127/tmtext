@@ -328,4 +328,14 @@ class Statistics_model extends CI_Model {
         }
         return $num_rows;
     }
+
+    function delete_by_research_data_id($batch_id, $research_data_id){
+        return $this->db->delete(
+            $this->tables['statistics'],
+            array(
+                'batch_id' => $batch_id,
+                'research_data_id' => $research_data_id
+            )
+        );
+    }
 }
