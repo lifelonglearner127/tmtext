@@ -944,7 +944,50 @@ class Imported_data_parsed_model extends CI_Model {
         $results= $query->result();
         return $results;
      }
-    function do_stats(){
+     function do_stats_new_test($id){
+         $this->db->select('p.imported_data_id, p.key, p.value, p.revision')
+            ->from($this->tables['imported_data_parsed'] . ' as p')
+
+                ->where('p.revision = (SELECT  MAX(revision) as revision
+                      FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
+                      GROUP BY imported_data_id)',  NULL, FALSE)
+               ->where('p.imported_data_id',$id);
+            $query=$this->db->get();
+            $res = $query->result();
+            $parsed_attributes='';
+            $description = '';
+            $long_description = '';
+            $url = '';
+            $revision=1;
+            $features = '';
+            foreach ($res as $val) {
+                $revision=$val->revision;
+                if ($val->key == 'URL') {
+                    $url = $val->value;
+                }
+                if ($val->key == 'Description') {
+                    $description = $val->value;
+                }
+                if ($val->key == 'Long_Description') {
+                    $long_description = $val->value;
+                }
+                if ($val->key === 'parsed_attributes') {
+                   $parsed_attributes = unserialize($val->value);
+               }
+                if ($val->key== 'Product Name') {
+                    $product_name = $val->value;
+                }
+                if ($val->key== 'Features') {
+                    $features = $val->value;
+                }
+            }
+            $data=array();
+            array_push($data, (object) array('imported_data_id' => $id,
+                'description' => $description, 'long_description' => $long_description, 'url' => $url, 'product_name' => $product_name, 'features' => $features, 'parsed_attributes'=>$parsed_attributes,'revision'=>$revision));
+        return $data;
+
+     }
+        function do_stats(){
 
         $q=$this->db->select('key,description')->from('settings')->where('key','cron_job_offset');
         $res=$q->get()->row_array();
