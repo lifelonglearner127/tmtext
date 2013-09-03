@@ -124,6 +124,7 @@ function readGridDataBrandRanking() {
             {"sName" : "tweet_count"},
             {"sName" : "total_tweets"},
             {"sName" : "twitter_followers"},
+            {"sName" : "following"},
             {"sName" : "youtube_video_count"},
             {"sName" : "youtube_view_count"},
             {"sName" : "total_youtube_views"},

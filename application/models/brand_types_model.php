@@ -3,6 +3,7 @@
 class Brand_types_model extends CI_Model {
 
     var $name = '';
+    var $IR500Rank = '';
 
     var $tables = array(
         'brand_types' => 'brand_types',
@@ -27,20 +28,22 @@ class Brand_types_model extends CI_Model {
             ->limit(1)
             ->get($this->tables['brand_types']);
 
-        return $query->result();
+        return $query->row();
     }
     
-    function insert($name)
+    function insert($name, $IR500Rank='')
     {
         $this->name = $name;
+        $this->IR500Rank = $IR500Rank;
 
         $this->db->insert($this->tables['brand_types'], $this);
         return $this->db->insert_id();
     }
 
-    function update($name)
+    function update($id, $name, $IR500Rank='')
     {
         $this->name = $name;
+        $this->IR500Rank = $IR500Rank;
 
     	return $this->db->update($this->tables['brand_types'],
                 $this,

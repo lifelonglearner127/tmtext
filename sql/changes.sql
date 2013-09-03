@@ -8,6 +8,9 @@ ADD  `user_keyword_description_count` INT( 11 ) NOT NULL ,
 ADD  `user_keyword_description_density` DOUBLE NOT NULL ,
 ADD  `description_text` VARCHAR( 255 ) NOT NULL;
 
+ALTER TABLE  `brand_types` ADD  `IR500Rank` TEXT NULL DEFAULT NULL;
+ALTER TABLE  `brand_data` ADD  `following` INT NOT NULL DEFAULT  '0' AFTER  `twitter_followers`;
+
 # 08/30 Viktor
 ALTER TABLE  `companies` ADD  `IR500Rank` INT NOT NULL DEFAULT  '0';
 ALTER TABLE  `companies` ADD  `Twitter` VARCHAR( 32 ) NULL DEFAULT NULL;
