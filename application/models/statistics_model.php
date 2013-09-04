@@ -4,7 +4,8 @@ class Statistics_model extends CI_Model {
 
     var $tables = array(
         'statistics' => 'statistics',
-        'research_data' => 'research_data'
+        'research_data' => 'research_data',
+        'crawler_list' => 'crawler_list',
     );
 
     function __construct()
@@ -119,9 +120,10 @@ class Statistics_model extends CI_Model {
 //            ->get($this->tables['statistics']);
 
         $query = $this->db
-            ->select('s.*, rd.include_in_assess_report')
+            ->select('s.*, rd.include_in_assess_report, cl.snap, cl.snap_date, cl.snap_state')
             ->from($this->tables['statistics'].' as s')
             ->join($this->tables['research_data'].' as rd', 'rd.id = s.research_data_id', 'left')
+            ->join($this->tables['crawler_list'].' as cl', 'cl.imported_data_id = s.imported_data_id', 'left')
             ->where('s.batch_id', $batch_id)->like('s.product_name', $txt_filter)
             ->get();
         $result =  $query->result();

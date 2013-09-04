@@ -392,6 +392,10 @@ class Research extends MY_Controller {
             $result_row->own_price = floatval($row->own_price);
             $price_diff = unserialize($row->price_diff);
             $result_row->lower_price_exist = false;
+            $result_row->snap = '';
+            if ($row->snap != null && $row->snap != ''){
+                $result_row->snap = $row->snap;
+            }
 
             if (floatval($row->own_price) <> false) {
                 $own_site = parse_url($row->url, PHP_URL_HOST);
@@ -714,10 +718,21 @@ class Research extends MY_Controller {
                         $recommendations_html = '<ul class="assess_recommendations">'.implode('', $recommendations).'</ul>';
                     }
 
+                    $row_url = '<table class="url_table"><tr><td style="padding:5px;"><a class="active_link" href="'.$data_row->url.'" target="_blank">'.$data_row->url.'</a></td></tr>';
+                    if ($data_row->snap != ''){
+                        $file = realpath(BASEPATH . "../webroot/webshoots").'/'.$data_row->snap;
+                        if (file_exists($file)){
+                            if (filesize($file) > 1024){
+                                $row_url = $row_url.'<tr style="height:1px;"><td style="text-align:right;"><i class="snap_ico icon-picture" snap="'.$data_row->snap.'"></i></tr></td>';
+                            }
+                        }
+                    }
+                    $row_url = $row_url.'</table>';
+
                     $output['aaData'][] = array(
                         $data_row->created,
                         $data_row->product_name,
-                        '<a class="active_link" href="'.$data_row->url.'" target="_blank">'.$data_row->url.'</a>',
+                        $row_url,
                         $data_row->short_description_wc,
                         $data_row->short_seo_phrases,
                         $data_row->long_description_wc,

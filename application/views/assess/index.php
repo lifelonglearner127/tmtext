@@ -268,6 +268,15 @@
     </form>
 </div>
 
+<div class="modal hide fade ci_hp_modals" id='assess_preview_crawl_snap_modal'>
+    <div class="modal-body" style='overflow: hidden'>
+        <div class='snap_holder'>&nbsp;</div>
+    </div>
+    <div class="modal-footer">
+        <a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
+    </div>
+</div>
+
 <div class="row-fluid">
     <div id="read" class="ui-tabs-panel ui-widget-content ui-corner-bottom">
         <div id="records_wrapper" class="dataTables_wrapper block_data_table">

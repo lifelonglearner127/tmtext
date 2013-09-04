@@ -112,7 +112,7 @@ $(function () {
             return nRow;
         },
         "fnDrawCallback": function(oSettings) {
-            highlightPrices();
+            tblAssess_postRenderProcessing();
             if (zeroTableDraw) {
                 zeroTableDraw = false;
                 return;
@@ -156,13 +156,19 @@ $(function () {
                 $(".research_assess_flagged").css('display','inline');
             }
             hideColumns();
-            highlightPrices();
+            tblAssess_postRenderProcessing();
         }
     }
 
-    function highlightPrices() {
+    function tblAssess_postRenderProcessing() {
         $('#tblAssess td input:hidden').each(function() {
             $(this).parent().addClass('highlightPrices');
+        });
+        $('#tblAssess tbody tr').each(function() {
+            var row_height = $(this).height();
+            if (row_height > 5){
+                $(this).find('table.url_table').height(row_height);
+            }
         });
     }
 
@@ -313,7 +319,10 @@ $(function () {
         if ($(event.target).is('a')) {
             return;
         }
-        var add_data = JSON.parse($(event.target).parents('tr').attr('add_data'));
+        var target = $(event.target);
+        if (target.parents('table').attr('class') == 'url_table')
+            target = target.parents('table');
+        var add_data = JSON.parse(target.parents('tr').attr('add_data'));
         // if this product is absent product from second batch
         if (add_data.id == undefined) {
             return;
@@ -641,13 +650,16 @@ $(function () {
 				column = 'td:eq(2)';
 			}
 			
-			setTimeout(function(){
-				//console.log( $("#tblAssess").html() );
-				$("#tblAssess").find('tr').each(function(){
-					//$(this).find('td:eq(2)').addClass('column_url');
-					$(this).find(column).addClass('column_url');
-				});
-			}, 2000);
+//			setTimeout(function(){
+//				//console.log( $("#tblAssess").html() );
+//				$("#tblAssess").find('tr').each(function(){
+//					//$(this).find('td:eq(2)').addClass('column_url');
+//					$(this).find(column).addClass('column_url');
+//				});
+//			}, 2000);
+            $("#tblAssess").find('tr').each(function(){
+                $(this).find(column).addClass('column_url');
+            });
 		}
 		//----------------------
 	}
@@ -921,4 +933,13 @@ $(function () {
 
     hideColumns();
     $('#assess_report_download_panel').hide();
+
+    $(document).on('mouseenter', 'i.snap_ico', function () {
+        var snap = "webshoots/" + $(this).attr('snap');
+        $("#assess_preview_crawl_snap_modal .snap_holder").html("<img src='" + base_url +  snap + "'>");
+        $("#assess_preview_crawl_snap_modal").modal('show');
+    });
+    $(document).on('mouseleave', '#assess_preview_crawl_snap_modal', function () {
+        $(this).modal('hide');
+    });
 });
