@@ -890,9 +890,8 @@ $(function () {
         if ($('#research_assess_short_check').is(':checked')) {
             assessRequestParams.short_less_check = $('#research_assess_short_less_check').is(':checked');
             assessRequestParams.short_less = $('#research_assess_short_less').val();
-            if ($('#research_assess_short_more_check').is(':checked')) {
-                assessRequestParams.short_more = $('#research_assess_short_more').val();
-            }
+            assessRequestParams.short_more_check = $('#research_assess_short_more_check').is(':checked')
+            assessRequestParams.short_more = $('#research_assess_short_more').val();
 
             if ($('#research_assess_short_seo_phrases').is(':checked')) {
                 assessRequestParams.short_seo_phrases = true;
@@ -905,9 +904,8 @@ $(function () {
         if ($('#research_assess_long_check').is(':checked')) {
             assessRequestParams.long_less_check = $('#research_assess_long_less_check').is(':checked');
             assessRequestParams.long_less = $('#research_assess_long_less').val();
-            if ($('#research_assess_long_more_check').is(':checked')) {
-                assessRequestParams.long_more = $('#research_assess_long_more').val();
-            }
+            assessRequestParams.long_more_check = ($('#research_assess_long_more_check').is(':checked'));
+            assessRequestParams.long_more = $('#research_assess_long_more').val();
 
             if ($('#research_assess_long_seo_phrases').is(':checked')) {
                 assessRequestParams.long_seo_phrases = true;

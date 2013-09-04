@@ -292,30 +292,36 @@ class Research extends MY_Controller {
             $build_assess_params->date_from = $this->input->get('date_from') == 'undefined' ? '' : $this->input->get('date_from');
             $build_assess_params->date_to = $this->input->get('date_to') == 'undefined' ? '' : $this->input->get('date_to');
             $build_assess_params->price_diff = $this->input->get('price_diff') == 'undefined' ? -1 :$this->input->get('price_diff');
+
             $build_assess_params->short_less_check = $this->input->get('short_less_check') == 'true' ? true : false;
             if ($this->input->get('short_less')) {
                 $build_assess_params->short_less = $this->input->get('short_less') == 'undefined' ? -1 : intval($this->input->get('short_less'));
             } else {
                 $build_assess_params->short_less = 0;
             }
+            $build_assess_params->short_more_check = $this->input->get('short_more_check') == 'true' ? true : false;
             if ($this->input->get('short_more')) {
                 $build_assess_params->short_more = $this->input->get('short_more') == 'undefined' ? -1 : intval($this->input->get('short_more'));
             } else {
                 $build_assess_params->short_more = 0;
             }
+
             $build_assess_params->short_seo_phrases = $this->input->get('short_seo_phrases');
             $build_assess_params->short_duplicate_content = $this->input->get('short_duplicate_content');
+
             $build_assess_params->long_less_check = $this->input->get('long_less_check') == 'true' ? true : false;
             if ($this->input->get('long_less')) {
                 $build_assess_params->long_less = $this->input->get('long_less') == 'undefined' ? -1 : intval($this->input->get('long_less'));
             } else {
                 $build_assess_params->long_less = 0;
             }
+            $build_assess_params->long_more_check = $this->input->get('long_more_check') == 'true' ? true : false;
             if ($this->input->get('long_more')) {
                 $build_assess_params->long_more = $this->input->get('long_more') == 'undefined' ? -1 : intval($this->input->get('long_more'));
             } else {
                 $build_assess_params->long_more = 0;
             }
+
             $build_assess_params->long_seo_phrases = $this->input->get('long_seo_phrases');
             $build_assess_params->long_duplicate_content = $this->input->get('long_duplicate_content');
             $build_assess_params->all_columns = $this->input->get('sColumns');
@@ -512,32 +518,39 @@ class Research extends MY_Controller {
                 $long_wc_total_not_0++;
             }
 
-            if ($result_row->short_description_wc < $build_assess_params->short_less) {
+            if ($result_row->short_description_wc <= $build_assess_params->short_less) {
                 $items_short_products_content_short++;
             }
 
-            if ($result_row->long_description_wc < $build_assess_params->long_less) {
+            if ($result_row->long_description_wc <= $build_assess_params->long_less) {
                 $items_long_products_content_short++;
             }
 
-//            if ($build_assess_params->short_more > 0) {
-//                if ($short_description_wc < $build_assess_params->short_more) {
-//                    continue;
-//                }
-//            }
 
-            if ($build_assess_params->short_less_check && $result_row->short_description_wc > $build_assess_params->short_less) {
-                continue;
+            if ($build_assess_params->short_less_check && $build_assess_params->short_more_check) {
+                if ($result_row->short_description_wc > $build_assess_params->short_less && $result_row->short_description_wc < $build_assess_params->short_more) {
+                    continue;
+                }
+            } else {
+                if ($build_assess_params->short_less_check && $result_row->short_description_wc > $build_assess_params->short_less) {
+                    continue;
+                }
+                if ($build_assess_params->short_more_check && $result_row->short_description_wc < $build_assess_params->short_more) {
+                    continue;
+                }
             }
 
-//            if ($build_assess_params->long_more > 0) {
-//                if ($long_description_wc < $build_assess_params->long_more) {
-//                    continue;
-//                }
-//            }
-
-            if ($build_assess_params->long_less_check && $result_row->long_description_wc > $build_assess_params->long_less) {
-                continue;
+            if ($build_assess_params->long_less_check && $build_assess_params->long_more_check) {
+                if ($result_row->long_description_wc > $build_assess_params->long_less && $result_row->long_description_wc < $build_assess_params->long_more) {
+                    continue;
+                }
+            } else {
+                if ($build_assess_params->long_less_check && $result_row->long_description_wc > $build_assess_params->long_less) {
+                    continue;
+                }
+                if ($build_assess_params->long_more_check && $result_row->long_description_wc < $build_assess_params->long_more) {
+                    continue;
+                }
             }
 
             $recomend = false;
