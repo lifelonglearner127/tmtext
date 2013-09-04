@@ -19,7 +19,7 @@ class Crons extends MY_Controller {
     }
 
     public function index() {
-
+        
     }
 
     private function urlExists($url) {
@@ -122,7 +122,7 @@ class Crons extends MY_Controller {
         $api_key = $this->config->item('webthumb_api_key');
         $url = "http://$url";
         $c_date = gmdate('Ymd', time());
-        $hash = md5($c_date.$url.$api_key);
+        $hash = md5($c_date . $url . $api_key);
         $e_url = urlencode(trim($url));
         $call = "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=large&cache=1";
         return $call;
@@ -139,12 +139,13 @@ class Crons extends MY_Controller {
         $year = date("Y", time());
         $sites = array();
         foreach ($customers as $k => $v) {
-            if ($this->urlExists($v['c_url'])) $sites[] = $v['c_url'];
+            if ($this->urlExists($v['c_url']))
+                $sites[] = $v['c_url'];
         }
         foreach ($sites as $url) {
             $c_url = preg_replace('#^https?://#', '', $url);
 
-            if($c_url === 'bjs.com') {
+            if ($c_url === 'bjs.com') {
                 $api_key = $this->config->item('snapito_api_secret');
                 $call_url = "http://api.snapito.com/web/$api_key/mc/$c_url";
             } else {
@@ -154,7 +155,7 @@ class Crons extends MY_Controller {
             $crawl_l = $this->upload_record_webshoot($call_url, $c_url . "_big");
             $file = $crawl_l['dir'];
             $file_size = filesize($file);
-            if($file_size === false || $file_size < 2048) {
+            if ($file_size === false || $file_size < 2048) {
                 @unlink($file);
                 $crawl_l = $this->upload_record_webshoot($call_url, $c_url . "_big");
             }
@@ -191,12 +192,12 @@ class Crons extends MY_Controller {
         $recs = $this->webshoots_model->get_recipients_list();
         $email_report_config_sender = $this->webshoots_model->getEmailReportConfig('sender');
         $attach_value = $this->webshoots_model->getEmailReportConfig('attach');
-        if($attach_value == 'yes') {
+        if ($attach_value == 'yes') {
             $attach_st = true;
         } else {
             $attach_st = false;
         }
-        if(count($recs) > 0) {
+        if (count($recs) > 0) {
             $this->load->library('email');
             $config['protocol'] = 'sendmail';
             $config['mailpath'] = '/usr/sbin/sendmail';
@@ -207,9 +208,9 @@ class Crons extends MY_Controller {
             foreach ($recs as $k => $v) {
                 $screens = $this->webshoots_model->getDistinctEmailScreensAnonim($c_week, $c_year);
                 // ==== sort assoc by pos (start)
-                if(count($screens) > 0) {
+                if (count($screens) > 0) {
                     $sort = array();
-                    foreach($screens as $k=>$v) {
+                    foreach ($screens as $k => $v) {
                         $sort['pos'][$k] = $v['pos'];
                     }
                     array_multisort($sort['pos'], SORT_ASC, $screens);
@@ -225,8 +226,8 @@ class Crons extends MY_Controller {
                 $msg = $this->load->view('measure/rec_report_email_template', $data_et, true);
                 $this->email->message($msg);
                 // --- attachments (start)
-                if($attach_st) {
-                    if(count($screens) > 0) {
+                if ($attach_st) {
+                    if (count($screens) > 0) {
                         foreach ($screens as $key => $value) {
                             $path = $value['dir'];
                             $this->email->attach("$path");
@@ -235,7 +236,7 @@ class Crons extends MY_Controller {
                 }
                 // --- attachments (end)
                 $this->email->send();
-                echo "Report sended to $v->email"."<br>";
+                echo "Report sended to $v->email" . "<br>";
             }
         }
         echo "Cron Job Finished";
@@ -268,8 +269,9 @@ class Crons extends MY_Controller {
 
         echo "ok";
     }
-    public function do_stats_new_test(){
-        $id=1103;
+
+    public function do_stats_new_test() {
+        $id = 1103;
         $this->load->model('imported_data_parsed_model');
         $this->load->model('research_data_model');
         $this->load->model('statistics_model');
@@ -279,12 +281,12 @@ class Crons extends MY_Controller {
         $this->load->model('similar_data_model');
         $this->load->library('helpers');
         $this->load->helper('algoritm');
-        $this->load->model('sites_model');//do_stats_new_test
+        $this->load->model('sites_model'); //do_stats_new_test
         $data_import = $this->imported_data_parsed_model->do_stats_new_test($id);
-        $obj=$data_import[0];
-        $data_import=(array)$data_import[0];
+        $obj = $data_import[0];
+        $data_import = (array) $data_import[0];
 
-       // print_r($data_import);
+        // print_r($data_import);
         $own_price = 0;
         $competitors_prices = array();
         $price_diff = '';
@@ -297,90 +299,90 @@ class Crons extends MY_Controller {
 
 
         $sites_list = array();
-                $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('sites');
-                $query_cus_res = $query_cus->result();
-                if (count($query_cus_res) > 0) {
-                    foreach ($query_cus_res as $key => $value) {
-                        $n = parse_url($value->url);
-                        $sites_list[] = $n['host'];
+        $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('sites');
+        $query_cus_res = $query_cus->result();
+        if (count($query_cus_res) > 0) {
+            foreach ($query_cus_res as $key => $value) {
+                $n = parse_url($value->url);
+                $sites_list[] = $n['host'];
+            }
+        }
+
+
+        if (isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
+
+            try {
+                $own_prices = $this->imported_data_parsed_model->getLastPrices($obj->imported_data_id);
+            } catch (Exception $e) {
+                echo 'РћС€РёР±РєР°', $e->getMessage(), "\n";
+                $own_prices = $this->imported_data_parsed_model->getLastPrices($obj->imported_data_id);
+            }
+
+            if (!empty($own_prices)) {
+                $own_price = floatval($own_prices[0]->price);
+                $obj->own_price = $own_price;
+                $price_diff_exists = array(); //"<input type='hidden'/>";
+                $price_diff_exists['id'] = $own_prices[0]->id;
+                $price_diff_exists['own_site'] = $own_site;
+                $price_diff_exists['own_price'] = floatval($own_price);
+            }
+
+            echo '!!!!' . $data_import['parsed_attributes']['model'];
+            $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
+
+
+
+            if (!empty($similar_items)) {
+
+                foreach ($similar_items as $ks => $vs) {
+                    $similar_item_imported_data_id = $similar_items[$ks]['imported_data_id'];
+                    if ($obj->imported_data_id == $similar_item_imported_data_id) {
+                        continue;
                     }
-                }
-
-
-         if (isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
-
-                        try {
-                            $own_prices = $this->imported_data_parsed_model->getLastPrices($obj->imported_data_id);
-                        } catch (Exception $e) {
-                            echo 'РћС€РёР±РєР°', $e->getMessage(), "\n";
-                            $own_prices = $this->imported_data_parsed_model->getLastPrices($obj->imported_data_id);
-                        }
-
-                        if (!empty($own_prices)) {
-                            $own_price = floatval($own_prices[0]->price);
-                            $obj->own_price = $own_price;
-                            $price_diff_exists = array(); //"<input type='hidden'/>";
-                            $price_diff_exists['id'] = $own_prices[0]->id;
-                            $price_diff_exists['own_site'] = $own_site;
-                            $price_diff_exists['own_price'] = floatval($own_price);
-                        }
-
-                        echo '!!!!'.$data_import['parsed_attributes']['model'];
-                        $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
-
-
-
-                            if (!empty($similar_items)) {
-
-                                foreach ($similar_items as $ks => $vs) {
-                                    $similar_item_imported_data_id = $similar_items[$ks]['imported_data_id'];
-                                    if ($obj->imported_data_id == $similar_item_imported_data_id) {
-                                        continue;
-                                    }
 //                                          $n = parse_url($vs['url']);
 //                                          $customer=  strtolower($n['host']);
 //                                          $customer = str_replace("www1.", "",$customer);
 //                                          $customer =str_replace("www.", "", $customer);
-                                    $customer = "";
-                                    foreach ($sites_list as $ki => $vi) {
-                                        if (strpos($vs['url'], "$vi") !== false) {
-                                            $customer = $vi;
-                                        }
-                                    }
+                    $customer = "";
+                    foreach ($sites_list as $ki => $vi) {
+                        if (strpos($vs['url'], "$vi") !== false) {
+                            $customer = $vi;
+                        }
+                    }
 
 
-                                    $customer = strtolower($this->sites_model->get_name_by_url($customer));
-                                    $similar_products_competitors[] = array(
-                                        'imported_data_id' => $similar_item_imported_data_id,
-                                        'customer' => $customer
-                                    );
+                    $customer = strtolower($this->sites_model->get_name_by_url($customer));
+                    $similar_products_competitors[] = array(
+                        'imported_data_id' => $similar_item_imported_data_id,
+                        'customer' => $customer
+                    );
 
-                                    try {
-                                        $three_last_prices = $this->imported_data_parsed_model->getLastPrices($similar_item_imported_data_id);
-                                    } catch (Exception $e) {
-                                        echo 'РћС€РёР±РєР°', $e->getMessage(), "\n";
+                    try {
+                        $three_last_prices = $this->imported_data_parsed_model->getLastPrices($similar_item_imported_data_id);
+                    } catch (Exception $e) {
+                        echo 'РћС€РёР±РєР°', $e->getMessage(), "\n";
 //                                        $this->statistics_model->db->close();
 //                                        $this->statistics_model->db->initialize();
-                                        $three_last_prices = $this->imported_data_parsed_model->getLastPrices($similar_item_imported_data_id);
-                                    }
+                        $three_last_prices = $this->imported_data_parsed_model->getLastPrices($similar_item_imported_data_id);
+                    }
 
-                                    if (!empty($three_last_prices)) {
-                                        $price_scatter = $own_price * 0.03;
-                                        $price_upper_range = $own_price + $price_scatter;
-                                        $price_lower_range = $own_price - $price_scatter;
-                                        $competitor_price = floatval($three_last_prices[0]->price);
-                                        if ($competitor_price < $own_price) {
-                                            $items_priced_higher_than_competitors = 1;
-                                        }
-                                        if ($competitor_price > $price_upper_range || $competitor_price < $price_lower_range) {
-                                            $price_diff_exists['competitor_customer'][] = $similar_items[$ks]['customer'];
-                                            $price_diff_exists['competitor_price'][] = $competitor_price;
-                                            $price_diff = $price_diff_exists;
-                                            $competitors_prices[] = $competitor_price;
-                                        }
-                                    }
-                                }
-                            }
+                    if (!empty($three_last_prices)) {
+                        $price_scatter = $own_price * 0.03;
+                        $price_upper_range = $own_price + $price_scatter;
+                        $price_lower_range = $own_price - $price_scatter;
+                        $competitor_price = floatval($three_last_prices[0]->price);
+                        if ($competitor_price < $own_price) {
+                            $items_priced_higher_than_competitors = 1;
+                        }
+                        if ($competitor_price > $price_upper_range || $competitor_price < $price_lower_range) {
+                            $price_diff_exists['competitor_customer'][] = $similar_items[$ks]['customer'];
+                            $price_diff_exists['competitor_price'][] = $competitor_price;
+                            $price_diff = $price_diff_exists;
+                            $competitors_prices[] = $competitor_price;
+                        }
+                    }
+                }
+            }
 
 
 //                        $n = parse_url($data_import['url']);
@@ -388,61 +390,60 @@ class Crons extends MY_Controller {
 //                                     $customer = str_replace("www1.", "",$customer);
 //                                     $customer =str_replace("www.", "", $customer);
 
+            $customer = "";
+            foreach ($sites_list as $ki => $vi) {
+                if (strpos($data_import['url'], "$vi") !== false) {
+                    $customer = $vi;
+                }
+            }
+
+            $customer = strtolower($this->sites_model->get_name_by_url($customer));
+
+            $similar_products_competitors[] = array(
+                'imported_data_id' => $data_import['imported_data_id'],
+                'customer' => $customer
+            );
+
+
+
+            $rows = $this->similar_data_model->get_group_id($data_import['imported_data_id']);
+            if (count($rows) > 0) {
+
+                foreach ($similar_products_competitors as $val) {
+                    foreach ($rows as $key => $row) {
+                        if ($row['group_id'] == $val['imported_data_id']) {
+                            unset($rows[$key]);
+                        }
+                    }
+                }
+            }
+            if (count($rows) > 0) {
+                $url = array();
+                foreach ($rows as $row) {
+                    $data_similar = $this->imported_data_parsed_model->getByImId($row['group_id']);
+                    $n = parse_url($data_similar['url']);
+                    $customer = $n['host'];
+                    $data_similar[$key]['customer'] = $customer;
+
+                    if (!in_array($customer, $url)) {
+                        $url[] = $customer;
                         $customer = "";
                         foreach ($sites_list as $ki => $vi) {
-                            if (strpos($data_import['url'], "$vi") !== false) {
+                            if (strpos($data_similar['url'], "$vi") !== false) {
                                 $customer = $vi;
                             }
                         }
-
                         $customer = strtolower($this->sites_model->get_name_by_url($customer));
-
-                        $similar_products_competitors[] = array(
-                            'imported_data_id' => $data_import['imported_data_id'],
-                            'customer' => $customer
-                        );
-
-
-
-                        $rows = $this->similar_data_model->get_group_id($data_import['imported_data_id']);
-                        if (count($rows) > 0) {
-
-                            foreach ($similar_products_competitors as $val) {
-                                foreach ($rows as $key => $row) {
-                                    if ($row['group_id'] == $val['imported_data_id']) {
-                                        unset($rows[$key]);
-                                    }
-                                }
-                            }
-                        }
-                        if (count($rows) > 0) {
-                            $url = array();
-                            foreach ($rows as $row) {
-                                $data_similar = $this->imported_data_parsed_model->getByImId($row['group_id']);
-                                $n = parse_url($data_similar['url']);
-                                $customer = $n['host'];
-                                $data_similar[$key]['customer'] = $customer;
-
-                                if (!in_array($customer, $url)) {
-                                    $url[] = $customer;
-                                    $customer = "";
-                                    foreach ($sites_list as $ki => $vi) {
-                                        if (strpos($data_similar['url'], "$vi") !== false) {
-                                            $customer = $vi;
-                                        }
-                                    }
-                                    $customer = strtolower($this->sites_model->get_name_by_url($customer));
-                                    $similar_products_competitors[] = array('imported_data_id' => $row['group_id'], 'customer' => $customer);
-                                }
-                            }
-                        }
+                        $similar_products_competitors[] = array('imported_data_id' => $row['group_id'], 'customer' => $customer);
                     }
+                }
+            }
+        }
 
 
         print_r($similar_products_competitors);
-
-
     }
+
     public function do_stats_new() {
         echo "Script start working";
         $tmp_dir = sys_get_temp_dir() . '/';
@@ -499,6 +500,8 @@ class Crons extends MY_Controller {
                     $own_site = str_replace("www.", "", $own_site);
 
                     $data_import = (array) $obj;
+                    
+                    //descriptions
                     if ($data_import['description'] !== null && trim($data_import['description']) !== "") {
 
                         $data_import['description'] = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $data_import['description']);
@@ -517,7 +520,7 @@ class Crons extends MY_Controller {
                     } else {
                         $long_description_wc = 0;
                     }
-
+                     //descriptions end
 
 
 
@@ -546,8 +549,11 @@ class Crons extends MY_Controller {
 
                     $time_end = microtime(true);
                     $time = $time_end - $time_start;
-                    echo "SEO Short phrases - $time seconds\n";
-                    // SEO Long phrases
+                    echo "SEO Short phrases - $time seconds\n"; 
+                    // SEO Long phrases end 
+                    
+                    
+                    
                     $time_start = microtime(true);
                     if ($long_description_wc != 0) {
 
@@ -570,8 +576,9 @@ class Crons extends MY_Controller {
                     $time_end = microtime(true);
                     $time = $time_end - $time_start;
                     echo "SEO Long phrases - $time seconds\n";
+                    // seo end ---------
 
-
+                    // similarity
                     $time_start = microtime(true);
                     if (isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
 
@@ -591,117 +598,78 @@ class Crons extends MY_Controller {
                             $price_diff_exists['own_price'] = floatval($own_price);
 
                             try {
-                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
+                                $three_last_prices = $this->imported_data_parsed_model->getLastPrices($similar_item_imported_data_id);
                             } catch (Exception $e) {
                                 echo 'РћС€РёР±РєР°', $e->getMessage(), "\n";
-
-                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
+                                $this->statistics_model->db->close();
+                                $this->statistics_model->db->initialize();
+                                $three_last_prices = $this->imported_data_parsed_model->getLastPrices($similar_item_imported_data_id);
                             }
 
-                            if (!empty($similar_items)) {
-                                foreach ($similar_items as $ks => $vs) {
-                                    $similar_item_imported_data_id = $similar_items[$ks]['imported_data_id'];
-                                    if ($obj->imported_data_id == $similar_item_imported_data_id) {
-                                        continue;
-                                    }
-//                                          $n = parse_url($vs['url']);
-//                                          $customer=  strtolower($n['host']);
-//                                          $customer = str_replace("www1.", "",$customer);
-//                                          $customer =str_replace("www.", "", $customer);
-                                    $customer = "";
-                                    foreach ($sites_list as $ki => $vi) {
-                                        if (strpos($vs['url'], "$vi") !== false) {
-                                            $customer = $vi;
-                                        }
-                                    }
-
-
-                                    $customer = strtolower($this->sites_model->get_name_by_url($customer));
-                                    $similar_products_competitors[] = array(
-                                        'imported_data_id' => $similar_item_imported_data_id,
-                                        'customer' => $customer
-                                    );
-
-                                    try {
-                                        $three_last_prices = $this->imported_data_parsed_model->getLastPrices($similar_item_imported_data_id);
-                                    } catch (Exception $e) {
-                                        echo 'РћС€РёР±РєР°', $e->getMessage(), "\n";
-                                        $this->statistics_model->db->close();
-                                        $this->statistics_model->db->initialize();
-                                        $three_last_prices = $this->imported_data_parsed_model->getLastPrices($similar_item_imported_data_id);
-                                    }
-
-                                    if (!empty($three_last_prices)) {
-                                        $price_scatter = $own_price * 0.03;
-                                        $price_upper_range = $own_price + $price_scatter;
-                                        $price_lower_range = $own_price - $price_scatter;
-                                        $competitor_price = floatval($three_last_prices[0]->price);
-                                        if ($competitor_price < $own_price) {
-                                            $items_priced_higher_than_competitors = 1;
-                                        }
-                                        if ($competitor_price > $price_upper_range || $competitor_price < $price_lower_range) {
-                                            $price_diff_exists['competitor_customer'][] = $similar_items[$ks]['customer'];
-                                            $price_diff_exists['competitor_price'][] = $competitor_price;
-                                            $price_diff = $price_diff_exists;
-                                            $competitors_prices[] = $competitor_price;
-                                        }
-                                    }
+                            if (!empty($three_last_prices)) {
+                                $price_scatter = $own_price * 0.03;
+                                $price_upper_range = $own_price + $price_scatter;
+                                $price_lower_range = $own_price - $price_scatter;
+                                $competitor_price = floatval($three_last_prices[0]->price);
+                                if ($competitor_price < $own_price) {
+                                    $items_priced_higher_than_competitors = 1;
                                 }
-                            }
-                        }else{
-                             try {
-                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
-                            } catch (Exception $e) {
-                                echo 'РћС€РёР±РєР°', $e->getMessage(), "\n";
-
-                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
-                            }
-
-                            if (!empty($similar_items)) {
-                                foreach ($similar_items as $ks => $vs) {
-                                    $similar_item_imported_data_id = $similar_items[$ks]['imported_data_id'];
-                                    if ($obj->imported_data_id == $similar_item_imported_data_id) {
-                                        continue;
-                                    }
-//                                          $n = parse_url($vs['url']);
-//                                          $customer=  strtolower($n['host']);
-//                                          $customer = str_replace("www1.", "",$customer);
-//                                          $customer =str_replace("www.", "", $customer);
-                                    $customer = "";
-                                    foreach ($sites_list as $ki => $vi) {
-                                        if (strpos($vs['url'], "$vi") !== false) {
-                                            $customer = $vi;
-                                        }
-                                    }
-
-
-                                    $customer = strtolower($this->sites_model->get_name_by_url($customer));
-                                    $similar_products_competitors[] = array(
-                                        'imported_data_id' => $similar_item_imported_data_id,
-                                        'customer' => $customer
-                                    );
+                                if ($competitor_price > $price_upper_range || $competitor_price < $price_lower_range) {
+                                    $price_diff_exists['competitor_customer'][] = $similar_items[$ks]['customer'];
+                                    $price_diff_exists['competitor_price'][] = $competitor_price;
+                                    $price_diff = $price_diff_exists;
+                                    $competitors_prices[] = $competitor_price;
                                 }
                             }
                         }
+
+
+                        try {
+                            $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
+                        } catch (Exception $e) {
+                            echo 'РћС€РёР±РєР°', $e->getMessage(), "\n";
+
+                            $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
+                        }
+
+                        if (!empty($similar_items)) {
+                            foreach ($similar_items as $ks => $vs) {
+                                $similar_item_imported_data_id = $similar_items[$ks]['imported_data_id'];
+                                 $customer = "";
+                                foreach ($sites_list as $ki => $vi) {
+                                    if (strpos($vs['url'], "$vi") !== false) {
+                                        $customer = $vi;
+                                    }
+                                }
+
+
+                                $customer = strtolower($this->sites_model->get_name_by_url($customer));
+                                $similar_products_competitors[] = array(
+                                    'imported_data_id' => $similar_item_imported_data_id,
+                                    'customer' => $customer
+                                );
+                            }
+                        }
+
 
 //                        $n = parse_url($data_import['url']);
 //                                     $customer=  strtolower($n['host']);
 //                                     $customer = str_replace("www1.", "",$customer);
 //                                     $customer =str_replace("www.", "", $customer);
 
-                        $customer = "";
-                        foreach ($sites_list as $ki => $vi) {
-                            if (strpos($data_import['url'], "$vi") !== false) {
-                                $customer = $vi;
-                            }
-                        }
-
-                        $customer = strtolower($this->sites_model->get_name_by_url($customer));
-
-                        $similar_products_competitors[] = array(
-                            'imported_data_id' => $data_import['imported_data_id'],
-                            'customer' => $customer
-                        );
+//                        $customer = "";
+//                        foreach ($sites_list as $ki => $vi) {
+//                            if (strpos($data_import['url'], "$vi") !== false) {
+//                                $customer = $vi;
+//                            }
+//                        }
+//
+//                        $customer = strtolower($this->sites_model->get_name_by_url($customer));
+//
+//                        $similar_products_competitors[] = array(
+//                            'imported_data_id' => $data_import['imported_data_id'],
+//                            'customer' => $customer
+//                        );
 
 
 
@@ -757,10 +725,7 @@ class Crons extends MY_Controller {
                             foreach ($rows as $key => $row) {
 
                                 $data_similar = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
-//                                    $n = parse_url($data_similar['url']);
-//                                    $customer=  strtolower($n['host']);
-//                                    $customer = str_replace("www1.", "",$customer);
-//                                    $customer =str_replace("www.", "", $customer);
+
                                 $customer = "";
                                 foreach ($sites_list as $ki => $vi) {
                                     if (strpos($data_similar['url'], "$vi") !== false) {
@@ -772,43 +737,43 @@ class Crons extends MY_Controller {
                                 $similar_products_competitors[] = array('imported_data_id' => $row->imported_data_id, 'customer' => $customer);
                             }
                         }
-                    }
-                    $time_end = microtime(true);
-                    $time = $time_end - $time_start;
+
+                        $time_end = microtime(true);
+                        $time = $time_end - $time_start;
 //                          echo "price_diff - $time seconds\n";
-                    // WC Short
+                        // WC Short
 
 
+                        $time_start = microtime(true);
 
-                    $time_start = microtime(true);
+                        try {
+                            $insert_id = $this->statistics_model->insert_new($obj->imported_data_id, $obj->revision, $short_description_wc, $long_description_wc, $short_seo_phrases, $long_seo_phrases, $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors, serialize($similar_products_competitors)
+                            );
+                        } catch (Exception $e) {
+                            echo 'РћС€РёР±РєР°', $e->getMessage(), "\n";
+                            $this->statistics_model->db->close();
+                            $this->statistics_model->db->initialize();
 
-                    try {
-                        $insert_id = $this->statistics_model->insert_new($obj->imported_data_id, $obj->revision, $short_description_wc, $long_description_wc, $short_seo_phrases, $long_seo_phrases, $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors, serialize($similar_products_competitors)
-                        );
-                    } catch (Exception $e) {
-                        echo 'РћС€РёР±РєР°', $e->getMessage(), "\n";
-                        $this->statistics_model->db->close();
-                        $this->statistics_model->db->initialize();
+                            $insert_id = $this->statistics_model->insert_new($obj->imported_data_id, $obj->revision, $short_description_wc, $long_description_wc, $short_seo_phrases, $long_seo_phrases, $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors, serialize($similar_products_competitors));
+                        }
 
-                        $insert_id = $this->statistics_model->insert_new($obj->imported_data_id, $obj->revision, $short_description_wc, $long_description_wc, $short_seo_phrases, $long_seo_phrases, $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors, serialize($similar_products_competitors));
+                        $time_end = microtime(true);
+                        $time = $time_end - $time_start;
+
+                        echo '.';
                     }
 
-                    $time_end = microtime(true);
-                    $time = $time_end - $time_start;
+                    $q = $this->db->select('key,description')->from('settings')->where('key', 'cron_job_offset');
+                    $res = $q->get()->row_array();
+                    $start = $res['description'];
+                    $start++;
+                    $data = array(
+                        'description' => $start
+                    );
 
-                    echo '.';
+                    $this->db->where('key', 'cron_job_offset');
+                    $this->db->update('settings', $data);
                 }
-
-                $q = $this->db->select('key,description')->from('settings')->where('key', 'cron_job_offset');
-                $res = $q->get()->row_array();
-                $start = $res['description'];
-                $start++;
-                $data = array(
-                    'description' => $start
-                );
-
-                $this->db->where('key', 'cron_job_offset');
-                $this->db->update('settings', $data);
             }
         } catch (Exception $e) {
             echo 'Ошибка', $e->getMessage(), "\n";
@@ -1087,7 +1052,7 @@ class Crons extends MY_Controller {
             $this->load->model('imported_data_parsed_model');
 
             if ($clear) {
-	            $this->statistics_model->truncate();
+                $this->statistics_model->truncate();
 //	            $this->statistics_duplicate_content_model->truncate();
             }
             $batches = $this->batches_model->getAll('id');
@@ -1112,10 +1077,10 @@ class Crons extends MY_Controller {
                 }
                 if (count($data) > 0) {
                     foreach ($data as $obj) {
-                    	// TODO: rewrite
-                    	if ($this->statistics_model->getbyImportedDataId($obj->imported_data_id)) {
-							continue;
-                    	}
+                        // TODO: rewrite
+                        if ($this->statistics_model->getbyImportedDataId($obj->imported_data_id)) {
+                            continue;
+                        }
 
                         $own_price = 0;
                         $competitors_prices = array();
