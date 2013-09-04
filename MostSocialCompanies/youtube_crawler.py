@@ -28,15 +28,24 @@ class Utils:
 
 			#TODO: maybe work with name indexes (insted of number)
 			site["site"] = row[1]
+			print "site ", site["site"]
 			site["yt_username"] = row[3]
 			sites.append(site)
+
+		csvfile.close()
 
 		return sites
 
 	# output results to csv file
 	@staticmethod
-	def output_all(filename):
-		pass
+	def output_all(filename, results):
+		csvfile = open(filename, "wb")
+
+		siteswriter = csv.writer(csvfile, delimiter=',')
+		siteswriter.writerow(["Date", "Brand", "Followers", "Following", "Tweets",\
+		 "All_Tweets", "YT_Videos", "YT_All_Videos", "YT_Views", "YT_All_Views"])
+
+		print results
 
 class CrawlUploads():
 	
@@ -150,4 +159,4 @@ if __name__ == "__main__":
   		#res_site["Brand"] = site["site"]
   		results.append(res_site)
 
-  	Utils.output_all(results)
+  	Utils.output_all("MostSocialBrands.txt", results)
