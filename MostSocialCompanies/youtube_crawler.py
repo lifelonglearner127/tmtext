@@ -5,6 +5,7 @@ from optparse import OptionParser
 from datetime import datetime, MINYEAR, MAXYEAR, timedelta
 
 from pprint import pprint
+import csv
 
 class Utils:
 
@@ -13,6 +14,29 @@ class Utils:
 	def daterange(start_date, end_date):
 		for n in range(int ((end_date - start_date).days)):
 			yield start_date + timedelta(n)
+
+	# read site youtube usernames from csv input file
+	@staticmethod
+	def input_sites(filename):
+		csvfile = open(filename, "rw")
+
+		sites = []
+
+		sitesreader = csv.reader(csvfile, delimiter=',')
+		for row in sitesreader:
+			site = {}
+
+			#TODO: maybe work with name indexes (insted of number)
+			site["site"] = row[1]
+			site["yt_username"] = row[3]
+			sites.append(site)
+
+		return sites
+
+	# output results to csv file
+	@staticmethod
+	def output_all(filename):
+		pass
 
 class CrawlUploads():
 	
@@ -39,7 +63,6 @@ class CrawlUploads():
 		else:
 			return []
 
-		#print "Channels:\n", "\n".join(channels), "\n"
 
 	# get uploaded videos from a certain channel (given by channel username) published between certain dates
 	def get_uploads(self, channel_username, min_date = datetime(MINYEAR, 1, 1), max_date = datetime(MAXYEAR, 12, 31)):
@@ -51,10 +74,6 @@ class CrawlUploads():
 
 		for channel in channels_response["items"]:
 			uploads_list_id = channel["contentDetails"]["relatedPlaylists"]["uploads"]
-			#print "Videos in list %s" % uploads_list_id
-
-			# can I rely on chronological order of videos?
-			
 
 			ret = {}
 			for date in Utils.daterange(min_date, max_date):
@@ -66,15 +85,11 @@ class CrawlUploads():
 
 			next_page_token = ""
 
-			#print 'mindate ', min_date, ' maxdate ', max_date, ' lasttime ', lasttime
 
-			# stop if we reached the minimum date (results are given in reverse chronological order)
+			# stop if we reached the minimum date (assuming results are given in reverse chronological order)
 			while (next_page_token is not None) and (lasttime >= min_date):
-			#while next_page_token is not None:
 				playlistitems_response = self.youtube.playlistItems().list(playlistId=uploads_list_id, \
 					part="snippet", maxResults=50, pageToken=next_page_token).execute()
-
-				#print 'length: ', len(playlistitems_response['items'])
 
 				for playlist_item in playlistitems_response["items"]:
 					title = playlist_item["snippet"]["title"]
@@ -94,11 +109,13 @@ class CrawlUploads():
 
 					# check if the date is also smaller than max date
 					if lasttime <= max_date:
-						# print "%s (%s)" % (title, video_id)
 
-						# print 'published at:', lasttime
-
-						ret[lasttime.strftime("%b %d, %Y")] += 1
+						date = lasttime.strftime("%b %d, %Y")
+						# if date not in ret:
+						# 	ret[date] = 1
+						# else:
+						# 	ret[date] += 1
+						ret[date] += 1
 						total_videos += 1
 
 						ret[title] = views
@@ -106,8 +123,6 @@ class CrawlUploads():
 
 
 				next_page_token = playlistitems_response.get("tokenPagination", {}).get("nextPageToken")
-				#next_page_token = playlistitems_response.get("nextPageToken")
-
 
 			ret['YT_All_Videos'] = total_videos
 			ret['YT_All_Views'] = total_views
@@ -117,12 +132,22 @@ class CrawlUploads():
 
 
 if __name__ == "__main__":
-  # parser = OptionParser()
-  # parser.add_option("--q", dest="q", help="Search term",
-  #   default="Google")
-  # parser.add_option("--max-results", dest="maxResults",
-  #   help="Max results", default=25)
-  # (options, args) = parser.parse_args()
+	parser = OptionParser()
+	parser.add_option("--date1", dest="date1", help="Minimum publish date")
+	parser.add_option("--date2", dest="date2", help="Maximum publish date")
+	(options, args) = parser.parse_args()
+
+	date1 = datetime.strptime(options.date1, "%Y-%m-%d")
+	date2 = datetime.strptime(options.date2, "%Y-%m-%d")
 
   	crawler = CrawlUploads()
-  	pprint(crawler.get_uploads("Staples", min_date=datetime(2013, 4, 1), max_date=datetime(2013, 9, 1)))
+
+  	sites = Utils.input_sites("Brand Retail Import Data.csv")
+
+  	results = []
+  	for site in sites:
+  		res_site = crawler.get_uploads(site["yt_username"], min_date=date1, max_date=date2)
+  		res_site["Brand"] = site["site"]
+  		results.append(res_site)
+
+  	Utils.output_all(results)
