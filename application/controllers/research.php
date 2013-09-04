@@ -716,7 +716,7 @@ class Research extends MY_Controller {
                     $output['aaData'][] = array(
                         $data_row->created,
                         $data_row->product_name,
-                        $data_row->url,
+                        '<a class="active_link" href="'.$data_row->url.'" target="_blank">'.$data_row->url.'</a>',
                         $data_row->short_description_wc,
                         $data_row->short_seo_phrases,
                         $data_row->long_description_wc,

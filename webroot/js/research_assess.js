@@ -326,6 +326,9 @@ $(function () {
     });
 
     $('#tblAssess tbody').click(function(event) {
+        if ($(event.target).is('a')) {
+            return;
+        }
         var add_data = JSON.parse($(event.target).parents('tr').attr('add_data'));
         // if this product is absent product from second batch
         if (add_data.id == undefined) {
