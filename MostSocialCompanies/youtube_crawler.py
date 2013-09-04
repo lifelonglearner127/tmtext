@@ -41,7 +41,6 @@ class CrawlUploads():
 
 		#print "Channels:\n", "\n".join(channels), "\n"
 
-
 	# get uploaded videos from a certain channel (given by channel username) published between certain dates
 	def get_uploads(self, channel_username, min_date = datetime(MINYEAR, 1, 1), max_date = datetime(MAXYEAR, 12, 31)):
 		channel_id = self.youtube_search_channel(channel_username)
@@ -62,6 +61,7 @@ class CrawlUploads():
 				ret[date.strftime("%b %d, %Y")] = 0
 
 			total_videos = 0
+			total_views = 0
 			lasttime = min_date
 
 			next_page_token = ""
@@ -74,12 +74,17 @@ class CrawlUploads():
 				playlistitems_response = self.youtube.playlistItems().list(playlistId=uploads_list_id, \
 					part="snippet", maxResults=50, pageToken=next_page_token).execute()
 
-				print 'length: ', len(playlistitems_response['items'])
+				#print 'length: ', len(playlistitems_response['items'])
 
 				for playlist_item in playlistitems_response["items"]:
 					title = playlist_item["snippet"]["title"]
 					video_id = playlist_item["snippet"]["resourceId"]["videoId"]
-					#views = playlist_item["statistics"]["viewCount"]
+					#video = self.get_video(video_id)
+					video_response = self.youtube.videos().list(part="snippet,statistics", id = video_id).execute()
+					video = video_response["items"][0]
+
+					title = video["snippet"]["title"]
+					views = int(video["statistics"]["viewCount"])
 
 					lasttime_iso = playlist_item["snippet"]["publishedAt"]
 					lasttime = datetime.strptime(lasttime_iso, "%Y-%m-%dT%H:%M:%S.000Z")
@@ -96,12 +101,16 @@ class CrawlUploads():
 						ret[lasttime.strftime("%b %d, %Y")] += 1
 						total_videos += 1
 
+						ret[title] = views
+						total_views += views
+
 
 				next_page_token = playlistitems_response.get("tokenPagination", {}).get("nextPageToken")
 				#next_page_token = playlistitems_response.get("nextPageToken")
 
 
 			ret['YT_All_Videos'] = total_videos
+			ret['YT_All_Views'] = total_views
     		return ret
 
 
