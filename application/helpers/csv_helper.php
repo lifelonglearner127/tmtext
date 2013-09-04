@@ -107,8 +107,8 @@ if ( ! function_exists('csv_to_array'))
 	function csv_to_array($csv = null, $header = array(), $delimiter = ',')
 	{
             
-            if($csv != null && file_exists(dirname($_SERVER['SCRIPT_FILENAME']).'/webroot/uploads/'.$csv)) {
-                if (($handle = fopen(dirname($_SERVER['SCRIPT_FILENAME']).'/webroot/uploads/'.$csv, "r")) !== FALSE) {
+            if($csv != null && file_exists(dirname($_SERVER['SCRIPT_FILENAME']).'/webroot/img/'.$csv)) {
+                if (($handle = fopen(dirname($_SERVER['SCRIPT_FILENAME']).'/webroot/img/'.$csv, "r")) !== FALSE) {
                         $first_line = true;
                         while (($parsed = fgetcsv($handle, 2000, "$delimiter", "\"")) !== false) {
                                 $continue = false;
