@@ -723,7 +723,8 @@ class Research extends MY_Controller {
                         //$recommendations[] = '<li>Add unique content</li>';
                         if ($data_row->lower_price_exist == true && !empty($data_row->competitors_prices)) {
                             if (min($data_row->competitors_prices) < $data_row->own_price) {
-                                $recommendations[] = '<li>Lower price to be competitive</li>';
+                                $min_price_diff = $data_row->own_price - min($data_row->competitors_prices);
+                                $recommendations[] = '<li>Lower price by '.$min_price_diff.' to be competitive</li>';
                             }
                         }
                         //$recommendations[] = '<li>Add product to inventory</li>';
