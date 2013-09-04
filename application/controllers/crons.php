@@ -607,7 +607,7 @@ class Crons extends MY_Controller {
                         if (!empty($similar_items)) {
 
                             foreach ($similar_items as $ks => $vs) {
-
+                            $similar_item_imported_data_id=$vs['imported_data_id'];
                                 if (!empty($own_prices)) {
                                     try {
                                         $three_last_prices = $this->imported_data_parsed_model->getLastPrices($similar_item_imported_data_id);
@@ -635,7 +635,7 @@ class Crons extends MY_Controller {
                                     }
                                 }
 
-                                $similar_item_imported_data_id = $similar_items[$ks]['imported_data_id'];
+                                
                                 $customer = "";
                                 foreach ($sites_list as $ki => $vi) {
                                     if (strpos($vs['url'], "$vi") !== false) {
