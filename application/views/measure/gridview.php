@@ -105,8 +105,17 @@ foreach ($same_pr as $ks => $vs) {
                 <div class='c_content'>
                     <div class="p_url">
     <?php if ($ks > 0 && $mismatch_button == true) { ?>
-                            <input data-value="<?php echo $vs['imported_data_id']; ?>"class="mismatch_image" style="float: right; margin-top: 0;" type="button" value="" title="Report mismatch">
+                            <input data-value="<?php echo $vs['imported_data_id']; ?>"class="mismatch_image" style="float: right; margin-top: 0;position: relative;z-index: 200;" type="button" value="" title="">
+                            <div class='missmatch_popup'style="display: none;">
+                             <span class="first_line">Mark as incorrect match  </span><br/>
+                             <span class="second_line">Enter URL of match... </span>
+                            </div>
                         <?php }
+               
+                    if ($ks ==0 && $mismatch_button == true) { ?>
+                            <input data-value="<?php echo $vs['imported_data_id']; ?>"class="missmatch_first" style="float: right; margin-top: 0;" type="button" value="" title="Report mismatch">
+                        <?php }
+               
                         ?>
                         <span class='analysis_content_head'>URL:</span>
                         <!--                        //Max-->
@@ -469,6 +478,21 @@ if (($i - 1) % 3 != 0) {
     });
 
     selectedCustomer();
+    $(document).ready(function(){
+       $(".mismatch_image").live('mouseover',function(){
+           
+       var item= "<div class='missmatch_popup'>Aaaaaaaaaa</div>";
+      $(".missmatch_popup").css('display','block');
+      
+}); 
+ $(".missmatch_popup").live('mouseleave',function(){
+           
+       
+      $(".missmatch_popup").css('display','none');
+      
+}); 
+
+    });
 
 </script>
 

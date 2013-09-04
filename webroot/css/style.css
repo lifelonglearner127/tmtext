@@ -1977,3 +1977,49 @@ span.highlight { background-color:yellow;}
 .short_product_date{width: 100%; font-size: 13px;}
 
 .short_product_date{width: 100%; font-size: 13px;}
+
+
+.missmatch_first{
+    background: url("../img/magnifying_glass.png") 0 0 no-repeat;
+    border: none;
+    width: 19px !important;
+    height: 19px;
+   
+}
+.missmatch_popup{
+    border: 1px solid #606C5E;
+   
+    border-radius: 15px;
+    position: absolute;
+    left: 58%;
+    overflow: hidden;
+    background: white;
+}
+.first_line{
+    
+    padding-left: 32px;
+    padding-right: 9px;
+    padding-top: 7px;
+    padding-bottom: 7px;
+    position: relative;
+    z-index: 1;
+}
+.second_line{
+    background: url("../img/magnifying_glass.png") 11px 3px no-repeat;
+    padding-left: 32px;
+    padding-right: 9px;
+    padding-top: 2px;
+    padding-bottom: 4px;
+    display: block;
+    margin-top: 7px;
+    margin-bottom: -1px;
+}
+.first_line:hover,.second_line:hover {
+    background-color: #6DAB5A;
+    border: 1px solid #C6C9C6;
+    border-radius: 15px;
+    cursor:pointer;
+}
+
+
+
