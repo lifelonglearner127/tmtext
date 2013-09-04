@@ -23,6 +23,10 @@ class Utils:
 		sites = []
 
 		sitesreader = csv.reader(csvfile, delimiter=',')
+
+		# exclude header
+		sitesreader.next()
+
 		for row in sitesreader:
 			site = {}
 
@@ -30,22 +34,29 @@ class Utils:
 			site["site"] = row[1]
 			print "site ", site["site"]
 			site["yt_username"] = row[3]
+			print 'username ', site['yt_username']
 			sites.append(site)
 
 		csvfile.close()
+
+		print 'read all'
 
 		return sites
 
 	# output results to csv file
 	@staticmethod
 	def output_all(filename, results):
-		csvfile = open(filename, "wb")
+		csvfile = open(filename, "wb+")
 
 		siteswriter = csv.writer(csvfile, delimiter=',')
-		siteswriter.writerow(["Date", "Brand", "Followers", "Following", "Tweets",\
-		 "All_Tweets", "YT_Videos", "YT_All_Videos", "YT_Views", "YT_All_Views"])
+		# siteswriter.writerow(["Date", "Brand", "Followers", "Following", "Tweets",\
+		#  "All_Tweets", "YT_Videos", "YT_All_Videos", "YT_Views", "YT_All_Views"])
 
-		print results
+		ordered_fieldnames = OrderedDict([('field1',None),('field2',None)])
+
+
+
+		filename.write(results)
 
 class CrawlUploads():
 	
@@ -58,7 +69,7 @@ class CrawlUploads():
 	# search for a channel by username and return its id
 	def youtube_search_channel(self, channel_username):
 
-		search_response = self.youtube.search().list(q=channel_username, part="id,snippet").execute()
+		search_response = self.youtube.search().list(q=channel_username, part="id,snippet", type='channel').execute()
 
 	  	channels = []
 
@@ -68,8 +79,10 @@ class CrawlUploads():
 				channels.append(search_result["id"]["channelId"])
 
 		if channels:
+			print 'found channel: ', channels[0], channel_username
 			return channels[0]
 		else:
+			print 'didn\'t find channel: ', channel_username
 			return []
 
 
@@ -82,6 +95,8 @@ class CrawlUploads():
 		channels_response = self.youtube.channels().list(part = "contentDetails", id = channel_id).execute()
 
 		for channel in channels_response["items"]:
+
+			print 'finding videos for ', channel
 			uploads_list_id = channel["contentDetails"]["relatedPlaylists"]["uploads"]
 
 			ret = {}
@@ -103,7 +118,6 @@ class CrawlUploads():
 				for playlist_item in playlistitems_response["items"]:
 					title = playlist_item["snippet"]["title"]
 					video_id = playlist_item["snippet"]["resourceId"]["videoId"]
-					#video = self.get_video(video_id)
 					video_response = self.youtube.videos().list(part="snippet,statistics", id = video_id).execute()
 					video = video_response["items"][0]
 
@@ -130,8 +144,12 @@ class CrawlUploads():
 						ret[title] = views
 						total_views += views
 
+						print title, lasttime
+
 
 				next_page_token = playlistitems_response.get("tokenPagination", {}).get("nextPageToken")
+
+			print 'done for ', channel
 
 			ret['YT_All_Videos'] = total_videos
 			ret['YT_All_Views'] = total_views
