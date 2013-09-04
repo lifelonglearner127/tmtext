@@ -174,6 +174,12 @@ class PageProcessor {
 			}
 		}
 
+		foreach($this->nokogiri->get('div.BodyXL div') as $item) {
+			foreach ($item['#text'] as $i) {
+				$description[] = trim($i);
+			}
+		}
+
 		$description = implode(' ', $description);
 
 		foreach($this->nokogiri->get('h1.productTitle') as $item) {
