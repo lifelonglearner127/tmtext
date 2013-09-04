@@ -187,18 +187,9 @@ $(function () {
         if (report.summary.short_wc_total_not_0 > 0 && report.summary.long_wc_total_not_0 > 0) {
             $('#assess_report_items_have_product_short_descriptions_that_are_too_short').html(report.summary.items_short_products_content_short);
             $('#assess_report_items_have_product_long_descriptions_that_are_too_short').html(report.summary.items_long_products_content_short);
-            if ($('#research_assess_short_less_check').is(':checked')) {
-                $('#assess_report_items_have_product_short_descriptions_that_are_less_than_value').html(report.summary.short_description_wc_lower_range);
-                $('#assess_report_items_2_descriptions_pnl_s').show();
-            } else {
-                $('#assess_report_items_2_descriptions_pnl_s').hide();
-            }
-            if ($('#research_assess_long_less_check').is(':checked')) {
-                $('#assess_report_items_have_product_long_descriptions_that_are_less_than_value').html(report.summary.long_description_wc_lower_range);
-                $('#assess_report_items_2_descriptions_pnl_l').show();
-            } else {
-                $('#assess_report_items_2_descriptions_pnl_l').hide();
-            }
+
+            $('#assess_report_items_have_product_short_descriptions_that_are_less_than_value').html(report.summary.short_description_wc_lower_range);
+            $('#assess_report_items_have_product_long_descriptions_that_are_less_than_value').html(report.summary.long_description_wc_lower_range);
 
             $('#assess_report_items_1_descriptions_pnl').hide();
             $('#assess_report_items_2_descriptions_pnl').show();
@@ -236,8 +227,6 @@ $(function () {
             } else if ($('#research_assess_short_less_check').is(':checked')){
                 $('#assess_report_items_have_product_descriptions_that_are_less_than_value').html(report.summary.long_description_wc_lower_range);
                 $('#assess_report_items_2_descriptions_pnl_s').show();
-            } else {
-                $('#assess_report_items_2_descriptions_pnl_s').hide();
             }
         }
 
@@ -892,9 +881,8 @@ $(function () {
         }
 
         if ($('#research_assess_short_check').is(':checked')) {
-            if ($('#research_assess_short_less_check').is(':checked')) {
-                assessRequestParams.short_less = $('#research_assess_short_less').val();
-            }
+            assessRequestParams.short_less_check = $('#research_assess_short_less_check').is(':checked');
+            assessRequestParams.short_less = $('#research_assess_short_less').val();
             if ($('#research_assess_short_more_check').is(':checked')) {
                 assessRequestParams.short_more = $('#research_assess_short_more').val();
             }
@@ -908,9 +896,8 @@ $(function () {
         }
 
         if ($('#research_assess_long_check').is(':checked')) {
-            if ($('#research_assess_long_less_check').is(':checked')) {
-                assessRequestParams.long_less = $('#research_assess_long_less').val();
-            }
+            assessRequestParams.long_less_check = $('#research_assess_long_less_check').is(':checked');
+            assessRequestParams.long_less = $('#research_assess_long_less').val();
             if ($('#research_assess_long_more_check').is(':checked')) {
                 assessRequestParams.long_more = $('#research_assess_long_more').val();
             }

@@ -292,6 +292,7 @@ class Research extends MY_Controller {
             $build_assess_params->date_from = $this->input->get('date_from') == 'undefined' ? '' : $this->input->get('date_from');
             $build_assess_params->date_to = $this->input->get('date_to') == 'undefined' ? '' : $this->input->get('date_to');
             $build_assess_params->price_diff = $this->input->get('price_diff') == 'undefined' ? -1 :$this->input->get('price_diff');
+            $build_assess_params->short_less_check = $this->input->get('short_less_check') == 'true' ? true : false;
             if ($this->input->get('short_less')) {
                 $build_assess_params->short_less = $this->input->get('short_less') == 'undefined' ? -1 : intval($this->input->get('short_less'));
             } else {
@@ -304,6 +305,7 @@ class Research extends MY_Controller {
             }
             $build_assess_params->short_seo_phrases = $this->input->get('short_seo_phrases');
             $build_assess_params->short_duplicate_content = $this->input->get('short_duplicate_content');
+            $build_assess_params->long_less_check = $this->input->get('long_less_check') == 'true' ? true : false;
             if ($this->input->get('long_less')) {
                 $build_assess_params->long_less = $this->input->get('long_less') == 'undefined' ? -1 : intval($this->input->get('long_less'));
             } else {
