@@ -187,15 +187,17 @@ function loadCurrentList(url) {
 				// console.log(node.snap_date);
 				// var test_date = new Date(2013, 08, 26, 23, 46, 55);
 				// console.log("TEST : ", test_date.getHours());
-				var hours = new Date(node.snap_date).getHours();
-				var minutes = new Date(node.snap_date).getMinutes();
-				var seconds = new Date(node.snap_date).getSeconds();
-				var hours_min_sec = node.snap_date.substring(11, node.snap_date.length) ; // === cause for some reasons normal way don't work any more !
-				$(".btn-snap-done").tooltip({
-					placement: 'left',
-					// title: moment(node.snap_date).format('MMMM Do, YYYY') + ", " + hours + ":" + minutes + ":" + seconds
-					title: moment(node.snap_date).format('MMMM Do, YYYY') + ", " + hours_min_sec
-				});
+				if(typeof(node.snap_date) !== 'undefined') {
+					var hours = new Date(node.snap_date).getHours();
+					var minutes = new Date(node.snap_date).getMinutes();
+					var seconds = new Date(node.snap_date).getSeconds();
+					var hours_min_sec = node.snap_date.substring(11, node.snap_date.length) ; // === cause for some reasons normal way don't work any more !
+					$(".btn-snap-done").tooltip({
+						placement: 'left',
+						// title: moment(node.snap_date).format('MMMM Do, YYYY') + ", " + hours + ":" + minutes + ":" + seconds
+						title: moment(node.snap_date).format('MMMM Do, YYYY') + ", " + hours_min_sec
+					});
+				}
 			}
 
 		});
