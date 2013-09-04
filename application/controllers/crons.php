@@ -796,7 +796,8 @@ class Crons extends MY_Controller {
 //                          echo "price_diff - $time seconds\n";
                             // WC Short
 
-
+                              }
+                    }
                             $time_start = microtime(true);
 
                             try {
@@ -814,8 +815,7 @@ class Crons extends MY_Controller {
                             $time = $time_end - $time_start;
 
                             echo '.';
-                        }
-                    }
+                      
                 }
                 $q = $this->db->select('key,description')->from('settings')->where('key', 'cron_job_offset');
                 $res = $q->get()->row_array();
