@@ -1677,8 +1677,14 @@ public function gridview() {
 
         // -------- COMPARING V1 (END)
 
-        $this->load->view('measure/gridview', $data);
-
+        $var = explode('?', $this->input->post('current_url') );
+		$page = preg_replace('/.*\/([^\/])/','$1',$var[0]);
+		unset($var);
+		
+		if( $page == 'measure_products_test' )
+			$this->load->view('measure/gridview_test', $data);
+		else
+			$this->load->view('measure/gridview', $data);
     }
     
     //Denis gridview_test page ------------------
