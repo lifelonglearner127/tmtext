@@ -125,12 +125,12 @@ $(function () {
             "sInfoFiltered": ""
         },
         "aoColumns": [
-            {"sTitle" : "Date", "sName":"created", "sWidth": "5%"},
+            {"sTitle" : "Date", "sName":"created", "sWidth": "7%"},
             {"sTitle" : "Product Name", "sName":"product_name", "sWidth": "25%"},
             {"sTitle" : "URL", "sName":"url", "sWidth": "30%"},
-            {"sTitle" : "Word Count (S)", "sName":"short_description_wc", "sWidth": "5%"},
+            {"sTitle" : "Word Count (S)", "sName":"short_description_wc", "sWidth": "4%"},
             {"sTitle" : "SEO Phrases (S)", "sName":"short_seo_phrases", "sWidth": "10%"},
-            {"sTitle" : "Word Count (L)", "sName":"long_description_wc", "sWidth": "5%"},
+            {"sTitle" : "Word Count (L)", "sName":"long_description_wc", "sWidth": "4%"},
             {"sTitle" : "SEO Phrases (L)", "sName":"long_seo_phrases", "sWidth": "10%"},
             {"sTitle" : "Duplicate Content", "sName":"duplicate_content", "sWidth": "5%"},
             {"sTitle" : "Price", "sName":"price_diff", "sWidth": "10%"},
