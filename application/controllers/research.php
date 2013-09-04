@@ -723,7 +723,7 @@ class Research extends MY_Controller {
                         if ($data_row->lower_price_exist == true && !empty($data_row->competitors_prices)) {
                             if (min($data_row->competitors_prices) < $data_row->own_price) {
                                 $min_price_diff = $data_row->own_price - min($data_row->competitors_prices);
-                                $recommendations[] = '<li>Lower price by '.$min_price_diff.' to be competitive</li>';
+                                $recommendations[] = '<li>Lower price by $'.$min_price_diff.' to be competitive</li>';
                             }
                         }
 
@@ -735,7 +735,7 @@ class Research extends MY_Controller {
                         $file = realpath(BASEPATH . "../webroot/webshoots").'/'.$data_row->snap;
                         if (file_exists($file)){
                             if (filesize($file) > 1024){
-                                $row_url = $row_url.'<tr style="height:1px;"><td style="text-align:right;"><i class="snap_ico icon-picture" snap="'.$data_row->snap.'"></i></tr></td>';
+                                $row_url = $row_url.'<tr style="height:1px;"><td style="text-align:right; padding: 0px;"><i class="snap_ico icon-picture" snap="'.$data_row->snap.'"></i></tr></td>';
                             }
                         }
                     }

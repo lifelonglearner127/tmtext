@@ -481,7 +481,7 @@ ul.ui-sortable {
 .assess_comparisons .key_row_name{
     font-weight: bold;
 }
-.block_data_table table td.column_url{
+.block_data_table table#tblAssess td.column_url{
     padding: 0px;
 }
 .block_data_table table td.column_url table{
