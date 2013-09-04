@@ -7,7 +7,7 @@
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_pricing'); ?>">Pricing</a></li>
     </ul>
     <div class="tab-content">
-
+   
         <div class="row-fluid home_pages">
             <div class='span12 head_section'>
 
@@ -56,46 +56,53 @@
                                     <ul class="dropdown-menu" >
                                     </ul>
                                 </div>
+					<!-- Compare with Begin-->
 					
 					
-                   <!-- <div class="span2 w_100 ml_disable">
-                        <select id='year_s' class='year_s' onchange="changeHomePageYersHandler()">
-                            // <?php for($i = 1980; $i <= 2013; $i++) { ?>
-                                // <?php $selected = ""; if($i == 2013) $selected = 'selected'; ?>
-                                // <option <?php echo $selected; ?> value="<?php echo $i; ?>"><?php echo $i; ?></option>
-                            // <?php } ?>
-                        </select>
+					<div id="departmentDropdownSec" style="float:right";  class="btn-group">
+                                    <button class="btn btn-danger btn_caret_sign_sec1" >Choose Department</button>
+                                    <button class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
+                                        <span class="caret"></span>
+                                    </button>
+                                    <ul class="dropdown-menu" >
+                                    </ul>
+                                </div>
+					
+					
+					 <div  style="float:right;padding-right:3%;">
+                        <style type="text/css">
+                            .tab-content{
+                                min-height:400px;
+                            }
+                            .temp_li{
+                                display: inline;
+                                font-size: 18px;
+                            }
+                        </style>
+						
+                        <?php
+                        if($this->ion_auth->is_admin($this->ion_auth->get_user_id())){
+                            if(count($customers_list) > 0) { ?>
+                                <div id="hp_boot_drop_sec"  class="btn-group <?php echo $dropup; ?> hp_boot_drop_sec  mr_10">
+                                    <button class="btn btn-danger btn_caret_sign_sec" >Choose Site</button>
+                                    <button class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
+                                        <span class="caret"></span>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <?php foreach($customers_list as $val) { ?>
+                                            <li><a data-item="<?php echo $val['id']; ?>" data-value="<?php echo $val['name_val']; ?>" href="javascript:void(0)"><?php echo $val['name']; ?></a></li>
+                                        <?php } ?>
+                                    </ul>
+                                </div>
+                            <?php }
+                        }
+                        ?>
                     </div>
-                     
-                    <!--div class="span1 ml_disable">week:</div>
-                    <div class='span6 ml_disable'>
-                        <div class="pagination">
-                            <ul>
-                                <li class="page_prev disabled"><a onclick="prevLocaHomePageWeekData()" href="javascript:void(0)">&laquo;</a></li>
-								<li data-week='1' class="page active"><a href="javascript:void(0)" onclick="locaHomePageWeekData('1')">1</a></li>
-								<li data-week='2' class='page'><a href="javascript:void(0)" onclick="locaHomePageWeekData('2')">2</a></li>
-								<li data-week='3' class='page'><a href="javascript:void(0)" onclick="locaHomePageWeekData('3')">3</a></li>
-								<li data-week='4' class='page'><a href="javascript:void(0)" onclick="locaHomePageWeekData('4')">4</a></li>
-								<li data-week='5' class='page'><a href="javascript:void(0)" onclick="locaHomePageWeekData('5')">5</a></li>
-								<li class='page_next'><a onclick="nextLocaHomePageWeekData()" href="javascript:void(0)">&raquo;</a></li>
-							</ul>
-						</div>
-					</div-->
+					<span style="float: right;font-weight: bold;">Compare with: </span>
+					
+					
+					 <!--Compare with END -->
                 </div>
-            </div>
-            <div style='margin-left: 0px;' class='span12 mt_10'>
-                <span class='inline_block lh_30 mr_10 span2'>Department:</span>
-                <?php  echo form_dropdown('department', $departmens_list, array(3), 'class="inline_block lh_30 w_375 mb_reset"'); ?>
-                <!-- <input type="text" id="department" name="department" value="" class="inline_block lh_30 w_375 mb_reset" placeholder=""/>-->
-                <button id="department_next" type="button" class="btn ml_10" >Next</button>
-                <button id="department_go" type="button" class="btn ml_10" >Go</button>
-            </div>
-
-            <div style='margin-left: 0px;' class='span12 mt_10'>
-                <span class='inline_block lh_30 mr_10 span2'>Category:</span>
-                <?php  echo form_dropdown('category', $category_list, array(15), 'class="inline_block lh_30 w_375 mb_reset"'); ?>
-                <button id="category_next" type="button" class="btn ml_10" >Next</button>
-                <button id="category_go" type="button" class="btn ml_10" >Go</button>
             </div>
             <div class="clear"></div>
         </div>
@@ -104,21 +111,37 @@
                     <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/smoothness/jquery-ui-1.8.2.custom.css" />
                     <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/styles.css" />
                     <div class="table_results">
-                        <div id="tabs" class="mt_10">
+                        <div id="tabs"  class="mt_10" style="overflow: hidden;" >
 
-                            <div id="read">
-                                <table id="records">
+                            <div id="dataTableDiv1" style="width: 48%;float: left;" >
+                                <table id="records" >
                                     <thead>
-                                    <tr>
-                                        <th>Rank</th>
-                                        <th>Product Name</th>
-                                        <th>URL</th>
-                                        <th><div class="draggable">Actions</div></th>
-                                    </tr>
+										<tr>
+											<th>Category()</th>
+											<th>Items</th>
+											<th>Category Description SEO</th>
+											<th>Words</th>
+										</tr>
                                     </thead>
-                                    <tbody></tbody>
+                                    <tbody>
+									</tbody>
                                 </table>
+								
                             </div>
+							<div id="dataTableDiv2" style="width: 48%;float: left;margin-left: 35px;" >
+								<table id="recordSec"  >
+                                    <thead>
+										<tr>
+											<th>Category()</th>
+											<th>Items</th>
+											<th>Category Description SEO</th>
+											<th>Words</th>
+										</tr>
+                                    </thead>
+                                    <tbody>
+									</tbody>
+                                </table>
+							</div>
 
                         </div> <!-- end tabs -->
 
@@ -146,265 +169,6 @@
                     </div>
             <!-- End of table for results -->
             <div class="clear"></div>
-			<!--div id='hp_ajax_content' class='span12 body_section ml_disable mt_30'>
-				<div class='ph_placeholder' data-week='1'>
-					<?php
-					$items_count = 6;
-					$item_per_row = 3;
-					$items_rows = ceil($items_count/$item_per_row);
-					?>
-
-					<?php for($i = 1; $i <= $items_rows; $i++) { ?>
-						<div class='span12 items_row ml_disable'>
-							<?php
-							$position = $item_per_row*($i-1);
-							// $row_items = getRowItemsRowFromBackend($item_per_row, $position); // -- method template to get items from backend // designed in such way that row will not have more than 3 items
-							$row_items = array(rand(), rand(), rand()); // tmp for mockup
-							?>
-							<?php if($i == $items_rows) $dropup = 'dropup'; else $dropup = ''; ?>
-							<?php foreach($row_items as $k=>$v) { ?>
-								<div class='span4 item'>
-									<?php if(count($customers_list) > 0) { ?>
-										<div id="hp_boot_drop_<?php echo $v; ?>" class="btn-group <?php echo $dropup; ?> hp_boot_drop">
-											<button class="btn btn-danger btn_caret_sign">[ Choose site ]</button>
-											<button class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
-												<span class="caret"></span>
-											</button>
-											<ul class="dropdown-menu">
-												<?php foreach($customers_list as $val) { ?>
-													<li><a data-item="<?php echo $v; ?>" data-value="<?php echo $val['name_val']; ?>" href="javascript:void(0)"><?php echo $val['name']; ?></a></li>
-												<?php } ?>
-											</ul>
-										</div>
-									<?php } ?>
-									<div>
-										<div class='w_100' style='background: none repeat scroll 0 0 #333333; height: 150px; width: 150px;'>&nbsp;</div>
-										<div class='mt_10'>
-                                            <span class="btn mr_10">
-                                                <i class="icon-align-justify"></i>
-                                            </span>
-											Keywords: .... (5)
-										</div>
-                                        <div class='mt_10'>
-                                            <span class="btn mr_10">
-                                                <i class="icon-align-justify"></i>
-                                            </span>
-                                            Text: (... words) ...
-                                        </div>
-									</div>
-								</div>
-							<?php } ?>
-						</div>
-					<?php } ?>
-				</div>
-			</div-->
 		</div>
     </div>
 </div>
-
-
-
-<script type="text/javascript">
-	$(document).ready(function() {
-        $(".hp_boot_drop .dropdown-menu > li > a").bind('click', function(e) {
-			var new_caret = $.trim($(this).text());
-			var item_id = $(this).data('item');
-            $("#hp_boot_drop .btn_caret_sign").text(new_caret);
-            if(dataTable != undefined){
-                dataTable.fnDestroy();
-                dataTable = undefined;
-            }
-			/*****for select departament begin*****/
-            $.post(base_url + 'index.php/measure/getDepartmentsByCustomer', {'customer_name': new_caret}, function(data) {
-                $("select[name='department']").empty();
-                if(data.length > 0){
-                    $("select[name='department']").append("<option value=''>All</option>");
-                    var sel = '';
-                    for(var i=0; i<data.length; i++){
-                        if(i == 0){
-                            sel = "selected='selected'";
-                        }else{
-                            sel= '';
-                        }
-                        $("select[name='department']").append("<option value='"+data[i].id+"' "+sel+">"+data[i].text+"</option>");
-                    }
-                }
-            });
-			/*****for select departament end*****/
-			  $.post(base_url + 'index.php/measure/getDepartmentsByCustomer', {'customer_name': new_caret}, function(data) {
-                $("#departmentDropdown .dropdown-menu").empty();
-                if(data.length > 0){
-                    $("#departmentDropdown .dropdown-menu").append("<li><a data-item=\"\" data-value=\"All\" href=\"javascript:void(0);\">All</a></li>");
-                    for(var i=0; i<data.length; i++){
-                        if(i == 0){
-							$('#departmentDropdown .btn_caret_sign1').text(data[i].text);
-                        }
-						$("#departmentDropdown .dropdown-menu").append("<li><a data-item="+data[i].id+" data-value="+data[i].text+" href=\"javascript:void(0);\">"+data[i].text+"</a></li>");
-                        //$("select[name='department']").append("<option value='"+data[i].id+"' "+sel+">"+data[i].text+"</option>");
-                    }
-                } else {
-					$('#departmentDropdown .btn_caret_sign1').text('empty');
-				}
-            });
-            $.post(base_url + 'index.php/measure/getCategoriesByCustomer', {'customer_name': new_caret}, function(data) {
-                $("select[name='category']").empty();
-                if(data.length > 0){
-                    $("select[name='category']").append("<option value=''>All</option>");
-                    var sel = '';
-                    for(var i=0; i<data.length; i++){
-                        if(i == 0){
-                            sel = "selected='selected'";
-                        }else{
-                            sel= '';
-                        }
-                        $("select[name='category']").append("<option value='"+data[i].id+"' "+sel+">"+data[i].text+"</option>");
-                    }
-                }
-                readBestSellers();
-            });
-
-		});
-
-		$("#departmentDropdown .dropdown-menu > li > a").live('click', function(e) {
-			var departmentValue = $.trim($(this).text());
-            $("#departmentDropdown .btn_caret_sign1").text(departmentValue);
-            $.post(base_url + 'index.php/measure/getCategoriesByDepartment', {
-                'department_id': $(this).data('item'),
-                'site_name': $('.btn_caret_sign').text()
-            }, function(data) {
-				
-				console.log(data);
-                $("select[name='category']").empty();
-                if(data.length > 0){
-                    $("select[name='category']").append("<option value=''>All</option>");
-                    var sel = '';
-                    for(var i=0; i<data.length; i++){
-                        if(i == 0){
-                            sel = "selected='selected'";
-                        }else{
-                            sel= '';
-                        }
-                        $("select[name='category']").append("<option value='"+data[i].id+"' "+sel+">"+data[i].text+"</option>");
-                    }
-                }
-                if(dataTable != undefined){
-                    dataTable.fnDestroy();
-                    dataTable = undefined;
-                }
-                readBestSellers();
-            });
-        });
-		
-        $("select[name='department']").change(function(){
-            $.post(base_url + 'index.php/measure/getCategoriesByDepartment', {
-                'department_id': $("select[name='department']").find('option:selected').val(),
-                'site_name': $('.btn_caret_sign').text()
-            }, function(data) {
-				
-				console.log(data);
-                $("select[name='category']").empty();
-                if(data.length > 0){
-                    $("select[name='category']").append("<option value=''>All</option>");
-                    var sel = '';
-                    for(var i=0; i<data.length; i++){
-                        if(i == 0){
-                            sel = "selected='selected'";
-                        }else{
-                            sel= '';
-                        }
-                        $("select[name='category']").append("<option value='"+data[i].id+"' "+sel+">"+data[i].text+"</option>");
-                    }
-                }
-                if(dataTable != undefined){
-                    dataTable.fnDestroy();
-                    dataTable = undefined;
-                }
-                readBestSellers();
-            });
-        });
-		
-		
-		
-
-        $("select[name='category']").change(function(){
-            if(dataTable != undefined){
-                dataTable.fnDestroy();
-                dataTable = undefined;
-            }
-            readBestSellers();
-        });
-
-        $('button#department_go').click(function(e){
-            // use success flag
-            var success = false;
-            var department_url = '';
-            e.preventDefault();
-            $.post(base_url + 'index.php/measure/getUrlByDepartment', {
-                'department_id': $('select[name="department"]').find("option:selected").val()
-            }, function(departmentdata) {
-                if(data.length > 0){
-                    window.success = true;
-                    if(data[0].url!='' && data[0].url!=undefined){
-                        window.department_url = data[0].url;
-                    }
-                }
-            });
-            setTimeout(function(){
-                if (window.success == true) { // and read the flag here
-                    window.open(window.department_url);
-                }
-            }, 100);
-
-
-        });
-
-        $('button#category_go').click(function(e){
-            // use success flag
-            var success = false;
-            var category_url = '';
-            e.preventDefault();
-            $.post(base_url + 'index.php/measure/getUrlByCategory', {
-                'category_id': $('select[name="category"]').find("option:selected").val()
-            }, function(data) {
-                if(data.length > 0){
-                    window.success = true;
-                    if(data[0].url!='' && data[0].url!=undefined){
-                        window.category_url = data[0].url;
-                    }
-                }
-            });
-            setTimeout(function(){
-                if (window.success == true) { // and read the flag here
-                    window.open(window.category_url);
-                }
-            }, 100);
-        });
-
-        $('button#department_next').click(function(){
-            var opt = $('select[name="department"]').find('option:selected');
-            $('select[name="department"]').removeAttr('selected');
-            $('select[name="department"]').find(opt).next().attr('selected', 'selected');
-            if(dataTable != undefined){
-                dataTable.fnDestroy();
-                dataTable = undefined;
-            }
-            readBestSellers();
-        });
-
-        $('button#category_next').click(function(){
-            var opt = $('select[name="category"]').find('option:selected');
-            $('select[name="category"]').removeAttr('selected');
-            $('select[name="category"]').find(opt).next().attr('selected', 'selected');
-            if(dataTable != undefined){
-                dataTable.fnDestroy();
-                dataTable = undefined;
-            }
-            readBestSellers();
-        });
-
-        $(document).on('click', 'table#records tbody tr', function(e){
-            e.preventDefault();
-            window.open($(this).find('td:nth-child(3)').text());
-        });
-	});
-</script>

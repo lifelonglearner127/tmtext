@@ -34,20 +34,20 @@ input[type=text] {
     font-size: .8em;
 }
 
-#records {
+#records,#recordSec {
     font-size: 1em;
     width: 100%;
 }
 
-#records .even {
+#records .even ,#recordSec .even {
     background: #EAEAEA;
 }
 
-#records tr:hover {
+#records tr:hover  ,#recordSec tr:hover{
     background: #CCCCCC;
 }
 
-#records td {
+#records td ,#recordSec td {
     padding: 6px;
     margin: 8px;
 }
@@ -184,15 +184,15 @@ input[type=text] {
     top: 4px;
 }
 
-#records th {
+#records th, #recordSec th {
     font-weight: bold;
 }
 
-#records .row_selected {
+#records .row_selected, #recordSec  .row_selected {
     background-color: #9FAFD1;
 }
 
-#records .reviewed {
+#records .reviewed, #recordSec .reviewed {
     background-color: #d0e9c6;
 }
 
