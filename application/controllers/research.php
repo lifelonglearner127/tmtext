@@ -297,7 +297,7 @@ class Research extends MY_Controller {
             if ($this->input->get('short_less')) {
                 $build_assess_params->short_less = $this->input->get('short_less') == 'undefined' ? -1 : intval($this->input->get('short_less'));
             } else {
-                $build_assess_params->short_less = 0;
+                $build_assess_params->short_less = 20;
             }
             $build_assess_params->short_more_check = $this->input->get('short_more_check') == 'true' ? true : false;
             if ($this->input->get('short_more')) {
@@ -313,7 +313,7 @@ class Research extends MY_Controller {
             if ($this->input->get('long_less')) {
                 $build_assess_params->long_less = $this->input->get('long_less') == 'undefined' ? -1 : intval($this->input->get('long_less'));
             } else {
-                $build_assess_params->long_less = 0;
+                $build_assess_params->long_less = 50;
             }
             $build_assess_params->long_more_check = $this->input->get('long_more_check') == 'true' ? true : false;
             if ($this->input->get('long_more')) {
@@ -710,13 +710,62 @@ class Research extends MY_Controller {
                         $recommendations_html = '<ul class="assess_recommendations"><li>'.$data_row->recommendations.'</li></ul>';
                     } else {
                         $recommendations = array();
-                        if ($data_row->short_description_wc <= $build_assess_params->short_less ||
+
+                        if($data_row->short_description_wc == 0 && $data_row->long_description_wc == 0){
+                            $recommendations[] = '<li>Add product descriptions</li>';
+                        }
+
+                        if($data_row->short_description_wc > 0 && $data_row->long_description_wc == 0){
+                            if($data_row->short_description_wc > 100){
+                                $sd_diff = 100 - $data_row->short_description_wc;
+                            } else {
+                                $sd_diff = $build_assess_params->short_less - $data_row->short_description_wc;
+                            }
+                            if($sd_diff > 0){
+                                $recommendations[] = '<li>Increase descriptions word count by '.$sd_diff.' words</li>';
+                            }
+
+                        }
+                        if($data_row->long_description_wc > 0 && $data_row->short_description_wc == 0){
+                            if($data_row->long_description_wc > 200){
+                                $ld_diff = 200 - $data_row->long_description_wc;
+                            } else {
+                                $ld_diff = $build_assess_params->long_less - $data_row->long_description_wc;
+                            }
+                            if($ld_diff > 0){
+                                $recommendations[] = '<li>Increase descriptions word count by '.$ld_diff.' words</li>';
+                            }
+                        }
+
+                        if($data_row->short_description_wc > 0 && $data_row->long_description_wc != 0){
+                            if($data_row->short_description_wc > 100){
+                                $sd_diff = 100 - $data_row->short_description_wc;
+                            } else {
+                                $sd_diff = $build_assess_params->short_less - $data_row->short_description_wc;
+                            }
+                            if($sd_diff > 0){
+                                $recommendations[] = '<li>Increase short descriptions word count by '.$sd_diff.' words</li>';
+                            }
+                        }
+                        if($data_row->long_description_wc > 0 && $data_row->short_description_wc != 0){
+                            if($data_row->long_description_wc > 200){
+                                $ld_diff = 200 - $data_row->long_description_wc;
+                            } else {
+                                $ld_diff = $build_assess_params->long_less - $data_row->long_description_wc;
+                            }
+                            if($ld_diff > 0){
+                                $recommendations[] = '<li>Increase long descriptions word count by '.$ld_diff.' words</li>';
+                            }
+                        }
+
+                        /*if ($data_row->short_description_wc <= $build_assess_params->short_less ||
                             $data_row->long_description_wc <= $build_assess_params->long_less) {
                             $sd_diff = $build_assess_params->short_less - $data_row->short_description_wc;
                             $ld_diff = $build_assess_params->long_less - $data_row->long_description_wc;
                             $increase_wc = max($sd_diff, $ld_diff);
                             $recommendations[] = '<li>Increase descriptions word count by'.$increase_wc.' words</li>';
-                        }
+                        }*/
+
                         if ($data_row->short_seo_phrases == 'None' && $data_row->long_seo_phrases == 'None') {
                             $recommendations[] = '<li>Keyword optimize product content</li>';
                         }
