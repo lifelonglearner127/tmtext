@@ -223,8 +223,6 @@ $(function () {
             }else if(report.summary.short_wc_total_not_0 == 0 && report.summary.long_wc_total_not_0 == 0){
                 $('#assess_report_items_1_descriptions_pnl').hide();
             }
-
-
         }
 
         if (report.summary.items_long_products_content_short == 0 && report.summary.items_short_products_content_short == 0) {
