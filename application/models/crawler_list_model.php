@@ -198,8 +198,7 @@ class Crawler_List_model extends CI_Model {
 
     function getByBatchLimit($limit, $start, $batch_id)
     {
-
-    	$this->db->select('cl.id, cl.imported_data_id, cl.url, cl.snap, c.name as name, cl.status, DATE(cl.updated) as updated')
+    	$this->db->select('cl.id, cl.imported_data_id, cl.url, cl.snap, cl.snap_date, c.name as name, cl.status, DATE(cl.updated) as updated')
     		->from($this->tables['crawler_list'].' as cl')
             ->join($this->tables['categories'].' as c', 'cl.category_id = c.id', 'left')
 			->join('research_data_to_crawler_list as rc', 'cl.id = rc.crawler_list_id' )
