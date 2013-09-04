@@ -147,7 +147,7 @@ if __name__ == "__main__":
   	results = []
   	for site in sites:
   		res_site = crawler.get_uploads(site["yt_username"], min_date=date1, max_date=date2)
-  		res_site["Brand"] = site["site"]
+  		#res_site["Brand"] = site["site"]
   		results.append(res_site)
 
   	Utils.output_all(results)
