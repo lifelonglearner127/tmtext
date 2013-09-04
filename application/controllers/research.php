@@ -710,9 +710,12 @@ class Research extends MY_Controller {
                         $recommendations_html = '<ul class="assess_recommendations"><li>'.$data_row->recommendations.'</li></ul>';
                     } else {
                         $recommendations = array();
-                        if (intval($data_row->short_description_wc) <= $build_assess_params->short_less ||
-                            intval($data_row->long_description_wc) <= $build_assess_params->long_less) {
-                            $recommendations[] = '<li>Increase descriptions word count</li>';
+                        if ($data_row->short_description_wc <= $build_assess_params->short_less ||
+                            $data_row->long_description_wc <= $build_assess_params->long_less) {
+                            $sd_diff = $build_assess_params->short_less - $data_row->short_description_wc;
+                            $ld_diff = $build_assess_params->long_less - $data_row->long_description_wc;
+                            $increase_wc = max($sd_diff, $ld_diff);
+                            $recommendations[] = '<li>Increase descriptions word count by'.$increase_wc.' words</li>';
                         }
                         if ($data_row->short_seo_phrases == 'None' && $data_row->long_seo_phrases == 'None') {
                             $recommendations[] = '<li>Keyword optimize product content</li>';
