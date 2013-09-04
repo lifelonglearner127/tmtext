@@ -167,7 +167,7 @@ $(function () {
         $('#tblAssess tbody tr').each(function() {
             var row_height = $(this).height();
             if (row_height > 5){
-                $(this).find('table.url_table').height(row_height);
+                $(this).find('table.url_table').height(row_height - 11);
             }
         });
     }
