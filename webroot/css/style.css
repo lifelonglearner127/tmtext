@@ -1920,7 +1920,7 @@ select#sites option{
 }
      
 
-span.highlight { font-weight:bold}
+span.highlight { background-color:yellow;}
 .cmp-btn{padding-right:5px;cursor:pointer;}
 
 .column_url{word-break: break-word;}

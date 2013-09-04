@@ -3,7 +3,7 @@
 //$selectedUrl = $_POST['selectedUrl'];
 //echo $selectedUrl;
 ?>
-<?php $i = 1;$bold = 0; ?>
+<?php $i = 1; $bold = 0;?>
 <?php
 //Max
 $min_price = 1000000000;
@@ -22,6 +22,8 @@ foreach ($same_pr as $ks => $vs) {
 <?php
 $row = 1;
 foreach ($same_pr as $ks => $vs) {
+    $marg = 0;
+    if(strlen($vs['product_name']) > 70){ $marg = 1;}
     $row = ceil($i / 3);
     foreach ($vs['three_last_prices'] as $key => $last_price) {
         if (count($vs['three_last_prices']) > 1) {
@@ -111,9 +113,9 @@ foreach ($same_pr as $ks => $vs) {
                         <p class='short_product_name ellipsis'><a target="_blank" href="<?php echo $vs['url']; ?>"><?php echo $vs['url']; ?></a></p>
                     </div>
                     <!--                            //Max-->
-                    <div class="p_name">
+                    <div class="p_name"  <?php if($marg == 0) echo "style='margin-bottom:25px;'";?>>
                         <span class='analysis_content_head'>Product Name:</span>
-                        <p style="min-height: 38px;" class='short_product_name'><?php echo $vs['product_name']; ?></p>
+                        <p style="min-height: 38px;float:none;" class='short_product_name'><?php echo $vs['product_name'];?></p>
                     </div>
                     <div class="p_price">
     <?php
@@ -133,7 +135,7 @@ foreach ($same_pr as $ks => $vs) {
                                             <?php if ($j != 0) { ?>
                                         <td>
                                             <!--    //Max-->
-                                            <p  class='short_product_name'> <span <?php 
+                                            <p  class='short_product_name'> <span <?php
                                                 if (sprintf("%01.2f", floatval($last_price->price)) == $min_price) {
                                                     if ($bold != 1) {
                                                         echo "style='font-weight: bold;'";
@@ -143,9 +145,9 @@ foreach ($same_pr as $ks => $vs) {
                                                 ?>class="product_price">$<?php echo sprintf("%01.2f", floatval($last_price->price)); ?></span></p>
                                             <!--    //Max                            -->
                                          </td>
-                                                <?php
-                                            } else {
-                                                ?>
+                                        <?php
+                                    } else {
+                                        ?>
                                         <td>
                                             <p  class='short_product_name'> <span <?php
                         if (sprintf("%01.2f", floatval($last_price->price)) > $min_price) {

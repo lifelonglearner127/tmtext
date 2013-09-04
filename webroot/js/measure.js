@@ -1080,7 +1080,7 @@ function fixSeoHeights() {
 
 function fixGridHeights() {
     fixSeoHeights();
-    var selectors = new Array('.p_url', '.p_name', '.p_price','.p_description');
+    var selectors = new Array('.p_url', '.p_price','.p_description');
     var wrapper = $('.wrapper');
     if (wrapper.length > 0) {
         $.each(wrapper, function(k, v) {

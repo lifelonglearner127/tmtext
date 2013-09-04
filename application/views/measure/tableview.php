@@ -88,18 +88,18 @@ foreach($customers as $val){
     $filename1_img =base_url().'img/'.$pri1->snap;
 
     if (file_exists($filename) || file_exists($filename1)) {
-        if(isset($pri->snap) || isset($pri1->snap)){
+        if( $pri->snap!= null ||  $pri1->snap!= null){
         ?>
     <tr>
-        <td class="table_subtitles">screenshot</td>
+        <td class="table_subtitles"></td>
         <td>
-           <?php if(file_exists($filename)&& isset($pri->snap)){?>
+           <?php if(file_exists($filename)&& $pri->snap!= null){?>
                <img src="<?php echo $filename_img ; ?>" style="width:250px;padding:30px;" title = 'screenshot'">
            <?php }?>
         </td>
         <?php if($count>1){?>
         <td>
-             <?php if(file_exists($filename1)&& isset($pri1->snap)){?>
+             <?php if(file_exists($filename1)&& $pri1->snap!= null){?>
                 <img src="<?php echo $filename1_img; ?>" style="width:250px;padding:30px;" title='screenshot'">
              <?php } ?>
          </td>
