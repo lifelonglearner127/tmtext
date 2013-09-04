@@ -762,7 +762,7 @@ class Crons extends MY_Controller {
 
                         echo '.';
                     }
-
+                }
                     $q = $this->db->select('key,description')->from('settings')->where('key', 'cron_job_offset');
                     $res = $q->get()->row_array();
                     $start = $res['description'];
@@ -773,7 +773,7 @@ class Crons extends MY_Controller {
 
                     $this->db->where('key', 'cron_job_offset');
                     $this->db->update('settings', $data);
-                }
+                
             }
         } catch (Exception $e) {
             echo 'Ошибка', $e->getMessage(), "\n";
