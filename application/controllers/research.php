@@ -714,20 +714,15 @@ class Research extends MY_Controller {
                             intval($data_row->long_description_wc) <= $build_assess_params->long_less) {
                             $recommendations[] = '<li>Increase descriptions word count</li>';
                         }
-                        /*if ($data_row->short_seo_phrases != 'None' || $data_row->long_seo_phrases != 'None') {
-                               $recommendations[] = '<li>SEO optimize product content</li>';
-                           }*/
                         if ($data_row->short_seo_phrases == 'None' && $data_row->long_seo_phrases == 'None') {
-                            $recommendations[] = '<li>SEO optimize product content</li>';
+                            $recommendations[] = '<li>Keyword optimize product content</li>';
                         }
-                        //$recommendations[] = '<li>Add unique content</li>';
                         if ($data_row->lower_price_exist == true && !empty($data_row->competitors_prices)) {
                             if (min($data_row->competitors_prices) < $data_row->own_price) {
                                 $min_price_diff = $data_row->own_price - min($data_row->competitors_prices);
                                 $recommendations[] = '<li>Lower price by '.$min_price_diff.' to be competitive</li>';
                             }
                         }
-                        //$recommendations[] = '<li>Add product to inventory</li>';
 
                         $recommendations_html = '<ul class="assess_recommendations">'.implode('', $recommendations).'</ul>';
                     }
