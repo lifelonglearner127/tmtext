@@ -32,14 +32,14 @@ class Utils:
 
 			#TODO: maybe work with name indexes (insted of number)
 			site["site"] = row[1]
-			print "site ", site["site"]
+			#print "site ", site["site"]
 			site["yt_username"] = row[3]
-			print 'username ', site['yt_username']
+			#print 'username ', site['yt_username']
 			sites.append(site)
 
 		csvfile.close()
 
-		print 'read all'
+		#print 'read all'
 
 		return sites
 
@@ -52,7 +52,7 @@ class Utils:
 		# siteswriter.writerow(["Date", "Brand", "Followers", "Following", "Tweets",\
 		#  "All_Tweets", "YT_Videos", "YT_All_Videos", "YT_Views", "YT_All_Views"])
 
-		ordered_fieldnames = OrderedDict([('field1',None),('field2',None)])
+		#ordered_fieldnames = OrderedDict([('field1',None),('field2',None)])
 
 
 
@@ -79,10 +79,10 @@ class CrawlUploads():
 				channels.append(search_result["id"]["channelId"])
 
 		if channels:
-			print 'found channel: ', channels[0], channel_username
+			#print 'found channel: ', channels[0], channel_username
 			return channels[0]
 		else:
-			print 'didn\'t find channel: ', channel_username
+			#print 'didn\'t find channel: ', channel_username
 			return []
 
 
@@ -96,7 +96,7 @@ class CrawlUploads():
 
 		for channel in channels_response["items"]:
 
-			print 'finding videos for ', channel
+			#print 'finding videos for ', channel
 			uploads_list_id = channel["contentDetails"]["relatedPlaylists"]["uploads"]
 
 			ret = {}
@@ -144,12 +144,12 @@ class CrawlUploads():
 						ret[title] = views
 						total_views += views
 
-						print title, lasttime
+						#print title, lasttime
 
 
 				next_page_token = playlistitems_response.get("tokenPagination", {}).get("nextPageToken")
 
-			print 'done for ', channel
+			#print 'done for ', channel
 
 			ret['YT_All_Videos'] = total_videos
 			ret['YT_All_Views'] = total_views
