@@ -145,7 +145,7 @@ class Brand extends MY_Controller {
         $this->output->set_content_type('application/json');
         $this->uploadhandler->upload(array(
             'script_url' => site_url('brand/csv_upload'),
-            'upload_dir' => $this->config->item('csv_upload_dir'),
+            'upload_dir' => 'webroot/uploads/',
             'param_name' => 'files',
             'delete_type' => 'POST',
             'accept_file_types' => '/.+\.(csv|txt)$/i',
