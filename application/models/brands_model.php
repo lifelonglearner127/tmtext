@@ -49,7 +49,7 @@ class Brands_model extends CI_Model {
         $this->name = $name;
         $this->company_id = $company_id;
         $this->brand_type = $brand_type;
-        $this->created = date('Y-m-d');
+        $this->created = date('Y-m-d h:i:s');
 
         $this->db->insert($this->tables['brands'], $this);
         return $this->db->insert_id();

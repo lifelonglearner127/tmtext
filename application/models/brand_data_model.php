@@ -9,6 +9,9 @@ class Brand_data_model extends CI_Model {
     var $following = 0;
     var $youtube_video_count = 0;
     var $youtube_view_count = 0;
+    var $total_tweets = 0;
+    var $total_youtube_videos = 0;
+    var $total_youtube_views = 0;
 
     var $tables = array(
         'brand_data' => 'brand_data',
@@ -36,7 +39,8 @@ class Brand_data_model extends CI_Model {
         return $query->result();
     }
     
-    function insert($brand_id, $date='', $tweet_count=0, $twitter_followers=0, $following=0, $youtube_video_count=0, $youtube_view_count=0)
+    function insert($brand_id, $date='', $tweet_count=0, $twitter_followers=0, $following=0, $youtube_video_count=0,
+                    $youtube_view_count=0, $total_tweets=0, $total_youtube_videos=0, $total_youtube_views)
     {
         $this->brand_id = $brand_id;
         $this->date = $date;
@@ -45,6 +49,9 @@ class Brand_data_model extends CI_Model {
         $this->following = $following;
         $this->youtube_video_count = $youtube_video_count;
         $this->youtube_view_count = $youtube_view_count;
+        $this->total_tweets = $total_tweets;
+        $this->total_youtube_videos = $total_youtube_videos;
+        $this->total_youtube_views = $total_youtube_views;
 
         $this->db->insert($this->tables['brand_data'], $this);
         return $this->db->insert_id();

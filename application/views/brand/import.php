@@ -29,25 +29,25 @@
                                     </div>
                                     <div class="clearfix"></div>
                                     <div class="span4" style="margin-left:0px;">
-                                        <h4>Upload Brand Data CSV:</h4>
+                                        <h4>Upload Brand List CSV:</h4>
                                     </div>
                                     <div class="span3">
                                         <span class="btn btn-success fileinput-button">
                                                 Upload
                                                 <i class="icon-plus icon-white"></i>
-                                                <input id="fileupload" type="file" name="fileupload">
+                                                <input id="fileupload" type="file" name="files[]">
                                         </span>
 
                                     </div>
                                     <div class="clearfix"></div>
                                     <div class="span4" style="margin-left:0px;">
-                                        <h4>Upload Social Data CSV:</h4>
+                                        <h4>Upload Brand Social Data CSV:</h4>
                                     </div>
                                     <div class="span3">
                                         <span class="btn btn-success fileinput-button">
                                                 Upload
                                                 <i class="icon-plus icon-white"></i>
-                                                <input id="fileupload_company" type="file" name="fileupload_company">
+                                                <input id="fileupload_company" type="file" name="files[]">
                                         </span>
                                     </div>
                                     <div class="clearfix margin-top-50"></div>
@@ -86,27 +86,13 @@
 <script type="text/javascript">
     $(function () {
         var url = '<?php echo site_url('brand/csv_upload');?>';
-        $('#fileupload, #fileupload_company').fileupload({
+        $('#fileupload').fileupload({
             url: url,
             dataType: 'json',
             done: function (e, data) {
-                
-                if(typeof data.result.fileupload_company != 'undefined') {
-                    $.each(data.result.fileupload_company, function (index, file) {
-                        if (file.error == undefined) {
-                                $('<p/>').text(file.name).appendTo('#files');
-                                $('#company_data_csv').val(file.name);
-                        }
-                    });
-                } else {
-                    $.each(data.result.fileupload, function (index, file) {
-                        if (file.error == undefined) {
-                                $('<p/>').text(file.name).appendTo('#files');
-                                $('#brand_data_csv').val(file.name);
-                        }
-                    });
-                }
-                
+                $('<p/>').text(data.files[0].name).appendTo('#files');
+                $('#brand_data_csv').val(data.files[0].name);
+                $('#brand_csv_import').trigger('click');
             },
             progressall: function (e, data) {
                 var progress = parseInt(data.loaded / data.total * 100, 10);
@@ -117,7 +103,23 @@
                 if (progress == 100) {}
             }
         });
-        
+        $('#fileupload_company').fileupload({
+            url: url,
+            dataType: 'json',
+            done: function (e, data) {
+                $('<p/>').text(data.files[0].name).appendTo('#files');
+                $('#company_data_csv').val(data.files[0].name);
+                $('#brand_csv_import').trigger('click');
+            },
+            progressall: function (e, data) {
+                var progress = parseInt(data.loaded / data.total * 100, 10);
+                $('#progress .bar').css(
+                    'width',
+                    progress + '%'
+                );
+                if (progress == 100) {}
+            }
+        });
         $('#brand_csv_import').click(function() {
             if($('#brand_data_csv').val() == '' && $('#company_data_csv').val() == '') {
                 return false;
