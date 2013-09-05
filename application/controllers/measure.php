@@ -1502,6 +1502,26 @@ public function gridview() {
 
             }
 
+            $selectedUrl = $this->input->post('selectedUrl');
+            foreach ($same_pr as $ks => $vs) {
+                if ($this->get_base_url($vs['url']) == $this->get_base_url($selectedUrl)) {
+                    if ($ks != 0) {
+                        $same_pr[] = $same_pr[0];
+                        $same_pr[0] = $vs;
+                        unset($same_pr[$ks]);
+                    }
+                }
+            }
+            
+            
+           if($show_from!='null'){
+               
+                foreach ($same_pr as $ks => $vs) {
+                if (!in_array($vs['customer'],$show_from)) {
+                        unset($same_pr[$ks]);
+                    }
+                }
+            }
 
 
             //     Max
@@ -1599,7 +1619,7 @@ public function gridview() {
             }
             //   Max
 //Max
-            $selectedUrl = $this->input->post('selectedUrl');
+            
             foreach ($same_pr as $ks => $vs) {
                 if(!empty($vs['seo']['short'])){
                 foreach($vs['seo']['short'] as $key => $val){
@@ -1622,25 +1642,7 @@ public function gridview() {
                 }
                 }
             }
-             foreach ($same_pr as $ks => $vs) {
-                if ($this->get_base_url($vs['url']) == $this->get_base_url($selectedUrl)) {
-                    if ($ks != 0) {
-                        $same_pr[] = $same_pr[0];
-                        $same_pr[0] = $vs;
-                        unset($same_pr[$ks]);
-                    }
-                }
-            }
-            
-            
-            if($show_from!='null'){
-               
-                foreach ($same_pr as $ks => $vs) {
-                if (!in_array($vs['customer'],$show_from)) {
-                        unset($same_pr[$ks]);
-                    }
-                }
-            }
+             
             
             foreach ($same_pr as $ks => $vs) {
             
