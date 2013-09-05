@@ -82,10 +82,10 @@ foreach($customers as $val){
     <?php 
     $pri= $same_pr[$ind0]['snap'][0];
     $pri1= $same_pr[$ind1]['snap'][0];
-    $filename = './webroot/img/'.$pri->snap;
-    $filename1 ='./webroot/img/'.$pri1->snap;
-    $filename_img =  base_url().'img/'.$pri->snap;
-    $filename1_img =base_url().'img/'.$pri1->snap;
+    $filename = './webroot/webshoots/'.$pri->snap;
+    $filename1 ='./webroot/webshoots/'.$pri1->snap;
+    $filename_img =  base_url().'webshoots/'.$pri->snap;
+    $filename1_img =base_url().'webshoots/'.$pri1->snap;
 
     if (file_exists($filename) || file_exists($filename1)) {
         if( $pri->snap!= null ||  $pri1->snap!= null){
