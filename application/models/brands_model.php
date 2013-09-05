@@ -99,7 +99,9 @@ class Brands_model extends CI_Model {
             }
         }
                  
-        $columns = 'SQL_CALC_FOUND_ROWS b.*, b.name, bds.IR500Rank, SUM(bd.tweet_count) AS tweets, SUM(bd.twitter_followers) AS followers, SUM(bd.following) AS following, ';
+        $columns = 'SQL_CALC_FOUND_ROWS b.*, 
+        (0.25 * SUM(bd.tweet_count) + 0.25 * SUM(bd.twitter_followers) + 0.25 * SUM(bd.youtube_video_count) + 0.25 * SUM(bd.youtube_view_count)) as social_rank,
+        b.name, bds.IR500Rank, SUM(bd.tweet_count) AS tweets, SUM(bd.twitter_followers) AS followers, SUM(bd.following) AS following, ';
         $columns .= 'SUM(bd.youtube_video_count) AS videos, SUM(bd.youtube_view_count) AS views, ';
         $columns .= 'bds.total_tweets, bds.total_youtube_videos, bds.total_youtube_views ';
         $this->db->select($columns, FALSE)
@@ -116,9 +118,9 @@ class Brands_model extends CI_Model {
         if(!empty($search)) {
             $this->db->where('b.name like ' . $this->db->escape('%' . $search . '%'));
         }
-        if(!empty($order_column_name)) {
-            //$this->db->order_by($order_column_name, $sort_direction_n);
-        }
+        
+        //if(!empty($order_column_name)) {}
+        $this->db->order_by('social_rank', 'desc');
         
         // set query limit
         $display_start = intval($this->input->get('iDisplayStart', TRUE));

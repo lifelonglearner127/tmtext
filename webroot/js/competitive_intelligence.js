@@ -133,7 +133,7 @@ function readGridDataBrandRanking() {
         ]
 
     });
-//    dataTable.fnSort([[0, 'desc']]);
+    //dataTable.fnSort([[1, 'desc']]);
     
     dataTable.fnFilter( $("#brand_types").val()+','+$("#month").val()+','+$("#year").val(), 1 );
 //    dataTable.fnFilter( $("#month").val(), 2 );

@@ -1,3 +1,7 @@
+# 09/05 Tatiana
+ALTER TABLE `brand_data_summary` ADD `IR500Rank` VARCHAR( 255 ) NOT NULL AFTER `total_youtube_views`;
+ALTER TABLE `brand_types` DROP `IR500Rank`;
+
 # 09/03 Viktor
 ALTER TABLE  `site_categories` ADD  `description_words` INT( 11 ) NOT NULL ,
 ADD  `title_seo_keywords` VARCHAR( 255 ) NOT NULL ,

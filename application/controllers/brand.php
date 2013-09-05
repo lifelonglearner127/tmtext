@@ -101,17 +101,16 @@ class Brand extends MY_Controller {
             "iTotalRecords" => $total_rows,
             "iTotalDisplayRecords" => $total_rows,
             "iDisplayLength" => $brand_list['display_length'],
-            "aaData" => array(),
-            "iSortingCols" => 0
+            "aaData" => array()
         );
 
         if (!empty($brand_list['result'])) {
             foreach ($brand_list['result'] as $brand_list) {
-                $social_rank = 0.25 * $brand_list->tweets + 0.25 * $brand_list->followers + 0.25 * $brand_list->videos + 0.25 * $brand_list->views;
+                //$social_rank = 0.25 * $brand_list->tweets + 0.25 * $brand_list->followers + 0.25 * $brand_list->videos + 0.25 * $brand_list->views;
 //                $parsed_attributes = unserialize($price->parsed_attributes);
 //                $model = (!empty($parsed_attributes['model']) ? $parsed_attributes['model'] : $parsed_attributes['UPC/EAN/ISBN']);
                 $output['aaData'][] = array(
-                    number_format($social_rank),
+                    number_format($brand_list->social_rank),
                     number_format($brand_list->IR500Rank),
                     $brand_list->name,
                     $brand_list->tweets,
