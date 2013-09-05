@@ -566,8 +566,10 @@ class Research extends MY_Controller {
 //            if ($items_short_products_content_short > 0 || $items_long_products_content_short > 0) {
 //                $recomend = true;
 //            }
-            if (intval($result_row->short_description_wc) <= $build_assess_params->short_less ||
-                intval($result_row->long_description_wc) <= $build_assess_params->long_less) {
+            if (($result_row->short_description_wc <= $build_assess_params->short_less ||
+                $result_row->long_description_wc <= $build_assess_params->long_less)
+                && ($build_assess_params->long_less_check || $build_assess_params->long_more_check)
+            ){
                 $recomend = true;
             }
             if ($result_row->short_seo_phrases == 'None' && $result_row->long_seo_phrases == 'None') {
