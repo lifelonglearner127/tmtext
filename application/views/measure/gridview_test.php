@@ -24,6 +24,19 @@ foreach ($same_pr as $ks => $vs) {
 }
 ?>
 <?php
+
+function fsort(&$ar, $field_name){
+	$func_code = "
+		if (\$a['$field_name'] == \$b['$field_name']) {
+			return 0;
+		}
+		return (\$a['$field_name'] > \$b['$field_name']) ? -1 : 1;
+	";
+	$sort_func = create_function ('$a,$b' , $func_code );
+	usort($ar, $sort_func);
+	return $ar;
+}
+
 $row=1;
 foreach ($same_pr as $ks => $vs) {
     $row=ceil($i/3);
@@ -106,7 +119,7 @@ foreach ($same_pr as $ks => $vs) {
                 <div class="p_name">
                     <!--<span class='analysis_content_head'>Product Name:</span>-->
                     <img class="assess_image product_image" src="<?php echo base_url() ?>/img/assess_grid/product.png">
-                    <p style="min-height: 38px;" class='short_product_name'><?php echo $vs['product_name']; ?></p>
+                    <p style="min-height: 38px;" class='short_product_name name_bold'><?php echo $vs['product_name']; ?></p>
                 </div>
 			<div class="p_url">
                     <?php if ($ks > 0 && $mismatch_button==true) { ?>
@@ -129,7 +142,6 @@ foreach ($same_pr as $ks => $vs) {
                                     <p class='short_product_name short_product_date'>
 										<img class="assess_image product_image" src="<?php echo base_url() ?>/img/assess_grid/cost_price_tag2.png">
 										<?php //if($last_price->created!=''){echo date("m/d/Y", strtotime($last_price->created)).' - ';} ?>
-										<?php if($last_price->created!=''){echo "<span>" . date("m/d/Y", strtotime($last_price->created)).' - ' . "</span>";} ?>
 										<?php if ($j != 0) { ?>
 												<span <?php
 													if (sprintf("%01.2f", floatval($last_price->price)) == $min_price) {
@@ -147,6 +159,7 @@ foreach ($same_pr as $ks => $vs) {
 											<?php
 										}
 										?>
+										<?php if($last_price->created!=''){echo "<span> - " . date("m/d/Y", strtotime($last_price->created)). "</span>";} ?>
 									</p>
                                 </td>
                                 <?php /* if ($j != 0) { ?>
@@ -215,15 +228,15 @@ foreach ($same_pr as $ks => $vs) {
 					</p>-->
 					<table id="analysis">
 						<tr>
-							<td style="width: 190px;">
-								<span class="short_product_name" style="float: none;">Analysis:</span>
+							<td style="width: 194px;">
+								<span class="short_product_name name_bold" style="float: none;">Analysis:</span>
 								<select name="analysis">
 									<option selected="selected">Product</option>
 									<option>Page</option>
 								</select>
 							</td>
 							<td>
-								<span class="short">Short</span>
+								<span class="short" style="margin-right: 6px;">Short</span>
 								<span class="short">Long</span>
 							</td>
 						</tr>
@@ -250,45 +263,71 @@ foreach ($same_pr as $ks => $vs) {
 					</table>
 				</div>
 				<div style="margin-top: 8px;">
-					<span class="short_product_name keywords">% Keywords from:</span>
+					<span class="short_product_name keywords keywords_lable">% Keywords from:</span>
 					<select class="keywords_select" name="analysis">
-						<option selected="selected">Title</option>
-						<option>You</option>
+						<option selected="selected" value="title">Title</option>
+						<option value="you">You</option>
 					</select>
 					<img class="assess_image product_image keywords_img" src="<?php echo base_url() ?>/img/assess_grid/highlighter.png">
 					<div class="clear"></div>
 				</div>
 				<div class="primary">
-					<div>
-						<span class="primary_name">Primary </span><span class="primary_speed">
-							[
-							<?php
-							if (count($vs['seo']['short']) > 0) {
-								foreach ($vs['seo']['short'] as $key => $value) {
-									$v_ph = $value['ph'];?>
-									<span style="white-space: normal;line-height: 20px;text-decoration: none;font-size: 14px !important;line-height: 21px;text-decoration: none;white-space: normal;"data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'short')" class='word_wrap_li_pr hover_en'>
-										<?php echo $value['ph']; ?> <?php //echo $value['prc'] . '%'; ?>
+					<!--<div>-->
+						<?php
+						//echo count($vs['seo']['short']);
+						if( count($vs['seo']['short']) > 0 ){
+							/*foreach ($vs['seo']['short'] as $key => $value) {
+								$v_ph = $value['ph'];
+								?>
+								<span style="white-space: normal;line-height: 20px;text-decoration: none;font-size: 14px !important;line-height: 21px;text-decoration: none;white-space: normal;"data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'short')" class='word_wrap_li_pr hover_en'>
+									<?php echo $value['ph']; ?> <?php echo $value['prc'] . '%'; ?>
+								</span>
+								<?php
+							}*/
+							//echo"<pre>"; print_r( $vs['seo']['short'] ); echo"</pre>";
+							fsort( $vs['seo']['short'], 'prc' );
+							$i = 0;
+							foreach ($vs['seo']['short'] as $key => $value) {
+								$v_ph = $value['ph'];
+								if( $i == 3 ) break;
+								if( $i == '0' ) echo '<div class="keywords_lines"><span class="primary_name">Primary: </span>';
+								if( $i == '1' ) echo '<div class="keywords_lines"><span class="primary_name">Secondary: </span>';
+								if( $i == '2' ) echo '<div class="keywords_lines"><span class="primary_name">Tertiary: </span>';
+								?>
+								<span style="float: left; width: 143px;">
+									<span class='primary_speed'>
+										[ <span class="title_words"><?php echo $value['ph']; ?></span><span class="you_words you_words_input"><input class="keyword_input" name="keyword<?=$i?>" type="text" value="" /></span> ]
 									</span>
-									<?php
-								}
+									<img class="assess_image primary_image keywords_img" src="<?php echo base_url() ?>/img/assess_grid/check_circle_green.png" />
+								</span>
+								<span><?php echo round($value['prc'], 1) . '%'; ?></span>
+								</div>
+								<div class="clear"></div>
+								<?php
+								$i++;
 							}
-							?>
-							]
-						</span><img class="assess_image primary_image keywords_img" src="<?php echo base_url() ?>/img/assess_grid/check_circle_green.png" /><span></span>
+							echo '<div class="save_keywords"><a class="save_keywords_a" href="javascript:void(0)">Save</a></div>';
+						}else{
+							echo 'None';
+						}
+						//echo"<pre>"; print_r( $vs['seo']['short'] ); echo"</pre>";
+						//echo"<pre>"; print_r( $vs['seo']['long'] ); echo"</pre>";
+						?>
+					<!--	</span><img class="assess_image primary_image keywords_img" src="<?php echo base_url() ?>/img/assess_grid/check_circle_green.png" /><span></span>
 					</div>
 					<div class="clear"></div>
 					<div>
-						<span class="primary_name">Secondary </span><span class="primary_speed">[10 Speed Blender] </span><img class="assess_image primary_image keywords_img" src="<?php echo base_url() ?>/img/assess_grid/check_circle_green.png" /><span></span>
+						<span class="primary_name">Secondary: </span><span class="primary_speed">[10 Speed Blender] </span><img class="assess_image primary_image keywords_img" src="<?php echo base_url() ?>/img/assess_grid/check_circle_green.png" /><span></span>
 					</div>
 					<div class="clear"></div>
 					<div>
-						<span class="primary_name">Tertiary </span><span class="primary_speed">[10 Speed Blender] </span><img class="assess_image primary_image keywords_img" src="<?php echo base_url() ?>/img/assess_grid/check_circle_green.png" /><span></span>
+						<span class="primary_name">Tertiary: </span><span class="primary_speed">[10 Speed Blender] </span><img class="assess_image primary_image keywords_img" src="<?php echo base_url() ?>/img/assess_grid/check_circle_green.png" /><span></span>
 					</div>
-					<div class="clear"></div>
+					<div class="clear"></div>-->
 				</div>
 				
 				<div class="description">
-					<span class="short_product_name keywords">Description:</span>
+					<span class="short_product_name keywords name_bold description_label">Description:</span>
 					<select class="description_select" name="description">
 						<option <?php if($s_product_short_desc_count > 0) echo 'selected="selected"'?> value="short_desc_show" >Short</option>
 						<option <?php if($s_product_long_desc_count > 0 && $s_product_short_desc_count == 0) echo 'selected="selected"';?> value="long_desc_show">Long</option>
@@ -464,7 +503,10 @@ if($s_product_long_desc_count > 0){
 if (($i - 1) % 3 != 0) {
     echo '</div>';
 }
+
 ?>
+
+<div class="clear"></div>
 
 <script type="text/javascript">
  rows_count="<?php echo $row=ceil(count($same_pr)/3);?>";
@@ -593,6 +635,29 @@ $(document).ready(function(){
 		$('.'+show_desc).show();
 	}
 	check_description();
+	
+	$('.keywords_select').change(function(){
+		if( $(this).val() == 'you' ){
+			$(this).parent().next('.primary:first').find('.title_words').hide();
+			$(this).parent().next('.primary:first').find('.you_words').show();
+			$(this).parent().next('.primary:first').find('.save_keywords').show();
+		}else if( $(this).val() == 'title' ){
+			$(this).parent().next('.primary:first').find('.you_words').hide();
+			$(this).parent().next('.primary:first').find('.save_keywords').hide();
+			$(this).parent().next('.primary:first').find('.title_words').show();
+		}
+	});
+	
+	$('.save_keywords_a').click(function(){
+		var keyword = new Array();
+		$(this).parent().parent().find('.keyword_input').each(function(){
+			keyword.push( $(this).val() );
+		})
+		
+		$.post(base_url + 'index.php/measure/save_new_words', {keywords: keyword}, function(data){
+			
+		});
+	});
 });
 
 </script>

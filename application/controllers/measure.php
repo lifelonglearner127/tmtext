@@ -1687,6 +1687,13 @@ public function gridview() {
 			$this->load->view('measure/gridview', $data);
     }
     
+    public function save_new_words(){
+		$keywords = $this->input->post('keywords');
+		//for( $i = 0; count($keywords)>$i; $i++ )
+		//	echo $keywords[$i]
+		//print_r($keywords);
+	}
+    
     //Denis gridview_test page ------------------
     public function gridview_test() {
        $data['mismatch_button']=false;
