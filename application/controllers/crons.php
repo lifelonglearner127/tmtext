@@ -234,7 +234,7 @@ class Crons extends MY_Controller {
                 'description' => 0
             );
 
-            $this->db->where('key', 'cron_job_offset');
+            $this->db->where('key', 'duplicate_offset');
             $this->db->update('settings', $data);
 
             $this->load->library('email');
@@ -242,7 +242,7 @@ class Crons extends MY_Controller {
             $this->email->to('bayclimber@gmail.com');
             $this->email->cc('max.kavelin@gmail.com');
             $this->email->subject('Cron job report');
-            $this->email->message('Cron job for do_statistics_new is done');
+            $this->email->message('Cron job for do_duplicate_content is done');
             $this->email->send();
         }
     }
