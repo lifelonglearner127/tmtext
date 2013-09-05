@@ -667,13 +667,31 @@ class System extends MY_Controller {
                         $department_members_id = $check_id;
                     }
                 }
+				/*new columns*/
+				if(isset($row->nr_products) && is_array($row->nr_products)){
+                    $nr_products = $row->nr_products[0];
+                } else if(isset($row->nr_products) && !is_array($row->nr_products) && !is_null($row->nr_products) && $row->nr_products!=''){
+                    $nr_products = $row->nr_products;
+                }
+				
+				if(isset($row->description_wc) && is_array($row->description_wc)){
+                    $description_wc = $row->description_wc[0];
+                } else if(isset($row->description_wc) && !is_array($row->description_wc) && !is_null($row->description_wc) && $row->description_wc!=''){
+                    $description_wc = $row->description_wc;
+                }
+				if(isset($row->description_text) && is_array($row->description_text)){
+                    $description_text = $row->description_text[0];
+                } else if(isset($row->description_text) && !is_array($row->description_text) && !is_null($row->description_text) && $row->description_text!=''){
+                    $description_text = $row->description_text;
+                }
+				/*end new columns*/
                 if($text != ''){
                     $check_site = $this->site_categories_model->checkExist($site_id, $text);
                     if($check_site == false){
-                        $this->site_categories_model->insert($site_id, $text, $url, $special, $parent_text, $department_members_id);
+                        $this->site_categories_model->insert($site_id, $text, $url, $special, $parent_text, $department_members_id, $nr_products, $description_wc);
                     }
                 }
-            }
+			}
             if($row->level == 1){
                 $check_id = $this->department_members_model->checkExist($site_name[0], $site_id, $row->text);
                 if($check_id == false){
@@ -681,6 +699,7 @@ class System extends MY_Controller {
                 }
             }
         }
+		
         $response['message'] =  'File was added successfully';
         $this->output->set_content_type('application/json')->set_output(json_encode($response));
     }
