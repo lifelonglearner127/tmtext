@@ -251,7 +251,7 @@ foreach ($same_pr as $ks => $vs) {
 							</td>
 						</tr>
 						<tr>
-							<td>
+							<td style="height: 30px;">
 								<img class="assess_image product_image" src="<?php echo base_url() ?>/img/assess_grid/copy_documents_duplicate.png">
 								<span class="duplicate-content">Duplicate content:</span>
 							</td>
