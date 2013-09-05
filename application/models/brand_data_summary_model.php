@@ -65,7 +65,7 @@ class Brand_data_summary_model extends CI_Model {
                 array('id' => $id));
     }
     
-    function updateByBrandId($brand_id, $tweet_count=0, $youtube_video_count=0, $youtube_view_count=0)
+    function updateByBrandId($brand_id, $tweet_count=0, $youtube_video_count=0, $youtube_view_count=0, $IR500Rank='')
     {
         $data =$this->getByBrandId($brand_id);
         if(!empty($data)) {
@@ -74,10 +74,26 @@ class Brand_data_summary_model extends CI_Model {
                     $brand_id,
                     ($data->total_tweets + $tweet_count),
                     ($data->total_youtube_videos + $youtube_video_count),
-                    ($data->total_youtube_views + $youtube_view_count)
+                    ($data->total_youtube_views + $youtube_view_count),
+                     $IR500Rank
                 );
         } else {
-            $this->insert($brand_id, $tweet_count, $youtube_video_count, $youtube_view_count);
+            $this->insert($brand_id, $tweet_count, $youtube_video_count, $youtube_view_count, $IR500Rank);
+        }
+    }
+
+    function updateByRankBrandId($brand_id, $IR500Rank='')
+    {
+        $data =$this->getByBrandId($brand_id);
+        if(!empty($data)) {
+            $id = $data->id;
+            $this->brand_id = $brand_id;
+            $this->IR500Rank = $IR500Rank;
+            $this->db->update($this->tables['brand_data_summary'], $this, array('id' => $id));
+        } else {
+            $this->brand_id = $brand_id;
+            $this->IR500Rank = $IR500Rank;
+            $this->db->insert($this->tables['brand_data_summary'], $this);
         }
     }
 

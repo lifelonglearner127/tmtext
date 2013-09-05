@@ -101,7 +101,8 @@ class Brand extends MY_Controller {
             "iTotalRecords" => $total_rows,
             "iTotalDisplayRecords" => $total_rows,
             "iDisplayLength" => $brand_list['display_length'],
-            "aaData" => array()
+            "aaData" => array(),
+            "iSortingCols" => 0
         );
 
         if (!empty($brand_list['result'])) {
@@ -110,18 +111,18 @@ class Brand extends MY_Controller {
 //                $parsed_attributes = unserialize($price->parsed_attributes);
 //                $model = (!empty($parsed_attributes['model']) ? $parsed_attributes['model'] : $parsed_attributes['UPC/EAN/ISBN']);
                 $output['aaData'][] = array(
-                    $social_rank,
-                    $brand_list->IR500Rank,
+                    number_format($social_rank),
+                    number_format($brand_list->IR500Rank),
                     $brand_list->name,
                     $brand_list->tweets,
-                    $brand_list->total_tweets,
-                    $brand_list->followers,
+                    number_format($brand_list->total_tweets),
+                    number_format($brand_list->followers),
                     $brand_list->following,
                     $brand_list->videos,
                     $brand_list->views,
-                    $brand_list->total_youtube_views,
+                    number_format($brand_list->total_youtube_views),
                     round($brand_list->views / $brand_list->videos, 2),
-                    $brand_list->total_youtube_videos,
+                    number_format($brand_list->total_youtube_videos),
                 );
             }
         }
@@ -221,7 +222,8 @@ class Brand extends MY_Controller {
                         } else {
                             $brand_id = $this->brands_model->insert($params['Brand'], 0, $brand_type->id);
                         }
-                        $this->brand_types_model->update($brand_type->id, $brand_type->name, $params['IR500Rank']);
+                        $this->brand_types_model->update($brand_type->id, $brand_type->name);                        
+                        $this->brand_data_summary_model->updateByRankBrandId($brand_id, $params['IR500Rank']);
                     }
                     $i++;
                 }

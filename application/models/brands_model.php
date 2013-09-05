@@ -99,7 +99,7 @@ class Brands_model extends CI_Model {
             }
         }
                  
-        $columns = 'SQL_CALC_FOUND_ROWS b.*, b.name, bt.IR500Rank, SUM(bd.tweet_count) AS tweets, SUM(bd.twitter_followers) AS followers, SUM(bd.following) AS following, ';
+        $columns = 'SQL_CALC_FOUND_ROWS b.*, b.name, bds.IR500Rank, SUM(bd.tweet_count) AS tweets, SUM(bd.twitter_followers) AS followers, SUM(bd.following) AS following, ';
         $columns .= 'SUM(bd.youtube_video_count) AS videos, SUM(bd.youtube_view_count) AS views, ';
         $columns .= 'bds.total_tweets, bds.total_youtube_videos, bds.total_youtube_views ';
         $this->db->select($columns, FALSE)
