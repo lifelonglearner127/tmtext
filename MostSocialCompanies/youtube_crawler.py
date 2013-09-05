@@ -189,4 +189,4 @@ if __name__ == "__main__":
   		#res_site["Brand"] = site["site"]
   		results += res_site
 
-  	Utils.output_all("MostSocialBrands.txt", results)
+  	Utils.output_all("MostSocialBrands.csv", results)
