@@ -53,7 +53,7 @@ class Utils:
 			"All_Tweets", "YT_Video", "YT_All_Videos", "YT_Views", "YT_All_Views"])
 
 		for item in results:
-			siteswriter.writerow(item['date'], item['brand'], '', '', '', '', item['title'], item['all_videos_count'], item['views'], item['all_views_count'])
+			siteswriter.writerow([item['date'], item['brand'], '', '', '', '', item['video_title'], item['all_videos_count'], item['video_views'], item['all_views_count']])
 		print results
 
 		csvfile.close()
@@ -143,8 +143,10 @@ class CrawlUploads():
 						ret_elem = {}
 						ret_elem['brand'] = brand
 						ret_elem['date'] = date
-						ret_elem['video_title'] = title
+						ret_elem['video_title'] = title.encode("utf-8")
 						ret_elem['video_views'] = views
+
+						ret.append(ret_elem)
 
 						total_videos += 1
 						total_views += views
