@@ -336,7 +336,32 @@ foreach ($same_pr as $ks => $vs) {
 							
 							echo '<div class="save_keywords"><a class="save_keywords_a" href="javascript:void(0)">Save</a></div>';
 						}else{
-							echo '<span class="name_bold">None</span>';
+							//echo '<span class="name_bold">None</span>';
+							echo '<div class="keywords_lines"><span class="primary_name">Primary: </span>
+									<span style="float: left; width: 140px;">
+									<span class="primary_speed">
+										[<span class="title_words"></span><span class="you_words you_words_input"><input class="keyword_input" name="keyword0" type="text" value="" /></span> ]
+									</span>
+									<!--<span><img class="assess_image primary_image keywords_img" src="'. base_url() .'/img/assess_grid/check_circle_green.png" /></span>-->
+									</div>
+									<div class="clear"></div>';
+							echo '<div class="keywords_lines"><span class="primary_name">Secondary: </span>
+									<span style="float: left; width: 140px;">
+									<span class="primary_speed">
+										[<span class="title_words"></span><span class="you_words you_words_input"><input class="keyword_input" name="keyword1" type="text" value="" /></span> ]
+									</span>
+									<!--<span><img class="assess_image primary_image keywords_img" src="'. base_url() .'/img/assess_grid/check_circle_green.png" /></span>-->
+									</div>
+									<div class="clear"></div>';
+							echo '<div class="keywords_lines"><span class="primary_name">Tertiary: </span>
+									<span style="float: left; width: 140px;">
+									<span class="primary_speed">
+										[<span class="title_words"></span><span class="you_words you_words_input"><input class="keyword_input" name="keyword2" type="text" value="" /></span> ]
+									</span>
+									<!--<span><img class="assess_image primary_image keywords_img" src="'. base_url() .'/img/assess_grid/check_circle_green.png" /></span>-->
+									</div>
+									<div class="clear"></div>';
+							echo '<div class="save_keywords"><a class="save_keywords_a" href="javascript:void(0)">Save</a></div>';
 						}
 						//echo"<pre>"; print_r( $vs['seo']['short'] ); echo"</pre>";
 						//echo"<pre>"; print_r( $vs['seo']['long'] ); echo"</pre>";

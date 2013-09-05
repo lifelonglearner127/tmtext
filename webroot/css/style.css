@@ -1974,6 +1974,7 @@ span.highlight { background-color:yellow;}
 
 .primary{
 	font-size: 12px;
+	margin-top: 5px;
 }
 
 .primary_name{float: left; width: 61px;}
@@ -1984,9 +1985,9 @@ span.highlight { background-color:yellow;}
 
 .short_product_date{width: 100%; font-size: 13px;}
 
-.keywords_lines{margin-bottom: 8px;}
+.keywords_lines{height: 28px;}
 #compet_area_grid .you_words_input{display: none;}
-#compet_area_grid .you_words_input input {width: 80px; height: 25px; margin-bottom: 0; margin-top: -4px;}
+#compet_area_grid .you_words_input input {width: 80px; height: 25px; margin-bottom: 0; margin-top: -3px;}
 
 .save_keywords{display: none; text-align: center;}
 

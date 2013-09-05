@@ -1693,7 +1693,7 @@ public function gridview() {
 		$keywords = $this->input->post('keywords');
 		//for( $i = 0; count($keywords)>$i; $i++ )
 		//	echo $keywords[$i]
-		//print_r($keywords);
+		print_r($keywords);
 	}
    
     function tableview(){
