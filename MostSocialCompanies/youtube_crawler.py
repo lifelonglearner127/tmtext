@@ -49,14 +49,14 @@ class Utils:
 		csvfile = open(filename, "wb+")
 
 		siteswriter = csv.writer(csvfile, delimiter=',')
-		# siteswriter.writerow(["Date", "Brand", "Followers", "Following", "Tweets",\
-		#  "All_Tweets", "YT_Videos", "YT_All_Videos", "YT_Views", "YT_All_Views"])
+		siteswriter.writerow(["Date", "Brand", "Followers", "Following", "Tweets", \
+			"All_Tweets", "YT_Video", "YT_All_Videos", "YT_Views", "YT_All_Views"])
 
-		#ordered_fieldnames = OrderedDict([('field1',None),('field2',None)])
+		for item in results:
+			siteswriter.writerow(item['date'], item['brand'], '', '', '', '', item['title'], item['all_videos_count'], item['views'], item['all_views_count'])
+		print results
 
-
-
-		filename.write(results)
+		csvfile.close()
 
 class CrawlUploads():
 	
@@ -73,7 +73,6 @@ class CrawlUploads():
 
 	  	channels = []
 
-		#TODO: include "channel" option as paramater to search, instead of filtering through them
 		for search_result in search_response.get("items", []):
 			if search_result["id"]["kind"] == "youtube#channel":
 				channels.append(search_result["id"]["channelId"])
@@ -87,7 +86,7 @@ class CrawlUploads():
 
 
 	# get uploaded videos from a certain channel (given by channel username) published between certain dates
-	def get_uploads(self, channel_username, min_date = datetime(MINYEAR, 1, 1), max_date = datetime(MAXYEAR, 12, 31)):
+	def get_uploads(self, channel_username, brand, min_date = datetime(MINYEAR, 1, 1), max_date = datetime(MAXYEAR, 12, 31)):
 		channel_id = self.youtube_search_channel(channel_username)
 		if not channel_id:
 			return
@@ -99,9 +98,10 @@ class CrawlUploads():
 			#print 'finding videos for ', channel
 			uploads_list_id = channel["contentDetails"]["relatedPlaylists"]["uploads"]
 
-			ret = {}
-			for date in Utils.daterange(min_date, max_date):
-				ret[date.strftime("%b %d, %Y")] = 0
+			ret = []
+
+			# number of views for each date
+#			for date in Utils.daterange(min_date, max_date):
 
 			total_videos = 0
 			total_views = 0
@@ -130,6 +130,7 @@ class CrawlUploads():
 					if (lasttime < min_date):
 						break
 
+
 					# check if the date is also smaller than max date
 					if lasttime <= max_date:
 
@@ -138,10 +139,14 @@ class CrawlUploads():
 						# 	ret[date] = 1
 						# else:
 						# 	ret[date] += 1
-						ret[date] += 1
-						total_videos += 1
 
-						ret[title] = views
+						ret_elem = {}
+						ret_elem['brand'] = brand
+						ret_elem['date'] = date
+						ret_elem['video_title'] = title
+						ret_elem['video_views'] = views
+
+						total_videos += 1
 						total_views += views
 
 						#print title, lasttime
@@ -151,8 +156,13 @@ class CrawlUploads():
 
 			#print 'done for ', channel
 
-			ret['YT_All_Videos'] = total_videos
-			ret['YT_All_Views'] = total_views
+			# set the total views and nr of videos field for all elements in returned list (all days)
+
+			for ret_elem in ret:
+				ret_elem['all_videos_count'] = total_videos
+				ret_elem['all_views_count'] = total_views
+				# ret['YT_All_Videos'] = total_videos
+				# ret['YT_All_Views'] = total_views
     		return ret
 
 
@@ -173,8 +183,8 @@ if __name__ == "__main__":
 
   	results = []
   	for site in sites:
-  		res_site = crawler.get_uploads(site["yt_username"], min_date=date1, max_date=date2)
+  		res_site = crawler.get_uploads(site["yt_username"], brand = site['site'], min_date=date1, max_date=date2)
   		#res_site["Brand"] = site["site"]
-  		results.append(res_site)
+  		results += res_site
 
   	Utils.output_all("MostSocialBrands.txt", results)
