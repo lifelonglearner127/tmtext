@@ -928,21 +928,34 @@ class Imported_data_parsed_model extends CI_Model {
     }
 
      function do_stats_ids(){
-          $q=$this->db->select('key,description')->from('settings')->where('key','cron_duplicate');
+         
+        $q=$this->db->select('key,description')->from('settings')->where('key','duplicate_offset');
         $res=$q->get()->row_array();
-        $limit=30;
-        $start=$res['description'];
+        if(count($res)>0){
+            $start=$res['description'];
+        }else{
+            $d = array(
+            'key' => 'duplicate_offset' ,
+            'description' => '0' ,
 
-        $start = $start*30+1;
+         );
+
+        $this->db->insert('settings', $d);
+         
+        $start=0;
+        }
+        $limit=10;
+
+        $start =$start*10+1;
 
         $this->db->select('p.imported_data_id')
             ->from($this->tables['imported_data_parsed'] . ' as p');
 
         $this->db->group_by('imported_data_id');
         $this->db->limit($limit,$start);
-        $query= $this->db->get();
-        $results= $query->result();
-        return $results;
+        $query1 = $this->db->get();
+        $results1 = $query1->result();
+        return $results1;
      }
      function do_stats_new_test($id){
          $this->db->select('p.imported_data_id, p.key, p.value, p.revision')

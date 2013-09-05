@@ -208,10 +208,15 @@ class Crons extends MY_Controller {
         $this->load->helper('algoritm');
         $this->load->model('sites_model');
         $ids = $this->imported_data_parsed_model->do_stats_ids();
+      
         foreach ($ids as $val) {
-            $this->duplicate_content_new($val->imported_data_id);
+            $query = $this->db->where('imported_data_id', $val->imported_data_id)
+            ->get('duplicate_content_new');
+            if ($query->num_rows()==0){
+                $this->duplicate_content_new($val->imported_data_id);
+            }
         }
-        $q = $this->db->select('key,description')->from('settings')->where('key', 'cron_duplicate');
+        $q = $this->db->select('key,description')->from('settings')->where('key', 'duplicate_offset');
         $res = $q->get()->row_array();
         $start = $res['description'];
         $start++;
@@ -219,10 +224,27 @@ class Crons extends MY_Controller {
             'description' => $start
         );
 
-        $this->db->where('key', 'cron_duplicate');
+        $this->db->where('key', 'duplicate_offset');
         $this->db->update('settings', $data);
+        $data_arr=$this->imported_data_parsed_model->do_stats_ids();
+        if (count($data_arr) > 1) {
+            shell_exec('wget -S -O- http://dev.contentsolutionsinc.com/producteditor/index.php/crons/do_duplicate_content > /dev/null 2>/dev/null &');
+        } else {
+            $data = array(
+                'description' => 0
+            );
 
-        echo "ok";
+            $this->db->where('key', 'cron_job_offset');
+            $this->db->update('settings', $data);
+
+            $this->load->library('email');
+            $this->email->from('info@dev.contentsolutionsinc.com', '!!!!');
+            $this->email->to('bayclimber@gmail.com');
+            $this->email->cc('max.kavelin@gmail.com');
+            $this->email->subject('Cron job report');
+            $this->email->message('Cron job for do_statistics_new is done');
+            $this->email->send();
+        }
     }
     public function do_stats_new_test(){
         $id=1103;
@@ -1366,7 +1388,7 @@ class Crons extends MY_Controller {
         unlink($tmp_dir . ".locked");
     }
 
-    function duplicate_content_new() {
+    function duplicate_content_new($imported_data_id) {
 
         try {
 
@@ -1377,7 +1399,7 @@ class Crons extends MY_Controller {
             echo "block with check_duplicate_content - $time seconds\n";
             $time_start = $time_end;
             foreach ($res_data as $val) {
-                $this->statistics_duplicate_content_model->insert_new($val['imported_data_id'], $val['url'], $val['features'], $val['customer'], $val['long_original'], $val['short_original']);
+                $this->statistics_duplicate_content_model->insert_new($val['imported_data_id'], $val['long_original'], $val['short_original'],'1');
             }
             $time_end = microtime(true);
             $time = $time_end - $time_start;
@@ -1598,22 +1620,22 @@ class Crons extends MY_Controller {
                     }
                 }
 
-                $vs['short_original'] = 100 - round($maxshort, 2);
-                $vs['long_original'] = 100 - round($maxlong, 2);
-
+                $vs['short_original'] = ceil($maxshort);
+                $vs['long_original'] = ceil($maxlong);
 
                 if ($k_lng == 0) {
-                    $vs['long_original'] = 100;
+                    $vs['long_original'] = 0;
                 }
                 if ($k_sh == 0) {
-                    $vs['short_original'] = 100;
+                    $vs['short_original'] =0;
                 }
 
                 $same_pr[$ks] = $vs;
             }
         } else {
-            $same_pr[0]['long_original'] = 100;
-            $same_pr[0]['short_original'] = 100;
+            $same_pr[0]['long_original'] = 0;
+            $same_pr[0]['short_original'] = 0;
+            
         }
         return $same_pr;
     }

@@ -43,19 +43,20 @@ class Statistics_duplicate_content_model extends CI_Model {
         return $this->db->insert_id();
     }
     
-    function insert_new( $imported_data_id, $product_name, $description, $long_description, $url,
-                     $features, $customer, $long_original, $short_original)
+    function insert_new( $imported_data_id,$long_original, $short_original,$revision)
     {
-        $this->imported_data_id = $imported_data_id;
-        $this->url = (string)$url;
-        $this->features = (string)$features;
-        $this->customer = (string)$customer;
-        $this->long_original = (string)$long_original;
-        $this->short_original = (string)$short_original;
-        $this->created = date('Y-m-d h:i:s');
+        
+        $query = $this->db->where('imported_data_id', $imported_data_id)
+            ->get('duplicate_content_new');
 
-        $this->db->insert($this->tables['statistics_duplicate_content'], $this);
-        return $this->db->insert_id();
+        if ($query->num_rows()==0){
+            $this->imported_data_id = $imported_data_id;
+            $this->long_original = (string)$long_original;
+            $this->short_original = (string)$short_original;
+            $this->revision = $revision;
+            $this->db->insert('duplicate_content_new', $this);
+            return $this->db->insert_id();
+        }
     }
 
 
