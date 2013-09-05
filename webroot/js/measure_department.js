@@ -9,97 +9,98 @@ var readUrl   = base_url + 'index.php/measure/get_best_sellers',
 
 $( function() {
 
-    $( '#tabs' ).tabs({
-        fx: { height: 'toggle', opacity: 'toggle' }
-    });
     // readBestSellers();
 	dataTable = $( '#records' ).dataTable({"bJQueryUI": true});
 	dataTableSec = $( '#recordSec' ).dataTable({"bJQueryUI": true});
-    $( '#msgDialog' ).dialog({
-        autoOpen: false,
+	
+    // $( '#tabs' ).tabs({
+        // fx: { height: 'toggle', opacity: 'toggle' }
+    // });
+    // $( '#msgDialog' ).dialog({
+        // autoOpen: false,
 
-        buttons: {
-            'Ok': function() {
-                $( this ).dialog( 'close' );
-            }
-        }
-    });
+        // buttons: {
+            // 'Ok': function() {
+                // $( this ).dialog( 'close' );
+            // }
+        // }
+    // });
 
-    $( '#updateDialog' ).dialog({
-        autoOpen: false,
-        buttons: {
-            'Update': function() {
-                $( '#ajaxLoadAni' ).fadeIn( 'slow' );
-                $( this ).dialog( 'close' );
+    // $( '#updateDialog' ).dialog({
+        // autoOpen: false,
+        // buttons: {
+            // 'Update': function() {
+                // $( '#ajaxLoadAni' ).fadeIn( 'slow' );
+                // $( this ).dialog( 'close' );
 
-                $.ajax({
-                    url: updateHref,
-                    type: 'POST',
-                    data: $( '#updateDialog form' ).serialize(),
+                // $.ajax({
+                    // url: updateHref,
+                    // type: 'POST',
+                    // data: $( '#updateDialog form' ).serialize(),
 
-                    success: function( response ) {
-                        $( '#msgDialog > p' ).html( response );
-                        $( '#msgDialog' ).dialog( 'option', 'title', 'Success' ).dialog( 'open' );
+                    // success: function( response ) {
+                        // $( '#msgDialog > p' ).html( response );
+                        // $( '#msgDialog' ).dialog( 'option', 'title', 'Success' ).dialog( 'open' );
 
-                        $( '#ajaxLoadAni' ).fadeOut( 'slow' );
+                        // $( '#ajaxLoadAni' ).fadeOut( 'slow' );
 
-                        //--- update row in table with new values ---
-                        var title = $( 'tr#' + updateId + ' td' )[ 2 ];
+                        // --- update row in table with new values ---
+                        // var title = $( 'tr#' + updateId + ' td' )[ 2 ];
 
-                        $( title ).html( $( '#title' ).val() );
+                        // $( title ).html( $( '#title' ).val() );
 
-                        //--- clear form ---
-                        $( '#updateDialog form input' ).val( '' );
+                        // --- clear form ---
+                        // $( '#updateDialog form input' ).val( '' );
 
-                    } //end success
+                    // } //end success
 
-                }); //end ajax()
-            },
+                // }); //end ajax()
+            // },
 
-            'Cancel': function() {
-                $( this ).dialog( 'close' );
-            }
-        },
-        width: '350px'
-    }); //end update dialog
+            // 'Cancel': function() {
+                // $( this ).dialog( 'close' );
+            // }
+        // },
+        // width: '350px'
+    // }); //end update dialog
 
-    $( '#delConfDialog' ).dialog({
-        autoOpen: false,
+    // $( '#delConfDialog' ).dialog({
+        // autoOpen: false,
 
-        buttons: {
-            'No': function() {
-                $( this ).dialog( 'close' );
-            },
+        // buttons: {
+            // 'No': function() {
+                // $( this ).dialog( 'close' );
+            // },
 
-            'Yes': function() {
-                //display ajax loader animation here...
-                $( '#ajaxLoadAni' ).fadeIn( 'slow' );
-                $( this ).dialog( 'close' );
+            // 'Yes': function() {
+                // display ajax loader animation here...
+                // $( '#ajaxLoadAni' ).fadeIn( 'slow' );
+                // $( this ).dialog( 'close' );
 
-                $.ajax({
-                    url: delHref,
-                    type:'POST',
-                    data:{'id': delId},
-                    success: function( response ) {
-                        //hide ajax loader animation here...
-                        $( '#ajaxLoadAni' ).fadeOut( 'slow' );
+                // $.ajax({
+                    // url: delHref,
+                    // type:'POST',
+                    // data:{'id': delId},
+                    // success: function( response ) {
+                        // hide ajax loader animation here...
+                        // $( '#ajaxLoadAni' ).fadeOut( 'slow' );
 
-                        //$( '#msgDialog > p' ).html( response );
-                        //$( '#msgDialog' ).dialog( 'option', 'title', 'Success' ).dialog( 'open' );
+                        // $( '#msgDialog > p' ).html( response );
+                        // $( '#msgDialog' ).dialog( 'option', 'title', 'Success' ).dialog( 'open' );
 
-                        $( 'a[href=' + delHref + ']' ).parents( 'tr' )
-                            .fadeOut( 'slow', function() {
-                                $( this ).remove();
-                            });
+                        // $( 'a[href=' + delHref + ']' ).parents( 'tr' )
+                            // .fadeOut( 'slow', function() {
+                                // $( this ).remove();
+                            // });
 
-                    } //end success
-                });
+                    // } //end success
+                // });
 
-            } //end Yes
+            // } //end Yes
 
-        } //end buttons
+        // } //end buttons
 
-    }); //end dialog
+    // }); //end dialog
 
     // $( '#records' ).delegate( 'a.updateBtn', 'click', function() {
         // updateHref = $( this ).attr( 'href' );
@@ -203,10 +204,10 @@ $( function() {
         });
 		//Compare with End
 		
-        $(document).on('click', 'table#records tbody tr', function(e){
-            e.preventDefault();
-            window.open($(this).find('td:nth-child(3)').text());
-        });
+        // $(document).on('click', 'table#records tbody tr', function(e){
+            // e.preventDefault();
+            // window.open($(this).find('td:nth-child(3)').text());
+        // });
 
 }); //end document ready
 
@@ -229,7 +230,7 @@ function readBestSellers(department_id,site_name,table_name) {
 			for(var i=0; i<data.length; i++){
 				tableDataString += '<tr>';
 				tableDataString += '<td>'+data[i].text+'</td>';
-				tableDataString += '<td>'+data[i].nr_product+'</td>';
+				tableDataString += '<td>'+data[i].nr_products+'</td>';
 				tableDataString += '<td>'+data[i].text+'3.5%<input type="text" name="rere" value="keyword" /></td>';
 				tableDataString += '<td>'+data[i].description_words+'</td>';
 				tableDataString += '</tr>';

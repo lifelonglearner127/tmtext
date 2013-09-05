@@ -38,7 +38,7 @@ class Site_categories_model extends CI_Model {
         if($department_id != ''){
             $department_id = " and `department_members_id`='".$department_id."' ";
         }
-        $sql = "SELECT `id`, `text`, `nr_product`, `description_words` FROM `site_categories` WHERE `site_id` = '".$site_id."' ".$department_id." ORDER BY `text` ASC";
+        $sql = "SELECT `id`, `text`, `nr_products`, `description_words` FROM `site_categories` WHERE `site_id` = '".$site_id."' ".$department_id." ORDER BY `text` ASC";
         $query = $this->db->query($sql);
         return $query->result();
     }
@@ -49,15 +49,18 @@ class Site_categories_model extends CI_Model {
         return $query->result();
     }
 
-    function insert($site_id, $text, $url, $special=0, $parent_text='', $department_members_id = 0)
+    function insert($site_id, $text, $url, $special=0, $parent_text='', $department_members_id = 0, $nr_products = 0 , $description_wc = 0 )
     {
+        $this->site_id = $site_id;
         $this->text = $text;
         $this->url = $url;
-        $this->site_id = $site_id;
         $this->special = $special;
         $this->parent_text = $parent_text;
         $this->department_members_id = $department_members_id;
-
+		if($nr_products != NULL)
+			$this->nr_products = $nr_products;
+		if($description_wc != NULL)
+			$this->description_words = $description_wc;
         $this->db->insert($this->tables['site_categories'], $this);
         return $this->db->insert_id();
     }

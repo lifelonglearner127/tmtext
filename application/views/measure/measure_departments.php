@@ -1,3 +1,10 @@
+<style type="text/css">
+.dropdown-menu {
+	max-height: 350px;
+	overflow: hidden;
+	overflow-y: auto;
+}
+</style>
 <div class="tabbable">
     <ul class="nav nav-tabs jq-measure-tabs">
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure');?>">Home Pages</a></li>
@@ -154,7 +161,7 @@
                         <script type="text/javascript" src="<?php echo base_url();?>js/jquery.validate.min.js"></script>
                         <script type="text/javascript" src="<?php echo base_url();?>js/jquery.dataTables.min.js"></script>
 
-                        <script type="text/template" id="readTemplate">
+                        <!--script type="text/template" id="readTemplate">
                             <tr id="${id}">
                                 <td>${rank}</td>
                                 <td>${product_name}</td>
@@ -163,7 +170,7 @@
                                     <a class="deleteBtn icon-remove ml_5" href="${deleteLink}"></a>
                                 </td>
                             </tr>
-                        </script>
+                        </script-->
 
                         <script type="text/javascript" src="<?php echo base_url();?>js/measure_department.js"></script>
                     </div>
