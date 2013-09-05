@@ -263,7 +263,8 @@ foreach ($same_pr as $ks => $vs) {
 					</table>
 				</div>
 				<div style="margin-top: 8px;">
-					<span class="short_product_name keywords keywords_lable">% Keywords from:</span>
+					<img style="margin-top: 7px;" class="assess_image product_image" src="<?php echo base_url() ?>/img/assess_grid/percent.png">
+					<span class="short_product_name keywords keywords_lable">Keywords from:</span>
 					<select class="keywords_select" name="analysis">
 						<option selected="selected" value="title">Title</option>
 						<option value="you">You</option>
@@ -287,14 +288,22 @@ foreach ($same_pr as $ks => $vs) {
 							//echo"<pre>"; print_r( $vs['seo']['short'] ); echo"</pre>";
 							fsort( $vs['seo']['short'], 'prc' );
 							$i = 0;
+							$tertiary = 0;
+							$secondary = 0;
 							foreach ($vs['seo']['short'] as $key => $value) {
 								$v_ph = $value['ph'];
 								if( $i == 3 ) break;
 								if( $i == '0' ) echo '<div class="keywords_lines"><span class="primary_name">Primary: </span>';
-								if( $i == '1' ) echo '<div class="keywords_lines"><span class="primary_name">Secondary: </span>';
-								if( $i == '2' ) echo '<div class="keywords_lines"><span class="primary_name">Tertiary: </span>';
+								if( $i == '1' ){
+									echo '<div class="keywords_lines"><span class="primary_name">Secondary: </span>';
+									$secondary = 1;
+								}
+								if( $i == '2' ){
+									echo '<div class="keywords_lines"><span class="primary_name">Tertiary: </span>';
+									$tertiary = 1;
+								}
 								?>
-								<span style="float: left; width: 143px;">
+								<span style="float: left; width: 140px;">
 									<span class='primary_speed'>
 										[ <span class="title_words"><?php echo $value['ph']; ?></span><span class="you_words you_words_input"><input class="keyword_input" name="keyword<?=$i?>" type="text" value="" /></span> ]
 									</span>
@@ -306,9 +315,28 @@ foreach ($same_pr as $ks => $vs) {
 								<?php
 								$i++;
 							}
+							if( $secondary != 1 )
+								echo '<div class="keywords_lines"><span class="primary_name">Secondary: </span>
+									<span style="float: left; width: 140px;">
+									<span class="primary_speed">
+										[&nbsp]
+									</span>
+									<!--<span><img class="assess_image primary_image keywords_img" src="'. base_url() .'/img/assess_grid/check_circle_green.png" /></span>-->
+									</div>
+									<div class="clear"></div>';
+							if( $tertiary != 1 )
+								echo '<div class="keywords_lines"><span class="primary_name">Tertiary: </span>
+									<span style="float: left; width: 140px;">
+									<span class="primary_speed">
+										[&nbsp]
+									</span>
+									<!--<span><img class="assess_image primary_image keywords_img" src="'. base_url() .'/img/assess_grid/check_circle_green.png" /></span>-->
+									</div>
+									<div class="clear"></div>';
+							
 							echo '<div class="save_keywords"><a class="save_keywords_a" href="javascript:void(0)">Save</a></div>';
 						}else{
-							echo 'None';
+							echo '<span class="name_bold">None</span>';
 						}
 						//echo"<pre>"; print_r( $vs['seo']['short'] ); echo"</pre>";
 						//echo"<pre>"; print_r( $vs['seo']['long'] ); echo"</pre>";

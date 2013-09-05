@@ -1958,18 +1958,18 @@ span.highlight { background-color:yellow;}
 .duplicate-content{text-decoration: underline;}
 
 .keywords{width: 126px; margin-top: 5px;}
-.keywords_select{width: 68px; float: left;}
+.keywords_select{width: 66px; float: left;}
 
 .clear{ clear: both;}
 
-.keywords_lable{font-size: 13px; width: 109px;}
+.keywords_lable{font-size: 13px; width: 91px;}
 
 .keywords_img{
 	margin-left: 5px;
 	margin-top: 6px;
 }
 
-.description_label{width: 113px;}
+.description_label{width: 113px; font-size: 13px;}
 .description_select{width: 75px;}
 
 .primary{
