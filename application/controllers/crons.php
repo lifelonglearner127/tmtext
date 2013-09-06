@@ -452,7 +452,6 @@ class Crons extends MY_Controller {
             
             $trnc = $this->uri->segment(3);
            
-            echo $trnc; exit;
             if(!$trnc){
                 $trnc=1;
             }
