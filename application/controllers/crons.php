@@ -780,8 +780,8 @@ class Crons extends MY_Controller {
                     $query_research_data_id = 0;
                     $query_batch_id = 0;
                     if ($query = $this->statistics_new_model->getResearchDataAndBatchIds($obj->imported_data_id)) {
-                    	$query_research_data_id = $query->research_data_id;
-                    	$query_batch_id = $query->batch_id;
+                    	$query_research_data_id = $query[0]->research_data_id;
+                    	$query_batch_id = $query[0]->batch_id;
                     }
 
                     try {

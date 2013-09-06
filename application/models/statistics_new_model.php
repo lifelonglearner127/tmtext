@@ -35,7 +35,7 @@ class Statistics_new_model extends CI_Model {
                          $short_description_wc, $long_description_wc,
                          $short_seo_phrases, $long_seo_phrases,
                          $own_price, $price_diff, $competitors_prices, $items_priced_higher_than_competitors, $similar_products_competitors,
-                         $research_data_id = 0, $batch_id = 0){
+                         $research_data_id, $batch_id){
 
         $this->imported_data_id = $imported_data_id;
         $this->revision = $revision;
