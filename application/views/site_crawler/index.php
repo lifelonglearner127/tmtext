@@ -180,7 +180,7 @@ function loadCurrentList(url) {
 
 			$(".btn-make-snap").tooltip({
 				placement: 'left',
-				title: 'Make Snapshoot'
+				title: 'Make snapshot'
 			});
 
 			if(node.snap !== null && node.snap !== "") {
