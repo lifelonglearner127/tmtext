@@ -260,6 +260,7 @@ foreach ($same_pr as $ks => $vs) {
 							fsort( $vs['seo']['short'], 'prc' );
 							
 							$i = 1;
+							$keyword_user = 0;
 							$tertiary = 0;
 							$secondary = 0;
 							foreach ($vs['seo']['short'] as $key => $value) {
@@ -277,12 +278,17 @@ foreach ($same_pr as $ks => $vs) {
 									echo '<div class="keywords_lines"><span class="primary_name">Tertiary: </span>';
 									$tertiary = 1;
 								}
+								$user_word = '';
+								//foreach( $vs['seo']['keyword'] as $key => $kw ) {
+									//$user_word = $kw->keyword;
+								//}
+								//$user_word = $vs['seo']['keyword'][$keyword_user]->keyword;
 								?>
 								<span>
 									<span class='primary_speed'>
 										<div style="float: left;">[</div> <span class="title_words"><?php echo $value['ph']; ?></span>
 										<span class="you_words you_words_input">
-											<input class="keyword_input" imported_data_id="<?php echo $vs['imported_data_id']; ?>" name="keyword<?=$i?>" keyword_num="<?=$i?>" type="text" value="" />
+											<input class="keyword_input" imported_data_id="<?php echo $vs['imported_data_id']; ?>" name="keyword<?=$i?>" keyword_num="<?=$i?>" type="text" value="<?=$user_word;?>" />
 										</span>
 										<div style="float: right;">]</div>
 									</span>
@@ -291,8 +297,9 @@ foreach ($same_pr as $ks => $vs) {
 								<span class="keyword_percent"><?php echo round($value['prc'], 1) . '%'; ?></span> <span class="keyword_count"><?php echo $keyword_count ?></span>
 								</div>
 								<div class="clear"></div>
-								<?php
+								<?php 
 								$i++;
+								$keyword_user++;
 							}
 							if( $secondary != 1 )
 								echo '<div class="keywords_lines"><span class="primary_name">Secondary: </span>

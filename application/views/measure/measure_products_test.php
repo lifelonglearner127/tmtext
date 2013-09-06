@@ -1,3 +1,15 @@
+
+<?php
+	$var = explode('?', $_SERVER['REQUEST_URI'] );
+	$page = preg_replace('/.*\/([^\/])/','$1',$var[0]);
+	unset($var);
+	
+	if( $page == 'measure_products_test' )
+		$page = 'measure_products_test';
+	else 
+		$page = 'measure_products';
+?>
+
 <script type='text/javascript'>
 jQuery(document).ready(function($) {
     $("#compare_text").focus();
@@ -9,7 +21,8 @@ jQuery(document).ready(function($) {
     <ul class="nav nav-tabs jq-measure-tabs">
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure');?>">Home Pages</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_departments');?>">Categories</a></li>
-        <li class="active"><a data-toggle="tab" href="<?php echo site_url('measure/measure_products');?>">Products</a></li>
+        <!--<li class="active"><a data-toggle="tab" href="<?php echo site_url('measure/measure_products_test');?>">Products</a></li>-->
+        <li class="active"><a id="measure_products" data-toggle="tab" href="<?php echo site_url('measure/'.$page);?>">Products</a></li>
         <!--<li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_social'); ?>">Social</a></li>-->
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_pricing'); ?>">Pricing</a></li>
     </ul>
