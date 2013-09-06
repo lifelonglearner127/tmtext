@@ -19,7 +19,7 @@ class Crons extends MY_Controller {
     }
 
     public function index() {
-        
+
     }
 
     private function urlExists($url) {
@@ -196,7 +196,15 @@ class Crons extends MY_Controller {
         // }
         echo "Cron Job Finished";
     }
-
+    function send_email_report($subject, $message){
+        $this->load->library('email');
+        $this->email->from('info@dev.contentsolutionsinc.com', '!!!!');
+        $this->email->to('bayclimber@gmail.com');
+        $this->email->cc('max.kavelin@gmail.com');
+        $this->email->subject($subject);
+        $this->email->message($message);
+        $this->email->send();
+    }
     public function do_duplicate_content() {
         $this->load->model('imported_data_parsed_model');
         $this->load->model('research_data_model');
@@ -208,10 +216,10 @@ class Crons extends MY_Controller {
         $this->load->helper('algoritm');
         $this->load->model('sites_model');
         $ids = $this->imported_data_parsed_model->do_stats_ids();
-      
+
         foreach ($ids as $val) {
             $query = $this->db->where('imported_data_id', $val->imported_data_id)
-            ->get('duplicate_content_new');
+                ->get('duplicate_content_new');
             if ($query->num_rows()==0){
                 $this->duplicate_content_new($val->imported_data_id);
             }
@@ -261,8 +269,8 @@ class Crons extends MY_Controller {
         $data_import = $this->imported_data_parsed_model->do_stats_new_test($id);
         $obj=$data_import[0];
         $data_import=(array)$data_import[0];
-        
-       // print_r($data_import);
+
+        // print_r($data_import);
         $own_price = 0;
         $competitors_prices = array();
         $price_diff = '';
@@ -272,154 +280,153 @@ class Crons extends MY_Controller {
         $short_seo_phrases = '?';
         $long_seo_phrases = '?';
         $similar_products_competitors = array();
-        
-        
+
+
         $sites_list = array();
-                $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('sites');
-                $query_cus_res = $query_cus->result();
-                if (count($query_cus_res) > 0) {
-                    foreach ($query_cus_res as $key => $value) {
-                        $n = parse_url($value->url);
-                        $sites_list[] = $n['host'];
+        $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('sites');
+        $query_cus_res = $query_cus->result();
+        if (count($query_cus_res) > 0) {
+            foreach ($query_cus_res as $key => $value) {
+                $n = parse_url($value->url);
+                $sites_list[] = $n['host'];
+            }
+        }
+
+        if (isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
+
+            try {
+                $own_prices = $this->imported_data_parsed_model->getLastPrices($obj->imported_data_id);
+            } catch (Exception $e) {
+                echo 'Error', $e->getMessage(), "\n";
+                $own_prices = $this->imported_data_parsed_model->getLastPrices($obj->imported_data_id);
+            }
+
+            if (!empty($own_prices)) {
+                $own_price = floatval($own_prices[0]->price);
+                $obj->own_price = $own_price;
+                $price_diff_exists = array(); //"<input type='hidden'/>";
+                $price_diff_exists['id'] = $own_prices[0]->id;
+                $price_diff_exists['own_site'] = $own_site;
+                $price_diff_exists['own_price'] = floatval($own_price);
+            }
+
+            echo '!!!!'.$data_import['parsed_attributes']['model'];
+            $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
+
+
+
+            if (!empty($similar_items)) {
+
+                foreach ($similar_items as $ks => $vs) {
+                    $similar_item_imported_data_id = $similar_items[$ks]['imported_data_id'];
+                    if ($obj->imported_data_id == $similar_item_imported_data_id) {
+                        continue;
                     }
-                }
-        
-       
-         if (isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
-
-                        try {
-                            $own_prices = $this->imported_data_parsed_model->getLastPrices($obj->imported_data_id);
-                        } catch (Exception $e) {
-                            echo 'РћС€РёР±РєР°', $e->getMessage(), "\n";
-                            $own_prices = $this->imported_data_parsed_model->getLastPrices($obj->imported_data_id);
-                        }
-
-                        if (!empty($own_prices)) {
-                            $own_price = floatval($own_prices[0]->price);
-                            $obj->own_price = $own_price;
-                            $price_diff_exists = array(); //"<input type='hidden'/>";
-                            $price_diff_exists['id'] = $own_prices[0]->id;
-                            $price_diff_exists['own_site'] = $own_site;
-                            $price_diff_exists['own_price'] = floatval($own_price);
-                        }
-                            
-                        echo '!!!!'.$data_import['parsed_attributes']['model'];
-                        $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
-                           
- 
-        
-                            if (!empty($similar_items)) {
-                              
-                                foreach ($similar_items as $ks => $vs) {
-                                    $similar_item_imported_data_id = $similar_items[$ks]['imported_data_id'];
-                                    if ($obj->imported_data_id == $similar_item_imported_data_id) {
-                                        continue;
-                                    }
 //                                          $n = parse_url($vs['url']);
 //                                          $customer=  strtolower($n['host']);
 //                                          $customer = str_replace("www1.", "",$customer);
 //                                          $customer =str_replace("www.", "", $customer);
-                                    $customer = "";
-                                    foreach ($sites_list as $ki => $vi) {
-                                        if (strpos($vs['url'], "$vi") !== false) {
-                                            $customer = $vi;
-                                        }
-                                    }
+                    $customer = "";
+                    foreach ($sites_list as $ki => $vi) {
+                        if (strpos($vs['url'], "$vi") !== false) {
+                            $customer = $vi;
+                        }
+                    }
 
 
-                                    $customer = strtolower($this->sites_model->get_name_by_url($customer));
-                                    $similar_products_competitors[] = array(
-                                        'imported_data_id' => $similar_item_imported_data_id,
-                                        'customer' => $customer
-                                    );
+                    $customer = strtolower($this->sites_model->get_name_by_url($customer));
+                    $similar_products_competitors[] = array(
+                        'imported_data_id' => $similar_item_imported_data_id,
+                        'customer' => $customer
+                    );
 
                                     try {
                                         $three_last_prices = $this->imported_data_parsed_model->getLastPrices($similar_item_imported_data_id);
                                     } catch (Exception $e) {
-                                        echo 'РћС€РёР±РєР°', $e->getMessage(), "\n";
+                                        echo 'Error', $e->getMessage(), "\n";
 //                                        $this->statistics_model->db->close();
 //                                        $this->statistics_model->db->initialize();
-                                        $three_last_prices = $this->imported_data_parsed_model->getLastPrices($similar_item_imported_data_id);
-                                    }
+                        $three_last_prices = $this->imported_data_parsed_model->getLastPrices($similar_item_imported_data_id);
+                    }
 
-                                    if (!empty($three_last_prices)) {
-                                        $price_scatter = $own_price * 0.03;
-                                        $price_upper_range = $own_price + $price_scatter;
-                                        $price_lower_range = $own_price - $price_scatter;
-                                        $competitor_price = floatval($three_last_prices[0]->price);
-                                        if ($competitor_price < $own_price) {
-                                            $items_priced_higher_than_competitors = 1;
-                                        }
-                                        if ($competitor_price > $price_upper_range || $competitor_price < $price_lower_range) {
-                                            $price_diff_exists['competitor_customer'][] = $similar_items[$ks]['customer'];
-                                            $price_diff_exists['competitor_price'][] = $competitor_price;
-                                            $price_diff = $price_diff_exists;
-                                            $competitors_prices[] = $competitor_price;
-                                        }
-                                    }
-                                }
-                            }
-                        
+                    if (!empty($three_last_prices)) {
+                        $price_scatter = $own_price * 0.03;
+                        $price_upper_range = $own_price + $price_scatter;
+                        $price_lower_range = $own_price - $price_scatter;
+                        $competitor_price = floatval($three_last_prices[0]->price);
+                        if ($competitor_price < $own_price) {
+                            $items_priced_higher_than_competitors = 1;
+                        }
+                        if ($competitor_price > $price_upper_range || $competitor_price < $price_lower_range) {
+                            $price_diff_exists['competitor_customer'][] = $similar_items[$ks]['customer'];
+                            $price_diff_exists['competitor_price'][] = $competitor_price;
+                            $price_diff = $price_diff_exists;
+                            $competitors_prices[] = $competitor_price;
+                        }
+                    }
+                }
+            }
+
 
 //                        $n = parse_url($data_import['url']);
 //                                     $customer=  strtolower($n['host']);
 //                                     $customer = str_replace("www1.", "",$customer);
 //                                     $customer =str_replace("www.", "", $customer);
 
+            $customer = "";
+            foreach ($sites_list as $ki => $vi) {
+                if (strpos($data_import['url'], "$vi") !== false) {
+                    $customer = $vi;
+                }
+            }
+
+            $customer = strtolower($this->sites_model->get_name_by_url($customer));
+
+            $similar_products_competitors[] = array(
+                'imported_data_id' => $data_import['imported_data_id'],
+                'customer' => $customer
+            );
+
+
+
+            $rows = $this->similar_data_model->get_group_id($data_import['imported_data_id']);
+            if (count($rows) > 0) {
+
+                foreach ($similar_products_competitors as $val) {
+                    foreach ($rows as $key => $row) {
+                        if ($row['group_id'] == $val['imported_data_id']) {
+                            unset($rows[$key]);
+                        }
+                    }
+                }
+            }
+            if (count($rows) > 0) {
+                $url = array();
+                foreach ($rows as $row) {
+                    $data_similar = $this->imported_data_parsed_model->getByImId($row['group_id']);
+                    $n = parse_url($data_similar['url']);
+                    $customer = $n['host'];
+                    $data_similar[$key]['customer'] = $customer;
+
+                    if (!in_array($customer, $url)) {
+                        $url[] = $customer;
                         $customer = "";
                         foreach ($sites_list as $ki => $vi) {
-                            if (strpos($data_import['url'], "$vi") !== false) {
+                            if (strpos($data_similar['url'], "$vi") !== false) {
                                 $customer = $vi;
                             }
                         }
-
                         $customer = strtolower($this->sites_model->get_name_by_url($customer));
-
-                        $similar_products_competitors[] = array(
-                            'imported_data_id' => $data_import['imported_data_id'],
-                            'customer' => $customer
-                        );
-
-
-
-                        $rows = $this->similar_data_model->get_group_id($data_import['imported_data_id']);
-                        if (count($rows) > 0) {
-
-                            foreach ($similar_products_competitors as $val) {
-                                foreach ($rows as $key => $row) {
-                                    if ($row['group_id'] == $val['imported_data_id']) {
-                                        unset($rows[$key]);
-                                    }
-                                }
-                            }
-                        }
-                        if (count($rows) > 0) {
-                            $url = array();
-                            foreach ($rows as $row) {
-                                $data_similar = $this->imported_data_parsed_model->getByImId($row['group_id']);
-                                $n = parse_url($data_similar['url']);
-                                $customer = $n['host'];
-                                $data_similar[$key]['customer'] = $customer;
-
-                                if (!in_array($customer, $url)) {
-                                    $url[] = $customer;
-                                    $customer = "";
-                                    foreach ($sites_list as $ki => $vi) {
-                                        if (strpos($data_similar['url'], "$vi") !== false) {
-                                            $customer = $vi;
-                                        }
-                                    }
-                                    $customer = strtolower($this->sites_model->get_name_by_url($customer));
-                                    $similar_products_competitors[] = array('imported_data_id' => $row['group_id'], 'customer' => $customer);
-                                }
-                            }
-                        }
+                        $similar_products_competitors[] = array('imported_data_id' => $row['group_id'], 'customer' => $customer);
                     }
-        
-        
+                }
+            }
+        }
+
+
         print_r($similar_products_competitors);
-        
-       
+
+
     }
     public function do_stats_new() {
         echo "Script start working";
@@ -434,6 +441,7 @@ class Crons extends MY_Controller {
             $this->load->model('imported_data_parsed_model');
             $this->load->model('research_data_model');
             $this->load->model('statistics_model');
+            $this->load->model('statistics_new_model');
             $this->load->model('statistics_duplicate_content_model');
             $this->load->model('similar_imported_data_model');
             $this->load->model('similar_product_groups_model');
@@ -441,7 +449,16 @@ class Crons extends MY_Controller {
             $this->load->library('helpers');
             $this->load->helper('algoritm');
             $this->load->model('sites_model');
-            $data_arr = $this->imported_data_parsed_model->do_stats();
+            $this->statistics_new_model->truncate();
+
+            $trnc = $this->uri->segment(3);
+            var_dump($trnc);        
+            if($trnc===false){
+                $trnc=1;
+            }
+           
+            $data_arr = $this->imported_data_parsed_model->do_stats($trnc);
+
             if (count($data_arr) > 1) {
 
                 $sites_list = array();
@@ -556,7 +573,7 @@ class Crons extends MY_Controller {
                         try {
                             $own_prices = $this->imported_data_parsed_model->getLastPrices($obj->imported_data_id);
                         } catch (Exception $e) {
-                            echo 'РћС€РёР±РєР°', $e->getMessage(), "\n";
+                            echo 'Error', $e->getMessage(), "\n";
                             $own_prices = $this->imported_data_parsed_model->getLastPrices($obj->imported_data_id);
                         }
 
@@ -567,12 +584,12 @@ class Crons extends MY_Controller {
                             $price_diff_exists['id'] = $own_prices[0]->id;
                             $price_diff_exists['own_site'] = $own_site;
                             $price_diff_exists['own_price'] = floatval($own_price);
-                        
+
                             try {
                                 $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
                             } catch (Exception $e) {
-                                echo 'РћС€РёР±РєР°', $e->getMessage(), "\n";
-                               
+                                echo 'Error', $e->getMessage(), "\n";
+
                                 $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
                             }
 
@@ -603,7 +620,7 @@ class Crons extends MY_Controller {
                                     try {
                                         $three_last_prices = $this->imported_data_parsed_model->getLastPrices($similar_item_imported_data_id);
                                     } catch (Exception $e) {
-                                        echo 'РћС€РёР±РєР°', $e->getMessage(), "\n";
+                                        echo 'Error', $e->getMessage(), "\n";
                                         $this->statistics_model->db->close();
                                         $this->statistics_model->db->initialize();
                                         $three_last_prices = $this->imported_data_parsed_model->getLastPrices($similar_item_imported_data_id);
@@ -630,8 +647,8 @@ class Crons extends MY_Controller {
                              try {
                                 $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
                             } catch (Exception $e) {
-                                echo 'РћС€РёР±РєР°', $e->getMessage(), "\n";
-                               
+                                echo 'Error', $e->getMessage(), "\n";
+
                                 $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
                             }
 
@@ -761,14 +778,18 @@ class Crons extends MY_Controller {
                     $time_start = microtime(true);
 
                     try {
-                        $insert_id = $this->statistics_model->insert_new($obj->imported_data_id, $obj->revision, $short_description_wc, $long_description_wc, $short_seo_phrases, $long_seo_phrases, $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors, serialize($similar_products_competitors)
+                        $insert_id = $this->statistics_new_model->insert($obj->imported_data_id, $obj->revision, $short_description_wc, $long_description_wc,
+                            $short_seo_phrases, $long_seo_phrases, $own_price, serialize($price_diff), serialize($competitors_prices),
+                            $items_priced_higher_than_competitors, serialize($similar_products_competitors)
                         );
                     } catch (Exception $e) {
-                        echo 'РћС€РёР±РєР°', $e->getMessage(), "\n";
+                        echo 'Error', $e->getMessage(), "\n";
                         $this->statistics_model->db->close();
                         $this->statistics_model->db->initialize();
 
-                        $insert_id = $this->statistics_model->insert_new($obj->imported_data_id, $obj->revision, $short_description_wc, $long_description_wc, $short_seo_phrases, $long_seo_phrases, $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors, serialize($similar_products_competitors));
+                        $insert_id = $this->statistics_new_model->insert($obj->imported_data_id, $obj->revision,
+                            $short_description_wc, $long_description_wc, $short_seo_phrases, $long_seo_phrases, $own_price,
+                            serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors, serialize($similar_products_competitors));
                     }
 
                     $time_end = microtime(true);
@@ -789,7 +810,7 @@ class Crons extends MY_Controller {
                 $this->db->update('settings', $data);
             }
         } catch (Exception $e) {
-            echo 'Ошибка', $e->getMessage(), "\n";
+            echo 'Error', $e->getMessage(), "\n";
             unlink($tmp_dir . ".locked");
         }
         unlink($tmp_dir . ".locked");
@@ -798,7 +819,7 @@ class Crons extends MY_Controller {
         $res = $q->get()->row_array();
         $start = $res['description'];
         if (count($data_arr) > 1) {
-            shell_exec('wget -S -O- http://dev.contentsolutionsinc.com/producteditor/index.php/crons/do_stats_new > /dev/null 2>/dev/null &');
+            shell_exec("wget -S -O- http://dev.contentsolutionsinc.com/producteditor/index.php/crons/do_stats_new/$trnc > /dev/null 2>/dev/null &");
         } else {
             $data = array(
                 'description' => 0
@@ -1042,7 +1063,7 @@ class Crons extends MY_Controller {
             echo "Script finish working";
             echo "Cron Job Finished";
         } catch (Exception $e) {
-            echo 'Ошибка', $e->getMessage(), "\n";
+            echo 'Error', $e->getMessage(), "\n";
             unlink($tmp_dir . ".locked");
         }
         unlink($tmp_dir . ".locked");
@@ -1058,6 +1079,10 @@ class Crons extends MY_Controller {
 
         touch($tmp_dir . ".locked");
         try {
+            $subject='Cron Job Report - do_stats started';
+            $message='Cron job for do_stats started';
+            $this->send_email_report($subject,  $message);
+
             $this->load->model('batches_model');
             $this->load->model('research_data_model');
             $this->load->model('statistics_model');
@@ -1080,7 +1105,7 @@ class Crons extends MY_Controller {
                 try {
                     $data = $this->research_data_model->do_stats($batch->id);
                 } catch (Exception $e) {
-                    echo 'Ошибка', $e->getMessage(), "\n";
+                    echo 'Error', $e->getMessage(), "\n";
                     $this->statistics_model->db->close();
                     $this->statistics_model->db->initialize();
                     $data = $this->research_data_model->do_stats($batch->id);
@@ -1113,7 +1138,7 @@ class Crons extends MY_Controller {
                         try {
                             $data_import = $this->imported_data_parsed_model->getByImId($obj->imported_data_id);
                         } catch (Exception $e) {
-                            echo 'Ошибка', $e->getMessage(), "\n";
+                            echo 'Error', $e->getMessage(), "\n";
                             $this->statistics_model->db->close();
                             $this->statistics_model->db->initialize();
                             $data_import = $this->imported_data_parsed_model->getByImId($obj->imported_data_id);
@@ -1129,7 +1154,7 @@ class Crons extends MY_Controller {
                             try {
                                 $own_prices = $this->imported_data_parsed_model->getLastPrices($obj->imported_data_id);
                             } catch (Exception $e) {
-                                echo 'Ошибка', $e->getMessage(), "\n";
+                                echo 'Error', $e->getMessage(), "\n";
                                 $this->statistics_model->db->close();
                                 $this->statistics_model->db->initialize();
                                 $own_prices = $this->imported_data_parsed_model->getLastPrices($obj->imported_data_id);
@@ -1146,7 +1171,7 @@ class Crons extends MY_Controller {
                                 try {
                                     $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
                                 } catch (Exception $e) {
-                                    echo 'Ошибка', $e->getMessage(), "\n";
+                                    echo 'Error', $e->getMessage(), "\n";
                                     $this->statistics_model->db->close();
                                     $this->statistics_model->db->initialize();
                                     $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
@@ -1166,7 +1191,7 @@ class Crons extends MY_Controller {
                                         try {
                                             $three_last_prices = $this->imported_data_parsed_model->getLastPrices($similar_item_imported_data_id);
                                         } catch (Exception $e) {
-                                            echo 'Ошибка', $e->getMessage(), "\n";
+                                            echo 'Error', $e->getMessage(), "\n";
                                             $this->statistics_model->db->close();
                                             $this->statistics_model->db->initialize();
                                             $three_last_prices = $this->imported_data_parsed_model->getLastPrices($similar_item_imported_data_id);
@@ -1201,7 +1226,7 @@ class Crons extends MY_Controller {
                             try {
                                 $this->imported_data_parsed_model->insert($obj->imported_data_id, "Description_WC", $short_description_wc);
                             } catch (Exception $e) {
-                                echo 'Ошибка', $e->getMessage(), "\n";
+                                echo 'Error', $e->getMessage(), "\n";
                                 $this->statistics_model->db->close();
                                 $this->statistics_model->db->initialize();
                                 $this->imported_data_parsed_model->insert($obj->imported_data_id, "Description_WC", $short_description_wc);
@@ -1211,7 +1236,7 @@ class Crons extends MY_Controller {
                                 try {
                                     $this->imported_data_parsed_model->updateValueByKey($obj->imported_data_id, "Description_WC", $short_description_wc);
                                 } catch (Exception $e) {
-                                    echo 'Ошибка', $e->getMessage(), "\n";
+                                    echo 'Error', $e->getMessage(), "\n";
                                     $this->statistics_model->db->close();
                                     $this->statistics_model->db->initialize();
                                     $this->imported_data_parsed_model->updateValueByKey($obj->imported_data_id, "Description_WC", $short_description_wc);
@@ -1228,7 +1253,7 @@ class Crons extends MY_Controller {
                             try {
                                 $this->imported_data_parsed_model->insert($obj->imported_data_id, "Long_Description_WC", $long_description_wc);
                             } catch (Exception $e) {
-                                echo 'Ошибка', $e->getMessage(), "\n";
+                                echo 'Error', $e->getMessage(), "\n";
                                 $this->statistics_model->db->close();
                                 $this->statistics_model->db->initialize();
                                 $this->imported_data_parsed_model->insert($obj->imported_data_id, "Long_Description_WC", $long_description_wc);
@@ -1238,7 +1263,7 @@ class Crons extends MY_Controller {
                                 try {
                                     $this->imported_data_parsed_model->updateValueByKey($obj->imported_data_id, "Long_Description_WC", $long_description_wc);
                                 } catch (Exception $e) {
-                                    echo 'Ошибка', $e->getMessage(), "\n";
+                                    echo 'Error', $e->getMessage(), "\n";
                                     $this->statistics_model->db->close();
                                     $this->statistics_model->db->initialize();
                                     $this->imported_data_parsed_model->updateValueByKey($obj->imported_data_id, "Long_Description_WC", $long_description_wc);
@@ -1266,7 +1291,7 @@ class Crons extends MY_Controller {
                                         try {
                                             $this->imported_data_parsed_model->insert($obj->imported_data_id, "short_seo_phrases", $short_seo_phrases);
                                         } catch (Exception $e) {
-                                            echo 'Ошибка', $e->getMessage(), "\n";
+                                            echo 'Error', $e->getMessage(), "\n";
                                             $this->statistics_model->db->close();
                                             $this->statistics_model->db->initialize();
                                             $this->imported_data_parsed_model->insert($obj->imported_data_id, "short_seo_phrases", $short_seo_phrases);
@@ -1275,7 +1300,7 @@ class Crons extends MY_Controller {
                                         try {
                                             $this->imported_data_parsed_model->updateValueByKey($obj->imported_data_id, "short_seo_phrases", $short_seo_phrases);
                                         } catch (Exception $e) {
-                                            echo 'Ошибка', $e->getMessage(), "\n";
+                                            echo 'Error', $e->getMessage(), "\n";
                                             $this->statistics_model->db->close();
                                             $this->statistics_model->db->initialize();
                                             $this->imported_data_parsed_model->updateValueByKey($obj->imported_data_id, "short_seo_phrases", $short_seo_phrases);
@@ -1305,7 +1330,7 @@ class Crons extends MY_Controller {
                                         try {
                                             $this->imported_data_parsed_model->insert($obj->imported_data_id, "long_seo_phrases", $long_seo_phrases);
                                         } catch (Exception $e) {
-                                            echo 'Ошибка', $e->getMessage(), "\n";
+                                            echo 'Error', $e->getMessage(), "\n";
                                             $this->statistics_model->db->close();
                                             $this->statistics_model->db->initialize();
                                             $this->imported_data_parsed_model->insert($obj->imported_data_id, "long_seo_phrases", $long_seo_phrases);
@@ -1314,7 +1339,7 @@ class Crons extends MY_Controller {
                                         try {
                                             $this->imported_data_parsed_model->updateValueByKey($obj->imported_data_id, "long_seo_phrases", $long_seo_phrases);
                                         } catch (Exception $e) {
-                                            echo 'Ошибка', $e->getMessage(), "\n";
+                                            echo 'Error', $e->getMessage(), "\n";
                                             $this->statistics_model->db->close();
                                             $this->statistics_model->db->initialize();
                                             $this->imported_data_parsed_model->updateValueByKey($obj->imported_data_id, "long_seo_phrases", $long_seo_phrases);
@@ -1333,7 +1358,7 @@ class Crons extends MY_Controller {
                             $insert_id = $this->statistics_model->insert($obj->rid, $obj->imported_data_id, $obj->research_data_id, $batch->id, $obj->product_name, $obj->url, $obj->short_description, $obj->long_description, $short_description_wc, $long_description_wc, $short_seo_phrases, $long_seo_phrases, $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors, serialize($similar_products_competitors)
                             );
                         } catch (Exception $e) {
-                            echo 'Ошибка', $e->getMessage(), "\n";
+                            echo 'Error', $e->getMessage(), "\n";
                             $this->statistics_model->db->close();
                             $this->statistics_model->db->initialize();
 
@@ -1379,10 +1404,13 @@ class Crons extends MY_Controller {
                       } */
                 }
             }
+            $subject='Cron Job Report - do_stats finished';
+            $message='Cron job for do_stats finished';
+            $this->send_email_report($subject,  $message);
             echo "Script finish working";
             echo "Cron Job Finished";
         } catch (Exception $e) {
-            echo 'Ошибка', $e->getMessage(), "\n";
+            echo 'Error', $e->getMessage(), "\n";
             unlink($tmp_dir . ".locked");
         }
         unlink($tmp_dir . ".locked");
@@ -1405,7 +1433,7 @@ class Crons extends MY_Controller {
             $time = $time_end - $time_start;
             echo "foreach insert - $time seconds\n";
         } catch (Exception $e) {
-            echo 'Ошибка', $e->getMessage(), "\n";
+            echo 'Error', $e->getMessage(), "\n";
         }
     }
 
@@ -1458,7 +1486,7 @@ class Crons extends MY_Controller {
             }
             echo "Cron Job Finished";
         } catch (Exception $e) {
-            echo 'Ошибка', $e->getMessage(), "\n";
+            echo 'Error', $e->getMessage(), "\n";
             unlink($tmp_dir . ".locked");
         }
         unlink($tmp_dir . ".locked");
@@ -1635,7 +1663,7 @@ class Crons extends MY_Controller {
         } else {
             $same_pr[0]['long_original'] = 0;
             $same_pr[0]['short_original'] = 0;
-            
+
         }
         return $same_pr;
     }

@@ -167,6 +167,16 @@
 							<input type="text" id="java_input" name="settings[java_input]" value="<?php echo isset($settings['java_input'])? $settings['java_input']:'' ?>"/>
 						</div>
 					</div>
+                    <h3>Assess data table:</h3>
+                    <div class="row-fluid">
+                        <div class="span6 admin_system_content">
+                            <input type="radio" name="settings[statistics_table]" id="statistics" value="statistics" <?php if(!isset($settings['statistics_table']) or $settings['statistics_table']=="statistics"){ echo 'checked'; } ?> />
+                            <p>statistics</p>
+                            <div class="clear-fix"></div>
+                            <input type="radio" name="settings[statistics_table]" id="statistics_new" value="statistics_new" <?php echo ($settings['statistics_table']=="statistics_new")? 'checked':'' ?>/>
+                            <p>statistics_new</p>
+                        </div>
+                    </div>
 					<div class="row-fluid">
 						<h3>Description Generators:</h3>
 			    		<div class="control-group">

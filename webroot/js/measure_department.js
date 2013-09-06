@@ -209,8 +209,21 @@ $( function() {
             // window.open($(this).find('td:nth-child(3)').text());
         // });
 
+		$('.changeDensity').live('change',function(){
+			var descriptionTitle = $(this).children('option:selected').text();
+			var currentVal = $(this).val().trim();
+			var densityCheck = '0.0%';
+			if($(this).val().trim() == ''){
+				$(this).children('option').each(function(){
+					if(descriptionTitle.trim().replace('"','').replace('"','').toLowerCase() == $(this).text())
+						densityCheck = $(this).val();
+				});
+				$(this).next().text('\xa0'+densityCheck+'%');
+				
+			}else
+				$(this).next().text('\xa0'+$(this).val()+'%');
+		});
 }); //end document ready
-
 
 function readBestSellers(department_id,site_name,table_name) {
     //display ajax loader animation
@@ -226,12 +239,35 @@ function readBestSellers(department_id,site_name,table_name) {
 		 },
 
         success: function( data ) {
+		
 			var tableDataString = '';
+			
 			for(var i=0; i<data.length; i++){
+				
 				tableDataString += '<tr>';
 				tableDataString += '<td>'+data[i].text+'</td>';
 				tableDataString += '<td>'+data[i].nr_products+'</td>';
-				tableDataString += '<td>'+data[i].text+'3.5%<input type="text" name="rere" value="keyword" /></td>';
+				
+				if(data[i].title_keyword_description_density && data[i].description_title) {
+					var density = '0.0%';
+					var densityObj = $.parseJSON(data[i].title_keyword_description_density);
+					var descriptionTitle = data[i].description_title;
+					
+					for(index in densityObj){
+						if(descriptionTitle.trim().replace('"','').replace('"','').toLowerCase() == index.trim())
+							density = densityObj[index]+'%';
+					}
+				
+					tableDataString += '<td><select class="changeDensity" style="width:120px;" >';
+					tableDataString += '<option value="" >'+descriptionTitle.trim().replace('"','').replace('"','')+'</option>';
+					for(index in densityObj){
+						tableDataString += '<option value="'+densityObj[index]+'" >'+index+'</option>';
+					}
+					tableDataString += '</select><span style="position:absolute";>&nbsp;'+density+'</span><br>';
+				} else {
+					tableDataString += '<td>';
+				}
+				tableDataString += '<input type="text" onblur="keywordAjax(this);" name="keyword" value="" /></td>';
 				tableDataString += '<td>'+data[i].description_words+'</td>';
 				tableDataString += '</tr>';
 			}
@@ -254,4 +290,18 @@ function readBestSellers(department_id,site_name,table_name) {
             $( '#ajaxLoadAni' ).fadeOut( 'slow' );
         }
     });
+}
+function keywordAjax(obj) {
+	$.ajax({
+	
+			url: base_url + 'index.php/measure/getKeywordByDescriptionText',
+			type: 'post',
+			data: {'keyword': $(obj).val(),
+			       'department_id': department_id,
+                   'site_name': site_name},
+			success: function(data) {
+				
+			}
+
+	});
 }

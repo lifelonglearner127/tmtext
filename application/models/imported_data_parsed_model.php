@@ -927,104 +927,121 @@ class Imported_data_parsed_model extends CI_Model {
         return $this->db->update($this->tables['imported_data_parsed'], $params, array('imported_data_id' => $imported_id, 'key' => $key));
     }
 
-     function do_stats_ids(){
-         
-        $q=$this->db->select('key,description')->from('settings')->where('key','duplicate_offset');
-        $res=$q->get()->row_array();
-        if(count($res)>0){
-            $start=$res['description'];
-        }else{
+    function do_stats_ids() {
+
+        $q = $this->db->select('key,description')->from('settings')->where('key', 'duplicate_offset');
+        $res = $q->get()->row_array();
+        if (count($res) > 0) {
+            $start = $res['description'];
+        } else {
             $d = array(
-            'key' => 'duplicate_offset' ,
-            'description' => '0' ,
+                'key' => 'duplicate_offset',
+                'description' => '0',
+            );
 
-         );
+            $this->db->insert('settings', $d);
 
-        $this->db->insert('settings', $d);
-         
-        $start=0;
+            $start = 0;
         }
-        $limit=5;
+        $limit = 5;
 
-        $start =$start*5+1;
+        $start = $start * 5 + 1;
 
         $this->db->select('p.imported_data_id')
-            ->from($this->tables['imported_data_parsed'] . ' as p');
+                ->from($this->tables['imported_data_parsed'] . ' as p');
 
         $this->db->group_by('imported_data_id');
-        $this->db->limit($limit,$start);
+        $this->db->limit($limit, $start);
         $query1 = $this->db->get();
         $results1 = $query1->result();
         return $results1;
-     }
-     function do_stats_new_test($id){
-         $this->db->select('p.imported_data_id, p.key, p.value, p.revision')
-            ->from($this->tables['imported_data_parsed'] . ' as p')
+    }
 
+    function do_stats_new_test($id) {
+        $this->db->select('p.imported_data_id, p.key, p.value, p.revision')
+                ->from($this->tables['imported_data_parsed'] . ' as p')
                 ->where('p.revision = (SELECT  MAX(revision) as revision
                       FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
-                      GROUP BY imported_data_id)',  NULL, FALSE)
-               ->where('p.imported_data_id',$id);
-            $query=$this->db->get();
-            $res = $query->result();
-            $parsed_attributes='';
-            $description = '';
-            $long_description = '';
-            $url = '';
-            $revision=1;
-            $features = '';
-            foreach ($res as $val) {
-                $revision=$val->revision;
-                if ($val->key == 'URL') {
-                    $url = $val->value;
-                }
-                if ($val->key == 'Description') {
-                    $description = $val->value;
-                }
-                if ($val->key == 'Long_Description') {
-                    $long_description = $val->value;
-                }
-                if ($val->key === 'parsed_attributes') {
-                   $parsed_attributes = unserialize($val->value);
-               }
-                if ($val->key== 'Product Name') {
-                    $product_name = $val->value;
-                }
-                if ($val->key== 'Features') {
-                    $features = $val->value;
-                }
+                      GROUP BY imported_data_id)', NULL, FALSE)
+                ->where('p.imported_data_id', $id);
+        $query = $this->db->get();
+        $res = $query->result();
+        $parsed_attributes = '';
+        $description = '';
+        $long_description = '';
+        $url = '';
+        $revision = 1;
+        $features = '';
+        foreach ($res as $val) {
+            $revision = $val->revision;
+            if ($val->key == 'URL') {
+                $url = $val->value;
             }
-            $data=array();
-            array_push($data, (object) array('imported_data_id' => $id,
-                'description' => $description, 'long_description' => $long_description, 'url' => $url, 'product_name' => $product_name, 'features' => $features, 'parsed_attributes'=>$parsed_attributes,'revision'=>$revision));
-        return $data;
-
-     }
-        function do_stats(){
-
-        $q=$this->db->select('key,description')->from('settings')->where('key','cron_job_offset');
-        $res=$q->get()->row_array();
-        if(count($res)>0){
-            $start=$res['description'];
-        }else{
-            $d = array(
-            'key' => 'cron_job_offset' ,
-            'description' => '0' ,
-
-         );
-
-         $this->db->insert('settings', $d);
-         $start=0;
+            if ($val->key == 'Description') {
+                $description = $val->value;
+            }
+            if ($val->key == 'Long_Description') {
+                $long_description = $val->value;
+            }
+            if ($val->key === 'parsed_attributes') {
+                $parsed_attributes = unserialize($val->value);
+            }
+            if ($val->key == 'Product Name') {
+                $product_name = $val->value;
+            }
+            if ($val->key == 'Features') {
+                $features = $val->value;
+            }
         }
-        $limit=100;
+        $data = array();
+        array_push($data, (object) array('imported_data_id' => $id,
+                    'description' => $description, 'long_description' => $long_description, 'url' => $url, 'product_name' => $product_name, 'features' => $features, 'parsed_attributes' => $parsed_attributes, 'revision' => $revision));
+        return $data;
+    }
 
-        $start =$start*100+1;
+    function truncate_stats_new() {
+        $sql_cmd = "TRUNCATE TABLE `statistics_new`";
+        return $this->db->query($sql_cmd);
+    }
+
+    function do_stats($truncate) {
+
+        $q = $this->db->select('key,description')->from('settings')->where('key', 'cron_job_offset');
+        $res = $q->get()->row_array();
+        if (count($res) > 0) {
+            $start = $res['description'];
+        } else {
+            $d = array(
+                'key' => 'cron_job_offset',
+                'description' => '0',
+            );
+
+            $this->db->insert('settings', $d);
+
+            $start = 0;
+        }
+       
+        if (($truncate==1) &&  ($start == 0)) {
+            $this->truncate_stats_new();
+        }
+        if ($this->db->count_all('statistics_new') == 0 && $start != 0) {
+
+            $this->db->where('key', 'cron_job_offset');
+            $this->db->update('settings', array(
+                'description' => 0
+            ));
+             $start = 0;
+        }
+
+        $limit = 100;
+
+        $start = $start * 100 + 1;
 
         $this->db->select('p.imported_data_id')
-            ->from($this->tables['imported_data_parsed'] . ' as p');
+                ->from($this->tables['imported_data_parsed'] . ' as p');
 
         $this->db->group_by('imported_data_id');
-        $this->db->limit($limit,$start);
+        $this->db->limit($limit, $start);
         $query1 = $this->db->get();
         $results1 = $query1->result();
 
@@ -1032,22 +1049,21 @@ class Imported_data_parsed_model extends CI_Model {
         foreach ($results1 as $result) {
 
             $this->db->select('p.imported_data_id, p.key, p.value, p.revision')
-            ->from($this->tables['imported_data_parsed'] . ' as p')
-
-                ->where('p.revision = (SELECT  MAX(revision) as revision
+                    ->from($this->tables['imported_data_parsed'] . ' as p')
+                    ->where('p.revision = (SELECT  MAX(revision) as revision
                       FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
-                      GROUP BY imported_data_id)',  NULL, FALSE)
-               ->where('p.imported_data_id',$result->imported_data_id);
-            $query=$this->db->get();
+                      GROUP BY imported_data_id)', NULL, FALSE)
+                    ->where('p.imported_data_id', $result->imported_data_id);
+            $query = $this->db->get();
             $res = $query->result();
-            $parsed_attributes='';
+            $parsed_attributes = '';
             $description = '';
             $long_description = '';
             $url = '';
-            $revision=1;
+            $revision = 1;
             $features = '';
             foreach ($res as $val) {
-                $revision=$val->revision;
+                $revision = $val->revision;
                 if ($val->key == 'URL') {
                     $url = $val->value;
                 }
@@ -1058,33 +1074,35 @@ class Imported_data_parsed_model extends CI_Model {
                     $long_description = $val->value;
                 }
                 if ($val->key === 'parsed_attributes') {
-                   $parsed_attributes = unserialize($val->value);
-               }
-                if ($val->key== 'Product Name') {
+                    $parsed_attributes = unserialize($val->value);
+                }
+                if ($val->key == 'Product Name') {
                     $product_name = $val->value;
                 }
-                if ($val->key== 'Features') {
+                if ($val->key == 'Features') {
                     $features = $val->value;
                 }
             }
             array_push($data, (object) array('imported_data_id' => $result->imported_data_id,
-                'description' => $description, 'long_description' => $long_description, 'url' => $url, 'product_name' => $product_name, 'features' => $features, 'parsed_attributes'=>$parsed_attributes,'revision'=>$revision));
+                        'description' => $description, 'long_description' => $long_description, 'url' => $url, 'product_name' => $product_name, 'features' => $features, 'parsed_attributes' => $parsed_attributes, 'revision' => $revision));
         }
 
-       return $data;
+        return $data;
     }
+
     function getData($value, $website = '', $category_id = '', $limit = '', $key = 'Product Name', $strict = false) {
-        if(strlen($value)>4){
+
+        if ($key == 'parsed_attributes' && strlen($value) > 4) {
             $arr = explode('/', $value);
             $value = $arr[0];
-         }
+        }
         $this->db->select('p.imported_data_id, p.key, p.value')
                 ->from($this->tables['imported_data_parsed'] . ' as p')
                 ->join($this->tables['imported_data'] . ' as i', 'i.id = p.imported_data_id', 'left')
                 ->where('p.key', $key)
                 ->where('p.revision = (SELECT  MAX(revision) as revision
                       FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
-                      GROUP BY imported_data_id)',  NULL, FALSE);
+                      GROUP BY imported_data_id)', NULL, FALSE);
 
         if ($strict) {
             $this->db->like('p.value', '"' . $value . '"');
@@ -1226,43 +1244,31 @@ class Imported_data_parsed_model extends CI_Model {
 
         $batch = "";
         if ($this->input->get('batch')) {
-            $batch = " and b.title = " . $this->db->escape($this->input->get('batch'));
+            $batch = " and b.title = " . $this->db->escape(rawurldecode($this->input->get('batch')));
         }
 
         $sql_cmd = "
-            (select
+            select
                 rd.id,
                 rd.batch_id,
-                CASE WHEN rd.product_name IS NULL OR rd.product_name = '' THEN kv.`value` ELSE rd.product_name END AS product_name,
-                rd.url
+                CASE WHEN rd.product_name IS NULL OR rd.product_name = '' THEN idp.`value` ELSE rd.product_name END AS product_name,
+                rd.url,
+                max(idp.revision) as revision
             from
-                research_data as rd
-            INNER JOIN batches AS b ON
+                batches AS b
+            INNER JOIN research_data as rd ON
                 b.id = rd.batch_Id
-            INNER JOIN imported_data_parsed AS idp ON
-                idp.value = rd.url
-                AND `key` = 'URL'
-            INNER JOIN imported_data_parsed AS kv ON
-                kv.imported_data_id = idp.imported_data_id
-                AND kv.key = 'Product Name'
+            inner join research_data_to_crawler_list as rdtcl on rdtcl.research_data_id = rd.id
+            inner join crawler_list as cl on cl.id = rdtcl.crawler_list_id
+            left join imported_data_parsed as idp
+                on idp.imported_data_id = cl.imported_data_id
+                and idp.`key` = 'Product Name'
             where
-                concat(rd.product_name, kv.`value`, rd.url) like $like
+                concat(rd.product_name, rd.url) like $like
                 $status
                 $batch
-            ) union (
-            select
-                r.id,
-                r.batch_id,
-                r.product_name,
-                r.url
-            from
-                `research_data` r
-            INNER JOIN batches AS b ON
-                b.id = r.batch_Id
-            LEFT JOIN imported_data_parsed i ON r.url = i.value
-                and i.`key` = 'URL'
-            where i.imported_data_id IS NULL $batch
-            )
+            group by
+	            rd.id
         ";
 
         $query = $this->db->query($sql_cmd);
@@ -1436,7 +1442,7 @@ class Imported_data_parsed_model extends CI_Model {
                 ->or_where('p.key', 'URL')
                 ->where('p.revision = (SELECT  MAX(revision) as revision
                       FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
-                      GROUP BY imported_data_id)',  NULL, FALSE);
+                      GROUP BY imported_data_id)', NULL, FALSE);
 
         $query = $this->db->get();
         $results = $query->result();
@@ -1489,19 +1495,19 @@ class Imported_data_parsed_model extends CI_Model {
                                     }
                                 }
                             } else {
-                                if(isset($val1['parsed_attributes']['model'])){
+                                if (isset($val1['parsed_attributes']['model'])) {
                                     if (preg_match('/' . $val1['parsed_attributes']['model'] . '/', $val['product_name'])) {
+                                        if (leven_algoritm(strtolower($val1['product_name']), strtolower($val['product_name'])) > 37) {
+                                            $urls[] = $this->get_base_url($val1['url']);
+                                            $groups[$im_data_id][] = $key;
+                                        }
+                                    }
+                                } else {
                                     if (leven_algoritm(strtolower($val1['product_name']), strtolower($val['product_name'])) > 37) {
                                         $urls[] = $this->get_base_url($val1['url']);
                                         $groups[$im_data_id][] = $key;
                                     }
                                 }
-                                }else{
-                                if (leven_algoritm(strtolower($val1['product_name']), strtolower($val['product_name'])) >37) {
-                                    $urls[] = $this->get_base_url($val1['url']);
-                                    $groups[$im_data_id][] = $key;
-                                }
-                               }
                             }
                         }
                     }
@@ -1522,9 +1528,9 @@ class Imported_data_parsed_model extends CI_Model {
                 }
             }
         }
-
     }
-    public function test($im_data_id){
+
+    public function test($im_data_id) {
 
 
 
@@ -1542,8 +1548,8 @@ class Imported_data_parsed_model extends CI_Model {
 //        $query = $this->db->get('imported_data_parsed');
 //        echo "<pre>";
 //        print_r($query->result());
-
     }
+
     public function getByProductName($im_data_id, $selected_product_name = '', $manufacturer = '', $strict = false) {
 
         $this->db->select('p.imported_data_id, p.key, p.value')
@@ -1552,9 +1558,9 @@ class Imported_data_parsed_model extends CI_Model {
                 ->where('p.key', 'Product Name')
                 ->or_where('p.key', 'parsed_attributes')
                 ->or_where('p.key', 'URL')
-              ->where('p.revision = (SELECT  MAX(revision) as revision
+                ->where('p.revision = (SELECT  MAX(revision) as revision
                       FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
-                      GROUP BY imported_data_id)',  NULL, FALSE);
+                      GROUP BY imported_data_id)', NULL, FALSE);
 
 
         if ($strict) {
@@ -1592,28 +1598,28 @@ class Imported_data_parsed_model extends CI_Model {
                     $for_groups[] = $key;
                 } else {
                     if (!in_array($this->get_base_url($val1['url']), $urls)) {
-                         if (isset($val1['parsed_attributes']['manufacturer'])) {
-                             if (preg_match('/' . $val1['parsed_attributes']['manufacturer'] . '/', $selected_product_name)) {
-                                    if (leven_algoritm(strtolower($val1['product_name']), strtolower($selected_product_name)) > 37) {
-                                        $urls[] = $this->get_base_url($val1['url']);
-                                        $for_groups[] = $key;
-                                    }
+                        if (isset($val1['parsed_attributes']['manufacturer'])) {
+                            if (preg_match('/' . $val1['parsed_attributes']['manufacturer'] . '/', $selected_product_name)) {
+                                if (leven_algoritm(strtolower($val1['product_name']), strtolower($selected_product_name)) > 37) {
+                                    $urls[] = $this->get_base_url($val1['url']);
+                                    $for_groups[] = $key;
                                 }
-                         }else{
-                            if(isset($val1['parsed_attributes']['model'])){
+                            }
+                        } else {
+                            if (isset($val1['parsed_attributes']['model'])) {
                                 if (preg_match('/' . $val1['parsed_attributes']['model'] . '/', $selected_product_name)) {
                                     if (leven_algoritm(strtolower($val1['product_name']), strtolower($selected_product_name)) > 37) {
                                         $urls[] = $this->get_base_url($val1['url']);
                                         $for_groups[] = $key;
                                     }
                                 }
-                            }else{
-                                if (leven_algoritm(strtolower($val1['product_name']), strtolower($selected_product_name)) >37) {
+                            } else {
+                                if (leven_algoritm(strtolower($val1['product_name']), strtolower($selected_product_name)) > 37) {
                                     $urls[] = $this->get_base_url($val1['url']);
                                     $for_groups[] = $key;
                                 }
                             }
-                         }
+                        }
                     }
                 }
             }
@@ -1625,7 +1631,7 @@ class Imported_data_parsed_model extends CI_Model {
         foreach ($for_groups as $result) {
             $query = $this->db->where('imported_data_id', $result)->where("revision = (SELECT  MAX(revision) as revision
                       FROM imported_data_parsed WHERE `imported_data_id`= $result
-                      GROUP BY imported_data_id)",  NULL, FALSE)->get($this->tables['imported_data_parsed']);
+                      GROUP BY imported_data_id)", NULL, FALSE)->get($this->tables['imported_data_parsed']);
             $res = $query->result_array();
             $description = '';
             $long_description = '';

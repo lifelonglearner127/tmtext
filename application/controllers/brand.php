@@ -87,7 +87,7 @@ class Brand extends MY_Controller {
     public function rankings()
     {
         $this->load->model('brands_model');
-        
+
         $brand_list = $this->brands_model->rankings();
         
         if (!empty($brand_list['total_rows'])) {
@@ -106,31 +106,75 @@ class Brand extends MY_Controller {
 
         if (!empty($brand_list['result'])) {
             $rank = 1;
+            $result = array();
             foreach ($brand_list['result'] as $brand_list) {
-                //$social_rank = 0.25 * $brand_list->tweets + 0.25 * $brand_list->followers + 0.25 * $brand_list->videos + 0.25 * $brand_list->views;
-//                $parsed_attributes = unserialize($price->parsed_attributes);
-//                $model = (!empty($parsed_attributes['model']) ? $parsed_attributes['model'] : $parsed_attributes['UPC/EAN/ISBN']);
-                $output['aaData'][] = array(
-                    $rank,
-                    number_format($brand_list->IR500Rank),
-                    $brand_list->name,
-                    number_format($brand_list->tweets),
-                    number_format($brand_list->total_tweets),
-                    number_format($brand_list->followers),
-                    number_format($brand_list->following),
-                    number_format($brand_list->videos),
-                    number_format($brand_list->views),
-                    number_format($brand_list->total_youtube_views),
-                    round($brand_list->views / $brand_list->videos, 2),
-                    number_format($brand_list->total_youtube_videos),
-                );
+                $row = new stdClass();
+                $row->social_rank = $rank;
+                $row->IR500Rank = intval($brand_list->IR500Rank);
+                $row->name = $brand_list->name;
+                $row->tweets = intval($brand_list->tweets);
+                $row->total_tweets = intval($brand_list->total_tweets);
+                $row->followers = intval($brand_list->followers);
+                $row->following = intval($brand_list->following);
+                $row->videos = intval($brand_list->videos);
+                $row->views = intval($brand_list->views);
+                $row->total_youtube_views = intval($brand_list->total_youtube_views);
+                $row->avarage = round(intval($brand_list->views) / intval($brand_list->videos), 2);
+                $row->total_youtube_videos = intval($brand_list->total_youtube_videos);
+                $result[] = $row;
+
                 $rank++;
+            }
+
+            $this->sort_direction = $this->input->get('sSortDir_0', TRUE);
+            $all_columns = $this->input->get('sColumns');
+            $sort_columns = $this->input->get('iSortCol_0');
+            $s_columns = explode(',', $all_columns);
+            $s_column_index = intval($sort_columns);
+            $s_column = $s_columns[$s_column_index];
+            $this->sort_column = $s_column;
+            $this->sort_type = is_numeric($result[0]->$s_column) ? "num" : "";
+            usort($result, array("Brand", "brand_sort"));
+
+            foreach ($result as $brand) {
+                $output['aaData'][] = array(
+                    $brand->social_rank,
+                    number_format($brand->IR500Rank),
+                    $brand->name,
+                    number_format($brand->tweets),
+                    number_format($brand->total_tweets),
+                    number_format($brand->followers),
+                    number_format($brand->following),
+                    number_format($brand->videos),
+                    number_format($brand->views),
+                    number_format($brand->total_youtube_views),
+                    number_format($brand->avarage),
+                    number_format($brand->total_youtube_videos),
+                );
             }
         }
 
         $this->output->set_content_type('application/json')
                 ->set_output(json_encode($output));
         
+    }
+
+    private function brand_sort($a, $b) {
+        $column = $this->sort_column;
+        $key1 = $a->$column;
+        $key2 = $b->$column;
+
+        if ($this->sort_type == "num") {
+            $result = intval($key1) - intval($key2);
+        } else {
+            $result = strcmp(strval($key1), strval($key2));
+        }
+
+        if ($this->sort_direction == "asc") {
+            return $result;
+        } else {
+            return -$result;
+        }
     }
     
     public function import() {

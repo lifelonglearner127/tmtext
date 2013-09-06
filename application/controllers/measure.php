@@ -936,6 +936,9 @@ class Measure extends MY_Controller {
         $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }
 
+    public function getKeywordByDescriptionText(){
+		//echo($_POST['keyword']);
+    }
     public function getCategoriesByDepartment(){
         $this->load->model('site_categories_model');
         $this->load->model('sites_model');
@@ -2099,7 +2102,12 @@ public function gridview() {
             );
 
             if ($limit !== 0) {
-                $data_import = $this->imported_data_parsed_model->getData($s, $sl, $cat_id, $limit);
+                if(preg_match('/www/',$s) || preg_match('/http:/',$s)){
+                    
+                     $data_import = $this->imported_data_parsed_model->getData($s, $sl, $cat_id, $limit, 'URL');
+                }else{
+                    $data_import = $this->imported_data_parsed_model->getData($s, $sl, $cat_id, $limit);
+                }
             } else {
                 $data_import = $this->imported_data_parsed_model->getData($s, $sl, $cat_id);
             }

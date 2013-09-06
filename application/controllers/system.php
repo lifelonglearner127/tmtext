@@ -623,7 +623,7 @@ class System extends MY_Controller {
         $file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
         $_rows = array();
         if (($handle = fopen($file, "r")) !== FALSE) {
-            while (($data = fgetcsv($handle, 1000, "\n")) !== FALSE) {
+            while (($data = fgetcsv($handle, 5000, "\n")) !== FALSE) {
                 if(!is_null($data[0]) && $data[0]!=''){
                     $_rows[] = json_decode($data[0]);
                 }
@@ -657,7 +657,7 @@ class System extends MY_Controller {
                 if(substr_count($url, 'http://') == 0 && $this->input->post('site_name')!='[Choose site]'){
                     $url = str_replace('..', '', $url);
                     $url = 'http://'.strtolower($this->input->post('site_name')).$url;
-                }
+                }	
                 $department_members_id = 0;
                 if($parent_text!=''){
                     $check_id = $this->department_members_model->checkExist($site_name[0], $site_id, $parent_text);
@@ -684,11 +684,37 @@ class System extends MY_Controller {
                 } else if(isset($row->description_text) && !is_array($row->description_text) && !is_null($row->description_text) && $row->description_text!=''){
                     $description_text = $row->description_text;
                 }
+				
+				
+				if(isset($row->keyword_density) && is_array($row->keyword_density)){
+				
+                    $keyword_density = $row->keyword_density[0];
+                } else if(isset($row->keyword_density) && !is_array($row->keyword_density) && !is_null($row->keyword_density) && $row->keyword_density!=''){
+				
+                    $keyword_density = json_encode($row->keyword_density);
+                }
+				
+				if(isset($row->description_title) && is_array($row->description_title)){
+				
+                    $description_title = $row->description_title[0];
+                } else if(isset($row->description_title) && !is_array($row->description_title) && !is_null($row->description_title) && $row->description_title!=''){
+				
+                    $description_title = json_encode($row->description_title);
+                }
+				if(isset($row->description_text) && is_array($row->description_text)){
+				
+                    $description_text = $row->description_text[0];
+                } 
+				else if(isset($row->description_text) && !is_array($row->description_text) && !is_null($row->description_text) && $row->description_text!=''){
+				
+                    $description_text = json_encode($row->description_text);
+                }
+				
 				/*end new columns*/
                 if($text != ''){
                     $check_site = $this->site_categories_model->checkExist($site_id, $text);
                     if($check_site == false){
-                        $this->site_categories_model->insert($site_id, $text, $url, $special, $parent_text, $department_members_id, $nr_products, $description_wc);
+                        $this->site_categories_model->insert($site_id, $text, $url, $special, $parent_text, $department_members_id, $nr_products, $description_wc,$keyword_density,$description_title,$description_text);
                     }
                 }
 			}
