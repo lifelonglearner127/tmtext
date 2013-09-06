@@ -36,8 +36,8 @@ function fsort(&$ar, $field_name){
 	usort($ar, $sort_func);
 	return $ar;
 }
-echo "<pre>";
-print_r($same_pr);
+//echo "<pre>";
+//print_r($same_pr);
 $row=1;
 foreach ($same_pr as $ks => $vs) {
     $row=ceil($i/3);
