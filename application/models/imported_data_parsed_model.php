@@ -1021,7 +1021,7 @@ class Imported_data_parsed_model extends CI_Model {
             $start = 0;
         }
         
-        if ($truncate==1 &&  $start == 0) {
+        if (($truncate==1) &&  ($start == 0)) {
             $this->truncate_stats_new();
         }
         if ($this->db->count_all('statistics_new') == 0 && $start != 0) {

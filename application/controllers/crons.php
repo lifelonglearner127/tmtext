@@ -451,7 +451,7 @@ class Crons extends MY_Controller {
             $this->load->model('sites_model');
             
             $trnc = $this->uri->segment(3);
-            echo "____".$trnc."____";exit;
+            
             if(!$trnc){
                 $trnc=1;
             }
