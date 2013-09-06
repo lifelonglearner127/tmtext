@@ -1,3 +1,6 @@
+# 09/06 Ruslan
+ALTER TABLE  `crawler_list_prices` ADD  `revision` INT NOT NULL DEFAULT  '0';
+
 # 09/05 Tatiana
 ALTER TABLE `brand_data_summary` ADD `IR500Rank` VARCHAR( 255 ) NOT NULL AFTER `total_youtube_views`;
 ALTER TABLE `brand_types` DROP `IR500Rank`;

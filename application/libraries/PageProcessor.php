@@ -94,6 +94,8 @@ class PageProcessor {
 				}
 			}
 
+			$result['Date'] = date("Y-m-d H:i:s");
+
         	return $result;
         }
 
@@ -189,6 +191,12 @@ class PageProcessor {
 		$price = '';
 		foreach($this->nokogiri->get('.PricingInfo .camelPriceSAC span') as $item) {
 			$price .= $item['#text'][0];
+		}
+
+		if (empty($price)) {
+			foreach($this->nokogiri->get('.PricingInfo .camelPrice span') as $item) {
+				$price .= $item['#text'][0];
+			}
 		}
 
 		$price = str_replace(',','',$price);
