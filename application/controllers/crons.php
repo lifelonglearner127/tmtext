@@ -452,11 +452,11 @@ class Crons extends MY_Controller {
             $this->statistics_new_model->truncate();
 
             $trnc = $this->uri->segment(3);
-            var_dump($trnc);        
+            var_dump($trnc);
             if($trnc===false){
                 $trnc=1;
             }
-           
+
             $data_arr = $this->imported_data_parsed_model->do_stats($trnc);
 
             if (count($data_arr) > 1) {
@@ -1069,7 +1069,7 @@ class Crons extends MY_Controller {
         unlink($tmp_dir . ".locked");
     }
 
-    public function do_stats() {
+    public function do_stats($clear = false) {
         echo "Script start working";
         $tmp_dir = sys_get_temp_dir() . '/';
         unlink($tmp_dir . ".locked");
@@ -1088,8 +1088,10 @@ class Crons extends MY_Controller {
             $this->load->model('statistics_model');
             $this->load->model('statistics_duplicate_content_model');
             $this->load->model('imported_data_parsed_model');
-            $this->statistics_model->truncate();
-            $this->statistics_duplicate_content_model->truncate();
+            if ($clear) {
+            	$this->statistics_model->truncate();
+//            	$this->statistics_duplicate_content_model->truncate();
+            }
             $batches = $this->batches_model->getAll('id');
             $enable_exec = true;
 //            $conn = mysql_connect('localhost', 'c38trlmonk', '542piF88');
@@ -1112,6 +1114,10 @@ class Crons extends MY_Controller {
                 }
                 if (count($data) > 0) {
                     foreach ($data as $obj) {
+                    	// TODO: rewrite
+                    	if ($this->statistics_model->getbyImportedDataId($obj->imported_data_id)) {
+							continue;
+                    	}
                         $own_price = 0;
                         $competitors_prices = array();
                         $price_diff = '';
