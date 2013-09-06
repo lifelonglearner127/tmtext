@@ -348,7 +348,15 @@ class Research extends MY_Controller {
     }
 
     private function get_data_for_assess($params) {
+        $this->load->model('settings_model');
         $this->load->model('statistics_model');
+        $this->load->model('statistics_new_model');
+
+        /*if($this->settings['statistics_table'] == "statistics_new"){
+            $results = $this->statistics_new_model->getStatsData($params);
+        } else {
+            $results = $this->statistics_model->getStatsData($params);
+        }*/
         $results = $this->statistics_model->getStatsData($params);
         //$this->load->model('research_data_model');
         //$results = $this->research_data_model->getInfoForAssess($params);

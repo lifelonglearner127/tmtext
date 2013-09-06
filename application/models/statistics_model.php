@@ -52,30 +52,7 @@ class Statistics_model extends CI_Model {
         $sql_cmd = "TRUNCATE TABLE `statistics`";
         return $this->db->query($sql_cmd);
     }
-    function insert_new( $imported_data_id,$revision,
 
-                    $short_description_wc, $long_description_wc,
-                    $short_seo_phrases, $long_seo_phrases,
-                    $own_price, $price_diff, $competitors_prices, $items_priced_higher_than_competitors, $similar_products_competitors){
-
-        $this->imported_data_id = $imported_data_id;
-        $this->revision = $revision;
-
-        $this->short_description_wc = (string)$short_description_wc;
-        $this->long_description_wc = (string)$long_description_wc;
-        $this->short_seo_phrases = (string)$short_seo_phrases;
-        $this->long_seo_phrases = (string)$long_seo_phrases;
-        $this->created = date('Y-m-d h:i:s');
-        $this->own_price = (string)$own_price;
-        $this->price_diff = (string)$price_diff;
-        $this->competitors_prices = (string)$competitors_prices;
-        $this->items_priced_higher_than_competitors = $items_priced_higher_than_competitors;
-        $this->similar_products_competitors = $similar_products_competitors;
-
-        $this->db->insert('statistics_new', $this);
-        return $this->db->insert_id();
-
-        }
     function insert($rid, $imported_data_id, $research_data_id, $batch_id,
                     $product_name, $url, $short_description, $long_description,
                     $short_description_wc, $long_description_wc,
