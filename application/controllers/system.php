@@ -936,6 +936,68 @@ class System extends MY_Controller {
 
     }
 
+    private function category_list_new() {
+        $this->load->model('site_categories_model');
+        $categories = $this->site_categories_model->getAll();
+        $category_list = array();
+        foreach($categories as $category) {
+        	$mid = array(
+        		'id' => $category->id,
+        		'site_id' => $category->site_id,
+        		'text' => $category->text,
+        		'url' => $category->url,
+        		'special' => $category->special,
+        		'parent_text' => $category->parent_text,
+        		'department_members_id' => $category->department_members_id
+        	);
+        	$category_list[] = $mid;
+        }
+        return $category_list;
+    }
+
+    public function system_sites_category_snap() {
+    	$res = array(
+    		'status' => false,
+    		'snap' => '',
+    		'msg' => ''
+    	);
+    	$id = $this->input->post('id');
+    	$this->load->model('webshoots_model');
+    	$this->load->model('site_categories_model');
+    	$category = $this->site_categories_model->get($id);
+    	if(count($category) > 0) {
+    		$cat = $category[0];
+    		// === implement snapshoting (start)
+    		$http_status = $this->webshoots_model->urlExistsCode($cat->url);
+    		if($http_status == 200) {
+	            $url = preg_replace('#^https?://#', '', $cat->url);
+	            $call_url = $this->webshoots_model->webthumb_call_link($url);
+	            $snap_res = $this->webshoots_model->crawl_webshoot($call_url, $cat->id, 'sites_cat_snap-');
+	            // ==== check image (if we need to repeat snap craw, but using snapito.com) (start)
+				$fs = filesize($snap_res['dir']);
+				if($fs === false || $fs < 10000) { // === so re-craw it
+					@unlink($snap_res['dir']);
+					$api_key = $this->config->item('snapito_api_secret');
+	    			$call_url = "http://api.snapito.com/web/$api_key/mc/$url";
+	    			$snap_res = $this->webshoots_model->crawl_webshoot($call_url, $cat->id, 'sites_cat_snap-');
+				}
+				// ==== check image (if we need to repeat snap craw, but using snapito.com) (end)
+	            $res_insert = $this->site_categories_model->insertSiteCategorySnap($cat->id, $snap_res['img'], $snap_res['path'], $snap_res['dir'], $http_status);
+	    		if($res_insert > 0) {
+	    			$res['snap'] = $snap_res['path'];
+	    			$res['status'] = true;
+	    			$res['msg'] = 'Ok';
+	    		}
+	    		// === implement snapshoting (end)
+    		} else {
+    			$res['msg'] = "Category url is unreachable (400) or redirected (302). Snapshot attempt is canceled. HTTP STATUS: $http_status";
+    		}
+    	} else {
+    		$res['msg'] = "Such category don't exists in DB. Snapshot attempt is canceled.";
+    	}
+    	$this->output->set_content_type('application/json')->set_output(json_encode($res));
+    }
+
     public function sites_view()
     {
         $this->load->model('sites_model');
@@ -957,7 +1019,7 @@ class System extends MY_Controller {
         }
 
         $this->data['sites'] = $sitesArray;
-        $this->data['category_list'] = $this->category_list();
+        $this->data['category_list'] = $this->category_list_new();
         $this->render();
     }
 

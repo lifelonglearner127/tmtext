@@ -139,6 +139,7 @@ class Site_Crawler extends MY_Controller {
 
 	function all_urls() {
 		$this->load->model('crawler_list_model');
+		$this->load->model('webshoots_model');
 		$this->load->library('pagination');
 
         $search_crawl_data = '';
@@ -166,6 +167,37 @@ class Site_Crawler extends MY_Controller {
         } else {
         	$urls = $this->crawler_list_model->getAllLimit($config["per_page"], $page, false, $search_crawl_data);
         }
+
+        // === screenshots alive scanner (start)
+        $re_query_data = false;
+        if(count($urls) > 0) {
+        	foreach($urls as $ks => $vs) {
+        		$id = $vs->id;
+        		$url = $vs->url;
+        		$snap = $vs->snap;
+        		if($snap !== null && trim($snap) !== "") {
+        			$file_size = realpath(BASEPATH . "../webroot/webshoots/$snap");
+    				$fs = filesize($file_size);
+    				if($fs === false || $fs < 10000) { // === so re-craw it
+    					if(!$re_query_data) $re_query_data = true;
+    					@unlink(realpath(BASEPATH . "../webroot/webshoots/$snap"));
+    					$url = preg_replace('#^https?://#', '', $url);
+    					$api_key = $this->config->item('snapito_api_secret');
+            			$call_url = "http://api.snapito.com/web/$api_key/mc/$url";
+    					$snap_res = $this->webshoots_model->crawl_webshoot($call_url, $id, 'crawl_snap-');
+    					$this->webshoots_model->updateCrawlListWithSnap($id, $snap_res['img'], null);
+    				}
+        		}
+        	}
+        }
+        if($re_query_data) {
+        	if ($this->input->get('batch_id')!=0) {
+	        	$urls = $this->crawler_list_model->getByBatchLimit($config["per_page"], $page, $this->input->get('batch_id'));
+	        } else {
+	        	$urls = $this->crawler_list_model->getAllLimit($config["per_page"], $page, false, $search_crawl_data);
+	        }
+        }
+        // === screenshots alive scanner (end)
 
 		$this->output->set_content_type('application/json');
 		echo json_encode(array(

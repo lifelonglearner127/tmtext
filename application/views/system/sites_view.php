@@ -217,6 +217,25 @@
                      });
                 }
             });
+
+            $("#category_snapshot").click(function(){
+                $("#loading_crawl_snap_modal").modal('show');
+                $.post(base_url + 'index.php/system/system_sites_category_snap', {
+                    'id': $('select[name="category"]').find('option:selected').val()
+                }, function(data){
+                    $("#loading_crawl_snap_modal").modal('hide');
+                    if(data['status']) {
+                        showSnap("<img src='" + data['snap'] + "'>");
+                    } else {
+                        showSnap("<p>" + data['msg'] + "</p>");
+                    }
+                });
+                return false;
+            });
+            function showSnap(data) {
+                $("#preview_crawl_snap_modal").modal('show');
+                $("#preview_crawl_snap_modal .snap_holder").html(data);
+            }
         </script>
 
 
@@ -390,9 +409,17 @@
                 </div>
                 <div class="row-fluid mt_10">
                     <label>Categories:</label>
-                    <?php echo form_dropdown('category', $category_list ); ?>
+                    <?php // echo form_dropdown('category', $category_list ); ?>
+                    <?php if(count($category_list) > 0) { ?>
+                        <select name='category'>
+                        <?php foreach($category_list as $kc => $kv) { ?>
+                            <option value="<?php echo $kv['id']; ?>"><?php echo $kv['text']; ?></option>
+                        <?php } ?>
+                        </select>
+                    <?php } ?>
                     <button id="delete_category" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
                     <button id="delete_all_categories" class="btn btn-danger" onclick="doconfirm('categories');return false;"><i class="icon-white icon-ok"></i>&nbsp;Delete All</button>
+                    <button id="category_snapshot" class="btn btn-success"><i class="icon-white icon-ok"></i>&nbsp;Snapshot</button>
                 </div>
             </div>
             <div class="span12 mt_20 mb_40 general ml_0">
@@ -479,6 +506,23 @@
         </div>
     </div>
 </div>
+
+<!-- MODALS (START) -->
+<div class="modal hide fade ci_hp_modals" id='loading_crawl_snap_modal'>
+    <div class="modal-body">
+        <p><img src="<?php echo base_url();?>img/loader_scr.gif">&nbsp;&nbsp;&nbsp;Generating snapshot. Please wait...</p>
+    </div>
+</div>
+
+<div class="modal hide fade ci_hp_modals" id='preview_crawl_snap_modal'>
+    <div class="modal-body" style='overflow: hidden'>
+        <div class='snap_holder'>&nbsp;</div>
+    </div>
+    <div class="modal-footer">
+        <a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
+    </div>
+</div>
+<!-- MODALS (END) -->
 
 <script type="text/javascript">
     $(function() {
