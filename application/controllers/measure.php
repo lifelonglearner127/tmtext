@@ -1690,10 +1690,8 @@ public function gridview() {
     }
     
     public function save_new_words(){
-		$keywords = $this->input->post('keywords');
-		//for( $i = 0; count($keywords)>$i; $i++ )
-		//	echo $keywords[$i]
-		print_r($keywords);
+		$keyword = $this->input->post('keywords');
+		
 	}
    
     function tableview(){
