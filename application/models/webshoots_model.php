@@ -26,6 +26,28 @@ class Webshoots_model extends CI_Model {
         return $pos;
     }
 
+    public function crawl_webshoot($call_url, $id) {
+        $file = file_get_contents($call_url);
+        $type = 'png';
+        $dir = realpath(BASEPATH . "../webroot/webshoots");
+        if (!file_exists($dir)) {
+            mkdir($dir);
+            chmod($dir, 0777);
+        }
+        // --- NEW STUFF (TIMESTAMP BASED IMAGES NAMES) (START)
+        $url_name = "crawl_snap-" . $id . "-" . date('Y-m-d-H-i-s', time());
+        // --- NEW STUFF (TIMESTAMP BASED IMAGES NAMES) (END)
+        $t = file_put_contents($dir . "/$url_name.$type", $file);
+        $path = base_url() . "webshoots/$url_name.$type";
+        $res = array(
+            'path' => $path,
+            'dir' => $dir . "/$url_name.$type",
+            'img' => $url_name.".".$type,
+            'call' => $call_url
+        );
+        return $res;
+    }
+
     public function updateHomePagesConfig($type, $value) {
         $update_object = array(
             'value' => $value
