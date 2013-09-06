@@ -184,7 +184,7 @@ class Site_Crawler extends MY_Controller {
     					$url = preg_replace('#^https?://#', '', $url);
     					$api_key = $this->config->item('snapito_api_secret');
             			$call_url = "http://api.snapito.com/web/$api_key/mc/$url";
-    					$snap_res = $this->webshoots_model->crawl_webshoot($call_url, $id);
+    					$snap_res = $this->webshoots_model->crawl_webshoot($call_url, $id, 'crawl_snap-');
     					$this->webshoots_model->updateCrawlListWithSnap($id, $snap_res['img'], null);
     				}
         		}

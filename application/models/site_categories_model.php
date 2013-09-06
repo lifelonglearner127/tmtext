@@ -10,6 +10,7 @@ class Site_categories_model extends CI_Model {
 
     var $tables = array(
         'site_categories' => 'site_categories',
+        'site_categories_snaps' => 'site_categories_snaps'
     );
 
     function __construct()
@@ -23,6 +24,19 @@ class Site_categories_model extends CI_Model {
         $query = $this->db->get($this->tables['site_categories']);
 
         return $query->result();
+    }
+
+    function insertSiteCategorySnap($cat_id, $snap_name, $snap_path, $snap_dir, $http_status) {
+        $insert_object = array(
+            'cat_id' => $cat_id,
+            'snap_name' => $snap_name,
+            'snap_path' => $snap_path,
+            'snap_dir' => $snap_dir,
+            'http_status' => $http_status,
+            'stamp' => date("Y-m-d H:i:s")
+        );
+        $this->db->insert($this->tables['site_categories_snaps'], $insert_object);
+        return $this->db->insert_id();
     }
 
     function get($id)

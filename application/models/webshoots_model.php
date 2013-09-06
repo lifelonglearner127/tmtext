@@ -26,7 +26,31 @@ class Webshoots_model extends CI_Model {
         return $pos;
     }
 
-    public function crawl_webshoot($call_url, $id) {
+    public function webthumb_call_link($url) {
+        $webthumb_user_id = $this->config->item('webthumb_user_id');
+        $api_key = $this->config->item('webthumb_api_key');
+        $url = "http://$url";
+        $c_date = gmdate('Ymd', time()); 
+        $hash = md5($c_date.$url.$api_key); 
+        $e_url = urlencode(trim($url));
+        $call = "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=large&cache=1";
+        return $call;
+    }
+
+    public function urlExistsCode($url) {
+        if ($url === null || trim($url) === "")
+            return false;
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $data = curl_exec($ch);
+        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        return $httpcode;
+    }
+
+    public function crawl_webshoot($call_url, $id, $prefix) {
         $file = file_get_contents($call_url);
         $type = 'png';
         $dir = realpath(BASEPATH . "../webroot/webshoots");
@@ -35,7 +59,7 @@ class Webshoots_model extends CI_Model {
             chmod($dir, 0777);
         }
         // --- NEW STUFF (TIMESTAMP BASED IMAGES NAMES) (START)
-        $url_name = "crawl_snap-" . $id . "-" . date('Y-m-d-H-i-s', time());
+        $url_name = $prefix . $id . "-" . date('Y-m-d-H-i-s', time());
         // --- NEW STUFF (TIMESTAMP BASED IMAGES NAMES) (END)
         $t = file_put_contents($dir . "/$url_name.$type", $file);
         $path = base_url() . "webshoots/$url_name.$type";

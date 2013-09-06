@@ -1,3 +1,15 @@
+# 09/06 Ilya
+CREATE TABLE IF NOT EXISTS `site_categories_snaps` (
+  `id` INT NOT NULL ,
+  `cat_id` INT NULL DEFAULT NULL ,
+  `snap_name` VARCHAR(128) NULL DEFAULT NULL ,
+  `snap_path` VARCHAR(512) NULL DEFAULT NULL ,
+  `snap_dir` VARCHAR(512) NULL DEFAULT NULL ,
+  `http_status` INT NULL DEFAULT NULL ,
+  `stamp` VARCHAR(45) NULL DEFAULT NULL ,
+  PRIMARY KEY (`id`) 
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1;
+
 # 09/06 Ruslan
 ALTER TABLE  `crawler_list_prices` ADD  `revision` INT NOT NULL DEFAULT  '0';
 
