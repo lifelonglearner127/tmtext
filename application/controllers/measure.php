@@ -936,6 +936,9 @@ class Measure extends MY_Controller {
         $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }
 
+    public function getKeywordByDescriptionText(){
+		//echo($_POST['keyword']);
+    }
     public function getCategoriesByDepartment(){
         $this->load->model('site_categories_model');
         $this->load->model('sites_model');
