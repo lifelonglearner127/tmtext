@@ -450,11 +450,10 @@ class Crons extends MY_Controller {
             $this->load->helper('algoritm');
             $this->load->model('sites_model');
             $trnc=$this->input->get('runcate');
-            if($trnc=='1'){
-                $data_arr = $this->imported_data_parsed_model->do_stats(false);
-            }else{
-                $data_arr = $this->imported_data_parsed_model->do_stats(true);
+            if(!$trnc){
+                $trnc=1;
             }
+            $data_arr = $this->imported_data_parsed_model->do_stats($trnc);
             if (count($data_arr) > 1) {
 
                 $sites_list = array();
@@ -811,7 +810,7 @@ class Crons extends MY_Controller {
         $res = $q->get()->row_array();
         $start = $res['description'];
         if (count($data_arr) > 1) {
-            shell_exec('wget -S -O- http://dev.contentsolutionsinc.com/producteditor/index.php/crons/do_stats_new > /dev/null 2>/dev/null &');
+            shell_exec("wget -S -O- http://dev.contentsolutionsinc.com/producteditor/index.php/crons/do_stats_new/truncate/0 > /dev/null 2>/dev/null &");
         } else {
             $data = array(
                 'description' => 0

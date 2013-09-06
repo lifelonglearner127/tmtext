@@ -1004,7 +1004,7 @@ class Imported_data_parsed_model extends CI_Model {
         return $this->db->query($sql_cmd);
     }
 
-    function do_stats($truncate=true) {
+    function do_stats($truncate=1) {
 
         $q = $this->db->select('key,description')->from('settings')->where('key', 'cron_job_offset');
         $res = $q->get()->row_array();
@@ -1021,7 +1021,7 @@ class Imported_data_parsed_model extends CI_Model {
             $start = 0;
         }
         
-        if ($start == 0) {
+        if ($truncate==1 &&  $start == 0) {
             $this->truncate_stats_new();
         }
         if ($this->db->count_all('statistics_new') == 0 && $start != 0) {
