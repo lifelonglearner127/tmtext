@@ -449,7 +449,12 @@ class Crons extends MY_Controller {
             $this->load->library('helpers');
             $this->load->helper('algoritm');
             $this->load->model('sites_model');
-            $data_arr = $this->imported_data_parsed_model->do_stats();
+            $trnc=$this->input->get('runcate');
+            if($trnc==0){
+                $data_arr = $this->imported_data_parsed_model->do_stats(false);
+            }else{
+                $data_arr = $this->imported_data_parsed_model->do_stats(true);
+            }
             if (count($data_arr) > 1) {
 
                 $sites_list = array();
