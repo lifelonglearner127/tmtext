@@ -292,7 +292,6 @@ class Crons extends MY_Controller {
             }
         }
 
-
         if (isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
 
             try {
@@ -341,10 +340,10 @@ class Crons extends MY_Controller {
                         'customer' => $customer
                     );
 
-                    try {
-                        $three_last_prices = $this->imported_data_parsed_model->getLastPrices($similar_item_imported_data_id);
-                    } catch (Exception $e) {
-                        echo 'Error', $e->getMessage(), "\n";
+                                    try {
+                                        $three_last_prices = $this->imported_data_parsed_model->getLastPrices($similar_item_imported_data_id);
+                                    } catch (Exception $e) {
+                                        echo 'Error', $e->getMessage(), "\n";
 //                                        $this->statistics_model->db->close();
 //                                        $this->statistics_model->db->initialize();
                         $three_last_prices = $this->imported_data_parsed_model->getLastPrices($similar_item_imported_data_id);
@@ -450,7 +449,8 @@ class Crons extends MY_Controller {
             $this->load->library('helpers');
             $this->load->helper('algoritm');
             $this->load->model('sites_model');
-             $this->statistics_new_model->truncate();
+
+            $this->statistics_new_model->truncate();
             $trnc = $this->uri->segment(3);
 
             if($trnc!=1 && $trnc!=0){
