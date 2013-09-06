@@ -1707,6 +1707,13 @@ class Imported_data_parsed_model extends CI_Model {
             return $rows;
         }
     }
+    
+    function getKeywordsBy_imported_data_id($im_data_id){
+		$query = $this->db->where('imported_data_id', $im_data_id)
+				->order_by('word_num', 'asc')
+                ->get('keywords');
+		return $query->result();
+	}
 
     function getByParsedAttributes($search, $strict = false) {
         if ($rows = $this->getData($search, null, null, null, 'parsed_attributes', $strict)) {

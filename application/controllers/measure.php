@@ -1339,7 +1339,7 @@ public function gridview() {
             $this->load->model('similar_data_model');
             $data_import = $this->imported_data_parsed_model->getByImId($im_data_id);
             
-             if ($data_import['description'] !== null && trim($data_import['description']) !== "") {
+            if ($data_import['description'] !== null && trim($data_import['description']) !== "") {
                 $data_import['description'] = preg_replace('/\s+/', ' ', $data_import['description']);
                 // $data_import['description'] = preg_replace('/[^A-Za-z0-9\. -!]/', ' ', $data_import['description']);
                 $data['s_product_short_desc_count'] = count(explode(" ", $data_import['description']));
@@ -1391,7 +1391,7 @@ public function gridview() {
                     }
                 }
             }
-
+            
             if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['UPC/EAN/ISBN'])) {
 
                 $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['UPC/EAN/ISBN']);
@@ -1502,6 +1502,10 @@ public function gridview() {
                 }else{
                     $same_pr[$ks]['three_last_prices'] = array();
                 }
+
+            
+				$keywords = $this->imported_data_parsed_model->getKeywordsBy_imported_data_id( $imported_data_id );
+				$same_pr[$ks]['seo']['keyword'] = $keywords;
 
             }
 
@@ -1632,7 +1636,6 @@ public function gridview() {
                    $val['prc']=round($count*$words/$desc_words_count*100,2);
                    $same_pr[$ks]['seo']['short'][$key]=$val;
                    
-                   
                 }
                 }
                 if(!empty($vs['seo']['long'])){
@@ -1663,8 +1666,7 @@ public function gridview() {
             
 
             $data['same_pr'] = $same_pr;
-
-
+			
 //            }
             // --- ATTEMPT TO GET 'SAME' FROM 'HUMAN INTERFACE' (products_compare table) (END)
             // --- GET SELECTED RPODUCT SEO DATA (TMP) (START)
@@ -1681,6 +1683,7 @@ public function gridview() {
         $s_term = $this->input->post('s_term');
 
         // -------- COMPARING V1 (END)
+        
 
         $var = explode('?', $this->input->post('current_url') );
 		$page = preg_replace('/.*\/([^\/])/','$1',$var[0]);
@@ -1694,7 +1697,33 @@ public function gridview() {
     
     public function save_new_words(){
 		$keyword = $this->input->post('keywords');
+		$keyword_num = $this->input->post('keyword_num');
+		$imported_data_id = $this->input->post('imported_data_id');
 		
+		$query = $this->db->where('imported_data_id = ' . $imported_data_id .' AND word_num = ' . $keyword_num)
+                ->get('keywords');
+        $result = $query->result();
+		
+        if( $query->num_rows() > 0 ){
+			foreach($result as $rs){
+				$id = $rs->id;
+			}
+			$data_update = array(
+				'imported_data_id' => $imported_data_id,
+				'word_num' => $keyword_num,
+				'keyword' => $keyword
+			);
+			$this->db->where('id', $id);
+			$this->db->update('keywords', $data_update); 
+		}else{
+			$data = array(
+				'imported_data_id' => $imported_data_id,
+				'word_num' => $keyword_num,
+				'keyword' => $keyword
+			);
+			$this->db->set($data);
+			$this->db->insert('keywords');
+		}
 	}
    
     function tableview(){

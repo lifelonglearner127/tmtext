@@ -36,8 +36,8 @@ function fsort(&$ar, $field_name){
 	usort($ar, $sort_func);
 	return $ar;
 }
-//echo "<pre>";
-//print_r($same_pr);
+echo "<pre>";
+print_r($same_pr);
 $row=1;
 foreach ($same_pr as $ks => $vs) {
     $row=ceil($i/3);
@@ -197,36 +197,6 @@ foreach ($same_pr as $ks => $vs) {
                     ?>
                 </div>
                 <div class="p_analusis">
-					<!--<span class="short_product_name">Analysis:</span>
-					<select id="analysis" name="analysis">
-						<option selected="selected">Product</option>
-						<option>Page</option>
-					</select>
-					<span class="word_count">
-						<span style="margin-right: 5px;">Short</span>
-						<span>Long</span>
-					</span>
-					<p class="heading_text" style="font-size: 13px;">
-						<img class="assess_image product_image" src="<?php echo base_url() ?>/img/assess_grid/page_number.png">
-						Word count: <span class="words_count">
-							<b>
-								<span class="words_count_short" style="position: absolute; margin-left: -63px;"><?php echo $s_product_long_desc_count ?></span>
-								<span style="position: absolute; margin-left: -24px;"><?php echo $s_product_short_desc_count; ?></span>
-							</b>
-						</span>
-					</p>
-				</div>
-				<div style="font-size: 13px;">
-					<p>
-						<img class="assess_image product_image" src="<?php echo base_url() ?>/img/assess_grid/copy_documents_duplicate.png">
-						<span class="duplicate-content">Duplicate content:</span>
-						<span class="words_count" style="margin-right: -26px;">
-							<b>
-								<span class="words_count_short" style="position: absolute; margin-left: -93px;"><?php echo isset($vs['short_original']) && $vs['short_original'] != 'Insufficient data' && $vs['short_original'] != '%' ? $vs['short_original'] : '0%'; ?></span>
-								<span class="words_count_short" style="position: absolute; margin-left: -53px;"><?php echo isset($vs['long_original']) && $vs['long_original'] != 'Insufficient data' && $vs['short_original'] != '%' ? $vs['long_original'] : '0%'; ?></span>
-							</b>
-						</span>
-					</p>-->
 					<table id="analysis">
 						<tr>
 							<td style="width: 194px;">
