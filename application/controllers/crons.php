@@ -450,7 +450,7 @@ class Crons extends MY_Controller {
             $this->load->helper('algoritm');
             $this->load->model('sites_model');
             $trnc=$this->input->get('runcate');
-            if($trnc==0){
+            if($trnc=='1'){
                 $data_arr = $this->imported_data_parsed_model->do_stats(false);
             }else{
                 $data_arr = $this->imported_data_parsed_model->do_stats(true);
