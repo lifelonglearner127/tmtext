@@ -451,10 +451,11 @@ class Crons extends MY_Controller {
             $this->load->model('sites_model');
             
             $trnc = $this->uri->segment(3);
-            
-            if(!$trnc){
+                       
+            if($trnc!=1 && $trnc!=0){
                 $trnc=1;
             }
+            
             $data_arr = $this->imported_data_parsed_model->do_stats($trnc);
             if (count($data_arr) > 1) {
 
