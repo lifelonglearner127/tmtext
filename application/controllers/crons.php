@@ -449,14 +449,14 @@ class Crons extends MY_Controller {
             $this->load->library('helpers');
             $this->load->helper('algoritm');
             $this->load->model('sites_model');
-
             $this->statistics_new_model->truncate();
-            $trnc = $this->uri->segment(3);
 
-            if($trnc!=1 && $trnc!=0){
+            $trnc = $this->uri->segment(3);
+            var_dump($trnc);        
+            if($trnc===false){
                 $trnc=1;
             }
-
+           
             $data_arr = $this->imported_data_parsed_model->do_stats($trnc);
 
             if (count($data_arr) > 1) {

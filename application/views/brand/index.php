@@ -34,8 +34,16 @@ $pervious_month = date("m", strtotime("first day of previous month"));
                     .brand_filters .year { width:90px; }
                 </style>
                 <div>
-                    <h3 class="pull-left">The 100 Most Social</h3>
-                    <div class="brand_filters pull-left">
+                    <h3 class="pull-left">
+                        The 10 Most
+                    </h3>
+                    <div id="brand_filters" class="brand_filters pull-left">
+                        <select id="brand_most_type" class="brand_most_type">
+                            <option value="0">Social</option>
+                            <option value="5">Followed</option>
+                            <option value="3">Active</option>
+                            <option value="8">Watched</option>
+                        </select>
                         <select name="brand_types" id="brand_types" class="brand_types">
                             <?php foreach($brand_types as $brand_type) { ?>
                                     <option value="<?php echo $brand_type->id; ?>"><?php echo $brand_type->name.' Brands'; ?></option>

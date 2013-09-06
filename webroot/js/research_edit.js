@@ -155,8 +155,7 @@ $(function() {
         }
         var link_id = $('div.research_edit_filter_links a[class=active_link]').attr('id');
 
-        var selected_batch =  $('select[name="research_edit_batches"]').find('option:selected').text();
-
+        var selected_batch = encodeURIComponent($('select[name="research_edit_batches"]').find('option:selected').text());
         var urlWithParams = readUrl + '?status=' + link_id + '&batch=' + selected_batch;
         dataTable.fnReloadAjax(urlWithParams, null, null);
     }
