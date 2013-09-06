@@ -196,7 +196,15 @@ class Crons extends MY_Controller {
         // }
         echo "Cron Job Finished";
     }
-
+    function send_email_report($subject, $message){
+        $this->load->library('email');
+            $this->email->from('info@dev.contentsolutionsinc.com', '!!!!');
+            $this->email->to('bayclimber@gmail.com');
+            $this->email->cc('max.kavelin@gmail.com');
+            $this->email->subject($subject);
+            $this->email->message($message);
+            $this->email->send();
+    }
     public function do_duplicate_content() {
         $this->load->model('imported_data_parsed_model');
         $this->load->model('research_data_model');
@@ -1058,6 +1066,10 @@ class Crons extends MY_Controller {
 
         touch($tmp_dir . ".locked");
         try {
+            $subject='Cron Job Report - do_stats started';
+            $message='Cron job for do_stats started';
+            $this->send_email_report($subject,  $message);
+            
             $this->load->model('batches_model');
             $this->load->model('research_data_model');
             $this->load->model('statistics_model');
@@ -1379,6 +1391,9 @@ class Crons extends MY_Controller {
                       } */
                 }
             }
+            $subject='Cron Job Report - do_stats finished';
+            $message='Cron job for do_stats finished';
+            $this->send_email_report($subject,  $message);
             echo "Script finish working";
             echo "Cron Job Finished";
         } catch (Exception $e) {
