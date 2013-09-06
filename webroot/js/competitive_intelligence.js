@@ -1,5 +1,6 @@
     var readUrl = base_url + 'index.php/measure/get_product_price';
     var rankingUrl = base_url + 'index.php/brand/rankings';
+    var brand_most_type_flag = true;
 
 $( function() {
     
@@ -110,7 +111,6 @@ function readGridDataBrandRanking() {
         "sPaginationType": "full_numbers",
         "bProcessing": true,
         "bServerSide": true,
-        "bSort": false,
         "sAjaxSource": rankingUrl, //rankingUrl, readUrl
         "oLanguage": {
             "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
@@ -119,30 +119,57 @@ function readGridDataBrandRanking() {
         },
         "aoColumns": [
             {"sName" : "social_rank"},
-            {"sName" : "IR500rank"},
-            {"sName" : "brand"},
-            {"sName" : "tweet_count"},
+            {"sName" : "IR500Rank"},
+            {"sName" : "name"},
+            {"sName" : "tweets"},
             {"sName" : "total_tweets"},
-            {"sName" : "twitter_followers"},
+            {"sName" : "followers"},
             {"sName" : "following"},
-            {"sName" : "youtube_video_count"},
-            {"sName" : "youtube_view_count"},
+            {"sName" : "videos"},
+            {"sName" : "views"},
             {"sName" : "total_youtube_views"},
             {"sName" : "average"},
             {"sName" : "total_youtube_videos"}
-        ]
-
+        ],
+        "fnServerData": function (sSource, aoData, fnCallback) {
+            if (brand_most_type_flag == true){
+                brand_most_type_flag = false;
+                var brand_most_type = $("#brand_most_type").val();
+                replace_value(aoData, 'iSortCol_0', brand_most_type);
+                if (brand_most_type == 0){
+                    replace_value(aoData, 'sSortDir_0', 'asc');
+                }else{
+                    replace_value(aoData, 'sSortDir_0', 'desc');
+                }
+            }
+            $.getJSON(sSource, aoData, function (json) {
+                fnCallback(json);
+            });
+        }
     });
-    //dataTable.fnSort([[1, 'desc']]);
-    
-    dataTable.fnFilter( $("#brand_types").val()+','+$("#month").val()+','+$("#year").val(), 1 );
-//    dataTable.fnFilter( $("#month").val(), 2 );
-//    dataTable.fnFilter( $("#year").val(), 3 );
-    
-    $("#brand_types").change( function() { dataTable.fnFilter( $("#brand_types").val()+','+$("#month").val()+','+$("#year").val(), 1 ); } );
-    $("#month").change( function() { dataTable.fnFilter( $("#brand_types").val()+','+$("#month").val()+','+$("#year").val(), 1 ); } );
-    $("#year").change( function() { dataTable.fnFilter( $("#brand_types").val()+','+$("#month").val()+','+$("#year").val(), 1 ); } );
 
-    //hide ajax loader animation here...
+    $('#brand_filters select').change(function(){
+        if ($(this).attr('id') == 'brand_most_type'){
+            brand_most_type_flag = true;
+        }
+        dataTable.fnFilter(
+            $("#brand_types").val()
+                +','+$("#month").val()
+                +','+$("#year").val()
+            ,1
+        );
+    });
+
+  //hide ajax loader animation here...
   //  $( '#ajaxLoadAni' ).fadeOut( 'slow' );
 }
+
+    function replace_value(aoData, name, value){
+        $.each(aoData, function(){
+            if (this.name == name){
+                this.value = value;
+                return;
+            }
+        });
+        //aoData.push({name: name, value: value});
+    }
