@@ -1244,43 +1244,31 @@ class Imported_data_parsed_model extends CI_Model {
 
         $batch = "";
         if ($this->input->get('batch')) {
-            $batch = " and b.title = " . $this->db->escape($this->input->get('batch'));
+            $batch = " and b.title = " . $this->db->escape(rawurldecode($this->input->get('batch')));
         }
 
         $sql_cmd = "
-            (select
+            select
                 rd.id,
                 rd.batch_id,
-                CASE WHEN rd.product_name IS NULL OR rd.product_name = '' THEN kv.`value` ELSE rd.product_name END AS product_name,
-                rd.url
+                CASE WHEN rd.product_name IS NULL OR rd.product_name = '' THEN idp.`value` ELSE rd.product_name END AS product_name,
+                rd.url,
+                max(idp.revision) as revision
             from
-                research_data as rd
-            INNER JOIN batches AS b ON
+                batches AS b
+            INNER JOIN research_data as rd ON
                 b.id = rd.batch_Id
-            INNER JOIN imported_data_parsed AS idp ON
-                idp.value = rd.url
-                AND `key` = 'URL'
-            INNER JOIN imported_data_parsed AS kv ON
-                kv.imported_data_id = idp.imported_data_id
-                AND kv.key = 'Product Name'
+            inner join research_data_to_crawler_list as rdtcl on rdtcl.research_data_id = rd.id
+            inner join crawler_list as cl on cl.id = rdtcl.crawler_list_id
+            left join imported_data_parsed as idp
+                on idp.imported_data_id = cl.imported_data_id
+                and idp.`key` = 'Product Name'
             where
-                concat(rd.product_name, kv.`value`, rd.url) like $like
+                concat(rd.product_name, rd.url) like $like
                 $status
                 $batch
-            ) union (
-            select
-                r.id,
-                r.batch_id,
-                r.product_name,
-                r.url
-            from
-                `research_data` r
-            INNER JOIN batches AS b ON
-                b.id = r.batch_Id
-            LEFT JOIN imported_data_parsed i ON r.url = i.value
-                and i.`key` = 'URL'
-            where i.imported_data_id IS NULL $batch
-            )
+            group by
+	            rd.id
         ";
 
         $query = $this->db->query($sql_cmd);
