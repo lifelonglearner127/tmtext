@@ -279,16 +279,13 @@ foreach ($same_pr as $ks => $vs) {
 									$tertiary = 1;
 								}
 								$user_word = '';
-								//foreach( $vs['seo']['keyword'] as $key => $kw ) {
-									//$user_word = $kw->keyword;
-								//}
-								//$user_word = $vs['seo']['keyword'][$keyword_user]->keyword;
+								$user_word = $vs['seo']['keyword'][$keyword_user]->keyword;
 								?>
 								<span>
 									<span class='primary_speed'>
 										<div style="float: left;">[</div> <span class="title_words"><?php echo $value['ph']; ?></span>
 										<span class="you_words you_words_input">
-											<input class="keyword_input" imported_data_id="<?php echo $vs['imported_data_id']; ?>" name="keyword<?=$i?>" keyword_num="<?=$i?>" type="text" value="<?=$user_word;?>" />
+											<input class="keyword_input" imported_data_id="<?php echo $vs['imported_data_id']; ?>" name="keyword<?=$i?>" keyword_num="<?=$i?>" type="text" value="<?=$user_word/* .'|'. $keyword_user;*/?>" />
 										</span>
 										<div style="float: right;">]</div>
 									</span>
@@ -301,33 +298,37 @@ foreach ($same_pr as $ks => $vs) {
 								$i++;
 								$keyword_user++;
 							}
-							if( $secondary != 1 )
+							if( $secondary != 1 ){
+								$user_word = $vs['seo']['keyword'][1]->keyword;
 								echo '<div class="keywords_lines"><span class="primary_name">Secondary: </span>
 										<span>
 											<span class="primary_speed">
 												<div style="float: left;">[</div><span class="title_words"></span>
 												<span class="you_words you_words_input">
-													<input class="keyword_input" imported_data_id="'. $vs['imported_data_id'] .'" name="keyword2" keyword_num="2" type="text" value="" />
+													<input class="keyword_input" imported_data_id="'. $vs['imported_data_id'] .'" name="keyword2" keyword_num="2" type="text" value="'.$user_word.'" />
 												</span> <div style="float: right;">]</div>
 											</span>
 											<img class="keyword_checkmark assess_image primary_image keywords_img" src="'. base_url() .'/img/assess_grid/check_circle_green.png" />
 										</span>
 									</div>
 									<div class="clear"></div>';
-							if( $tertiary != 1 )
+							}
+							if( $tertiary != 1 ){
+								$user_word = $vs['seo']['keyword'][2]->keyword;
 								echo '<div class="keywords_lines"><span class="primary_name">Tertiary: </span>
 									<span>
 										<span class="primary_speed">
 											<div style="float: left;">[</div>
 											<span class="title_words"></span>
 											<span class="you_words you_words_input">
-												<input class="keyword_input" imported_data_id="'. $vs['imported_data_id'] .'" name="keyword3" keyword_num="3" type="text" value="" />
+												<input class="keyword_input" imported_data_id="'. $vs['imported_data_id'] .'" name="keyword3" keyword_num="3" type="text" value="'.$user_word.'" />
 											</span> <div style="float: right;">]</div>
 										</span>
 										<img class="assess_image keyword_checkmark primary_image keywords_img" src="'. base_url() .'/img/assess_grid/check_circle_green.png" />
 									</span>
 									</div>
 									<div class="clear"></div>';
+							}
 						}else{
 							//echo '<span class="name_bold">None</span>';
 							for( $j = 1; $j <= 3; $j++ ){
@@ -335,12 +336,12 @@ foreach ($same_pr as $ks => $vs) {
 								if( $j == '2' )	echo '<div class="keywords_lines"><span class="primary_name">Secondary: </span>';
 								if( $j == '3' )	echo '<div class="keywords_lines"><span class="primary_name">Tertiary: </span>';
 								
-								//echo '<div class="keywords_lines"><span class="primary_name">Primary: </span>
+								$user_word = $vs['seo']['keyword'][$j-1]->keyword;
 								echo '<span>
 										<span class="primary_speed">
 											<div style="float: left;">[</div> <span class="title_words"></span>
 											<span class="you_words you_words_input">
-												<input class="keyword_input" imported_data_id="'. $vs['imported_data_id'] .'" name="keyword'.$j.'" keyword_num="'.$j.'" type="text" value="" />
+												<input class="keyword_input" imported_data_id="'. $vs['imported_data_id'] .'" name="keyword'.$j.'" keyword_num="'.$j.'" type="text" value="'.$user_word.'" />
 											</span>
 											<div style="float: right;">]</div>
 										</span>
