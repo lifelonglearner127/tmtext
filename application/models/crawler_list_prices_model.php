@@ -46,6 +46,7 @@ class Crawler_List_Prices_model extends CI_Model {
     	$this->crawler_list_id = $crawler_list_id;
     	$this->price = $price;
         $this->created = date('Y-m-d h:i:s');
+        $this->revision = count($this->getByCrawlerListId($crawler_list_id))+1;
 
         $this->db->insert($this->tables['crawler_list_prices'], $this);
         return $this->db->insert_id();

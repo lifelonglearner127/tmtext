@@ -94,6 +94,8 @@ class PageProcessor {
 				}
 			}
 
+			$result['Date'] = date("Y-m-d H:i:s");
+
         	return $result;
         }
 
