@@ -990,10 +990,10 @@ class System extends MY_Controller {
 	    		}
 	    		// === implement snapshoting (end)
     		} else {
-    			$res['msg'] = "Category url is unreachable or redirected. HTTP STATUS: $http_status";
+    			$res['msg'] = "Category url is unreachable or redirected. Snapshot attempt is canceled. HTTP STATUS: $http_status";
     		}
     	} else {
-    		$res['msg'] = "Such category don't exists in DB";
+    		$res['msg'] = "Such category don't exists in DB. Snapshot attempt is canceled.";
     	}
     	$this->output->set_content_type('application/json')->set_output(json_encode($res));
     }
