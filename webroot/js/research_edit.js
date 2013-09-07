@@ -98,6 +98,12 @@ $(function() {
             $(nRow).attr("url", aData[2]);
             return nRow;
         },
+        "fnDrawCallback": function(oSettings) {
+            if (oSettings.aoData.length > 0){
+                $('#records tbody tr:first td:first').trigger('click');
+                //console.log($('#records tbody tr:first td:first'));
+            }
+        },
         "oLanguage": {
             "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
             "sInfoEmpty": "Showing 0 to 0 of 0 records",
