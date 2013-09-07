@@ -1041,7 +1041,7 @@ class Imported_data_parsed_model extends CI_Model {
                 ->from($this->tables['imported_data_parsed'] . ' as p');
 
         $this->db->group_by('imported_data_id');
-       // $this->db->limit($limit, $start);
+        $this->db->limit($limit, $start);
         $query1 = $this->db->get();
         $results1 = $query1->result();
 
