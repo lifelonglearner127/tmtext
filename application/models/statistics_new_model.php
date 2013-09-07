@@ -34,7 +34,8 @@ class Statistics_new_model extends CI_Model {
 
                          $short_description_wc, $long_description_wc,
                          $short_seo_phrases, $long_seo_phrases,
-                         $own_price, $price_diff, $competitors_prices, $items_priced_higher_than_competitors, $similar_products_competitors){
+                         $own_price, $price_diff, $competitors_prices, $items_priced_higher_than_competitors, $similar_products_competitors,
+                         $research_data_id, $batch_id){
 
         $this->imported_data_id = $imported_data_id;
         $this->revision = $revision;
@@ -49,9 +50,33 @@ class Statistics_new_model extends CI_Model {
         $this->competitors_prices = (string)$competitors_prices;
         $this->items_priced_higher_than_competitors = $items_priced_higher_than_competitors;
         $this->similar_products_competitors = $similar_products_competitors;
+        $this->research_data_id = $research_data_id;
+        $this->batch_id = $batch_id;
 
         $this->db->insert('statistics_new', $this);
         return $this->db->insert_id();
+
+    }
+
+    function getResearchDataAndBatchIds($imported_data_id) {
+		//  SELECT research_data_id, batch_id FROM `crawler_list` as cl
+		//	JOIN `research_data_to_crawler_list` as rdc ON (cl.id = rdc.crawler_list_id)
+		//	JOIN `research_data` as rd ON (rdc.research_data_id = rd.id)
+		//	JOIN `batches` as b ON (b.id = rd.batch_id)
+		//	WHERE cl.imported_data_id = 20
+
+		$query = $this->db
+            ->select('research_data_id, batch_id')
+            ->from('crawler_list as cl')
+            ->join('research_data_to_crawler_list as rdc', 'cl.id = rdc.crawler_list_id')
+            ->join('research_data as rd', 'rdc.research_data_id = rd.id')
+            ->join('batches as b', 'b.id = rd.batch_id')
+            ->where('cl.imported_data_id', $imported_data_id)
+            ->limit(1)
+            ->get();
+
+        $result =  $query->result();
+        return $result;
 
     }
 

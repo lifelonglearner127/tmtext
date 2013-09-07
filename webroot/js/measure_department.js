@@ -215,7 +215,7 @@ $( function() {
 			var densityCheck = '0.0%';
 			if($(this).val().trim() == ''){
 				$(this).children('option').each(function(){
-					if(descriptionTitle.trim().replace('"','').replace('"','').toLowerCase() == $(this).text())
+					if(descriptionTitle.trim().replace('"','').replace('"','').toLowerCase() == $(this).text().toLowerCase())
 						densityCheck = $(this).val();
 				});
 				$(this).next().text('\xa0'+densityCheck+'%');
@@ -245,7 +245,7 @@ function readBestSellers(department_id,site_name,table_name) {
 			for(var i=0; i<data.length; i++){
 				
 				tableDataString += '<tr>';
-				tableDataString += '<td>'+data[i].text+'</td>';
+				tableDataString += '<td>'+data[i].text+'<input type="hidden" class="categoryID" value="'+data[i].id+'" ></td>';
 				tableDataString += '<td>'+data[i].nr_products+'</td>';
 				
 				if(data[i].title_keyword_description_density && data[i].description_title) {
@@ -254,11 +254,11 @@ function readBestSellers(department_id,site_name,table_name) {
 					var descriptionTitle = data[i].description_title;
 					
 					for(index in densityObj){
-						if(descriptionTitle.trim().replace('"','').replace('"','').toLowerCase() == index.trim())
+						if(descriptionTitle.replace('"','').replace('"','').toLowerCase().trim() == index.trim().toLowerCase())
 							density = densityObj[index]+'%';
 					}
 				
-					tableDataString += '<td><select class="changeDensity" style="width:120px;" >';
+					tableDataString += '<td><select class="changeDensity" style="width:95px;" >';
 					tableDataString += '<option value="" >'+descriptionTitle.trim().replace('"','').replace('"','')+'</option>';
 					for(index in densityObj){
 						tableDataString += '<option value="'+densityObj[index]+'" >'+index+'</option>';
@@ -267,40 +267,38 @@ function readBestSellers(department_id,site_name,table_name) {
 				} else {
 					tableDataString += '<td>';
 				}
-				tableDataString += '<input type="text" onblur="keywordAjax(this);" name="keyword" value="" /></td>';
+				var user_seo_keywords = data[i].user_seo_keywords.trim();
+				var user_keyword_description_density = data[i].user_keyword_description_density.trim()+'%';
+				if(user_seo_keywords == '')
+					user_keyword_description_density = 'N/A';
+				tableDataString += '<input type="text" style="width: 95px;float: left;margin-right: 5px;" placeholder="Your keyword" onblur="keywordAjax(this);" name="keyword" value="'+user_seo_keywords+'" />';
+				tableDataString += '<span style="float: left;" >'+user_keyword_description_density+'</span></td>';
 				tableDataString += '<td>'+data[i].description_words+'</td>';
 				tableDataString += '</tr>';
 			}
-            //clear old rows
-            //append new rows
-            // $( '#readTemplate' ).render( response ).appendTo( "#records > tbody" );
-			var stringNewData = '<table id="'+table_name+'" ><thead><tr><th>Category()</th><th>Items</th><th>Category Description SEO</th><th>Words</th></tr></thead><tbody>'+tableDataString+'</tbody></table>';
+			
+			var categoryCount = data.length;
+			var stringNewData = '<table id="'+table_name+'" ><thead><tr><th style="width: 50px !important;word-wrap: break-word;" >Category('+categoryCount+')</th><th>Items</th><th>Category Description SEO</th><th>Words</th></tr></thead><tbody>'+tableDataString+'</tbody></table>';
 			if(table_name == 'records')
 				$( '#dataTableDiv1' ).html(stringNewData);
 			else
 				$( '#dataTableDiv2' ).html(stringNewData);
 			$( '#'+table_name ).dataTable({"bJQueryUI": true});
-            //apply dataTable to #records table and save its object in dataTable variable
-            // if( typeof dataTable == 'undefined' )
-                // dataTable = $( '#records' ).dataTable({"bJQueryUI": true});
-			// else if( typeof dataTableSec == 'undefined' ) 
-				// dataTableSec = $( '#recordSec' ).dataTable({"bJQueryUI": true});
-
-            //hide ajax loader animation here...
+			
             $( '#ajaxLoadAni' ).fadeOut( 'slow' );
         }
     });
 }
 function keywordAjax(obj) {
+	var categoryID = $(obj).parent().parent().find('.categoryID').val();
 	$.ajax({
 	
 			url: base_url + 'index.php/measure/getKeywordByDescriptionText',
 			type: 'post',
 			data: {'keyword': $(obj).val(),
-			       'department_id': department_id,
-                   'site_name': site_name},
+			       'categoryID': categoryID},
 			success: function(data) {
-				
+				$(obj).next().text(data);
 			}
 
 	});

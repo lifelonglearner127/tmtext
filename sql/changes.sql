@@ -1,3 +1,8 @@
+# 09/07 Ruslan
+ALTER TABLE  `statistics_new` 
+	ADD  `batch_id` INT NULL AFTER  `imported_data_id` ,
+	ADD  `research_data_id` INT NULL AFTER  `batch_id`;
+
 # 09/06 Ilya
 CREATE TABLE IF NOT EXISTS `site_categories_snaps` (
   `id` INT NOT NULL ,

@@ -339,6 +339,23 @@ class Measure extends MY_Controller {
         $this->output->set_content_type('application/json')->set_output(true);
     }
 
+    public function crawlsnapshootcmd() { // shell_exec version
+        $this->load->model('webshoots_model');
+        $urls = $this->input->post('urls');
+        $ids_string = "";
+        $cmd = "";
+        if(count($urls) > 0) {
+            foreach ($urls as $k => $v) {
+                $ids_string .= $v['id'].",";
+            }
+            $ids_string = substr($ids_string, 0, -1);
+            $path_to_cron = base_url()."index.php/crons/site_crawler_screens?ids=$ids_string";
+            $cmd = "wget -S -O- $path_to_cron";
+            shell_exec($cmd);
+        }
+        $this->output->set_content_type('application/json')->set_output(json_encode($cmd));
+    }
+
     // public function crawlsnapshoot() {
     //     $this->load->model('webshoots_model');
     //     $urls = $this->input->post('urls');
@@ -954,7 +971,39 @@ class Measure extends MY_Controller {
     }
 
     public function getKeywordByDescriptionText(){
-		//echo($_POST['keyword']);
+         $this->load->model('site_categories_model');
+		 $category_id = $_POST['categoryID'];
+		 $result = $this->site_categories_model->getDataByCategory($category_id);
+		 if(empty($_POST['keyword'])){
+		     $this->site_categories_model->UpdateKeywordsData($category_id);
+			 $density = 'N/A';
+		 } else {
+			 //var_dump($result);
+			 $description_text=trim($result->description_text,'"');
+			 $vowels = array(".", ",", "?", ":", "/", ">", "<", "&", "#", "^", ";", "`", "~", "*");
+			 $description_text = str_replace($vowels, "",$description_text);
+			 //echo $description_text;
+			 $description_words=$result->description_words;
+			 $array=explode(' ',$description_text);
+			 $keyword=trim($_POST['keyword']);
+			 //print_r($array);
+			 $count_key=0;
+			  foreach($array as $value)
+			  {if(strtolower(trim($value))==strtolower($keyword))
+			   $count_key++;
+			  }
+			  //echo $count_key;
+			  if($description_words==0 || $count_key==0)
+				  $density='0.0%';
+				  
+			  else
+			  {    $densityDouble=$count_key/$description_words*100;
+				   $density=sprintf("%01.2f",$densityDouble).'%';
+			   }
+			  $this->site_categories_model->UpdateKeywordsData($category_id,$keyword,$count_key,sprintf("%01.2f",$densityDouble)); 
+		  }
+		  
+	   echo $density;
     }
     public function getCategoriesByDepartment(){
         $this->load->model('site_categories_model');
@@ -1409,10 +1458,10 @@ public function gridview() {
                 }
             }
             
-            if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['UPC/EAN/ISBN'])) {
-
-                $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['UPC/EAN/ISBN']);
-            }
+//            if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['UPC/EAN/ISBN'])) {
+//
+//                $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['UPC/EAN/ISBN']);
+//            }
             if(empty($same_pr) && !isset($data_import['parsed_attributes']['model'])){
             $data['mismatch_button']=true;
             if (!$this->similar_product_groups_model->checkIfgroupExists($im_data_id)) {
@@ -1521,8 +1570,8 @@ public function gridview() {
                 }
 
             
-				$keywords = $this->imported_data_parsed_model->getKeywordsBy_imported_data_id( $imported_data_id );
-				$same_pr[$ks]['seo']['keyword'] = $keywords;
+//				$keywords = $this->imported_data_parsed_model->getKeywordsBy_imported_data_id( $imported_data_id );
+//				$same_pr[$ks]['seo']['keyword'] = $keywords;
 
             }
 

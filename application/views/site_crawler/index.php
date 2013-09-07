@@ -97,6 +97,7 @@
 				<button id="crawl_all" class="btn new_btn btn-success mt_10 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Crawl All</button>
 				<button id="current_crawl" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Crawl</button>
 				<button id="current_snapshot" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Snapshot</button>
+				<button id="current_snapshot_cmd" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Snap (cmd)</button>
 				<p class='help-block'>* use checkboxes in table list to activate snapshot button</p>
 			</div>
 			<div class="row-fluid">
@@ -258,6 +259,28 @@ $(function () {
         this.val($initialVal);
     };
 
+    $("#current_snapshot_cmd").click(function(e) { // ==== !!! EXPREIMENTAL OPTION !!!
+    	var urls = [];
+    	$("#Current_List > ul > li input[type='checkbox']:checked").each(function(index, value) {
+    		var mid = {
+    			id: $(value).data('id'),
+    			url: $(value).data('url')
+    		}
+    		urls.push(mid);
+    	});
+    	var send_data = {
+    		urls: urls
+    	};
+    	$("#loading_crawl_snap_modal").modal('show');
+    	$.post(base_url + 'index.php/measure/crawlsnapshootcmd', send_data, function(data) {
+    		console.log("CMD PATH: ", data);
+    		$("#loading_crawl_snap_modal").modal('hide');
+    		$('#current_snapshot').attr('disabled', 'disabled');
+    		$('#current_snapshot_cmd').attr('disabled', 'disabled');
+    		loadCurrentList();
+    	});
+    });
+
     $("#current_snapshot").click(function(e) {
     	var urls = [];
     	$("#Current_List > ul > li input[type='checkbox']:checked").each(function(index, value) {
@@ -274,6 +297,7 @@ $(function () {
     	$.post(base_url + 'index.php/measure/crawlsnapshoot', send_data, function(data) {
     		$("#loading_crawl_snap_modal").modal('hide');
     		$('#current_snapshot').attr('disabled', 'disabled');
+    		$('#current_snapshot_cmd').attr('disabled', 'disabled');
     		loadCurrentList();
     	});
     });
@@ -285,8 +309,10 @@ $(function () {
 //            $('#current_crawl').attr('disabled', 'disabled');
 			if( $("#Current_List > ul > li input[type='checkbox']:checked").length > 0 ) {
 				$('#current_snapshot').removeAttr('disabled');
+				$('#current_snapshot_cmd').removeAttr('disabled');
 			} else {
 				$('#current_snapshot').attr('disabled', 'disabled');
+				$('#current_snapshot_cmd').attr('disabled', 'disabled');
 			}
 
             var ids = [];
@@ -361,8 +387,10 @@ $(function () {
 	$(document).on("click", "#Current_List > ul > li input[type='checkbox']", function(e) {
 		if( $("#Current_List > ul > li input[type='checkbox']:checked").length > 0 ) {
 			$('#current_snapshot').removeAttr('disabled');
+			$('#current_snapshot_cmd').removeAttr('disabled');
 		} else {
 			$('#current_snapshot').attr('disabled', 'disabled');
+			$('#current_snapshot_cmd').attr('disabled', 'disabled');
 		}
 	});
 
@@ -450,9 +478,11 @@ $(function () {
 
 		if ($('input#checkAll').is(':checked')) {
 			$('button#current_snapshot').removeAttr('disabled');
+			$('button#current_snapshot_cmd').removeAttr('disabled');
 			$('button#current_crawl').removeAttr('disabled');
 		} else {
 			$('button#current_snapshot').attr('disabled', 'disabled');
+			$('button#current_snapshot_cmd').attr('disabled', 'disabled');
 			$('button#current_crawl').attr('disabled', 'disabled');
 		}
 	});

@@ -52,10 +52,24 @@ class Site_categories_model extends CI_Model {
         if($department_id != ''){
             $department_id = " and `department_members_id`='".$department_id."' ";
         }
-        $sql = "SELECT `id`, `text`, `nr_products`, `description_words`, `description_title`, `title_keyword_description_density` FROM `site_categories` WHERE `site_id` = '".$site_id."' ".$department_id." ORDER BY `text` ASC";
+        $sql = "SELECT `id`, `text`, `nr_products`, `description_words`, `description_title`, `title_keyword_description_density` ,`user_keyword_description_density`, `user_seo_keywords` FROM `site_categories` WHERE `site_id` = '".$site_id."' ".$department_id." ORDER BY `text` ASC";
         $query = $this->db->query($sql);
         return $query->result();
     }
+	
+	function getDataByCategory($category_id){
+	$sql = "SELECT `description_text`, `description_words` FROM `site_categories` WHERE `id` = '".$category_id."'";
+    $query = $this->db->query($sql);
+	$result = $query->result();
+    return $result[0];
+	}
+	
+	 function UpdateKeywordsData($category_id, $user_seo_keywords = "",$user_keyword_description_count = 0,$user_keyword_description_density = 0){
+	 $sql="UPDATE `site_categories` SET `user_seo_keywords` = '".$user_seo_keywords."',`user_keyword_description_count` = $user_keyword_description_count,`user_keyword_description_density` = $user_keyword_description_density WHERE `id` = $category_id";
+	 $query = $this->db->query($sql);
+	 return $query;
+	 }
+
 
     function getUrlByCategory($category_id){
         $sql = "SELECT `url` FROM `site_categories` WHERE `id` = '".$category_id."'";

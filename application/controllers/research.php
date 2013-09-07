@@ -352,12 +352,12 @@ class Research extends MY_Controller {
         $this->load->model('statistics_model');
         $this->load->model('statistics_new_model');
 
-        /*if($this->settings['statistics_table'] == "statistics_new"){
+        if($this->settings['statistics_table'] == "statistics_new"){
             $results = $this->statistics_new_model->getStatsData($params);
         } else {
             $results = $this->statistics_model->getStatsData($params);
-        }*/
-        $results = $this->statistics_model->getStatsData($params);
+        }
+        //$results = $this->statistics_model->getStatsData($params);
         //$this->load->model('research_data_model');
         //$results = $this->research_data_model->getInfoForAssess($params);
         return $results;
@@ -448,8 +448,29 @@ class Research extends MY_Controller {
                 $detail_comparisons_total += 1;
             }
 
-            $result_row->long_seo_phrases = $row->long_seo_phrases;
-            $result_row->short_seo_phrases = $row->short_seo_phrases;
+            if($this->settings['statistics_table'] == "statistics_new"){
+                $short_seo = unserialize($row->short_seo_phrases);
+                if($short_seo){
+                    $str_short_seo = '';
+                    foreach($short_seo as $val){
+                        $str_short_seo .= $val['ph'].', ';
+                    }
+                    $str_short_seo = substr($str_short_seo, 0, -2);
+                    $result_row->short_seo_phrases = $str_short_seo;
+                }
+                $long_seo = unserialize($row->long_seo_phrases);
+                if($long_seo){
+                    $str_long_seo = '';
+                    foreach($long_seo as $val){
+                        $str_long_seo .= $val['ph'].', ';
+                    }
+                    $str_long_seo = substr($str_long_seo, 0, -2);
+                    $result_row->long_seo_phrases = $str_long_seo;
+                }
+            } else {
+                $result_row->short_seo_phrases = $row->short_seo_phrases;
+                $result_row->long_seo_phrases = $row->long_seo_phrases;
+            }
 
             if ($build_assess_params->short_duplicate_content || $build_assess_params->long_duplicate_content) {
                $dc = $this->statistics_duplicate_content_model->get($row->imported_data_id);

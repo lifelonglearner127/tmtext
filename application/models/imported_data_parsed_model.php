@@ -773,7 +773,9 @@ class Imported_data_parsed_model extends CI_Model {
     function getByImId($im_data_id) {
         $f_res = array();
         $this->db->select('imported_data_id, key, value');
-        $this->db->where('imported_data_id', $im_data_id);
+        $this->db->where('imported_data_id', $im_data_id)->where("revision = (SELECT  MAX(revision) as revision
+                      FROM imported_data_parsed WHERE `imported_data_id`= $im_data_id
+                      GROUP BY imported_data_id)", NULL, FALSE);
         $query = $this->db->get($this->tables['imported_data_parsed']);
         $results = $query->result();
         $data = array('url' => '', 'product_name' => '', 'description' => '', 'long_description' => '');
@@ -1708,12 +1710,12 @@ class Imported_data_parsed_model extends CI_Model {
         }
     }
     
-    function getKeywordsBy_imported_data_id($im_data_id){
-		$query = $this->db->where('imported_data_id', $im_data_id)
-				->order_by('word_num', 'asc')
-                ->get('keywords');
-		return $query->result();
-	}
+//    function getKeywordsBy_imported_data_id($im_data_id){
+//		$query = $this->db->where('imported_data_id', $im_data_id)
+//				->order_by('word_num', 'asc')
+//                ->get('keywords');
+//		return $query->result();
+//	}
 
     function getByParsedAttributes($search, $strict = false) {
         if ($rows = $this->getData($search, null, null, null, 'parsed_attributes', $strict)) {
