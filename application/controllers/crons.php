@@ -833,7 +833,8 @@ class Crons extends MY_Controller {
                     }
 
                     try {
-                        $insert_id = $this->statistics_new_model->insert($obj->imported_data_id, $obj->revision, $short_description_wc, $long_description_wc,
+                        $insert_id = $this->statistics_new_model->insert($obj->imported_data_id, $obj->revision,
+                            $data_import['product_name'], $data_import['url'], $short_description_wc, $long_description_wc,
                             $short_seo_phrases, $long_seo_phrases, $own_price, serialize($price_diff), serialize($competitors_prices),
                             $items_priced_higher_than_competitors, serialize($similar_products_competitors),
                             $query_research_data_id, $query_batch_id
@@ -844,7 +845,7 @@ class Crons extends MY_Controller {
                         $this->statistics_model->db->initialize();
 
                         $insert_id = $this->statistics_new_model->insert($obj->imported_data_id, $obj->revision,
-                            $short_description_wc, $long_description_wc, $short_seo_phrases, $long_seo_phrases, $own_price,
+                            $data_import['product_name'], $data_import['url'], $short_description_wc, $long_description_wc, $short_seo_phrases, $long_seo_phrases, $own_price,
                             serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors, serialize($similar_products_competitors),
                             $query_research_data_id, $query_batch_id
                         );

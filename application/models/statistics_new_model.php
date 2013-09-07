@@ -30,8 +30,7 @@ class Statistics_new_model extends CI_Model {
         return $this->db->query($sql_cmd);
     }
 
-    function insert( $imported_data_id, $revision,
-
+    function insert( $imported_data_id, $revision, $product_name, $url,
                          $short_description_wc, $long_description_wc,
                          $short_seo_phrases, $long_seo_phrases,
                          $own_price, $price_diff, $competitors_prices, $items_priced_higher_than_competitors, $similar_products_competitors,
@@ -39,7 +38,8 @@ class Statistics_new_model extends CI_Model {
 
         $this->imported_data_id = $imported_data_id;
         $this->revision = $revision;
-
+        $this->product_name = $product_name;
+        $this->url = $url;
         $this->short_description_wc = (string)$short_description_wc;
         $this->long_description_wc = (string)$long_description_wc;
         $this->short_seo_phrases = (string)$short_seo_phrases;
