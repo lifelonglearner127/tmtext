@@ -971,7 +971,39 @@ class Measure extends MY_Controller {
     }
 
     public function getKeywordByDescriptionText(){
-		//echo($_POST['keyword']);
+         $this->load->model('site_categories_model');
+		 $category_id = $_POST['categoryID'];
+		 $result = $this->site_categories_model->getDataByCategory($category_id);
+		 if(empty($_POST['keyword'])){
+		     $this->site_categories_model->UpdateKeywordsData($category_id);
+			 $density = 'N/A';
+		 } else {
+			 //var_dump($result);
+			 $description_text=trim($result->description_text,'"');
+			 $vowels = array(".", ",", "?", ":", "/", ">", "<", "&", "#", "^", ";", "`", "~", "*");
+			 $description_text = str_replace($vowels, "",$description_text);
+			 //echo $description_text;
+			 $description_words=$result->description_words;
+			 $array=explode(' ',$description_text);
+			 $keyword=trim($_POST['keyword']);
+			 //print_r($array);
+			 $count_key=0;
+			  foreach($array as $value)
+			  {if(strtolower(trim($value))==strtolower($keyword))
+			   $count_key++;
+			  }
+			  //echo $count_key;
+			  if($description_words==0 || $count_key==0)
+				  $density='0.0%';
+				  
+			  else
+			  {    $densityDouble=$count_key/$description_words*100;
+				   $density=sprintf("%01.2f",$densityDouble).'%';
+			   }
+			  $this->site_categories_model->UpdateKeywordsData($category_id,$keyword,$count_key,sprintf("%01.2f",$densityDouble)); 
+		  }
+		  
+	   echo $density;
     }
     public function getCategoriesByDepartment(){
         $this->load->model('site_categories_model');

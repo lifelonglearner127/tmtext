@@ -105,7 +105,7 @@
                         }
                         ?>
                     </div>
-					<span style="float: right;font-weight: bold;">Compare with: </span>
+					<span style="float: right;font-weight: bold;margin-right: 5px;margin-top: 5px;">Compare with: </span>
 					
 					
 					 <!--Compare with END -->
@@ -135,7 +135,7 @@
                                 </table>
 								
                             </div>
-							<!--div id="dataTableDiv2" style="width: 48%;float: left;margin-left: 35px;" >
+							<div id="dataTableDiv2" style="width: 48%;float: left;margin-left: 35px;" >
 								<table id="recordSec"  >
                                     <thead>
 										<tr>
@@ -148,7 +148,7 @@
                                     <tbody>
 									</tbody>
                                 </table>
-							</div-->
+							</div>
 
                         </div> <!-- end tabs -->
 
