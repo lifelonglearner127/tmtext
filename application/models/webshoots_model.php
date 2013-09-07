@@ -26,6 +26,11 @@ class Webshoots_model extends CI_Model {
         return $pos;
     }
 
+    public function get_crawler_list_by_ids($ids) {
+        $cr_query = $this->db->where_in('id', $ids)->get($this->tables['crawler_list']);
+        return $cr_query->result();
+    }
+
     public function webthumb_call_link($url) {
         $webthumb_user_id = $this->config->item('webthumb_user_id');
         $api_key = $this->config->item('webthumb_api_key');

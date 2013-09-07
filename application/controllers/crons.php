@@ -39,6 +39,19 @@ class Crons extends MY_Controller {
         }
     }
 
+    private function urlExistsCode($url) {
+        if ($url === null || trim($url) === "")
+            return false;
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $data = curl_exec($ch);
+        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        return $httpcode;
+    }
+
     private function webthumb_call($url) {
         $webthumb_user_id = $this->config->item('webthumb_user_id');
         $api_key = $this->config->item('webthumb_api_key');
@@ -92,6 +105,31 @@ class Crons extends MY_Controller {
             'dir' => $dir . "/$url_name.$type"
         );
         return $res;
+    }
+
+    public function site_crawler_screens() {
+        $this->load->model('webshoots_model');
+        $ids = $_GET['ids'];
+        $ids = explode(",", $ids);
+        $crawls = $this->webshoots_model->get_crawler_list_by_ids($ids);
+        if(count($crawls) > 0) {
+            foreach($crawls as $k => $v) {
+                $http_status = $this->urlExistsCode($v->url);
+                $url = preg_replace('#^https?://#', '', $v->url);
+                $call_url = $this->webshoots_model->webthumb_call_link($url);
+                $snap_res = $this->webshoots_model->crawl_webshoot($call_url, $v->id, 'crawl_snap-');
+                $f = $snap_res['img'];
+                $file_path = realpath(BASEPATH . "../webroot/webshoots/$f");
+                $fs = filesize($file_path);
+                if($fs === false || $fs < 10000) { // === so re-craw it
+                    @unlink(realpath(BASEPATH . "../webroot/webshoots/$f"));
+                    $api_key = $this->config->item('snapito_api_secret');
+                    $call_url = "http://api.snapito.com/web/$api_key/mc/$url";
+                    $snap_res = $this->webshoots_model->crawl_webshoot($call_url, $v->id, 'crawl_snap-');
+                }
+                $this->webshoots_model->updateCrawlListWithSnap($v->id, $snap_res['img'], $http_status);
+            }
+        }
     }
 
     /**
