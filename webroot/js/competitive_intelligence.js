@@ -119,8 +119,8 @@ function readGridDataBrandRanking() {
         },
         "aoColumns": [
             {"sName" : "social_rank"},
-            {"sName" : "IR500Rank"},
             {"sName" : "name"},
+            {"sName" : "IR500Rank"},
             {"sName" : "tweets"},
             {"sName" : "total_tweets"},
             {"sName" : "followers"},
