@@ -259,7 +259,7 @@ foreach ($same_pr as $ks => $vs) {
 							//echo"<pre>"; print_r( $vs['seo']['short'] ); echo"</pre>";
 							fsort( $vs['seo']['short'], 'prc' );
 							
-							$i = 1;
+							$ii = 1;
 							$keyword_user = 0;
 							$tertiary = 0;
 							$secondary = 0;
@@ -268,13 +268,13 @@ foreach ($same_pr as $ks => $vs) {
 								
 								$keyword_count = substr_count($s_product_description, $v_ph);
 								
-								if( $i == 4 ) break;
-								if( $i == '1' ) echo '<div class="keywords_lines"><span class="primary_name">Primary: </span>';
-								if( $i == '2' ){
+								if( $ii == 4 ) break;
+								if( $ii == '1' ) echo '<div class="keywords_lines"><span class="primary_name">Primary: </span>';
+								if( $ii == '2' ){
 									echo '<div class="keywords_lines"><span class="primary_name">Secondary: </span>';
 									$secondary = 1;
 								}
-								if( $i == '3' ){
+								if( $ii == '3' ){
 									echo '<div class="keywords_lines"><span class="primary_name">Tertiary: </span>';
 									$tertiary = 1;
 								}
@@ -285,7 +285,7 @@ foreach ($same_pr as $ks => $vs) {
 									<span class='primary_speed'>
 										<div style="float: left;">[</div> <span class="title_words"><?php echo $value['ph']; ?></span>
 										<span class="you_words you_words_input">
-											<input class="keyword_input" imported_data_id="<?php echo $vs['imported_data_id']; ?>" name="keyword<?=$i?>" keyword_num="<?=$i?>" type="text" value="<?=$user_word/* .'|'. $keyword_user;*/?>" />
+											<input class="keyword_input" imported_data_id="<?php echo $vs['imported_data_id']; ?>" name="keyword<?=$ii?>" keyword_num="<?=$ii?>" type="text" value="<?=$user_word?>" />
 										</span>
 										<div style="float: right;">]</div>
 									</span>
@@ -295,7 +295,7 @@ foreach ($same_pr as $ks => $vs) {
 								</div>
 								<div class="clear"></div>
 								<?php 
-								$i++;
+								$ii++;
 								$keyword_user++;
 							}
 							if( $secondary != 1 ){
@@ -331,17 +331,17 @@ foreach ($same_pr as $ks => $vs) {
 							}
 						}else{
 							//echo '<span class="name_bold">None</span>';
-							for( $j = 1; $j <= 3; $j++ ){
-								if( $j == '1' ) echo '<div class="keywords_lines"><span class="primary_name">Primary: </span>';
-								if( $j == '2' )	echo '<div class="keywords_lines"><span class="primary_name">Secondary: </span>';
-								if( $j == '3' )	echo '<div class="keywords_lines"><span class="primary_name">Tertiary: </span>';
+							for( $jj = 1; $jj <= 3; $jj++ ){
+								if( $jj == '1' ) echo '<div class="keywords_lines"><span class="primary_name">Primary: </span>';
+								if( $jj == '2' )	echo '<div class="keywords_lines"><span class="primary_name">Secondary: </span>';
+								if( $jj == '3' )	echo '<div class="keywords_lines"><span class="primary_name">Tertiary: </span>';
 								
-								$user_word = $vs['seo']['keyword'][$j-1]->keyword;
+								$user_word = $vs['seo']['keyword'][$jj-1]->keyword;
 								echo '<span>
 										<span class="primary_speed">
 											<div style="float: left;">[</div> <span class="title_words"></span>
 											<span class="you_words you_words_input">
-												<input class="keyword_input" imported_data_id="'. $vs['imported_data_id'] .'" name="keyword'.$j.'" keyword_num="'.$j.'" type="text" value="'.$user_word.'" />
+												<input class="keyword_input" imported_data_id="'. $vs['imported_data_id'] .'" name="keyword'.$jj.'" keyword_num="'.$jj.'" type="text" value="'.$user_word.'" />
 											</span>
 											<div style="float: right;">]</div>
 										</span>
@@ -410,98 +410,6 @@ foreach ($same_pr as $ks => $vs) {
 						<?php } ?>
 					</div>
 				</div>
-				
-                <!--                            //Max-->
-                <?php /* ?>
-                <div class="p_description" style="overflow:hidden;">
-                    <?php if ($s_product_short_desc_count > 0) { ?>
-                        <span class='analysis_content_head'><img style="height: 9px;width: 9px;background: rgb(207, 207, 207);padding: 2px;margin-top: -3px;margin-right: 4px;" src="<?php echo base_url() ?>/img/arrow-down.png"><?php
-                            if ($s_product_long_description == '') {
-                                echo "Description";
-                            } else {
-                                //echo $s_product_long_description."!!!!";
-                                echo "Short Description";
-                            }
-                            ?><span class='short_desc_wc'></span></span>
-                        <p class="heading_text">Words: <b><?php echo $s_product_short_desc_count; ?></b></p>
-                        <div class="p_seo<?php echo $row; ?>short">
-                            <?php if (count($vs['seo']['short']) > 0) { ?>
-                                <p class="heading_text">SEO Keywords: </p>
-                                <ul class='gr_seo_short_ph' style='margin:0px;font-weight: bold;'>
-                                    <?php foreach ($vs['seo']['short'] as $key => $value) { ?>
-                                    
-                                        <?php $v_ph = $value['ph']; ?>
-
-                                        <li >
-                                            <span style="white-space: normal;line-height: 20px;text-decoration: none;font-size: 14px !important;line-height: 21px;text-decoration: none;white-space: normal;"data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'short')" class='word_wrap_li_pr hover_en'>
-                                                <?php echo $value['ph']; ?>
-                                                <?php echo '(' . $value['count'] . ') - '.$value['prc'].'%'; ?>
-                                            </span>
-                        <!--                                    <span class='word_wrap_li_sec' style="margin-top: -16px;margin-left: 5px;"></span>-->
-                                        </li>
-                                    <?php } ?>
-                                </ul>
-                            <?php } else { ?>
-
-                                <p class="heading_text">SEO Keywords: <span style="font-weight: bold;">None</span></p>
-                            <?php } ?>
-                        </div>
-                        <p>Duplicate content: <b><?php echo isset($vs['short_original']) ? $vs['short_original'] : ''; ?></b></p>
-
-                        <p  class='short_desc_con'><?php echo $s_product_description; ?></p>
-                        <?php
-                    }
-if($s_product_long_desc_count > 0){
-    
-                        ?>
-
-                        <span class='analysis_content_head'><img style="height: 9px;width: 9px;background: rgb(207, 207, 207);padding: 2px;margin-top: -3px;margin-right: 4px;" src="<?php echo base_url() ?>/img/arrow-down.png"><?php
-                            if ($s_product_description == '') {
-                                echo "Description";
-                            } else {
-                                echo "Long Description";
-                            }
-                            ?><span class='long_desc_wc'></span></span>
-                        <p class="heading_text">Words: <b><?php echo $s_product_long_desc_count; ?></b></p>
-                        <div class="p_seo<?php if ($s_product_description == '') {echo $row.'short';}else{echo $row.'long'; }?>">
-                            <?php if (count($vs['seo']['long']) > 0) { ?>
-                                <p class="heading_text">SEO Keywords: </p>
-                                <ul class='gr_seo_short_ph' style='margin:0px;font-weight: bold;'>
-                                    <?php foreach ($vs['seo']['long'] as $key => $value) { ?>
-                                        <?php $v_ph = $value['ph']; ?>
-
-                                        <li >
-                                            <span style="font-size: 14px !important;white-space: normal;line-height: 20px;text-decoration: none;"data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'long')" class='word_wrap_li_pr hover_en'>
-                                                <?php echo $value['ph']; ?>
-                                                <?php echo '(' . $value['count'] . ') - '.$value['prc'].'%'; ?>
-                                            </span>
-                        <!--                                    <span class='word_wrap_li_sec' style="margin-top: -16px;margin-left: 5px;"></span>-->
-                                        </li>
-                                    <?php } ?>
-                                </ul>
-                            <?php } else { ?>
-
-                                <p class="heading_text">SEO Keywords: <span style="font-weight: bold;">None</span></p>
-                            <?php } ?>
-                        </div>
-                        <p>Duplicate content: <b><?php echo isset($vs['long_original']) ? $vs['long_original'] : ''; ?></b></p>
-
-
-                        <!--                     //Max-->
-                        <?php
-                        echo '<p>' . $s_product_long_description . '</p>';
-                    }
-                     if($s_product_long_desc_count == 0 && $s_product_short_desc_count == 0 ){
-                       ?>
-                        <span class='analysis_content_head'>Description: </span>
-                        <span>No description on site</span>
-
-                       <?php
-                    }
-                    ?>
-
-                </div>
-                <?php */?>
 
 
             </div>
