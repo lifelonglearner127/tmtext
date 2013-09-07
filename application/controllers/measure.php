@@ -1426,10 +1426,10 @@ public function gridview() {
                 }
             }
             
-            if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['UPC/EAN/ISBN'])) {
-
-                $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['UPC/EAN/ISBN']);
-            }
+//            if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['UPC/EAN/ISBN'])) {
+//
+//                $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['UPC/EAN/ISBN']);
+//            }
             if(empty($same_pr) && !isset($data_import['parsed_attributes']['model'])){
             $data['mismatch_button']=true;
             if (!$this->similar_product_groups_model->checkIfgroupExists($im_data_id)) {
@@ -1538,8 +1538,8 @@ public function gridview() {
                 }
 
             
-				$keywords = $this->imported_data_parsed_model->getKeywordsBy_imported_data_id( $imported_data_id );
-				$same_pr[$ks]['seo']['keyword'] = $keywords;
+//				$keywords = $this->imported_data_parsed_model->getKeywordsBy_imported_data_id( $imported_data_id );
+//				$same_pr[$ks]['seo']['keyword'] = $keywords;
 
             }
 
