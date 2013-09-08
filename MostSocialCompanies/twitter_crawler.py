@@ -4,6 +4,8 @@ import twitter
 from datetime import datetime, MINYEAR, MAXYEAR
 from pprint import pprint
 
+from crawl_both import Utils
+
 class CrawlTweets():
 
 	def __init__(self):
@@ -22,15 +24,14 @@ class CrawlTweets():
 		return date.strftime("%b %d, %Y")
 
 	# get tweets for user with screen name username, that were published between min_date and max_date
-	# return list of dictionaries containing number of tweets for each day in the time interval and total number of tweets in the interval
+	# return dictionary indexed by date (day)
 
 	# note: username without the "@" prefix
 	def getTweets(self, brand, username, min_date = datetime(MINYEAR, 1, 1), max_date = datetime(MAXYEAR, 12, 31)):
 
-		results = []
+		results = {}
 
 		statuses = self.api.GetUserTimeline(screen_name=username, count=100)
-		day_views = {}
 
 		while CrawlTweets.stringToDate(statuses[-1].created_at) > min_date:
 			statuses += self.api.GetUserTimeline(screen_name=username, count=100)
@@ -39,13 +40,6 @@ class CrawlTweets():
 			and (CrawlTweets.stringToDate(x.created_at) >= min_date), statuses)
 		all_tweets_count = len(all_tweets)
 
-		# count tweets for each day
-		date_count = {}
-		for tweet in statuses:
-			if tweet.created_at not in date_count:
-				date_count[tweet.created_at] = 0
-			else:
-				date_count[tweet.created_at] += 1
 
 		# get additional info about this user
 		data = self.getDataForUser(username)
@@ -54,15 +48,18 @@ class CrawlTweets():
 		total_tweets = data['tweets']
 
 		for tweet in statuses:
-			ret_elem = {}
-			ret_elem['brand'] = brand
-			ret_elem['date'] = self.dateToString(self.stringToDate(tweet.created_at))
-			ret_elem['all_tweets_count'] = all_tweets_count
-			ret_elem['tweets_count'] = date_count[tweet.created_at]
-			ret_elem['followers'] = followers
-			ret_elem['following'] = following
-			ret_elem['total_tweets'] = total_tweets
-			results.append(ret_elem)
+			date = self.dateToString(self.stringToDate(tweet.created_at))
+			if date not in results:
+				ret_elem = {}
+				ret_elem['brand'] = brand
+				ret_elem['all_tweets_count'] = all_tweets_count
+				ret_elem['tweets_count'] = 1
+				ret_elem['followers'] = followers
+				ret_elem['following'] = following
+				ret_elem['total_tweets'] = total_tweets
+				results[date] = ret_elem
+			else:
+				results[date][tweets_count] += 1
 
 		return results
 
@@ -91,6 +88,25 @@ class CrawlTweets():
 		return ret
 
 
-ct = CrawlTweets()
-tweets = ct.getTweets("Amazon", "amazon", datetime(2013, 04, 15), datetime(2013, 05, 15))
-pprint(tweets)
+if __name__ == "__main__":
+
+	parser = OptionParser()
+	parser.add_option("--date1", dest="date1", help="Minimum publish date")
+	parser.add_option("--date2", dest="date2", help="Maximum publish date")
+	(options, args) = parser.parse_args()
+
+	date1 = datetime.strptime(options.date1, "%Y-%m-%d")
+	date2 = datetime.strptime(options.date2, "%Y-%m-%d")
+
+  	crawler = CrawlTweets()
+
+  	sites = Utils.input_sites("Brand Retail Import Data.csv")
+
+  	results = []
+  	for site in sites:
+  		res_site = crawler.get_uploads(username = site["twitter_username"], brand = site['site'], min_date=date1, max_date=date2)
+  		#res_site["Brand"] = site["site"]
+  		results += res_site
+
+  	print results
+  	#Utils.output_all("MostSocialBrands.csv", results)

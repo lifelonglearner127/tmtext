@@ -4,59 +4,7 @@ from apiclient.discovery import build
 from optparse import OptionParser
 from datetime import datetime, MINYEAR, MAXYEAR, timedelta
 
-from pprint import pprint
-import csv
-
-class Utils:
-
-	# return a list of dates for all days in a date range
-	@staticmethod
-	def daterange(start_date, end_date):
-		for n in range(int ((end_date - start_date).days)):
-			yield start_date + timedelta(n)
-
-	# read site youtube usernames from csv input file
-	@staticmethod
-	def input_sites(filename):
-		csvfile = open(filename, "rw")
-
-		sites = []
-
-		sitesreader = csv.reader(csvfile, delimiter=',')
-
-		# exclude header
-		sitesreader.next()
-
-		for row in sitesreader:
-			site = {}
-
-			#TODO: maybe work with name indexes (insted of number)
-			site["site"] = row[1]
-			#print "site ", site["site"]
-			site["yt_username"] = row[3]
-			#print 'username ', site['yt_username']
-			sites.append(site)
-
-		csvfile.close()
-
-		#print 'read all'
-
-		return sites
-
-	# output results to csv file
-	@staticmethod
-	def output_all(filename, results):
-		csvfile = open(filename, "wb+")
-
-		siteswriter = csv.writer(csvfile, delimiter=',')
-		siteswriter.writerow(["Date", "Brand", "Followers", "Following", "Tweets", \
-			"All_Tweets", "YT_Video", "YT_All_Videos", "YT_Views", "YT_All_Views"])
-
-		for item in results:
-			siteswriter.writerow([item['date'], item['brand'], '', '', '', '', item['video_title'], item['all_videos_count'], item['video_views'], item['all_views_count']])
-		print results
-
-		csvfile.close()
+from crawl_both import Utils
 
 class CrawlUploads():
 	
@@ -86,6 +34,7 @@ class CrawlUploads():
 
 
 	# get uploaded videos from a certain channel (given by channel username) published between certain dates
+	# return dictionary indexed by date (day)
 	def get_uploads(self, channel_username, brand, min_date = datetime(MINYEAR, 1, 1), max_date = datetime(MAXYEAR, 12, 31)):
 		channel_id = self.youtube_search_channel(channel_username)
 		if not channel_id:
@@ -98,7 +47,7 @@ class CrawlUploads():
 			#print 'finding videos for ', channel
 			uploads_list_id = channel["contentDetails"]["relatedPlaylists"]["uploads"]
 
-			ret = []
+			ret = {}
 
 			# number of views for each date
 #			for date in Utils.daterange(min_date, max_date):
@@ -140,13 +89,15 @@ class CrawlUploads():
 						# else:
 						# 	ret[date] += 1
 
-						ret_elem = {}
-						ret_elem['brand'] = brand
-						ret_elem['date'] = date
-						ret_elem['video_title'] = title.encode("utf-8")
-						ret_elem['video_views'] = views
+						if date not in ret:
+							ret_elem = {}
+							ret_elem['brand'] = brand
+							ret_elem['video_titles'] = [{title.encode("utf-8") : views}]
 
-						ret.append(ret_elem)
+							ret[date] = ret_elem
+						else:
+							ret_elem = ret[date]
+							ret_elem['video_titles'].append({title.encode("utf-8") : views})
 
 						total_videos += 1
 						total_views += views
@@ -160,7 +111,7 @@ class CrawlUploads():
 
 			# set the total views and nr of videos field for all elements in returned list (all days)
 
-			for ret_elem in ret:
+			for ret_elem in ret.values():
 				ret_elem['all_videos_count'] = total_videos
 				ret_elem['all_views_count'] = total_views
 				# ret['YT_All_Videos'] = total_videos
@@ -189,4 +140,5 @@ if __name__ == "__main__":
   		#res_site["Brand"] = site["site"]
   		results += res_site
 
-  	Utils.output_all("MostSocialBrands.csv", results)
+  	#Utils.output_all("MostSocialBrands.csv", results)
+  	print results
