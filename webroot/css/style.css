@@ -1927,7 +1927,7 @@ span.highlight { background-color:yellow;}
 	float: left;
 	margin-right: 5px;
 }
-.assess_image:hover{cursor: pointer;}
+.percent_img:hover{cursor: pointer;}
 
 #compet_area_grid .short_product_name.ellipsis a{
 	font-size: 13px;

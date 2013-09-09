@@ -256,7 +256,7 @@ foreach ($same_pr as $ks => $vs) {
 								</span>
 								<?php
 							}*/
-							//echo"<pre>"; print_r( $vs['seo']['short'] ); echo"</pre>";
+							//echo"<pre>"; print_r( $vs['seo']['keyword'] ); echo"</pre>";
 							fsort( $vs['seo']['short'], 'prc' );
 							
 							$ii = 1;
@@ -661,12 +661,12 @@ $(document).ready(function(){
 		}
 	});
 	
-	$('.assess_image').mouseover(function(){
+	$('.percent_img').mouseover(function(){
 		$(this).parent().next('.primary:first').find('.keyword_percent').css({'text-decoration': 'underline'});
 		$(this).parent().next('.primary:first').find('.keyword_count').css({'text-decoration': 'underline'});
 	});
 	
-	$('.assess_image').mouseout(function(){
+	$('.percent_img').mouseout(function(){
 		$(this).parent().next('.primary:first').find('.keyword_percent').css({'text-decoration': 'none'});
 		$(this).parent().next('.primary:first').find('.keyword_count').css({'text-decoration': 'none'});
 	});
