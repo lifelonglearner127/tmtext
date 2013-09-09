@@ -63,28 +63,28 @@
 
 
 			<script>
-			$('button#crawl').attr("disabled","disabled");	
+			$('button#crawl').attr("disabled","disabled");
 
 			$('select[name="batch"]').change(function(){
 				$('button#crawl').removeAttr("disabled");
 			});
 
-            
+
             </script>
 
 
 			<h3 class="span3 current_list_title">Crawl list: <br/><small nowrap></small></h3>
-			
+
             <select name="batch" class="span4 pull-left mt_15" style="width: 125px;" id="batches">
 				<?php foreach($batches_list as $ks => $vs):?>
 				<option value="<?php echo $ks; ?>"><?php echo $vs; ?></option>
 				<?php endforeach;?>
 			</select>
-			<button id="crawl" class="btn new_btn btn-success mt_15 ml_15">Crawl</button>
+			<button id="crawl_batch" class="btn new_btn btn-success mt_15 ml_15">Crawl</button>
             <input type="text" class="span3 pull-left mt_15" name="search_crawl_data" >
             <button id="apply_search_data" class="btn new_btn btn-success mt_15 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Apply</button>
             <button id="clear_search_data" class="btn new_btn btn-success mt_15 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Clear</button>
-            
+
 			<div class="row-fluid mt_5">
 				<div class="search_area uneditable-input span10" style="cursor: text; width: 765px; height: 320px; overflow : auto;" id="Current_List">
 				<!-- <div id='current_list_tbl_holder'>&nbsp;</div> -->
@@ -447,6 +447,12 @@ $(function () {
 
 	$(document).on("click", "button#crawl_all", function(){
 		$.post('<?php echo site_url('site_crawler/crawl_all');?>', function(data) {
+			loadCurrentList();
+		});
+	});
+
+	$(document).on("click", "button#crawl_batch", function(){
+		$.post('<?php echo site_url('site_crawler/crawl_all');?>', {batch_id: $('#batches option:selected').val() }, function(data) {
 			loadCurrentList();
 		});
 	});

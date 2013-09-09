@@ -30,8 +30,20 @@ class Statistics_new_model extends CI_Model {
         return $this->db->query($sql_cmd);
     }
 
-    function insert( $imported_data_id, $revision,
+    public function total_items_in_batch($batch_id){
+        $this->load->model('research_data_model');
+        $params = new stdClass();
+        $params->batch_id = $batch_id;
+        $params->txt_filter = '';
+        $res = $this->getStatsData($params);
+        $num_rows = count($res);
+        if($num_rows == 0){
+            $num_rows = $this->research_data_model->countAll($batch_id);
+        }
+        return $num_rows;
+    }
 
+    function insert( $imported_data_id, $revision,
                          $short_description_wc, $long_description_wc,
                          $short_seo_phrases, $long_seo_phrases,
                          $own_price, $price_diff, $competitors_prices, $items_priced_higher_than_competitors, $similar_products_competitors,
@@ -39,7 +51,6 @@ class Statistics_new_model extends CI_Model {
 
         $this->imported_data_id = $imported_data_id;
         $this->revision = $revision;
-
         $this->short_description_wc = (string)$short_description_wc;
         $this->long_description_wc = (string)$long_description_wc;
         $this->short_seo_phrases = (string)$short_seo_phrases;
@@ -94,7 +105,10 @@ class Statistics_new_model extends CI_Model {
 //            ->get($this->tables['statistics']);
 
         $query = $this->db
-            ->select('s.*, cl.snap, cl.snap_date, cl.snap_state')
+            ->select('s.*, cl.snap, cl.snap_date, cl.snap_state,
+            (select `value` from imported_data_parsed where `key`="Product Name" and `imported_data_id` = `s`.`imported_data_id` and `revision`=`s`.`revision` limit 1) as `product_name`,
+            (select `value` from imported_data_parsed where `key`="Url" and `imported_data_id` = `s`.`imported_data_id` and `revision`=`s`.`revision` limit 1) as `url`
+            ')
             ->from($this->tables['statistics_new'].' as s')
             ->join($this->tables['crawler_list'].' as cl', 'cl.imported_data_id = s.imported_data_id', 'left')
             ->where('s.batch_id', $batch_id)->get();

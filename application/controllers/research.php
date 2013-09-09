@@ -620,7 +620,11 @@ class Research extends MY_Controller {
             $result_table[] = $result_row;
         }
 
-        $own_batch_total_items = $this->statistics_model->total_items_in_batch($batch_id);
+        if($this->settings['statistics_table'] == "statistics_new"){
+            $own_batch_total_items = $this->statistics_new_model->total_items_in_batch($batch_id);
+        } else {
+            $own_batch_total_items = $this->statistics_model->total_items_in_batch($batch_id);
+        }
 
         $report['summary']['total_items'] = $own_batch_total_items;
         $report['summary']['items_priced_higher_than_competitors'] = $items_priced_higher_than_competitors;

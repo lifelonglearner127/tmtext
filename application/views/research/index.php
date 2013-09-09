@@ -161,13 +161,12 @@ jQuery(document).ready(function($) {
     <div class="tab-content">
         <div class="research">
             <div class="row-fluid">
-                <div class="span6">
+                <div class="span6" style="padding-left: 5px;">
                     Batch:
                     <div id="research_edit_customers" class="customer_dropdown"></div>
                     <?php echo form_dropdown('research_edit_batches', $batches_list, array(), 'class="mt_10" style="width: 175px;"'); ?>
-                    <button id="export_batch" class="btn" type="button" style="margin-left:5px; margin-right: 10px;">Export</button>
                 </div>
-                <div class="span6 research_edit_filter_links">
+                <div class="span3 research_edit_filter_links">
                     Show:
                     <a id="batches_all" title="All" href="#" class="active_link">All</a> |
                     <a id="batches_edited" title="Edited" href="#">Edited</a> |
@@ -177,10 +176,11 @@ jQuery(document).ready(function($) {
                     <button id="new_batch" class="btn" type="button" style="margin-left:5px">New</button>
                     -->
                 </div>
+                <button id="export_batch" class="btn" type="button" style="margin: 8px 5px;float:right;">Export</button>
             </div>
             <div class="clear"></div>
             <div id="research_tab1" class="tab-pane active">
-                <div class="mt_10 span12 ui-resizable">
+                <div class="span12 ui-resizable">
                     <!-- Table for results -->
                     <div class="tabbable">
                         <div class="tab-content block_data_table">
@@ -197,7 +197,7 @@ jQuery(document).ready(function($) {
                                         <span>Loading...</span>
                                     </div>
 
-                                    <div id="tabs" class="mt_10">
+                                    <div id="tabs">
                                         <div id="read">
                                             <table id="records" style="width: 100%;">
                                                 <thead></thead>

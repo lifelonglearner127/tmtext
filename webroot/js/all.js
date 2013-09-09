@@ -393,7 +393,7 @@ function readResearchData() {
                         "sInfoEmpty": "Showing 0 to 0 of 0 records",
                         "sInfoFiltered": ""
                     },
-                    "aoColumns": [
+                   "aoColumns": [
                          null, null, null, null, null, null, null, null, null
                     ]
                 });
@@ -406,9 +406,10 @@ function readResearchData() {
             // get visible columns status
             var columns_checkboxes = $('#choiceColumnDialog input[type=checkbox]');
             $(columns_checkboxes).each(function(i) {
-                if($(this).attr('checked') != 'checked') {
+                if($(this).attr('checked') != 'checked' && i<9) {
                     dataTable.fnSetColumnVis( i, false, true );
                 }
+
             });
 
             $('#records tbody tr').each( function() {

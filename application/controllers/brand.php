@@ -139,8 +139,8 @@ class Brand extends MY_Controller {
             foreach ($result as $brand) {
                 $output['aaData'][] = array(
                     $brand->social_rank,
-                    number_format($brand->IR500Rank),
                     $brand->name,
+                    number_format($brand->IR500Rank),
                     number_format($brand->tweets),
                     number_format($brand->total_tweets),
                     number_format($brand->followers),

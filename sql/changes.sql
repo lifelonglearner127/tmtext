@@ -1,3 +1,7 @@
+# 09/07 Tatiana
+ALTER TABLE `statistics_new` ADD `product_name` VARCHAR( 255 ) NOT NULL AFTER `research_data_id`;
+ALTER TABLE `statistics_new` ADD `url` TEXT NOT NULL AFTER `product_name`
+
 # 09/07 Ruslan
 ALTER TABLE  `statistics_new` 
 	ADD  `batch_id` INT NULL AFTER  `imported_data_id` ,

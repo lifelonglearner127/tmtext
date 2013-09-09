@@ -75,8 +75,8 @@ $pervious_month = date("m", strtotime("first day of previous month"));
                                     <thead>
                                     <tr>
                                         <th><div class="draggable">Social Rank</div></th>
-                                        <th><div class="draggable">IR 500 Rank</div></th>
                                         <th><div class="draggable">Brand</div></th>
+                                        <th><div class="draggable">IR 500 Rank</div></th>
                                         <th><div class="draggable">Tweets</div></th>
                                         <th><div class="draggable">All Tweets</div></th>
                                         <th><div class="draggable">Followers</div></th>

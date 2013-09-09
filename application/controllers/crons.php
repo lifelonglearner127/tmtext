@@ -263,6 +263,11 @@ class Crons extends MY_Controller {
         $this->load->library('helpers');
         $this->load->helper('algoritm');
         $this->load->model('sites_model');
+         $trnc = $this->uri->segment(3);
+           
+            if($trnc===false){
+                $trnc=1;
+            }
         $ids = $this->imported_data_parsed_model->do_stats_ids();
 
         foreach ($ids as $val) {
@@ -284,7 +289,7 @@ class Crons extends MY_Controller {
         $this->db->update('settings', $data);
         $data_arr=$this->imported_data_parsed_model->do_stats_ids();
         if (count($data_arr) > 1) {
-            shell_exec('wget -S -O- http://dev.contentsolutionsinc.com/producteditor/index.php/crons/do_duplicate_content > /dev/null 2>/dev/null &');
+            shell_exec("wget -S -O- http://dev.contentsolutionsinc.com/producteditor/index.php/crons/do_duplicate_content/$trnc > /dev/null 2>/dev/null &");
         } else {
             $data = array(
                 'description' => 0
@@ -833,7 +838,8 @@ class Crons extends MY_Controller {
                     }
 
                     try {
-                        $insert_id = $this->statistics_new_model->insert($obj->imported_data_id, $obj->revision, $short_description_wc, $long_description_wc,
+                        $insert_id = $this->statistics_new_model->insert($obj->imported_data_id, $obj->revision,
+                            $short_description_wc, $long_description_wc,
                             $short_seo_phrases, $long_seo_phrases, $own_price, serialize($price_diff), serialize($competitors_prices),
                             $items_priced_higher_than_competitors, serialize($similar_products_competitors),
                             $query_research_data_id, $query_batch_id
@@ -1617,9 +1623,9 @@ class Crons extends MY_Controller {
             $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], $strict);
         }
 
-        if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['UPC/EAN/ISBN'])) {
-            $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['UPC/EAN/ISBN']);
-        }
+//        if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['UPC/EAN/ISBN'])) {
+//            $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['UPC/EAN/ISBN']);
+//        }
         if (empty($same_pr) && !isset($data_import['parsed_attributes']['model'])) {
             $data['mismatch_button'] = true;
             if (!$this->similar_product_groups_model->checkIfgroupExists($imported_data_id)) {
