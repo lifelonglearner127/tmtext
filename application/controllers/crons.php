@@ -1618,9 +1618,9 @@ class Crons extends MY_Controller {
             $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], $strict);
         }
 
-        if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['UPC/EAN/ISBN'])) {
-            $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['UPC/EAN/ISBN']);
-        }
+//        if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['UPC/EAN/ISBN'])) {
+//            $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['UPC/EAN/ISBN']);
+//        }
         if (empty($same_pr) && !isset($data_import['parsed_attributes']['model'])) {
             $data['mismatch_button'] = true;
             if (!$this->similar_product_groups_model->checkIfgroupExists($imported_data_id)) {
