@@ -353,7 +353,7 @@ class Measure extends MY_Controller {
             // $cmd = "wget -S -O- $path_to_cron";
             // $cmd = "wget -O - -q -t 1 $path_to_cron";
             // $cmd = "wget -O- $path_to_cron >> /dev/null";
-            $cmd = "wget -S -O- $path_to_cron > /dev/null 2>/dev/null &";
+            $cmd = "wget -S -O- '$path_to_cron' > /dev/null 2>/dev/null &";
             shell_exec($cmd);
         }
         $this->output->set_content_type('application/json')->set_output(json_encode($cmd));
