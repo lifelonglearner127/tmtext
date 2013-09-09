@@ -105,9 +105,12 @@ class Statistics_new_model extends CI_Model {
 //            ->get($this->tables['statistics']);
 
         $query = $this->db
-            ->select('s.*, cl.snap, cl.snap_date, cl.snap_state')
+            ->select('s.*, cl.snap, cl.snap_date, cl.snap_state,
+            (select `value` from imported_data_parsed where `key`="Product Name" and `imported_data_id` = `s`.`imported_data_id` and `revision`=`s`.`revision`) as `product_name`,
+            (select `value` from imported_data_parsed where `key`="Url" and `imported_data_id` = `s`.`imported_data_id` and `revision`=`s`.`revision`) as `url`
+            ')
             ->from($this->tables['statistics_new'].' as s')
-            ->join($this->tables['crawler_list'].' as cl', 'cl.imported_data_id = s.imported_data_id', 'left')
+            ->join($this->tables['crawler_list'].' as cl', 'cl.imported_data_id =9 s.imported_data_id', 'left')
             ->where('s.batch_id', $batch_id)->get();
         $result =  $query->result();
         return $result;
