@@ -1338,7 +1338,8 @@ class Imported_data_parsed_model extends CI_Model {
                 CASE WHEN result.product_name IS NULL OR TRIM(result.product_name) = '' THEN rd.product_name ELSE result.product_name END AS product_name,
                 CASE WHEN result.long_description IS NULL OR TRIM(result.long_description) = '' THEN rd.long_description ELSE result.long_description END AS long_description,
                 CASE WHEN result.short_description IS NULL OR TRIM(result.short_description) = '' THEN rd.short_description ELSE result.short_description END AS short_description,
-                CASE WHEN result.url IS NULL OR TRIM(result.url) = '' THEN rd.url ELSE result.url END AS url
+                CASE WHEN result.url IS NULL OR TRIM(result.url) = '' THEN rd.url ELSE result.url END AS url,
+                rd.meta_name, rd.meta_description,  rd.meta_keywords
             FROM (
                 SELECT
                     r.imported_data_id AS imported_data_id,

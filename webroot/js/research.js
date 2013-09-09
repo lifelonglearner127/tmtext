@@ -332,7 +332,7 @@ $(document).ready(function () {
 
     $(document).on("click", "button#save_in_batch", function(){
         $.post(base_url + 'index.php/research/save_in_batch', {
-            'batch': $('select[name="research_batches"]').find('option:selected').text(),
+            'batch': $('select[name="research_edit_batches"]').find('option:selected').text(),
             'url': $('input[name="url"]').val(),
             'product_name': $('input[name="product_name"]').val(),
             'keyword1': $('input[name="primary"]').val(),
@@ -352,7 +352,32 @@ $(document).ready(function () {
 
     $(document).on("click", "button#save_next", function(){
         $("button#save_in_batch").trigger("click");
-        $('#research_products li.current_selected').next().trigger('click');
+        //$('#research_products li.current_selected').next().trigger('click');
+        var prev_row = $('#records tbody tr.row_selected');
+        prev_row.removeClass('row_selected');
+        var row = prev_row.next().addClass('row_selected');
+        var request = {
+            batch_id: row.attr('batch_id'),
+            url: row.attr('url')
+        };
+        $.get(base_url + 'index.php/research/getResearchDataByURLandBatchId', request, function(response) {
+            $('ul#product_descriptions').empty();
+            $('ul#research_products').empty();
+            $('ul#rel_keywords').empty();
+            $('ul[data-st-id="short_desc_seo"]').empty();
+            $('ul[data-st-id="long_desc_seo"]').empty();
+
+            $('input[name="product_name"]').val(response.product_name);
+            $('input[name="url"]').val(row.attr('url'));
+            $('input[name="meta_title"]').val(response.meta_name);
+            $('textarea[name="meta_description"]').val(response.meta_description);
+            $('input[name="meta_keywords"]').val(response.meta_keywords);
+            $('textarea[name="short_description"]').val(response.short_description);
+            $('div#long_description').text(response.long_description);
+            $('textarea[name="short_description"]').trigger('change');
+            $('div#long_description').trigger('change');
+        });
+        //$('#records tbody tr.row_selected').next().trigger('click');
     });
 
     $(document).on("click", "button#research_update_density", function(){
