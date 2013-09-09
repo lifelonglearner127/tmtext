@@ -136,8 +136,7 @@ class Crons extends MY_Controller {
      * Cron Job for CI home tab screenshots generating
      */
     public function screenscron() {
-        die("NEED TO TEST!");
-        $customers = $this->customers_list_new();
+        $customers = $this->customers_list();
         $this->load->model('webshoots_model');
         $week = date("W", time());
         $year = date("Y", time());
@@ -145,16 +144,15 @@ class Crons extends MY_Controller {
         foreach ($customers as $k => $v) {
             if ($this->urlExists($v['c_url'])) $sites[] = $v['c_url'];
         }
+        // $sites = array_slice($sites, 0, 1);
         foreach ($sites as $url) {
             $c_url = preg_replace('#^https?://#', '', $url);
-
             if($c_url === 'bjs.com') {
                 $api_key = $this->config->item('snapito_api_secret');
                 $call_url = "http://api.snapito.com/web/$api_key/mc/$c_url";
             } else {
-                $call_url = $this->webthumb_call_link($c_url);
+                $call_url = $this->webshoots_model->webthumb_call_link($c_url);
             }
-
             $crawl_l = $this->upload_record_webshoot($call_url, $c_url . "_big");
             $file = $crawl_l['dir'];
             $file_size = filesize($file);
@@ -169,7 +167,7 @@ class Crons extends MY_Controller {
                 'big_crawl' => $crawl_l['path'],
                 'dir_thumb' => $crawl_l['dir'],
                 'dir_img' => $crawl_l['dir'],
-                'uid' => 0,
+                'uid' => 4,
                 'year' => $year,
                 'week' => $week,
                 'pos' => 0
@@ -178,7 +176,7 @@ class Crons extends MY_Controller {
             // === webshots selection refresh attempt (start)
             $this->webshoots_model->selectionRefreshDecision($r); 
             // === webshots selection refresh attempt (end)
-            sleep(10);
+            sleep(5);
         }
         echo "Cron Job Finished";
     }
