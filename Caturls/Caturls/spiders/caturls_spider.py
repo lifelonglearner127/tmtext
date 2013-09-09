@@ -86,17 +86,18 @@ class CaturlsSpider(BaseSpider):
 
 			# set a hardcoded value for zipcode
 			zipcode = "12345"
-
 			textbox = driver.find_element_by_name("zipCode")
-			textbox.send_keys(zipcode)
 
-			button = driver.find_element_by_id("submitLink")
-			button.click()
+			if textbox.is_displayed():
+				textbox.send_keys(zipcode)
 
-			cookie = {"zipcode": zipcode}
-			driver.add_cookie(cookie)
+				button = driver.find_element_by_id("submitLink")
+				button.click()
 
-			time.sleep(5)
+				cookie = {"zipcode": zipcode}
+				driver.add_cookie(cookie)
+
+				time.sleep(5)
 
 			# convert html to "nice format"
 			text_html = driver.page_source.encode('utf-8')
