@@ -80,28 +80,28 @@ $( function() {
         $(columns_checkboxes).each(function(i) {
             switch($(this).attr('id')) {
                 case 'column_product_name' : {
-                    if($(this).attr('checked') == true) {
+                    if($(this).attr('checked') == 'checked') {
                         var product_name = $( 'tr#' + updateId + ' td.column_product_name' );
                         $(product_name).html( $( '#product_name' ).val() );
                     }
                     break;
                 }
                 case 'column_url' : {
-                    if($(this).attr('checked') == true) {
+                    if($(this).attr('checked') == 'checked') {
                         var url = $( 'tr#' + updateId + ' td.column_url' );
                         $(url).html( $( '#url' ).val() );
                     }
                     break;
                 }
                 case 'column_short_description' : {
-                    if($(this).attr('checked') == true) {
+                    if($(this).attr('checked') == 'checked') {
                         var short_description = $( 'tr#' + updateId + ' td.column_short_description' );
                         $(short_description).html( $( '#short_description' ).val() );
                     }
                     break;
                 }
                 case 'column_short_description_wc' : {
-                    if($(this).attr('checked') == true) {
+                    if($(this).attr('checked') == 'checked') {
                         var short_description_wc = $( 'tr#' + updateId + ' td.column_short_description_wc' );
                         var short_description_wc_text = $( '#short_description_wc' ).text();
                         if(short_description_wc_text == '0') {
@@ -112,14 +112,14 @@ $( function() {
                     break;
                 }
                 case 'column_long_description' : {
-                    if($(this).attr('checked') == true) {
+                    if($(this).attr('checked') == 'checked') {
                         var long_description = $( 'tr#' + updateId + ' td.column_long_description' );
                         $(long_description).html( $( '#long_description' ).val() );
                     }
                     break;
                 }
                 case 'column_long_description_wc' : {
-                    if($(this).attr('checked') == true) {
+                    if($(this).attr('checked') == 'checked') {
                         var long_description_wc = $( 'tr#' + updateId + ' td.column_long_description_wc');
                         var long_description_wc_text = $( '#long_description_wc' ).text();
                         if(long_description_wc_text == '0') {
