@@ -165,4 +165,9 @@ $(function() {
         var urlWithParams = readUrl + '?status=' + link_id + '&batch=' + selected_batch;
         dataTable.fnReloadAjax(urlWithParams, null, null);
     }
+
+    $('#tabReview').on('click', function(){
+        selected_batch_for_review = $('select[name="research_edit_batches"]').find('option:selected').val();
+        selected_customer_for_review = $("#research_edit_customers").msDropdown().data("dd").value;
+    });
 });

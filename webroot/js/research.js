@@ -558,12 +558,6 @@ $(document).ready(function () {
         });
     });
 
-    $(document).on("click", '#research_batches_search', function() {
-        dataTable.fnDestroy();
-        dataTable = undefined;
-        readResearchData();
-    });
-
     $(document).on("change", 'select[name="research_batches"]', function() {
         $.post(base_url + 'index.php/research/filterCustomerByBatch', { 'batch': $("select[name='research_batches']").find("option:selected").text()}, function(data){
             var oDropdown = $("#research_customers").msDropdown().data("dd");

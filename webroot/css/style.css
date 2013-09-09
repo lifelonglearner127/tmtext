@@ -1610,7 +1610,7 @@ label.dd-selected-text, label.dd-option-text{
     display: inline;
 }
 
-.research .customer_dropdown .dd{
+.customer_dropdown .dd{
     width: 190px!important;
     margin-right: 5px;
 }
@@ -1629,10 +1629,6 @@ label.dd-selected-text, label.dd-option-text{
 
 #research_tab2 .customer_dropdown{
     display: inline;
-}
-
-#research_tab2 .customer_dropdown .dd{
-    width: 150px!important;
 }
 
 .ddcommon .ddTitle .ddTitleText img {
@@ -1837,9 +1833,10 @@ select#sites option{
     display: inline;
     padding-left: 100px;
 }
-/*//Max*/
 .heading_text{
     margin:0px;
+    float: left;
+    margin-right: 10px;
 }
 
 .general label{

@@ -192,38 +192,43 @@ class Research_data_model extends CI_Model {
         return $query->result();
     }
 
-   function getInfoFromResearchData($text, $batch_id)
-   {
-        $batch_first_str = "";
-        $batch_second_str = "";
-        if($batch_id != ''){
-            $batch_first_str = " `rd`.`batch_id`= ". $batch_id ." and ";
-            $batch_second_str = " `i`.`batch_id`= ". $batch_id ." and ";
-        }
+    function getInfoFromResearchData($params){
+        $params->batch_id = $this->db->escape($params->batch_id);
+        $sql_cmd = "
+            SELECT
+                rd.id,
+                rd.batch_id,
+                rd.url,
+                rd.product_name,
+                rd.short_description,
+                rd.short_description_wc,
+                rd.long_description,
+                rd.long_description_wc,
+                rd.status,
+                u.email as user_id,
+                b.title as batch_name
+            FROM
+                research_data as rd
+            left join batches as b on rd.batch_id = b.id
+            left join users as u on rd.user_id = u.id
+            where
+                rd.batch_id = ".$params->batch_id."
+                and concat(
+                    rd.url, rd.product_name, rd.keyword1, rd.keyword2, rd.keyword3, rd.meta_name,
+                    rd.meta_description, rd.meta_keywords, rd.short_description, rd.long_description
+                ) like '%".$params->filter."%'
+            order by rd.".$params->sort_column." ".$params->sort_order."
+        ";
+        $query = $this->db->query($sql_cmd);
+        $rows = $query->result();
+        $result = new stdClass();
+        $result->total_rows = count($rows);
 
-        $query = $this->db->query("(SELECT `rd`.`id`, `rd`.`batch_id`, `rd`.`url`,`rd`.`product_name`, `rd`.`keyword1`, `rd`.`keyword2`, `rd`.`keyword3`, `rd`.`meta_name`,`rd`.`meta_description`, `rd`.`meta_keywords`, `rd`.`short_description`, `rd`.`short_description_wc`, `rd`.`long_description`, `rd`.`long_description_wc`,
-        `rd`.`status`,
-        `u`.`email` as `user_id`,
-        `b`.`title` as `batch_name`
-     FROM ".$this->tables['research_data']." as `rd`
-        left join ".$this->tables['batches']." as `b` on `rd`.`batch_id` = `b`.`id`
-        left join ".$this->tables['users']." as `u` on `rd`.`user_id` = `u`.`id`
-        where ". $batch_first_str." concat(`rd`.`url`, `rd`.`product_name`, `rd`.`keyword1`, `rd`.`keyword2`, `rd`.`keyword3`, `rd`.`meta_name`,
-        `rd`.`meta_description`, `rd`.`meta_keywords`, `rd`.`short_description`, `rd`.`short_description_wc`,
-        `rd`.`long_description`, `rd`.`long_description_wc`) like '%".$text."%')
-union all
-    (SELECT `i`.`id`, `i`.`batch_id`, `i`.`url`,`i`.`product_name`, `i`.`keyword1`, `i`.`keyword2`, `i`.`keyword3`, `i`.`meta_name`,`i`.`meta_description`, `i`.`meta_keywords`, `i`.`short_description`, `i`.`short_description_wc`, `i`.`long_description`, `i`.`long_description_wc`,
-        `i`.`status`,
-        `u`.`email` as `user_id`,
-        `b`.`title` as `batch_name`
-     FROM ".$this->tables['items']." as `i`
-        left join ".$this->tables['batches']." as `b` on `i`.`batch_id` = `b`.`id`
-        left join ".$this->tables['users']." as `u` on `i`.`user_id` = `u`.`id`
-        where ".$batch_second_str." concat(`i`.`url`, `i`.`product_name`, `i`.`keyword1`, `i`.`keyword2`, `i`.`keyword3`, `i`.`meta_name`,
-        `i`.`meta_description`, `i`.`meta_keywords`, `i`.`short_description`, `i`.`short_description_wc`,
-        `i`.`long_description`, `i`.`long_description_wc`) like '%".$text."%')");
+        $sql_cmd = $sql_cmd." limit ".$params->display_start.",".$params->display_length;
+        $query = $this->db->query($sql_cmd);
+        $result->rows = $rows = $query->result();
 
-        return $query->result();
+        return $result;
     }
 
     function getInfoForAssess($params)

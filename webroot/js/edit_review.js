@@ -3,16 +3,90 @@ var readUrl   = base_url + 'index.php/research/get_research_info',
     delUrl    = base_url + 'index.php/research/delete_research_info',
     delHref,
     updateHref,
-    updateId;
+    updateId,
+    deleteId;
+var editAfterReload = false;
 
+$(function(){
+    $.fn.dataTableExt.oApi.fnStandingRedraw = function(oSettings) {
+        if(oSettings.oFeatures.bServerSide === false){
+            var before = oSettings._iDisplayStart;
+            oSettings.oApi._fnReDraw(oSettings);
+            // iDisplayStart has been reset to zero - so lets change it back
+            oSettings._iDisplayStart = before;
+            oSettings.oApi._fnCalculateEnd(oSettings);
+        }
+        // draw the 'current' page
+        oSettings.oApi._fnDraw(oSettings);
+    };
 
-$( function() {
+    if (typeof selected_batch_for_review != 'undefined'){
+        $('select[name="research_batches"]').val(selected_batch_for_review).prop('selected', true);
+        delete selected_batch_for_review;
+    }
 
-    $( '#tabs' ).tabs({
-        fx: { height: 'toggle', opacity: 'toggle' }
+    var tblReview = $('#tblReview').dataTable({
+        "bJQueryUI": true,
+        "bDestroy": true,
+        "sPaginationType": "full_numbers",
+        "bProcessing": true,
+        "bServerSide": true,
+        "sAjaxSource": readUrl,
+        "fnServerData": function (sSource, aoData, fnCallback) {
+            aoData = buildReviewTableParams(aoData);
+            $.getJSON(sSource, aoData, function (json) {
+                fnCallback(json);
+            });
+        },
+        "fnRowCallback": function(nRow, aData, iDisplayIndex) {
+            var add_data = aData[9];
+            var updateURL = updateUrl + '/' + add_data.id;
+            var deleteURL = delUrl + '/' + add_data.id;
+            var actions = '<a class="updateBtn icon-edit" style="float:left;" data-url="'+updateURL+'"></a><a class="deleteBtn icon-remove ml_5" data-url="'+deleteURL+'"></a>';
+            $(nRow).find('td:last').html(actions);
+            $(nRow).attr("id", add_data.id);
+            $(nRow).attr("status", add_data.status);
+            return nRow;
+        },
+        "fnDrawCallback": function(oSettings) {
+            $('#tblReview tbody tr').each( function() {
+                if ($(this).attr('status') == 'reviewed') {
+                    $(this).removeClass('odd even');
+                    $(this).addClass('reviewed');
+                }
+            });
+            if (editAfterReload == true){
+                var updateId = $('#tblReview tbody tr:first').attr('id');
+                $("tr#" + updateId).find("a.updateBtn").click();
+                editAfterReload = false;
+            }
+        },
+        "oLanguage": {
+            "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
+            "sInfoEmpty": "Showing 0 to 0 of 0 records",
+            "sInfoFiltered": ""
+        },
+        "aoColumns": [
+            {"sTitle" : "Editor", "sName":"user_id", "sWidth": "10%"},
+            {"sTitle" : "Product Name", "sName":"product_name", "sWidth": "20%"},
+            {"sTitle" : "URL", "sName":"url", "sWidth": "150px"},
+            {"sTitle" : "Short Description", "sName":"short_description", "sWidth": "4%"},
+            {"sTitle" : "Words", "sName":"short_description_wc", "sWidth": "10%"},
+            {"sTitle" : "Long Description", "sName":"long_description", "sWidth": "4%"},
+            {"sTitle" : "Words", "sName":"long_description_wc", "sWidth": "10%"},
+            {"sTitle" : "Batch Name", "sName":"batch_name", "sWidth": "5%"},
+            {"sTitle" : "Actions", "sName":"actions", "sWidth": "6%", "bSortable": false},
+            {"sName":"add_data", "bVisible": false}
+        ]
     });
-    readResearchData();
-    $( '#msgDialog' ).dialog({
+
+    $('#research_batches_columns').appendTo('div.dataTables_filter');
+
+    $(document).on("click", '#research_batches_search', function() {
+        readReviewData();
+    });
+
+    $('#msgDialog').dialog({
         autoOpen: false,
 
         buttons: {
@@ -24,6 +98,8 @@ $( function() {
 
     $( '#updateDialog' ).dialog({
         autoOpen: false,
+        modal: true,
+        resizable: false,
         buttons: {
             'Cancel': function() {
                 $( this ).dialog( 'close' );
@@ -41,7 +117,7 @@ $( function() {
                         success: function( response ) {
                             $( '#msgDialog > p' ).html( response );
                             $( '#ajaxLoadAni' ).fadeOut( 'slow' );
-                            updateTableRow();
+                            //updateTableRow();
                             //--- clear form ---
                             $( '#updateDialog form input' ).val( '' );
                             updateNextDialog(updateId);
@@ -62,9 +138,10 @@ $( function() {
                         success: function( response ) {
                             $( '#msgDialog > p' ).html( response );
                             $( '#ajaxLoadAni' ).fadeOut( 'slow' );
-                            updateTableRow();
+                            //updateTableRow();
                             //--- clear form ---
                             $( '#updateDialog form input' ).val( '' );
+                            readReviewData();
                         } //end success
                     }); //end ajax()
             }, 
@@ -80,28 +157,28 @@ $( function() {
         $(columns_checkboxes).each(function(i) {
             switch($(this).attr('id')) {
                 case 'column_product_name' : {
-                    if($(this).attr('checked') == true) {
+                    if($(this).attr('checked') == 'checked') {
                         var product_name = $( 'tr#' + updateId + ' td.column_product_name' );
                         $(product_name).html( $( '#product_name' ).val() );
                     }
                     break;
                 }
                 case 'column_url' : {
-                    if($(this).attr('checked') == true) {
+                    if($(this).attr('checked') == 'checked') {
                         var url = $( 'tr#' + updateId + ' td.column_url' );
                         $(url).html( $( '#url' ).val() );
                     }
                     break;
                 }
                 case 'column_short_description' : {
-                    if($(this).attr('checked') == true) {
+                    if($(this).attr('checked') == 'checked') {
                         var short_description = $( 'tr#' + updateId + ' td.column_short_description' );
                         $(short_description).html( $( '#short_description' ).val() );
                     }
                     break;
                 }
                 case 'column_short_description_wc' : {
-                    if($(this).attr('checked') == true) {
+                    if($(this).attr('checked') == 'checked') {
                         var short_description_wc = $( 'tr#' + updateId + ' td.column_short_description_wc' );
                         var short_description_wc_text = $( '#short_description_wc' ).text();
                         if(short_description_wc_text == '0') {
@@ -112,14 +189,14 @@ $( function() {
                     break;
                 }
                 case 'column_long_description' : {
-                    if($(this).attr('checked') == true) {
+                    if($(this).attr('checked') == 'checked') {
                         var long_description = $( 'tr#' + updateId + ' td.column_long_description' );
                         $(long_description).html( $( '#long_description' ).val() );
                     }
                     break;
                 }
                 case 'column_long_description_wc' : {
-                    if($(this).attr('checked') == true) {
+                    if($(this).attr('checked') == 'checked') {
                         var long_description_wc = $( 'tr#' + updateId + ' td.column_long_description_wc');
                         var long_description_wc_text = $( '#long_description_wc' ).text();
                         if(long_description_wc_text == '0') {
@@ -149,7 +226,9 @@ $( function() {
 
                 $.ajax({
                     url: delHref,
-
+                    data: {
+                        id:deleteId
+                    },
                     success: function( response ) {
                         //hide ajax loader animation here...
                         $( '#ajaxLoadAni' ).fadeOut( 'slow' );
@@ -157,10 +236,11 @@ $( function() {
                         $( '#msgDialog > p' ).html( response );
                         $( '#msgDialog' ).dialog( 'option', 'title', 'Success' ).dialog( 'open' );
 
-                        $( 'a[href=' + delHref + ']' ).parents( 'tr' )
-                        .fadeOut( 'slow', function() {
-                            $( this ).remove();
-                        });
+//                        $( 'a[href=' + delHref + ']' ).parents( 'tr' )
+//                        .fadeOut( 'slow', function() {
+//                            $( this ).remove();
+//                        });
+                        readReviewData();
 
                     } //end success
                 });
@@ -174,8 +254,9 @@ $( function() {
     $("#updateDialog #long_description").click(function(e){
         e.stopPropagation(); // return click to long desc field
     });
-    $( '#records' ).delegate( 'a.updateBtn', 'click', function() {
-        updateHref = $( this ).attr( 'href' );
+
+    $( '#tblReview' ).delegate( 'a.updateBtn', 'click', function() {
+        updateHref = $( this ).data('url');
         updateId = $( this ).parents( 'tr' ).attr( "id" );
 
         $( '#ajaxLoadAni' ).fadeIn( 'slow' );
@@ -209,9 +290,9 @@ $( function() {
         return false;
     }); //end update delegate
 
-    $( '#records' ).delegate( 'a.deleteBtn', 'click', function() {
-        delHref = $( this ).attr( 'href' );
-
+    $( '#tblReview' ).delegate( 'a.deleteBtn', 'click', function() {
+        delHref = $( this ).data('url');
+        deleteId = $( this ).parents( 'tr' ).attr( "id" );
         $( '#delConfDialog' ).dialog( 'open' );
 
         return false;
@@ -220,8 +301,16 @@ $( function() {
 
     function updateNextDialog(updateId) {
         // Click on next btn update for update
-        $("tr#" + updateId).next().find("a.updateBtn").click();
-
+        if ($("#tblReview").find("tr#"+updateId).is(':last-child')){
+            editAfterReload = true;
+            var oSettings = $('#tblReview').dataTable().fnSettings();
+            var nextPage = oSettings._iDisplayStart + oSettings._iDisplayLength;
+            oSettings._iDisplayStart = nextPage;
+            $("#tblReview tbody tr").remove();
+            tblReview.fnStandingRedraw();
+        }else{
+            $("tr#" + updateId).next().find("a.updateBtn").click();
+        }
     }
 
     // choice column dialog
@@ -256,9 +345,9 @@ $( function() {
                     },
                     success: function( data ) {
                         if(data == true) {
-                            dataTable.fnDestroy();
-                            dataTable = undefined;
-                            readResearchData();
+//                            dataTable.fnDestroy();
+//                            dataTable = undefined;
+//                            readResearchData();
                         }
                     }
                 });
@@ -359,6 +448,23 @@ $( function() {
         }
     });*/
 
+    $('select[name="research_batches"]').on("change", function(){
+        readReviewData();
+    });
+
+    function readReviewData() {
+        $("#tblReview tbody tr").remove();
+        tblReview.fnStandingRedraw();
+    }
+
+    function buildReviewTableParams(existingParams) {
+        var batch_name = $('select[name="research_batches"]').find('option:selected').text();
+        var search_text = $('input[name="research_batches_text"]').val();
+        existingParams.push({"name": 'batch_name', "value": batch_name});
+        existingParams.push({"name": 'search_text', "value": search_text});
+        return existingParams;
+    }
+
 }); //end document ready
 
 function readResearchData() {
@@ -397,6 +503,7 @@ function readResearchData() {
                          null, null, null, null, null, null, null, null, null
                     ]
                 });
+                $('#research_batches_columns').appendTo('div.dataTables_filter');
             }
 
             dataTable.fnFilter( $('select[name="research_batches"]').find('option:selected').text(), 7);
