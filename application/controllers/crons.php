@@ -263,6 +263,11 @@ class Crons extends MY_Controller {
         $this->load->library('helpers');
         $this->load->helper('algoritm');
         $this->load->model('sites_model');
+         $trnc = $this->uri->segment(3);
+           
+            if($trnc===false){
+                $trnc=1;
+            }
         $ids = $this->imported_data_parsed_model->do_stats_ids();
 
         foreach ($ids as $val) {
@@ -284,7 +289,7 @@ class Crons extends MY_Controller {
         $this->db->update('settings', $data);
         $data_arr=$this->imported_data_parsed_model->do_stats_ids();
         if (count($data_arr) > 1) {
-            shell_exec('wget -S -O- http://dev.contentsolutionsinc.com/producteditor/index.php/crons/do_duplicate_content > /dev/null 2>/dev/null &');
+            shell_exec("wget -S -O- http://dev.contentsolutionsinc.com/producteditor/index.php/crons/do_duplicate_content/$trnc > /dev/null 2>/dev/null &");
         } else {
             $data = array(
                 'description' => 0

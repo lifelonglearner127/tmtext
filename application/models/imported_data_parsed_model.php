@@ -929,7 +929,7 @@ class Imported_data_parsed_model extends CI_Model {
         return $this->db->update($this->tables['imported_data_parsed'], $params, array('imported_data_id' => $imported_id, 'key' => $key));
     }
 
-    function do_stats_ids() {
+    function do_stats_ids($truncate) {
 
         $q = $this->db->select('key,description')->from('settings')->where('key', 'duplicate_offset');
         $res = $q->get()->row_array();
@@ -944,6 +944,10 @@ class Imported_data_parsed_model extends CI_Model {
             $this->db->insert('settings', $d);
 
             $start = 0;
+        }
+        
+        if (($truncate==1) &&  ($start == 0)) {
+            $this->truncate_duplicate_content_new();
         }
         $limit = 5;
 
@@ -1005,7 +1009,10 @@ class Imported_data_parsed_model extends CI_Model {
         $sql_cmd = "TRUNCATE TABLE `statistics_new`";
         return $this->db->query($sql_cmd);
     }
-
+    function truncate_duplicate_content_new(){
+         $sql_cmd = "TRUNCATE TABLE `duplicate_content_new";
+        return $this->db->query($sql_cmd);
+    }
     function do_stats($truncate) {
 
         $q = $this->db->select('key,description')->from('settings')->where('key', 'cron_job_offset');
