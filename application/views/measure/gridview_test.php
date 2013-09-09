@@ -289,7 +289,7 @@ foreach ($same_pr as $ks => $vs) {
 										</span>
 										<!--<div style="float: right;">]</div>-->
 									</span>
-									<img class="assess_image keyword_checkmark primary_image keywords_img" src="<?php echo base_url() ?>/img/assess_grid/check_circle_green.png" />
+									<!--<img class="assess_image keyword_checkmark primary_image keywords_img" src="<?php echo base_url() ?>/img/assess_grid/check_circle_green.png" />-->
 								</span>
 								<span class="keyword_percent"><?php echo round($value['prc'], 1) . '%'; ?></span> <span class="keyword_count"><?php echo $keyword_count ?></span>
 								</div>
@@ -308,7 +308,7 @@ foreach ($same_pr as $ks => $vs) {
 													<input class="keyword_input" imported_data_id="'. $vs['imported_data_id'] .'" name="keyword2" keyword_num="2" type="text" value="'.$user_word.'" />
 												</span>&nbsp <!--<div style="float: right;">]</div>-->
 											</span>
-											<img class="keyword_checkmark assess_image primary_image keywords_img" src="'. base_url() .'/img/assess_grid/check_circle_green.png" />
+											<!--<img class="keyword_checkmark assess_image primary_image keywords_img" src="'. base_url() .'/img/assess_grid/check_circle_green.png" />-->
 										</span>
 									</div>
 									<div class="clear"></div>';
@@ -324,7 +324,7 @@ foreach ($same_pr as $ks => $vs) {
 												<input class="keyword_input" imported_data_id="'. $vs['imported_data_id'] .'" name="keyword3" keyword_num="3" type="text" value="'.$user_word.'" />
 											</span> &nbsp<!--<div style="float: right;">]</div>-->
 										</span>
-										<img class="assess_image keyword_checkmark primary_image keywords_img" src="'. base_url() .'/img/assess_grid/check_circle_green.png" />
+										<!--<img class="assess_image keyword_checkmark primary_image keywords_img" src="'. base_url() .'/img/assess_grid/check_circle_green.png" />-->
 									</span>
 									</div>
 									<div class="clear"></div>';
@@ -345,7 +345,7 @@ foreach ($same_pr as $ks => $vs) {
 											</span>&nbsp
 											<!--<div style="float: right;">]</div>-->
 										</span>
-										<img class="assess_image keyword_checkmark primary_image keywords_img" src="'. base_url() .'/img/assess_grid/check_circle_green.png" />
+										<!--<img class="assess_image keyword_checkmark primary_image keywords_img" src="'. base_url() .'/img/assess_grid/check_circle_green.png" />-->
 									</span>
 									</div>
 									<div class="clear"></div>';
@@ -659,6 +659,16 @@ $(document).ready(function(){
 			$(count).hide();
 			$(percent).show();			
 		}
+	});
+	
+	$('.assess_image').mouseover(function(){
+		$(this).parent().next('.primary:first').find('.keyword_percent').css({'text-decoration': 'underline'});
+		$(this).parent().next('.primary:first').find('.keyword_count').css({'text-decoration': 'underline'});
+	});
+	
+	$('.assess_image').mouseout(function(){
+		$(this).parent().next('.primary:first').find('.keyword_percent').css({'text-decoration': 'none'});
+		$(this).parent().next('.primary:first').find('.keyword_count').css({'text-decoration': 'none'});
 	});
 });
 
