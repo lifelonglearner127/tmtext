@@ -76,77 +76,90 @@ class CaturlsSpider(BaseSpider):
 
 		# handle staples televisions
 		if site == 'staples':
+
+			############################################
+			#
+			# # Use selenium - not necessary anymore
+
+
+			# # zipcode = "12345"
+
+			# # hxs = HtmlXPathSelector(response)
+			# # return Request(self.cat_page, callback = self.parsePage_staples, cookies = {"zipcode" : zipcode}, meta = {"dont_redirect" : False})
+			# # use selenium to complete the zipcode form and get the first results page
+			# driver = webdriver.Firefox()
+			# driver.get(response.url)
+
+			# # set a hardcoded value for zipcode
 			# zipcode = "12345"
+			# textbox = driver.find_element_by_name("zipCode")
 
-			# hxs = HtmlXPathSelector(response)
-			# return Request(self.cat_page, callback = self.parsePage_staples, cookies = {"zipcode" : zipcode}, meta = {"dont_redirect" : False})
-			# use selenium to complete the zipcode form and get the first results page
-			driver = webdriver.Firefox()
-			driver.get(response.url)
+			# if textbox.is_displayed():
+			# 	textbox.send_keys(zipcode)
 
-			# set a hardcoded value for zipcode
+			# 	button = driver.find_element_by_id("submitLink")
+			# 	button.click()
+
+			# 	cookie = {"zipcode": zipcode}
+			# 	driver.add_cookie(cookie)
+
+			# 	time.sleep(5)
+
+			# # convert html to "nice format"
+			# text_html = driver.page_source.encode('utf-8')
+			# #print "TEXT_HTML", text_html
+			# html_str = str(text_html)
+
+			# # this is a hack that initiates a "TextResponse" object (taken from the Scrapy module)
+			# resp_for_scrapy = TextResponse('none',200,{},html_str,[],None)
+			# #resp_for_scrapy = TextResponse(html_str)
+
+			# # pass first page to parsePage function to extract products
+			# items += self.parsePage_staples(resp_for_scrapy)
+
+			# # use selenium to get next page, while there is a next page
+			# next_page = driver.find_element_by_xpath("//li[@class='pageNext']/a")
+			# while (next_page):
+			# 	next_page.click()
+			# 	time.sleep(5)
+
+			# 	# convert html to "nice format"
+			# 	text_html = driver.page_source.encode('utf-8')
+			# 	#print "TEXT_HTML", text_html
+			# 	html_str = str(text_html)
+
+			# 	# this is a hack that initiates a "TextResponse" object (taken from the Scrapy module)
+			# 	resp_for_scrapy = TextResponse('none',200,{},html_str,[],None)
+			# 	#resp_for_scrapy = TextResponse(html_str)
+
+			# 	# pass first page to parsePage function to extract products
+			# 	items += self.parsePage_staples(resp_for_scrapy)
+
+			# 	hxs = HtmlXPathSelector(resp_for_scrapy)
+			# 	next = hxs.select("//li[@class='pageNext']/a")
+			# 	next_page = None
+			# 	if next:
+			# 		next_page = driver.find_element_by_xpath("//li[@class='pageNext']/a")
+
+			# 	#TODO: this doesn't work
+			# 	# try:
+			# 	# 	next_page = driver.find_element_by_xpath("//li[@class='pageNext']/a")
+			# 	# 	break
+			# 	# except NoSuchElementException:
+			# 	# 	# if there are no more pages exit the loop
+			# 	# 	driver.close()
+			# 	# 	return items
+
+			# driver.close()
+
+			# return items
+			#
+			##############################################
+
 			zipcode = "12345"
-			textbox = driver.find_element_by_name("zipCode")
-
-			if textbox.is_displayed():
-				textbox.send_keys(zipcode)
-
-				button = driver.find_element_by_id("submitLink")
-				button.click()
-
-				cookie = {"zipcode": zipcode}
-				driver.add_cookie(cookie)
-
-				time.sleep(5)
-
-			# convert html to "nice format"
-			text_html = driver.page_source.encode('utf-8')
-			#print "TEXT_HTML", text_html
-			html_str = str(text_html)
-
-			# this is a hack that initiates a "TextResponse" object (taken from the Scrapy module)
-			resp_for_scrapy = TextResponse('none',200,{},html_str,[],None)
-			#resp_for_scrapy = TextResponse(html_str)
-
-			# pass first page to parsePage function to extract products
-			items += self.parsePage_staples(resp_for_scrapy)
-
-			# use selenium to get next page, while there is a next page
-			next_page = driver.find_element_by_xpath("//li[@class='pageNext']/a")
-			while (next_page):
-				next_page.click()
-				time.sleep(5)
-
-				# convert html to "nice format"
-				text_html = driver.page_source.encode('utf-8')
-				#print "TEXT_HTML", text_html
-				html_str = str(text_html)
-
-				# this is a hack that initiates a "TextResponse" object (taken from the Scrapy module)
-				resp_for_scrapy = TextResponse('none',200,{},html_str,[],None)
-				#resp_for_scrapy = TextResponse(html_str)
-
-				# pass first page to parsePage function to extract products
-				items += self.parsePage_staples(resp_for_scrapy)
-
-				hxs = HtmlXPathSelector(resp_for_scrapy)
-				next = hxs.select("//li[@class='pageNext']/a")
-				next_page = None
-				if next:
-					next_page = driver.find_element_by_xpath("//li[@class='pageNext']/a")
-
-				#TODO: this doesn't work
-				# try:
-				# 	next_page = driver.find_element_by_xpath("//li[@class='pageNext']/a")
-				# 	break
-				# except NoSuchElementException:
-				# 	# if there are no more pages exit the loop
-				# 	driver.close()
-				# 	return items
-
-			driver.close()
-
-			return items
+			request = Request(response.url, callback = self.parsePage_staples, cookies = {"zipcode" : zipcode}, \
+				headers = {"Cookie" : "zipcode=" + zipcode}, meta = {"dont_redirect" : True, "dont_merge_cookies" : True})
+			return request
 
 		# handle bloomingdales sneakers
 		if site == 'bloomingdales':
@@ -333,17 +346,25 @@ class CaturlsSpider(BaseSpider):
 
 		hxs = HtmlXPathSelector(response)
 
+		#print 'title parsepage ', hxs.select("//h1/text()").extract()
+
 		products = hxs.select("//a[@class='url']")
 		root_url = "http://www.staples.com"
-		items = []
 
 		for product in products:
 
 			item = ProductItem()
 			item['product_url'] = root_url + product.select("@href").extract()[0]
-			items.append(item)
+			yield item
 
-		return items
+		#yield items
+
+		nextPage = hxs.select("//li[@class='pageNext']/a/@href").extract()
+		zipcode = "12345"
+		if nextPage:
+			# parse next page, (first convert url from unicode to string)
+			yield Request(str(nextPage[0]), callback = self.parsePage_staples, cookies = {"zipcode" : zipcode}, \
+				headers = {"Cookie" : "zipcode=" + zipcode}, meta = {"dont_redirect" : True, "dont_merge_cookies" : True})
 
 	# parse bloomingdales page and extract product URLs
 	def parsePage_bloomingdales(self, response):
