@@ -1319,7 +1319,7 @@ class Research extends MY_Controller {
     public function delete_research_info()
     {
         $this->load->model('research_data_model');
-        $id = $this->input->post('id');
+        $id = $this->input->get('id');
         if( is_null( $id ) ) {
             echo 'ERROR: Id not provided.';
             return;

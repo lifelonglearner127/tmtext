@@ -3,7 +3,9 @@ var readUrl   = base_url + 'index.php/research/get_research_info',
     delUrl    = base_url + 'index.php/research/delete_research_info',
     delHref,
     updateHref,
-    updateId;
+    updateId,
+    deleteId;
+var editAfterReload = false;
 
 $(function(){
     $.fn.dataTableExt.oApi.fnStandingRedraw = function(oSettings) {
@@ -53,6 +55,11 @@ $(function(){
                     $(this).addClass('reviewed');
                 }
             });
+            if (editAfterReload == true){
+                var updateId = $('#tblReview tbody tr:first').attr('id');
+                $("tr#" + updateId).find("a.updateBtn").click();
+                editAfterReload = false;
+            }
         },
         "oLanguage": {
             "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
@@ -219,7 +226,9 @@ $(function(){
 
                 $.ajax({
                     url: delHref,
-
+                    data: {
+                        id:deleteId
+                    },
                     success: function( response ) {
                         //hide ajax loader animation here...
                         $( '#ajaxLoadAni' ).fadeOut( 'slow' );
@@ -283,7 +292,7 @@ $(function(){
 
     $( '#tblReview' ).delegate( 'a.deleteBtn', 'click', function() {
         delHref = $( this ).data('url');
-
+        deleteId = $( this ).parents( 'tr' ).attr( "id" );
         $( '#delConfDialog' ).dialog( 'open' );
 
         return false;
@@ -292,8 +301,16 @@ $(function(){
 
     function updateNextDialog(updateId) {
         // Click on next btn update for update
-        $("tr#" + updateId).next().find("a.updateBtn").click();
-
+        if ($("#tblReview").find("tr#"+updateId).is(':last-child')){
+            editAfterReload = true;
+            var oSettings = $('#tblReview').dataTable().fnSettings();
+            var nextPage = oSettings._iDisplayStart + oSettings._iDisplayLength;
+            oSettings._iDisplayStart = nextPage;
+            $("#tblReview tbody tr").remove();
+            tblReview.fnStandingRedraw();
+        }else{
+            $("tr#" + updateId).next().find("a.updateBtn").click();
+        }
     }
 
     // choice column dialog
