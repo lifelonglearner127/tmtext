@@ -350,7 +350,8 @@ class Measure extends MY_Controller {
             }
             $ids_string = substr($ids_string, 0, -1);
             $path_to_cron = base_url()."index.php/crons/site_crawler_screens?ids=$ids_string";
-            $cmd = "wget -S -O- $path_to_cron";
+            // $cmd = "wget -S -O- $path_to_cron";
+            $cmd = "wget -O - -q -t 1 $path_to_cron";
             shell_exec($cmd);
         }
         $this->output->set_content_type('application/json')->set_output(json_encode($cmd));
