@@ -224,5 +224,17 @@ class Crawler_List_model extends CI_Model {
         return $this->db->count_all_results();
     }
 
+    function getByBatchId($batch_id)
+    {
+    	$this->db->select('cl.*')
+    		->from($this->tables['crawler_list'].' as cl')
+			->join('research_data_to_crawler_list as rc', 'cl.id = rc.crawler_list_id' )
+			->join('research_data as rd', 'rd.id = rc.research_data_id')
+			->where('rd.batch_id',$batch_id);
+
+        $query = $this->db->get();
+
+        return $query->result();
+    }
 
 }
