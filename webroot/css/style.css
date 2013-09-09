@@ -1970,7 +1970,7 @@ span.highlight { background-color:yellow;}
 }
 
 .description_label{width: 112px; font-size: 13px;}
-.description_select{width: 62px; padding: 4px 0px;}
+.description_select{width: 74px; /*padding: 4px 0px;*/}
 
 .primary{
 	font-size: 12px;
