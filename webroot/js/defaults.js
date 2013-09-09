@@ -208,6 +208,10 @@ jQuery(document).ready(function($) {
         setTimeout(function() {
             var customers_list_ci = $.post(base_url + 'index.php/measure/getcustomerslist_new', { }, function(c_data) {
                 var jsn = $('.customer_dropdown').msDropDown({byJson:{data:c_data, name:'customers_list'}}).data("dd");
+                if (typeof selected_customer_for_review != 'undefined'){
+                    $("#research_customers").msDropdown().data("dd").setIndexByValue(selected_customer_for_review);
+                    delete selected_customer_for_review;
+                }
                 if(jsn != undefined){
                     jsn.on("change", function(res) {
                         if($('.customer_dropdown').attr('id') == 'research_customers'){
@@ -236,7 +240,7 @@ jQuery(document).ready(function($) {
                                         $("select[name='product_batches']").append('<option '+select_batch+' value="'+data[i]+'">'+data[i]+'</option>');
                                        //$("select[name='product_batches']").append('<option value="'+data[i]+'">'+data[i]+'</option>');
                                     }
-                                    
+
                                     //If user chooses a customer that only has one batch, automatically select that batch. Denis
                                     show_from_butches();
                                     

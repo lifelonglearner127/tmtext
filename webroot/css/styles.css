@@ -34,20 +34,20 @@ input[type=text] {
     font-size: .8em;
 }
 
-#records,#recordSec {
+#records,#recordSec,#tblReview {
     font-size: 1em;
     width: 100%;
 }
 
-#records .even ,#recordSec .even {
+#records .even ,#recordSec .even, #tblReview .even {
     background: #EAEAEA;
 }
 
-#records tr:hover  ,#recordSec tr:hover{
+#records tr:hover  ,#recordSec tr:hover, #tblReview tr:hover{
     background: #CCCCCC;
 }
 
-#records td ,#recordSec td {
+#records td ,#recordSec td, #tblReview td{
     padding: 6px;
     margin: 8px;
 }

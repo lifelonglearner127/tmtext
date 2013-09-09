@@ -5,14 +5,81 @@ var readUrl   = base_url + 'index.php/research/get_research_info',
     updateHref,
     updateId;
 
+$(function(){
+    $.fn.dataTableExt.oApi.fnStandingRedraw = function(oSettings) {
+        if(oSettings.oFeatures.bServerSide === false){
+            var before = oSettings._iDisplayStart;
+            oSettings.oApi._fnReDraw(oSettings);
+            // iDisplayStart has been reset to zero - so lets change it back
+            oSettings._iDisplayStart = before;
+            oSettings.oApi._fnCalculateEnd(oSettings);
+        }
+        // draw the 'current' page
+        oSettings.oApi._fnDraw(oSettings);
+    };
 
-$( function() {
+    if (typeof selected_batch_for_review != 'undefined'){
+        $('select[name="research_batches"]').val(selected_batch_for_review).prop('selected', true);
+        delete selected_batch_for_review;
+    }
 
-    $( '#tabs' ).tabs({
-        fx: { height: 'toggle', opacity: 'toggle' }
+    var tblReview = $('#tblReview').dataTable({
+        "bJQueryUI": true,
+        "bDestroy": true,
+        "sPaginationType": "full_numbers",
+        "bProcessing": true,
+        "bServerSide": true,
+        "sAjaxSource": readUrl,
+        "fnServerData": function (sSource, aoData, fnCallback) {
+            aoData = buildReviewTableParams(aoData);
+            $.getJSON(sSource, aoData, function (json) {
+                fnCallback(json);
+            });
+        },
+        "fnRowCallback": function(nRow, aData, iDisplayIndex) {
+            var add_data = aData[9];
+            var updateURL = updateUrl + '/' + add_data.id;
+            var deleteURL = delUrl + '/' + add_data.id;
+            var actions = '<a class="updateBtn icon-edit" style="float:left;" data-url="'+updateURL+'"></a><a class="deleteBtn icon-remove ml_5" data-url="'+deleteURL+'"></a>';
+            $(nRow).find('td:last').html(actions);
+            $(nRow).attr("id", add_data.id);
+            $(nRow).attr("status", add_data.status);
+            return nRow;
+        },
+        "fnDrawCallback": function(oSettings) {
+            $('#tblReview tbody tr').each( function() {
+                if ($(this).attr('status') == 'reviewed') {
+                    $(this).removeClass('odd even');
+                    $(this).addClass('reviewed');
+                }
+            });
+        },
+        "oLanguage": {
+            "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
+            "sInfoEmpty": "Showing 0 to 0 of 0 records",
+            "sInfoFiltered": ""
+        },
+        "aoColumns": [
+            {"sTitle" : "Editor", "sName":"user_id", "sWidth": "10%"},
+            {"sTitle" : "Product Name", "sName":"product_name", "sWidth": "20%"},
+            {"sTitle" : "URL", "sName":"url", "sWidth": "150px"},
+            {"sTitle" : "Short Description", "sName":"short_description", "sWidth": "4%"},
+            {"sTitle" : "Words", "sName":"short_description_wc", "sWidth": "10%"},
+            {"sTitle" : "Long Description", "sName":"long_description", "sWidth": "4%"},
+            {"sTitle" : "Words", "sName":"long_description_wc", "sWidth": "10%"},
+            {"sTitle" : "Batch Name", "sName":"batch_name", "sWidth": "5%"},
+            {"sTitle" : "Actions", "sName":"actions", "sWidth": "6%", "bSortable": false},
+            {"sName":"add_data", "bVisible": false}
+        ]
     });
-    readResearchData();
-    $( '#msgDialog' ).dialog({
+
+    $('#research_batches_columns').appendTo('div.dataTables_filter');
+
+    $(document).on("click", '#research_batches_search', function() {
+        readReviewData();
+    });
+
+    $('#msgDialog').dialog({
         autoOpen: false,
 
         buttons: {
@@ -24,6 +91,8 @@ $( function() {
 
     $( '#updateDialog' ).dialog({
         autoOpen: false,
+        modal: true,
+        resizable: false,
         buttons: {
             'Cancel': function() {
                 $( this ).dialog( 'close' );
@@ -41,7 +110,7 @@ $( function() {
                         success: function( response ) {
                             $( '#msgDialog > p' ).html( response );
                             $( '#ajaxLoadAni' ).fadeOut( 'slow' );
-                            updateTableRow();
+                            //updateTableRow();
                             //--- clear form ---
                             $( '#updateDialog form input' ).val( '' );
                             updateNextDialog(updateId);
@@ -62,9 +131,10 @@ $( function() {
                         success: function( response ) {
                             $( '#msgDialog > p' ).html( response );
                             $( '#ajaxLoadAni' ).fadeOut( 'slow' );
-                            updateTableRow();
+                            //updateTableRow();
                             //--- clear form ---
                             $( '#updateDialog form input' ).val( '' );
+                            readReviewData();
                         } //end success
                     }); //end ajax()
             }, 
@@ -157,10 +227,11 @@ $( function() {
                         $( '#msgDialog > p' ).html( response );
                         $( '#msgDialog' ).dialog( 'option', 'title', 'Success' ).dialog( 'open' );
 
-                        $( 'a[href=' + delHref + ']' ).parents( 'tr' )
-                        .fadeOut( 'slow', function() {
-                            $( this ).remove();
-                        });
+//                        $( 'a[href=' + delHref + ']' ).parents( 'tr' )
+//                        .fadeOut( 'slow', function() {
+//                            $( this ).remove();
+//                        });
+                        readReviewData();
 
                     } //end success
                 });
@@ -174,8 +245,9 @@ $( function() {
     $("#updateDialog #long_description").click(function(e){
         e.stopPropagation(); // return click to long desc field
     });
-    $( '#records' ).delegate( 'a.updateBtn', 'click', function() {
-        updateHref = $( this ).attr( 'href' );
+
+    $( '#tblReview' ).delegate( 'a.updateBtn', 'click', function() {
+        updateHref = $( this ).data('url');
         updateId = $( this ).parents( 'tr' ).attr( "id" );
 
         $( '#ajaxLoadAni' ).fadeIn( 'slow' );
@@ -209,8 +281,8 @@ $( function() {
         return false;
     }); //end update delegate
 
-    $( '#records' ).delegate( 'a.deleteBtn', 'click', function() {
-        delHref = $( this ).attr( 'href' );
+    $( '#tblReview' ).delegate( 'a.deleteBtn', 'click', function() {
+        delHref = $( this ).data('url');
 
         $( '#delConfDialog' ).dialog( 'open' );
 
@@ -256,9 +328,9 @@ $( function() {
                     },
                     success: function( data ) {
                         if(data == true) {
-                            dataTable.fnDestroy();
-                            dataTable = undefined;
-                            readResearchData();
+//                            dataTable.fnDestroy();
+//                            dataTable = undefined;
+//                            readResearchData();
                         }
                     }
                 });
@@ -359,6 +431,23 @@ $( function() {
         }
     });*/
 
+    $('select[name="research_batches"]').on("change", function(){
+        readReviewData();
+    });
+
+    function readReviewData() {
+        $("#tblReview tbody tr").remove();
+        tblReview.fnStandingRedraw();
+    }
+
+    function buildReviewTableParams(existingParams) {
+        var batch_name = $('select[name="research_batches"]').find('option:selected').text();
+        var search_text = $('input[name="research_batches_text"]').val();
+        existingParams.push({"name": 'batch_name', "value": batch_name});
+        existingParams.push({"name": 'search_text', "value": search_text});
+        return existingParams;
+    }
+
 }); //end document ready
 
 function readResearchData() {
@@ -397,6 +486,7 @@ function readResearchData() {
                          null, null, null, null, null, null, null, null, null
                     ]
                 });
+                $('#research_batches_columns').appendTo('div.dataTables_filter');
             }
 
             dataTable.fnFilter( $('select[name="research_batches"]').find('option:selected').text(), 7);

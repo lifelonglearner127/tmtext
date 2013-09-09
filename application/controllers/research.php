@@ -1234,30 +1234,68 @@ class Research extends MY_Controller {
     {
         $this->load->model('research_data_model');
         $this->load->model('batches_model');
-        $data = '';
-        if($this->input->get('search_text') != ''){
-            $data = $this->input->get('search_text');
-        }
-        $batch = $this->input->get('batch_name');
 
-        $batch_id = $this->batches_model->getIdByName($batch);
-        if($batch_id == false || $data != '') {
-            $batch_id = '';
+        $params = new stdClass();
+        $batch_name = $this->input->get('batch_name');
+        $params->batch_id = $this->batches_model->getIdByName($batch_name);
+        $params->filter = trim($this->input->get('search_text'));
+        $params->display_length = intval($this->input->get('iDisplayLength', TRUE));
+        $params->display_start = intval($this->input->get('iDisplayStart', TRUE));
+        if (empty($params->display_start)) {
+            $params->display_start = 0;
         }
-        $results = $this->research_data_model->getInfoFromResearchData($data, $batch_id);
+        if (empty($params->display_length)) {
+            $params->display_length = 10;
+        }
+
+        $all_columns = $this->input->get('sColumns');
+        $sort_columns = $this->input->get('iSortCol_0');
+        $s_columns = explode(',', $all_columns);
+        $s_column_index = intval($sort_columns);
+        $params->sort_column = $s_columns[$s_column_index];
+        $params->sort_order = $this->input->get('sSortDir_0');
+
+        $result = $this->research_data_model->getInfoFromResearchData($params);
+
+        $echo = intval($this->input->get('sEcho'));
+
+        $output = array(
+            "sEcho"                     => $echo,
+            "iTotalRecords"             => $result->total_rows,
+            "iTotalDisplayRecords"      => $result->total_rows,
+            "iDisplayLength"            => $params->display_length,
+            "aaData"                    => array()
+        );
 
         // change '0' value to '-'
-        foreach($results as $result) {
-            if($result->short_description_wc == '0') {
-                $result->short_description_wc = '-';
+        foreach($result->rows as $data_row) {
+            if($data_row->short_description_wc == '0') {
+                $data_row->short_description_wc = '-';
             }
-            if($result->long_description_wc == '0') {
-                $result->long_description_wc = '-';
+            if($data_row->long_description_wc == '0') {
+                $data_row->long_description_wc = '-';
             }
+
+            $add_data = new stdClass();
+            $add_data->id = $data_row->id;
+            $add_data->status = $data_row->status;
+
+            $output['aaData'][] = array(
+                $data_row->user_id,
+                $data_row->product_name,
+                $data_row->url,
+                $data_row->short_description,
+                $data_row->short_description_wc,
+                $data_row->long_description,
+                $data_row->long_description_wc,
+                $data_row->bach_name,
+                'actions',
+                $add_data
+            );
         }
 
         $this->output->set_content_type('application/json')
-            ->set_output(json_encode($results));
+            ->set_output(json_encode($output));
     }
 
     public function update_research_info()
