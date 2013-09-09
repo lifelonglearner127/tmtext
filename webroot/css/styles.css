@@ -87,6 +87,7 @@ input[type=text] {
 #updateDialog .parag div.bottom-labeler {
     position: relative;
     top: -65px;
+    width:50px;
 }
 
 #updateDialog .parag div.bottom-labeler label {
@@ -498,4 +499,7 @@ ul.ui-sortable {
 }
 .brand_most_type{
     width: 100px;
+}
+#tblReview a.updateBtn, #tblReview a.deleteBtn{
+    cursor:pointer;
 }
