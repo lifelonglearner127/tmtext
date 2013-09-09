@@ -350,10 +350,6 @@ class Measure extends MY_Controller {
             }
             $ids_string = substr($ids_string, 0, -1);
             $path_to_cron = base_url()."index.php/crons/site_crawler_screens?ids=$ids_string";
-            // $cmd = "wget -S -O- $path_to_cron";
-            // $cmd = "wget -O - -q -t 1 $path_to_cron";
-            // $cmd = "wget -O- $path_to_cron >> /dev/null";
-            // $cmd = "wget -S -O- '$path_to_cron' > /dev/null 2>/dev/null &";
             $cmd = "wget -q $path_to_cron > /dev/null 2>&1";
             shell_exec($cmd);
         }
