@@ -1833,9 +1833,10 @@ select#sites option{
     display: inline;
     padding-left: 100px;
 }
-/*//Max*/
 .heading_text{
     margin:0px;
+    float: left;
+    margin-right: 10px;
 }
 
 .general label{

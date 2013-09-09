@@ -184,19 +184,70 @@ foreach ($same_pr as $ks => $vs) {
                     <!--                            //Max-->
                     <div class="p_description" style="overflow:hidden;">
     <?php if ($s_product_short_desc_count > 0) { ?>
-                            <span class='analysis_content_head'><img style="height: 9px;width: 9px;background: rgb(207, 207, 207);padding: 2px;margin-top: -3px;margin-right: 4px;" src="<?php echo base_url() ?>/img/arrow-down.png"><?php
+                            <span class='analysis_content_head' style="width: 100%;"><img style="height: 9px;width: 9px;background: rgb(207, 207, 207);padding: 2px;margin-top: -3px;margin-right: 4px;" src="<?php echo base_url() ?>/img/arrow-down.png"><?php
                             if ($s_product_long_description == '') {
                                 echo "Description";
                             } else {
                                 //echo $s_product_long_description."!!!!";
                                 echo "Short Description";
                             }
-                            ?><span class='short_desc_wc'></span></span>
+                            ?><span class='short_desc_wc' style="float:left;width: 100%;"></span></span>
                             <p class="heading_text">Words: <b><?php echo $s_product_short_desc_count; ?></b></p>
-                            <div class="p_seo<?php echo $row; ?>short">
+                            <div class="p_seo<?php echo $row; ?>short seo_container">
         <?php if (count($vs['seo']['short']) > 0) { ?>
-                                    <p class="heading_text">SEO Keywords: </p>
-                                    <ul class='gr_seo_short_ph' style='margin:0px;font-weight: bold;'>
+                                   <div style="float: left;width: 100%;"> <p class="heading_text">SEO Keywords: </p>
+                                    <select class="keywords_select" name="analysis" style="float: left;margin-top: -5px;width: 95px;">
+						<option  value="title">Title</option>
+						<option value="custom">Custom</option>
+				    </select></div>
+                                <div class="primary" style="height: 100%;width: 100%;">
+					<!--<div>-->
+						<div class="keywords_lines"><span class="primary_name">Primary: </span><span>
+										<span class="primary_speed">
+											<div style="float: left;">[</div> <span class="title_words" style="display: none;"></span>
+											<span class="you_words you_words_input" style="display: inline;">
+												<input class="keyword_input" imported_data_id="197" name="keyword1" keyword_num="1" type="text" value="">
+											</span>
+											<div style="float: right;">]</div>
+										</span>
+										<img class="assess_image keyword_checkmark primary_image keywords_img" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAilBMVEW4t63///+UrmuUrmu4t62Urmuqv4iwzWmwzWuxyIOxzW2zyYi1z3W5y5y51m292He+zqO+2Hi/z6a/2X3A0ZzA0Z3D06LE06XJ17DK5XvN5oLP27vQ3bHR3bXS3rbU6pXV4bvX4sLX65zf5s/p79Xp8NTs8t3t897v9OHy9uf2+O32+O73+fD8/fm4Gj4xAAAABXRSTlMAADxmgDEFVUQAAACMSURBVBjTbc7bEsFAEATQFdNkkwhJEOKyrHuY//89szJUUfplqs/LtOn9xPwBI4EkXAWgZC6BSAGTx71tDytGpHC7Xs77BTP3X4DRcVtvaukDdHBaz3gqfb5T8BmHxIVXsFUifZg3tgOCGycc50sH0i+pq7KicSl0BwHWewvQeylRmE70mR4oVIXvPAHdTgqKoNFQYgAAAABJRU5ErkJggg==">
+									</span>
+									</div>
+									<div class="clear"></div><div class="keywords_lines"><span class="primary_name">Secondary: </span><span>
+										<span class="primary_speed">
+											<div style="float: left;">[</div> <span class="title_words" style="display: none;"></span>
+											<span class="you_words you_words_input" style="display: inline;">
+												<input class="keyword_input" imported_data_id="197" name="keyword2" keyword_num="2" type="text" value="">
+											</span>
+											<div style="float: right;">]</div>
+										</span>
+										<img class="assess_image keyword_checkmark primary_image keywords_img" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAilBMVEW4t63///+UrmuUrmu4t62Urmuqv4iwzWmwzWuxyIOxzW2zyYi1z3W5y5y51m292He+zqO+2Hi/z6a/2X3A0ZzA0Z3D06LE06XJ17DK5XvN5oLP27vQ3bHR3bXS3rbU6pXV4bvX4sLX65zf5s/p79Xp8NTs8t3t897v9OHy9uf2+O32+O73+fD8/fm4Gj4xAAAABXRSTlMAADxmgDEFVUQAAACMSURBVBjTbc7bEsFAEATQFdNkkwhJEOKyrHuY//89szJUUfplqs/LtOn9xPwBI4EkXAWgZC6BSAGTx71tDytGpHC7Xs77BTP3X4DRcVtvaukDdHBaz3gqfb5T8BmHxIVXsFUifZg3tgOCGycc50sH0i+pq7KicSl0BwHWewvQeylRmE70mR4oVIXvPAHdTgqKoNFQYgAAAABJRU5ErkJggg==">
+									</span>
+									</div>
+									<div class="clear"></div><div class="keywords_lines"><span class="primary_name">Tertiary: </span><span>
+										<span class="primary_speed">
+											<div style="float: left;">[</div> <span class="title_words" style="display: none;"></span>
+											<span class="you_words you_words_input" style="display: inline;">
+												<input class="keyword_input" imported_data_id="197" name="keyword3" keyword_num="3" type="text" value="">
+											</span>
+											<div style="float: right;">]</div>
+										</span>
+										<img class="assess_image keyword_checkmark primary_image keywords_img" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAilBMVEW4t63///+UrmuUrmu4t62Urmuqv4iwzWmwzWuxyIOxzW2zyYi1z3W5y5y51m292He+zqO+2Hi/z6a/2X3A0ZzA0Z3D06LE06XJ17DK5XvN5oLP27vQ3bHR3bXS3rbU6pXV4bvX4sLX65zf5s/p79Xp8NTs8t3t897v9OHy9uf2+O32+O73+fD8/fm4Gj4xAAAABXRSTlMAADxmgDEFVUQAAACMSURBVBjTbc7bEsFAEATQFdNkkwhJEOKyrHuY//89szJUUfplqs/LtOn9xPwBI4EkXAWgZC6BSAGTx71tDytGpHC7Xs77BTP3X4DRcVtvaukDdHBaz3gqfb5T8BmHxIVXsFUifZg3tgOCGycc50sH0i+pq7KicSl0BwHWewvQeylRmE70mR4oVIXvPAHdTgqKoNFQYgAAAABJRU5ErkJggg==">
+									</span>
+									</div>
+									<div class="clear"></div>					<!--	</span><img class="assess_image primary_image keywords_img" src="http://dev.contalytics.com/producteditor//img/assess_grid/check_circle_green.png" /><span></span>
+					</div>
+					<div class="clear"></div>
+					<div>
+						<span class="primary_name">Secondary: </span><span class="primary_speed">[10 Speed Blender] </span><img class="assess_image primary_image keywords_img" src="http://dev.contalytics.com/producteditor//img/assess_grid/check_circle_green.png" /><span></span>
+					</div>
+					<div class="clear"></div>
+					<div>
+						<span class="primary_name">Tertiary: </span><span class="primary_speed">[10 Speed Blender] </span><img class="assess_image primary_image keywords_img" src="http://dev.contalytics.com/producteditor//img/assess_grid/check_circle_green.png" /><span></span>
+					</div>
+					<div class="clear"></div>-->
+				</div> <div class="clear"></div>
+                                    <ul class='gr_seo_short_ph poxos' style='font-weight: bold;float:left;'>
             <?php foreach ($vs['seo']['short'] as $key => $value) { ?>
 
                                             <?php $v_ph = $value['ph']; ?>
@@ -212,10 +263,10 @@ foreach ($same_pr as $ks => $vs) {
                                     </ul>
                                     <?php } else { ?>
 
-                                    <p class="heading_text">SEO Keywords: <span style="font-weight: bold;">None</span></p>
+                                    <p style="float: left;width: 100%;" class="heading_text">SEO Keywords: <span style="font-weight: bold;">None</span></p>
         <?php } ?>
                             </div>
-                            <div class="cmp-area">
+                            <div class="cmp-area" style="float: left;">
         <?php if (isset($vs['short_original']) && $vs['short_original'] != "Insufficient data") { ?>
                                     <p><img class="cmp-btn" src="<?php echo base_url() ?>/img/icon.png" title='Click to see dublicates words'>Duplicate content: <b><?php echo $vs['short_original']; ?> </b></p>
                                 <?php } else { ?>
@@ -228,13 +279,13 @@ foreach ($same_pr as $ks => $vs) {
     if ($s_product_long_desc_count > 0) {
         ?>
 
-                            <span class='analysis_content_head'><img style="height: 9px;width: 9px;background: rgb(207, 207, 207);padding: 2px;margin-top: -3px;margin-right: 4px;" src="<?php echo base_url() ?>/img/arrow-down.png"><?php
+                            <span class='analysis_content_head' style="width: 100%;float:left;"><img style="height: 9px;width: 9px;background: rgb(207, 207, 207);padding: 2px;margin-top: -3px;margin-right: 4px;" src="<?php echo base_url() ?>/img/arrow-down.png"><?php
                     if ($s_product_description == '') {
                         echo "Description";
                     } else {
                         echo "Long Description";
                     }
-        ?><span class='long_desc_wc'></span></span>
+        ?><span class='long_desc_wc'style="float:left;width: 100%;" ></span></span>
                             <p class="heading_text">Words: <b><?php echo $s_product_long_desc_count; ?></b></p>
                             <div class="p_seo<?php
                         if ($s_product_description == '') {
@@ -242,10 +293,52 @@ foreach ($same_pr as $ks => $vs) {
                         } else {
                             echo $row . 'long';
                         }
-        ?>">
+        ?> seo_container">
                             <?php if (count($vs['seo']['long']) > 0) { ?>
-                                    <p class="heading_text">SEO Keywords: </p>
-                                    <ul class='gr_seo_short_ph' style='margin:0px;font-weight: bold;'>
+                                    <div style="float: left;width: 100%;"><p class="heading_text">SEO Keywords: </p>
+                                    <select class="keywords_select" name="analysis" style="float: left;margin-top: -5px;width: 95px;">
+						<option  value="title">Title</option>
+						<option value="custom">Custom</option>
+					</select></div>
+                                  <div class="primary" style="height: 100%;width: 100%;">
+					<!--<div>-->
+						<div class="keywords_lines"><span class="primary_name">Primary: </span><span>
+										<span class="primary_speed">
+											<div style="float: left;">[</div> <span class="title_words" style="display: none;"></span>
+											<span class="you_words you_words_input" style="display: inline;">
+												<input class="keyword_input" imported_data_id="197" name="keyword1" keyword_num="1" type="text" value="">
+											</span>
+											<div style="float: right;">]</div>
+										</span>
+										<img class="assess_image keyword_checkmark primary_image keywords_img" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAilBMVEW4t63///+UrmuUrmu4t62Urmuqv4iwzWmwzWuxyIOxzW2zyYi1z3W5y5y51m292He+zqO+2Hi/z6a/2X3A0ZzA0Z3D06LE06XJ17DK5XvN5oLP27vQ3bHR3bXS3rbU6pXV4bvX4sLX65zf5s/p79Xp8NTs8t3t897v9OHy9uf2+O32+O73+fD8/fm4Gj4xAAAABXRSTlMAADxmgDEFVUQAAACMSURBVBjTbc7bEsFAEATQFdNkkwhJEOKyrHuY//89szJUUfplqs/LtOn9xPwBI4EkXAWgZC6BSAGTx71tDytGpHC7Xs77BTP3X4DRcVtvaukDdHBaz3gqfb5T8BmHxIVXsFUifZg3tgOCGycc50sH0i+pq7KicSl0BwHWewvQeylRmE70mR4oVIXvPAHdTgqKoNFQYgAAAABJRU5ErkJggg==">
+									</span>
+									</div>
+									<div class="clear"></div><div class="keywords_lines"><span class="primary_name">Secondary: </span><span>
+										<span class="primary_speed">
+											<div style="float: left;">[</div> <span class="title_words" style="display: none;"></span>
+											<span class="you_words you_words_input" style="display: inline;">
+												<input class="keyword_input" imported_data_id="197" name="keyword2" keyword_num="2" type="text" value="">
+											</span>
+											<div style="float: right;">]</div>
+										</span>
+										<img class="assess_image keyword_checkmark primary_image keywords_img" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAilBMVEW4t63///+UrmuUrmu4t62Urmuqv4iwzWmwzWuxyIOxzW2zyYi1z3W5y5y51m292He+zqO+2Hi/z6a/2X3A0ZzA0Z3D06LE06XJ17DK5XvN5oLP27vQ3bHR3bXS3rbU6pXV4bvX4sLX65zf5s/p79Xp8NTs8t3t897v9OHy9uf2+O32+O73+fD8/fm4Gj4xAAAABXRSTlMAADxmgDEFVUQAAACMSURBVBjTbc7bEsFAEATQFdNkkwhJEOKyrHuY//89szJUUfplqs/LtOn9xPwBI4EkXAWgZC6BSAGTx71tDytGpHC7Xs77BTP3X4DRcVtvaukDdHBaz3gqfb5T8BmHxIVXsFUifZg3tgOCGycc50sH0i+pq7KicSl0BwHWewvQeylRmE70mR4oVIXvPAHdTgqKoNFQYgAAAABJRU5ErkJggg==">
+									</span>
+									</div>
+									<div class="clear"></div><div class="keywords_lines"><span class="primary_name">Tertiary: </span><span>
+										<span class="primary_speed">
+											<div style="float: left;">[</div> <span class="title_words" style="display: none;"></span>
+											<span class="you_words you_words_input" style="display: inline;">
+												<input class="keyword_input" imported_data_id="197" name="keyword3" keyword_num="3" type="text" value="">
+											</span>
+											<div style="float: right;">]</div>
+										</span>
+										<img class="assess_image keyword_checkmark primary_image keywords_img" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAilBMVEW4t63///+UrmuUrmu4t62Urmuqv4iwzWmwzWuxyIOxzW2zyYi1z3W5y5y51m292He+zqO+2Hi/z6a/2X3A0ZzA0Z3D06LE06XJ17DK5XvN5oLP27vQ3bHR3bXS3rbU6pXV4bvX4sLX65zf5s/p79Xp8NTs8t3t897v9OHy9uf2+O32+O73+fD8/fm4Gj4xAAAABXRSTlMAADxmgDEFVUQAAACMSURBVBjTbc7bEsFAEATQFdNkkwhJEOKyrHuY//89szJUUfplqs/LtOn9xPwBI4EkXAWgZC6BSAGTx71tDytGpHC7Xs77BTP3X4DRcVtvaukDdHBaz3gqfb5T8BmHxIVXsFUifZg3tgOCGycc50sH0i+pq7KicSl0BwHWewvQeylRmE70mR4oVIXvPAHdTgqKoNFQYgAAAABJRU5ErkJggg==">
+									</span>
+									</div>
+									<div class="clear"></div>					
+				</div>         <div class="clear"></div>                                
+
+                                    <ul class='gr_seo_short_ph poxos' style='font-weight: bold;float:left;'>
             <?php foreach ($vs['seo']['long'] as $key => $value) { ?>
                                             <?php $v_ph = $value['ph']; ?>
 
@@ -260,10 +353,10 @@ foreach ($same_pr as $ks => $vs) {
                                     </ul>
                                     <?php } else { ?>
 
-                                    <p class="heading_text">SEO Keywords: <span style="font-weight: bold;">None</span></p>
+                                    <p style="float: left;width: 100%;" class="heading_text">SEO Keywords: <span style="font-weight: bold;">None</span></p>
         <?php } ?>
                             </div>
-                            <div class="cmp-area">                                
+                            <div class="cmp-area" style="float: left;">                                
         <?php if (isset($vs['long_original']) && $vs['long_original'] != "Insufficient data") { ?>
                                     <p><img class="cmp-btn" src="<?php echo base_url() ?>/img/icon.png" title='Click to see dublicates words'>Duplicate content: <b><?php echo $vs['long_original']; ?> </b></p>
                                 <?php } else { ?>
@@ -491,6 +584,22 @@ if (($i - 1) % 3 != 0) {
       $(".missmatch_popup").css('display','none');
       
 }); 
+$(".primary").css('display','none');
+$(".keywords_select").live('change',function(){
+    
+  
+if($(this).val()==='title'){
+   
+    $(this).parents('.seo_container').find(".primary").css('display','none');
+    $(this).parents('.seo_container').find(".poxos").css('display','block');
+}else{
+     
+   $(this).parents('.seo_container').find(".poxos").css('display','none');
+   $(this).parents('.seo_container').find(".primary").css('display','block');
+}  
+});
+
+
 
     });
 
