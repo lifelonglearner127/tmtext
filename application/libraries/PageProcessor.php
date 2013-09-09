@@ -108,7 +108,9 @@ class PageProcessor {
 		if	( method_exists($this, $methodName) ) {
 			$result = $this->$methodName();
 			foreach ($result as &$value) {
-				$value = trim($value);
+				if (!is_array($value)) {
+					$value = trim($value);
+				}
 			}
 
 			if (!empty($result)) {
@@ -265,6 +267,17 @@ class PageProcessor {
 						$result['model_title'] = $j;
 					}
 				}
+			}
+		}
+
+		foreach($this->nokogiri->get('.SpecTable tr') as $item) {
+			$features[] = trim($item['td'][0]['#text'][0]).trim($item['td'][1]['#text'][0]);
+		}
+		$result['feature_count'] = count($features);
+
+		foreach($this->nokogiri->get('#BVRRSourceID span') as $item) {
+			if (isset($item['itemprop']) && $item['itemprop']=='reviewCount' ) {
+				$result['review_count'] = $item['#text'][0];
 			}
 		}
 
@@ -926,16 +939,18 @@ class PageProcessor {
 		}
 		$result['feature_count'] = count($features);
 
-//		foreach($this->nokogiri->get('#detail-bullets .bucket .content table tr td a') as $item) {
-//			var_dump($item);
-//			$line = trim($item['#text'][0]);
-//			if (!empty($line)) {
-//				$result['pdf'][] = array(
-//					'name' => $line
-//				);
-//			}
-//		}
+		foreach($this->nokogiri->get('#detail-bullets .bucket .content table tr td a') as $item) {
+			if (isset($item['onclick'])) {
+				if (preg_match("/.*\('([^']*\.pdf)',.*/", $item['onclick'], $matches)) {
+					$result['pdf'][] = array(
+						'name' => $item['#text'][0],
+						'url' => $matches[1]
+					);
+				}
+			}
+		}
 
+		$result['pdf_count'] = count($result['pdf']);
 
 		return $result;
 	}
