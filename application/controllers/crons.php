@@ -185,7 +185,6 @@ class Crons extends MY_Controller {
      * Cron Job for CI home tab screenshots reports mailer
      */
     public function emailreports() {
-        die("NEED TO TEST!");
         $this->load->model('webshoots_model');
         $current_day = lcfirst(date('l', time()));
         $c_week = date("W", time());
@@ -200,19 +199,21 @@ class Crons extends MY_Controller {
         }
         if(count($recs) > 0) {
             $this->load->library('email');
+
             $config['protocol'] = 'sendmail';
             $config['mailpath'] = '/usr/sbin/sendmail';
             $config['charset'] = 'UTF-8';
             $config['wordwrap'] = TRUE;
             $config['mailtype'] = 'html';
+
             $this->email->initialize($config);
             foreach ($recs as $k => $v) {
                 $screens = $this->webshoots_model->getDistinctEmailScreensAnonim($c_week, $c_year);
                 // ==== sort assoc by pos (start)
                 if(count($screens) > 0) {
                     $sort = array();
-                    foreach($screens as $k=>$v) {
-                        $sort['pos'][$k] = $v['pos'];
+                    foreach($screens as $k=>$vs) {
+                        $sort['pos'][$k] = $vs['pos'];
                     }
                     array_multisort($sort['pos'], SORT_ASC, $screens);
                 }
@@ -225,6 +226,7 @@ class Crons extends MY_Controller {
                 $data_et['day'] = $day;
                 $data_et['screens'] = $screens;
                 $msg = $this->load->view('measure/rec_report_email_template', $data_et, true);
+                // die($msg);
                 $this->email->message($msg);
                 // --- attachments (start)
                 if($attach_st) {
@@ -237,7 +239,7 @@ class Crons extends MY_Controller {
                 }
                 // --- attachments (end)
                 $this->email->send();
-                echo "Report sended to $v->email"."<br>";
+                echo "Report sended to $email"."<br>";
             }
         }
         echo "Cron Job Finished";
