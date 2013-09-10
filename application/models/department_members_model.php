@@ -12,12 +12,26 @@ class Department_members_model extends CI_Model {
     var $parent_id = null;
 
     var $tables = array(
-        'department_members' => 'department_members'
+        'department_members' => 'department_members',
+        'site_departments_snaps' => 'site_departments_snaps'
     );
 
     function __construct()
     {
         parent::__construct();
+    }
+
+    function insertSiteDepartmentSnap($dep_id, $snap_name, $snap_path, $snap_dir, $http_status) {
+        $insert_object = array(
+            'dep_id' => $dep_id,
+            'snap_name' => $snap_name,
+            'snap_path' => $snap_path,
+            'snap_dir' => $snap_dir,
+            'http_status' => $http_status,
+            'stamp' => date("Y-m-d H:i:s")
+        );
+        $this->db->insert($this->tables['site_departments_snaps'], $insert_object);
+        return $this->db->insert_id();
     }
 
     function get($id)
