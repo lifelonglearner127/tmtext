@@ -290,6 +290,10 @@ class CaturlsSpider(BaseSpider):
 
 			return Request(url = self.cat_page, callback = self.parsePage_sonoma)
 
+		#TODO
+		if site == 'overstock':
+			pass
+
 	# parse macy's category
 	def parse_macys(self, response):
 		
@@ -397,7 +401,7 @@ class CaturlsSpider(BaseSpider):
 			page_url = root_url + next_page[0]
 			yield Request(url = page_url, callback = self.parsePage_walmart)
 
-	# parse walmart page and extract product URLs
+	# parse amazon page and extract product URLs
 	def parsePage_amazon(self, response):
 		hxs = HtmlXPathSelector(response)
 		product_links = hxs.select("//h3[@class='newaps']/a/@href")
@@ -412,6 +416,27 @@ class CaturlsSpider(BaseSpider):
 		if next_page:
 			page_url = root_url + next_page[0]
 			yield Request(url = page_url, callback = self.parsePage_amazon)
+
+		# if no products were found, maybe this was a bestsellers page
+		if not product_links:
+			yield Request(response.url, callback = self.parseBsPage_amazon)
+
+			# get next pages as well
+			page_urls = hxs.select("//div[@id='zg_paginationWrapper']//a/@href").extract()
+			for page_url in page_urls:
+				yield Request(page_url, callback = self.parseBsPage_amazon)
+
+	# parse bestsellers page for amazon and extract product urls (needed for amazon tablets)
+	def parseBsPage_amazon(self, response):
+		hxs = HtmlXPathSelector(response)
+		products = hxs.select("//div[@class='zg_itemImmersion']")
+
+		for product in products:
+			item = ProductItem()
+			url = product.select("div[@class='zg_itemWrapper']//div[@class='zg_title']/a/@href").extract()
+			if url:
+				item['product_url'] = url[0].strip()
+				yield item
 
 	# parse bestbuy page and extract product URLs
 	def parsePage_bestbuy(self, response):
