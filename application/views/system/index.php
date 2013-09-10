@@ -1,3 +1,4 @@
+<script src="<?php echo base_url();?>js/ajaxupload.js"></script>
 <script type="text/javascript">
 	$(document).ready(function() {
 		$('head').find('title').text('System');
@@ -59,6 +60,35 @@
 
 				<h3>Home Pages:</h3>
 				<div class="row-fluid">
+					<div class='email_rep_upload_sec'>
+						<img src="<?php echo base_url(); ?>emails_logos/<?php echo $email_report_config_logo ?>">
+						<span id='fileupload_emailrep_logo' class="btn btn-success fileinput-button fileinput-button-elogo">Upload<i class="icon-plus icon-white"></i></span>
+						<!-- <span class="btn btn-success fileinput-button fileinput-button-elogo">Upload<i class="icon-plus icon-white"></i><input id="fileupload_emailrep_logo" type="file" name="file"></span> -->
+						<script>
+						$(function () {
+							var url = '<?php echo site_url('system/upload_email_logo');?>';
+							var em_logo_btn = $("#fileupload_emailrep_logo");
+						    new AjaxUpload(em_logo_btn, {
+						      action: url,
+						      name: 'avatar',
+						      onSubmit: function() {
+						      	console.log('email logo upload start');
+						      },
+						      onComplete: function(file, response) {
+						      	console.log(file);
+						      	console.log(response);
+						      }
+						    });
+						    // $('#fileupload_emailrep_logo').fileupload({
+						    //     url: url,
+						    //     dataType: 'json',
+						    //     done: function (e, data) {
+						    //         console.log(data);
+						    //     }
+						    // });
+						});
+						</script>
+					</div>
 					<form class="form-inline" method='post' action='' enctype="multipart/form-data">
 						<input type="text" id='email_report_config_sender' class="input-large" value="<?php echo $email_report_config_sender; ?>" placeholder="Email">
 						<button type="submit" onclick='return updateReportConfigSender();' class="btn btn-success">Update</button>
