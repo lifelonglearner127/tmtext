@@ -1988,6 +1988,8 @@ span.highlight { background-color:yellow;}
 	margin-top: 5px;
 }
 
+.percent_character{display:none}
+
 .c_content select{
 	-webkit-border-radius: 0;
 	-moz-border-radius: 0;
