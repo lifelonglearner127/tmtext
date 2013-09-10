@@ -186,10 +186,15 @@ class Crons extends MY_Controller {
      */
     public function emailreports() {
         $this->load->model('webshoots_model');
+        $this->load->model('settings_model');
         $current_day = lcfirst(date('l', time()));
         $c_week = date("W", time());
         $c_year = date("Y", time());
         $recs = $this->webshoots_model->get_recipients_list();
+
+        $email_report_sender_name = $this->settings_model->get_general_setting('site_name');
+        if($email_report_sender_name === false) $email_report_sender_name = "Content Solutions - Home Pages Report";
+
         $email_report_config_sender = $this->webshoots_model->getEmailReportConfig('sender');
         $attach_value = $this->webshoots_model->getEmailReportConfig('attach');
         if($attach_value == 'yes') {
@@ -220,9 +225,9 @@ class Crons extends MY_Controller {
                 // ==== sort assoc by pos (end)
                 $day = $v->day;
                 $email = $v->email;
-                $this->email->from("$email_report_config_sender", "Content Solutions - Home Pages Report");
+                $this->email->from("$email_report_config_sender", "$email_report_sender_name");
                 $this->email->to("$email");
-                $this->email->subject('Contalytics - Home Pages Report');
+                $this->email->subject("$email_report_sender_name - Home Pages Report");
                 $data_et['day'] = $day;
                 $data_et['screens'] = $screens;
                 $msg = $this->load->view('measure/rec_report_email_template', $data_et, true);

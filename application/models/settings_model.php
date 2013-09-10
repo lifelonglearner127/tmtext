@@ -13,6 +13,23 @@ class Settings_model extends CI_Model {
         parent::__construct();
     }
 
+    function get_general_setting($key) {
+        $res = false;
+        $query_s = $this->db->where('key', $key)->get($this->tables['settings']);
+        $query_s_res = $query_s->result();
+        if(count($query_s_res) > 0) {
+            $settings = $query_s_res[0];
+            $set_id = $settings->id;
+            $query_s_value = $this->db->where('setting_id', $set_id)->get($this->tables['setting_values']);
+            $query_s_value_res = $query_s_value->result();
+            if(count($query_s_value_res) > 0) {
+                $settings_val = $query_s_value_res[0];
+                $res = $settings_val->value;
+            }
+        }
+        return $res;
+    }
+
     function get_system_value($key) {
 		return $this->get_value($this->system_user, $key);
     }

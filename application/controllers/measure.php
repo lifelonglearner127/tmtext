@@ -140,8 +140,13 @@ class Measure extends MY_Controller {
 
     public function send_recipient_report_selected() {
         $this->load->model('webshoots_model');
+        $this->load->model('settings_model');
 
         $email_report_config_sender = $this->webshoots_model->getEmailReportConfig('sender');
+
+        $email_report_sender_name = $this->settings_model->get_general_setting('site_name');
+        if($email_report_sender_name === false) $email_report_sender_name = "Content Solutions - Home Pages Report";
+
         $attach_value = $this->webshoots_model->getEmailReportConfig('attach');
         if($attach_value == 'yes') {
             $attach_st = true;
@@ -176,9 +181,9 @@ class Measure extends MY_Controller {
             $day = $v['day'];
             $email = $v['email'];
             $id = $v['id'];
-            $this->email->from("$email_report_config_sender", "Content Solutions - Home Pages Report");
+            $this->email->from("$email_report_config_sender", "$email_report_sender_name");
             $this->email->to("$email");
-            $this->email->subject('Contalytics - Home Pages Report');
+            $this->email->subject("$email_report_sender_name - Home Pages Report");
             $data_et['day'] = $day;
             $data_et['screens'] = $screens;
             $msg = $this->load->view('measure/rec_report_email_template', $data_et, true);
@@ -200,8 +205,13 @@ class Measure extends MY_Controller {
 
     public function send_recipient_report() {
         $this->load->model('webshoots_model');
+        $this->load->model('settings_model');
 
         $email_report_config_sender = $this->webshoots_model->getEmailReportConfig('sender');
+        
+        $email_report_sender_name = $this->settings_model->get_general_setting('site_name');
+        if($email_report_sender_name === false) $email_report_sender_name = "Content Solutions - Home Pages Report";
+        
         $attach_value = $this->webshoots_model->getEmailReportConfig('attach');
         if($attach_value == 'yes') {
             $attach_st = true;
@@ -237,9 +247,9 @@ class Measure extends MY_Controller {
         
         $this->email->initialize($config);
         // -- email config (dev configurations) (end) --
-        $this->email->from("$email_report_config_sender", "Content Solutions - Home Pages Report");
+        $this->email->from("$email_report_config_sender", "$email_report_sender_name");
         $this->email->to("$email");
-        $this->email->subject('Contalytics - Home Pages Report');
+        $this->email->subject("$email_report_sender_name - Home Pages Report");
         $data_et['day'] = $day;
         $data_et['screens'] = $screens;
         $msg = $this->load->view('measure/rec_report_email_template', $data_et, true);
