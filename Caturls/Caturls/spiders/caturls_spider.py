@@ -262,6 +262,9 @@ class CaturlsSpider(BaseSpider):
 					# send the page to parsePage and extract product URLs
 					return Request(page_url, callback = self.parsePage_bestbuy)
 
+				else:
+					return Request(response.url, callback = self.parsePage_bestbuy)
+
 			# if you can't find the link to the product list page, try to parse this as the product list page
 			else:
 				return Request(response.url, callback = self.parsePage_bestbuy)
