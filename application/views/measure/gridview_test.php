@@ -293,7 +293,7 @@ foreach ($same_pr as $ks => $vs) {
 								}
 								
 								?>
-								<span>
+								
 									<span class='primary_speed'>
 										<!--<div style="float: left;">[</div>--> <span class="title_words name_bold"><?php echo $value['ph']; ?></span>
 										<span class="you_words you_words_input">
@@ -302,8 +302,12 @@ foreach ($same_pr as $ks => $vs) {
 										<!--<div style="float: right;">]</div>-->
 									</span>
 									<!--<img class="assess_image keyword_checkmark primary_image keywords_img" src="<?php echo base_url() ?>/img/assess_grid/check_circle_green.png" />-->
-								</span>
-								<span class="keyword_percent"><?php echo round($value['prc'], 1) . '%'; ?></span> <span class="keyword_count"><?php echo $keyword_count ?></span>
+									
+									<span class="keyword_percent">
+										<span class="keyword_percent_text"><?php echo round($value['prc'], 1); ?></span>
+										%
+									</span>
+									<span class="keyword_count"><?php echo $keyword_count ?></span>
 								</div>
 								<div class="clear"></div>
 								<?php 
@@ -326,15 +330,15 @@ foreach ($same_pr as $ks => $vs) {
 							if( $secondary != 1 ){
 								$user_word = $vs['seo']['keyword'][1]->keyword;
 								echo '<div class="keywords_lines"><span class="primary_name">Secondary: </span>
-										<span>
-											<span class="primary_speed">
-												<!--<div style="float: left;">[</div>--> <span class="title_words"></span>
-												<span class="you_words you_words_input">
-													<input class="keyword_input" imported_data_id="'. $vs['imported_data_id'] .'" name="keyword2" keyword_num="2" type="text" value="'.$user_word2.'" />
-												</span>&nbsp <!--<div style="float: right;">]</div>-->
-											</span>
-											<!--<img class="keyword_checkmark assess_image primary_image keywords_img" src="'. base_url() .'/img/assess_grid/check_circle_green.png" />-->
+										
+										<span class="primary_speed">
+											<!--<div style="float: left;">[</div>--> <span class="title_words"></span>
+											<span class="you_words you_words_input">
+												<input class="keyword_input" imported_data_id="'. $vs['imported_data_id'] .'" name="keyword2" keyword_num="2" type="text" value="'.$user_word2.'" />
+											</span>&nbsp <!--<div style="float: right;">]</div>-->
 										</span>
+										<!--<img class="keyword_checkmark assess_image primary_image keywords_img" src="'. base_url() .'/img/assess_grid/check_circle_green.png" />-->
+										
 									</div>
 									<div class="clear"></div>';
 							}
@@ -344,7 +348,7 @@ foreach ($same_pr as $ks => $vs) {
 								//echo "</pre>";
 								$user_word = $vs['seo']['keyword'][2]->keyword;
 								echo '<div class="keywords_lines"><span class="primary_name">Tertiary: </span>
-									<span>
+									
 										<span class="primary_speed">
 											<!--<div style="float: left;">[</div>-->
 											<span class="title_words"></span>
@@ -353,7 +357,7 @@ foreach ($same_pr as $ks => $vs) {
 											</span> &nbsp<!--<div style="float: right;">]</div>-->
 										</span>
 										<!--<img class="assess_image keyword_checkmark primary_image keywords_img" src="'. base_url() .'/img/assess_grid/check_circle_green.png" />-->
-									</span>
+									
 									</div>
 									<div class="clear"></div>';
 							}
@@ -373,16 +377,14 @@ foreach ($same_pr as $ks => $vs) {
 										$user_word = $kv->keyword;
 									}
 								}
-								echo '<span>
-										<span class="primary_speed">
-											<!--<div style="float: left;">[</div>--> <span class="title_words"></span>
-											<span class="you_words you_words_input">
-												<input class="keyword_input" imported_data_id="'. $vs['imported_data_id'] .'" name="keyword'.$jj.'" keyword_num="'.$jj.'" type="text" value="'.$user_word.'" />
-											</span>&nbsp
-											<!--<div style="float: right;">]</div>-->
-										</span>
-										<!--<img class="assess_image keyword_checkmark primary_image keywords_img" src="'. base_url() .'/img/assess_grid/check_circle_green.png" />-->
+								echo '<span class="primary_speed">
+										<!--<div style="float: left;">[</div>--> <span class="title_words"></span>
+										<span class="you_words you_words_input">
+											<input class="keyword_input" imported_data_id="'. $vs['imported_data_id'] .'" name="keyword'.$jj.'" keyword_num="'.$jj.'" type="text" value="'.$user_word.'" />
+										</span>&nbsp
+										<!--<div style="float: right;">]</div>-->
 									</span>
+									<!--<img class="assess_image keyword_checkmark primary_image keywords_img" src="'. base_url() .'/img/assess_grid/check_circle_green.png" />-->									
 									</div>
 									<div class="clear"></div>';
 							}
@@ -645,6 +647,12 @@ $(document).ready(function(){
 			$(this).parent().next('.primary:first').find('.title_words').hide();
 			$(this).parent().next('.primary:first').find('.you_words').show();
 			$(this).parent().next('.primary:first').find('.save_keywords').show();
+			
+			/*$(this).parent().next('.primary').find('.keyword_input').each(function(){
+			
+				keywords_count( $(this) );
+			});*/
+			
 		}else if( $(this).val() == 'title' ){
 			$(this).parent().next('.primary:first').find('.you_words').hide();
 			$(this).parent().next('.primary:first').find('.save_keywords').hide();
@@ -668,6 +676,7 @@ $(document).ready(function(){
 			
 		});*/
 		keyword_save( $(this) );
+		//keywords_count( $(this) );
 	});
 	
 	$(".keyword_checkmark").click(function(){
@@ -700,6 +709,27 @@ $(document).ready(function(){
 	$('.duplicate_content_img').click(function(){
 		//$('.cmp-btn').click();
 	});
+	/*
+	//$('.keyword_input').click(function(){
+	function keywords_count(obj){
+		var word = $(obj).val();
+		if( word != '' ){
+			content = $(obj).parent().parent().parent().parent().parent().parent().find('p.compare').text();
+			reg = new RegExp(' '+word, 'gi')
+			count = 0;
+			while( (matches = reg.exec(content)) != null ){
+				// var msg = "Done " + matches[0] + ".  ";
+				//msg += "next from " + reg.lastIndex;
+				//alert(msg);
+				count++;
+			}
+			count_length = content.split(" ").length;
+			percent = (count/count_length)*100;
+			percent = percent.toFixed(1);
+			$(obj).parent().parent().parent().find('.keyword_count').text(count);
+			$(obj).parent().parent().parent().find('.keyword_percent_text').text(percent);
+		}
+	};*/
 	
 	/*$('.percent_img').mouseover(function(){
 		$(this).parent().next('.primary:first').find('.keyword_percent').css({'text-decoration': 'underline'});
