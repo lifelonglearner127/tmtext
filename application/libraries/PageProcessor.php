@@ -412,7 +412,7 @@ class PageProcessor {
 
 	public function process_staples(){
 		foreach($this->nokogiri->get('.skuShortDescription') as $item) {
-			$description = $item;
+			$description[] = $item['#text'][0];
 		}
 
 		foreach($this->nokogiri->get('.skuHeadline') as $item) {
@@ -430,13 +430,29 @@ class PageProcessor {
 		}
 
 		foreach($this->nokogiri->get('#subdesc_content .layoutWidth06 ul li') as $item) {
-			$features[] = $item['#text'][0];
+			$description[] = $item['#text'][0];
 		}
-		$features = implode("\n",$features);
+
+		foreach($this->nokogiri->get('#tabProductInfo-Content .gridWidth06 p') as $item) {
+			if (isset($item['class']) && $item['class']=='skuShortDescription' ) {
+				continue;
+			}
+			$description[] = $item['#text'][0];
+		}
+
+		$description = implode(" ",$description);
+
+		foreach($this->nokogiri->get('#specs_content #tableSpecifications tr') as $item) {
+			if (isset($item['td']) && isset($item['td'][0]) && isset($item['td'][1])) {
+				$features[] = $item['td'][0]['#text'][0].": ".$item['td'][1]['#text'][0];
+			}
+
+		}
+		$features = implode("\n", $features);
 
 		return array(
 			'Product Name' => $title['#text'][0],
-			'Long_Description' => $description['#text'][0],
+			'Long_Description' => $description,
 			'Description' => $descriptionShort['#text'][0],
 			'Price' => $price,
 			'Features' => $features

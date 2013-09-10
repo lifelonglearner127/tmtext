@@ -1927,6 +1927,7 @@ span.highlight { background-color:yellow;}
 	float: left;
 	margin-right: 5px;
 }
+.percent_img:hover{cursor: pointer;}
 
 #compet_area_grid .short_product_name.ellipsis a{
 	font-size: 13px;
@@ -1976,7 +1977,8 @@ span.highlight { background-color:yellow;}
 
 
 .primary_name{float: left; width: 59px;}
-.primary_speed{float: left; margin-left: 5px; width: 110px;}
+/*.primary_speed{float: left; margin-left: 5px; width: 110px;}*/
+.primary_speed{float: left; margin-left: 5px; width: 132px;}
 .primary_image{margin-top: 0; margin-right: 3px;}
 
 .short_product_date{width: 100%; font-size: 13px;}

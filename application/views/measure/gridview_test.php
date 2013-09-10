@@ -256,7 +256,7 @@ foreach ($same_pr as $ks => $vs) {
 								</span>
 								<?php
 							}*/
-							//echo"<pre>"; print_r( $vs['seo']['short'] ); echo"</pre>";
+							//echo"<pre>"; print_r( $vs['seo']['keyword'] ); echo"</pre>";
 							fsort( $vs['seo']['short'], 'prc' );
 							
 							$ii = 1;
@@ -283,13 +283,13 @@ foreach ($same_pr as $ks => $vs) {
 								?>
 								<span>
 									<span class='primary_speed'>
-										<div style="float: left;">[</div> <span class="title_words"><?php echo $value['ph']; ?></span>
+										<!--<div style="float: left;">[</div>--> <span class="title_words"><?php echo $value['ph']; ?></span>
 										<span class="you_words you_words_input">
 											<input class="keyword_input" imported_data_id="<?php echo $vs['imported_data_id']; ?>" name="keyword<?=$ii?>" keyword_num="<?=$ii?>" type="text" value="<?=$user_word?>" />
 										</span>
-										<div style="float: right;">]</div>
+										<!--<div style="float: right;">]</div>-->
 									</span>
-									<img class="assess_image keyword_checkmark primary_image keywords_img" src="<?php echo base_url() ?>/img/assess_grid/check_circle_green.png" />
+									<!--<img class="assess_image keyword_checkmark primary_image keywords_img" src="<?php echo base_url() ?>/img/assess_grid/check_circle_green.png" />-->
 								</span>
 								<span class="keyword_percent"><?php echo round($value['prc'], 1) . '%'; ?></span> <span class="keyword_count"><?php echo $keyword_count ?></span>
 								</div>
@@ -303,12 +303,12 @@ foreach ($same_pr as $ks => $vs) {
 								echo '<div class="keywords_lines"><span class="primary_name">Secondary: </span>
 										<span>
 											<span class="primary_speed">
-												<div style="float: left;">[</div><span class="title_words"></span>
+												<!--<div style="float: left;">[</div>--> <span class="title_words"></span>
 												<span class="you_words you_words_input">
 													<input class="keyword_input" imported_data_id="'. $vs['imported_data_id'] .'" name="keyword2" keyword_num="2" type="text" value="'.$user_word.'" />
-												</span> <div style="float: right;">]</div>
+												</span>&nbsp <!--<div style="float: right;">]</div>-->
 											</span>
-											<img class="keyword_checkmark assess_image primary_image keywords_img" src="'. base_url() .'/img/assess_grid/check_circle_green.png" />
+											<!--<img class="keyword_checkmark assess_image primary_image keywords_img" src="'. base_url() .'/img/assess_grid/check_circle_green.png" />-->
 										</span>
 									</div>
 									<div class="clear"></div>';
@@ -318,13 +318,13 @@ foreach ($same_pr as $ks => $vs) {
 								echo '<div class="keywords_lines"><span class="primary_name">Tertiary: </span>
 									<span>
 										<span class="primary_speed">
-											<div style="float: left;">[</div>
+											<!--<div style="float: left;">[</div>-->
 											<span class="title_words"></span>
 											<span class="you_words you_words_input">
 												<input class="keyword_input" imported_data_id="'. $vs['imported_data_id'] .'" name="keyword3" keyword_num="3" type="text" value="'.$user_word.'" />
-											</span> <div style="float: right;">]</div>
+											</span> &nbsp<!--<div style="float: right;">]</div>-->
 										</span>
-										<img class="assess_image keyword_checkmark primary_image keywords_img" src="'. base_url() .'/img/assess_grid/check_circle_green.png" />
+										<!--<img class="assess_image keyword_checkmark primary_image keywords_img" src="'. base_url() .'/img/assess_grid/check_circle_green.png" />-->
 									</span>
 									</div>
 									<div class="clear"></div>';
@@ -339,13 +339,13 @@ foreach ($same_pr as $ks => $vs) {
 								$user_word = $vs['seo']['keyword'][$jj-1]->keyword;
 								echo '<span>
 										<span class="primary_speed">
-											<div style="float: left;">[</div> <span class="title_words"></span>
+											<!--<div style="float: left;">[</div>--> <span class="title_words"></span>
 											<span class="you_words you_words_input">
 												<input class="keyword_input" imported_data_id="'. $vs['imported_data_id'] .'" name="keyword'.$jj.'" keyword_num="'.$jj.'" type="text" value="'.$user_word.'" />
-											</span>
-											<div style="float: right;">]</div>
+											</span>&nbsp
+											<!--<div style="float: right;">]</div>-->
 										</span>
-										<img class="assess_image keyword_checkmark primary_image keywords_img" src="'. base_url() .'/img/assess_grid/check_circle_green.png" />
+										<!--<img class="assess_image keyword_checkmark primary_image keywords_img" src="'. base_url() .'/img/assess_grid/check_circle_green.png" />-->
 									</span>
 									</div>
 									<div class="clear"></div>';
@@ -659,6 +659,16 @@ $(document).ready(function(){
 			$(count).hide();
 			$(percent).show();			
 		}
+	});
+	
+	$('.percent_img').mouseover(function(){
+		$(this).parent().next('.primary:first').find('.keyword_percent').css({'text-decoration': 'underline'});
+		$(this).parent().next('.primary:first').find('.keyword_count').css({'text-decoration': 'underline'});
+	});
+	
+	$('.percent_img').mouseout(function(){
+		$(this).parent().next('.primary:first').find('.keyword_percent').css({'text-decoration': 'none'});
+		$(this).parent().next('.primary:first').find('.keyword_count').css({'text-decoration': 'none'});
 	});
 });
 

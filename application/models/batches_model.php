@@ -67,7 +67,7 @@ class Batches_model extends CI_Model {
         return $query->result();
     }
 
-    function insert($title, $customer_id)
+    function insert($title, $customer_id=0)
     {
         $CI =& get_instance();
         $this->title = $title;

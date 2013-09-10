@@ -350,7 +350,7 @@ class Measure extends MY_Controller {
             }
             $ids_string = substr($ids_string, 0, -1);
             $path_to_cron = base_url()."index.php/crons/site_crawler_screens?ids=$ids_string";
-            $cmd = "wget -S -O- $path_to_cron";
+            $cmd = "wget -q $path_to_cron > /dev/null 2>&1";
             shell_exec($cmd);
         }
         $this->output->set_content_type('application/json')->set_output(json_encode($cmd));
@@ -1570,8 +1570,8 @@ public function gridview() {
                 }
 
             
-//				$keywords = $this->imported_data_parsed_model->getKeywordsBy_imported_data_id( $imported_data_id );
-//				$same_pr[$ks]['seo']['keyword'] = $keywords;
+				$keywords = $this->imported_data_parsed_model->getKeywordsBy_imported_data_id( $imported_data_id );
+				$same_pr[$ks]['seo']['keyword'] = $keywords;
 
             }
 
