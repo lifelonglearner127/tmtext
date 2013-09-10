@@ -73,7 +73,8 @@
                             }
                         }
                     });
-                    $.post(base_url + 'index.php/system/getCategoriesBySiteId', {'site_id': $(this).data('value')}, function(data) {
+                    $.post(base_url + 'index.php/system/getCategoriesBySiteId', {'site_id': $(this).data('value'),
+                        'department_id': $('select[name="department"]').find('option:selected').val()}, function(data) {
                         $("select[name='category']").empty();
                         if(data.length > 0 ){
                             for(var i=0; i<data.length; i++){
@@ -236,6 +237,33 @@
                 $("#preview_crawl_snap_modal").modal('show');
                 $("#preview_crawl_snap_modal .snap_holder").html(data);
             }
+
+            $("select[name='department']").change(function(){
+                if($(this).attr('id') =='second_department'){
+                    var select_opt = $(this).val();
+                    $("select#first_department option").each(function(){
+                       if($(this).val() == select_opt){
+                           $(this).attr('selected','selected');
+                       }
+                    });
+                } else {
+                    var select_opt = $(this).val();
+                    $("select#second_department option").each(function(){
+                        if($(this).val() == select_opt){
+                            $(this).attr('selected','selected');
+                        }
+                    });
+                }
+                $.post(base_url + 'index.php/system/getCategoriesBySiteId', {'site_id': $("#sites .btn_caret_sign").attr('id'),
+                    'department_id': $(this).val()}, function(data) {
+                    $("select[name='category']").empty();
+                    if(data.length > 0 ){
+                        for(var i=0; i<data.length; i++){
+                            $("select[name='category']").append("<option value='"+data[i].id+"'>"+data[i].text+"</option>");
+                        }
+                    }
+                });
+            });
         </script>
 
 
@@ -358,7 +386,7 @@
             <div class="span12 mt_20 general ml_0">
                 <div class="row-fluid">
                     <label>Department:</label>
-                    <?php  echo form_dropdown('department', $departmens_list, null, 'class="inline_block lh_30 w_375 mb_reset"'); ?>
+                    <?php  echo form_dropdown('department', $departmens_list, null, 'class="inline_block lh_30 w_375 mb_reset" id="second_department"'); ?>
                     <button class="btn btn-success" id="csv_import_create_batch" style="display:none"><i class="icon-white icon-ok"></i>&nbsp;Import</button>
 								<span class="btn btn-success fileinput-button ml_10">
 									Upload
@@ -390,7 +418,8 @@
                                                     }
                                                 }
                                             });
-                                            $.post(base_url + 'index.php/system/getCategoriesBySiteId', {'site_id': $("#sites .btn_caret_sign").attr('id')}, function(data) {
+                                            $.post(base_url + 'index.php/system/getCategoriesBySiteId', {'site_id': $("#sites .btn_caret_sign").attr('id'),
+                                                'department_id': $('select[name="department"]').find('option:selected').val()}, function(data) {
                                                 $("select[name='category']").empty();
                                                 if(data.length > 0 ){
                                                     for(var i=0; i<data.length; i++){
@@ -454,7 +483,8 @@
                                                 }
                                             }
                                         });
-                                        $.post(base_url + 'index.php/system/getCategoriesBySiteId', {'site_id': $("#sites .btn_caret_sign").attr('id')}, function(data) {
+                                        $.post(base_url + 'index.php/system/getCategoriesBySiteId', {'site_id': $("#sites .btn_caret_sign").attr('id'),
+                                            'department_id': $('select[name="department"]').find('option:selected').val()}, function(data) {
                                             $("select[name='category']").empty();
                                             if(data.length > 0 ){
                                                 for(var i=0; i<data.length; i++){
@@ -480,7 +510,7 @@
                 </div>
                 <div class="row-fluid mt_10">
                     <label>Department:</label>
-                    <?php  echo form_dropdown('department', $departmens_list, null, 'class="inline_block lh_30 w_375 mb_reset"'); ?>
+                    <?php  echo form_dropdown('department', $departmens_list, null, 'class="inline_block lh_30 w_375 mb_reset" id="first_department"'); ?>
                     <span class="btn btn-success fileinput-button ml_10">Upload<i class="icon-plus icon-white"></i>
                         <input type="file" multiple="" name="best_sellers_department_files[]" id="best_sellers_department_fileupload">
 					</span>
