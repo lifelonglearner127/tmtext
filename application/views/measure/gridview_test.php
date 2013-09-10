@@ -225,7 +225,7 @@ foreach ($same_pr as $ks => $vs) {
 						<tr>
 							<td style="height: 30px;">
 								<!--<img class="assess_image product_image" src="<?php echo base_url() ?>/img/assess_grid/copy_documents_duplicate.png">-->
-								<img class="assess_image product_image duplicate_content_img cmp-btn" src="<?php echo base_url() ?>/img/assess_grid/highlighter.png" title="Click to see duplicates words">
+								<img class="assess_image product_image duplicate_content_img cmp-btn" test_page="1" src="<?php echo base_url() ?>/img/assess_grid/highlighter.png" title="Click to see duplicates words">
 								<span class="duplicate-content">Duplicate content:</span>
 							</td>
 							<td>
