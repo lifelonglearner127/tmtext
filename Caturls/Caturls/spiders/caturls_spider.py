@@ -293,8 +293,9 @@ class CaturlsSpider(BaseSpider):
 
 			return Request(url = self.cat_page, callback = self.parsePage_sonoma)
 
+		#TODO: these overstock pages wotk with loading new results by scrolling, need to implement support for that or I'll get incomplete results
 		if site == 'overstock':
-			return Request(url = self.cat_page, callback = self.parsePage_overstock())
+			return Request(url = self.cat_page, callback = self.parsePage_overstock)
 
 	# parse macy's category
 	def parse_macys(self, response):
