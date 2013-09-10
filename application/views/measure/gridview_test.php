@@ -241,7 +241,7 @@ foreach ($same_pr as $ks => $vs) {
 					<span class="short_product_name keywords keywords_lable">Keywords:</span>
 					<select class="keywords_select" name="analysis">
 						<option selected="selected" value="title">Title</option>
-						<option value="you">You</option>
+						<option value="you">Custom</option>
 					</select>
 					<!--<img class="assess_image product_image keywords_img" src="<?php echo base_url() ?>/img/assess_grid/highlighter.png">-->
 					<div class="clear"></div>

@@ -1949,7 +1949,7 @@ span.highlight { background-color:yellow;}
 #analysis{
 	font-size: 13px;
 }
-#analysis select{width: 100px; margin-top: 8px;}
+#analysis select{width: 82px; margin-top: 8px; margin-left: 37px;}
 #analysis .short{text-decoration: underline; margin-top: -5px; float: left;}
 
 .p_analusis .short_product_name{width: 23%; margin-top: 5px;}
@@ -1963,11 +1963,11 @@ span.highlight { background-color:yellow;}
 .duplicate-content{text-decoration: underline;}
 
 .keywords{width: 126px; margin-top: 5px;}
-.keywords_select{width: 62px; float: left; padding: 4px 4px;}
+.keywords_select{width: 82px; float: left; padding: 4px 4px;}
 
 .clear{ clear: both;}
 
-.keywords_lable{font-size: 13px; width: 91px;}
+.keywords_lable{font-size: 13px; width: 75px;}
 
 .keywords_img{
 	margin-left: 5px;
@@ -1980,14 +1980,21 @@ span.highlight { background-color:yellow;}
 	display: block;
 }
 
-.description_label{width: 112px; font-size: 13px;}
-.description_select{width: 74px; /*padding: 4px 0px;*/}
+.description_label{width: 98px; font-size: 13px;}
+.description_select{width: 68px; /*padding: 4px 0px;*/}
 
 .primary{
 	font-size: 12px;
 	margin-top: 5px;
 }
 
+.c_content select{
+	-webkit-border-radius: 0;
+	-moz-border-radius: 0;
+	border-radius: 0;
+	padding: 0;
+	height: 25px;
+}
 
 .primary_name{float: left; width: 59px;}
 /*.primary_speed{float: left; margin-left: 5px; width: 110px;}*/
