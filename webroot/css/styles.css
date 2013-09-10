@@ -503,3 +503,54 @@ ul.ui-sortable {
 #tblReview a.updateBtn, #tblReview a.deleteBtn{
     cursor:pointer;
 }
+#brand_ranking{
+    width: 100%;
+    font-size: 11px;
+    border: 1px solid #000000;
+}
+#brand_ranking th{
+    font-weight: bold;
+}
+#brand_ranking td{
+    text-align: center;
+    padding-top: 12px;
+    padding-bottom: 12px;
+}
+#brand_ranking .ui-state-default, #brand_ranking .ui-widget-content .ui-state-default, #brand_ranking .ui-widget-header .ui-state-default {
+    color: #000000;
+}
+.brand_filters{
+    margin: 10px 0;
+}
+.brand_filters select{
+    float:left;
+    margin-left: 5px;
+    margin-top:5px;
+}
+.brand_filters .brand_types{
+    width:150px;
+}
+.brand_filters .day{
+    width:70px
+}
+.brand_filters .month{
+    width:120px;
+}
+.brand_filters .year{
+    width:90px;
+}
+#brand_ranking .tweet{
+    background: #5DC5F7;
+    color: #000000;
+}
+#brand_ranking .youtube{
+    background: #B63929;
+    color: #FFFFFF;
+}
+#brand_ranking .DataTables_sort_wrapper {
+    padding: 4px 6px;
+    position: relative;
+}
+#brand_ranking .DataTables_sort_wrapper .css_right {
+    right: -4px;
+}

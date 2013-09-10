@@ -23,16 +23,6 @@ $pervious_month = date("m", strtotime("first day of previous month"));
                         $( ".draggable" ).draggable();
                     });
                 </script>
-                <style type="text/css">
-                    #brand_ranking {width: 100%; font-size: 1em;}
-                    #brand_ranking th { font-weight: bold; }
-                    .brand_filters { margin: 10px 0; }
-                    .brand_filters select { float:left; margin-left: 5px; margin-top:5px; }
-                    .brand_filters .brand_types { width:150px; }
-                    .brand_filters .day { width:70px; }
-                    .brand_filters .month { width:120px; }
-                    .brand_filters .year { width:90px; }
-                </style>
                 <div>
                     <h3 class="pull-left">
                         The 10 Most
@@ -74,18 +64,18 @@ $pervious_month = date("m", strtotime("first day of previous month"));
                                 <table id="brand_ranking">
                                     <thead>
                                     <tr>
-                                        <th><div class="draggable">Social Rank</div></th>
-                                        <th><div class="draggable">Brand</div></th>
-                                        <th><div class="draggable">IR 500 Rank</div></th>
-                                        <th><div class="draggable">Tweets</div></th>
-                                        <th><div class="draggable">All Tweets</div></th>
-                                        <th><div class="draggable">Followers</div></th>
-                                        <th><div class="draggable">Following</div></th>
-                                        <th><div class="draggable">Youtube Videos</div></th>
-                                        <th><div class="draggable">Views</div></th>
-                                        <th><div class="draggable">All Views</div></th>
-                                        <th><div class="draggable">Average</div></th>
-                                        <th><div class="draggable">All Videos</div></th>
+                                        <th>Social Rank</th>
+                                        <th>Brand</th>
+                                        <th>IR 500 Rank</th>
+                                        <th class="tweet">Tweets</th>
+                                        <th class="tweet">All Tweets</th>
+                                        <th class="tweet">Followers</th>
+                                        <th class="tweet">Following</th>
+                                        <th class="youtube">Youtube Videos</th>
+                                        <th class="youtube">Views</th>
+                                        <th class="youtube">All Views</th>
+                                        <th class="youtube">Average</th>
+                                        <th class="youtube">All Videos</th>
                                     </tr>
                                     </thead>
                                     <tbody></tbody>
