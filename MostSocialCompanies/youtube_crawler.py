@@ -95,6 +95,8 @@ class CrawlUploads():
 							ret_elem['video_titles'] = [{title.encode("utf-8") : views}]
 
 							ret[date] = ret_elem
+
+							#print ret_elem
 						else:
 							ret_elem = ret[date]
 							ret_elem['video_titles'].append({title.encode("utf-8") : views})
@@ -116,7 +118,8 @@ class CrawlUploads():
 				ret_elem['all_views_count'] = total_views
 				# ret['YT_All_Videos'] = total_videos
 				# ret['YT_All_Views'] = total_views
-    		return ret
+
+		return ret
 
 
 
@@ -137,8 +140,7 @@ if __name__ == "__main__":
   	results = []
   	for site in sites:
   		res_site = crawler.get_uploads(site["yt_username"], brand = site['site'], min_date=date1, max_date=date2)
-  		#res_site["Brand"] = site["site"]
-  		results += res_site
+  		results.append(res_site)
 
   	#Utils.output_all("MostSocialBrands.csv", results)
   	print results

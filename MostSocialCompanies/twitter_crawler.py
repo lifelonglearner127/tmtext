@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import twitter
+from optparse import OptionParser
 from datetime import datetime, MINYEAR, MAXYEAR
 from pprint import pprint
 
@@ -59,7 +60,7 @@ class CrawlTweets():
 				ret_elem['total_tweets'] = total_tweets
 				results[date] = ret_elem
 			else:
-				results[date][tweets_count] += 1
+				results[date]['tweets_count'] += 1
 
 		return results
 
@@ -104,9 +105,8 @@ if __name__ == "__main__":
 
   	results = []
   	for site in sites:
-  		res_site = crawler.get_uploads(username = site["twitter_username"], brand = site['site'], min_date=date1, max_date=date2)
-  		#res_site["Brand"] = site["site"]
-  		results += res_site
+  		res_site = crawler.getTweets(username = site["twitter_username"], brand = site['site'], min_date=date1, max_date=date2)
+  		results.append(res_site)
 
   	print results
   	#Utils.output_all("MostSocialBrands.csv", results)
