@@ -2077,6 +2077,8 @@ span.highlight { background-color:yellow;}
  overflow: hidden;
 }
 
-
+.grid_product_name{
+    min-height:60px;
+}
 
 

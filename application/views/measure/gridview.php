@@ -122,9 +122,9 @@ foreach ($same_pr as $ks => $vs) {
                         <p class='short_product_name ellipsis'><a target="_blank" href="<?php echo $vs['url']; ?>"><?php echo $vs['url']; ?></a></p>
                     </div>
                     <!--                            //Max-->
-                    <div class="p_name"  <?php if($marg == 0) echo "style='margin-bottom:25px;'";?>>
+                    <div class="p_name"  <?php //if($marg == 0) echo "style='margin-bottom:25px;'";?>>
                         <span class='analysis_content_head'>Product Name:</span>
-                        <p style="min-height: 38px;float:none;" class='short_product_name'><?php echo $vs['product_name'];?></p>
+                        <p style="float:none;" class='short_product_name grid_product_name'  ><?php echo $vs['product_name'];?></p>
                     </div>
                     <div class="p_price">
     <?php
