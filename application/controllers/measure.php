@@ -1005,12 +1005,60 @@ class Measure extends MY_Controller {
 		  
 	   echo $density;
     }
+    
+    
+    public function getKeywordDepartmentByDescriptionText(){
+         $this->load->model('department_members_model');
+		 $department_id = $_POST['departmentID'];
+		 $result = $this->department_members_model->getDataByDepartment($department_id);
+		 if(empty($_POST['keyword'])){
+		     $this->department_members_model->UpdateKeywordsDepartmentData($department_id);
+			 $density = 'N/A';
+		 } else {
+			 //var_dump($result);
+			 $description_text=trim($result->description_text,'"');
+			 $vowels = array(".", ",", "?", ":", "/", ">", "<", "&", "#", "^", ";", "`", "~", "*");
+			 $description_text = str_replace($vowels, "",$description_text);
+			 //echo $description_text;
+			 $description_words=$result->description_words;
+			 $array=explode(' ',$description_text);
+			 $keyword=trim($_POST['keyword']);
+			 //print_r($array);
+			 $count_key=0;
+			  foreach($array as $value)
+			  {if(strtolower(trim($value))==strtolower($keyword))
+			   $count_key++;
+			  }
+			  //echo $count_key;
+			  if($description_words==0 || $count_key==0)
+				  $density='0.0%';
+				  
+			  else
+			  {    $densityDouble=$count_key/$description_words*100;
+				   $density=sprintf("%01.2f",$densityDouble).'%';
+			   }
+			  $this->department_members_model->UpdateKeywordsDepartmentData($department_id,$keyword,$count_key,sprintf("%01.2f",$densityDouble)); 
+		  }
+		  
+	   echo $density;
+    }
+   
+    
     public function getCategoriesByDepartment(){
         $this->load->model('site_categories_model');
         $this->load->model('sites_model');
         $department_id = $this->input->post('department_id');
         $site_id = $this->sites_model->getIdByName($this->input->post('site_name'));
         $result = $this->site_categories_model->getAllBySiteId($site_id, $department_id);
+        $this->output->set_content_type('application/json')->set_output(json_encode($result));
+    }
+    
+    public function getDataByDepartment(){
+        $this->load->model('department_members_model');
+        $this->load->model('sites_model');
+        $department_id=$this->input->post('department_id');
+        $site_id=$this->sites_model->getIdByName($this->input->post('site_name'));
+        $result=$this->department_members_model->getDataByDepartmentId($site_id, $department_id);
         $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }
 
