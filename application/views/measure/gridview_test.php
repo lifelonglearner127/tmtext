@@ -282,7 +282,16 @@ foreach ($same_pr as $ks => $vs) {
 									$tertiary = 1;
 								}
 								$user_word = '';
-								$user_word = $vs['seo']['keyword'][$keyword_user]->keyword;
+								//$user_word = $vs['seo']['keyword'][$keyword_user]->keyword;
+								foreach($vs['seo']['keyword'] as $kv){
+									//echo '<br>'. $word_num = $kv->word_num . ' | ' . $kv->keyword . '<br/>';
+									$word_num = $kv->word_num;
+									if( $word_num == $ii ){
+										$user_word = $kv->keyword;
+										break;
+									}
+								}
+								
 								?>
 								<span>
 									<span class='primary_speed'>
@@ -301,6 +310,19 @@ foreach ($same_pr as $ks => $vs) {
 								$ii++;
 								$keyword_user++;
 							}
+							foreach($vs['seo']['keyword'] as $kv){
+								//echo '<br>'. $word_num = $kv->word_num . ' | ' . $kv->keyword . '<br/>';
+								$word_num = $kv->word_num;
+								if( $word_num == 1 ){
+									$user_word1 = $kv->keyword;
+								}
+								if( $word_num == 2 ){
+									$user_word2 = $kv->keyword;
+								}
+								if( $word_num == 3 ){
+									$user_word3 = $kv->keyword;
+								}
+							}
 							if( $secondary != 1 ){
 								$user_word = $vs['seo']['keyword'][1]->keyword;
 								echo '<div class="keywords_lines"><span class="primary_name">Secondary: </span>
@@ -308,7 +330,7 @@ foreach ($same_pr as $ks => $vs) {
 											<span class="primary_speed">
 												<!--<div style="float: left;">[</div>--> <span class="title_words"></span>
 												<span class="you_words you_words_input">
-													<input class="keyword_input" imported_data_id="'. $vs['imported_data_id'] .'" name="keyword2" keyword_num="2" type="text" value="'.$user_word.'" />
+													<input class="keyword_input" imported_data_id="'. $vs['imported_data_id'] .'" name="keyword2" keyword_num="2" type="text" value="'.$user_word2.'" />
 												</span>&nbsp <!--<div style="float: right;">]</div>-->
 											</span>
 											<!--<img class="keyword_checkmark assess_image primary_image keywords_img" src="'. base_url() .'/img/assess_grid/check_circle_green.png" />-->
@@ -317,6 +339,9 @@ foreach ($same_pr as $ks => $vs) {
 									<div class="clear"></div>';
 							}
 							if( $tertiary != 1 ){
+								//echo "<pre>";
+								//print_r($vs['seo']['keyword']);
+								//echo "</pre>";
 								$user_word = $vs['seo']['keyword'][2]->keyword;
 								echo '<div class="keywords_lines"><span class="primary_name">Tertiary: </span>
 									<span>
@@ -324,7 +349,7 @@ foreach ($same_pr as $ks => $vs) {
 											<!--<div style="float: left;">[</div>-->
 											<span class="title_words"></span>
 											<span class="you_words you_words_input">
-												<input class="keyword_input" imported_data_id="'. $vs['imported_data_id'] .'" name="keyword3" keyword_num="3" type="text" value="'.$user_word.'" />
+												<input class="keyword_input" imported_data_id="'. $vs['imported_data_id'] .'" name="keyword3" keyword_num="3" type="text" value="'.$user_word3.'" />
 											</span> &nbsp<!--<div style="float: right;">]</div>-->
 										</span>
 										<!--<img class="assess_image keyword_checkmark primary_image keywords_img" src="'. base_url() .'/img/assess_grid/check_circle_green.png" />-->
@@ -339,7 +364,15 @@ foreach ($same_pr as $ks => $vs) {
 								if( $jj == '2' )	echo '<div class="keywords_lines"><span class="primary_name">Secondary: </span>';
 								if( $jj == '3' )	echo '<div class="keywords_lines"><span class="primary_name">Tertiary: </span>';
 								
-								$user_word = $vs['seo']['keyword'][$jj-1]->keyword;
+								//$user_word = $vs['seo']['keyword'][$jj-1]->keyword;
+								foreach($vs['seo']['keyword'] as $kv){
+									//echo '<br>'. $kv->word_num . ' | ' . $kv->keyword . '<br/>';
+									$user_word = '';
+									$word_num = $kv->word_num;
+									if( $word_num == $jj ){
+										$user_word = $kv->keyword;
+									}
+								}
 								echo '<span>
 										<span class="primary_speed">
 											<!--<div style="float: left;">[</div>--> <span class="title_words"></span>
@@ -394,6 +427,7 @@ foreach ($same_pr as $ks => $vs) {
 					<select class="description_select" name="description">
 						<option <?php if($s_product_short_desc_count > 0) echo 'selected="selected"'?> value="short_desc_show" >Short</option>
 						<option <?php if($s_product_long_desc_count > 0 && $s_product_short_desc_count == 0) echo 'selected="selected"';?> value="long_desc_show">Long</option>
+						<option value="meta">Meta</option>
 					</select>
 					<div class="clear"></div>
 					<div>
@@ -643,13 +677,13 @@ $(document).ready(function(){
 	});
 	
 	function keyword_save( obj ){
-		if( $(obj).val().length >= 2 ) {
+		//if( $(obj).val().length >= 2 ) {
 			imported_data_id = $(obj).attr('imported_data_id');
 			keyword = $(obj).val();
 			keyword_name = $(obj).attr('name');
 			keyword_num = $(obj).attr('keyword_num');
 			$.post(base_url + 'index.php/measure/save_new_words', {imported_data_id: imported_data_id, keywords: keyword, keyword_num: keyword_num, keyword_name: keyword_name}, function(data){});
-		}
+		//}
 	}
 	
 	$('.percent_img').click(function(){
