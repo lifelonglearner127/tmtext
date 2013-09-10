@@ -363,7 +363,7 @@ jQuery(document).ready(function($) {
                                     </div>
                                     <div class="row-fluid"><label>Long description:</label>
                                         <label><span id="research_wc1">0</span> words<input type="hidden" name="long_description_wc" /></label>
-                                        <div class="search_area uneditable-input ml_10"  id="long_description" contenteditable="false" style="cursor: text; width: 365px; overflow: auto;"></div>
+                                        <div class="search_area uneditable-input ml_10"  id="long_description" contenteditable="false" style="cursor: text; width: 365px; overflow: auto; display: block;"></div>
                                     </div>
                                     <div class="row-fluid" id="research_density">
                                         <label>Density:</label><label>Primary:</label><input type="text" name="research_primary" class="span2" value="0" readonly="readonly" /><span class="percent">%</span>
