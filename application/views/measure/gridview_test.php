@@ -664,6 +664,10 @@ $(document).ready(function(){
 		}
 	});
 	
+	$('.duplicate_content_img').click(function(){
+		//$('.cmp-btn').click();
+	});
+	
 	/*$('.percent_img').mouseover(function(){
 		$(this).parent().next('.primary:first').find('.keyword_percent').css({'text-decoration': 'underline'});
 		$(this).parent().next('.primary:first').find('.keyword_count').css({'text-decoration': 'underline'});

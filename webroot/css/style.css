@@ -1935,6 +1935,13 @@ span.highlight { background-color:yellow;}
 	text-decoration: underline;
 }
 
+.duplicate_content_img:hover, .percent_img:hover{cursor: pointer; border-bottom: 1px solid #000;}
+
+.duplicate_content_img{
+	padding: 0;
+	padding-bottom: 1px;
+}
+
 .name_bold{font-weight: bold;}
 
 .short_product_date{width: 100%; font-size: 13px;}
@@ -1965,6 +1972,12 @@ span.highlight { background-color:yellow;}
 .keywords_img{
 	margin-left: 5px;
 	margin-top: 6px;
+}
+
+.duplicate-content{
+	/*text-decoration: underline;*/
+	padding-top: 3px;
+	display: block;
 }
 
 .description_label{width: 112px; font-size: 13px;}
