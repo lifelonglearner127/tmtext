@@ -554,3 +554,6 @@ ul.ui-sortable {
 #brand_ranking .DataTables_sort_wrapper .css_right {
     right: -4px;
 }
+span.highlight{
+    background-color:yellow;
+}
