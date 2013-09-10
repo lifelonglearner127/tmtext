@@ -719,9 +719,42 @@ class System extends MY_Controller {
                 }
 			}
             if($row->level == 1){
+           
                 $check_id = $this->department_members_model->checkExist($site_name[0], $site_id, $row->text);
+                
+                if(isset($row->description_wc) && is_array($row->description_wc)){
+                    $description_wc = $row->description_wc[0];
+                } else if(isset($row->description_wc) && !is_array($row->description_wc) && !is_null($row->description_wc) && $row->description_wc!=''){
+                    $description_wc = $row->description_wc;
+                }
+                
+     	
+		if(isset($row->keyword_density) && is_array($row->keyword_density)){
+				
+                    $keyword_density = $row->keyword_density[0];
+                } else if(isset($row->keyword_density) && !is_array($row->keyword_density) && !is_null($row->keyword_density) && $row->keyword_density!=''){
+				
+                    $keyword_density = json_encode($row->keyword_density);
+                }
+				
+		if(isset($row->description_title) && is_array($row->description_title)){
+				
+                    $description_title = $row->description_title[0];
+                } else if(isset($row->description_title) && !is_array($row->description_title) && !is_null($row->description_title) && $row->description_title!=''){
+				
+                    $description_title = json_encode($row->description_title);
+                }
+		if(isset($row->description_text) && is_array($row->description_text)){
+				
+                    $description_text = $row->description_text[0];
+                } 
+				else if(isset($row->description_text) && !is_array($row->description_text) && !is_null($row->description_text) && $row->description_text!=''){
+				
+                    $description_text = json_encode($row->description_text);
+                }
+                
                 if($check_id == false){
-                    $this->department_members_model->insert($site_name[0], $site_id, $row->text);
+                    $this->department_members_model->insert($site_name[0], $site_id, $row->text, $description_wc, $description_text, $keyword_density, $description_title );
                 }
             }
         }

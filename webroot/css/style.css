@@ -2054,6 +2054,10 @@ span.highlight { background-color:yellow;}
     border-radius: 15px;
     cursor:pointer;
 }
+.seo_container{
+ overflow: hidden;
+}
+
 
 
 
