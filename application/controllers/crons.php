@@ -921,15 +921,10 @@ class Crons extends MY_Controller {
             $this->statistics_duplicate_content_model->truncate();
             $batches = $this->batches_model->getAll('id');
             $enable_exec = true;
-            $conn = mysql_connect('localhost', 'c38trlmonk', '542piF88');
+            $params = parse_ini_file('./application/config/db.ini');        
+            $conn = mysql_connect($params['db.host'], $params['db.user'], $params['db.pass']);
             foreach ($batches as $batch) {
                 $batch_id = $batch->id;
-                /* Make sure the connection is still alive, if not, try to reconnect */
-                //if (!mysql_ping($conn)) {
-                //echo 'Lost connection, exiting after query #2';
-                //exit;
-                //    $conn = mysql_connect('localhost', 'c38trlmonk', '542piF88');
-                //}
                 $data = $this->research_data_model->do_stats($batch->id);
                 error_log("Problem after do_stats query", 3, 'log.txt');
                 if (count($data) > 0) {
@@ -1158,16 +1153,8 @@ class Crons extends MY_Controller {
             }
             $batches = $this->batches_model->getAll('id');
             $enable_exec = true;
-//            $conn = mysql_connect('localhost', 'c38trlmonk', '542piF88');
             foreach ($batches as $batch) {
                 $batch_id = $batch->id;
-                /* Make sure the connection is still alive, if not, try to reconnect */
-//                if (!mysql_ping($conn)) {
-                //echo 'Lost connection, exiting after query #2';
-                //exit;
-//                    $conn = mysql_connect('localhost', 'c38trlmonk', '542piF88');
-//                }
-
                 try {
                     $data = $this->research_data_model->do_stats($batch->id);
                 } catch (Exception $e) {
@@ -1529,12 +1516,6 @@ class Crons extends MY_Controller {
                 $params->batch_id = $batch->id;
                 $params->txt_filter = '';
                 $stat_data = $this->statistics_model->getStatsData($params);
-//                $conn = mysql_connect('localhost', 'c38trlmonk', '542piF88');
-                /* Make sure the connection is still alive, if not, try to reconnect */
-//                if (!mysql_ping($conn)) {
-//                    echo 'Lost connection, exiting after query #2';
-//                    exit;
-//                }
                 if (count($stat_data) > 0) {
                     foreach ($stat_data as $stat) {
                         $time_start = microtime(true);

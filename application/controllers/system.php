@@ -914,7 +914,11 @@ class System extends MY_Controller {
     public function getCategoriesBySiteId()
     {
         $this->load->model('site_categories_model');
-        $result = $this->site_categories_model->getAllBySiteId($this->input->post('site_id'));
+        $department_id = '';
+        if($this->input->post('department_id') != ''){
+            $department_id = $this->input->post('department_id');
+        }
+        $result = $this->site_categories_model->getAllBySiteId($this->input->post('site_id'), $department_id);
         $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }
 

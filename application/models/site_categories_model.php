@@ -52,7 +52,7 @@ class Site_categories_model extends CI_Model {
         if($department_id != ''){
             $department_id = " and `department_members_id`='".$department_id."' ";
         }
-        $sql = "SELECT `id`, `text`, `nr_products`, `description_words`, `description_title`, `title_keyword_description_density` ,`user_keyword_description_density`, `user_seo_keywords` FROM `site_categories` WHERE `site_id` = '".$site_id."' ".$department_id." ORDER BY `text` ASC";
+        $sql = "SELECT * FROM `site_categories` WHERE `site_id` = '".$site_id."' ".$department_id." ORDER BY `text` ASC";
         $query = $this->db->query($sql);
         return $query->result();
     }
