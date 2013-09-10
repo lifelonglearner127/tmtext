@@ -26,7 +26,8 @@ import json
 class CaturlsSpider(BaseSpider):
 
 	name = "producturls"
-	allowed_domains = ["staples.com", "bloomingdales.com", "walmart.com", "amazon.com", "bestbuy.com", "nordstrom.com", "macys.com", "williams-sonoma.com"]
+	allowed_domains = ["staples.com", "bloomingdales.com", "walmart.com", "amazon.com", "bestbuy.com", \
+	"nordstrom.com", "macys.com", "williams-sonoma.com", "overstock.com"]
 
 	# store the cateory page url given as an argument into a field and add it to the start_urls list
 	def __init__(self, cat_page, outfile = "product_urls.txt"):
@@ -59,6 +60,8 @@ class CaturlsSpider(BaseSpider):
 		#self.start_urls = ["http://www.williams-sonoma.com/shop/electrics/mixers-attachments/?cm_type=gnav"]
 		# williams-sonoma coffee makers
 		#self.start_urls = ["http://www.williams-sonoma.com/shop/electrics/coffee-makers/?cm_type=gnav"]
+		# overstock tablets
+		#self.start_urls = ["http://www.overstock.com/Electronics/Tablet-PCs/New,/condition,/24821/subcat.html?TID=TN:ELEC:Tablet"]
 
 		
 
@@ -290,13 +293,12 @@ class CaturlsSpider(BaseSpider):
 
 			return Request(url = self.cat_page, callback = self.parsePage_sonoma)
 
-		#TODO
 		if site == 'overstock':
-			pass
+			return Request(url = self.cat_page, callback = self.parsePage_overstock())
 
 	# parse macy's category
 	def parse_macys(self, response):
-		
+
 		json_response = json.loads(unicode(response.body, errors='replace'))
 		product_ids = json_response['productIds']
 
@@ -485,6 +487,16 @@ class CaturlsSpider(BaseSpider):
 		for product_link in product_links:
 			item = ProductItem()
 			item['product_url'] = root_url + product_link.extract()
+			yield item
+
+	# parse overstock page and extract URLs
+	def parsePage_overstock(self, response):
+		hxs = HtmlXPathSelector(response)
+
+		product_links = hxs.select("//a[@class='pro-thumb']/@href")
+		for product_link in product_links:
+			item = ProductItem()
+			item['product_url'] = product_link.extract()
 			yield item
 
 
