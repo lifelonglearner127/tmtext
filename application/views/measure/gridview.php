@@ -207,6 +207,7 @@ foreach ($same_pr as $ks => $vs) {
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
                                                         <input class="keyword_input" imported_data_id="197" name="keyword1" keyword_num="1" type="text" value="">
+                                                        <span id="keyword1_density"></span>
                                                     </span>
                                             </span>
                                         </span>
@@ -218,6 +219,7 @@ foreach ($same_pr as $ks => $vs) {
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
                                                         <input class="keyword_input" imported_data_id="197" name="keyword2" keyword_num="2" type="text" value="">
+                                                        <span id="keyword2_density"></span>
                                                     </span>
                                             </span>
                                         </span>
@@ -229,6 +231,7 @@ foreach ($same_pr as $ks => $vs) {
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
                                                         <input class="keyword_input" imported_data_id="197" name="keyword3" keyword_num="2" type="text" value="">
+                                                        <span id="keyword3_density"></span>
                                                     </span>
                                             </span>
                                         </span>
@@ -466,6 +469,37 @@ if (($i - 1) % 3 != 0) {
 
 </script>
 <script type='text/javascript'>
+    function gridKeywordDensity(){
+        var grid_primary_ph = $.trim($('input[name="keyword1"]').val());
+        var grid_secondary_ph = $.trim($('input[name="keyword2"]').val());
+        var grid_tertiary_ph = $.trim($('input[name="keyword3"]').val());
+        if(grid_primary_ph !== "") grid_primary_ph.replace(/<\/?[^>]+(>|$)/g, "");
+        if(grid_secondary_ph !== "") grid_secondary_ph.replace(/<\/?[^>]+(>|$)/g, "");
+        if(grid_tertiary_ph !== "") grid_tertiary_ph.replace(/<\/?[^>]+(>|$)/g, "");
+
+        if(grid_primary_ph !== "" || grid_secondary_ph !== "" || grid_tertiary_ph !== "") {
+            var grid_long_desc = $.trim($('.short_desc_con').html() +' '+ $(".compare").html());
+            if(grid_long_desc !== "") grid_long_desc.replace(/<\/?[^>]+(>|$)/g, "");
+
+            var grid_send_object = {
+                primary_ph: grid_primary_ph,
+                secondary_ph: grid_secondary_ph,
+                tertiary_ph: grid_tertiary_ph,
+                short_desc: '',
+                long_desc: grid_long_desc
+            };
+
+            $.post(base_url+'index.php/measure/analyzekeywords', grid_send_object, function(data) {
+                var first = (data['primary'][1].toPrecision(3)*100).toFixed(2);
+                var second = (data['secondary'][1].toPrecision(3)*100).toFixed(2);
+                var third = (data['tertiary'][1].toPrecision(3)*100).toFixed(2);
+                $('span#keyword1_density').html(' - '+first+'%');
+                $('span#keyword2_density').html(' - '+second+'%');
+                $('span#keyword3_density').html(' - '+third+'%');
+            }, 'json');
+        }
+        return false;
+    }
     function inArray(needle, haystack) {
         var length = haystack.length;
         for (var i = 0; i < length; i++) {
@@ -592,9 +626,19 @@ if (($i - 1) % 3 != 0) {
         fixGridHeights();
     });
 
-
-
+    $(".keyword_input").change(function() {
+        gridKeywordDensity();
     });
+    $(".keyword_input").bind('keypress',function(e) {
+        if(e.keyCode==13){
+            gridKeywordDensity();
+        }
+    });
+    //on keyup, start the countdown
+    $(".keyword_input").keyup(function(){
+         setTimeout(function(){ gridKeywordDensity();}, '1000');
+    });
+  });
 
 </script>
 
