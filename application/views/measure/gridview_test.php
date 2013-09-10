@@ -196,8 +196,9 @@ foreach ($same_pr as $ks => $vs) {
 					}
                     ?>
                 </div>
-                <div class="p_analusis">
+                <div class="p_analusis cmp-area">
 					<table id="analysis">
+						<tbody>
 						<tr>
 							<td style="width: 194px;">
 								<span class="short_product_name name_bold" style="float: none;">Analysis:</span>
@@ -223,7 +224,8 @@ foreach ($same_pr as $ks => $vs) {
 						</tr>
 						<tr>
 							<td style="height: 30px;">
-								<img class="assess_image product_image" src="<?php echo base_url() ?>/img/assess_grid/copy_documents_duplicate.png">
+								<!--<img class="assess_image product_image" src="<?php echo base_url() ?>/img/assess_grid/copy_documents_duplicate.png">-->
+								<img class="assess_image product_image duplicate_content_img cmp-btn" src="<?php echo base_url() ?>/img/assess_grid/highlighter.png" title="Click to see duplicates words">
 								<span class="duplicate-content">Duplicate content:</span>
 							</td>
 							<td>
@@ -231,16 +233,17 @@ foreach ($same_pr as $ks => $vs) {
 								<span class="words_count_short" style=""><?php echo isset($vs['long_original']) && $vs['long_original'] != 'Insufficient data' && $vs['short_original'] != '%' ? $vs['long_original'] : '0%'; ?></span>
 							</td>
 						</tr>
+						</tbody>
 					</table>
 				</div>
 				<div style="margin-top: 8px;">
 					<img style="margin-top: 7px;" class="assess_image product_image percent_img" src="<?php echo base_url() ?>/img/assess_grid/percent.png">
-					<span class="short_product_name keywords keywords_lable">Keywords from:</span>
+					<span class="short_product_name keywords keywords_lable">Keywords:</span>
 					<select class="keywords_select" name="analysis">
 						<option selected="selected" value="title">Title</option>
 						<option value="you">You</option>
 					</select>
-					<img class="assess_image product_image keywords_img" src="<?php echo base_url() ?>/img/assess_grid/highlighter.png">
+					<!--<img class="assess_image product_image keywords_img" src="<?php echo base_url() ?>/img/assess_grid/highlighter.png">-->
 					<div class="clear"></div>
 				</div>
 				<div class="primary">
@@ -283,7 +286,7 @@ foreach ($same_pr as $ks => $vs) {
 								?>
 								<span>
 									<span class='primary_speed'>
-										<!--<div style="float: left;">[</div>--> <span class="title_words"><?php echo $value['ph']; ?></span>
+										<!--<div style="float: left;">[</div>--> <span class="title_words name_bold"><?php echo $value['ph']; ?></span>
 										<span class="you_words you_words_input">
 											<input class="keyword_input" imported_data_id="<?php echo $vs['imported_data_id']; ?>" name="keyword<?=$ii?>" keyword_num="<?=$ii?>" type="text" value="<?=$user_word?>" />
 										</span>
@@ -661,7 +664,7 @@ $(document).ready(function(){
 		}
 	});
 	
-	$('.percent_img').mouseover(function(){
+	/*$('.percent_img').mouseover(function(){
 		$(this).parent().next('.primary:first').find('.keyword_percent').css({'text-decoration': 'underline'});
 		$(this).parent().next('.primary:first').find('.keyword_count').css({'text-decoration': 'underline'});
 	});
@@ -669,7 +672,7 @@ $(document).ready(function(){
 	$('.percent_img').mouseout(function(){
 		$(this).parent().next('.primary:first').find('.keyword_percent').css({'text-decoration': 'none'});
 		$(this).parent().next('.primary:first').find('.keyword_count').css({'text-decoration': 'none'});
-	});
+	});*/
 });
 
 </script>
