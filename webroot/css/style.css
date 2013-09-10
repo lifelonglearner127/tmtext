@@ -1,3 +1,18 @@
+.email_rep_upload_sec {
+    margin-bottom: 15px;
+}
+.email_rep_upload_sec > img {
+    max-width: 240px;
+}
+
+.nav-tabs > li.pull_right_navlink {
+    float: right;
+}
+.nav-tabs > li.pull_right_navlink > a:hover {
+    background-color: transparent !important;
+    border: 1px solid transparent !important;
+}
+
 .form_error.mt5 {
     margin-top: 5px;
 }

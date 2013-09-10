@@ -22,6 +22,7 @@ class System extends MY_Controller {
 		$this->data['message'] = $this->session->flashdata('message');
 		$this->data['email_report_config_sender'] = $this->webshoots_model->getEmailReportConfig('sender');
 		$this->data['email_report_config_attach'] = $this->webshoots_model->getEmailReportConfig('attach');
+		$this->data['email_report_config_logo'] = $this->webshoots_model->getEmailReportConfig('logo');
 		$this->render();
 	}
 
@@ -872,6 +873,34 @@ class System extends MY_Controller {
         }
         $response['message'] =  'File was added successfully';
         $this->output->set_content_type('application/json')->set_output(json_encode($response));
+    }
+
+    public function upload_email_logo() {
+    	 $status = "";
+		   $msg = "";
+		   $file_element_name = 'avatar';
+		    
+		   if ($status != "error") {
+		      $config['upload_path'] = realpath(BASEPATH . "../webroot/emails_logos/");
+		      $config['allowed_types'] = 'gif|jpg|png|doc|txt';
+		      $config['max_size']  = 1024 * 8;
+		      $config['encrypt_name'] = TRUE;
+		 
+		      $this->load->library('upload', $config);
+		 
+		      if (!$this->upload->do_upload($file_element_name)) {
+		         $status = 'error';
+		         $msg = $this->upload->display_errors('', '');
+		      }
+		      else {
+		         $data = $this->upload->data();
+		         // echo $data['file_name'];
+		         $status = "success";
+		         $msg = "File successfully uploaded";
+		      }
+		      @unlink($_FILES[$file_element_name]);
+		   }
+		   $this->output->set_content_type('application/json')->set_output(json_encode(array('status' => $status, 'msg' => $msg)));
     }
 
 	public function upload_csv()
