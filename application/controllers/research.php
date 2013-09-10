@@ -1238,7 +1238,7 @@ class Research extends MY_Controller {
         $params = new stdClass();
         $batch_name = $this->input->get('batch_name');
         $params->batch_id = $this->batches_model->getIdByName($batch_name);
-        $params->filter = trim($this->input->get('search_text'));
+        $params->filter = trim($this->input->get('search_text')).'%'.trim($this->input->get('sSearch'));
         $params->display_length = intval($this->input->get('iDisplayLength', TRUE));
         $params->display_start = intval($this->input->get('iDisplayStart', TRUE));
         if (empty($params->display_start)) {
