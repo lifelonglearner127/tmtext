@@ -1,4 +1,13 @@
-<img src="<?php echo base_url() ?>/img/content_analytics_logo.jpg">
+<!-- <img src="<?php echo base_url() ?>/img/content_analytics_logo.jpg"> -->
+<?php 
+	$file = realpath(BASEPATH . "../webroot/emails_logos/$email_logo");
+    $file_size = filesize($file);
+    if($file_size === false) {
+    	$email_logo = 'default_logo.jpg';
+    }
+?>
+<img style='max-width: 240px;' src="<?php echo base_url() ?>/emails_logos/<?php echo $email_logo; ?>">
+
 <?php if(count($screens) > 0) { ?>
 	<?php 
 		$item_per_row = 2;

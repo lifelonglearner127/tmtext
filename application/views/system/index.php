@@ -61,6 +61,13 @@
 				<h3>Home Pages:</h3>
 				<div class="row-fluid">
 					<div class='email_rep_upload_sec'>
+						<?php 
+							$file = realpath(BASEPATH . "../webroot/emails_logos/$email_report_config_logo");
+			                $file_size = filesize($file);
+			                if($file_size === false) {
+			                	$email_report_config_logo = 'default_logo.jpg';
+			                }
+						?>
 						<img id='fileupload_emailrep_logo_holder' src="<?php echo base_url(); ?>emails_logos/<?php echo $email_report_config_logo ?>">
 						<span id='fileupload_emailrep_logo' class="btn btn-success fileinput-button fileinput-button-elogo">Upload<i class="icon-plus icon-white"></i></span>
 						<script>
