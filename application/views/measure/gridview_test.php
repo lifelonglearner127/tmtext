@@ -444,13 +444,13 @@ foreach ($same_pr as $ks => $vs) {
 					<div class="clear"></div>
 					<div>
 						<?php 
-						if( $s_product_short_desc_count > 0 ){
+						if( $s_product_short_desc_count > 0 ){ //echo '<br/>short = ' . $s_product_short_desc_count;
 						?>
 							<!--<p class="short_desc_show short_desc_con compare"><?php echo $s_product_description; ?></p>-->
 							<p class="short_desc_show compare" <?php if($s_product_long_desc_count == 0 || $s_product_long_desc_count > 0 ) echo 'style="display: block;"';?> ><?php echo $s_product_description; ?></p>
 						<?php 
 						} 
-						if( $s_product_long_desc_count > 0 ) { ?>
+						if( $s_product_long_desc_count > 0 ) { //echo '<br/>long = ' . $s_product_long_desc_count;?>
 							<p class="long_desc_show compare" <?php if($s_product_short_desc_count == 0) echo 'style="display: block;"';?>><?php echo $s_product_long_description ?></p>
 						<?php
 						}
@@ -645,6 +645,9 @@ $(document).ready(function(){
 			$(this).parent().find('.long_desc_show').hide();
 			$(this).parent().find('.short_desc_show').show();
 		}
+		$(this).parent().prev('.primary').find('.keyword_input').each(function(){
+			keywords_count( $(this) );
+		});
 	});
 	
 	function check_description(){
@@ -682,20 +685,6 @@ $(document).ready(function(){
 	});
 	
 	$(".keyword_input").keyup(function(event) {
-		/*if( $(this).val().length >= 2 ) {
-			imported_data_id = $(this).attr('imported_data_id');
-			keyword = $(this).val();
-			keyword_name = $(this).attr('name');
-			keyword_num = $(this).attr('keyword_num');
-			$.post(base_url + 'index.php/measure/save_new_words', {imported_data_id: imported_data_id, keywords: keyword, keyword_num: keyword_num, keyword_name: keyword_name}, function(data){});
-		}*/
-		/*var keyword = new Array();
-		$(this).parent().parent().find('.keyword_input').each(function(){
-			keyword.push( $(this).val() );
-		});		
-		$.post(base_url + 'index.php/measure/save_new_words', {keywords: keyword}, function(data){
-			
-		});*/
 		keyword_save( $(this) );
 		keywords_count( $(this) );
 	});
@@ -727,15 +716,14 @@ $(document).ready(function(){
 		}
 	});
 	
-	$('.duplicate_content_img').click(function(){
-		//$('.cmp-btn').click();
-	});
-	
 	//$('.keyword_input').click(function(){
 	function keywords_count(obj){
 		var word = $(obj).val();
+		show_desc = $(obj).parent().parent().parent().parent().next().find('.description_select :selected').val();
+		//console.log(show_desc);
 		if( word != '' ){
-			content = $(obj).parent().parent().parent().parent().parent().parent().find('p.compare').text();
+			content = $(obj).parent().parent().parent().parent().parent().parent().find('.'+show_desc).text();
+			//content = $(obj).parent().parent().parent().parent().parent().parent().find('p.compare').text();
 			reg = new RegExp(' '+word, 'gi')
 			count = 0;
 			while( (matches = reg.exec(content)) != null ){
