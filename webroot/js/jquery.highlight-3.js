@@ -2,8 +2,13 @@ $(document).ready(function() {
 var cmd = true;
     $('.cmp-btn').live('click',function() {
         if(cmd){
+			test_page = $(this).attr('test_page');
+			if( test_page )
+				var thisText = $(this).parent().parent().parent().parent().parent().parent().find('.compare').text();
+            else
+				var thisText = $(this).parent().next().text();
             $(this).parent().next().addClass('clicked');
-            var thisText = $(this).parent().next().text();
+            //var thisText = $(this).parent().next().text();
             thisText = thisText.split(' ');
             var twoWordArr = new Array();
             for(var i=0; i<thisText.length; i++){
