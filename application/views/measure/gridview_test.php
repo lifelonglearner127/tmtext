@@ -427,7 +427,6 @@ foreach ($same_pr as $ks => $vs) {
 					<select class="description_select" name="description">
 						<option <?php if($s_product_short_desc_count > 0) echo 'selected="selected"'?> value="short_desc_show" >Short</option>
 						<option <?php if($s_product_long_desc_count > 0 && $s_product_short_desc_count == 0) echo 'selected="selected"';?> value="long_desc_show">Long</option>
-						<option value="meta">Meta</option>
 					</select>
 					<div class="clear"></div>
 					<div>
