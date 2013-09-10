@@ -193,10 +193,10 @@ foreach ($same_pr as $ks => $vs) {
                             }
                             ?><span class='short_desc_wc' style="float:left;width: 100%;"></span></span>
                             <p class="heading_text">Words: <b><?php echo $s_product_short_desc_count; ?></b></p>
-                            <div class="p_seo<?php echo $row; ?>short seo_container">
+                            <div class="p_seo<?php echo $row; ?>short seo_container" style="clear:left;">
         <?php if (count($vs['seo']['short']) > 0) { ?>
                                    <div style="float: left;width: 100%;"> <p class="heading_text">SEO Keywords: </p>
-                                    <select class="keywords_select" name="analysis" style="float: right;margin-top: -20px;width: 95px;margin-right: 50px;">
+                                    <select class="keywords_select" name="analysis" style="float: right;width: 95px;margin-right: 50px;">
 						<option  value="title">Title</option>
 						<option value="custom">Custom</option>
 				    </select></div>
