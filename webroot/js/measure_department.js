@@ -157,6 +157,9 @@ $( function() {
                 } else {
 					$('#departmentDropdown .btn_caret_sign1').text('empty');
 				}
+				var stringNewData = '<table id="records" ><thead><tr><th style="width: 50px !important;word-wrap: break-word;" >Category()</th><th>Items</th><th>Category Description SEO</th><th>Words</th></tr></thead><tbody></tbody></table>';
+				$( '#dataTableDiv1' ).html(stringNewData);
+				$( '#records' ).dataTable({"bJQueryUI": true});
             });
 
 		});
@@ -191,6 +194,9 @@ $( function() {
                 } else {
 					$('#departmentDropdownSec .btn_caret_sign_sec1').text('empty');
 				}
+				var stringNewData = '<table id="recordSec" ><thead><tr><th style="width: 50px !important;word-wrap: break-word;" >Category()</th><th>Items</th><th>Category Description SEO</th><th>Words</th></tr></thead><tbody></tbody></table>';
+				$( '#dataTableDiv2' ).html(stringNewData);
+				$( '#recordSec' ).dataTable({"bJQueryUI": true});
             });
 
 		});

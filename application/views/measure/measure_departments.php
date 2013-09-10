@@ -14,7 +14,7 @@
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_pricing'); ?>">Pricing</a></li>
     </ul>
     <div class="tab-content">
-   
+	<div style="text-align: center;"><span style="font-weight: bold">Compare with: </span></div>
         <div class="row-fluid home_pages">
             <div class='span12 head_section'>
 
@@ -29,6 +29,19 @@
                                 display: inline;
                                 font-size: 18px;
                             }
+							#departmentDropdown{
+							    padding-left:31px;
+						    }
+							#departmentDropdownSec{
+							     margin-right:10px;
+							}
+							.DataTables_sort_icon  {
+											position: absolute;
+											right: -4px;
+											top: 4px;
+							}
+							
+							
                         </style>
                        <!-- <ul class="ml_10 pull-left" style="float:left">
                             <li class="temp_li"><a href="#" style="text-decoration: underline;">Your Watchlists</a></li>
@@ -40,7 +53,7 @@
                         <?php
                         if($this->ion_auth->is_admin($this->ion_auth->get_user_id())){
                             if(count($customers_list) > 0) { ?>
-                                <div id="hp_boot_drop" style="float:left;" class="btn-group <?php echo $dropup; ?> hp_boot_drop  mr_10">
+                                <div id="hp_boot_drop" style="float:left;margin-left:8px" class="btn-group <?php echo $dropup; ?> hp_boot_drop  mr_10">
                                     <button class="btn btn-danger btn_caret_sign" >Choose Site</button>
                                     <button class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
                                         <span class="caret"></span>
@@ -85,6 +98,8 @@
                                 display: inline;
                                 font-size: 18px;
                             }
+							#dataTableDiv1 .dataTables_filter input, #dataTableDiv2 .dataTables_filter input { width: 150px }
+							
                         </style>
 						
                         <?php
@@ -105,7 +120,7 @@
                         }
                         ?>
                     </div>
-					<span style="float: right;font-weight: bold;margin-right: 5px;margin-top: 5px;">Compare with: </span>
+					
 					
 					
 					 <!--Compare with END -->
