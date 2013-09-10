@@ -304,7 +304,7 @@ class Helpers {
     $orig = explode(" ", $clean_t);
     $overall_words_count = count($words);
     // ---- convert to array (end)
-    $balck_list= array('gives you','lets you', 'in a');
+    $balck_list= array('gives you','lets you', 'in a', 'on a', 'with', 'the', 'and the', 'to the', 'for');
     $res_stack = array();
     // $log = array();
     for($l = 6; $l >= 1; $l--) {
