@@ -12,14 +12,12 @@
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_products'); ?>">Products</a></li>
         <!--<li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_social'); ?>">Social</a></li>-->
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_pricing'); ?>">Pricing</a></li>
+        <li class='pull_right_navlink'><a href="javascript:void(0)" onclick="viewRecipientsList()">Configure Recipients</a></li>
     </ul>
 
 
 
     <div class="tab-content">
-
-
-
 
 
         <div style="text-align: center;"><span style="font-weight: bold">Compare with: </span></div>
@@ -217,9 +215,40 @@
                 </script-->
 
                 <script type="text/javascript" src="<?php echo base_url(); ?>js/measure_department.js"></script>
+                <script type='text/javascript' src="<?php echo base_url();?>js/ci_home_pages.js"></script>
             </div>
             <!-- End of table for results -->
             <div class="clear"></div>
         </div>
     </div>
 </div>
+
+<!-- MODALS (START) -->
+<div class="modal hide fade ci_hp_modals crawl_launch_panel" id='recipients_control_panel_modal'></div>
+
+<div class="modal hide fade ci_hp_modals" id='loader_emailsend_modal'>
+    <div class="modal-body">
+        <p><img src="<?php echo base_url();?>img/loader_scr.gif">&nbsp;&nbsp;&nbsp;Sending report. Please wait...</p>
+    </div>
+</div>
+
+<div class="modal hide fade ci_hp_modals" id='success_emailsend_modal'>
+    <div class="modal-body">
+        <p>Report sent.</p>
+    </div>
+</div>
+
+<div class="modal hide fade ci_hp_modals" id='configure_email_reports_success'>
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h3>Reports Configuration Saved</h3>
+    </div>
+    <div class="modal-body">
+        <p><span>Email configuration successfully saved!</span> <span>Use</span> <a href='javascript:void(0)' onclick='redirectToRecipientsListAfterAdd()' >'Recipients List'</a> <span>button to view results.</span></p>
+    </div>
+    <div class="modal-footer">
+        <a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
+    </div>
+</div>
+<!-- MODALS (END) -->
+
