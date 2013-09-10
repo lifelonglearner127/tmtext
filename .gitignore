@@ -23,4 +23,5 @@ license.txt
 /application/config/database.php
 /webroot/img
 /webroot/webshoots
+/webroot/emails_logos
 !/webroot/img/

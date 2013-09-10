@@ -876,9 +876,11 @@ class System extends MY_Controller {
     }
 
     public function upload_email_logo() {
+    	 $this->load->model('webshoots_model');
     	 $status = "";
 		   $msg = "";
-		   $file_element_name = 'avatar';
+		   $file_element_name = 'logoemail';
+		   $filename = "";
 		    
 		   if ($status != "error") {
 		      $config['upload_path'] = realpath(BASEPATH . "../webroot/emails_logos/");
@@ -894,13 +896,14 @@ class System extends MY_Controller {
 		      }
 		      else {
 		         $data = $this->upload->data();
-		         // echo $data['file_name'];
+		         $filename = $data['file_name'];
+		         $this->webshoots_model->updateHomePagesConfig('logo', $filename);
 		         $status = "success";
 		         $msg = "File successfully uploaded";
 		      }
 		      @unlink($_FILES[$file_element_name]);
 		   }
-		   $this->output->set_content_type('application/json')->set_output(json_encode(array('status' => $status, 'msg' => $msg)));
+		   $this->output->set_content_type('application/json')->set_output(json_encode(array('status' => $status, 'msg' => $msg, 'filename' => $filename)));
     }
 
 	public function upload_csv()
