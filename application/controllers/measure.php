@@ -13,6 +13,7 @@ class Measure extends MY_Controller {
         $this->load->helper('algoritm');
         $this->load->helper('comparebysimilarwordscount');
         $this->load->helper('baseurl');
+        $this->load->model('keywords_model');
         $this->data['title'] = 'Measure';
         $this->load->model('statistics_model');
 
@@ -2439,5 +2440,15 @@ public function gridview() {
         $this->output->set_content_type('application/json')
             ->set_output(json_encode($output));
     }
+    
+    public function addseo(){
+        $primary = $this->input->post('primary');
+        $secondary = $this->input->post('secondary');
+        $tertiary = $this->input->post('tertiary');
+        $imported_data_id = $this->input->post('imported_data_id');
+        
+        $this->keywords_model->insert($imported_data_id,$primary, $secondary,$tertiary);
+    }
+
 
 }

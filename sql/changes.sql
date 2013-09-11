@@ -643,3 +643,16 @@ CREATE TABLE IF NOT EXISTS `statistics_new` (
   `similar_products_competitors` text COLLATE utf8_unicode_ci NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
+
+#09/11 Max
+
+CREATE TABLE IF NOT EXISTS `keywords_new` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `imported_data_id` int(11) NOT NULL,
+  `primary` varchar(30) NOT NULL,
+  `secondary` varchar(50) NOT NULL,
+  `tertiary` varchar(60) NOT NULL,
+  `revision` int(11) NOT NULL,
+  `create_date` datetime NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;

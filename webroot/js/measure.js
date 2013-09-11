@@ -4,6 +4,7 @@ var status_results;
 var rows_count = 1;
 var editorGridViewBaseUrl = base_url + 'index.php/measure/gridview';
 var editorTableViewBaseUrl = base_url + 'index.php/measure/tableview';
+var add_seo = base_url + 'index.php/measure/addseo';
 // ---- search string cookie (auto mode search launcher) (start)
 // var auto_mode_search_str = "";
 // var cookie_search_str = $.cookie('com_intel_search_str');

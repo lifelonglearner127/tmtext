@@ -206,7 +206,7 @@ foreach ($same_pr as $ks => $vs) {
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
-                                                        <input class="keyword_input" imported_data_id="197" name="keyword1" keyword_num="1" type="text" value="">
+                                                        <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword1" keyword_num="1" type="text" value="">
                                                         <span id="keyword1_density"></span>
                                                     </span>
                                             </span>
@@ -218,7 +218,7 @@ foreach ($same_pr as $ks => $vs) {
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
-                                                        <input class="keyword_input" imported_data_id="197" name="keyword2" keyword_num="2" type="text" value="">
+                                                        <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword2" keyword_num="2" type="text" value="">
                                                         <span id="keyword2_density"></span>
                                                     </span>
                                             </span>
@@ -230,7 +230,7 @@ foreach ($same_pr as $ks => $vs) {
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
-                                                        <input class="keyword_input" imported_data_id="197" name="keyword3" keyword_num="2" type="text" value="">
+                                                        <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword3" keyword_num="2" type="text" value="">
                                                         <span id="keyword3_density"></span>
                                                     </span>
                                             </span>
@@ -300,7 +300,7 @@ foreach ($same_pr as $ks => $vs) {
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
-                                                        <input class="keyword_input" imported_data_id="197" name="keyword1" keyword_num="1" type="text" value="">
+                                                        <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword1" keyword_num="1" type="text" value="">
                                                     </span>
                                             </span>
                                         </span>
@@ -311,7 +311,7 @@ foreach ($same_pr as $ks => $vs) {
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
-                                                        <input class="keyword_input" imported_data_id="197" name="keyword2" keyword_num="2" type="text" value="">
+                                                        <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword2" keyword_num="2" type="text" value="">
                                                     </span>
                                             </span>
                                         </span>
@@ -322,7 +322,7 @@ foreach ($same_pr as $ks => $vs) {
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
-                                                        <input class="keyword_input" imported_data_id="197" name="keyword3" keyword_num="2" type="text" value="">
+                                                        <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword3" keyword_num="2" type="text" value="">
                                                     </span>
                                             </span>
                                         </span>
@@ -401,7 +401,7 @@ foreach ($same_pr as $ks => $vs) {
 
                     </div>    
                 </div>
-                <p style="color: rgb(117, 114, 114);">Id: <?php echo $vs['imported_data_id']; ?></p>
+                <p  style="color: rgb(117, 114, 114);">Id: <span class="imported_data_id"><?php echo $vs['imported_data_id']; ?></span></p>
 
                 <!--            <div class='grid_seo'>
                                 <ul>
@@ -640,6 +640,21 @@ if (($i - 1) % 3 != 0) {
          setTimeout(function(){ gridKeywordDensity();}, '1000');
     });
   });
+  
+  $('.primary input').keydown(function (e){
+    if(e.keyCode == '13'){
+        
+    var primary=$(this).closest('.primary').find("input[name='keyword1']").val();
+    var secondary=$(this).closest('.primary').find("input[name='keyword2']").val();
+    var tertiary=$(this).closest('.primary').find("input[name='keyword3']").val();
+    var imported_data_id= $(this).closest('.primary').find("input[name='keyword1']").attr('data-value');
+       
+    $.post(add_seo, {primary: primary, secondary: secondary, tertiary: tertiary, imported_data_id: imported_data_id}, 'json').done(function(data) {
+    
+    });
+    }
+  });
+  
 
 </script>
 
