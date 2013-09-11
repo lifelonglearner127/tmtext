@@ -61,31 +61,35 @@
 				<h3>Home Pages:</h3>
 				<div class="row-fluid">
 					<div class='email_rep_upload_sec'>
-						<img src="<?php echo base_url(); ?>emails_logos/<?php echo $email_report_config_logo ?>">
+						<?php 
+							$file = realpath(BASEPATH . "../webroot/emails_logos/$email_report_config_logo");
+			                $file_size = filesize($file);
+			                if($file_size === false) {
+			                	$email_report_config_logo = 'default_logo.jpg';
+			                }
+						?>
+						<img id='fileupload_emailrep_logo_holder' src="<?php echo base_url(); ?>emails_logos/<?php echo $email_report_config_logo ?>">
 						<span id='fileupload_emailrep_logo' class="btn btn-success fileinput-button fileinput-button-elogo">Upload<i class="icon-plus icon-white"></i></span>
-						<!-- <span class="btn btn-success fileinput-button fileinput-button-elogo">Upload<i class="icon-plus icon-white"></i><input id="fileupload_emailrep_logo" type="file" name="file"></span> -->
 						<script>
 						$(function () {
 							var url = '<?php echo site_url('system/upload_email_logo');?>';
 							var em_logo_btn = $("#fileupload_emailrep_logo");
 						    new AjaxUpload(em_logo_btn, {
 						      action: url,
-						      name: 'avatar',
+						      name: 'logoemail',
+						      responseType: 'json',
 						      onSubmit: function() {
 						      	console.log('email logo upload start');
 						      },
 						      onComplete: function(file, response) {
-						      	console.log(file);
 						      	console.log(response);
+						      	if(response.filename == "") {
+						      		alert('Internal Server Error (check out console)');
+						      	} else {
+						      		$("#fileupload_emailrep_logo_holder").attr('src', base_url + "emails_logos/" + response.filename);
+						      	} 
 						      }
 						    });
-						    // $('#fileupload_emailrep_logo').fileupload({
-						    //     url: url,
-						    //     dataType: 'json',
-						    //     done: function (e, data) {
-						    //         console.log(data);
-						    //     }
-						    // });
 						});
 						</script>
 					</div>

@@ -158,6 +158,7 @@ class Measure extends MY_Controller {
         $uid = $this->input->post('uid');
         $c_week = $this->input->post('c_week');
         $c_year = $this->input->post('c_year');
+        $email_logo = $this->webshoots_model->getEmailReportConfig('logo');
         $screens = $this->webshoots_model->getDistinctEmailScreens($c_week, $c_year, $uid);
         // ==== sort assoc by pos (start)
         if(count($screens) > 0) {
@@ -186,6 +187,7 @@ class Measure extends MY_Controller {
             $this->email->subject("$email_report_sender_name - Home Pages Report");
             $data_et['day'] = $day;
             $data_et['screens'] = $screens;
+            $data_et['email_logo'] = $email_logo;
             $msg = $this->load->view('measure/rec_report_email_template', $data_et, true);
             $this->email->message($msg);
             // --- attachments (start)
@@ -252,6 +254,7 @@ class Measure extends MY_Controller {
         $this->email->subject("$email_report_sender_name - Home Pages Report");
         $data_et['day'] = $day;
         $data_et['screens'] = $screens;
+        $data_et['email_logo'] = $this->webshoots_model->getEmailReportConfig('logo');
         $msg = $this->load->view('measure/rec_report_email_template', $data_et, true);
         $this->email->message($msg);
         // --- attachments (start)

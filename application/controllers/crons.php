@@ -190,8 +190,9 @@ class Crons extends MY_Controller {
         $current_day = lcfirst(date('l', time()));
         $c_week = date("W", time());
         $c_year = date("Y", time());
+        $data_et['email_logo'] = $email_logo;
         $recs = $this->webshoots_model->get_recipients_list();
-
+        $email_logo = $this->webshoots_model->getEmailReportConfig('logo');
         $email_report_sender_name = $this->settings_model->get_general_setting('site_name');
         if($email_report_sender_name === false) $email_report_sender_name = "Content Solutions - Home Pages Report";
 
@@ -230,6 +231,7 @@ class Crons extends MY_Controller {
                 $this->email->subject("$email_report_sender_name - Home Pages Report");
                 $data_et['day'] = $day;
                 $data_et['screens'] = $screens;
+                $data_et['email_logo'] = $email_logo;
                 $msg = $this->load->view('measure/rec_report_email_template', $data_et, true);
                 // die($msg);
                 $this->email->message($msg);

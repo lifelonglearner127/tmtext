@@ -219,12 +219,29 @@
                 }
             });
 
+            $("#department_snapshot").click(function(){
+                $("#loading_crawl_snap_modal").modal('show');
+                $.post(base_url + 'index.php/system/system_sites_department_snap', {
+                    'id': $('select[name="department"]').find('option:selected').val()
+                }, function(data){
+                    $("#loading_crawl_snap_modal").modal('hide');
+                    console.log(data);
+                    if(data['status']) {
+                        showSnap("<img src='" + data['snap'] + "'>");
+                    } else {
+                        showSnap("<p>" + data['msg'] + "</p>");
+                    }
+                });
+                return false;
+            });
+
             $("#category_snapshot").click(function(){
                 $("#loading_crawl_snap_modal").modal('show');
                 $.post(base_url + 'index.php/system/system_sites_category_snap', {
                     'id': $('select[name="category"]').find('option:selected').val()
                 }, function(data){
                     $("#loading_crawl_snap_modal").modal('hide');
+                    console.log(data);
                     if(data['status']) {
                         showSnap("<img src='" + data['snap'] + "'>");
                     } else {
@@ -435,6 +452,7 @@
 
                     <button id="delete_department" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
                     <button class="btn btn-danger" onclick="doconfirm('departments');return false;"><i class="icon-white icon-ok"></i>&nbsp;Delete All</button>
+                    <button id="department_snapshot" class="btn btn-success"><i class="icon-white icon-ok"></i>&nbsp;Snapshot</button>
                 </div>
                 <div class="row-fluid mt_10">
                     <label>Categories:</label>

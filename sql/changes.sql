@@ -15,8 +15,24 @@ ALTER TABLE  `site_categories` CHANGE  `user_keyword_description_density`  `user
 ALTER TABLE  `department_members` CHANGE  `user_keyword_description_count`  `user_keyword_description_count` VARCHAR( 255 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL DEFAULT  '0';
 ALTER TABLE  `department_members` CHANGE  `user_keyword_description_density`  `user_keyword_description_density` DOUBLE NOT NULL DEFAULT  '0';
 
-ALTER TABLE  `site_categories` ADD  `description_title` VARCHAR( 255 ) NOT NULL ,
+ALTER TABLE  `site_categories` ADD  `description_title` VARCHAR( 255 ) NOT NULL ;
 
+
+# 09/11 Ilya
+CREATE TABLE IF NOT EXISTS `site_departments_snaps` (
+  `id` INT NOT NULL ,
+  `dep_id` INT NULL DEFAULT NULL ,
+  `snap_name` VARCHAR(128) NULL DEFAULT NULL ,
+  `snap_path` VARCHAR(512) NULL DEFAULT NULL ,
+  `snap_dir` VARCHAR(512) NULL DEFAULT NULL ,
+  `http_status` INT NULL DEFAULT NULL ,
+  `stamp` VARCHAR(45) NULL DEFAULT NULL ,
+  PRIMARY KEY (`id`) 
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1;
+
+#09/10 Tatiana
+ALTER TABLE `statistics_new` DROP `product_name`;
+ALTER TABLE `statistics_new` DROP `url`;
 
 # 09/07 Tatiana
 ALTER TABLE `statistics_new` ADD `product_name` VARCHAR( 255 ) NOT NULL AFTER `research_data_id`;
