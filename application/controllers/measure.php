@@ -1615,7 +1615,7 @@ public function gridview() {
                  //echo 'bbb'.strtolower($this->sites_model->get_name_by_url($this->get_base_url($vs['url']))).'aaaaaaaaa';
                 
                 $same_pr[$ks]['customer']=  strtolower($this->sites_model->get_name_by_url($same_pr[$ks]['customer']));
-                $same_pr[$ks]['seo']['short'] = $this->helpers-> measure_analyzer_start_v2_product_name($vs['product_name'],preg_replace('/\s+/', ' ', $vs['description']));
+                $same_pr[$ks]['seo']['short'] = $this->helpers->measure_analyzer_start_v2_product_name($vs['product_name'],preg_replace('/\s+/', ' ', $vs['description']));
                 $same_pr[$ks]['seo']['long'] = $this->helpers->measure_analyzer_start_v2_product_name($vs['product_name'],preg_replace('/\s+/', ' ', $vs['long_description']));
 
                 // three last prices
@@ -1787,8 +1787,8 @@ public function gridview() {
                   if($res=$this->statistics_model->getbyimpid($vs['imported_data_id'])){
                       $same_pr[$ks]['short_description_wc']=$res['short_description_wc'];
                       $same_pr[$ks]['long_description_wc']= $res['long_description_wc']; 
-                      $same_pr[$ks]['seo']['long']= $res['short_seo_phrases']!='None'? unserialize($res['short_seo_phrases']):array();
-                      $same_pr[$ks]['seo']['long']= $res['long_seo_phrases']!='None'?unserialize($res['long_seo_phrases']):array();
+                      //$same_pr[$ks]['seo']['long']= $res['short_seo_phrases']!='None'? unserialize($res['short_seo_phrases']):array();
+                      //$same_pr[$ks]['seo']['long']= $res['long_seo_phrases']!='None'?unserialize($res['long_seo_phrases']):array();
                                                   
                   }
             }
