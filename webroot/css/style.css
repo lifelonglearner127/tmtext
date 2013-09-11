@@ -1850,7 +1850,7 @@ select#sites option{
 }
 .heading_text{
     margin:0px;
-    float: left;
+    /*float: left;*/
     margin-right: 10px;
 }
 

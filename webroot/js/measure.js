@@ -1086,45 +1086,34 @@ function fixSeoHeights() {
             var section = thisEl.find('.grid_se_section');
             if (section.length > 1) {
                 $.each(selectorss, function(k1, v1) {
-
-                    
+                   
+                   var max_height=0;
                     var heights = thisEl.find(v1).map(function() {
                         if ($(this).find('.keywords_select').val() === 'custom') {
                             
-                            if (new_height_[v1] == 0) {
-                                height_new=heights;
-                          
-                                new_height_[v1] = 50;
-                                seo_custom_height = parseInt($(this).height()) + 50;
-                                return seo_custom_height;
-                            }
+                           
+                            $(this).height('auto');
+                            max_height=$(this).height();
+                             new_height_[v1]=1;
 
                         } else if ($(this).find('.keywords_select').val() === 'title') {
-                           
-//                            if (new_height_[v1] !== 0) {
-//                                console.log("ccc");
-//                                 console.log("seo_custom_height:"+new_height_[v1]);
-//                                $.each(heights, function(k,v){
-//                                    
-//                                    if(v==seo_custom_height){
-//                                        
-//                                        delete heights[k];
-//                                    }
-//                                });
-//                                console.log(heights);
-//                                new_height_[v1] = 0;
-//                                return seo_custom_height-50;
-//
-//                            }
+                            
+                            $(this).height('auto');
+                             max_height=$(this).height();
                         }
                         return $(this).height();
                     }).get();
                     
-                    console.log("heights max=");
+                   if( max_height !== 0){
+                       thisEl.find(v1).height(max_height);
+                   }else{
+                                    
+                       thisEl.find(v1).height(Array.max(heights));
+                   }
+                    
+                    console.log("heights after  =");
                     console.log(heights);
-                    console.log(Array.max(heights));
-                    counter++;
-                    thisEl.find(v1).height(Array.max(heights));
+                    
                 });
                 
                
@@ -1133,7 +1122,7 @@ function fixSeoHeights() {
             }
         });
     }
-    console.log("counter="+counter);
+ 
 
 }
 
