@@ -1630,6 +1630,11 @@ public function gridview() {
             
 				$keywords = $this->imported_data_parsed_model->getKeywordsBy_imported_data_id( $imported_data_id );
 				$same_pr[$ks]['seo']['keyword'] = $keywords;
+				
+				//$key_description = $this->imported_data_parsed_model->getByImId($imported_data_id);
+				//$same_pr[$ks]['seo']['key'] = $key_description;
+				//echo "<pre>";
+				//print_r($same_pr);
 
             }
 
