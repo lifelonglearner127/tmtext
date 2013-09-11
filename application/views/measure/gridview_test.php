@@ -122,7 +122,7 @@ foreach ($same_pr as $ks => $vs) {
                     <img class="assess_image product_image" src="<?php echo base_url() ?>/img/assess_grid/product.png">
                     <p style="min-height: 38px;" class='short_product_name name_bold'><?php echo $vs['product_name']; ?></p>
                 </div>
-			<div class="p_url">
+				<div class="p_url">
                     <?php if ($ks > 0 && $mismatch_button==true) { ?>
                         <input data-value="<?php echo $vs['imported_data_id']; ?>"class="mismatch_image" style="float: right; margin-top: 0;" type="button" value="" title="Report mismatch">
                     <?php }
@@ -131,6 +131,7 @@ foreach ($same_pr as $ks => $vs) {
                     <img class="assess_image product_image" src="<?php echo base_url() ?>/img/assess_grid/link.png">
                     <p class='short_product_name ellipsis'><a target="_blank" href="<?php echo $vs['url']; ?>"><?php echo $vs['url']; ?></a></p>
                 </div>
+                <div class="clear"></div>
                 <div class="p_price1">
                     <?php
                     if (!empty($vs['three_last_prices'])) {
@@ -651,6 +652,8 @@ $(document).ready(function(){
 		$(this).parent().prev('.primary').find('.keyword_input').each(function(){
 			keywords_count( $(this) );
 		});
+		
+		//$('.keywords_select').trigger('change');
 	});
 	
 	function check_description(){
@@ -730,7 +733,7 @@ $(document).ready(function(){
 			reg = new RegExp(' '+word, 'gi')
 			count = 0;
 			while( (matches = reg.exec(content)) != null ){
-				// var msg = "Done " + matches[0] + ".  ";
+				//var msg = "Done " + matches[0] + ".  ";
 				//msg += "next from " + reg.lastIndex;
 				//alert(msg);
 				count++;
