@@ -196,7 +196,7 @@ foreach ($same_pr as $ks => $vs) {
                             <div class="p_seo<?php echo $row; ?>short seo_container" style="clear:left;">
         <?php if (count($vs['seo']['short']) > 0) { ?>
                                    <div style="float: left;width: 100%;"> <p class="heading_text">SEO Keywords: </p>
-                                    <select class="keywords_select" name="analysis" style="float: right;width: 95px;margin-right: 50px;">
+                                    <select class="keywords_select" name="analysis" style="margin-top: -20px;float: right;width: 95px;margin-right: 50px;">
 						<option  value="title">Title</option>
 						<option value="custom">Custom</option>
 				    </select></div>
@@ -290,7 +290,8 @@ foreach ($same_pr as $ks => $vs) {
                                    <select class="keywords_select" name="analysis" style="float: right;margin-top: -20px;width: 95px;margin-right: 50px;">
 						<option  value="title">Title</option>
 						<option value="custom">Custom</option>
-				   </select></div>
+				   </select>
+                                   </div>
                                 <?php if ($s_product_description == '') { ?>
                                    <div class="primary" style="height: 100%;width: 100%;">
                                     <div class=""><span class="primary_name">Primary: </span>
@@ -647,4 +648,9 @@ if (($i - 1) % 3 != 0) {
         margin-top: 0px !important;
         width: 120px !important;
     }
+    .primary{
+        height: auto !important;
+        
+    }
+    
 </style>

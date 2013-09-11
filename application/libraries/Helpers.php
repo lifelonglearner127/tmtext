@@ -338,7 +338,7 @@ class Helpers {
                     $res_stack[] = $mid;
                 }
             }else{
-                if($r > 1 && count(explode(" ", trim($w))) > 1) {
+                if($r > 1 && count(explode(" ", trim($w))) > 1 && !in_array(trim($w),$balck_list)) {
                     $mid = array(
                         "ph" => trim($w),
                         "count" => $r,
@@ -386,7 +386,7 @@ class Helpers {
             if(!$isset){
                 $r = $this->keywords_appearence_count(strtolower($text), strtolower($val));
                 //if($r > 1 && preg_match('/'.strtolower($val).'/',strtolower($product_name )) && strlen($val)>2) {
-                 if($r > 1 && strlen($val)>2) {  
+                 if($r > 1 && strlen($val)>2 && !in_array(trim($val),$balck_list) ) {  
                     $mid = array(
                         "ph" => trim($val),
                         "count" => $r,
