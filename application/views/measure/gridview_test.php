@@ -437,9 +437,14 @@ foreach ($same_pr as $ks => $vs) {
 				
 				<div class="description">
 					<span class="short_product_name keywords name_bold description_label">Description:</span>
+					
 					<select class="description_select" name="description">
 						<option <?php if($s_product_short_desc_count > 0) echo 'selected="selected"'?> value="short_desc_show" >Short</option>
 						<option <?php if($s_product_long_desc_count > 0 && $s_product_short_desc_count == 0) echo 'selected="selected"';?> value="long_desc_show">Long</option>
+						<?php
+						if( $vs['parsed_meta']['Description'] )
+							echo "<option value='meta_desc_show'>Meta</option>";
+						?>
 					</select>
 					<div class="clear"></div>
 					<div>
@@ -452,6 +457,10 @@ foreach ($same_pr as $ks => $vs) {
 						} 
 						if( $s_product_long_desc_count > 0 ) { //echo '<br/>long = ' . $s_product_long_desc_count;?>
 							<p class="long_desc_show compare" <?php if($s_product_short_desc_count == 0) echo 'style="display: block;"';?>><?php echo $s_product_long_description ?></p>
+						<?php
+						}
+						if( $vs['parsed_meta']['Description'] ){ ?>
+							<p class="meta_desc_show compare"><?php echo $vs['parsed_meta']['Description'] ?></p>
 						<?php
 						}
 						if( $s_product_long_desc_count == 0 && $s_product_short_desc_count == 0 ) { ?>
@@ -634,17 +643,11 @@ selectedCustomer();
 $(document).ready(function(){
 	$('.description_select').change(function(){
 		show = $(this).val();
-		if( show == 'long_desc_show' ){
-			/*$(this).parent().find('.short_desc_show').fadeOut();
-			$(this).parent().find('.long_desc_show').fadeIn();*/
-			$(this).parent().find('.short_desc_show').hide();
-			$(this).parent().find('.long_desc_show').show();
-		}else if( show == 'short_desc_show' ){
-			/*$(this).parent().find('.long_desc_show').fadeOut();
-			$(this).parent().find('.short_desc_show').fadeIn();*/
-			$(this).parent().find('.long_desc_show').hide();
-			$(this).parent().find('.short_desc_show').show();
-		}
+		$(this).parent().find('p.compare').each(function(){
+			$(this).hide();
+		});
+		$(this).parent().find('p.'+show).show();
+		
 		$(this).parent().prev('.primary').find('.keyword_input').each(function(){
 			keywords_count( $(this) );
 		});

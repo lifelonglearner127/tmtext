@@ -2005,7 +2005,7 @@ span.highlight { background-color:yellow;}
 
 .percent_character{display:none}
 
-.description .long_desc_show{display: none;}
+.description .long_desc_show, .description .meta_desc_show{display: none;}
 
 .c_content select{
 	-webkit-border-radius: 0;

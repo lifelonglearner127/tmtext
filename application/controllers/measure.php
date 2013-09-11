@@ -1635,7 +1635,7 @@ public function gridview() {
 				$same_pr[$ks]['seo']['keyword'] = $keywords;
 				
 				$parsed_meta = $this->imported_data_parsed_model->getByImId($imported_data_id);
-				//$same_pr[$ks]['parsed_meta'] = $parsed_meta['parsed_meta'];
+				$same_pr[$ks]['parsed_meta'] = $parsed_meta['parsed_meta'];
 				
             }
 
