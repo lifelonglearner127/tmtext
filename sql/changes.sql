@@ -1,3 +1,6 @@
+# 09/11 Tatian
+ALTER TABLE `site_categories` ADD `nr_products` INT NOT NULL AFTER `department_members_id` ;
+
 # 09/10 Viktor
 
 ALTER TABLE  `department_members` ADD  `description_words` INT( 11 ) NOT NULL ,
