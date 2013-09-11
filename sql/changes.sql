@@ -1,4 +1,4 @@
-# 09/11 Tatian
+# 09/11 Tatiana
 ALTER TABLE `site_categories` ADD `nr_products` INT NOT NULL AFTER `department_members_id` ;
 
 # 09/10 Viktor
