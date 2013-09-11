@@ -71,6 +71,7 @@
                             for(var i=0; i<data.length; i++){
                                 $("select[name='department']").append("<option value='"+data[i].id+"'>"+data[i].text+"</option>");
                             }
+                            standaloneDepartmentScreenDetector();
                         }
                     });
                     $.post(base_url + 'index.php/system/getCategoriesBySiteId', {'site_id': $(this).data('value'),
@@ -80,6 +81,7 @@
                             for(var i=0; i<data.length; i++){
                                 $("select[name='category']").append("<option value='"+data[i].id+"'>"+data[i].text+"</option>");
                             }
+                            standaloneCatScreenDetector();
                         }
                     });
                     $.post(base_url + 'index.php/system/getBestSellersBySiteId', {'site_id': $(this).data('value')}, function(data) {
@@ -255,6 +257,10 @@
                 $("#preview_crawl_snap_modal .snap_holder").html(data);
             }
 
+            $("select#category_sites_frow").change(function() {
+                standaloneCatScreenDetector();
+            });
+
             $("select[name='department']").change(function(){
                 if($(this).attr('id') =='second_department'){
                     var select_opt = $(this).val();
@@ -273,6 +279,8 @@
                 }
                 $.post(base_url + 'index.php/system/getCategoriesBySiteId', {'site_id': $("#sites .btn_caret_sign").attr('id'),
                     'department_id': $(this).val()}, function(data) {
+                    departmentScreenDetector(data.snap_data); // ===== monitor icon and screenshot availability decision
+                    var data = data.result;
                     $("select[name='category']").empty();
                     if(data.length > 0 ){
                         for(var i=0; i<data.length; i++){
@@ -281,6 +289,57 @@
                     }
                 });
             });
+            
+            function departmentScreenDetector(snap_data) {
+                if(snap_data.dep_id !== "") {
+                    $("#dep_monitor").fadeOut('medium', function() {
+                        $("#dep_monitor").fadeIn('medium');
+                    });
+                    $("#dep_monitor").on('mouseover', function() { departmentScreenDetectorMouseOver(snap_data); } );
+                } else {
+                    $("#dep_monitor").hide();
+                }
+            }
+
+            function departmentScreenDetectorMouseOver(snap_data) {
+                if(snap_data.img_av_status) {
+                    showSnap("<img src='" + snap_data['snap_path'] + "'>");
+                } else {
+                    showSnap("<p>Snapshot image not exists on server</p>");
+                }
+            }
+
+            function standaloneDepartmentScreenDetector() {
+                var dep_id = $("select[name='department'] > option:selected").val();
+                $.post(base_url + 'index.php/system/scanForDepartmentSnap', {'dep_id': dep_id}, function(data) {
+                    if(data.dep_id !== "") {
+                        $("#dep_monitor").fadeOut('medium', function() {
+                            $("#dep_monitor").fadeIn('medium');
+                        });
+                        $("#dep_monitor").on('mouseover', function() { departmentScreenDetectorMouseOver(data); } );
+                    } else {
+                        $("#dep_monitor").hide();
+                    }
+                });
+            }
+
+            function standaloneCatScreenDetector() {
+                var cat_id = $("select#category_sites_frow > option:selected").val();
+                $.post(base_url + 'index.php/system/scanForCatSnap', {'cat_id': cat_id}, function(data) {
+                    if(data.cat_id !== "") {
+                        $("#cat_monitor").fadeOut('medium', function() {
+                            $("#cat_monitor").fadeIn('medium');
+                        });
+                        $("#cat_monitor").on('mouseover', function() { departmentScreenDetectorMouseOver(data); } );
+                    } else {
+                        $("#cat_monitor").hide();
+                    }
+                });
+            }
+
+            standaloneDepartmentScreenDetector();
+            standaloneCatScreenDetector();
+            
         </script>
 
 
@@ -404,6 +463,7 @@
                 <div class="row-fluid">
                     <label>Department:</label>
                     <?php  echo form_dropdown('department', $departmens_list, null, 'class="inline_block lh_30 w_375 mb_reset" id="second_department"'); ?>
+                    <img class='monitor_icon hidden' id='dep_monitor' src="<?php echo base_url() ?>/img/monitor.png">
                     <button class="btn btn-success" id="csv_import_create_batch" style="display:none"><i class="icon-white icon-ok"></i>&nbsp;Import</button>
 								<span class="btn btn-success fileinput-button ml_10">
 									Upload
@@ -458,12 +518,13 @@
                     <label>Categories:</label>
                     <?php // echo form_dropdown('category', $category_list ); ?>
                     <?php if(count($category_list) > 0) { ?>
-                        <select name='category'>
+                        <select id='category_sites_frow' name='category'>
                         <?php foreach($category_list as $kc => $kv) { ?>
                             <option value="<?php echo $kv['id']; ?>"><?php echo $kv['text']; ?></option>
                         <?php } ?>
                         </select>
                     <?php } ?>
+                    <img class='monitor_icon hidden mr10' id='cat_monitor' src="<?php echo base_url() ?>/img/monitor.png">
                     <button id="delete_category" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
                     <button id="delete_all_categories" class="btn btn-danger" onclick="doconfirm('categories');return false;"><i class="icon-white icon-ok"></i>&nbsp;Delete All</button>
                     <button id="category_snapshot" class="btn btn-success"><i class="icon-white icon-ok"></i>&nbsp;Snapshot</button>

@@ -976,15 +976,39 @@ class System extends MY_Controller {
         $this->render();
     }
 
+    public function scanForCatSnap() {
+    	$this->load->model('site_categories_model');
+    	$cat_id = $this->input->post('cat_id');
+    	$snap_data = $this->site_categories_model->getLatestCatScreen($cat_id);
+    	$this->output->set_content_type('application/json')->set_output(json_encode($snap_data));
+    }
+
+    public function scanForDepartmentSnap() {
+    	$this->load->model('department_members_model');
+    	$dep_id = $this->input->post('dep_id');
+    	$snap_data = $this->department_members_model->getLatestDepartmentScreen($dep_id);
+    	$this->output->set_content_type('application/json')->set_output(json_encode($snap_data));
+    }
+
     public function getCategoriesBySiteId()
     {
         $this->load->model('site_categories_model');
+        $this->load->model('department_members_model');
         $department_id = '';
+        $snap_data = null;
         if($this->input->post('department_id') != ''){
             $department_id = $this->input->post('department_id');
+            $snap_data = $this->department_members_model->getLatestDepartmentScreen($department_id);
         }
         $result = $this->site_categories_model->getAllBySiteId($this->input->post('site_id'), $department_id);
-        $this->output->set_content_type('application/json')->set_output(json_encode($result));
+        // $this->output->set_content_type('application/json')->set_output(json_encode($result)); // === OLD STUFF 
+        // === NEW STUFF (START)
+        $res_data = array(
+        	'result' => $result,
+        	'snap_data' => $snap_data
+        );
+        $this->output->set_content_type('application/json')->set_output(json_encode($res_data));
+        // === NEW STUFF (END)
     }
 
     public function getBestSellersBySiteId(){

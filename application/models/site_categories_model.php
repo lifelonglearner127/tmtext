@@ -26,6 +26,37 @@ class Site_categories_model extends CI_Model {
         return $query->result();
     }
 
+    function getLatestCatScreen($cat_id) {
+        $res_data = array(
+            'cat_id' => '',
+            'snap_name' => '',
+            'snap_path' => '',
+            'snap_dir' => '',
+            'http_status' => '',
+            'stamp' => '',
+            'img_av_status' => false
+        );
+        $check_obj = array(
+            'cat_id' => $cat_id
+        );
+        $query = $this->db->where($check_obj)->order_by('stamp', 'desc')->limit(1)->get($this->tables['site_categories_snaps']);
+        $query_res = $query->result();
+        if(count($query_res) > 0) {
+            $r = $query_res[0];
+            $fs = filesize($r->snap_dir);
+            $res_data['cat_id'] = $r->cat_id;
+            $res_data['snap_name'] = $r->snap_name;
+            $res_data['snap_path'] = $r->snap_path;
+            $res_data['snap_dir'] = $r->snap_dir;
+            $res_data['http_status'] = $r->http_status;
+            $res_data['stamp'] = $r->stamp;
+            if($fs !== false || $fs > 10000) {
+                $res_data['img_av_status'] = true;
+            }
+        }
+        return $res_data;
+    }
+
     function insertSiteCategorySnap($cat_id, $snap_name, $snap_path, $snap_dir, $http_status) {
         $insert_object = array(
             'cat_id' => $cat_id,

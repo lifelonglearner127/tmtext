@@ -1,3 +1,17 @@
+#second_department {
+    width: 300px !important;
+}
+.monitor_icon {
+    margin-left: 10px;
+    cursor: pointer;
+}
+.monitor_icon.hidden {
+    display: none;
+}
+.monitor_icon.mr10 {
+    margin-right: 10px;
+}
+
 .email_rep_upload_sec {
     margin-bottom: 15px;
 }
