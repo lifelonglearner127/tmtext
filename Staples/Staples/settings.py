@@ -11,6 +11,7 @@ BOT_NAME = 'Staples'
 SPIDER_MODULES = ['Staples.spiders']
 NEWSPIDER_MODULE = 'Staples.spiders'
 ITEM_PIPELINES = ['Staples.pipelines.StaplesPipeline']
+DUPEFILTER_CLASS = 'scrapy.dupefilter.BaseDupeFilter'
 
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent

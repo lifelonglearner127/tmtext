@@ -8,8 +8,11 @@ import json
 class StaplesPipeline(object):
 	def __init__(self):
 		self.file = open('staples_categories.jl', 'wb')
+		self.items = []
 	
 	def process_item(self, item, spider):
-		line = json.dumps(dict(item)) + "\n"
-		self.file.write(line)
-		return item
+		if item['url'] not in self.items:
+			self.items.append(item['url'])
+			line = json.dumps(dict(item)) + "\n"
+			self.file.write(line)
+			return item

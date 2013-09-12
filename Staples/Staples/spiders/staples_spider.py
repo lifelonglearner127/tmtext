@@ -147,8 +147,8 @@ class StaplesSpider(BaseSpider):
 			m = re.findall("[0-9]+\s*items", nritems_holder[0])
 			if m:
 				item['nr_products'] = int("".join(re.findall("[0-9]+", m[0])))
-			else:
-				print "NOT MATCH ", nritems_holder[0]
+			# else:
+			# 	print "NOT MATCH ", nritems_holder[0]
 
 		# extract description, if any
 		description_texts = hxs.select("//h2[@class='seo short']//text() | //h2[@class='seo short long']//text()").extract()
@@ -166,7 +166,7 @@ class StaplesSpider(BaseSpider):
 
 			else:
 				# if no description is found
-				print 'desc_holder but no desc_text ', response.URL
+				#print 'desc_holder but no desc_text ', response.URL
 				item['description_wc'] = 0
 		else:
 			item['description_wc'] = 0
