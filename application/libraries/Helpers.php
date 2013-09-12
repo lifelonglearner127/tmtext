@@ -330,7 +330,7 @@ class Helpers {
             // --- debug logger (end)
             $WW=trim(strtolower($w));
             if(!preg_match("/$WW/",  strtolower($product_name))){
-                $phrases_array = explode(" ", trim($w));
+                $phrases_array = explode(" ", trim(strtolower($w)));
                 if($r > 3 && count($phrases_array) > 1 && !in_array($WW,$balck_list)&& (count(array_intersect($phrases_array, $balck_list_words))!= count($phrases_array))) {
                     $mid = array(
                         "ph" => trim($w),
@@ -340,7 +340,7 @@ class Helpers {
                     $res_stack[] = $mid;
                 }
             }else{
-                 $phrases_array = explode(" ", trim($w));
+                 $phrases_array = explode(" ", trim(strtolower($w)));
                 if($r > 1 && count( $phrases_array) > 1 && !in_array(trim($w),$balck_list) && (count(array_intersect($phrases_array, $balck_list_words))!= count($phrases_array))) {
                     $mid = array(
                         "ph" => trim($w),
@@ -389,7 +389,7 @@ class Helpers {
             if(!$isset){
                 $r = $this->keywords_appearence_count(strtolower($text), strtolower($val));
                 //if($r > 1 && preg_match('/'.strtolower($val).'/',strtolower($product_name )) && strlen($val)>2) {
-                 if($r > 1 && strlen($val)>2 && !in_array(trim($val),$balck_list) && !in_array(trim($val),$balck_list_words) ) {  
+                 if($r > 1 && strlen($val)>2 && !in_array(trim($val),$balck_list) && !in_array(trim(strtolower($val)),$balck_list_words) ) {  
                     $mid = array(
                         "ph" => trim($val),
                         "count" => $r,
