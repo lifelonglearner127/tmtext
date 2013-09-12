@@ -1,3 +1,4 @@
+<span class="pdf_header">Product Detail View</span><br /><br />
 <table class="assess_comparisons" border="0" cellspacing="0" cellpadding="0">
     <tr>
         <td class="row_first"></td>

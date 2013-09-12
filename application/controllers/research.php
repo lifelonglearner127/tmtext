@@ -987,7 +987,7 @@ class Research extends MY_Controller {
             $build_assess_params->compare_batch_id = $compare_batch_id;
         }
 
-        $assess_table = $this->build_asses_table($results, $build_assess_params, $params->batch_id);
+        $assess_data = $this->build_asses_table($results, $build_assess_params, $params->batch_id);
 
         $download_report_params = new stdClass();
         $download_report_params->img_path = $img_path;
@@ -999,7 +999,7 @@ class Research extends MY_Controller {
         $download_report_params->current_date = $current_date;
         $download_report_params->report_presetted_pages = $report_presetted_pages;
         $download_report_params->report_parts = $report_parts;
-        $download_report_params->assess_table = $assess_table['ExtraData']['report'];
+        $download_report_params->assess_data = $assess_data;
         $download_report_params->assess_report_page_layout = $assess_report_page_layout;
 
         switch($type_doc) {
@@ -1015,7 +1015,8 @@ class Research extends MY_Controller {
 
     private function download_pdf($download_report_params) {
         $css_file = $download_report_params->css_path.'assess_report.css';
-        $report_data = $download_report_params->assess_table;
+        $report_data = $download_report_params->assess_data['ExtraData']['report'];
+        $report_details = $download_report_params->assess_data['aaData'];
         $assess_report_page_layout = $download_report_params->assess_report_page_layout;
 
         $layout = 'L';
@@ -1028,14 +1029,11 @@ class Research extends MY_Controller {
 
         $this->load->library('pdf');
         $pdf = $this->pdf->load();
-        $pdf = new mPDF('', 'Letter', 0, '', 10, 10, 10, 10, 8, 8);
+        $pdf = new mPDF('', 'Letter', 0, '', 10, 10, 40, 10, 8, 8);
 //        $pdf->showImageErrors = true;
 //        $pdf->debug = true;
         $stylesheet = file_get_contents($css_file);
         $pdf->WriteHTML($stylesheet, 1);
-        $pdf->SetHTMLFooter('<span style="font-size: 8px;">Copyright © 2013 Content Solutions, Inc.</span>');
-
-        $html = '';
 
         $header = '<table border=0 width=100%>';
         $header = $header.'<tr>';
@@ -1048,133 +1046,149 @@ class Research extends MY_Controller {
         $header = $header.'</tr>';
         $header = $header.'</table>';
         $header = $header.'<hr color="#C31233" height="10">';
+        $pdf->SetHTMLHeader($header);
+
+        $pdf->SetHTMLFooter('<span style="font-size: 8px;">Copyright © 2013 Content Solutions, Inc.</span>');
+
+        $html = '';
 
         foreach($download_report_params->report_presetted_pages as $page){
             if ($page->order < 5000) {
                 $pdf->AddPage($page->layout);
                 $html = '';
-                $html = $html.$header;
                 $html = $html.$page->body;
                 $pdf->WriteHTML($html);
             }
         }
 
-        $pdf->AddPage($layout);
-        $html = '';
+        if ($download_report_params->report_parts->summary == true){
+            $pdf->AddPage($layout);
+            $html = '';
 
-        $html = $html.$header;
+            $html = $html.'<table width=100% border=0>';
+            $html = $html.'<tr><td style="text-align: left;font-weight: bold; font-style: italic;">Batch - '.$download_report_params->batch_name.'</td><td style="text-align: right;font-weight: bold; font-style: italic;">'.$download_report_params->current_date.'</td></tr>';
+            $html = $html.'<tr><td colspan="2"><hr height="3"></td></tr>';
+            $html = $html.'</table>';
 
-        $html = $html.'<table width=100% border=0>';
-        $html = $html.'<tr><td style="text-align: left;font-weight: bold; font-style: italic;">Batch - '.$download_report_params->batch_name.'</td><td style="text-align: right;font-weight: bold; font-style: italic;">'.$download_report_params->current_date.'</td></tr>';
-        $html = $html.'<tr><td colspan="2"><hr height="3"></td></tr>';
-        $html = $html.'</table>';
+            $html = $html.'<table class="report" border="1" cellspacing="0" cellpadding="0">';
 
-        $html = $html.'<table class="report" border="1" cellspacing="0" cellpadding="0">';
+            $html = $html.'<tr><td class="tableheader">Summary</td></tr>';
 
-        $html = $html.'<tr><td class="tableheader">Summary</td></tr>';
+            //if (!empty($report_data['summary']['total_items']) && intval($report_data['summary']['total_items'] > 0)) {
+                $html = $html.'<tr><td class="report_td">';
+                $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_number.png">'.$report_data['summary']['total_items'].' total Items</div>';
+                $html = $html.'</td></td></tr>';
+            //}
 
-        //if (!empty($report_data['summary']['total_items']) && intval($report_data['summary']['total_items'] > 0)) {
-            $html = $html.'<tr><td class="report_td">';
-            $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_number.png">'.$report_data['summary']['total_items'].' total Items</div>';
-            $html = $html.'</td></td></tr>';
-        //}
+            //if (!empty($report_data['summary']['items_priced_higher_than_competitors']) && intval($report_data['summary']['items_priced_higher_than_competitors'] > 0)) {
+                $html = $html.'<tr><td class="report_td">';
+                $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_dollar.png">'.$report_data['summary']['items_priced_higher_than_competitors'].' items priced higher than competitors</div>';
+                $html = $html.'</td></tr>';
+            //}
 
-        //if (!empty($report_data['summary']['items_priced_higher_than_competitors']) && intval($report_data['summary']['items_priced_higher_than_competitors'] > 0)) {
-            $html = $html.'<tr><td class="report_td">';
-            $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_dollar.png">'.$report_data['summary']['items_priced_higher_than_competitors'].' items priced higher than competitors</div>';
-            $html = $html.'</td></tr>';
-        //}
+            //if (!empty($report_data['summary']['items_have_more_than_20_percent_duplicate_content']) && intval($report_data['summary']['items_have_more_than_20_percent_duplicate_content'] > 0)) {
+                $html = $html.'<tr><td class="report_td">';
+                $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_D.png">'.$report_data['summary']['items_have_more_than_20_percent_duplicate_content'].' items have more than 20% duplicate content</div>';
+                $html = $html.'</td></tr>';
+            //}
 
-        //if (!empty($report_data['summary']['items_have_more_than_20_percent_duplicate_content']) && intval($report_data['summary']['items_have_more_than_20_percent_duplicate_content'] > 0)) {
-            $html = $html.'<tr><td class="report_td">';
-            $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_D.png">'.$report_data['summary']['items_have_more_than_20_percent_duplicate_content'].' items have more than 20% duplicate content</div>';
-            $html = $html.'</td></tr>';
-        //}
+            //if (!empty($report_data['summary']['items_unoptimized_product_content']) && intval($report_data['summary']['items_unoptimized_product_content'] > 0)) {
+                $html = $html.'<tr><td class="report_td">';
+                $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_seo.png">'.$report_data['summary']['items_unoptimized_product_content'].' items have non-keyword optimized product content</div>';
+                $html = $html.'</td></tr>';
+            //}
 
-        //if (!empty($report_data['summary']['items_unoptimized_product_content']) && intval($report_data['summary']['items_unoptimized_product_content'] > 0)) {
-            $html = $html.'<tr><td class="report_td">';
-            $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_seo.png">'.$report_data['summary']['items_unoptimized_product_content'].' items have non-keyword optimized product content</div>';
-            $html = $html.'</td></tr>';
-        //}
+            if ($report_data['summary']['short_wc_total_not_0'] > 0 && $report_data['summary']['long_wc_total_not_0'] > 0) {
+                $html = $html.'<tr><td class="report_td">';
+                $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_arrow_down.png">'.$report_data['summary']['items_short_products_content_short'].' items have short descriptions that are too short</div>';
+                $html = $html.'</td></tr>';
+                $html = $html.'<tr><td class="report_td">';
+                $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_arrow_down.png">'.$report_data['summary']['items_long_products_content_short'].' items have long descriptions that are too short</div>';
+                $html = $html.'</td></tr>';
+            } else {
+                $html = $html.'<tr><td class="report_td">';
+                $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_arrow_down.png">items have descriptions that are too short</div>';
+                $html = $html.'</td></tr>';
+            }
 
-        if ($report_data['summary']['short_wc_total_not_0'] > 0 && $report_data['summary']['long_wc_total_not_0'] > 0) {
-            $html = $html.'<tr><td class="report_td">';
-            $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_arrow_down.png">'.$report_data['summary']['items_short_products_content_short'].' items have short descriptions that are too short</div>';
-            $html = $html.'</td></tr>';
-            $html = $html.'<tr><td class="report_td">';
-            $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_arrow_down.png">'.$report_data['summary']['items_long_products_content_short'].' items have long descriptions that are too short</div>';
-            $html = $html.'</td></tr>';
-        } else {
-            $html = $html.'<tr><td class="report_td">';
-            $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_arrow_down.png">items have descriptions that are too short</div>';
-            $html = $html.'</td></tr>';
+            if (!empty($report_data['summary']['absent_items_count']) && intval($report_data['summary']['absent_items_count'] > 0)) {
+                $html = $html.'<tr><td class="report_td">';
+                $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_comparison.png">'.$report_data['summary']['absent_items_count'];
+                $html = $html.' items in '.$report_data['summary']['compare_customer_name'].' - '.$report_data['summary']['compare_batch_name'];
+                $html = $html.' are absent from '.$report_data['summary']['own_batch_name'];
+                $html = $html.'</div></td></tr>';
+            }
+
+            $html = $html.'</table>';
+
+            $html = $html.'<table class="report recommendations" border="1" cellspacing="0" cellpadding="0">';
+
+            $html = $html.'<tr><td class="tableheader">Recommendations</td></tr>';
+            if ($report_data['recommendations']['items_priced_higher_than_competitors']) {
+                $html = $html.'<tr><td class="report_td">';
+                $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_dollar.png">';
+                $html = $html.$report_data['recommendations']['items_priced_higher_than_competitors'].'</div>';
+                $html = $html.'</td></tr>';
+            }
+            if ($report_data['recommendations']['items_have_more_than_20_percent_duplicate_content']) {
+                $html = $html.'<tr><td class="report_td">';
+                $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_D.png">';
+                $html = $html.$report_data['recommendations']['items_have_more_than_20_percent_duplicate_content'].'</div>';
+                $html = $html.'</td></tr>';
+            }
+            if ($report_data['recommendations']['items_short_products_content']) {
+                $html = $html.'<tr><td class="report_td">';
+                $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_seo.png">';
+                $html = $html.$report_data['recommendations']['items_short_products_content'].'</div>';
+                $html = $html.'</td></tr>';
+            }
+            if ($report_data['recommendations']['items_unoptimized_product_content']) {
+                $html = $html.'<tr><td class="report_td">';
+                $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_arrow_up.png">';
+                $html = $html.$report_data['recommendations']['items_unoptimized_product_content'].'</div>';
+                $html = $html.'</td></tr>';
+            }
+
+            $html = $html.'</table>';
+
+            $html = $html.'<tr><td>';
+            $html = $html.'</table>';
+
+            $pdf->WriteHTML($html);
         }
 
-        if (!empty($report_data['summary']['absent_items_count']) && intval($report_data['summary']['absent_items_count'] > 0)) {
-            $html = $html.'<tr><td class="report_td">';
-            $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_comparison.png">'.$report_data['summary']['absent_items_count'];
-            $html = $html.' items in '.$report_data['summary']['compare_customer_name'].' - '.$report_data['summary']['compare_batch_name'];
-            $html = $html.' are absent from '.$report_data['summary']['own_batch_name'];
-            $html = $html.'</div></td></tr>';
+        if ($download_report_params->report_parts->recommendations == true && count($report_details) > 0){
+            $data['report_details'] = $report_details;
+            $report_recommendations_view = $this->load->view('research/product_recommendations_pdf', $data, true);
+            $html = $report_recommendations_view;
+            $pdf->AddPage($layout);
+            $pdf->WriteHTML($html);
         }
 
-        $html = $html.'</table>';
-
-        $html = $html.'<table class="report recommendations" border="1" cellspacing="0" cellpadding="0">';
-
-        $html = $html.'<tr><td class="tableheader">Recommendations</td></tr>';
-        if ($report_data['recommendations']['items_priced_higher_than_competitors']) {
-            $html = $html.'<tr><td class="report_td">';
-            $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_dollar.png">';
-            $html = $html.$report_data['recommendations']['items_priced_higher_than_competitors'].'</div>';
-            $html = $html.'</td></tr>';
+        if ($download_report_params->report_parts->details == true && count($report_details) > 0){
+            $data['report_details'] = $report_details;
+            $report_details_view = $this->load->view('research/product_details_pdf', $data, true);
+            $html = $report_details_view;
+            $pdf->AddPage($layout);
+            $pdf->WriteHTML($html);
         }
-        if ($report_data['recommendations']['items_have_more_than_20_percent_duplicate_content']) {
-            $html = $html.'<tr><td class="report_td">';
-            $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_D.png">';
-            $html = $html.$report_data['recommendations']['items_have_more_than_20_percent_duplicate_content'].'</div>';
-            $html = $html.'</td></tr>';
-        }
-        if ($report_data['recommendations']['items_short_products_content']) {
-            $html = $html.'<tr><td class="report_td">';
-            $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_seo.png">';
-            $html = $html.$report_data['recommendations']['items_short_products_content'].'</div>';
-            $html = $html.'</td></tr>';
-        }
-        if ($report_data['recommendations']['items_unoptimized_product_content']) {
-            $html = $html.'<tr><td class="report_td">';
-            $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_arrow_up.png">';
-            $html = $html.$report_data['recommendations']['items_unoptimized_product_content'].'</div>';
-            $html = $html.'</td></tr>';
-        }
-
-        $html = $html.'</table>';
-
-        $html = $html.'<tr><td>';
-        $html = $html.'</table>';
-
-        $pdf->WriteHTML($html);
 
         $comparison_data_array = $this->statistics_model->product_comparison($download_report_params->batch_id);
         if (count($comparison_data_array) > 0) {
+            $html = '';
             foreach ($comparison_data_array as $comparison_data) {
                 $pdf->AddPage($layout);
                 $data['comparison_data'] = $comparison_data;
                 $comparison_details_view = $this->load->view('research/comparison_details_pdf', $data, true);
-                $html = $header;
-                $html = $html.'<span class="pdv_header">Product Detail View</span><br /><br />';
                 $html = $html.$comparison_details_view;
                 $pdf->WriteHTML($html);
             }
-
-
         }
 
         foreach($download_report_params->report_presetted_pages as $page){
             if ($page->order > 5000) {
                 $pdf->AddPage($page->layout);
                 $html = '';
-                $html = $html.$header;
                 $html = $html.$page->body;
                 $pdf->WriteHTML($html);
             }
