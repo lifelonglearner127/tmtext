@@ -7,6 +7,8 @@ from Staples.items import CategoryItem
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 
+from spiders_utils import Utils
+
 import time
 import re
 
@@ -30,38 +32,43 @@ class StaplesSpider(BaseSpider):
 	def parse(self, response):
 
 		
-		# use selenium to complete the zipcode form and get the first results page
-		driver = webdriver.Firefox()
-		driver.get(response.url)
+		# # use selenium to complete the zipcode form and get the first results page
+		# driver = webdriver.Firefox()
+		# driver.get(response.url)
 
-		# set a hardcoded value for zipcode
+		# # set a hardcoded value for zipcode
+		# zipcode = "12345"
+
+		# textbox = driver.find_element_by_name("zipCode")
+		# textbox.send_keys(zipcode)
+
+		# button = driver.find_element_by_id("submitLink")
+		# button.click()
+
+		# cookie = {"zipcode": zipcode}
+		# driver.add_cookie(cookie)
+
+		# time.sleep(5)
+
+		# # convert html to "nice format"
+		# text_html = driver.page_source.encode('utf-8')
+		# #print "TEXT_HTML", text_html
+		# html_str = str(text_html)
+
+		# # this is a hack that initiates a "TextResponse" object (taken from the Scrapy module)
+		# resp_for_scrapy = TextResponse('none',200,{},html_str,[],None)
+
+		# driver.close()
+
+		# # parse department list
+		# items = self.parseList(resp_for_scrapy)
+
+		# return items
+
 		zipcode = "12345"
-
-		textbox = driver.find_element_by_name("zipCode")
-		textbox.send_keys(zipcode)
-
-		button = driver.find_element_by_id("submitLink")
-		button.click()
-
-		cookie = {"zipcode": zipcode}
-		driver.add_cookie(cookie)
-
-		time.sleep(5)
-
-		# convert html to "nice format"
-		text_html = driver.page_source.encode('utf-8')
-		#print "TEXT_HTML", text_html
-		html_str = str(text_html)
-
-		# this is a hack that initiates a "TextResponse" object (taken from the Scrapy module)
-		resp_for_scrapy = TextResponse('none',200,{},html_str,[],None)
-
-		driver.close()
-
-		# parse department list
-		items = self.parseList(resp_for_scrapy)
-
-		return items
+		request = Request(response.url, callback = self.parseList, cookies = {"zipcode" : zipcode}, \
+			headers = {"Cookie" : "zipcode=" + zipcode}, meta = {"dont_redirect" : True, "dont_merge_cookies" : True})
+		return request
 
 	def parseList(self, response):
 		hxs = HtmlXPathSelector(response)
@@ -79,49 +86,57 @@ class StaplesSpider(BaseSpider):
 			item['url'] = root_url + department.select("@href").extract()[0]
 			item['level'] = 1
 
+			yield item
 
-			# parse each department page for its categories, pass the department item too so that it's added to the list in parseDept
-			yield Request(item['url'], callback = self.parseDept, meta = {"department": item})
+			# # parse each department page for its categories, pass the department item too so that it's added to the list in parseDept
+			# yield Request(item['url'], callback = self.parseDept, meta = {"department": item})
+
+			zipcode = "12345"
+			request = Request(item['url'], callback = self.parseDept, cookies = {"zipcode" : zipcode}, \
+				headers = {"Cookie" : "zipcode=" + zipcode}, meta = {"dont_redirect" : True, "dont_merge_cookies" : True, \
+				"parent": item, "level": 1})
+			yield request
 
 
 	def parseDept(self, response):
 
 		# for "copy & print" there's an exception, we don't need zipcode
 
-		# use selenium to complete the zipcode form and get the first results page
-		driver = webdriver.Firefox()
-		driver.get(response.url)
+		# # use selenium to complete the zipcode form and get the first results page
+		# driver = webdriver.Firefox()
+		# driver.get(response.url)
 
-		# set a hardcoded value for zipcode
-		zipcode = "12345"
+		# # set a hardcoded value for zipcode
+		# zipcode = "12345"
 
-		textbox = driver.find_element_by_name("zipCode")
-		textbox.send_keys(zipcode)
+		# textbox = driver.find_element_by_name("zipCode")
+		# textbox.send_keys(zipcode)
 
-		button = driver.find_element_by_id("submitLink")
-		button.click()
+		# button = driver.find_element_by_id("submitLink")
+		# button.click()
 
-		cookie = {"zipcode": zipcode}
-		driver.add_cookie(cookie)
+		# cookie = {"zipcode": zipcode}
+		# driver.add_cookie(cookie)
 
-		time.sleep(5)
+		# time.sleep(5)
 
-		# convert html to "nice format"
-		text_html = driver.page_source.encode('utf-8')
-		#print "TEXT_HTML", text_html
-		html_str = str(text_html)
+		# # convert html to "nice format"
+		# text_html = driver.page_source.encode('utf-8')
+		# #print "TEXT_HTML", text_html
+		# html_str = str(text_html)
 
-		# this is a hack that initiates a "TextResponse" object (taken from the Scrapy module)
-		resp_for_scrapy = TextResponse('none',200,{},html_str,[],None)
+		# # this is a hack that initiates a "TextResponse" object (taken from the Scrapy module)
+		# resp_for_scrapy = TextResponse('none',200,{},html_str,[],None)
 
 
-		hxs = HtmlXPathSelector(resp_for_scrapy)
+		# hxs = HtmlXPathSelector(resp_for_scrapy)
+
+		hxs = HtmlXPathSelector(response)
 		categories = hxs.select("//h2/a")
 
 		root_url = "http://www.staples.com"
 
-		items = []
-		items.append(response.meta['department'])
+		#items.append(response.meta['department'])
 
 		for category in categories:
 			# there are pages that don't have categories
@@ -132,12 +147,16 @@ class StaplesSpider(BaseSpider):
 			url = category.select("@href").extract()
 			if url:
 				item['url'] = root_url + url[0]
-			item['level'] = 0
-			item['parent_text'] = response.meta['department']['text']
+			item['level'] = int(response.meta['level']-1)
+			item['parent_text'] = response.meta['parent']['text']
 			item['parent_url'] = response.url
 
-			items.append(item)
+			yield item
 
-		driver.close()
+			# extract subcategories if any
+			zipcode = "12345"
+			request = Request(item['url'], callback = self.parseDept, cookies = {"zipcode" : zipcode}, \
+				headers = {"Cookie" : "zipcode=" + zipcode}, meta = {"dont_redirect" : True, "dont_merge_cookies" : True, \
+				"parent": item, "level": item['level']})
+			yield request
 
-		return items
