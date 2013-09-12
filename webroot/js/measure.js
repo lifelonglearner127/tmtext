@@ -1086,34 +1086,21 @@ function fixSeoHeights() {
             var thisEl = $(this);
             var section = thisEl.find('.grid_se_section');
             if (section.length > 1) {
-                $.each(selectorss, function(k1, v1) {
-                   
-                   var max_height=0;
+                   $.each(selectorss, function(k1, v1) {
+                                    
+                                            
+                    thisEl.find(v1).height('auto');
+                        
                     var heights = thisEl.find(v1).map(function() {
-                        if ($(this).find('.keywords_select').val() === 'custom') {
-                            
-                           
-                            $(this).height('auto');
-                            max_height=$(this).height();
-                             new_height_[v1]=1;
-
-                        } else if ($(this).find('.keywords_select').val() === 'title') {
-                            
-                            $(this).height('auto');
-                             max_height=$(this).height();
-                        }
+                        
                         return $(this).height();
                     }).get();
+                                                                       
+                    thisEl.find(v1).height(Array.max(heights));
+                   
                     
-                   if( max_height !== 0){
-                       thisEl.find(v1).height(max_height);
-                   }else{
-                                    
-                       thisEl.find(v1).height(Array.max(heights));
-                   }
-                    
-                    console.log("heights after  =");
-                    console.log(heights);
+//                    console.log("heights after  =");
+//                    console.log(heights);
                     
                 });
                 

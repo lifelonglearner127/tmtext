@@ -667,5 +667,10 @@ if (($i - 1) % 3 != 0) {
         height: auto !important;
         
     }
-    
+    .primary_speed{
+        float: left;
+        margin-left: 5px;
+        width: 180px;
+        margin-bottom: 2px;
+    }
 </style>
