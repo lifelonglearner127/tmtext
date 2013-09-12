@@ -157,8 +157,12 @@ class Measure extends MY_Controller {
 
         $selected_data = $this->input->post('selected_data');
         $uid = $this->input->post('uid');
-        $c_week = $this->input->post('c_week');
-        $c_year = $this->input->post('c_year');
+
+        // $c_week = $this->input->post('c_week');
+        // $c_year = $this->input->post('c_year');
+        $c_week = date("W", time());
+        $c_year = date("Y", time());
+
         $email_logo = $this->webshoots_model->getEmailReportConfig('logo');
         $screens = $this->webshoots_model->getDistinctEmailScreens($c_week, $c_year, $uid);
         // ==== sort assoc by pos (start)
@@ -226,8 +230,11 @@ class Measure extends MY_Controller {
         $email = $this->input->post('email');
         $day = $this->input->post('day');
         $uid = $this->input->post('uid');
-        $c_week = $this->input->post('c_week');
-        $c_year = $this->input->post('c_year');
+        // $c_week = $this->input->post('c_week');
+        // $c_year = $this->input->post('c_year');
+        $c_week = date("W", time());
+        $c_year = date("Y", time());
+
         $screens = $this->webshoots_model->getDistinctEmailScreens($c_week, $c_year, $uid);
         // ==== sort assoc by pos (start)
         if(count($screens) > 0) {
