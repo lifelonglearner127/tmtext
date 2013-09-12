@@ -3,7 +3,6 @@
 class Department_members_model extends CI_Model {
 
     var $department_id = 0;
-    var $site = '';
     var $site_id = 0;
     var $customer_id = 0;
     var $text = '';

@@ -1,6 +1,6 @@
 # 12/10 Viktor
-ALTER TABLE  `department_members` CHANGE  `level`  `level` INT( 11 ) NOT NULL,
-ALTER TABLE  `site_categories` ADD  `level` INT( 11 ) AFTER  `department_members_id`,
+ALTER TABLE  `department_members` CHANGE  `level`  `level` INT( 11 ) NOT NULL;
+ALTER TABLE  `site_categories` ADD  `level` INT( 11 ) AFTER  `department_members_id`;
 ALTER TABLE `department_members` DROP COLUMN `site`;
 
 # 09/11 Tatiana
