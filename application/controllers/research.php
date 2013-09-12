@@ -897,7 +897,13 @@ class Research extends MY_Controller {
             $page->body = $page_body;
         }
 
-        return $report_pages;
+        $report_parts = unserialize($report[0]->parts);
+
+        $report_params = array(
+            'report_pages'=>$report_pages,
+            'report_parts'=>$report_parts,
+        );
+        return $report_params;
     }
 
     public function comparison_detail(){
@@ -962,7 +968,9 @@ class Research extends MY_Controller {
         $get_report_presetted_pages_params->report_name = $report_name;
         $get_report_presetted_pages_params->customer_name = $customer->name;
         $get_report_presetted_pages_params->current_date = $current_date;
-        $report_presetted_pages = $this->get_report_presetted_pages($get_report_presetted_pages_params);
+        $report_params = $this->get_report_presetted_pages($get_report_presetted_pages_params);
+        $report_presetted_pages = $report_params['report_pages'];
+        $report_parts = $report_params['report_parts'];
 
         $build_assess_params = new stdClass();
         $build_assess_params->short_less = $this->input->get('short_less') == 'undefined' ? -1 : $this->input->get('short_less');
@@ -990,6 +998,7 @@ class Research extends MY_Controller {
         $download_report_params->batch_name = $params->batch_name;
         $download_report_params->current_date = $current_date;
         $download_report_params->report_presetted_pages = $report_presetted_pages;
+        $download_report_params->report_parts = $report_parts;
         $download_report_params->assess_table = $assess_table['ExtraData']['report'];
         $download_report_params->assess_report_page_layout = $assess_report_page_layout;
 

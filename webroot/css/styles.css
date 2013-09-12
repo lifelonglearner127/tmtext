@@ -557,3 +557,6 @@ ul.ui-sortable {
 span.highlight{
     background-color:yellow;
 }
+#report_options input[type=checkbox]{
+    margin-top: -5px;
+}

@@ -1425,6 +1425,18 @@ class System extends MY_Controller {
                     'page_body' => $report[0]->about_page_body,
                 );
                 break;
+            case 'parts':
+                $report_parts = unserialize($report[0]->parts);
+                if ($report_parts == false){
+                    $response = array (
+                        'summary' => true,
+                        'recommendations' => false,
+                        'details' => false,
+                    );
+                }else{
+                    $response = $report_parts;
+                }
+                break;
             default:
                 $response = array(
                     'page_name' => $report[0]->cover_page_name,
@@ -1455,10 +1467,21 @@ class System extends MY_Controller {
         $this->load->model('reports_model');
         $id = $this->input->post('id');
         $params = json_decode($this->input->post('params'));
+        $type = $this->input->post('type');
+        if ($type != false){
+            switch ($type){
+                case 'parts':
+                    $params->parts = serialize($params->parts);
+                    break;
+                default:
+                    $params = new stdClass();
+                    break;
+            }
+        }
         $response['success'] = $this->reports_model->update($id, $params);
         $this->output->set_content_type('application/json')->set_output(json_encode($response));
     }
-    
+
     public function system_logins() {
         $this->render();
 	}

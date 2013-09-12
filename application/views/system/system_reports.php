@@ -1,3 +1,4 @@
+<link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/styles.css" />
 <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/assess_report.css" />
 <div class="tabbable">
     <ul class="nav nav-tabs jq-system-tabs">
@@ -27,9 +28,10 @@
                     <li class="active"><a data-content="cover" href="javascript:void(0)">Cover Page</a></li>
                     <li><a data-content="recommendations" href="javascript:void(0)">Strategic Recommendations Page</a></li>
                     <li><a data-content="about" href="javascript:void(0)">About Content Analytics Page</a></li>
+                    <li><a data-content="options" href="javascript:void(0)">Report Options</a></li>
                 </ul>
                 <div class='tab-content' style='border-bottom: none;'>
-                    <div id="tab1_r_tabset" class="tab-pane active">
+                    <div id="tabPageLayout" class="tab-pane active">
                         Page Name:
                         <input type="text" id="system_reports_page_name" class="mt_5 mr_10">
                         Page:
@@ -56,8 +58,21 @@
                             <button id="system_reports_page_edit" type="button" class="btn btn-primary"><i class="icon-white icon-pencil"></i>Edit</button>
                         </div>
                     </div>
-                    <div id="tab2_r_tabset" class='tab-pane'>&nbsp;</div>
-                    <div id="tab3_r_tabset" class='tab-pane'>&nbsp;</div>
+                    <div id="tabOptions" class='tab-pane'>
+                        <h3>Include report parts</h3>
+                        <form id="report_options" name="report_options">
+                            <p>
+                                <label for="summary"><input type="checkbox" id="summary" name="summary" /> Summary</label>
+                            </p>
+                            <p>
+                                <label for="recommendations"><input type="checkbox" id="recommendations" name="recommendations" /> Recommendations</label>
+                            </p>
+                            <p>
+                                <label for="details"><input type="checkbox" id="details" name="details" /> Details</label>
+                            </p>
+                        </form>
+                        <button id="system_reports_save_options" type="button" class="btn btn-success"><i class="icon-white icon-ok"></i>Save</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -81,7 +96,53 @@
             $("#sub_reports_tabset").siblings().find('.tab-pane:eq(0)').addClass('active');
             var id = system_reports.val();
             var page = $(this).find('a').attr('data-content');
-            reports_get_by_id(id, page);
+            if (page == 'options'){
+                $("#tabPageLayout").hide();
+                $("#tabOptions").show();
+                renderOptionsTab('hello');
+            }else{
+                $("#tabOptions").hide();
+                $("#tabPageLayout").show();
+                reports_get_by_id(id, page);
+            }
+        });
+
+        function renderOptionsTab(data) {
+            var id = system_reports.val();
+            var data = {
+                id:id,
+                page:'parts'
+            };
+            $.get(base_url + 'index.php/system/system_reports_get_options', data, function(data){
+                $.each(data, function(index, value){
+                    $('#'+index).removeAttr('checked');
+                    if (value){
+                        $('#'+index).attr('checked', 'checked');
+                    }
+                });
+            });
+        }
+
+        $('#system_reports_save_options').click(function() {
+            var id = system_reports.val();
+            var summary = $("#summary").attr('checked') == 'checked';
+            var recommendations = $("#recommendations").attr('checked') == 'checked';
+            var details = $("#details").attr('checked') == 'checked';
+            var params = {
+                parts : {
+                    summary:summary,
+                    recommendations:recommendations,
+                    details:details
+                }
+            };
+            var data = {
+                id:id,
+                type:'parts',
+                params:JSON.stringify(params)
+            };
+            $.post(base_url + 'index.php/system/system_reports_update', data, function(data){
+
+            });
         });
 
         $('#system_reports_delete').click(function() {
