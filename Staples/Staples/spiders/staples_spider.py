@@ -86,7 +86,7 @@ class StaplesSpider(BaseSpider):
 			item['url'] = root_url + department.select("@href").extract()[0]
 			item['level'] = 1
 
-			yield item
+			#yield item
 
 			# # parse each department page for its categories, pass the department item too so that it's added to the list in parseDept
 			# yield Request(item['url'], callback = self.parseDept, meta = {"department": item})
@@ -136,8 +136,37 @@ class StaplesSpider(BaseSpider):
 
 		root_url = "http://www.staples.com"
 
-		#items.append(response.meta['department'])
+		# from parent's page:
+		item = response.meta['parent']
+		# extract number of items, if any
+		nritems_holder = hxs.select("//div[@class='perpage']/span[@class='note']/text()").extract()
+		if nritems_holder:
+			m = re.match(".*([0-9]+)\s*items\s*", nritems_holder[0])
+			if m:
+				item['nr_products'] = int(m.group(1))
+			else:
+				print "NOT MATCH ", nritems_holder[0]
 
+		# extract description, if any
+		desc_holder = hxs.select("//h2[@class='seo short']//text()").extract()
+		if desc_holder:
+			item['description_text'] = desc_holder[0].strip()
+			item['description_title'] = item['text']
+
+			tokenized = Utils.normalize_text(item['description_text'])
+			item['description_wc'] = len(tokenized)
+
+			(item['keyword_count'], item['keyword_density']) = Utils.phrases_freq(item['description_title'], item['description_text'])
+
+		else:
+			# if no description is found
+			item['description_wc'] = 0
+
+		# yield item the request came from (parent)
+		yield item
+
+
+		# extract subcategories
 		for category in categories:
 			# there are pages that don't have categories
 			item = CategoryItem()
@@ -151,7 +180,8 @@ class StaplesSpider(BaseSpider):
 			item['parent_text'] = response.meta['parent']['text']
 			item['parent_url'] = response.url
 
-			yield item
+			# yield the item after passing it through request and collecting additonal info
+			#yield item
 
 			# extract subcategories if any
 			zipcode = "12345"
