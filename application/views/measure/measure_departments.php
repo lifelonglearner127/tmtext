@@ -4,6 +4,35 @@
         overflow: hidden;
         overflow-y: auto;
     }
+    .tab-content{
+        min-height:400px;
+    }
+    .temp_li{
+        display: inline;
+        font-size: 18px;
+    }
+    #departmentDropdown{
+        padding-left:31px;
+    }
+    #departmentDropdownSec{
+        margin-right:10px;
+    }
+    .DataTables_sort_icon  {
+        position: absolute;
+        right: -4px;
+        top: 4px;
+    }
+    #departments_content div{
+        margin-left:10px;
+    }
+    #departments_content{
+        margin-top:10px;
+        width:430px;
+        display: block;
+        overflow: auto;
+    }
+    #dataTableDiv1 .dataTables_filter input, #dataTableDiv2 .dataTables_filter input { width: 150px }
+    #hp_boot_drop_sec{ display: block!important;float:right;padding-right: 31px; }
 </style>
 <div class="tabbable">
     <ul class="nav nav-tabs jq-measure-tabs">
@@ -26,29 +55,7 @@
 
                 <div class='head_line_2'>
                     <!--div class="span2">View Reports for:</div-->
-                    <div >
-                        <style type="text/css">
-                            .tab-content{
-                                min-height:400px;
-                            }
-                            .temp_li{
-                                display: inline;
-                                font-size: 18px;
-                            }
-                            #departmentDropdown{
-                                padding-left:31px;
-                            }
-                            #departmentDropdownSec{
-                                margin-right:10px;
-                            }
-                            .DataTables_sort_icon  {
-                                position: absolute;
-                                right: -4px;
-                                top: 4px;
-                            }
-
-
-                        </style>
+                    <div style="float:left">
                         <!-- <ul class="ml_10 pull-left" style="float:left">
                              <li class="temp_li"><a href="#" style="text-decoration: underline;">Your Watchlists</a></li>
                              <li class="temp_li ml_50"><a href="#">Best-sellers</a></li>
@@ -75,49 +82,29 @@
                             }
                         }
                         ?>
+                        <div id="departmentDropdown"  class="btn-group" style="display: none">
+                            <button id="departmentDropdown_first" class="btn btn-danger btn_caret_sign1" style="width:165px" >Choose Department</button>
+                            <button class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
+                                <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu" >
+                            </ul>
+                        </div>
                     </div>
-                    <div id="departmentDropdown"  class="btn-group">
-                        <button class="btn btn-danger btn_caret_sign1" >Choose Department</button>
-                        <button class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
-                            <span class="caret"></span>
-                        </button>
-                        <ul class="dropdown-menu" >
-                        </ul>
-                    </div>
+
                     <!-- Compare with Begin-->
 
 
-                    <div id="departmentDropdownSec" style="float:right";  class="btn-group">
-                        <button class="btn btn-danger btn_caret_sign_sec1" >Choose Department</button>
-                        <button class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
-                            <span class="caret"></span>
-                        </button>
-                        <ul class="dropdown-menu" >
-                        </ul>
-                    </div>
 
-
-                    <div  style="float:right;padding-right:3%;">
-                        <style type="text/css">
-                            .tab-content{
-                                min-height:400px;
-                            }
-                            .temp_li{
-                                display: inline;
-                                font-size: 18px;
-                            }
-                            #departments_content div{
-                                margin-left:10px;
-                            }
-                             #departments_content{
-                                margin-top:10px;
-                                width:430px;
-                                display: block;
-                            }
-                            #dataTableDiv1 .dataTables_filter input, #dataTableDiv2 .dataTables_filter input { width: 150px }
-
-                        </style>
-
+                    <div style="float:right;">
+                        <div id="departmentDropdownSec" style="float:right;display: none"  class="btn-group">
+                            <button id="departmentDropdownSec_first" class="btn btn-danger btn_caret_sign_sec1" style="width:165px" >Choose Department</button>
+                            <button class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
+                                <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu" >
+                            </ul>
+                        </div>
                         <?php
                         if ($this->ion_auth->is_admin($this->ion_auth->get_user_id())) {
                             if (count($customers_list) > 0) {
@@ -133,10 +120,10 @@
                                 <?php } ?>
                                     </ul>
                                 </div>
-    <?php
-    }
-}
-?>
+                            <?php
+                            }
+                        }
+                        ?>
                     </div>
 
 

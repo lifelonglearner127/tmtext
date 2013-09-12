@@ -148,13 +148,14 @@ $( function() {
         var item_id = $(this).data('item');
         $('#departments_content').html('');
         $("#hp_boot_drop .btn_caret_sign").text(new_caret);
+        $("#departmentDropdown").show();
         $.post(base_url + 'index.php/measure/getDepartmentsByCustomer', {
             'customer_name': new_caret
         }, function(data) {
             $("#departmentDropdown .dropdown-menu").empty();
             if(data.length > 0){
                 $('#tabs').show();
-                $("#departmentDropdown .dropdown-menu").append("<li><a data-item=\"\" data-value=\"All\" href=\"javascript:void(0);\">All</a></li>");
+                $("#departmentDropdown .dropdown-menu").append("<li><a data-item=\"empty\" data-value=\"\" href=\"javascript:void(0);\">Choose department</a></li><li><a data-item=\"\" data-value=\"All\" href=\"javascript:void(0);\">All</a></li>");
                 for(var i=0; i<data.length; i++){
                     if(i == 0){
                         $('#departmentDropdown .btn_caret_sign1').text('Choose Department');
@@ -179,15 +180,23 @@ $( function() {
     $("#departmentDropdown .dropdown-menu > li > a").live('click', function(e) {
         var departmentValue = $.trim($(this).text());
         var department_id = $(this).data('item');
+        //console.log(department_id);
         var site_name=$('.btn_caret_sign').text()
-        $("#departmentDropdown .btn_caret_sign1").text(departmentValue);
+        $("#departmentDropdown_first").text(departmentValue);
         readBestSellers(department_id,site_name,'records');
         
         /*****departmentAjax****/
-        if(department_id != '')
+        if(department_id != ''){
             departmentAjax(department_id,site_name);
-        else
+            $('.table_results').show();
+        } else if(department_id == 'empty'){
             $('#departments_content').html('');
+            $('.table_results').hide();
+            dataTable.fnClearTable();
+        } else {
+            $('.table_results').show();
+            $('#departments_content').html('');
+        }
         
     });
 		
@@ -196,16 +205,16 @@ $( function() {
 		
 		
     $(".hp_boot_drop_sec .dropdown-menu > li > a").bind('click', function(e) {
-		 
         var new_caret = $.trim($(this).text());
         var item_id = $(this).data('item');
         $("#hp_boot_drop_sec .btn_caret_sign_sec").text(new_caret);
+        $("#departmentDropdownSec").show();
         $.post(base_url + 'index.php/measure/getDepartmentsByCustomer', {
             'customer_name': new_caret
         }, function(data) {
             $("#departmentDropdownSec .dropdown-menu").empty();
             if(data.length > 0){
-                $("#departmentDropdownSec .dropdown-menu").append("<li><a data-item=\"\" data-value=\"All\" href=\"javascript:void(0);\">All</a></li>");
+                $("#departmentDropdownSec .dropdown-menu").append("<li><a data-item=\"empty\" data-value=\"\" href=\"javascript:void(0);\">Choose department</a></li><li><a data-item=\"\" data-value=\"All\" href=\"javascript:void(0);\">All</a></li>");
                 for(var i=0; i<data.length; i++){
                     if(i == 0){
                         $('#departmentDropdownSec .btn_caret_sign_sec1').text('Choose Department');
@@ -230,11 +239,24 @@ $( function() {
         var departmentValue = $.trim($(this).text());
         var department_id = $(this).data('item');
         var site_name=$('.btn_caret_sign_sec').text()
-        $("#departmentDropdownSec .btn_caret_sign1").text(departmentValue);
+        $("#departmentDropdownSec_first").text(departmentValue);
         readBestSellers(department_id,site_name,'recordSec');
+        console.log(department_id);
+        /*****departmentAjax****/
+        if(department_id != ''){
+            departmentAjax(department_id,site_name);
+            $('.table_results').show();
+        } else if(department_id == 'empty'){
+            $('#departments_content').html('');
+            $('.table_results').hide();
+            dataTableSec.fnClearTable();
+        } else {
+            $('.table_results').show();
+            $('#departments_content').html('');
+        }
     });
     //Compare with End
-		
+
     // $(document).on('click', 'table#records tbody tr', function(e){
     // e.preventDefault();
     // window.open($(this).find('td:nth-child(3)').text());
@@ -252,6 +274,12 @@ $( function() {
             $(this).next().html('\xa0'+densityCheck+'%');
         } else {
             $(this).next().text('\xa0'+$(this).val()+'%');
+        }
+    });
+    $('input.your_keyword').bind('keypress', function(e) {
+        if(e.keyCode==13){
+            // Enter pressed... do anything here...
+            console.log(111);
         }
     });
 }); //end document ready
@@ -276,7 +304,7 @@ function readBestSellers(department_id,site_name,table_name) {
             for(var i=0; i<data.length; i++){
 				
                 tableDataString += '<tr>';
-                tableDataString += '<td>'+data[i].text+'<input type="hidden" class="categoryID" value="'+data[i].id+'" ></td>';
+                tableDataString += '<td><a href="'+data[i].url+'" target="_blank">'+data[i].text+'</a><input type="hidden" class="categoryID" value="'+data[i].id+'" ></td>';
                 tableDataString += '<td>'+data[i].nr_products+'</td>';
 				
                 if(data[i].title_keyword_description_density && data[i].description_title) {
@@ -301,9 +329,9 @@ function readBestSellers(department_id,site_name,table_name) {
                 var user_seo_keywords = data[i].user_seo_keywords.trim();
                 var user_keyword_description_density = ' - '+data[i].user_keyword_description_density.trim()+'%';
                 if(user_seo_keywords == '')
-                    user_keyword_description_density = ' N/A';
-                tableDataString += '<input type="text" style="width: 95px;float: left;margin-right: 5px;" placeholder="Your keyword" onblur="keywordAjax(this);" name="keyword" value="'+user_seo_keywords+'" />';
-                tableDataString += '<span style="float: left;margin-top: 5px" > - '+user_keyword_description_density+'</span></td>';
+                    user_keyword_description_density = ' -  N/A';
+                tableDataString += '<input type="text" style="width: 95px;float: left;margin-right: 5px;" placeholder="Your keyword" onblur="keywordAjax(this);" onkeypress="keywordAjaxCode(this);" name="keyword" value="'+user_seo_keywords+'" />';
+                tableDataString += '<span style="float: left;margin-top: 5px" >'+user_keyword_description_density+'</span></td>';
                 tableDataString += '<td>'+data[i].description_words+'</td>';
                 tableDataString += '</tr>';
             }
@@ -340,6 +368,26 @@ function keywordAjax(obj) {
 
     });
     
+}
+
+function keywordAjaxCode(obj) {
+    var num = window.event ? event.keyCode : obj.which;
+    if(num == 13){
+        var categoryID = $(obj).parent().parent().find('.categoryID').val();
+        $.ajax({
+
+            url: base_url + 'index.php/measure/getKeywordByDescriptionText',
+            type: 'post',
+            data: {
+                'keyword': $(obj).val(),
+                'categoryID': categoryID
+            },
+            success: function(data) {
+                $(obj).next().text(' - '+   data);
+            }
+
+        });
+    }
 }
 
 function keywordAjaxDepartment(obj){
