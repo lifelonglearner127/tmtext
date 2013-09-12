@@ -304,7 +304,8 @@ class Helpers {
     $orig = explode(" ", $clean_t);
     $overall_words_count = count($words);
     // ---- convert to array (end)
-    $balck_list= array('gives you','lets you', 'in a', 'on a', 'with', 'the', 'and the', 'to the', 'for');
+    $balck_list_words=array('you','on', 'a' ,'and', 'the' , 'your' , 'with', 'of', 'as', 'more', 'for', 'to','into' );
+    $balck_list= array('gives you','lets you','and more');
     $res_stack = array();
     // $log = array();
     for($l = 6; $l >= 1; $l--) {
@@ -329,7 +330,8 @@ class Helpers {
             // --- debug logger (end)
             $WW=trim(strtolower($w));
             if(!preg_match("/$WW/",  strtolower($product_name))){
-                if($r > 3 && count(explode(" ", trim($w))) > 1 && !in_array($WW,$balck_list)) {
+                $phrases_array = explode(" ", trim($w));
+                if($r > 3 && count($phrases_array) > 1 && !in_array($WW,$balck_list)&& (count(array_intersect($phrases_array, $balck_list_words))!= count($phrases_array))) {
                     $mid = array(
                         "ph" => trim($w),
                         "count" => $r,
@@ -338,7 +340,8 @@ class Helpers {
                     $res_stack[] = $mid;
                 }
             }else{
-                if($r > 1 && count(explode(" ", trim($w))) > 1 && !in_array(trim($w),$balck_list)) {
+                 $phrases_array = explode(" ", trim($w));
+                if($r > 1 && count( $phrases_array) > 1 && !in_array(trim($w),$balck_list) && (count(array_intersect($phrases_array, $balck_list_words))!= count($phrases_array))) {
                     $mid = array(
                         "ph" => trim($w),
                         "count" => $r,
@@ -386,7 +389,7 @@ class Helpers {
             if(!$isset){
                 $r = $this->keywords_appearence_count(strtolower($text), strtolower($val));
                 //if($r > 1 && preg_match('/'.strtolower($val).'/',strtolower($product_name )) && strlen($val)>2) {
-                 if($r > 1 && strlen($val)>2 && !in_array(trim($val),$balck_list) ) {  
+                 if($r > 1 && strlen($val)>2 && !in_array(trim($val),$balck_list) && !in_array(trim($val),$balck_list_words) ) {  
                     $mid = array(
                         "ph" => trim($val),
                         "count" => $r,
