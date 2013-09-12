@@ -84,7 +84,7 @@
 						      onComplete: function(file, response) {
 						      	console.log(response);
 						      	if(response.filename == "") {
-						      		alert('Internal Server Error (check out console)');
+						      		alert('Internal Server Error (check out console).' + response.msg);
 						      	} else {
 						      		$("#fileupload_emailrep_logo_holder").attr('src', base_url + "emails_logos/" + response.filename);
 						      	} 
