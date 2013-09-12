@@ -111,7 +111,7 @@
                             }
                              #departments_content{
                                 margin-top:10px;
-                                width: 563px;
+                                width:430px;
                                 display: block;
                             }
                             #dataTableDiv1 .dataTables_filter input, #dataTableDiv2 .dataTables_filter input { width: 150px }
