@@ -152,9 +152,10 @@ class StaplesSpider(BaseSpider):
 				print "NOT MATCH ", nritems_holder[0]
 
 		# extract description, if any
-		desc_holder = hxs.select("//h2[@class='seo short']//text()").extract()
+		desc_holder = hxs.select("//h2[@class='seo short']//text() | //h2[@class='seo short long']//text()").extract()
 		if desc_holder:
-			item['description_text'] = desc_holder[0].strip()
+			#TODO: check this
+			item['description_text'] = " ".join(filter(desc_holder, None))
 
 			if item['description_text']:
 				item['description_title'] = item['text']
