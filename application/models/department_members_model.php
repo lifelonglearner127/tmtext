@@ -81,9 +81,9 @@ class Department_members_model extends CI_Model {
         return $query->result();
     }
 
-    function getAllByCustomer($customer)
+    function getAllByCustomerID($customerID)
     {
-        $sql = "SELECT `id`, `text` FROM `department_members` WHERE `site` = '".$customer."' group by `text` ORDER BY `text` ASC";
+        $sql = "SELECT `id`, `text` FROM `department_members` WHERE `site_id` = '".$customerID."' group by `text` ORDER BY `text` ASC";
         $query = $this->db->query($sql);
         return $query->result();
     }
@@ -118,11 +118,12 @@ class Department_members_model extends CI_Model {
 	 return $query;
     }
 
-    function insert($site_name, $site_id, $text, $description_wc,$description_text,$keyword_density,$description_title)
+    function insert($site_id, $text, $description_wc,$description_text,$keyword_density,$description_title,$level)
     {
         $this->text = $text;
-        $this->site = $site_name;
         $this->site_id = $site_id;
+        if($level!=NULL)
+            $this->level=$level;
         if($description_wc != NULL)
             $this->description_words = $description_wc;
         if($description_text !=NULL)
@@ -141,16 +142,16 @@ class Department_members_model extends CI_Model {
         return $this->db->delete($this->tables['department_members'], array('id' => $id));
     }
 
-    function deleteAll($site)
+    function deleteAll($site_id)
     {
-        return $this->db->delete($this->tables['department_members'], array('site' => $site));
+        return $this->db->delete($this->tables['department_members'], array('site_id' => $site_id));
     }
 
-    function checkExist($site_name, $site_id, $text)
+    function checkExist($site_id, $text)
     {
         $query =  $this->db->select('id')
             ->from($this->tables['department_members'])
-            ->where('site', trim($site_name))->where('site_id', trim($site_id))->where('text', trim($text))->limit(1)->get();
+            ->where('site_id', trim($site_id))->where('text', trim($text))->limit(1)->get();
         if($query->num_rows() > 0) {
             return $query->row()->id;
         }

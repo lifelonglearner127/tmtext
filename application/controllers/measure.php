@@ -957,7 +957,7 @@ class Measure extends MY_Controller {
         $this->load->model('site_categories_model');
 
         $this->data['departmens_list'][] = 'All';
-        foreach ($this->department_members_model->getAllByCustomer('amazon') as $row) {
+        foreach ($this->department_members_model->getAllByCustomerID(7) as $row) {
             $this->data['departmens_list'][$row->id] = $row->text;
         }
         $this->data['category_list'][] = 'All';
@@ -970,9 +970,10 @@ class Measure extends MY_Controller {
     }
 
     public function getDepartmentsByCustomer(){
+        $this->load->model('sites_model');
         $this->load->model('department_members_model');
-        $customer = explode(".", $this->input->post('customer_name'));
-        $result = $this->department_members_model->getAllByCustomer(addslashes(strtolower($customer[0])));
+        $customerID = $this->sites_model->getIdByName($this->input->post('customer_name'));
+        $result = $this->department_members_model->getAllByCustomerID($customerID);
         $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }
 

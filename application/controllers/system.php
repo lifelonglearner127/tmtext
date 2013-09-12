@@ -631,8 +631,17 @@ class System extends MY_Controller {
             }
             fclose($handle);
         }
+        
+        $highest_level = $_rows[0]->level;
+        foreach($_rows as $key=>$one){
+            if($highest_level <= $one->level)
+                $highest_level = $one->level;
+        }
+        
+       // echo $highest_level;
+        
         foreach($_rows as $row){
-            if($row->level <= 0){
+            if($row->level <$highest_level){
                 $special = 0;
                 $parent_text = '';
                 $text = '';
@@ -640,19 +649,19 @@ class System extends MY_Controller {
                 if($row->special!='' && !is_null($row->special)){
                     $special = $row->special;
                 }
-                if(is_array($row->parent_text)){
+                if(isset($row->parent_text) && is_array($row->parent_text)){
                     $parent_text = $row->parent_text[0];
-                } else if(!is_array($row->parent_text) && !is_null($row->parent_text) && $row->parent_text!=''){
+                } else if(isset($row->parent_text) && !is_array($row->parent_text) && !is_null($row->parent_text) && $row->parent_text!=''){
                     $parent_text = $row->parent_text;
                 }
-                if(is_array($row->text)){
+                if(isset($row->text) && is_array($row->text)){
                     $text = $row->text[0];
-                } else if(!is_array($row->text) && !is_null($row->text)){
+                } else if(isset($row->text) && !is_array($row->text) && !is_null($row->text)){
                     $text = $row->text;
                 }
-                if(is_array($row->url)){
+                if(isset($row->url) && is_array($row->url)){
                     $url = $row->url[0];
-                } else if(!is_array($row->url) && !is_null($row->url)){
+                } else if(isset($row->url) && !is_array($row->url) && !is_null($row->url)){
                     $url = $row->url;
                 }
                 if(substr_count($url, 'http://') == 0 && $this->input->post('site_name')!='[Choose site]'){
@@ -661,14 +670,21 @@ class System extends MY_Controller {
                 }	
                 $department_members_id = 0;
                 if($parent_text!=''){
-                    $check_id = $this->department_members_model->checkExist($site_name[0], $site_id, $parent_text);
+                    $check_id = $this->department_members_model->checkExist( $site_id, $parent_text);
                     if($check_id == false){
-                        $department_members_id = $this->department_members_model->insert($site_name[0], $site_id, $parent_text);
+                        $department_members_id = $this->department_members_model->insert( $site_id, $parent_text);
                     } else {
                         $department_members_id = $check_id;
                     }
                 }
 				/*new columns*/
+                
+                 if(isset($row->level) && is_array($row->level)){
+                    $level = $row->level[0];
+                } else if(isset($row->level) && !is_array($row->level) && !is_null($row->level) && $row->level!=''){
+                    $level = $row->level;
+                }
+                
 				if(isset($row->nr_products) && is_array($row->nr_products)){
                     $nr_products = $row->nr_products[0];
                 } else if(isset($row->nr_products) && !is_array($row->nr_products) && !is_null($row->nr_products) && $row->nr_products!=''){
@@ -715,13 +731,17 @@ class System extends MY_Controller {
                 if($text != ''){
                     $check_site = $this->site_categories_model->checkExist($site_id, $text);
                     if($check_site == false){
-                        $this->site_categories_model->insert($site_id, $text, $url, $special, $parent_text, $department_members_id, $nr_products, $description_wc,$keyword_density,$description_title,$description_text);
+                        $this->site_categories_model->insert($site_id, $text, $url, $special, $parent_text, $department_members_id, $nr_products, $description_wc,$keyword_density,$description_title,$description_text,$level);
                     }
                 }
 			}
-            if($row->level > 0){
+            if($row->level == $highest_level){
            
-                $check_id = $this->department_members_model->checkExist($site_name[0], $site_id, $row->text);
+                $check_id = $this->department_members_model->checkExist( $site_id, $row->text);
+                
+                if(isset($row->level) && !is_null($row->level) && $row->level!=''){
+                    $level = $row->level;
+                }
                 
                 if(isset($row->description_wc) && is_array($row->description_wc)){
                     $description_wc = $row->description_wc[0];
@@ -755,7 +775,7 @@ class System extends MY_Controller {
                 }
                 
                 if($check_id == false){
-                    $this->department_members_model->insert($site_name[0], $site_id, $row->text, $description_wc, $description_text, $keyword_density, $description_title );
+                    $this->department_members_model->insert($site_id, $row->text, $description_wc, $description_text, $keyword_density, $description_title, $level);
                 }
             }
         }
@@ -798,12 +818,12 @@ class System extends MY_Controller {
         $this->load->model('best_sellers_model');
         $type = $this->input->post('type');
         $site_id = $this->input->post('site_id');
-        $site_name = explode(".", $this->input->post('site_name'));
+//        $site_name = explode(".", $this->input->post('site_name'));
         if($type == 'categories'){
             $this->site_categories_model->deleteAll($site_id);
             $response['message'] =  'Categories was deleted successfully';
         } elseif($type == 'departments'){
-            $this->department_members_model->deleteAll(strtolower($site_name[0]));
+            $this->department_members_model->deleteAll($site_id);
             $response['message'] =  'Departments was deleted successfully';
         } elseif($type == 'overall'){
             $this->best_sellers_model->deleteAll($site_id);
@@ -818,7 +838,7 @@ class System extends MY_Controller {
         $this->load->model('sites_model');
 
         $site_id = $this->input->post('site_id');
-        $site_name = explode(".", strtolower($this->input->post('site_name')));
+//        $site_name = explode(".", strtolower($this->input->post('site_name')));
         $file = $this->config->item('csv_upload_dir').$this->input->post('overall_choosen_file');
         $_rows = array();
         if (($handle = fopen($file, "r")) !== FALSE) {

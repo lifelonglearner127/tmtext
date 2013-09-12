@@ -108,7 +108,7 @@ class Site_categories_model extends CI_Model {
         return $query->result();
     }
 
-    function insert($site_id, $text, $url, $special=0, $parent_text='', $department_members_id = 0, $nr_products = 0 , $description_wc = 0,$title_keyword_description_density,$description_title,$description_text )
+    function insert($site_id, $text, $url, $special, $parent_text, $department_members_id, $nr_products, $description_wc, $title_keyword_description_density, $description_title, $description_text, $level)
     {
         $this->site_id = $site_id;
         $this->text = $text;
@@ -116,10 +116,9 @@ class Site_categories_model extends CI_Model {
         $this->special = $special;
         $this->parent_text = $parent_text;
         $this->department_members_id = $department_members_id;
-		
-		if($nr_products != NULL)
+        if(isset($nr_products))
 			$this->nr_products = $nr_products;
-		if($description_wc != NULL)
+        if(isset($description_wc))
 			$this->description_words = $description_wc;
 		if(isset($title_keyword_description_density))
 			$this->title_keyword_description_density = $title_keyword_description_density;
@@ -127,8 +126,7 @@ class Site_categories_model extends CI_Model {
 			$this->description_title = $description_title;
 		if(isset($description_text))
 			$this->description_text = $description_text;
-			
-			
+        $this->level=$level;		
         $this->db->insert($this->tables['site_categories'], $this);
         return $this->db->insert_id();
     }
