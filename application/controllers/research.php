@@ -1041,7 +1041,7 @@ class Research extends MY_Controller {
         $header = $header.'<img src="'.$download_report_params->own_logo.'" />';
         $header = $header.'</td>';
         $header = $header.'<td style="text-align: right;">';
-        $header = $header.'<img src="'.$download_report_params->customer_logo.'" />';
+        $header = $header.'<img src="'.$download_report_params->customer_logo.'" style="max-height:60px;max-width:300px;" />';
         $header = $header.'</td>';
         $header = $header.'</tr>';
         $header = $header.'</table>';
