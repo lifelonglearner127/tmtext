@@ -1100,14 +1100,21 @@ class Research extends MY_Controller {
 
             if ($report_data['summary']['short_wc_total_not_0'] > 0 && $report_data['summary']['long_wc_total_not_0'] > 0) {
                 $html = $html.'<tr><td class="report_td">';
-                $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_arrow_down.png">'.$report_data['summary']['items_short_products_content_short'].' items have short descriptions that are too short</div>';
+                $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_arrow_down.png">'.$report_data['summary']['items_short_products_content_short'].' items have short descriptions that are less than '.$report_data['summary']['short_description_wc_lower_range'].'</div>';
                 $html = $html.'</td></tr>';
                 $html = $html.'<tr><td class="report_td">';
-                $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_arrow_down.png">'.$report_data['summary']['items_long_products_content_short'].' items have long descriptions that are too short</div>';
+                $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_arrow_down.png">'.$report_data['summary']['items_long_products_content_short'].' items have long descriptions that are less than '.$report_data['summary']['long_description_wc_lower_range'].'</div>';
                 $html = $html.'</td></tr>';
             } else {
+                if ($report_data['summary']['short_wc_total_not_0'] == 0 && $report_data['summary']['long_wc_total_not_0'] != 0){
+                    $product_descriptions_that_are_too_short = $report_data['summary']['items_long_products_content_short'];
+                    $product_descriptions_that_are_less_than = $report_data['summary']['long_description_wc_lower_range'];
+                } else {
+                    $product_descriptions_that_are_too_short = $report_data['summary']['items_short_products_content_short'];
+                    $product_descriptions_that_are_less_than = $report_data['summary']['short_description_wc_lower_range'];
+                }
                 $html = $html.'<tr><td class="report_td">';
-                $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_arrow_down.png">items have descriptions that are too short</div>';
+                $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_arrow_down.png">'.$product_descriptions_that_are_too_short.' items have long descriptions that are less than '.$product_descriptions_that_are_less_than.'</div>';
                 $html = $html.'</td></tr>';
             }
 
