@@ -11,6 +11,10 @@ from pprint import pprint
 filename = sys.argv[1]
 field = sys.argv[2]
 
+if len(sys.argv) > 2:
+	filter_field = sys.argv[3]
+	value = sys.argv[4]
+
 f = codecs.open(filename, "rb", "utf-8")
 fields = []
 
@@ -18,7 +22,11 @@ for line in f:
 	item = json.loads(line.strip())
 
 	if field in item:
-		fields.append(item[field])
+		if len(sys.argv) > 2:
+			if item[filter_field] == value:
+				fields.append(item[field])
+		else:
+			fields.append(item[field])
 
 for el in sorted(fields):
 	print el
