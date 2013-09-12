@@ -990,7 +990,7 @@ class Measure extends MY_Controller {
 		 $result = $this->site_categories_model->getDataByCategory($category_id);
 		 if(empty($_POST['keyword'])){
 		     $this->site_categories_model->UpdateKeywordsData($category_id);
-			 $density = 'N/A';
+			 $density = ' N/A';
 		 } else {
 			 //var_dump($result);
 			 $description_text=trim($result->description_text,'"');
@@ -1027,7 +1027,7 @@ class Measure extends MY_Controller {
 		 $result = $this->department_members_model->getDataByDepartment($department_id);
 		 if(empty($_POST['keyword'])){
 		     $this->department_members_model->UpdateKeywordsDepartmentData($department_id);
-			 $density = 'N/A';
+			 $density = ' N/A';
 		 } else {
 			 //var_dump($result);
 			 $description_text=trim($result->description_text,'"');

@@ -153,6 +153,7 @@ $( function() {
         }, function(data) {
             $("#departmentDropdown .dropdown-menu").empty();
             if(data.length > 0){
+                $('#tabs').show();
                 $("#departmentDropdown .dropdown-menu").append("<li><a data-item=\"\" data-value=\"All\" href=\"javascript:void(0);\">All</a></li>");
                 for(var i=0; i<data.length; i++){
                     if(i == 0){
@@ -162,8 +163,9 @@ $( function() {
                 }
             } else {
                 $('#departmentDropdown .btn_caret_sign1').text('empty');
+                $('#tabs').hide();
             }
-            var stringNewData = '<table id="records" ><thead><tr><th style="width: 50px !important;word-wrap: break-word;" >Category()</th><th>Items</th><th>Category Description SEO</th><th>Words</th></tr></thead><tbody></tbody></table>';
+            var stringNewData = '<table id="records" ><thead><tr><th style="width: 112px !important;word-wrap: break-word;" >Categories ()</th><th>Items</th><th>Keyword Density</th><th>Words</th></tr></thead><tbody></tbody></table>';
             $( '#dataTableDiv1' ).html(stringNewData);
             $( '#records' ).dataTable({
                 "bJQueryUI": true
@@ -211,7 +213,7 @@ $( function() {
             } else {
                 $('#departmentDropdownSec .btn_caret_sign_sec1').text('empty');
             }
-            var stringNewData = '<table id="recordSec" ><thead><tr><th style="width: 50px !important;word-wrap: break-word;" >Category()</th><th>Items</th><th>Category Description SEO</th><th>Words</th></tr></thead><tbody></tbody></table>';
+            var stringNewData = '<table id="recordSec" ><thead><tr><th style="width: 112px !important;word-wrap: break-word;" nowrap>Categories ()</th><th style="min-width: 60px;">Items</th><th>Keyword Density</th><th style="min-width: 60px;">Words</th></tr></thead><tbody></tbody></table>';
             $( '#dataTableDiv2' ).html(stringNewData);
             $( '#recordSec' ).dataTable({
                 "bJQueryUI": true
@@ -274,13 +276,13 @@ function readBestSellers(department_id,site_name,table_name) {
                 tableDataString += '<td>'+data[i].nr_products+'</td>';
 				
                 if(data[i].title_keyword_description_density && data[i].description_title) {
-                    var density = '0.0%';
+                    var density = ' - 0.0%';
                     var densityObj = $.parseJSON(data[i].title_keyword_description_density);
                     var descriptionTitle = data[i].description_title;
 					
                     for(index in densityObj){
                         if(descriptionTitle.replace('"','').replace('"','').toLowerCase().trim() == index.trim().toLowerCase())
-                            density = densityObj[index]+'%';
+                            density = ' - '+densityObj[index]+'%';
                     }
 				
                     tableDataString += '<td><select class="changeDensity" style="width:95px;" >';
@@ -293,9 +295,9 @@ function readBestSellers(department_id,site_name,table_name) {
                     tableDataString += '<td>';
                 }
                 var user_seo_keywords = data[i].user_seo_keywords.trim();
-                var user_keyword_description_density = data[i].user_keyword_description_density.trim()+'%';
+                var user_keyword_description_density = ' - '+data[i].user_keyword_description_density.trim()+'%';
                 if(user_seo_keywords == '')
-                    user_keyword_description_density = 'N/A';
+                    user_keyword_description_density = ' N/A';
                 tableDataString += '<input type="text" style="width: 95px;float: left;margin-right: 5px;" placeholder="Your keyword" onblur="keywordAjax(this);" name="keyword" value="'+user_seo_keywords+'" />';
                 tableDataString += '<span style="float: left;" >'+user_keyword_description_density+'</span></td>';
                 tableDataString += '<td>'+data[i].description_words+'</td>';
@@ -303,7 +305,7 @@ function readBestSellers(department_id,site_name,table_name) {
             }
 			
             var categoryCount = data.length;
-            var stringNewData = '<table id="'+table_name+'" ><thead><tr><th style="width: 50px !important;word-wrap: break-word;" >Category('+categoryCount+')</th><th>Items</th><th>Category Description SEO</th><th>Words</th></tr></thead><tbody>'+tableDataString+'</tbody></table>';
+            var stringNewData = '<table id="'+table_name+'" ><thead><tr><th style="width: 115px !important;word-wrap: break-word;" nowrap>Categories ('+categoryCount+')</th><th style="min-width:60px;">Items</th><th>Keyword Density</th><th style="min-width:60px;">Words</th></tr></thead><tbody>'+tableDataString+'</tbody></table>';
             if(table_name == 'records')
                 $( '#dataTableDiv1' ).html(stringNewData);
             else
@@ -327,7 +329,7 @@ function keywordAjax(obj) {
             'categoryID': categoryID
         },
         success: function(data) {
-            $(obj).next().text(data);
+            $(obj).next().text(' - '+   data);
         }
 
     });
@@ -346,7 +348,7 @@ function keywordAjaxDepartment(obj){
             'departmentID': departmentID
         },
         success: function(data) {
-            $(obj).next().text(data);
+            $(obj).next().text(' - '+data);
             
         }
 
@@ -371,18 +373,18 @@ function departmentAjax(department_id,site_name){
 				
                 // tableDataString += '<td>'+data[i].text+'<input type="hidden" class="categoryID" value="'+data[i].id+'" ></td>';
                 
-                dataString = '<div><span style="font-weight: bold;float:left;width: 156px;">Dept Description SEO:</span></div>';
+                dataString = '<div><span style="font-weight: bold;float:left;width: 156px;">SEO Keyword Density:</span></div>';
                 if(data[i].title_keyword_description_density && data[i].description_title) {
-                    var density = '0.0%';
+                    var density = ' - 0.0%';
                     var densityObj = $.parseJSON(data[i].title_keyword_description_density);
                     var descriptionTitle = data[i].description_title;
 					
                     for(index in densityObj){
                         if(descriptionTitle.replace('"','').replace('"','').toLowerCase().trim() == index.trim().toLowerCase())
-                            density = densityObj[index]+'%';
+                            density = ' - '+densityObj[index]+'%';
                     }
 		    dataString += '<input type="hidden" class="departmentID" value="'+data[i].id+'" >';		
-                    dataString += '<select class="changeDensity" style="width:100px;margin-left: 17px;" >';
+                    dataString += '<select class="changeDensity" style="width:334px;margin-left: 13px;" >';
                     dataString += '<option value="" >'+descriptionTitle.trim().replace('"','').replace('"','')+'</option>';
                     for(index in densityObj){
                         dataString += '<option value="'+densityObj[index]+'" >'+index+'</option>';
@@ -390,16 +392,14 @@ function departmentAjax(department_id,site_name){
                     dataString += '</select><span>&nbsp;'+density+'</span>';
                 } 
                 var user_seo_keywords = data[i].user_seo_keywords.trim();
-                var user_keyword_description_density = data[i].user_keyword_description_density.trim()+'%';
+                var user_keyword_description_density = ' - '+data[i].user_keyword_description_density.trim()+'%';
                 if(user_seo_keywords == '')
-                    user_keyword_description_density = 'N/A';
-                dataString += '<div style="width: 146px;float: right;margin-right: 20px;"><input type="text" style="width: 100px;float: left;" placeholder="Your keyword" onblur="keywordAjaxDepartment(this);" name="keyword" value="'+user_seo_keywords+'" />';
-                dataString += '<span style="float: left;margin-top: 4px;margin-left: 2px;" >'+user_keyword_description_density+'</span></div>';
+                    user_keyword_description_density = ' N/A';
+                dataString += '<div style="float: right;margin-right: 20px;"><input type="text" style="width: 333px;float: left;" placeholder="Your keyword" onblur="keywordAjaxDepartment(this);" name="keyword" value="'+user_seo_keywords+'" />';
+                dataString += '<span style="float: left;margin-top: 4px;margin-left:7px;" >'+user_keyword_description_density+'</span></div>';
                 
             }
-            
             $('#departments_content').html(dataString);
-            
            
         }  
     });      

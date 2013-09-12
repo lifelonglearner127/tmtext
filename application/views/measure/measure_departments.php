@@ -20,7 +20,7 @@
     <div class="tab-content">
 
 
-        <div style="text-align: center;"><span style="font-weight: bold">Compare with: </span></div>
+        <div style="text-align: center;"><span style="font-weight: bold; float: right; margin-right: 10px;">Compare with: </span></div>
         <div class="row-fluid home_pages">
             <div class='span12 head_section'>
 
@@ -111,7 +111,8 @@
                             }
                              #departments_content{
                                 margin-top:10px;
-                                width: 350px;
+                                width: 563px;
+                                display: block;
                             }
                             #dataTableDiv1 .dataTables_filter input, #dataTableDiv2 .dataTables_filter input { width: 150px }
 
@@ -160,15 +161,15 @@
             <link type="text/css" rel="stylesheet" href="<?php echo base_url(); ?>css/styles.css" />
 
             <div class="table_results">
-                <div id="tabs"  class="mt_10" style="overflow: hidden;" >
+                <div id="tabs"  class="mt_10" style="overflow: hidden;display: none;" >
 
                     <div id="dataTableDiv1" style="width: 48%;float: left;" >
                         <table id="records" >
                             <thead>
                                 <tr>
-                                    <th>Category()</th>
+                                    <th>Categories ()</th>
                                     <th>Items</th>
-                                    <th>Category Description SEO</th>
+                                    <th>Keyword Density</th>
                                     <th>Words</th>
                                 </tr>
                             </thead>
@@ -181,9 +182,9 @@
                         <table id="recordSec"  >
                             <thead>
                                 <tr>
-                                    <th>Category()</th>
+                                    <th>Categories ()</th>
                                     <th>Items</th>
-                                    <th>Category Description SEO</th>
+                                    <th>Keyword Density</th>
                                     <th>Words</th>
                                 </tr>
                             </thead>
