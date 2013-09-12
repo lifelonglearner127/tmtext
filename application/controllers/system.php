@@ -883,8 +883,9 @@ class System extends MY_Controller {
 		   $filename = "";
 		    
 		   if ($status != "error") {
-		      $config['upload_path'] = realpath(BASEPATH . "../webroot/emails_logos/");
-		      $config['allowed_types'] = 'gif|jpg|png|doc|txt';
+		   	  $up_path = realpath(BASEPATH . "../webroot/emails_logos/");
+		      $config['upload_path'] = $up_path;
+		      $config['allowed_types'] = 'gif|jpg|png|jpeg';
 		      $config['max_size']  = 1024 * 8;
 		      $config['encrypt_name'] = TRUE;
 		 
