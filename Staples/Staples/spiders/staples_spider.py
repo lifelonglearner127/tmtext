@@ -131,6 +131,10 @@ class StaplesSpider(BaseSpider):
 
 		# hxs = HtmlXPathSelector(resp_for_scrapy)
 
+
+		#TODO: doesn't extract Televisions for ex
+		#TODO: some descriptions are empty, don't extract them if they are empty
+
 		hxs = HtmlXPathSelector(response)
 		categories = hxs.select("//h2/a")
 
@@ -141,9 +145,9 @@ class StaplesSpider(BaseSpider):
 		# extract number of items, if any
 		nritems_holder = hxs.select("//div[@class='perpage']/span[@class='note']/text()").extract()
 		if nritems_holder:
-			m = re.match(".*([0-9]+)\s*items\s*", nritems_holder[0])
+			m = re.findall("[0-9]+\s*items", nritems_holder[0])
 			if m:
-				item['nr_products'] = int(m.group(1))
+				item['nr_products'] = int("".join(re.findall("[0-9]+", m[0])))
 			else:
 				print "NOT MATCH ", nritems_holder[0]
 
@@ -151,12 +155,14 @@ class StaplesSpider(BaseSpider):
 		desc_holder = hxs.select("//h2[@class='seo short']//text()").extract()
 		if desc_holder:
 			item['description_text'] = desc_holder[0].strip()
-			item['description_title'] = item['text']
 
-			tokenized = Utils.normalize_text(item['description_text'])
-			item['description_wc'] = len(tokenized)
+			if item['description_text']:
+				item['description_title'] = item['text']
 
-			(item['keyword_count'], item['keyword_density']) = Utils.phrases_freq(item['description_title'], item['description_text'])
+				tokenized = Utils.normalize_text(item['description_text'])
+				item['description_wc'] = len(tokenized)
+
+				(item['keyword_count'], item['keyword_density']) = Utils.phrases_freq(item['description_title'], item['description_text'])
 
 		else:
 			# if no description is found
