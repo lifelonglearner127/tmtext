@@ -17,7 +17,10 @@ fields = []
 for line in f:
 	item = json.loads(line.strip())
 
-	if field in item:
+	#if field in item:
+	if item["level"] == 1:
+		fields.append("<font style = 'background-color: yellow'>" + item[field].encode("utf-8", errors='ignore') + "</font>")
+	else:
 		fields.append(item[field].encode("utf-8", errors='ignore'))
 
 for el in sorted(fields):
