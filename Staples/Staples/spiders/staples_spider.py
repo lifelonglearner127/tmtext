@@ -133,7 +133,6 @@ class StaplesSpider(BaseSpider):
 
 
 		#TODO: doesn't extract Televisions for ex
-		#TODO: some descriptions are empty, don't extract them if they are empty
 
 		hxs = HtmlXPathSelector(response)
 		categories = hxs.select("//h2/a")
@@ -152,10 +151,10 @@ class StaplesSpider(BaseSpider):
 				print "NOT MATCH ", nritems_holder[0]
 
 		# extract description, if any
-		desc_holder = hxs.select("//h2[@class='seo short']//text() | //h2[@class='seo short long']//text()").extract()
-		if desc_holder:
-			#TODO: check this
-			item['description_text'] = " ".join(filter(desc_holder, None))
+		description_texts = hxs.select("//h2[@class='seo short']//text() | //h2[@class='seo short long']//text()").extract()
+		if description_texts and reduce(lambda x,y: x or y, [line.strip() for line in description_texts]):
+			# replace all whitespace with one space, strip, and remove empty texts; then join them
+			item['description_text'] = " ".join([re.sub("\s+"," ", description_text.strip()) for description_text in description_texts if description_text.strip()])
 
 			if item['description_text']:
 				item['description_title'] = item['text']
@@ -165,8 +164,11 @@ class StaplesSpider(BaseSpider):
 
 				(item['keyword_count'], item['keyword_density']) = Utils.phrases_freq(item['description_title'], item['description_text'])
 
+			else:
+				# if no description is found
+				print 'desc_holder but no desc_text ', response.URL
+				item['description_wc'] = 0
 		else:
-			# if no description is found
 			item['description_wc'] = 0
 
 		# yield item the request came from (parent)
