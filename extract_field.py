@@ -22,7 +22,7 @@ for line in f:
 	item = json.loads(line.strip())
 
 	if field in item:
-		if len(sys.argv) > 2:
+		if len(sys.argv) > 2 and filter_field in item:
 			if item[filter_field] == value:
 				fields.append(item[field])
 		else:
