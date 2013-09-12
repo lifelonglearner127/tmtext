@@ -26,6 +26,35 @@ class Webshoots_model extends CI_Model {
         return $pos;
     }
 
+    public function scanForProductSnap($im_data_id) {
+        $res_data = array(
+            'snap' => '',
+            'img_av_status' => false,
+            'status' => ''
+        );
+        $check_obj = array(
+            'imported_data_id' => $im_data_id,
+            'snap !=' => 'null'
+        );
+        $query = $this->db->where($check_obj)->order_by('snap_date', 'desc')->limit(1)->get($this->tables['crawler_list']);
+        $query_res = $query->result();
+        if(count($query_res) > 0) {
+            $r = $query_res[0];
+            $snap = $r->snap;
+            $fs = filesize(realpath(BASEPATH . "../webroot/webshoots/$snap"));
+            $res_data['snap'] = $snap;
+            if($fs !== false || $fs > 10000) {
+                $res_data['img_av_status'] = true;
+                $res_data['status'] = 'ok';
+            } else {
+                $res_data['status'] = 'low filesize or file not exists';
+            }
+        } else {
+            $res_data['status'] = 'no snap in db';
+        }
+        return $res_data;
+    }
+
     public function get_crawler_list_by_ids($ids) {
         $cr_query = $this->db->where_in('id', $ids)->get($this->tables['crawler_list']);
         return $cr_query->result();

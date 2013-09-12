@@ -1452,13 +1452,19 @@ public function gridview() {
             
         }
 
+        // ===== product snap scanner (start)
+        // $this->load->model('webshoots_model');
+        // $snap_data = $this->webshoots_model->scanForProductSnap($im_data_id);
+        // ===== product snap scanner (end)
+
         $data = array(
             'im_data_id' => $im_data_id,
             's_product' => array(),
             's_product_short_desc_count' => 0,
             's_product_long_desc_count' => 0,
             'seo' => array('short' => array(), 'long' => array()),
-            'same_pr' => array()
+            'same_pr' => array(),
+            'webshoots_model' => $this->load->model('webshoots_model')
         );
         if ($im_data_id !== null && is_numeric($im_data_id)) {
 

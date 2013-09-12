@@ -23,6 +23,7 @@ foreach ($same_pr as $ks => $vs) {
 $row = 1;
 foreach ($same_pr as $ks => $vs) {
     $marg = 0;
+
     if(strlen($vs['product_name']) > 70){ $marg = 1;}
     $row = ceil($i / 3);
     foreach ($vs['three_last_prices'] as $key => $last_price) {
@@ -191,7 +192,12 @@ foreach ($same_pr as $ks => $vs) {
                                 //echo $s_product_long_description."!!!!";
                                 echo "Short Description";
                             }
-                            ?><span class='short_desc_wc' style="float:left;width: 100%;"></span></span>
+                            ?>
+                            <?php $snap_data = $this->webshoots_model->scanForProductSnap($vs['imported_data_id']); ?>
+                            <?php if($snap_data['img_av_status']) { ?>
+                                <i style='float: right;' class='snap_ico_gridview icon-picture' data-snap="<?php echo $snap_data['snap']; ?>"></i
+                            <?php } ?>
+                            <span class='short_desc_wc' style="float:left;width: 100%;"></span></span>
                             <p class="heading_text">Words: <b><?php echo $s_product_short_desc_count; ?></b></p>
                             <div class="p_seo<?php echo $row; ?>short seo_container" style="clear:left;">
         
@@ -441,6 +447,7 @@ foreach ($same_pr as $ks => $vs) {
 
                     </div>    
                 </div>
+
                 <p  style="color: rgb(117, 114, 114);">Id: <span class="imported_data_id"><?php echo $vs['imported_data_id']; ?></span></p>
 
                 <!--            <div class='grid_seo'>
@@ -680,6 +687,17 @@ if (($i - 1) % 3 != 0) {
     $(".keyword_input").keyup(function(){
          setTimeout(function(){ gridKeywordDensity();}, '1000');
     });
+
+    $(".snap_ico_gridview").on('mouseover', function(e) { 
+        var snap = $(e.target).data('snap');
+        var img_target = "/webshoots/" + snap;
+        var data = "<img src='" + img_target + "'>";
+        $("#preview_crawl_snap_modal").modal('show');
+        $("#preview_crawl_snap_modal .snap_holder").html(data);
+    });
+
+
+
   });
   
   $('.primary input').keydown(function (e){
