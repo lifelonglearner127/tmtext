@@ -194,19 +194,20 @@ foreach ($same_pr as $ks => $vs) {
                             ?><span class='short_desc_wc' style="float:left;width: 100%;"></span></span>
                             <p class="heading_text">Words: <b><?php echo $s_product_short_desc_count; ?></b></p>
                             <div class="p_seo<?php echo $row; ?>short seo_container" style="clear:left;">
-        <?php if (count($vs['seo']['short']) > 0) { ?>
+        
                                    <div style="float: left;width: 100%;"> <p class="heading_text">SEO Keywords: </p>
-                                    <select class="keywords_select" name="analysis" style="margin-top: -20px;float: right;width: 95px;margin-right: 50px;">
-						<option  value="title">Title</option>
-						<option value="custom">Custom</option>
-				    </select></div>
+                                        <select class="keywords_select" name="analysis" style="margin-top: -20px;float: right;width: 95px;margin-right: 50px;">
+                                                    <option  value="title">Title</option>
+                                                    <option value="custom">Custom</option>
+                                        </select>
+                                   </div>
                                 <div class="primary" style="height: 100%;width: 100%;">
                                     <div class=""><span class="primary_name">Primary: </span>
                                         <span>
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
-                                                        <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword1" keyword_num="1" type="text" value="">
+                                                        <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword1" keyword_num="1" type="text" value="<?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['primary']; }?>">
                                                         <span id="keyword1_density"></span>
                                                     </span>
                                             </span>
@@ -218,7 +219,7 @@ foreach ($same_pr as $ks => $vs) {
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
-                                                        <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword2" keyword_num="2" type="text" value="">
+                                                        <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword2" keyword_num="2" type="text" value="<?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['secondary']; }?>">
                                                         <span id="keyword2_density"></span>
                                                     </span>
                                             </span>
@@ -230,7 +231,7 @@ foreach ($same_pr as $ks => $vs) {
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
-                                                        <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword3" keyword_num="2" type="text" value="">
+                                                        <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword3" keyword_num="2" type="text" value="<?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['tertiary']; }?>">
                                                         <span id="keyword3_density"></span>
                                                     </span>
                                             </span>
@@ -238,6 +239,7 @@ foreach ($same_pr as $ks => $vs) {
                                     </div>
                                     <div class="clear"></div>					
 				</div> 
+            <?php if (count($vs['seo']['short']) > 0) { ?>                    
                                     <ul class='gr_seo_short_ph list_section' style='font-weight: bold;float:left;'>
             <?php foreach ($vs['seo']['short'] as $key => $value) { ?>
 
@@ -254,7 +256,7 @@ foreach ($same_pr as $ks => $vs) {
                                     </ul>
                                     <?php } else { ?>
 
-                                    <p style="float: left;width: 100%;" class="heading_text">SEO Keywords: <span style="font-weight: bold;">None</span></p>
+                                    <p style="float: left;width: 100%;" class="heading_text list_section"><span style="font-weight: bold;">None</span></p>
         <?php } ?>
                             </div>
                             <div class="cmp-area" style="float: left;">
@@ -285,7 +287,7 @@ foreach ($same_pr as $ks => $vs) {
                             echo $row . 'long';
                         }
         ?> seo_container">
-                            <?php if (count($vs['seo']['long']) > 0) { ?>
+                           
                                    <div style="float: left;width: 100%;"><p class="heading_text">SEO Keywords: </p>
                                    <select class="keywords_select" name="analysis" style="float: right;margin-top: -20px;width: 95px;margin-right: 50px;">
 						<option  value="title">Title</option>
@@ -300,7 +302,7 @@ foreach ($same_pr as $ks => $vs) {
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
-                                                        <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword1" keyword_num="1" type="text" value="">
+                                                        <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword1" keyword_num="1" type="text" value="<?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['primary']; }?>">
                                                     </span>
                                             </span>
                                         </span>
@@ -311,7 +313,7 @@ foreach ($same_pr as $ks => $vs) {
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
-                                                        <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword2" keyword_num="2" type="text" value="">
+                                                        <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword2" keyword_num="2" type="text" value="<?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['secondary']; }?>">
                                                     </span>
                                             </span>
                                         </span>
@@ -322,7 +324,7 @@ foreach ($same_pr as $ks => $vs) {
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
-                                                        <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword3" keyword_num="2" type="text" value="">
+                                                        <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword3" keyword_num="2" type="text" value="<?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['tertiary']; }?>">
                                                     </span>
                                             </span>
                                         </span>
@@ -330,10 +332,48 @@ foreach ($same_pr as $ks => $vs) {
                                     <div class="clear"></div>					
 				</div>  
                                 <?php }else{ ?>
-                                <div class="primary" style="height: 100%;width: 100%;">
-                                </div>
+                                <!--<div class="primary" style="height: 100%;width: 100%;">
+                                   <p style="float: left;width: 100%;" class="heading_text list_section"><span style="font-weight: bold;">Primary: <?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['primary']; }?></span></p>
+                                   <p style="float: left;width: 100%;" class="heading_text list_section"><span style="font-weight: bold;">Secondary: <?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['secondary']; }?></span></p>
+                                   <p style="float: left;width: 100%;" class="heading_text list_section"><span style="font-weight: bold;">Tertiary: <?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['tertiary'];}?></span></p>
+                                </div>-->
+                                <div class="primary" style="height: 100%; width: 100%; display: block;">
+                                    <div class=""><span class="primary_name">Primary: </span>
+                                        <span>
+                                            <span class="primary_speed">
+                                                    <span class="title_words" style="display: none;"></span>
+                                                    <span class="you_words you_words_input" style="display: inline;">
+                                                        <span> <?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['primary']; }?></span>
+                                                    </span>
+                                            </span>
+                                        </span>
+                                    </div>
+                                    <div class="clear"></div>	
+                                    <div class=""><span class="primary_name">Secondary: </span>
+                                        <span>
+                                            <span class="primary_speed">
+                                                    <span class="title_words" style="display: none;"></span>
+                                                    <span class="you_words you_words_input" style="display: inline;">
+                                                        <span><?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['secondary']; }?></span>
+                                                    </span>
+                                            </span>
+                                        </span>
+                                    </div>
+                                    <div class="clear"></div>
+                                    <div class=""><span class="primary_name">Tertiary: </span>
+                                        <span>
+                                            <span class="primary_speed">
+                                                    <span class="title_words" style="display: none;"></span>
+                                                    <span class="you_words you_words_input" style="display: inline;">
+                                                        <span><?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['tertiary']; }?></span>
+                                                    </span>
+                                            </span>
+                                        </span>
+                                    </div>
+                                    <div class="clear"></div>
+				</div>
                                 <?php }?>
-
+ <?php if (count($vs['seo']['long']) > 0) { ?>
                                     <ul class='gr_seo_short_ph list_section' style='font-weight: bold;float:left;'>
             <?php foreach ($vs['seo']['long'] as $key => $value) { ?>
                                             <?php $v_ph = $value['ph']; ?>
@@ -349,7 +389,7 @@ foreach ($same_pr as $ks => $vs) {
                                     </ul>
                                     <?php } else { ?>
 
-                                    <p style="float: left;width: 100%;" class="heading_text">SEO Keywords: <span style="font-weight: bold;">None</span></p>
+                                    <p style="float: left;width: 100%;" class="heading_text list_section"><span style="font-weight: bold;">None</span></p>
         <?php } ?>
                             </div>
                             <div class="cmp-area" style="float: left;">                                
@@ -600,6 +640,7 @@ if (($i - 1) % 3 != 0) {
     selectedCustomer();
    
  $(document).ready(function(){
+   gridKeywordDensity();
    $(".mismatch_image").live('mouseover', function() {
 
         var item = "<div class='missmatch_popup'>Aaaaaaaaaa</div>";

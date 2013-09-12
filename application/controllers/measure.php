@@ -1782,7 +1782,8 @@ public function gridview() {
              
             
             foreach ($same_pr as $ks => $vs) {
-            
+             $custom_seo= $this->keywords_model->get_by_imp_id($vs['imported_data_id']);
+             $same_pr[$ks]['custom_seo']=$custom_seo;
                   if($res=$this->statistics_model->getbyimpid($vs['imported_data_id'])){
                       $same_pr[$ks]['short_description_wc']=$res['short_description_wc'];
                       $same_pr[$ks]['long_description_wc']= $res['long_description_wc']; 
