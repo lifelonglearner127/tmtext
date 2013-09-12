@@ -719,7 +719,7 @@ class System extends MY_Controller {
                     }
                 }
 			}
-            if($row->level == 1){
+            if($row->level > 0){
            
                 $check_id = $this->department_members_model->checkExist($site_name[0], $site_id, $row->text);
                 
