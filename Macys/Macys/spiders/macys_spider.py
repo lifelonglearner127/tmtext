@@ -33,14 +33,21 @@ class MacysSpider(BaseSpider):
             item['text'] = text
             item['url'] = link.select('@href').extract()[0]
             item['level'] = 1
-            yield item
+
+            # only yield this item after parsing its page and extracting additional info
+            #yield item
 
             # create request to extract subcategories for this category
-            yield Request(item['url'], callback = self.parseCategory, meta = {'parent' : item['text']})
+            yield Request(item['url'], callback = self.parseCategory, meta = {'parent' : item, 'level' : 1})
 
     # extract subcategories from each category
     def parseCategory(self, response):
         hxs = HtmlXPathSelector(response)
+
+        # output received parent element after extracting additional info
+        item = response.meta['parent']
+        yield item
+
         chapters = hxs.select("//li[@class='nav_cat_item_bold']")
         
         for chapter in chapters:
@@ -61,8 +68,10 @@ class MacysSpider(BaseSpider):
                 else:
                     item['text'] = text
                 item['url'] = subcat.select('@href').extract()[0]
-                item['level'] = 0
-                item['parent_text'] = response.meta['parent']
+                item['level'] = int(response.meta['level']) - 1
+                item['parent_text'] = response.meta['parent']['text']
                 item['parent_url'] = response.url
 
-                yield item
+                #yield item
+
+                yield Request(item['url'], callback = self.parseCategory, meta = {'parent' : item, 'level' : item['level']})
