@@ -200,7 +200,7 @@ foreach ($same_pr as $ks => $vs) {
                             <span class='short_desc_wc' style="float:left;width: 100%;"></span></span>
                             <p class="heading_text">Words: <b><?php echo $s_product_short_desc_count; ?></b></p>
                             <div class="p_seo<?php echo $row; ?>short seo_container" style="clear:left;">
-        
+                           
                                    <div style="float: left;width: 100%;"> <p class="heading_text">SEO Keywords: </p>
                                         <select class="keywords_select" name="analysis" style="margin-top: -20px;float: right;width: 95px;margin-right: 50px;">
                                                     <option  value="title">Title</option>
@@ -293,14 +293,14 @@ foreach ($same_pr as $ks => $vs) {
                             echo $row . 'long';
                         }
         ?> seo_container">
-                           
+                           <?php if ($s_product_description == '') { ?>
                                    <div style="float: left;width: 100%;"><p class="heading_text">SEO Keywords: </p>
                                    <select class="keywords_select" name="analysis" style="float: right;margin-top: -20px;width: 95px;margin-right: 50px;">
 						<option  value="title">Title</option>
 						<option value="custom">Custom</option>
 				   </select>
                                    </div>
-                                <?php if ($s_product_description == '') { ?>
+                                
                                    <div class="primary" style="height: 100%;width: 100%;">
                                     <div class=""><span class="primary_name">Primary: </span>
                                         <?php  ?>
@@ -343,13 +343,14 @@ foreach ($same_pr as $ks => $vs) {
                                    <p style="float: left;width: 100%;" class="heading_text list_section"><span style="font-weight: bold;">Secondary: <?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['secondary']; }?></span></p>
                                    <p style="float: left;width: 100%;" class="heading_text list_section"><span style="font-weight: bold;">Tertiary: <?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['tertiary'];}?></span></p>
                                 </div>-->
+                                <div style="float: left;width: 100%;"><p class="heading_text">SEO Keywords: </p></div>
                                 <div class="primary" style="height: 100%; width: 100%; display: block;">
                                     <div class=""><span class="primary_name">Primary: </span>
                                         <span>
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
-                                                        <span> <?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['primary']; }?></span>
+                                                        <span class='prim_1'> <?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['primary']; }?></span><span class='prim_1_prc'></span>
                                                     </span>
                                             </span>
                                         </span>
@@ -360,7 +361,7 @@ foreach ($same_pr as $ks => $vs) {
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
-                                                        <span><?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['secondary']; }?></span>
+                                                        <span class='prim_2'><?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['secondary']; }?></span><span class='prim_2_prc'></span>
                                                     </span>
                                             </span>
                                         </span>
@@ -371,7 +372,7 @@ foreach ($same_pr as $ks => $vs) {
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
-                                                        <span><?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['tertiary']; }?></span>
+                                                        <span class='prim_3'><?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['tertiary']; }?></span><span class='prim_3_prc'></span>
                                                     </span>
                                             </span>
                                         </span>
@@ -517,7 +518,7 @@ if (($i - 1) % 3 != 0) {
 
 </script>
 <script type='text/javascript'>
-    function gridKeywordDensity(){
+ function gridKeywordDensity(){
         var grid_primary_ph = $.trim($('input[name="keyword1"]').val());
         var grid_secondary_ph = $.trim($('input[name="keyword2"]').val());
         var grid_tertiary_ph = $.trim($('input[name="keyword3"]').val());
@@ -664,12 +665,12 @@ if (($i - 1) % 3 != 0) {
     $(".keywords_select").live('change', function() {
 
         if ($(this).val() === 'title') {
-            $(this).parents('.seo_container').find(".primary").css('display', 'none');
-            $(this).parents('.seo_container').find(".list_section").css('display', 'block');            
+            $(this).closest('.grid_se_section').find(".primary").css('display', 'none');
+            $(this).closest('.grid_se_section').find(".list_section").css('display', 'block');            
         } else {
 
-            $(this).parents('.seo_container').find(".list_section").css('display', 'none');
-            $(this).parents('.seo_container').find(".primary").css('display', 'block');
+            $(this).closest('.grid_se_section').find(".list_section").css('display', 'none');
+            $(this).closest('.grid_se_section').find(".primary").css('display', 'block');
            
         } 
         fixGridHeights();
@@ -706,7 +707,9 @@ $(document).click(function(e) {
             var secondary=$('.currentFocused').closest('.primary').find("input[name='keyword2']").val();
             var tertiary=$('.currentFocused').closest('.primary').find("input[name='keyword3']").val();
             var imported_data_id= $('.currentFocused').closest('.primary').find("input[name='keyword1']").attr('data-value');
-       
+            $('.currentFocused').closest('.grid_se_section').find('.prim_1').text(primary);
+            $('.currentFocused').closest('.grid_se_section').find('.prim_2').text(secondary);
+            $('.currentFocused').closest('.grid_se_section').find('.prim_3').text(tertiary);
     $.post(add_seo, {primary: primary, secondary: secondary, tertiary: tertiary, imported_data_id: imported_data_id}, 'json').done(function(data) {
     
     });
@@ -723,7 +726,9 @@ $(document).click(function(e) {
         var secondary=$(this).closest('.primary').find("input[name='keyword2']").val();
         var tertiary=$(this).closest('.primary').find("input[name='keyword3']").val();
         var imported_data_id= $(this).closest('.primary').find("input[name='keyword1']").attr('data-value');
-
+        $(this).closest('.grid_se_section').find('.prim_1').text(primary);
+        $(this).closest('.grid_se_section').find('.prim_2').text(secondary);
+        $(this).closest('.grid_se_section').find('.prim_3').text(tertiary);
         $.post(add_seo, {primary: primary, secondary: secondary, tertiary: tertiary, imported_data_id: imported_data_id}, 'json').done(function(data) {
 
         });
