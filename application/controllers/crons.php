@@ -15,6 +15,7 @@ class Crons extends MY_Controller {
             'duplicate_content' => true,
             'do_stats_new' => true,
             'do_duplicate_content' => true,
+            'ranking_api_exp' => true
         ));
     }
 
@@ -111,7 +112,19 @@ class Crons extends MY_Controller {
         // ==== moz.com (start)
         $access_id = "member-6d6d5924b0";
         $secret_key = "c5a3b6754bcb7f51b1674ca1790c7d66";
-        $test_api_call = "http://lsapi.seomoz.com/linkscape";
+        $expires = time() + 300;
+        $stringToSign = $access_id."\n".$expires;
+        $binarySignature = hash_hmac('sha1', $stringToSign, $secret_key, true);
+        $urlSafeSignature = urlencode(base64_encode($binarySignature));
+        $cols = "103079215108";
+        $object_url = "www.dev.contalytics.com";
+        $test_api_call = "http://lsapi.seomoz.com/linkscape/url-metrics/".urlencode($object_url)."?Cols=".$cols."&AccessID=".$access_id."&Expires=".$expires."&Signature=".$urlSafeSignature;
+        $options = array( CURLOPT_RETURNTRANSFER => true );  
+        $ch = curl_init($test_api_call); 
+        curl_setopt_array($ch, $options); 
+        $content = curl_exec($ch); 
+        curl_close($ch);  
+        print_r($content);
         // ==== moz.com (end)
     }
 
