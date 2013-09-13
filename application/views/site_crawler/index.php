@@ -65,12 +65,29 @@
 			<script>
 			$('button#crawl').attr("disabled","disabled");
 
-			$('select[name="batch"]').change(function(){
+			$('select[name="batch"]').change(function(e){
 				$('button#crawl').removeAttr("disabled");
+				if($(e.target).val() == "") {
+					$('button#snap_selected_batch').attr("disabled", "disabled");
+				} else {
+					$('button#snap_selected_batch').removeAttr("disabled");
+				}
 			});
 
+			function submitBatchSnapProcess() {
+				var batch_id = $('select[name="batch"] > option:selected').val();
+				var send_data = {
+	    		batch_id: batch_id
+	    	};
+	    	$("#loading_crawl_snap_modal").modal('show');
+	    	$.post(base_url + 'index.php/measure/batch_snap_process', send_data, function(data) {
+	    		console.log("BATCH SNAP PROCESS RESPONSE : ", data);
+	    		$("#loading_crawl_snap_modal").modal('hide');
+	    		loadCurrentList();
+	    	});
+			}
 
-            </script>
+      </script>
 
 
 			<h3 class="span3 current_list_title">Crawl list: <br/><small nowrap></small></h3>
@@ -80,10 +97,11 @@
 				<option value="<?php echo $ks; ?>"><?php echo $vs; ?></option>
 				<?php endforeach;?>
 			</select>
-			<button id="crawl_batch" class="btn new_btn btn-success mt_15 ml_15">Crawl</button>
-            <input type="text" class="span3 pull-left mt_15" name="search_crawl_data" >
-            <button id="apply_search_data" class="btn new_btn btn-success mt_15 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Apply</button>
-            <button id="clear_search_data" class="btn new_btn btn-success mt_15 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Clear</button>
+			<button id='snap_selected_batch' onclick="submitBatchSnapProcess()" disabled class='btn btn-success new_btn mt_15 ml_10'>Snap</button>
+			<button id="crawl_batch" class="btn new_btn btn-success mt_15 ml_10">Crawl</button>
+            <input type="text" class="span3 pull-left mt_15 ml_10" name="search_crawl_data" >
+            <button id="apply_search_data" class="btn new_btn btn-success mt_15 ml_10"><i class="icon-white icon-ok"></i>&nbsp;Apply</button>
+            <button id="clear_search_data" class="btn new_btn btn-success mt_15 ml_10"><i class="icon-white icon-ok"></i>&nbsp;Clear</button>
 
 			<div class="row-fluid mt_5">
 				<div class="search_area uneditable-input span10" style="cursor: text; width: 765px; height: 320px; overflow : auto;" id="Current_List">

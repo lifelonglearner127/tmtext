@@ -118,6 +118,45 @@ class Measure extends MY_Controller {
         return $this->webshoots_model->checkScreenCrawlStatus($url);
     }
 
+    public function batch_snap_process() {
+        $this->load->model('webshoots_model');
+        $this->load->model('crawler_list_model');
+        $batch_id = $this->input->post('batch_id');
+        $res = array(
+            'status' => false,
+            'data' => array()
+        );
+        if(isset($batch_id) && is_numeric($batch_id)) {
+            // $urls = $this->crawler_list_model->getByBatchOverall($batch_id);
+            $urls = $this->crawler_list_model->getByBatchLimit(5, 0, $batch_id);
+            // ===== start snaps crawl process (start)
+            if(count($urls) > 0) {
+                foreach ($urls as $k => $v) {
+                    $http_status = $this->urlExistsCode($v->url);
+                    $url = preg_replace('#^https?://#', '', $v->url);
+                    $r_url = urlencode(trim($url));
+                    $call_url = $this->webthumb_call_link($url);
+                    $snap_res = $this->crawl_webshoot($call_url, $v->id);
+
+                    $file = $snap_res['dir'];
+                    $file_size = filesize($file);
+                    if($file_size === false || $file_size < 2048) {
+                        @unlink($file);
+                        $api_key = $this->config->item('snapito_api_secret');
+                        $call_url = "http://api.snapito.com/web/$api_key/mc/$url";
+                        $snap_res = $this->crawl_webshoot($call_url, $v->id);
+                    }
+
+                    $this->webshoots_model->updateCrawlListWithSnap($v->id, $snap_res['img'], $http_status);
+                }
+            }
+            // ===== start snaps crawl process (end)
+            $res['status'] = true;
+            $res['data'] = $urls;
+        }
+        $this->output->set_content_type('application/json')->set_output(json_encode($res));
+    }
+
     public function reset_screen_drop() {
         $this->load->model('webshoots_model');
         $uid = $this->input->post('uid');
