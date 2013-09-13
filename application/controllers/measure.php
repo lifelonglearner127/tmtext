@@ -132,22 +132,22 @@ class Measure extends MY_Controller {
             // ===== start snaps crawl process (start)
             if(count($urls) > 0) {
                 foreach ($urls as $k => $v) {
-                    $http_status = $this->urlExistsCode($v->url);
-                    $url = preg_replace('#^https?://#', '', $v->url);
-                    $r_url = urlencode(trim($url));
-                    $call_url = $this->webthumb_call_link($url);
-                    $snap_res = $this->crawl_webshoot($call_url, $v->id);
+                    // $http_status = $this->urlExistsCode($v->url);
+                    // $url = preg_replace('#^https?://#', '', $v->url);
+                    // $r_url = urlencode(trim($url));
+                    // $call_url = $this->webthumb_call_link($url);
+                    // $snap_res = $this->crawl_webshoot($call_url, $v->id);
 
-                    $file = $snap_res['dir'];
-                    $file_size = filesize($file);
-                    if($file_size === false || $file_size < 2048) {
-                        @unlink($file);
-                        $api_key = $this->config->item('snapito_api_secret');
-                        $call_url = "http://api.snapito.com/web/$api_key/mc/$url";
-                        $snap_res = $this->crawl_webshoot($call_url, $v->id);
-                    }
+                    // $file = $snap_res['dir'];
+                    // $file_size = filesize($file);
+                    // if($file_size === false || $file_size < 2048) {
+                    //     @unlink($file);
+                    //     $api_key = $this->config->item('snapito_api_secret');
+                    //     $call_url = "http://api.snapito.com/web/$api_key/mc/$url";
+                    //     $snap_res = $this->crawl_webshoot($call_url, $v->id);
+                    // }
 
-                    $this->webshoots_model->updateCrawlListWithSnap($v->id, $snap_res['img'], $http_status);
+                    // $this->webshoots_model->updateCrawlListWithSnap($v->id, $snap_res['img'], $http_status);
                 }
             }
             // ===== start snaps crawl process (end)

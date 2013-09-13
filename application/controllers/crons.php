@@ -107,6 +107,14 @@ class Crons extends MY_Controller {
         return $res;
     }
 
+    public function ranking_api_exp() {
+        // ==== moz.com (start)
+        $access_id = "member-6d6d5924b0";
+        $secret_key = "c5a3b6754bcb7f51b1674ca1790c7d66";
+        $test_api_call = "http://lsapi.seomoz.com/linkscape";
+        // ==== moz.com (end)
+    }
+
     public function site_crawler_screens() {
         $this->load->model('webshoots_model');
         $ids = $_GET['ids'];
