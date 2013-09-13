@@ -696,24 +696,47 @@ if (($i - 1) % 3 != 0) {
         $("#preview_crawl_snap_modal .snap_holder").html(data);
     });
 
+$('.primary input').change(function() {
+        $(this).closest('.primary').find('.keyword_input').addClass('currentFocused');
+    });  
 
-
-  });
-  
-  $('.primary input').keydown(function (e){
-    if(e.keyCode == '13'){
-        
-    var primary=$(this).closest('.primary').find("input[name='keyword1']").val();
-    var secondary=$(this).closest('.primary').find("input[name='keyword2']").val();
-    var tertiary=$(this).closest('.primary').find("input[name='keyword3']").val();
-    var imported_data_id= $(this).closest('.primary').find("input[name='keyword1']").attr('data-value');
+$(document).click(function(e) {
+        if ($('.currentFocused').length>0 && !($(e.target).hasClass('keyword_input') && $(e.target).hasClass('currentFocused'))) {
+            var primary=$('.currentFocused').closest('.primary').find("input[name='keyword1']").val();
+            var secondary=$('.currentFocused').closest('.primary').find("input[name='keyword2']").val();
+            var tertiary=$('.currentFocused').closest('.primary').find("input[name='keyword3']").val();
+            var imported_data_id= $('.currentFocused').closest('.primary').find("input[name='keyword1']").attr('data-value');
        
     $.post(add_seo, {primary: primary, secondary: secondary, tertiary: tertiary, imported_data_id: imported_data_id}, 'json').done(function(data) {
     
     });
-    }
-  });
+        $('.currentFocused').removeClass('currentFocused');
+        }
+    });
+    
+           
+  $('.primary input').keydown(function (e){
+   
+    if(e.keyCode == '13' || e.keyCode == '32'){
+      
+        var primary=$(this).closest('.primary').find("input[name='keyword1']").val();
+        var secondary=$(this).closest('.primary').find("input[name='keyword2']").val();
+        var tertiary=$(this).closest('.primary').find("input[name='keyword3']").val();
+        var imported_data_id= $(this).closest('.primary').find("input[name='keyword1']").attr('data-value');
 
+        $.post(add_seo, {primary: primary, secondary: secondary, tertiary: tertiary, imported_data_id: imported_data_id}, 'json').done(function(data) {
+
+        });
+ 
+        $('.currentFocused').removeClass('currentFocused')
+        
+    }
+    
+  });
+   });
+
+ 
+  
 </script>
 
 <style>
