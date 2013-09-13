@@ -1,3 +1,6 @@
+# 09/13
+ALTER TABLE  `department_members` CHANGE  `level`  `level` INT( 11 ) NULL;
+
 # 12/10 Viktor
 ALTER TABLE  `department_members` CHANGE  `level`  `level` INT( 11 ) NOT NULL;
 ALTER TABLE  `site_categories` ADD  `level` INT( 11 ) AFTER  `department_members_id`;

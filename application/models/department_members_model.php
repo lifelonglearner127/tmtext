@@ -1,14 +1,7 @@
 <?php  if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 
 class Department_members_model extends CI_Model {
-
-    var $department_id = 0;
-    var $site_id = 0;
-    var $customer_id = 0;
-    var $text = '';
-    var $url = '';
-    var $level = 0;
-    var $parent_id = null;
+    
 
     var $tables = array(
         'department_members' => 'department_members',
@@ -117,23 +110,35 @@ class Department_members_model extends CI_Model {
 	 return $query;
     }
 
-    function insert($site_id, $text, $description_wc,$description_text,$keyword_density,$description_title,$level)
+    function insert($site_id, $text = '', $description_wc = 0, $description_text = '', $keyword_density = '', $description_title = '', $level)
     {
-        $this->text = $text;
-        $this->site_id = $site_id;
-        if($level!=NULL)
-            $this->level=$level;
-        if($description_wc != NULL)
-            $this->description_words = $description_wc;
-        if($description_text !=NULL)
-            $this->description_text=$description_text;
-        if($keyword_density !=NULL)
-            $this->title_keyword_description_density=$keyword_density;
-        if($description_title !=NULL)
-            $this->description_title=$description_title;
+        $data = array(
+            'text' => $text,
+            'site_id' => $site_id,
+            'level' => $level,
+            'description_words' => $description_wc,
+            'description_text' => $description_text,
+            'title_keyword_description_density' => $keyword_density,
+            'description_title' => $description_title
+        );
         
-        $this->db->insert($this->tables['department_members'], $this);
+        $this->db->insert($this->tables['department_members'], $data);
         return $this->db->insert_id();
+    }
+
+    function update($check_id, $description_wc = 0,$description_text = '',$keyword_density = '',$description_title = '',$level)
+    {
+        $data = array(
+            'level' => $level,
+            'description_words' => $description_wc,
+            'description_text' => $description_text,
+            'title_keyword_description_density' => $keyword_density,
+            'description_title' => $description_title
+        );
+        
+        $this->db->where('id', $check_id);
+        $this->db->update($this->tables['department_members'], $data);
+        return $check_id;
     }
 
     function delete($id)

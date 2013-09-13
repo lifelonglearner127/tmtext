@@ -2,12 +2,6 @@
 
 class Site_categories_model extends CI_Model {
 
-    var $site_id = 0;
-    var $text = '';
-    var $url = '';
-    var $special = 0;
-    var $parent_text = '';
-
     var $tables = array(
         'site_categories' => 'site_categories',
         'site_categories_snaps' => 'site_categories_snaps'
@@ -108,26 +102,24 @@ class Site_categories_model extends CI_Model {
         return $query->result();
     }
 
-    function insert($site_id, $text, $url, $special, $parent_text, $department_members_id, $nr_products, $description_wc, $title_keyword_description_density, $description_title, $description_text, $level)
+    function insert($site_id, $text = '', $url = '', $special = 0, $parent_text = '', $department_members_id = 0, $nr_products = 0, $description_wc = 0, $title_keyword_description_density = '', $description_title = '', $description_text = '', $level)
     {
-        $this->site_id = $site_id;
-        $this->text = $text;
-        $this->url = $url;
-        $this->special = $special;
-        $this->parent_text = $parent_text;
-        $this->department_members_id = $department_members_id;
-        if(isset($nr_products))
-			$this->nr_products = $nr_products;
-        if(isset($description_wc))
-			$this->description_words = $description_wc;
-		if(isset($title_keyword_description_density))
-			$this->title_keyword_description_density = $title_keyword_description_density;
-		if(isset($description_title))
-			$this->description_title = $description_title;
-		if(isset($description_text))
-			$this->description_text = $description_text;
-        $this->level=$level;		
-        $this->db->insert($this->tables['site_categories'], $this);
+        $data = array(
+            'site_id' => $site_id,
+            'text' => $text,
+            'url' => $url,
+            'special' => $special,
+            'parent_text' => $parent_text,
+            'department_members_id' => $department_members_id,
+            'level' => $level,
+            'nr_products' => $nr_products,
+            'description_words' => $description_wc,
+            'title_keyword_description_density' => $title_keyword_description_density,
+            'description_title' => $description_title,
+            'description_text' => $description_text
+        );
+        
+        $this->db->insert($this->tables['site_categories'], $data);
         return $this->db->insert_id();
     }
 
