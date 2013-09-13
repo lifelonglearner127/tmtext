@@ -80,6 +80,15 @@ class AmazonSpider(BaseSpider):
         # extract additional info for received parent and return it
         item = response.meta['parent']
 
+        # extract product count if available
+        prod_count_holder = hxs.select("//h2[@class='resultCount']/span/text()").extract()
+        if prod_count_holder:
+            prod_count = prod_count_holder[0]
+            # extract number
+            m = re.match(".*\s*of\s*([0-9,]+)\s*Results\s*", prod_count)
+            if m:
+                item['nr_products'] = int(re.sub(",","",m.group(1)))
+
         # extract description if available
         # only extracts descriptions that contain a h2. is that good?
         desc_holders = hxs.select("//div[@class='unified_widget rcmBody'][descendant::h2][last()]")
@@ -98,8 +107,6 @@ class AmazonSpider(BaseSpider):
             desc_title = desc_holder.select("h2/text()").extract()
             if desc_title:
                 item['description_title'] = desc_title[0].strip()
-            # else:
-            #     print 'no desc title ', item['url']
             
             description_texts = desc_holder.select(".//text()[not(ancestor::h2)]").extract()
 
