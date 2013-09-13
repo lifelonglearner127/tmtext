@@ -679,9 +679,10 @@ class System extends MY_Controller {
                 $department_members_id = 0;
                 if($parent_text!=''){
                     $check_id = $this->department_members_model->checkExist( $site_id, $parent_text);
-                    if($check_id == false){
+                    /*if($check_id == false){
                         $department_members_id = $this->department_members_model->insert( $site_id, $parent_text);
-                    } else {
+                    } else {*/
+                    if($check_id){
                         $department_members_id = $check_id;
                     }
                 }
