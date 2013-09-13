@@ -11,6 +11,7 @@ class MacysPipeline(object):
 		self.items = []
 
 	def process_item(self, item, spider):
+		# ignore duplicates: consider categories as distinct if they have different urls
 		if item['url'] not in self.items:
 			self.items.append(item['url'])
 			line = json.dumps(dict(item)) + "\n"

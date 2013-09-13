@@ -9,3 +9,9 @@ class CategoryItem(Item):
     parent_url = Field() # url of parent category
     level = Field() # level of category in the nested list (from narrower to broader categories)
     special = Field() # is it a special category? (1 or nothing)
+    description_text = Field() # text of category description (if any)
+    description_title = Field() # title of category description (if any)
+    description_wc = Field() # number of words in description text, 0 if no description
+    keyword_count = Field()
+    keyword_density = Field()
+    nr_products = Field() # number of items in the category
