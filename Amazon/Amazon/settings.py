@@ -12,5 +12,7 @@ SPIDER_MODULES = ['Amazon.spiders']
 NEWSPIDER_MODULE = 'Amazon.spiders'
 ITEM_PIPELINES = ['Amazon.pipelines.AmazonPipeline']
 
+DUPEFILTER_CLASS = 'scrapy.dupefilter.BaseDupeFilter'
+
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'Amazon (+http://www.yourdomain.com)'

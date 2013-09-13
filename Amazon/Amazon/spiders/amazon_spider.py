@@ -8,6 +8,8 @@ import re
 import sys
 import datetime
 
+from spiders_utils import Utils
+
 ################################
 # Run with 
 #
@@ -27,7 +29,7 @@ class AmazonSpider(BaseSpider):
         hxs = HtmlXPathSelector(response)
         links_level0 = hxs.select("//div[@id='siteDirectory']//table//a")
         titles_level1 = hxs.select("//div//table//h2")
-        items = []
+        #items = []
 
         # add level 1 categories to items
 
@@ -36,7 +38,8 @@ class AmazonSpider(BaseSpider):
         special_item['text'] = titles_level1[0].select('text()').extract()[0]
         special_item['level'] = 2
         special_item['special'] = 1
-        items.append(special_item)
+        #items.append(special_item)
+        yield special_item
 
         # the rest of the titles are not special
         for title in titles_level1[1:]:
@@ -44,7 +47,9 @@ class AmazonSpider(BaseSpider):
             item['text'] = title.select('text()').extract()[0]
             item['level'] = 2
 
-            items.append(item)
+            yield item
+
+            #items.append(item)
 
         # add level 0 categories to items
         for link in links_level0:
@@ -63,9 +68,63 @@ class AmazonSpider(BaseSpider):
                 if (item['parent_text'] == special_item['text']):
                     item['special'] = 1
 
-            items.append(item)
+            yield Request(item['url'], callback = self.parseCategory, meta = {'parent' : item, 'level' : 1})
 
-        return items
+            #items.append(item)
+
+        #return items
+
+    def parseCategory(self, response):
+        hxs = HtmlXPathSelector(response)
+
+        # extract additional info for received parent and return it
+        item = response.meta['parent']
+
+        # extract description if available
+        # only extracts descriptions that contain a h2. is that good?
+        desc_holders = hxs.select("//div[@class='unified_widget rcmBody'][descendant::h2][last()]")
+        # select the one among these with the most text
+        #TODO: another idea: check if the holder has a h2 item
+        if desc_holders:
+            maxsize = 0
+            max_desc_holder = desc_holders[0]
+            for desc_holder in desc_holders:
+                size = len(" ".join(desc_holder.select(".//text()").extract()))
+
+                if size > maxsize:
+                    maxsize = size
+                    max_desc_holder = desc_holder
+            desc_holder = max_desc_holder
+            desc_title = desc_holder.select("h2/text()").extract()
+            if desc_title:
+                item['description_title'] = desc_title[0].strip()
+            # else:
+            #     print 'no desc title ', item['url']
+            
+            description_texts = desc_holder.select(".//text()[not(ancestor::h2)]").extract()
+
+            # if the list is not empty and contains at least one non-whitespace item
+            # if there is a description title or the description body is large enough
+            size_threshold = 50
+            if (description_texts and reduce(lambda x,y: x or y, [line.strip() for line in description_texts])):# and \
+            #(desc_title or len(" ".join(description_texts.select(".//text()").extract()) > size_threshold)):
+                # replace all whitespace with one space, strip, and remove empty texts; then join them
+                item['description_text'] = " ".join([re.sub("\s+"," ", description_text.strip()) for description_text in description_texts if description_text.strip()])
+
+                tokenized = Utils.normalize_text(item['description_text'])
+                item['description_wc'] = len(tokenized)
+
+                if desc_title:
+                    (item['keyword_count'], item['keyword_density']) = Utils.phrases_freq(item['description_title'], item['description_text'])
+            
+            else:
+                item['description_wc'] = 0
+
+        else:
+            item['description_wc'] = 0
+
+
+        yield item
 
 
 ################################
