@@ -690,7 +690,7 @@ if (($i - 1) % 3 != 0) {
 
     $(".snap_ico_gridview").on('mouseover', function(e) { 
         var snap = $(e.target).data('snap');
-        var img_target = "/webshoots/" + snap;
+        var img_target = base_url + "webshoots/" + snap;
         var data = "<img src='" + img_target + "'>";
         $("#preview_crawl_snap_modal").modal('show');
         $("#preview_crawl_snap_modal .snap_holder").html(data);
@@ -713,7 +713,6 @@ if (($i - 1) % 3 != 0) {
     });
     }
   });
-  
 
 </script>
 
