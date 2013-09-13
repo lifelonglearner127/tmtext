@@ -7,6 +7,8 @@ import re
 import sys
 import datetime
 
+from spiders_utils import Utils
+
 ################################
 # Run with 
 #
@@ -26,55 +28,59 @@ class BestbuySpider(BaseSpider):
         # currently not extracting parents that are non-links (smaller parent categories like "resources" and "shops")
         hxs = HtmlXPathSelector(response)
 
-        # select all categories (bottom level)
-        product_links = hxs.select("//div[@id='container']/div/header//nav/ul[@id='nav']//li/a")
+        # # select all categories (bottom level)
+        # product_links = hxs.select("//div[@id='container']/div/header//nav/ul[@id='nav']//li/a")
 
         # select all parent categories
         parent_links = hxs.select("//div[@id='container']/div/header//nav/ul[@id='nav']//h4/a")
 
         #TODO: add extraction of level 3 categories (broadest: products, services,...)
         
-        items = []
+        # items = []
 
-        for link in product_links:
+        #############################################
+        # Extract all categories from sitemap
 
-            # retrieve parent category for this link
-            parent = link.select("parent::node()/parent::node()/preceding-sibling::node()/a")
-            item = CategoryItem()
+        # for link in product_links:
 
-            item['text'] = link.select('text()').extract()[0]
-            item['url'] = link.select('@href').extract()[0]
+        #     # retrieve parent category for this link
+        #     parent = link.select("parent::node()/parent::node()/preceding-sibling::node()/a")
+        #     item = CategoryItem()
 
-            
-            parent_text = parent.select('text()').extract()
-            parent_url = parent.select('@href').extract()
-            if parent_text:
-                item['parent_text'] = parent_text[0]
-            if parent_url:
-                item['parent_url'] = parent_url[0]
-
-
-            # mark it as special if a certain condition is checked
-            if (link.select("parent::node()/parent::*[@class='nav-res']")):
-                item['special'] = 1
-            #TODO: add its direct parent if it's special (not among the categories). ex: shops, resources...
-
-            # get grandparent of the category, mark item as special if grandparent is special
-            grandparent = parent.select("parent::node()/parent::node()/parent::node()/parent::node()")
-            if not grandparent.select('@class') or grandparent.select('@class').extract()[0] != 'nav-pro':
-                item['special'] = 1
+        #     item['text'] = link.select('text()').extract()[0]
+        #     item['url'] = link.select('@href').extract()[0]
 
             
-            grandparent_text = grandparent.select('a/text()').extract()
-            grandparent_url = grandparent.select('a/@href').extract()
-            if grandparent_text:
-                item['grandparent_text'] = grandparent_text[0]
-            if grandparent_url:
-                item['grandparent_url'] = grandparent_url[0]
+        #     parent_text = parent.select('text()').extract()
+        #     parent_url = parent.select('@href').extract()
+        #     if parent_text:
+        #         item['parent_text'] = parent_text[0]
+        #     if parent_url:
+        #         item['parent_url'] = parent_url[0]
 
-            item['level'] = 0
 
-            items.append(item)
+        #     # mark it as special if a certain condition is checked
+        #     if (link.select("parent::node()/parent::*[@class='nav-res']")):
+        #         item['special'] = 1
+        #     #TODO: add its direct parent if it's special (not among the categories). ex: shops, resources...
+
+        #     # get grandparent of the category, mark item as special if grandparent is special
+        #     grandparent = parent.select("parent::node()/parent::node()/parent::node()/parent::node()")
+        #     if not grandparent.select('@class') or grandparent.select('@class').extract()[0] != 'nav-pro':
+        #         item['special'] = 1
+
+            
+        #     grandparent_text = grandparent.select('a/text()').extract()
+        #     grandparent_url = grandparent.select('a/@href').extract()
+        #     if grandparent_text:
+        #         item['grandparent_text'] = grandparent_text[0]
+        #     if grandparent_url:
+        #         item['grandparent_url'] = grandparent_url[0]
+
+        #     item['level'] = 0
+
+        #     items.append(item)
+        ###############################################################
 
         for link in parent_links:
             item = CategoryItem()
@@ -90,15 +96,72 @@ class BestbuySpider(BaseSpider):
                 item['special'] = 1
 
             parent_text = parent.select('a/text()').extract()
-            parent_url = parent.select('a/@href').extract()
+            # they don't actually have a url, only a #
+            #parent_url = parent.select('a/@href').extract()
             if parent_text:
                 item['parent_text'] = parent_text[0]
-            if parent_url:
-                item['parent_url'] = parent_url[0]
 
-            items.append(item)
+            # if parent_url:
+            #     item['parent_url'] = parent_url[0]
 
-        return items
+            #items.append(item)
+            request = Request(item['url'], callback = self.parseCategory, meta = {'parent' : item, 'level' : 1})
+            yield request
+
+
+        #return items
+
+    def parseCategory(self, response):
+        hxs = HtmlXPathSelector(response)
+
+        # get parent item from response, extract additional info and return it
+        item = response.meta['parent']
+
+        # extract product count if available
+        nr_items_holder = hxs.select("//div[@id='showing']/strong[position()=2]/text()").extract()
+        if nr_items_holder:
+            item['nr_products'] = int(str(nr_items_holder[0]))
+
+        # extract description if available
+        # these are descriptions for  services pages
+        desc_title_holder = hxs.select("//div[@id='searchstate']/a[position()=2]/text()").extract()
+        if desc_title_holder:
+            item['description_title'] = desc_title_holder[0].strip()
+        desc_content_holder = hxs.select("//div[@class='content']/h3/text()").extract()
+        if desc_content_holder:
+            item['description_text'] = desc_content_holder[0].strip()
+            tokenized = Utils.normalize_text(item['description_text'])
+            item['description_wc'] = len(tokenized)
+            (item['keyword_count'], item['keyword_density']) = Utils.phrases_freq(item['description_title'], item['description_text'])
+        else:
+            item['description_wc'] = 0
+
+
+        yield item
+
+        # extract its subcategories
+        subcats_holders = hxs.select("//div[@class='narrowcontent']/ul[@class='search']")
+        if subcats_holders:
+            subcats_holder = subcats_holders[0]
+            # these are subcategories if they are preceded by the title "Shop ..."
+            title = subcats_holder.select("parent::node()/preceding-sibling::node()//text()").extract()[0]
+            if str(title).startswith("Shop"):
+                subcats = subcats_holder.select(".//li/a")
+                for subcat in subcats:
+                    item = CategoryItem()
+                    item['text'] = subcat.select("text()").extract()[0].strip()
+                    item['url'] = Utils.add_domain(subcat.select("@href").extract()[0], "http://www.bestbuy.com")
+                    parent = response.meta['parent']
+                    item['level'] = int(response.meta['level']) - 1
+                    # if parent was special, this category is special too
+                    if 'special' in parent:
+                        item['special'] = 1
+                    item['parent_text'] = parent['text']
+                    item['parent_url'] = parent['url']
+
+                    request = Request(url = item['url'], callback = self.parseCategory, meta = {'parent' : item, 'level' : item['level']})
+                    yield request
+
 
 
 ################################
