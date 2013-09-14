@@ -39,7 +39,7 @@ class BestbuySpider(BaseSpider):
         # items = []
 
         #############################################
-        # Extract all categories from sitemap
+        # Extract all categories from sitemap instead of menus on category landing pages (lower level as well)
 
         # for link in product_links:
 
@@ -82,6 +82,8 @@ class BestbuySpider(BaseSpider):
         #     items.append(item)
         ###############################################################
 
+        department_id = 0
+
         for link in parent_links:
             item = CategoryItem()
 
@@ -105,7 +107,9 @@ class BestbuySpider(BaseSpider):
             #     item['parent_url'] = parent_url[0]
 
             #items.append(item)
-            request = Request(item['url'], callback = self.parseCategory, meta = {'parent' : item, 'level' : 1})
+            department_id += 1
+            request = Request(item['url'], callback = self.parseCategory, meta = {'parent' : item, 'level' : 1, \
+                'department_text' : item['text'], 'department_url' : item['url'], 'department_id' : department_id})
             yield request
 
 
@@ -116,6 +120,11 @@ class BestbuySpider(BaseSpider):
 
         # get parent item from response, extract additional info and return it
         item = response.meta['parent']
+
+        # add department name, url and id for item
+        item['department_text'] = response.meta['department_text']
+        item['department_url'] = response.meta['department_url']
+        item['department_id'] = response.meta['department_id']
 
         # extract product count if available
         nr_items_holder = hxs.select("//div[@id='showing']/strong[position()=2]/text()").extract()
@@ -159,7 +168,8 @@ class BestbuySpider(BaseSpider):
                     item['parent_text'] = parent['text']
                     item['parent_url'] = parent['url']
 
-                    request = Request(url = item['url'], callback = self.parseCategory, meta = {'parent' : item, 'level' : item['level']})
+                    request = Request(url = item['url'], callback = self.parseCategory, meta = {'parent' : item, 'level' : item['level'], \
+                        'department_text' : meta.response['department_text'], 'department_url' : meta.response['department_url'], 'department_id' : meta.response['department_id']})
                     yield request
 
 
