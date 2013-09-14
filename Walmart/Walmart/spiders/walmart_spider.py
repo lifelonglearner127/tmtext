@@ -63,6 +63,8 @@ class WalmartSpider(BaseSpider):
             # yield item
             #yield Request(item['url'], callback = self.parseCategory, meta = {'item' : item})
 
+        department_id = 0
+
         for link in parent_links:
             item = CategoryItem()
 
@@ -74,15 +76,23 @@ class WalmartSpider(BaseSpider):
 
             item['level'] = 1
 
+            department_id += 1
+
             #yield item
 
             # send category page to parseCategory function to extract description and number of products and add them to the item
-            yield Request(item['url'], callback = self.parseCategory, meta = {'item' : item})
+            yield Request(item['url'], callback = self.parseCategory, meta = {'item' : item, \
+                'department_text' : item['text'], 'department_url' : item['url'], 'department_id' : department_id})
 
     # parse category page and extract description and number of products
     def parseCategory(self, response):
         hxs = HtmlXPathSelector(response)
         item = response.meta['item']
+
+        # Add department text, url and id to item
+        item['department_text'] = response.meta['department_text']
+        item['department_url'] = response.meta['department_url']
+        item['department_id'] = response.meta['department_id']
 
         # Extract description title, text, wordcount, and keyword density (if any)
 
@@ -168,12 +178,18 @@ class WalmartSpider(BaseSpider):
                         continue
 
                     item = CategoryItem()
-                    item['text'] = subcategory.select("text()").extract()[0].strip()
+                    item['url'] = Utils.add_domain(subcategory.select("@href").extract()[0], self.root_url)
+                    text = subcategory.select("text()").extract()
+
+                    #TODO: fix this
+                    if text:
+                        item['text'] = text[0].strip()
+                    else:
+                        print "no text for subcategory ", item, response.url
 
                     # # take care of unicode
                     # item['text'] = item['text'].encode("utf-8", errors=ignore)
 
-                    item['url'] = Utils.add_domain(subcategory.select("@href").extract()[0], self.root_url)
                     item['level'] = level
 
                     #item['nr_products'] = 1
@@ -186,7 +202,8 @@ class WalmartSpider(BaseSpider):
                     # #TODO: i don't even know this
                     # item['description_wc'] = 0
                     # yield item
-                    yield Request(item['url'], callback = self.parseCategory, meta = {'item' : item})
+                    yield Request(item['url'], callback = self.parseCategory, meta = {'item' : item, \
+                        'department_text' : response.meta['department_text'], 'department_url' : response.meta['department_url'], 'department_id' : response.meta['department_id']})
 
                 # idea for sending parent and collecting nr products. send all of these subcats as a list in meta, pass it on, when list becomes empty, yield the parent
                 yield parent_item
