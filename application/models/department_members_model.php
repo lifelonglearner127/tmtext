@@ -110,12 +110,13 @@ class Department_members_model extends CI_Model {
 	 return $query;
     }
 
-    function insert($site_id, $department_id = '', $text = '', $description_wc = 0, $description_text = '', $keyword_density = '', $description_title = '', $level)
+    function insert($parent_id, $site_id, $department_id = '', $text = '', $description_wc = 0, $description_text = '', $keyword_density = '', $description_title = '', $level)
     {
         $data = array(
             'text' => $text,
             'department_id' => $department_id,
             'site_id' => $site_id,
+            'parent_id' => $parent_id,
             'level' => $level,
             'description_words' => $description_wc,
             'description_text' => $description_text,

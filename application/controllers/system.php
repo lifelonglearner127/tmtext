@@ -625,7 +625,7 @@ class System extends MY_Controller {
         $file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
         $_rows = array();
         if (($handle = fopen($file, "r")) !== FALSE) {
-            while (($data = fgetcsv($handle, 5000, "\n")) !== FALSE) {
+            while (($data = fgetcsv($handle, 15000, "\n")) !== FALSE) {
                 if(!is_null($data[0]) && $data[0]!=''){
                     $_rows[] = json_decode($data[0]);
                 }
@@ -638,9 +638,6 @@ class System extends MY_Controller {
             if((int)$highest_level <= (int)$one->level)
                 $highest_level = $one->level;
         }
-//        echo '<pre>';
-//        print_r($_rows);die;
-       // echo $highest_level;
         
         foreach($_rows as $row){
             $special = 0;
@@ -652,9 +649,65 @@ class System extends MY_Controller {
             $description_text = '';
             $keyword_density = '';
             $description_title = '';
-            
+            $level = '';
+
+            if($row->level == $highest_level){
+                if(isset($row->level) && !is_null($row->level) && $row->level!=''){
+                    $level = $row->level;
+                }
+                if(isset($row->description_wc) && is_array($row->description_wc)){
+                    $description_wc = $row->description_wc[0];
+                } else if(isset($row->description_wc) && !is_array($row->description_wc) && !is_null($row->description_wc) && $row->description_wc!=''){
+                    $description_wc = $row->description_wc;
+                }
+		        if(isset($row->keyword_density) && is_array($row->keyword_density)){
+                    $keyword_density = $row->keyword_density[0];
+                } else if(isset($row->keyword_density) && !is_array($row->keyword_density) && !is_null($row->keyword_density) && $row->keyword_density!=''){
+                    $keyword_density = json_encode($row->keyword_density);
+                }
+		        if(isset($row->description_title) && is_array($row->description_title)){
+                    $description_title = $row->description_title[0];
+                } else if(isset($row->description_title) && !is_array($row->description_title) && !is_null($row->description_title) && $row->description_title!=''){
+                    $description_title = $row->description_title;
+                }
+		        if(isset($row->description_text) && is_array($row->description_text)){
+                    $description_text = $row->description_text[0];
+                } else if(isset($row->description_text) && !is_array($row->description_text) && !is_null($row->description_text) && $row->description_text!=''){
+                    $description_text = $row->description_text;
+                }
+                $check_department_id = $this->department_model->checkExist($row->text);
+                if($check_department_id == false){
+                    $department_id = $this->department_model->insert($row->text, $row->text);
+                } else {
+                    $department_id = $check_department_id;
+                }
+                $parent_id = 0;
+                if($parent_text!=''){
+                    $parent_id =  $this->department_members_model->checkExist($site_id, $parent_text);
+                    if($parent_id == false){
+                        $parent_id = $this->department_members_model->insert(0, $site_id, $department_id, $row->text, $description_wc, $description_text, $keyword_density, $description_title, $level);
+                    }
+                }
+                $check_id = $this->department_members_model->checkExist( $site_id, $row->text);
+                if($check_id == false){
+                    $this->department_members_model->insert($parent_id, $site_id, $department_id, $row->text, $description_wc, $description_text, $keyword_density, $description_title, $level);
+                } else {
+                    $this->department_members_model->update($check_id, $department_id, $description_wc, $description_text, $keyword_density, $description_title, $level);
+                }
+            }
+        }
+        foreach($_rows as $row){
+            $special = 0;
+            $parent_text = '';
+            $text = '';
+            $url = '';
+            $nr_products = 0;
+            $description_wc = 0;
+            $description_text = '';
+            $keyword_density = '';
+            $description_title = '';
+            $level = 0;
             if($row->level < $highest_level){
-                
                 if($row->special!='' && !is_null($row->special)){
                     $special = $row->special;
                 }
@@ -676,18 +729,15 @@ class System extends MY_Controller {
                 if(substr_count($url, 'http://') == 0 && $this->input->post('site_name')!='[Choose site]'){
                     $url = str_replace('..', '', $url);
                     $url = 'http://'.strtolower($this->input->post('site_name')).$url;
-                }	
+                }
+
                 $department_members_id = 0;
                 if($parent_text!=''){
                     $check_id = $this->department_members_model->checkExist( $site_id, $parent_text);
-                    /*if($check_id == false){
-                        $department_members_id = $this->department_members_model->insert( $site_id, $parent_text);
-                    } else {*/
                     if($check_id){
                         $department_members_id = $check_id;
                     }
                 }
-				/*new columns*/
 
                 if(isset($row->level) && is_array($row->level)){
                     $level = $row->level[0];
@@ -719,55 +769,29 @@ class System extends MY_Controller {
                 } else if(isset($row->description_title) && !is_array($row->description_title) && !is_null($row->description_title) && $row->description_title!=''){
                     $description_title = $row->description_title;
                 }
-				
-				/*end new columns*/
+                $parent_id = 0;
+                if($parent_text!=''){
+                    $parent_id =  $this->site_categories_model->checkExist($site_id, $parent_text);
+                    if($parent_id == false){
+                        $parent_id = $this->site_categories_model->insert(0, $site_id, $text, $url, $special, $parent_text, $department_members_id, $nr_products, $description_wc,$keyword_density,$description_title,$description_text,$level);
+                    }
+                }
+
+                if($parent_id !=0 && $department_members_id == 0) {
+                    $res = $this->site_categories_model->checkDepartmentId($parent_id);
+                    $department_members_id = $res->department_members_id;
+                }
+
+                /*end new columns*/
                 if($text != ''){
                     $check_site = $this->site_categories_model->checkExist($site_id, $text);
                     if($check_site == false){
-                        $this->site_categories_model->insert($site_id, $text, $url, $special, $parent_text, $department_members_id, $nr_products, $description_wc,$keyword_density,$description_title,$description_text,$level);
+                        $this->site_categories_model->insert($parent_id, $site_id, $text, $url, $special, $parent_text, $department_members_id, $nr_products, $description_wc,$keyword_density,$description_title,$description_text,$level);
                     }
                 }
             }
-            if($row->level == $highest_level){
-                
-                if(isset($row->level) && !is_null($row->level) && $row->level!=''){
-                    $level = $row->level;
-                }
-                if(isset($row->description_wc) && is_array($row->description_wc)){
-                    $description_wc = $row->description_wc[0];
-                } else if(isset($row->description_wc) && !is_array($row->description_wc) && !is_null($row->description_wc) && $row->description_wc!=''){
-                    $description_wc = $row->description_wc;
-                }
-		if(isset($row->keyword_density) && is_array($row->keyword_density)){
-                    $keyword_density = $row->keyword_density[0];
-                } else if(isset($row->keyword_density) && !is_array($row->keyword_density) && !is_null($row->keyword_density) && $row->keyword_density!=''){
-                    $keyword_density = json_encode($row->keyword_density);
-                }
-		if(isset($row->description_title) && is_array($row->description_title)){
-                    $description_title = $row->description_title[0];
-                } else if(isset($row->description_title) && !is_array($row->description_title) && !is_null($row->description_title) && $row->description_title!=''){
-                    $description_title = $row->description_title;
-                }
-		if(isset($row->description_text) && is_array($row->description_text)){
-                    $description_text = $row->description_text[0];
-                } else if(isset($row->description_text) && !is_array($row->description_text) && !is_null($row->description_text) && $row->description_text!=''){
-                    $description_text = $row->description_text;
-                }
-                $check_department_id = $this->department_model->checkExist($row->text);
-                if($check_department_id == false){
-                    $department_id = $this->department_model->insert($row->text, $row->text);
-                } else {
-                    $department_id = $check_department_id;
-                }
-                $check_id = $this->department_members_model->checkExist( $site_id, $row->text);
-                if($check_id == false){
-                    $this->department_members_model->insert($site_id, $department_id, $row->text, $description_wc, $description_text, $keyword_density, $description_title, $level);
-                } else {
-                    $this->department_members_model->update($check_id, $department_id, $description_wc, $description_text, $keyword_density, $description_title, $level);
-                }
-            }
+            $a++;
         }
-		
         $response['message'] =  'File was added successfully';
         $this->output->set_content_type('application/json')->set_output(json_encode($response));
     }

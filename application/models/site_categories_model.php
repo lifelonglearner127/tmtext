@@ -102,9 +102,10 @@ class Site_categories_model extends CI_Model {
         return $query->result();
     }
 
-    function insert($site_id, $text = '', $url = '', $special = 0, $parent_text = '', $department_members_id = 0, $nr_products = 0, $description_wc = 0, $title_keyword_description_density = '', $description_title = '', $description_text = '', $level)
+    function insert($parent_id, $site_id, $text = '', $url = '', $special = 0, $parent_text = '', $department_members_id = 0, $nr_products = 0, $description_wc = 0, $title_keyword_description_density = '', $description_title = '', $description_text = '', $level='')
     {
         $data = array(
+            'parent_id' => $parent_id,
             'site_id' => $site_id,
             'text' => $text,
             'url' => $url,
@@ -142,5 +143,13 @@ class Site_categories_model extends CI_Model {
             return $query->row()->id;
         }
         return false;
+    }
+
+    function checkDepartmentId($parent_id)
+    {
+        $sql = "SELECT `department_members_id` FROM `site_categories` WHERE `id` = '".$parent_id."'";
+        $query = $this->db->query($sql);
+        $result = $query->result();
+        return $result[0];
     }
 }
