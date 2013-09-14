@@ -617,6 +617,7 @@ class System extends MY_Controller {
 
     public function save_departments_categories()
     {
+        $this->load->model('department_model');
         $this->load->model('department_members_model');
         $this->load->model('site_categories_model');
         $site_id = $this->input->post('site_id');
@@ -687,7 +688,7 @@ class System extends MY_Controller {
                     }
                 }
 				/*new columns*/
-                
+
                 if(isset($row->level) && is_array($row->level)){
                     $level = $row->level[0];
                 } else if(isset($row->level) && !is_array($row->level) && !is_null($row->level) && $row->level!=''){
@@ -752,12 +753,17 @@ class System extends MY_Controller {
                 } else if(isset($row->description_text) && !is_array($row->description_text) && !is_null($row->description_text) && $row->description_text!=''){
                     $description_text = $row->description_text;
                 }
-                
+                $check_department_id = $this->department_model->checkExist($row->text);
+                if($check_department_id == false){
+                    $department_id = $this->department_model->insert($row->text, $row->text);
+                } else {
+                    $department_id = $check_department_id;
+                }
                 $check_id = $this->department_members_model->checkExist( $site_id, $row->text);
                 if($check_id == false){
-                    $this->department_members_model->insert($site_id, $row->text, $description_wc, $description_text, $keyword_density, $description_title, $level);
+                    $this->department_members_model->insert($site_id, $department_id, $row->text, $description_wc, $description_text, $keyword_density, $description_title, $level);
                 } else {
-                    $this->department_members_model->update($check_id, $description_wc, $description_text, $keyword_density, $description_title, $level);
+                    $this->department_members_model->update($check_id, $department_id, $description_wc, $description_text, $keyword_density, $description_title, $level);
                 }
             }
         }

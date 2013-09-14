@@ -50,4 +50,15 @@ class Department_model extends CI_Model {
 
         return $query->result();
     }
+
+    function checkExist($short_name)
+    {
+        $query =  $this->db->select('id')
+            ->from($this->tables['departments'])
+            ->where('short_name', trim($short_name))->limit(1)->get();
+        if($query->num_rows() > 0) {
+            return $query->row()->id;
+        }
+        return false;
+    }
 }
