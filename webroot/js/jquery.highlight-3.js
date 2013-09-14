@@ -30,11 +30,46 @@ var cmd = true;
             $('.compare').each(function(){
                 $(this).html($(this).text());
                 $(this).removeClass('clicked');
+                 $(this).removeClass('seleckted_seo');
             });
                     
             cmd = true;
         }
     });
+    
+    var cmd_seo = true;
+    $('.primary_name').live('click',function() {
+        if(cmd_seo){
+			
+        var thisValue = $(this).next().find('.keyword_input').val();
+        var arr = [];
+        var re = new RegExp(thisValue,"gi");
+        $(this).parent().parent().parent().next().find('.compare').addClass('seleckted_seo');
+            $('.seleckted_seo').each(function(){
+                arr = $(this).text().match(re);
+                if(arr){
+                 for(var i = 0; i<arr.length;i++){
+                    var regv = new RegExp(arr[i],"g");
+                    $(this).html($(this).html().replace(regv, '<span class="highlight">'+arr[i]+'</span>')); 
+                    
+                 }
+                }
+                arr = null;
+            });
+                  
+            cmd_seo = false;
+
+        } else { 
+            
+             $('.seleckted_seo').each(function(){
+               $(this).html($(this).text());              
+            });
+             $(this).parent().parent().parent().next().find('.compare').removeClass('seleckted_seo');
+            cmd_seo = true;
+        }
+    });
+    
+    
     
 });
 function clean_text(text) {

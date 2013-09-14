@@ -2099,4 +2099,4 @@ span.highlight { background-color:yellow;}
     min-height:60px;
 }
 
-
+.primary_name:hover {cursor:pointer;text-decoration:underline;}
