@@ -148,12 +148,13 @@ $( function() {
         var item_id = $(this).data('item');
         $('#departments_content').html('');
         $("#hp_boot_drop .btn_caret_sign").text(new_caret);
-        $("#departmentDropdown").show();
+        //$("#departmentDropdown").show();
         $.post(base_url + 'index.php/measure/getDepartmentsByCustomer', {
             'customer_name': new_caret
         }, function(data) {
             $("#departmentDropdown .dropdown-menu").empty();
             if(data.length > 0){
+				$("#departmentDropdown").show();
                 $('#tabs').show();
                 $("#departmentDropdown .dropdown-menu").append("<li><a data-item=\"empty\" data-value=\"\" href=\"javascript:void(0);\">Choose department</a></li><li><a data-item=\"\" data-value=\"All\" href=\"javascript:void(0);\">All</a></li>");
                 for(var i=0; i<data.length; i++){
@@ -163,6 +164,7 @@ $( function() {
                     $("#departmentDropdown .dropdown-menu").append("<li><a data-item="+data[i].id+" data-value="+data[i].text+" href=\"javascript:void(0);\">"+data[i].text+"</a></li>");
                 }
             } else {
+                $('#departmentDropdown').hide();
                 $('#departmentDropdown .btn_caret_sign1').text('empty');
                 $('#tabs').hide();
             }
