@@ -15,3 +15,6 @@ class CategoryItem(Item):
     keyword_count = Field()
     keyword_density = Field()
     nr_products = Field() # number of items in the category
+    department_text = Field() # name of the department it belongs to
+    department_url = Field() # url of the department it belongs to
+    department_id = Field() # unique id of the department it belongs to

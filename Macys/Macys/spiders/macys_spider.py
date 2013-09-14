@@ -28,6 +28,8 @@ class MacysSpider(BaseSpider):
         links = hxs.select("//div[@id='sitemap_header']/a")
         root_url = "http://www1.macys.com"
 
+        department_id = 0
+
         for link in links:
             item = CategoryItem()
 
@@ -45,8 +47,11 @@ class MacysSpider(BaseSpider):
             # only yield this item after parsing its page and extracting additional info
             #yield item
 
+            department_id += 1
+
             # create request to extract subcategories for this category
-            yield Request(item['url'], callback = self.parseCategory, meta = {'parent' : item, 'level' : 1})
+            yield Request(item['url'], callback = self.parseCategory, meta = {'parent' : item, 'level' : 1, \
+                'department_text' : item['text'], 'department_url' : item['url'], 'department_id' : department_id})
 
     # extract subcategories from each category
     def parseCategory(self, response):
@@ -54,6 +59,11 @@ class MacysSpider(BaseSpider):
 
         # output received parent element after extracting additional info
         item = response.meta['parent']
+
+        # add department name, url and id to item
+        item['department_text'] = response.meta['department_text']
+        item['department_url'] = response.meta['department_url']
+        item['department_id'] = response.meta['department_id']
 
         # extract number of items if available
         prod_count_holder = hxs.select("//span[@id='productCount']/text()").extract()
@@ -114,4 +124,5 @@ class MacysSpider(BaseSpider):
 
                 #yield item
 
-                yield Request(item['url'], callback = self.parseCategory, meta = {'parent' : item, 'level' : item['level']})
+                yield Request(item['url'], callback = self.parseCategory, meta = {'parent' : item, 'level' : item['level'], \
+                    'department_text' : response.meta['department_text'], 'department_url' : response.meta['department_url'], 'department_id' : response.meta['department_id']})
