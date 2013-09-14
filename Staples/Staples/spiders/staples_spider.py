@@ -79,6 +79,8 @@ class StaplesSpider(BaseSpider):
 
 		root_url = "http://www.staples.com"
 
+		department_id = 0
+
 		for department in departments:
 			item = CategoryItem()
 
@@ -91,10 +93,13 @@ class StaplesSpider(BaseSpider):
 			# # parse each department page for its categories, pass the department item too so that it's added to the list in parseDept
 			# yield Request(item['url'], callback = self.parseDept, meta = {"department": item})
 
+			department_id += 1
+
 			zipcode = "12345"
 			request = Request(item['url'], callback = self.parseDept, cookies = {"zipcode" : zipcode}, \
 				headers = {"Cookie" : "zipcode=" + zipcode}, meta = {"dont_redirect" : True, "dont_merge_cookies" : True, \
-				"parent": item, "level": 1})
+				"parent": item, "level": 1, \
+				"department_text" : item["text"], "department_url" : item["url"], "department_id" : department_id})
 			yield request
 
 
@@ -141,6 +146,12 @@ class StaplesSpider(BaseSpider):
 
 		# from parent's page:
 		item = response.meta['parent']
+
+		# add department name, url and id to item
+		item['department_text'] = response.meta['department_text']
+		item['department_url'] = response.meta['department_url']
+		item['department_id'] = response.meta['department_id']
+
 		# extract number of items, if any
 		nritems_holder = hxs.select("//div[@class='perpage']/span[@class='note']/text()").extract()
 		if nritems_holder:
@@ -186,7 +197,10 @@ class StaplesSpider(BaseSpider):
 			if url:
 				item['url'] = root_url + url[0]
 			item['level'] = int(response.meta['level']-1)
-			item['parent_text'] = response.meta['parent']['text']
+			if 'text' in response.meta['parent']:
+				item['parent_text'] = response.meta['parent']['text']
+			else:
+				print 'no text in parent ', response.meta['parent']
 			item['parent_url'] = response.url
 
 			# yield the item after passing it through request and collecting additonal info
@@ -196,6 +210,7 @@ class StaplesSpider(BaseSpider):
 			zipcode = "12345"
 			request = Request(item['url'], callback = self.parseDept, cookies = {"zipcode" : zipcode}, \
 				headers = {"Cookie" : "zipcode=" + zipcode}, meta = {"dont_redirect" : True, "dont_merge_cookies" : True, \
-				"parent": item, "level": item['level']})
+				"parent": item, "level": item['level'], \
+				"department_text" : response.meta["department_text"], "department_url" : response.meta["department_url"], "department_id" : response.meta["department_id"]})
 			yield request
 
