@@ -112,11 +112,11 @@ foreach ($same_pr as $ks => $vs) {
                              <span class="second_line">Enter URL of match... </span>
                             </div>
                         <?php }
-               
+
                     if ($ks ==0 && $mismatch_button == true) { ?>
                             <input data-value="<?php echo $vs['imported_data_id']; ?>"class="missmatch_first" style="float: right; margin-top: 0;" type="button" value="" title="Report mismatch">
                         <?php }
-               
+
                         ?>
                         <span class='analysis_content_head'>URL:</span>
                         <!--                        //Max-->
@@ -195,12 +195,12 @@ foreach ($same_pr as $ks => $vs) {
                             ?>
                             <?php $snap_data = $this->webshoots_model->scanForProductSnap($vs['imported_data_id']); ?>
                             <?php if($snap_data['img_av_status']) { ?>
-                                <i style='float: right;' class='snap_ico_gridview icon-picture' data-snap="<?php echo $snap_data['snap']; ?>"></i
+                                <i style='float: right;' class='snap_ico_gridview icon-picture' data-snap="<?php echo $snap_data['snap']; ?>"></i>
                             <?php } ?>
                             <span class='short_desc_wc' style="float:left;width: 100%;"></span></span>
                             <p class="heading_text">Words: <b><?php echo $s_product_short_desc_count; ?></b></p>
                             <div class="p_seo<?php echo $row; ?>short seo_container" style="clear:left;">
-                           
+
                                    <div style="float: left;width: 100%;"> <p class="heading_text">SEO Keywords: </p>
                                         <select class="keywords_select" name="analysis" style="margin-top: -20px;float: right;width: 95px;margin-right: 50px;">
                                                     <option  value="title">Title</option>
@@ -243,9 +243,9 @@ foreach ($same_pr as $ks => $vs) {
                                             </span>
                                         </span>
                                     </div>
-                                    <div class="clear"></div>					
-				</div> 
-            <?php if (count($vs['seo']['short']) > 0) { ?>                    
+                                    <div class="clear"></div>
+				</div>
+            <?php if (count($vs['seo']['short']) > 0) { ?>
                                     <ul class='gr_seo_short_ph list_section' style='font-weight: bold;float:left;'>
             <?php foreach ($vs['seo']['short'] as $key => $value) { ?>
 
@@ -300,7 +300,7 @@ foreach ($same_pr as $ks => $vs) {
 						<option value="custom">Custom</option>
 				   </select>
                                    </div>
-                                
+
                                    <div class="primary" style="height: 100%;width: 100%;">
                                     <div class=""><span class="primary_name">Primary: </span>
                                         <?php  ?>
@@ -335,8 +335,8 @@ foreach ($same_pr as $ks => $vs) {
                                             </span>
                                         </span>
                                     </div>
-                                    <div class="clear"></div>					
-				</div>  
+                                    <div class="clear"></div>
+				</div>
                                 <?php }else{ ?>
                                 <!--<div class="primary" style="height: 100%;width: 100%;">
                                    <p style="float: left;width: 100%;" class="heading_text list_section"><span style="font-weight: bold;">Primary: <?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['primary']; }?></span></p>
@@ -355,7 +355,7 @@ foreach ($same_pr as $ks => $vs) {
                                             </span>
                                         </span>
                                     </div>
-                                    <div class="clear"></div>	
+                                    <div class="clear"></div>
                                     <div class=""><span class="primary_name">Secondary: </span>
                                         <span>
                                             <span class="primary_speed">
@@ -399,7 +399,7 @@ foreach ($same_pr as $ks => $vs) {
                                     <p style="float: left;width: 100%;" class="heading_text list_section"><span style="font-weight: bold;">None</span></p>
         <?php } ?>
                             </div>
-                            <div class="cmp-area" style="float: left;">                                
+                            <div class="cmp-area" style="float: left;">
         <?php if (isset($vs['long_original']) && $vs['long_original'] != "Insufficient data") { ?>
                                     <p><img class="cmp-btn" src="<?php echo base_url() ?>/img/icon.png" title='Click to see dublicates words'>Duplicate content: <b><?php echo $vs['long_original']; ?> </b></p>
                                 <?php } else { ?>
@@ -434,7 +434,7 @@ foreach ($same_pr as $ks => $vs) {
                             echo "<b>" . implode(',', $vs['short_original_text']) . "</b>";
                         }
                         ?>
-                        <!--   end  dublicate the short text           -->  
+                        <!--   end  dublicate the short text           -->
                         <!--     dublicate the long text           -->
 
                         <!--?php
@@ -444,9 +444,9 @@ foreach ($same_pr as $ks => $vs) {
                             echo "<b>" . implode(',', $vs['long_original_text']) . "</b>";
                         }
                         ?>
-                        <!--   end  dublicate the long text           -->  
+                        <!--   end  dublicate the long text           -->
 
-                    </div>    
+                    </div>
                 </div>
 
                 <p  style="color: rgb(117, 114, 114);">Id: <span class="imported_data_id"><?php echo $vs['imported_data_id']; ?></span></p>
@@ -493,7 +493,7 @@ foreach ($same_pr as $ks => $vs) {
                 <?php
             }
             ?>
-        </div>      
+        </div>
     </div>
     <?php
     if ($i % 3 == 0) {
@@ -646,7 +646,7 @@ if (($i - 1) % 3 != 0) {
     });
 
     selectedCustomer();
-   
+
  $(document).ready(function(){
    gridKeywordDensity();
    $(".mismatch_image").live('mouseover', function() {
@@ -655,24 +655,24 @@ if (($i - 1) % 3 != 0) {
         $(".missmatch_popup").css('display', 'block');
 
     });
-    
+
     $(".missmatch_popup").live('mouseleave', function() {
         $(".missmatch_popup").css('display', 'none');
     });
-    
+
     $(".primary").css('display', 'none');
-    
+
     $(".keywords_select").live('change', function() {
 
         if ($(this).val() === 'title') {
             $(this).closest('.grid_se_section').find(".primary").css('display', 'none');
-            $(this).closest('.grid_se_section').find(".list_section").css('display', 'block');            
+            $(this).closest('.grid_se_section').find(".list_section").css('display', 'block');
         } else {
 
             $(this).closest('.grid_se_section').find(".list_section").css('display', 'none');
             $(this).closest('.grid_se_section').find(".primary").css('display', 'block');
-           
-        } 
+
+        }
         fixGridHeights();
     });
 
@@ -689,7 +689,7 @@ if (($i - 1) % 3 != 0) {
          setTimeout(function(){ gridKeywordDensity();}, '1000');
     });
 
-    $(".snap_ico_gridview").on('mouseover', function(e) { 
+    $(".snap_ico_gridview").on('mouseover', function(e) {
         var snap = $(e.target).data('snap');
         var img_target = base_url + "webshoots/" + snap;
         var data = "<img src='" + img_target + "'>";
@@ -699,7 +699,7 @@ if (($i - 1) % 3 != 0) {
 
 $('.primary input').change(function() {
         $(this).closest('.primary').find('.keyword_input').addClass('currentFocused');
-    });  
+    });
 
 $(document).click(function(e) {
         if ($('.currentFocused').length>0 && !($(e.target).hasClass('keyword_input') && $(e.target).hasClass('currentFocused'))) {
@@ -711,17 +711,17 @@ $(document).click(function(e) {
             $('.currentFocused').closest('.grid_se_section').find('.prim_2').text(secondary);
             $('.currentFocused').closest('.grid_se_section').find('.prim_3').text(tertiary);
     $.post(add_seo, {primary: primary, secondary: secondary, tertiary: tertiary, imported_data_id: imported_data_id}, 'json').done(function(data) {
-    
+
     });
         $('.currentFocused').removeClass('currentFocused');
         }
     });
-    
-           
+
+
   $('.primary input').keydown(function (e){
-   
+
     if(e.keyCode == '13' || e.keyCode == '32'){
-      
+
         var primary=$(this).closest('.primary').find("input[name='keyword1']").val();
         var secondary=$(this).closest('.primary').find("input[name='keyword2']").val();
         var tertiary=$(this).closest('.primary').find("input[name='keyword3']").val();
@@ -732,16 +732,16 @@ $(document).click(function(e) {
         $.post(add_seo, {primary: primary, secondary: secondary, tertiary: tertiary, imported_data_id: imported_data_id}, 'json').done(function(data) {
 
         });
- 
+
         $('.currentFocused').removeClass('currentFocused')
-        
+
     }
-    
+
   });
    });
 
- 
-  
+
+
 </script>
 
 <style>
@@ -751,7 +751,7 @@ $(document).click(function(e) {
     }
     .primary{
         height: auto !important;
-        
+
     }
     .primary_speed{
         float: left;

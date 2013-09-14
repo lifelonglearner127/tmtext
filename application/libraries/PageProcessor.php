@@ -429,6 +429,14 @@ class PageProcessor {
 			}
 		}
 
+		if (empty($price)) {
+			foreach($this->nokogiri->get('.skuWrapper #SkuForm .priceTotal .finalPrice') as $item) {
+				if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $item['#text'][0], $match)) {
+					$price = $match[1];
+				}
+			}
+		}
+
 		foreach($this->nokogiri->get('#subdesc_content .layoutWidth06 ul li') as $item) {
 			$description[] = $item['#text'][0];
 		}
