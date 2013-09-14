@@ -27,7 +27,7 @@ class AmazonSpider(BaseSpider):
 
     def parse(self, response):
         hxs = HtmlXPathSelector(response)
-        links_level0 = hxs.select("//div[@id='siteDirectory']//table//a")
+        links_level1 = hxs.select("//div[@id='siteDirectory']//table//a")
         titles_level1 = hxs.select("//div//table//h2")
         #items = []
 
@@ -50,9 +50,10 @@ class AmazonSpider(BaseSpider):
             yield item
 
             #items.append(item)
+        department_id = 0
 
-        # add level 0 categories to items
-        for link in links_level0:
+        # add level 1 categories to items
+        for link in links_level1:
             item = CategoryItem()
             item['text'] = link.select('text()').extract()[0]
             root_url = "http://www.amazon.com"
@@ -68,7 +69,10 @@ class AmazonSpider(BaseSpider):
                 if (item['parent_text'] == special_item['text']):
                     item['special'] = 1
 
-            yield Request(item['url'], callback = self.parseCategory, meta = {'parent' : item, 'level' : 1})
+            department_id += 1
+
+            yield Request(item['url'], callback = self.parseCategory, meta = {'parent' : item, 'level' : 1, \
+                'department_text' : item['text'], 'department_url' : item['url'], 'department_id' : department_id})
 
             #items.append(item)
 
@@ -79,6 +83,11 @@ class AmazonSpider(BaseSpider):
 
         # extract additional info for received parent and return it
         item = response.meta['parent']
+
+        # add department name, url and id for item
+        item['department_text'] = response.meta['department_text']
+        item['department_url'] = response.meta['department_url']
+        item['department_id'] = response.meta['department_id']
 
         # extract product count if available
         prod_count_holder = hxs.select("//h2[@class='resultCount']/span/text()").extract()
@@ -131,6 +140,7 @@ class AmazonSpider(BaseSpider):
             item['description_wc'] = 0
 
 
+        #TODO: when I use yield request, remember to add department_text, department_url and department_id parameters to it
         yield item
 
 
