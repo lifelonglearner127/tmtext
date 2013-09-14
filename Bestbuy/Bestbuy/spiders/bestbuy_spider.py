@@ -169,7 +169,7 @@ class BestbuySpider(BaseSpider):
                     item['parent_url'] = parent['url']
 
                     request = Request(url = item['url'], callback = self.parseCategory, meta = {'parent' : item, 'level' : item['level'], \
-                        'department_text' : meta.response['department_text'], 'department_url' : meta.response['department_url'], 'department_id' : meta.response['department_id']})
+                        'department_text' : response.meta['department_text'], 'department_url' : response.meta['department_url'], 'department_id' : response.meta['department_id']})
                     yield request
 
 
