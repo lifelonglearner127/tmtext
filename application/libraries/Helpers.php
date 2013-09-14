@@ -18,6 +18,12 @@ class Helpers {
 
   public function measure_analyzer_keywords($primary_ph, $secondary_ph, $tertiary_ph, $short_desc, $long_desc) {
     // --- default res array and values (start)
+   $primary_ph=  strtolower($primary_ph);
+   $secondary_ph=  strtolower($secondary_ph);
+   $tertiary_ph=  strtolower($tertiary_ph);
+   $short_desc=  strtolower($short_desc);
+   $long_desc=  strtolower($long_desc);
+   
     $res = array(
         "primary" => array(0, 0),
         "secondary" => array(0, 0),

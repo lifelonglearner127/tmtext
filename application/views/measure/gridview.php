@@ -407,7 +407,7 @@ foreach ($same_pr as $ks => $vs) {
                                 <?php } ?>
 
                                 <!--                     //Max-->
-        <?php echo '<p class="compare">' . $s_product_long_description . '</p>'; ?>
+        <?php echo '<p class="compare compare_long">' . $s_product_long_description . '</p>'; ?>
 
                             </div>
         <?php
@@ -518,33 +518,41 @@ if (($i - 1) % 3 != 0) {
 
 </script>
 <script type='text/javascript'>
- function gridKeywordDensity(){
-        var grid_primary_ph = $.trim($('input[name="keyword1"]').val());
-        var grid_secondary_ph = $.trim($('input[name="keyword2"]').val());
-        var grid_tertiary_ph = $.trim($('input[name="keyword3"]').val());
+ function gridKeywordDensity( selected_item){
+        var grid_primary_ph = $.trim($(selected_item+' input[name="keyword1"]').val());
+        var grid_secondary_ph = $.trim($(selected_item+' input[name="keyword2"]').val());
+        var grid_tertiary_ph = $.trim($(selected_item+' input[name="keyword3"]').val());
         if(grid_primary_ph !== "") grid_primary_ph.replace(/<\/?[^>]+(>|$)/g, "");
         if(grid_secondary_ph !== "") grid_secondary_ph.replace(/<\/?[^>]+(>|$)/g, "");
         if(grid_tertiary_ph !== "") grid_tertiary_ph.replace(/<\/?[^>]+(>|$)/g, "");
 
         if(grid_primary_ph !== "" || grid_secondary_ph !== "" || grid_tertiary_ph !== "") {
-            var grid_long_desc = $.trim($('.short_desc_con').html() +' '+ $(".compare").html());
-            if(grid_long_desc !== "") grid_long_desc.replace(/<\/?[^>]+(>|$)/g, "");
+            var grid_short_desc = $.trim($(selected_item+' .short_desc_con').html());
+            if(grid_short_desc  !== "") grid_short_desc.replace(/<\/?[^>]+(>|$)/g, "");
+            var grid_long_desc = $.trim($(selected_item+' .compare_long').html());
+            if(grid_long_desc  !== "") grid_short_desc.replace(/<\/?[^>]+(>|$)/g, "");
 
             var grid_send_object = {
                 primary_ph: grid_primary_ph,
                 secondary_ph: grid_secondary_ph,
                 tertiary_ph: grid_tertiary_ph,
-                short_desc: '',
+                short_desc: grid_short_desc,
                 long_desc: grid_long_desc
             };
 
             $.post(base_url+'index.php/measure/analyzekeywords', grid_send_object, function(data) {
-                var first = (data['primary'][1].toPrecision(3)*100).toFixed(2);
-                var second = (data['secondary'][1].toPrecision(3)*100).toFixed(2);
-                var third = (data['tertiary'][1].toPrecision(3)*100).toFixed(2);
-                $('span#keyword1_density').html(' - '+first+'%');
-                $('span#keyword2_density').html(' - '+second+'%');
-                $('span#keyword3_density').html(' - '+third+'%');
+                var first = (data['primary'][0].toPrecision(3)*100).toFixed(2);
+                var second = (data['secondary'][0].toPrecision(3)*100).toFixed(2);
+                var third = (data['tertiary'][0].toPrecision(3)*100).toFixed(2);
+                var first1 = (data['primary'][1].toPrecision(3)*100).toFixed(2);
+                var second1 = (data['secondary'][1].toPrecision(3)*100).toFixed(2);
+                var third1 = (data['tertiary'][1].toPrecision(3)*100).toFixed(2);
+                $(selected_item+' span#keyword1_density').html(' - '+first+'%');
+                $(selected_item+' span#keyword2_density').html(' - '+second+'%');
+                $(selected_item+' span#keyword3_density').html(' - '+third+'%');
+                $(selected_item+' .prim_1_prc').html(' - '+first1+'%');
+                $(selected_item+' .prim_2_prc').html(' - '+second1+'%');
+                $(selected_item+' .prim_3_prc').html(' - '+third1+'%');
             }, 'json');
         }
         return false;
@@ -648,7 +656,12 @@ if (($i - 1) % 3 != 0) {
     selectedCustomer();
 
  $(document).ready(function(){
-   gridKeywordDensity();
+   $(".grid_se_section").each(function() {
+       var selected_item='#'+$(this).closest('.grid_se_section').attr('id');
+       gridKeywordDensity(selected_item);
+
+    });
+   
    $(".mismatch_image").live('mouseover', function() {
 
         var item = "<div class='missmatch_popup'>Aaaaaaaaaa</div>";
@@ -677,16 +690,22 @@ if (($i - 1) % 3 != 0) {
     });
 
     $(".keyword_input").change(function() {
-        gridKeywordDensity();
+        
+    selected_item='#'+$(this).closest('.grid_se_section').attr('id');
+        gridKeywordDensity(selected_item);
     });
     $(".keyword_input").bind('keypress',function(e) {
+        
+        selected_item='#'+$(this).closest('.grid_se_section').attr('id');
         if(e.keyCode==13){
-            gridKeywordDensity();
+            gridKeywordDensity(selected_item);
         }
     });
     //on keyup, start the countdown
     $(".keyword_input").keyup(function(){
-         setTimeout(function(){ gridKeywordDensity();}, '1000');
+         selected_item='#'+$(this).closest('.grid_se_section').attr('id');
+    
+         setTimeout(function(){ gridKeywordDensity(selected_item);}, '1000');
     });
 
     $(".snap_ico_gridview").on('mouseover', function(e) {
