@@ -1,3 +1,6 @@
+# 09/11 Tatiana
+ALTER TABLE `site_categories` ADD `parent_id` INT NOT NULL AFTER `id`;
+
 # 09/13
 ALTER TABLE  `department_members` CHANGE  `level`  `level` INT( 11 ) NULL;
 
