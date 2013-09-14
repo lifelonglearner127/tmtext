@@ -345,34 +345,34 @@ foreach ($same_pr as $ks => $vs) {
                                 </div>-->
                                 <div style="float: left;width: 100%;"><p class="heading_text">SEO Keywords: </p></div>
                                 <div class="primary" style="height: 100%; width: 100%; display: block;">
-                                    <div class=""><span class="primary_name">Primary: </span>
+                                    <div class=""><span class="primary_name1">Primary: </span>
                                         <span>
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
-                                                        <span class='prim_1'> <?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['primary']; }?></span><span class='prim_1_prc'></span>
+                                                        <span class='prim_1 primary_name_long'> <?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['primary']; }?></span><span class='prim_1_prc'></span>
                                                     </span>
                                             </span>
                                         </span>
                                     </div>
                                     <div class="clear"></div>
-                                    <div class=""><span class="primary_name">Secondary: </span>
+                                    <div class=""><span class="primary_name1">Secondary: </span>
                                         <span>
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
-                                                        <span class='prim_2'><?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['secondary']; }?></span><span class='prim_2_prc'></span>
+                                                        <span class='prim_2 primary_name_long'><?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['secondary']; }?></span><span class='prim_2_prc'></span>
                                                     </span>
                                             </span>
                                         </span>
                                     </div>
                                     <div class="clear"></div>
-                                    <div class=""><span class="primary_name">Tertiary: </span>
+                                    <div class=""><span class="primary_name1">Tertiary: </span>
                                         <span>
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
-                                                        <span class='prim_3'><?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['tertiary']; }?></span><span class='prim_3_prc'></span>
+                                                        <span class='prim_3 primary_name_long'><?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['tertiary']; }?></span><span class='prim_3_prc'></span>
                                                     </span>
                                             </span>
                                         </span>
