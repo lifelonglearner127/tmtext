@@ -181,11 +181,13 @@ class WalmartSpider(BaseSpider):
                     item['url'] = Utils.add_domain(subcategory.select("@href").extract()[0], self.root_url)
                     text = subcategory.select("text()").extract()
 
-                    #TODO: fix this
                     if text:
                         item['text'] = text[0].strip()
                     else:
-                        print "no text for subcategory ", item, response.url
+                        # usually means it's something else than what we need
+                        #TODO: check
+                        continue
+                        #print "no text for subcategory ", item, response.url
 
                     # # take care of unicode
                     # item['text'] = item['text'].encode("utf-8", errors=ignore)
