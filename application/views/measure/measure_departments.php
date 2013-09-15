@@ -65,7 +65,7 @@
 
                         <?php
                         if ($this->ion_auth->is_admin($this->ion_auth->get_user_id())) {
-                            if (count($customers_list) > 0) {
+                            if (count($sites_list) > 0) {
                                 ?>
                                 <div id="hp_boot_drop" style="float:left;margin-left:8px" class="btn-group <?php echo $dropup; ?> hp_boot_drop  mr_10">
                                     <button class="btn btn-danger btn_caret_sign" >Choose Site</button>
@@ -73,7 +73,7 @@
                                         <span class="caret"></span>
                                     </button>
                                     <ul class="dropdown-menu">
-                                        <?php foreach ($customers_list as $val) { ?>
+                                        <?php foreach ($sites_list as $val) { ?>
                                             <li><a data-item="<?php echo $val['id']; ?>" data-value="<?php echo $val['name_val']; ?>" href="javascript:void(0)"><?php echo $val['name']; ?></a></li>
         <?php } ?>
                                     </ul>
@@ -107,7 +107,7 @@
                         </div>
                         <?php
                         if ($this->ion_auth->is_admin($this->ion_auth->get_user_id())) {
-                            if (count($customers_list) > 0) {
+                            if (count($sites_list) > 0) {
                                 ?>
                                 <div id="hp_boot_drop_sec"  class="btn-group <?php echo $dropup; ?> hp_boot_drop_sec  mr_10">
                                     <button class="btn btn-danger btn_caret_sign_sec" >Choose Site</button>
@@ -115,9 +115,9 @@
                                         <span class="caret"></span>
                                     </button>
                                     <ul class="dropdown-menu">
-        <?php foreach ($customers_list as $val) { ?>
+                                    <?php foreach ($sites_list as $val) { ?>
                                             <li><a data-item="<?php echo $val['id']; ?>" data-value="<?php echo $val['name_val']; ?>" href="javascript:void(0)"><?php echo $val['name']; ?></a></li>
-                                <?php } ?>
+                                    <?php } ?>
                                     </ul>
                                 </div>
                             <?php

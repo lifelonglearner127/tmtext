@@ -1001,6 +1001,7 @@ class Measure extends MY_Controller {
     public function measure_departments() {
         $this->load->model('department_members_model');
         $this->load->model('site_categories_model');
+        $this->load->model('sites_model');
 
         $this->data['departmens_list'][] = 'All';
         foreach ($this->department_members_model->getAllByCustomerID(7) as $row) {
@@ -1010,9 +1011,29 @@ class Measure extends MY_Controller {
         foreach ($this->site_categories_model->getAll() as $row) {
             $this->data['category_list'][$row->id] = $row->text;
         }
-
-        $this->data['customers_list'] = $this->customers_list_new();
+        $this->data['sites_list'] = $this->sites_list_new();
         $this->render();
+    }
+
+    private function sites_list_new() {
+        $this->load->model('sites_model');
+        $output = array();
+        $sites_init_list = $this->sites_model->getAll();
+        if (count($sites_init_list) > 0) {
+            foreach ($sites_init_list as $key => $value) {
+                $c_url = preg_replace('#^https?://#', '', $value->url);
+                $c_url = preg_replace('#^www.#', '', $c_url);
+                $mid = array(
+                    'id' => $value->id,
+                    'image_url' => $value->image_url,
+                    'name' => $value->name,
+                    'name_val' => $value->name,
+                    'c_url' => $c_url
+                );
+                $output[] = $mid;
+            }
+        }
+        return $output;
     }
 
     public function getDepartmentsByCustomer(){
