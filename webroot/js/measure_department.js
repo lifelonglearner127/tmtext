@@ -153,19 +153,26 @@ $( function() {
             'customer_name': new_caret
         }, function(data) {
             $("#departmentDropdown .dropdown-menu").empty();
+            $("#hp_boot_drop_sec_department .dropdown-menu").empty();
             if(data.length > 0){
 				$("#departmentDropdown").show();
+                $(".dashboard").show();
                 //$('#tabs').show();
                 $("#departmentDropdown .dropdown-menu").append("<li><a data-item=\"empty\" data-value=\"\" href=\"javascript:void(0);\">Choose department</a></li><li><a data-item=\"\" data-value=\"All\" href=\"javascript:void(0);\">All</a></li>");
+                $("#hp_boot_drop_sec_department .dropdown-menu").append("<li><a data-item=\"empty\" data-value=\"\" href=\"javascript:void(0);\">Choose department</a></li><li><a data-item=\"\" data-value=\"All\" href=\"javascript:void(0);\">All</a></li>");
                 for(var i=0; i<data.length; i++){
                     if(i == 0){
                         $('#departmentDropdown .btn_caret_sign1').text('Choose Department');
+                        $('#hp_boot_drop_sec_department  .btn_caret_sign1').text('Choose Department');
                     }
                     $("#departmentDropdown .dropdown-menu").append("<li><a data-item="+data[i].id+" data-value="+data[i].text+" href=\"javascript:void(0);\">"+data[i].text+"</a></li>");
+                    $("#hp_boot_drop_sec_department .dropdown-menu").append("<li><a data-item="+data[i].id+" data-value="+data[i].text+" href=\"javascript:void(0);\">"+data[i].text+"</a></li>");
                 }
             } else {
+                $(".dashboard").hide();
                 $('#departmentDropdown').hide();
                 $('#departmentDropdown .btn_caret_sign1').text('empty');
+                $('#hp_boot_drop_sec_department .btn_caret_sign1').text('empty');
                 //$('#tabs').hide();
             }
             var stringNewData = '<table id="records" ><thead><tr><th style="width: 112px !important;word-wrap: break-word;" >Categories ()</th>' +
@@ -174,6 +181,12 @@ $( function() {
             $( '#dataTableDiv1' ).html(stringNewData);
             $( '#records' ).dataTable({
                 "bJQueryUI": true
+            });
+            $(".hp_boot_drop_sec_department .dropdown-menu > li > a").bind('click', function(e) {
+                var new_caret = $.trim($(this).text());
+                var item_id = $(this).data('item');
+                $("#hp_boot_drop_sec_department .btn_caret_sign_sec").text(new_caret);
+
             });
         });
 
@@ -239,7 +252,7 @@ $( function() {
         });
 
     });
-		
+
     $("#departmentDropdownSec .dropdown-menu > li > a").live('click', function(e) {
         var departmentValue = $.trim($(this).text());
         var department_id = $(this).data('item');
@@ -260,6 +273,21 @@ $( function() {
             $('#departments_content').html('');
         }
     });
+
+    $(".hp_boot_drop_sec_department .dropdown-menu > li > a").bind('click', function(e) {
+        var new_caret = $.trim($(this).text());
+        var item_id = $(this).data('item');
+        $("#hp_boot_drop_sec_department .btn_caret_sign_sec").text(new_caret);
+
+    });
+
+    $(".hp_boot_drop_sec_category .dropdown-menu > li > a").bind('click', function(e) {
+        var new_caret = $.trim($(this).text());
+        var item_id = $(this).data('item');
+        $("#hp_boot_drop_sec_category .btn_caret_sign_sec").text(new_caret);
+
+    });
+
     //Compare with End
 
     // $(document).on('click', 'table#records tbody tr', function(e){

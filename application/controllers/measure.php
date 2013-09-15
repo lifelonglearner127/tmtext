@@ -1001,11 +1001,10 @@ class Measure extends MY_Controller {
     public function measure_departments() {
         $this->load->model('department_members_model');
         $this->load->model('site_categories_model');
-        $this->load->model('sites_model');
 
-        $this->data['departmens_list'][] = 'All';
-        foreach ($this->department_members_model->getAllByCustomerID(7) as $row) {
-            $this->data['departmens_list'][$row->id] = $row->text;
+        $this->data['departments_list'][] = 'All';
+        foreach ($this->department_members_model->getAll() as $row) {
+            $this->data['departments_list'][$row->id] = $row->text;
         }
         $this->data['category_list'][] = 'All';
         foreach ($this->site_categories_model->getAll() as $row) {

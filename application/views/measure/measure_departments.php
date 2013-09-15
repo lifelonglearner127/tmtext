@@ -206,14 +206,34 @@
             </div>
             <!-- End of table for results -->
             <div class="clear"></div>
-            <div class="span12">
-                <table class="dashboard">
+            <table class="dashboard" style="display: none">
                     <thead>
                         <tr>
-                            <th colspan="2">Departments</th>
+                            <th colspan="2">
+                                <?php
+                                if ($this->ion_auth->is_admin($this->ion_auth->get_user_id())) {
+                                    if (count($departments_list) > 0) {
+                                        ?>
+                                        <div id="hp_boot_drop_sec_department"  class="btn-group <?php echo $dropup; ?> hp_boot_drop_sec_department  mr_10" style="float:left;">
+                                            <button class="btn btn-danger btn_caret_sign_sec" >Department</button>
+                                            <button class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
+                                                <span class="caret"></span>
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <?php foreach ($departments_list as $key => $val) { ?>
+                                                    <li><a data-item="<?php echo $key; ?>" data-value="<?php echo $val; ?>" href="javascript:void(0)"><?php echo $val; ?></a></li>
+                                                <?php } ?>
+                                            </ul>
+                                        </div>
+                                    <?php
+                                    }
+                                }
+                                ?>
+                            </th>
                             <th colspan="2">Recommended Actions</th>
                         </tr>
                     </thead>
+
                     <tbody>
                         <tr>
                             <td nowrap>Total Analyzed:</td>
@@ -252,13 +272,31 @@
                             <td>(Coming soon)</td>
                         </tr>
                     </tbody>
-                </table>
-            </div>
-            <div class="span12 mt_10">
-                <table class="dashboard">
+            </table>
+            <table class="dashboard  mt_10" style="display: none">
                     <thead>
                     <tr>
-                        <th colspan="2">Categories</th>
+                        <th colspan="2">
+                            <?php
+                            if ($this->ion_auth->is_admin($this->ion_auth->get_user_id())) {
+                                if (count($category_list) > 0) {
+                                    ?>
+                                    <div id="hp_boot_drop_sec_category"  class="btn-group <?php echo $dropup; ?> hp_boot_drop_sec_category  mr_10" style="float:left;">
+                                        <button class="btn btn-danger btn_caret_sign_sec" >Category</button>
+                                        <button class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
+                                            <span class="caret"></span>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <?php foreach ($category_list as $key => $val) { ?>
+                                                <li><a data-item="<?php echo $key; ?>" data-value="<?php echo $val; ?>" href="javascript:void(0)"><?php echo $val; ?></a></li>
+                                            <?php } ?>
+                                        </ul>
+                                    </div>
+                                <?php
+                                }
+                            }
+                            ?>
+                        </th>
                         <th colspan="2">Recommended Actions</th>
                     </tr>
                     </thead>
@@ -301,7 +339,6 @@
                     </tr>
                     </tbody>
                 </table>
-            </div>
         </div>
     </div>
 </div>
