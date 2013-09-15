@@ -2114,3 +2114,7 @@ span.highlight { background-color:yellow;}
 .dashboard thead th, .dashboard tbody td{
     padding: 3px;
 }
+.dashboard tbody td:last-child{
+    padding-left: 30px;
+    display: block;
+}
