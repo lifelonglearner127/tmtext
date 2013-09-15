@@ -49,7 +49,6 @@
     <div class="tab-content">
 
 
-        <div style="text-align: center;"><span style="font-weight: bold; float: right; margin-right: 10px;">Compare with: </span></div>
         <div class="row-fluid home_pages">
             <div class='span12 head_section'>
 
@@ -110,7 +109,7 @@
                             if (count($sites_list) > 0) {
                                 ?>
                                 <div id="hp_boot_drop_sec"  class="btn-group <?php echo $dropup; ?> hp_boot_drop_sec  mr_10">
-                                    <button class="btn btn-danger btn_caret_sign_sec" >Choose Site</button>
+                                    <button class="btn btn-danger btn_caret_sign_sec" >Choose comparison site</button>
                                     <button class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
                                         <span class="caret"></span>
                                     </button>
@@ -179,8 +178,8 @@
                             </tbody>
                         </table>
                     </div>
-
                 </div> <!-- end tabs -->
+
 
                 <div id="ajaxLoadAni">
                     <span>Loading...</span>
@@ -207,6 +206,102 @@
             </div>
             <!-- End of table for results -->
             <div class="clear"></div>
+            <div class="span12">
+                <table class="dashboard">
+                    <thead>
+                        <tr>
+                            <th colspan="2">Departments</th>
+                            <th colspan="2">Recommended Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td nowrap>Total Analyzed:</td>
+                            <td>41</td>
+                            <td>&nbsp;</td>
+                        </tr>
+                        <tr>
+                            <td nowrap>Description text < 250 words:</td>
+                            <td>17</td>
+                            <td>Add 3 - 19 more words to 17 department descriptions</td>
+
+                        </tr>
+                        <tr>
+                            <td nowrap>Description text < 200 words:</td>
+                            <td>12</td>
+                            <td>Add 51 - 73 more words to 12 department descriptions</td>
+                        </tr>
+                        <tr>
+                            <td nowrap>Description text < 150 words:</td>
+                            <td>5</td>
+                            <td>Add 107 - 123 words to 3 more department descriptions</td>
+                        </tr>
+                        <tr>
+                            <td nowrap>Description text < 250 words:</td>
+                            <td>0</td>
+                            <td>Add descriptions to 2 departments</td>
+                        </tr>
+                        <tr>
+                            <td nowrap>Need keyword optimization:</td>
+                            <td>32</td>
+                            <td>Keyword optimize 32 categories</td>
+                        </tr>
+                        <tr>
+                            <td nowrap>Contain duplicate content:</td>
+                            <td></td>
+                            <td>(Coming soon)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="span12 mt_10">
+                <table class="dashboard">
+                    <thead>
+                    <tr>
+                        <th colspan="2">Categories</th>
+                        <th colspan="2">Recommended Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td nowrap>Total Analyzed:</td>
+                        <td>41</td>
+                        <td>&nbsp;</td>
+                    </tr>
+                    <tr>
+                        <td nowrap>Description text < 250 words:</td>
+                        <td>17</td>
+                        <td nowrap>Add 3 - 19 more words to 17 department descriptions</td>
+
+                    </tr>
+                    <tr>
+                        <td nowrap>Description text < 200 words:</td>
+                        <td>12</td>
+                        <td>Add 51 - 73 more words to 12 department descriptions</td>
+                    </tr>
+                    <tr>
+                        <td nowrap>Description text < 150 words:</td>
+                        <td>5</td>
+                        <td nowrap>Add 107 - 123 words to 3 more department descriptions</td>
+                    </tr>
+                    <tr>
+                        <td nowrap>Description text < 250 words:</td>
+                        <td>0</td>
+                        <td nowrap>Add descriptions to 2 departments</td>
+                    </tr>
+                    <tr>
+                        <td nowrap>Need keyword optimization:</td>
+                        <td>32</td>
+                        <td nowrap>Keyword optimize 32 categories</td>
+                    </tr>
+                    <tr>
+                        <td nowrap>Contain duplicate content:</td>
+                        <td></td>
+                        <td nowrap>(Coming soon)</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>

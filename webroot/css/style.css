@@ -2102,3 +2102,15 @@ span.highlight { background-color:yellow;}
 
 .primary_name:hover {cursor:pointer;text-decoration:underline;}
 .primary_name1:hover {cursor:pointer;text-decoration:underline;}
+
+.dashboard{
+    border: 1px solid #000;
+    padding: 10px;
+    border-collapse: separate!important;
+}
+.dashboard thead th{
+    font-weight: bold;
+}
+.dashboard thead th, .dashboard tbody td{
+    padding: 3px;
+}

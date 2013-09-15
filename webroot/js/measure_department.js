@@ -155,7 +155,7 @@ $( function() {
             $("#departmentDropdown .dropdown-menu").empty();
             if(data.length > 0){
 				$("#departmentDropdown").show();
-                $('#tabs').show();
+                //$('#tabs').show();
                 $("#departmentDropdown .dropdown-menu").append("<li><a data-item=\"empty\" data-value=\"\" href=\"javascript:void(0);\">Choose department</a></li><li><a data-item=\"\" data-value=\"All\" href=\"javascript:void(0);\">All</a></li>");
                 for(var i=0; i<data.length; i++){
                     if(i == 0){
@@ -166,7 +166,7 @@ $( function() {
             } else {
                 $('#departmentDropdown').hide();
                 $('#departmentDropdown .btn_caret_sign1').text('empty');
-                $('#tabs').hide();
+                //$('#tabs').hide();
             }
             var stringNewData = '<table id="records" ><thead><tr><th style="width: 112px !important;word-wrap: break-word;" >Categories ()</th>' +
                 '<th style="width: 60px !important;" nowrap >Items</th><th style="width:160px!important" nowrap>Keyword Density</th>' +
@@ -190,12 +190,15 @@ $( function() {
         /*****departmentAjax****/
         if(department_id != ''){
             departmentAjax(department_id,site_name);
+            $('#tabs').show();
             $('.table_results').show();
         } else if(department_id == 'empty'){
             $('#departments_content').html('');
             $('.table_results').hide();
+            $('#tabs').hide();
             dataTable.fnClearTable();
         } else {
+            $('#tabs').show();
             $('.table_results').show();
             $('#departments_content').html('');
         }
