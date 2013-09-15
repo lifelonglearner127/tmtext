@@ -102,7 +102,8 @@ class Site_categories_model extends CI_Model {
         return $query->result();
     }
 
-    function insert($parent_id, $site_id, $text = '', $url = '', $special = 0, $parent_text = '', $department_members_id = 0, $nr_products = 0, $description_wc = 0, $title_keyword_description_density = '', $description_title = '', $description_text = '', $level='')
+    function insert($parent_id, $site_id, $text = '', $url = '', $special = 0, $parent_text = '', $department_members_id = 0,
+                    $nr_products = 0, $description_wc = 0, $title_keyword_description_count = '', $title_keyword_description_density = '', $description_title = '', $description_text = '', $level='')
     {
         $data = array(
             'parent_id' => $parent_id,
@@ -115,6 +116,7 @@ class Site_categories_model extends CI_Model {
             'level' => $level,
             'nr_products' => $nr_products,
             'description_words' => $description_wc,
+            'title_keyword_description_count' => $title_keyword_description_count,
             'title_keyword_description_density' => $title_keyword_description_density,
             'description_title' => $description_title,
             'description_text' => $description_text

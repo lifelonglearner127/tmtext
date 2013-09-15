@@ -713,6 +713,7 @@ class System extends MY_Controller {
             $nr_products = 0;
             $description_wc = 0;
             $description_text = '';
+            $keyword_count = '';
             $keyword_density = '';
             $description_title = '';
             $level = 0;
@@ -768,6 +769,11 @@ class System extends MY_Controller {
                 } else if(isset($row->description_text) && !is_array($row->description_text) && !is_null($row->description_text) && $row->description_text!=''){
                     $description_text = $row->description_text;
                 }
+                if(isset($row->keyword_count) && is_array($row->keyword_count)){
+                    $keyword_count = $row->keyword_count[0];
+                } else if(isset($row->keyword_count) && !is_array($row->keyword_count) && !is_null($row->keyword_count) && $row->keyword_count!=''){
+                    $keyword_count = json_encode($row->keyword_count);
+                }
                 if(isset($row->keyword_density) && is_array($row->keyword_density)){
                     $keyword_density = $row->keyword_density[0];
                 } else if(isset($row->keyword_density) && !is_array($row->keyword_density) && !is_null($row->keyword_density) && $row->keyword_density!=''){
@@ -782,7 +788,8 @@ class System extends MY_Controller {
                 if($parent_text!=''){
                     $parent_id =  $this->site_categories_model->checkExist($site_id, $parent_text);
                     if($parent_id == false){
-                        $parent_id = $this->site_categories_model->insert(0, $site_id, $text, $url, $special, $parent_text, $department_members_id, $nr_products, $description_wc,$keyword_density,$description_title,$description_text,$level);
+                        $parent_id = $this->site_categories_model->insert(0, $site_id, $text, $url, $special, $parent_text,
+                            $department_members_id, $nr_products, $description_wc, $keyword_count, $keyword_density, $description_title, $description_text,$level);
                     }
                 }
 
@@ -795,11 +802,11 @@ class System extends MY_Controller {
                 if($text != ''){
                     $check_site = $this->site_categories_model->checkExist($site_id, $text);
                     if($check_site == false){
-                        $this->site_categories_model->insert($parent_id, $site_id, $text, $url, $special, $parent_text, $department_members_id, $nr_products, $description_wc,$keyword_density,$description_title,$description_text,$level);
+                        $this->site_categories_model->insert($parent_id, $site_id, $text, $url, $special, $parent_text,
+                            $department_members_id, $nr_products, $description_wc, $keyword_count, $keyword_density,$description_title,$description_text,$level);
                     }
                 }
             }
-            $a++;
         }
         $response['message'] =  'File was added successfully';
         $this->output->set_content_type('application/json')->set_output(json_encode($response));
