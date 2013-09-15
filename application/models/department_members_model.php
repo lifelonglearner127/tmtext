@@ -110,16 +110,19 @@ class Department_members_model extends CI_Model {
 	 return $query;
     }
 
-    function insert($parent_id, $site_id, $department_id = '', $text = '', $description_wc = 0, $description_text = '', $keyword_density = '', $description_title = '', $level)
+    function insert($parent_id, $site_id, $department_id = '', $text = '', $url = '',$description_wc = 0, $description_text = '',
+                    $keyword_count = '', $keyword_density = '', $description_title = '', $level)
     {
         $data = array(
             'text' => $text,
+            'url' => $url,
             'department_id' => $department_id,
             'site_id' => $site_id,
             'parent_id' => $parent_id,
             'level' => $level,
             'description_words' => $description_wc,
             'description_text' => $description_text,
+            'title_keyword_description_count' => $keyword_count,
             'title_keyword_description_density' => $keyword_density,
             'description_title' => $description_title
         );
@@ -128,13 +131,15 @@ class Department_members_model extends CI_Model {
         return $this->db->insert_id();
     }
 
-    function update($check_id, $department_id = '', $description_wc = 0,$description_text = '',$keyword_density = '',$description_title = '',$level)
+    function update($check_id, $department_id = '', $description_wc = 0,$description_text = '', $keyword_count = '',
+                    $keyword_density = '',$description_title = '',$level)
     {
         $data = array(
             'level' => $level,
             'department_id' => $department_id,
             'description_words' => $description_wc,
             'description_text' => $description_text,
+            'title_keyword_description_count' => $keyword_cout,
             'title_keyword_description_density' => $keyword_density,
             'description_title' => $description_title
         );

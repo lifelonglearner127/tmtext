@@ -648,12 +648,16 @@ class System extends MY_Controller {
             $description_wc = 0;
             $description_text = '';
             $keyword_density = '';
+            $keyword_count = '';
             $description_title = '';
             $level = '';
 
             if($row->level == $highest_level){
                 if(isset($row->level) && !is_null($row->level) && $row->level!=''){
                     $level = $row->level;
+                }
+                if(isset($row->url) && !is_null($row->url) && $row->url!=''){
+                    $url = $row->url;
                 }
                 if(isset($row->description_wc) && is_array($row->description_wc)){
                     $description_wc = $row->description_wc[0];
@@ -664,6 +668,11 @@ class System extends MY_Controller {
                     $keyword_density = $row->keyword_density[0];
                 } else if(isset($row->keyword_density) && !is_array($row->keyword_density) && !is_null($row->keyword_density) && $row->keyword_density!=''){
                     $keyword_density = json_encode($row->keyword_density);
+                }
+                if(isset($row->keyword_count) && is_array($row->keyword_count)){
+                    $keyword_count = $row->keyword_count[0];
+                } else if(isset($row->keyword_count) && !is_array($row->keyword_count) && !is_null($row->keyword_count) && $row->keyword_count!=''){
+                    $keyword_count = json_encode($row->keyword_count);
                 }
 		        if(isset($row->description_title) && is_array($row->description_title)){
                     $description_title = $row->description_title[0];
@@ -685,14 +694,14 @@ class System extends MY_Controller {
                 if($parent_text!=''){
                     $parent_id =  $this->department_members_model->checkExist($site_id, $parent_text);
                     if($parent_id == false){
-                        $parent_id = $this->department_members_model->insert(0, $site_id, $department_id, $row->text, $description_wc, $description_text, $keyword_density, $description_title, $level);
+                        $parent_id = $this->department_members_model->insert(0, $site_id, $department_id, $row->text, $url, $description_wc, $description_text, $keyword_count, $keyword_density, $description_title, $level);
                     }
                 }
                 $check_id = $this->department_members_model->checkExist( $site_id, $row->text);
                 if($check_id == false){
-                    $this->department_members_model->insert($parent_id, $site_id, $department_id, $row->text, $description_wc, $description_text, $keyword_density, $description_title, $level);
+                    $this->department_members_model->insert($parent_id, $site_id, $department_id, $row->text, $url, $description_wc, $description_text, $keyword_count, $keyword_density, $description_title, $level);
                 } else {
-                    $this->department_members_model->update($check_id, $department_id, $description_wc, $description_text, $keyword_density, $description_title, $level);
+                    $this->department_members_model->update($check_id, $department_id, $description_wc, $description_text, $keyword_count, $keyword_density, $description_title, $level);
                 }
             }
         }
