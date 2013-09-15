@@ -153,26 +153,22 @@ $( function() {
             'customer_name': new_caret
         }, function(data) {
             $("#departmentDropdown .dropdown-menu").empty();
-            $("#hp_boot_drop_sec_department .dropdown-menu").empty();
             if(data.length > 0){
 				$("#departmentDropdown").show();
                 $(".dashboard").show();
+                $("tbody#department_data").show();
                 //$('#tabs').show();
                 $("#departmentDropdown .dropdown-menu").append("<li><a data-item=\"empty\" data-value=\"\" href=\"javascript:void(0);\">Choose department</a></li><li><a data-item=\"\" data-value=\"All\" href=\"javascript:void(0);\">All</a></li>");
-                $("#hp_boot_drop_sec_department .dropdown-menu").append("<li><a data-item=\"empty\" data-value=\"\" href=\"javascript:void(0);\">Choose department</a></li><li><a data-item=\"\" data-value=\"All\" href=\"javascript:void(0);\">All</a></li>");
                 for(var i=0; i<data.length; i++){
                     if(i == 0){
                         $('#departmentDropdown .btn_caret_sign1').text('Choose Department');
-                        $('#hp_boot_drop_sec_department  .btn_caret_sign1').text('Choose Department');
                     }
                     $("#departmentDropdown .dropdown-menu").append("<li><a data-item="+data[i].id+" data-value="+data[i].text+" href=\"javascript:void(0);\">"+data[i].text+"</a></li>");
-                    $("#hp_boot_drop_sec_department .dropdown-menu").append("<li><a data-item="+data[i].id+" data-value="+data[i].text+" href=\"javascript:void(0);\">"+data[i].text+"</a></li>");
                 }
             } else {
                 $(".dashboard").hide();
                 $('#departmentDropdown').hide();
                 $('#departmentDropdown .btn_caret_sign1').text('empty');
-                $('#hp_boot_drop_sec_department .btn_caret_sign1').text('empty');
                 //$('#tabs').hide();
             }
             var stringNewData = '<table id="records" ><thead><tr><th style="width: 112px !important;word-wrap: break-word;" >Categories ()</th>' +
@@ -181,12 +177,6 @@ $( function() {
             $( '#dataTableDiv1' ).html(stringNewData);
             $( '#records' ).dataTable({
                 "bJQueryUI": true
-            });
-            $(".hp_boot_drop_sec_department .dropdown-menu > li > a").bind('click', function(e) {
-                var new_caret = $.trim($(this).text());
-                var item_id = $(this).data('item');
-                $("#hp_boot_drop_sec_department .btn_caret_sign_sec").text(new_caret);
-
             });
         });
 
@@ -274,20 +264,18 @@ $( function() {
         }
     });
 
-    $(".hp_boot_drop_sec_department .dropdown-menu > li > a").bind('click', function(e) {
+    $(".hp_boot_drop_sec_dashboard .dropdown-menu > li > a").bind('click', function(e) {
         var new_caret = $.trim($(this).text());
         var item_id = $(this).data('item');
-        $("#hp_boot_drop_sec_department .btn_caret_sign_sec").text(new_caret);
-
+        $("#hp_boot_drop_sec_dashboard .btn_caret_sign_sec").text(new_caret);
+        if(new_caret == "Departments"){
+            $("tbody#department_data").show();
+            $("tbody#category_data").hide();
+        } else {
+            $("tbody#department_data").hide();
+            $("tbody#category_data").show();
+        }
     });
-
-    $(".hp_boot_drop_sec_category .dropdown-menu > li > a").bind('click', function(e) {
-        var new_caret = $.trim($(this).text());
-        var item_id = $(this).data('item');
-        $("#hp_boot_drop_sec_category .btn_caret_sign_sec").text(new_caret);
-
-    });
-
     //Compare with End
 
     // $(document).on('click', 'table#records tbody tr', function(e){
@@ -345,15 +333,19 @@ function readBestSellers(department_id,site_name,table_name) {
                     var densityObj = $.parseJSON(data[i].title_keyword_description_density);
                     var descriptionTitle = data[i].description_title;
 					
-                    for(index in densityObj){
+                    /*for(index in densityObj){
                         if(descriptionTitle.replace('"','').replace('"','').toLowerCase().trim() == index.trim().toLowerCase())
                             density = ' - '+densityObj[index]+'%';
-                    }
+                    }*/
 				
                     tableDataString += '<td><select class="changeDensity" style="width:95px;" >';
-                    tableDataString += '<option value="" >'+descriptionTitle.trim().replace('"','').replace('"','')+'</option>';
+                    //tableDataString += '<option value="" >'+descriptionTitle.trim().replace('"','').replace('"','')+'</option>';
+
                     for(index in densityObj){
                         tableDataString += '<option value="'+densityObj[index]+'" >'+index+'</option>';
+                        if(density == ' - 0.0%'){
+                            density = ' - '+densityObj[index]+'%';
+                        }
                     }
                     tableDataString += '</select><span style="position:absolute; margin-top:5px;">&nbsp;'+density+'</span><br>';
                 } else {
@@ -380,7 +372,7 @@ function readBestSellers(department_id,site_name,table_name) {
             $( '#'+table_name ).dataTable({
                 "bJQueryUI": true
             });
-			
+            $('.changeDensity').trigger('change');
             $( '#ajaxLoadAni' ).fadeOut( 'slow' );
         }
     });

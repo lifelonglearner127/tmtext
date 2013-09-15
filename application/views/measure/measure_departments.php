@@ -210,31 +210,21 @@
                     <thead>
                         <tr>
                             <th colspan="2">
-                                <?php
-                                if ($this->ion_auth->is_admin($this->ion_auth->get_user_id())) {
-                                    if (count($departments_list) > 0) {
-                                        ?>
-                                        <div id="hp_boot_drop_sec_department"  class="btn-group <?php echo $dropup; ?> hp_boot_drop_sec_department  mr_10" style="float:left;">
-                                            <button class="btn btn-danger btn_caret_sign_sec" >Department</button>
+                                        <div id="hp_boot_drop_sec_dashboard"  class="btn-group hp_boot_drop_sec_dashboard  mr_10" style="float:left;">
+                                            <button class="btn btn-danger btn_caret_sign_sec" >Departments</button>
                                             <button class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
                                                 <span class="caret"></span>
                                             </button>
                                             <ul class="dropdown-menu">
-                                                <?php foreach ($departments_list as $key => $val) { ?>
-                                                    <li><a data-item="<?php echo $key; ?>" data-value="<?php echo $val; ?>" href="javascript:void(0)"><?php echo $val; ?></a></li>
-                                                <?php } ?>
+                                                <li><a data-item="departments" data-value="Departments" href="javascript:void(0)">Departments</a></li>
+                                                <li><a data-item="categories" data-value="Categories" href="javascript:void(0)">Categories</a></li>
                                             </ul>
                                         </div>
-                                    <?php
-                                    }
-                                }
-                                ?>
                             </th>
                             <th colspan="2">Recommended Actions</th>
                         </tr>
                     </thead>
-
-                    <tbody>
+                    <tbody id="department_data" style="display: none">
                         <tr>
                             <td nowrap>Total Analyzed:</td>
                             <td>41</td>
@@ -272,44 +262,16 @@
                             <td>(Coming soon)</td>
                         </tr>
                     </tbody>
-            </table>
-            <table class="dashboard  mt_10" style="display: none">
-                    <thead>
+                    <tbody id="category_data" style="display: none">
                     <tr>
-                        <th colspan="2">
-                            <?php
-                            if ($this->ion_auth->is_admin($this->ion_auth->get_user_id())) {
-                                if (count($category_list) > 0) {
-                                    ?>
-                                    <div id="hp_boot_drop_sec_category"  class="btn-group <?php echo $dropup; ?> hp_boot_drop_sec_category  mr_10" style="float:left;">
-                                        <button class="btn btn-danger btn_caret_sign_sec" >Category</button>
-                                        <button class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
-                                            <span class="caret"></span>
-                                        </button>
-                                        <ul class="dropdown-menu">
-                                            <?php foreach ($category_list as $key => $val) { ?>
-                                                <li><a data-item="<?php echo $key; ?>" data-value="<?php echo $val; ?>" href="javascript:void(0)"><?php echo $val; ?></a></li>
-                                            <?php } ?>
-                                        </ul>
-                                    </div>
-                                <?php
-                                }
-                            }
-                            ?>
-                        </th>
-                        <th colspan="2">Recommended Actions</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr>
-                        <td nowrap>Total Analyzed:</td>
+                        <td nowrap>Total Analyzed Categories:</td>
                         <td>41</td>
                         <td>&nbsp;</td>
                     </tr>
                     <tr>
                         <td nowrap>Description text < 250 words:</td>
                         <td>17</td>
-                        <td nowrap>Add 3 - 19 more words to 17 department descriptions</td>
+                        <td>Add 3 - 19 more words to 17 department descriptions</td>
 
                     </tr>
                     <tr>
@@ -320,25 +282,25 @@
                     <tr>
                         <td nowrap>Description text < 150 words:</td>
                         <td>5</td>
-                        <td nowrap>Add 107 - 123 words to 3 more department descriptions</td>
+                        <td>Add 107 - 123 words to 3 more department descriptions</td>
                     </tr>
                     <tr>
                         <td nowrap>Description text < 250 words:</td>
                         <td>0</td>
-                        <td nowrap>Add descriptions to 2 departments</td>
+                        <td>Add descriptions to 2 departments</td>
                     </tr>
                     <tr>
                         <td nowrap>Need keyword optimization:</td>
                         <td>32</td>
-                        <td nowrap>Keyword optimize 32 categories</td>
+                        <td>Keyword optimize 32 categories</td>
                     </tr>
                     <tr>
                         <td nowrap>Contain duplicate content:</td>
                         <td></td>
-                        <td nowrap>(Coming soon)</td>
+                        <td>(Coming soon)</td>
                     </tr>
                     </tbody>
-                </table>
+            </table>
         </div>
     </div>
 </div>
