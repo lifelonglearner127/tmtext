@@ -193,11 +193,18 @@ foreach ($same_pr as $ks => $vs) {
                             }
                             ?>
                             <?php $snap_data = $this->webshoots_model->scanForProductSnap($vs['imported_data_id']); ?>
-                            <input type='hidden', value="<?php echo $vs['imported_data_id']; ?>">
-                            <input type='hidden', value="<?php echo $snap_data['snap']; ?>">
-                            <input type='hidden', value="<?php echo $snap_data['img_av_status']; ?>">
-                            <input type='hidden', value="<?php echo $snap_data['status']; ?>">
-                            <input type='hidden', value="<?php echo $snap_data['fs']; ?>">
+                            <?php 
+                                $debug_id = $vs['imported_data_id'];
+                                $debug_snap = $snap_data['snap'];
+                                $debug_av = $snap_data['img_av_status'];
+                                $debug_status = $snap_data['status'];
+                                $debug_fs = $snap_data['fs'];
+                            ?>
+                            <input type='hidden' value="<?php echo $debug_id; ?>">
+                            <input type='hidden' value="<?php echo $debug_snap; ?>">
+                            <input type='hidden' value="<?php echo $debug_av; ?>">
+                            <input type='hidden' value="<?php echo $debug_status; ?>">
+                            <input type='hidden' value="<?php echo $debug_fs; ?>">
                             <?php if($snap_data['img_av_status']) { ?>
                                 <i style='float: right;' class='snap_ico_gridview icon-picture' data-snap="<?php echo $snap_data['snap']; ?>"></i>
                             <?php } ?>
