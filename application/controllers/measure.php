@@ -47,6 +47,8 @@ class Measure extends MY_Controller {
             $cmd = "wget -q $path_to_cron > /dev/null 2>&1";
         } else if($opt == 2) {
             $cmd = "wget -q $path_to_cron 2>&1";
+        } else if($opt == 3) {
+            $cmd = "wget -O - -q -t 1 $path_to_cron";
         }
         shell_exec($cmd);
         $this->output->set_content_type('application/json')->set_output(json_encode($cmd));

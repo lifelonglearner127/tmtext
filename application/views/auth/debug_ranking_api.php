@@ -85,9 +85,6 @@
 				          <button type="button" onclick="debugCmdScreenshots('1')" class="btn btn-primary">wget 1</button>
 				          <button type="button" onclick="debugCmdScreenshots('2')" class="btn btn-primary">wget 2</button>
 				          <button type="button" onclick="debugCmdScreenshots('3')" class="btn btn-primary">wget 3</button>
-				          <button type="button" onclick="debugCmdScreenshots('4')" class="btn btn-primary">wget 4</button>
-				          <button type="button" onclick="debugCmdScreenshots('5')" class="btn btn-primary">wget 5</button>
-				          <button type="button" onclick="debugCmdScreenshots('6')" class="btn btn-primary">wget 6</button>
 				        </div>
 				      </div>
 						</form>	
