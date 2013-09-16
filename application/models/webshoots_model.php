@@ -30,13 +30,15 @@ class Webshoots_model extends CI_Model {
         $res_data = array(
             'snap' => '',
             'img_av_status' => false,
-            'status' => ''
+            'status' => '',
+            'fs' => 0
         );
         $check_obj = array(
             'imported_data_id' => $im_data_id,
             'snap !=' => 'null'
         );
-        $query = $this->db->where($check_obj)->order_by('snap_date', 'desc')->limit(1)->get($this->tables['crawler_list']);
+        // $query = $this->db->where($check_obj)->order_by('snap_date', 'desc')->limit(1)->get($this->tables['crawler_list']);
+        $query = $this->db->where($check_obj)->limit(1)->get($this->tables['crawler_list']);
         $query_res = $query->result();
         if(count($query_res) > 0) {
             $r = $query_res[0];
@@ -49,6 +51,7 @@ class Webshoots_model extends CI_Model {
             } else {
                 $res_data['status'] = 'low filesize or file not exists';
             }
+            $res_data['fs'] = $fs;
         } else {
             $res_data['status'] = 'no snap in db';
         }

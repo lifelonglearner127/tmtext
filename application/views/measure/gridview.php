@@ -193,6 +193,11 @@ foreach ($same_pr as $ks => $vs) {
                             }
                             ?>
                             <?php $snap_data = $this->webshoots_model->scanForProductSnap($vs['imported_data_id']); ?>
+                            <input type='hidden', value="<?php echo $vs['imported_data_id']; ?>">
+                            <input type='hidden', value="<?php echo $snap_data['snap']; ?>">
+                            <input type='hidden', value="<?php echo $snap_data['img_av_status']; ?>">
+                            <input type='hidden', value="<?php echo $snap_data['status']; ?>">
+                            <input type='hidden', value="<?php echo $snap_data['fs']; ?>">
                             <?php if($snap_data['img_av_status']) { ?>
                                 <i style='float: right;' class='snap_ico_gridview icon-picture' data-snap="<?php echo $snap_data['snap']; ?>"></i>
                             <?php } ?>
