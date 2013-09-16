@@ -158,19 +158,19 @@ $( function() {
                 $(".dashboard").show();
                 $("tbody#department_data").show();
                 var site_name=$('#hp_boot_drop .btn_caret_sign').text();
-                $.post(base_url + 'index.php/measure/getDashboardData', {
+                $.post(base_url + 'index.php/measure/getDashboardDepData', {
                     'site_name': site_name
                 }, function(data) {
                     $("tbody#department_data").empty();
                     var data_str = '<tr><td nowrap>Total Analyzed:</td><td>41</td><td>&nbsp;</td></tr>';
                     data_str += '<tr><td nowrap>Description text < 250 words:</td><td>'+data.res250+'</td>' +
-                        '<td>Add 3 - 19 more words to 17 department descriptions</td></tr>';
+                        '<td>Add 3 - 19 more words to '+data.res250+' department descriptions</td></tr>';
                     data_str += '<tr><td nowrap>Description text < 200 words:</td><td>'+data.res200+'</td>' +
-                        '<td>Add 51 - 73 more words to 12 department descriptions</td></tr>';
+                        '<td>Add 51 - 73 more words to '+data.res200+' department descriptions</td></tr>';
                     data_str += '<tr><td nowrap>Description text < 150 words:</td><td>'+data.res150+'</td>' +
-                        '<td>Add 107 - 123 words to 3 more department descriptions</td></tr>';
+                        '<td>Add 107 - 123 words to '+data.res150+' more department descriptions</td></tr>';
                     data_str += '<tr><td nowrap>Description text < 250 words:</td><td>'+data.res0+'</td>' +
-                        '<td>Add descriptions to 2 departments</td></tr>';
+                        '<td>Add descriptions to '+data.res0+' departments</td></tr>';
                     data_str += '<tr><td nowrap>Need keyword optimization:</td><td>32</td>' +
                         '<td>Keyword optimize 32 categories</td></tr>';
                     data_str += '<tr><td nowrap>Contain duplicate content:</td><td></td><td>(Coming soon)</td></tr>';
@@ -298,18 +298,18 @@ $( function() {
             $("tbody#category_data").hide();
             $("tbody#department_data").empty();
             var site_name=$('#hp_boot_drop .btn_caret_sign').text();
-            $.post(base_url + 'index.php/measure/getDashboardData', {
+            $.post(base_url + 'index.php/measure/getDashboardDepData', {
                 'site_name': site_name
             }, function(data) {
                 var data_str = '<tr><td nowrap>Total Analyzed:</td><td>41</td><td>&nbsp;</td></tr>';
                 data_str += '<tr><td nowrap>Description text < 250 words:</td><td>'+data.res250+'</td>' +
-                    '<td>Add 3 - 19 more words to 17 department descriptions</td></tr>';
+                    '<td>Add 3 - 19 more words to '+data.res250+' department descriptions</td></tr>';
                 data_str += '<tr><td nowrap>Description text < 200 words:</td><td>'+data.res200+'</td>' +
-                    '<td>Add 51 - 73 more words to 12 department descriptions</td></tr>';
+                    '<td>Add 51 - 73 more words to '+data.res200+' department descriptions</td></tr>';
                 data_str += '<tr><td nowrap>Description text < 150 words:</td><td>'+data.res150+'</td>' +
-                    '<td>Add 107 - 123 words to 3 more department descriptions</td></tr>';
+                    '<td>Add 107 - 123 words to '+data.res150+' more department descriptions</td></tr>';
                 data_str += '<tr><td nowrap>Description text 0 words:</td><td>'+data.res0+'</td>' +
-                    '<td>Add descriptions to 2 departments</td></tr>';
+                    '<td>Add descriptions to '+data.res0+' departments</td></tr>';
                 data_str += '<tr><td nowrap>Need keyword optimization:</td><td>32</td>' +
                     '<td>Keyword optimize 32 categories</td></tr>';
                 data_str += '<tr><td nowrap>Contain duplicate content:</td><td></td><td>(Coming soon)</td></tr>';
@@ -320,23 +320,23 @@ $( function() {
             $("tbody#category_data").show();
             $("tbody#category_data").empty();
             var site_name=$('#hp_boot_drop .btn_caret_sign').text();
-            /*$.post(base_url + 'index.php/measure/getDashboardData', {
+            $.post(base_url + 'index.php/measure/getDashboardCatData', {
                 'site_name': site_name
-            }, function(data) {*/
+            }, function(data) {
                 var data_str = '<tr><td nowrap>Total Analyzed:</td><td>397</td><td>&nbsp;</td></tr>';
-                data_str += '<tr><td nowrap>Description text < 250 words:</td><td>108</td>' +
-                    '<td>Add 3 - 19 more words to 108 category descriptions</td></tr>';
-                data_str += '<tr><td nowrap>Description text < 200 words:</td><td>43</td>' +
-                    '<td>Add 51 - 73 more words to 43 category descriptions</td></tr>';
-                data_str += '<tr><td nowrap>Description text < 150 words:</td><td>14</td>' +
-                    '<td>Add 107 - 123 words to 14 more category descriptions</td></tr>';
-                data_str += '<tr><td nowrap>Description text 0 words:</td><td>11</td>' +
-                    '<td>Add descriptions to 11 categories</td></tr>';
+                data_str += '<tr><td nowrap>Description text < 250 words:</td><td>'+data.res250+'</td>' +
+                    '<td>Add 3 - 19 more words to '+data.res250+' category descriptions</td></tr>';
+                data_str += '<tr><td nowrap>Description text < 200 words:</td><td>'+data.res200+'</td>' +
+                    '<td>Add 51 - 73 more words to '+data.res200+' category descriptions</td></tr>';
+                data_str += '<tr><td nowrap>Description text < 150 words:</td><td>'+data.res150+'</td>' +
+                    '<td>Add 107 - 123 words to '+data.res150+' more category descriptions</td></tr>';
+                data_str += '<tr><td nowrap>Description text 0 words:</td><td>'+data.res0+'</td>' +
+                    '<td>Add descriptions to '+data.res0+' categories</td></tr>';
                 data_str += '<tr><td nowrap>Need keyword optimization:</td><td>32</td>' +
                     '<td>Keyword optimize 32 categories</td></tr>';
                 data_str += '<tr><td nowrap>Contain duplicate content:</td><td></td><td>(Coming soon)</td></tr>';
                 $("tbody#category_data").append(data_str);
-            //});
+            });
         }
     });
     //Compare with End

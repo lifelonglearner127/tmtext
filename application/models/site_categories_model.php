@@ -154,4 +154,19 @@ class Site_categories_model extends CI_Model {
         $result = $query->result();
         return $result[0];
     }
+
+    function getDescriptionData($site_id)
+    {
+        $sql_total = $this->db->query("SELECT count(*) as c FROM `site_categories` WHERE `site_id`=".$site_id."");
+        $total = $sql_total->result();
+        $sql_250 = $this->db->query("SELECT count(*) as c FROM `site_categories` WHERE `site_id`=".$site_id." and `description_words` < 250");
+        $result250 = $sql_250->result();
+        $sql_200 = $this->db->query("SELECT count(*) as c FROM `site_categories` WHERE `site_id`=".$site_id." and `description_words` < 200");
+        $result200 = $sql_200->result();
+        $sql_150 = $this->db->query("SELECT count(*) as c FROM `site_categories` WHERE `site_id`=".$site_id." and `description_words` < 150");
+        $result150 = $sql_150->result();
+        $sql_0 = $this->db->query("SELECT count(*) as c FROM `site_categories` WHERE `site_id`=".$site_id." and `description_words` = 0");
+        $result0 = $sql_0->result();
+        return array('total' => $total[0]->c, 'res250' => $result250[0]->c, 'res200' => $result200[0]->c, 'res150' => $result150[0]->c,'res0' => $result0[0]->c );
+    }
 }
