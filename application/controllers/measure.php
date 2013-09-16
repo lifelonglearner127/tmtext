@@ -1040,6 +1040,21 @@ class Measure extends MY_Controller {
         $this->load->model('department_members_model');
         $site_id = $this->sites_model->getIdByName($this->input->post('site_name'));
         $data = $this->department_members_model->getDescriptionData($site_id);
+        $data_more = $this->department_members_model->getDepartmentsByWc($site_id);
+        $count_dep = 0;
+        foreach($data_more as $key => $obj){
+            $keywords_density = json_decode($data_more[$key]->title_keyword_description_density);
+            $num = 0;
+            foreach($keywords_density as $k => $v){
+                if(floatval($v) > 2){
+                    $num = 0;
+                } else {
+                    $num = 1;
+                }
+            }
+            $count_dep += $num;
+        }
+        $data = array_merge($data, array('keyword_optimize' => $count_dep));
         $this->output->set_content_type('application/json')->set_output(json_encode($data));
     }
 
@@ -1048,6 +1063,22 @@ class Measure extends MY_Controller {
         $this->load->model('site_categories_model');
         $site_id = $this->sites_model->getIdByName($this->input->post('site_name'));
         $data = $this->site_categories_model->getDescriptionData($site_id);
+        $data_more = $this->site_categories_model->getCategoriesByWc($site_id);
+        $count_dep = 0;
+        foreach($data_more as $key => $obj){
+            $keywords_density = json_decode($data_more[$key]->title_keyword_description_density);
+            $num = 0;
+            foreach($keywords_density as $k => $v){
+                if(floatval($v) > 2){
+                    $num = 0;
+                } else {
+                    $num = 1;
+                }
+            }
+            $count_dep += $num;
+        }
+        $data = array_merge($data, array('keyword_optimize' => $count_dep));
+        $this->output->set_content_type('application/json')->set_output(json_encode($data));
         $this->output->set_content_type('application/json')->set_output(json_encode($data));
     }
 

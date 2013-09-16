@@ -159,14 +159,25 @@ class Site_categories_model extends CI_Model {
     {
         $sql_total = $this->db->query("SELECT count(*) as c FROM `site_categories` WHERE `site_id`=".$site_id."");
         $total = $sql_total->result();
-        $sql_250 = $this->db->query("SELECT count(*) as c FROM `site_categories` WHERE `site_id`=".$site_id." and `description_words` < 250");
+        $sql_250 = $this->db->query("SELECT count(*) as c, min(`description_words`) as low_wc, max(`description_words`) as top_wc FROM `site_categories` WHERE `site_id`=".$site_id." and `description_words` < 250");
         $result250 = $sql_250->result();
-        $sql_200 = $this->db->query("SELECT count(*) as c FROM `site_categories` WHERE `site_id`=".$site_id." and `description_words` < 200");
+        $sql_200 = $this->db->query("SELECT count(*) as c, min(`description_words`) as low_wc, max(`description_words`) as top_wc FROM `site_categories` WHERE `site_id`=".$site_id." and `description_words` < 200");
         $result200 = $sql_200->result();
-        $sql_150 = $this->db->query("SELECT count(*) as c FROM `site_categories` WHERE `site_id`=".$site_id." and `description_words` < 150");
+        $sql_150 = $this->db->query("SELECT count(*) as c, min(`description_words`) as low_wc, max(`description_words`) as top_wc FROM `site_categories` WHERE `site_id`=".$site_id." and `description_words` < 150");
         $result150 = $sql_150->result();
         $sql_0 = $this->db->query("SELECT count(*) as c FROM `site_categories` WHERE `site_id`=".$site_id." and `description_words` = 0");
         $result0 = $sql_0->result();
-        return array('total' => $total[0]->c, 'res250' => $result250[0]->c, 'res200' => $result200[0]->c, 'res150' => $result150[0]->c,'res0' => $result0[0]->c );
+        return array('total' => $total[0]->c,
+            'res250' => $result250[0]->c, 'res250_low_wc' => $result250[0]->low_wc, 'res250_top_wc' => $result250[0]->top_wc,
+            'res200' => $result200[0]->c, 'res200_low_wc' => $result200[0]->low_wc, 'res200_top_wc' => $result200[0]->top_wc,
+            'res150' => $result150[0]->c, 'res150_low_wc' => $result150[0]->low_wc, 'res150_top_wc' => $result150[0]->top_wc,
+            'res0' => $result0[0]->c );
+    }
+
+    function getCategoriesByWc($site_id)
+    {
+        $sql = "SELECT * FROM `site_categories` WHERE `site_id` = '".$site_id."' and `description_words` > 0";
+        $query = $this->db->query($sql);
+        return $query->result();
     }
 }
