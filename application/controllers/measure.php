@@ -1035,6 +1035,14 @@ class Measure extends MY_Controller {
         return $output;
     }
 
+    public function getDashboardData(){
+        $this->load->model('sites_model');
+        $this->load->model('department_members_model');
+        $site_id = $this->sites_model->getIdByName($this->input->post('site_name'));
+        $data = $this->department_members_model->getDescriptionData($site_id);
+        $this->output->set_content_type('application/json')->set_output(json_encode($data));
+    }
+
     public function getDepartmentsByCustomer(){
         $this->load->model('sites_model');
         $this->load->model('department_members_model');

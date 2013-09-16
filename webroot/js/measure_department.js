@@ -157,6 +157,25 @@ $( function() {
 				$("#departmentDropdown").show();
                 $(".dashboard").show();
                 $("tbody#department_data").show();
+                var site_name=$('#hp_boot_drop .btn_caret_sign').text();
+                $.post(base_url + 'index.php/measure/getDashboardData', {
+                    'site_name': site_name
+                }, function(data) {
+                    $("tbody#department_data").empty();
+                    var data_str = '<tr><td nowrap>Total Analyzed:</td><td>41</td><td>&nbsp;</td></tr>';
+                    data_str += '<tr><td nowrap>Description text < 250 words:</td><td>'+data.res250+'</td>' +
+                        '<td>Add 3 - 19 more words to 17 department descriptions</td></tr>';
+                    data_str += '<tr><td nowrap>Description text < 200 words:</td><td>'+data.res200+'</td>' +
+                        '<td>Add 51 - 73 more words to 12 department descriptions</td></tr>';
+                    data_str += '<tr><td nowrap>Description text < 150 words:</td><td>'+data.res150+'</td>' +
+                        '<td>Add 107 - 123 words to 3 more department descriptions</td></tr>';
+                    data_str += '<tr><td nowrap>Description text < 250 words:</td><td>'+data.res0+'</td>' +
+                        '<td>Add descriptions to 2 departments</td></tr>';
+                    data_str += '<tr><td nowrap>Need keyword optimization:</td><td>32</td>' +
+                        '<td>Keyword optimize 32 categories</td></tr>';
+                    data_str += '<tr><td nowrap>Contain duplicate content:</td><td></td><td>(Coming soon)</td></tr>';
+                    $("tbody#department_data").append(data_str);
+                });
                 //$('#tabs').show();
                 $("#departmentDropdown .dropdown-menu").append("<li><a data-item=\"empty\" data-value=\"\" href=\"javascript:void(0);\">Choose department</a></li><li><a data-item=\"\" data-value=\"All\" href=\"javascript:void(0);\">All</a></li>");
                 for(var i=0; i<data.length; i++){
@@ -185,6 +204,12 @@ $( function() {
     $("#departmentDropdown .dropdown-menu > li > a").live('click', function(e) {
         var departmentValue = $.trim($(this).text());
         var department_id = $(this).data('item');
+        $.post(base_url + 'index.php/measure/getUrlByDepartment', {
+            'department_id': department_id
+        }, function(data) {
+            $("a#department_url").attr('href', data[0].url);
+            $("a#department_url").show();
+        })
         //console.log(department_id);
         var site_name=$('.btn_caret_sign').text()
         $("#departmentDropdown_first").text(departmentValue);
@@ -271,6 +296,25 @@ $( function() {
         if(new_caret == "Departments"){
             $("tbody#department_data").show();
             $("tbody#category_data").hide();
+            $("tbody#department_data").empty();
+            var site_name=$('#hp_boot_drop .btn_caret_sign').text();
+            $.post(base_url + 'index.php/measure/getDashboardData', {
+                'site_name': site_name
+            }, function(data) {
+                var data_str = '<tr><td nowrap>Total Analyzed:</td><td>41</td><td>&nbsp;</td></tr>';
+                data_str += '<tr><td nowrap>Description text < 250 words:</td><td>'+data.res250+'</td>' +
+                    '<td>Add 3 - 19 more words to 17 department descriptions</td></tr>';
+                data_str += '<tr><td nowrap>Description text < 200 words:</td><td>'+data.res200+'</td>' +
+                    '<td>Add 51 - 73 more words to 12 department descriptions</td></tr>';
+                data_str += '<tr><td nowrap>Description text < 150 words:</td><td>'+data.res150+'</td>' +
+                    '<td>Add 107 - 123 words to 3 more department descriptions</td></tr>';
+                data_str += '<tr><td nowrap>Description text < 250 words:</td><td>'+data.res0+'</td>' +
+                    '<td>Add descriptions to 2 departments</td></tr>';
+                data_str += '<tr><td nowrap>Need keyword optimization:</td><td>32</td>' +
+                    '<td>Keyword optimize 32 categories</td></tr>';
+                data_str += '<tr><td nowrap>Contain duplicate content:</td><td></td><td>(Coming soon)</td></tr>';
+                $("tbody#department_data").append(data_str);
+            });
         } else {
             $("tbody#department_data").hide();
             $("tbody#category_data").show();
