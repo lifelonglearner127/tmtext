@@ -13,7 +13,20 @@
             <tr>
                 <td class="name"><?php echo $row[1]; ?></td>
                 <td class="url"><a href="<?php echo $data->url; ?>" target="_blank"><?php echo implode('<br/>', str_split($data->url, 120)); ?></a></td>
-                <td class="recommendations"><?php echo $row[9]; ?></td>
+                <td class="recommendations">
+                    <table border="0" cellspacing="0" cellpadding="0" style="border-collapse: collapse;border-spacing: 0;">
+                        <?php foreach ($data->recommendations as $recommendation) { ?>
+                            <tr style="border: 0px;">
+                                <td style="border: 0px;">
+                                    <?php echo $recommendation->img; ?>
+                                </td>
+                                <td style="border: 0px;">
+                                    <?php echo $recommendation->msg; ?>
+                                </td>
+                            </tr>
+                        <?php } ?>
+                    </table>
+                </td>
             </tr>
         <?php } ?>
     </tbody>

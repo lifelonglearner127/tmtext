@@ -162,3 +162,7 @@ a.url{
 .red{
     background-color: #FF0000;
 }
+img.bullet {
+    width: 18px;
+    height: 18px;
+}

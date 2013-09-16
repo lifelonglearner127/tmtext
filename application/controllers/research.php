@@ -744,10 +744,14 @@ class Research extends MY_Controller {
                         // this is for absent product in selected batch only
                         $recommendations_html = '<ul class="assess_recommendations"><li>'.$data_row->recommendations.'</li></ul>';
                     } else {
+                        $img_path = base_url()."img/";
                         $recommendations = array();
 
                         if($data_row->short_description_wc == 0 && $data_row->long_description_wc == 0){
-                            $recommendations[] = '<li>Add product descriptions</li>';
+                            $recommendations[] = array(
+                                'img'=>'<img class="bullet" src="'.$img_path.'assess_report_D.png">',
+                                'msg'=>'Add product descriptions',
+                            );
                         }
 
                         if($data_row->short_description_wc > 0 && $data_row->long_description_wc == 0){
@@ -757,7 +761,10 @@ class Research extends MY_Controller {
                                 $sd_diff = $build_assess_params->short_less - $data_row->short_description_wc;
                             }
                             if($sd_diff > 0){
-                                $recommendations[] = '<li>Increase descriptions word count by '.$sd_diff.' words</li>';
+                                $recommendations[] = array(
+                                    'img'=>'<img class="bullet" src="'.$img_path.'assess_report_arrow_up.png">',
+                                    'msg'=>'Increase descriptions word count by '.$sd_diff.' words',
+                                );
                             }
 
                         }
@@ -768,7 +775,10 @@ class Research extends MY_Controller {
                                 $ld_diff = $build_assess_params->long_less - $data_row->long_description_wc;
                             }
                             if($ld_diff > 0){
-                                $recommendations[] = '<li>Increase descriptions word count by '.$ld_diff.' words</li>';
+                                $recommendations[] = array(
+                                    'img'=>'<img class="bullet" src="'.$img_path.'assess_report_arrow_up.png">',
+                                    'msg'=>'Increase descriptions word count by '.$ld_diff.' words',
+                                );
                             }
                         }
 
@@ -779,7 +789,10 @@ class Research extends MY_Controller {
                                 $sd_diff = $build_assess_params->short_less - $data_row->short_description_wc;
                             }
                             if($sd_diff > 0){
-                                $recommendations[] = '<li>Increase short descriptions word count by '.$sd_diff.' words</li>';
+                                $recommendations[] = array(
+                                    'img'=>'<img class="bullet" src="'.$img_path.'assess_report_arrow_up.png">',
+                                    'msg'=>'Increase short descriptions word count by '.$sd_diff.' words',
+                                );
                             }
                         }
                         if($data_row->long_description_wc > 0 && $data_row->short_description_wc != 0){
@@ -789,7 +802,10 @@ class Research extends MY_Controller {
                                 $ld_diff = $build_assess_params->long_less - $data_row->long_description_wc;
                             }
                             if($ld_diff > 0){
-                                $recommendations[] = '<li>Increase long descriptions word count by '.$ld_diff.' words</li>';
+                                $recommendations[] = array(
+                                    'img'=>'<img class="bullet" src="'.$img_path.'assess_report_arrow_up.png">',
+                                    'msg'=>'Increase long descriptions word count by '.$ld_diff.' words',
+                                );
                             }
                         }
 
@@ -802,13 +818,25 @@ class Research extends MY_Controller {
                         }*/
 
                         if ($data_row->short_seo_phrases == 'None' && $data_row->long_seo_phrases == 'None') {
-                            $recommendations[] = '<li>Keyword optimize product content</li>';
+                            $recommendations[] = array(
+                                'img'=>'<img class="bullet" src="'.$img_path.'assess_report_seo.png">',
+                                'msg'=>'Keyword optimize product content',
+                            );
                         }
                         if ($data_row->lower_price_exist == true && !empty($data_row->competitors_prices)) {
                             if (min($data_row->competitors_prices) < $data_row->own_price) {
                                 $min_price_diff = $data_row->own_price - min($data_row->competitors_prices);
-                                $recommendations[] = '<li>Lower price by $'.$min_price_diff.' to be competitive</li>';
+                                $recommendations[] = array(
+                                    'img'=>'<img class="bullet" src="'.$img_path.'assess_report_dollar.png">',
+                                    'msg'=>'Lower price by $'.$min_price_diff.' to be competitive',
+                                );
                             }
+                        }
+
+                        $data_row->recommendations = $recommendations;
+
+                        for ($i = 0; $i < count($recommendations); $i++){
+                            $recommendations[$i] = '<li>'.$recommendations[$i]['img'].$recommendations[$i]['msg'].'</li>';
                         }
 
                         $recommendations_html = '<ul class="assess_recommendations">'.implode('', $recommendations).'</ul>';
