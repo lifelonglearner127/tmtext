@@ -61,7 +61,7 @@
 																<p>no ranking data</p>
 															<?php } ?>
 													</td>
-													<td><button type='button' class='btn btn-danger'>Delete</button></td>
+													<td><button type='button' class='btn btn-danger' onclick="deleteKeyword('<?php echo $v->site; ?>', '<?php echo $kv->keyword; ?>')">Delete</button></td>
 												</tr>
 											<?php } ?>
 										</tbody>
@@ -77,6 +77,18 @@
 </div>
 
 <script type="text/javascript">
+	function deleteKeyword(site, key_word) {
+		if(confirm('Are you sure?')) {
+			var send_data = {
+				url: site,
+				key_word: key_word
+			} 
+			$.post(base_url + "index.php/measure/debug_ranking_data_delete", send_data, 'json').done(function(a_data) {
+				location.reload();
+      });
+		}
+	}
+
 	function addRankingData() {
 		$("#add_rank_form .form_error").text("");
 		$("#add_rank_form .form_error").hide();
@@ -103,7 +115,6 @@
 			} 
 			$.post(base_url + "index.php/measure/debug_ranking_data", send_data, 'json').done(function(a_data) {
 				location.reload();
-				// console.log('DEBUG RANKING DATA : ', a_data);
       });
 		}
 		return false;

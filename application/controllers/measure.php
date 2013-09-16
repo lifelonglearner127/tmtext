@@ -38,6 +38,31 @@ class Measure extends MY_Controller {
         $this->render();
     }
 
+    public function debug_ranking_data_delete() {
+        // === incoming data
+        $url = $this->input->post('url');
+        $key_word = $this->input->post('key_word');
+        // === config
+        $api_username = 'content';
+        $api_key = 'MNl5FKbecbxv9EQAQ';
+        // === delete keyword data to http://www.serpranktracker.com (start)
+        $key_url = array(
+            'site' => "$url",
+            'keyword' => "$key_word",
+            'location' => 'US',
+            'searchengine' => 'G'
+        );
+        $data = array("data" => json_encode(array("action" => "deleteAccountKeywords", "id" => "$api_username", "apikey" => "$api_key", "keywords" => array($key_url))));
+        $ch = curl_init('https://www.serpranktracker.com/tracker/webservice');
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $result = curl_exec($ch);
+        // === delete keyword data to http://www.serpranktracker.com (end)
+
+        $this->output->set_content_type('application/json')->set_output(json_encode($result));
+    }
+
     public function debug_ranking_data() {
         // === incoming data
         $url = $this->input->post('url');
@@ -59,30 +84,6 @@ class Measure extends MY_Controller {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         $result = curl_exec($ch);
         // === add new keyword + url to http://www.serpranktracker.com (end)
-
-        // === get keyword data to http://www.serpranktracker.com (start)
-        // $data = array("data" => json_encode(array("action" => "getAccountRankings", "id" => "$api_username", "apikey" => "$api_key")));
-        // $ch = curl_init('https://www.serpranktracker.com/tracker/webservice');
-        // curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST"); 
-        // curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-        // curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        // $result = curl_exec($ch);
-        // === get keyword data to http://www.serpranktracker.com (end)
-
-        // === delete keyword data to http://www.serpranktracker.com (start)
-        // $key_url = array(
-        //     'site' => 'http://staples.com',
-        //     'keyword' => 'samsung',
-        //     'location' => 'US',
-        //     'searchengine' => 'G'
-        // );
-        // $data = array("data" => json_encode(array("action" => "deleteAccountKeywords", "id" => "$api_username", "apikey" => "$api_key", "keywords" => array($key_url))));
-        // $ch = curl_init('https://www.serpranktracker.com/tracker/webservice');
-        // curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-        // curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-        // curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        // $result = curl_exec($ch);
-        // === delete keyword data to http://www.serpranktracker.com (end)
 
         $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }
