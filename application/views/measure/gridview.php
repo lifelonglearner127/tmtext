@@ -23,8 +23,7 @@ foreach ($same_pr as $ks => $vs) {
 $row = 1;
 foreach ($same_pr as $ks => $vs) {
     $marg = 0;
-
-    if(strlen($vs['product_name']) > 70){ $marg = 1;}
+    
     $row = ceil($i / 3);
     foreach ($vs['three_last_prices'] as $key => $last_price) {
         if (count($vs['three_last_prices']) > 1) {
@@ -48,7 +47,7 @@ foreach ($same_pr as $ks => $vs) {
     //           print_r(explode(" ", trim($s_product_long_description )));
     //           $s_product_long_desc_count = count(explode(" ", $s_product_long_description));
 
-    if (!isset($vs['short_description_wc'])) {
+   // if (!isset($vs['short_description_wc'])) {
         if ($vs['description'] !== null && trim($vs['description']) !== "") {
             $s_product_description = $vs['description'];
             $vs['description'] = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $vs['description']);
@@ -73,17 +72,17 @@ foreach ($same_pr as $ks => $vs) {
             $s_product_long_desc_count = 0;
             $s_product_long_description = '';
         }
-    } else {
-        $s_product_short_desc_count = $vs['short_description_wc'];
-        $s_product_long_desc_count = $vs['long_description_wc'];
-        $s_product_description = $vs['short_description_wc'] != 0 ? $vs['description'] : '';
-        $s_product_long_description = $vs['long_description_wc'] != 0 ? $vs['long_description'] : '';
-    }
+//    } else {
+//        $s_product_short_desc_count = $vs['short_description_wc'];
+//        $s_product_long_desc_count = $vs['long_description_wc'];
+//        $s_product_description = $vs['short_description_wc'] != 0 ? $vs['description'] : '';
+//        $s_product_long_description = $vs['long_description_wc'] != 0 ? $vs['long_description'] : '';
+//    }
 
     if ($i % 3 == 1) {
         echo '<div class="wrapper">';
     }
-    ?>
+ ?>
 
 
     <div id="grid_se_section_<?php echo $i; ?>"  class='grid_se_section <?php echo $class_left; ?> '>
@@ -547,12 +546,24 @@ if (($i - 1) % 3 != 0) {
                 var first1 = (data['primary'][1].toPrecision(3)*100).toFixed(2);
                 var second1 = (data['secondary'][1].toPrecision(3)*100).toFixed(2);
                 var third1 = (data['tertiary'][1].toPrecision(3)*100).toFixed(2);
-                $(selected_item+' span#keyword1_density').html(' - '+first+'%');
-                $(selected_item+' span#keyword2_density').html(' - '+second+'%');
-                $(selected_item+' span#keyword3_density').html(' - '+third+'%');
-                $(selected_item+' .prim_1_prc').html(' - '+first1+'%');
-                $(selected_item+' .prim_2_prc').html(' - '+second1+'%');
-                $(selected_item+' .prim_3_prc').html(' - '+third1+'%');
+                if($(selected_item+" input[name='keyword1']").val()!=''){
+                    $(selected_item+' span#keyword1_density').html(' - '+first+'%');
+                }
+                if($.trim($(selected_item+" input[name='keyword2']").val())!=''){
+                    $(selected_item+' span#keyword2_density').html(' - '+second+'%');
+                }
+                if($.trim($(selected_item+" input[name='keyword3']").val())!=''){
+                    $(selected_item+' span#keyword3_density').html(' - '+third+'%');
+                }
+                if($.trim($(selected_item+' .prim_1').text()!='')){
+                    $(selected_item+' .prim_1_prc').html(' - '+first1+'%');
+                }
+                if($(selected_item+' .prim_2').text()!=''){
+                    $(selected_item+' .prim_2_prc').html(' - '+second1+'%');
+                }
+                if($(selected_item+' .prim_3').text()!=''){
+                    $(selected_item+' .prim_3_prc').html(' - '+third1+'%');
+                }
             }, 'json');
         }
         return false;
@@ -694,17 +705,27 @@ if (($i - 1) % 3 != 0) {
     selected_item='#'+$(this).closest('.grid_se_section').attr('id');
         gridKeywordDensity(selected_item);
     });
-    $(".keyword_input").bind('keypress',function(e) {
-        
-        selected_item='#'+$(this).closest('.grid_se_section').attr('id');
-        if(e.keyCode==13){
-            gridKeywordDensity(selected_item);
-        }
-    });
+    
     //on keyup, start the countdown
     $(".keyword_input").keyup(function(){
-         selected_item='#'+$(this).closest('.grid_se_section').attr('id');
-    
+        selected_item='#'+$(this).closest('.grid_se_section').attr('id');
+                  
+        var primary=$(selected_item).find("input[name='keyword1']").val();
+        var secondary=$(selected_item).find("input[name='keyword2']").val();
+        var tertiary=$(selected_item).find("input[name='keyword3']").val();
+        $(selected_item).find('.prim_1').text(primary);
+        $(selected_item).find('.prim_2').text(secondary);
+        $(selected_item).find('.prim_3').text(tertiary);
+        $(selected_item).find('.keyword_input').each(function(){
+             if($.trim($(this).val())==''){
+             $(this).next('span').text('');
+        }  
+        });
+        $(selected_item).find('.primary_name_long').each(function(){
+             if($.trim($(this).val())==''){
+             $(this).next('span').text('');
+        }  
+        });            
          setTimeout(function(){ gridKeywordDensity(selected_item);}, '1000');
     });
 
