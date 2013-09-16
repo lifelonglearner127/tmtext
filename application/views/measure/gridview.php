@@ -9,7 +9,7 @@
 $min_price = 1000000000;
 $j = 0;
 foreach ($same_pr as $ks => $vs) {
-
+    
     foreach ($vs['three_last_prices'] as $key => $last_price) {
 
         $price = sprintf("%01.2f", floatval($last_price->price));
@@ -23,7 +23,7 @@ foreach ($same_pr as $ks => $vs) {
 $row = 1;
 foreach ($same_pr as $ks => $vs) {
     $marg = 0;
-    
+   
     $row = ceil($i / 3);
     foreach ($vs['three_last_prices'] as $key => $last_price) {
         if (count($vs['three_last_prices']) > 1) {
@@ -204,6 +204,11 @@ foreach ($same_pr as $ks => $vs) {
                                         <select class="keywords_select" name="analysis" style="margin-top: -20px;float: right;width: 95px;margin-right: 50px;">
                                                     <option  value="title">Title</option>
                                                     <option value="custom">Custom</option>
+<!--                                                    Maxik-->
+                                                    <?php if(isset($vs['short_meta'])){?>
+                                                    <option value="meta">Meta</option>   
+                                                    <?php }?>
+<!--                                                     Maxik-->
                                         </select>
                                    </div>
                                 <div class="primary" style="height: 100%;width: 100%;">
@@ -244,6 +249,24 @@ foreach ($same_pr as $ks => $vs) {
                                     </div>
                                     <div class="clear"></div>
 				</div>
+<!--                                Maxik-->
+                                <div class="seo_meta">
+                                    <ul class='gr_seo_short_ph seo_meta_section' style='font-weight: bold;float:left;'>
+            <?php if(isset($vs['short_meta'])){foreach ($vs['short_meta'] as $key => $value) { ?>
+
+                                            <?php $v_ph = $value['value']; ?>
+
+                                            <li >
+                                                <span style="white-space: normal;line-height: 20px;text-decoration: none;font-size: 14px !important;line-height: 21px;text-decoration: none;white-space: normal;"data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'short')" class='word_wrap_li_pr hover_en'>
+                <?php echo $value['value']; ?>
+                                                    <?php echo '(' . $value['count'] . ') - ' . $value['prc']. '%'; ?>
+                                                </span>
+                            <!--                                    <span class='word_wrap_li_sec' style="margin-top: -16px;margin-left: 5px;"></span>-->
+                                            </li>
+    <?php } }?>
+                                    </ul>
+                                </div>
+<!--Maxik-->
             <?php if (count($vs['seo']['short']) > 0) { ?>
                                     <ul class='gr_seo_short_ph list_section' style='font-weight: bold;float:left;'>
             <?php foreach ($vs['seo']['short'] as $key => $value) { ?>
@@ -297,6 +320,11 @@ foreach ($same_pr as $ks => $vs) {
                                    <select class="keywords_select" name="analysis" style="float: right;margin-top: -20px;width: 95px;margin-right: 50px;">
 						<option  value="title">Title</option>
 						<option value="custom">Custom</option>
+<!--                                                Maxik-->
+                                                <?php if(isset($vs['long_meta'])){?>
+                                                    <option value="meta">Meta</option>   
+                                                <?php }?>
+<!--                                                    Maxik-->
 				   </select>
                                    </div>
 
@@ -380,6 +408,24 @@ foreach ($same_pr as $ks => $vs) {
                                     </div>
                                     <div class="clear"></div>
 				</div>
+<!--                                Maxik-->
+                                <div class="seo_meta">
+                                    <ul class='gr_seo_short_ph seo_meta_section' style='font-weight: bold;float:left;'>
+            <?php if(isset($vs['short_meta'])){foreach ($vs['long_meta'] as $key => $value) { ?>
+
+                                            <?php $v_ph = $value['value']; ?>
+
+                                            <li >
+                                                <span style="white-space: normal;line-height: 20px;text-decoration: none;font-size: 14px !important;line-height: 21px;text-decoration: none;white-space: normal;"data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'long')" class='word_wrap_li_pr hover_en'>
+                <?php echo $value['value']; ?>
+                                                    <?php echo '(' . $value['count'] . ') - ' . $value['prc']. '%'; ?>
+                                                </span>
+                            <!--                                    <span class='word_wrap_li_sec' style="margin-top: -16px;margin-left: 5px;"></span>-->
+                                            </li>
+            <?php }} ?>
+                                    </ul>
+                               </div>
+<!--Maxik-->
                                 <?php }?>
  <?php if (count($vs['seo']['long']) > 0) { ?>
                                     <ul class='gr_seo_short_ph list_section' style='font-weight: bold;float:left;'>
@@ -704,23 +750,35 @@ if (($i - 1) % 3 != 0) {
     $(".missmatch_popup").live('mouseleave', function() {
         $(".missmatch_popup").css('display', 'none');
     });
-
+// Maxik
     $(".primary").css('display', 'none');
+    $(".seo_meta_section").css('display', 'none');
 
     $(".keywords_select").live('change', function() {
 
         if ($(this).val() === 'title') {
             $(this).closest('.grid_se_section').find(".primary").css('display', 'none');
+            $(this).closest('.grid_se_section').find(".seo_meta_section").css('display', 'none');
             $(this).closest('.grid_se_section').find(".list_section").css('display', 'block');
-        } else {
+        }
+        if($(this).val() === 'meta'){
+            
+            $(this).closest('.grid_se_section').find(".primary").css('display', 'none');
+            $(this).closest('.grid_se_section').find(".list_section").css('display', 'none');
+            $(this).closest('.grid_se_section').find(".seo_meta_section").css('display', 'block');
+              
+        }
+        
+        if($(this).val() === 'custom'){
 
             $(this).closest('.grid_se_section').find(".list_section").css('display', 'none');
+            $(this).closest('.grid_se_section').find(".seo_meta_section").css('display', 'none');
             $(this).closest('.grid_se_section').find(".primary").css('display', 'block');
 
         }
         fixGridHeights();
     });
-
+//Maxik
     $(".keyword_input").change(function() {
         
     selected_item='#'+$(this).closest('.grid_se_section').attr('id');

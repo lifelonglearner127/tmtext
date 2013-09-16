@@ -1903,6 +1903,37 @@ public function gridview() {
             
             foreach ($same_pr as $ks => $vs) {
              $custom_seo= $this->keywords_model->get_by_imp_id($vs['imported_data_id']);
+             $meta=array();
+             if((isset($vs['parsed_meta']['Keywords'])&& $vs['parsed_meta']['Keywords']!='')){
+                 $meta = explode(',',$vs['parsed_meta']['Keywords']);
+             }
+             if((isset($vs['parsed_meta']['keywords'])&& $vs['parsed_meta']['keywords']!='')){
+                 $meta = explode(',',$vs['parsed_meta']['keywords']);
+                
+             }
+             if(count($meta)>0 && isset($vs['description']) && $vs['description']!=''){
+             foreach($meta as $key => $val){
+                   $words= count(explode(' ',trim($val)));
+                   $count= $this->keywords_appearence_count(strtolower($vs['description']), strtolower($val));
+                   $desc_words_count=count(explode(' ',$vs['description']));
+                  
+                   $prc=round($count*$words/$desc_words_count*100,2);
+                   $same_pr[$ks]['short_meta'][]=array('value'=>$val,'count'=>$words,'prc'=>$prc);
+                   
+             }
+             }
+             if(count($meta)>0 && isset($vs['long_description']) && $vs['long_description']!=''){
+                  
+             foreach($meta as $key => $val){
+                   $words= count(explode(' ',trim($val)));
+                   $count= $this->keywords_appearence_count(strtolower($vs['long_description']), strtolower($val));
+                   $desc_words_count=count(explode(' ',$vs['long_description']));
+                  
+                   $prc=round($count*$words/$desc_words_count*100,2);
+                   $same_pr[$ks]['long_meta'][]=array('value'=>$val,'count'=>$words,'prc'=>$prc);
+                   
+             }
+             }
              $same_pr[$ks]['custom_seo']=$custom_seo;
                   if($res=$this->statistics_model->getbyimpid($vs['imported_data_id'])){
                       $same_pr[$ks]['short_description_wc']=$res['short_description_wc'];
@@ -1946,7 +1977,9 @@ public function gridview() {
 		else
 			$this->load->view('measure/gridview', $data);
     }
-    
+    private function keywords_appearence_count($desc, $phrase) {
+        return substr_count($desc, $phrase);
+    }
     public function save_new_words(){
 		$keyword = $this->input->post('keywords');
 		$keyword_num = $this->input->post('keyword_num');
