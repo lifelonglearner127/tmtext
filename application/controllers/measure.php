@@ -38,6 +38,19 @@ class Measure extends MY_Controller {
         $this->render();
     }
 
+    public function debug_cmd_screenshots() {
+        $opt = $this->input->post('opt');
+        $id = $this->input->post('id');
+        $path_to_cron = base_url()."index.php/crons/site_crawler_screens?ids=$id";
+        if($opt == 1) {
+            $cmd = "wget -q $path_to_cron > /dev/null 2>&1";
+        } else {
+            $cmd = "";
+        }
+        shell_exec($cmd);
+        $this->output->set_content_type('application/json')->set_output(json_encode($cmd));
+    }
+
     public function debug_ranking_data_delete() {
         // === incoming data
         $url = $this->input->post('url');

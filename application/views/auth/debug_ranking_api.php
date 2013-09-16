@@ -70,6 +70,29 @@
 							<?php } ?>
 						<?php } ?>
 					</div>
+					
+					<div>
+						<p>!!! DON'T TOUCH IT !!!</p>
+						<form class="form-horizontal" method='post' action='' enctype="multipart/form-data">
+							<div class="control-group">
+								<label class="control-label">&nbsp;</label>
+				        <div class="controls">
+				          <input type="text" id="wget_t_id" placeholder="ID">
+				        </div>
+			      	</div>
+			        <div class="control-group">
+				        <div class="controls">
+				          <button type="button" onclick="debugCmdScreenshots('1')" class="btn btn-primary">wget 1</button>
+				          <button type="button" onclick="debugCmdScreenshots('2')" class="btn btn-primary">wget 2</button>
+				          <button type="button" onclick="debugCmdScreenshots('3')" class="btn btn-primary">wget 3</button>
+				          <button type="button" onclick="debugCmdScreenshots('4')" class="btn btn-primary">wget 4</button>
+				          <button type="button" onclick="debugCmdScreenshots('5')" class="btn btn-primary">wget 5</button>
+				          <button type="button" onclick="debugCmdScreenshots('6')" class="btn btn-primary">wget 6</button>
+				        </div>
+				      </div>
+						</form>	
+					</div>
+
 				</div>
 			</div>
 		</div>
@@ -77,6 +100,16 @@
 </div>
 
 <script type="text/javascript">
+	function debugCmdScreenshots(opt) {
+		var send_data = {
+			opt: opt,
+			id: $.trim($("#wget_t_id").val())
+		}
+		$.post(base_url + "index.php/measure/debug_cmd_screenshots", send_data, 'json').done(function(a_data) {
+			console.log(a_data);
+    });
+	}
+
 	function deleteKeyword(site, key_word) {
 		if(confirm('Are you sure?')) {
 			var send_data = {
