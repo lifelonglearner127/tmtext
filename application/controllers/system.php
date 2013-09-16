@@ -1533,10 +1533,31 @@ class System extends MY_Controller {
     public function system_logins() {
         $this->render();
 	}
+    public function keywords() {
+        $this->render();
+	}        
 	
 	public function system_last_logins() {
 		$this->load->model('logins_model');
 		$response['data'] = $this->logins_model->get_last_logins();
         $this->output->set_content_type('application/json')->set_output(json_encode($response));
 	}
+	public function system_keywords() {
+		$this->load->model('keyword_model_system');
+		$response['data'] = $this->keyword_model_system->get_keywords();
+        $this->output->set_content_type('application/json')->set_output(json_encode($response));
+	}   
+        public function add_new_keywords()
+        {
+            $this->load->model('keyword_model_system');
+            $new_keyword = $this->input->post('new_keyword');
+            $new_volume = $this->input->post('new_volume');
+            $new_search_engine = $this->input->post('new_search_engine');
+            $new_region = $this->input->post('new_region');
+            $response['data'] = $this->keyword_model_system->insertKeywords($new_keyword,$new_volume,$new_search_engine,$new_region);
+            $response['message'] =  'keyword was added successfully';
+            $this->output->set_content_type('application/json')->set_output(json_encode($response));
+            
+            
+        }
 }
