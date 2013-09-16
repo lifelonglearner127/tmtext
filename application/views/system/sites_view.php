@@ -231,6 +231,7 @@
                     console.log(data);
                     if(data['status']) {
                         showSnap("<img src='" + data['snap'] + "'>");
+                        standaloneDepartmentScreenDetector();
                     } else {
                         showSnap("<p>" + data['msg'] + "</p>");
                     }
@@ -247,6 +248,7 @@
                     console.log(data);
                     if(data['status']) {
                         showSnap("<img src='" + data['snap'] + "'>");
+                        standaloneCatScreenDetector();
                     } else {
                         showSnap("<p>" + data['msg'] + "</p>");
                     }
