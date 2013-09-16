@@ -227,47 +227,8 @@
                             <th colspan="2">Recommended Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="department_data" style="display: none">
-
-                    </tbody>
-                    <tbody id="category_data" style="display: none">
-                    <tr>
-                        <td nowrap>Total Analyzed Categories:</td>
-                        <td>41</td>
-                        <td>&nbsp;</td>
-                    </tr>
-                    <tr>
-                        <td nowrap>Description text < 250 words:</td>
-                        <td>17</td>
-                        <td>Add 3 - 19 more words to 17 department descriptions</td>
-
-                    </tr>
-                    <tr>
-                        <td nowrap>Description text < 200 words:</td>
-                        <td>12</td>
-                        <td>Add 51 - 73 more words to 12 department descriptions</td>
-                    </tr>
-                    <tr>
-                        <td nowrap>Description text < 150 words:</td>
-                        <td>5</td>
-                        <td>Add 107 - 123 words to 3 more department descriptions</td>
-                    </tr>
-                    <tr>
-                        <td nowrap>Description text < 250 words:</td>
-                        <td>0</td>
-                        <td>Add descriptions to 2 departments</td>
-                    </tr>
-                    <tr>
-                        <td nowrap>Need keyword optimization:</td>
-                        <td>32</td>
-                        <td>Keyword optimize 32 categories</td>
-                    </tr>
-                    <tr>
-                        <td nowrap>Contain duplicate content:</td>
-                        <td></td>
-                        <td>(Coming soon)</td>
-                    </tr>
-                    </tbody>
+                    <tbody id="department_data" style="display: none"></tbody>
+                    <tbody id="category_data" style="display: none"></tbody>
             </table>
         </div>
     </div>
