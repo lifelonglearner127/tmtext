@@ -981,6 +981,7 @@ class Research extends MY_Controller {
         $build_assess_params->long_more = $this->input->get('long_more') == 'undefined' ? -1 : $this->input->get('long_more');
         $build_assess_params->long_seo_phrases = true;
         $build_assess_params->long_duplicate_content = true;
+        $build_assess_params->flagged = $this->input->get('flagged') == 'true' ? true : $this->input->get('flagged');
         $price_diff = $this->input->get('price_diff') == 'undefined' ? -1 :$this->input->get('price_diff');
         $build_assess_params->price_diff = $price_diff === 'true' ? true : false;
         if (intval($compare_batch_id) > 0) {
