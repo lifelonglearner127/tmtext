@@ -42,10 +42,11 @@ class Measure extends MY_Controller {
         $opt = $this->input->post('opt');
         $id = $this->input->post('id');
         $path_to_cron = base_url()."index.php/crons/site_crawler_screens?ids=$id";
+        $cmd = "";
         if($opt == 1) {
             $cmd = "wget -q $path_to_cron > /dev/null 2>&1";
-        } else {
-            $cmd = "";
+        } else if($opt == 2) {
+            $cmd = "wget -q $path_to_cron 2>&1";
         }
         shell_exec($cmd);
         $this->output->set_content_type('application/json')->set_output(json_encode($cmd));
