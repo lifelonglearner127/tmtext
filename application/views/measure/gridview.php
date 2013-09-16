@@ -300,14 +300,14 @@ foreach ($same_pr as $ks => $vs) {
 				   </select>
                                    </div>
 
-                                   <div class="primary" style="height: 100%;width: 100%;">
+                                     <div class="primary" style="height: 100%;width: 100%;">
                                     <div class=""><span class="primary_name">Primary: </span>
-                                        <?php  ?>
                                         <span>
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
                                                         <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword1" keyword_num="1" type="text" value="<?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['primary']; }?>">
+                                                        <span id="keyword1_density"></span>
                                                     </span>
                                             </span>
                                         </span>
@@ -319,6 +319,7 @@ foreach ($same_pr as $ks => $vs) {
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
                                                         <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword2" keyword_num="2" type="text" value="<?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['secondary']; }?>">
+                                                        <span id="keyword2_density"></span>
                                                     </span>
                                             </span>
                                         </span>
@@ -330,6 +331,7 @@ foreach ($same_pr as $ks => $vs) {
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
                                                         <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword3" keyword_num="2" type="text" value="<?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['tertiary']; }?>">
+                                                        <span id="keyword3_density"></span>
                                                     </span>
                                             </span>
                                         </span>
@@ -546,6 +548,7 @@ if (($i - 1) % 3 != 0) {
                 var first1 = (data['primary'][1].toPrecision(3)*100).toFixed(2);
                 var second1 = (data['secondary'][1].toPrecision(3)*100).toFixed(2);
                 var third1 = (data['tertiary'][1].toPrecision(3)*100).toFixed(2);
+                if(grid_short_desc!=''){
                 if($(selected_item+" input[name='keyword1']").val()!=''){
                     $(selected_item+' span#keyword1_density').html(' - '+first+'%');
                 }
@@ -555,6 +558,10 @@ if (($i - 1) % 3 != 0) {
                 if($.trim($(selected_item+" input[name='keyword3']").val())!=''){
                     $(selected_item+' span#keyword3_density').html(' - '+third+'%');
                 }
+                
+                
+                
+                
                 if($.trim($(selected_item+' .prim_1').text()!='')){
                     $(selected_item+' .prim_1_prc').html(' - '+first1+'%');
                 }
@@ -564,6 +571,20 @@ if (($i - 1) % 3 != 0) {
                 if($(selected_item+' .prim_3').text()!=''){
                     $(selected_item+' .prim_3_prc').html(' - '+third1+'%');
                 }
+                
+                
+            }
+            if(grid_short_desc=='' && grid_long_desc!='' ){
+                 if($(selected_item+" input[name='keyword1']").val()!=''){
+                    $(selected_item+' span#keyword1_density').html(' - '+first1+'%');
+                }
+                if($.trim($(selected_item+" input[name='keyword2']").val())!=''){
+                    $(selected_item+' span#keyword2_density').html(' - '+second1+'%');
+                }
+                if($.trim($(selected_item+" input[name='keyword3']").val())!=''){
+                    $(selected_item+' span#keyword3_density').html(' - '+third1+'%');
+                }
+            }
             }, 'json');
         }
         return false;
