@@ -204,31 +204,32 @@ $( function() {
     $("#departmentDropdown .dropdown-menu > li > a").live('click', function(e) {
         var departmentValue = $.trim($(this).text());
         var department_id = $(this).data('item');
-        $.post(base_url + 'index.php/measure/getUrlByDepartment', {
-            'department_id': department_id
-        }, function(data) {
-            $("a#department_url").attr('href', data[0].url);
-            $("a#department_url").show();
-        })
         //console.log(department_id);
         var site_name=$('.btn_caret_sign').text()
         $("#departmentDropdown_first").text(departmentValue);
         readBestSellers(department_id,site_name,'records');
-        
+
         /*****departmentAjax****/
-        if(department_id != ''){
+        if(department_id != '' && department_id != 'empty'){
             departmentAjax(department_id,site_name);
             $('#tabs').show();
             $('.table_results').show();
+            $.post(base_url + 'index.php/measure/getUrlByDepartment', {
+                'department_id': department_id
+            }, function(data) {
+                $("a#department_url").attr('href', data[0].url);
+                $("a#department_url").show();
+            });
         } else if(department_id == 'empty'){
             $('#departments_content').html('');
             $('.table_results').hide();
             $('#tabs').hide();
-            dataTable.fnClearTable();
+            $("a#department_url").hide();
         } else {
             $('#tabs').show();
             $('.table_results').show();
             $('#departments_content').html('');
+            $("a#department_url").hide();
         }
         
     });
@@ -282,7 +283,6 @@ $( function() {
         } else if(department_id == 'empty'){
             $('#departments_content').html('');
             $('.table_results').hide();
-            dataTableSec.fnClearTable();
         } else {
             $('.table_results').show();
             $('#departments_content').html('');
