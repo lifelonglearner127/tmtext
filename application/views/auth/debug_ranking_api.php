@@ -32,15 +32,16 @@
 						<p class='h'>Current tracking www.serpranktracker.com data:</p>
 						<?php if(isset($track_data) && isset($track_data->data) && count($track_data->data) > 0) { ?>
 							<?php foreach($track_data->data as $k => $v) { ?>
-								<div class="alert"><?php echo $v->site; ?></div>
+								<div class="alert"><?php echo $v->site; ?> <?php if(!isset($v->keywords) || count($v->keywords) == 0) { ?>(no data)<?php } ?></div>
 								<?php if(isset($v->keywords) && count($v->keywords) > 0) { ?>
 									<table class='table'>
 										<thead>
 											<tr>
 												<th>keyword</th>
 												<th>location</th>
-												<th>searchengine</th>
+												<th>engine</th>
 												<th>ranking</th>
+												<th>control</th>
 											</tr>
 										</thead>
 										<tbody>
@@ -60,22 +61,14 @@
 																<p>no ranking data</p>
 															<?php } ?>
 													</td>
+													<td><button type='button' class='btn btn-danger'>Delete</button></td>
 												</tr>
 											<?php } ?>
 										</tbody>
 									</table>
-								<?php } else { ?>
-								<table class='table'>
-									<tbody>
-										<tr><td colspan='4'>no keyword data</td></tr>
-									</tbody>
-								</table>
 								<?php } ?>
 							<?php } ?>
 						<?php } ?>
-						<br><br>
-						<?php // echo var_dump($track_data); ?>
-						<ul id="res_seo_list"></ul>
 					</div>
 				</div>
 			</div>
