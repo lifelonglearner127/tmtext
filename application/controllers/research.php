@@ -428,11 +428,9 @@ class Research extends MY_Controller {
                     if($customer_url["host"] != $price_diff['competitor_customer'][$i]){
                         if ($own_price > floatval($price_diff['competitor_price'][$i])) {
                             $result_row->lower_price_exist = true;
-                            if ($build_assess_params->price_diff == true) {
-                                $competitor_site = str_replace('www.', '', $price_diff['competitor_customer'][$i]);
-                                $competitor_site = str_replace('www.', '', $competitor_site);
-                                $price_diff_res .= "<input type='hidden'><nobr>".$competitor_site." - $".$price_diff['competitor_price'][$i]."</nobr><br />";
-                            }
+                            $competitor_site = str_replace('www.', '', $price_diff['competitor_customer'][$i]);
+                            $competitor_site = str_replace('www.', '', $competitor_site);
+                            $price_diff_res .= "<input type='hidden'><nobr>".$competitor_site." - $".$price_diff['competitor_price'][$i]."</nobr><br />";
                         }
                     }
                 }
