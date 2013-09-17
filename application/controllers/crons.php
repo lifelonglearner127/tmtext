@@ -110,6 +110,7 @@ class Crons extends MY_Controller {
 
     public function site_crawler_screens() {
         $this->load->model('webshoots_model');
+        $this->load->library('email');
         $ids = $_GET['ids'];
         $ids = explode(",", $ids);
         $crawls = $this->webshoots_model->get_crawler_list_by_ids($ids);
@@ -129,12 +130,13 @@ class Crons extends MY_Controller {
                     $snap_res = $this->webshoots_model->crawl_webshoot($call_url, $v->id, 'crawl_snap-');
                 }
                 $this->webshoots_model->updateCrawlListWithSnap($v->id, $snap_res['img'], $http_status);
-                $this->load->library('email');
+                // === email debug (start)
                 $this->email->from('info@dev.contentsolutionsinc.com', '!!!!');
                 $this->email->to('ishulgin8@gmail.com');
                 $this->email->subject('Cron job report');
                 $this->email->message('Cron job for site_crawler_screens is done');
                 $this->email->send();
+                // === email debug (end)
             }
         }
     }
