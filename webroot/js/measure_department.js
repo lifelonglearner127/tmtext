@@ -671,6 +671,7 @@ function departmentScreenDetectorMouseOver(snap_data) {
 
 function standaloneDepartmentScreenDetector() {
     var dep_id = $("input[name='selected_department_id']").val();
+    console.log(dep_id);
     $.post(base_url + 'index.php/system/scanForDepartmentSnap', {'dep_id': dep_id}, function(data) {
         if(data.dep_id !== "") {
             $("#dep_monitor").fadeOut('medium', function() {
