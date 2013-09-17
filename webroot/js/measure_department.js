@@ -536,7 +536,6 @@ $('.site_categorie').live('click',function(e){
 
 $('.category_description_text').live('click',function(){
 	var count = $(this).attr('count');
-	console.log(count);
 	if( count == '0' ){
 		$(this).attr('count','1');
 	}else{
