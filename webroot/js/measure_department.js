@@ -247,6 +247,7 @@ $( function() {
                 $("a#department_url").attr('href', data[0].url);
                 $("a#department_url").show();
             });
+            standaloneDepartmentScreenDetector();
         } else if(department_id == 'empty'){
             $('#departments_content').html('');
             $('.table_results').hide();
@@ -257,8 +258,9 @@ $( function() {
             $('.table_results').show();
             $('#departments_content').html('');
             $("a#department_url").hide();
+            standaloneDepartmentScreenDetector();
         }
-        
+
     });
 		
 		
@@ -655,4 +657,32 @@ function departmentAjax(department_id,site_name){
            
         }  
     });      
+}
+
+function showSnap(data) {
+    $("#preview_crawl_snap_modal").modal('show');
+    $("#preview_crawl_snap_modal .snap_holder").html(data);
+}
+
+function departmentScreenDetectorMouseOver(snap_data) {
+    if(snap_data.img_av_status) {
+        showSnap("<img src='" + snap_data['snap_path'] + "'>");
+    } else {
+        showSnap("<p>Snapshot image not exists on server</p>");
+    }
+}
+
+function standaloneDepartmentScreenDetector() {
+    var dep_id = $("input[name='selected_department_id']").val();
+    console.log(dep_id);
+    $.post(base_url + 'index.php/system/scanForDepartmentSnap', {'dep_id': dep_id}, function(data) {
+        if(data.dep_id !== "") {
+            $("#dep_monitor").fadeOut('medium', function() {
+                $("#dep_monitor").fadeIn('medium');
+            });
+            $("#dep_monitor").on('mouseover', function() { departmentScreenDetectorMouseOver(data); } );
+        } else {
+            $("#dep_monitor").hide();
+        }
+    });
 }
