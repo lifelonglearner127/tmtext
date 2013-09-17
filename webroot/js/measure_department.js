@@ -498,10 +498,10 @@ function readBestSellers(department_id,site_name,table_name) {
                 tableDataString += '<td>'+data[i].description_words+'</td>';
                 tableDataString += '</tr>';
                 
-                if( data[i].description_text != '' )
+                /*if( data[i].description_text != '' )
 					tableDataString += '<tr count="0" class="category_description_text"><td style="text-align: justify;" colspan="4">'+data[i].description_text+'</td></tr>';
 				else
-					tableDataString += '<tr count="0" class="category_description_text"><td style="text-align: justify;" colspan="4">None</td></tr>';
+					tableDataString += '<tr count="0" class="category_description_text"><td style="text-align: justify;" colspan="4">None</td></tr>';*/
             }
 			
             var categoryCount = data.length;
