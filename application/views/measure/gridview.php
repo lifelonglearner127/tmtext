@@ -223,8 +223,14 @@ foreach ($same_pr as $ks => $vs) {
 <!--                                                     Maxik-->
                                         </select>
                                    </div>
+                                   <div class="density_rank">
+                                       <span class="density"> density</span>                                       
+                                       
+                                       <span class="rank"> rank</span>
+                                      
+                                   </div>
                                 <div class="primary" style="height: 100%;width: 100%;">
-                                    <div class=""><span class="primary_name">Primary: </span>
+                                    <div class="">
                                         <span>
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
@@ -236,7 +242,7 @@ foreach ($same_pr as $ks => $vs) {
                                         </span>
                                     </div>
                                     <div class="clear"></div>
-                                    <div class=""><span class="primary_name">Secondary: </span>
+                                    <div class="">
                                         <span>
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
@@ -248,7 +254,7 @@ foreach ($same_pr as $ks => $vs) {
                                         </span>
                                     </div>
                                     <div class="clear"></div>
-                                    <div class=""><span class="primary_name">Tertiary: </span>
+                                    <div class="">
                                         <span>
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
@@ -263,33 +269,34 @@ foreach ($same_pr as $ks => $vs) {
 				</div>
 <!--                                Maxik-->
                                 <div class="seo_meta">
-                                    <ul class='gr_seo_short_ph seo_meta_section' style='font-weight: bold;float:left;'>
+                                    <ul class='gr_seo_short_ph seo_meta_section' style='float:left;margin:0px;'>
             <?php if(isset($vs['short_meta'])){foreach ($vs['short_meta'] as $key => $value) { ?>
 
                                             <?php $v_ph = $value['value']; ?>
 
                                             <li >
-                                                <span style="white-space: normal;line-height: 20px;text-decoration: none;font-size: 14px !important;line-height: 21px;text-decoration: none;white-space: normal;"data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'short')" class='word_wrap_li_pr hover_en'>
+                                                <span style="white-space: normal;line-height: 20px;text-decoration: none;font-size: 14px !important;line-height: 21px;text-decoration: none;white-space: normal;width: 140px;float: left;word-wrap: break-word;"data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'short')" class='word_wrap_li_pr hover_en'>
                 <?php echo $value['value']; ?>
-                                                    <?php echo '(' . $value['count'] . ') - ' . $value['prc']. '%'; ?>
                                                 </span>
-                            <!--                                    <span class='word_wrap_li_sec' style="margin-top: -16px;margin-left: 5px;"></span>-->
+                                                 <span class='seo_prc' ><?php echo  $value['prc']; ?>%</span><span style="display:none" class='seo_count' ><?php echo $value['count']; ?></span>
+         
                                             </li>
     <?php } }?>
                                     </ul>
                                 </div>
 <!--Maxik-->
             <?php if (count($vs['seo']['short']) > 0) { ?>
-                                    <ul class='gr_seo_short_ph list_section' style='font-weight: bold;float:left;'>
+                                    <ul class='gr_seo_short_ph list_section' style='float:left;margin:0px;'>
             <?php foreach ($vs['seo']['short'] as $key => $value) { ?>
 
                                             <?php $v_ph = $value['ph']; ?>
 
-                                            <li >
-                                                <span style="white-space: normal;line-height: 20px;text-decoration: none;font-size: 14px !important;line-height: 21px;text-decoration: none;white-space: normal;"data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'short')" class='word_wrap_li_pr hover_en'>
+                                            <li>
+                                                <span style="white-space: normal;line-height: 20px;text-decoration: none;font-size: 14px !important;line-height: 21px;text-decoration: none;white-space: normal;width: 140px;float: left;word-wrap: break-word;"data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'short')" class='word_wrap_li_pr hover_en'>
                 <?php echo $value['ph']; ?>
-                                                    <?php echo '(' . $value['count'] . ') - ' . $value['prc'] . '%'; ?>
+                                                    
                                                 </span>
+                                                <span class='seo_prc' ><?php echo  $value['prc']; ?>%</span><span style="display:none" class='seo_count' ><?php echo $value['count']; ?></span>
                             <!--                                    <span class='word_wrap_li_sec' style="margin-top: -16px;margin-left: 5px;"></span>-->
                                             </li>
             <?php } ?>
@@ -339,9 +346,14 @@ foreach ($same_pr as $ks => $vs) {
 <!--                                                    Maxik-->
 				   </select>
                                    </div>
-
+                                   <div class="density_rank">
+                                       <span class="density"> density</span>                                       
+                                       
+                                       <span class="rank"> rank</span>
+                                      
+                                   </div>
                                      <div class="primary" style="height: 100%;width: 100%;">
-                                    <div class=""><span class="primary_name">Primary: </span>
+                                    <div class="">
                                         <span>
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
@@ -353,7 +365,7 @@ foreach ($same_pr as $ks => $vs) {
                                         </span>
                                     </div>
                                     <div class="clear"></div>
-                                    <div class=""><span class="primary_name">Secondary: </span>
+                                    <div class="">
                                         <span>
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
@@ -365,7 +377,7 @@ foreach ($same_pr as $ks => $vs) {
                                         </span>
                                     </div>
                                     <div class="clear"></div>
-                                    <div class=""><span class="primary_name">Tertiary: </span>
+                                    <div class="">
                                         <span>
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
@@ -378,6 +390,7 @@ foreach ($same_pr as $ks => $vs) {
                                     </div>
                                     <div class="clear"></div>
 				</div>
+                                
                                 <?php }else{ ?>
                                 <!--<div class="primary" style="height: 100%;width: 100%;">
                                    <p style="float: left;width: 100%;" class="heading_text list_section"><span style="font-weight: bold;">Primary: <?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['primary']; }?></span></p>
@@ -385,35 +398,45 @@ foreach ($same_pr as $ks => $vs) {
                                    <p style="float: left;width: 100%;" class="heading_text list_section"><span style="font-weight: bold;">Tertiary: <?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['tertiary'];}?></span></p>
                                 </div>-->
                                 <div style="float: left;width: 100%;"><p class="heading_text">SEO Keywords: </p></div>
+                                <div class="density_rank">
+                                       <span class="density"> density</span>                                       
+                                       
+                                       <span class="rank"> rank</span>
+                                      
+                                </div>
+                                
                                 <div class="primary" style="height: 100%; width: 100%; display: block;">
-                                    <div class=""><span class="primary_name1">Primary: </span>
+                                    <div class="">
                                         <span>
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
-                                                        <span class='prim_1 primary_name_long'> <?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['primary']; }?></span><span class='prim_1_prc'></span>
+                                                    <span class='prim_1 primary_name_long'style="float:left; width:140px; word-wrap: break-word;"> <?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['primary']; }?></span>
+                                                    <span class='prim_1_prc' style="float:left;"></span>
                                                     </span>
                                             </span>
                                         </span>
                                     </div>
                                     <div class="clear"></div>
-                                    <div class=""><span class="primary_name1">Secondary: </span>
+                                    <div class="">
                                         <span>
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
-                                                        <span class='prim_2 primary_name_long'><?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['secondary']; }?></span><span class='prim_2_prc'></span>
+                                                        <span class='prim_2 primary_name_long' style="float:left; width:140px; word-wrap: break-word;"><?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['secondary']; }?></span>
+                                                        <span class='prim_2_prc' style="float:left;"></span>
                                                     </span>
                                             </span>
                                         </span>
                                     </div>
                                     <div class="clear"></div>
-                                    <div class=""><span class="primary_name1">Tertiary: </span>
+                                    <div class="">
                                         <span>
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
-                                                        <span class='prim_3 primary_name_long'><?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['tertiary']; }?></span><span class='prim_3_prc'></span>
+                                                        <span class='prim_3 primary_name_long' style="float:left; width:140px; word-wrap: break-word;"><?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['tertiary']; }?></span>
+                                                        <span class='prim_3_prc' style="float:left;"></span>
                                                     </span>
                                             </span>
                                         </span>
@@ -422,17 +445,17 @@ foreach ($same_pr as $ks => $vs) {
 				</div>
 <!--                                Maxik-->
                                 <div class="seo_meta">
-                                    <ul class='gr_seo_short_ph seo_meta_section' style='font-weight: bold;float:left;'>
+                                    <ul class='gr_seo_short_ph seo_meta_section' style='float:left;margin:0px;'>
             <?php if(isset($vs['short_meta'])){foreach ($vs['long_meta'] as $key => $value) { ?>
 
                                             <?php $v_ph = $value['value']; ?>
 
                                             <li >
-                                                <span style="white-space: normal;line-height: 20px;text-decoration: none;font-size: 14px !important;line-height: 21px;text-decoration: none;white-space: normal;"data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'long')" class='word_wrap_li_pr hover_en'>
+                                                <span style="white-space: normal;line-height: 20px;text-decoration: none;font-size: 14px !important;line-height: 21px;text-decoration: none;white-space: normal;width: 140px;float: left;word-wrap: break-word;"data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'long')" class='word_wrap_li_pr hover_en'>
                 <?php echo $value['value']; ?>
-                                                    <?php echo '(' . $value['count'] . ') - ' . $value['prc']. '%'; ?>
                                                 </span>
-                            <!--                                    <span class='word_wrap_li_sec' style="margin-top: -16px;margin-left: 5px;"></span>-->
+                                                <span class='seo_prc' ><?php echo  $value['prc']; ?>%</span><span style="display:none" class='seo_count' ><?php echo $value['count']; ?></span>
+                           
                                             </li>
             <?php }} ?>
                                     </ul>
@@ -440,15 +463,16 @@ foreach ($same_pr as $ks => $vs) {
 <!--Maxik-->
                                 <?php }?>
  <?php if (count($vs['seo']['long']) > 0) { ?>
-                                    <ul class='gr_seo_short_ph list_section' style='font-weight: bold;float:left;'>
+                                    <ul class='gr_seo_short_ph list_section' style='float:left;margin:0px;'>
             <?php foreach ($vs['seo']['long'] as $key => $value) { ?>
                                             <?php $v_ph = $value['ph']; ?>
 
-                                            <li >
-                                                <span style="font-size: 14px !important;white-space: normal;line-height: 20px;text-decoration: none;"data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'long')" class='word_wrap_li_pr hover_en'>
+                                            <li>
+                                                <span style="font-size: 14px !important;white-space: normal;line-height: 20px;text-decoration: none;width: 140px;float: left;word-wrap: break-word;"data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'long')" class='word_wrap_li_pr hover_en'>
                 <?php echo $value['ph']; ?>
-                                                    <?php echo '(' . $value['count'] . ') - ' . $value['prc'] . '%'; ?>
+                                                    
                                                 </span>
+                                                 <span class='seo_prc' ><?php echo  $value['prc']; ?>%</span><span style="display:none" class='seo_count' ><?php echo $value['count']; ?></span>
                             <!--                                    <span class='word_wrap_li_sec' style="margin-top: -16px;margin-left: 5px;"></span>-->
                                             </li>
             <?php } ?>
@@ -608,39 +632,39 @@ if (($i - 1) % 3 != 0) {
                 var third1 = (data['tertiary'][1].toPrecision(3)*100).toFixed(2);
                 if(grid_short_desc!=''){
                 if($(selected_item+" input[name='keyword1']").val()!=''){
-                    $(selected_item+' span#keyword1_density').html(' - '+first+'%');
+                    $(selected_item+' span#keyword1_density').html(first+'%');
                 }
                 if($.trim($(selected_item+" input[name='keyword2']").val())!=''){
-                    $(selected_item+' span#keyword2_density').html(' - '+second+'%');
+                    $(selected_item+' span#keyword2_density').html(second+'%');
                 }
                 if($.trim($(selected_item+" input[name='keyword3']").val())!=''){
-                    $(selected_item+' span#keyword3_density').html(' - '+third+'%');
+                    $(selected_item+' span#keyword3_density').html(third+'%');
                 }
                 
                 
                 
                 
                 if($.trim($(selected_item+' .prim_1').text()!='')){
-                    $(selected_item+' .prim_1_prc').html(' - '+first1+'%');
+                    $(selected_item+' .prim_1_prc').html(first1+'%');
                 }
                 if($(selected_item+' .prim_2').text()!=''){
-                    $(selected_item+' .prim_2_prc').html(' - '+second1+'%');
+                    $(selected_item+' .prim_2_prc').html(second1+'%');
                 }
                 if($(selected_item+' .prim_3').text()!=''){
-                    $(selected_item+' .prim_3_prc').html(' - '+third1+'%');
+                    $(selected_item+' .prim_3_prc').html(third1+'%');
                 }
                 
                 
             }
             if(grid_short_desc=='' && grid_long_desc!='' ){
                  if($(selected_item+" input[name='keyword1']").val()!=''){
-                    $(selected_item+' span#keyword1_density').html(' - '+first1+'%');
+                    $(selected_item+' span#keyword1_density').html(first1+'%');
                 }
                 if($.trim($(selected_item+" input[name='keyword2']").val())!=''){
-                    $(selected_item+' span#keyword2_density').html(' - '+second1+'%');
+                    $(selected_item+' span#keyword2_density').html(second1+'%');
                 }
                 if($.trim($(selected_item+" input[name='keyword3']").val())!=''){
-                    $(selected_item+' span#keyword3_density').html(' - '+third1+'%');
+                    $(selected_item+' span#keyword3_density').html(third1+'%');
                 }
             }
             }, 'json');
@@ -746,6 +770,18 @@ if (($i - 1) % 3 != 0) {
     selectedCustomer();
 
  $(document).ready(function(){
+     
+   $('.seo_prc').live('click',function(){
+        $(this).hide();
+        $(this).next('.seo_count').show();
+      
+   });
+   $('.seo_count').live('click',function(){
+        $(this).hide();
+        $(this).prev('.seo_prc').show();
+       
+   })
+ 
    $(".grid_se_section").each(function() {
        var selected_item='#'+$(this).closest('.grid_se_section').attr('id');
        gridKeywordDensity(selected_item);

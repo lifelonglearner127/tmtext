@@ -2036,7 +2036,7 @@ span.highlight { background-color:yellow;}
 .primary_name1{float: left; width: 59px;}
 /*.primary_speed{float: left; margin-left: 5px; width: 110px;}*/
 .primary_speed{float: left; margin-left: 5px; width: 132px;}
-.primary_speed span#keyword1_density, .primary_speed span#keyword2_density, .primary_speed span#keyword3_density{ font-weight: bold;}
+/*.primary_speed span#keyword1_density, .primary_speed span#keyword2_density, .primary_speed span#keyword3_density{ font-weight: bold;}*/
 .primary_image{margin-top: 0; margin-right: 3px;}
 
 .short_product_date{width: 100%; font-size: 13px;}
@@ -2120,3 +2120,27 @@ span.highlight { background-color:yellow;}
 }
 
 .category_description_text{display: none;}
+
+.seo_prc, cseo_count :hover{
+    cursor:pointer;
+}
+.density_rank{
+    float: left;
+    margin-left: 142px;
+}
+.density, .rank{
+    text-transform: capitalize;
+    text-decoration: underline;
+    margin-right: 15px;
+}
+.list_section li span{
+    float:left;
+}
+.keyword_input + span{
+   margin-left: 8px; 
+}
+.seo_prc{
+    float:left;
+}
+
+
