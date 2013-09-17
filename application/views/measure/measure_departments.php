@@ -226,7 +226,7 @@
                                             </ul>
                                         </div>
                             </th>
-                            <th colspan="2">Recommended Actions</th>
+                            <th colspan="2" style="text-align:left; padding-left: 30px;">Recommended Actions</th>
                         </tr>
                     </thead>
                     <tbody id="department_data" style="display: none"></tbody>
