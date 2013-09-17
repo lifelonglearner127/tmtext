@@ -164,42 +164,16 @@ $( function() {
                 $.post(base_url + 'index.php/measure/getDashboardDepData', {
                     'site_name': site_name
                 }, function(data) {
-                    var add_min_text250 = 250 - data.res250_top_wc;
-                    var add_max_text250 = 250 - data.res250_low_wc;
-                    var add_text250 = '';
-                    if(add_min_text250 == add_max_text250){
-                        add_text250 = add_min_text250;
-                    } else {
-                        add_text250 = add_min_text250+' - '+add_max_text250;
-                    }
-                    var add_min_text200 = 200 - data.res200_top_wc;
-                    var add_max_text200 = 200 - data.res200_low_wc;
-                    var add_text200 = '';
-                    if(add_min_text200 == add_max_text200){
-                        add_text200 = add_min_text200;
-                    } else {
-                        add_text200 = add_min_text200+' - '+add_max_text200;
-                    }
-                    var add_min_text150 = 150 - data.res150_top_wc;
-                    var add_max_text150 = 150 - data.res150_low_wc;
-                    var add_text150 = '';
-                    if(add_min_text150 == add_max_text150){
-                        add_text150 = add_min_text150;
-                    } else {
-                        add_text150 = add_min_text150+' - '+add_max_text150;
-                    }
-                    var data_str = '<tr><td nowrap>Total Analyzed:</td><td>'+data.total+'</td><td>&nbsp;</td></tr>';
-                    data_str += '<tr><td nowrap>Description text < 250 words:</td><td>'+data.res250+'</td>' +
-                        '<td>Add '+add_text250+' more words to '+data.res250+' department descriptions</td></tr>';
-                    data_str += '<tr><td nowrap>Description text < 200 words:</td><td>'+data.res200+'</td>' +
-                        '<td>Add '+add_text200+' more words to '+data.res200+' department descriptions</td></tr>';
-                    data_str += '<tr><td nowrap>Description text < 150 words:</td><td>'+data.res150+'</td>' +
-                        '<td>Add '+add_text150+' words to '+data.res150+' more department descriptions</td></tr>';
-                    data_str += '<tr><td nowrap>Description text < 250 words:</td><td>'+data.res0+'</td>' +
-                        '<td>Add descriptions to '+data.res0+' departments</td></tr>';
-                    data_str += '<tr><td nowrap>Need keyword optimization:</td><td>'+data.keyword_optimize+'</td>' +
-                        '<td>Keyword optimize '+data.keyword_optimize+' departments</td></tr>';
-                    data_str += '<tr><td nowrap>Contain duplicate content:</td><td></td><td>(Coming soon)</td></tr>';
+                    var dep_content = data.total - data.res_more_than_0;
+                    var dep_optimize = dep_content - data.keyword_optimize;
+
+                    var data_str = '<tr><td nowrap>Departments Analyzed:</td><td>'+data.total+'</td><td>&nbsp;</td></tr>';
+                    data_str += '<tr><td nowrap>Departments that have content:</td><td>'+data.res_more_than_0+'/'+data.total+'</td>' +
+                        '<td>Create content for '+dep_content+' departments</td></tr>';
+                    data_str += '<tr><td nowrap>Average content word count:</td><td>'+data.res_avg+'</td>' +
+                        '<td>Add more words to '+data.res_more+' departments</td></tr>';
+                    data_str += '<tr><td>Departments optimized:</td><td>'+data.keyword_optimize+'/'+dep_content+'</td>' +
+                        '<td>Optimize '+dep_optimize+' departments</td></tr>';
                     $("tbody#department_data").append(data_str);
                 });
                 //$('#tabs').show();
@@ -331,42 +305,16 @@ $( function() {
             $.post(base_url + 'index.php/measure/getDashboardDepData', {
                 'site_name': site_name
             }, function(data) {
-                var add_min_text250 = 250 - data.res250_top_wc;
-                var add_max_text250 = 250 - data.res250_low_wc;
-                var add_text250 = '';
-                if(add_min_text250 == add_max_text250){
-                    add_text250 = add_min_text250;
-                } else {
-                    add_text250 = add_min_text250+' - '+add_max_text250;
-                }
-                var add_min_text200 = 200 - data.res200_top_wc;
-                var add_max_text200 = 200 - data.res200_low_wc;
-                var add_text200 = '';
-                if(add_min_text200 == add_max_text200){
-                    add_text200 = add_min_text200;
-                } else {
-                    add_text200 = add_min_text200+' - '+add_max_text200;
-                }
-                var add_min_text150 = 150 - data.res150_top_wc;
-                var add_max_text150 = 150 - data.res150_low_wc;
-                var add_text150 = '';
-                if(add_min_text150 == add_max_text150){
-                    add_text150 = add_min_text150;
-                } else {
-                    add_text150 = add_min_text150+' - '+add_max_text150;
-                }
-                var data_str = '<tr><td nowrap>Total Analyzed:</td><td>'+data.total+'</td><td>&nbsp;</td></tr>';
-                data_str += '<tr><td nowrap>Description text < 250 words:</td><td>'+data.res250+'</td>' +
-                    '<td>Add '+add_text250+' more words to '+data.res250+' department descriptions</td></tr>';
-                data_str += '<tr><td nowrap>Description text < 200 words:</td><td>'+data.res200+'</td>' +
-                    '<td>Add '+add_text200+' more words to '+data.res200+' department descriptions</td></tr>';
-                data_str += '<tr><td nowrap>Description text < 150 words:</td><td>'+data.res150+'</td>' +
-                    '<td>Add '+add_text150+' words to '+data.res150+' more department descriptions</td></tr>';
-                data_str += '<tr><td nowrap>Description text 0 words:</td><td>'+data.res0+'</td>' +
-                    '<td>Add descriptions to '+data.res0+' departments</td></tr>';
-                data_str += '<tr><td nowrap>Need keyword optimization:</td><td>'+data.keyword_optimize+'</td>' +
-                    '<td>Keyword optimize '+data.keyword_optimize+' departments</td></tr>';
-                data_str += '<tr><td nowrap>Contain duplicate content:</td><td></td><td>(Coming soon)</td></tr>';
+                var dep_content = data.total - data.res_more_than_0;
+                var dep_optimize = dep_content - data.keyword_optimize;
+
+                var data_str = '<tr><td nowrap>Departments Analyzed:</td><td>'+data.total+'</td><td>&nbsp;</td></tr>';
+                data_str += '<tr><td nowrap>Departments that have content:</td><td>'+data.res_more_than_0+'/'+data.total+'</td>' +
+                    '<td>Create content for '+dep_content+' departments</td></tr>';
+                data_str += '<tr><td nowrap>Average content word count:</td><td>'+data.res_avg+'</td>' +
+                    '<td>Add more words to '+data.res_more+' departments</td></tr>';
+                data_str += '<tr><td>Departments optimized:</td><td>'+data.keyword_optimize+'/'+dep_content+'</td>' +
+                    '<td>Optimize '+dep_optimize+' departments</td></tr>';
                 $("tbody#department_data").append(data_str);
             });
         } else {
@@ -376,42 +324,16 @@ $( function() {
             $.post(base_url + 'index.php/measure/getDashboardCatData', {
                 'site_name': site_name
             }, function(data) {
-                var add_min_text250 = 250 - data.res250_top_wc;
-                var add_max_text250 = 250 - data.res250_low_wc;
-                var add_text250 = '';
-                if(add_min_text250 == add_max_text250){
-                    add_text250 = add_min_text250;
-                } else {
-                    add_text250 = add_min_text250+' - '+add_max_text250;
-                }
-                var add_min_text200 = 200 - data.res200_top_wc;
-                var add_max_text200 = 200 - data.res200_low_wc;
-                var add_text200 = '';
-                if(add_min_text200 == add_max_text200){
-                    add_text200 = add_min_text200;
-                } else {
-                    add_text200 = add_min_text200+' - '+add_max_text200;
-                }
-                var add_min_text150 = 150 - data.res150_top_wc;
-                var add_max_text150 = 150 - data.res150_low_wc;
-                var add_text150 = '';
-                if(add_min_text150 == add_max_text150){
-                    add_text150 = add_min_text150;
-                } else {
-                    add_text150 = add_min_text150+' - '+add_max_text150;
-                }
-                var data_str = '<tr><td nowrap>Total Analyzed:</td><td>'+data.total+'</td><td>&nbsp;</td></tr>';
-                data_str += '<tr><td nowrap>Description text < 250 words:</td><td>'+data.res250+'</td>' +
-                    '<td>Add '+add_text250+' more words to '+data.res250+' category descriptions</td></tr>';
-                data_str += '<tr><td nowrap>Description text < 200 words:</td><td>'+data.res200+'</td>' +
-                    '<td>Add '+add_text200+' more words to '+data.res200+' category descriptions</td></tr>';
-                data_str += '<tr><td nowrap>Description text < 150 words:</td><td>'+data.res150+'</td>' +
-                    '<td>Add '+add_text150+' words to '+data.res150+' more category descriptions</td></tr>';
-                data_str += '<tr><td nowrap>Description text 0 words:</td><td>'+data.res0+'</td>' +
-                    '<td>Add descriptions to '+data.res0+' categories</td></tr>';
-                data_str += '<tr><td nowrap>Need keyword optimization:</td><td>'+data.keyword_optimize+'</td>' +
-                    '<td>Keyword optimize '+data.keyword_optimize+' categories</td></tr>';
-                data_str += '<tr><td nowrap>Contain duplicate content:</td><td></td><td>(Coming soon)</td></tr>';
+                var dep_content = data.total - data.res_more_than_0;
+                var dep_optimize = dep_content - data.keyword_optimize;
+
+                var data_str = '<tr><td nowrap>Categories Analyzed:</td><td>'+data.total+'</td><td>&nbsp;</td></tr>';
+                data_str += '<tr><td nowrap>Categories that have content:</td><td>'+data.res_more_than_0+'/'+data.total+'</td>' +
+                    '<td>Create content for '+dep_content+' categories</td></tr>';
+                data_str += '<tr><td nowrap>Average content word count:</td><td>'+data.res_avg+'</td>' +
+                    '<td>Add more words to '+data.res_more+' categories</td></tr>';
+                data_str += '<tr><td>Categories optimized:</td><td>'+data.keyword_optimize+'/'+dep_content+'</td>' +
+                    '<td>Optimize '+dep_optimize+' categories</td></tr>';
                 $("tbody#category_data").append(data_str);
             });
         }
