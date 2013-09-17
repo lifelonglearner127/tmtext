@@ -47,7 +47,7 @@
 											<?php foreach($v->keywords as $ks => $kv) { ?>
 												<tr>
 													<td>
-														<?php echo $kv->keyword; ?>
+														<?php echo $kv->keyword; ?><br>
 														<button type='button' style='margin-top: 10px;' class='btn btn-danger' onclick="deleteKeyword('<?php echo $v->site; ?>', '<?php echo $kv->keyword; ?>')">Delete</button>
 													</td>
 													<td><?php echo $kv->location; ?></td>
