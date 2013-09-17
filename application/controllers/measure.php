@@ -1984,7 +1984,7 @@ public function gridview() {
                    $desc_words_count=count(explode(' ',$vs['description']));
                   
                    $prc=round($count*$words/$desc_words_count*100,2);
-                   $same_pr[$ks]['short_meta'][]=array('value'=>$val,'count'=>$words,'prc'=>$prc);
+                   $same_pr[$ks]['short_meta'][]=array('value'=>$val,'count'=>$count,'prc'=>$prc);
                    
              }
              }
@@ -1996,7 +1996,7 @@ public function gridview() {
                    $desc_words_count=count(explode(' ',$vs['long_description']));
                   
                    $prc=round($count*$words/$desc_words_count*100,2);
-                   $same_pr[$ks]['long_meta'][]=array('value'=>$val,'count'=>$words,'prc'=>$prc);
+                   $same_pr[$ks]['long_meta'][]=array('value'=>$val,'count'=>$count,'prc'=>$prc);
                    
              }
              }
