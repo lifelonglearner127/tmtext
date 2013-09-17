@@ -41,7 +41,8 @@ class Measure extends MY_Controller {
     public function debug_cmd_screenshots() {
         $opt = $this->input->post('opt');
         $id = $this->input->post('id');
-        $path_to_cron = base_url()."index.php/crons/site_crawler_screens?ids=$id";
+        // $path_to_cron = base_url()."index.php/crons/site_crawler_screens?ids=$id";
+        $path_to_cron = "http://dev.contentsolutionsinc.com/producteditor/index.php/crons/site_crawler_screens?ids=$id";
         $cmd = "";
         if($opt == 1) {
             $cmd = "wget -q $path_to_cron > /dev/null 2>&1";
@@ -49,6 +50,8 @@ class Measure extends MY_Controller {
             $cmd = "wget -q $path_to_cron 2>&1";
         } else if($opt == 3) {
             $cmd = "wget -O - -q -t 1 $path_to_cron";
+        } else if($opt == 4) {
+            shell_exec("wget -S -O- $path_to_cron > /dev/null 2>/dev/null &");
         }
         shell_exec($cmd);
         $this->output->set_content_type('application/json')->set_output(json_encode($cmd));
