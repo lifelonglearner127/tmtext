@@ -41,13 +41,15 @@
 												<th>location</th>
 												<th>engine</th>
 												<th>ranking</th>
-												<th>control</th>
 											</tr>
 										</thead>
 										<tbody>
 											<?php foreach($v->keywords as $ks => $kv) { ?>
 												<tr>
-													<td><?php echo $kv->keyword; ?></td>
+													<td>
+														<?php echo $kv->keyword; ?>
+														<button type='button' style='margin-top: 10px;' class='btn btn-danger' onclick="deleteKeyword('<?php echo $v->site; ?>', '<?php echo $kv->keyword; ?>')">Delete</button>
+													</td>
 													<td><?php echo $kv->location; ?></td>
 													<td><?php echo $kv->searchengine; ?></td>
 													<td>
@@ -61,7 +63,6 @@
 																<p>no ranking data</p>
 															<?php } ?>
 													</td>
-													<td><button type='button' class='btn btn-danger' onclick="deleteKeyword('<?php echo $v->site; ?>', '<?php echo $kv->keyword; ?>')">Delete</button></td>
 												</tr>
 											<?php } ?>
 										</tbody>
