@@ -19,11 +19,18 @@
         <input type="text" id="new_keyword" name="new_keyword">
         <p>New volume(number)</p>
         <input type="text" id="new_volume" name="new_volume">
-        <p>New search_engine</p>
-        <input type="text" id="new_search_engine" name="new_search_engine">
-        <p>New region</p>
-        <input type="text" id="new_region" name="new_region">
-        <button id="btn_new_keyword" style="margin-bottom: 11px;" class="btn btn-primary" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Add</button>
+        <div>
+            <div style="float:left;">
+                <p class="heading_text">New search_engine </p>
+                  <?php  echo form_dropdown('search_engine', $search_engine, array(),' class="search_engine_select" style="width: 200px;float:left;margin-right: 20px;margin-top: 10px;"'); ?>
+            </div>
+            <div style="float:left;">
+                <p>New region</p>
+                <?php  echo form_dropdown('regions_list', $regions, array(),'class="region_select"  style="width: 200px;margin-right:float:left; 20px;"'); ?>
+            </div>
+            <button id="btn_new_keyword" style="margin-bottom: 11px;float:left;margin-top: 28px;margin-left: 10px;" class="btn btn-primary" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Add</button>
+        </div>    
+        
         <div class="clear-fix"></div>
     </div>
     
@@ -84,20 +91,31 @@
 		system_keywords();
                 
                 
-	
+	var new_search_engine = null;
+        $(".search_engine_select").live('change', function() {       
+             if($(this).val() == 0){
+                new_search_engine = null;
+                return
+            }
+            new_search_engine = $(this).val();
+        });
+	var new_region = null;
+        $(".region_select").live('change', function() {       
+            if($(this).val() == 0){
+                new_region = null;
+                return
+            }
+            new_region = $(this).val();
+        });        
+        
         
         $('button#btn_new_keyword').click(function(){
 
             var new_keyword = $.trim($('#new_keyword').val());
             var new_volume = $.trim($('#new_volume').val());
-            var new_search_engine = $.trim($('#new_search_engine').val());
-            var new_region = $.trim($('#new_region').val());
             if(new_keyword !== "") new_keyword.replace(/<\/?[^>]+(>|$)/g, "");
-            if(new_volume !== "") new_volume.replace(/<\/?[^>]+(>|$)/g, "");
-            if(new_search_engine !== "") new_search_engine.replace(/<\/?[^>]+(>|$)/g, "");    
-            if(new_region !== "") new_region.replace(/<\/?[^>]+(>|$)/g, "");             
-            
-            if($('#new_keyword').val() != '' || $('#new_volume').val() != '' || $('#new_search_engine').val() != '' || $('#new_region').val() != ''){  
+            if(new_volume !== "") new_volume.replace(/<\/?[^>]+(>|$)/g, "");           
+            if($('#new_keyword').val() != '' || $('#new_volume').val() != ''){  
                 var new_keywords = {
                     new_keyword: new_keyword,
                     new_volume: new_volume,
@@ -123,9 +141,7 @@
                         
                        });
                 $('#new_keyword').val('');
-                $('#new_volume').val('');
-                $('#new_search_engine').val('');
-                $('#new_region').val('');                                     
+                $('#new_volume').val('');                                                  
                 }else{                  
                 $(".info-message").append("keyword was not added");
                 $(".info-message").fadeOut(7000);                

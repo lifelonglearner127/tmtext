@@ -1584,9 +1584,22 @@ class System extends MY_Controller {
     public function system_logins() {
         $this->render();
 	}
-    public function keywords() {
+         public function keywords() {
+        $this->load->model('keyword_model_system'); 
+        $regions =  $this->keyword_model_system->get_regions();
+        $search_engines = $this->keyword_model_system->get_serach_engine();
+        $search_engine_list = array(0 => 'Choose search_engine');
+        $regions_list = array(0 => 'Choose region');
+            foreach ($regions as $region) {
+                $regions_list[$region->id] = $region->region;
+            }
+            foreach ($search_engines as $search_engine) {
+                $search_engine_list[$search_engine->id] = $search_engine->search_engine;
+            }
+        $this->data['regions'] = $regions_list;
+        $this->data['search_engine'] = $search_engine_list;
         $this->render();
-	}        
+	}         
 	
 	public function system_last_logins() {
 		$this->load->model('logins_model');

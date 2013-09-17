@@ -670,4 +670,31 @@ CREATE TABLE IF NOT EXISTS `keywords_new` (
   `revision` int(11) NOT NULL,
   `create_date` datetime NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;
+
+
+#09/16 Evgeni
+
+CREATE TABLE IF NOT EXISTS `keywords_data` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `keyword` varchar(30) NOT NULL,
+  `volume` int(11) NOT NULL,
+  `search_engine` int(11) NOT NULL,
+  `region` int(11) NOT NULL,
+  `create_date` int(11) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1
+
+#09/17 Evgeni
+CREATE TABLE IF NOT EXISTS `search_engine` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `search_engine` varchar(30) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1
+
+#09/17 Evgeni
+CREATE TABLE IF NOT EXISTS `regions` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `region` varchar(30) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1
