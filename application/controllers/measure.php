@@ -1154,6 +1154,7 @@ class Measure extends MY_Controller {
         $data = $this->department_members_model->getDescriptionData($site_id);
         $data_more = $this->department_members_model->getDepartmentsByWc($site_id);
         $count_dep = 0;
+        $count_optimize = array();
         foreach($data_more as $key => $obj){
             $keywords_density = json_decode($data_more[$key]->title_keyword_description_density);
             $num = 0;
@@ -1164,9 +1165,12 @@ class Measure extends MY_Controller {
                     $num = 1;
                 }
             }
+            if($num == 0){
+                array_push($count_optimize, $obj);
+            }
             $count_dep += $num;
         }
-        $data = array_merge($data, array('keyword_optimize' => $count_dep));
+        $data = array_merge($data, array('keyword_optimize' => $count_dep, 'dep_optimize'=>$count_optimize));
         $this->output->set_content_type('application/json')->set_output(json_encode($data));
     }
 
@@ -1177,6 +1181,7 @@ class Measure extends MY_Controller {
         $data = $this->site_categories_model->getDescriptionData($site_id);
         $data_more = $this->site_categories_model->getCategoriesByWc($site_id);
         $count_dep = 0;
+        $count_optimize = array();
         foreach($data_more as $key => $obj){
             $keywords_density = json_decode($data_more[$key]->title_keyword_description_density);
             $num = 0;
@@ -1187,9 +1192,12 @@ class Measure extends MY_Controller {
                     $num = 1;
                 }
             }
+            if($num == 0){
+                array_push($count_optimize, $obj);
+            }
             $count_dep += $num;
         }
-        $data = array_merge($data, array('keyword_optimize' => $count_dep));
+        $data = array_merge($data, array('keyword_optimize' => $count_dep, 'dep_optimize'=>$count_optimize));
         $this->output->set_content_type('application/json')->set_output(json_encode($data));
         $this->output->set_content_type('application/json')->set_output(json_encode($data));
     }

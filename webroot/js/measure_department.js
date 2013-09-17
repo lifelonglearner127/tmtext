@@ -167,14 +167,90 @@ $( function() {
                     var dep_content = data.total - data.res_more_than_0;
                     var dep_optimize = dep_content - data.keyword_optimize;
 
-                    var data_str = '<tr><td nowrap>Departments Analyzed:</td><td>'+data.total+'</td><td>&nbsp;</td></tr>';
+                    var data_str = '<tr><td nowrap>Departments Analyzed:</td><td colspan="2">'+data.total+'</td></tr>';
                     data_str += '<tr><td nowrap>Departments that have content:</td><td>'+data.res_more_than_0+'/'+data.total+'</td>' +
                         '<td>Create content for '+dep_content+' departments</td></tr>';
+                    if(data.result0.length > 0){
+                        for(var j=0; j<data.result0.length; j++){
+                            data_str += '<tr class="more_than_0 hidden_row">';
+                            var json = data.result0[j].title_keyword_description_density;
+                            if(json != ''){
+                                var keywords = JSON.parse(json);
+                            }
+                            data_str += '<td >'+data.result0[j].text+'</td>' +
+                                '<td>'+data.result0[j].description_words+'</td><td>';
+                            if(json != ''){
+                                jQuery.each(keywords, function(i, val) {
+                                    data_str += i+' - '+val+'%<br />';
+                                });
+                            } else {
+                                data_str += ' - ';
+                            }
+                            data_str += '</td></tr>';
+                        }
+                    }
                     data_str += '<tr><td nowrap>Average content word count:</td><td>'+data.res_avg+'</td>' +
                         '<td>Add more words to '+data.res_more+' departments</td></tr>';
+                    if(data.res_more_data.length > 0){
+
+                        for(var j=0; j<data.res_more_data.length; j++){
+                            data_str += '<tr class="res_more hidden_row">';
+                            var json = data.res_more_data[j].title_keyword_description_density;
+                            if(json != ''){
+                                var keywords = JSON.parse(json);
+                            }
+                            data_str += '<td >'+data.res_more_data[j].text+'</td><td>'+data.res_more_data[j].description_words+'</td><td>';
+                            if(json != ''){
+                                jQuery.each(keywords, function(i, val) {
+                                    data_str += i+' - '+val+'%<br />';
+                                });
+                            } else {
+                                data_str += ' - ';
+                            }
+                            data_str += '</td></tr>';
+                        }
+                    }
+
                     data_str += '<tr><td>Departments optimized:</td><td>'+data.keyword_optimize+'/'+dep_content+'</td>' +
                         '<td>Optimize '+dep_optimize+' departments</td></tr>';
+                    if(data.dep_optimize.length > 0){
+                        for(var j=0; j<data.dep_optimize.length; j++){
+                            data_str += '<tr class="dep_optimize hidden_row">';
+                            var json = data.dep_optimize[j].title_keyword_description_density;
+                            if(json != ''){
+                                var keywords = JSON.parse(json);
+                            }
+                            data_str += '<td>'+data.dep_optimize[j].text+'</td><td>'
+                                +data.dep_optimize[j].description_words+'</td><td>';
+                            if(json != ''){
+                                jQuery.each(keywords, function(i, val) {
+                                    data_str += i+' - '+val+'%<br />';
+                                });
+                            } else {
+                                data_str += ' - ';
+                            }
+                            data_str += '</td></tr>';
+                        }
+                    }
                     $("tbody#department_data").append(data_str);
+                    $("tbody#department_data tr").click(function() {
+                        var next = $(this).next();
+                        if(next.hasClass('more_than_0') && next.eq(0).css('display')=='none'){
+                            $('.more_than_0').show();
+                        } else {
+                            $('.more_than_0').hide();
+                        }
+                        if(next.hasClass('res_more') && next.eq(0).css('display')=='none'){
+                            $('.res_more').show();
+                        } else {
+                            $('.res_more').hide();
+                        }
+                        if(next.hasClass('dep_optimize') && next.eq(0).css('display')=='none'){
+                            $('.dep_optimize').show();
+                        } else {
+                            $('.dep_optimize').hide();
+                        }
+                    });
                 });
                 //$('#tabs').show();
                 $("#departmentDropdown .dropdown-menu").append("<li><a data-item=\"empty\" data-value=\"\" href=\"javascript:void(0);\">Choose department</a></li><li><a data-item=\"\" data-value=\"All\" href=\"javascript:void(0);\">All</a></li>");
@@ -278,7 +354,6 @@ $( function() {
         var site_name=$('.btn_caret_sign_sec').text()
         $("#departmentDropdownSec_first").text(departmentValue);
         readBestSellers(department_id,site_name,'recordSec');
-        console.log(department_id);
         /*****departmentAjax****/
         if(department_id != ''){
             departmentAjax(department_id,site_name);
@@ -308,14 +383,90 @@ $( function() {
                 var dep_content = data.total - data.res_more_than_0;
                 var dep_optimize = dep_content - data.keyword_optimize;
 
-                var data_str = '<tr><td nowrap>Departments Analyzed:</td><td>'+data.total+'</td><td>&nbsp;</td></tr>';
+                var data_str = '<tr><td nowrap>Departments Analyzed:</td><td colspan="2">'+data.total+'</td></tr>';
                 data_str += '<tr><td nowrap>Departments that have content:</td><td>'+data.res_more_than_0+'/'+data.total+'</td>' +
                     '<td>Create content for '+dep_content+' departments</td></tr>';
+                if(data.result0.length > 0){
+                    data_str += '<tr class="more_than_0 hidden_row">';
+                    for(var j=0; j<data.result0.length; j++){
+                        var json = data.result0[j].title_keyword_description_density;
+                        if(json != ''){
+                            var keywords = JSON.parse(json);
+                        }
+                        data_str += '<td >'+data.result0[j].text+'</td>' +
+                            '<td>'+data.result0[j].description_words+'</td><td>';
+                        if(json != ''){
+                            jQuery.each(keywords, function(i, val) {
+                                data_str += i+' - '+val+'%<br />';
+                            });
+                        } else {
+                            data_str += ' - ';
+                        }
+                        data_str += '</td>';
+                    }
+                    data_str += '</tr>';
+                }
                 data_str += '<tr><td nowrap>Average content word count:</td><td>'+data.res_avg+'</td>' +
                     '<td>Add more words to '+data.res_more+' departments</td></tr>';
+                if(data.res_more_data.length > 0){
+                    for(var j=0; j<data.res_more_data.length; j++){
+                        data_str += '<tr class="res_more hidden_row">';
+                        var json = data.res_more_data[j].title_keyword_description_density;
+                        if(json != ''){
+                            var keywords = JSON.parse(json);
+                        }
+                        data_str += '<td >'+data.res_more_data[j].text+'</td><td>'+data.res_more_data[j].description_words+'</td><td>';
+                        if(json != ''){
+                            jQuery.each(keywords, function(i, val) {
+                                data_str += i+' - '+val+'%<br />';
+                            });
+                        } else {
+                            data_str += ' - ';
+                        }
+                        data_str += '</td></tr>';
+                    }
+                }
+
                 data_str += '<tr><td>Departments optimized:</td><td>'+data.keyword_optimize+'/'+dep_content+'</td>' +
                     '<td>Optimize '+dep_optimize+' departments</td></tr>';
+                if(data.dep_optimize.length > 0){
+                    for(var j=0; j<data.dep_optimize.length; j++){
+                        data_str += '<tr class="dep_optimize hidden_row">';
+                        var json = data.dep_optimize[j].title_keyword_description_density;
+                        if(json != ''){
+                            var keywords = JSON.parse(json);
+                        }
+                        data_str += '<td>'+data.dep_optimize[j].text+'</td><td>'
+                            +data.dep_optimize[j].description_words+'</td><td>';
+                        if(json != ''){
+                            jQuery.each(keywords, function(i, val) {
+                                data_str += i+' - '+val+'%<br />';
+                            });
+                        } else {
+                            data_str += ' - ';
+                        }
+                        data_str += '</td></tr>';
+                    }
+                }
                 $("tbody#department_data").append(data_str);
+                $("tbody#department_data tr").click(function() {
+                    var next = $(this).next();
+                    if(next.hasClass('more_than_0') && next.eq(0).css('display')=='none'){
+                        $('.more_than_0').show();
+                    } else {
+                        $('.more_than_0').hide();
+                    }
+                    if(next.hasClass('res_more') && next.eq(0).css('display')=='none'){
+                        $('.res_more').show();
+                    } else {
+                        $('.res_more').hide();
+                    }
+                    if(next.hasClass('dep_optimize') && next.eq(0).css('display')=='none'){
+                        $('.dep_optimize').show();
+                    } else {
+                        $('.dep_optimize').hide();
+                    }
+                });
             });
         } else {
             $("tbody#department_data").hide();
@@ -327,14 +478,89 @@ $( function() {
                 var dep_content = data.total - data.res_more_than_0;
                 var dep_optimize = dep_content - data.keyword_optimize;
 
-                var data_str = '<tr><td nowrap>Categories Analyzed:</td><td>'+data.total+'</td><td>&nbsp;</td></tr>';
+                var data_str = '<tr><td nowrap>Categories Analyzed:</td><td colspan="2">'+data.total+'</td></tr>';
                 data_str += '<tr><td nowrap>Categories that have content:</td><td>'+data.res_more_than_0+'/'+data.total+'</td>' +
                     '<td>Create content for '+dep_content+' categories</td></tr>';
+                if(data.result0.length > 0){
+                    for(var j=0; j<data.result0.length; j++){
+                        data_str += '<tr class="res_more hidden_row">';
+                        var json = data.result0[j].title_keyword_description_density;
+                        if(json != ''){
+                            var keywords = JSON.parse(json);
+                        }
+                        data_str += '<td >'+data.result0[j].text+'</td>' +
+                            '<td>'+data.result0[j].description_words+'</td><td>';
+                        if(json != ''){
+                            jQuery.each(keywords, function(i, val) {
+                                data_str += i+' - '+val+'%<br />';
+                            });
+                        } else {
+                            data_str += ' - ';
+                        }
+                        data_str += '</td></tr>';
+                    }
+                }
                 data_str += '<tr><td nowrap>Average content word count:</td><td>'+data.res_avg+'</td>' +
                     '<td>Add more words to '+data.res_more+' categories</td></tr>';
+                if(data.res_more_data.length > 0){
+                    for(var j=0; j<data.res_more_data.length; j++){
+                        data_str += '<tr class="res_more hidden_row">';
+                        var json = data.res_more_data[j].title_keyword_description_density;
+                        if(json != ''){
+                            var keywords = JSON.parse(json);
+                        }
+                        data_str += '<td >'+data.res_more_data[j].text+'</td><td>'+data.res_more_data[j].description_words+'</td><td>';
+                        if(json != ''){
+                            jQuery.each(keywords, function(i, val) {
+                                data_str += i+' - '+val+'%<br />';
+                            });
+                        } else {
+                            data_str += ' - ';
+                        }
+                        data_str += '</td></tr>';
+                    }
+                }
+
                 data_str += '<tr><td>Categories optimized:</td><td>'+data.keyword_optimize+'/'+dep_content+'</td>' +
                     '<td>Optimize '+dep_optimize+' categories</td></tr>';
+                if(data.dep_optimize.length > 0){
+                    for(var j=0; j<data.dep_optimize.length; j++){
+                        data_str += '<tr class="dep_optimize hidden_row">';
+                        var json = data.dep_optimize[j].title_keyword_description_density;
+                        if(json != ''){
+                            var keywords = JSON.parse(json);
+                        }
+                        data_str += '<td>'+data.dep_optimize[j].text+'</td><td>'
+                            +data.dep_optimize[j].description_words+'</td><td>';
+                        if(json != ''){
+                            jQuery.each(keywords, function(i, val) {
+                                data_str += i+' - '+val+'%<br />';
+                            });
+                        } else {
+                            data_str += ' - ';
+                        }
+                        data_str += '</td></tr>';
+                    }
+                }
                 $("tbody#category_data").append(data_str);
+                $("tbody#category_data tr").click(function() {
+                    var next = $(this).next();
+                    if(next.hasClass('more_than_0') && next.eq(0).css('display')=='none'){
+                        $('.more_than_0').show();
+                    } else {
+                        $('.more_than_0').hide();
+                    }
+                    if(next.hasClass('res_more') && next.eq(0).css('display')=='none'){
+                        $('.res_more').show();
+                    } else {
+                        $('.res_more').hide();
+                    }
+                    if(next.hasClass('dep_optimize') && next.eq(0).css('display')=='none'){
+                        $('.dep_optimize').show();
+                    } else {
+                        $('.dep_optimize').hide();
+                    }
+                });
             });
         }
     });
@@ -596,7 +822,6 @@ function departmentScreenDetectorMouseOver(snap_data) {
 
 function standaloneDepartmentScreenDetector() {
     var dep_id = $("input[name='selected_department_id']").val();
-    console.log(dep_id);
     $.post(base_url + 'index.php/system/scanForDepartmentSnap', {'dep_id': dep_id}, function(data) {
         if(data.dep_id !== "") {
             $("#dep_monitor").fadeOut('medium', function() {

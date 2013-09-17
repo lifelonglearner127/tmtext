@@ -2143,4 +2143,18 @@ span.highlight { background-color:yellow;}
     float:left;
 }
 
+tbody#category_data tr:hover, tbody#department_data tr:hover,
+tbody#category_data tr:active, tbody#department_data tr:active{
+    cursor: pointer;
+    border-bottom: 1px solid #000!important;
+    border-collapse: collapse!important;
+    background:#EEEEEE;
+}
 
+tbody#category_data tr td, tbody#department_data tr td{
+    vertical-align: top;
+}
+.hidden_row{
+    display: none;
+    font-size: 12px;
+}
