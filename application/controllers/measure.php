@@ -57,13 +57,57 @@ class Measure extends MY_Controller {
         $this->output->set_content_type('application/json')->set_output(json_encode($cmd));
     }
 
+    public function ranking_api_db_sync() {
+        $this->load->model('rankapi_model');
+        $api_username = $this->config->item('ranking_api_username');
+        $api_key = $this->config->item('ranking_api_key');
+        $data = array("data" => json_encode(array("action" => "getAccountRankings", "id" => "$api_username", "apikey" => "$api_key")));
+        $ch = curl_init('https://www.serpranktracker.com/tracker/webservice');
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST"); 
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $track_data = curl_exec($ch);
+        $data = json_decode($track_data);
+        $res = array(
+            'status' => false,
+            'msg' => ''
+        );
+        if(isset($data) && $data->status == 'success') {
+            //  var_dump($data);
+            foreach($data->data as $k=>$v) {
+                $site = $v->site;
+                $keywords = $v->keywords;
+                if((isset($site) && trim($site) !== "") && (isset($keywords) && count($keywords) > 0)) {
+                    // var_dump($keywords);
+                    foreach($keywords as $ks => $kv) {
+                        $sync_data = array(
+                            'site' => $site,
+                            'keyword' => $kv->keyword,
+                            'location' => $kv->location,
+                            'engine' => $kv->searchengine,
+                            'rank_json_encode' => json_encode($kv->rankings)
+                        );
+                        $this->rankapi_model->start_db_sync($sync_data);
+                        // var_dump($sync_data);
+                        // var_dump($this->rankapi_model->start_db_sync($sync_data));
+                    }
+                }
+            }
+            $res['status'] = true;
+            $res['msg'] = 'sync finished';
+        } else {
+            $res['msg'] = 'API call failed';
+        }
+        $this->output->set_content_type('application/json')->set_output(json_encode($res));
+    }
+
     public function debug_ranking_data_delete() {
-        // === incoming data
+        // === incoming data§
         $url = $this->input->post('url');
         $key_word = $this->input->post('key_word');
         // === config
-        $api_username = 'content';
-        $api_key = 'MNl5FKbecbxv9EQAQ';
+        $api_username = $this->config->item('ranking_api_username');
+        $api_key = $this->config->item('ranking_api_key');
         // === delete keyword data to http://www.serpranktracker.com (start)
         $key_url = array(
             'site' => "$url",
@@ -87,8 +131,8 @@ class Measure extends MY_Controller {
         $url = $this->input->post('url');
         $key_word = $this->input->post('key_word');
         // === config
-        $api_username = 'content';
-        $api_key = 'MNl5FKbecbxv9EQAQ';
+        $api_username = $this->config->item('ranking_api_username');
+        $api_key = $this->config->item('ranking_api_key');
         // === add new keyword + url to http://www.serpranktracker.com (start)
         $key_url = array(
             "site" => "$url",
@@ -103,7 +147,6 @@ class Measure extends MY_Controller {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         $result = curl_exec($ch);
         // === add new keyword + url to http://www.serpranktracker.com (end)
-
         $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }
 

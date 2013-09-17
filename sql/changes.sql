@@ -1,3 +1,15 @@
+# 17/09 Ilya
+CREATE TABLE IF NOT EXISTS `ranking_api_data` (
+  `id` INT NOT NULL AUTO_INCREMENT ,
+  `site` VARCHAR(512) NULL DEFAULT NULL ,
+  `keyword` VARCHAR(512) NULL DEFAULT NULL ,
+  `location` VARCHAR(45) NULL DEFAULT NULL ,
+  `engine` VARCHAR(45) NULL DEFAULT NULL ,
+  `rank_json_encode` TEXT NULL DEFAULT NULL ,
+  `stamp` datetime NULL DEFAULT NULL ,
+  PRIMARY KEY (`id`) 
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1;
+
 # 09/11 Tatiana
 ALTER TABLE `site_categories` ADD `parent_id` INT NOT NULL AFTER `id`;
 

@@ -2,7 +2,7 @@
 	<div class="span9 offset2">
 		<div class="login_container" style="margin-top: 5%;">
 			<div class="login_header">
-				<h3 class="text-center">Ranking API Debugger</h3>
+				<h3 class="text-center">Ranking API Debugger <button type='button' onclick='syncApiWithDB()' class='btn btn-success'>Sync DB data with API data</button></h3>
 			</div>
 			<div class="login_content">
 				<div class='debug_seo_ph'>
@@ -98,7 +98,22 @@
 	</div>
 </div>
 
+<div class="modal hide fade ci_hp_modals" id='loader_sync_modal'>
+	<div class="modal-body">
+		<p><img src="<?php echo base_url();?>img/loader_scr.gif">&nbsp;&nbsp;&nbsp;Sync procees. Please wait...</p>
+	</div>
+</div>
+
 <script type="text/javascript">
+	
+	function syncApiWithDB() {
+		$("#loader_sync_modal").modal('show');
+		$.post(base_url + "index.php/measure/ranking_api_db_sync", {}, 'json').done(function(a_data) {
+			$("#loader_sync_modal").modal('hide');
+			console.log(a_data);
+    });
+	}
+
 	function debugCmdScreenshots(opt) {
 		var send_data = {
 			opt: opt,

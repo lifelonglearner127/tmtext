@@ -79,8 +79,8 @@ class Auth extends MY_Controller {
 		if (!$this->ion_auth->logged_in()) {
 			redirect('auth/login', 'refresh');
 		} else {
-      $api_username = 'content';
-      $api_key = 'MNl5FKbecbxv9EQAQ';
+      $api_username = $this->config->item('ranking_api_username');
+      $api_key = $this->config->item('ranking_api_key');
       // === get keyword data to http://www.serpranktracker.com (start)
       $data = array("data" => json_encode(array("action" => "getAccountRankings", "id" => "$api_username", "apikey" => "$api_key")));
       $ch = curl_init('https://www.serpranktracker.com/tracker/webservice');

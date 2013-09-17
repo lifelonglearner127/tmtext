@@ -438,6 +438,10 @@ $config['webthumb_sites'] = array(
 	'pgestore.com'
 );
 
+// ==== https://www.serpranktracker.com
+$config['ranking_api_username'] = 'content';
+$config['ranking_api_key'] = 'MNl5FKbecbxv9EQAQ';
+
 // allow the local environment to override the settings
 if (file_exists(APPPATH.'config/config.local.php')) {
 	@require_once APPPATH.'config/config.local.php';
