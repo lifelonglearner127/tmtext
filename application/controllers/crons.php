@@ -129,6 +129,12 @@ class Crons extends MY_Controller {
                     $snap_res = $this->webshoots_model->crawl_webshoot($call_url, $v->id, 'crawl_snap-');
                 }
                 $this->webshoots_model->updateCrawlListWithSnap($v->id, $snap_res['img'], $http_status);
+                $this->load->library('email');
+                $this->email->from('info@dev.contentsolutionsinc.com', '!!!!');
+                $this->email->to('ishulgin8@gmail.com');
+                $this->email->subject('Cron job report');
+                $this->email->message('Cron job for site_crawler_screens is done');
+                $this->email->send();
             }
         }
     }
