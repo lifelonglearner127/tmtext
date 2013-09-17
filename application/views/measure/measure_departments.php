@@ -263,5 +263,14 @@
         <a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
     </div>
 </div>
+
+<div class="modal hide fade ci_hp_modals" id='preview_crawl_snap_modal'>
+    <div class="modal-body" style='overflow: hidden'>
+        <div class='snap_holder'>&nbsp;</div>
+    </div>
+    <div class="modal-footer">
+        <a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
+    </div>
+</div>
 <!-- MODALS (END) -->
 

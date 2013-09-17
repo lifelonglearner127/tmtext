@@ -441,6 +441,8 @@ $( function() {
             console.log(111);
         }
     });
+
+    standaloneDepartmentScreenDetector();
 }); //end document ready
 
 function readBestSellers(department_id,site_name,table_name) {
@@ -683,4 +685,4 @@ function standaloneDepartmentScreenDetector() {
         }
     });
 }
-standaloneDepartmentScreenDetector();
+
