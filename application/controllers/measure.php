@@ -38,6 +38,72 @@ class Measure extends MY_Controller {
         $this->render();
     }
 
+    public function debug_cmd_screenshots() {
+        $opt = $this->input->post('opt');
+        $id = $this->input->post('id');
+        $path_to_cron = base_url()."index.php/crons/site_crawler_screens?ids=$id";
+        $cmd = "";
+        if($opt == 1) {
+            $cmd = "wget -q $path_to_cron > /dev/null 2>&1";
+        } else if($opt == 2) {
+            $cmd = "wget -q $path_to_cron 2>&1";
+        } else if($opt == 3) {
+            $cmd = "wget -O - -q -t 1 $path_to_cron";
+        }
+        shell_exec($cmd);
+        $this->output->set_content_type('application/json')->set_output(json_encode($cmd));
+    }
+
+    public function debug_ranking_data_delete() {
+        // === incoming data
+        $url = $this->input->post('url');
+        $key_word = $this->input->post('key_word');
+        // === config
+        $api_username = 'content';
+        $api_key = 'MNl5FKbecbxv9EQAQ';
+        // === delete keyword data to http://www.serpranktracker.com (start)
+        $key_url = array(
+            'site' => "$url",
+            'keyword' => "$key_word",
+            'location' => 'US',
+            'searchengine' => 'G'
+        );
+        $data = array("data" => json_encode(array("action" => "deleteAccountKeywords", "id" => "$api_username", "apikey" => "$api_key", "keywords" => array($key_url))));
+        $ch = curl_init('https://www.serpranktracker.com/tracker/webservice');
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $result = curl_exec($ch);
+        // === delete keyword data to http://www.serpranktracker.com (end)
+
+        $this->output->set_content_type('application/json')->set_output(json_encode($result));
+    }
+
+    public function debug_ranking_data() {
+        // === incoming data
+        $url = $this->input->post('url');
+        $key_word = $this->input->post('key_word');
+        // === config
+        $api_username = 'content';
+        $api_key = 'MNl5FKbecbxv9EQAQ';
+        // === add new keyword + url to http://www.serpranktracker.com (start)
+        $key_url = array(
+            "site" => "$url",
+            "keyword" => "$key_word",
+            "location" => "US",
+            "searchengine" => "G"
+        );
+        $data = array("data" => json_encode(array("action" => "addAccountKeywords", "id" => "$api_username", "apikey" => "$api_key", "keywords" => array($key_url))));
+        $ch = curl_init('https://www.serpranktracker.com/tracker/webservice');
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $result = curl_exec($ch);
+        // === add new keyword + url to http://www.serpranktracker.com (end)
+
+        $this->output->set_content_type('application/json')->set_output(json_encode($result));
+    }
+
     private function webthumb_call($url) {
         $webthumb_user_id = $this->config->item('webthumb_user_id');
         $api_key = $this->config->item('webthumb_api_key');
@@ -1918,7 +1984,7 @@ public function gridview() {
                    $desc_words_count=count(explode(' ',$vs['description']));
                   
                    $prc=round($count*$words/$desc_words_count*100,2);
-                   $same_pr[$ks]['short_meta'][]=array('value'=>$val,'count'=>$words,'prc'=>$prc);
+                   $same_pr[$ks]['short_meta'][]=array('value'=>$val,'count'=>$count,'prc'=>$prc);
                    
              }
              }
@@ -1930,7 +1996,7 @@ public function gridview() {
                    $desc_words_count=count(explode(' ',$vs['long_description']));
                   
                    $prc=round($count*$words/$desc_words_count*100,2);
-                   $same_pr[$ks]['long_meta'][]=array('value'=>$val,'count'=>$words,'prc'=>$prc);
+                   $same_pr[$ks]['long_meta'][]=array('value'=>$val,'count'=>$count,'prc'=>$prc);
                    
              }
              }

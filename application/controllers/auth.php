@@ -75,6 +75,25 @@ class Auth extends MY_Controller {
 		}
 	}
 
+	function debug_ranking_api() {
+		if (!$this->ion_auth->logged_in()) {
+			redirect('auth/login', 'refresh');
+		} else {
+      $api_username = 'content';
+      $api_key = 'MNl5FKbecbxv9EQAQ';
+      // === get keyword data to http://www.serpranktracker.com (start)
+      $data = array("data" => json_encode(array("action" => "getAccountRankings", "id" => "$api_username", "apikey" => "$api_key")));
+      $ch = curl_init('https://www.serpranktracker.com/tracker/webservice');
+      curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST"); 
+      curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+      curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+      $track_data = curl_exec($ch);
+      $this->data['track_data'] = json_decode($track_data);
+      // === get keyword data to http://www.serpranktracker.com (end)
+			$this->render('debug');
+		}
+	}
+
 	function ajaxcheckregemail() {
 		$this->load->model('user_groups_model');
 		$email = $this->input->post('email');

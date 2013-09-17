@@ -183,15 +183,6 @@ foreach ($same_pr as $ks => $vs) {
                     </div>
                     <!--                            //Max-->
                     <div class="p_description" style="overflow:hidden;">
-    <?php if ($s_product_short_desc_count > 0) { ?>
-                            <span class='analysis_content_head' style="width: 100%;"><img style="height: 9px;width: 9px;background: rgb(207, 207, 207);padding: 2px;margin-top: -3px;margin-right: 4px;" src="<?php echo base_url() ?>/img/arrow-down.png"><?php
-                            if ($s_product_long_description == '') {
-                                echo "Description";
-                            } else {
-                                //echo $s_product_long_description."!!!!";
-                                echo "Short Description";
-                            }
-                            ?>
                             <?php $snap_data = $this->webshoots_model->scanForProductSnap($vs['imported_data_id']); ?>
                             <?php 
                                 $debug_id = $vs['imported_data_id'];
@@ -208,6 +199,15 @@ foreach ($same_pr as $ks => $vs) {
                             <?php if($snap_data['img_av_status']) { ?>
                                 <i style='float: right;' class='snap_ico_gridview icon-picture' data-snap="<?php echo $snap_data['snap']; ?>"></i>
                             <?php } ?>
+    <?php if ($s_product_short_desc_count > 0) { ?>
+                            <span class='analysis_content_head' style="width: 100%;"><img style="height: 9px;width: 9px;background: rgb(207, 207, 207);padding: 2px;margin-top: -3px;margin-right: 4px;" src="<?php echo base_url() ?>/img/arrow-down.png"><?php
+                            if ($s_product_long_description == '') {
+                                echo "Description";
+                            } else {
+                                //echo $s_product_long_description."!!!!";
+                                echo "Short Description";
+                            }
+                            ?>
                             <span class='short_desc_wc' style="float:left;width: 100%;"></span></span>
                             <p class="heading_text">Words: <b><?php echo $s_product_short_desc_count; ?></b></p>
                             <div class="p_seo<?php echo $row; ?>short seo_container" style="clear:left;">

@@ -642,7 +642,11 @@ function departmentAjax(department_id,site_name){
                 var user_keyword_description_density = ' - '+data[i].user_keyword_description_density.trim()+'%';
                 if(user_seo_keywords == '')
                     user_keyword_description_density = ' N/A';
-                dataString += '<div style="float: right;margin-right: 20px;"><input type="text" style="width: 237px;float: left;" placeholder="Your keyword" onblur="keywordAjaxDepartment(this);" name="keyword" value="'+user_seo_keywords+'" />';
+                dataString += '<div style="';
+                if(data[i].title_keyword_description_density && data[i].description_title) {
+                    dataString += 'margin-right:20px;';
+                }
+                dataString += 'float: right;"><input type="text" style="width: 237px;float: left;" placeholder="Your keyword" onblur="keywordAjaxDepartment(this);" name="keyword" value="'+user_seo_keywords+'" />';
                 dataString += '<span style="float: left;margin-top: 4px;margin-left:4px;" > - '+user_keyword_description_density+'</span></div>';
                 
             }
