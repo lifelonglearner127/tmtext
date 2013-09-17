@@ -92,6 +92,8 @@
                         <a id="department_url" href="" style="display: none;" target="_blank">
                             <img src="<?php echo base_url();?>webroot/img/next_blue.png" >
                         </a>
+                        <img class='monitor_icon hidden' id='dep_monitor' src="<?php echo base_url() ?>/img/monitor.png">
+                        <input type="hidden" name="selected_department_id" />
                     </div>
 
                     <!-- Compare with Begin-->
