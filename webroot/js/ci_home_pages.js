@@ -76,21 +76,19 @@ function drop_selecction_scan() {
     var drop_selection_scan = $.post(base_url + 'index.php/measure/dropselectionscan', send_data, function(data) {
     	for(var i=0; i < data.length; i++) {
     		if(data[i]['cell'] !== false) {
-    			console.log(data[i]['cell']['id'], data[i]['cell']['reset']);
     			if(data[i]['cell']['reset'] == 0) {
-    				console.log("NEW");
+    				var data_cell_img = base_url + "webshoots/" + data[i]['cell']['shot_name'];
 	    			var item_id = $(".hp_boot_drop[data-pos='" + data[i]['pos'] + "']").data('itemid'); 
-	    			$("#screen_lightbox_img_" + item_id).attr('src', data[i]['cell']['img']);
-					$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox' style='background-image: url(" + data[i]['cell']['img'] + "); background-position: top left; background-repeat: no-repeat;'></a>");
-					var t = moment(data[i]['cell']['screen_stamp']).format('MMMM Do, YYYY');
-					$("#crawl_date_" + item_id).text(t);
-					$("#hp_boot_drop_" + item_id + " .btn_caret_sign").text(data[i]['cell']['label']);
+	    			$("#screen_lightbox_img_" + item_id).attr('src', data_cell_img);
+						$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox' style='background-image: url(" + data_cell_img + "); background-position: top left; background-repeat: no-repeat;'></a>");
+						var t = moment(data[i]['cell']['screen_stamp']).format('MMMM Do, YYYY');
+						$("#crawl_date_" + item_id).text(t);
+						$("#hp_boot_drop_" + item_id + " .btn_caret_sign").text(data[i]['cell']['label']);
 				} else {
-					var item_id = $(".hp_boot_drop[data-pos='" + data[i]['pos'] + "']").data('itemid'); 
-					console.log("EMPTY", item_id);
-					$("#art_img_" + item_id).html("");
-					$("#crawl_date_" + item_id).text("");
-					$("#hp_boot_drop_" + item_id + " .btn_caret_sign").text("[ Choose site ]");
+						var item_id = $(".hp_boot_drop[data-pos='" + data[i]['pos'] + "']").data('itemid'); 
+						$("#art_img_" + item_id).html("");
+						$("#crawl_date_" + item_id).text("");
+						$("#hp_boot_drop_" + item_id + " .btn_caret_sign").text("[ Choose site ]");
 				}
     		}
     	}
