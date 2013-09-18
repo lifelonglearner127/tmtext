@@ -2153,6 +2153,10 @@ tbody#category_data tr:hover td, tbody#department_data tr:hover td
     border-bottom:1px solid #000;
 }
 
+tbody#category_data tr td:nth-child(2), tbody#department_data tr td:nth-child(2){
+    text-align: right;
+}
+
 tbody#category_data tr td, tbody#department_data tr td{
     vertical-align: top;
 }
