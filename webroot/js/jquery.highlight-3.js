@@ -2,29 +2,37 @@ $(document).ready(function() {
 var cmd = true;
     $('.cmp-btn').live('click',function() {
         if(cmd){
-			test_page = $(this).attr('test_page');
-			if( test_page )
-				var thisText = $(this).parent().parent().parent().parent().parent().parent().find('.compare').text();
-            else
-				var thisText = $(this).parent().next().text();
             $(this).parent().next().addClass('clicked');
-            //var thisText = $(this).parent().next().text();
+            var thisText = $(this).parent().next().text();
             thisText = thisText.split(' ');
             var twoWordArr = new Array();
             for(var i=0; i<thisText.length; i++){
                 if(thisText[i+1] && thisText[i])
-                    twoWordArr[i] = clean_text(thisText[i])+' '+clean_text(thisText[i+1]);
+                    twoWordArr.push(thisText[i]+' '+thisText[i+1]);
             }
+            var match_arr=[];
             $('.compare').each(function(){
                 if(!$(this).hasClass('clicked')){
                     for(var j=0; j<twoWordArr.length; j++){
                         if(twoWordArr[j]){
-                        var re = new RegExp(twoWordArr[j],"i");
-                        $(this).html($(this).html().replace(re, '<span class="highlight">'+twoWordArr[j]+'</span>'));
-                    }}
+                            var re = new RegExp(twoWordArr[j],"ig");
+                            var arr2 =[];
+                            arr2 = $(this).text().match(re);
+                              if(arr2){
+                                    for(var m = 0; m < arr2.length; m++){
+                                        match_arr.push(arr2[m]);             
+                                    }
+                              }              
+                        }
+                    }
                 }
             });
-            
+            match_arr = array_unique(match_arr)
+            for(var k=0; k<match_arr.length; k++){
+                if(match_arr[k]){
+                var reg = new RegExp(match_arr[k],"ig");
+                $(this).parent().next().html($(this).parent().next().html().replace(reg, '<span class="highlight">'+match_arr[k]+'</span>'));
+            }}
             cmd = false;
         } else {
             $('.compare').each(function(){
@@ -37,6 +45,21 @@ var cmd = true;
         }
     });
     
+
+function array_unique(array) {
+    var p, i, j;
+    for(i = array.length; i;){
+        for(p = --i; p > 0;){
+            if(array[i] === array[--p]){
+                    for(j = p; --p && array[i] === array[p];);
+                    i -= array.splice(p + 1, j - p).length;
+            }
+        }
+
+    }
+    return array;
+}
+ 
  
     $('.primary_name').live('click',function() {
         	
