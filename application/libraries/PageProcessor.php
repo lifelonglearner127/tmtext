@@ -1410,6 +1410,59 @@ class PageProcessor {
 
 		return $result;
 	}
+
+	public function process_newegg(){
+		foreach($this->nokogiri->get('.grpDesc h1 span') as $item) {
+			$title = $item['#text'][0];
+		}
+
+		foreach($this->nokogiri->get('#Overview_Content .itmDesc #overview-content') as $item) {
+			foreach($item['#text'] as $i) {
+				$description[] = trim($i);
+			}
+		}
+		$description = trim(implode(' ',$description));
+
+		if (empty($description)) {
+			foreach($this->nokogiri->get('#Overview_Content .itmDesc p') as $item) {
+				$description[] = trim($item['#text'][0]);
+			}
+			$description = trim(implode(' ',$description));
+		}
+
+		foreach($this->nokogiri->get('#Details_Content #Specs dl') as $item) {
+			if (isset($item['dt']) && isset($item['dd'])) {
+				$features[] = trim($item['dt'][0]['#text'][0]).': '.trim($item['dd'][0]['#text'][0]);
+			}
+		}
+
+		$features = implode("\n",$features);
+
+		return array(
+			'Product Name' => $title,
+			'Description' => $description,
+			'Long_Description' => $descriptionLong,
+			'Features' => $features,
+			'Price' => $price
+		);
+	}
+
+	public function attributes_newegg() {
+		$result = array();
+
+		foreach($this->nokogiri->get('#Details_Content #Specs dl') as $item) {
+			if (isset($item['dt']) && isset($item['dd'])) {
+				$line = trim($item['dt'][0]["#text"][0]);
+				if (!empty($line) && stristr($line, 'brand')!== false) {
+					$result['manufacturer'] = trim($item['dd'][0]['#text'][0]);
+				} else if (!empty($line) && stristr($line, 'model')!== false) {
+					$result['model'] = trim($item['dd'][0]['#text'][0]);
+				}
+			}
+		}
+
+		return $result;
+	}
 }
 
 ?>
