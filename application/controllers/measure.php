@@ -1207,6 +1207,15 @@ class Measure extends MY_Controller {
         $this->output->set_content_type('application/json')->set_output(json_encode($data));
     }
 
+    public function getDashboardCatDetails(){
+        $this->load->model('sites_model');
+        $this->load->model('site_categories_model');
+        $condition = $this->input->post('condition');
+        $site_id = $this->sites_model->getIdByName($this->input->post('site_name'));
+        $data = $this->site_categories_model->getCatData($site_id, $condition);
+        $this->output->set_content_type('application/json')->set_output(json_encode($data));
+    }
+
     public function getDepartmentsByCustomer(){
         $this->load->model('sites_model');
         $this->load->model('department_members_model');

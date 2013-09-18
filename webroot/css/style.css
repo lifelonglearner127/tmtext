@@ -2144,12 +2144,12 @@ span.highlight { background-color:yellow;}
     float:left;
 }
 
-tbody#category_data tr td:hover, tbody#department_data tr td:hover,
-tbody#category_data tr td:active, tbody#department_data tr td:active{
+tbody#category_data tr td span.dep_title:hover, tbody#department_data tr td span.dep_title:hover,
+tbody#category_data tr td span.dep_title:active, tbody#department_data tr td span.dep_title:active{
     cursor: pointer;
     border-bottom:1px solid transparent;
 }
-tbody#category_data tr td:hover, tbody#department_data tr td:hover
+tbody#category_data tr td span.dep_title:hover, tbody#department_data tr td span.dep_title:hover
 {
     border-bottom:1px solid #000;
 }
@@ -2179,7 +2179,7 @@ tbody#category_data tr td, tbody#department_data tr td{
     float: right;
     text-align: right;
     margin-bottom: 10px;
-    width:220px;
+    word-wrap: break-word;
 }
 span.dep_text{
     width:180px;
@@ -2191,5 +2191,12 @@ span.dep_numbers{
     float: right;
 }
 span.dep_title{
+    display: block;
+    float: left;
+    width: 100%;
+}
+span.dep_left_part{
+    float: left;
+    width:280px;
     display: block;
 }
