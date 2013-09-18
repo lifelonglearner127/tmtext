@@ -175,7 +175,7 @@ $( function() {
                             data_str += '<tr class="more_than_0 hidden_row">';
                             var json = data.result0[j].title_keyword_description_density;
                             if(json != ''){
-                                var keywords = JSON.parse(json.replace(/&quot;/ig, '"'));
+                                var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                             }
                             data_str += '<td >'+data.result0[j].text+'</td>' +
                                 '<td>'+data.result0[j].description_words+'</td><td>';
@@ -197,7 +197,7 @@ $( function() {
                             data_str += '<tr class="res_more hidden_row">';
                             var json = data.res_more_data[j].title_keyword_description_density;
                             if(json != ''){
-                                var keywords = JSON.parse(json.replace(/&quot;/ig, '"'));
+                                var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                             }
                             data_str += '<td >'+data.res_more_data[j].text+'</td><td>'+data.res_more_data[j].description_words+'</td><td>';
                             if(json != ''){
@@ -218,7 +218,7 @@ $( function() {
                             data_str += '<tr class="dep_optimize hidden_row">';
                             var json = data.dep_optimize[j].title_keyword_description_density;
                             if(json != ''){
-                                var keywords = JSON.parse(json.replace(/&quot;/ig, '"'));
+                                var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                             }
                             data_str += '<td>'+data.dep_optimize[j].text+'</td><td>'
                                 +data.dep_optimize[j].description_words+'</td><td>';
@@ -403,7 +403,7 @@ $( function() {
                     for(var j=0; j<data.result0.length; j++){
                         var json = data.result0[j].title_keyword_description_density;
                         if(json != ''){
-                            var keywords = JSON.parse(json.replace(/&quot;/ig, '"'));
+                            var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                         }
                         data_str += '<td >'+data.result0[j].text+'</td>' +
                             '<td>'+data.result0[j].description_words+'</td><td>';
@@ -425,7 +425,7 @@ $( function() {
                         data_str += '<tr class="res_more hidden_row">';
                         var json = data.res_more_data[j].title_keyword_description_density;
                         if(json != ''){
-                            var keywords = JSON.parse(json.replace(/&quot;/ig, '"'));
+                            var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                         }
                         data_str += '<td >'+data.res_more_data[j].text+'</td><td>'+data.res_more_data[j].description_words+'</td><td>';
                         if(json != ''){
@@ -446,7 +446,7 @@ $( function() {
                         data_str += '<tr class="dep_optimize hidden_row">';
                         var json = data.dep_optimize[j].title_keyword_description_density;
                         if(json != ''){
-                            var keywords = JSON.parse(json.replace(/&quot;/ig, '"'));
+                            var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                         }
                         data_str += '<td>'+data.dep_optimize[j].text+'</td><td>'
                             +data.dep_optimize[j].description_words+'</td><td>';
@@ -510,7 +510,7 @@ $( function() {
                         data_str += '<tr class="more_than_0 hidden_row">';
                         var json = data.result0[j].title_keyword_description_density;
                         if(json != ''){
-                            var keywords = JSON.parse(json.replace(/&quot;/ig, '"'));
+                            var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                         }
                         data_str += '<td >'+data.result0[j].text+'</td>' +
                             '<td>'+data.result0[j].description_words+'</td><td>';
@@ -531,7 +531,7 @@ $( function() {
                         data_str += '<tr class="res_more hidden_row">';
                         var json = data.res_more_data[j].title_keyword_description_density;
                         if(json != ''){
-                            var keywords = JSON.parse(json.replace(/&quot;/ig, '"'));
+                            var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                         }
                         data_str += '<td >'+data.res_more_data[j].text+'</td><td>'+data.res_more_data[j].description_words+'</td><td>';
                         if(json != ''){
@@ -552,7 +552,7 @@ $( function() {
                         data_str += '<tr class="dep_optimize hidden_row">';
                         var json = data.dep_optimize[j].title_keyword_description_density;
                         if(json != ''){
-                            var keywords = JSON.parse(json);
+                            var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                         }
                         data_str += '<td>'+data.dep_optimize[j].text+'</td><td>'
                             +data.dep_optimize[j].description_words+'</td><td>';
