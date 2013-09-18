@@ -13,6 +13,7 @@ NEWSPIDER_MODULE = 'Walmart.spiders'
 ITEM_PIPELINES = ['Walmart.pipelines.WalmartPipeline']
 
 # # allow duplicates
-# DUPEFILTER_CLASS = 'scrapy.dupefilter.BaseDupeFilter'
+#TODO: this makes it worse. definitely a bug in this
+#DUPEFILTER_CLASS = 'scrapy.dupefilter.BaseDupeFilter'
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'Walmart (+http://www.yourdomain.com)'

@@ -27,7 +27,7 @@ class CaturlsSpider(BaseSpider):
 
 	name = "producturls"
 	allowed_domains = ["staples.com", "bloomingdales.com", "walmart.com", "amazon.com", "bestbuy.com", \
-	"nordstrom.com", "macys.com", "williams-sonoma.com", "overstock.com"]
+	"nordstrom.com", "macys.com", "williams-sonoma.com", "overstock.com", "newegg.com"]
 
 	# store the cateory page url given as an argument into a field and add it to the start_urls list
 	def __init__(self, cat_page, outfile = "product_urls.txt"):
@@ -62,6 +62,8 @@ class CaturlsSpider(BaseSpider):
 		#self.start_urls = ["http://www.williams-sonoma.com/shop/electrics/coffee-makers/?cm_type=gnav"]
 		# overstock tablets
 		#self.start_urls = ["http://www.overstock.com/Electronics/Tablet-PCs/New,/condition,/24821/subcat.html?TID=TN:ELEC:Tablet"]
+		# newegg laptops
+		#self.start_urls = ["http://www.newegg.com/Laptops-Notebooks/SubCategory/ID-32"]
 
 		
 
@@ -304,6 +306,9 @@ class CaturlsSpider(BaseSpider):
 			# else:
 			# 	return Request(url = self.cat_page, callback = self.parsePage_overstock)
 
+		if site == 'newegg':
+			return Request(url = self.cat_page, callback = self.parsePage_newegg, meta = {'page' : 1})
+
 
 	# parse macy's category
 	def parse_macys(self, response):
@@ -530,4 +535,23 @@ class CaturlsSpider(BaseSpider):
 
 				#TODO: same thing for other categories?
 
+	def parsePage_newegg(self, response):
+		hxs = HtmlXPathSelector(response)
 
+		product_links = hxs.select("//div[@class='itemText']/div[@class='wrapper']/a")
+		for product_link in product_links:
+			item = ProductItem()
+			item['product_url'] = product_link.select("@href").extract()[0]
+			yield item
+
+		# crawl further pages
+		# will automatically stop when it doesn't find any more pages because the URL won't be valid
+		page = int(response.meta['page']) + 1
+		next_url = ""
+		if page == 2:
+			next_url = response.url + "/Page-2"
+		else:
+			m = re.match("(http://www.newegg.com/.*Page-)[0-9]+", response.url)
+			if m:
+				next_url = m.group(1) + str(page)
+		yield Request(url = next_url, callback = self.parsePage_newegg, meta = {'page' : page})
