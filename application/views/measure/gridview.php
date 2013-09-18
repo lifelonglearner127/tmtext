@@ -505,6 +505,12 @@ foreach ($same_pr as $ks => $vs) {
     ?>
 
                     </div>
+<?php if(!empty($vs['features'])): ?>
+    <div class="p_feature" >
+        <span class="analysis_content_head">Product Features:</span>
+        <p style="float:none;" class="short_product_name grid_product_name"><?php echo $vs['features']; ?></p>
+    </div>
+<?php endif; ?>
 
                     <div>
 

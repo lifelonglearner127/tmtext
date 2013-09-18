@@ -2560,6 +2560,10 @@ public function gridview() {
                     $data_import[0]['imported_data_id'] = 0;
                 }
             }
+            foreach ($data_import as $key => $row) {
+                $volume[$key]  = $row['product_name'];
+            }
+            array_multisort($volume, SORT_ASC, $data_import);
               
             $data['search_results'] = $data_import;
             $this->load->view('measure/searchmeasuredball', $data);
@@ -2599,6 +2603,10 @@ public function gridview() {
                     }
                 }
             }
+            foreach ($result as $key => $row) {
+                $volume[$key]  = $row['product_name'];
+            }
+            array_multisort($volume, SORT_ASC, $result);
             
            $data['search_results'] = $result;
          
