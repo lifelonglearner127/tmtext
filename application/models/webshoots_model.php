@@ -448,7 +448,7 @@ class Webshoots_model extends CI_Model {
                         'img' => $ws_item->img,
                         'thumb' => $ws_item->thumb,
                         'screen_stamp' => $ws_item->stamp,
-                        'shot_name' => $ws->shot_name
+                        'shot_name' => $ws_item->shot_name
                     );
                     $this->db->update($this->tables['webshoots_select'], $u_object, array('id' => $v->id));
                 }
