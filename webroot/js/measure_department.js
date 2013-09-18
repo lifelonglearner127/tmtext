@@ -165,7 +165,7 @@ $( function() {
                     'site_name': site_name
                 }, function(data) {
                     var dep_content = data.total - data.res_more_than_0;
-                    var dep_optimize = data.keyword_optimize - data.res_more_than_0;
+                    var dep_optimize = data.res_more_than_0 - data.keyword_optimize;
 
                     var data_str = '<tr><td nowrap><span class="dep_left_part">Departments Analyzed: </span>' +
                         '<span class="dep_total_numbers">'+data.total+'</span></td><td>&nbsp;</td></tr>';
@@ -451,7 +451,7 @@ $( function() {
                 'site_name': site_name
             }, function(data) {
                 var dep_content = data.total - data.res_more_than_0;
-                var dep_optimize = data.keyword_optimize - data.res_more_than_0;
+                var dep_optimize = data.res_more_than_0 - data.keyword_optimize;
 
                 var data_str = '<tr><td nowrap><span class="dep_left_part">Departments Analyzed:</span> <span class="dep_total_numbers">'+data.total+'</span></td><td>&nbsp;</td></tr>';
                 data_str += '<tr><td nowrap class="dep_first_part span6"><span class="dep_title"><span class="dep_left_part">Departments that have content:  </span>' +
@@ -614,7 +614,7 @@ $( function() {
                 'site_name': site_name
             }, function(data) {
                 var dep_content = data.total - data.res_more_than_0;
-                var dep_optimize = data.keyword_optimize - data.res_more_than_0;
+                var dep_optimize = data.res_more_than_0 - data.keyword_optimize;
                 var data_str = '<tr><td nowrap><span class="dep_title"><span class="dep_left_part">Categories Analyzed: </span><span class="dep_total_numbers">'+data.total+'</span></span></td><td>&nbsp;</td></tr>';
                 data_str += '<tr><td nowrap class="dep_first_part span6" onclick="getCatData(this, \'`description_words` > 0\');">' +
                     '<span class="dep_title"><span class="dep_left_part">Categories that have content:  </span>' +
