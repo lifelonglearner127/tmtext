@@ -2202,3 +2202,6 @@ span.dep_left_part{
     width:280px;
     display: block;
 }
+.cat_desc{
+    display: none;
+}

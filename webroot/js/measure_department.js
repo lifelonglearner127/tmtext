@@ -5,6 +5,20 @@ delHref,
 updateHref,
 updateId,
 delId;
+var oTable;
+
+/* Formating function for row details */
+function fnFormatDetails ( nTr )
+{
+    var aData = oTable.fnGetData( nTr );
+    var sOut = '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px;">';
+    sOut += '<tr><td>Rendering engine:</td><td>'+aData[2]+' '+aData[5]+'</td></tr>';
+    sOut += '<tr><td>Link to source:</td><td>Could provide a link here</td></tr>';
+    sOut += '<tr><td>Extra info:</td><td>And any further details here (images etc)</td></tr>';
+    sOut += '</table>';
+
+    return sOut;
+}
 
 
 $( function() {
@@ -768,7 +782,7 @@ function readBestSellers(department_id,site_name,table_name) {
             var tableDataString = '';
 			
             for(var i=0; i<data.length; i++){
-				
+
                 tableDataString += '<tr class="site_categorie">';
                 tableDataString += '<td><a href="'+data[i].url+'" target="_blank">'+data[i].text+'</a><input type="hidden" class="categoryID" value="'+data[i].id+'" ></td>';
                 tableDataString += '<td>'+data[i].nr_products+'</td>';
@@ -802,13 +816,12 @@ function readBestSellers(department_id,site_name,table_name) {
                     user_keyword_description_density = ' -  N/A';
                 tableDataString += '<input type="text" style="width: 95px;float: left;margin-right: 5px;" placeholder="Your keyword" onblur="keywordAjax(this);" onkeypress="keywordAjaxCode(this);" name="keyword" value="'+user_seo_keywords+'" />';
                 tableDataString += '<span style="float: left;margin-top: 5px" >'+user_keyword_description_density+'</span></td>';
-                tableDataString += '<td>'+data[i].description_words+'</td>';
+                tableDataString += '<td>';
+                if( data[i].description_text != '' ){
+                    tableDataString += '<div class="cat_desc" style="display:none">'+data[i].description_text+'</div>';
+                }
+                tableDataString += data[i].description_words+'</td>';
                 tableDataString += '</tr>';
-                
-                /*if( data[i].description_text != '' )
-					tableDataString += '<tr count="0" class="category_description_text"><td style="text-align: justify;" colspan="4">'+data[i].description_text+'</td></tr>';
-				else
-					tableDataString += '<tr count="0" class="category_description_text"><td style="text-align: justify;" colspan="4">None</td></tr>';*/
             }
 			
             var categoryCount = data.length;
@@ -828,18 +841,11 @@ function readBestSellers(department_id,site_name,table_name) {
     });
 }
 
-$('.site_categorie').live('click',function(e){
-	e.stopPropagation();
-	
-	$('.category_description_text').each(function(){
-		$(this).hide();
-	});
-	
-	if( $(this).next().is(":visible") ){
-		$(this).next().fadeOut();
-		$(this).attr('count', '0');
-	}else
-		$(this).next().fadeIn();
+$('.site_categorie').live('click',function(){
+	//e.stopPropagation();
+    var txt = $('div.cat_desc').text();
+    $("#mypopup").dialog().empty().append(txt);
+
 });
 
 $('.category_description_text').live('click',function(){

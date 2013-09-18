@@ -274,3 +274,4 @@
 </div>
 <!-- MODALS (END) -->
 
+<div id="mypopup" style="display:none;"></div>
