@@ -111,6 +111,7 @@ class Crons extends MY_Controller {
     public function site_crawler_screens() {
         $this->load->model('webshoots_model');
         $this->load->library('email');
+        $ids_debug = $_GET['ids'];
         $ids = $_GET['ids'];
         $ids = explode(",", $ids);
         $crawls = $this->webshoots_model->get_crawler_list_by_ids($ids);
@@ -134,7 +135,7 @@ class Crons extends MY_Controller {
                 $this->email->from('info@dev.contentsolutionsinc.com', 'Cron notification');
                 $this->email->to('ishulgin8@gmail.com');
                 $this->email->subject('Cron job report for site_crawler_screens');
-                $this->email->message("Cron job for site_crawler_screens is done. Crawler list ids: $ids");
+                $this->email->message("Cron job for site_crawler_screens is done. Crawler list ids: $ids_debug");
                 $this->email->send();
                 // === email debug (end)
             }
