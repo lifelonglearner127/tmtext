@@ -167,7 +167,7 @@ $( function() {
                     var dep_content = data.total - data.res_more_than_0;
                     var dep_optimize = dep_content - data.keyword_optimize;
 
-                    var data_str = '<tr><td nowrap>Departments Analyzed:</td><td colspan="2">'+data.total+'</td></tr>';
+                    var data_str = '<tr><td nowrap>Departments Analyzed:</td><td>'+data.total+'</td><td>&nbsp;</td></tr>';
                     data_str += '<tr><td nowrap>Departments that have content:</td><td>'+data.res_more_than_0+'/'+data.total+'</td>' +
                         '<td>Create content for '+dep_content+' departments</td></tr>';
                     if(data.result0.length > 0){
@@ -395,7 +395,7 @@ $( function() {
                 var dep_content = data.total - data.res_more_than_0;
                 var dep_optimize = dep_content - data.keyword_optimize;
 
-                var data_str = '<tr><td nowrap>Departments Analyzed:</td><td colspan="2">'+data.total+'</td></tr>';
+                var data_str = '<tr><td nowrap>Departments Analyzed:</td><td>'+data.total+'</td><td>&nbsp;</td></tr>';
                 data_str += '<tr><td nowrap>Departments that have content:</td><td>'+data.res_more_than_0+'/'+data.total+'</td>' +
                     '<td>Create content for '+dep_content+' departments</td></tr>';
                 if(data.result0.length > 0){
@@ -502,7 +502,7 @@ $( function() {
                 var dep_content = data.total - data.res_more_than_0;
                 var dep_optimize = dep_content - data.keyword_optimize;
 
-                var data_str = '<tr><td nowrap>Categories Analyzed:</td><td colspan="2">'+data.total+'</td></tr>';
+                var data_str = '<tr><td nowrap>Categories Analyzed:</td><td>'+data.total+'</td><td>&nbsp;</td></tr>';
                 data_str += '<tr><td nowrap>Categories that have content:</td><td>'+data.res_more_than_0+'/'+data.total+'</td>' +
                     '<td>Create content for '+dep_content+' categories</td></tr>';
                 if(data.result0.length > 0){
