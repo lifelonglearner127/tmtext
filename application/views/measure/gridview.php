@@ -792,9 +792,12 @@ if (($i - 1) % 3 != 0) {
         $(this).prev('.rank').show();
        
    });
-   $('.volume').live('hover',function(){
+   $('.volume, .seo_count').live('hover',function(){
         $(this).css('cursor','pointer');
-       
+  });
+  $('.seo_count').live('hover',function(){
+        $(this).css('text-decoration','underline');
+        
   });
  
    $(".grid_se_section").each(function() {
