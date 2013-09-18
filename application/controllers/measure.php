@@ -211,6 +211,7 @@ class Measure extends MY_Controller {
         $res = array(
             'path' => $path,
             'dir' => $dir . "/$url_name.$type",
+            'shot_name' => $url_name.".".$type,
             'call' => $ext_url
         );
         return $res;
@@ -675,13 +676,14 @@ class Measure extends MY_Controller {
                 'uid' => $uid,
                 'year' => $year,
                 'week' => $week,
-                'pos' => 0
+                'pos' => 0,
+                'shot_name' => $crawl_l['shot_name'] 
             );
             $r = $this->webshoots_model->recordUpdateWebshoot($result);
             // === webshots selection refresh attempt (start)
             $this->webshoots_model->selectionRefreshDecision($r); 
             // === webshots selection refresh attempt (end)
-            sleep(10);
+            sleep(5);
         }
         $this->output->set_content_type('application/json')->set_output(true);
     }
@@ -725,7 +727,8 @@ class Measure extends MY_Controller {
                         'img' => $crawl_l['path'],
                         'thumb' => $crawl_l['path'],
                         'dir_thumb' => $crawl_l['dir'],
-                        'dir_img' => $crawl_l['dir']
+                        'dir_img' => $crawl_l['dir'],
+                        'shot_name' => $crawl_l['shot_name']
                     );
                     $this->webshoots_model->updateWebshootById($up_object, $res->id);
                 } else {
@@ -736,13 +739,14 @@ class Measure extends MY_Controller {
                         'img' => $crawl_l['path'],
                         'thumb' => $crawl_l['path'],
                         'dir_thumb' => $crawl_l['dir'],
-                        'dir_img' => $crawl_l['dir']
+                        'dir_img' => $crawl_l['dir'],
+                        'shot_name' => $crawl_l['shot_name']
                     );
                     $this->webshoots_model->updateWebshootById($up_object, $res->id);
                 }
             } 
             $screen_id = $res->id;
-            $this->webshoots_model->recordWebShootSelectionAttempt($screen_id, $uid, $pos, $year, $week, $res->img, $res->thumb, $res->stamp, $res->url, $label); // --- webshoot selection record attempt
+            $this->webshoots_model->recordWebShootSelectionAttempt($screen_id, $uid, $pos, $year, $week, $res->img, $res->thumb, $res->stamp, $res->url, $label, $res->shot_name); // --- webshoot selection record attempt
             $result = $res;
         } else { // --- crawl brand new screenshot
             $http_status = $this->urlExistsCode($c_url);
@@ -762,11 +766,12 @@ class Measure extends MY_Controller {
                     'uid' => $uid,
                     'year' => $year,
                     'week' => $week,
-                    'pos' => $pos
+                    'pos' => $pos,
+                    'shot_name' => $crawl_l['shot_name']
                 );
                 $insert_id = $this->webshoots_model->recordUpdateWebshoot($result);
                 $result = $this->webshoots_model->getWebshootDataById($insert_id);
-                $this->webshoots_model->recordWebShootSelectionAttempt($insert_id, $uid, $pos, $year, $week, $result->img, $result->thumb, $result->stamp, $result->url, $label);
+                $this->webshoots_model->recordWebShootSelectionAttempt($insert_id, $uid, $pos, $year, $week, $result->img, $result->thumb, $result->stamp, $result->url, $label, $res->shot_name);
             } else {
                 @unlink($file);
                 $call_url = $this->webthumb_call_link($c_url);
@@ -781,11 +786,12 @@ class Measure extends MY_Controller {
                     'uid' => $uid,
                     'year' => $year,
                     'week' => $week,
-                    'pos' => $pos
+                    'pos' => $pos,
+                    'shot_name' => $crawl_l['shot_name']
                 );
                 $insert_id = $this->webshoots_model->recordUpdateWebshoot($result);
                 $result = $this->webshoots_model->getWebshootDataById($insert_id);
-                $this->webshoots_model->recordWebShootSelectionAttempt($insert_id, $uid, $pos, $year, $week, $result->img, $result->thumb, $result->stamp, $result->url, $label);
+                $this->webshoots_model->recordWebShootSelectionAttempt($insert_id, $uid, $pos, $year, $week, $result->img, $result->thumb, $result->stamp, $result->url, $label, $res->shot_name);
             }
 
         }
@@ -982,7 +988,8 @@ class Measure extends MY_Controller {
             'uid' => $uid,
             'year' => $year,
             'week' => $week,
-            'pos' => 0
+            'pos' => 0,
+            'shot_name' => $crawl_l['shot_name']
         );
         $r = $this->webshoots_model->recordUpdateWebshoot($result);
         // === webshots selection refresh attempt (start)

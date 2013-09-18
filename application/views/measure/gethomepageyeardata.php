@@ -205,11 +205,19 @@
 		}
 		var getwebshootbyurl = $.post(base_url + 'index.php/measure/getwebshootbyurl', send_data, function(data) {
 			$("#loader_over_" + item_id).remove();
-			$("#screen_lightbox_img_" + item_id).attr('src', data['img']);
-			$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox' style='background-image: url(" + data['img'] + "); background-position: top left; background-repeat: no-repeat;'></a>");
+			var data_img = base_url + "webshoots/" + data['shot_name'];
+			$("#screen_lightbox_img_" + item_id).attr('src', data_img);
+			$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox' style='background-image: url(" + data_img + "); background-position: top left; background-repeat: no-repeat;'></a>");	
 			var t = moment(data['stamp']).format('MMMM Do, YYYY');
 			$("#crawl_date_" + item_id).text(t);
 		});
+		// var getwebshootbyurl = $.post(base_url + 'index.php/measure/getwebshootbyurl', send_data, function(data) {
+		// 	$("#loader_over_" + item_id).remove();
+		// 	$("#screen_lightbox_img_" + item_id).attr('src', data['img']);
+		// 	$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox' style='background-image: url(" + data['img'] + "); background-position: top left; background-repeat: no-repeat;'></a>");
+		// 	var t = moment(data['stamp']).format('MMMM Do, YYYY');
+		// 	$("#crawl_date_" + item_id).text(t);
+		// });
 		// ---- ATTEMPT TO GET SCREENSHOT (END)
 	}
 
@@ -233,24 +241,41 @@
 			title: 'Open Screenshot Control Panel'
 		});
 		// --- screens dropdowns selections scanner (start)
-	    var send_data = {
+    var send_data = {
 			year: $("#year_s > option:selected").val(),
 			week: $(".pagination ul li.page.active").data('week')
 		}
-	    var drop_selection_scan = $.post(base_url + 'index.php/measure/dropselectionscan', send_data, function(data) {
-	    	for(var i=0; i < data.length; i++) {
-	    		if(data[i]['cell'] !== false) {
-	    			if(data[i]['cell']['reset'] == 0) {
-		    			var item_id = $(".hp_boot_drop[data-pos='" + data[i]['pos'] + "']").data('itemid');
-		    			$("#screen_lightbox_img_" + item_id).attr('src', data[i]['cell']['img']);
-						$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox' style='background-image: url(" + data[i]['cell']['img'] + "); background-position: top left; background-repeat: no-repeat;'></a>");
+
+		var drop_selection_scan = $.post(base_url + 'index.php/measure/dropselectionscan', send_data, function(data) {
+    	for(var i=0; i < data.length; i++) {
+    		if(data[i]['cell'] !== false) {
+    			if(data[i]['cell']['reset'] == 0) {
+    				var data_cell_img = base_url + "webshoots/" + data[i]['cell']['shot_name'];
+      			var item_id = $(".hp_boot_drop[data-pos='" + data[i]['pos'] + "']").data('itemid'); 
+      			$("#screen_lightbox_img_" + item_id).attr('src', data_cell_img);
+						$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox' style='background-image: url(" + data_cell_img + "); background-position: top left; background-repeat: no-repeat;'></a>");
 						var t = moment(data[i]['cell']['screen_stamp']).format('MMMM Do, YYYY');
 						$("#crawl_date_" + item_id).text(t);
 						$("#hp_boot_drop_" + item_id + " .btn_caret_sign").text(data[i]['cell']['label']);
 					}
-	    		}
-	    	}
-	    });
+    		}
+    	}
+    });
+
+	    // var drop_selection_scan = $.post(base_url + 'index.php/measure/dropselectionscan', send_data, function(data) {
+	    // 	for(var i=0; i < data.length; i++) {
+	    // 		if(data[i]['cell'] !== false) {
+	    // 			if(data[i]['cell']['reset'] == 0) {
+		   //  			var item_id = $(".hp_boot_drop[data-pos='" + data[i]['pos'] + "']").data('itemid');
+		   //  			$("#screen_lightbox_img_" + item_id).attr('src', data[i]['cell']['img']);
+					// 	$("#art_img_" + item_id).html("<a href='#screen_lightbox_" + item_id  + "' data-toggle='lightbox' style='background-image: url(" + data[i]['cell']['img'] + "); background-position: top left; background-repeat: no-repeat;'></a>");
+					// 	var t = moment(data[i]['cell']['screen_stamp']).format('MMMM Do, YYYY');
+					// 	$("#crawl_date_" + item_id).text(t);
+					// 	$("#hp_boot_drop_" + item_id + " .btn_caret_sign").text(data[i]['cell']['label']);
+					// }
+	    // 		}
+	    // 	}
+	    // });
 	    // --- screens dropdowns selections scanner (end)
 
 	});

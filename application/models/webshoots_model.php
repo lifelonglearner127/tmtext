@@ -283,7 +283,8 @@ class Webshoots_model extends CI_Model {
                         'stamp' => date("Y-m-d H:i:s"),
                         'screen_stamp' => $object_as->stamp,
                         'site' => $candidate_url,
-                        'label' => $candidate_name
+                        'label' => $candidate_name,
+                        'shot_name' => $object_as->shot_name
                     );
                     $this->db->insert($this->tables['webshoots_select'], $insert_object);
                 }
@@ -369,7 +370,7 @@ class Webshoots_model extends CI_Model {
         return $res;
     }
 
-    function recordWebShootSelectionAttempt($screen_id, $uid, $pos, $year, $week, $img, $thumb, $screen_stamp, $url, $label) {
+    function recordWebShootSelectionAttempt($screen_id, $uid, $pos, $year, $week, $img, $thumb, $screen_stamp, $url, $label, $shot_name) {
         $res = false;
         $check_obj = array(
             'pos' => $pos,
@@ -388,7 +389,8 @@ class Webshoots_model extends CI_Model {
                 'screen_stamp' => $screen_stamp, 
                 'site' => $url, 
                 'label' => $label,
-                'reset' => 0
+                'reset' => 0,
+                'shot_name' => $shot_name
             );
             $this->db->update($this->tables['webshoots_select'], $update_object, $check_obj);
         } else { // --- new
@@ -403,7 +405,8 @@ class Webshoots_model extends CI_Model {
                 'stamp' => date("Y-m-d H:i:s"),
                 'screen_stamp' => $screen_stamp,
                 'site' => $url,
-                'label' => $label
+                'label' => $label,
+                'shot_name' => $shot_name
             );
             $this->db->insert($this->tables['webshoots_select'], $insert_object);
         }
@@ -444,7 +447,8 @@ class Webshoots_model extends CI_Model {
                         'screen_id' => $ws_item->id,
                         'img' => $ws_item->img,
                         'thumb' => $ws_item->thumb,
-                        'screen_stamp' => $ws_item->stamp
+                        'screen_stamp' => $ws_item->stamp,
+                        'shot_name' => $ws->shot_name
                     );
                     $this->db->update($this->tables['webshoots_select'], $u_object, array('id' => $v->id));
                 }
@@ -463,7 +467,8 @@ class Webshoots_model extends CI_Model {
             'uid' => $result['uid'],
             'year' => $result['year'],
             'week' => $result['week'],
-            'pos' => $result['pos']
+            'pos' => $result['pos'],
+            'shot_name' => $result['shot_name'] 
         );
         $this->db->insert($this->tables['webshoots'], $insert_object);
         $insert_id = $this->db->insert_id();
