@@ -157,23 +157,21 @@ class Site_categories_model extends CI_Model {
 
     function getDescriptionData($site_id)
     {
-        $sql_total = $this->db->query("SELECT count(*) as c FROM `site_categories` WHERE `site_id`=".$site_id."");
-        $total = $sql_total->result();
-        $sql_avg = $this->db->query("SELECT round(avg(`description_words`)) AS c FROM `site_categories` WHERE `site_id`=".$site_id." and `description_words`>0 GROUP BY `site_id`");
-        $result_avg = $sql_avg->result();
-        $sql_more = $this->db->query("SELECT count(*) AS c FROM `site_categories` WHERE `site_id`=".$site_id." and (`description_words`>0 and `description_words`<250) GROUP BY `site_id`");
-        $result_more = $sql_more->result();
+        $sql = $this->db->query("SELECT count(*) as total,
+                (SELECT round(avg(`description_words`)) AS c  FROM `site_categories` WHERE `site_id`=".$site_id." and `description_words`>0 GROUP BY `site_id`) as res_avg,
+                count(if((`description_words`>0 and `description_words`<250), id, null)) as more,
+                count(if(`description_words`>0, id, null)) as more_than_0
+                FROM  `site_categories` WHERE `site_id`=".$site_id."");
+        $result = $sql->result();
         $sql_more_data = $this->db->query("SELECT * FROM `site_categories` WHERE `site_id`=".$site_id." and (`description_words`>0 and `description_words`<250)");
         $result_more_data = $sql_more_data->result();
-        $sql_more_than_0 = $this->db->query("SELECT count(*) as c FROM `site_categories` WHERE `site_id`=".$site_id." and `description_words` > 0");
-        $result_more_than_0 = $sql_more_than_0->result();
         $sql_data_more_than_0 = $this->db->query("SELECT * FROM `site_categories` WHERE `site_id`=".$site_id." and `description_words` > 0");
         $res_data_more_than_0 = $sql_data_more_than_0->result();
-        $sql0 = $this->db->query("SELECT * FROM `site_categories` WHERE `site_id`=".$site_id." and `description_words`=0");
+        $sql0 = $this->db->query("SELECT * FROM  `site_categories` WHERE `site_id`=".$site_id." and `description_words`=0");
         $result0 = $sql0->result();
-        return array('total' => $total[0]->c, 'result0'=> $result0,
-            'res_avg' => $result_avg[0]->c, 'res_more' => $result_more[0]->c, 'res_more_data' => $result_more_data,
-            'res_more_than_0' => $result_more_than_0[0]->c, 'res_data_more_than_0' => $res_data_more_than_0 );
+        return array('total' => $result[0]->total, 'result0'=> $result0,
+            'res_avg' => $result[0]->res_avg, 'res_more' => $result[0]->more, 'res_more_data' => $result_more_data,
+            'res_more_than_0' => $result[0]->more_than_0, 'res_data_more_than_0' => $res_data_more_than_0 );
     }
 
     function getCategoriesByWc($site_id)
