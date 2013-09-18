@@ -182,11 +182,13 @@ class Department_members_model extends CI_Model {
         $result_more_data = $sql_more_data->result();
         $sql_more_than_0 = $this->db->query("SELECT count(*) as c FROM `department_members` WHERE `site_id`=".$site_id." and `description_words` > 0");
         $result_more_than_0 = $sql_more_than_0->result();
+        $sql_data_more_than_0 = $this->db->query("SELECT * FROM `department_members` WHERE `site_id`=".$site_id." and `description_words` > 0");
+        $res_data_more_than_0 = $sql_data_more_than_0->result();
         $sql0 = $this->db->query("SELECT * FROM `department_members` WHERE `site_id`=".$site_id." and `description_words`=0");
         $result0 = $sql0->result();
         return array('total' => $total[0]->c, 'result0'=> $result0,
             'res_avg' => $result_avg[0]->c, 'res_more' => $result_more[0]->c, 'res_more_data' => $result_more_data,
-            'res_more_than_0' => $result_more_than_0[0]->c );
+            'res_more_than_0' => $result_more_than_0[0]->c, 'res_data_more_than_0' => $res_data_more_than_0 );
     }
 
     function getDepartmentsByWc($site_id)

@@ -214,7 +214,7 @@
             <table class="dashboard" style="display: none">
                     <thead>
                         <tr>
-                            <th colspan="2">
+                            <th>
                                         <div id="hp_boot_drop_sec_dashboard"  class="btn-group hp_boot_drop_sec_dashboard  mr_10" style="float:left;">
                                             <button class="btn btn-danger btn_caret_sign_sec" >Departments</button>
                                             <button class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
@@ -226,7 +226,7 @@
                                             </ul>
                                         </div>
                             </th>
-                            <th colspan="2" style="text-align:left; padding-left: 30px;">Recommended Actions</th>
+                            <th>Recommended Actions</th>
                         </tr>
                     </thead>
                     <tbody id="department_data" style="display: none"></tbody>

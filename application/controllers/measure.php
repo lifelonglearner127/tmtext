@@ -1153,8 +1153,9 @@ class Measure extends MY_Controller {
         $site_id = $this->sites_model->getIdByName($this->input->post('site_name'));
         $data = $this->department_members_model->getDescriptionData($site_id);
         $data_more = $this->department_members_model->getDepartmentsByWc($site_id);
-        $count_dep = 0;
-        $count_optimize = array();
+        $keyword_optimize = 0;
+        $keyword_optimize_data = array();
+        $dep_optimize = array();
         foreach($data_more as $key => $obj){
             $keywords_density = json_decode($data_more[$key]->title_keyword_description_density);
             $num = 0;
@@ -1166,11 +1167,13 @@ class Measure extends MY_Controller {
                 }
             }
             if($num == 0){
-                array_push($count_optimize, $obj);
+                array_push($dep_optimize, $obj);
+            }else{
+                array_push($keyword_optimize_data, $obj);
             }
-            $count_dep += $num;
+            $keyword_optimize += $num;
         }
-        $data = array_merge($data, array('keyword_optimize' => $count_dep, 'dep_optimize'=>$count_optimize));
+        $data = array_merge($data, array('keyword_optimize' => $keyword_optimize,'keyword_optimize_data' => $keyword_optimize_data, 'dep_optimize'=>$dep_optimize));
         $this->output->set_content_type('application/json')->set_output(json_encode($data));
     }
 
@@ -1180,8 +1183,9 @@ class Measure extends MY_Controller {
         $site_id = $this->sites_model->getIdByName($this->input->post('site_name'));
         $data = $this->site_categories_model->getDescriptionData($site_id);
         $data_more = $this->site_categories_model->getCategoriesByWc($site_id);
-        $count_dep = 0;
-        $count_optimize = array();
+        $keyword_optimize = 0;
+        $keyword_optimize_data = array();
+        $dep_optimize = array();
         foreach($data_more as $key => $obj){
             $keywords_density = json_decode($data_more[$key]->title_keyword_description_density);
             $num = 0;
@@ -1193,12 +1197,13 @@ class Measure extends MY_Controller {
                 }
             }
             if($num == 0){
-                array_push($count_optimize, $obj);
+                array_push($dep_optimize, $obj);
+            }else{
+                array_push($keyword_optimize_data, $obj);
             }
-            $count_dep += $num;
+            $keyword_optimize += $num;
         }
-        $data = array_merge($data, array('keyword_optimize' => $count_dep, 'dep_optimize'=>$count_optimize));
-        $this->output->set_content_type('application/json')->set_output(json_encode($data));
+        $data = array_merge($data, array('keyword_optimize' => $keyword_optimize,'keyword_optimize_data' => $keyword_optimize_data, 'dep_optimize'=>$dep_optimize));
         $this->output->set_content_type('application/json')->set_output(json_encode($data));
     }
 

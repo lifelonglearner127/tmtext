@@ -2110,15 +2110,12 @@ span.highlight { background-color:yellow;}
 }
 .dashboard thead th{
     font-weight: bold;
+    width: 450px;
+    text-align: left;
 }
 .dashboard thead th, .dashboard tbody td{
     padding: 3px;
 }
-.dashboard tbody td:last-child{
-    padding-left: 30px;
-    display: block;
-}
-
 .category_description_text{display: none;}
 
 .seo_prc, cseo_count, .rank, .volume :hover{
@@ -2147,24 +2144,52 @@ span.highlight { background-color:yellow;}
     float:left;
 }
 
-tbody#category_data tr:hover, tbody#department_data tr:hover,
-tbody#category_data tr:active, tbody#department_data tr:active{
+tbody#category_data tr td:hover, tbody#department_data tr td:hover,
+tbody#category_data tr td:active, tbody#department_data tr td:active{
     cursor: pointer;
     border-bottom:1px solid transparent;
 }
-tbody#category_data tr:hover td, tbody#department_data tr:hover td
+tbody#category_data tr td:hover, tbody#department_data tr td:hover
 {
     border-bottom:1px solid #000;
 }
 
-tbody#category_data tr td:nth-child(2), tbody#department_data tr td:nth-child(2){
-    text-align: right;
-}
-
 tbody#category_data tr td, tbody#department_data tr td{
     vertical-align: top;
+    padding: 5px;
 }
 .hidden_row{
     display: none;
     font-size: 12px;
+}
+
+#department_data ul, .dep_second_part ul, #category_data ul{
+    font-size: 12px;
+    margin-left: 5px;
+    display: none;
+}
+
+#department_data ul li, #category_data ul li{
+    clear: both;
+}
+#department_data ul li span:first-child, #category_data ul li span:first-child{
+    float: left;
+}
+#department_data ul li span:last-child, #category_data ul li span:last-child{
+    float: right;
+    text-align: right;
+    margin-bottom: 10px;
+    width:220px;
+}
+span.dep_text{
+    width:180px;
+}
+span.dep_numbers{
+     width:45px;
+}
+.dep_total_numbers{
+    float: right;
+}
+span.dep_title{
+    display: block;
 }

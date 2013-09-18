@@ -165,20 +165,42 @@ $( function() {
                     'site_name': site_name
                 }, function(data) {
                     var dep_content = data.total - data.res_more_than_0;
-                    var dep_optimize = dep_content - data.keyword_optimize;
+                    var dep_optimize = data.keyword_optimize - data.res_more_than_0;
 
-                    var data_str = '<tr><td nowrap>Departments Analyzed:</td><td>'+data.total+'</td><td>&nbsp;</td></tr>';
-                    data_str += '<tr><td nowrap>Departments that have content:</td><td>'+data.res_more_than_0+'/'+data.total+'</td>' +
-                        '<td>Create content for '+dep_content+' departments</td></tr>';
+                    var data_str = '<tr><td nowrap>Departments Analyzed: <span class="dep_total_numbers">'+data.total+'</span></td><td>&nbsp;</td></tr>';
+                    data_str += '<tr><td nowrap class="dep_first_part span6"><span class="dep_title">Departments that have content:  <span class="dep_total_numbers">'+data.res_more_than_0+'/'+data.total+'</span></span>';
+                    if(data.res_data_more_than_0.length > 0){
+                        data_str += '<ul>';
+                        for(var j=0; j<data.res_data_more_than_0.length; j++){
+                            var json = data.res_data_more_than_0[j].title_keyword_description_density;
+                            if(json != ''){
+                                var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
+                            }
+                            data_str += '<li><span class="dep_text">'+data.res_data_more_than_0[j].text+'</span><span class="dep_numbers">' +
+                                data.res_data_more_than_0[j].description_words+'</span><span class="dep_keywords">';
+                            if(json != ''){
+                                jQuery.each(keywords, function(i, val) {
+                                    data_str += i+' - '+val+'%<br />';
+                                });
+                            } else {
+                                data_str += ' - ';
+                            }
+                            data_str += '</span></li>';
+                        }
+                        data_str += '</ul>';
+                    }
+                    data_str += '</td>';
+                    data_str += '<td class="dep_second_part span6"><span class="dep_title">Create content for '+dep_content+' departments</span>';
                     if(data.result0.length > 0){
+                        data_str += '<ul>';
                         for(var j=0; j<data.result0.length; j++){
-                            data_str += '<tr class="more_than_0 hidden_row">';
+                            data_str += '<li>';
                             var json = data.result0[j].title_keyword_description_density;
                             if(json != ''){
                                 var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                             }
-                            data_str += '<td >'+data.result0[j].text+'</td>' +
-                                '<td>'+data.result0[j].description_words+'</td><td>';
+                            data_str += '<span class="dep_text">'+data.result0[j].text+'</span><span class="dep_numbers">'
+                                +data.result0[j].description_words+'</span><span class="dep_keywords">';
                             if(json != ''){
                                 jQuery.each(keywords, function(i, val) {
                                     data_str += i+' - '+val+'%<br />';
@@ -186,20 +208,22 @@ $( function() {
                             } else {
                                 data_str += ' - ';
                             }
-                            data_str += '</td></tr>';
+                            data_str += '</span></li>';
                         }
+                        data_str += '</ul>';
                     }
-                    data_str += '<tr><td nowrap>Average content word count:</td><td>'+data.res_avg+'</td>' +
-                        '<td>Add more words to '+data.res_more+' departments</td></tr>';
-                    if(data.res_more_data.length > 0){
+                    data_str += '</td></tr>';
 
+                   data_str += '<tr><td nowrap class="span6 dep_first_part"><span class="dep_title">Average content word count: <span class="dep_total_numbers">'+data.res_avg+'</span></span>';
+                    if(data.res_more_data.length > 0){
+                        data_str += '<ul>';
                         for(var j=0; j<data.res_more_data.length; j++){
-                            data_str += '<tr class="res_more hidden_row">';
                             var json = data.res_more_data[j].title_keyword_description_density;
                             if(json != ''){
                                 var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                             }
-                            data_str += '<td >'+data.res_more_data[j].text+'</td><td>'+data.res_more_data[j].description_words+'</td><td>';
+                            data_str += '<li><span class="dep_text">'+data.res_more_data[j].text+'</span><span class="dep_numbers">'
+                                +data.res_more_data[j].description_words+'</span><span class="dep_keywords">';
                             if(json != ''){
                                 jQuery.each(keywords, function(i, val) {
                                     data_str += i+' - '+val+'%<br />';
@@ -207,21 +231,67 @@ $( function() {
                             } else {
                                 data_str += ' - ';
                             }
-                            data_str += '</td></tr>';
+                            data_str += '</span></li>';
                         }
+                        data_str += '</ul>';
                     }
+                    data_str += '</td>';
+                    data_str += '<td class="span6 dep_second_part"><span class="dep_title">Add more words to '+data.res_more+' departments</span>';
+                    if(data.res_more_data.length > 0){
+                        data_str += '<ul>';
+                        for(var j=0; j<data.res_more_data.length; j++){
+                            var json = data.res_more_data[j].title_keyword_description_density;
+                            if(json != ''){
+                                var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
+                            }
+                            data_str += '<li><span class="dep_text">'+data.res_more_data[j].text+'</span><span class="dep_numbers">'
+                                +data.res_more_data[j].description_words+'</span><span class="dep_keywords">';
+                            if(json != ''){
+                                jQuery.each(keywords, function(i, val) {
+                                    data_str += i+' - '+val+'%<br />';
+                                });
+                            } else {
+                                data_str += ' - ';
+                            }
+                            data_str += '</span></li>';
+                        }
+                        data_str += '</ul>';
+                    }
+                    data_str += '</td></tr>';
 
-                    data_str += '<tr><td>Departments optimized:</td><td>'+data.keyword_optimize+'/'+dep_content+'</td>' +
-                        '<td>Optimize '+dep_optimize+' departments</td></tr>';
+
+                    data_str += '<tr><td><span class="dep_title">Departments optimized: <span class="dep_total_numbers">'+data.keyword_optimize+'/'+data.res_more_than_0+'</span></span>';
+                    if(data.keyword_optimize_data.length > 0){
+                        data_str += '<ul>';
+                        for(var j=0; j<data.keyword_optimize_data.length; j++){
+                            var json = data.keyword_optimize_data[j].title_keyword_description_density;
+                            if(json != ''){
+                                var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
+                            }
+                            data_str += '<li><span class="dep_text">'+data.dep_optimize[j].text+'</span><span class="dep_numbers">'
+                                +data.dep_optimize[j].description_words+'</span><span class="dep_keywords">';
+                            if(json != ''){
+                                jQuery.each(keywords, function(i, val) {
+                                    data_str += i+' - '+val+'%<br />';
+                                });
+                            } else {
+                                data_str += ' - ';
+                            }
+                            data_str += '</span></li>';
+                        }
+                        data_str += '</ul>';
+                    }
+                    data_str += '</td>';
+                    data_str += '<td><span class="dep_title">Optimize '+dep_optimize+' departments</span>';
                     if(data.dep_optimize.length > 0){
+                        data_str += '<ul>';
                         for(var j=0; j<data.dep_optimize.length; j++){
-                            data_str += '<tr class="dep_optimize hidden_row">';
                             var json = data.dep_optimize[j].title_keyword_description_density;
                             if(json != ''){
                                 var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                             }
-                            data_str += '<td>'+data.dep_optimize[j].text+'</td><td>'
-                                +data.dep_optimize[j].description_words+'</td><td>';
+                            data_str += '<li><span class="dep_text">'+data.dep_optimize[j].text+'</span><span class="dep_numbers">'
+                                +data.dep_optimize[j].description_words+'</span><span class="dep_keywords">';
                             if(json != ''){
                                 jQuery.each(keywords, function(i, val) {
                                     data_str += i+' - '+val+'%<br />';
@@ -229,38 +299,21 @@ $( function() {
                             } else {
                                 data_str += ' - ';
                             }
-                            data_str += '</td></tr>';
+                            data_str += '</span></li>';
                         }
+                        data_str += '<ul>';
                     }
+                    data_str += '</td></tr>';
+
                     $("tbody#department_data").append(data_str);
-                    $("tbody#department_data tr").click(function() {
-                        var next = $(this).next();
-                        if(next.hasClass('more_than_0')){
-                            if(next.eq(0).css('display')=='none'){
-                                $('.more_than_0').show();
-                                $('.res_more').hide();
-                                $('.dep_optimize').hide();
-                            } else {
-                                $('.more_than_0').hide();
-                            }
-                        }
-                        if(next.hasClass('res_more')){
-                            if(next.eq(0).css('display')=='none'){
-                                $('.res_more').show();
-                                $('.more_than_0').hide();
-                                $('.dep_optimize').hide();
-                            } else {
-                                $('.res_more').hide();
-                            }
-                        }
-                        if(next.hasClass('dep_optimize')){
-                            if(next.eq(0).css('display')=='none'){
-                                $('.dep_optimize').show();
-                                $('.res_more').hide();
-                                $('.more_than_0').hide();
-                            } else {
-                                $('.dep_optimize').hide();
-                            }
+                    $("tbody#department_data tr td").click(function() {
+                        var el = $(this).find('ul');
+                        if(el.css('display') == 'none'){
+                            $(this).find('span.dep_title').css({'border-bottom':'1px solid #000'});
+                            el.css({'display':'block'});
+                        } else {
+                            el.css({'display':'none'});
+                            $(this).find('span.dep_title').css({'border-bottom':'none'});
                         }
                     });
                 });
@@ -393,20 +446,42 @@ $( function() {
                 'site_name': site_name
             }, function(data) {
                 var dep_content = data.total - data.res_more_than_0;
-                var dep_optimize = dep_content - data.keyword_optimize;
+                var dep_optimize = data.keyword_optimize - data.res_more_than_0;
 
-                var data_str = '<tr><td nowrap>Departments Analyzed:</td><td>'+data.total+'</td><td>&nbsp;</td></tr>';
-                data_str += '<tr><td nowrap>Departments that have content:</td><td>'+data.res_more_than_0+'/'+data.total+'</td>' +
-                    '<td>Create content for '+dep_content+' departments</td></tr>';
+                var data_str = '<tr><td nowrap>Departments Analyzed: <span class="dep_total_numbers">'+data.total+'</span></td><td>&nbsp;</td></tr>';
+                data_str += '<tr><td nowrap class="dep_first_part span6"><span class="dep_title">Departments that have content:  <span class="dep_total_numbers">'+data.res_more_than_0+'/'+data.total+'</span></span>';
+                if(data.res_data_more_than_0.length > 0){
+                    data_str += '<ul>';
+                    for(var j=0; j<data.res_data_more_than_0.length; j++){
+                        var json = data.res_data_more_than_0[j].title_keyword_description_density;
+                        if(json != ''){
+                            var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
+                        }
+                        data_str += '<li><span class="dep_text">'+data.res_data_more_than_0[j].text+'</span><span class="dep_numbers">' +
+                            data.res_data_more_than_0[j].description_words+'</span><span class="dep_keywords">';
+                        if(json != ''){
+                            jQuery.each(keywords, function(i, val) {
+                                data_str += i+' - '+val+'%<br />';
+                            });
+                        } else {
+                            data_str += ' - ';
+                        }
+                        data_str += '</span></li>';
+                    }
+                    data_str += '</ul>';
+                }
+                data_str += '</td>';
+                data_str += '<td class="dep_second_part span6"><span class="dep_title">Create content for '+dep_content+' departments</span>';
                 if(data.result0.length > 0){
-                    data_str += '<tr class="more_than_0 hidden_row">';
+                    data_str += '<ul>';
                     for(var j=0; j<data.result0.length; j++){
+                        data_str += '<li>';
                         var json = data.result0[j].title_keyword_description_density;
                         if(json != ''){
                             var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                         }
-                        data_str += '<td >'+data.result0[j].text+'</td>' +
-                            '<td>'+data.result0[j].description_words+'</td><td>';
+                        data_str += '<span class="dep_text">'+data.result0[j].text+'</span><span class="dep_numbers">'
+                            +data.result0[j].description_words+'</span><span class="dep_keywords">';
                         if(json != ''){
                             jQuery.each(keywords, function(i, val) {
                                 data_str += i+' - '+val+'%<br />';
@@ -414,20 +489,22 @@ $( function() {
                         } else {
                             data_str += ' - ';
                         }
-                        data_str += '</td>';
+                        data_str += '</span></li>';
                     }
-                    data_str += '</tr>';
+                    data_str += '</ul>';
                 }
-                data_str += '<tr><td nowrap>Average content word count:</td><td>'+data.res_avg+'</td>' +
-                    '<td>Add more words to '+data.res_more+' departments</td></tr>';
+                data_str += '</td></tr>';
+
+                data_str += '<tr><td nowrap class="span6 dep_first_part"><span class="dep_title">Average content word count: <span class="dep_total_numbers">'+data.res_avg+'</span></span>';
                 if(data.res_more_data.length > 0){
+                    data_str += '<ul>';
                     for(var j=0; j<data.res_more_data.length; j++){
-                        data_str += '<tr class="res_more hidden_row">';
                         var json = data.res_more_data[j].title_keyword_description_density;
                         if(json != ''){
                             var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                         }
-                        data_str += '<td >'+data.res_more_data[j].text+'</td><td>'+data.res_more_data[j].description_words+'</td><td>';
+                        data_str += '<li><span class="dep_text">'+data.res_more_data[j].text+'</span><span class="dep_numbers">'
+                            +data.res_more_data[j].description_words+'</span><span class="dep_keywords">';
                         if(json != ''){
                             jQuery.each(keywords, function(i, val) {
                                 data_str += i+' - '+val+'%<br />';
@@ -435,21 +512,67 @@ $( function() {
                         } else {
                             data_str += ' - ';
                         }
-                        data_str += '</td></tr>';
+                        data_str += '</span></li>';
                     }
+                    data_str += '</ul>';
                 }
+                data_str += '</td>';
+                data_str += '<td class="span6 dep_second_part"><span class="dep_title">Add more words to '+data.res_more+' departments</span>';
+                if(data.res_more_data.length > 0){
+                    data_str += '<ul>';
+                    for(var j=0; j<data.res_more_data.length; j++){
+                        var json = data.res_more_data[j].title_keyword_description_density;
+                        if(json != ''){
+                            var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
+                        }
+                        data_str += '<li><span class="dep_text">'+data.res_more_data[j].text+'</span><span class="dep_numbers">'
+                            +data.res_more_data[j].description_words+'</span><span class="dep_keywords">';
+                        if(json != ''){
+                            jQuery.each(keywords, function(i, val) {
+                                data_str += i+' - '+val+'%<br />';
+                            });
+                        } else {
+                            data_str += ' - ';
+                        }
+                        data_str += '</span></li>';
+                    }
+                    data_str += '</ul>';
+                }
+                data_str += '</td></tr>';
 
-                data_str += '<tr><td>Departments optimized:</td><td>'+data.keyword_optimize+'/'+dep_content+'</td>' +
-                    '<td>Optimize '+dep_optimize+' departments</td></tr>';
+
+                data_str += '<tr><td><span class="dep_title">Departments optimized: <span class="dep_total_numbers">'+data.keyword_optimize+'/'+data.res_more_than_0+'</span></span>';
+                if(data.keyword_optimize_data.length > 0){
+                    data_str += '<ul>';
+                    for(var j=0; j<data.keyword_optimize_data.length; j++){
+                        var json = data.keyword_optimize_data[j].title_keyword_description_density;
+                        if(json != ''){
+                            var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
+                        }
+                        data_str += '<li><span class="dep_text">'+data.dep_optimize[j].text+'</span><span class="dep_numbers">'
+                            +data.dep_optimize[j].description_words+'</span><span class="dep_keywords">';
+                        if(json != ''){
+                            jQuery.each(keywords, function(i, val) {
+                                data_str += i+' - '+val+'%<br />';
+                            });
+                        } else {
+                            data_str += ' - ';
+                        }
+                        data_str += '</span></li>';
+                    }
+                    data_str += '</ul>';
+                }
+                data_str += '</td>';
+                data_str += '<td><span class="dep_title">Optimize '+dep_optimize+' departments</span>';
                 if(data.dep_optimize.length > 0){
+                    data_str += '<ul>';
                     for(var j=0; j<data.dep_optimize.length; j++){
-                        data_str += '<tr class="dep_optimize hidden_row">';
                         var json = data.dep_optimize[j].title_keyword_description_density;
                         if(json != ''){
                             var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                         }
-                        data_str += '<td>'+data.dep_optimize[j].text+'</td><td>'
-                            +data.dep_optimize[j].description_words+'</td><td>';
+                        data_str += '<li><span class="dep_text">'+data.dep_optimize[j].text+'</span><span class="dep_numbers">'
+                            +data.dep_optimize[j].description_words+'</span><span class="dep_keywords">';
                         if(json != ''){
                             jQuery.each(keywords, function(i, val) {
                                 data_str += i+' - '+val+'%<br />';
@@ -457,38 +580,21 @@ $( function() {
                         } else {
                             data_str += ' - ';
                         }
-                        data_str += '</td></tr>';
+                        data_str += '</span></li>';
                     }
+                    data_str += '<ul>';
                 }
+                data_str += '</td></tr>';
+
                 $("tbody#department_data").append(data_str);
-                $("tbody#department_data tr").click(function() {
-                    var next = $(this).next();
-                    if(next.hasClass('more_than_0')){
-                        if(next.eq(0).css('display')=='none'){
-                            $('.more_than_0').show();
-                            $('.res_more').hide();
-                            $('.dep_optimize').hide();
-                        } else {
-                            $('.more_than_0').hide();
-                        }
-                    }
-                    if(next.hasClass('res_more')){
-                        if(next.eq(0).css('display')=='none'){
-                            $('.res_more').show();
-                            $('.more_than_0').hide();
-                            $('.dep_optimize').hide();
-                        } else {
-                            $('.res_more').hide();
-                        }
-                    }
-                    if(next.hasClass('dep_optimize')){
-                        if(next.eq(0).css('display')=='none'){
-                            $('.dep_optimize').show();
-                            $('.res_more').hide();
-                            $('.more_than_0').hide();
-                        } else {
-                            $('.dep_optimize').hide();
-                        }
+                $("tbody#department_data tr td").click(function() {
+                    var el = $(this).find('ul');
+                    if(el.css('display') == 'none'){
+                        $(this).find('span.dep_title').css({'border-bottom':'1px solid #000'});
+                        el.css({'display':'block'});
+                    } else {
+                        el.css({'display':'none'});
+                        $(this).find('span.dep_title').css({'border-bottom':'none'});
                     }
                 });
             });
@@ -500,20 +606,41 @@ $( function() {
                 'site_name': site_name
             }, function(data) {
                 var dep_content = data.total - data.res_more_than_0;
-                var dep_optimize = dep_content - data.keyword_optimize;
-
-                var data_str = '<tr><td nowrap>Categories Analyzed:</td><td>'+data.total+'</td><td>&nbsp;</td></tr>';
-                data_str += '<tr><td nowrap>Categories that have content:</td><td>'+data.res_more_than_0+'/'+data.total+'</td>' +
-                    '<td>Create content for '+dep_content+' categories</td></tr>';
+                var dep_optimize = data.keyword_optimize - data.res_more_than_0;
+                var data_str = '<tr><td nowrap>Categories Analyzed: <span class="dep_total_numbers">'+data.total+'</span></td><td>&nbsp;</td></tr>';
+                data_str += '<tr><td nowrap class="dep_first_part span6"><span class="dep_title">Categories that have content:  <span class="dep_total_numbers">'+data.res_more_than_0+'/'+data.total+'</span></span>';
+                if(data.res_data_more_than_0.length > 0){
+                    data_str += '<ul>';
+                    for(var j=0; j<data.res_data_more_than_0.length; j++){
+                        var json = data.res_data_more_than_0[j].title_keyword_description_density;
+                        if(json != ''){
+                            var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
+                        }
+                        data_str += '<li><span class="dep_text">'+data.res_data_more_than_0[j].text+'</span><span class="dep_numbers">' +
+                            data.res_data_more_than_0[j].description_words+'</span><span class="dep_keywords">';
+                        if(json != ''){
+                            jQuery.each(keywords, function(i, val) {
+                                data_str += i+' - '+val+'%<br />';
+                            });
+                        } else {
+                            data_str += ' - ';
+                        }
+                        data_str += '</span></li>';
+                    }
+                    data_str += '</ul>';
+                }
+                data_str += '</td>';
+                data_str += '<td class="dep_second_part span6"><span class="dep_title">Create content for '+dep_content+' categories</span>';
                 if(data.result0.length > 0){
+                    data_str += '<ul>';
                     for(var j=0; j<data.result0.length; j++){
-                        data_str += '<tr class="more_than_0 hidden_row">';
+                        data_str += '<li>';
                         var json = data.result0[j].title_keyword_description_density;
                         if(json != ''){
                             var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                         }
-                        data_str += '<td >'+data.result0[j].text+'</td>' +
-                            '<td>'+data.result0[j].description_words+'</td><td>';
+                        data_str += '<span class="dep_text">'+data.result0[j].text+'</span><span class="dep_numbers">'
+                            +data.result0[j].description_words+'</span><span class="dep_keywords">';
                         if(json != ''){
                             jQuery.each(keywords, function(i, val) {
                                 data_str += i+' - '+val+'%<br />';
@@ -521,19 +648,22 @@ $( function() {
                         } else {
                             data_str += ' - ';
                         }
-                        data_str += '</td></tr>';
+                        data_str += '</span></li>';
                     }
+                    data_str += '</ul>';
                 }
-                data_str += '<tr><td nowrap>Average content word count:</td><td>'+data.res_avg+'</td>' +
-                    '<td>Add more words to '+data.res_more+' categories</td></tr>';
+                data_str += '</td></tr>';
+
+                data_str += '<tr><td nowrap class="span6 dep_first_part"><span class="dep_title">Average content word count: <span class="dep_total_numbers">'+data.res_avg+'</span></span>';
                 if(data.res_more_data.length > 0){
+                    data_str += '<ul>';
                     for(var j=0; j<data.res_more_data.length; j++){
-                        data_str += '<tr class="res_more hidden_row">';
                         var json = data.res_more_data[j].title_keyword_description_density;
                         if(json != ''){
                             var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                         }
-                        data_str += '<td >'+data.res_more_data[j].text+'</td><td>'+data.res_more_data[j].description_words+'</td><td>';
+                        data_str += '<li><span class="dep_text">'+data.res_more_data[j].text+'</span><span class="dep_numbers">'
+                            +data.res_more_data[j].description_words+'</span><span class="dep_keywords">';
                         if(json != ''){
                             jQuery.each(keywords, function(i, val) {
                                 data_str += i+' - '+val+'%<br />';
@@ -541,21 +671,67 @@ $( function() {
                         } else {
                             data_str += ' - ';
                         }
-                        data_str += '</td></tr>';
+                        data_str += '</span></li>';
                     }
+                    data_str += '</ul>';
                 }
+                data_str += '</td>';
+                data_str += '<td class="span6 dep_second_part"><span class="dep_title">Add more words to '+data.res_more+' categories</span>';
+                if(data.res_more_data.length > 0){
+                    data_str += '<ul>';
+                    for(var j=0; j<data.res_more_data.length; j++){
+                        var json = data.res_more_data[j].title_keyword_description_density;
+                        if(json != ''){
+                            var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
+                        }
+                        data_str += '<li><span class="dep_text">'+data.res_more_data[j].text+'</span><span class="dep_numbers">'
+                            +data.res_more_data[j].description_words+'</span><span class="dep_keywords">';
+                        if(json != ''){
+                            jQuery.each(keywords, function(i, val) {
+                                data_str += i+' - '+val+'%<br />';
+                            });
+                        } else {
+                            data_str += ' - ';
+                        }
+                        data_str += '</span></li>';
+                    }
+                    data_str += '</ul>';
+                }
+                data_str += '</td></tr>';
 
-                data_str += '<tr><td>Categories optimized:</td><td>'+data.keyword_optimize+'/'+dep_content+'</td>' +
-                    '<td>Optimize '+dep_optimize+' categories</td></tr>';
+
+                data_str += '<tr><td><span class="dep_title">Categories optimized: <span class="dep_total_numbers">'+data.keyword_optimize+'/'+data.res_more_than_0+'</span></span>';
+                if(data.keyword_optimize_data.length > 0){
+                    data_str += '<ul>';
+                    for(var j=0; j<data.keyword_optimize_data.length; j++){
+                        var json = data.keyword_optimize_data[j].title_keyword_description_density;
+                        if(json != ''){
+                            var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
+                        }
+                        data_str += '<li><span class="dep_text">'+data.dep_optimize[j].text+'</span><span class="dep_numbers">'
+                            +data.dep_optimize[j].description_words+'</span><span class="dep_keywords">';
+                        if(json != ''){
+                            jQuery.each(keywords, function(i, val) {
+                                data_str += i+' - '+val+'%<br />';
+                            });
+                        } else {
+                            data_str += ' - ';
+                        }
+                        data_str += '</span></li>';
+                    }
+                    data_str += '</ul>';
+                }
+                data_str += '</td>';
+                data_str += '<td><span class="dep_title">Optimize '+dep_optimize+' categories</span>';
                 if(data.dep_optimize.length > 0){
+                    data_str += '<ul>';
                     for(var j=0; j<data.dep_optimize.length; j++){
-                        data_str += '<tr class="dep_optimize hidden_row">';
                         var json = data.dep_optimize[j].title_keyword_description_density;
                         if(json != ''){
                             var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                         }
-                        data_str += '<td>'+data.dep_optimize[j].text+'</td><td>'
-                            +data.dep_optimize[j].description_words+'</td><td>';
+                        data_str += '<li><span class="dep_text">'+data.dep_optimize[j].text+'</span><span class="dep_numbers">'
+                            +data.dep_optimize[j].description_words+'</span><span class="dep_keywords">';
                         if(json != ''){
                             jQuery.each(keywords, function(i, val) {
                                 data_str += i+' - '+val+'%<br />';
@@ -563,38 +739,21 @@ $( function() {
                         } else {
                             data_str += ' - ';
                         }
-                        data_str += '</td></tr>';
+                        data_str += '</span></li>';
                     }
+                    data_str += '<ul>';
                 }
+                data_str += '</td></tr>';
+
                 $("tbody#category_data").append(data_str);
-                $("tbody#category_data tr").click(function() {
-                    var next = $(this).next();
-                    if(next.hasClass('more_than_0')){
-                        if(next.eq(0).css('display')=='none'){
-                            $('.more_than_0').show();
-                            $('.res_more').hide();
-                            $('.dep_optimize').hide();
-                        } else {
-                            $('.more_than_0').hide();
-                        }
-                    }
-                    if(next.hasClass('res_more')){
-                        if(next.eq(0).css('display')=='none'){
-                            $('.res_more').show();
-                            $('.more_than_0').hide();
-                            $('.dep_optimize').hide();
-                        } else {
-                            $('.res_more').hide();
-                        }
-                    }
-                    if(next.hasClass('dep_optimize')){
-                        if(next.eq(0).css('display')=='none'){
-                            $('.dep_optimize').show();
-                            $('.res_more').hide();
-                            $('.more_than_0').hide();
-                        } else {
-                            $('.dep_optimize').hide();
-                        }
+                $("tbody#category_data tr td").click(function() {
+                    var el = $(this).find('ul');
+                    if(el.css('display') == 'none'){
+                        $(this).find('span.dep_title').css({'border-bottom':'1px solid #000'});
+                        el.css({'display':'block'});
+                    } else {
+                        el.css({'display':'none'});
+                        $(this).find('span.dep_title').css({'border-bottom':'none'});
                     }
                 });
             });
