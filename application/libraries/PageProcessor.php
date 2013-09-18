@@ -1037,6 +1037,15 @@ class PageProcessor {
 			}
 		}
 
+		foreach($this->nokogiri->get('#pdp_tabs #pdp_tabs_body_details ul li') as $item) {
+			foreach($item['#text'] as $i) {
+				$line = trim($i);
+				if (!empty($line)) {
+					$description[] = $line;
+				}
+			}
+		}
+
 		$description = implode(' ',$description);
 
 		foreach($this->nokogiri->get('#pdp_tabs #pdp_tabs_body_left ul li') as $item) {
