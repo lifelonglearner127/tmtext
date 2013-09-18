@@ -608,8 +608,9 @@ $( function() {
                 var dep_content = data.total - data.res_more_than_0;
                 var dep_optimize = data.keyword_optimize - data.res_more_than_0;
                 var data_str = '<tr><td nowrap>Categories Analyzed: <span class="dep_total_numbers">'+data.total+'</span></td><td>&nbsp;</td></tr>';
-                data_str += '<tr><td nowrap class="dep_first_part span6"><span class="dep_title">Categories that have content:  <span class="dep_total_numbers">'+data.res_more_than_0+'/'+data.total+'</span></span>';
-                if(data.res_data_more_than_0.length > 0){
+                data_str += '<tr><td nowrap class="dep_first_part span6" ><span class="dep_title">Categories that have content:  <span class="dep_total_numbers">'+data.res_more_than_0+'/'+data.total+'</span></span>';
+
+                /*if(data.res_data_more_than_0.length > 0){
                     data_str += '<ul>';
                     for(var j=0; j<data.res_data_more_than_0.length; j++){
                         var json = data.res_data_more_than_0[j].title_keyword_description_density;
@@ -628,10 +629,10 @@ $( function() {
                         data_str += '</span></li>';
                     }
                     data_str += '</ul>';
-                }
+                }*/
                 data_str += '</td>';
                 data_str += '<td class="dep_second_part span6"><span class="dep_title">Create content for '+dep_content+' categories</span>';
-                if(data.result0.length > 0){
+                /*if(data.result0.length > 0){
                     data_str += '<ul>';
                     for(var j=0; j<data.result0.length; j++){
                         data_str += '<li>';
@@ -651,11 +652,11 @@ $( function() {
                         data_str += '</span></li>';
                     }
                     data_str += '</ul>';
-                }
+                }*/
                 data_str += '</td></tr>';
 
                 data_str += '<tr><td nowrap class="span6 dep_first_part"><span class="dep_title">Average content word count: <span class="dep_total_numbers">'+data.res_avg+'</span></span>';
-                if(data.res_more_data.length > 0){
+                /*if(data.res_more_data.length > 0){
                     data_str += '<ul>';
                     for(var j=0; j<data.res_more_data.length; j++){
                         var json = data.res_more_data[j].title_keyword_description_density;
@@ -674,10 +675,10 @@ $( function() {
                         data_str += '</span></li>';
                     }
                     data_str += '</ul>';
-                }
+                }*/
                 data_str += '</td>';
                 data_str += '<td class="span6 dep_second_part"><span class="dep_title">Add more words to '+data.res_more+' categories</span>';
-                if(data.res_more_data.length > 0){
+                /*if(data.res_more_data.length > 0){
                     data_str += '<ul>';
                     for(var j=0; j<data.res_more_data.length; j++){
                         var json = data.res_more_data[j].title_keyword_description_density;
@@ -696,12 +697,12 @@ $( function() {
                         data_str += '</span></li>';
                     }
                     data_str += '</ul>';
-                }
+                }*/
                 data_str += '</td></tr>';
 
 
                 data_str += '<tr><td><span class="dep_title">Categories optimized: <span class="dep_total_numbers">'+data.keyword_optimize+'/'+data.res_more_than_0+'</span></span>';
-                if(data.keyword_optimize_data.length > 0){
+                /*if(data.keyword_optimize_data.length > 0){
                     data_str += '<ul>';
                     for(var j=0; j<data.keyword_optimize_data.length; j++){
                         var json = data.keyword_optimize_data[j].title_keyword_description_density;
@@ -720,10 +721,10 @@ $( function() {
                         data_str += '</span></li>';
                     }
                     data_str += '</ul>';
-                }
+                }*/
                 data_str += '</td>';
                 data_str += '<td><span class="dep_title">Optimize '+dep_optimize+' categories</span>';
-                if(data.dep_optimize.length > 0){
+                /*if(data.dep_optimize.length > 0){
                     data_str += '<ul>';
                     for(var j=0; j<data.dep_optimize.length; j++){
                         var json = data.dep_optimize[j].title_keyword_description_density;
@@ -742,7 +743,7 @@ $( function() {
                         data_str += '</span></li>';
                     }
                     data_str += '<ul>';
-                }
+                }*/
                 data_str += '</td></tr>';
 
                 $("tbody#category_data").append(data_str);
@@ -788,6 +789,17 @@ $( function() {
     });
 
 }); //end document ready
+
+function getCatData(condition){
+    var site_name=$('#hp_boot_drop .btn_caret_sign').text();
+    $.post(base_url + 'index.php/measure/getDashboardCatDetails', {
+        'site_name': site_name,
+        'condition':condition
+    }, function(data) {
+        console.log(data);
+    });
+}
+
 
 function readBestSellers(department_id,site_name,table_name) {
     //display ajax loader animation
