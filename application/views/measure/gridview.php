@@ -226,7 +226,7 @@ foreach ($same_pr as $ks => $vs) {
                                    <div class="density_rank">
                                        <span class="density"> density</span>                                       
                                        
-                                       <span class="rank"> rank</span>
+                                       <span class="rank"> rank</span><span style="display: none;"class="volume"> Volume</span>
                                       
                                    </div>
                                 <div class="primary" style="height: 100%;width: 100%;">
@@ -349,7 +349,7 @@ foreach ($same_pr as $ks => $vs) {
                                    <div class="density_rank">
                                        <span class="density"> density</span>                                       
                                        
-                                       <span class="rank"> rank</span>
+                                       <span class="rank"> rank</span><span style="display: none;"class="volume"> Volume</span>
                                       
                                    </div>
                                      <div class="primary" style="height: 100%;width: 100%;">
@@ -401,7 +401,7 @@ foreach ($same_pr as $ks => $vs) {
                                 <div class="density_rank">
                                        <span class="density"> density</span>                                       
                                        
-                                       <span class="rank"> rank</span>
+                                       <span class="rank"> rank</span><span style="display: none;"class="volume"> Volume</span>
                                       
                                 </div>
                                 
@@ -780,7 +780,22 @@ if (($i - 1) % 3 != 0) {
         $(this).hide();
         $(this).prev('.seo_prc').show();
        
-   })
+   });
+   
+    $('.rank').live('click',function(){
+        $(this).hide();
+        $(this).next('.volume').show();
+      
+   });
+   $('.volume').live('click',function(){
+        $(this).hide();
+        $(this).prev('.rank').show();
+       
+   });
+   $('.volume').live('hover',function(){
+        $(this).css('cursor','pointer');
+       
+  });
  
    $(".grid_se_section").each(function() {
        var selected_item='#'+$(this).closest('.grid_se_section').attr('id');

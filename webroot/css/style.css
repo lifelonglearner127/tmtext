@@ -2121,7 +2121,7 @@ span.highlight { background-color:yellow;}
 
 .category_description_text{display: none;}
 
-.seo_prc, cseo_count :hover{
+.seo_prc, cseo_count, .rank, .volume :hover{
     cursor:pointer;
 }
 .density_rank{
@@ -2132,6 +2132,10 @@ span.highlight { background-color:yellow;}
     text-transform: capitalize;
     text-decoration: underline;
     margin-right: 15px;
+}
+.volume{
+    text-transform: capitalize;
+    text-decoration: underline;
 }
 .list_section li span{
     float:left;
