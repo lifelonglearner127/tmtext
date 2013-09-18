@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS `ranking_api_data` (
   `location` VARCHAR(45) NULL DEFAULT NULL ,
   `engine` VARCHAR(45) NULL DEFAULT NULL ,
   `rank_json_encode` TEXT NULL DEFAULT NULL ,
+  `rank` INT(11) NULL DEFAULT NULL ,
   `stamp` datetime NULL DEFAULT NULL ,
   PRIMARY KEY (`id`) 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1;

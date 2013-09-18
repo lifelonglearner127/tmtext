@@ -73,23 +73,44 @@ class Measure extends MY_Controller {
             'msg' => ''
         );
         if(isset($data) && $data->status == 'success') {
-            //  var_dump($data);
             foreach($data->data as $k=>$v) {
                 $site = $v->site;
                 $keywords = $v->keywords;
                 if((isset($site) && trim($site) !== "") && (isset($keywords) && count($keywords) > 0)) {
-                    // var_dump($keywords);
                     foreach($keywords as $ks => $kv) {
+                        // === extract not null and latest (according to date) rank object (start)
+                        $r_object = null;
+                        $rank_int = null;
+                        $ranking_stack = array();
+                        foreach ($kv->rankings as $ks => $vs) {
+                            if(isset($vs->ranking) && $vs->ranking !== null && $vs->ranking !== "") {
+                                $mid = array(
+                                    'ranking' => $vs->ranking,
+                                    'rankedurl' => $vs->rankedurl,
+                                    'datetime' => $vs->datetime
+                                );
+                                array_push($ranking_stack, $mid);
+                            }
+                        }
+                        $sort = array();
+                        foreach($ranking_stack as $k=>$v) {
+                            $sort['datetime'][$k] = $v['datetime'];
+                        }
+                        array_multisort($sort['datetime'], SORT_DESC, $ranking_stack);
+                        if(count($ranking_stack) > 0) {
+                            $r_object = $ranking_stack[0];
+                        }
+                        if($r_object !== null) $rank_int = $r_object['ranking'];
+                        // === extract not null and latest (according to date) rank object (end)
                         $sync_data = array(
                             'site' => $site,
                             'keyword' => $kv->keyword,
                             'location' => $kv->location,
                             'engine' => $kv->searchengine,
-                            'rank_json_encode' => json_encode($kv->rankings)
+                            'rank_json_encode' => json_encode($kv->rankings),
+                            'rank' => $rank_int
                         );
                         $this->rankapi_model->start_db_sync($sync_data);
-                        // var_dump($sync_data);
-                        // var_dump($this->rankapi_model->start_db_sync($sync_data));
                     }
                 }
             }

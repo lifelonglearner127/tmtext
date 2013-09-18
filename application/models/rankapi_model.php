@@ -23,6 +23,7 @@ class Rankapi_model extends CI_Model {
                 'location' => $sync_data['location'],
                 'engine' => $sync_data['engine'],
                 'rank_json_encode' => $sync_data['rank_json_encode'],
+                'rank' => $sync_data['rank'],
                 'stamp' => date("Y-m-d H:i:s")
             );
             $c_object = array(
@@ -37,6 +38,7 @@ class Rankapi_model extends CI_Model {
                 'location' => $sync_data['location'],
                 'engine' => $sync_data['engine'],
                 'rank_json_encode' => $sync_data['rank_json_encode'],
+                'rank' => $sync_data['rank'],
                 'stamp' => date("Y-m-d H:i:s")
             );
             $this->db->insert($this->tables['ranking_api_data'], $insert_object);
