@@ -694,6 +694,7 @@ CREATE TABLE IF NOT EXISTS `keywords_data` (
   `search_engine` int(11) NOT NULL,
   `region` int(11) NOT NULL,
   `create_date` int(11) NOT NULL,
+  `data_source_id` int(11) NOT NULL 
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1
 
@@ -708,5 +709,12 @@ CREATE TABLE IF NOT EXISTS `search_engine` (
 CREATE TABLE IF NOT EXISTS `regions` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `region` varchar(30) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1
+
+#09/18 Evgeni
+CREATE TABLE IF NOT EXISTS `keyword_data_sources` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `data_source_name` varchar(30) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1

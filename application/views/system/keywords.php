@@ -15,19 +15,23 @@
     <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/styles.css" />
      <div class="info-message text-success"></div>
     <div class="row-fluid">
+        <div style="float: left;width: 25%;">
         <p>New keyword</p>
         <input type="text" id="new_keyword" name="new_keyword">
         <p>New volume(number)</p>
-        <input type="text" id="new_volume" name="new_volume">
-        <div>
-            <div style="float:left;">
-                <p class="heading_text">New search_engine </p>
-                  <?php  echo form_dropdown('search_engine', $search_engine, array(),' class="search_engine_select" style="width: 200px;float:left;margin-right: 20px;margin-top: 10px;"'); ?>
-            </div>
-            <div style="float:left;">
+        <input type="text" style="float: left;" id="new_volume" name="new_volume">
+            <p class="heading_text">New search_engine </p>
+            <?php  echo form_dropdown('search_engine', $search_engine, array(),' class="search_engine_select" style="width: 207px;float:left;margin-right: 20px;margin-top: 10px;"'); ?>       
+        </div>
+        <div style="float: left;width: 25%;">
+
                 <p>New region</p>
                 <?php  echo form_dropdown('regions_list', $regions, array(),'class="region_select"  style="width: 200px;margin-right:float:left; 20px;"'); ?>
-            </div>
+
+ 
+                <p>New data_source_name</p>
+                <?php  echo form_dropdown('data_source_name_list', $keyword_data_sources, array(),'class="data_source_name_select"  style="width: 200px;margin-right:float:left; 20px;"'); ?>
+        
             <button id="btn_new_keyword" style="margin-bottom: 11px;float:left;margin-top: 28px;margin-left: 10px;" class="btn btn-primary" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Add</button>
         </div>    
         
@@ -54,6 +58,9 @@
 						<th class="ui-state-default" tabindex="0" rowspan="1" colspan="1" aria-label="URL: activate to sort column ascending" style="width: 532px; height: 30px;">
 							<div class="DataTables_sort_wrapper">region</div>
 						</th>
+						<th class="ui-state-default" tabindex="0" rowspan="1" colspan="1" aria-label="URL: activate to sort column ascending" style="width: 532px; height: 30px;">
+							<div class="DataTables_sort_wrapper">data_source_name</div>
+						</th>                                                
                                                
 						<th class="ui-state-default" tabindex="0" rowspan="1" colspan="1" aria-label="URL: activate to sort column ascending" style="width: 532px; height: 30px;">
 							<div class="DataTables_sort_wrapper">Date</div>
@@ -83,7 +90,7 @@
 					curdate.setTime( time*1000 );
 					var date_keyword = curdate.toLocaleString();
 					
-					var keywords = '<tr class="'+tr_class+'"><td>'+value.keyword+'</td><td>'+value.volume+'</td><td>'+value.search_engine+'</td><td>'+value.region+'</td><td>'+date_keyword+'</td></tr>';
+					var keywords = '<tr class="'+tr_class+'"><td>'+value.keyword+'</td><td>'+value.volume+'</td><td>'+value.search_engine+'</td><td>'+value.region+'</td><td>'+value.data_source_name+'</td><td>'+date_keyword+'</td></tr>';
 					$('.keywords_list').append(keywords);
 				});
 			});
@@ -91,22 +98,18 @@
 		system_keywords();
                 
                 
-	var new_search_engine = null;
-        $(".search_engine_select").live('change', function() {       
-             if($(this).val() == 0){
-                new_search_engine = null;
-                return
-            }
+	var new_search_engine = 1;
+        $(".search_engine_select").live('change', function() {  
             new_search_engine = $(this).val();
         });
-	var new_region = null;
+	var new_region = 1;
         $(".region_select").live('change', function() {       
-            if($(this).val() == 0){
-                new_region = null;
-                return
-            }
             new_region = $(this).val();
-        });        
+        });  
+        var new_data_source_name = 1;
+        $(".data_source_name_select").live('change', function() {       
+            new_data_source_name = $(this).val();
+        });
         
         
         $('button#btn_new_keyword').click(function(){
@@ -121,6 +124,7 @@
                     new_volume: new_volume,
                     new_search_engine: new_search_engine,
                     new_region: new_region,
+                    new_data_source_name: new_data_source_name
                    
                 };
                     
@@ -135,7 +139,7 @@
                             var curdate = new Date(null);
                             curdate.setTime( time*1000 );
                             var date_keyword = curdate.toLocaleString();
-                            var keywords = '<tr class="'+tr_class+'"><td>'+value.keyword+'</td><td>'+value.volume+'</td><td>'+value.search_engine+'</td><td>'+value.region+'</td><td>'+date_keyword+'</td></tr>';
+                            var keywords = '<tr class="'+tr_class+'"><td>'+value.keyword+'</td><td>'+value.volume+'</td><td>'+value.search_engine+'</td><td>'+value.region+'</td><td>'+value.data_source_name+'</td><td>'+date_keyword+'</td></tr>';
                             $('.keywords_list').prepend(keywords);  
                         });
                         

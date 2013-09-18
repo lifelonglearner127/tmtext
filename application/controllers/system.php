@@ -1587,16 +1587,19 @@ class System extends MY_Controller {
          public function keywords() {
         $this->load->model('keyword_model_system'); 
         $regions =  $this->keyword_model_system->get_regions();
+        $keyword_data_sources =  $this->keyword_model_system->get_keyword_data_sources();
         $search_engines = $this->keyword_model_system->get_serach_engine();
-        $search_engine_list = array(0 => 'Choose search_engine');
-        $regions_list = array(0 => 'Choose region');
             foreach ($regions as $region) {
                 $regions_list[$region->id] = $region->region;
             }
             foreach ($search_engines as $search_engine) {
                 $search_engine_list[$search_engine->id] = $search_engine->search_engine;
             }
+            foreach ($keyword_data_sources as $keyword_data_source) {
+                $keyword_data_sources_list[$keyword_data_source->id] = $keyword_data_source->data_source_name;
+            }
         $this->data['regions'] = $regions_list;
+        $this->data['keyword_data_sources'] = $keyword_data_sources_list;
         $this->data['search_engine'] = $search_engine_list;
         $this->render();
 	}         
@@ -1615,10 +1618,11 @@ class System extends MY_Controller {
         {
             $this->load->model('keyword_model_system');
             $new_keyword = $this->input->post('new_keyword');
+            $new_data_source_name = $this->input->post('new_data_source_name');
             $new_volume = $this->input->post('new_volume');
             $new_search_engine = $this->input->post('new_search_engine');
             $new_region = $this->input->post('new_region');
-            $response['data'] = $this->keyword_model_system->insertKeywords($new_keyword,$new_volume,$new_search_engine,$new_region);
+            $response['data'] = $this->keyword_model_system->insertKeywords($new_keyword,$new_volume,$new_search_engine,$new_region,$new_data_source_name);
             $response['message'] =  'keyword was added successfully';
             $this->output->set_content_type('application/json')->set_output(json_encode($response));
             
