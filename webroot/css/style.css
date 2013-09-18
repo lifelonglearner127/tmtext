@@ -2142,6 +2142,8 @@ span.highlight { background-color:yellow;}
 }
 .seo_prc{
     float:left;
+    width: 48px;
+    margin-right: 17px;
 }
 
 tbody#category_data tr td span.dep_title:hover, tbody#department_data tr td span.dep_title:hover,

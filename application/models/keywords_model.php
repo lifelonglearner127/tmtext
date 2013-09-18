@@ -18,10 +18,19 @@ class Keywords_model extends CI_Model {
                       GROUP BY imported_data_id)", NULL, FALSE)
            
         ->get($this->tables['keywords']);
-
+       
         return $query->row_array();
     }
-
+    function get_by_keyword($keyword){
+        $keyword=trim(strtolower($keyword));
+        $query = $this->db->where('LOWER(keyword)',$keyword)->where("create_date = (SELECT  MAX(create_date) as create_date
+                      FROM keyword_data WHERE LOWER(keyword) = '".$keyword."'
+                      )", NULL, FALSE)
+           
+        ->get('keyword_data');
+         
+        return $query->row_array();
+    }
     function insert($im_data_id, $primary, $secondary, $tertiary){
     
         if(count($this->get_by_imp_id($im_data_id))>0){

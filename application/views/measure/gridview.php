@@ -279,7 +279,7 @@ foreach ($same_pr as $ks => $vs) {
                 <?php echo $value['value']; ?>
                                                 </span>
                                                  <span class='seo_prc' ><?php echo  $value['prc']; ?>%</span><span style="display:none" class='seo_count' ><?php echo $value['count']; ?></span>
-         
+                                                 <span class='rank_value' ><?php  ?></span><span style="display:none" class='volume_value' ><?php echo $value['volume']; ?></span>
                                             </li>
     <?php } }?>
                                     </ul>
@@ -297,7 +297,7 @@ foreach ($same_pr as $ks => $vs) {
                                                     
                                                 </span>
                                                 <span class='seo_prc' ><?php echo  $value['prc']; ?>%</span><span style="display:none" class='seo_count' ><?php echo $value['count']; ?></span>
-                            <!--                                    <span class='word_wrap_li_sec' style="margin-top: -16px;margin-left: 5px;"></span>-->
+                                                <span class='rank_value' ><?php  ?></span><span style="display:none" class='volume_value' ><?php echo $value['volume']; ?></span>
                                             </li>
             <?php } ?>
                                     </ul>
@@ -455,6 +455,7 @@ foreach ($same_pr as $ks => $vs) {
                 <?php echo $value['value']; ?>
                                                 </span>
                                                 <span class='seo_prc' ><?php echo  $value['prc']; ?>%</span><span style="display:none" class='seo_count' ><?php echo $value['count']; ?></span>
+                                                <span class='rank_value' ><?php  ?></span><span style="display:none" class='volume_value' ><?php echo $value['volume']; ?></span>
                            
                                             </li>
             <?php }} ?>
@@ -473,7 +474,7 @@ foreach ($same_pr as $ks => $vs) {
                                                     
                                                 </span>
                                                  <span class='seo_prc' ><?php echo  $value['prc']; ?>%</span><span style="display:none" class='seo_count' ><?php echo $value['count']; ?></span>
-                            <!--                                    <span class='word_wrap_li_sec' style="margin-top: -16px;margin-left: 5px;"></span>-->
+                                                 <span class='rank_value' ><?php  ?></span><span style="display:none" class='volume_value' ><?php echo $value['volume']; ?></span>
                                             </li>
             <?php } ?>
                                     </ul>
@@ -630,12 +631,43 @@ if (($i - 1) % 3 != 0) {
             };
 
             $.post(base_url+'index.php/measure/analyzekeywords', grid_send_object, function(data) {
-                var first = (data['primary'][0].toPrecision(3)*100).toFixed(2);
-                var second = (data['secondary'][0].toPrecision(3)*100).toFixed(2);
-                var third = (data['tertiary'][0].toPrecision(3)*100).toFixed(2);
-                var first1 = (data['primary'][1].toPrecision(3)*100).toFixed(2);
-                var second1 = (data['secondary'][1].toPrecision(3)*100).toFixed(2);
-                var third1 = (data['tertiary'][1].toPrecision(3)*100).toFixed(2);
+                var first='';
+                var second='';
+                var third='';
+                var first1='';
+                var second1='';
+                var third1='';
+               if(typeof(data['primary']) !== 'undefined'){
+                    if((data['primary'][0]) !== 'undefined'){
+                     first = (data['primary'][0]['prc'].toPrecision(3)*100).toFixed(2);
+                    }
+                    if(data['primary'][1]!=='undefined'){
+                       first1 = (data['primary'][1]['prc'].toPrecision(3)*100).toFixed(2);
+                    }
+               
+               }
+               if(typeof(data['secondary'])  !== 'undefined'){ 
+                    if(typeof(data['secondary'][0]) !== 'undefined'){
+                          second = (data['secondary'][0]['prc'].toPrecision(3)*100).toFixed(2);
+                    }
+                    if(typeof(data['secondary'][1])!=='undefined'){
+                         second1 = (data['secondary'][1]['prc'].toPrecision(3)*100).toFixed(2);
+                    }
+               }
+               if(typeof(data['tertiary'])!== 'undefined'){
+                    if(typeof(data['tertiary'][0])!=='undefined'){
+                       third = (data['tertiary'][0]['prc'].toPrecision(3)*100).toFixed(2);
+                    }
+                    if(typeof(data['tertiary'][1])!=='undefined'){
+                          third1 = (data['tertiary'][1]['prc'].toPrecision(3)*100).toFixed(2);
+                         }
+               }
+              
+               if(typeof(data['tertiary'])!=='undefined'){
+               if(typeof(data['tertiary'][1])!=='undefined'){
+                third1 = (data['tertiary'][1]['prc'].toPrecision(3)*100).toFixed(2);
+               }
+               }
                 if(grid_short_desc!=''){
                 if($(selected_item+" input[name='keyword1']").val()!=''){
                     $(selected_item+' span#keyword1_density').html(first+'%');
@@ -785,17 +817,20 @@ if (($i - 1) % 3 != 0) {
    $('.seo_count').live('click',function(){
         $(this).hide();
         $(this).prev('.seo_prc').show();
+      
        
    });
    
     $('.rank').live('click',function(){
         $(this).hide();
         $(this).next('.volume').show();
+        $(this).closest('.seo_container').find('.volume_value').show();
       
    });
    $('.volume').live('click',function(){
         $(this).hide();
         $(this).prev('.rank').show();
+        $(this).closest('.seo_container').find('.volume_value').hide();
        
    });
    $('.volume, .seo_count').live('hover',function(){

@@ -2015,21 +2015,32 @@ public function gridview() {
             foreach ($same_pr as $ks => $vs) {
                 if(!empty($vs['seo']['short'])){
                 foreach($vs['seo']['short'] as $key => $val){
+                   $volume='';
+                   $from_keyword_data=$this->keywords_model->get_by_keyword($val['ph']); 
+                   if(count($from_keyword_data)>0){
+                       $volume=$from_keyword_data['volume'];
+                   }
                    $words= count(explode(' ',$val['ph']));
                    $desc_words_count=count(explode(' ',$vs['description']));
                    $count=$val['count'];
                    $val['prc']=round($count*$words/$desc_words_count*100,2);
+                   $val['volume'] =  $volume;
                    $same_pr[$ks]['seo']['short'][$key]=$val;
                    
                 }
                 }
                 if(!empty($vs['seo']['long'])){
                 foreach($vs['seo']['long'] as $key => $val){
-                   
+                   $volume='';
+                   $from_keyword_data=$this->keywords_model->get_by_keyword($val['ph']);
+                   if(count($from_keyword_data)>0){
+                       $volume=$from_keyword_data['volume'];
+                   }
                    $words= count(explode(' ',$val['ph']));
                    $desc_words_count=count(explode(' ',$vs['long_description']));
                    $count=$val['count'];
                    $same_pr[$ks]['seo']['long'][$key]['prc']=round($count*$words/$desc_words_count*100,2);
+                   $same_pr[$ks]['seo']['long'][$key]['volume']=$volume;
                 }
                 }
             }
@@ -2047,24 +2058,34 @@ public function gridview() {
              }
              if(count($meta)>0 && isset($vs['description']) && $vs['description']!=''){
              foreach($meta as $key => $val){
+                   $volume='';
+                   $from_keyword_data=$this->keywords_model->get_by_keyword($val['ph']);
+                   if(count($from_keyword_data)>0){
+                       $volume=$from_keyword_data['volume'];
+                   }
                    $words= count(explode(' ',trim($val)));
                    $count= $this->keywords_appearence_count(strtolower($vs['description']), strtolower($val));
                    $desc_words_count=count(explode(' ',$vs['description']));
                   
                    $prc=round($count*$words/$desc_words_count*100,2);
-                   $same_pr[$ks]['short_meta'][]=array('value'=>$val,'count'=>$count,'prc'=>$prc);
+                   $same_pr[$ks]['short_meta'][]=array('value'=>$val,'count'=>$count,'prc'=>$prc,'volume'=>$volume);
                    
              }
              }
              if(count($meta)>0 && isset($vs['long_description']) && $vs['long_description']!=''){
                   
              foreach($meta as $key => $val){
+                   $volume='';
+                   $from_keyword_data=$this->keywords_model->get_by_keyword($val);
+                   if(count($from_keyword_data)>0){
+                       $volume=$from_keyword_data['volume'];
+                   }
                    $words= count(explode(' ',trim($val)));
                    $count= $this->keywords_appearence_count(strtolower($vs['long_description']), strtolower($val));
                    $desc_words_count=count(explode(' ',$vs['long_description']));
                   
                    $prc=round($count*$words/$desc_words_count*100,2);
-                   $same_pr[$ks]['long_meta'][]=array('value'=>$val,'count'=>$count,'prc'=>$prc);
+                   $same_pr[$ks]['long_meta'][]=array('value'=>$val,'count'=>$count,'prc'=>$prc, 'volume'=>$volume);
                    
              }
              }
@@ -2524,7 +2545,7 @@ public function gridview() {
         $tertiary_ph = $this->input->post('tertiary_ph');
         $short_desc = $this->input->post('short_desc');
         $long_desc = $this->input->post('long_desc');
-        $output = $this->helpers->measure_analyzer_keywords($primary_ph, $secondary_ph, $tertiary_ph, $short_desc, $long_desc);
+        $output = $this->measure_analyzer_keywords($primary_ph, $secondary_ph, $tertiary_ph, $short_desc, $long_desc);
         $this->output->set_content_type('application/json')->set_output(json_encode($output));
     }
 
@@ -2745,6 +2766,109 @@ public function gridview() {
         
         $this->keywords_model->insert($imported_data_id,$primary, $secondary,$tertiary);
     }
+     public function measure_analyzer_keywords($primary_ph, $secondary_ph, $tertiary_ph, $short_desc, $long_desc) {
+   $this->load->model('keywords_model');
+    // --- default res array and values (start)
+   $primary_ph=  strtolower($primary_ph);
+   $secondary_ph=  strtolower($secondary_ph);
+   $tertiary_ph=  strtolower($tertiary_ph);
+   $short_desc=  strtolower($short_desc);
+   $long_desc=  strtolower($long_desc);
+   
+    $res = array();
+    $short_desc_words_count = count(explode(" ", $short_desc));
+    $long_desc_words_count = count(explode(" ", $long_desc));
+    // --- default res array and values (end)
+
+    // --- primary calculation (start)
+    if($primary_ph !== "") {
+        $primary_ph_words_count = count(explode(" ", $primary_ph));
+        if($short_desc !== "") {
+            // if($this->keywords_appearence($short_desc, $primary_ph) !== 0) $res['primary'][0] = $short_desc_words_count / ($this->keywords_appearence($short_desc, $primary_ph) * $primary_ph_words_count);
+            $res['primary'][0]['prc'] = ($this->keywords_appearence($short_desc, $primary_ph) * $primary_ph_words_count) / $short_desc_words_count;
+        
+            $volume='';
+            $from_keyword_data=$this->keywords_model->get_by_keyword($primary_ph);
+            if(count($from_keyword_data)>0){
+                $volume=$from_keyword_data['volume'];
+            }
+            $res['primary'][0]['volume']= $volume;
+        }
+        if($long_desc !== "") {
+            // if($this->keywords_appearence($long_desc, $primary_ph) !== 0) $res['primary'][1] = $long_desc_words_count / ($this->keywords_appearence($long_desc, $primary_ph) * $primary_ph_words_count);
+            $res['primary'][1]['prc'] = ($this->keywords_appearence($long_desc, $primary_ph) * $primary_ph_words_count) / $long_desc_words_count;
+        
+            $volume='';
+            $from_keyword_data=$this->keywords_model->get_by_keyword($primary_ph);
+            if(count($from_keyword_data)>0){
+                $volume=$from_keyword_data['volume'];
+            }
+            $res['primary'][1]['volume']= $volume;
+        }
+    }
+    // --- primary calculation (end)
+
+    // --- secondary calculation (start)
+    if($secondary_ph !== "") {
+        $secondary_ph_words_count = count(explode(" ", $secondary_ph));
+        if($short_desc !== "") {
+            // if($this->keywords_appearence($short_desc, $secondary_ph) !== 0) $res['secondary'][0] = $short_desc_words_count / ($this->keywords_appearence($short_desc, $secondary_ph) * $secondary_ph_words_count);
+            $res['secondary'][0]['prc'] = ($this->keywords_appearence($short_desc, $secondary_ph) * $secondary_ph_words_count) / $short_desc_words_count;
+        
+            $volume='';
+            $from_keyword_data=$this->keywords_model->get_by_keyword($secondary_ph);
+            if(count($from_keyword_data)>0){
+                $volume=$from_keyword_data['volume'];
+            }
+            $res['secondary'][0]['volume']= $volume;
+        }
+        if($long_desc !== "") {
+            // if($this->keywords_appearence($long_desc, $secondary_ph) !== 0) $res['secondary'][1] = $long_desc_words_count / ($this->keywords_appearence($long_desc, $secondary_ph) * $secondary_ph_words_count);
+            $res['secondary'][1]['prc'] = ($this->keywords_appearence($long_desc, $secondary_ph) * $secondary_ph_words_count) / $long_desc_words_count;
+            $volume='';
+            $from_keyword_data=$this->keywords_model->get_by_keyword($secondary_ph);
+            if(count($from_keyword_data)>0){
+                $volume=$from_keyword_data['volume'];
+            }
+            $res['secondary'][1]['volume']= $volume;
+        }
+    }
+    // --- secondary calculation (end)
+
+    // --- tertiary calculation (start)
+    if($tertiary_ph !== "") {
+        $tertiary_ph_words_count = count(explode(" ", $tertiary_ph));
+        if($short_desc !== "") {
+            // if($this->keywords_appearence($short_desc, $tertiary_ph) !== 0) $res['tertiary'][0] = $short_desc_words_count / ($this->keywords_appearence($short_desc, $tertiary_ph) * $tertiary_ph_words_count);
+            $res['tertiary'][0]['prc'] = ($this->keywords_appearence($short_desc, $tertiary_ph) * $tertiary_ph_words_count) / $short_desc_words_count;
+        
+            $volume='';
+            $from_keyword_data=$this->keywords_model->get_by_keyword($tertiary_ph);
+            if(count($from_keyword_data)>0){
+                $volume=$from_keyword_data['volume'];
+            }
+            $res['tertiary'][0]['volume']= $volume;
+        }
+        if($long_desc !== "") {
+            // if($this->keywords_appearence($long_desc, $tertiary_ph) !== 0) $res['tertiary'][1] = $long_desc_words_count / ($this->keywords_appearence($long_desc, $tertiary_ph) * $tertiary_ph_words_count);
+            $res['tertiary'][1]['prc'] = ($this->keywords_appearence($long_desc, $tertiary_ph) * $tertiary_ph_words_count) / $long_desc_words_count;
+            $volume='';
+            $from_keyword_data=$this->keywords_model->get_by_keyword($tertiary_ph);
+            if(count($from_keyword_data)>0){
+                $volume=$from_keyword_data['volume'];
+            }
+            $res['tertiary'][1]['volume']= $volume;
+            
+        }
+    }
+    // --- tertiary calculation (end)
+   
+    return $res;
+  }
+
+  private function keywords_appearence($desc, $phrase) {
+    return substr_count($desc, $phrase);
+  }
 
 
 }
