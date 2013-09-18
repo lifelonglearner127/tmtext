@@ -552,7 +552,7 @@ $( function() {
                         data_str += '<tr class="dep_optimize hidden_row">';
                         var json = data.dep_optimize[j].title_keyword_description_density;
                         if(json != ''){
-                            var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
+                            var keywords = $.parseJSON(json..replace(/\n/g,"\\n").replace(/&quot;/ig, '"'));
                         }
                         data_str += '<td>'+data.dep_optimize[j].text+'</td><td>'
                             +data.dep_optimize[j].description_words+'</td><td>';
