@@ -273,13 +273,17 @@ foreach ($same_pr as $ks => $vs) {
             <?php if(isset($vs['short_meta'])){foreach ($vs['short_meta'] as $key => $value) { ?>
 
                                             <?php $v_ph = $value['value']; ?>
-
+                                            <input type='hidden' name='debug_rank_api_long_url' value="<?php echo $vs['url']; ?>">
+                                            <input type='hidden' name='debug_rank_api_long_ph' value="<?php echo $v_ph; ?>">
+                                            <?php $rank_api = $this->rankapi_model->checkRankApiData($vs['url'], $v_ph); ?>
+                                            <input type='hidden' name='debug_rank_api_rank_ph' value="<?php echo $rank_api; ?>">
+                                            <?php if($rank_api === null || $rank_api === 0) { $rank_int = ''; } else { $rank_int = $rank_api; } ?>
                                             <li >
                                                 <span style="white-space: normal;line-height: 20px;text-decoration: none;font-size: 14px !important;line-height: 21px;text-decoration: none;white-space: normal;width: 140px;float: left;word-wrap: break-word;"data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'short')" class='word_wrap_li_pr hover_en'>
                 <?php echo $value['value']; ?>
                                                 </span>
                                                  <span class='seo_prc' ><?php echo  $value['prc']; ?>%</span><span style="display:none" class='seo_count' ><?php echo $value['count']; ?></span>
-                                                 <span class='rank_value' ><?php  ?></span><span style="display:none" class='volume_value' ><?php echo $value['volume']; ?></span>
+                                                 <span class='rank_value' ><?php echo $rank_int; ?></span><span style="display:none" class='volume_value' ><?php echo $value['volume']; ?></span>
                                             </li>
     <?php } }?>
                                     </ul>
@@ -290,14 +294,18 @@ foreach ($same_pr as $ks => $vs) {
             <?php foreach ($vs['seo']['short'] as $key => $value) { ?>
 
                                             <?php $v_ph = $value['ph']; ?>
-
+                                            <input type='hidden' name='debug_rank_api_long_url' value="<?php echo $vs['url']; ?>">
+                                            <input type='hidden' name='debug_rank_api_long_ph' value="<?php echo $v_ph; ?>">
+                                            <?php $rank_api = $this->rankapi_model->checkRankApiData($vs['url'], $v_ph); ?>
+                                            <input type='hidden' name='debug_rank_api_rank_ph' value="<?php echo $rank_api; ?>">
+                                            <?php if($rank_api === null || $rank_api === 0) { $rank_int = ''; } else { $rank_int = $rank_api; } ?>
                                             <li>
                                                 <span style="white-space: normal;line-height: 20px;text-decoration: none;font-size: 14px !important;line-height: 21px;text-decoration: none;white-space: normal;width: 140px;float: left;word-wrap: break-word;"data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'short')" class='word_wrap_li_pr hover_en'>
                 <?php echo $value['ph']; ?>
                                                     
                                                 </span>
                                                 <span class='seo_prc' ><?php echo  $value['prc']; ?>%</span><span style="display:none" class='seo_count' ><?php echo $value['count']; ?></span>
-                                                <span class='rank_value' ><?php  ?></span><span style="display:none" class='volume_value' ><?php echo $value['volume']; ?></span>
+                                                <span class='rank_value' ><?php echo $rank_int; ?></span><span style="display:none" class='volume_value' ><?php echo $value['volume']; ?></span>
                                             </li>
             <?php } ?>
                                     </ul>
@@ -449,13 +457,17 @@ foreach ($same_pr as $ks => $vs) {
             <?php if(isset($vs['short_meta'])){foreach ($vs['long_meta'] as $key => $value) { ?>
 
                                             <?php $v_ph = $value['value']; ?>
-
+                                            <input type='hidden' name='debug_rank_api_long_url' value="<?php echo $vs['url']; ?>">
+                                            <input type='hidden' name='debug_rank_api_long_ph' value="<?php echo $v_ph; ?>">
+                                            <?php $rank_api = $this->rankapi_model->checkRankApiData($vs['url'], $v_ph); ?>
+                                            <input type='hidden' name='debug_rank_api_rank_ph' value="<?php echo $rank_api; ?>">
+                                            <?php if($rank_api === null || $rank_api === 0) { $rank_int = ''; } else { $rank_int = $rank_api; } ?>
                                             <li >
                                                 <span style="white-space: normal;line-height: 20px;text-decoration: none;font-size: 14px !important;line-height: 21px;text-decoration: none;white-space: normal;width: 140px;float: left;word-wrap: break-word;"data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'long')" class='word_wrap_li_pr hover_en'>
                 <?php echo $value['value']; ?>
                                                 </span>
                                                 <span class='seo_prc' ><?php echo  $value['prc']; ?>%</span><span style="display:none" class='seo_count' ><?php echo $value['count']; ?></span>
-                                                <span class='rank_value' ><?php  ?></span><span style="display:none" class='volume_value' ><?php echo $value['volume']; ?></span>
+                                                <span class='rank_value' ><?php echo $rank_int;  ?></span><span style="display:none" class='volume_value' ><?php echo $value['volume']; ?></span>
                            
                                             </li>
             <?php }} ?>
@@ -467,14 +479,18 @@ foreach ($same_pr as $ks => $vs) {
                                     <ul class='gr_seo_short_ph list_section' style='float:left;margin:0px;'>
             <?php foreach ($vs['seo']['long'] as $key => $value) { ?>
                                             <?php $v_ph = $value['ph']; ?>
-
+                                            <input type='hidden' name='debug_rank_api_long_url' value="<?php echo $vs['url']; ?>">
+                                            <input type='hidden' name='debug_rank_api_long_ph' value="<?php echo $v_ph; ?>">
+                                            <?php $rank_api = $this->rankapi_model->checkRankApiData($vs['url'], $v_ph); ?>
+                                            <input type='hidden' name='debug_rank_api_rank_ph' value="<?php echo $rank_api; ?>">
+                                            <?php if($rank_api === null || $rank_api === 0) { $rank_int = ''; } else { $rank_int = $rank_api; } ?>
                                             <li>
                                                 <span style="font-size: 14px !important;white-space: normal;line-height: 20px;text-decoration: none;width: 140px;float: left;word-wrap: break-word;"data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'long')" class='word_wrap_li_pr hover_en'>
                 <?php echo $value['ph']; ?>
                                                     
                                                 </span>
                                                  <span class='seo_prc' ><?php echo  $value['prc']; ?>%</span><span style="display:none" class='seo_count' ><?php echo $value['count']; ?></span>
-                                                 <span class='rank_value' ><?php  ?></span><span style="display:none" class='volume_value' ><?php echo $value['volume']; ?></span>
+                                                 <span class='rank_value' ><?php echo $rank_int;  ?></span><span style="display:none" class='volume_value' ><?php echo $value['volume']; ?></span>
                                             </li>
             <?php } ?>
                                     </ul>

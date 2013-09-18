@@ -1732,7 +1732,8 @@ public function gridview() {
             's_product_long_desc_count' => 0,
             'seo' => array('short' => array(), 'long' => array()),
             'same_pr' => array(),
-            'webshoots_model' => $this->load->model('webshoots_model')
+            'webshoots_model' => $this->load->model('webshoots_model'),
+            'rankapi_model' => $this->load->model('rankapi_model')
         );
         if ($im_data_id !== null && is_numeric($im_data_id)) {
 

@@ -10,12 +10,27 @@ class Rankapi_model extends CI_Model {
         parent::__construct();
     }
 
+    public function checkRankApiData($url, $keyword) {
+        $rank = 0;
+        $check_obj = array(
+            'site' => $url,
+            'keyword' => $keyword
+        );
+        $c_query = $this->db->where($check_obj)->order_by('stamp', 'desc')->get($this->tables['ranking_api_data']);
+        $c_res = $c_query->result();
+        if(count($c_res) > 0) {
+            $rank_data = $c_res[0];
+            $rank = $rank_data->rank; 
+        }
+        return $rank;
+    }
+
     public function start_db_sync($sync_data) {
         $check_obj = array(
             'site' => $sync_data['site'],
             'keyword' => $sync_data['keyword']
         );
-        $c_query = $this->db->where($check_obj)->order_by('stamp', 'desc')->limit(6)->get($this->tables['ranking_api_data']);
+        $c_query = $this->db->where($check_obj)->order_by('stamp', 'desc')->get($this->tables['ranking_api_data']);
         $c_res = $c_query->result();
         if(count($c_res) > 0) { // === update
             $r = $c_res[0];
