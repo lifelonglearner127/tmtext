@@ -438,7 +438,7 @@ class PageProcessor {
 		}
 
 		foreach($this->nokogiri->get('#subdesc_content .layoutWidth06 ul li') as $item) {
-			$description[] = $item['#text'][0];
+			$description[] = '<li>'.$item['#text'][0].'</li>';
 		}
 
 		foreach($this->nokogiri->get('#tabProductInfo-Content .gridWidth06 p') as $item) {
@@ -542,7 +542,7 @@ class PageProcessor {
 			$description_long[] = $item['#text'][0];
 		}
 		foreach($this->nokogiri->get('#prod_tabs #tab-Wrapper #description-text #details_descFull ul li') as $item) {
-			$description_long[] = $item['#text'][0];
+			$description_long[] = '<li>'.$item['#text'][0].'</li>';
 		}
 
 		$description_long = implode(' ',$description_long);
@@ -634,7 +634,7 @@ class PageProcessor {
 			$description[] = $item['#text'][0];
 		}
 		foreach($this->nokogiri->get('div.skuHeading longBulletTop ul li') as $item) {
-			$description[] = $item['#text'][0];
+			$description[] = '<li>'.$item['#text'][0].'</li>';
 		}
 
 		foreach($this->nokogiri->get('div#skuDetails .sku_desc p') as $item) {
@@ -1041,7 +1041,7 @@ class PageProcessor {
 			foreach($item['#text'] as $i) {
 				$line = trim($i);
 				if (!empty($line)) {
-					$description[] = $line;
+					$description[] = '<li>'.$line.'</li>';
 				}
 			}
 		}
@@ -1313,7 +1313,7 @@ class PageProcessor {
 		$description = implode(' ',$description);
 
 		foreach($this->nokogiri->get('.pip-info .accordion-component .accordion-body .accordion-contents ul li') as $item) {
-			$descriptionLong[] = trim($item["#text"][0]);
+			$descriptionLong[] = '<li>'.trim($item["#text"][0]).'</li>';
 		}
 
 		$descriptionLong = implode(' ',$descriptionLong);
@@ -1370,7 +1370,7 @@ class PageProcessor {
 		}
 
 		foreach($this->nokogiri->get('.productinfo #pdpTab1 .tabContent ul li') as $item) {
-			$description[] = trim($item['#text'][0]);
+			$description[] = '<li>'.trim($item['#text'][0]).'</li>';
 		}
 
 		$description = implode(' ',$description);
