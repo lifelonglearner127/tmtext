@@ -817,7 +817,7 @@ function readBestSellers(department_id,site_name,table_name) {
                 tableDataString += '<input type="text" style="width: 95px;float: left;margin-right: 5px;" placeholder="Your keyword" onblur="keywordAjax(this);" onkeypress="keywordAjaxCode(this);" name="keyword" value="'+user_seo_keywords+'" />';
                 tableDataString += '<span style="float: left;margin-top: 5px" >'+user_keyword_description_density+'</span></td>';
                 tableDataString += '<td>';
-                if( data[i].description_text != '' ){
+                if( data[i].description_text != '' && data[i].description_words > 0){
                     tableDataString += '<div class="cat_desc" style="display:none">'+data[i].description_text+'</div>';
                 }
                 tableDataString += data[i].description_words+'</td>';
@@ -843,9 +843,11 @@ function readBestSellers(department_id,site_name,table_name) {
 
 $('.site_categorie').live('click',function(){
 	//e.stopPropagation();
-    var txt = $('div.cat_desc').text();
-    $("#mypopup").dialog().empty().append(txt);
-
+    var txt = $(this).find('div.cat_desc').text();
+    console.log()
+    if(txt != ''){
+        $("#mypopup").dialog().empty().append(txt);
+    }
 });
 
 $('.category_description_text').live('click',function(){
