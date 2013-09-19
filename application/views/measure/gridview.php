@@ -181,6 +181,15 @@ foreach ($same_pr as $ks => $vs) {
                             }
                             ?>
                     </div>
+                    
+                        <!--                            //Model-->
+                    <?php if(isset($vs['parsed_attributes'])){ ?>
+                       <div class="parsed_attributes" style="width: 100%;margin-bottom: 20px;"> <p style="font-weight:bold;">Model: </p>                                                                     
+                            <?php echo $vs['parsed_attributes']['model']; ?>
+                      </div>                                                        
+                    <?php }?>
+                    
+                    
                     <!--                            //Max-->
                     <div class="p_description" style="overflow:hidden;">
                             <?php $snap_data = $this->webshoots_model->scanForProductSnap($vs['imported_data_id']); ?>

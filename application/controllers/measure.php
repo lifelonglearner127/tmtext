@@ -2042,6 +2042,11 @@ public function gridview() {
 //Max
             
             foreach ($same_pr as $ks => $vs) {
+                $model = $this->imported_data_parsed_model->getByImId($vs['imported_data_id']);
+                if($model){
+                   $same_pr[$ks]['parsed_attributes']=$model['parsed_attributes'];
+                }
+                
                 if(!empty($vs['seo']['short'])){
                 foreach($vs['seo']['short'] as $key => $val){
                    $volume='';
