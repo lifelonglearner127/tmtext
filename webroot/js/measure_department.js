@@ -366,7 +366,7 @@ $( function() {
         var department_id = $(this).data('item');
         $("input[name='selected_department_id']").val(department_id);
         //console.log(department_id);
-        var site_name=$('.btn_caret_sign').text()
+        var site_name=$('.btn_caret_sign').text();
         $("#departmentDropdown_first").text(departmentValue);
         readBestSellers(department_id,site_name,'records');
 
@@ -435,7 +435,7 @@ $( function() {
     $("#departmentDropdownSec .dropdown-menu > li > a").live('click', function(e) {
         var departmentValue = $.trim($(this).text());
         var department_id = $(this).data('item');
-        var site_name=$('.btn_caret_sign_sec').text()
+        var site_name=$('#hp_boot_drop_sec .btn_caret_sign_sec').text();
         $("#departmentDropdownSec_first").text(departmentValue);
         readBestSellers(department_id,site_name,'recordSec');
         /*****departmentAjax****/
