@@ -1009,6 +1009,7 @@ $(document).click(function(e) {
         if(inputVal != ''){
             if(trueOrFalse){
                 $(this).closest('.p_description').find('.compare, .short_desc_con').each(function(){
+                    console.log($(this).text());
                     var reg = new RegExp(inputVal,"ig");
                     var newInputVal = $(this).html().match(reg);
                     for(var i in newInputVal){
