@@ -12,7 +12,7 @@
         font-size: 18px;
     }
     #departmentDropdown{
-        padding-left:31px;
+        padding-left:14px;
     }
     #departmentDropdownSec{
         margin-right:10px;
@@ -32,7 +32,7 @@
         overflow: auto;
     }
     #dataTableDiv1 .dataTables_filter input, #dataTableDiv2 .dataTables_filter input { width: 150px }
-    #hp_boot_drop_sec{ display: block!important;float:right;padding-right: 31px; }
+    #hp_boot_drop_sec{ display: block!important;float:right;padding-right: 14px; }
 </style>
 <div class="tabbable">
     <ul class="nav nav-tabs jq-measure-tabs">
