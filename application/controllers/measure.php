@@ -44,13 +44,13 @@ class Measure extends MY_Controller {
         // $path_to_cron = base_url()."index.php/crons/site_crawler_screens?ids=$id";
         $path_to_cron = "http://dev.contentsolutionsinc.com/producteditor/index.php/crons/site_crawler_screens?ids=$id";
         $cmd = "";
-        if($opt == 1) {
+        if ($opt == 1) {
             $cmd = "wget -q $path_to_cron > /dev/null 2>&1";
-        } else if($opt == 2) {
+        } else if ($opt == 2) {
             $cmd = "wget -q $path_to_cron 2>&1";
-        } else if($opt == 3) {
+        } else if ($opt == 3) {
             $cmd = "wget -O - -q -t 1 $path_to_cron";
-        } else if($opt == 4) {
+        } else if ($opt == 4) {
             $cmd = "wget -S -O- $path_to_cron > /dev/null 2>/dev/null &";
         }
         shell_exec($cmd);
@@ -63,7 +63,7 @@ class Measure extends MY_Controller {
         $api_key = $this->config->item('ranking_api_key');
         $data = array("data" => json_encode(array("action" => "getAccountRankings", "id" => "$api_username", "apikey" => "$api_key")));
         $ch = curl_init('https://www.serpranktracker.com/tracker/webservice');
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST"); 
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
         curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         $track_data = curl_exec($ch);
@@ -72,18 +72,18 @@ class Measure extends MY_Controller {
             'status' => false,
             'msg' => ''
         );
-        if(isset($data) && $data->status == 'success') {
-            foreach($data->data as $k=>$v) {
+        if (isset($data) && $data->status == 'success') {
+            foreach ($data->data as $k => $v) {
                 $site = $v->site;
                 $keywords = $v->keywords;
-                if((isset($site) && trim($site) !== "") && (isset($keywords) && count($keywords) > 0)) {
-                    foreach($keywords as $ks => $kv) {
+                if ((isset($site) && trim($site) !== "") && (isset($keywords) && count($keywords) > 0)) {
+                    foreach ($keywords as $ks => $kv) {
                         // === extract not null and latest (according to date) rank object (start)
                         $r_object = null;
                         $rank_int = null;
                         $ranking_stack = array();
                         foreach ($kv->rankings as $ks => $vs) {
-                            if(isset($vs->ranking) && $vs->ranking !== null && $vs->ranking !== "") {
+                            if (isset($vs->ranking) && $vs->ranking !== null && $vs->ranking !== "") {
                                 $mid = array(
                                     'ranking' => $vs->ranking,
                                     'rankedurl' => $vs->rankedurl,
@@ -93,14 +93,15 @@ class Measure extends MY_Controller {
                             }
                         }
                         $sort = array();
-                        foreach($ranking_stack as $k=>$v) {
+                        foreach ($ranking_stack as $k => $v) {
                             $sort['datetime'][$k] = $v['datetime'];
                         }
                         array_multisort($sort['datetime'], SORT_DESC, $ranking_stack);
-                        if(count($ranking_stack) > 0) {
+                        if (count($ranking_stack) > 0) {
                             $r_object = $ranking_stack[0];
                         }
-                        if($r_object !== null) $rank_int = $r_object['ranking'];
+                        if ($r_object !== null)
+                            $rank_int = $r_object['ranking'];
                         // === extract not null and latest (according to date) rank object (end)
                         $sync_data = array(
                             'site' => $site,
@@ -175,8 +176,8 @@ class Measure extends MY_Controller {
         $webthumb_user_id = $this->config->item('webthumb_user_id');
         $api_key = $this->config->item('webthumb_api_key');
         $url = "http://$url";
-        $c_date = gmdate('Ymd', time()); 
-        $hash = md5($c_date.$url.$api_key); 
+        $c_date = gmdate('Ymd', time());
+        $hash = md5($c_date . $url . $api_key);
         $e_url = urlencode(trim($url));
         return $res = array(
             "s" => "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=medium2&cache=1",
@@ -188,8 +189,8 @@ class Measure extends MY_Controller {
         $webthumb_user_id = $this->config->item('webthumb_user_id');
         $api_key = $this->config->item('webthumb_api_key');
         $url = "http://$url";
-        $c_date = gmdate('Ymd', time()); 
-        $hash = md5($c_date.$url.$api_key); 
+        $c_date = gmdate('Ymd', time());
+        $hash = md5($c_date . $url . $api_key);
         $e_url = urlencode(trim($url));
         $call = "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=large&cache=1";
         return $call;
@@ -211,12 +212,12 @@ class Measure extends MY_Controller {
         $res = array(
             'path' => $path,
             'dir' => $dir . "/$url_name.$type",
-            'shot_name' => $url_name.".".$type,
+            'shot_name' => $url_name . "." . $type,
             'call' => $ext_url
         );
         return $res;
     }
-  
+
     private function urlExistsCode($url) {
         if ($url === null || trim($url) === "")
             return false;
@@ -260,18 +261,17 @@ class Measure extends MY_Controller {
             'status' => false,
             'data' => array()
         );
-        if(isset($batch_id) && is_numeric($batch_id)) {
+        if (isset($batch_id) && is_numeric($batch_id)) {
             // $urls = $this->crawler_list_model->getByBatchOverall($batch_id);
             $urls = $this->crawler_list_model->getByBatchLimit(5, 0, $batch_id);
             // ===== start snaps crawl process (start)
-            if(count($urls) > 0) {
+            if (count($urls) > 0) {
                 foreach ($urls as $k => $v) {
                     // $http_status = $this->urlExistsCode($v->url);
                     // $url = preg_replace('#^https?://#', '', $v->url);
                     // $r_url = urlencode(trim($url));
                     // $call_url = $this->webthumb_call_link($url);
                     // $snap_res = $this->crawl_webshoot($call_url, $v->id);
-
                     // $file = $snap_res['dir'];
                     // $file_size = filesize($file);
                     // if($file_size === false || $file_size < 2048) {
@@ -280,7 +280,6 @@ class Measure extends MY_Controller {
                     //     $call_url = "http://api.snapito.com/web/$api_key/mc/$url";
                     //     $snap_res = $this->crawl_webshoot($call_url, $v->id);
                     // }
-
                     // $this->webshoots_model->updateCrawlListWithSnap($v->id, $snap_res['img'], $http_status);
                 }
             }
@@ -319,10 +318,11 @@ class Measure extends MY_Controller {
         $email_report_config_sender = $this->webshoots_model->getEmailReportConfig('sender');
 
         $email_report_sender_name = $this->settings_model->get_general_setting('site_name');
-        if($email_report_sender_name === false) $email_report_sender_name = "Content Solutions - Home Pages Report";
+        if ($email_report_sender_name === false)
+            $email_report_sender_name = "Content Solutions - Home Pages Report";
 
         $attach_value = $this->webshoots_model->getEmailReportConfig('attach');
-        if($attach_value == 'yes') {
+        if ($attach_value == 'yes') {
             $attach_st = true;
         } else {
             $attach_st = false;
@@ -339,9 +339,9 @@ class Measure extends MY_Controller {
         $email_logo = $this->webshoots_model->getEmailReportConfig('logo');
         $screens = $this->webshoots_model->getDistinctEmailScreens($c_week, $c_year, $uid);
         // ==== sort assoc by pos (start)
-        if(count($screens) > 0) {
+        if (count($screens) > 0) {
             $sort = array();
-            foreach($screens as $k=>$v) {
+            foreach ($screens as $k => $v) {
                 $sort['pos'][$k] = $v['pos'];
             }
             array_multisort($sort['pos'], SORT_ASC, $screens);
@@ -369,8 +369,8 @@ class Measure extends MY_Controller {
             $msg = $this->load->view('measure/rec_report_email_template', $data_et, true);
             $this->email->message($msg);
             // --- attachments (start)
-            if($attach_st) {
-                if(count($screens) > 0) {
+            if ($attach_st) {
+                if (count($screens) > 0) {
                     foreach ($screens as $key => $value) {
                         $path = $value['dir'];
                         $this->email->attach("$path");
@@ -388,12 +388,13 @@ class Measure extends MY_Controller {
         $this->load->model('settings_model');
 
         $email_report_config_sender = $this->webshoots_model->getEmailReportConfig('sender');
-        
+
         $email_report_sender_name = $this->settings_model->get_general_setting('site_name');
-        if($email_report_sender_name === false) $email_report_sender_name = "Content Solutions - Home Pages Report";
-        
+        if ($email_report_sender_name === false)
+            $email_report_sender_name = "Content Solutions - Home Pages Report";
+
         $attach_value = $this->webshoots_model->getEmailReportConfig('attach');
-        if($attach_value == 'yes') {
+        if ($attach_value == 'yes') {
             $attach_st = true;
         } else {
             $attach_st = false;
@@ -410,9 +411,9 @@ class Measure extends MY_Controller {
 
         $screens = $this->webshoots_model->getDistinctEmailScreens($c_week, $c_year, $uid);
         // ==== sort assoc by pos (start)
-        if(count($screens) > 0) {
+        if (count($screens) > 0) {
             $sort = array();
-            foreach($screens as $k=>$v) {
+            foreach ($screens as $k => $v) {
                 $sort['pos'][$k] = $v['pos'];
             }
             array_multisort($sort['pos'], SORT_ASC, $screens);
@@ -427,7 +428,7 @@ class Measure extends MY_Controller {
         $config['charset'] = 'UTF-8';
         $config['wordwrap'] = TRUE;
         $config['mailtype'] = 'html';
-        
+
         $this->email->initialize($config);
         // -- email config (dev configurations) (end) --
         $this->email->from("$email_report_config_sender", "$email_report_sender_name");
@@ -439,8 +440,8 @@ class Measure extends MY_Controller {
         $msg = $this->load->view('measure/rec_report_email_template', $data_et, true);
         $this->email->message($msg);
         // --- attachments (start)
-        if($attach_st) {
-            if(count($screens) > 0) {
+        if ($attach_st) {
+            if (count($screens) > 0) {
                 foreach ($screens as $key => $value) {
                     $path = $value['dir'];
                     $this->email->attach("$path");
@@ -476,7 +477,7 @@ class Measure extends MY_Controller {
         $res = array(
             'path' => $path,
             'dir' => $dir . "/$url_name.$type",
-            'img' => $url_name.".".$type,
+            'img' => $url_name . "." . $type,
             'call' => $call_url
         );
         return $res;
@@ -519,7 +520,7 @@ class Measure extends MY_Controller {
     public function crawlsnapshoot() {
         $this->load->model('webshoots_model');
         $urls = $this->input->post('urls');
-        if(count($urls) > 0) {
+        if (count($urls) > 0) {
             foreach ($urls as $k => $v) {
                 $http_status = $this->urlExistsCode($v['url']);
                 $orig_url = $v['url'];
@@ -538,12 +539,12 @@ class Measure extends MY_Controller {
         $urls = $this->input->post('urls');
         $ids_string = "";
         $cmd = "";
-        if(count($urls) > 0) {
+        if (count($urls) > 0) {
             foreach ($urls as $k => $v) {
-                $ids_string .= $v['id'].",";
+                $ids_string .= $v['id'] . ",";
             }
             $ids_string = substr($ids_string, 0, -1);
-            $path_to_cron = base_url()."index.php/crons/site_crawler_screens?ids=$ids_string";
+            $path_to_cron = base_url() . "index.php/crons/site_crawler_screens?ids=$ids_string";
             $cmd = "wget -q $path_to_cron > /dev/null 2>&1";
             shell_exec($cmd);
         }
@@ -579,7 +580,6 @@ class Measure extends MY_Controller {
     //     }
     //     $this->output->set_content_type('application/json')->set_output(true);
     // }
-
     // public function webshootcrawlall() {
     //     $customers = $this->customers_list_new();
     //     $this->load->model('webshoots_model');
@@ -647,12 +647,13 @@ class Measure extends MY_Controller {
         $year = date("Y", time());
         $sites = array();
         foreach ($customers as $k => $v) {
-            if ($this->urlExists($v['c_url'])) $sites[] = $v['c_url'];
+            if ($this->urlExists($v['c_url']))
+                $sites[] = $v['c_url'];
         }
         foreach ($sites as $url) {
             $c_url = preg_replace('#^https?://#', '', $url);
 
-            if($c_url === 'bjs.com') {
+            if ($c_url === 'bjs.com') {
                 $api_key = $this->config->item('snapito_api_secret');
                 $call_url = "http://api.snapito.com/web/$api_key/mc/$c_url";
             } else {
@@ -662,7 +663,7 @@ class Measure extends MY_Controller {
             $crawl_l = $this->upload_record_webshoot($call_url, $c_url . "_big");
             $file = $crawl_l['dir'];
             $file_size = filesize($file);
-            if($file_size === false || $file_size < 2048) {
+            if ($file_size === false || $file_size < 2048) {
                 @unlink($file);
                 $crawl_l = $this->upload_record_webshoot($call_url, $c_url . "_big");
             }
@@ -677,11 +678,11 @@ class Measure extends MY_Controller {
                 'year' => $year,
                 'week' => $week,
                 'pos' => 0,
-                'shot_name' => $crawl_l['shot_name'] 
+                'shot_name' => $crawl_l['shot_name']
             );
             $r = $this->webshoots_model->recordUpdateWebshoot($result);
             // === webshots selection refresh attempt (start)
-            $this->webshoots_model->selectionRefreshDecision($r); 
+            $this->webshoots_model->selectionRefreshDecision($r);
             // === webshots selection refresh attempt (end)
             sleep(5);
         }
@@ -716,13 +717,13 @@ class Measure extends MY_Controller {
         $res = $this->webshoots_model->getWebShootByUrl($c_url);
         if ($res !== false) {
             $file_s = filesize($res->dir_img);
-            if($file_s === false || $file_s < 2048) { // === destroy bad image, crawl new one, update record in DB
+            if ($file_s === false || $file_s < 2048) { // === destroy bad image, crawl new one, update record in DB
                 @unlink($res->dir_img);
                 $call_url = $this->webthumb_call_link($c_url);
                 $crawl_l = $this->upload_record_webshoot($call_url, $c_url . "_big");
                 $file = $crawl_l['dir'];
                 $file_size = filesize($file);
-                if($file_size !== false && $file_size > 2048) { // === update
+                if ($file_size !== false && $file_size > 2048) { // === update
                     $up_object = array(
                         'img' => $crawl_l['path'],
                         'thumb' => $crawl_l['path'],
@@ -744,7 +745,7 @@ class Measure extends MY_Controller {
                     );
                     $this->webshoots_model->updateWebshootById($up_object, $res->id);
                 }
-            } 
+            }
             $screen_id = $res->id;
             $this->webshoots_model->recordWebShootSelectionAttempt($screen_id, $uid, $pos, $year, $week, $res->img, $res->thumb, $res->stamp, $res->url, $label, $res->shot_name); // --- webshoot selection record attempt
             $result = $res;
@@ -755,7 +756,7 @@ class Measure extends MY_Controller {
             $crawl_l = $this->upload_record_webshoot($call_url, $c_url . "_big");
             $file = $crawl_l['dir'];
             $file_size = filesize($file);
-            if($file_size !== false && $file_size > 2048) {
+            if ($file_size !== false && $file_size > 2048) {
                 $result = array(
                     'state' => false,
                     'url' => $c_url,
@@ -793,7 +794,6 @@ class Measure extends MY_Controller {
                 $result = $this->webshoots_model->getWebshootDataById($insert_id);
                 $this->webshoots_model->recordWebShootSelectionAttempt($insert_id, $uid, $pos, $year, $week, $result->img, $result->thumb, $result->stamp, $result->url, $label, $res->shot_name);
             }
-
         }
         $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }
@@ -964,7 +964,7 @@ class Measure extends MY_Controller {
         // === common params (end)
         $c_url = preg_replace('#^https?://#', '', $c_url);
 
-        if($c_url === 'bjs.com') {
+        if ($c_url === 'bjs.com') {
             $api_key = $this->config->item('snapito_api_secret');
             $call_url = "http://api.snapito.com/web/$api_key/mc/$c_url";
         } else {
@@ -974,7 +974,7 @@ class Measure extends MY_Controller {
 
         $file = $crawl_l['dir'];
         $file_size = filesize($file);
-        if($file_size === false || $file_size < 10000) {
+        if ($file_size === false || $file_size < 10000) {
             @unlink($file);
             $crawl_l = $this->upload_record_webshoot($call_url, $c_url . "_big_s");
         }
@@ -993,9 +993,10 @@ class Measure extends MY_Controller {
         );
         $r = $this->webshoots_model->recordUpdateWebshoot($result);
         // === webshots selection refresh attempt (start)
-        $this->webshoots_model->selectionRefreshDecision($r); 
+        $this->webshoots_model->selectionRefreshDecision($r);
         // === webshots selection refresh attempt (end)
-        if ($r > 0) $result['state'] = true;
+        if ($r > 0)
+            $result['state'] = true;
         $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }
 
@@ -1113,7 +1114,7 @@ class Measure extends MY_Controller {
         $this->data['batches_list'] = $batches_list;
         $this->render();
     }
-    
+
     // Denis measure/measure_products_test page-----------------------------------------
     public function measure_products_test() {
         $this->load->model('sites_model');
@@ -1136,6 +1137,7 @@ class Measure extends MY_Controller {
         $this->data['batches_list'] = $batches_list;
         $this->render();
     }
+
     //-----------------------------------------------
 
     public function measure_departments() {
@@ -1175,7 +1177,7 @@ class Measure extends MY_Controller {
         return $output;
     }
 
-    public function getDashboardDepData(){
+    public function getDashboardDepData() {
         $this->load->model('sites_model');
         $this->load->model('department_members_model');
         $site_id = $this->sites_model->getIdByName($this->input->post('site_name'));
@@ -1184,28 +1186,28 @@ class Measure extends MY_Controller {
         $keyword_optimize = 0;
         $keyword_optimize_data = array();
         $dep_optimize = array();
-        foreach($data_more as $key => $obj){
+        foreach ($data_more as $key => $obj) {
             $keywords_density = json_decode($data_more[$key]->title_keyword_description_density);
             $num = 0;
-            foreach($keywords_density as $k => $v){
-                if(floatval($v) > 2){
+            foreach ($keywords_density as $k => $v) {
+                if (floatval($v) > 2) {
                     $num = 0;
                 } else {
                     $num = 1;
                 }
             }
-            if($num == 0){
+            if ($num == 0) {
                 array_push($dep_optimize, $obj);
-            }else{
+            } else {
                 array_push($keyword_optimize_data, $obj);
             }
             $keyword_optimize += $num;
         }
-        $data = array_merge($data, array('keyword_optimize' => $keyword_optimize,'keyword_optimize_data' => $keyword_optimize_data, 'dep_optimize'=>$dep_optimize));
+        $data = array_merge($data, array('keyword_optimize' => $keyword_optimize, 'keyword_optimize_data' => $keyword_optimize_data, 'dep_optimize' => $dep_optimize));
         $this->output->set_content_type('application/json')->set_output(json_encode($data));
     }
 
-    public function getDashboardCatData(){
+    public function getDashboardCatData() {
         $this->load->model('sites_model');
         $this->load->model('site_categories_model');
         $site_id = $this->sites_model->getIdByName($this->input->post('site_name'));
@@ -1214,28 +1216,28 @@ class Measure extends MY_Controller {
         $keyword_optimize = 0;
         $keyword_optimize_data = array();
         $dep_optimize = array();
-        foreach($data_more as $key => $obj){
+        foreach ($data_more as $key => $obj) {
             $keywords_density = json_decode($data_more[$key]->title_keyword_description_density);
             $num = 0;
-            foreach($keywords_density as $k => $v){
-                if(floatval($v) > 2){
+            foreach ($keywords_density as $k => $v) {
+                if (floatval($v) > 2) {
                     $num = 0;
                 } else {
                     $num = 1;
                 }
             }
-            if($num == 0){
+            if ($num == 0) {
                 array_push($dep_optimize, $obj);
-            }else{
+            } else {
                 array_push($keyword_optimize_data, $obj);
             }
             $keyword_optimize += $num;
         }
-        $data = array_merge($data, array('keyword_optimize' => $keyword_optimize,'keyword_optimize_data' => $keyword_optimize_data, 'dep_optimize'=>$dep_optimize));
+        $data = array_merge($data, array('keyword_optimize' => $keyword_optimize, 'keyword_optimize_data' => $keyword_optimize_data, 'dep_optimize' => $dep_optimize));
         $this->output->set_content_type('application/json')->set_output(json_encode($data));
     }
 
-    public function getDashboardCatDetails(){
+    public function getDashboardCatDetails() {
         $this->load->model('sites_model');
         $this->load->model('site_categories_model');
         $condition = $this->input->post('condition');
@@ -1244,7 +1246,7 @@ class Measure extends MY_Controller {
         $this->output->set_content_type('application/json')->set_output(json_encode($data));
     }
 
-    public function getDepartmentsByCustomer(){
+    public function getDepartmentsByCustomer() {
         $this->load->model('sites_model');
         $this->load->model('department_members_model');
         $customerID = $this->sites_model->getIdByName($this->input->post('customer_name'));
@@ -1252,7 +1254,7 @@ class Measure extends MY_Controller {
         $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }
 
-    public function getCategoriesByCustomer(){
+    public function getCategoriesByCustomer() {
         $this->load->model('sites_model');
         $this->load->model('site_categories_model');
         $site_id = $this->sites_model->getIdByName($this->input->post('customer_name'));
@@ -1260,81 +1262,79 @@ class Measure extends MY_Controller {
         $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }
 
-    public function getKeywordByDescriptionText(){
-         $this->load->model('site_categories_model');
-		 $category_id = $_POST['categoryID'];
-		 $result = $this->site_categories_model->getDataByCategory($category_id);
-		 if(empty($_POST['keyword'])){
-		     $this->site_categories_model->UpdateKeywordsData($category_id);
-			 $density = ' N/A';
-		 } else {
-			 //var_dump($result);
-			 $description_text=trim($result->description_text,'"');
-			 $vowels = array(".", ",", "?", ":", "/", ">", "<", "&", "#", "^", ";", "`", "~", "*");
-			 $description_text = str_replace($vowels, "",$description_text);
-			 //echo $description_text;
-			 $description_words=$result->description_words;
-			 $array=explode(' ',$description_text);
-			 $keyword=trim($_POST['keyword']);
-			 //print_r($array);
-			 $count_key=0;
-			  foreach($array as $value)
-			  {if(strtolower(trim($value))==strtolower($keyword))
-			   $count_key++;
-			  }
-			  //echo $count_key;
-			  if($description_words==0 || $count_key==0)
-				  $density='0.0%';
-				  
-			  else
-			  {    $densityDouble=$count_key/$description_words*100;
-				   $density=sprintf("%01.2f",$densityDouble).'%';
-			   }
-			  $this->site_categories_model->UpdateKeywordsData($category_id,$keyword,$count_key,sprintf("%01.2f",$densityDouble)); 
-		  }
-		  
-	   echo $density;
+    public function getKeywordByDescriptionText() {
+        $this->load->model('site_categories_model');
+        $category_id = $_POST['categoryID'];
+        $result = $this->site_categories_model->getDataByCategory($category_id);
+        if (empty($_POST['keyword'])) {
+            $this->site_categories_model->UpdateKeywordsData($category_id);
+            $density = ' N/A';
+        } else {
+            //var_dump($result);
+            $description_text = trim($result->description_text, '"');
+            $vowels = array(".", ",", "?", ":", "/", ">", "<", "&", "#", "^", ";", "`", "~", "*");
+            $description_text = str_replace($vowels, "", $description_text);
+            //echo $description_text;
+            $description_words = $result->description_words;
+            $array = explode(' ', $description_text);
+            $keyword = trim($_POST['keyword']);
+            //print_r($array);
+            $count_key = 0;
+            foreach ($array as $value) {
+                if (strtolower(trim($value)) == strtolower($keyword))
+                    $count_key++;
+            }
+            //echo $count_key;
+            if ($description_words == 0 || $count_key == 0)
+                $density = '0.0%';
+
+            else {
+                $densityDouble = $count_key / $description_words * 100;
+                $density = sprintf("%01.2f", $densityDouble) . '%';
+            }
+            $this->site_categories_model->UpdateKeywordsData($category_id, $keyword, $count_key, sprintf("%01.2f", $densityDouble));
+        }
+
+        echo $density;
     }
-    
-    
-    public function getKeywordDepartmentByDescriptionText(){
-         $this->load->model('department_members_model');
-		 $department_id = $_POST['departmentID'];
-		 $result = $this->department_members_model->getDataByDepartment($department_id);
-		 if(empty($_POST['keyword'])){
-		     $this->department_members_model->UpdateKeywordsDepartmentData($department_id);
-			 $density = ' N/A';
-		 } else {
-			 //var_dump($result);
-			 $description_text=trim($result->description_text,'"');
-			 $vowels = array(".", ",", "?", ":", "/", ">", "<", "&", "#", "^", ";", "`", "~", "*");
-			 $description_text = str_replace($vowels, "",$description_text);
-			 //echo $description_text;
-			 $description_words=$result->description_words;
-			 $array=explode(' ',$description_text);
-			 $keyword=trim($_POST['keyword']);
-			 //print_r($array);
-			 $count_key=0;
-			  foreach($array as $value)
-			  {if(strtolower(trim($value))==strtolower($keyword))
-			   $count_key++;
-			  }
-			  //echo $count_key;
-			  if($description_words==0 || $count_key==0)
-				  $density='0.0%';
-				  
-			  else
-			  {    $densityDouble=$count_key/$description_words*100;
-				   $density=sprintf("%01.2f",$densityDouble).'%';
-			   }
-			  $this->department_members_model->UpdateKeywordsDepartmentData($department_id,$keyword,$count_key,sprintf("%01.2f",$densityDouble)); 
-		  }
-		  
-	   echo $density;
+
+    public function getKeywordDepartmentByDescriptionText() {
+        $this->load->model('department_members_model');
+        $department_id = $_POST['departmentID'];
+        $result = $this->department_members_model->getDataByDepartment($department_id);
+        if (empty($_POST['keyword'])) {
+            $this->department_members_model->UpdateKeywordsDepartmentData($department_id);
+            $density = ' N/A';
+        } else {
+            //var_dump($result);
+            $description_text = trim($result->description_text, '"');
+            $vowels = array(".", ",", "?", ":", "/", ">", "<", "&", "#", "^", ";", "`", "~", "*");
+            $description_text = str_replace($vowels, "", $description_text);
+            //echo $description_text;
+            $description_words = $result->description_words;
+            $array = explode(' ', $description_text);
+            $keyword = trim($_POST['keyword']);
+            //print_r($array);
+            $count_key = 0;
+            foreach ($array as $value) {
+                if (strtolower(trim($value)) == strtolower($keyword))
+                    $count_key++;
+            }
+            //echo $count_key;
+            if ($description_words == 0 || $count_key == 0)
+                $density = '0.0%';
+
+            else {
+                $densityDouble = $count_key / $description_words * 100;
+                $density = sprintf("%01.2f", $densityDouble) . '%';
+            }
+            $this->department_members_model->UpdateKeywordsDepartmentData($department_id, $keyword, $count_key, sprintf("%01.2f", $densityDouble));
+        }
+
+        echo $density;
     }
-   
-    
-    public function getCategoriesByDepartment(){
+
+    public function getCategoriesByDepartment() {
         $this->load->model('site_categories_model');
         $this->load->model('sites_model');
         $department_id = $this->input->post('department_id');
@@ -1342,23 +1342,23 @@ class Measure extends MY_Controller {
         $result = $this->site_categories_model->getAllBySiteId($site_id, $department_id);
         $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }
-    
-    public function getDataByDepartment(){
+
+    public function getDataByDepartment() {
         $this->load->model('department_members_model');
         $this->load->model('sites_model');
-        $department_id=$this->input->post('department_id');
-        $site_id=$this->sites_model->getIdByName($this->input->post('site_name'));
-        $result=$this->department_members_model->getDataByDepartmentId($site_id, $department_id);
+        $department_id = $this->input->post('department_id');
+        $site_id = $this->sites_model->getIdByName($this->input->post('site_name'));
+        $result = $this->department_members_model->getDataByDepartmentId($site_id, $department_id);
         $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }
 
-    public function getUrlByDepartment(){
+    public function getUrlByDepartment() {
         $this->load->model('department_members_model');
         $result = $this->department_members_model->getUrlByDepartment($this->input->post('department_id'));
         $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }
 
-    public function getUrlByCategory(){
+    public function getUrlByCategory() {
         $this->load->model('site_categories_model');
         $result = $this->site_categories_model->getUrlByCategory($this->input->post('category_id'));
         $this->output->set_content_type('application/json')->set_output(json_encode($result));
@@ -1476,21 +1476,21 @@ class Measure extends MY_Controller {
 //Max
 
     public function compare_text($first_text, $second_text) {
-       
-       $first_text = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $first_text); 
-       $first_text = preg_replace('/[a-zA-Z]-/', ' ', $first_text); 
-       $second_text = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $second_text); 
-       $second_text = preg_replace('/[a-zA-Z]-/', ' ', $second_text); 
-      
-        if($first_text===$second_text){
+
+        $first_text = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $first_text);
+        $first_text = preg_replace('/[a-zA-Z]-/', ' ', $first_text);
+        $second_text = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $second_text);
+        $second_text = preg_replace('/[a-zA-Z]-/', ' ', $second_text);
+
+        if ($first_text === $second_text) {
             return 100;
-        }else{
-        $a=explode(' ', strtolower($first_text));
-        
-        $b =explode(' ', strtolower($second_text));
-        $arr=  array_intersect($a, $b);
-        $arr =array_unique($arr);
-        $count = count($arr);
+        } else {
+            $a = explode(' ', strtolower($first_text));
+
+            $b = explode(' ', strtolower($second_text));
+            $arr = array_intersect($a, $b);
+            $arr = array_unique($arr);
+            $count = count($arr);
 //        foreach ($a as $val) {
 //            if (in_array($val, $b)) {
 //                $arr[]=$val;
@@ -1498,103 +1498,135 @@ class Measure extends MY_Controller {
 //            }
 //        }
 
-        $prc = $count / count($a) * 100;
-        $dubl_arr = array($prc,$arr);
-        return $dubl_arr;
+            $prc = $count / count($a) * 100;
+            $dubl_arr = array($prc, $arr);
+            return $dubl_arr;
         }
     }
-    public function similar_groups(){
-        
+
+    public function similar_groups() {
+
         $this->load->model('imported_data_parsed_model');
         $this->imported_data_parsed_model->change_mpdel();
 //        $this->imported_data_parsed_model->similiarity_cron();
 //        
     }
-    public function report_mismatch(){
 
-        $group_id=$this->input->post('group_id');
-        $im_data_id=$this->input->post('im_data_id');
+    public function report_mismatch() {
+
+        $group_id = $this->input->post('group_id');
+        $im_data_id = $this->input->post('im_data_id');
         $this->load->model('similar_data_model');
-        $this->similar_data_model->update($group_id,$im_data_id,1);
+        $this->similar_data_model->update($group_id, $im_data_id, 1);
         $this->output->set_content_type('application/json')->set_output(json_encode("aaaaaaaa"));
-
     }
 
-    function get_base_url($url)
-    {
-    $chars = preg_split('//', $url, -1, PREG_SPLIT_NO_EMPTY);
+    function get_base_url($url) {
+        $chars = preg_split('//', $url, -1, PREG_SPLIT_NO_EMPTY);
 
-    $slash = 3; // 3rd slash
+        $slash = 3; // 3rd slash
 
-    $i = 0;
+        $i = 0;
 
-    foreach($chars as $key => $char)
-    {
-        if($char == '/')
-        {
-           $j = $i++;
+        foreach ($chars as $key => $char) {
+            if ($char == '/') {
+                $j = $i++;
+            }
+
+            if ($i == 3) {
+                $pos = $key;
+                break;
+            }
+        }
+        if (preg_match('/www/', $url)) {
+            $main_base = substr($url, 11, $pos - 11);
+        } else {
+            $main_base = substr($url, 7, $pos - 7);
         }
 
-        if($i == 3)
-        {
-           $pos = $key; break;
-        }
+        return $main_base;
     }
-if(preg_match('/www/',$url)){
-$main_base = substr($url, 11, $pos-11);
-}else{
-   $main_base = substr($url, 7, $pos-7); 
-}
 
-return $main_base;
-}
-function matches_count($im_data_id){
-     if(!$this->statistics_model->getbyimpid($im_data_id)){
-        $data = array(
-            'im_data_id' => $im_data_id,
-            's_product' => array(),
-            's_product_short_desc_count' => 0,
-            's_product_long_desc_count' => 0,
-            'seo' => array('short' => array(), 'long' => array()),
-            'same_pr' => array()
-        );
-        if ($im_data_id !== null && is_numeric($im_data_id)) {
+    function matches_count($im_data_id) {
+        if (!$this->statistics_model->getbyimpid($im_data_id)) {
+            $data = array(
+                'im_data_id' => $im_data_id,
+                's_product' => array(),
+                's_product_short_desc_count' => 0,
+                's_product_long_desc_count' => 0,
+                'seo' => array('short' => array(), 'long' => array()),
+                'same_pr' => array()
+            );
+            if ($im_data_id !== null && is_numeric($im_data_id)) {
 
-            // --- GET SELECTED RPODUCT DATA (START)
-            $this->load->model('imported_data_parsed_model');
-            $this->load->model('similar_product_groups_model');
-            $this->load->model('similar_data_model');
-            $data_import = $this->imported_data_parsed_model->getByImId($im_data_id);
+                // --- GET SELECTED RPODUCT DATA (START)
+                $this->load->model('imported_data_parsed_model');
+                $this->load->model('similar_product_groups_model');
+                $this->load->model('similar_data_model');
+                $data_import = $this->imported_data_parsed_model->getByImId($im_data_id);
 
-            $same_pr = $this->imported_data_parsed_model->getSameProductsHuman($im_data_id);
-            
-            // get similar by parsed_attributes
-            if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
+                $same_pr = $this->imported_data_parsed_model->getSameProductsHuman($im_data_id);
 
-                $strict = $this->input->post('strict');
-                $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], $strict);
-                
-                
-            }
+                // get similar by parsed_attributes
+                if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
 
-            if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['UPC/EAN/ISBN'])) {
-
-                $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['UPC/EAN/ISBN']);
-            }
-            if(empty($same_pr) && !isset($data_import['parsed_attributes']['model'])){
-            $data['mismatch_button']=true;
-            if (!$this->similar_product_groups_model->checkIfgroupExists($im_data_id)) {
-
-                if (!isset($data_import['parsed_attributes'])) {
-
-                    $same_pr = $this->imported_data_parsed_model->getByProductName($im_data_id, $data_import['product_name'], '', $strict);
+                    $strict = $this->input->post('strict');
+                    $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], $strict);
                 }
-                if (isset($data_import['parsed_attributes']) ) {
 
-                    $same_pr = $this->imported_data_parsed_model->getByProductName($im_data_id, $data_import['product_name'], $data_import['parsed_attributes']['manufacturer'], $strict);
+                if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['UPC/EAN/ISBN'])) {
+
+                    $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['UPC/EAN/ISBN']);
                 }
-            } else {
+                if (empty($same_pr) && !isset($data_import['parsed_attributes']['model'])) {
+                    $data['mismatch_button'] = true;
+                    if (!$this->similar_product_groups_model->checkIfgroupExists($im_data_id)) {
+
+                        if (!isset($data_import['parsed_attributes'])) {
+
+                            $same_pr = $this->imported_data_parsed_model->getByProductName($im_data_id, $data_import['product_name'], '', $strict);
+                        }
+                        if (isset($data_import['parsed_attributes'])) {
+
+                            $same_pr = $this->imported_data_parsed_model->getByProductName($im_data_id, $data_import['product_name'], $data_import['parsed_attributes']['manufacturer'], $strict);
+                        }
+                    } else {
+                        $this->load->model('similar_imported_data_model');
+                        $customers_list = array();
+                        $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('sites');
+                        $query_cus_res = $query_cus->result();
+                        if (count($query_cus_res) > 0) {
+                            foreach ($query_cus_res as $key => $value) {
+                                $n = parse_url($value->url);
+                                $customers_list[] = $n['host'];
+                            }
+                        }
+                        $customers_list = array_unique($customers_list);
+                        $rows = $this->similar_data_model->getByGroupId($im_data_id);
+                        $data_similar = array();
+
+                        foreach ($rows as $key => $row) {
+                            $data_similar[$key] = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
+                            $data_similar[$key]['imported_data_id'] = $row->imported_data_id;
+
+                            $cus_val = "";
+                            foreach ($customers_list as $ki => $vi) {
+                                if (strpos($data_similar[$key]['url'], "$vi") !== false) {
+                                    $cus_val = $vi;
+                                }
+                            }
+                            if ($cus_val !== "")
+                                $data_similar[$key]['customer'] = $cus_val;
+                        }
+
+                        if (!empty($data_similar)) {
+                            $same_pr = $data_similar;
+                        }
+                    }
+                }
+                // get similar for first row
                 $this->load->model('similar_imported_data_model');
+
                 $customers_list = array();
                 $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('sites');
                 $query_cus_res = $query_cus->result();
@@ -1605,128 +1637,86 @@ function matches_count($im_data_id){
                     }
                 }
                 $customers_list = array_unique($customers_list);
-                $rows = $this->similar_data_model->getByGroupId($im_data_id);
-                $data_similar = array();
 
-                foreach ($rows as $key => $row) {
-                    $data_similar[$key] = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
-                    $data_similar[$key]['imported_data_id'] = $row->imported_data_id;
+                if (empty($same_pr) && ($group_id = $this->similar_imported_data_model->findByImportedDataId($im_data_id))) {
+                    if ($rows = $this->similar_imported_data_model->getImportedDataByGroupId($group_id)) {
+                        $data_similar = array();
 
-                    $cus_val = "";
-                    foreach ($customers_list as $ki => $vi) {
-                        if (strpos($data_similar[$key]['url'], "$vi") !== false) {
-                            $cus_val = $vi;
-                        }
-                    }
-                    if ($cus_val !== "")
-                        $data_similar[$key]['customer'] = $cus_val;
-                }
+                        foreach ($rows as $key => $row) {
+                            $data_similar[$key] = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
+                            $data_similar[$key]['imported_data_id'] = $row->imported_data_id;
 
-                if (!empty($data_similar)) {
-                    $same_pr = $data_similar;
-                }
-            }
-            }
-            // get similar for first row
-            $this->load->model('similar_imported_data_model');
-
-            $customers_list = array();
-            $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('sites');
-            $query_cus_res = $query_cus->result();
-            if (count($query_cus_res) > 0) {
-                foreach ($query_cus_res as $key => $value) {
-                    $n = parse_url($value->url);
-                    $customers_list[] = $n['host'];
-                }
-            }
-            $customers_list = array_unique($customers_list);
-
-            if (empty($same_pr) && ($group_id = $this->similar_imported_data_model->findByImportedDataId($im_data_id))) {
-                if ($rows = $this->similar_imported_data_model->getImportedDataByGroupId($group_id)) {
-                    $data_similar = array();
-
-                    foreach ($rows as $key => $row) {
-                        $data_similar[$key] = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
-                        $data_similar[$key]['imported_data_id'] = $row->imported_data_id;
-
-                        $cus_val = "";
-                        foreach ($customers_list as $ki => $vi) {
-                            if (strpos($data_similar[$key]['url'], "$vi") !== false) {
-                                $cus_val = $vi;
+                            $cus_val = "";
+                            foreach ($customers_list as $ki => $vi) {
+                                if (strpos($data_similar[$key]['url'], "$vi") !== false) {
+                                    $cus_val = $vi;
+                                }
                             }
+                            if ($cus_val !== "")
+                                $data_similar[$key]['customer'] = $cus_val;
                         }
-                        if ($cus_val !== "")
-                            $data_similar[$key]['customer'] = $cus_val;
-                    }
 
-                    if (!empty($data_similar)) {
-                        $same_pr = $data_similar;
+                        if (!empty($data_similar)) {
+                            $same_pr = $data_similar;
+                        }
                     }
                 }
-            }
 
-            foreach ($same_pr as $ks => $vs) {
+                foreach ($same_pr as $ks => $vs) {
 
-                if ($this->get_base_url($vs['url']) == $this->get_base_url($selectedUrl)) {
-                    if ($ks != 0) {
-                        $same_pr[] = $same_pr[0];
-                        $same_pr[0] = $vs;
-                        unset($same_pr[$ks]);
+                    if ($this->get_base_url($vs['url']) == $this->get_base_url($selectedUrl)) {
+                        if ($ks != 0) {
+                            $same_pr[] = $same_pr[0];
+                            $same_pr[0] = $vs;
+                            unset($same_pr[$ks]);
+                        }
                     }
                 }
-            }
-            foreach ($same_pr as $ks => $vs) {
-                
-                $this->load->model('sites_model');
-                   $same_pr[$ks]['customer']=  strtolower($this->sites_model->get_name_by_url($same_pr[$ks]['customer']));
-                
-            }
-           
-        $matched_sites=array();
-        foreach($same_pr as $ks => $vs){
-           $matched_sites[]=strtolower($vs['customer']);
-        }
-        
-        // -------- COMPARING V1 (START)
-        return $matched_sites;
-        }
-     }else{
-         $matched_sites=array();
-         $res=$this->statistics_model->getbyimpid($im_data_id);
-         $matches=  unserialize($res['similar_products_competitors']);
-         foreach($matches as $val){
-             $matched_sites[]=$val['customer'];
-         }
-         return  $matched_sites;
-         
-                           
-     }   
-     
-         
-     
-}
+                foreach ($same_pr as $ks => $vs) {
 
-public function filterSiteNameByCustomerName(){
-    $this->load->model('customers_model');
-    $this->load->model('sites_model');
-    $this->load->model('batches_model');
-    $batch = $this->input->post('batch');
-    $customer_name = $this->batches_model->getCustomerByBatch($batch);
-    $customer=$this->customers_model->getByName($customer_name);
-    $customer_url=$n = parse_url($customer['url']);
-    $site= strtolower($this->sites_model->get_name_by_url($customer_url['host']));
-    echo $site;
-    
-}
-public function gridview() {
-       $data['mismatch_button']=false;
+                    $this->load->model('sites_model');
+                    $same_pr[$ks]['customer'] = strtolower($this->sites_model->get_name_by_url($same_pr[$ks]['customer']));
+                }
+
+                $matched_sites = array();
+                foreach ($same_pr as $ks => $vs) {
+                    $matched_sites[] = strtolower($vs['customer']);
+                }
+
+                // -------- COMPARING V1 (START)
+                return $matched_sites;
+            }
+        } else {
+            $matched_sites = array();
+            $res = $this->statistics_model->getbyimpid($im_data_id);
+            $matches = unserialize($res['similar_products_competitors']);
+            foreach ($matches as $val) {
+                $matched_sites[] = $val['customer'];
+            }
+            return $matched_sites;
+        }
+    }
+
+    public function filterSiteNameByCustomerName() {
+        $this->load->model('customers_model');
+        $this->load->model('sites_model');
+        $this->load->model('batches_model');
+        $batch = $this->input->post('batch');
+        $customer_name = $this->batches_model->getCustomerByBatch($batch);
+        $customer = $this->customers_model->getByName($customer_name);
+        $customer_url = $n = parse_url($customer['url']);
+        $site = strtolower($this->sites_model->get_name_by_url($customer_url['host']));
+        echo $site;
+    }
+
+    public function gridview() {
+        $data['mismatch_button'] = false;
         $im_data_id = $this->input->post('im_data_id');
         $im_data_id = $this->input->post('im_data_id');
-        $show_from= $this->input->post('show_from');
-        if($show_from!='null'){
-            $show_from=explode(',',$show_from);
-            $show_from=array_map('strtolower',  $show_from);
-            
+        $show_from = $this->input->post('show_from');
+        if ($show_from != 'null') {
+            $show_from = explode(',', $show_from);
+            $show_from = array_map('strtolower', $show_from);
         }
 
         // ===== product snap scanner (start)
@@ -1751,7 +1741,7 @@ public function gridview() {
             $this->load->model('similar_product_groups_model');
             $this->load->model('similar_data_model');
             $data_import = $this->imported_data_parsed_model->getByImId($im_data_id);
-            
+
             if ($data_import['description'] !== null && trim($data_import['description']) !== "") {
                 $data_import['description'] = preg_replace('/\s+/', ' ', $data_import['description']);
                 // $data_import['description'] = preg_replace('/[^A-Za-z0-9\. -!]/', ' ', $data_import['description']);
@@ -1773,88 +1763,88 @@ public function gridview() {
                 $strict = $this->input->post('strict');
                 $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], $strict);
                 $rows = $this->similar_data_model->get_group_id($im_data_id);
-               
+
                 //echo "<pre>";
-               // print_r($rows);
-                if(count($rows)>0){
-                    
-                    foreach($same_pr as $val){
-                        foreach($rows as  $key =>$row){
-                           if($row['group_id']==$val['imported_data_id']){
-                               unset($rows[$key]);
-                           }
+                // print_r($rows);
+                if (count($rows) > 0) {
+
+                    foreach ($same_pr as $val) {
+                        foreach ($rows as $key => $row) {
+                            if ($row['group_id'] == $val['imported_data_id']) {
+                                unset($rows[$key]);
+                            }
                         }
                     }
                 }
-                 if(count($rows)>0){
-                    $url=array();
-                    foreach($rows as $row){
-                        $data_similar= $this->imported_data_parsed_model->getByImId($row['group_id']);
+                if (count($rows) > 0) {
+                    $url = array();
+                    foreach ($rows as $row) {
+                        $data_similar = $this->imported_data_parsed_model->getByImId($row['group_id']);
                         $data_similar['imported_data_id'] = $row['group_id'];
                         $n = parse_url($data_similar['url']);
                         $customer = $n['host'];
-                        $customer = str_replace("www1.", "",$customer);
-                        $customer =str_replace("www.", "", $customer);
+                        $customer = str_replace("www1.", "", $customer);
+                        $customer = str_replace("www.", "", $customer);
                         $data_similar['customer'] = $customer;
-                         
-                        if (!in_array($customer,$url)){
-                            $url[]=$customer;
-                            $same_pr[]=$data_similar;
+
+                        if (!in_array($customer, $url)) {
+                            $url[] = $customer;
+                            $same_pr[] = $data_similar;
                         }
                     }
                 }
             }
-            
+
 //            if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['UPC/EAN/ISBN'])) {
 //
 //                $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['UPC/EAN/ISBN']);
 //            }
-            if(empty($same_pr) && !isset($data_import['parsed_attributes']['model'])){
-            $data['mismatch_button']=true;
-            if (!$this->similar_product_groups_model->checkIfgroupExists($im_data_id)) {
+            if (empty($same_pr) && !isset($data_import['parsed_attributes']['model'])) {
+                $data['mismatch_button'] = true;
+                if (!$this->similar_product_groups_model->checkIfgroupExists($im_data_id)) {
 
-                if (!isset($data_import['parsed_attributes'])) {
+                    if (!isset($data_import['parsed_attributes'])) {
 
-                    $same_pr = $this->imported_data_parsed_model->getByProductName($im_data_id, $data_import['product_name'], '', $strict);
-                }
-                if (isset($data_import['parsed_attributes']) ) {
-
-                    $same_pr = $this->imported_data_parsed_model->getByProductName($im_data_id, $data_import['product_name'], $data_import['parsed_attributes']['manufacturer'], $strict);
-                }
-            } else {
-                $this->load->model('similar_imported_data_model');
-                $customers_list = array();
-                $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('sites');
-                $query_cus_res = $query_cus->result();
-                if (count($query_cus_res) > 0) {
-                    foreach ($query_cus_res as $key => $value) {
-                        $n = parse_url($value->url);
-                        $customers_list[] = $n['host'];
+                        $same_pr = $this->imported_data_parsed_model->getByProductName($im_data_id, $data_import['product_name'], '', $strict);
                     }
-                }
-                $customers_list = array_unique($customers_list);
-                $rows = $this->similar_data_model->getByGroupId($im_data_id);
-                $data_similar = array();
+                    if (isset($data_import['parsed_attributes'])) {
 
-                foreach ($rows as $key => $row) {
-                    $data_similar[$key] = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
-                    $data_similar[$key]['imported_data_id'] = $row->imported_data_id;
-                   
-                    $cus_val = "";
-                    foreach ($customers_list as $ki => $vi) {
-                        if (strpos($data_similar[$key]['url'], "$vi") !== false) {
-                            $cus_val = $vi;
+                        $same_pr = $this->imported_data_parsed_model->getByProductName($im_data_id, $data_import['product_name'], $data_import['parsed_attributes']['manufacturer'], $strict);
+                    }
+                } else {
+                    $this->load->model('similar_imported_data_model');
+                    $customers_list = array();
+                    $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('sites');
+                    $query_cus_res = $query_cus->result();
+                    if (count($query_cus_res) > 0) {
+                        foreach ($query_cus_res as $key => $value) {
+                            $n = parse_url($value->url);
+                            $customers_list[] = $n['host'];
                         }
                     }
-                    
-                    if ($cus_val !== "")
-                        $data_similar[$key]['customer'] = $cus_val;
+                    $customers_list = array_unique($customers_list);
+                    $rows = $this->similar_data_model->getByGroupId($im_data_id);
+                    $data_similar = array();
+
+                    foreach ($rows as $key => $row) {
+                        $data_similar[$key] = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
+                        $data_similar[$key]['imported_data_id'] = $row->imported_data_id;
+
+                        $cus_val = "";
+                        foreach ($customers_list as $ki => $vi) {
+                            if (strpos($data_similar[$key]['url'], "$vi") !== false) {
+                                $cus_val = $vi;
+                            }
+                        }
+
+                        if ($cus_val !== "")
+                            $data_similar[$key]['customer'] = $cus_val;
+                    }
+
+                    if (!empty($data_similar)) {
+                        $same_pr = $data_similar;
+                    }
                 }
-                
-                if (!empty($data_similar)) {
-                    $same_pr = $data_similar;
-                }
-            }
             }
             // get similar for first row
             $this->load->model('similar_imported_data_model');
@@ -1895,34 +1885,33 @@ public function gridview() {
             }
 
             foreach ($same_pr as $ks => $vs) {
-                
+
                 $this->load->model('sites_model');
                 //echo $this->get_base_url($vs['url']);
-                 //echo 'bbb'.strtolower($this->sites_model->get_name_by_url($this->get_base_url($vs['url']))).'aaaaaaaaa';
-                
-                $same_pr[$ks]['customer']=  strtolower($this->sites_model->get_name_by_url($same_pr[$ks]['customer']));
-                $same_pr[$ks]['seo']['short'] = $this->helpers->measure_analyzer_start_v2_product_name($vs['product_name'],preg_replace('/\s+/', ' ', $vs['description']));
-                $same_pr[$ks]['seo']['long'] = $this->helpers->measure_analyzer_start_v2_product_name($vs['product_name'],preg_replace('/\s+/', ' ', $vs['long_description']));
+                //echo 'bbb'.strtolower($this->sites_model->get_name_by_url($this->get_base_url($vs['url']))).'aaaaaaaaa';
+
+                $same_pr[$ks]['customer'] = strtolower($this->sites_model->get_name_by_url($same_pr[$ks]['customer']));
+                $same_pr[$ks]['seo']['short'] = $this->helpers->measure_analyzer_start_v2_product_name($vs['product_name'], preg_replace('/\s+/', ' ', $vs['description']));
+                $same_pr[$ks]['seo']['long'] = $this->helpers->measure_analyzer_start_v2_product_name($vs['product_name'], preg_replace('/\s+/', ' ', $vs['long_description']));
 
                 // three last prices
                 $imported_data_id = $same_pr[$ks]['imported_data_id'];
                 $three_last_prices = $this->imported_data_parsed_model->getLastPrices($imported_data_id);
                 $same_pr[$ks]['three_last_prices'] = $three_last_prices;
-                if(!empty($three_last_prices)){
+                if (!empty($three_last_prices)) {
                     $same_pr[$ks]['three_last_prices'] = $three_last_prices;
-                }elseif($this->imported_data_parsed_model->PriceOld($imported_data_id)){
-                     $same_pr[$ks]['three_last_prices']=array((object) array('price'=>$this->imported_data_parsed_model->PriceOld($imported_data_id), 'created'=>''));
-                }else{
+                } elseif ($this->imported_data_parsed_model->PriceOld($imported_data_id)) {
+                    $same_pr[$ks]['three_last_prices'] = array((object) array('price' => $this->imported_data_parsed_model->PriceOld($imported_data_id), 'created' => ''));
+                } else {
                     $same_pr[$ks]['three_last_prices'] = array();
                 }
 
-            
-				$keywords = $this->imported_data_parsed_model->getKeywordsBy_imported_data_id( $imported_data_id );
-				$same_pr[$ks]['seo']['keyword'] = $keywords;
-				
-				$parsed_meta = $this->imported_data_parsed_model->getByImId($imported_data_id);
-				$same_pr[$ks]['parsed_meta'] = $parsed_meta['parsed_meta'];
-				
+
+                $keywords = $this->imported_data_parsed_model->getKeywordsBy_imported_data_id($imported_data_id);
+                $same_pr[$ks]['seo']['keyword'] = $keywords;
+
+                $parsed_meta = $this->imported_data_parsed_model->getByImId($imported_data_id);
+                $same_pr[$ks]['parsed_meta'] = $parsed_meta['parsed_meta'];
             }
 
             $selectedUrl = $this->input->post('selectedUrl');
@@ -1935,12 +1924,12 @@ public function gridview() {
                     }
                 }
             }
-            
-            
-           if($show_from!='null'){
-               
+
+
+            if ($show_from != 'null') {
+
                 foreach ($same_pr as $ks => $vs) {
-                if (!in_array($vs['customer'],$show_from)) {
+                    if (!in_array($vs['customer'], $show_from)) {
                         unset($same_pr[$ks]);
                     }
                 }
@@ -1963,7 +1952,7 @@ public function gridview() {
                                 if ($vs1['description'] != '') {
                                     //echo 1;
                                     $k_sh++;
-                                   //$percent = array();
+                                    //$percent = array();
                                     $percent = $this->compare_text($vs['description'], $vs1['description']);
                                     if ($percent[0] > $maxshort) {
                                         $maxshort = $percent[0];
@@ -1972,7 +1961,7 @@ public function gridview() {
                                 }
 
                                 if ($vs1['long_description'] != '') {
-                                   // echo 2;
+                                    // echo 2;
                                     $k_sh++;
                                     $percent = $this->compare_text($vs['description'], $vs1['long_description']);
                                     if ($percent[0] > $maxshort) {
@@ -2006,20 +1995,19 @@ public function gridview() {
                             }
                         }
                     }
-                    if($maxshort!=0){
-                        $vs['short_original'] =  ceil($maxshort) . '%';
+                    if ($maxshort != 0) {
+                        $vs['short_original'] = ceil($maxshort) . '%';
                         $vs['short_original_text'] = $maxshorttext;
-                        
-                    }else{
-                        $vs['short_original']= "Insufficient data";
+                    } else {
+                        $vs['short_original'] = "Insufficient data";
                         unset($vs['short_original_text']);
                     }
 
-                    if($maxlong!=0){
-                        $vs['long_original'] =  ceil($maxlong) . '%';
+                    if ($maxlong != 0) {
+                        $vs['long_original'] = ceil($maxlong) . '%';
                         $vs['long_original_text'] = $maxlongtext;
-                    }else{
-                        $vs['long_original']= "Insufficient data";
+                    } else {
+                        $vs['long_original'] = "Insufficient data";
                         unset($vs['long_original_text']);
                     }
 
@@ -2042,105 +2030,100 @@ public function gridview() {
             }
             //   Max
 //Max
-            
+
             foreach ($same_pr as $ks => $vs) {
                 $model = $this->imported_data_parsed_model->getByImId($vs['imported_data_id']);
-                if($model){
-                   $same_pr[$ks]['parsed_attributes']=$model['parsed_attributes'];
+                if ($model) {
+                    $same_pr[$ks]['parsed_attributes'] = $model['parsed_attributes'];
                 }
-                
-                if(!empty($vs['seo']['short'])){
-                foreach($vs['seo']['short'] as $key => $val){
-                   $volume='';
-                   $from_keyword_data=$this->keywords_model->get_by_keyword($val['ph']); 
-                   if(count($from_keyword_data)>0){
-                       $volume=$from_keyword_data['volume'];
-                   }
-                   $words= count(explode(' ',$val['ph']));
-                   $desc_words_count=count(explode(' ',$vs['description']));
-                   $count=$val['count'];
-                   $val['prc']=round($count*$words/$desc_words_count*100,2);
-                   $val['volume'] =  $volume;
-                   $same_pr[$ks]['seo']['short'][$key]=$val;
-                   
+
+                if (!empty($vs['seo']['short'])) {
+                    foreach ($vs['seo']['short'] as $key => $val) {
+                        $volume = '';
+                        $from_keyword_data = $this->keywords_model->get_by_keyword($val['ph']);
+                        if (count($from_keyword_data) > 0) {
+                            $volume = $from_keyword_data['volume'];
+                        }
+                        $words = count(explode(' ', $val['ph']));
+                        $desc_words_count = count(explode(' ', $vs['description']));
+                        $count = $val['count'];
+                        $val['prc'] = round($count * $words / $desc_words_count * 100, 2);
+                        $val['volume'] = $volume;
+                        $same_pr[$ks]['seo']['short'][$key] = $val;
+                    }
                 }
-                }
-                if(!empty($vs['seo']['long'])){
-                foreach($vs['seo']['long'] as $key => $val){
-                   $volume='';
-                   $from_keyword_data=$this->keywords_model->get_by_keyword($val['ph']);
-                   if(count($from_keyword_data)>0){
-                       $volume=$from_keyword_data['volume'];
-                   }
-                   $words= count(explode(' ',$val['ph']));
-                   $desc_words_count=count(explode(' ',$vs['long_description']));
-                   $count=$val['count'];
-                   $same_pr[$ks]['seo']['long'][$key]['prc']=round($count*$words/$desc_words_count*100,2);
-                   $same_pr[$ks]['seo']['long'][$key]['volume']=$volume;
-                }
+                if (!empty($vs['seo']['long'])) {
+                    foreach ($vs['seo']['long'] as $key => $val) {
+                        $volume = '';
+                        $from_keyword_data = $this->keywords_model->get_by_keyword($val['ph']);
+                        if (count($from_keyword_data) > 0) {
+                            $volume = $from_keyword_data['volume'];
+                        }
+                        $words = count(explode(' ', $val['ph']));
+                        $desc_words_count = count(explode(' ', $vs['long_description']));
+                        $count = $val['count'];
+                        $same_pr[$ks]['seo']['long'][$key]['prc'] = round($count * $words / $desc_words_count * 100, 2);
+                        $same_pr[$ks]['seo']['long'][$key]['volume'] = $volume;
+                    }
                 }
             }
-             
-            
+
+
             foreach ($same_pr as $ks => $vs) {
-             $custom_seo= $this->keywords_model->get_by_imp_id($vs['imported_data_id']);
-             $meta=array();
-             if((isset($vs['parsed_meta']['Keywords'])&& $vs['parsed_meta']['Keywords']!='')){
-                 $meta = explode(',',$vs['parsed_meta']['Keywords']);
-             }
-             if((isset($vs['parsed_meta']['keywords'])&& $vs['parsed_meta']['keywords']!='')){
-                 $meta = explode(',',$vs['parsed_meta']['keywords']);
-                
-             }
-             if(count($meta)>0 && isset($vs['description']) && $vs['description']!=''){
-             foreach($meta as $key => $val){
-                   $volume='';
-                   $from_keyword_data=$this->keywords_model->get_by_keyword($val['ph']);
-                   if(count($from_keyword_data)>0){
-                       $volume=$from_keyword_data['volume'];
-                   }
-                   $words= count(explode(' ',trim($val)));
-                   $count= $this->keywords_appearence_count(strtolower($vs['description']), strtolower($val));
-                   $desc_words_count=count(explode(' ',$vs['description']));
-                  
-                   $prc=round($count*$words/$desc_words_count*100,2);
-                   $same_pr[$ks]['short_meta'][]=array('value'=>$val,'count'=>$count,'prc'=>$prc,'volume'=>$volume);
-                   
-             }
-             }
-             if(count($meta)>0 && isset($vs['long_description']) && $vs['long_description']!=''){
-                  
-             foreach($meta as $key => $val){
-                   $volume='';
-                   $from_keyword_data=$this->keywords_model->get_by_keyword($val);
-                   if(count($from_keyword_data)>0){
-                       $volume=$from_keyword_data['volume'];
-                   }
-                   $words= count(explode(' ',trim($val)));
-                   $count= $this->keywords_appearence_count(strtolower($vs['long_description']), strtolower($val));
-                   $desc_words_count=count(explode(' ',$vs['long_description']));
-                  
-                   $prc=round($count*$words/$desc_words_count*100,2);
-                   $same_pr[$ks]['long_meta'][]=array('value'=>$val,'count'=>$count,'prc'=>$prc, 'volume'=>$volume);
-                   
-             }
-             }
-             $same_pr[$ks]['custom_seo']=$custom_seo;
-                  if($res=$this->statistics_model->getbyimpid($vs['imported_data_id'])){
-                      $same_pr[$ks]['short_description_wc']=$res['short_description_wc'];
-                      $same_pr[$ks]['long_description_wc']= $res['long_description_wc']; 
-                      //$same_pr[$ks]['seo']['long']= $res['short_seo_phrases']!='None'? unserialize($res['short_seo_phrases']):array();
-                      //$same_pr[$ks]['seo']['long']= $res['long_seo_phrases']!='None'?unserialize($res['long_seo_phrases']):array();
-                                                  
-                  }
+                $custom_seo = $this->keywords_model->get_by_imp_id($vs['imported_data_id']);
+                $meta = array();
+                if ((isset($vs['parsed_meta']['Keywords']) && $vs['parsed_meta']['Keywords'] != '')) {
+                    $meta = explode(',', $vs['parsed_meta']['Keywords']);
+                }
+                if ((isset($vs['parsed_meta']['keywords']) && $vs['parsed_meta']['keywords'] != '')) {
+                    $meta = explode(',', $vs['parsed_meta']['keywords']);
+                }
+                if (count($meta) > 0 && isset($vs['description']) && $vs['description'] != '') {
+                    foreach ($meta as $key => $val) {
+                        $volume = '';
+                        $from_keyword_data = $this->keywords_model->get_by_keyword($val['ph']);
+                        if (count($from_keyword_data) > 0) {
+                            $volume = $from_keyword_data['volume'];
+                        }
+                        $words = count(explode(' ', trim($val)));
+                        $count = $this->keywords_appearence_count(strtolower($vs['description']), strtolower($val));
+                        $desc_words_count = count(explode(' ', $vs['description']));
+
+                        $prc = round($count * $words / $desc_words_count * 100, 2);
+                        $same_pr[$ks]['short_meta'][] = array('value' => $val, 'count' => $count, 'prc' => $prc, 'volume' => $volume);
+                    }
+                }
+                if (count($meta) > 0 && isset($vs['long_description']) && $vs['long_description'] != '') {
+
+                    foreach ($meta as $key => $val) {
+                        $volume = '';
+                        $from_keyword_data = $this->keywords_model->get_by_keyword($val);
+                        if (count($from_keyword_data) > 0) {
+                            $volume = $from_keyword_data['volume'];
+                        }
+                        $words = count(explode(' ', trim($val)));
+                        $count = $this->keywords_appearence_count(strtolower($vs['long_description']), strtolower($val));
+                        $desc_words_count = count(explode(' ', $vs['long_description']));
+
+                        $prc = round($count * $words / $desc_words_count * 100, 2);
+                        $same_pr[$ks]['long_meta'][] = array('value' => $val, 'count' => $count, 'prc' => $prc, 'volume' => $volume);
+                    }
+                }
+                $same_pr[$ks]['custom_seo'] = $custom_seo;
+                if ($res = $this->statistics_model->getbyimpid($vs['imported_data_id'])) {
+                    $same_pr[$ks]['short_description_wc'] = $res['short_description_wc'];
+                    $same_pr[$ks]['long_description_wc'] = $res['long_description_wc'];
+                    //$same_pr[$ks]['seo']['long']= $res['short_seo_phrases']!='None'? unserialize($res['short_seo_phrases']):array();
+                    //$same_pr[$ks]['seo']['long']= $res['long_seo_phrases']!='None'?unserialize($res['long_seo_phrases']):array();
+                }
             }
-            
-            
-            
-            
+
+
+
+
 
             $data['same_pr'] = $same_pr;
-			
+
 //            }
             // --- ATTEMPT TO GET 'SAME' FROM 'HUMAN INTERFACE' (products_compare table) (END)
             // --- GET SELECTED RPODUCT SEO DATA (TMP) (START)
@@ -2157,116 +2140,153 @@ public function gridview() {
         $s_term = $this->input->post('s_term');
 
         // -------- COMPARING V1 (END)
-        
 
-        $var = explode('?', $this->input->post('current_url') );
-		$page = preg_replace('/.*\/([^\/])/','$1',$var[0]);
-		unset($var);
-		
-		if( $page == 'measure_products_test' )
-			$this->load->view('measure/gridview_test', $data);
-		else
-			$this->load->view('measure/gridview', $data);
+
+        $var = explode('?', $this->input->post('current_url'));
+        $page = preg_replace('/.*\/([^\/])/', '$1', $var[0]);
+        unset($var);
+
+        if ($page == 'measure_products_test')
+            $this->load->view('measure/gridview_test', $data);
+        else
+            $this->load->view('measure/gridview', $data);
     }
+
     private function keywords_appearence_count($desc, $phrase) {
         return substr_count($desc, $phrase);
     }
-    public function save_new_words(){
-		$keyword = $this->input->post('keywords');
-		$keyword_num = $this->input->post('keyword_num');
-		$imported_data_id = $this->input->post('imported_data_id');
-		
-		$query = $this->db->where('imported_data_id = ' . $imported_data_id .' AND word_num = ' . $keyword_num)
+
+    public function save_new_words() {
+        $keyword = $this->input->post('keywords');
+        $keyword_num = $this->input->post('keyword_num');
+        $imported_data_id = $this->input->post('imported_data_id');
+
+        $query = $this->db->where('imported_data_id = ' . $imported_data_id . ' AND word_num = ' . $keyword_num)
                 ->get('keywords');
         $result = $query->result();
-		
-        if( $query->num_rows() > 0 ){
-			foreach($result as $rs){
-				$id = $rs->id;
-			}
-			$data_update = array(
-				'imported_data_id' => $imported_data_id,
-				'word_num' => $keyword_num,
-				'keyword' => $keyword
-			);
-			$this->db->where('id', $id);
-			$this->db->update('keywords', $data_update); 
-		}else{
-			$data = array(
-				'imported_data_id' => $imported_data_id,
-				'word_num' => $keyword_num,
-				'keyword' => $keyword
-			);
-			$this->db->set($data);
-			$this->db->insert('keywords');
-		}
-	}
-   
-    function tableview(){
-        if($same_pr=$this->input->post('result_data')){
-          $data['ind0']=$this->input->post('ind0');
-          $data['ind1']=$this->input->post('ind1');
-          $data['same_pr'] =$same_pr;
-          $this->load->view('measure/tableview', $data);  
-        }else{
-         $im_data_id = $this->input->post('im_data_id');
 
-        $data = array(
-            'im_data_id' => $im_data_id,
-            's_product' => array(),
-            's_product_short_desc_count' => 0,
-            's_product_long_desc_count' => 0,
-            'seo' => array('short' => array(), 'long' => array()),
-            'same_pr' => array()
-        );
-        if ($im_data_id !== null && is_numeric($im_data_id)) {
-
-            // --- GET SELECTED RPODUCT DATA (START)
-            $this->load->model('imported_data_parsed_model');
-            $this->load->model('similar_product_groups_model');
-            $this->load->model('similar_data_model');
-            $data_import = $this->imported_data_parsed_model->getByImId($im_data_id);
-
-            if ($data_import['description'] !== null && trim($data_import['description']) !== "") {
-                $data_import['description'] = preg_replace('/\s+/', ' ', $data_import['description']);
-                // $data_import['description'] = preg_replace('/[^A-Za-z0-9\. -!]/', ' ', $data_import['description']);
-                $data['s_product_short_desc_count'] = count(explode(" ", $data_import['description']));
+        if ($query->num_rows() > 0) {
+            foreach ($result as $rs) {
+                $id = $rs->id;
             }
-            if ($data_import['long_description'] !== null && trim($data_import['long_description']) !== "") {
-                $data_import['long_description'] = preg_replace('/\s+/', ' ', $data_import['long_description']);
-                // $data_import['long_description'] = preg_replace('/[^A-Za-z0-9\. -!]/', ' ', $data_import['long_description']);
-                $data['s_product_long_desc_count'] = count(explode(" ", $data_import['long_description']));
-            }
-            $data['s_product'] = $data_import;
-            // --- GET SELECTED RPODUCT DATA (END)
-            // --- ATTEMPT TO GET 'SAME' FROM 'HUMAN INTERFACE' (products_compare table) (START)
-            $same_pr = $this->imported_data_parsed_model->getSameProductsHuman($im_data_id);
+            $data_update = array(
+                'imported_data_id' => $imported_data_id,
+                'word_num' => $keyword_num,
+                'keyword' => $keyword
+            );
+            $this->db->where('id', $id);
+            $this->db->update('keywords', $data_update);
+        } else {
+            $data = array(
+                'imported_data_id' => $imported_data_id,
+                'word_num' => $keyword_num,
+                'keyword' => $keyword
+            );
+            $this->db->set($data);
+            $this->db->insert('keywords');
+        }
+    }
 
-            // get similar by parsed_attributes
-            if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
+    function tableview() {
+        if ($same_pr = $this->input->post('result_data')) {
+            $data['ind0'] = $this->input->post('ind0');
+            $data['ind1'] = $this->input->post('ind1');
+            $data['same_pr'] = $same_pr;
+            $this->load->view('measure/tableview', $data);
+        } else {
+            $im_data_id = $this->input->post('im_data_id');
 
-                $strict = $this->input->post('strict');
-                $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], $strict);
-            }
+            $data = array(
+                'im_data_id' => $im_data_id,
+                's_product' => array(),
+                's_product_short_desc_count' => 0,
+                's_product_long_desc_count' => 0,
+                'seo' => array('short' => array(), 'long' => array()),
+                'same_pr' => array()
+            );
+            if ($im_data_id !== null && is_numeric($im_data_id)) {
 
-            if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['UPC/EAN/ISBN'])) {
+                // --- GET SELECTED RPODUCT DATA (START)
+                $this->load->model('imported_data_parsed_model');
+                $this->load->model('similar_product_groups_model');
+                $this->load->model('similar_data_model');
+                $data_import = $this->imported_data_parsed_model->getByImId($im_data_id);
 
-                $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['UPC/EAN/ISBN']);
-            }
-            if(empty($same_pr) && !isset($data_import['parsed_attributes']['model'])){
-            $data['mismatch_button']=true;
-            if (!$this->similar_product_groups_model->checkIfgroupExists($im_data_id)) {
-
-                if (!isset($data_import['parsed_attributes'])) {
-
-                    $same_pr = $this->imported_data_parsed_model->getByProductName($im_data_id, $data_import['product_name'], '', $strict);
+                if ($data_import['description'] !== null && trim($data_import['description']) !== "") {
+                    $data_import['description'] = preg_replace('/\s+/', ' ', $data_import['description']);
+                    // $data_import['description'] = preg_replace('/[^A-Za-z0-9\. -!]/', ' ', $data_import['description']);
+                    $data['s_product_short_desc_count'] = count(explode(" ", $data_import['description']));
                 }
-                if (isset($data_import['parsed_attributes']) ) {
-
-                    $same_pr = $this->imported_data_parsed_model->getByProductName($im_data_id, $data_import['product_name'], $data_import['parsed_attributes']['manufacturer'], $strict);
+                if ($data_import['long_description'] !== null && trim($data_import['long_description']) !== "") {
+                    $data_import['long_description'] = preg_replace('/\s+/', ' ', $data_import['long_description']);
+                    // $data_import['long_description'] = preg_replace('/[^A-Za-z0-9\. -!]/', ' ', $data_import['long_description']);
+                    $data['s_product_long_desc_count'] = count(explode(" ", $data_import['long_description']));
                 }
-            } else {
+                $data['s_product'] = $data_import;
+                // --- GET SELECTED RPODUCT DATA (END)
+                // --- ATTEMPT TO GET 'SAME' FROM 'HUMAN INTERFACE' (products_compare table) (START)
+                $same_pr = $this->imported_data_parsed_model->getSameProductsHuman($im_data_id);
+
+                // get similar by parsed_attributes
+                if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
+
+                    $strict = $this->input->post('strict');
+                    $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], $strict);
+                }
+
+                if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['UPC/EAN/ISBN'])) {
+
+                    $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['UPC/EAN/ISBN']);
+                }
+                if (empty($same_pr) && !isset($data_import['parsed_attributes']['model'])) {
+                    $data['mismatch_button'] = true;
+                    if (!$this->similar_product_groups_model->checkIfgroupExists($im_data_id)) {
+
+                        if (!isset($data_import['parsed_attributes'])) {
+
+                            $same_pr = $this->imported_data_parsed_model->getByProductName($im_data_id, $data_import['product_name'], '', $strict);
+                        }
+                        if (isset($data_import['parsed_attributes'])) {
+
+                            $same_pr = $this->imported_data_parsed_model->getByProductName($im_data_id, $data_import['product_name'], $data_import['parsed_attributes']['manufacturer'], $strict);
+                        }
+                    } else {
+                        $this->load->model('similar_imported_data_model');
+                        $customers_list = array();
+                        $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('sites');
+                        $query_cus_res = $query_cus->result();
+                        if (count($query_cus_res) > 0) {
+                            foreach ($query_cus_res as $key => $value) {
+                                $n = parse_url($value->url);
+                                $customers_list[] = $n['host'];
+                            }
+                        }
+                        $customers_list = array_unique($customers_list);
+                        $rows = $this->similar_data_model->getByGroupId($im_data_id);
+                        $data_similar = array();
+
+                        foreach ($rows as $key => $row) {
+                            $data_similar[$key] = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
+                            $data_similar[$key]['imported_data_id'] = $row->imported_data_id;
+
+                            $cus_val = "";
+                            foreach ($customers_list as $ki => $vi) {
+                                if (strpos($data_similar[$key]['url'], "$vi") !== false) {
+                                    $cus_val = $vi;
+                                }
+                            }
+                            if ($cus_val !== "")
+                                $data_similar[$key]['customer'] = $cus_val;
+                        }
+
+                        if (!empty($data_similar)) {
+                            $same_pr = $data_similar;
+                        }
+                    }
+                }
+                // get similar for first row
                 $this->load->model('similar_imported_data_model');
+
                 $customers_list = array();
                 $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('sites');
                 $query_cus_res = $query_cus->result();
@@ -2277,233 +2297,183 @@ public function gridview() {
                     }
                 }
                 $customers_list = array_unique($customers_list);
-                $rows = $this->similar_data_model->getByGroupId($im_data_id);
-                $data_similar = array();
 
-                foreach ($rows as $key => $row) {
-                    $data_similar[$key] = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
-                    $data_similar[$key]['imported_data_id'] = $row->imported_data_id;
+                if (empty($same_pr) && ($group_id = $this->similar_imported_data_model->findByImportedDataId($im_data_id))) {
+                    if ($rows = $this->similar_imported_data_model->getImportedDataByGroupId($group_id)) {
+                        $data_similar = array();
 
-                    $cus_val = "";
-                    foreach ($customers_list as $ki => $vi) {
-                        if (strpos($data_similar[$key]['url'], "$vi") !== false) {
-                            $cus_val = $vi;
-                        }
-                    }
-                    if ($cus_val !== "")
-                        $data_similar[$key]['customer'] = $cus_val;
-                }
+                        foreach ($rows as $key => $row) {
+                            $data_similar[$key] = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
+                            $data_similar[$key]['imported_data_id'] = $row->imported_data_id;
 
-                if (!empty($data_similar)) {
-                    $same_pr = $data_similar;
-                }
-            }
-            }
-            // get similar for first row
-            $this->load->model('similar_imported_data_model');
-
-            $customers_list = array();
-            $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('sites');
-            $query_cus_res = $query_cus->result();
-            if (count($query_cus_res) > 0) {
-                foreach ($query_cus_res as $key => $value) {
-                    $n = parse_url($value->url);
-                    $customers_list[] = $n['host'];
-                }
-            }
-            $customers_list = array_unique($customers_list);
-
-            if (empty($same_pr) && ($group_id = $this->similar_imported_data_model->findByImportedDataId($im_data_id))) {
-                if ($rows = $this->similar_imported_data_model->getImportedDataByGroupId($group_id)) {
-                    $data_similar = array();
-
-                    foreach ($rows as $key => $row) {
-                        $data_similar[$key] = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
-                        $data_similar[$key]['imported_data_id'] = $row->imported_data_id;
-
-                        $cus_val = "";
-                        foreach ($customers_list as $ki => $vi) {
-                            if (strpos($data_similar[$key]['url'], "$vi") !== false) {
-                                $cus_val = $vi;
+                            $cus_val = "";
+                            foreach ($customers_list as $ki => $vi) {
+                                if (strpos($data_similar[$key]['url'], "$vi") !== false) {
+                                    $cus_val = $vi;
+                                }
                             }
+                            if ($cus_val !== "")
+                                $data_similar[$key]['customer'] = $cus_val;
                         }
-                        if ($cus_val !== "")
-                            $data_similar[$key]['customer'] = $cus_val;
-                    }
 
-                    if (!empty($data_similar)) {
-                        $same_pr = $data_similar;
+                        if (!empty($data_similar)) {
+                            $same_pr = $data_similar;
+                        }
                     }
                 }
-            }
 
-            foreach ($same_pr as $ks => $vs) {
-                $this->load->model('sites_model');
-                $same_pr[$ks]['customer']=  strtolower($this->sites_model->get_name_by_url($same_pr[$ks]['customer']));
-                $same_pr[$ks]['seo']['short'] = $this->helpers-> measure_analyzer_start_v2_product_name($vs['product_name'],preg_replace('/\s+/', ' ', $vs['description']));
-                $same_pr[$ks]['seo']['long'] = $this->helpers->measure_analyzer_start_v2_product_name($vs['product_name'],preg_replace('/\s+/', ' ', $vs['long_description']));
-                 $imported_data_id = $same_pr[$ks]['imported_data_id'];
-                //snap
-                $this->load->model('crawler_list_model');
-                $same_pr[$ks]['snap'] = $this->crawler_list_model->selectSnap($imported_data_id);
-
-                // three last prices
-
-                $three_last_prices = $this->imported_data_parsed_model->getLastPrices($imported_data_id);
-                $same_pr[$ks]['three_last_prices'] = $three_last_prices;
-                if(!empty($three_last_prices)){
-                    $same_pr[$ks]['three_last_prices'] = $three_last_prices;
-                }elseif($this->imported_data_parsed_model->PriceOld($imported_data_id)){
-                     $same_pr[$ks]['three_last_prices']=array((object) array('price'=>$this->imported_data_parsed_model->PriceOld($imported_data_id), 'created'=>''));
-                }else{
-                    $same_pr[$ks]['three_last_prices'] = array();
-                }
-
-            }
-
-
-
-            //     Max
-            if (count($same_pr) != 1) {
                 foreach ($same_pr as $ks => $vs) {
-                    $maxshort = 0;
-                    $maxlong = 0;
-                    $maxshorttext = 0;
-                    $maxlongtext = 0;
-                    $k_sh = 0;
-                    $k_lng = 0;
-                    foreach ($same_pr as $ks1 => $vs1) {
+                    $this->load->model('sites_model');
+                    $same_pr[$ks]['customer'] = strtolower($this->sites_model->get_name_by_url($same_pr[$ks]['customer']));
+                    $same_pr[$ks]['seo']['short'] = $this->helpers->measure_analyzer_start_v2_product_name($vs['product_name'], preg_replace('/\s+/', ' ', $vs['description']));
+                    $same_pr[$ks]['seo']['long'] = $this->helpers->measure_analyzer_start_v2_product_name($vs['product_name'], preg_replace('/\s+/', ' ', $vs['long_description']));
+                    $imported_data_id = $same_pr[$ks]['imported_data_id'];
+                    //snap
+                    $this->load->model('crawler_list_model');
+                    $same_pr[$ks]['snap'] = $this->crawler_list_model->selectSnap($imported_data_id);
 
-                        if ($ks != $ks1) {
-                            if ($vs['description'] != '') {
-                                if ($vs1['description'] != '') {
-                                    //echo 1;
-                                    $k_sh++;
-                                   //$percent = array();
-                                    $percent = $this->compare_text($vs['description'], $vs1['description']);
-                                    if ($percent[0] > $maxshort) {
-                                        $maxshort = $percent[0];
-                                        
+                    // three last prices
+
+                    $three_last_prices = $this->imported_data_parsed_model->getLastPrices($imported_data_id);
+                    $same_pr[$ks]['three_last_prices'] = $three_last_prices;
+                    if (!empty($three_last_prices)) {
+                        $same_pr[$ks]['three_last_prices'] = $three_last_prices;
+                    } elseif ($this->imported_data_parsed_model->PriceOld($imported_data_id)) {
+                        $same_pr[$ks]['three_last_prices'] = array((object) array('price' => $this->imported_data_parsed_model->PriceOld($imported_data_id), 'created' => ''));
+                    } else {
+                        $same_pr[$ks]['three_last_prices'] = array();
+                    }
+                }
+
+
+
+                //     Max
+                if (count($same_pr) != 1) {
+                    foreach ($same_pr as $ks => $vs) {
+                        $maxshort = 0;
+                        $maxlong = 0;
+                        $maxshorttext = 0;
+                        $maxlongtext = 0;
+                        $k_sh = 0;
+                        $k_lng = 0;
+                        foreach ($same_pr as $ks1 => $vs1) {
+
+                            if ($ks != $ks1) {
+                                if ($vs['description'] != '') {
+                                    if ($vs1['description'] != '') {
+                                        //echo 1;
+                                        $k_sh++;
+                                        //$percent = array();
+                                        $percent = $this->compare_text($vs['description'], $vs1['description']);
+                                        if ($percent[0] > $maxshort) {
+                                            $maxshort = $percent[0];
+                                        }
+                                    }
+
+                                    if ($vs1['long_description'] != '') {
+                                        // echo 2;
+                                        $k_sh++;
+                                        $percent = $this->compare_text($vs['description'], $vs1['long_description']);
+                                        if ($percent[0] > $maxshort) {
+                                            $maxshort = $percent[0];
+                                        }
                                     }
                                 }
 
-                                if ($vs1['long_description'] != '') {
-                                   // echo 2;
-                                    $k_sh++;
-                                    $percent = $this->compare_text($vs['description'], $vs1['long_description']);
-                                    if ($percent[0] > $maxshort) {
-                                        $maxshort = $percent[0];
-                                        
+                                if ($vs['long_description'] != '') {
+
+                                    if ($vs1['description'] != '') {
+                                        //echo 3
+                                        $k_lng++;
+                                        $percent = $this->compare_text($vs['long_description'], $vs1['description']);
+                                        if ($percent[0] > $maxlong) {
+                                            $maxlong = $percent[0];
+                                        }
                                     }
-                                }
-                            }
 
-                            if ($vs['long_description'] != '') {
-
-                                if ($vs1['description'] != '') {
-                                    //echo 3
-                                    $k_lng++;
-                                    $percent = $this->compare_text($vs['long_description'], $vs1['description']);
-                                    if ($percent[0] > $maxlong) {
-                                        $maxlong = $percent[0];
-                                        
-                                    }
-                                }
-
-                                if ($vs1['long_description'] != '') {
-                                    //echo 4;
-                                    $k_lng++;
-                                    $percent = $this->compare_text($vs['long_description'], $vs1['long_description']);
-                                    if ($percent[0] > $maxlong) {
-                                        $maxlong = $percent[0];
-                                        
+                                    if ($vs1['long_description'] != '') {
+                                        //echo 4;
+                                        $k_lng++;
+                                        $percent = $this->compare_text($vs['long_description'], $vs1['long_description']);
+                                        if ($percent[0] > $maxlong) {
+                                            $maxlong = $percent[0];
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                    if($maxshort!=0){
-                        $vs['short_original'] =  ceil($maxshort) . '%';
-                        
-                        
-                    }else{
-                        $vs['short_original']= "Insufficient data";
-                        
-                    }
+                        if ($maxshort != 0) {
+                            $vs['short_original'] = ceil($maxshort) . '%';
+                        } else {
+                            $vs['short_original'] = "Insufficient data";
+                        }
 
-                    if($maxlong!=0){
-                        $vs['long_original'] =  ceil($maxlong) . '%';
-                        
-                    }else{
-                        $vs['long_original']= "Insufficient data";
-                        
-                    }
+                        if ($maxlong != 0) {
+                            $vs['long_original'] = ceil($maxlong) . '%';
+                        } else {
+                            $vs['long_original'] = "Insufficient data";
+                        }
 
-                    if ($k_lng == 0) {
-                        $vs['long_original'] = "Insufficient data";
-                        
-                    }
-                    if ($k_sh == 0) {
-                        $vs['short_original'] = "Insufficient data";
-                        
-                    }
+                        if ($k_lng == 0) {
+                            $vs['long_original'] = "Insufficient data";
+                        }
+                        if ($k_sh == 0) {
+                            $vs['short_original'] = "Insufficient data";
+                        }
 
-                    $same_pr[$ks] = $vs;
+                        $same_pr[$ks] = $vs;
+                    }
+                } else {
+                    $same_pr[0]['long_original'] = 'Insufficient data';
+                    $same_pr[0]['short_original'] = 'Insufficient data';
                 }
-            } else {
-                $same_pr[0]['long_original'] = 'Insufficient data';
-                $same_pr[0]['short_original'] = 'Insufficient data';
-                
-            }
-            //   Max
+                //   Max
 //Max
-            $selectedUrl = $this->input->post('selectedUrl');
-            foreach ($same_pr as $ks => $vs) {
-                
-                if ($this->get_base_url($vs['url']) == $this->get_base_url($selectedUrl)) {
-                    if ($ks != 0) {
-                        $same_pr[] = $same_pr[0];
-                        $same_pr[0] = $vs;
-                        unset($same_pr[$ks]);
+                $selectedUrl = $this->input->post('selectedUrl');
+                foreach ($same_pr as $ks => $vs) {
+
+                    if ($this->get_base_url($vs['url']) == $this->get_base_url($selectedUrl)) {
+                        if ($ks != 0) {
+                            $same_pr[] = $same_pr[0];
+                            $same_pr[0] = $vs;
+                            unset($same_pr[$ks]);
+                        }
                     }
                 }
-            }
-            
-            foreach ($same_pr as $ks => $vs) {
-            
-                  if($res=$this->statistics_model->getbyimpid($vs['imported_data_id'])){
-                      
-                      $same_pr[$ks]['short_description_wc']=$res['short_description_wc'];
-                      $same_pr[$ks]['long_description_wc']= $res['long_description_wc']; 
-                      $same_pr[$ks]['seo']['long']= $res['short_seo_phrases']!='None'? unserialize($res['short_seo_phrases']):array();
-                      $same_pr[$ks]['seo']['long']= $res['long_seo_phrases']!='None'?unserialize($res['long_seo_phrases']):array();
-                                                
-                  }
-            }
-           
-            $data['same_pr'] = $same_pr;
+
+                foreach ($same_pr as $ks => $vs) {
+
+                    if ($res = $this->statistics_model->getbyimpid($vs['imported_data_id'])) {
+
+                        $same_pr[$ks]['short_description_wc'] = $res['short_description_wc'];
+                        $same_pr[$ks]['long_description_wc'] = $res['long_description_wc'];
+                        $same_pr[$ks]['seo']['long'] = $res['short_seo_phrases'] != 'None' ? unserialize($res['short_seo_phrases']) : array();
+                        $same_pr[$ks]['seo']['long'] = $res['long_seo_phrases'] != 'None' ? unserialize($res['long_seo_phrases']) : array();
+                    }
+                }
+
+                $data['same_pr'] = $same_pr;
 
 
 //            }
-            // --- ATTEMPT TO GET 'SAME' FROM 'HUMAN INTERFACE' (products_compare table) (END)
-            // --- GET SELECTED RPODUCT SEO DATA (TMP) (START)
-            if ($data_import['description'] !== null && trim($data_import['description']) !== "") {
-                $data['seo']['short'] = $this->helpers->measure_analyzer_start_v2($data_import['description']);
+                // --- ATTEMPT TO GET 'SAME' FROM 'HUMAN INTERFACE' (products_compare table) (END)
+                // --- GET SELECTED RPODUCT SEO DATA (TMP) (START)
+                if ($data_import['description'] !== null && trim($data_import['description']) !== "") {
+                    $data['seo']['short'] = $this->helpers->measure_analyzer_start_v2($data_import['description']);
+                }
+                if ($data_import['long_description'] !== null && trim($data_import['long_description']) !== "") {
+                    $data['seo']['long'] = $this->helpers->measure_analyzer_start_v2($data_import['long_description']);
+                }
+                // --- GET SELECTED RPODUCT SEO DATA (TMP) (END)
             }
-            if ($data_import['long_description'] !== null && trim($data_import['long_description']) !== "") {
-                $data['seo']['long'] = $this->helpers->measure_analyzer_start_v2($data_import['long_description']);
-            }
-            // --- GET SELECTED RPODUCT SEO DATA (TMP) (END)
+
+            // -------- COMPARING V1 (START)
+            $s_term = $this->input->post('s_term');
+
+            // -------- COMPARING V1 (END)
+
+            $this->load->view('measure/tableview', $data);
         }
-
-        // -------- COMPARING V1 (START)
-        $s_term = $this->input->post('s_term');
-
-        // -------- COMPARING V1 (END)
-
-        $this->load->view('measure/tableview', $data);
-        }
-
     }
 
     public function getcustomerslist_new() {
@@ -2586,14 +2556,14 @@ public function gridview() {
     }
 
     public function searchmeasuredball() {
-        $status_results=$this->input->post('status_results');
-        $selected_cites=$this->input->post('selected_cites');
-        
-        if($selected_cites!='null'){
-        $selected_cites=explode(',',$selected_cites);
-        foreach($selected_cites as $key => $val){
-            $selected_cites[$key]=  strtolower( $val);
-        }
+        $status_results = $this->input->post('status_results');
+        $selected_cites = $this->input->post('selected_cites');
+
+        if ($selected_cites != 'null') {
+            $selected_cites = explode(',', $selected_cites);
+            foreach ($selected_cites as $key => $val) {
+                $selected_cites[$key] = strtolower($val);
+            }
         }
         $batch_id = $this->input->post('batch_id');
         if (!$batch_id) {
@@ -2607,10 +2577,10 @@ public function gridview() {
             );
 
             if ($limit !== 0) {
-                if(preg_match('/www/',$s) || preg_match('/http:/',$s)){
-                    
-                     $data_import = $this->imported_data_parsed_model->getData($s, $sl, $cat_id, $limit, 'URL');
-                }else{
+                if (preg_match('/www/', $s) || preg_match('/http:/', $s)) {
+
+                    $data_import = $this->imported_data_parsed_model->getData($s, $sl, $cat_id, $limit, 'URL');
+                } else {
                     $data_import = $this->imported_data_parsed_model->getData($s, $sl, $cat_id, $limit);
                 }
             } else {
@@ -2627,56 +2597,61 @@ public function gridview() {
                 }
             }
             foreach ($data_import as $key => $row) {
-                $volume[$key]  = $row['product_name'];
+                $volume[$key] = $row['product_name'];
             }
             array_multisort($volume, SORT_ASC, $data_import);
-              
+
             $data['search_results'] = $data_import;
             $this->load->view('measure/searchmeasuredball', $data);
         } else {
-            
+
             $this->load->model('research_data_model');
-            
+
             $result = $this->research_data_model->get_by_batch_id($batch_id);
-            if($status_results=='no_match'){
-                foreach($result as $kay => $val){
-                     $matches_sites=$this->matches_count($val['imported_data_id']);
-                     if(count($matches_sites)>1){
-                    
+            if ($status_results == 'no_match') {
+                foreach ($result as $kay => $val) {
+                    $matches_sites = $this->matches_count($val['imported_data_id']);
+                    if (count($matches_sites) > 1) {
+
                         unset($result[$kay]);
                     }
                 }
             }
-            if($status_results=='one_match'){
-               
-                foreach($result as $kay => $val){
-                     $matches_sites=$this->matches_count($val['imported_data_id']);
-                     
-                     if(count($matches_sites)==1){
-                    
+            if ($status_results == 'one_match') {
+
+                foreach ($result as $kay => $val) {
+                    $matches_sites = $this->matches_count($val['imported_data_id']);
+
+                    if (count($matches_sites) == 1) {
+
                         unset($result[$kay]);
                     }
                 }
             }
-            if($status_results=='matchon' && $selected_cites!='null'){
-                
-                foreach($result as $kay => $val){
-                     $matches_sites=  array_unique($this->matches_count($val['imported_data_id']));
-                     
-                     if(count(array_intersect($matches_sites,$selected_cites))<1){
-                    
-                        unset($result[$kay]);
+            if ($status_results == 'matchon' && $selected_cites != 'null') {
+
+                foreach ($result as $kay => $val) {
+                    $matches_sites = array_unique($this->matches_count($val['imported_data_id']));
+                    if (count($matches_sites) == 1 && count($selected_cites) > 1) {
+                        if (count(array_intersect($matches_sites, $selected_cites)) < 2) {
+
+                            unset($result[$kay]);
+                        }
+                    } else {
+                        if (count(array_intersect($matches_sites, $selected_cites)) < 1) {
+
+                            unset($result[$kay]);
+                        }
                     }
-                     
                 }
             }
             foreach ($result as $key => $row) {
-                $volume[$key]  = $row['product_name'];
+                $volume[$key] = $row['product_name'];
             }
             array_multisort($volume, SORT_ASC, $result);
-            
-           $data['search_results'] = $result;
-         
+
+            $data['search_results'] = $result;
+
             $this->load->view('measure/searchmeasuredball', $data);
         }
     }
@@ -2777,135 +2752,130 @@ public function gridview() {
                 ->set_output(json_encode($data));
     }
 
-    public function get_best_sellers()
-    {
+    public function get_best_sellers() {
         $this->load->model('best_sellers_model');
         $this->load->model('sites_model');
         $department = '';
-        if($this->input->post('site') != ''){
+        if ($this->input->post('site') != '') {
             $site_id = $this->sites_model->getIdByName($this->input->post('site'));
-            if($this->input->post('department') != '' && $this->input->post('department') != 'All'){
+            if ($this->input->post('department') != '' && $this->input->post('department') != 'All') {
                 $department = $this->input->post('department');
             }
             $output = $this->best_sellers_model->getAllBySiteId($site_id, $department);
-        } else{
+        } else {
             $output = $this->best_sellers_model->getAll();
         }
         $this->output->set_content_type('application/json')
-            ->set_output(json_encode($output));
+                ->set_output(json_encode($output));
     }
-    
-    public function addseo(){
+
+    public function addseo() {
         $primary = $this->input->post('primary');
         $secondary = $this->input->post('secondary');
         $tertiary = $this->input->post('tertiary');
         $imported_data_id = $this->input->post('imported_data_id');
-        
-        $this->keywords_model->insert($imported_data_id,$primary, $secondary,$tertiary);
+
+        $this->keywords_model->insert($imported_data_id, $primary, $secondary, $tertiary);
     }
-     public function measure_analyzer_keywords($primary_ph, $secondary_ph, $tertiary_ph, $short_desc, $long_desc) {
-   $this->load->model('keywords_model');
-    // --- default res array and values (start)
-   $primary_ph=  strtolower($primary_ph);
-   $secondary_ph=  strtolower($secondary_ph);
-   $tertiary_ph=  strtolower($tertiary_ph);
-   $short_desc=  strtolower($short_desc);
-   $long_desc=  strtolower($long_desc);
-   
-    $res = array();
-    $short_desc_words_count = count(explode(" ", $short_desc));
-    $long_desc_words_count = count(explode(" ", $long_desc));
-    // --- default res array and values (end)
 
-    // --- primary calculation (start)
-    if($primary_ph !== "") {
-        $primary_ph_words_count = count(explode(" ", $primary_ph));
-        if($short_desc !== "") {
-            // if($this->keywords_appearence($short_desc, $primary_ph) !== 0) $res['primary'][0] = $short_desc_words_count / ($this->keywords_appearence($short_desc, $primary_ph) * $primary_ph_words_count);
-            $res['primary'][0]['prc'] = ($this->keywords_appearence($short_desc, $primary_ph) * $primary_ph_words_count) / $short_desc_words_count;
-        
-            $volume='';
-            $from_keyword_data=$this->keywords_model->get_by_keyword($primary_ph);
-            if(count($from_keyword_data)>0){
-                $volume=$from_keyword_data['volume'];
+    public function measure_analyzer_keywords($primary_ph, $secondary_ph, $tertiary_ph, $short_desc, $long_desc) {
+        $this->load->model('keywords_model');
+        // --- default res array and values (start)
+        $primary_ph = strtolower($primary_ph);
+        $secondary_ph = strtolower($secondary_ph);
+        $tertiary_ph = strtolower($tertiary_ph);
+        $short_desc = strtolower($short_desc);
+        $long_desc = strtolower($long_desc);
+
+        $res = array();
+        $short_desc_words_count = count(explode(" ", $short_desc));
+        $long_desc_words_count = count(explode(" ", $long_desc));
+        // --- default res array and values (end)
+        // --- primary calculation (start)
+        if ($primary_ph !== "") {
+            $primary_ph_words_count = count(explode(" ", $primary_ph));
+            if ($short_desc !== "") {
+                // if($this->keywords_appearence($short_desc, $primary_ph) !== 0) $res['primary'][0] = $short_desc_words_count / ($this->keywords_appearence($short_desc, $primary_ph) * $primary_ph_words_count);
+                $res['primary'][0]['prc'] = ($this->keywords_appearence($short_desc, $primary_ph) * $primary_ph_words_count) / $short_desc_words_count;
+
+                $volume = '';
+                $from_keyword_data = $this->keywords_model->get_by_keyword($primary_ph);
+                if (count($from_keyword_data) > 0) {
+                    $volume = $from_keyword_data['volume'];
+                }
+                $res['primary'][0]['volume'] = $volume;
             }
-            $res['primary'][0]['volume']= $volume;
-        }
-        if($long_desc !== "") {
-            // if($this->keywords_appearence($long_desc, $primary_ph) !== 0) $res['primary'][1] = $long_desc_words_count / ($this->keywords_appearence($long_desc, $primary_ph) * $primary_ph_words_count);
-            $res['primary'][1]['prc'] = ($this->keywords_appearence($long_desc, $primary_ph) * $primary_ph_words_count) / $long_desc_words_count;
-        
-            $volume='';
-            $from_keyword_data=$this->keywords_model->get_by_keyword($primary_ph);
-            if(count($from_keyword_data)>0){
-                $volume=$from_keyword_data['volume'];
+            if ($long_desc !== "") {
+                // if($this->keywords_appearence($long_desc, $primary_ph) !== 0) $res['primary'][1] = $long_desc_words_count / ($this->keywords_appearence($long_desc, $primary_ph) * $primary_ph_words_count);
+                $res['primary'][1]['prc'] = ($this->keywords_appearence($long_desc, $primary_ph) * $primary_ph_words_count) / $long_desc_words_count;
+
+                $volume = '';
+                $from_keyword_data = $this->keywords_model->get_by_keyword($primary_ph);
+                if (count($from_keyword_data) > 0) {
+                    $volume = $from_keyword_data['volume'];
+                }
+                $res['primary'][1]['volume'] = $volume;
             }
-            $res['primary'][1]['volume']= $volume;
         }
+        // --- primary calculation (end)
+        // --- secondary calculation (start)
+        if ($secondary_ph !== "") {
+            $secondary_ph_words_count = count(explode(" ", $secondary_ph));
+            if ($short_desc !== "") {
+                // if($this->keywords_appearence($short_desc, $secondary_ph) !== 0) $res['secondary'][0] = $short_desc_words_count / ($this->keywords_appearence($short_desc, $secondary_ph) * $secondary_ph_words_count);
+                $res['secondary'][0]['prc'] = ($this->keywords_appearence($short_desc, $secondary_ph) * $secondary_ph_words_count) / $short_desc_words_count;
+
+                $volume = '';
+                $from_keyword_data = $this->keywords_model->get_by_keyword($secondary_ph);
+                if (count($from_keyword_data) > 0) {
+                    $volume = $from_keyword_data['volume'];
+                }
+                $res['secondary'][0]['volume'] = $volume;
+            }
+            if ($long_desc !== "") {
+                // if($this->keywords_appearence($long_desc, $secondary_ph) !== 0) $res['secondary'][1] = $long_desc_words_count / ($this->keywords_appearence($long_desc, $secondary_ph) * $secondary_ph_words_count);
+                $res['secondary'][1]['prc'] = ($this->keywords_appearence($long_desc, $secondary_ph) * $secondary_ph_words_count) / $long_desc_words_count;
+                $volume = '';
+                $from_keyword_data = $this->keywords_model->get_by_keyword($secondary_ph);
+                if (count($from_keyword_data) > 0) {
+                    $volume = $from_keyword_data['volume'];
+                }
+                $res['secondary'][1]['volume'] = $volume;
+            }
+        }
+        // --- secondary calculation (end)
+        // --- tertiary calculation (start)
+        if ($tertiary_ph !== "") {
+            $tertiary_ph_words_count = count(explode(" ", $tertiary_ph));
+            if ($short_desc !== "") {
+                // if($this->keywords_appearence($short_desc, $tertiary_ph) !== 0) $res['tertiary'][0] = $short_desc_words_count / ($this->keywords_appearence($short_desc, $tertiary_ph) * $tertiary_ph_words_count);
+                $res['tertiary'][0]['prc'] = ($this->keywords_appearence($short_desc, $tertiary_ph) * $tertiary_ph_words_count) / $short_desc_words_count;
+
+                $volume = '';
+                $from_keyword_data = $this->keywords_model->get_by_keyword($tertiary_ph);
+                if (count($from_keyword_data) > 0) {
+                    $volume = $from_keyword_data['volume'];
+                }
+                $res['tertiary'][0]['volume'] = $volume;
+            }
+            if ($long_desc !== "") {
+                // if($this->keywords_appearence($long_desc, $tertiary_ph) !== 0) $res['tertiary'][1] = $long_desc_words_count / ($this->keywords_appearence($long_desc, $tertiary_ph) * $tertiary_ph_words_count);
+                $res['tertiary'][1]['prc'] = ($this->keywords_appearence($long_desc, $tertiary_ph) * $tertiary_ph_words_count) / $long_desc_words_count;
+                $volume = '';
+                $from_keyword_data = $this->keywords_model->get_by_keyword($tertiary_ph);
+                if (count($from_keyword_data) > 0) {
+                    $volume = $from_keyword_data['volume'];
+                }
+                $res['tertiary'][1]['volume'] = $volume;
+            }
+        }
+        // --- tertiary calculation (end)
+
+        return $res;
     }
-    // --- primary calculation (end)
 
-    // --- secondary calculation (start)
-    if($secondary_ph !== "") {
-        $secondary_ph_words_count = count(explode(" ", $secondary_ph));
-        if($short_desc !== "") {
-            // if($this->keywords_appearence($short_desc, $secondary_ph) !== 0) $res['secondary'][0] = $short_desc_words_count / ($this->keywords_appearence($short_desc, $secondary_ph) * $secondary_ph_words_count);
-            $res['secondary'][0]['prc'] = ($this->keywords_appearence($short_desc, $secondary_ph) * $secondary_ph_words_count) / $short_desc_words_count;
-        
-            $volume='';
-            $from_keyword_data=$this->keywords_model->get_by_keyword($secondary_ph);
-            if(count($from_keyword_data)>0){
-                $volume=$from_keyword_data['volume'];
-            }
-            $res['secondary'][0]['volume']= $volume;
-        }
-        if($long_desc !== "") {
-            // if($this->keywords_appearence($long_desc, $secondary_ph) !== 0) $res['secondary'][1] = $long_desc_words_count / ($this->keywords_appearence($long_desc, $secondary_ph) * $secondary_ph_words_count);
-            $res['secondary'][1]['prc'] = ($this->keywords_appearence($long_desc, $secondary_ph) * $secondary_ph_words_count) / $long_desc_words_count;
-            $volume='';
-            $from_keyword_data=$this->keywords_model->get_by_keyword($secondary_ph);
-            if(count($from_keyword_data)>0){
-                $volume=$from_keyword_data['volume'];
-            }
-            $res['secondary'][1]['volume']= $volume;
-        }
+    private function keywords_appearence($desc, $phrase) {
+        return substr_count($desc, $phrase);
     }
-    // --- secondary calculation (end)
-
-    // --- tertiary calculation (start)
-    if($tertiary_ph !== "") {
-        $tertiary_ph_words_count = count(explode(" ", $tertiary_ph));
-        if($short_desc !== "") {
-            // if($this->keywords_appearence($short_desc, $tertiary_ph) !== 0) $res['tertiary'][0] = $short_desc_words_count / ($this->keywords_appearence($short_desc, $tertiary_ph) * $tertiary_ph_words_count);
-            $res['tertiary'][0]['prc'] = ($this->keywords_appearence($short_desc, $tertiary_ph) * $tertiary_ph_words_count) / $short_desc_words_count;
-        
-            $volume='';
-            $from_keyword_data=$this->keywords_model->get_by_keyword($tertiary_ph);
-            if(count($from_keyword_data)>0){
-                $volume=$from_keyword_data['volume'];
-            }
-            $res['tertiary'][0]['volume']= $volume;
-        }
-        if($long_desc !== "") {
-            // if($this->keywords_appearence($long_desc, $tertiary_ph) !== 0) $res['tertiary'][1] = $long_desc_words_count / ($this->keywords_appearence($long_desc, $tertiary_ph) * $tertiary_ph_words_count);
-            $res['tertiary'][1]['prc'] = ($this->keywords_appearence($long_desc, $tertiary_ph) * $tertiary_ph_words_count) / $long_desc_words_count;
-            $volume='';
-            $from_keyword_data=$this->keywords_model->get_by_keyword($tertiary_ph);
-            if(count($from_keyword_data)>0){
-                $volume=$from_keyword_data['volume'];
-            }
-            $res['tertiary'][1]['volume']= $volume;
-            
-        }
-    }
-    // --- tertiary calculation (end)
-   
-    return $res;
-  }
-
-  private function keywords_appearence($desc, $phrase) {
-    return substr_count($desc, $phrase);
-  }
-
 
 }
