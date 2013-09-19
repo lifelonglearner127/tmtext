@@ -305,7 +305,6 @@
 <!-- MODALS (END) -->
 
 <script type="text/javascript">
-	console.log("DEBUG BASEURL (SIGN FOR UDAOTE) (FINAL): ", base_url);
 	function clickScreenDrop(new_caret, item_id, pos, new_label) {
 		$("#hp_boot_drop_" + item_id + " .btn_caret_sign").text(new_label);
 		// ---- ATTEMPT TO GET SCREENSHOT (START)
