@@ -642,6 +642,7 @@ class System extends MY_Controller {
         foreach($_rows as $row){
             $special = 0;
             $parent_text = '';
+            $department_text = '';
             $text = '';
             $url = '';
             $nr_products = 0;
@@ -664,6 +665,11 @@ class System extends MY_Controller {
                 } else if(isset($row->description_wc) && !is_array($row->description_wc) && !is_null($row->description_wc) && $row->description_wc!=''){
                     $description_wc = $row->description_wc;
                 }
+                if(isset($row->department_text) && is_array($row->department_text)){
+                    $department_text = $row->department_text[0];
+                } else if(isset($row->department_text) && !is_array($row->department_text) && !is_null($row->department_text) && $row->department_text!=''){
+                    $department_text = $row->department_text;
+                }
 		        if(isset($row->keyword_density) && is_array($row->keyword_density)){
                     $keyword_density = $row->keyword_density[0];
                 } else if(isset($row->keyword_density) && !is_array($row->keyword_density) && !is_null($row->keyword_density) && $row->keyword_density!=''){
@@ -684,22 +690,22 @@ class System extends MY_Controller {
                 } else if(isset($row->description_text) && !is_array($row->description_text) && !is_null($row->description_text) && $row->description_text!=''){
                     $description_text = $row->description_text;
                 }
-                $check_department_id = $this->department_model->checkExist($row->text);
+                $check_department_id = $this->department_model->checkExist($department_text);
                 if($check_department_id == false){
-                    $department_id = $this->department_model->insert($row->text, $row->text);
+                    $department_id = $this->department_model->insert($department_text, $department_text);
                 } else {
                     $department_id = $check_department_id;
                 }
                 $parent_id = 0;
                 if($parent_text!=''){
-                    $parent_id =  $this->department_members_model->checkExist($site_id, $parent_text);
+                    $parent_id =  $this->department_members_model->checkExist($site_id, $department_text);
                     if($parent_id == false){
-                        $parent_id = $this->department_members_model->insert(0, $site_id, $department_id, $row->text, $url, $description_wc, $description_text, $keyword_count, $keyword_density, $description_title, $level);
+                        $parent_id = $this->department_members_model->insert(0, $site_id, $department_id, $department_text, $url, $description_wc, $description_text, $keyword_count, $keyword_density, $description_title, $level);
                     }
                 }
-                $check_id = $this->department_members_model->checkExist( $site_id, $row->text);
+                $check_id = $this->department_members_model->checkExist( $site_id, $department_text);
                 if($check_id == false){
-                    $this->department_members_model->insert($parent_id, $site_id, $department_id, $row->text, $url, $description_wc, $description_text, $keyword_count, $keyword_density, $description_title, $level);
+                    $this->department_members_model->insert($parent_id, $site_id, $department_id, $department_text, $url, $description_wc, $description_text, $keyword_count, $keyword_density, $description_title, $level);
                 } else {
                     $this->department_members_model->update($check_id, $department_id, $description_wc, $description_text, $keyword_count, $keyword_density, $description_title, $level);
                 }
@@ -708,6 +714,7 @@ class System extends MY_Controller {
         foreach($_rows as $row){
             $special = 0;
             $parent_text = '';
+            $department_text = '';
             $text = '';
             $url = '';
             $nr_products = 0;
@@ -726,6 +733,11 @@ class System extends MY_Controller {
                 } else if(isset($row->parent_text) && !is_array($row->parent_text) && !is_null($row->parent_text) && $row->parent_text!=''){
                     $parent_text = $row->parent_text;
                 }
+                if(isset($row->department_text) && is_array($row->department_text)){
+                    $department_text = $row->department_text[0];
+                } else if(isset($row->department_text) && !is_array($row->department_text) && !is_null($row->department_text) && $row->department_text!=''){
+                    $department_text = $row->department_text;
+                }
                 if(isset($row->text) && is_array($row->text)){
                     $text = $row->text[0];
                 } else if(isset($row->text) && !is_array($row->text) && !is_null($row->text)){
@@ -742,8 +754,8 @@ class System extends MY_Controller {
                 }
 
                 $department_members_id = 0;
-                if($parent_text!=''){
-                    $check_id = $this->department_members_model->checkExist( $site_id, $parent_text);
+                if($department_text!=''){
+                    $check_id = $this->department_members_model->checkExist( $site_id, $department_text);
                     if($check_id){
                         $department_members_id = $check_id;
                     }
@@ -800,7 +812,7 @@ class System extends MY_Controller {
 
                 /*end new columns*/
                 if($text != ''){
-                    $check_site = $this->site_categories_model->checkExist($site_id, $text);
+                    $check_site = $this->site_categories_model->checkExist($site_id, $text, $department_members_id);
                     if($check_site == false){
                         $this->site_categories_model->insert($parent_id, $site_id, $text, $url, $special, $parent_text,
                             $department_members_id, $nr_products, $description_wc, $keyword_count, $keyword_density,$description_title,$description_text,$level);
