@@ -1008,7 +1008,7 @@ $(document).click(function(e) {
         var inputVal = $(this).next().val().trim();
         if(inputVal != ''){
             if(trueOrFalse){
-                $(this).closest('.p_description').find('.compare').each(function(){
+                $(this).closest('.p_description').find('.compare, .short_desc_con').each(function(){
                     var reg = new RegExp(inputVal,"ig");
                     var newInputVal = $(this).html().match(reg);
                     for(var i in newInputVal){
@@ -1017,7 +1017,7 @@ $(document).click(function(e) {
    });
                 trueOrFalse = false;
             } else {
-                $('.compare').each(function(){
+                $('.compare, .short_desc_con').each(function(){
                     $(this).html($(this).text());
                 });
                 trueOrFalse = true;
