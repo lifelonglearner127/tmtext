@@ -306,7 +306,7 @@ class Crons extends MY_Controller {
         $this->db->update('settings', $data);
         $data_arr=$this->imported_data_parsed_model->do_stats_ids();
         if (count($data_arr) > 1) {
-            shell_exec("wget -S -O- http://dev.contentsolutionsinc.com/producteditor/index.php/crons/do_duplicate_content/$trnc > /dev/null 2>/dev/null &");
+            shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/do_duplicate_content/$trnc > /dev/null 2>/dev/null &");
         } else {
             $data = array(
                 'description' => 0
@@ -851,7 +851,7 @@ class Crons extends MY_Controller {
         $res = $q->get()->row_array();
         $start = $res['description'];
         if (count($data_arr) > 1) {
-            shell_exec("wget -S -O- http://dev.contentsolutionsinc.com/producteditor/index.php/crons/do_stats_new/$trnc > /dev/null 2>/dev/null &");
+            shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/do_stats_new/$trnc > /dev/null 2>/dev/null &");
         } else {
             $data = array(
                 'description' => 0
