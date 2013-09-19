@@ -39,32 +39,14 @@ class Imported_data_parsed_model extends CI_Model {
     }
     
     function model_info($imported_data_id, $model, $revision){
-        $query = $this->db->where('imported_data_id',$imported_data_id)->where('key','model')
-              
-                ->get($this->tables['imported_data_parsed']);
-        if($query->num_rows() > 0){
-            $res= $query->result_array();
-            if($res['revision']==$revision){}else{
-                //update
-                $update_object = array(
-                   'revision' => $revision,
-                   'value' => $model
-                );
-                $this->db->where('imported_data_id', $imported_data_id)->where('key', 'model');
-                $this->db->update($this->tables['imported_data_parsed'], $update_object);
-            }
-        }else{
-             //insert
-            $insert_object = array(
-                'imported_data_id' => $imported_data_id,
-                'key' => 'model',
-                'value' =>$model ,
-                'revision' =>$revision
-                            );
-            $this->db->insert($this->tables['imported_data_parsed'], $insert_object);
-            
-        }
         
+            $update_object = array(
+                'model' => $model,
+              
+                            );
+            $this->db->where('imported_data_id', $imported_data_id)->where('key', 'parsed_attributes')->where('revision', $revision);
+            $this->db->update($this->tables['imported_data_parsed'], $update_object);
+                            
     }
     function get($id) {
         $query = $this->db->where('id', $id)
@@ -1129,13 +1111,58 @@ class Imported_data_parsed_model extends CI_Model {
 
         return $data;
     }
-
+    function change_mpdel(){
+        $this->db->select('p.imported_data_id, p.key, p.value, p.revision')
+                ->from($this->tables['imported_data_parsed'] . ' as p')
+                ->where('p.key', 'model');
+                $query = $this->db->get();
+                 $results = $query->result_array();
+                 
+                 foreach($results as  $key => $val){
+                  $update_object = array(
+                   'model' => $val['value'],
+                   
+                );
+                $this->db->where('imported_data_id', $val['imported_data_id'])->where('key', 'parsed_attributes')->where('revision', $val['revision']);
+                $this->db->update($this->tables['imported_data_parsed'], $update_object);
+                 }
+                
+    }
     function getData($value, $website = '', $category_id = '', $limit = '', $key = 'Product Name', $strict = false) {
 
-        if ($key == 'parsed_attributes' && strlen($value) > 4) {
-            $arr = explode('/', $value);
-            $value = $arr[0];
-        }
+//        if ($key == 'parsed_attributes' && strlen($value) > 4) {
+//            $arr = explode('/', $value);
+//            $value = $arr[0];
+//        }
+        
+//        if ($key == 'parsed_attributes'){
+//             
+//             $this->db->select('p.imported_data_id, p.revision')
+//                ->from($this->tables['imported_data_parsed'] . ' as p')
+//                ->where('p.key', 'model')
+//                ->where('p.revision = (SELECT  MAX(revision) as revision
+//                      FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
+//                      GROUP BY imported_data_id)', NULL, FALSE)     
+//                ->where("`p`.`value` like '$value' OR INSTR(`p`.`value`, '$value')>0 ", NULL, FALSE);
+//                $query = $this->db->get();
+//                $ids=array();
+//                $results = $query->result_array();
+//                
+//                print_r($results);
+//                foreach($results as $key => $val){
+//                    $ids[]= $val['imported_data_id'];
+//                }
+//                print_r($ids);
+//                echo "<br>";
+//                $ids=array_unique($ids);
+//                print_r($ids);
+//                $results =array();
+//                foreach($ids as $val){
+//                     $results[]=(object)array('imported_data_id' => $val);
+//                }
+//                               
+//        }else{
+//        
         $this->db->select('p.imported_data_id, p.key, p.value')
                 ->from($this->tables['imported_data_parsed'] . ' as p')
                 ->join($this->tables['imported_data'] . ' as i', 'i.id = p.imported_data_id', 'left')
@@ -1143,11 +1170,17 @@ class Imported_data_parsed_model extends CI_Model {
                 ->where('p.revision = (SELECT  MAX(revision) as revision
                       FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
                       GROUP BY imported_data_id)', NULL, FALSE);
-
-        if ($strict) {
+        if ($key == 'parsed_attributes'){
+            
+            $this->db->where("`p`.`model` like '%" . $value . "%' OR INSTR('" . $value . "', `p`.`model`) > 0 ", NULL, FALSE);
+            
+        }else{
+           if ($strict) {
             $this->db->like('p.value', '"' . $value . '"');
-        } else {
-            $this->db->like('p.value', $value);
+            } else {
+                $this->db->like('p.value', $value);
+            }
+            
         }
 
         if ($category_id > 0 && $category_id != 2) {
@@ -1161,9 +1194,10 @@ class Imported_data_parsed_model extends CI_Model {
         if ($limit) {
             $this->db->limit((int) $limit);
         }
-
+       
         $query = $this->db->get();
         $results = $query->result();
+         //}
         $data = array();
         foreach ($results as $result) {
             $query = $this->db->where('imported_data_id', $result->imported_data_id)->get($this->tables['imported_data_parsed']);

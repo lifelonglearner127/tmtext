@@ -1504,9 +1504,11 @@ class Measure extends MY_Controller {
         }
     }
     public function similar_groups(){
-        $this->load->model('imported_data_parsed_model');
-        $this->imported_data_parsed_model->similiarity_cron();
         
+        $this->load->model('imported_data_parsed_model');
+        $this->imported_data_parsed_model->change_mpdel();
+//        $this->imported_data_parsed_model->similiarity_cron();
+//        
     }
     public function report_mismatch(){
 
