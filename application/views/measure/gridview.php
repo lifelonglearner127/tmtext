@@ -341,7 +341,7 @@ foreach ($same_pr as $ks => $vs) {
                                 <?php } else { ?>
                                     <p>Duplicate content: <b><?php echo $vs['short_original']; ?> </b></p>
                                 <?php } ?>
-                                <p class="short_desc_con compare"><?php echo $s_product_description; ?></p>
+                                <p class="compare short_desc_con"><?php echo $s_product_description; ?></p>
                             </div>
         <?php
     }
