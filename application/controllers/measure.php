@@ -2662,16 +2662,12 @@ public function gridview() {
                 
                 foreach($result as $kay => $val){
                      $matches_sites=  array_unique($this->matches_count($val['imported_data_id']));
-                     if(count($selected_cites)==1){
-                         if(count(array_intersect($matches_sites,$selected_cites))<1){
-                         unset($result[$kay]);
-                    }
-                     }else{
-                     if(count(array_intersect($matches_sites,$selected_cites))<2){
+                     
+                     if(count(array_intersect($matches_sites,$selected_cites))<1){
                     
                         unset($result[$kay]);
                     }
-                     }
+                     
                 }
             }
             foreach ($result as $key => $row) {
