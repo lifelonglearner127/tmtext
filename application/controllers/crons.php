@@ -103,7 +103,8 @@ class Crons extends MY_Controller {
         $path = base_url() . "webshoots/$url_name.$type";
         $res = array(
             'path' => $path,
-            'dir' => $dir . "/$url_name.$type"
+            'dir' => $dir . "/$url_name.$type",
+            'shot_name' => $url_name.".".$type
         );
         return $res;
     }
@@ -180,7 +181,8 @@ class Crons extends MY_Controller {
                 'uid' => 4,
                 'year' => $year,
                 'week' => $week,
-                'pos' => 0
+                'pos' => 0,
+                'shot_name' => $crawl_l['shot_name']
             );
             $r = $this->webshoots_model->recordUpdateWebshoot($result);
             // === webshots selection refresh attempt (start)
