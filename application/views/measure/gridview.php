@@ -126,6 +126,12 @@ foreach ($same_pr as $ks => $vs) {
                         <span class='analysis_content_head'>Product Name:</span>
                         <p style="float:none;" class='short_product_name grid_product_name'  ><?php echo $vs['product_name'];?></p>
                     </div>
+                    <div class="p_meta" >
+                        <?php if(isset($vs['parsed_meta']['description'])): ?>
+                            <span class="analysis_content_head">Meta Description:</span>
+                            <p style="float:none;" class="short_product_name grid_product_name"><?php echo $vs['parsed_meta']['description']; ?></p>
+                        <?php endif; ?>
+                    </div>
                     <div class="p_price">
     <?php
     if (!empty($vs['three_last_prices'])) {
@@ -222,7 +228,7 @@ foreach ($same_pr as $ks => $vs) {
                             <div class="p_seo<?php echo $row; ?>short seo_container" style="clear:left;">
 
                                    <div style="float: left;width: 100%;"> <p class="heading_text">SEO Keywords: </p>
-                                        <select class="keywords_select" name="analysis" style="margin-top: -20px;float: right;width: 95px;margin-right: 50px;">
+                                        <select class="keywords_select" name="analysis" style="margin-top: -20px;float: right;width: 95px;margin-right: 10px;">
                                                     <option  value="title">Title</option>
                                                     <option value="custom">Custom</option>
 <!--                                                    Maxik-->
@@ -244,6 +250,7 @@ foreach ($same_pr as $ks => $vs) {
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
+                                                        <img class="seo-btn" src="http://tmeditor.dev//img/icon.png" title="Click to see dublicates words">
                                                         <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword1" keyword_num="1" type="text" value="<?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['primary']; }?>">
                                                         <span id="keyword1_density"></span>
                                                     </span>
@@ -256,6 +263,7 @@ foreach ($same_pr as $ks => $vs) {
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
+                                                        <img class="seo-btn" src="http://tmeditor.dev//img/icon.png" title="Click to see dublicates words">
                                                         <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword2" keyword_num="2" type="text" value="<?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['secondary']; }?>">
                                                         <span id="keyword2_density"></span>
                                                     </span>
@@ -268,6 +276,7 @@ foreach ($same_pr as $ks => $vs) {
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
+                                                        <img class="seo-btn" src="http://tmeditor.dev//img/icon.png" title="Click to see dublicates words">
                                                         <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword3" keyword_num="2" type="text" value="<?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['tertiary']; }?>">
                                                         <span id="keyword3_density"></span>
                                                     </span>
@@ -278,7 +287,7 @@ foreach ($same_pr as $ks => $vs) {
 				</div>
 <!--                                Maxik-->
                                 <div class="seo_meta">
-                                    <ul class='gr_seo_short_ph seo_meta_section' style='float:left;margin:0px;'>
+                                    <ul class="gr_seo_short_ph seo_meta_section" style="float:left;margin:0px;">
             <?php if(isset($vs['short_meta'])){foreach ($vs['short_meta'] as $key => $value) { ?>
 
                                             <?php $v_ph = $value['value']; ?>
@@ -287,8 +296,10 @@ foreach ($same_pr as $ks => $vs) {
                                             <?php $rank_api = $this->rankapi_model->checkRankApiData($vs['url'], $v_ph); ?>
                                             <input type='hidden' name='debug_rank_api_rank_ph' value="<?php echo $rank_api; ?>">
                                             <?php if($rank_api === null || $rank_api === 0) { $rank_int = ''; } else { $rank_int = $rank_api; } ?>
-                                            <li >
-                                                <span style="white-space: normal;line-height: 20px;text-decoration: none;font-size: 14px !important;line-height: 21px;text-decoration: none;white-space: normal;width: 140px;float: left;word-wrap: break-word;"data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'short')" class='word_wrap_li_pr hover_en'>
+                                            <li style="float: left;" >
+                                                <img class="meta-btn word_wrap_li_pr hover_en" style="float:left;margin-right: 2px;" onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'short')"  src="http://tmeditor.dev//img/icon.png" title="Click to see dublicates words" data-status="seo_link" />
+                                                
+                                                <span  style="white-space: normal;line-height: 20px;text-decoration: none;font-size: 14px !important;line-height: 21px;text-decoration: none;white-space: normal;width: 140px;float: left;word-wrap: break-word;" >
                 <?php echo $value['value']; ?>
                                                 </span>
                                                  <span class='seo_prc' ><?php echo  $value['prc']; ?>%</span><span style="display:none" class='seo_count' ><?php echo $value['count']; ?></span>
@@ -308,8 +319,9 @@ foreach ($same_pr as $ks => $vs) {
                                             <?php $rank_api = $this->rankapi_model->checkRankApiData($vs['url'], $v_ph); ?>
                                             <input type='hidden' name='debug_rank_api_rank_ph' value="<?php echo $rank_api; ?>">
                                             <?php if($rank_api === null || $rank_api === 0) { $rank_int = ''; } else { $rank_int = $rank_api; } ?>
-                                            <li>
-                                                <span style="white-space: normal;line-height: 20px;text-decoration: none;font-size: 14px !important;line-height: 21px;text-decoration: none;white-space: normal;width: 140px;float: left;word-wrap: break-word;"data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'short')" class='word_wrap_li_pr hover_en'>
+                                            <li style="float: left;" >
+                                                <img src="http://tmeditor.dev//img/icon.png" class="meta-btn word_wrap_li_pr hover_en" style="float:left;margin-right: 2px;" onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'short')"   title="Click to see dublicates words" data-status="seo_link" />
+                                                <span style="white-space: normal;line-height: 20px;text-decoration: none;font-size: 14px !important;line-height: 21px;text-decoration: none;white-space: normal;width: 140px;float: left;word-wrap: break-word;" >
                 <?php echo $value['ph']; ?>
                                                     
                                                 </span>
@@ -353,7 +365,7 @@ foreach ($same_pr as $ks => $vs) {
         ?> seo_container">
                            <?php if ($s_product_description == '') { ?>
                                    <div style="float: left;width: 100%;"><p class="heading_text">SEO Keywords: </p>
-                                   <select class="keywords_select" name="analysis" style="float: right;margin-top: -20px;width: 95px;margin-right: 50px;">
+                                   <select class="keywords_select" name="analysis" style="float: right;margin-top: -20px;width: 95px;margin-right: 10px;">
 						<option  value="title">Title</option>
 						<option value="custom">Custom</option>
 <!--                                                Maxik-->
@@ -471,8 +483,9 @@ foreach ($same_pr as $ks => $vs) {
                                             <?php $rank_api = $this->rankapi_model->checkRankApiData($vs['url'], $v_ph); ?>
                                             <input type='hidden' name='debug_rank_api_rank_ph' value="<?php echo $rank_api; ?>">
                                             <?php if($rank_api === null || $rank_api === 0) { $rank_int = ''; } else { $rank_int = $rank_api; } ?>
-                                            <li >
-                                                <span style="white-space: normal;line-height: 20px;text-decoration: none;font-size: 14px !important;line-height: 21px;text-decoration: none;white-space: normal;width: 140px;float: left;word-wrap: break-word;"data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'long')" class='word_wrap_li_pr hover_en'>
+                                            <li style="float: left;">
+                                                <img class="word_wrap_li_pr hover_en" style="float:left;margin-right: 2px;"  src="http://tmeditor.dev//img/icon.png" title="Click to see dublicates words" data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'long')"  />
+                                                <span style="white-space: normal;line-height: 20px;text-decoration: none;font-size: 14px !important;line-height: 21px;text-decoration: none;white-space: normal;width: 140px;float: left;word-wrap: break-word;" >
                 <?php echo $value['value']; ?>
                                                 </span>
                                                 <span class='seo_prc' ><?php echo  $value['prc']; ?>%</span><span style="display:none" class='seo_count' ><?php echo $value['count']; ?></span>
@@ -493,8 +506,9 @@ foreach ($same_pr as $ks => $vs) {
                                             <?php $rank_api = $this->rankapi_model->checkRankApiData($vs['url'], $v_ph); ?>
                                             <input type='hidden' name='debug_rank_api_rank_ph' value="<?php echo $rank_api; ?>">
                                             <?php if($rank_api === null || $rank_api === 0) { $rank_int = ''; } else { $rank_int = $rank_api; } ?>
-                                            <li>
-                                                <span style="font-size: 14px !important;white-space: normal;line-height: 20px;text-decoration: none;width: 140px;float: left;word-wrap: break-word;"data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'long')" class='word_wrap_li_pr hover_en'>
+                                            <li style="float: left;" >
+                                                <img class="meta-btn word_wrap_li_pr hover_en" style="float:left;margin-right: 2px;" onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'long')"  src="http://tmeditor.dev//img/icon.png" title="Click to see dublicates words" data-status="seo_link" />
+                                                <span style="font-size: 14px !important;white-space: normal;line-height: 20px;text-decoration: none;width: 140px;float: left;word-wrap: break-word;"  >
                 <?php echo $value['ph']; ?>
                                                     
                                                 </span>
@@ -989,7 +1003,48 @@ $(document).click(function(e) {
     }
 
   });
+    var trueOrFalse = true;
+    $('.seo-btn').click(function(){
+        var inputVal = $(this).next().val().trim();
+        if(inputVal != ''){
+            if(trueOrFalse){
+                $(this).closest('.p_description').find('.compare').each(function(){
+                    var reg = new RegExp(inputVal,"ig");
+                    var newInputVal = $(this).html().match(reg);
+                    for(var i in newInputVal){
+                        $(this).html($(this).html().replace(newInputVal[i], '<span class="highlight">'+newInputVal[i]+'</span>'));
+                    }
    });
+                trueOrFalse = false;
+            } else {
+                $('.compare').each(function(){
+                    $(this).html($(this).text());
+                });
+                trueOrFalse = true;
+            }
+        }
+    });
+//    $('.meta-btn').click(function(){
+//        var inputVal = $(this).next().text().trim();
+//        if(inputVal != ''){
+//            if(trueOrFalse){
+//                $(this).closest('.p_description').find('.compare').each(function(){
+//                    var reg = new RegExp(inputVal,"ig");
+//                    var newInputVal = $(this).html().match(reg);
+//                    for(var i in newInputVal){
+//                        $(this).html($(this).html().replace(newInputVal[i], '<span class="highlight">'+newInputVal[i]+'</span>'));
+//                    }
+//                });
+//                trueOrFalse = false;
+//            } else {
+//                $('.compare').each(function(){
+//                    $(this).html($(this).text());
+//                });
+//                trueOrFalse = true;
+//            }
+//        }
+//    });
+   });//document ready end
 
 
 
@@ -1007,7 +1062,7 @@ $(document).click(function(e) {
     .primary_speed{
         float: left;
         margin-left: 5px;
-        width: 180px;
+        width: 196px;
         margin-bottom: 2px;
     }
 </style>

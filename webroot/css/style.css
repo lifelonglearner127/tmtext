@@ -2123,12 +2123,12 @@ span.highlight { background-color:yellow;}
 }
 .density_rank{
     float: left;
-    margin-left: 142px;
+    margin-left: 159px;
 }
 .density, .rank{
     text-transform: capitalize;
     text-decoration: underline;
-    margin-right: 15px;
+    margin-right: 10px;
 }
 .volume{
     text-transform: capitalize;
@@ -2204,4 +2204,7 @@ span.dep_left_part{
 }
 .cat_desc{
     display: none;
+}
+.seo-btn, meta-btn {
+    cursor: pointer;
 }

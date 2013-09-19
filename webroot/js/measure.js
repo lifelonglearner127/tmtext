@@ -1125,7 +1125,7 @@ function fixGridHeights() {
 //            $(selectorssaa).height( aaa);
 //        } 
 //    });
-    var selectors = new Array('.p_url', '.p_price', '.p_description', '.p_feature','.parsed_attributes');
+    var selectors = new Array('.p_url', '.p_price', '.p_description', '.p_feature', '.p_meta');
     var wrapper = $('.wrapper');
     if (wrapper.length > 0) {
         $.each(wrapper, function(k, v) {
