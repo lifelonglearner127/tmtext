@@ -617,9 +617,9 @@ class Crons extends MY_Controller {
                             if (!empty($similar_items)) {
                                 foreach ($similar_items as $ks => $vs) {
                                     $similar_item_imported_data_id = $similar_items[$ks]['imported_data_id'];
-                                    if ($obj->imported_data_id == $similar_item_imported_data_id) {
-                                        continue;
-                                    }
+//                                    if ($obj->imported_data_id == $similar_item_imported_data_id) {
+//                                        continue;
+//                                    }
 //                                          $n = parse_url($vs['url']);
 //                                          $customer=  strtolower($n['host']);
 //                                          $customer = str_replace("www1.", "",$customer);
