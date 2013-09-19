@@ -156,24 +156,17 @@ class Webshoots_model extends CI_Model {
         $sel_query = $this->db->where($check_obj)->order_by('stamp', 'desc')->limit(6)->get($this->tables['webshoots_select']);
         $sel_res = $sel_query->result();
         if(count($sel_res) > 0) {
-            $screen_ids = array();
-            foreach ($sel_res as $ks => $vs) {
-                $screen_ids[] = $vs->screen_id;
-            }
-            // $screen_ids = array_unique($screen_ids);
-            $shots_query = $this->db->where_in('id', $screen_ids)->get($this->tables['webshoots']);
-            $shots_res = $shots_query->result();
-            if(count($shots_res) > 0) {
-                foreach($shots_res as $k => $v) {
-                    $fs = filesize($v->dir_img); 
-                    if($fs !== false && $fs > 10000) {
-                        $mid = array(
-                            'link' => $v->img,
-                            'dir' => $v->dir_img,
-                            'pos' => $this->getScreenPosition($v->id) # ==== !!! CHECK IT, SOMETHING WRONG !!!
-                        );
-                        $images[] = $mid;
-                    }
+            foreach($sel_res as $k => $v) {
+                $shot_name = $v->shot_name;
+                $dir_img = realpath(BASEPATH . "../webroot/webshoots/$shot_name");
+                $fs = filesize($dir_img); 
+                if($fs !== false && $fs > 10000) {
+                    $mid = array(
+                        'link' => $v->img,
+                        'dir' => $dir_img,
+                        'pos' => $v->pos
+                    );
+                    $images[] = $mid;
                 }
             }
         }
@@ -188,32 +181,61 @@ class Webshoots_model extends CI_Model {
             'week' => $c_week,
             'reset' => 0
         );
-        $sel_query = $this->db->where($check_obj)->order_by('stamp', 'desc')->get($this->tables['webshoots_select']);
+        $sel_query = $this->db->where($check_obj)->order_by('stamp', 'desc')->limit(6)->get($this->tables['webshoots_select']);
         $sel_res = $sel_query->result();
         if(count($sel_res) > 0) {
-            $screen_ids = array();
-            foreach ($sel_res as $ks => $vs) {
-                $screen_ids[] = $vs->screen_id;
-            }
-            // $screen_ids = array_unique($screen_ids);
-            $shots_query = $this->db->where_in('id', $screen_ids)->get($this->tables['webshoots']);
-            $shots_res = $shots_query->result();
-            if(count($shots_res) > 0) {
-                foreach($shots_res as $k => $v) {
-                    $fs = filesize($v->dir_img); 
-                    if($fs !== false && $fs > 10000) {
-                        $mid = array(
-                            'link' => $v->img,
-                            'dir' => $v->dir_img,
-                            'pos' => $this->getScreenPosition($v->id) # ==== !!! CHECK IT, SOMETHING WRONG !!!
-                        );
-                        $images[] = $mid;
-                    }
+            foreach($sel_res as $k => $v) {
+                $shot_name = $v->shot_name;
+                $dir_img = realpath(BASEPATH . "../webroot/webshoots/$shot_name");
+                $fs = filesize($dir_img); 
+                if($fs !== false && $fs > 10000) {
+                    $mid = array(
+                        'link' => $v->img,
+                        'dir' => $dir_img,
+                        'pos' => $v->pos
+                    );
+                    $images[] = $mid;
                 }
             }
         }
         return $images;
     }
+
+    // public function getDistinctEmailScreens($c_week, $c_year, $uid) {
+    //     $images = array();
+    //     $check_obj = array(
+    //         'uid' => $uid,
+    //         'year' => $c_year,
+    //         'week' => $c_week,
+    //         'reset' => 0
+    //     );
+    //     $sel_query = $this->db->where($check_obj)->order_by('stamp', 'desc')->limit(6)->get($this->tables['webshoots_select']);
+    //     $sel_res = $sel_query->result();
+    //     var_dump($sel_res);
+    //     if(count($sel_res) > 0) {
+    //         $screen_ids = array();
+    //         foreach ($sel_res as $ks => $vs) {
+    //             $screen_ids[] = $vs->screen_id;
+    //         }
+    //         // $screen_ids = array_unique($screen_ids);
+    //         $shots_query = $this->db->where_in('id', $screen_ids)->get($this->tables['webshoots']);
+    //         $shots_res = $shots_query->result();
+    //         if(count($shots_res) > 0) {
+    //             foreach($shots_res as $k => $v) {
+    //                 $fs = filesize($v->dir_img); 
+    //                 if($fs !== false && $fs > 10000) {
+    //                     $mid = array(
+    //                         'link' => $v->img,
+    //                         'dir' => $v->dir_img,
+    //                         'pos' => $this->getScreenPosition($v->id) # ==== !!! CHECK IT, SOMETHING WRONG !!!
+    //                     );
+    //                     $images[] = $mid;
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     return $images;
+    // }
 
     public function updateWebshootById($up_object, $id) {
         return $this->db->update($this->tables['webshoots'], $up_object, array('id' => $id));
