@@ -325,7 +325,7 @@ class Crons extends MY_Controller {
         }
     }
     public function do_stats_new_test(){
-        $id=2156;
+        $id=1232;
         $this->load->model('imported_data_parsed_model');
         $this->load->model('research_data_model');
         $this->load->model('statistics_model');
@@ -341,107 +341,112 @@ class Crons extends MY_Controller {
         $data_import=(array)$data_import[0];
 
         // print_r($data_import);
-        $own_price = 0;
-                    $competitors_prices = array();
-                    $price_diff = '';
-                    $items_priced_higher_than_competitors = 0;
-                    $short_description_wc = 0;
-                    $long_description_wc = 0;
-                    $short_seo_phrases = '?';
-                    $long_seo_phrases = '?';
-                    $similar_products_competitors = array();
-                    // Price difference
-                    $own_site = parse_url($obj->url, PHP_URL_HOST);
-                    if (!$own_site)
-                        $own_site = "own site";
-                    $own_site = str_replace("www1.", "", str_replace("www.", "", $own_site));
-
-                    // Price difference
-                    $own_site = parse_url($obj->url, PHP_URL_HOST);
-                    if (!$own_site)
-                        $own_site = "own site";
-                    $own_site = str_replace("www.", "", $own_site);
-
+//        $own_price = 0;
+//                    $competitors_prices = array();
+//                    $price_diff = '';
+//                    $items_priced_higher_than_competitors = 0;
+//                    $short_description_wc = 0;
+//                    $long_description_wc = 0;
+//                    $short_seo_phrases = '?';
+//                    $long_seo_phrases = '?';
+//                    $similar_products_competitors = array();
+//                    // Price difference
+//                    $own_site = parse_url($obj->url, PHP_URL_HOST);
+//                    if (!$own_site)
+//                        $own_site = "own site";
+//                    $own_site = str_replace("www1.", "", str_replace("www.", "", $own_site));
+//
+//                    // Price difference
+//                    $own_site = parse_url($obj->url, PHP_URL_HOST);
+//                    if (!$own_site)
+//                        $own_site = "own site";
+//                    $own_site = str_replace("www.", "", $own_site);
+//
+//                    
+//                    if ($data_import['description'] !== null && trim($data_import['description']) !== "") {
+//
+//                        $data_import['description'] = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $data_import['description']);
+//                        $data_import['description'] = preg_replace('/\s+/', ' ', $data_import['description']);
+//                        //$data_import['description'] = preg_replace('/[a-zA-Z]-/', ' ', $data_import['description']);
+//                        $short_description_wc = count(explode(" ", $data_import['description']));
+//                    } else {
+//                        $short_description_wc = 0;
+//                    }
+//                    if ($data_import['long_description'] !== null && trim($data_import['long_description']) !== "") {
+//
+//                        $data_import['long_description'] = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $data_import['long_description']);
+//                        $data_import['long_description'] = preg_replace('/\s+/', ' ', $data_import['long_description']);
+//                        //$data_import['long_description'] = preg_replace('/[a-zA-Z]-/', ' ', $data_import['long_description']);
+//                        $long_description_wc = count(explode(" ", $data_import['long_description']));
+//                    } else {
+//                        $long_description_wc = 0;
+//                    }
+//
+//
+//
+//
+//                    // SEO Short phrases
+//                    $time_start = microtime(true);
+//                    if ($short_description_wc != 0) {
+//
+//                        $short_seo_phrases = $this->helpers->measure_analyzer_start_v2_product_name($data_import['product_name'], preg_replace('/\s+/', ' ', $data_import['description']));
+//                        if (count($short_seo_phrases) > 0) {
+//
+//                            foreach ($short_seo_phrases as $key => $val) {
+//                                $words = count(explode(' ', $val['ph']));
+//                                $desc_words_count = count(explode(' ', $data_import['description']));
+//                                $count = $val['count'];
+//                                $val['prc'] = number_format($count * $words / $desc_words_count * 100, 2);
+//                                $short_seo_phrases[$key] = $val;
+//                            }
+//
+//                            $short_seo_phrases = serialize($short_seo_phrases);
+//                        } else {
+//                            $short_seo_phrases = "None";
+//                        }
+//                    } else {
+//                        $short_seo_phrases = 'None';
+//                    }
+//                    echo "<pre>";
+//                    echo "short_seo_phrases=";
+//                    print_r($short_seo_phrases);
+//                    echo "</pre>";
+//                    $time_end = microtime(true);
+//                    $time = $time_end - $time_start;
+//                    echo "SEO Short phrases - $time seconds\n";
+//                    // SEO Long phrases
+//                    $time_start = microtime(true);
+//                    if ($long_description_wc != 0) {
+//                        echo "<br>".$data_import['long_description']."<br>";
+//                        $long_seo_phrases = $this->helpers->measure_analyzer_start_v2_product_name($data_import['product_name'], $data_import['long_description']);
+//                        if (count($long_seo_phrases) > 0) {
+//                            foreach ($long_seo_phrases as $key => $val) {
+//                                $words = count(explode(' ', $val['ph']));
+//                                $desc_words_count = count(explode(' ', $data_import['long_description']));
+//                                $count = $val['count'];
+//                                $val['prc'] = number_format($count * $words / $desc_words_count * 100, 2);
+//                                $long_seo_phrases[$key] = $val;
+//                            }
+//                            $long_seo_phrases = serialize($long_seo_phrases);
+//                        } else {
+//                            $long_seo_phrases = "None";
+//                        }
+//                    } else {
+//                        $long_seo_phrases = 'None';
+//                    }
+//                    $time_end = microtime(true);
+//                    $time = $time_end - $time_start;
+//                    echo "SEO Long phrases - $time seconds\n";
+//                    echo "<pre>";
+//                    echo "short_seo_phrases=";
+//                    print_r($long_seo_phrases);
+//                    echo "</pre>";
+                   ///////////////////////////////////////////
+                    if (isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
+                        $this->imported_data_parsed_model->model_info($data_import['imported_data_id'],$data_import['parsed_attributes']['model'],$data_import['revision']);
+                    }
                     
-                    if ($data_import['description'] !== null && trim($data_import['description']) !== "") {
-
-                        $data_import['description'] = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $data_import['description']);
-                        $data_import['description'] = preg_replace('/\s+/', ' ', $data_import['description']);
-                        //$data_import['description'] = preg_replace('/[a-zA-Z]-/', ' ', $data_import['description']);
-                        $short_description_wc = count(explode(" ", $data_import['description']));
-                    } else {
-                        $short_description_wc = 0;
-                    }
-                    if ($data_import['long_description'] !== null && trim($data_import['long_description']) !== "") {
-
-                        $data_import['long_description'] = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $data_import['long_description']);
-                        $data_import['long_description'] = preg_replace('/\s+/', ' ', $data_import['long_description']);
-                        //$data_import['long_description'] = preg_replace('/[a-zA-Z]-/', ' ', $data_import['long_description']);
-                        $long_description_wc = count(explode(" ", $data_import['long_description']));
-                    } else {
-                        $long_description_wc = 0;
-                    }
-
-
-
-
-                    // SEO Short phrases
-                    $time_start = microtime(true);
-                    if ($short_description_wc != 0) {
-
-                        $short_seo_phrases = $this->helpers->measure_analyzer_start_v2_product_name($data_import['product_name'], preg_replace('/\s+/', ' ', $data_import['description']));
-                        if (count($short_seo_phrases) > 0) {
-
-                            foreach ($short_seo_phrases as $key => $val) {
-                                $words = count(explode(' ', $val['ph']));
-                                $desc_words_count = count(explode(' ', $data_import['description']));
-                                $count = $val['count'];
-                                $val['prc'] = number_format($count * $words / $desc_words_count * 100, 2);
-                                $short_seo_phrases[$key] = $val;
-                            }
-
-                            $short_seo_phrases = serialize($short_seo_phrases);
-                        } else {
-                            $short_seo_phrases = "None";
-                        }
-                    } else {
-                        $short_seo_phrases = 'None';
-                    }
-                    echo "<pre>";
-                    echo "short_seo_phrases=";
-                    print_r($short_seo_phrases);
-                    echo "</pre>";
-                    $time_end = microtime(true);
-                    $time = $time_end - $time_start;
-                    echo "SEO Short phrases - $time seconds\n";
-                    // SEO Long phrases
-                    $time_start = microtime(true);
-                    if ($long_description_wc != 0) {
-                        echo "<br>".$data_import['long_description']."<br>";
-                        $long_seo_phrases = $this->helpers->measure_analyzer_start_v2_product_name($data_import['product_name'], $data_import['long_description']);
-                        if (count($long_seo_phrases) > 0) {
-                            foreach ($long_seo_phrases as $key => $val) {
-                                $words = count(explode(' ', $val['ph']));
-                                $desc_words_count = count(explode(' ', $data_import['long_description']));
-                                $count = $val['count'];
-                                $val['prc'] = number_format($count * $words / $desc_words_count * 100, 2);
-                                $long_seo_phrases[$key] = $val;
-                            }
-                            $long_seo_phrases = serialize($long_seo_phrases);
-                        } else {
-                            $long_seo_phrases = "None";
-                        }
-                    } else {
-                        $long_seo_phrases = 'None';
-                    }
-                    $time_end = microtime(true);
-                    $time = $time_end - $time_start;
-                    echo "SEO Long phrases - $time seconds\n";
-                    echo "<pre>";
-                    echo "short_seo_phrases=";
-                    print_r($long_seo_phrases);
-                    echo "</pre>";
-                    exit;
+                    
 
     }
     public function do_stats_new() {
@@ -585,7 +590,7 @@ class Crons extends MY_Controller {
 
                     $time_start = microtime(true);
                     if (isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
-
+                        $this->imported_data_parsed_model->model_info($data_import['imported_data_id'],$data_import['parsed_attributes']['model'],$data_import['revision']);
                         try {
                             $own_prices = $this->imported_data_parsed_model->getLastPrices($obj->imported_data_id);
                         } catch (Exception $e) {

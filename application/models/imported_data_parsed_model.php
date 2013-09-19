@@ -37,7 +37,35 @@ class Imported_data_parsed_model extends CI_Model {
     function __construct() {
         parent::__construct();
     }
-
+    
+    function model_info($imported_data_id, $model, $revision){
+        $query = $this->db->where('imported_data_id',$imported_data_id)->where('key','model')
+              
+                ->get($this->tables['imported_data_parsed']);
+        if($query->num_rows() > 0){
+            $res= $query->result_array();
+            if($res['revision']==$revision){}else{
+                //update
+                $update_object = array(
+                   'revision' => $revision,
+                   'value' => $model
+                );
+                $this->db->where('imported_data_id', $imported_data_id)->where('key', 'model');
+                $this->db->update($this->tables['imported_data_parsed'], $update_object);
+            }
+        }else{
+             //insert
+            $insert_object = array(
+                'imported_data_id' => $imported_data_id,
+                'key' => 'model',
+                'value' =>$model ,
+                'revision' =>$revision
+                            );
+            $this->db->insert($this->tables['imported_data_parsed'], $insert_object);
+            
+        }
+        
+    }
     function get($id) {
         $query = $this->db->where('id', $id)
                 ->limit(1)
