@@ -7,6 +7,7 @@
 <?php
 //Max
 $min_price = 1000000000;
+$max_price = 0;
 $j = 0;
 foreach ($same_pr as $ks => $vs) {
     
@@ -15,6 +16,9 @@ foreach ($same_pr as $ks => $vs) {
         $price = sprintf("%01.2f", floatval($last_price->price));
         if ($price < $min_price) {
             $min_price = $price;
+        }
+         if ($price > $max_price) {
+            $max_price = $price;
         }
     }
 }
@@ -165,14 +169,16 @@ foreach ($same_pr as $ks => $vs) {
                                         ?>
                                         <td>
                                             <p  class='short_product_name'> <span <?php
-                        if (sprintf("%01.2f", floatval($last_price->price)) > $min_price) {
-                            echo "class='not_min'";
-                        } elseif (sprintf("%01.2f", floatval($last_price->price)) == $min_price) {
+				if (sprintf("%01.2f", floatval($last_price->price)) == $min_price) {
                             if ($bold != 1) {
                                 echo "style='font-weight: bold;'";
                                 $bold = 1;
                             }
-                        }
+                        }                                            
+                        if (sprintf("%01.2f", floatval($last_price->price)) == $max_price) {
+                            if($bold != 1)
+                            echo "class='not_min'";
+                        } 
                 ?> class="product_price"><?php echo '$' . sprintf("%01.2f", floatval($last_price->price)); ?></span></p>
                                         </td>
                                                     <?php
@@ -245,7 +251,7 @@ foreach ($same_pr as $ks => $vs) {
                                         </select>
                                    </div>
                                    <div class="density_rank">
-                                       <span class="density"> density</span>                                       
+                                       <span class="density" style="margin-right:3px;"> density</span>                                       
                                        
                                        <span class="rank"> rank</span><span style="display: none;"class="volume"> Volume</span>
                                       
@@ -361,14 +367,14 @@ foreach ($same_pr as $ks => $vs) {
                         echo "Long Description";
                     }
         ?><span class='long_desc_wc'style="float:left;width: 100%;" ></span></span>
-                            <p class="heading_text">Words: <b><?php echo $s_product_long_desc_count; ?></b></p>
+                            <p class="heading_text" style="clear: left;">Words: <b><?php echo $s_product_long_desc_count; ?></b></p>
                             <div class="p_seo<?php
                         if ($s_product_description == '') {
                             echo $row . 'short';
                         } else {
                             echo $row . 'long';
                         }
-        ?> seo_container">
+        ?> seo_container"  style="clear:left;">
                            <?php if ($s_product_description == '') { ?>
                                    <div style="float: left;width: 100%;"><p class="heading_text">SEO Keywords: </p>
                                    <select class="keywords_select" name="analysis" style="float: right;margin-top: -20px;width: 95px;margin-right: 10px;">
@@ -382,7 +388,7 @@ foreach ($same_pr as $ks => $vs) {
 				   </select>
                                    </div>
                                    <div class="density_rank">
-                                       <span class="density"> density</span>                                       
+                                       <span class="density" style="margin-right:3px;"> density</span>                                       
                                        
                                        <span class="rank"> rank</span><span style="display: none;"class="volume"> Volume</span>
                                       
@@ -434,7 +440,7 @@ foreach ($same_pr as $ks => $vs) {
                                 </div>-->
                                 <div style="float: left;width: 100%;"><p class="heading_text">SEO Keywords: </p></div>
                                 <div class="density_rank">
-                                       <span class="density"> density</span>                                       
+                                       <span class="density" style="margin-right:3px;"> density</span>                                       
                                        
                                        <span class="rank"> rank</span><span style="display: none;"class="volume"> Volume</span>
                                       
