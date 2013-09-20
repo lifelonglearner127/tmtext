@@ -368,7 +368,7 @@ $( function() {
         var departmentValue = $.trim($(this).text());
         var department_id = $(this).data('item');
         $("input[name='selected_department_id']").val(department_id);
-        //console.log(department_id);
+        $(".dashboard").hide();
         var site_name=$('.btn_caret_sign').text();
         $("#departmentDropdown_first").text(departmentValue);
         readBestSellers(department_id,site_name,'records');
