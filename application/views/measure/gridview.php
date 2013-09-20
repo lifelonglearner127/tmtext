@@ -188,14 +188,20 @@ foreach ($same_pr as $ks => $vs) {
                             ?>
                     </div>
                     
+                         <!--            //review_count-->
+                        <div class="review_count"  style="width: 100%;">
+                    <?php if(isset($vs['parsed_attributes']['review_count'])){ ?>
+                        <span style="margin:0;font-weight:bold;">Reviews:</span>                                                                    
+                            <?php echo $vs['parsed_attributes']['review_count'];  } ?> 
+                              
+                        </div>                 
+                    
                         <!--                            //Model-->
-                    <?php if(isset($vs['parsed_attributes'])){ ?>
-                       <div class="parsed_attributes" style="width: 100%;margin-bottom: 20px;"> <p style="font-weight:bold;">Model: </p>                                                                     
-                            <?php echo $vs['parsed_attributes']['model']; ?>
-                      </div>                                                        
-                    <?php }?>
-                    
-                    
+                        <div class="parsed_attributes"  style="width: 100%;margin-bottom: 10px;">
+                    <?php if(isset($vs['parsed_attributes']['model'])){ ?>
+                        <p style="font-weight:bold;margin:0;">Model: </p>                                                                     
+                            <?php echo $vs['parsed_attributes']['model'];  } ?>                                                                                              
+                        </div>
                     <!--                            //Max-->
                     <div class="p_description" style="overflow:hidden;">
                             <?php $snap_data = $this->webshoots_model->scanForProductSnap($vs['imported_data_id']); ?>
