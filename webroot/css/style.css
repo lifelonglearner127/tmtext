@@ -2159,6 +2159,8 @@ tbody#category_data tr td span.dep_title:hover, tbody#department_data tr td span
 tbody#category_data tr td, tbody#department_data tr td{
     vertical-align: top;
     padding: 5px;
+    max-width: 480px;
+    padding-right: 30px;
 }
 .hidden_row{
     display: none;

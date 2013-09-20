@@ -211,7 +211,7 @@
             </div>
             <!-- End of table for results -->
             <div class="clear"></div>
-            <table class="dashboard" style="display: none">
+            <table class="dashboard" style="display: none" cellspacing="10">
                     <thead>
                         <tr>
                             <th>
