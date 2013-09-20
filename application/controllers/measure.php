@@ -2793,6 +2793,9 @@ class Measure extends MY_Controller {
         $long_desc = strtolower($long_desc);
 
         $res = array();
+        $res['primary']=array(0=>array('prc'=>0), 1=> array('prc'=>0));
+        $res['secondary']=array(0=>array('prc'=>0), 1=> array('prc'=>0));
+        $res['secondary']=array(0=>array('prc'=>0), 1=> array('prc'=>0));
         $short_desc_words_count = count(explode(" ", $short_desc));
         $long_desc_words_count = count(explode(" ", $long_desc));
         // --- default res array and values (end)
