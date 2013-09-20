@@ -2176,6 +2176,9 @@ tbody#category_data tr td, tbody#department_data tr td{
 #department_data ul li, #category_data ul li{
     clear: both;
 }
+#department_data ul li.dep_header, #category_data ul li.cat_header{
+    font-size: 14px;
+}
 #department_data ul li span:first-child, #category_data ul li span:first-child{
     float: left;
 }
