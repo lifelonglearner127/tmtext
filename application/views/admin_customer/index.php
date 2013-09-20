@@ -91,7 +91,7 @@
                                                     
                                                     <div class="aclis">
                                                                 <div style="margin-bottom: 15px;"id="sites" class="btn-group hp_boot_drop mr_10">
-                                                                    <button class="btn btn-danger btn_caret_sign" id="" onclick="return false;">[ Select Customer ]</button>
+                                                                    <button class="btn btn-danger btn_caret_sign" id="" onclick="return false;">Select Customer</button>
                                                                     <button class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
                                                                         <span class="caret"></span>
                                                                     </button>
@@ -251,7 +251,7 @@
     </div>
 </div>
 <script>
-function selectOption(){
+            function selectOption(){
                 $(".hp_boot_drop .dropdown-menu > li > a").bind('click', function(e) {
                     var new_caret = $.trim($(this).text());
                     $("#sites .btn_caret_sign").text(new_caret);
@@ -259,15 +259,14 @@ function selectOption(){
                     var url='';
                     
                     if(new_caret!=='Select Customer'){
-                        
-                    $("span").each(function(){
-                        if($(this).hasClass(new_caret)){
-                            url=$(this).closest('a').attr('data-item');
-                             var image=$(this).closest('a').attr('data-value');
-                             $('#customer_url').val(url);
-                             $("#customer_logo").attr('src',image);
-                        }
-                    })
+                        $("span").each(function(){
+                            if($(this).hasClass(new_caret)){
+                                url=$(this).closest('a').attr('data-item');
+                                 var image=$(this).closest('a').attr('data-value');
+                                 $('#customer_url').val(url);
+                                 $("#customer_logo").attr('src',image);
+                            }
+                        })
 //                      url=$("span[class='"+new_caret+"']").closest('a').attr('data-item');
 //                      var image=$("span[class='"+new_caret+"']").closest('a').attr('data-value');
 
@@ -276,7 +275,16 @@ function selectOption(){
 						customer_name = $(this).text();
 						$('#delete_customer').attr("customer_id",customer_id);
 						$('#delete_customer').attr("customer_name",customer_name);
-                      
+                        var checking = false;
+                        $(".hp_boot_drop .dropdown-menu > li > a").each(function(){
+                                if($(this).text() == 'Select Customer'){
+                                    checking = true;
+                                }
+                        });
+                        if(checking == false){
+                            $(".hp_boot_drop .dropdown-menu").prepend('<li><a data-item="" data-value="" customer_id=""  href="javascript:void(0)"><span>Select Customer</span></a></li>');
+                            selectOption();
+                        }
                     }else{
                         $("#customer_logo").attr('src',"../../img/no-logo.jpg");
                         $('#customer_url').val('');
@@ -325,10 +333,8 @@ function selectOption(){
                 }
                 return false;
             });
-   $(document).ready(function(){
-   $(".hp_boot_drop .dropdown-menu li ").tsort('span',{order:'asc'});
-   
-   $(".hp_boot_drop .dropdown-menu").prepend('<li><a data-item="" data-value="" href="javascript:void(0)"><span>Select Customer</span></a></li>');
-   });
+           $(document).ready(function(){
+                    $(".hp_boot_drop .dropdown-menu li ").tsort('span',{order:'asc'});
+           });
             
             </script>
