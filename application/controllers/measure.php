@@ -2632,11 +2632,6 @@ class Measure extends MY_Controller {
 
                 foreach ($result as $kay => $val) {
                     $matches_sites = array_unique($this->matches_count($val['imported_data_id']));
-//                    echo "<pre>";
-//                    echo "matches__";
-//                    print_r($matches_sites);
-//                    echo "lelected";
-//                    print_r($selected_cites);
                     if (count($matches_sites) == 1 && count($selected_cites) > 1) {
                         if (count(array_intersect($matches_sites, $selected_cites)) < 2) {
 

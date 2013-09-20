@@ -1614,6 +1614,7 @@ class Imported_data_parsed_model extends CI_Model {
         $query = $this->db->get();
 
         $results = $query->result();
+       
         $data = array();
         $for_groups = array();
         foreach ($results as $result) {
@@ -1633,12 +1634,13 @@ class Imported_data_parsed_model extends CI_Model {
         }
 
         $urls = array($this->get_base_url($selected_url));
+        $for_groups[]=$im_data_id;
         foreach ($data as $key => $val1) {
 
             if (isset($val1['product_name']) && isset($val1['url'])) {
 
                 if ($key == $im_data_id) {
-                    $for_groups[] = $key;
+                    //$for_groups[] = $key;
                 } else {
                     if (!in_array($this->get_base_url($val1['url']), $urls)) {
                         if (isset($val1['parsed_attributes']['manufacturer'])) {
@@ -1670,7 +1672,7 @@ class Imported_data_parsed_model extends CI_Model {
 
 
         $data1 = array();
-
+       
         foreach ($for_groups as $result) {
             $query = $this->db->where('imported_data_id', $result)->where("revision = (SELECT  MAX(revision) as revision
                       FROM imported_data_parsed WHERE `imported_data_id`= $result
