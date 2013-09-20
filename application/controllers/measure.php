@@ -1548,6 +1548,7 @@ class Measure extends MY_Controller {
     }
 
     function matches_count($im_data_id) {
+        $matched_sites=array();
         if (!$this->statistics_model->getbyimpid($im_data_id)) {
             $data = array(
                 'im_data_id' => $im_data_id,
@@ -1684,7 +1685,7 @@ class Measure extends MY_Controller {
                 }
 
                 // -------- COMPARING V1 (START)
-                return $matched_sites;
+               // return $matched_sites;
             }
         } else {
             $matched_sites = array();
@@ -1693,8 +1694,25 @@ class Measure extends MY_Controller {
             foreach ($matches as $val) {
                 $matched_sites[] = $val['customer'];
             }
-            return $matched_sites;
+            
+           // return $matched_sites;
         }
+        
+        if(count($matched_sites)==0){
+               $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('sites');
+               $sites_list = $query_cus->result();
+               $customer ='';
+               $data_similar = $this->imported_data_parsed_model->getByImId($row['group_id']);
+                        foreach ($sites_list as $ki => $vi) {
+                            
+                                        if (strpos($data_similar['url'], "$vi") !== false) {
+                                            $customer = $vi;
+                                        }
+                        }
+                 $matched_sites[]= $customer;  
+      }
+        
+        return $matched_sites;
     }
 
     public function filterSiteNameByCustomerName() {
@@ -2032,10 +2050,10 @@ class Measure extends MY_Controller {
 //Max
 
             foreach ($same_pr as $ks => $vs) {
-                $model = $this->imported_data_parsed_model->getByImId($vs['imported_data_id']);
-                if ($model) {
-                    $same_pr[$ks]['parsed_attributes'] = $model['parsed_attributes'];
-                }
+//                $model = $this->imported_data_parsed_model->getByImId($vs['imported_data_id']);
+//                if ($model) {
+//                    $same_pr[$ks]['parsed_attributes'] = $model['parsed_attributes'];
+//                }
 
                 if (!empty($vs['seo']['short'])) {
                     foreach ($vs['seo']['short'] as $key => $val) {
