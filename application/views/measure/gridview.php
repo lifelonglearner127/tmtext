@@ -126,9 +126,9 @@ foreach ($same_pr as $ks => $vs) {
                         <span class='analysis_content_head'>Product Name:</span>
                         <p style="float:none;" class='short_product_name grid_product_name'  ><?php echo $vs['product_name'];?></p>
                     </div>
-                    <div class="p_meta" >
+                    <div class="p_meta" style="margin-bottom: 20px;" >
                         <?php if(isset($vs['parsed_meta']['description'])): ?>
-                            <span class="analysis_content_head">Meta Description:</span>
+                            <span style="margin: 0;" class="analysis_content_head">Meta Description:</span>
                             <p style="float:none;" class="short_product_name grid_product_name"><?php echo $vs['parsed_meta']['description']; ?></p>
                         <?php endif; ?>
                     </div>
@@ -1007,16 +1007,25 @@ $(document).click(function(e) {
   });
     var trueOrFalse = true;
     $('.seo-btn').click(function(){
+        abc = false;
         var inputVal = $(this).next().val().trim();
         if(inputVal != ''){
             if(trueOrFalse){
-                $(this).closest('.p_description').find('.compare, .short_desc_con').each(function(){
-                    console.log($(this).text());
+                var j = 1;
+                var newInputVal = new Array();
+                var k = 0;
                     var reg = new RegExp(inputVal,"ig");
-                    var newInputVal = $(this).html().match(reg);
-                    for(var i in newInputVal){
-                        $(this).html($(this).html().replace(newInputVal[i], '<span class="highlight">'+newInputVal[i]+'</span>'));
+                $(this).closest('.p_description').find('.compare').each(function(){
+                    var $this = $(this);
+                    newInputVal[k] = $this.html().match(reg);
+                    if(newInputVal[k]){
+                            for(var i = 0; i < newInputVal[k].length; i++){
+                            var newHtml = $this.html().replace(newInputVal[k][i], '<span class="highlight">'+newInputVal[k][i]+'</span>');
+                            $this.html(newHtml); 
                     }
+                    }
+                    k++;
+                    
    });
                 trueOrFalse = false;
             } else {
@@ -1048,6 +1057,7 @@ $(document).click(function(e) {
 //        }
 //    });
    });//document ready end
+    var abc = true;
 
 
 
