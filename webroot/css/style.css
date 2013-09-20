@@ -2193,6 +2193,7 @@ span.dep_text{
 }
 span.dep_numbers{
      width:45px;
+     float: left;
 }
 .dep_total_numbers{
     float: right;

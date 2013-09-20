@@ -226,7 +226,7 @@
                                             </ul>
                                         </div>
                             </th>
-                            <th>Recommended Actions</th>
+                            <th><span id="dashboard_recommend">Recommended Actions</span></th>
                         </tr>
                     </thead>
                     <tbody id="department_data" style="display: none"></tbody>
