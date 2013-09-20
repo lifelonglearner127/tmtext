@@ -699,14 +699,10 @@ if (($i - 1) % 3 != 0) {
                     }
                     if(typeof(data['tertiary'][1])!=='undefined'){
                           third1 = (data['tertiary'][1]['prc'].toPrecision(3)*100).toFixed(2);
-                         }
+                      }
                }
               
-               if(typeof(data['tertiary'])!=='undefined'){
-               if(typeof(data['tertiary'][1])!=='undefined'){
-                third1 = (data['tertiary'][1]['prc'].toPrecision(3)*100).toFixed(2);
-               }
-               }
+               
                 if(grid_short_desc!=''){
                 if($(selected_item+" input[name='keyword1']").val()!=''){
                     $(selected_item+' span#keyword1_density').html(first+'%');
