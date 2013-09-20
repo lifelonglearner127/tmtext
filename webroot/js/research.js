@@ -624,6 +624,7 @@ $(document).ready(function () {
                 return false;
         });
         $('.batch_info').html('');
+        $('#files').html('');
     });
 
     $(document).on("click", "button#csv_import_create_batch", function(event){
