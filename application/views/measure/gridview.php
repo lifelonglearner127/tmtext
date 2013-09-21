@@ -10,7 +10,7 @@ $min_price = 1000000000;
 $max_price = 0;
 $j = 0;
 foreach ($same_pr as $ks => $vs) {
-    
+
     foreach ($vs['three_last_prices'] as $key => $last_price) {
 
         $price = sprintf("%01.2f", floatval($last_price->price));
@@ -27,7 +27,7 @@ foreach ($same_pr as $ks => $vs) {
 $row = 1;
 foreach ($same_pr as $ks => $vs) {
     $marg = 0;
-   
+
     $row = ceil($i / 3);
     foreach ($vs['three_last_prices'] as $key => $last_price) {
         if (count($vs['three_last_prices']) > 1) {
@@ -174,11 +174,11 @@ foreach ($same_pr as $ks => $vs) {
                                 echo "style='font-weight: bold;'";
                                 $bold = 1;
                             }
-                        }                                            
+                        }
                         if (sprintf("%01.2f", floatval($last_price->price)) == $max_price) {
                             if($bold != 1)
                             echo "class='not_min'";
-                        } 
+                        }
                 ?> class="product_price"><?php echo '$' . sprintf("%01.2f", floatval($last_price->price)); ?></span></p>
                                         </td>
                                                     <?php
@@ -193,25 +193,25 @@ foreach ($same_pr as $ks => $vs) {
                             }
                             ?>
                     </div>
-                    
+
                          <!--            //review_count-->
                         <div class="review_count"  style="width: 100%;">
                     <?php if(isset($vs['parsed_attributes']['review_count'])){ ?>
-                        <span style="margin:0;font-weight:bold;">Reviews:</span>                                                                    
-                            <?php echo $vs['parsed_attributes']['review_count'];  } ?> 
-                              
-                        </div>                 
-                    
+                        <span style="margin:0;font-weight:bold;">Reviews:</span>
+                            <?php echo $vs['parsed_attributes']['review_count'];  } ?>
+
+                        </div>
+
                         <!--                            //Model-->
                         <div class="parsed_attributes"  style="width: 100%;margin-bottom: 10px;">
                     <?php if(isset($vs['parsed_attributes']['model'])){ ?>
-                        <p style="font-weight:bold;margin:0;">Model: </p>                                                                     
-                            <?php echo $vs['parsed_attributes']['model'];  } ?>                                                                                              
+                        <p style="font-weight:bold;margin:0;">Model: </p>
+                            <?php echo $vs['parsed_attributes']['model'];  } ?>
                         </div>
                     <!--                            //Max-->
                     <div class="p_description" style="overflow:hidden;">
                             <?php $snap_data = $this->webshoots_model->scanForProductSnap($vs['imported_data_id']); ?>
-                            <?php 
+                            <?php
                                 $debug_id = $vs['imported_data_id'];
                                 $debug_snap = $snap_data['snap'];
                                 $debug_av = $snap_data['img_av_status'];
@@ -245,16 +245,16 @@ foreach ($same_pr as $ks => $vs) {
                                                     <option value="custom">Custom</option>
 <!--                                                    Maxik-->
                                                     <?php if(isset($vs['short_meta'])){?>
-                                                    <option value="meta">Meta</option>   
+                                                    <option value="meta">Meta</option>
                                                     <?php }?>
 <!--                                                     Maxik-->
                                         </select>
                                    </div>
                                    <div class="density_rank">
-                                       <span class="density" style="margin-right:3px;"> density</span>                                       
-                                       
+                                       <span class="density" style="margin-right:3px;"> density</span>
+
                                        <span class="rank"> rank</span><span style="display: none;"class="volume"> Volume</span>
-                                      
+
                                    </div>
                                 <div class="primary" style="height: 100%;width: 100%;">
                                     <div class="">
@@ -262,7 +262,7 @@ foreach ($same_pr as $ks => $vs) {
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
-                                                        <img class="seo-btn" src="http://tmeditor.dev//img/icon.png" title="Click to see dublicates words">
+                                                        <img class="seo-btn" src="/img/icon.png" title="Click to see dublicates words">
                                                         <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword1" keyword_num="1" type="text" value="<?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['primary']; }?>">
                                                         <span id="keyword1_density"></span>
                                                     </span>
@@ -275,7 +275,7 @@ foreach ($same_pr as $ks => $vs) {
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
-                                                        <img class="seo-btn" src="http://tmeditor.dev//img/icon.png" title="Click to see dublicates words">
+                                                        <img class="seo-btn" src="/img/icon.png" title="Click to see dublicates words">
                                                         <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword2" keyword_num="2" type="text" value="<?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['secondary']; }?>">
                                                         <span id="keyword2_density"></span>
                                                     </span>
@@ -288,7 +288,7 @@ foreach ($same_pr as $ks => $vs) {
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
-                                                        <img class="seo-btn" src="http://tmeditor.dev//img/icon.png" title="Click to see dublicates words">
+                                                        <img class="seo-btn" src="/img/icon.png" title="Click to see dublicates words">
                                                         <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword3" keyword_num="2" type="text" value="<?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['tertiary']; }?>">
                                                         <span id="keyword3_density"></span>
                                                     </span>
@@ -309,8 +309,8 @@ foreach ($same_pr as $ks => $vs) {
                                             <input type='hidden' name='debug_rank_api_rank_ph' value="<?php echo $rank_api; ?>">
                                             <?php if($rank_api === null || $rank_api === 0) { $rank_int = ''; } else { $rank_int = $rank_api; } ?>
                                             <li style="float: left;" >
-                                                <img class="meta-btn word_wrap_li_pr hover_en" style="float:left;margin-right: 2px;" onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'short')"  src="http://tmeditor.dev//img/icon.png" title="Click to see dublicates words" data-status="seo_link" />
-                                                
+                                                <img class="meta-btn word_wrap_li_pr hover_en" style="float:left;margin-right: 2px;" onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'short')"  src="/img/icon.png" title="Click to see dublicates words" data-status="seo_link" />
+
                                                 <span  style="white-space: normal;line-height: 20px;text-decoration: none;font-size: 14px !important;line-height: 21px;text-decoration: none;white-space: normal;width: 140px;float: left;word-wrap: break-word;" >
                 <?php echo $value['value']; ?>
                                                 </span>
@@ -332,10 +332,10 @@ foreach ($same_pr as $ks => $vs) {
                                             <input type='hidden' name='debug_rank_api_rank_ph' value="<?php echo $rank_api; ?>">
                                             <?php if($rank_api === null || $rank_api === 0) { $rank_int = ''; } else { $rank_int = $rank_api; } ?>
                                             <li style="float: left;" >
-                                                <img src="http://tmeditor.dev//img/icon.png" class="meta-btn word_wrap_li_pr hover_en" style="float:left;margin-right: 2px;" onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'short')"   title="Click to see dublicates words" data-status="seo_link" />
+                                                <img src="/img/icon.png" class="meta-btn word_wrap_li_pr hover_en" style="float:left;margin-right: 2px;" onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'short')"   title="Click to see dublicates words" data-status="seo_link" />
                                                 <span style="white-space: normal;line-height: 20px;text-decoration: none;font-size: 14px !important;line-height: 21px;text-decoration: none;white-space: normal;width: 140px;float: left;word-wrap: break-word;" >
                 <?php echo $value['ph']; ?>
-                                                    
+
                                                 </span>
                                                 <span class='seo_prc' ><?php echo  $value['prc']; ?>%</span><span style="display:none" class='seo_count' ><?php echo $value['count']; ?></span>
                                                 <span class='rank_value' ><?php echo $rank_int; ?></span><span style="display:none" class='volume_value' ><?php echo $value['volume']; ?></span>
@@ -382,16 +382,16 @@ foreach ($same_pr as $ks => $vs) {
 						<option value="custom">Custom</option>
 <!--                                                Maxik-->
                                                 <?php if(isset($vs['long_meta'])){?>
-                                                    <option value="meta">Meta</option>   
+                                                    <option value="meta">Meta</option>
                                                 <?php }?>
 <!--                                                    Maxik-->
 				   </select>
                                    </div>
                                    <div class="density_rank">
-                                       <span class="density" style="margin-right:3px;"> density</span>                                       
-                                       
+                                       <span class="density" style="margin-right:3px;"> density</span>
+
                                        <span class="rank"> rank</span><span style="display: none;"class="volume"> Volume</span>
-                                      
+
                                    </div>
                                      <div class="primary" style="height: 100%;width: 100%;">
                                     <div class="">
@@ -431,7 +431,7 @@ foreach ($same_pr as $ks => $vs) {
                                     </div>
                                     <div class="clear"></div>
 				</div>
-                                
+
                                 <?php }else{ ?>
                                 <!--<div class="primary" style="height: 100%;width: 100%;">
                                    <p style="float: left;width: 100%;" class="heading_text list_section"><span style="font-weight: bold;">Primary: <?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['primary']; }?></span></p>
@@ -440,12 +440,12 @@ foreach ($same_pr as $ks => $vs) {
                                 </div>-->
                                 <div style="float: left;width: 100%;"><p class="heading_text">SEO Keywords: </p></div>
                                 <div class="density_rank">
-                                       <span class="density" style="margin-right:3px;"> density</span>                                       
-                                       
+                                       <span class="density" style="margin-right:3px;"> density</span>
+
                                        <span class="rank"> rank</span><span style="display: none;"class="volume"> Volume</span>
-                                      
+
                                 </div>
-                                
+
                                 <div class="primary" style="height: 100%; width: 100%; display: block;">
                                     <div class="">
                                         <span>
@@ -496,13 +496,13 @@ foreach ($same_pr as $ks => $vs) {
                                             <input type='hidden' name='debug_rank_api_rank_ph' value="<?php echo $rank_api; ?>">
                                             <?php if($rank_api === null || $rank_api === 0) { $rank_int = ''; } else { $rank_int = $rank_api; } ?>
                                             <li style="float: left;">
-                                                <img class="word_wrap_li_pr hover_en" style="float:left;margin-right: 2px;"  src="http://tmeditor.dev//img/icon.png" title="Click to see dublicates words" data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'long')"  />
+                                                <img class="word_wrap_li_pr hover_en" style="float:left;margin-right: 2px;"  src="/img/icon.png" title="Click to see dublicates words" data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'long')"  />
                                                 <span style="white-space: normal;line-height: 20px;text-decoration: none;font-size: 14px !important;line-height: 21px;text-decoration: none;white-space: normal;width: 140px;float: left;word-wrap: break-word;" >
                 <?php echo $value['value']; ?>
                                                 </span>
                                                 <span class='seo_prc' ><?php echo  $value['prc']; ?>%</span><span style="display:none" class='seo_count' ><?php echo $value['count']; ?></span>
                                                 <span class='rank_value' ><?php echo $rank_int;  ?></span><span style="display:none" class='volume_value' ><?php echo $value['volume']; ?></span>
-                           
+
                                             </li>
             <?php }} ?>
                                     </ul>
@@ -519,10 +519,10 @@ foreach ($same_pr as $ks => $vs) {
                                             <input type='hidden' name='debug_rank_api_rank_ph' value="<?php echo $rank_api; ?>">
                                             <?php if($rank_api === null || $rank_api === 0) { $rank_int = ''; } else { $rank_int = $rank_api; } ?>
                                             <li style="float: left;" >
-                                                <img class="meta-btn word_wrap_li_pr hover_en" style="float:left;margin-right: 2px;" onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'long')"  src="http://tmeditor.dev//img/icon.png" title="Click to see dublicates words" data-status="seo_link" />
+                                                <img class="meta-btn word_wrap_li_pr hover_en" style="float:left;margin-right: 2px;" onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'long')"  src="/img/icon.png" title="Click to see dublicates words" data-status="seo_link" />
                                                 <span style="font-size: 14px !important;white-space: normal;line-height: 20px;text-decoration: none;width: 140px;float: left;word-wrap: break-word;"  >
                 <?php echo $value['ph']; ?>
-                                                    
+
                                                 </span>
                                                  <span class='seo_prc' ><?php echo  $value['prc']; ?>%</span><span style="display:none" class='seo_count' ><?php echo $value['count']; ?></span>
                                                  <span class='rank_value' ><?php echo $rank_int;  ?></span><span style="display:none" class='volume_value' ><?php echo $value['volume']; ?></span>
@@ -695,9 +695,9 @@ if (($i - 1) % 3 != 0) {
                     if(data['primary'][1]!=='undefined'){
                        first1 = (data['primary'][1]['prc'].toPrecision(3)*100).toFixed(2);
                     }
-               
+
                }
-               if(typeof(data['secondary'])  !== 'undefined'){ 
+               if(typeof(data['secondary'])  !== 'undefined'){
                     if(typeof(data['secondary'][0]) !== 'undefined'){
                           second = (data['secondary'][0]['prc'].toPrecision(3)*100).toFixed(2);
                     }
@@ -713,8 +713,8 @@ if (($i - 1) % 3 != 0) {
                           third1 = (data['tertiary'][1]['prc'].toPrecision(3)*100).toFixed(2);
                       }
                }
-              
-               
+
+
                 if(grid_short_desc!=''){
                 if($(selected_item+" input[name='keyword1']").val()!=''){
                     $(selected_item+' span#keyword1_density').html(first+'%');
@@ -725,10 +725,10 @@ if (($i - 1) % 3 != 0) {
                 if($.trim($(selected_item+" input[name='keyword3']").val())!=''){
                     $(selected_item+' span#keyword3_density').html(third+'%');
                 }
-                
-                
-                
-                
+
+
+
+
                 if($.trim($(selected_item+' .prim_1').text()!='')){
                     $(selected_item+' .prim_1_prc').html(first1+'%');
                 }
@@ -738,8 +738,8 @@ if (($i - 1) % 3 != 0) {
                 if($(selected_item+' .prim_3').text()!=''){
                     $(selected_item+' .prim_3_prc').html(third1+'%');
                 }
-                
-                
+
+
             }
             if(grid_short_desc=='' && grid_long_desc!='' ){
                  if($(selected_item+" input[name='keyword1']").val()!=''){
@@ -855,45 +855,45 @@ if (($i - 1) % 3 != 0) {
     selectedCustomer();
 
  $(document).ready(function(){
-     
+
    $('.seo_prc').live('click',function(){
         $(this).hide();
         $(this).next('.seo_count').show();
-      
+
    });
    $('.seo_count').live('click',function(){
         $(this).hide();
         $(this).prev('.seo_prc').show();
-      
-       
+
+
    });
-   
+
     $('.rank').live('click',function(){
         $(this).hide();
         $(this).next('.volume').show();
         $(this).closest('.seo_container').find('.volume_value').show();
-      
+
    });
    $('.volume').live('click',function(){
         $(this).hide();
         $(this).prev('.rank').show();
         $(this).closest('.seo_container').find('.volume_value').hide();
-       
+
    });
    $('.volume, .seo_count').live('hover',function(){
         $(this).css('cursor','pointer');
   });
   $('.seo_count').live('hover',function(){
         $(this).css('text-decoration','underline');
-        
+
   });
- 
+
    $(".grid_se_section").each(function() {
        var selected_item='#'+$(this).closest('.grid_se_section').attr('id');
        gridKeywordDensity(selected_item);
 
     });
-   
+
    $(".mismatch_image").live('mouseover', function() {
 
         var item = "<div class='missmatch_popup'>Aaaaaaaaaa</div>";
@@ -916,13 +916,13 @@ if (($i - 1) % 3 != 0) {
             $(this).closest('.grid_se_section').find(".list_section").css('display', 'block');
         }
         if($(this).val() === 'meta'){
-            
+
             $(this).closest('.grid_se_section').find(".primary").css('display', 'none');
             $(this).closest('.grid_se_section').find(".list_section").css('display', 'none');
             $(this).closest('.grid_se_section').find(".seo_meta_section").css('display', 'block');
-              
+
         }
-        
+
         if($(this).val() === 'custom'){
 
             $(this).closest('.grid_se_section').find(".list_section").css('display', 'none');
@@ -934,15 +934,15 @@ if (($i - 1) % 3 != 0) {
     });
 //Maxik
     $(".keyword_input").change(function() {
-        
+
     selected_item='#'+$(this).closest('.grid_se_section').attr('id');
         gridKeywordDensity(selected_item);
     });
-    
+
     //on keyup, start the countdown
     $(".keyword_input").keyup(function(){
         selected_item='#'+$(this).closest('.grid_se_section').attr('id');
-                  
+
         var primary=$(selected_item).find("input[name='keyword1']").val();
         var secondary=$(selected_item).find("input[name='keyword2']").val();
         var tertiary=$(selected_item).find("input[name='keyword3']").val();
@@ -952,13 +952,13 @@ if (($i - 1) % 3 != 0) {
         $(selected_item).find('.keyword_input').each(function(){
              if($.trim($(this).val())==''){
              $(this).next('span').text('');
-        }  
+        }
         });
         $(selected_item).find('.primary_name_long').each(function(){
              if($.trim($(this).val())==''){
              $(this).next('span').text('');
-        }  
-        });            
+        }
+        });
          setTimeout(function(){ gridKeywordDensity(selected_item);}, '1000');
     });
 
@@ -1038,11 +1038,11 @@ $(document).click(function(e) {
                     if(newInputVal[k]){
                             for(var i = 0; i < newInputVal[k].length; i++){
                             var newHtml = $this.html().replace(newInputVal[k][i], '<span class="highlight">'+newInputVal[k][i]+'</span>');
-                            $this.html(newHtml); 
+                            $this.html(newHtml);
                     }
                     }
                     k++;
-                    
+
    });
                 trueOrFalse = false;
             } else {
