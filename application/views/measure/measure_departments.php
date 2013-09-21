@@ -42,6 +42,7 @@
         <!--<li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_social'); ?>">Social</a></li>-->
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_pricing'); ?>">Pricing</a></li>
         <li class='pull_right_navlink'><a href="javascript:void(0)" onclick="viewRecipientsList()">Configure Recipients</a></li>
+        <li class='pull_right_navlink'><a href="javascript:void(0)" onclick="viewDepCatScreensCp()">Departments/Categories screenshot report</a></li>
     </ul>
 
 
@@ -237,6 +238,8 @@
 </div>
 
 <!-- MODALS (START) -->
+<div class="modal hide fade ci_hp_modals crawl_launch_panel" id='dcsr_control_panel_modal'></div>
+
 <div class="modal hide fade ci_hp_modals crawl_launch_panel" id='recipients_control_panel_modal'></div>
 
 <div class="modal hide fade ci_hp_modals" id='loader_emailsend_modal'>

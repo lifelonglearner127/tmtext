@@ -1102,6 +1102,11 @@ class Measure extends MY_Controller {
         $this->load->view('measure/gethomepageweekdata', $data);
     }
 
+    public function get_dep_cats_screens_rep() {
+        $data = array();
+        $this->load->view('measure/get_dep_cats_screens_rep', $data);
+    }
+
     public function measure_products() {
         // === API -> DB sync launcher (end)
         $this->load->model('rankapi_model');

@@ -97,6 +97,16 @@ function drop_selecction_scan() {
     // --- screens dropdowns selections scanner (end)
 }
 
+function viewDepCatScreensCp() {
+	$("#dcsr_control_panel_modal").modal('show');
+	// --- refresh listing (start)
+	var send_data = {};
+	var rec = $.post(base_url + 'index.php/measure/get_dep_cats_screens_rep', send_data, function(data) {
+		$("#dcsr_control_panel_modal").html(data);
+	});
+	// -- refresh listing (end)
+}
+
 function resetScreenDrop(uid, pos, year, week) {
 	var send_data = {
 		uid: uid,
