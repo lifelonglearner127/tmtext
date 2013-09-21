@@ -9,6 +9,7 @@ class Imported_data_parsed_model extends CI_Model {
     var $key = '';
     var $value = '';
     var $revision = 1;
+    var $model = null;
     // -------  WHITE LISTS FOR FILTERING (START)
     var $manu = array(
         'sony',
@@ -37,16 +38,16 @@ class Imported_data_parsed_model extends CI_Model {
     function __construct() {
         parent::__construct();
     }
-    
+
     function model_info($imported_data_id, $model, $revision){
-        
+
             $update_object = array(
                 'model' => $model,
-              
+
                             );
             $this->db->where('imported_data_id', $imported_data_id)->where('key', 'parsed_attributes')->where('revision', $revision);
             $this->db->update($this->tables['imported_data_parsed'], $update_object);
-                            
+
     }
     function get($id) {
         $query = $this->db->where('id', $id)
@@ -918,11 +919,12 @@ class Imported_data_parsed_model extends CI_Model {
         return false;
     }
 
-    function insert($imported_id, $key, $value, $revision = 1) {
+    function insert($imported_id, $key, $value, $revision = 1, $model = null) {
         $this->key = $key;
         $this->value = $value;
         $this->imported_data_id = $imported_id;
         $this->revision = $revision;
+        $this->model = $model;
 
         $this->db->insert($this->tables['imported_data_parsed'], $this);
         return $this->db->insert_id();
@@ -958,7 +960,7 @@ class Imported_data_parsed_model extends CI_Model {
 
             $start = 0;
         }
-        
+
         if (($truncate==1) &&  ($start == 0)) {
             $this->truncate_duplicate_content_new();
         }
@@ -1042,7 +1044,7 @@ class Imported_data_parsed_model extends CI_Model {
 
             $start = 0;
         }
-       
+
         if (($truncate==1) &&  ($start == 0)) {
             $this->truncate_stats_new();
         }
@@ -1117,16 +1119,16 @@ class Imported_data_parsed_model extends CI_Model {
 //                ->where('p.key', 'model');
 //                $query = $this->db->get();
 //                 $results = $query->result_array();
-//                 
+//
 //                 foreach($results as  $key => $val){
 //                  $update_object = array(
 //                   'model' => $val['value'],
-//                   
+//
 //                );
 //                $this->db->where('imported_data_id', $val['imported_data_id'])->where('key', 'parsed_attributes')->where('revision', $val['revision']);
 //                $this->db->update($this->tables['imported_data_parsed'], $update_object);
 //                 }
-//                
+//
 //    }
     function getData($value, $website = '', $category_id = '', $limit = '', $key = 'Product Name', $strict = false) {
 
@@ -1137,18 +1139,18 @@ class Imported_data_parsed_model extends CI_Model {
                 ->where('p.revision = (SELECT  MAX(revision) as revision
                       FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
                       GROUP BY imported_data_id)', NULL, FALSE);
-        
+
         if ($key == 'parsed_attributes'){
-            
+
             $this->db->where("`p`.`model` like '%" . $value . "%' OR INSTR('" . $value . "', `p`.`model`) > 0 ", NULL, FALSE);
-            
+
         }else{
            if ($strict) {
             $this->db->like('p.value', '"' . $value . '"');
             } else {
                 $this->db->like('p.value', $value);
             }
-            
+
         }
 
         if ($category_id > 0 && $category_id != 2) {
@@ -1162,10 +1164,10 @@ class Imported_data_parsed_model extends CI_Model {
         if ($limit) {
             $this->db->limit((int) $limit);
         }
-       
+
         $query = $this->db->get();
         $results = $query->result();
-        
+
         $data = array();
         foreach ($results as $result) {
             $query = $this->db->where('imported_data_id', $result->imported_data_id)->get($this->tables['imported_data_parsed']);
@@ -1195,7 +1197,7 @@ class Imported_data_parsed_model extends CI_Model {
             array_push($data, array('imported_data_id' => $result->imported_data_id, 'product_name' => $result->value,
                 'description' => $description, 'long_description' => $long_description, 'url' => $url, 'product_name' => $product_name, 'features' => $features));
         }
-      
+
         return $data;
     }
 
@@ -1614,7 +1616,7 @@ class Imported_data_parsed_model extends CI_Model {
         $query = $this->db->get();
 
         $results = $query->result();
-       
+
         $data = array();
         $for_groups = array();
         foreach ($results as $result) {
@@ -1672,7 +1674,7 @@ class Imported_data_parsed_model extends CI_Model {
 
 
         $data1 = array();
-       
+
         foreach ($for_groups as $result) {
             $query = $this->db->where('imported_data_id', $result)->where("revision = (SELECT  MAX(revision) as revision
                       FROM imported_data_parsed WHERE `imported_data_id`= $result
@@ -1752,7 +1754,7 @@ class Imported_data_parsed_model extends CI_Model {
             return $rows;
         }
     }
-    
+
     function getKeywordsBy_imported_data_id($im_data_id){
 		$query = $this->db->where('imported_data_id', $im_data_id)
 				->order_by('word_num', 'asc')

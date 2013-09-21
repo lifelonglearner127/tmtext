@@ -359,13 +359,17 @@ class Site_Crawler extends MY_Controller {
 					$revision++;
 				}
 
-				foreach($page_data_without_price as $key=>$value) {
-					$value = (!is_null($value))?$value: '';
-					$this->imported_data_parsed_model->insert($imported_id, $key, $value, $revision);
+				$model = null;
+				if (($attributes = $this->pageprocessor->attributes()) !== false) {
+					if (isset($attributes['model'])) {
+						$model = $attributes['model'];
+					}
+					$this->imported_data_parsed_model->insert($imported_id, 'parsed_attributes', serialize($attributes), $revision, $model);
 				}
 
-				if (($attributes = $this->pageprocessor->attributes()) !== false) {
-					$this->imported_data_parsed_model->insert($imported_id, 'parsed_attributes', serialize($attributes), $revision);
+				foreach($page_data_without_price as $key=>$value) {
+					$value = (!is_null($value))?$value: '';
+					$this->imported_data_parsed_model->insert($imported_id, $key, $value, $revision, $model);
 				}
 
 				if (($meta = $this->pageprocessor->meta()) !== false) {
