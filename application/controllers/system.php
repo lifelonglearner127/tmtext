@@ -1496,6 +1496,10 @@ class System extends MY_Controller {
         return $output;
     }
 
+    public function system_rankings() {
+    	$this->render();
+    }
+
     public function system_reports() {
         $this->render();
     }

@@ -10,6 +10,7 @@
         <li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_reports');?>">Reports</a></li>
         <li class="active"><a data-toggle="tab" href="<?php echo site_url('system/system_logins');?>">Logins</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('system/keywords');?>">Keywords</a></li>
+        <li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_rankings');?>">Rankings</a></li>
     </ul>
         
     <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/styles.css" />
