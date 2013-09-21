@@ -1497,7 +1497,34 @@ class System extends MY_Controller {
     }
 
     public function system_rankings() {
+    	$api_username = $this->config->item('ranking_api_username');
+      $api_key = $this->config->item('ranking_api_key');
+      // === get keyword data to http://www.serpranktracker.com (start)
+      $data = array("data" => json_encode(array("action" => "getAccountRankings", "id" => "$api_username", "apikey" => "$api_key")));
+      $ch = curl_init('https://www.serpranktracker.com/tracker/webservice');
+      curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST"); 
+      curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+      curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+      $track_data = curl_exec($ch);
+      $this->data['track_data'] = json_decode($track_data);
+      // === get keyword data to http://www.serpranktracker.com (end)
     	$this->render();
+    }
+
+    public function getrankingdata() {
+    	$api_username = $this->config->item('ranking_api_username');
+      $api_key = $this->config->item('ranking_api_key');
+      // === get keyword data to http://www.serpranktracker.com (start)
+      $data = array("data" => json_encode(array("action" => "getAccountRankings", "id" => "$api_username", "apikey" => "$api_key")));
+      $ch = curl_init('https://www.serpranktracker.com/tracker/webservice');
+      curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST"); 
+      curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+      curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+      $track_data = curl_exec($ch);
+      $data = array(
+          'track_data' => json_decode($track_data)
+      );
+      $this->load->view('system/getrankingdata', $data);
     }
 
     public function system_reports() {

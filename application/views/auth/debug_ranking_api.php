@@ -18,7 +18,7 @@
 			      <div class="control-group">
 			        <label class="control-label" for="ar_keyw">Keyword</label>
 			        <div class="controls">
-			          <input type="text" id="ar_keyw" placeholder="Password">
+			          <input type="text" id="ar_keyw" placeholder="Keyword">
 			          <p id='fe_ar_keyw' class='help-block form_error'>&nbsp;</p>
 			        </div>
 			      </div>
