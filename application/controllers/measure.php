@@ -2050,10 +2050,9 @@ class Measure extends MY_Controller {
 //Max
 
             foreach ($same_pr as $ks => $vs) {
-//                $model = $this->imported_data_parsed_model->getByImId($vs['imported_data_id']);
-//                if ($model) {
-//                    $same_pr[$ks]['parsed_attributes'] = $model['parsed_attributes'];
-//                }
+                $model = $this->imported_data_parsed_model->getByImId($vs['imported_data_id']);               if ($model) {
+                   $same_pr[$ks]['parsed_attributes'] = $model['parsed_attributes'];
+               }
 
                 if (!empty($vs['seo']['short'])) {
                     foreach ($vs['seo']['short'] as $key => $val) {
@@ -2089,6 +2088,7 @@ class Measure extends MY_Controller {
 
             foreach ($same_pr as $ks => $vs) {
                 $custom_seo = $this->keywords_model->get_by_imp_id($vs['imported_data_id']);
+                $custom_seo='';
                 $meta = array();
                 if ((isset($vs['parsed_meta']['Keywords']) && $vs['parsed_meta']['Keywords'] != '')) {
                     $meta = explode(',', $vs['parsed_meta']['Keywords']);

@@ -1141,8 +1141,9 @@ class Imported_data_parsed_model extends CI_Model {
                       GROUP BY imported_data_id)', NULL, FALSE);
 
         if ($key == 'parsed_attributes'){
-
-            $this->db->where("`p`.`model` like '%" . $value . "%' OR INSTR('" . $value . "', `p`.`model`) > 0 ", NULL, FALSE);
+            $value1=$this->db->escape('%'.$value.'%');
+            $value2=$this->db->escape($value);
+            $this->db->where("`p`.`model` like " . $value1 . " OR INSTR(" . $value2 . ", `p`.`model`) > 0 ", NULL, FALSE);
 
         }else{
            if ($strict) {
