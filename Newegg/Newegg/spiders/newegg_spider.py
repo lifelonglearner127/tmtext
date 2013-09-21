@@ -54,14 +54,15 @@ class NeweggSpider(BaseSpider):
 
         item = response.meta['item']
 
-        #TODO
         # extract number of products if available
+        #TODO check
+        count_holder = hxs.select("//div[@class='recordCount']/span[@id='RecordCount_1']/text()")
+        if count_holder:
+            item['nr_products'] = int(count_holder.extract()[0])
 
         #TODO
         # try to change URL "Category" to "SubCategory", see if you find the product count there
 
-
-        #TODO
         # extract description if available
         description_holders = hxs.select("//div[@class='captionWrap']")
         if description_holders:
