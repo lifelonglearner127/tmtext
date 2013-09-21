@@ -808,6 +808,12 @@ class PageProcessor {
 			$result['model'] =  trim($item['#text'][0]);
 		}
 
+		foreach($this->nokogiri->get('.ratings-count #ratings-count-link') as $item) {
+			$p = $item['#text'][0];
+			if (preg_match('/([0-9]+)/', $p, $match)) {
+				$result['review_count'] =  trim($match[1]);
+			}
+		}
 		return $result;
 	}
 
@@ -1466,6 +1472,15 @@ class PageProcessor {
 					$result['manufacturer'] = trim($item['dd'][0]['#text'][0]);
 				} else if (!empty($line) && stristr($line, 'model')!== false) {
 					$result['model'] = trim($item['dd'][0]['#text'][0]);
+				}
+			}
+		}
+
+		foreach($this->nokogiri->get('.grpDesc  .itmRating span') as $item) {
+			if (isset($item['itemprop']) && ($item['itemprop']=='reviewCount')){
+				$p = $item['#text'][0];
+				if (preg_match('/([0-9]+)/', $p, $match)) {
+					$result['review_count'] =  trim($match[1]);
 				}
 			}
 		}
