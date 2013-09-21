@@ -123,7 +123,7 @@ foreach ($same_pr as $ks => $vs) {
                         ?>
                         <span class='analysis_content_head'>URL:</span>
                         <!--                        //Max-->
-                        <p class='short_product_name ellipsis'><a target="_blank" href="<?php echo $vs['url']; ?>"><?php echo $vs['url']; ?></a></p>
+                        <p class='short_product_name ellipsis'><a target="_blank" id="grid_item_url_<?php echo $vs['imported_data_id'] ?>" href="<?php echo $vs['url']; ?>"><?php echo $vs['url']; ?></a></p>
                     </div>
                     <!--                            //Max-->
                     <div class="p_name"  <?php //if($marg == 0) echo "style='margin-bottom:25px;'";?>>
@@ -1005,6 +1005,17 @@ $(document).click(function(e) {
         $.post(add_seo, {primary: primary, secondary: secondary, tertiary: tertiary, imported_data_id: imported_data_id}, 'json').done(function(data) {
 
         });
+
+        // ==== add to rank and make sync (start)
+        var griditemrankapi_data  = {
+            url: $("#grid_item_url_" + imported_data_id).text(),
+            key_word: $(e.target).val()
+        };
+        console.log("RAKING DATA DEBUG: ", griditemrankapi_data);
+        $.post(base_url+'index.php/measure/griditemrankapi', griditemrankapi_data, 'json').done(function(data) {
+
+        });
+        // ==== add to rank and make sync (start)
 
         $('.currentFocused').removeClass('currentFocused')
 

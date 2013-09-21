@@ -38,6 +38,15 @@ class Measure extends MY_Controller {
         $this->render();
     }
 
+    public function griditemrankapi() {
+        // === incoming data§
+        $this->load->model('rankapi_model');
+        $url = $this->input->post('url');
+        $key_word = $this->input->post('key_word');
+        $res = $this->rankapi_model->addGridItemRankingApi($url, $key_word);
+        $this->output->set_content_type('application/json')->set_output(json_encode($res));
+    }
+
     public function debug_cmd_screenshots() {
         $opt = $this->input->post('opt');
         $id = $this->input->post('id');
@@ -1094,6 +1103,64 @@ class Measure extends MY_Controller {
     }
 
     public function measure_products() {
+        // === API -> DB sync launcher (end)
+        $this->load->model('rankapi_model');
+        $api_username = $this->config->item('ranking_api_username');
+        $api_key = $this->config->item('ranking_api_key');
+        $data = array("data" => json_encode(array("action" => "getAccountRankings", "id" => "$api_username", "apikey" => "$api_key")));
+        $ch = curl_init('https://www.serpranktracker.com/tracker/webservice');
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $track_data = curl_exec($ch);
+        $rdata = json_decode($track_data);
+        if (isset($rdata) && $rdata->status == 'success') {
+            foreach ($rdata->data as $k => $v) {
+                $site = $v->site;
+                $keywords = $v->keywords;
+                if ((isset($site) && trim($site) !== "") && (isset($keywords) && count($keywords) > 0)) {
+                    foreach ($keywords as $ks => $kv) {
+                        // === extract not null and latest (according to date) rank object (start)
+                        $r_object = null;
+                        $rank_int = null;
+                        $ranking_stack = array();
+                        foreach ($kv->rankings as $ks => $vs) {
+                            if (isset($vs->ranking) && $vs->ranking !== null && $vs->ranking !== "") {
+                                $mid = array(
+                                    'ranking' => $vs->ranking,
+                                    'rankedurl' => $vs->rankedurl,
+                                    'datetime' => $vs->datetime
+                                );
+                                array_push($ranking_stack, $mid);
+                            }
+                        }
+                        $sort = array();
+                        foreach ($ranking_stack as $k => $v) {
+                            $sort['datetime'][$k] = $v['datetime'];
+                        }
+                        array_multisort($sort['datetime'], SORT_DESC, $ranking_stack);
+                        if (count($ranking_stack) > 0) {
+                            $r_object = $ranking_stack[0];
+                        }
+                        if ($r_object !== null)
+                            $rank_int = $r_object['ranking'];
+                        // === extract not null and latest (according to date) rank object (end)
+                        $sync_data = array(
+                            'site' => $site,
+                            'keyword' => $kv->keyword,
+                            'location' => $kv->location,
+                            'engine' => $kv->searchengine,
+                            'rank_json_encode' => json_encode($kv->rankings),
+                            'rank' => $rank_int
+                        );
+                        $this->rankapi_model->start_db_sync($sync_data);
+                    }
+                }
+            }
+        }
+        // === API -> DB sync launcher (end)
+
+
         $this->load->model('sites_model');
         $sites = $this->sites_model->getAll();
         $this->data['sites'] = $sites;
