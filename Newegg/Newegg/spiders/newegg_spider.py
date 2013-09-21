@@ -97,6 +97,8 @@ class NeweggSpider(BaseSpider):
             item = CategoryItem()
             
             item['text'] = subcat.select("text()").extract()[0].strip()
+
+            #TODO: check out some huge URLs
             item['url'] = subcat.select("@href").extract()[0]
 
             item['parent_text'] = parent['text']
