@@ -38,6 +38,8 @@ class NeweggSpider(BaseSpider):
             # mark as department
             item['level'] = 1
 
+            department_id += 1
+
             # mark it as its own department, will be passed on to its subcategories
             item['department_text'] = item['text']
             item['department_url'] = item['url']
