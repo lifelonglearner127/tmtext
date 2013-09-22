@@ -1802,12 +1802,15 @@ class Measure extends MY_Controller {
     public function gridview() {
         $data['mismatch_button'] = false;
         $im_data_id = $this->input->post('im_data_id');
-        $im_data_id = $this->input->post('im_data_id');
+       
         $show_from = $this->input->post('show_from');
-        if ($show_from != 'null') {
+        
+        if ($show_from != 'null' && $show_from!= false ) {
             $show_from = explode(',', $show_from);
             $show_from = array_map('strtolower', $show_from);
-        }
+            //echo "<pre>";
+            
+            }
 
         // ===== product snap scanner (start)
         // $this->load->model('webshoots_model');
@@ -2016,12 +2019,14 @@ class Measure extends MY_Controller {
             }
 
 
-            if ($show_from != 'null') {
-
+//print_r($same_pr );
+            if ($show_from != 'null' && $show_from != false ) {
+                if(count($show_from)>0){
                 foreach ($same_pr as $ks => $vs) {
                     if (!in_array($vs['customer'], $show_from)) {
                         unset($same_pr[$ks]);
                     }
+                }
                 }
             }
 
@@ -2160,7 +2165,7 @@ class Measure extends MY_Controller {
 
             foreach ($same_pr as $ks => $vs) {
                 $custom_seo = $this->keywords_model->get_by_imp_id($vs['imported_data_id']);
-                $custom_seo='';
+               
                 $meta = array();
                 if ((isset($vs['parsed_meta']['Keywords']) && $vs['parsed_meta']['Keywords'] != '')) {
                     $meta = explode(',', $vs['parsed_meta']['Keywords']);
@@ -2719,7 +2724,7 @@ class Measure extends MY_Controller {
                 }
             }
             if ($status_results == 'matchon' && $selected_cites != 'null') {
-
+                
                 foreach ($result as $kay => $val) {
                     $matches_sites = array_unique($this->matches_count($val['imported_data_id']));
                     if (count($matches_sites) == 1 && count($selected_cites) > 1) {

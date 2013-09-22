@@ -244,7 +244,7 @@ function switchToGridView() {
             show_from = null;
         }
     }
-    if ($("#batchess").val() !== '0' && status_results === 'matchon') {
+    if ($("#batchess").val() != '0' && status_results == 'matchon') {
         $.post(base_url + 'index.php/measure/filterSiteNameByCustomerName', {'batch': $("#batchess").val()}, function(data) {
 
             if (show_from !== null && show_from.toLowerCase().indexOf(data) < 0) {
@@ -254,7 +254,7 @@ function switchToGridView() {
             if (show_from === null) {
                 show_from = data.toLowerCase();
             }
-            //var grid_view = $.post(editorGridViewBaseUrl, {show_from: show_from,selectedUrl: $('#products li[data-status=selected] span').eq(1).text(), im_data_id: im_data_id, s_term: $.trim($("#compare_text").val()), strict: strict}, 'html').done(function(data) {
+                        //var grid_view = $.post(editorGridViewBaseUrl, {show_from: show_from,selectedUrl: $('#products li[data-status=selected] span').eq(1).text(), im_data_id: im_data_id, s_term: $.trim($("#compare_text").val()), strict: strict}, 'html').done(function(data) {
             var grid_view = $.post(editorGridViewBaseUrl, {current_url: location.href, show_from: show_from, selectedUrl: $('#products li[data-status=selected] span').eq(1).text(), im_data_id: im_data_id, s_term: $.trim($("#compare_text").val()), strict: strict}, 'html').done(function(data) {
                 $("#compet_area_grid").html(data);
                 $("#compet_area_grid").show();
@@ -275,9 +275,9 @@ function switchToGridView() {
 
         });
     } else {
-
+      
         //var grid_view = $.post(editorGridViewBaseUrl, {show_from: show_from,selectedUrl: $('#products li[data-status=selected] span').eq(1).text(), im_data_id: im_data_id, s_term: $.trim($("#compare_text").val()), strict: strict}, 'html').done(function(data) {
-        var grid_view = $.post(editorGridViewBaseUrl, {current_url: location.href, show_from: show_from, selectedUrl: $('#products li[data-status=selected] span').eq(1).text(), im_data_id: im_data_id, s_term: $.trim($("#compare_text").val()), strict: strict}, 'html').done(function(data) {
+        var grid_view = $.post(editorGridViewBaseUrl, {current_url: location.href,show_from: null, selectedUrl: $('#products li[data-status=selected] span').eq(1).text(), im_data_id: im_data_id, s_term: $.trim($("#compare_text").val()), strict: strict}, 'html').done(function(data) {
             $("#compet_area_grid").html(data);
             $("#compet_area_grid").show();
             $(".preloader_grids_box").hide();
@@ -727,7 +727,7 @@ $("*").click(function(e) {
         } else {
             abc = true;
     }
-
+        
     }
 });
 
@@ -945,7 +945,8 @@ $(document).ready(function() {
     });
 
     $("#batchess").live('change', function() {//max
-
+        $("#an_sort_search_box").html("");
+        $("#compet_area_grid").html('');
         var ci_product_item_view = $.cookie('ci_product_item_view_selected');
         if (typeof(ci_product_item_view) !== 'undefined') {
             $.removeCookie('ci_product_item_view_selected', {path: '/'}); // destroy
