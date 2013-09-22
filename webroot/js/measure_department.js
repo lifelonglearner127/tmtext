@@ -162,6 +162,33 @@ $( function() {
         var item_id = $(this).data('item');
         $('#departments_content').html('');
         $("#hp_boot_drop .btn_caret_sign").text(new_caret);
+        if(new_caret != 'Choose Site'){
+            var checking = false;
+            $(".hp_boot_drop .dropdown-menu > li > a").each(function(){
+                if($(this).text() == 'Choose Site'){
+                    checking = true;
+                }
+            });
+            if(checking == false){
+                $(".hp_boot_drop .dropdown-menu").prepend("<li><a data-item=\"\" data-value=\"\" href=\"javascript:void(0);\">Choose Site</a></li>");
+            }
+            $(".hp_boot_drop .dropdown-menu > li > a").bind('click', function(e) {
+                var new_caret = $.trim($(this).text());
+                if(new_caret == 'Choose Site'){
+                    $(".dashboard").hide();
+                    $('#tabs').hide();
+                    $('#department_url').hide();
+                    $('#departmentDropdown .btn_caret_sign1').text('Choose Department');
+                    $("#hp_boot_drop .btn_caret_sign").text(new_caret);
+                    $('#departments_content').html('');
+                }
+            });
+        }else{
+            $(".dashboard").hide();
+            $('#departmentDropdown .btn_caret_sign1').text('Choose Department');
+            $('#departments_content').html('');
+        }
+
         $("tbody#department_data").empty();
         $("tbody#category_data").empty();
         //$("#departmentDropdown").show();
@@ -305,6 +332,29 @@ $( function() {
                 allCatDashboard(site_name, new_caret);
             }
         }
+
+        if(new_caret != 'Choose comparison site'){
+            var checking = false;
+            $(".hp_boot_drop_sec .dropdown-menu > li > a").each(function(){
+                if($(this).text() == 'Choose comparison site'){
+                    checking = true;
+                }
+            });
+            if(checking == false){
+                $(".hp_boot_drop_sec .dropdown-menu").prepend("<li><a data-item=\"\" data-value=\"\" href=\"javascript:void(0);\">Choose comparison site</a></li>");
+            }
+            $(".hp_boot_drop_sec .dropdown-menu > li > a").bind('click', function(e) {
+                var new_caret = $.trim($(this).text());
+                if(new_caret == 'Choose comparison site'){
+                    $("#departmentDropdownSec_first").text('Choose Department');
+                    $("#hp_boot_drop_sec .btn_caret_sign_sec").text(new_caret);
+                    $('#departments_content').html('');
+                }
+            });
+        }else{
+            $("#departmentDropdownSec_first").text('Choose Department');
+            $('#departments_content').html('');
+        }
     });
 
     $("#departmentDropdownSec .dropdown-menu > li > a").live('click', function(e) {
@@ -401,7 +451,7 @@ function globalDepDashboard(site_name){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                data_str += '<li><span class="dep_text">'+data.res_data_more_than_0[j].text+'</span><span class="dep_numbers">' +
+                data_str += '<li><span class="dep_text"><a href="'+data.res_data_more_than_0[j].url+'" target="_blank">'+data.res_data_more_than_0[j].text+'</a></span><span class="dep_numbers">' +
                     data.res_data_more_than_0[j].description_words+'</span><span class="dep_keywords">';
                 if(json != ''){
                     jQuery.each(keywords, function(i, val) {
@@ -449,7 +499,7 @@ function globalDepDashboard(site_name){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                data_str += '<li><span class="dep_text">'+data.res_more_data[j].text+'</span><span class="dep_numbers">'
+                data_str += '<li><span class="dep_text"><a href="'+data.res_more_data[j].url+'" target="_blank">'+data.res_more_data[j].text+'</a></span><span class="dep_numbers">'
                     +data.res_more_data[j].description_words+'</span><span class="dep_keywords">';
                 if(json != ''){
                     jQuery.each(keywords, function(i, val) {
@@ -497,7 +547,7 @@ function globalDepDashboard(site_name){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                data_str += '<li><span class="dep_text">'+data.dep_optimize[j].text+'</span><span class="dep_numbers">'
+                data_str += '<li><span class="dep_text"><a href="'+data.dep_optimize[j].url+'" target="_blank">'+data.dep_optimize[j].text+'</a></span><span class="dep_numbers">'
                     +data.dep_optimize[j].description_words+'</span><span class="dep_keywords">';
                 if(json != ''){
                     jQuery.each(keywords, function(i, val) {
@@ -535,14 +585,14 @@ function globalDepDashboard(site_name){
         data_str += '</td></tr>';
 
         $("tbody#department_data").append(data_str);
-        $("tbody#department_data tr td").click(function() {
-            var el = $(this).find('ul');
+        $("tbody#department_data tr td span.dep_title").click(function() {
+            var el = $(this).parent().find('ul');
             if(el.css('display') == 'none'){
-                $(this).find('span.dep_title').css({'border-bottom':'1px solid #000'});
+                $(this).css({'border-bottom':'1px solid #000'});
                 el.css({'display':'block'});
             } else {
                 el.css({'display':'none'});
-                $(this).find('span.dep_title').css({'border-bottom':'none'});
+                $(this).css({'border-bottom':'none'});
             }
         });
     });
@@ -577,7 +627,7 @@ function globalCatDashboard(site_name){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                data_str += '<li><span class="dep_text">'+data.dep_optimize[j].text+'</span><span class="dep_numbers">'
+                data_str += '<li><span class="dep_text"><a href="'+data.dep_optimize[j].url+'" target="_blank">'+data.dep_optimize[j].text+'</a></span><span class="dep_numbers">'
                     +data.dep_optimize[j].description_words+'</span><span class="dep_keywords">';
                 if(json != ''){
                     jQuery.each(keywords, function(i, val) {
@@ -615,14 +665,14 @@ function globalCatDashboard(site_name){
         data_str += '</td></tr>';
 
         $("tbody#category_data").append(data_str);
-        $("tbody#category_data tr td").click(function() {
-            var el = $(this).find('ul');
+        $("tbody#category_data tr td span.dep_title").click(function() {
+            var el = $(this).parent().find('ul');
             if(el.css('display') == 'none'){
-                $(this).find('span.dep_title').css({'border-bottom':'1px solid #000'});
+                $(this).css({'border-bottom':'1px solid #000'});
                 el.css({'display':'block'});
             } else {
                 el.css({'display':'none'});
-                $(this).find('span.dep_title').css({'border-bottom':'none'});
+                $(this).css({'border-bottom':'none'});
             }
         });
     });
@@ -648,7 +698,7 @@ function allDepDashboard(site_name, site_name_sec){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                first_part_table += '<li><span class="dep_text">'+data.res_data_more_than_0[j].text+'</span><span class="dep_numbers">' +
+                first_part_table += '<li><span class="dep_text"><a href="'+data.res_data_more_than_0[j].url+'" target="_blank">'+data.res_data_more_than_0[j].text+'</a></span><span class="dep_numbers">' +
                     data.res_data_more_than_0[j].description_words+'</span><span class="dep_keywords">';
                 if(json != ''){
                     jQuery.each(keywords, function(i, val) {
@@ -672,7 +722,7 @@ function allDepDashboard(site_name, site_name_sec){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                second_part_table += '<li><span class="dep_text">'+data.res_more_data[j].text+'</span><span class="dep_numbers">'
+                second_part_table += '<li><span class="dep_text"><a href="'+data.res_more_data[j].url+'" target="_blank">'+data.res_more_data[j].text+'</a></span><span class="dep_numbers">'
                     +data.res_more_data[j].description_words+'</span><span class="dep_keywords">';
                 if(json != ''){
                     jQuery.each(keywords, function(i, val) {
@@ -696,7 +746,7 @@ function allDepDashboard(site_name, site_name_sec){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                third_part_table += '<li><span class="dep_text">'+data.dep_optimize[j].text+'</span><span class="dep_numbers">'
+                third_part_table += '<li><span class="dep_text"><a href="'+data.dep_optimize[j].url+'" target="_blank">'+data.dep_optimize[j].text+'</a></span><span class="dep_numbers">'
                     +data.dep_optimize[j].description_words+'</span><span class="dep_keywords">';
                 if(json != ''){
                     jQuery.each(keywords, function(i, val) {
@@ -726,7 +776,7 @@ function allDepDashboard(site_name, site_name_sec){
                     if(json != ''){
                         var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                     }
-                    first_part_table += '<li><span class="dep_text">'+data.res_data_more_than_0[j].text+'</span><span class="dep_numbers">' +
+                    first_part_table += '<li><span class="dep_text"><a href="'+data.res_data_more_than_0[j].url+'" target="_blank">'+data.res_data_more_than_0[j].text+'</a></span><span class="dep_numbers">' +
                         data.res_data_more_than_0[j].description_words+'</span><span class="dep_keywords">';
                     if(json != ''){
                         jQuery.each(keywords, function(i, val) {
@@ -750,7 +800,7 @@ function allDepDashboard(site_name, site_name_sec){
                     if(json != ''){
                         var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                     }
-                    second_part_table += '<li><span class="dep_text">'+data.res_more_data[j].text+'</span><span class="dep_numbers">'
+                    second_part_table += '<li><span class="dep_text"><a href="'+data.res_more_data[j].url+'" target="_blank">'+data.res_more_data[j].text+'</a></span><span class="dep_numbers">'
                         +data.res_more_data[j].description_words+'</span><span class="dep_keywords">';
                     if(json != ''){
                         jQuery.each(keywords, function(i, val) {
@@ -774,7 +824,7 @@ function allDepDashboard(site_name, site_name_sec){
                     if(json != ''){
                         var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                     }
-                    third_part_table += '<li><span class="dep_text">'+data.dep_optimize[j].text+'</span><span class="dep_numbers">'
+                    third_part_table += '<li><span class="dep_text"><a href="'+data.dep_optimize[j].url+'" target="_blank">'+data.dep_optimize[j].text+'</a></span><span class="dep_numbers">'
                         +data.dep_optimize[j].description_words+'</span><span class="dep_keywords">';
                     if(json != ''){
                         jQuery.each(keywords, function(i, val) {
@@ -790,14 +840,14 @@ function allDepDashboard(site_name, site_name_sec){
             third_part_table += '</td></tr>';
             var data_str = header_first_table + first_part_table + second_part_table + third_part_table;
             $("tbody#department_data").append(data_str);
-            $("tbody#department_data tr td").click(function() {
-                var el = $(this).find('ul');
+            $("tbody#department_data tr td span.dep_title").click(function() {
+                var el = $(this).parent().find('ul');
                 if(el.css('display') == 'none'){
-                    $(this).find('span.dep_title').css({'border-bottom':'1px solid #000'});
+                    $(this).css({'border-bottom':'1px solid #000'});
                     el.css({'display':'block'});
                 } else {
                     el.css({'display':'none'});
-                    $(this).find('span.dep_title').css({'border-bottom':'none'});
+                    $(this).css({'border-bottom':'none'});
                 }
             });
         });
@@ -833,7 +883,7 @@ function allCatDashboard(site_name, site_name_sec){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                third_part_table += '<li><span class="dep_text">'+data.dep_optimize[j].text+'</span><span class="dep_numbers">'
+                third_part_table += '<li><span class="dep_text"><a href="'+data.dep_optimize[j].url+'" target="_blank">'+data.dep_optimize[j].text+'</a></span><span class="dep_numbers">'
                     +data.dep_optimize[j].description_words+'</span><span class="dep_keywords">';
                 if(json != ''){
                     jQuery.each(keywords, function(i, val) {
@@ -871,7 +921,7 @@ function allCatDashboard(site_name, site_name_sec){
                     if(json != ''){
                         var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                     }
-                    third_part_table += '<li><span class="dep_text">'+data.dep_optimize[j].text+'</span><span class="dep_numbers">'
+                    third_part_table += '<li><span class="dep_text"><a href="'+data.dep_optimize[j].url+'" target="_blank">'+data.dep_optimize[j].text+'</a></span><span class="dep_numbers">'
                         +data.dep_optimize[j].description_words+'</span><span class="dep_keywords">';
                     if(json != ''){
                         jQuery.each(keywords, function(i, val) {
@@ -887,14 +937,14 @@ function allCatDashboard(site_name, site_name_sec){
             third_part_table += '</td></tr>';
             var data_str = header_first_table + first_part_table + second_part_table + third_part_table;
             $("tbody#category_data").append(data_str);
-            $("tbody#category_data tr td").click(function() {
-                var el = $(this).find('ul');
+            $("tbody#category_data tr td span.dep_title").click(function() {
+                var el = $(this).parent().find('ul');
                 if(el.css('display') == 'none'){
-                    $(this).find('span.dep_title').css({'border-bottom':'1px solid #000'});
+                    $(this).css({'border-bottom':'1px solid #000'});
                     el.css({'display':'block'});
                 } else {
                     el.css({'display':'none'});
-                    $(this).find('span.dep_title').css({'border-bottom':'none'});
+                    $(this).css({'border-bottom':'none'});
                 }
             });
         });
@@ -918,7 +968,15 @@ function getCatData(site_name, obj, condition, state){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                data_str += '<li><span class="dep_text">'+data[j].text+'</span><span class="dep_numbers">' +
+                data_str += '<li><span class="dep_text">';
+                if(state == 1){
+                    data_str += '<a href="'+data[j].url+'" target="_blank">';
+                }
+                data_str += data[j].text;
+                if(state == 1){
+                    data_str += '</a>';
+                }
+                data_str += '</span><span class="dep_numbers">' +
                     data[j].description_words+'</span><span class="dep_keywords">';
                 if(json != ''){
                     jQuery.each(keywords, function(i, val) {
@@ -1017,7 +1075,6 @@ function readBestSellers(department_id,site_name,table_name) {
 $('.site_categorie').live('click',function(){
 	//e.stopPropagation();
     var txt = $(this).find('div.cat_desc').text();
-    console.log()
     if(txt != ''){
         $("#mypopup").dialog().empty().append(txt);
     }
