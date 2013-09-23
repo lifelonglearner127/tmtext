@@ -1024,7 +1024,6 @@ $(document).click(function(e) {
   });
     var trueOrFalse = true;
     $('.seo-btn').click(function(){
- //       var abc = false;
         var inputVal = $(this).next().val().trim();
         if(inputVal != ''){
             if(trueOrFalse){
@@ -1074,7 +1073,7 @@ $(document).click(function(e) {
 //        }
 //    });
    });//document ready end
-    //var abc = true;
+
 
 
 
