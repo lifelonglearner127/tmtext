@@ -717,18 +717,12 @@ function wordHighLighter(w, status) {
 
 $("*").click(function(e) {
     var attr = $(e.target).attr('data-status');
-   // var abc = true;
     if (typeof(attr) !== 'undefined' && attr === 'seo_link') {
     } else {
-      //if(abc){
         removeTagsFromDescs();
-        if ($("#compet_area_grid .grid_se_section").length > 0) {
-            removeTagsFromAllGridDescs();
-        }
-        //} else {
-       //     abc = true;
-   // }
-        
+            if ($("#compet_area_grid .grid_se_section").length > 0) {
+                removeTagsFromAllGridDescs();
+            }
     }
 });
 
