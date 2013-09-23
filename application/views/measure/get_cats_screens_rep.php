@@ -13,7 +13,7 @@
 		</thead>
 		<tbody>
 			<tr>
-				<td><input type='checkbox' name="cat_report_ch" id="cat_report_ch"></td>
+				<td><input type='checkbox' class='cat_report_ch'></td>
 				<td>
 					<?php if (count($sites_list) > 0) { ?>
 						<select class='main_site_chooser' onchange="mainSiteChooserHandler(this)">
@@ -46,11 +46,23 @@
 </div>
 <div class="modal-footer">
 	<button class="btn" type="button">New row</button>
-	<button class="btn btn-primary btn-rec-all-send" disabled="" type="button">Save set</button>
+	<button id='btn_dep_rep_save_set' class="btn btn-primary btn-rec-all-send" disabled="" type="button">Save set</button>
 </div>
 
 <script type='text/javascript'>
 	
+	$(document).ready(function() {
+		$("#cat_report_ch_all").on('change', function(e) {
+			if($(e.target).is(":checked")) {
+				$('.cat_report_ch').attr('checked', true);
+				$('#btn_dep_rep_save_set').removeAttr('disabled');
+			} else {
+				$('.cat_report_ch').removeAttr('checked');
+				$('#btn_dep_rep_save_set').attr('disabled', true);
+			}
+		});
+	});
+
 	function removeCompetitorRow(e) {
 		var comparison_row = $(e).parent().parent();
 		comparison_row.remove();
