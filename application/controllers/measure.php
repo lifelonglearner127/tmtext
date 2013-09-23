@@ -1344,7 +1344,7 @@ class Measure extends MY_Controller {
         $this->load->model('sites_model');
         $this->load->model('department_members_model');
         $customerID = $this->sites_model->getIdByName($this->input->post('customer_name'));
-        $result = $this->department_members_model->getCatsBySideId($customerID);
+        $result = $this->department_members_model->getAllByCustomerID($customerID);
         $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }
 

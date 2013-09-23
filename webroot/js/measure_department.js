@@ -207,10 +207,9 @@ $( function() {
                 }
                 $(".dashboard").show();
                 $("tbody#department_data").show();
-
+                $("tbody#category_data").empty();
+                $("tbody#department_data").empty();
                 if($("#hp_boot_drop_sec .btn_caret_sign_sec").text() != 'Choose comparison site'){
-                    $("tbody#category_data").empty();
-                    $("tbody#department_data").empty();
                     var site_name_sec = $("#hp_boot_drop_sec .btn_caret_sign_sec").text();
                     $("#dashboard_recommend").hide();
 
@@ -315,13 +314,12 @@ $( function() {
                 "bJQueryUI": true
             });
         });
-
+        var selected_type = $('#hp_boot_drop_sec_dashboard .btn_caret_sign_sec').text();
         if($("#hp_boot_drop .btn_caret_sign").text() != 'Choose Site'){
             $(".dashboard").show();
             $("#dashboard_recommend").hide();
             $("tbody#category_data").empty();
             $("tbody#department_data").empty();
-            var selected_type = $('#hp_boot_drop_sec_dashboard .btn_caret_sign_sec').text();
             if(selected_type == "Departments"){
                 $("tbody#department_data").show();
                 $("tbody#category_data").hide();
@@ -349,6 +347,15 @@ $( function() {
                     $("#departmentDropdownSec_first").text('Choose Department');
                     $("#hp_boot_drop_sec .btn_caret_sign_sec").text(new_caret);
                     $('#departments_content').html('');
+                    $("tbody#category_data").empty();
+                    $("tbody#department_data").empty();
+                    if(selected_type == "Departments"){
+                        $('#dashboard_recommend').show();
+                        globalDepDashboard(site_name);
+                    } else {
+                        $('#dashboard_recommend').show();
+                        globalCatDashboard(site_name);
+                    }
                 }
             });
         }else{
@@ -383,6 +390,7 @@ $( function() {
         var item_id = $(this).data('item');
         var site_name = $('#hp_boot_drop .btn_caret_sign').text();
         var site_name_sec = $('#hp_boot_drop_sec .btn_caret_sign_sec').text();
+        $('#departments_content').html('');
         $("tbody#category_data").empty();
         $("tbody#department_data").empty();
         if(new_caret == "Departments"){
@@ -391,6 +399,7 @@ $( function() {
             if(site_name_sec != 'Choose comparison site'){
                 allDepDashboard(site_name, site_name_sec);
             } else {
+                $('#dashboard_recommend').show();
                 globalDepDashboard(site_name);
             }
         } else {
@@ -399,6 +408,7 @@ $( function() {
             if(site_name_sec != 'Choose comparison site'){
                 allCatDashboard(site_name, site_name_sec);
             } else {
+                $('#dashboard_recommend').show();
                 globalCatDashboard(site_name);
             }
         }
