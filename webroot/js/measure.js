@@ -40,7 +40,7 @@ function startGridsBoxesContentAnalyzer(s) {
                 var sr_stack = incoming.split("<br />");
                 // --- map attributes array to clean it up (start)
                 sr_stack = $.map(sr_stack, function(val, index) {
-                    val = val.replace(/\n/g, "")
+                    val = val.replace(/\n/g, "");
                     val = val.replace(/\s+/g, ' ');
                     return val;
                 });
@@ -717,6 +717,7 @@ function wordHighLighter(w, status) {
 
 $("*").click(function(e) {
     var attr = $(e.target).attr('data-status');
+    var abc;
     if (typeof(attr) !== 'undefined' && attr === 'seo_link') {
     } else {
         if(abc){
