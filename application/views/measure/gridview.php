@@ -270,7 +270,7 @@ foreach ($same_pr as $ks => $vs) {
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
-                                                        <img class="seo-btn" src="<?php echo base_url();?>/img/icon.png" title="Click to see dublicates words">
+                                                        <img class="seo-btn" section="<?php echo $i; ?>" description="short" data-status="seo_link" src="<?php echo base_url();?>/img/icon.png" title="Click to see dublicates words">
                                                         <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword1" keyword_num="1" type="text" value="<?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['primary']; }?>">
                                                         <span class="coustom_keyword_density" id="keyword1_density"></span>
                                                         <span class="coustom_keyword_count" style="display:none" id="keyword1_count"></span>
@@ -286,7 +286,7 @@ foreach ($same_pr as $ks => $vs) {
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
-                                                        <img class="seo-btn" src="<?php echo base_url();?>/img/icon.png" title="Click to see dublicates words">
+                                                        <img class="seo-btn" section="<?php echo $i; ?>" description="short" data-status="seo_link" src="<?php echo base_url();?>/img/icon.png" title="Click to see dublicates words">
                                                         <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword2" keyword_num="2" type="text" value="<?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['secondary']; }?>">
                                                         <span class="coustom_keyword_density" id="keyword2_density"></span>
                                                         <span class="coustom_keyword_count" style="display:none" id="keyword2_count"></span>
@@ -302,7 +302,7 @@ foreach ($same_pr as $ks => $vs) {
                                             <span class="primary_speed">
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
-                                                        <img class="seo-btn" src="<?php echo base_url();?>/img/icon.png" title="Click to see dublicates words">
+                                                        <img class="seo-btn" data-status="seo_link" section="<?php echo $i; ?>" description="short" src="<?php echo base_url();?>/img/icon.png" title="Click to see dublicates words">
                                                         <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword3" keyword_num="2" type="text" value="<?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['tertiary']; }?>">
                                                         <span  class="coustom_keyword_density" id="keyword3_density"></span>
                                                         <span style="display:none" class="coustom_keyword_count" id="keyword3_count"></span>
@@ -326,7 +326,8 @@ foreach ($same_pr as $ks => $vs) {
                                             <input type='hidden' name='debug_rank_api_rank_ph' value="<?php echo $rank_api; ?>">
                                             <?php if($rank_api === null || $rank_api === 0) { $rank_int = ''; } else { $rank_int = $rank_api; } ?>
                                             <li style="float: left;" >
-                                                <img class="meta-btn word_wrap_li_pr hover_en" style="float:left;margin-right: 2px;" onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'short')"  src="<?php echo base_url();?>/img/icon.png" title="Click to see dublicates words" data-status="seo_link" />
+                                                <!--<img class="meta-btn word_wrap_li_pr hover_en" style="float:left;margin-right: 2px;" onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'short')"  src="<?php echo base_url();?>/img/icon.png" title="Click to see dublicates words" data-status="seo_link" />-->
+                                                <img class="meta-btn word_wrap_li_pr hover_en" style="float:left;margin-right: 2px;" section="<?php echo $i; ?>" description="short" src="<?php echo base_url();?>/img/icon.png" title="Click to see dublicates words" data-status="seo_link" />
                                                 
                                                 <span  style="white-space: normal;line-height: 20px;text-decoration: none;font-size: 14px !important;line-height: 21px;text-decoration: none;white-space: normal;width: 140px;float: left;word-wrap: break-word;" >
                 <?php echo $value['value']; ?>
@@ -349,7 +350,8 @@ foreach ($same_pr as $ks => $vs) {
                                             <input type='hidden' name='debug_rank_api_rank_ph' value="<?php echo $rank_api; ?>">
                                             <?php if($rank_api === null || $rank_api === 0) { $rank_int = ''; } else { $rank_int = $rank_api; } ?>
                                             <li style="float: left;" >
-                                                <img src="<?php echo base_url();?>/img/icon.png" class="meta-btn word_wrap_li_pr hover_en" style="float:left;margin-right: 2px;" onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'short')"   title="Click to see dublicates words" data-status="seo_link" />
+                                                <!--<img src="<?php echo base_url();?>/img/icon.png" class="meta-btn word_wrap_li_pr hover_en" style="float:left;margin-right: 2px;" onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'short')"   title="Click to see dublicates words" data-status="seo_link" />-->
+                                                <img src="<?php echo base_url();?>/img/icon.png" class="meta-btn word_wrap_li_pr hover_en" section="<?php echo $i; ?>" description="short" style="float:left;margin-right: 2px;" title="Click to see dublicates words" data-status="seo_link" />
                                                 <span style="white-space: normal;line-height: 20px;text-decoration: none;font-size: 14px !important;line-height: 21px;text-decoration: none;white-space: normal;width: 140px;float: left;word-wrap: break-word;" >
                 <?php echo $value['ph']; ?>
                                                     
@@ -528,7 +530,8 @@ foreach ($same_pr as $ks => $vs) {
                                             <input type='hidden' name='debug_rank_api_rank_ph' value="<?php echo $rank_api; ?>">
                                             <?php if($rank_api === null || $rank_api === 0) { $rank_int = ''; } else { $rank_int = $rank_api; } ?>
                                             <li style="float: left;">
-                                                <img class="word_wrap_li_pr hover_en" style="float:left;margin-right: 2px;"  src="<?php echo base_url();?>/img/icon.png" title="Click to see dublicates words" data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'long')"  />
+                                                <!--<img class="word_wrap_li_pr hover_en" style="float:left;margin-right: 2px;"  src="<?php echo base_url();?>/img/icon.png" title="Click to see dublicates words" data-status='seo_link' onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'long')"  />-->
+                                                <img class="word_wrap_li_pr hover_en" style="float:left;margin-right: 2px;" section="<?php echo $i; ?>" description="long" src="<?php echo base_url();?>/img/icon.png" title="Click to see dublicates words" data-status='seo_link'  />
                                                 <span style="white-space: normal;line-height: 20px;text-decoration: none;font-size: 14px !important;line-height: 21px;text-decoration: none;white-space: normal;width: 140px;float: left;word-wrap: break-word;" >
                 <?php echo $value['value']; ?>
                                                 </span>
@@ -551,7 +554,8 @@ foreach ($same_pr as $ks => $vs) {
                                             <input type='hidden' name='debug_rank_api_rank_ph' value="<?php echo $rank_api; ?>">
                                             <?php if($rank_api === null || $rank_api === 0) { $rank_int = ''; } else { $rank_int = $rank_api; } ?>
                                             <li style="float: left;" >
-                                                <img class="meta-btn word_wrap_li_pr hover_en" style="float:left;margin-right: 2px;" onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'long')"  src="<?php echo base_url();?>/img/icon.png" title="Click to see dublicates words" data-status="seo_link" />
+                                                <!--<img class="meta-btn word_wrap_li_pr hover_en" style="float:left;margin-right: 2px;" onclick="wordGridModeHighLighter('section_<?php echo $i; ?>', '<?php echo $v_ph; ?>', 'long')"  src="<?php echo base_url();?>/img/icon.png" title="Click to see dublicates words" data-status="seo_link" />-->
+                                                <img class="meta-btn word_wrap_li_pr hover_en" section="<?php echo $i; ?>" description="long" style="float:left;margin-right: 2px;" src="<?php echo base_url();?>/img/icon.png" title="Click to see dublicates words" data-status="seo_link" />
                                                 <span style="font-size: 14px !important;white-space: normal;line-height: 20px;text-decoration: none;width: 140px;float: left;word-wrap: break-word;"  >
                 <?php echo $value['ph']; ?>
                                                     
@@ -1105,28 +1109,99 @@ $(document).click(function(e) {
     }
 
   });
-  
+	/*
     $('.seo-btn').click(function(){
         var inputVal = $(this).next().val().trim();
         if(inputVal != ''){
-                var j = 1;
-                var newInputVal = new Array();
-                var k = 0;
-                    var reg = new RegExp(inputVal,"ig");
-                $(this).closest('.p_description').find('.short_desc_con').each(function(){
-                    var $this = $(this);
-                    newInputVal[k] = $this.html().match(reg);
-                    if(newInputVal[k]){
-                            for(var i = 0; i < newInputVal[k].length; i++){
-                            $(this).html($(this).text());
-                            var newHtml = $this.html().replace(newInputVal[k][i], '<span class="highlight">'+newInputVal[k][i]+'</span>');
-                            $this.html(newHtml); 
-                    }
-                    }
-                    k++;
-                    
-   });
-            }
+			var j = 1;
+			var newInputVal = new Array();
+			var k = 0;
+				var reg = new RegExp(inputVal,"ig");
+			$(this).closest('.p_description').find('.short_desc_con').each(function(){
+				var $this = $(this);
+				newInputVal[k] = $this.html().match(reg);
+				if(newInputVal[k]){
+					for(var i = 0; i < newInputVal[k].length; i++){
+						$(this).html($(this).text());
+						var newHtml = $this.html().replace(newInputVal[k][i], '<span class="highlight">'+newInputVal[k][i]+'</span>');
+						$this.html(newHtml); 
+					}
+				}
+				k++;
+				
+			});
+        }
+    });*/
+    var trueOrFalse = true;
+    $('.seo-btn').click(function(){
+        var inputVal = $(this).next().val().trim();
+        if(inputVal != ''){
+			if(trueOrFalse){
+				var j = 1;
+				var newInputVal = new Array();
+				var k = 0;
+				var reg = new RegExp(inputVal,"ig");
+				var section = $(this).attr('section');
+				var description = $(this).attr('description');
+				//alert(section +' | '+ inputVal +' | '+ description);
+				$(this).closest('.p_description').find('.'+description+'_desc_con').each(function(){
+					/*var $this = $(this);
+					newInputVal[k] = $this.html().match(reg);
+					if(newInputVal[k]){
+						for(var i = 0; i < newInputVal[k].length; i++){
+							$(this).html($(this).text());
+							var newHtml = $this.html().replace(newInputVal[k][i], '<span class="highlight">'+newInputVal[k][i]+'</span>');
+							$this.html(newHtml); 
+						}
+					}
+					k++;*/
+					section = 'section_'+section;
+					wordGridModeHighLighter(section, inputVal, description);
+				});
+				trueOrFalse = false;
+			}else{
+				$('.compare, .short_desc_con').each(function(){
+                    $(this).html($(this).text());
+                });
+               trueOrFalse = true;
+			}
+        }
+    });
+    
+    var trueOrFalse2 = true;
+    $('.meta-btn').click(function(){
+        var inputVal = $(this).next().text().trim();
+        if(inputVal != ''){
+			if(trueOrFalse2){
+				var j = 1;
+				var newInputVal = new Array();
+				var k = 0;
+				var reg = new RegExp(inputVal,"ig");
+				var section = $(this).attr('section');
+				var description = $(this).attr('description');
+				//alert(section +' | '+ inputVal +' | '+ description);
+				$(this).closest('.p_description').find('.'+description+'_desc_con').each(function(){
+					/*var $this = $(this);
+					newInputVal[k] = $this.html().match(reg);
+					if(newInputVal[k]){
+						for(var i = 0; i < newInputVal[k].length; i++){
+							$(this).html($(this).text());
+							var newHtml = $this.html().replace(newInputVal[k][i], '<span class="highlight">'+newInputVal[k][i]+'</span>');
+							$this.html(newHtml); 
+						}
+					}
+					k++;*/
+					section = 'section_'+section;
+					wordGridModeHighLighter(section, inputVal, description);
+				});
+				trueOrFalse2 = false;
+			}else{
+				$('.compare, .short_desc_con').each(function(){
+                    $(this).html($(this).text());
+                });
+               trueOrFalse2 = true;
+			}
+        }
     });
     
    });//document ready end
