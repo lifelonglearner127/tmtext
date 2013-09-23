@@ -6,13 +6,14 @@
 	<table class='table table-striped'>
 		<thead>
 			<tr>
+				<th><input type='checkbox' name="cat_report_ch_all" id="cat_report_ch_all"></th>
 				<th>Choose Department</th>
 				<th>Competitors</th>
-				<th>&nbsp;</th>
 			</tr>
 		</thead>
 		<tbody>
 			<tr>
+				<td><input type='checkbox' name="cat_report_ch" id="cat_report_ch"></td>
 				<td>
 					<?php if (count($sites_list) > 0) { ?>
 						<select class='main_site_chooser' onchange="mainSiteChooserHandler(this)">
@@ -25,7 +26,7 @@
 					<?php } ?>
 				</td>
 				<td>
-					<div class='comparison_row_1'>
+					<div class='comparison_row'>
 						<select class='sec_site_chooser' onchange="secSiteChooserHandler(this)">
 							<option value='0'>Choose comparison site</option>
 							<?php foreach ($sites_list as $val) { ?>
@@ -35,79 +36,33 @@
 						<select style='display: none;' class='sec_dep_chooser'></select>
 						<label style='display: none; margin-top: 0px !important;' class="checkbox"><input type="checkbox"> Select competitor</label>
 						<div style='display: none; margin-bottom: 10px;' class='comparison_row_cnt'>
-							<button type='button' class='btn btn-success'>Add Competitor</button>
-							<button type='button' class='btn btn-primary'>Save Set</button>
-						</div>
-					</div>
-					<div class='comparison_row_2'>
-						<select class='sec_site_chooser' onchange="secSiteChooserHandler(this)">
-							<option value='0'>Choose comparison site</option>
-							<?php foreach ($sites_list as $val) { ?>
-							<option value="<?php echo $val['id']; ?>" data-value="<?php echo $val['name_val']; ?>"><?php echo $val['name']; ?></option>
-							<?php } ?>
-						</select>
-						<select style='display: none;' class='sec_dep_chooser'></select>
-						<label style='display: none; margin-top: 0px !important;' class="checkbox"><input type="checkbox"> Select competitor</label>
-						<div style='display: none; margin-bottom: 10px;' class='comparison_row_cnt'>
-							<button type='button' class='btn btn-success'>Add Competitor</button>
-							<button type='button' class='btn btn-primary'>Save Set</button>
-						</div>
-					</div>
-					<div class='comparison_row_3'>
-						<select class='sec_site_chooser' onchange="secSiteChooserHandler(this)">
-							<option value='0'>Choose comparison site</option>
-							<?php foreach ($sites_list as $val) { ?>
-							<option value="<?php echo $val['id']; ?>" data-value="<?php echo $val['name_val']; ?>"><?php echo $val['name']; ?></option>
-							<?php } ?>
-						</select>
-						<select style='display: none;' class='sec_dep_chooser'></select>
-						<label style='display: none; margin-top: 0px !important;' class="checkbox"><input type="checkbox"> Select competitor</label>
-						<div style='display: none; margin-bottom: 10px;' class='comparison_row_cnt'>
-							<button type='button' class='btn btn-success'>Add Competitor</button>
-							<button type='button' class='btn btn-primary'>Save Set</button>
-						</div>
-					</div>
-					<div class='comparison_row_4'>
-						<select class='sec_site_chooser' onchange="secSiteChooserHandler(this)">
-							<option value='0'>Choose comparison site</option>
-							<?php foreach ($sites_list as $val) { ?>
-							<option value="<?php echo $val['id']; ?>" data-value="<?php echo $val['name_val']; ?>"><?php echo $val['name']; ?></option>
-							<?php } ?>
-						</select>
-						<select style='display: none;' class='sec_dep_chooser'></select>
-						<label style='display: none; margin-top: 0px !important;' class="checkbox"><input type="checkbox"> Select competitor</label>
-						<div style='display: none; margin-bottom: 10px;' class='comparison_row_cnt'>
-							<button type='button' class='btn btn-success'>Add Competitor</button>
-							<button type='button' class='btn btn-primary'>Save Set</button>
-						</div>
-					</div>
-					<div class='comparison_row_5'>
-						<select class='sec_site_chooser' onchange="secSiteChooserHandler(this)">
-							<option value='0'>Choose comparison site</option>
-							<?php foreach ($sites_list as $val) { ?>
-							<option value="<?php echo $val['id']; ?>" data-value="<?php echo $val['name_val']; ?>"><?php echo $val['name']; ?></option>
-							<?php } ?>
-						</select>
-						<select style='display: none;' class='sec_dep_chooser'></select>
-						<label style='display: none; margin-top: 0px !important;' class="checkbox"><input type="checkbox"> Select competitor</label>
-						<div style='display: none; margin-bottom: 10px;' class='comparison_row_cnt'>
-							<button type='button' class='btn btn-success'>Add Competitor</button>
-							<button type='button' class='btn btn-primary'>Save Set</button>
+							<button type='button' class='btn btn-success' onclick="addCompetitorRow(this)">Add Competitor</button>
 						</div>
 					</div>
 				</td>
-				<td></td>
 			</tr>
 		</tbody>
 	</table>
 </div>
 <div class="modal-footer">
 	<button class="btn" type="button">New row</button>
-	<button id="send_now_btn" class="btn btn-success btn-rec-all-send disabled" disabled="" type="button">Send now</button>
-	<button class="btn btn-primary btn-rec-all-send" disabled="" type="button">Send to all</button>
+	<button class="btn btn-primary btn-rec-all-send" disabled="" type="button">Save set</button>
 </div>
 
 <script type='text/javascript'>
+
+	function addCompetitorRow(e) {
+		console.log(e);
+		var comparison_row = $(e).parent().parent();
+		console.log(comparison_row);
+		$.post(base_url + 'index.php/measure/get_dep_rep_comparison_row', {}, function(data) {
+			$(data).insertAfter(comparison_row);
+			var rows_count = $('.comparison_row').length;
+			if(rows_count == 5) {
+				$('.comparison_row').last().find('.comparison_row_cnt').remove();
+			}
+		}); 
+	}
 
 	function secSiteChooserHandler(e) {
 		var site_id = $(e).val();
