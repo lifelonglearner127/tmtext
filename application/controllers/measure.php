@@ -1102,9 +1102,19 @@ class Measure extends MY_Controller {
         $this->load->view('measure/gethomepageweekdata', $data);
     }
 
-    public function get_dep_cats_screens_rep() {
-        $data = array();
-        $this->load->view('measure/get_dep_cats_screens_rep', $data);
+    public function get_cats_screens_rep() {
+        $this->load->model('department_members_model');
+        $this->load->model('site_categories_model');
+        $data['departments_list'][] = 'All';
+        foreach ($this->department_members_model->getAll() as $row) {
+            $data['departments_list'][$row->id] = $row->text;
+        }
+        $data['category_list'][] = 'All';
+        foreach ($this->site_categories_model->getAll() as $row) {
+            $data['category_list'][$row->id] = $row->text;
+        }
+        $data['sites_list'] = $this->sites_list_new();
+        $this->load->view('measure/get_cats_screens_rep', $data);
     }
 
     public function measure_products() {
@@ -1318,11 +1328,18 @@ class Measure extends MY_Controller {
         $this->output->set_content_type('application/json')->set_output(json_encode($data));
     }
 
+    public function getDepartmentsByCustomerNew() {
+        $this->load->model('department_members_model');
+        $site_id = $this->input->post('site_id');
+        $result = $this->department_members_model->getDepartmentsBySiteId($site_id);
+        $this->output->set_content_type('application/json')->set_output(json_encode($result));
+    }
+
     public function getDepartmentsByCustomer() {
         $this->load->model('sites_model');
         $this->load->model('department_members_model');
         $customerID = $this->sites_model->getIdByName($this->input->post('customer_name'));
-        $result = $this->department_members_model->getAllByCustomerID($customerID);
+        $result = $this->department_members_model->getCatsBySideId($customerID);
         $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }
 

@@ -13,6 +13,11 @@ class Department_members_model extends CI_Model {
         parent::__construct();
     }
 
+    function getDepartmentsBySiteId($site_id) {
+        $query = $this->db->where('site_id', $site_id)->get($this->tables['department_members']);
+        return $query->result();
+    }
+
     function getLatestDepartmentScreen($dep_id) {
         $res_data = array(
             'dep_id' => '',

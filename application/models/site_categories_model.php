@@ -73,6 +73,14 @@ class Site_categories_model extends CI_Model {
         return $query->result();
     }
 
+    function getCatsBySideId($site_id) {
+        $query = $this->db->where('site_id', $site_id)
+            ->limit(1)
+            ->get($this->tables['site_categories']);
+
+        return $query->result();
+    }
+
     function getAllBySiteId($site_id, $department_id=''){
         if($department_id != ''){
             $department_id = " and `department_members_id`='".$department_id."' ";

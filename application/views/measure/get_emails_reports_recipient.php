@@ -86,8 +86,8 @@
 </div>
 <div class="modal-footer">
     <button onclick="newRecipient()" type='button' class="btn">New row</button>
-	<button type='button' id='send_now_btn' href="javascript:void(0)" onclick="sendEmailScreensToSelected()" disabled class="btn btn-success btn-rec-all-send disabled">Send now</button>
-	<button type='button' href="javascript:void(0)" onclick="sendEmailScreensToAll()" class="btn btn-primary btn-rec-all-send">Send to all</button>
+	<button type='button' id='send_now_btn' onclick="sendEmailScreensToSelected()" disabled class="btn btn-success btn-rec-all-send disabled">Send now</button>
+	<button type='button' onclick="sendEmailScreensToAll()" class="btn btn-primary btn-rec-all-send">Send to all</button>
 </div>
 
 <script type='text/javascript'>
