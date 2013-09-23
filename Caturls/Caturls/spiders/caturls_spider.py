@@ -568,11 +568,11 @@ class CaturlsSpider(BaseSpider):
 	def parsePage_tigerdirect(self, response):
 		hxs = HtmlXPathSelector(response)
 
-		product_links = hxs.select("//h3[@class='itemName']/a")
+		product_links = hxs.select("//h3[@class='itemName']/a/@href").extract()
 
 		for product_link in product_links:
 			item = ProductItem()
-			item['product_url'] = Utils.add_domain(product_link.select("@href").extract()[0], "http://www.tigerdirect.com")
+			item['product_url'] = Utils.add_domain(product_link, "http://www.tigerdirect.com")
 			yield item
 
 		# parse next pages (if results spread on more than 1 page)
@@ -584,7 +584,6 @@ class CaturlsSpider(BaseSpider):
 
 		# if you can't find product links, you should search for links to the subcategories pages and parse them for product links
 		else:
-			#TODO: to be implemented
 			yield Request(url = response.url, callback = self.parseSubcats_tigerdirect)
 
 
