@@ -9,6 +9,8 @@ from pprint import pprint
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 
+from spiders_utils import Utils
+
 import time
 import re
 import sys
