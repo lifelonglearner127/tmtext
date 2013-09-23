@@ -927,12 +927,15 @@ if (($i - 1) % 3 != 0) {
         $(this).closest('.seo_container').find('.volume_value').hide();
        
    });
-   $('.volume, .seo_count').live('hover',function(){
+   
+ $('.volume, .seo_count, .seo_prc').live('mouseover',function(){
         $(this).css('cursor','pointer');
   });
-  $('.seo_count').live('hover',function(){
+  $('.seo_count, .seo_prc').live('mouseover',function(){
         $(this).css('text-decoration','underline');
-        
+  });
+ $('.seo_count, .seo_prc').live('mouseout',function(){
+        $(this).css('text-decoration','none');
   });
  
    $(".grid_se_section").each(function() {

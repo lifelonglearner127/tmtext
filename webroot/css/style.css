@@ -2118,7 +2118,7 @@ span.highlight { background-color:yellow;}
 }
 .category_description_text{display: none;}
 
-.seo_prc, cseo_count, .rank, .volume :hover{
+.seo_prc, .seo_count, .rank, .volume :hover{
     cursor:pointer;
 }
 .density_rank{

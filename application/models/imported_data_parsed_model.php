@@ -1172,7 +1172,7 @@ class Imported_data_parsed_model extends CI_Model {
 
         $data = array();
         foreach ($results as $result) {
-            echo 'revision='.$result->revision;
+           
             $query = $this->db->where('imported_data_id', $result->imported_data_id)->where("revision = (SELECT  MAX(revision) as revision
                       FROM imported_data_parsed WHERE `imported_data_id`= $result->imported_data_id
                       GROUP BY imported_data_id)", NULL, FALSE)->get($this->tables['imported_data_parsed']);
