@@ -5,7 +5,6 @@ from scrapy.http import TextResponse
 from Caturls.items import ProductItem
 from pprint import pprint
 
-
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 
@@ -591,4 +590,17 @@ class CaturlsSpider(BaseSpider):
 
 	# parse a Tigerdirect category page and extract its subcategories to pass to the page parser (parsePage_tigerdirect)
 	def parseSubcats_tigerdirect(self, response):
-		pass
+		hxs = HtmlXPathSelector(response)
+
+		# search for a link to "See All Products"
+		seeall = hxs.select("//a[text()='See All Products']/@href").extract()
+		if seeall:
+			# pass the new page to this same method to be handled by the next branch of the if statement
+			yield Request(url = Utils.add_domain(seeall, "http://www.tigerdirect.com"), callback = self.parseSubcats_tigerdirect)
+		else:
+			# extract subcategories
+			subcats_links = hxs.select("//div[@class='sideNav']/div[@class='innerWrap'][1]//ul/li/a")
+			for subcat_link in subcats_links:
+				subcat_url = Utils.add_domain(subcat_link.select("@href").extract()[0], "http://www.tigerdirect.com")
+				yield Request(url = subcat_url, callback = self.parsePage_tigerdirect,\
+				 meta = {'page' : 1, 'base_url' : subcat_url})
