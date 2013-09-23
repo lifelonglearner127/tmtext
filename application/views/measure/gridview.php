@@ -272,8 +272,9 @@ foreach ($same_pr as $ks => $vs) {
                                                     <span class="you_words you_words_input" style="display: inline;">
                                                         <img class="seo-btn" src="<?php echo base_url();?>/img/icon.png" title="Click to see dublicates words">
                                                         <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword1" keyword_num="1" type="text" value="<?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['primary']; }?>">
-                                                        <span id="keyword1_density"></span>
-                                                        <span class="rank_value"></span>
+                                                        <span class="coustom_keyword_density" id="keyword1_density"></span>
+                                                        <span class="coustom_keyword_count" style="display:none" id="keyword1_count"></span>
+                                                        <span style="display:none" class="rank_value"></span>
                                                         <span id="keyword1_volume" style="display:none" class="volume_value"></span>
                                                     </span>
                                             </span>
@@ -287,7 +288,8 @@ foreach ($same_pr as $ks => $vs) {
                                                     <span class="you_words you_words_input" style="display: inline;">
                                                         <img class="seo-btn" src="<?php echo base_url();?>/img/icon.png" title="Click to see dublicates words">
                                                         <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword2" keyword_num="2" type="text" value="<?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['secondary']; }?>">
-                                                        <span id="keyword2_density"></span>
+                                                        <span class="coustom_keyword_density" id="keyword2_density"></span>
+                                                        <span class="coustom_keyword_count" style="display:none" id="keyword2_count"></span>
                                                         <span class="rank_value"></span>
                                                         <span id="keyword2_volume" style="display:none" class="volume_value"></span>
                                                     </span>
@@ -302,7 +304,8 @@ foreach ($same_pr as $ks => $vs) {
                                                     <span class="you_words you_words_input" style="display: inline;">
                                                         <img class="seo-btn" src="<?php echo base_url();?>/img/icon.png" title="Click to see dublicates words">
                                                         <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword3" keyword_num="2" type="text" value="<?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['tertiary']; }?>">
-                                                        <span id="keyword3_density"></span>
+                                                        <span  class="coustom_keyword_density" id="keyword3_density"></span>
+                                                        <span style="display:none" class="coustom_keyword_count" id="keyword3_count"></span>
                                                         <span class="rank_value"></span>
                                                         <span id="keyword3_volume" style="display:none" class="volume_value"></span>
                                                     </span>
@@ -414,7 +417,8 @@ foreach ($same_pr as $ks => $vs) {
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
                                                         <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword1" keyword_num="1" type="text" value="<?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['primary']; }?>">
-                                                        <span id="keyword1_density"></span>
+                                                        <span class="coustom_keyword_density"id="keyword1_density"></span>
+                                                        <span class="coustom_keyword_count" id="keyword1_count" tyle="display:none"></span>
                                                         <span class="rank_value"></span>
                                                         <span id="keyword1_volume" style="display:none" class="volume_value"></span>
                                                     </span>
@@ -428,7 +432,8 @@ foreach ($same_pr as $ks => $vs) {
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
                                                         <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword2" keyword_num="2" type="text" value="<?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['secondary']; }?>">
-                                                        <span id="keyword2_density"></span>
+                                                        <span class="coustom_keyword_density" id="keyword2_density"></span>
+                                                        <span class="coustom_keyword_count"tyle="display:none" id="keyword2_count"></span>
                                                         <span class="rank_value"></span>
                                                         <span id="keyword2_volume" style="display:none" class="volume_value"></span>
                                                     </span>
@@ -442,7 +447,8 @@ foreach ($same_pr as $ks => $vs) {
                                                     <span class="title_words" style="display: none;"></span>
                                                     <span class="you_words you_words_input" style="display: inline;">
                                                         <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword3" keyword_num="2" type="text" value="<?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['tertiary']; }?>">
-                                                        <span id="keyword3_density"></span>
+                                                        <span class="coustom_keyword_density" id="keyword3_density"></span>
+                                                        <span class="coustom_keyword_count" style="display:none" id="keyword3_count"></span>
                                                         <span class="rank_value"></span>
                                                         <span id="keyword3_volume" style="display:none" class="volume_value"></span>
                                                     </span>
@@ -710,24 +716,32 @@ if (($i - 1) % 3 != 0) {
             $.post(base_url+'index.php/measure/analyzekeywords', grid_send_object, function(data) {
                 var first='';
                 var firstVolume='';
+                var firstCount='';
                 var second='';
                 var secondVolume='';
+                var secondCount='';
                 var third='';
                 var thirdVolume='';
+                var thirdCount='';
                 var first1='';
                 var firstVolume1='';
+                var firstCount1='';
                 var second1='';
+                var secondCount1='';
                 var secondVolume1='';
                 var third1='';
                 var thirdVolume1='';
+                var thirdCount1='';
                if(typeof(data['primary']) !== 'undefined'){
                     if((data['primary'][0]) !== 'undefined'){
                      first = (data['primary'][0]['prc'].toPrecision(3)*100).toFixed(2);
                      firstVolume = data['primary'][0]['volume'];
+                     firstCount= data['primary'][0]['count'];
                     }
                     if(data['primary'][1]!=='undefined'){
                        first1 = (data['primary'][1]['prc'].toPrecision(3)*100).toFixed(2);
                        firstVolume1 = data['primary'][1]['volume'];
+                       firstCount = data['primary'][1]['count'];
                     }
                
                }
@@ -735,20 +749,24 @@ if (($i - 1) % 3 != 0) {
                     if(typeof(data['secondary'][0]) !== 'undefined'){
                           second = (data['secondary'][0]['prc'].toPrecision(3)*100).toFixed(2);
                           secondVolume = data['secondary'][0]['volume'];
+                          secondCount = data['secondary'][0]['count'];
                     }
                     if(typeof(data['secondary'][1])!=='undefined'){
                          second1 = (data['secondary'][1]['prc'].toPrecision(3)*100).toFixed(2);
-                          secondVolume1 = data['secondary'][1]['volume'];
+                         secondVolume1 = data['secondary'][1]['volume'];
+                         secondCount1 = data['secondary'][1]['count'];
                     }
                }
                if(typeof(data['tertiary'])!== 'undefined'){
                     if(typeof(data['tertiary'][0])!=='undefined'){
                        third = (data['tertiary'][0]['prc'].toPrecision(3)*100).toFixed(2);
                        thirdVolume = data['tertiary'][0]['volume'];
+                       thirdCount = data['tertiary'][0]['count'];
                     }
                     if(typeof(data['tertiary'][1])!=='undefined'){
                           third1 = (data['tertiary'][1]['prc'].toPrecision(3)*100).toFixed(2);
                           thirdVolume1 = data['tertiary'][1]['volume'];
+                          thirdCount1 = data['tertiary'][1]['count'];
                       }
                }
               
@@ -756,14 +774,17 @@ if (($i - 1) % 3 != 0) {
                 if(grid_short_desc!=''){
                 if($(selected_item+" input[name='keyword1']").val()!=''){
                     $(selected_item+' span#keyword1_density').html(first+'%');
+                    $(selected_item+' span#keyword1_count').html(firstCount);
                     $(selected_item+' span#keyword1_volume').html(firstVolume);
                 }
                 if($.trim($(selected_item+" input[name='keyword2']").val())!=''){
                     $(selected_item+' span#keyword2_density').html(second+'%');
+                    $(selected_item+' span#keyword2_count').html(secondCount);
                     $(selected_item+' span#keyword2_volume').html(secondVolume);
                 }
                 if($.trim($(selected_item+" input[name='keyword3']").val())!=''){
                     $(selected_item+' span#keyword3_density').html(third+'%');
+                    $(selected_item+' span#keyword3_count').html(thirdCount)
                     $(selected_item+' span#keyword3_volume').html(thirdVolume);
                 }
                 
@@ -902,6 +923,18 @@ if (($i - 1) % 3 != 0) {
     selectedCustomer();
 
  $(document).ready(function(){
+   
+   $('.coustom_keyword_density').live('click',function(){
+        $(this).hide();
+        $(this).next('.coustom_keyword_count').show();
+      
+   });
+   $('.coustom_keyword_count').live('click',function(){
+        $(this).hide();
+        $(this).prev('.coustom_keyword_density').show();
+      
+       
+   });
    
    $('.seo_prc').live('click',function(){
         $(this).hide();

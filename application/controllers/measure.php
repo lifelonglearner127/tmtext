@@ -2883,9 +2883,9 @@ class Measure extends MY_Controller {
         $long_desc = strtolower($long_desc);
 
         $res = array();
-        $res['primary']=array(0=>array('prc'=>0), 1=> array('prc'=>0));
-        $res['secondary']=array(0=>array('prc'=>0), 1=> array('prc'=>0));
-        $res['secondary']=array(0=>array('prc'=>0), 1=> array('prc'=>0));
+        $res['primary']=array(0=>array('prc'=>0,'count'=>0), 1=> array('prc'=>0,'count'=>0));
+        $res['secondary']=array(0=>array('prc'=>0,'count'=>0), 1=> array('prc'=>0,'count'=>0));
+        $res['secondary']=array(0=>array('prc'=>0,'count'=>0), 1=> array('prc'=>0,'count'=>0));
         $short_desc_words_count = count(explode(" ", $short_desc));
         $long_desc_words_count = count(explode(" ", $long_desc));
         // --- default res array and values (end)
@@ -2895,7 +2895,7 @@ class Measure extends MY_Controller {
             if ($short_desc !== "") {
                 // if($this->keywords_appearence($short_desc, $primary_ph) !== 0) $res['primary'][0] = $short_desc_words_count / ($this->keywords_appearence($short_desc, $primary_ph) * $primary_ph_words_count);
                 $res['primary'][0]['prc'] = ($this->keywords_appearence($short_desc, $primary_ph) * $primary_ph_words_count) / $short_desc_words_count;
-
+                $res['primary'][0]['count']= $this->keywords_appearence($short_desc, $primary_ph);
                 $volume = '';
                 $from_keyword_data = $this->keywords_model->get_by_keyword($primary_ph);
                 if (count($from_keyword_data) > 0) {
@@ -2906,7 +2906,7 @@ class Measure extends MY_Controller {
             if ($long_desc !== "") {
                 // if($this->keywords_appearence($long_desc, $primary_ph) !== 0) $res['primary'][1] = $long_desc_words_count / ($this->keywords_appearence($long_desc, $primary_ph) * $primary_ph_words_count);
                 $res['primary'][1]['prc'] = ($this->keywords_appearence($long_desc, $primary_ph) * $primary_ph_words_count) / $long_desc_words_count;
-
+                $res['primary'][1]['count']=$this->keywords_appearence($long_desc, $primary_ph);
                 $volume = '';
                 $from_keyword_data = $this->keywords_model->get_by_keyword($primary_ph);
                 if (count($from_keyword_data) > 0) {
@@ -2922,7 +2922,7 @@ class Measure extends MY_Controller {
             if ($short_desc !== "") {
                 // if($this->keywords_appearence($short_desc, $secondary_ph) !== 0) $res['secondary'][0] = $short_desc_words_count / ($this->keywords_appearence($short_desc, $secondary_ph) * $secondary_ph_words_count);
                 $res['secondary'][0]['prc'] = ($this->keywords_appearence($short_desc, $secondary_ph) * $secondary_ph_words_count) / $short_desc_words_count;
-
+                $res['secondary'][0]['count']=$this->keywords_appearence($short_desc, $secondary_ph);
                 $volume = '';
                 $from_keyword_data = $this->keywords_model->get_by_keyword($secondary_ph);
                 if (count($from_keyword_data) > 0) {
@@ -2933,6 +2933,7 @@ class Measure extends MY_Controller {
             if ($long_desc !== "") {
                 // if($this->keywords_appearence($long_desc, $secondary_ph) !== 0) $res['secondary'][1] = $long_desc_words_count / ($this->keywords_appearence($long_desc, $secondary_ph) * $secondary_ph_words_count);
                 $res['secondary'][1]['prc'] = ($this->keywords_appearence($long_desc, $secondary_ph) * $secondary_ph_words_count) / $long_desc_words_count;
+                $res['secondary'][1]['count']=$this->keywords_appearence($long_desc, $secondary_ph);
                 $volume = '';
                 $from_keyword_data = $this->keywords_model->get_by_keyword($secondary_ph);
                 if (count($from_keyword_data) > 0) {
@@ -2948,7 +2949,7 @@ class Measure extends MY_Controller {
             if ($short_desc !== "") {
                 // if($this->keywords_appearence($short_desc, $tertiary_ph) !== 0) $res['tertiary'][0] = $short_desc_words_count / ($this->keywords_appearence($short_desc, $tertiary_ph) * $tertiary_ph_words_count);
                 $res['tertiary'][0]['prc'] = ($this->keywords_appearence($short_desc, $tertiary_ph) * $tertiary_ph_words_count) / $short_desc_words_count;
-
+                $res['tertiary'][0]['count']=$this->keywords_appearence($short_desc, $tertiary_ph);
                 $volume = '';
                 $from_keyword_data = $this->keywords_model->get_by_keyword($tertiary_ph);
                 if (count($from_keyword_data) > 0) {
@@ -2959,6 +2960,7 @@ class Measure extends MY_Controller {
             if ($long_desc !== "") {
                 // if($this->keywords_appearence($long_desc, $tertiary_ph) !== 0) $res['tertiary'][1] = $long_desc_words_count / ($this->keywords_appearence($long_desc, $tertiary_ph) * $tertiary_ph_words_count);
                 $res['tertiary'][1]['prc'] = ($this->keywords_appearence($long_desc, $tertiary_ph) * $tertiary_ph_words_count) / $long_desc_words_count;
+               $res['tertiary'][1]['count']=$this->keywords_appearence($long_desc, $tertiary_ph);
                 $volume = '';
                 $from_keyword_data = $this->keywords_model->get_by_keyword($tertiary_ph);
                 if (count($from_keyword_data) > 0) {
