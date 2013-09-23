@@ -29,7 +29,7 @@ class CaturlsSpider(BaseSpider):
 
 	name = "producturls"
 	allowed_domains = ["staples.com", "bloomingdales.com", "walmart.com", "amazon.com", "bestbuy.com", \
-	"nordstrom.com", "macys.com", "williams-sonoma.com", "overstock.com", "newegg.com"]
+	"nordstrom.com", "macys.com", "williams-sonoma.com", "overstock.com", "newegg.com", "tigerdirect.com"]
 
 	# store the cateory page url given as an argument into a field and add it to the start_urls list
 	def __init__(self, cat_page, outfile = "product_urls.txt"):
@@ -66,6 +66,8 @@ class CaturlsSpider(BaseSpider):
 		#self.start_urls = ["http://www.overstock.com/Electronics/Tablet-PCs/New,/condition,/24821/subcat.html?TID=TN:ELEC:Tablet"]
 		# newegg laptops
 		#self.start_urls = ["http://www.newegg.com/Laptops-Notebooks/SubCategory/ID-32"]
+		# tigerdirect DSLR cameras
+		#self.start_urls = ["http://www.tigerdirect.com/applications/Category/guidedSearch.asp?CatId=7&sel=Detail;131_1337_58001_58001"]
 
 		
 
@@ -310,6 +312,11 @@ class CaturlsSpider(BaseSpider):
 
 		if site == 'newegg':
 			return Request(url = self.cat_page, callback = self.parsePage_newegg, meta = {'page' : 1})
+
+		if site == 'tigerdirect':
+			return Request(url = self.cat_page, callback = self.parsePage_tigerdirect,\
+				# add as meta the page number and the base URL to which to append page number if necessary
+			 meta = {'page' : 1, 'base_url' : self.cat_page})
 
 
 	# parse macy's category
@@ -557,3 +564,31 @@ class CaturlsSpider(BaseSpider):
 			if m:
 				next_url = m.group(1) + str(page)
 		yield Request(url = next_url, callback = self.parsePage_newegg, meta = {'page' : page})
+
+	# parse a Tigerdirect category page and extract product URLs
+	def parsePage_tigerdirect(self, response):
+		hxs = HtmlXPathSelector(response)
+
+		product_links = hxs.select("//h3[@class='itemName']/a")
+
+		for product_link in product_links:
+			item = ProductItem()
+			item['product_url'] = Utils.add_domain(product_link.select("@href").extract()[0], "http://www.tigerdirect.com")
+			yield item
+
+		# parse next pages (if results spread on more than 1 page)
+		if product_links:
+			page_nr = response.meta['page'] + 1
+			yield Request(url = response.meta['base_url'] + "&page=%d"%page_nr, callback = self.parsePage_tigerdirect,\
+				 meta = {'page' : page_nr, 'base_url' : response.meta['base_url']})
+
+
+		# if you can't find product links, you should search for links to the subcategories pages and parse them for product links
+		else:
+			#TODO: to be implemented
+			yield Request(url = response.url, callback = self.parseSubcats_tigerdirect)
+
+
+	# parse a Tigerdirect category page and extract its subcategories to pass to the page parser (parsePage_tigerdirect)
+	def parseSubcats_tigerdirect(self, response):
+		pass
