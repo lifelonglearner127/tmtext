@@ -1143,7 +1143,11 @@ function fixGridHeights() {
                     var heights = thisEl.find(v1).map(function() {
                         return $(this).height();
                     }).get();
-                    thisEl.find(v1).height(Array.max(heights));
+                    
+                    //console.log(thisEl.find(v1).attr('class'));
+                    if( thisEl.find(v1).attr('class') != 'p_name' )
+						thisEl.find(v1).height(Array.max(heights));
+                    //thisEl.find(v1).height(Array.max(heights));
                 });
             }
         });
