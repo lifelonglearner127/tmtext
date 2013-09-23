@@ -50,12 +50,16 @@
 </div>
 
 <script type='text/javascript'>
+	
+	function removeCompetitorRow(e) {
+		var comparison_row = $(e).parent().parent();
+		comparison_row.remove();
+	}
 
 	function addCompetitorRow(e) {
-		console.log(e);
 		var comparison_row = $(e).parent().parent();
-		console.log(comparison_row);
 		$.post(base_url + 'index.php/measure/get_dep_rep_comparison_row', {}, function(data) {
+			$(e).replaceWith("<button class='btn btn-danger' onclick='removeCompetitorRow(this)'>Remove Competitor</button>");
 			$(data).insertAfter(comparison_row);
 			var rows_count = $('.comparison_row').length;
 			if(rows_count == 5) {
