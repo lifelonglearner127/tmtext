@@ -273,6 +273,8 @@ foreach ($same_pr as $ks => $vs) {
                                                         <img class="seo-btn" src="<?php echo base_url();?>/img/icon.png" title="Click to see dublicates words">
                                                         <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword1" keyword_num="1" type="text" value="<?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['primary']; }?>">
                                                         <span id="keyword1_density"></span>
+                                                        <span class="rank_value"></span>
+                                                        <span id="keyword1_volume" style="display:none" class="volume_value"></span>
                                                     </span>
                                             </span>
                                         </span>
@@ -286,6 +288,8 @@ foreach ($same_pr as $ks => $vs) {
                                                         <img class="seo-btn" src="<?php echo base_url();?>/img/icon.png" title="Click to see dublicates words">
                                                         <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword2" keyword_num="2" type="text" value="<?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['secondary']; }?>">
                                                         <span id="keyword2_density"></span>
+                                                        <span class="rank_value"></span>
+                                                        <span id="keyword2_volume" style="display:none" class="volume_value"></span>
                                                     </span>
                                             </span>
                                         </span>
@@ -299,6 +303,8 @@ foreach ($same_pr as $ks => $vs) {
                                                         <img class="seo-btn" src="<?php echo base_url();?>/img/icon.png" title="Click to see dublicates words">
                                                         <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword3" keyword_num="2" type="text" value="<?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['tertiary']; }?>">
                                                         <span id="keyword3_density"></span>
+                                                        <span class="rank_value"></span>
+                                                        <span id="keyword3_volume" style="display:none" class="volume_value"></span>
                                                     </span>
                                             </span>
                                         </span>
@@ -409,6 +415,8 @@ foreach ($same_pr as $ks => $vs) {
                                                     <span class="you_words you_words_input" style="display: inline;">
                                                         <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword1" keyword_num="1" type="text" value="<?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['primary']; }?>">
                                                         <span id="keyword1_density"></span>
+                                                        <span class="rank_value"></span>
+                                                        <span id="keyword1_volume" style="display:none" class="volume_value"></span>
                                                     </span>
                                             </span>
                                         </span>
@@ -421,6 +429,8 @@ foreach ($same_pr as $ks => $vs) {
                                                     <span class="you_words you_words_input" style="display: inline;">
                                                         <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword2" keyword_num="2" type="text" value="<?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['secondary']; }?>">
                                                         <span id="keyword2_density"></span>
+                                                        <span class="rank_value"></span>
+                                                        <span id="keyword2_volume" style="display:none" class="volume_value"></span>
                                                     </span>
                                             </span>
                                         </span>
@@ -433,6 +443,8 @@ foreach ($same_pr as $ks => $vs) {
                                                     <span class="you_words you_words_input" style="display: inline;">
                                                         <input class="keyword_input" data-value="<?php echo $vs['imported_data_id']; ?>" name="keyword3" keyword_num="2" type="text" value="<?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['tertiary']; }?>">
                                                         <span id="keyword3_density"></span>
+                                                        <span class="rank_value"></span>
+                                                        <span id="keyword3_volume" style="display:none" class="volume_value"></span>
                                                     </span>
                                             </span>
                                         </span>
@@ -462,6 +474,8 @@ foreach ($same_pr as $ks => $vs) {
                                                     <span class="you_words you_words_input" style="display: inline;">
                                                     <span class='prim_1 primary_name_long'style="float:left; width:140px; word-wrap: break-word;"> <?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['primary']; }?></span>
                                                     <span class='prim_1_prc' style="float:left;"></span>
+                                                        <span class="rank_value"></span>
+                                                        <span id="keyword1_volume" style="display:none" class="volume_value"></span>
                                                     </span>
                                             </span>
                                         </span>
@@ -474,6 +488,8 @@ foreach ($same_pr as $ks => $vs) {
                                                     <span class="you_words you_words_input" style="display: inline;">
                                                         <span class='prim_2 primary_name_long' style="float:left; width:140px; word-wrap: break-word;"><?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['secondary']; }?></span>
                                                         <span class='prim_2_prc' style="float:left;"></span>
+                                                        <span class="rank_value"></span>
+                                                        <span id="keyword2_volume" style="display:none" class="volume_value"></span>
                                                     </span>
                                             </span>
                                         </span>
@@ -486,6 +502,8 @@ foreach ($same_pr as $ks => $vs) {
                                                     <span class="you_words you_words_input" style="display: inline;">
                                                         <span class='prim_3 primary_name_long' style="float:left; width:140px; word-wrap: break-word;"><?php if(count($vs['custom_seo'])>0){ echo $vs['custom_seo']['tertiary']; }?></span>
                                                         <span class='prim_3_prc' style="float:left;"></span>
+                                                        <span class="rank_value"></span>
+                                                        <span id="keyword3_volume" style="display:none" class="volume_value"></span>
                                                     </span>
                                             </span>
                                         </span>
@@ -691,34 +709,46 @@ if (($i - 1) % 3 != 0) {
 
             $.post(base_url+'index.php/measure/analyzekeywords', grid_send_object, function(data) {
                 var first='';
+                var firstVolume='';
                 var second='';
+                var secondVolume='';
                 var third='';
+                var thirdVolume='';
                 var first1='';
+                var firstVolume1='';
                 var second1='';
+                var secondVolume1='';
                 var third1='';
+                var thirdVolume1='';
                if(typeof(data['primary']) !== 'undefined'){
                     if((data['primary'][0]) !== 'undefined'){
                      first = (data['primary'][0]['prc'].toPrecision(3)*100).toFixed(2);
+                     firstVolume = data['primary'][0]['volume'];
                     }
                     if(data['primary'][1]!=='undefined'){
                        first1 = (data['primary'][1]['prc'].toPrecision(3)*100).toFixed(2);
+                       firstVolume1 = data['primary'][1]['volume'];
                     }
                
                }
                if(typeof(data['secondary'])  !== 'undefined'){ 
                     if(typeof(data['secondary'][0]) !== 'undefined'){
                           second = (data['secondary'][0]['prc'].toPrecision(3)*100).toFixed(2);
+                          secondVolume = data['secondary'][0]['volume'];
                     }
                     if(typeof(data['secondary'][1])!=='undefined'){
                          second1 = (data['secondary'][1]['prc'].toPrecision(3)*100).toFixed(2);
+                          secondVolume1 = data['secondary'][1]['volume'];
                     }
                }
                if(typeof(data['tertiary'])!== 'undefined'){
                     if(typeof(data['tertiary'][0])!=='undefined'){
                        third = (data['tertiary'][0]['prc'].toPrecision(3)*100).toFixed(2);
+                       thirdVolume = data['tertiary'][0]['volume'];
                     }
                     if(typeof(data['tertiary'][1])!=='undefined'){
                           third1 = (data['tertiary'][1]['prc'].toPrecision(3)*100).toFixed(2);
+                          thirdVolume1 = data['tertiary'][1]['volume'];
                       }
                }
               
@@ -726,12 +756,15 @@ if (($i - 1) % 3 != 0) {
                 if(grid_short_desc!=''){
                 if($(selected_item+" input[name='keyword1']").val()!=''){
                     $(selected_item+' span#keyword1_density').html(first+'%');
+                    $(selected_item+' span#keyword1_volume').html(firstVolume);
                 }
                 if($.trim($(selected_item+" input[name='keyword2']").val())!=''){
                     $(selected_item+' span#keyword2_density').html(second+'%');
+                    $(selected_item+' span#keyword2_volume').html(secondVolume);
                 }
                 if($.trim($(selected_item+" input[name='keyword3']").val())!=''){
                     $(selected_item+' span#keyword3_density').html(third+'%');
+                    $(selected_item+' span#keyword3_volume').html(thirdVolume);
                 }
                 
                 
@@ -739,12 +772,15 @@ if (($i - 1) % 3 != 0) {
                 
                 if($.trim($(selected_item+' .prim_1').text()!='')){
                     $(selected_item+' .prim_1_prc').html(first1+'%');
+                    $(selected_item+' .prim_1_prc').parent().find('.volume_value').html(firstVolume1);
                 }
                 if($(selected_item+' .prim_2').text()!=''){
                     $(selected_item+' .prim_2_prc').html(second1+'%');
+                    $(selected_item+' .prim_2_prc').parent().find('.volume_value').html(secondVolume1);
                 }
                 if($(selected_item+' .prim_3').text()!=''){
                     $(selected_item+' .prim_3_prc').html(third1+'%');
+                    $(selected_item+' .prim_3_prc').parent().find('.volume_value').html(thirdVolume1);
                 }
                 
                 
@@ -752,12 +788,15 @@ if (($i - 1) % 3 != 0) {
             if(grid_short_desc=='' && grid_long_desc!='' ){
                  if($(selected_item+" input[name='keyword1']").val()!=''){
                     $(selected_item+' span#keyword1_density').html(first1+'%');
+                    $(selected_item+' span#keyword1_volume').html(firstVolume1);
                 }
                 if($.trim($(selected_item+" input[name='keyword2']").val())!=''){
                     $(selected_item+' span#keyword2_density').html(second1+'%');
+                    $(selected_item+' span#keyword2_volume').html(secondVolume1);
                 }
                 if($.trim($(selected_item+" input[name='keyword3']").val())!=''){
                     $(selected_item+' span#keyword3_density').html(third1+'%');
+                    $(selected_item+' span#keyword3_volume').html(thirdVolume1);
                 }
             }
             }, 'json');
@@ -1099,7 +1138,7 @@ $(document).click(function(e) {
     .primary_speed{
         float: left;
         margin-left: 5px;
-        width: 196px;
+        width: 256px;
         margin-bottom: 2px;
     }
 </style>

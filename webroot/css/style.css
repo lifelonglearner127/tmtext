@@ -2214,3 +2214,6 @@ span.dep_left_part{
 .seo-btn, meta-btn {
     cursor: pointer;
 }
+#keyword1_density, #keyword2_density, #keyword3_density {
+    margin-right: 17px;
+}
