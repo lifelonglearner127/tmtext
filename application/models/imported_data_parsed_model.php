@@ -1136,7 +1136,7 @@ class Imported_data_parsed_model extends CI_Model {
                 ->from($this->tables['imported_data_parsed'] . ' as p')
                 ->join($this->tables['imported_data'] . ' as i', 'i.id = p.imported_data_id', 'left')
                 ->where('p.key', $key)
-                ->where('p.revision = (SELECT  MAX(revision) as revision
+                ->where('`p`.`revision` = (SELECT  MAX(revision) as revision
                       FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
                       GROUP BY imported_data_id)', NULL, FALSE);
 
