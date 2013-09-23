@@ -126,7 +126,7 @@ foreach ($same_pr as $ks => $vs) {
                         <p class='short_product_name ellipsis'><a target="_blank" id="grid_item_url_<?php echo $vs['imported_data_id'] ?>" href="<?php echo $vs['url']; ?>"><?php echo $vs['url']; ?></a></p>
                     </div>
                     <!--                            //Max-->
-                    <div class="p_name"  <?php //if($marg == 0) echo "style='margin-bottom:25px;'";?>>
+                    <div class="p_name"  style="margin-bottom: 20px;" <?php //if($marg == 0) echo "style='margin-bottom:25px;'";?>>
                         <span class='analysis_content_head'>Product Name:</span>
                         <p style="float:none;" class='short_product_name grid_product_name'  ><?php echo $vs['product_name'];?></p>
                     </div>
