@@ -1132,7 +1132,7 @@ function fixGridHeights() {
 //            $(selectorssaa).height( aaa);
 //        } 
 //    });
-    var selectors = new Array('.p_url', '.p_price','.p_name','.parsed_attributes','.review_count', '.p_description', '.p_feature', '.p_meta');
+    var selectors = new Array('.p_url', '.p_price','.p_name','.parsed_attributes','.review_count','.feature_count', '.p_description', '.p_feature', '.p_meta');
     var wrapper = $('.wrapper');
     if (wrapper.length > 0) {
         $.each(wrapper, function(k, v) {

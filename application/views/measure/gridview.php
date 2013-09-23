@@ -197,10 +197,18 @@ foreach ($same_pr as $ks => $vs) {
                          <!--            //review_count-->
                         <div class="review_count"  style="width: 100%;">
                     <?php if(isset($vs['parsed_attributes']['review_count'])){ ?>
-                        <span style="margin:0;font-weight:bold;">Reviews:</span>                                                                    
+                        <span style="margin:0;margin-right:7px;font-weight:bold;">Reviews:</span>                                                                    
                             <?php echo $vs['parsed_attributes']['review_count'];  } ?> 
                               
-                        </div>                 
+                        </div>        
+                         
+                         <!--            //feature_count-->
+                        <div class="feature_count"  style="width: 100%;">
+                    <?php if(isset($vs['parsed_attributes']['feature_count'])){ ?>
+                        <span style="margin:0;margin-right:7px;font-weight:bold;">Features:</span>                                                                    
+                            <?php echo $vs['parsed_attributes']['feature_count'];  } ?> 
+                              
+                        </div>                           
                     
                         <!--                            //Model-->
                         <div class="parsed_attributes"  style="width: 100%;margin-bottom: 10px;">
