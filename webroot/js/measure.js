@@ -1139,9 +1139,9 @@ function fixGridHeights() {
                     }).get();
                     
                     //console.log(thisEl.find(v1).attr('class'));
-                    if( thisEl.find(v1).attr('class') != 'p_name' )
-						thisEl.find(v1).height(Array.max(heights));
-                    //thisEl.find(v1).height(Array.max(heights));
+                   // if( thisEl.find(v1).attr('class') != 'p_name' )
+			//			thisEl.find(v1).height(Array.max(heights));
+                    thisEl.find(v1).height(Array.max(heights));
                 });
             }
         });
