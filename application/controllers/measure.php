@@ -2042,7 +2042,7 @@ class Measure extends MY_Controller {
 
 
 //print_r($same_pr );
-            print_r($show_from);
+           
             if ($show_from != 'null' && $show_from != false ) {
                 if(count($show_from)>0){
                 foreach ($same_pr as $ks => $vs) {
