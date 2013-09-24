@@ -575,6 +575,10 @@ class CaturlsSpider(BaseSpider):
 		for product_link in product_links:
 			item = ProductItem()
 			item['product_url'] = Utils.add_domain(product_link, "http://www.tigerdirect.com")
+			# remove CatId from URL (generates duplicates)
+			m = re.match("(.*)&CatId=[0-9]+", item['product_url'])
+			if m:
+				item['product_url'] = m.group(1)
 			yield item
 
 		# parse next pages (if results spread on more than 1 page)
