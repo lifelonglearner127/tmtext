@@ -568,24 +568,31 @@ class CaturlsSpider(BaseSpider):
 	# parse a Tigerdirect category page and extract product URLs
 	def parsePage_tigerdirect(self, response):
 		hxs = HtmlXPathSelector(response)
+		print "IN PARSEPAGE ", response.url
 
 		# without the "resultsWrap" div, these are found on pages we don't want as well
 		product_links = hxs.select("//div[@class='resultsWrap listView']//h3[@class='itemName']/a/@href").extract()
-		print "IN PARSEPAGE"
 		for product_link in product_links:
 			item = ProductItem()
 			item['product_url'] = Utils.add_domain(product_link, "http://www.tigerdirect.com")
 			yield item
 
 		# parse next pages (if results spread on more than 1 page)
-		if product_links:
+		next_page = hxs.select("//a[@title='Next page']")
+		if next_page:
+			print "next page ", response.url, next_page
 			page_nr = response.meta['page'] + 1
-			yield Request(url = response.meta['base_url'] + "&page=%d"%page_nr, callback = self.parsePage_tigerdirect,\
+			base_url = response.meta['base_url']
+			# remove trailing "&" character at the end of the URL
+			m = re.match("(.*)&", base_url)
+			if m:
+				base_url = m.group(1)
+			yield Request(url = base_url + "&page=%d"%page_nr, callback = self.parsePage_tigerdirect,\
 				 meta = {'page' : page_nr, 'base_url' : response.meta['base_url']})
 
 
 		# if you can't find product links, you should search for links to the subcategories pages and parse them for product links
-		else:
+		if not product_links:
 			yield Request(url = response.url, callback = self.parseSubcats_tigerdirect)
 
 
@@ -599,7 +606,6 @@ class CaturlsSpider(BaseSpider):
 			# pass the new page to this same method to be handled by the next branch of the if statement
 			yield Request(url = Utils.add_domain(seeall[0], "http://www.tigerdirect.com"), callback = self.parseSubcats_tigerdirect)
 		else:
-			print "EXTRACT SUBCATEGORIES"
 			# extract subcategories
 			subcats_links = hxs.select("//div[@class='sideNav']/div[@class='innerWrap'][1]//ul/li/a")
 			for subcat_link in subcats_links:
