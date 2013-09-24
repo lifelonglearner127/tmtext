@@ -19,5 +19,8 @@ DOWNLOADER_MIDDLEWARES = {
     'Caturls.middlewares.ProxyMiddleware': 100,
 }
 
+# allow duplicates
+DUPEFILTER_CLASS = 'scrapy.dupefilter.BaseDupeFilter'
+
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'Caturls (+http://www.yourdomain.com)'
