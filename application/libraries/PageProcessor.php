@@ -19,9 +19,14 @@ class PageProcessor {
 		return get_instance()->$var;
 	}
 
-	public function loadHtml($html) {
+	public function loadHtml($html, $url = null) {
 		$this->html = $html;
 		$this->nokogiri = new nokogiri($this->html);
+
+		if (isset($url)) {
+			$this->url = $url;
+			$this->hostName = $this->getDomainPart($url);
+		}
 	}
 
 	public function loadUrl($url) {
