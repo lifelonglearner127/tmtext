@@ -73,6 +73,9 @@
 				if(checked_count == count_s) $("#cat_report_ch_all").attr('checked', true);
 				if(count_s == 0) {
 					$("#cat_report_ch_all").removeAttr('checked');
+					$("#btn_dep_rep_save_set").attr('disabled', true);
+				} else {
+					$('#btn_dep_rep_save_set').removeAttr('disabled');
 				} 
 			}, 100);
 		});
@@ -86,8 +89,10 @@
 	}
 
 	function removeFullRow(e) {
-		var full_row = $(e).parent().parent();
-		full_row.remove();
+		if(confirm('Are you sure?')) {
+			var full_row = $(e).parent().parent();
+			full_row.remove();
+		}
 	}
 
 	function removeCompetitorRow(e) {
