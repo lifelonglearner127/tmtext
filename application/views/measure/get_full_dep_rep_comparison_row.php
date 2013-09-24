@@ -1,7 +1,7 @@
 <tr>
 	<td>
-		<input type='checkbox' class='cat_report_ch'>
-		<button class='btn btn-danger small_custom_icon_btn' onclick="removeFullRow(this)"><i class='icon-remove-circle icon-white'></i></button>
+		<input type='checkbox' class='cat_report_ch'><br>
+		<button class='btn btn-danger small_custom_icon_btn mt_5' onclick="removeFullRow(this)"><i class='icon-remove-circle icon-white'></i></button>
 	</td>
 	<td>
 		<?php if (count($sites_list) > 0) { ?>
