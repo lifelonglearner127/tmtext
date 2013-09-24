@@ -484,7 +484,7 @@ function globalDepDashboard(site_name){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                data_str += '<span class="dep_text">'+data.result0[j].text+'</span><span class="dep_numbers">'
+                data_str += '<span class="dep_text"><a href="'+data.result0[j].url+'" target="_blank">'+data.result0[j].text+'</a></span><span class="dep_numbers">'
                     +data.result0[j].description_words+'</span><span class="dep_keywords">';
                 if(json != ''){
                     jQuery.each(keywords, function(i, val) {
@@ -531,7 +531,7 @@ function globalDepDashboard(site_name){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                data_str += '<li><span class="dep_text">'+data.res_more_data[j].text+'</span><span class="dep_numbers">'
+                data_str += '<li><span class="dep_text"><a href="'+data.res_more_data[j].url+'" target="_blank">'+data.res_more_data[j].text+'</a></span><span class="dep_numbers">'
                     +data.res_more_data[j].description_words+'</span><span class="dep_keywords">';
                 if(json != ''){
                     jQuery.each(keywords, function(i, val) {
@@ -579,7 +579,8 @@ function globalDepDashboard(site_name){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                data_str += '<li><span class="dep_text">'+data.dep_optimize[j].text+'</span><span class="dep_numbers">'
+                data_str += '<li><span class="dep_text"><a href="'+data.dep_optimize[j].url+'" target="_blank">'+data.dep_optimize[j].text
+                    +'</a></span><span class="dep_numbers">'
                     +data.dep_optimize[j].description_words+'</span><span class="dep_keywords">';
                 if(json != ''){
                     jQuery.each(keywords, function(i, val) {
@@ -659,7 +660,7 @@ function globalCatDashboard(site_name){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                data_str += '<li><span class="dep_text">'+data.dep_optimize[j].text+'</span><span class="dep_numbers">'
+                data_str += '<li><span class="dep_text"><a href="'+data.dep_optimize[j].url+'" target="_blank">'+data.dep_optimize[j].text+'</a></span><span class="dep_numbers">'
                     +data.dep_optimize[j].description_words+'</span><span class="dep_keywords">';
                 if(json != ''){
                     jQuery.each(keywords, function(i, val) {
