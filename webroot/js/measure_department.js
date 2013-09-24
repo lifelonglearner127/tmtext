@@ -603,8 +603,13 @@ function globalDepDashboard(site_name){
                 el.css({'display':'block'});
             } else {
                 el.css({'display':'none'});
-                $(this).css({'border-bottom':'none'});
             }
+        });
+        $("tbody#department_data tr td span.dep_title").mouseover(function() {
+            $("tbody#department_data tr td span.dep_title").each(function(){
+                $(this).css({'border-bottom':'none'});
+            })
+            $(this).css({'border-bottom':'1px solid #000'});
         });
     });
 }
@@ -858,8 +863,13 @@ function allDepDashboard(site_name, site_name_sec){
                     el.css({'display':'block'});
                 } else {
                     el.css({'display':'none'});
-                    $(this).css({'border-bottom':'none'});
                 }
+            });
+            $("tbody#department_data tr td span.dep_title").mouseover(function() {
+                $("tbody#department_data tr td span.dep_title").each(function(){
+                    $(this).css({'border-bottom':'none'});
+                })
+                $(this).css({'border-bottom':'1px solid #000'});
             });
         });
     });
