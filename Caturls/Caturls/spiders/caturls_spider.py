@@ -568,7 +568,7 @@ class CaturlsSpider(BaseSpider):
 	# parse a Tigerdirect category page and extract product URLs
 	def parsePage_tigerdirect(self, response):
 		hxs = HtmlXPathSelector(response)
-		print "IN PARSEPAGE ", response.url
+		#print "IN PARSEPAGE ", response.url
 
 		# without the "resultsWrap" div, these are found on pages we don't want as well
 		product_links = hxs.select("//div[@class='resultsWrap listView']//h3[@class='itemName']/a/@href").extract()
@@ -578,17 +578,21 @@ class CaturlsSpider(BaseSpider):
 			yield item
 
 		# parse next pages (if results spread on more than 1 page)
+		#TODO: not sure if all of them are extracted
 		next_page = hxs.select("//a[@title='Next page']")
 		if next_page:
-			print "next page ", response.url, next_page
+			#print "next page : ", response.url, " + ", next_page
 			page_nr = response.meta['page'] + 1
-			base_url = response.meta['base_url']
-			# remove trailing "&" character at the end of the URL
-			m = re.match("(.*)&", base_url)
-			if m:
-				base_url = m.group(1)
-			yield Request(url = base_url + "&page=%d"%page_nr, callback = self.parsePage_tigerdirect,\
-				 meta = {'page' : page_nr, 'base_url' : response.meta['base_url']})
+			# base_url = response.meta['base_url']
+			# # remove trailing "&" character at the end of the URL
+			# m = re.match("(.*)&", base_url)
+			# if m:
+			# 	base_url = m.group(1)
+			# yield Request(url = base_url + "&page=%d"%page_nr, callback = self.parsePage_tigerdirect,\
+			# 	 meta = {'page' : page_nr, 'base_url' : response.meta['base_url']})
+			next_page_url = Utils.add_domain(next_page.select("@href").extract()[0], "http://www.tigerdirect.com")
+			yield Request(url = next_page_url, callback = self.parsePage_tigerdirect,\
+				meta = {'page' : page_nr})
 
 
 		# if you can't find product links, you should search for links to the subcategories pages and parse them for product links
