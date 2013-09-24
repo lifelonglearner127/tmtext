@@ -1102,6 +1102,12 @@ class Measure extends MY_Controller {
         $this->load->view('measure/gethomepageweekdata', $data);
     }
 
+    public function save_dep_rep_comparison_sets() {
+        $sets = $this->input->post('sets');
+        $res = $sets;
+        $this->output->set_content_type('application/json')->set_output(json_encode($res));
+    }
+
     public function get_full_dep_rep_comparison_row() {
         $data['sites_list'] = $this->sites_list_new();
         $this->load->view('measure/get_full_dep_rep_comparison_row', $data);
