@@ -461,14 +461,17 @@ function globalDepDashboard(site_name){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                data_str += '<li><span class="dep_text"><a href="'+data.res_data_more_than_0[j].url+'" target="_blank">'+data.res_data_more_than_0[j].text+'</a></span><span class="dep_numbers">' +
-                    data.res_data_more_than_0[j].description_words+'</span><span class="dep_keywords">';
+                data_str += '<li><span class="dep_text"><a href="'+data.res_data_more_than_0[j].url+'" target="_blank">'+data.res_data_more_than_0[j].text+'</a></span><span class="dep_numbers">';
+                if(data.res_data_more_than_0[j].description_words > 0){
+                    data_str += data.res_data_more_than_0[j].description_words;
+                }
+                data_str += '</span><span class="dep_keywords">';
                 if(json != ''){
                     jQuery.each(keywords, function(i, val) {
-                        data_str += i+' - '+val+'%<br />';
+                        data_str += i+' '+val+'%<br />';
                     });
                 } else {
-                    data_str += ' - ';
+                    data_str += ' ';
                 }
                 data_str += '</span></li>';
             }
@@ -484,14 +487,17 @@ function globalDepDashboard(site_name){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                data_str += '<span class="dep_text"><a href="'+data.result0[j].url+'" target="_blank">'+data.result0[j].text+'</a></span><span class="dep_numbers">'
-                    +data.result0[j].description_words+'</span><span class="dep_keywords">';
+                data_str += '<span class="dep_text"><a href="'+data.result0[j].url+'" target="_blank">'+data.result0[j].text+'</a></span><span class="dep_numbers">';
+                if(data.result0[j].description_words > 0){
+                    data_str += data.result0[j].description_words;
+                }
+                data_str += '</span><span class="dep_keywords">';
                 if(json != ''){
                     jQuery.each(keywords, function(i, val) {
-                        data_str += i+' - '+val+'%<br />';
+                        data_str += i+' '+val+'%<br />';
                     });
                 } else {
-                    data_str += ' - ';
+                    data_str += ' ';
                 }
                 data_str += '</span></li>';
             }
@@ -509,14 +515,17 @@ function globalDepDashboard(site_name){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                data_str += '<li><span class="dep_text"><a href="'+data.res_more_data[j].url+'" target="_blank">'+data.res_more_data[j].text+'</a></span><span class="dep_numbers">'
-                    +data.res_more_data[j].description_words+'</span><span class="dep_keywords">';
+                data_str += '<li><span class="dep_text"><a href="'+data.res_more_data[j].url+'" target="_blank">'+data.res_more_data[j].text+'</a></span><span class="dep_numbers">';
+                if(data.res_more_data[j].description_words > 0){
+                    data_str += data.res_more_data[j].description_words;
+                }
+                data_str += '</span><span class="dep_keywords">';
                 if(json != ''){
                     jQuery.each(keywords, function(i, val) {
-                        data_str += i+' - '+val+'%<br />';
+                        data_str += i+' '+val+'%<br />';
                     });
                 } else {
-                    data_str += ' - ';
+                    data_str += ' ';
                 }
                 data_str += '</span></li>';
             }
@@ -531,14 +540,17 @@ function globalDepDashboard(site_name){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                data_str += '<li><span class="dep_text"><a href="'+data.res_more_data[j].url+'" target="_blank">'+data.res_more_data[j].text+'</a></span><span class="dep_numbers">'
-                    +data.res_more_data[j].description_words+'</span><span class="dep_keywords">';
+                data_str += '<li><span class="dep_text"><a href="'+data.res_more_data[j].url+'" target="_blank">'+data.res_more_data[j].text+'</a></span><span class="dep_numbers">';
+                if(data.res_more_data[j].description_words > 0){
+                    data_str += data.res_more_data[j].description_words;
+                }
+                data_str += '</span><span class="dep_keywords">';
                 if(json != ''){
                     jQuery.each(keywords, function(i, val) {
-                        data_str += i+' - '+val+'%<br />';
+                        data_str += i+' '+val+'%<br />';
                     });
                 } else {
-                    data_str += ' - ';
+                    data_str += ' ';
                 }
                 data_str += '</span></li>';
             }
@@ -557,14 +569,17 @@ function globalDepDashboard(site_name){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                data_str += '<li><span class="dep_text"><a href="'+data.keyword_optimize_data[j].url+'" target="_blank">'+data.keyword_optimize_data[j].text+'</a></span><span class="dep_numbers">'
-                    +data.keyword_optimize_data[j].description_words+'</span><span class="dep_keywords">';
+                data_str += '<li><span class="dep_text"><a href="'+data.keyword_optimize_data[j].url+'" target="_blank">'+data.keyword_optimize_data[j].text+'</a></span><span class="dep_numbers">';
+                if(data.keyword_optimize_data[j].description_words > 0){
+                    data_str += data.keyword_optimize_data[j].description_words;
+                }
+                data_str += '</span><span class="dep_keywords">';
                 if(json != ''){
                     jQuery.each(keywords, function(i, val) {
-                        data_str += i+' - '+val+'%<br />';
+                        data_str += i+' '+val+'%<br />';
                     });
                 } else {
-                    data_str += ' - ';
+                    data_str += ' ';
                 }
                 data_str += '</span></li>';
             }
@@ -580,14 +595,17 @@ function globalDepDashboard(site_name){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
                 data_str += '<li><span class="dep_text"><a href="'+data.dep_optimize[j].url+'" target="_blank">'+data.dep_optimize[j].text
-                    +'</a></span><span class="dep_numbers">'
-                    +data.dep_optimize[j].description_words+'</span><span class="dep_keywords">';
+                    +'</a></span><span class="dep_numbers">';
+                if(data.dep_optimize[j].description_words > 0){
+                    data_str += data.dep_optimize[j].description_words;
+                }
+                data_str += '</span><span class="dep_keywords">';
                 if(json != ''){
                     jQuery.each(keywords, function(i, val) {
-                        data_str += i+' - '+val+'%<br />';
+                        data_str += i+' '+val+'%<br />';
                     });
                 } else {
-                    data_str += ' - ';
+                    data_str += ' ';
                 }
                 data_str += '</span></li>';
             }
@@ -643,14 +661,17 @@ function globalCatDashboard(site_name){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                data_str += '<li><span class="dep_text"><a href="'+data.keyword_optimize_data[j].url+'" target="_blank">'+data.keyword_optimize_data[j].text+'</a></span><span class="dep_numbers">'
-                    +data.keyword_optimize_data[j].description_words+'</span><span class="dep_keywords">';
+                data_str += '<li><span class="dep_text"><a href="'+data.keyword_optimize_data[j].url+'" target="_blank">'+data.keyword_optimize_data[j].text+'</a></span><span class="dep_numbers">';
+                if(data.keyword_optimize_data[j].description_words > 0){
+                    data_str += data.keyword_optimize_data[j].description_words;
+                }
+                data_str += '</span><span class="dep_keywords">';
                 if(json != ''){
                     jQuery.each(keywords, function(i, val) {
-                        data_str += i+' - '+val+'%<br />';
+                        data_str += i+' '+val+'%<br />';
                     });
                 } else {
-                    data_str += ' - ';
+                    data_str += ' ';
                 }
                 data_str += '</span></li>';
             }
@@ -665,14 +686,17 @@ function globalCatDashboard(site_name){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                data_str += '<li><span class="dep_text"><a href="'+data.dep_optimize[j].url+'" target="_blank">'+data.dep_optimize[j].text+'</a></span><span class="dep_numbers">'
-                    +data.dep_optimize[j].description_words+'</span><span class="dep_keywords">';
+                data_str += '<li><span class="dep_text"><a href="'+data.dep_optimize[j].url+'" target="_blank">'+data.dep_optimize[j].text+'</a></span><span class="dep_numbers">';
+                if(data.dep_optimize[j].description_words > 0){
+                    data_str += data.dep_optimize[j].description_words;
+                }
+                data_str += '</span><span class="dep_keywords">';
                 if(json != ''){
                     jQuery.each(keywords, function(i, val) {
-                        data_str += i+' - '+val+'%<br />';
+                        data_str += i+' '+val+'%<br />';
                     });
                 } else {
-                    data_str += ' - ';
+                    data_str += ' ';
                 }
                 data_str += '</span></li>';
             }
@@ -714,14 +738,17 @@ function allDepDashboard(site_name, site_name_sec){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                first_part_table += '<li><span class="dep_text"><a href="'+data.res_data_more_than_0[j].url+'" target="_blank">'+data.res_data_more_than_0[j].text+'</a></span><span class="dep_numbers">' +
-                    data.res_data_more_than_0[j].description_words+'</span><span class="dep_keywords">';
+                first_part_table += '<li><span class="dep_text"><a href="'+data.res_data_more_than_0[j].url+'" target="_blank">'+data.res_data_more_than_0[j].text+'</a></span><span class="dep_numbers">';
+                if(data.res_data_more_than_0[j].description_words > 0){
+                    first_part_table += data.res_data_more_than_0[j].description_words;
+                }
+                first_part_table += '</span><span class="dep_keywords">';
                 if(json != ''){
                     jQuery.each(keywords, function(i, val) {
-                        first_part_table += i+' - '+val+'%<br />';
+                        first_part_table += i+' '+val+'%<br />';
                     });
                 } else {
-                    first_part_table += ' - ';
+                    first_part_table += ' ';
                 }
                 first_part_table += '</span></li>';
             }
@@ -738,14 +765,17 @@ function allDepDashboard(site_name, site_name_sec){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                second_part_table += '<li><span class="dep_text"><a href="'+data.res_more_data[j].url+'" target="_blank">'+data.res_more_data[j].text+'</a></span><span class="dep_numbers">'
-                    +data.res_more_data[j].description_words+'</span><span class="dep_keywords">';
+                second_part_table += '<li><span class="dep_text"><a href="'+data.res_more_data[j].url+'" target="_blank">'+data.res_more_data[j].text+'</a></span><span class="dep_numbers">';
+                if(data.res_more_data[j].description_words > 0){
+                    second_part_table += data.res_more_data[j].description_words;
+                }
+                second_part_table += '</span><span class="dep_keywords">';
                 if(json != ''){
                     jQuery.each(keywords, function(i, val) {
-                        second_part_table += i+' - '+val+'%<br />';
+                        second_part_table += i+' '+val+'%<br />';
                     });
                 } else {
-                    second_part_table += ' - ';
+                    second_part_table += ' ';
                 }
                 second_part_table += '</span></li>';
             }
@@ -762,14 +792,17 @@ function allDepDashboard(site_name, site_name_sec){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                third_part_table += '<li><span class="dep_text"><a href="'+data.keyword_optimize_data[j].url+'" target="_blank">'+data.keyword_optimize_data[j].text+'</a></span><span class="dep_numbers">'
-                    +data.keyword_optimize_data[j].description_words+'</span><span class="dep_keywords">';
+                third_part_table += '<li><span class="dep_text"><a href="'+data.keyword_optimize_data[j].url+'" target="_blank">'+data.keyword_optimize_data[j].text+'</a></span><span class="dep_numbers">';
+                if(data.keyword_optimize_data[j].description_words > 0){
+                    third_part_table += data.keyword_optimize_data[j].description_words;
+                }
+                third_part_table += '</span><span class="dep_keywords">';
                 if(json != ''){
                     jQuery.each(keywords, function(i, val) {
-                        third_part_table += i+' - '+val+'%<br />';
+                        third_part_table += i+' '+val+'%<br />';
                     });
                 } else {
-                    third_part_table += ' - ';
+                    third_part_table += ' ';
                 }
                 third_part_table += '</span></li>';
             }
@@ -792,14 +825,17 @@ function allDepDashboard(site_name, site_name_sec){
                     if(json != ''){
                         var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                     }
-                    first_part_table += '<li><span class="dep_text"><a href="'+data.res_data_more_than_0[j].url+'" target="_blank">'+data.res_data_more_than_0[j].text+'</a></span><span class="dep_numbers">' +
-                        data.res_data_more_than_0[j].description_words+'</span><span class="dep_keywords">';
+                    first_part_table += '<li><span class="dep_text"><a href="'+data.res_data_more_than_0[j].url+'" target="_blank">'+data.res_data_more_than_0[j].text+'</a></span><span class="dep_numbers">';
+                    if(data.res_data_more_than_0[j].description_words > 0){
+                        first_part_table += data.res_data_more_than_0[j].description_words;
+                    }
+                    first_part_table += '</span><span class="dep_keywords">';
                     if(json != ''){
                         jQuery.each(keywords, function(i, val) {
-                            first_part_table += i+' - '+val+'%<br />';
+                            first_part_table += i+' '+val+'%<br />';
                         });
                     } else {
-                        first_part_table += ' - ';
+                        first_part_table += '  ';
                     }
                     first_part_table += '</span></li>';
                 }
@@ -816,14 +852,17 @@ function allDepDashboard(site_name, site_name_sec){
                     if(json != ''){
                         var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                     }
-                    second_part_table += '<li><span class="dep_text"><a href="'+data.res_more_data[j].url+'" target="_blank">'+data.res_more_data[j].text+'</a></span><span class="dep_numbers">'
-                        +data.res_more_data[j].description_words+'</span><span class="dep_keywords">';
+                    second_part_table += '<li><span class="dep_text"><a href="'+data.res_more_data[j].url+'" target="_blank">'+data.res_more_data[j].text+'</a></span><span class="dep_numbers">';
+                    if(data.res_more_data[j].description_words > 0){
+                        second_part_table += data.res_more_data[j].description_words;
+                    }
+                    second_part_table += '</span><span class="dep_keywords">';
                     if(json != ''){
                         jQuery.each(keywords, function(i, val) {
-                            second_part_table += i+' - '+val+'%<br />';
+                            second_part_table += i+'  '+val+'%<br />';
                         });
                     } else {
-                        second_part_table += ' - ';
+                        second_part_table += '  ';
                     }
                     second_part_table += '</span></li>';
                 }
@@ -840,14 +879,17 @@ function allDepDashboard(site_name, site_name_sec){
                     if(json != ''){
                         var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                     }
-                    third_part_table += '<li><span class="dep_text"><a href="'+data.keyword_optimize_data[j].url+'" target="_blank">'+data.keyword_optimize_data[j].text+'</a></span><span class="dep_numbers">'
-                        +data.keyword_optimize_data[j].description_words+'</span><span class="dep_keywords">';
+                    third_part_table += '<li><span class="dep_text"><a href="'+data.keyword_optimize_data[j].url+'" target="_blank">'+data.keyword_optimize_data[j].text+'</a></span><span class="dep_numbers">';
+                    if(data.keyword_optimize_data[j].description_words > 0){
+                        third_part_table += data.keyword_optimize_data[j].description_words;
+                    }
+                    third_part_table += '</span><span class="dep_keywords">';
                     if(json != ''){
                         jQuery.each(keywords, function(i, val) {
-                            third_part_table += i+' - '+val+'%<br />';
+                            third_part_table += i+' '+val+'%<br />';
                         });
                     } else {
-                        third_part_table += ' - ';
+                        third_part_table += '  ';
                     }
                     third_part_table += '</span></li>';
                 }
@@ -904,14 +946,17 @@ function allCatDashboard(site_name, site_name_sec){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                third_part_table += '<li><span class="dep_text"><a href="'+data.keyword_optimize_data[j].url+'" target="_blank">'+data.keyword_optimize_data[j].text+'</a></span><span class="dep_numbers">'
-                    +data.keyword_optimize_data[j].description_words+'</span><span class="dep_keywords">';
+                third_part_table += '<li><span class="dep_text"><a href="'+data.keyword_optimize_data[j].url+'" target="_blank">'+data.keyword_optimize_data[j].text+'</a></span><span class="dep_numbers">';
+                if(data.keyword_optimize_data[j].description_words > 0){
+                    third_part_table += data.keyword_optimize_data[j].description_words;
+                }
+                third_part_table += '</span><span class="dep_keywords">';
                 if(json != ''){
                     jQuery.each(keywords, function(i, val) {
-                        third_part_table += i+' - '+val+'%<br />';
+                        third_part_table += i+' '+val+'%<br />';
                     });
                 } else {
-                    third_part_table += ' - ';
+                    third_part_table += ' ';
                 }
                 third_part_table += '</span></li>';
             }
@@ -942,14 +987,17 @@ function allCatDashboard(site_name, site_name_sec){
                     if(json != ''){
                         var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                     }
-                    third_part_table += '<li><span class="dep_text"><a href="'+data.keyword_optimize_data[j].url+'" target="_blank">'+data.keyword_optimize_data[j].text+'</a></span><span class="dep_numbers">'
-                        +data.keyword_optimize_data[j].description_words+'</span><span class="dep_keywords">';
+                    third_part_table += '<li><span class="dep_text"><a href="'+data.keyword_optimize_data[j].url+'" target="_blank">'+data.keyword_optimize_data[j].text+'</a></span><span class="dep_numbers">';
+                    if(data.keyword_optimize_data[j].description_words > 0){
+                        third_part_table += data.keyword_optimize_data[j].description_words;
+                    }
+                    third_part_table += '</span><span class="dep_keywords">';
                     if(json != ''){
                         jQuery.each(keywords, function(i, val) {
-                            third_part_table += i+' - '+val+'%<br />';
+                            third_part_table += i+' '+val+'%<br />';
                         });
                     } else {
-                        third_part_table += ' - ';
+                        third_part_table += ' ';
                     }
                     third_part_table += '</span></li>';
                 }
@@ -997,14 +1045,17 @@ function getCatData(site_name, obj, condition, state){
                 if(state == 1){
                     data_str += '</a>';
                 }
-                data_str += '</span><span class="dep_numbers">' +
-                    data[j].description_words+'</span><span class="dep_keywords">';
+                data_str += '</span><span class="dep_numbers">';
+                if(data[j].description_words > 0){
+                    data_str += data[j].description_words;
+                }
+                data_str += '</span><span class="dep_keywords">';
                 if(json != ''){
                     jQuery.each(keywords, function(i, val) {
-                        data_str += i+' - '+val+'%<br />';
+                        data_str += i+' '+val+'%<br />';
                     });
                 } else {
-                    data_str += ' - ';
+                    data_str += ' ';
                 }
                 data_str += '</span></li>';
             }
