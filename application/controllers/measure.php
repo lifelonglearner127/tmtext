@@ -1277,16 +1277,24 @@ class Measure extends MY_Controller {
         foreach ($data_more as $key => $obj) {
             $keywords_density = json_decode($data_more[$key]->title_keyword_description_density);
             $num = 0;
+            $more_than = 0;
             foreach ($keywords_density as $k => $v) {
                 if (floatval($v) > 2) {
-                    $num = 0;
-                } else {
                     $num = 1;
                 }
             }
-            if ($num == 0) {
+            foreach ($keywords_density as $k => $v) {
+                if(floatval($v) < 2 ){
+                    $more_than = 1;
+                } else{
+                    $more_than = 0;
+                    break;
+                }
+            }
+            if ($more_than == 1) {
                 array_push($dep_optimize, $obj);
-            } else {
+            }
+            if($num == 1){
                 array_push($keyword_optimize_data, $obj);
             }
             $keyword_optimize += $num;
@@ -1307,16 +1315,24 @@ class Measure extends MY_Controller {
         foreach ($data_more as $key => $obj) {
             $keywords_density = json_decode($data_more[$key]->title_keyword_description_density);
             $num = 0;
+            $more_than = 0;
             foreach ($keywords_density as $k => $v) {
                 if (floatval($v) > 2) {
-                    $num = 0;
-                } else {
                     $num = 1;
                 }
             }
-            if ($num == 0) {
+            foreach ($keywords_density as $k => $v) {
+                if(floatval($v) < 2 ){
+                    $more_than = 1;
+                } else{
+                    $more_than = 0;
+                    break;
+                }
+            }
+            if ($more_than == 1) {
                 array_push($dep_optimize, $obj);
-            } else {
+            }
+            if($num == 1){
                 array_push($keyword_optimize_data, $obj);
             }
             $keyword_optimize += $num;
