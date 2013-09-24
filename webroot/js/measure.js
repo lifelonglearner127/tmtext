@@ -715,16 +715,16 @@ function wordHighLighter(w, status) {
     }
 }
 
-$("*").click(function(e) {
-    var attr = $(e.target).attr('data-status');
-    if (typeof(attr) !== 'undefined' && attr === 'seo_link') {
-    } else {
-        removeTagsFromDescs();
-            if ($("#compet_area_grid .grid_se_section").length > 0) {
-                removeTagsFromAllGridDescs();
-            }
-    }
-});
+//$("*").click(function(e) {
+//    var attr = $(e.target).attr('data-status');
+//    if (typeof(attr) !== 'undefined' && attr === 'seo_link') {
+//    } else {
+//        removeTagsFromDescs();
+//            if ($("#compet_area_grid .grid_se_section").length > 0) {
+//                removeTagsFromAllGridDescs();
+//            }
+//    }
+//});
 
 // --- KEYWORDS ANALYZER (START)
 function keywordsAnalizer() {

@@ -368,7 +368,7 @@ foreach ($same_pr as $ks => $vs) {
                             </div>
                             <div class="cmp-area" style="float: left;">
         <?php if (isset($vs['short_original']) && $vs['short_original'] != "Insufficient data") { ?>
-                                    <p><img class="cmp-btn" src="<?php echo base_url() ?>/img/icon.png" title='Click to see dublicates words'>Duplicate content: <b><?php echo $vs['short_original']; ?> </b></p>
+                                    <p><img class="cmp-btn" src="<?php echo base_url() ?>/img/icon.png" title='Click to see dublicates words'/>Duplicate content: <b><?php echo $vs['short_original']; ?> </b></p>
                                 <?php } else { ?>
                                     <p>Duplicate content: <b><?php echo $vs['short_original']; ?> </b></p>
                                 <?php } ?>
@@ -572,7 +572,7 @@ foreach ($same_pr as $ks => $vs) {
                             </div>
                             <div class="cmp-area" style="float: left;">
         <?php if (isset($vs['long_original']) && $vs['long_original'] != "Insufficient data") { ?>
-                                    <p><img class="cmp-btn" src="<?php echo base_url() ?>/img/icon.png" title='Click to see dublicates words'>Duplicate content: <b><?php echo $vs['long_original']; ?> </b></p>
+                                    <p><img class="cmp-btn" src="<?php echo base_url() ?>/img/icon.png" title='Click to see dublicates words'/>Duplicate content: <b><?php echo $vs['long_original']; ?> </b></p>
                                 <?php } else { ?>
                                     <p>Duplicate content: <b><?php echo $vs['long_original']; ?> </b></p>
                                 <?php } ?>
