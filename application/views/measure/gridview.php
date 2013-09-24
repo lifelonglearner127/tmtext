@@ -372,7 +372,7 @@ foreach ($same_pr as $ks => $vs) {
                                 <?php } else { ?>
                                     <p>Duplicate content: <b><?php echo $vs['short_original']; ?> </b></p>
                                 <?php } ?>
-                                    <p class="compare short_desc_con"><?php echo strip_tags($s_product_description); ?></p>
+                                    <div class="compare short_desc_con"><?php echo $s_product_description; ?></div>
                             </div>
         <?php
     }
@@ -578,7 +578,7 @@ foreach ($same_pr as $ks => $vs) {
                                 <?php } ?>
 
                                 <!--                     //Max-->
-        <?php echo '<p class="compare compare_long">' . strip_tags($s_product_long_description). '</p>'; ?>
+        <?php echo '<div class="compare compare_long">' . $s_product_long_description. '</div>'; ?>
 
                             </div>
         <?php
