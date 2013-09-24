@@ -2998,6 +2998,8 @@ class Measure extends MY_Controller {
     }
 
     private function keywords_appearence($desc, $phrase) {
+        
+        $desc= strip_tags($desc);
         return substr_count($desc, $phrase);
     }
 
