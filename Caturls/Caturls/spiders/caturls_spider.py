@@ -599,7 +599,6 @@ class CaturlsSpider(BaseSpider):
 			# pass the new page to this same method to be handled by the next branch of the if statement
 			yield Request(url = Utils.add_domain(seeall, "http://www.tigerdirect.com"), callback = self.parseSubcats_tigerdirect)
 		else:
-			print "NO SEALL"
 			# extract subcategories
 			subcats_links = hxs.select("//div[@class='sideNav']/div[@class='innerWrap'][1]//ul/li/a")
 			for subcat_link in subcats_links:
