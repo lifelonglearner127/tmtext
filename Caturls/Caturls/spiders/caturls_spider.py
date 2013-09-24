@@ -571,7 +571,7 @@ class CaturlsSpider(BaseSpider):
 
 		# without the "resultsWrap" div, these are found on pages we don't want as well
 		product_links = hxs.select("//div[@class='resultsWrap listView']//h3[@class='itemName']/a/@href").extract()
-
+		print "IN PARSEPAGE"
 		for product_link in product_links:
 			item = ProductItem()
 			item['product_url'] = Utils.add_domain(product_link, "http://www.tigerdirect.com")
@@ -594,11 +594,12 @@ class CaturlsSpider(BaseSpider):
 		hxs = HtmlXPathSelector(response)
 
 		# search for a link to "See All Products"
-		seeall = hxs.select("//a[text()='See All Products']/@href").extract()
+		seeall = hxs.select("//span[text()='See All Products']/parent::node()/@href").extract()
 		if seeall:
 			# pass the new page to this same method to be handled by the next branch of the if statement
-			yield Request(url = Utils.add_domain(seeall, "http://www.tigerdirect.com"), callback = self.parseSubcats_tigerdirect)
+			yield Request(url = Utils.add_domain(seeall[0], "http://www.tigerdirect.com"), callback = self.parseSubcats_tigerdirect)
 		else:
+			print "EXTRACT SUBCATEGORIES"
 			# extract subcategories
 			subcats_links = hxs.select("//div[@class='sideNav']/div[@class='innerWrap'][1]//ul/li/a")
 			for subcat_link in subcats_links:
