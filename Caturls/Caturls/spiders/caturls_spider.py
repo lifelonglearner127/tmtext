@@ -31,10 +31,11 @@ class CaturlsSpider(BaseSpider):
 	"nordstrom.com", "macys.com", "williams-sonoma.com", "overstock.com", "newegg.com", "tigerdirect.com"]
 
 	# store the cateory page url given as an argument into a field and add it to the start_urls list
-	def __init__(self, cat_page, outfile = "product_urls.txt"):
+	def __init__(self, cat_page, outfile = "product_urls.txt", use_proxy = False):
 		self.cat_page = cat_page
 		self.start_urls = [cat_page]
 		self.outfile = outfile
+		self.use_proxy = use_proxy
 		# staples televisions
 		#self.start_urls = ["http://www.staples.com/Televisions/cat_CL142471"]
 		# bloomingdales sneakers
@@ -577,6 +578,7 @@ class CaturlsSpider(BaseSpider):
 
 		# parse next pages (if results spread on more than 1 page)
 		if product_links:
+			print "PRODUCT LINKS ", product_links
 			page_nr = response.meta['page'] + 1
 			yield Request(url = response.meta['base_url'] + "&page=%d"%page_nr, callback = self.parsePage_tigerdirect,\
 				 meta = {'page' : page_nr, 'base_url' : response.meta['base_url']})
