@@ -3,7 +3,7 @@
 	<h3>Categories screenshot reports</h3>
 </div>
 <div class="modal-body">
-	<table class='table table-striped'>
+	<table id='dcsr_control_panel_tabel' class='table table-striped'>
 		<thead>
 			<tr>
 				<th><input type='checkbox' name="cat_report_ch_all" id="cat_report_ch_all"></th>
@@ -45,8 +45,9 @@
 	</table>
 </div>
 <div class="modal-footer">
-	<button class="btn" type="button">New row</button>
-	<button id='btn_dep_rep_save_set' class="btn btn-primary btn-rec-all-send" disabled="" type="button">Save set</button>
+	<button class="btn" onclick="addNewFullRow()" type="button">New row</button>
+	<button id='btn_dep_rep_preview_set' class="btn btn-success btn-rec-all-send" disabled="" type="button">Preview saved sets</button>
+	<button id='btn_dep_rep_save_set' class="btn btn-primary btn-rec-all-send" disabled="" type="button">Save sets</button>
 </div>
 
 <script type='text/javascript'>
@@ -61,7 +62,33 @@
 				$('#btn_dep_rep_save_set').attr('disabled', true);
 			}
 		});
+
+		$(".cat_report_ch").on('change', function(e) {
+			var checked_count = $(".cat_report_ch").length;
+			setTimeout(function() {
+				var count_s = 0;
+				$(".cat_report_ch").each(function(index, val) {
+					if($(val).is(':checked')) count_s++;
+				});
+				if(checked_count == count_s) $("#cat_report_ch_all").attr('checked', true);
+				if(count_s == 0) {
+					$("#cat_report_ch_all").removeAttr('checked');
+				} 
+			}, 100);
+		});
+
 	});
+
+	function addNewFullRow() {
+		$.post(base_url + 'index.php/measure/get_full_dep_rep_comparison_row', {}, function(data) {
+			$("#dcsr_control_panel_tabel tbody").append(data);
+		});
+	}
+
+	function removeFullRow(e) {
+		var full_row = $(e).parent().parent();
+		full_row.remove();
+	}
 
 	function removeCompetitorRow(e) {
 		var comparison_row = $(e).parent().parent();

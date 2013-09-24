@@ -1102,22 +1102,17 @@ class Measure extends MY_Controller {
         $this->load->view('measure/gethomepageweekdata', $data);
     }
 
+    public function get_full_dep_rep_comparison_row() {
+        $data['sites_list'] = $this->sites_list_new();
+        $this->load->view('measure/get_full_dep_rep_comparison_row', $data);
+    }
+
     public function get_dep_rep_comparison_row() {
         $data['sites_list'] = $this->sites_list_new();
         $this->load->view('measure/get_dep_rep_comparison_row', $data);
     }
 
     public function get_cats_screens_rep() {
-        // $this->load->model('department_members_model');
-        // $this->load->model('site_categories_model');
-        // $data['departments_list'][] = 'All';
-        // foreach ($this->department_members_model->getAll() as $row) {
-        //     $data['departments_list'][$row->id] = $row->text;
-        // }
-        // $data['category_list'][] = 'All';
-        // foreach ($this->site_categories_model->getAll() as $row) {
-        //     $data['category_list'][$row->id] = $row->text;
-        // }
         $data['sites_list'] = $this->sites_list_new();
         $this->load->view('measure/get_cats_screens_rep', $data);
     }
