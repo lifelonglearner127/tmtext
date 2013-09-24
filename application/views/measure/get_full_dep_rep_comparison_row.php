@@ -51,7 +51,11 @@
 				$(".cat_report_ch").each(function(index, val) {
 					if($(val).is(':checked')) count_s++;
 				});
-				if(checked_count == count_s) $("#cat_report_ch_all").attr('checked', true);
+				if(checked_count == count_s) {
+					$("#cat_report_ch_all").attr('checked', true);
+				} else {
+					$("#cat_report_ch_all").removeAttr('checked');
+				}
 				if(count_s == 0) {
 					$("#cat_report_ch_all").removeAttr('checked');
 					$("#btn_dep_rep_save_set").attr('disabled', true);
