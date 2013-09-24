@@ -5,7 +5,7 @@
 
 class CaturlsPipeline(object):
 	def __init__(self):
-		self.items = []
+		self.urls = []
 
 	def open_spider(self, spider):
 		self.file = open(spider.outfile, 'wb')
@@ -13,8 +13,8 @@ class CaturlsPipeline(object):
 	def process_item(self, item, spider):
 		line = item['product_url'] + "\n"
 		# avoid duplicates
-		if item not in self.items:
-			self.items.append(item)
+		if item['product_url'] not in self.urls:
+			self.urls.append(item['product_url'])
 			self.file.write(line)
 			return item
 
