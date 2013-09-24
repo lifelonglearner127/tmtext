@@ -1456,6 +1456,12 @@ class PageProcessor {
 			}
 		}
 
+		if (preg_match("/.*product_sale_price:'([0-9\\.]*)'.*/", $this->get_html(), $matches)) {;
+			if (preg_match('/([0-9]+[\.]*[0-9]*)/', $matches[1], $match)) {
+				$price = $match[1];
+			}
+		}
+
 		$features = implode("\n",$features);
 
 		return array(
