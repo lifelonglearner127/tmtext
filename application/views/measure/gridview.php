@@ -368,11 +368,11 @@ foreach ($same_pr as $ks => $vs) {
                             </div>
                             <div class="cmp-area" style="float: left;">
         <?php if (isset($vs['short_original']) && $vs['short_original'] != "Insufficient data") { ?>
-                                    <p><img class="cmp-btn" src="<?php echo base_url() ?>/img/icon.png" title='Click to see dublicates words'>Duplicate content: <b><?php echo $vs['short_original']; ?> </b></p>
+                                    <p><img class="cmp-btn" src="<?php echo base_url() ?>/img/icon.png" title='Click to see dublicates words'/>Duplicate content: <b><?php echo $vs['short_original']; ?> </b></p>
                                 <?php } else { ?>
                                     <p>Duplicate content: <b><?php echo $vs['short_original']; ?> </b></p>
                                 <?php } ?>
-                                <p class="compare short_desc_con"><?php echo $s_product_description; ?></p>
+                                    <div class="compare short_desc_con"><?php echo $s_product_description; ?></div>
                             </div>
         <?php
     }
@@ -572,13 +572,13 @@ foreach ($same_pr as $ks => $vs) {
                             </div>
                             <div class="cmp-area" style="float: left;">
         <?php if (isset($vs['long_original']) && $vs['long_original'] != "Insufficient data") { ?>
-                                    <p><img class="cmp-btn" src="<?php echo base_url() ?>/img/icon.png" title='Click to see dublicates words'>Duplicate content: <b><?php echo $vs['long_original']; ?> </b></p>
+                                    <p><img class="cmp-btn" src="<?php echo base_url() ?>/img/icon.png" title='Click to see dublicates words'/>Duplicate content: <b><?php echo $vs['long_original']; ?> </b></p>
                                 <?php } else { ?>
                                     <p>Duplicate content: <b><?php echo $vs['long_original']; ?> </b></p>
                                 <?php } ?>
 
                                 <!--                     //Max-->
-        <?php echo '<p class="compare compare_long">' . $s_product_long_description . '</p>'; ?>
+        <?php echo '<div class="compare compare_long">' . $s_product_long_description. '</div>'; ?>
 
                             </div>
         <?php

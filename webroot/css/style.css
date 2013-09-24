@@ -1,3 +1,12 @@
+.small_custom_icon_btn {
+    padding: 3px 4px !important;
+}
+.mt_5 {
+    margin-top: 5px !important;
+}
+.ml_5 {
+    margin-left: 5px !important;
+}
 .ml_10 {
     margin-left: 10px !important;
 }
@@ -2216,4 +2225,7 @@ span.dep_left_part{
 }
 #keyword1_density, #keyword2_density, #keyword3_density {
     margin-right: 17px;
+}
+.compare li{
+    list-style: disc;
 }
