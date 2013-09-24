@@ -557,8 +557,8 @@ function globalDepDashboard(site_name){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                data_str += '<li><span class="dep_text"><a href="'+data.dep_optimize[j].url+'" target="_blank">'+data.dep_optimize[j].text+'</a></span><span class="dep_numbers">'
-                    +data.dep_optimize[j].description_words+'</span><span class="dep_keywords">';
+                data_str += '<li><span class="dep_text"><a href="'+data.keyword_optimize_data[j].url+'" target="_blank">'+data.keyword_optimize_data[j].text+'</a></span><span class="dep_numbers">'
+                    +data.keyword_optimize_data[j].description_words+'</span><span class="dep_keywords">';
                 if(json != ''){
                     jQuery.each(keywords, function(i, val) {
                         data_str += i+' - '+val+'%<br />';
@@ -637,8 +637,8 @@ function globalCatDashboard(site_name){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                data_str += '<li><span class="dep_text"><a href="'+data.dep_optimize[j].url+'" target="_blank">'+data.dep_optimize[j].text+'</a></span><span class="dep_numbers">'
-                    +data.dep_optimize[j].description_words+'</span><span class="dep_keywords">';
+                data_str += '<li><span class="dep_text"><a href="'+data.keyword_optimize_data[j].url+'" target="_blank">'+data.keyword_optimize_data[j].text+'</a></span><span class="dep_numbers">'
+                    +data.keyword_optimize_data[j].description_words+'</span><span class="dep_keywords">';
                 if(json != ''){
                     jQuery.each(keywords, function(i, val) {
                         data_str += i+' - '+val+'%<br />';
@@ -756,8 +756,8 @@ function allDepDashboard(site_name, site_name_sec){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                third_part_table += '<li><span class="dep_text"><a href="'+data.dep_optimize[j].url+'" target="_blank">'+data.dep_optimize[j].text+'</a></span><span class="dep_numbers">'
-                    +data.dep_optimize[j].description_words+'</span><span class="dep_keywords">';
+                third_part_table += '<li><span class="dep_text"><a href="'+data.keyword_optimize_data[j].url+'" target="_blank">'+data.keyword_optimize_data[j].text+'</a></span><span class="dep_numbers">'
+                    +data.keyword_optimize_data[j].description_words+'</span><span class="dep_keywords">';
                 if(json != ''){
                     jQuery.each(keywords, function(i, val) {
                         third_part_table += i+' - '+val+'%<br />';
@@ -834,8 +834,8 @@ function allDepDashboard(site_name, site_name_sec){
                     if(json != ''){
                         var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                     }
-                    third_part_table += '<li><span class="dep_text"><a href="'+data.dep_optimize[j].url+'" target="_blank">'+data.dep_optimize[j].text+'</a></span><span class="dep_numbers">'
-                        +data.dep_optimize[j].description_words+'</span><span class="dep_keywords">';
+                    third_part_table += '<li><span class="dep_text"><a href="'+data.keyword_optimize_data[j].url+'" target="_blank">'+data.keyword_optimize_data[j].text+'</a></span><span class="dep_numbers">'
+                        +data.keyword_optimize_data[j].description_words+'</span><span class="dep_keywords">';
                     if(json != ''){
                         jQuery.each(keywords, function(i, val) {
                             third_part_table += i+' - '+val+'%<br />';
@@ -893,8 +893,8 @@ function allCatDashboard(site_name, site_name_sec){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                third_part_table += '<li><span class="dep_text"><a href="'+data.dep_optimize[j].url+'" target="_blank">'+data.dep_optimize[j].text+'</a></span><span class="dep_numbers">'
-                    +data.dep_optimize[j].description_words+'</span><span class="dep_keywords">';
+                third_part_table += '<li><span class="dep_text"><a href="'+data.keyword_optimize_data[j].url+'" target="_blank">'+data.keyword_optimize_data[j].text+'</a></span><span class="dep_numbers">'
+                    +data.keyword_optimize_data[j].description_words+'</span><span class="dep_keywords">';
                 if(json != ''){
                     jQuery.each(keywords, function(i, val) {
                         third_part_table += i+' - '+val+'%<br />';
@@ -931,8 +931,8 @@ function allCatDashboard(site_name, site_name_sec){
                     if(json != ''){
                         var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                     }
-                    third_part_table += '<li><span class="dep_text"><a href="'+data.dep_optimize[j].url+'" target="_blank">'+data.dep_optimize[j].text+'</a></span><span class="dep_numbers">'
-                        +data.dep_optimize[j].description_words+'</span><span class="dep_keywords">';
+                    third_part_table += '<li><span class="dep_text"><a href="'+data.keyword_optimize_data[j].url+'" target="_blank">'+data.keyword_optimize_data[j].text+'</a></span><span class="dep_numbers">'
+                        +data.keyword_optimize_data[j].description_words+'</span><span class="dep_keywords">';
                     if(json != ''){
                         jQuery.each(keywords, function(i, val) {
                             third_part_table += i+' - '+val+'%<br />';
