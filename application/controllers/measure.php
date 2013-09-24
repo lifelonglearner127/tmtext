@@ -1860,12 +1860,12 @@ class Measure extends MY_Controller {
             if ($data_import['description'] !== null && trim($data_import['description']) !== "") {
                 $data_import['description'] = preg_replace('/\s+/', ' ', $data_import['description']);
                 // $data_import['description'] = preg_replace('/[^A-Za-z0-9\. -!]/', ' ', $data_import['description']);
-                $data['s_product_short_desc_count'] = count(explode(" ", $data_import['description']));
+                $data['s_product_short_desc_count'] = count(explode(" ", strip_tags($data_import['description'])));
             }
             if ($data_import['long_description'] !== null && trim($data_import['long_description']) !== "") {
                 $data_import['long_description'] = preg_replace('/\s+/', ' ', $data_import['long_description']);
                 // $data_import['long_description'] = preg_replace('/[^A-Za-z0-9\. -!]/', ' ', $data_import['long_description']);
-                $data['s_product_long_desc_count'] = count(explode(" ", $data_import['long_description']));
+                $data['s_product_long_desc_count'] = count(explode(" ", strip_tags($data_import['long_description'])));
             }
             $data['s_product'] = $data_import;
             // --- GET SELECTED RPODUCT DATA (END)
@@ -2332,12 +2332,12 @@ class Measure extends MY_Controller {
                 if ($data_import['description'] !== null && trim($data_import['description']) !== "") {
                     $data_import['description'] = preg_replace('/\s+/', ' ', $data_import['description']);
                     // $data_import['description'] = preg_replace('/[^A-Za-z0-9\. -!]/', ' ', $data_import['description']);
-                    $data['s_product_short_desc_count'] = count(explode(" ", $data_import['description']));
+                    $data['s_product_short_desc_count'] = count(explode(" ", strip_tags($data_import['description'])));
                 }
                 if ($data_import['long_description'] !== null && trim($data_import['long_description']) !== "") {
                     $data_import['long_description'] = preg_replace('/\s+/', ' ', $data_import['long_description']);
                     // $data_import['long_description'] = preg_replace('/[^A-Za-z0-9\. -!]/', ' ', $data_import['long_description']);
-                    $data['s_product_long_desc_count'] = count(explode(" ", $data_import['long_description']));
+                    $data['s_product_long_desc_count'] = count(explode(" ", strip_tags($data_import['long_description'])));
                 }
                 $data['s_product'] = $data_import;
                 // --- GET SELECTED RPODUCT DATA (END)
