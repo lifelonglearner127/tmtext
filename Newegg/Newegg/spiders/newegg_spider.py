@@ -42,7 +42,7 @@ class NeweggSpider(BaseSpider):
 
             item = CategoryItem()
             item['text'] = category_link.select("text()").extract()[0]
-            item['url'] = category_link.select("@href").extract()[0]
+            item['url'] = self.clean_url(category_link.select("@href").extract()[0])
             # mark as department
             item['level'] = 1
 
@@ -107,7 +107,7 @@ class NeweggSpider(BaseSpider):
             item['text'] = subcat.select("text()").extract()[0].strip()
 
             #TODO: check out some huge URLs
-            item['url'] = subcat.select("@href").extract()[0]
+            item['url'] = self.clean_url(subcat.select("@href").extract()[0])
 
             item['parent_text'] = parent['text']
             item['parent_url'] = parent['url']
