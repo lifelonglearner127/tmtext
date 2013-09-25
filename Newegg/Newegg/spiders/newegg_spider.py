@@ -24,7 +24,7 @@ class NeweggSpider(BaseSpider):
 
     # remove suffix (referrer?) from URL
     def clean_url(self, url):
-        m = re.match("(.*)?Tid=[0-9]+", url)
+        m = re.match("(.*)\?Tid=[0-9]+", url)
         if m:
             return m.group(1)
         else:
