@@ -59,7 +59,7 @@ foreach ($same_pr as $ks => $vs) {
             $vs['description'] = preg_replace('/[a-zA-Z]-/', ' ', $vs['description']);
 
             // $data_import['description'] = preg_replace('/[^A-Za-z0-9\. -!]/', ' ', $data_import['description']);
-            $s_product_short_desc_count = count(explode(" ", $vs['description']));
+            $s_product_short_desc_count = count(explode(" ", strip_tags($vs['description'])));
         } else {
             $s_product_short_desc_count = 0;
             $s_product_description = '';
@@ -71,7 +71,7 @@ foreach ($same_pr as $ks => $vs) {
             $vs['long_description'] = preg_replace('/[a-zA-Z]-/', ' ', $vs['long_description']);
 
             // $data_import['long_description'] = preg_replace('/[^A-Za-z0-9\. -!]/', ' ', $data_import['long_description']);
-            $s_product_long_desc_count = count(explode(" ", $vs['long_description']));
+            $s_product_long_desc_count = count(explode(" ", strip_tags($vs['long_description'])));
         } else {
             $s_product_long_desc_count = 0;
             $s_product_long_description = '';

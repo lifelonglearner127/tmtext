@@ -71,6 +71,9 @@ class Research_data_model extends CI_Model {
             ->from($this->tables['imported_data_parsed'].' as p')
             ->join($this->tables['imported_data'].' as i', 'i.id = p.imported_data_id', 'left')
             ->where('p.key', 'URL')
+            ->where('`p`.`revision` = (SELECT  MAX(revision) as revision
+                      FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
+                      GROUP BY imported_data_id)', NULL, FALSE)
            ->where_in('p.value', $urls);
         $query = $this->db->get();
         $results = $query->result();
@@ -85,7 +88,9 @@ class Research_data_model extends CI_Model {
         }
          }
         foreach($results as $result){
-            $query = $this->db->where('imported_data_id', $result->imported_data_id)->get($this->tables['imported_data_parsed']);
+            $query = $this->db->where('imported_data_id', $result->imported_data_id)->where("revision = (SELECT  MAX(revision) as revision
+                      FROM imported_data_parsed WHERE `imported_data_id`= $result->imported_data_id
+                      GROUP BY imported_data_id)", NULL, FALSE)->get($this->tables['imported_data_parsed']);
             $res = $query->result_array();
             $description = '';
             $long_description = '';
