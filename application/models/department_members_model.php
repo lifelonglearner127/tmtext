@@ -14,7 +14,11 @@ class Department_members_model extends CI_Model {
     }
 
     function getDepartmentsBySiteId($site_id) {
-        $query = $this->db->where('site_id', $site_id)->get($this->tables['department_members']);
+        $check_obj = array(
+            'site_id' => $site_id,
+            'url !=' => ''
+        );
+        $query = $this->db->where($check_obj)->get($this->tables['department_members']);
         return $query->result();
     }
 
@@ -47,6 +51,19 @@ class Department_members_model extends CI_Model {
             }
         }
         return $res_data;
+    }
+
+    function updateSiteDepartmentSnap($dep_id, $snap_name, $snap_path, $snap_dir, $http_status)  {
+        $data = array(
+            'snap_name' => $snap_name,
+            'snap_path' => $snap_path,
+            'snap_dir' => $snap_dir,
+            'http_status' => $http_status,
+            'stamp' => date("Y-m-d H:i:s")
+        );
+        $this->db->where('dep_id', $dep_id);
+        $this->db->update($this->tables['site_departments_snaps'], $data);
+        return true;
     }
 
     function insertSiteDepartmentSnap($dep_id, $snap_name, $snap_path, $snap_dir, $http_status) {

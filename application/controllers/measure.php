@@ -1103,13 +1103,36 @@ class Measure extends MY_Controller {
     }
 
     public function save_dep_rep_comparison_sets() {
+        $res = array();
+        $this->load->model('webshoots_model');
         $sets = $this->input->post('sets');
-        $res = $sets;
+        if(count($sets) > 0) {
+            foreach($sets as $key => $value) {
+                $mid = array(
+                    'id' => $value['id'],
+                    'main_choose_dep' => $value['main_choose_dep'],
+                    'main_choose_site' => $value['main_choose_site'],
+                    'competitors' => $value['competitors'],
+                    'valid' => $value['valid'],
+                    'valid_db_rows' => array()
+                );
+                // ==== prepare and figure out valid db rows (start)
+                if($mid['valid']) {
+                  // === generate screens for sets (if needed) (start)
+                  $this->webshoots_model->checkAndGenerateDepScreenshot($mid['main_choose_dep']);
+                  // === generate screens for sets (if needed) (end)
+                }
+                // ==== prepare and figure out valid db rows (end)
+                array_push($res, $mid);
+            }
+        }
         $this->output->set_content_type('application/json')->set_output(json_encode($res));
     }
 
     public function get_full_dep_rep_comparison_row() {
+        $this->load->model('helpers_model');
         $data['sites_list'] = $this->sites_list_new();
+        $data['helpers_model'] = $this->helpers_model; 
         $this->load->view('measure/get_full_dep_rep_comparison_row', $data);
     }
 
@@ -1119,7 +1142,9 @@ class Measure extends MY_Controller {
     }
 
     public function get_cats_screens_rep() {
+        $this->load->model('helpers_model');
         $data['sites_list'] = $this->sites_list_new();
+        $data['helpers_model'] = $this->helpers_model; 
         $this->load->view('measure/get_cats_screens_rep', $data);
     }
 
@@ -1357,6 +1382,7 @@ class Measure extends MY_Controller {
     }
 
     public function getDepartmentsByCustomerNew() {
+        $this->load->model('webshoots_model');
         $this->load->model('department_members_model');
         $site_id = $this->input->post('site_id');
         $result = $this->department_members_model->getDepartmentsBySiteId($site_id);

@@ -1,4 +1,4 @@
-<tr>
+<tr data-id="<?php echo $helpers_model->random_string_gen(11); ?>">
 	<td>
 		<input type='checkbox' class='cat_report_ch'><br>
 		<button class='btn btn-danger small_custom_icon_btn mt_5' onclick="removeFullRow(this)"><i class='icon-remove-circle icon-white'></i></button>

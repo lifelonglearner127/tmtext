@@ -1,6 +1,6 @@
 <div class="modal-header">
 	<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-	<h3>Categories screenshot reports</h3>
+	<h3>Departments screenshot reports</h3>
 </div>
 <div class="modal-body">
 	<table id='dcsr_control_panel_tabel' class='table table-striped'>
@@ -12,7 +12,7 @@
 			</tr>
 		</thead>
 		<tbody>
-			<tr>
+			<tr data-id="<?php echo $helpers_model->random_string_gen(11); ?>">
 				<td><input type='checkbox' class='cat_report_ch'></td>
 				<td>
 					<?php if (count($sites_list) > 0) { ?>
@@ -91,6 +91,7 @@
 		// === prepare selected sets data for backend analyzer (start)
 		$("#dcsr_control_panel_tabel > tbody > tr").each(function(index, value) {
 			var mid = {
+				id: $(value).data('id'),
 				main_choose_site: '0',
 				main_choose_dep: '0',
 				competitors: [],
@@ -126,7 +127,10 @@
 		console.log("COLLECTED SETS DATA AFTER VALIDATION : ", sets);
 		// === initial sets validation (end)
 
+		$("#dcsr_control_panel_modal").modal('hide');
+		$("#loader_dep_saving_sets").modal('show');
 		$.post(base_url + 'index.php/measure/save_dep_rep_comparison_sets', {sets: sets}, function(data) {
+			$("#loader_dep_saving_sets").modal('hide');
 			console.log("SETS SAVING RESPONSE : ", data);
 		});
 

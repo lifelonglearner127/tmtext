@@ -8,7 +8,9 @@ class Webshoots_model extends CI_Model {
         'ci_home_page_recipients' => 'ci_home_page_recipients',
         'customers' => 'customers',
         'crawler_list' => 'crawler_list',
-        'home_pages_config' => 'home_pages_config'
+        'home_pages_config' => 'home_pages_config',
+        'site_departments_snaps' => 'site_departments_snaps',
+        'department_members' => 'department_members'
     );
 
     function __construct() {
@@ -536,6 +538,52 @@ class Webshoots_model extends CI_Model {
         } else {
             return array();
         }
+    }
+
+    public function checkAndGenerateDepScreenshot($dep_id) {
+      $this->load->model('department_members_model');
+      $check_obj = array(
+        'dep_id' => $dep_id
+      );
+      $qr = $this->db->where($check_obj)->get($this->tables['site_departments_snaps']);
+      $qr_res = $qr->result();
+      if(count($qr_res) > 0) { // === check image status of existed (and refresh if image is bad)
+        $r = $qr_res[0];
+        $snap_name = $r->snap_name;
+        $dir_img = realpath(BASEPATH . "../webroot/webshoots/$snap_name");
+        $fs = filesize($dir_img); 
+        if($fs === false || $fs < 10000) {
+          $dep_query = $this->db->where('id', $dep_id)->limit(1)->get($this->tables['department_members']);
+          $dep_query_res = $dep_query->result();
+          if(count($dep_query_res) > 0) {
+            $dep = $dep_query_res[0];
+            @unlink($dir_img);
+            $url = $dep->url;
+            $http_status = $this->urlExistsCode($url);
+            if($http_status >= 200 && $http_status <= 302) {
+              $url = preg_replace('#^https?://#', '', $url);
+              $call_url = $this->webthumb_call_link($url);
+              $snap_res = $this->crawl_webshoot($call_url, $dep->id, 'sites_dep_snap-');
+              $this->department_members_model->updateSiteDepartmentSnap($dep->id, $snap_res['img'], $snap_res['path'], $snap_res['dir'], $http_status);
+            }
+          }
+        }
+      } else { // === create brand new snap
+        $dep_query = $this->db->where('id', $dep_id)->limit(1)->get($this->tables['department_members']);
+        $dep_query_res = $dep_query->result();
+        if(count($dep_query_res) > 0) {
+          $dep = $dep_query_res[0];
+          $url = $dep->url;
+          $http_status = $this->urlExistsCode($url);
+          if($http_status >= 200 && $http_status <= 302) {
+            $url = preg_replace('#^https?://#', '', $url);
+            $call_url = $this->webthumb_call_link($url);
+            $snap_res = $this->crawl_webshoot($call_url, $dep->id, 'sites_dep_snap-');
+            $this->department_members_model->insertSiteDepartmentSnap($dep->id, $snap_res['img'], $snap_res['path'], $snap_res['dir'], $http_status);
+          }
+        }
+      }
+      return true;
     }
 
 }
