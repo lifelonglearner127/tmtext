@@ -29,7 +29,7 @@ jQuery(document).ready(function($) {
                         <li style="float: left;">
                             <button style="margin-right: 9px" class='btn' onclick="switchToGridView();" id='grid_sw_grid' type='button'><i class="icon-th-large"></i>&nbsp;Comparison</button>
                             <button style="margin-right: 9px" class='btn' onclick="switchToTableView();" id='table_grid' type='button'><i class="icon-th-table"></i>&nbsp;Summary</button>
-                            <button class='btn' onclick="switchToListView();" id='grid_sw_list' type='button'><i class="icon-th-list"></i>&nbsp;List</button>
+                            <button class='btn' onclick="switchToListView();" id='grid_sw_list' type='button'><i class="icon-th-list"></i>&nbsp;SEO</button>
 <!--                            <a href="#myModal" role="button"  data-toggle="modal"><img  style="width:30px; heihgt: 30px;"src ="<?php echo base_url() ?>/img/ico-gear.png"></a>-->
                             
                         </li>
@@ -188,14 +188,14 @@ $(document).ready(function(){
                     <!-- <h3>Metrics</h3> -->
                     <ul>
                         <li><h3>Metrics</h3></li>
-                        <li><a href="javascript:void(0)">Site Metrics</a></li>
+<!--                        <li><a href="javascript:void(0)">Site Metrics</a></li>
                         <li>Alexa: &nbsp;</li>
                         <li>SKUs: &nbsp;</li>
                         <li>&nbsp;</li>
                         <li><a href="javascript:void(0)">Page Metrics</a></li>
                         <li>SKU: &nbsp;</li>
-                        <li>&nbsp;</li>
-                        <li style='margin-bottom: 5px;'><a href="javascript:void(0)">Keyword Metrics</a></li>
+                        <li>&nbsp;</li>-->
+                        <li style='margin-bottom: 5px;'><a href="javascript:void(0)">Analyze Keyword Density</a></li>
                         <li class='keywords_metrics_bl'>
                             <table class='keywords_metrics_tbl'>
                                 <tbody>
