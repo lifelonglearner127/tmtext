@@ -2294,7 +2294,7 @@ class Measure extends MY_Controller {
     }
 
     private function keywords_appearence_count($desc, $phrase) {
-        return substr_count($desc, $phrase);
+        return substr_count($desc, ' '.$phrase.' ');
     }
 
     public function save_new_words() {

@@ -145,7 +145,7 @@ class Helpers {
 
   private function keywords_appearence_count($desc, $phrase) {
     $desc=strip_tags($desc);
-    return substr_count($desc, $phrase);
+    return substr_count($desc, ' '.$phrase.' ');
   }
 
   // private function keywords_appearence_count_exp($desc, $phrase) {
