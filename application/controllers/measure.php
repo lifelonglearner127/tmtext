@@ -1120,7 +1120,13 @@ class Measure extends MY_Controller {
                 if($mid['valid']) {
                   // === generate screens for sets (if needed) (start)
                   $this->webshoots_model->checkAndGenerateDepScreenshot($mid['main_choose_dep']);
+                  if(count($value['competitors']) > 0) {
+                    foreach ($value['competitors'] as $k => $v) {
+                      $this->webshoots_model->checkAndGenerateDepScreenshot($v['sec_dep_chooser']);
+                    }
+                  }
                   // === generate screens for sets (if needed) (end)
+                  // TODO: NEXT STEP - IMPLEMENT RECORD / UPDATE TO SETS DB TABLE
                 }
                 // ==== prepare and figure out valid db rows (end)
                 array_push($res, $mid);
