@@ -1,3 +1,15 @@
+# 25/09 Ilya
+CREATE  TABLE IF NOT EXISTS `site_departments_reports` (
+  `id` INT NOT NULL AUTO_INCREMENT ,
+  `uid` INT NULL DEFAULT NULL ,
+  `main_choose_dep` INT NULL DEFAULT NULL ,
+  `main_choose_site` INT NULL DEFAULT NULL ,
+  `sec_site_chooser` INT NULL DEFAULT NULL ,
+  `sec_dep_chooser` INT NULL DEFAULT NULL ,
+  `stamp` DATETIME NULL DEFAULT NULL ,
+  PRIMARY KEY (`id`) 
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1;
+
 # 17/09 Ilya
 CREATE TABLE IF NOT EXISTS `ranking_api_data` (
   `id` INT NOT NULL AUTO_INCREMENT ,

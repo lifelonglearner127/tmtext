@@ -5,12 +5,44 @@ class Department_members_model extends CI_Model {
 
     var $tables = array(
         'department_members' => 'department_members',
-        'site_departments_snaps' => 'site_departments_snaps'
+        'site_departments_snaps' => 'site_departments_snaps',
+        'site_departments_reports' => 'site_departments_reports'
     );
 
     function __construct()
     {
         parent::__construct();
+    }
+
+    function recordUpdateDepReportSet($db_row) {
+        $check_obj = array(
+            'uid' => (int)$db_row['uid'],
+            'main_choose_dep' => (int)$db_row['main_choose_dep'],
+            'main_choose_site' => (int)$db_row['main_choose_site'],
+            'sec_site_chooser' => (int)$db_row['sec_site_chooser'],
+            'sec_dep_chooser' => (int)$db_row['sec_dep_chooser']
+        );
+        $query = $this->db->where($check_obj)->get($this->tables['site_departments_reports']);
+        $q_res = $query->result();
+        if(count($q_res) > 0) {
+            $r = $q_res[0];
+            $data = array(
+                'stamp' => date("Y-m-d H:i:s")
+            );
+            $this->db->where('id', $r->id);
+            $this->db->update($this->tables['site_departments_reports'], $data);
+        } else {
+            $insert_object = array(
+                'uid' => (int)$db_row['uid'],
+                'main_choose_dep' => (int)$db_row['main_choose_dep'],
+                'main_choose_site' => (int)$db_row['main_choose_site'],
+                'sec_site_chooser' => (int)$db_row['sec_site_chooser'],
+                'sec_dep_chooser' => (int)$db_row['sec_dep_chooser'],
+                'stamp' => date("Y-m-d H:i:s")
+            );
+            $this->db->insert($this->tables['site_departments_reports'], $insert_object);
+        }
+        return true;
     }
 
     function getDepartmentsBySiteId($site_id) {

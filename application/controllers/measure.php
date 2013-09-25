@@ -1103,8 +1103,10 @@ class Measure extends MY_Controller {
     }
 
     public function save_dep_rep_comparison_sets() {
+        $uid = $this->ion_auth->get_user_id();
         $res = array();
         $this->load->model('webshoots_model');
+        $this->load->model('department_members_model');
         $sets = $this->input->post('sets');
         if(count($sets) > 0) {
             foreach($sets as $key => $value) {
@@ -1123,10 +1125,20 @@ class Measure extends MY_Controller {
                   if(count($value['competitors']) > 0) {
                     foreach ($value['competitors'] as $k => $v) {
                       $this->webshoots_model->checkAndGenerateDepScreenshot($v['sec_dep_chooser']);
+                      // == IMPLEMENT RECORD / UPDATE TO SETS DB TABLE (START)
+                      $db_row = array(
+                        'uid' => $uid,
+                        'main_choose_dep' => $value['main_choose_dep'],
+                        'main_choose_site' => $value['main_choose_site'],
+                        'sec_site_chooser' => $v['sec_site_chooser'],
+                        'sec_dep_chooser' => $v['sec_dep_chooser']
+                      );
+                      array_push($mid['valid_db_rows'], $db_row);
+                      $this->department_members_model->recordUpdateDepReportSet($db_row);
+                      // == IMPLEMENT RECORD / UPDATE TO SETS DB TABLE (END)
                     }
                   }
                   // === generate screens for sets (if needed) (end)
-                  // TODO: NEXT STEP - IMPLEMENT RECORD / UPDATE TO SETS DB TABLE
                 }
                 // ==== prepare and figure out valid db rows (end)
                 array_push($res, $mid);
