@@ -1317,7 +1317,7 @@ class Measure extends MY_Controller {
         $dep_optimize = array();
         foreach ($data_more as $key => $obj) {
             $keywords_density = json_decode($data_more[$key]->title_keyword_description_density);
-            if($data_more[$key]->title_keyword_description_density == '{}' || $data_more[$key]->title_keyword_description_density == '')){
+            if($data_more[$key]->title_keyword_description_density == '{}' || $data_more[$key]->title_keyword_description_density == ''){
                 array_push($dep_optimize, $obj);
             }
             $num = 0;
