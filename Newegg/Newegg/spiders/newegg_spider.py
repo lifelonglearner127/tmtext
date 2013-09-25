@@ -22,6 +22,14 @@ class NeweggSpider(BaseSpider):
     allowed_domains = ["newegg.com"]
     start_urls = ["http://www.newegg.com"]
 
+    # remove suffix (referrer?) from URL
+    def clean_url(self, url):
+        m = re.match("(.*)?Tid=[0-9]+", url)
+        if m:
+            return m.group(1)
+        else:
+            return url
+
     def parse(self, response):
         hxs = HtmlXPathSelector(response)
 
