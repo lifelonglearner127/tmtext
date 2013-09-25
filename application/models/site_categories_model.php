@@ -181,7 +181,7 @@ class Site_categories_model extends CI_Model {
 
     function getCategoriesByWc($site_id)
     {
-        $sql = "SELECT * FROM `site_categories` WHERE `site_id` = '".$site_id."' and `description_words` > 0";
+        $sql = "SELECT * FROM `site_categories` WHERE `site_id` = '".$site_id."' and `description_words` > 0 order by `text` asc";
         $query = $this->db->query($sql);
         return $query->result();
     }
