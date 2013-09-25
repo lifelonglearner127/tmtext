@@ -349,6 +349,7 @@ $( function() {
                     $('#departments_content').html('');
                     $("tbody#category_data").empty();
                     $("tbody#department_data").empty();
+                    $("#dataTableDiv2").hide();
                     if(selected_type == "Departments"){
                         $('#dashboard_recommend').show();
                         globalDepDashboard(site_name);
@@ -372,6 +373,7 @@ $( function() {
         readBestSellers(department_id,site_name,'recordSec');
         $(".dashboard").hide();
         /*****departmentAjax****/
+        $("#dataTableDiv2").show();
         if(department_id != ''){
             departmentAjax(department_id,site_name);
             $('.table_results').show();
