@@ -1040,13 +1040,7 @@ function getCatData(site_name, obj, condition, state){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
                 data_str += '<li><span class="dep_text">';
-                if(state == 1){
-                    data_str += '<a href="'+data[j].url+'" target="_blank">';
-                }
-                data_str += data[j].text;
-                if(state == 1){
-                    data_str += '</a>';
-                }
+                data_str += '<a href="'+data[j].url+'" target="_blank">'+data[j].text+'</a>';
                 data_str += '</span><span class="dep_numbers">';
                 if(data[j].description_words > 0){
                     data_str += data[j].description_words;
