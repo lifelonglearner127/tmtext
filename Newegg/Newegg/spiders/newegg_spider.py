@@ -66,7 +66,7 @@ class NeweggSpider(BaseSpider):
         # try to change URL "Category" to "SubCategory", see if you find the product count there
 
         # extract description if available
-        description_holders = hxs.select("//div[@class='captionWrap']")
+        description_holders = hxs.select("//div[@id='bcaShopWindowSEO']")
         if description_holders:
             # if the list is not empty and contains at least one non-whitespace item
             if description_holders:
