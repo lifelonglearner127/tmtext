@@ -16,7 +16,7 @@
 			<?php if(count($user_dep_rep_sets) > 0) { ?>
 				<?php foreach($user_dep_rep_sets as $k => $v) { ?>
 				<tr>
-					<td><input type='checkbox' class='clst_report_ch'></td>
+					<td><input type='checkbox' value="<?php echo $v->id ?>" class='clst_report_ch'></td>
 					<td>
 						<?php $main_dep_snap = $this->department_members_model->getLatestDepartmentScreen($v->main_choose_dep); ?>
 						<?php if($main_dep_snap['img_av_status']) { ?> 
@@ -49,5 +49,60 @@
 	</table>
 </div>
 <div class="modal-footer">
-	<button id='btn_dep_rep_send_set' class="btn btn-primary btn-rec-all-send" disabled="" type="button" onclick="">Send report</button>
+	<button id='btn_dep_rep_send_set' class="btn btn-primary btn-rec-all-send" disabled="" type="button" onclick="sendDepSnapsReport()">Send report</button>
 </div>
+
+<script type='text/javascript'>
+	
+	$(document).ready(function() {
+		$("#clst_report_ch_all").on('change', function(e) {
+			if($(e.target).is(":checked")) {
+				$('.clst_report_ch').attr('checked', true);
+				$('#btn_dep_rep_send_set').removeAttr('disabled');
+			} else {
+				$('.clst_report_ch').removeAttr('checked');
+				$('#btn_dep_rep_send_set').attr('disabled', true);
+			}
+		});
+
+		$(".clst_report_ch").on('change', function(e) {
+			var checked_count = $(".clst_report_ch").length;
+			setTimeout(function() {
+				var count_s = 0;
+				$(".clst_report_ch").each(function(index, val) {
+					if($(val).is(':checked')) count_s++;
+				});
+				if(checked_count == count_s) {
+					$("#clst_report_ch_all").attr('checked', true);
+				} else {
+					$("#clst_report_ch_all").removeAttr('checked');
+				}
+				if(count_s == 0) {
+					$("#clst_report_ch_all").removeAttr('checked');
+					$("#btn_dep_rep_send_set").attr('disabled', true);
+				} else {
+					$('#btn_dep_rep_send_set').removeAttr('disabled');
+				} 
+			}, 100);
+		});
+
+	});
+
+	function sendDepSnapsReport() {
+		var rep_ids = [];
+		$(".clst_report_ch:checked").each(function(index, value) {
+			rep_ids.push($(value).val());
+		});
+		if(rep_ids.length > 0) {
+			$("#dep_rep_preview_list_modal").modal('hide');
+			$('#loader_dep_sending_rep').modal('show');
+			$.post(base_url + 'index.php/measure/send_dep_snaps_report', {rep_ids: rep_ids}, function(data) {
+				$('#loader_dep_sending_rep').modal('hide');
+				console.log(data);	
+			});
+		} else {
+			alert('No checked items');
+		}
+	}
+
+</script>

@@ -244,6 +244,12 @@
 
 <div class="modal hide fade ci_hp_modals crawl_launch_panel" id='recipients_control_panel_modal'></div>
 
+<div class="modal hide fade ci_hp_modals" id='loader_dep_sending_rep'>
+    <div class="modal-body">
+        <p><img src="<?php echo base_url();?>img/loader_scr.gif">&nbsp;&nbsp;&nbsp;Sending report. Please wait...</p>
+    </div>
+</div>
+
 <div class="modal hide fade ci_hp_modals" id='loader_dep_saving_sets'>
     <div class="modal-body">
         <p><img src="<?php echo base_url();?>img/loader_scr.gif">&nbsp;&nbsp;&nbsp;Saving sets. Please wait...</p>

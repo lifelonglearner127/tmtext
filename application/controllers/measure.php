@@ -1102,6 +1102,49 @@ class Measure extends MY_Controller {
         $this->load->view('measure/gethomepageweekdata', $data);
     }
 
+    public function send_dep_snaps_report() {
+        $this->load->model('department_members_model');
+        $this->load->model('webshoots_model');
+        $this->load->model('settings_model');
+        $uid = $this->ion_auth->get_user_id();
+        $rep_ids = $this->input->post('rep_ids');
+        $reports = $this->department_members_model->getDepReportsByIds($rep_ids);
+
+        $email_report_config_sender = $this->webshoots_model->getEmailReportConfig('sender');
+        $email_report_sender_name = $this->settings_model->get_general_setting('site_name');
+        if ($email_report_sender_name === false)
+            $email_report_sender_name = "Content Solutions - Home Pages Report";
+        $user_object = $this->department_members_model->getUserObjectById($uid);
+        if($user_object !== null) {
+            $email = $user_object->email;
+        } else {
+            $email = 'ishulgin8@gmail.com';
+        }
+        // --------------- email sender (start) ---------------
+        // -- email config (dev configurations) (start) --
+        $this->load->library('email');
+
+        $config['protocol'] = 'sendmail';
+        $config['mailpath'] = '/usr/sbin/sendmail';
+        $config['charset'] = 'UTF-8';
+        $config['wordwrap'] = TRUE;
+        $config['mailtype'] = 'html';
+
+        $this->email->initialize($config);
+        // -- email config (dev configurations) (end) --
+        $this->email->from("$email_report_config_sender", "$email_report_sender_name");
+        $this->email->to("$email");
+        $this->email->subject("$email_report_sender_name - Home Pages Report");
+        $data_et['department_members_model'] = $this->department_members_model;
+        $data_et['reports'] = $reports;
+        $data_et['email_logo'] = $this->webshoots_model->getEmailReportConfig('logo');
+        $msg = $this->load->view('measure/dep_cat_report_email_template', $data_et, true);
+        $this->email->message($msg);
+        $this->email->send();
+        $this->output->set_content_type('application/json')->set_output(json_encode($this->email->print_debugger()));
+        // --------------- email sender (end) -----------------
+    }
+
     public function save_dep_rep_comparison_sets() {
         $uid = $this->ion_auth->get_user_id();
         $res = array();

@@ -6,12 +6,31 @@ class Department_members_model extends CI_Model {
     var $tables = array(
         'department_members' => 'department_members',
         'site_departments_snaps' => 'site_departments_snaps',
-        'site_departments_reports' => 'site_departments_reports'
+        'site_departments_reports' => 'site_departments_reports',
+        'users' => 'users'
     );
 
     function __construct()
     {
         parent::__construct();
+    }
+
+    function getUserObjectById($uid) {
+        $res = null;
+        $check_obj = array(
+            'id' => $uid
+        );
+        $query = $this->db->where($check_obj)->get($this->tables['users']);
+        $res_query = $query->result();
+        if(count($res_query) > 0) {
+            $res = $res_query[0];
+        }
+        return $res;
+    }
+
+    function getDepReportsByIds($rep_ids) {
+        $query = $this->db->where_in('id', $rep_ids)->order_by('stamp desc')->get($this->tables['site_departments_reports']);
+        return $query->result();
     }
 
     function getUserDepRepSets($uid) {
