@@ -1982,6 +1982,7 @@ class Measure extends MY_Controller {
 //                $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['UPC/EAN/ISBN']);
 //            }
             if (empty($same_pr) && !isset($data_import['parsed_attributes']['model'])) {
+                $this->imported_data_parsed_model->getByProductNameNew($im_data_id, $data_import['product_name'], '', $strict);
                 $data['mismatch_button'] = true;
                 if (!$this->similar_product_groups_model->checkIfgroupExists($im_data_id)) {
 
@@ -2424,6 +2425,7 @@ class Measure extends MY_Controller {
                     $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['UPC/EAN/ISBN']);
                 }
                 if (empty($same_pr) && !isset($data_import['parsed_attributes']['model'])) {
+                    $this->imported_data_parsed_model->getByProductNameNew($im_data_id, $data_import['product_name'], '', $strict);
                     $data['mismatch_button'] = true;
                     if (!$this->similar_product_groups_model->checkIfgroupExists($im_data_id)) {
 
@@ -2795,7 +2797,7 @@ class Measure extends MY_Controller {
             $result = $this->research_data_model->get_by_batch_id($batch_id);
             if ($status_results == 'no_match') {
                 foreach ($result as $kay => $val) {
-                    $matches_sites = $this->matches_count($val['imported_data_id']);
+                    $matches_sites = array_unique($this->matches_count($val['imported_data_id']));
                     if (count($matches_sites) > 1) {
 
                         unset($result[$kay]);
