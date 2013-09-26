@@ -75,24 +75,23 @@ class NeweggSpider(BaseSpider):
 
         # extract description if available
         description_holders = hxs.select("//div[@id='bcaShopWindowSEO']")
+        # if the list is not empty and contains at least one non-whitespace item
         if description_holders:
-            # if the list is not empty and contains at least one non-whitespace item
-            if description_holders:
-                description_texts = description_holders.select(".//text()[not(ancestor::h2)]").extract()
+            description_texts = description_holders.select(".//text()[not(ancestor::h2)]").extract()
 
-                # replace all whitespace with one space, strip, and remove empty texts; then join them
-                item['description_text'] = " ".join([re.sub("\s+"," ", description_text.strip()) for description_text in description_texts if description_text.strip()])
+            # replace all whitespace with one space, strip, and remove empty texts; then join them
+            item['description_text'] = " ".join([re.sub("\s+"," ", description_text.strip()) for description_text in description_texts if description_text.strip()])
 
-                tokenized = Utils.normalize_text(item['description_text'])
-                item['description_wc'] = len(tokenized)
+            tokenized = Utils.normalize_text(item['description_text'])
+            item['description_wc'] = len(tokenized)
 
-                description_title = description_holders.select(".//h2/text()").extract()
-                if description_title:
-                    item['description_title'] = description_title[0].strip()
+            description_title = description_holders.select(".//h2/text()").extract()
+            if description_title:
+                item['description_title'] = description_title[0].strip()
 
-                    (item['keyword_count'], item['keyword_density']) = Utils.phrases_freq(item['description_title'], item['description_text'])
-            else:
-                item['description_wc'] = 0
+                (item['keyword_count'], item['keyword_density']) = Utils.phrases_freq(item['description_title'], item['description_text'])
+        else:
+            item['description_wc'] = 0
 
         yield item
 

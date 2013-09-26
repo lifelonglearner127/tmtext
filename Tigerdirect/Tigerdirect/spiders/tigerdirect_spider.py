@@ -35,14 +35,17 @@ class TigerdirectSpider(BaseSpider):
 
         item = response.meta['item']
 
-        #TODO
         # extract number of products if available
+        nrproducts_holder = hxs.select("//div[@class='resultsfilterBottom']/div[@class='itemsShowresult']/strong[2]/text()").extract()
+        if nrproducts_holder:
+            item['nr_products'] = int(nrproducts_holder[0])
 
-        #TODO
         # extract description if available
+        desc_holder = hxs.select("//div[@class='textBlock']")
+
+
+        yield item
 
         #TODO
         # extract subcategories
         parent = item
-
-        yield item
