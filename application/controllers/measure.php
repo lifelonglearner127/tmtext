@@ -1112,8 +1112,7 @@ class Measure extends MY_Controller {
 
         $email_report_config_sender = $this->webshoots_model->getEmailReportConfig('sender');
         $email_report_sender_name = $this->settings_model->get_general_setting('site_name');
-        if ($email_report_sender_name === false)
-            $email_report_sender_name = "Content Solutions - Home Pages Report";
+        if ($email_report_sender_name === false) $email_report_sender_name = "Content Solutions - Home Pages Report";
         $user_object = $this->department_members_model->getUserObjectById($uid);
         if($user_object !== null) {
             $email = $user_object->email;
