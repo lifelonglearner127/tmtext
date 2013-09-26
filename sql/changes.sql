@@ -5,8 +5,7 @@ CREATE  TABLE IF NOT EXISTS `site_departments_reports` (
   'set_id' VARCHAR(45) NULL DEFAULT NULL,
   `main_choose_dep` INT NULL DEFAULT NULL ,
   `main_choose_site` INT NULL DEFAULT NULL ,
-  `sec_site_chooser` INT NULL DEFAULT NULL ,
-  `sec_dep_chooser` INT NULL DEFAULT NULL ,
+  `json_encode_com` TEXT NULL DEFAULT NULL ,
   `stamp` DATETIME NULL DEFAULT NULL ,
   PRIMARY KEY (`id`) 
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1;
