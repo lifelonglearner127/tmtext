@@ -1,6 +1,7 @@
 from scrapy.spider import BaseSpider
 from scrapy.selector import HtmlXPathSelector
 from Tigerdirect.items import TigerdirectItem
+from scrapy.http import Request
 import sys
 
 ################################
@@ -20,14 +21,28 @@ class TigerdirectSpider(BaseSpider):
 
     def parse(self, response):
         hxs = HtmlXPathSelector(response)
-        links = hxs.select("//table//tr[1]/td//a[ancestor::h4 | ancestor::ul]")
-        items = []
+        links = hxs.select("//table//tr[1]/td//a[ancestor::h4]")
 
-        #TODO: implement parents
         for link in links:
             item = TigerdirectItem()
-            item['text'] = link.select('text()').extract()
-            item['url'] = link.select('@href').extract()
-            items.append(item)
+            item['text'] = link.select('text()').extract()[0]
+            item['url'] = link.select('@href').extract()[0]
+            yield Request(url = item['url'], callback = self.parseCategory, meta = {'item' : item})
 
-        return items
+    # receive one category url, add aditional info and return it; then extract its subcategories and parse them as well
+    def parseCategory(self, response):
+        hxs = HtmlXPathSelector(response)
+
+        item = response.meta['item']
+
+        #TODO
+        # extract number of products if available
+
+        #TODO
+        # extract description if available
+
+        #TODO
+        # extract subcategories
+        parent = item
+
+        yield item
