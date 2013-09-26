@@ -31,7 +31,7 @@
 							<?php foreach($decode_com as $k => $v) { ?>
 								<?php $sec_dep_snap = $this->department_members_model->getLatestDepartmentScreen($v->sec_dep_chooser); ?>
 								<?php if($sec_dep_snap['img_av_status']) { ?>
-								<div><img style='width: 100%' src="<?php echo base_url() ?>webshoots/<?php echo $sec_dep_snap['snap_name']; ?>"></div>	
+								<div style='margin-bottom: 10px;'><img style='width: 100%' src="<?php echo base_url() ?>webshoots/<?php echo $sec_dep_snap['snap_name']; ?>"></div>	
 								<?php } else { ?>
 								<p>not exists or broken <a href='javascript:void(0)' class='btn btn-success'>re-crawl</a></p>
 								<?php } ?>
