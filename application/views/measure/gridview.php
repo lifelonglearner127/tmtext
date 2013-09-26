@@ -927,6 +927,14 @@ if (($i - 1) % 3 != 0) {
     selectedCustomer();
 
  $(document).ready(function(){
+     
+   
+        $(".grid_se_section .c_content").scroll(function(){
+            if($("#scroll_all").attr('checked')==='checked'){
+        
+                $(".grid_se_section .c_content").scrollTop($(this).scrollTop());
+            }
+        });
    
    $('.coustom_keyword_density').live('click',function(){
         $(this).hide();

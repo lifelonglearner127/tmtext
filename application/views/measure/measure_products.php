@@ -69,6 +69,9 @@ jQuery(document).ready(function($) {
             <p>Use Shift to select multiple consecutive sites</p>
             <p>Use CTRL (Windows) or Command (Mac) to select multiple individual sites</p>
         </div>
+        
+        <input id="scroll_all" type="checkbox" value='1' /><span> Scroll all columns at same time</span>
+      
   </form> 
             
   </div>
@@ -80,13 +83,20 @@ jQuery(document).ready(function($) {
 </div>
 <script>
 $(document).ready(function(){
-                        $("#popup_save").click(function(){
-                     
+    
+                        $('#scroll_all').attr('checked',true);
+                        $("#popup_save").live('click',function(){
+                        
                         selected_cites=$("#popup_sites").val();
                         
                         //$("input['name=show_results']").val();
                         
 //<<<<<<< Updated upstream
+                        if($("#scroll_all").is(':checked')){
+                            
+                        }else{
+                            $("#scroll_all").removeAttr('checked');
+                        }
                         var status=$("input[name='show_results']:checked").val();
 
                         var status_showing_results = $.cookie('status_showing_results');
