@@ -1217,6 +1217,7 @@ class Measure extends MY_Controller {
         $uid = $this->ion_auth->get_user_id();
         $this->load->model('department_members_model');
         $data['user_dep_rep_sets'] = $this->department_members_model->getUserDepRepSets($uid);
+        $data['department_members_model'] = $this->department_members_model; 
         $this->load->view('measure/activate_dep_rep_preview_list', $data);
     }
 
