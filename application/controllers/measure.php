@@ -2254,9 +2254,6 @@ class Measure extends MY_Controller {
 
 
             foreach ($same_pr as $ks => $vs) {
-                if(isset($vs['features'])){
-                    $same_pr[$ks]['features']=  str_replace('\n', "</br>", $vs['features']);
-                }
                 $custom_seo = $this->keywords_model->get_by_imp_id($vs['imported_data_id']);
                
                 $meta = array();
