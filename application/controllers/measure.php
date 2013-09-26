@@ -2805,7 +2805,7 @@ class Measure extends MY_Controller {
             if ($status_results == 'one_match') {
 
                 foreach ($result as $kay => $val) {
-                    $matches_sites = $this->matches_count($val['imported_data_id']);
+                    $matches_sites = array_unique($this->matches_count($val['imported_data_id']));
                    
                     if (count($matches_sites) == 1) {
 
