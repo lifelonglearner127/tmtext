@@ -1982,7 +1982,7 @@ class Measure extends MY_Controller {
 //                $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['UPC/EAN/ISBN']);
 //            }
             if (empty($same_pr) && !isset($data_import['parsed_attributes']['model'])) {
-                $this->imported_data_parsed_model->getByProductNameNew($im_data_id, $data_import['product_name'], '', $strict);
+               // $this->imported_data_parsed_model->getByProductNameNew($im_data_id, $data_import['product_name'], '', $strict);
                 $data['mismatch_button'] = true;
                 if (!$this->similar_product_groups_model->checkIfgroupExists($im_data_id)) {
 
