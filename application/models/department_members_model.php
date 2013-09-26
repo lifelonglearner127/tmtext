@@ -14,11 +14,11 @@ class Department_members_model extends CI_Model {
         parent::__construct();
     }
 
-    function isDepRepSetsExists($uid) {
+    function getUserDepRepSets($uid) {
         $check_obj = array(
             'uid' => $uid
         );
-        $query = $this->db->where($check_obj)->order_by('set_id')->get($this->tables['site_departments_reports']);
+        $query = $this->db->where($check_obj)->order_by('stamp desc')->get($this->tables['site_departments_reports']);
         return $query->result();
     }
 

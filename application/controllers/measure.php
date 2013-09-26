@@ -1218,7 +1218,7 @@ class Measure extends MY_Controller {
         $this->load->model('helpers_model');
         $this->load->model('department_members_model');
         $data['sites_list'] = $this->sites_list_new();
-        $data['sets_exist'] = $this->department_members_model->isDepRepSetsExists($uid);
+        $data['user_dep_rep_sets'] = $this->department_members_model->getUserDepRepSets($uid);
         $data['helpers_model'] = $this->helpers_model; 
         $this->load->view('measure/get_cats_screens_rep', $data);
     }

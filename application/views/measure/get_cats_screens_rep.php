@@ -3,7 +3,6 @@
 	<h3>Departments screenshot reports</h3>
 </div>
 <div class="modal-body">
-	<?php // echo var_dump($sets_exist); ?>
 	<table id='dcsr_control_panel_tabel' class='table table-striped'>
 		<thead>
 			<tr>
@@ -47,7 +46,13 @@
 </div>
 <div class="modal-footer">
 	<button class="btn" onclick="addNewFullRow()" type="button">New row</button>
-	<button id='btn_dep_rep_preview_set' class="btn btn-success btn-rec-all-send" disabled="" type="button">Preview saved sets</button>
+	<?php 
+		$sets_disabled_state = "disabled";
+		if(count($user_dep_rep_sets) > 0) {
+			$sets_disabled_state = "";
+		}
+	?>
+	<button id='btn_dep_rep_preview_set' <?php echo $sets_disabled_state; ?> onclick="activateDepRepPreview()" class="btn btn-success btn-rec-all-send" type="button">Preview saved sets</button>
 	<button id='btn_dep_rep_save_set' class="btn btn-primary btn-rec-all-send" disabled="" type="button" onclick="saveSets()">Save sets</button>
 </div>
 
@@ -86,6 +91,10 @@
 		});
 
 	});
+
+	function activateDepRepPreview() {
+		
+	}
 
 	function saveSets() {
 		var sets = [];
