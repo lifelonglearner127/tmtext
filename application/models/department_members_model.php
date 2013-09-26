@@ -14,9 +14,14 @@ class Department_members_model extends CI_Model {
         parent::__construct();
     }
 
+    function isDepRepSetsExists($uid) {
+
+    }
+
     function recordUpdateDepReportSet($db_row) {
         $check_obj = array(
             'uid' => (int)$db_row['uid'],
+            'set_id' => $db_row['set_id'],
             'main_choose_dep' => (int)$db_row['main_choose_dep'],
             'main_choose_site' => (int)$db_row['main_choose_site'],
             'sec_site_chooser' => (int)$db_row['sec_site_chooser'],
@@ -34,6 +39,7 @@ class Department_members_model extends CI_Model {
         } else {
             $insert_object = array(
                 'uid' => (int)$db_row['uid'],
+                'set_id' => $db_row['set_id'],
                 'main_choose_dep' => (int)$db_row['main_choose_dep'],
                 'main_choose_site' => (int)$db_row['main_choose_site'],
                 'sec_site_chooser' => (int)$db_row['sec_site_chooser'],

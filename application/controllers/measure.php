@@ -1107,9 +1107,11 @@ class Measure extends MY_Controller {
         $res = array();
         $this->load->model('webshoots_model');
         $this->load->model('department_members_model');
+        $this->load->model('helpers_model');
         $sets = $this->input->post('sets');
         if(count($sets) > 0) {
             foreach($sets as $key => $value) {
+                $set_id = $this->helpers_model->random_string_gen(11);
                 $mid = array(
                     'id' => $value['id'],
                     'main_choose_dep' => $value['main_choose_dep'],
@@ -1128,6 +1130,7 @@ class Measure extends MY_Controller {
                       // == IMPLEMENT RECORD / UPDATE TO SETS DB TABLE (START)
                       $db_row = array(
                         'uid' => $uid,
+                        'set_id' => $set_id,
                         'main_choose_dep' => $value['main_choose_dep'],
                         'main_choose_site' => $value['main_choose_site'],
                         'sec_site_chooser' => $v['sec_site_chooser'],
@@ -1160,8 +1163,11 @@ class Measure extends MY_Controller {
     }
 
     public function get_cats_screens_rep() {
+        $uid = $this->ion_auth->get_user_id();
         $this->load->model('helpers_model');
+        $this->load->model('department_members_model');
         $data['sites_list'] = $this->sites_list_new();
+        $data['sets_exist'] = $this->department_members_model->isDepRepSetsExists($uid);
         $data['helpers_model'] = $this->helpers_model; 
         $this->load->view('measure/get_cats_screens_rep', $data);
     }
@@ -1983,6 +1989,7 @@ class Measure extends MY_Controller {
 //            }
             if (empty($same_pr) && !isset($data_import['parsed_attributes']['model'])) {
                // $this->imported_data_parsed_model->getByProductNameNew($im_data_id, $data_import['product_name'], '', $strict);
+
                 $data['mismatch_button'] = true;
                 if (!$this->similar_product_groups_model->checkIfgroupExists($im_data_id)) {
 
