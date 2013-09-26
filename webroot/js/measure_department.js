@@ -482,7 +482,7 @@ function globalDepDashboard(site_name){
         data_str += '</td>';
         data_str += '<td class="dep_second_part span6"><span class="dep_title">Create content for '+dep_content+' departments</span>';
         if(data.result0.length > 0){
-            data_str += '<ul>';
+            data_str += '<ul><li class="dep_header"><span class="dep_text_rec">RECOMMENDATIONS</span></li>';
             for(var j=0; j<data.result0.length; j++){
                 data_str += '<li>';
                 var json = data.result0[j].title_keyword_description_density;
@@ -536,7 +536,7 @@ function globalDepDashboard(site_name){
         data_str += '</td>';
         data_str += '<td class="span6 dep_second_part"><span class="dep_title">Add more words to '+data.res_more+' departments</span>';
         if(data.res_more_data.length > 0){
-            data_str += '<ul>';
+            data_str += '<ul><li class="dep_header"><span class="dep_text_rec">RECOMMENDATIONS</span></li>';
             for(var j=0; j<data.res_more_data.length; j++){
                 var json = data.res_more_data[j].title_keyword_description_density;
                 if(json != ''){
@@ -590,7 +590,7 @@ function globalDepDashboard(site_name){
         data_str += '</td>';
         data_str += '<td><span class="dep_title">Optimize '+dep_optimize+' departments</span>';
         if(data.dep_optimize.length > 0){
-            data_str += '<ul>';
+            data_str += '<ul><li class="dep_header"><span class="dep_text_rec">RECOMMENDATIONS</span></li>';
             for(var j=0; j<data.dep_optimize.length; j++){
                 var json = data.dep_optimize[j].title_keyword_description_density;
                 if(json != ''){
@@ -682,7 +682,7 @@ function globalCatDashboard(site_name){
         data_str += '</td>';
         data_str += '<td><span class="dep_title">Optimize '+dep_optimize+' categories</span>';
         if(data.dep_optimize.length > 0){
-            data_str += '<ul>';
+            data_str += '<ul><li class="cat_header"><span class="dep_text_rec">RECOMMENDATIONS</span></li>';
             for(var j=0; j<data.dep_optimize.length; j++){
                 var json = data.dep_optimize[j].title_keyword_description_density;
                 if(json != ''){
@@ -702,7 +702,7 @@ function globalCatDashboard(site_name){
                 }
                 data_str += '</span></li>';
             }
-            data_str += '<ul>';
+            data_str += '</ul>';
         }
         data_str += '</td></tr>';
 
@@ -1032,7 +1032,7 @@ function getCatData(site_name, obj, condition, state){
             if(state == 1){
                 var data_str = '<li class="cat_header"><span class="dep_text">CATEGORY</span><span class="dep_numbers">WORDS</span><span class="dep_keywords">KEYWORDS - DENSITY</span></li>';
             } else {
-                var data_str = '';
+                var data_str = '<li class="cat_header"><span class="dep_text_rec">RECOMMENDATIONS</span></li>';
             }
             for(var j=0; j<data.length; j++){
                 var json = data[j].title_keyword_description_density;

@@ -2187,8 +2187,13 @@ tbody#category_data tr td, tbody#department_data tr td{
 }
 #department_data ul li.dep_header, #category_data ul li.cat_header{
     font-size: 14px;
+    background-color: #EBEBEB;
+    display: block;
+    height: 20px;
+    padding: 3px;
 }
-#department_data ul li span:first-child, #category_data ul li span:first-child{
+#department_data ul li span:first-child, #category_data ul li span:first-child
+{
     float: left;
 }
 #department_data ul li span:last-child, #category_data ul li span:last-child{
@@ -2199,6 +2204,15 @@ tbody#category_data tr td, tbody#department_data tr td{
 }
 span.dep_text{
     width:180px;
+}
+#department_data ul li span.dep_text_rec, #category_data ul li span.dep_text_rec{
+    float: left!important;
+    text-align: left!important;
+    height: 20px;
+    font-size: 14px;
+    background-color: #EBEBEB;
+    display: block;
+    margin-bottom: 0px;
 }
 span.dep_numbers{
      width:45px;
