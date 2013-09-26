@@ -70,12 +70,15 @@ jQuery(document).ready(function($) {
             <p>Use CTRL (Windows) or Command (Mac) to select multiple individual sites</p>
         </div>
         
-        <input id="scroll_all" type="checkbox" value='1' /><span> Scroll all columns at same time</span>
+        
       
   </form> 
             
   </div>
   <div class="modal-footer">
+    <div style ="float: left;margin-top: 4px;">
+        <input style="margin-top: -4px;margin-left: 3px;" type="checkbox" name="scroll" id="scroll_all" value="scroll"><span> Scroll all columns at same time <span>
+    </div>
     <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
     <button id="popup_save"class="btn btn-primary">Save changes</button>
      
@@ -84,19 +87,19 @@ jQuery(document).ready(function($) {
 <script>
 $(document).ready(function(){
     
-                        $('#scroll_all').attr('checked',true);
+                        $('#scroll_all').attr('checked',true).addClass('check');
                         $("#popup_save").live('click',function(){
                         
                         selected_cites=$("#popup_sites").val();
                         
                         //$("input['name=show_results']").val();
                         
+                        if(!$("#scroll_all").is(':checked'))
+                            $("#scroll_all").removeAttr('checked').removeClass('check');
+                        else
+                            $('#scroll_all').attr('checked',true).addClass('check');
 //<<<<<<< Updated upstream
-                        if($("#scroll_all").is(':checked')){
-                            
-                        }else{
-                            $("#scroll_all").removeAttr('checked');
-                        }
+
                         var status=$("input[name='show_results']:checked").val();
 
                         var status_showing_results = $.cookie('status_showing_results');
