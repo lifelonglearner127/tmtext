@@ -86,21 +86,18 @@ class TigerdirectSpider(BaseSpider):
         product_links = hxs.select("//div[@class='resultsWrap listView']//h3[@class='itemName']/a/@href").extract()
         # only extract subcategories if product links not found on page
         if not product_links:
-            print 'no product links ', response.url
 
             parent = item
 
             # search for a link to "See All Products"
             seeall = hxs.select("//span[text()='See All Products']/parent::node()/@href").extract()
             if seeall:
-                print 'see all ', response.url
                 # pass the page with subcategories menu to a method to parse it
                 yield Request(url = Utils.add_domain(seeall[0], "http://www.tigerdirect.com"), callback = self.parseSubcats, \
                     meta = {'parent' : parent,\
                      'department_text' : response.meta['department_text'], 'department_url' : response.meta['department_url'],\
                      'department_id' : response.meta['department_id']})
             else:
-                print 'no see all ', response.url
                 # pass the current page (with subcategories menu on it) to a method to parse it
                 yield Request(url = response.url, callback = self.parseSubcats, meta = {'parent' : parent,\
                     'department_text' : response.meta['department_text'], 'department_url' : response.meta['department_url'],\
@@ -108,7 +105,6 @@ class TigerdirectSpider(BaseSpider):
 
     
     def parseSubcats(self, response):
-        print 'in subcats'
         hxs = HtmlXPathSelector(response)
 
         parent = response.meta['parent']
@@ -129,7 +125,6 @@ class TigerdirectSpider(BaseSpider):
             item['department_id'] = response.meta['department_id']
             item['department_text'] = response.meta['department_text']
 
-            print item
 
             yield Request(url = item['url'], callback = self.parseCategory,\
              meta = {'item' : item,\
