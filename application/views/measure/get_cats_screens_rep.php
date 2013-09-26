@@ -3,6 +3,7 @@
 	<h3>Departments screenshot reports</h3>
 </div>
 <div class="modal-body">
+	<?php // echo var_dump($sets_exist); ?>
 	<table id='dcsr_control_panel_tabel' class='table table-striped'>
 		<thead>
 			<tr>

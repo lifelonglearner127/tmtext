@@ -1125,21 +1125,24 @@ class Measure extends MY_Controller {
                   // === generate screens for sets (if needed) (start)
                   $this->webshoots_model->checkAndGenerateDepScreenshot($mid['main_choose_dep']);
                   if(count($value['competitors']) > 0) {
+                    $json_encode_com = array();
                     foreach ($value['competitors'] as $k => $v) {
                       $this->webshoots_model->checkAndGenerateDepScreenshot($v['sec_dep_chooser']);
-                      // == IMPLEMENT RECORD / UPDATE TO SETS DB TABLE (START)
-                      $db_row = array(
+                      $jec_mid = array(
+                        'sec_site_chooser' => $v['sec_site_chooser'],
+                        'sec_dep_chooser' => $v['sec_dep_chooser']
+                      );
+                      array_push($json_encode_com, $jec_mid);
+                      array_push($mid['valid_db_rows'], $db_row);
+                    }
+                    $db_row = array(
                         'uid' => $uid,
                         'set_id' => $set_id,
                         'main_choose_dep' => $value['main_choose_dep'],
                         'main_choose_site' => $value['main_choose_site'],
-                        'sec_site_chooser' => $v['sec_site_chooser'],
-                        'sec_dep_chooser' => $v['sec_dep_chooser']
-                      );
-                      array_push($mid['valid_db_rows'], $db_row);
-                      $this->department_members_model->recordUpdateDepReportSet($db_row);
-                      // == IMPLEMENT RECORD / UPDATE TO SETS DB TABLE (END)
-                    }
+                        'json_encode_com' => json_encode($json_encode_com)
+                    );
+                    $this->department_members_model->recordUpdateDepReportSet($db_row);
                   }
                   // === generate screens for sets (if needed) (end)
                 }
@@ -1149,6 +1152,54 @@ class Measure extends MY_Controller {
         }
         $this->output->set_content_type('application/json')->set_output(json_encode($res));
     }
+
+    // public function save_dep_rep_comparison_sets() {
+    //     $uid = $this->ion_auth->get_user_id();
+    //     $res = array();
+    //     $this->load->model('webshoots_model');
+    //     $this->load->model('department_members_model');
+    //     $this->load->model('helpers_model');
+    //     $sets = $this->input->post('sets');
+    //     if(count($sets) > 0) {
+    //         foreach($sets as $key => $value) {
+    //             $set_id = $this->helpers_model->random_string_gen(11);
+    //             $mid = array(
+    //                 'id' => $value['id'],
+    //                 'main_choose_dep' => $value['main_choose_dep'],
+    //                 'main_choose_site' => $value['main_choose_site'],
+    //                 'competitors' => $value['competitors'],
+    //                 'valid' => $value['valid'],
+    //                 'valid_db_rows' => array()
+    //             );
+    //             // ==== prepare and figure out valid db rows (start)
+    //             if($mid['valid']) {
+    //               // === generate screens for sets (if needed) (start)
+    //               $this->webshoots_model->checkAndGenerateDepScreenshot($mid['main_choose_dep']);
+    //               if(count($value['competitors']) > 0) {
+    //                 foreach ($value['competitors'] as $k => $v) {
+    //                   $this->webshoots_model->checkAndGenerateDepScreenshot($v['sec_dep_chooser']);
+    //                   // == IMPLEMENT RECORD / UPDATE TO SETS DB TABLE (START)
+    //                   $db_row = array(
+    //                     'uid' => $uid,
+    //                     'set_id' => $set_id,
+    //                     'main_choose_dep' => $value['main_choose_dep'],
+    //                     'main_choose_site' => $value['main_choose_site'],
+    //                     'sec_site_chooser' => $v['sec_site_chooser'],
+    //                     'sec_dep_chooser' => $v['sec_dep_chooser']
+    //                   );
+    //                   array_push($mid['valid_db_rows'], $db_row);
+    //                   $this->department_members_model->recordUpdateDepReportSet($db_row);
+    //                   // == IMPLEMENT RECORD / UPDATE TO SETS DB TABLE (END)
+    //                 }
+    //               }
+    //               // === generate screens for sets (if needed) (end)
+    //             }
+    //             // ==== prepare and figure out valid db rows (end)
+    //             array_push($res, $mid);
+    //         }
+    //     }
+    //     $this->output->set_content_type('application/json')->set_output(json_encode($res));
+    // }
 
     public function get_full_dep_rep_comparison_row() {
         $this->load->model('helpers_model');

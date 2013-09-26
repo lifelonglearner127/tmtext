@@ -15,7 +15,11 @@ class Department_members_model extends CI_Model {
     }
 
     function isDepRepSetsExists($uid) {
-
+        $check_obj = array(
+            'uid' => $uid
+        );
+        $query = $this->db->where($check_obj)->order_by('set_id')->get($this->tables['site_departments_reports']);
+        return $query->result();
     }
 
     function recordUpdateDepReportSet($db_row) {
@@ -23,9 +27,7 @@ class Department_members_model extends CI_Model {
             'uid' => (int)$db_row['uid'],
             'set_id' => $db_row['set_id'],
             'main_choose_dep' => (int)$db_row['main_choose_dep'],
-            'main_choose_site' => (int)$db_row['main_choose_site'],
-            'sec_site_chooser' => (int)$db_row['sec_site_chooser'],
-            'sec_dep_chooser' => (int)$db_row['sec_dep_chooser']
+            'main_choose_site' => (int)$db_row['main_choose_site']
         );
         $query = $this->db->where($check_obj)->get($this->tables['site_departments_reports']);
         $q_res = $query->result();
@@ -42,14 +44,46 @@ class Department_members_model extends CI_Model {
                 'set_id' => $db_row['set_id'],
                 'main_choose_dep' => (int)$db_row['main_choose_dep'],
                 'main_choose_site' => (int)$db_row['main_choose_site'],
-                'sec_site_chooser' => (int)$db_row['sec_site_chooser'],
-                'sec_dep_chooser' => (int)$db_row['sec_dep_chooser'],
+                'json_encode_com' => $db_row['json_encode_com'],
                 'stamp' => date("Y-m-d H:i:s")
             );
             $this->db->insert($this->tables['site_departments_reports'], $insert_object);
         }
         return true;
     }
+
+    // function recordUpdateDepReportSet($db_row) {
+    //     $check_obj = array(
+    //         'uid' => (int)$db_row['uid'],
+    //         'set_id' => $db_row['set_id'],
+    //         'main_choose_dep' => (int)$db_row['main_choose_dep'],
+    //         'main_choose_site' => (int)$db_row['main_choose_site'],
+    //         'sec_site_chooser' => (int)$db_row['sec_site_chooser'],
+    //         'sec_dep_chooser' => (int)$db_row['sec_dep_chooser']
+    //     );
+    //     $query = $this->db->where($check_obj)->get($this->tables['site_departments_reports']);
+    //     $q_res = $query->result();
+    //     if(count($q_res) > 0) {
+    //         $r = $q_res[0];
+    //         $data = array(
+    //             'stamp' => date("Y-m-d H:i:s")
+    //         );
+    //         $this->db->where('id', $r->id);
+    //         $this->db->update($this->tables['site_departments_reports'], $data);
+    //     } else {
+    //         $insert_object = array(
+    //             'uid' => (int)$db_row['uid'],
+    //             'set_id' => $db_row['set_id'],
+    //             'main_choose_dep' => (int)$db_row['main_choose_dep'],
+    //             'main_choose_site' => (int)$db_row['main_choose_site'],
+    //             'sec_site_chooser' => (int)$db_row['sec_site_chooser'],
+    //             'sec_dep_chooser' => (int)$db_row['sec_dep_chooser'],
+    //             'stamp' => date("Y-m-d H:i:s")
+    //         );
+    //         $this->db->insert($this->tables['site_departments_reports'], $insert_object);
+    //     }
+    //     return true;
+    // }
 
     function getDepartmentsBySiteId($site_id) {
         $check_obj = array(
