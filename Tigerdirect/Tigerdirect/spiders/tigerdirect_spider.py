@@ -1,6 +1,6 @@
 from scrapy.spider import BaseSpider
 from scrapy.selector import HtmlXPathSelector
-from Tigerdirect.items import TigerdirectItem
+from Tigerdirect.items import CategoryItem
 from scrapy.http import Request
 import sys
 import re
@@ -25,12 +25,21 @@ class TigerdirectSpider(BaseSpider):
         hxs = HtmlXPathSelector(response)
         links = hxs.select("//table//tr[1]/td//a[ancestor::h4]")
 
+        department_id = 0
+
         for link in links:
-            item = TigerdirectItem()
+            item = CategoryItem()
             item['text'] = link.select('text()').extract()[0]
             item['url'] = link.select('@href').extract()[0]
             item['level'] = 1
-            yield Request(url = item['url'], callback = self.parseCategory, meta = {'item' : item})
+
+            department_id += 1
+            item['department_text'] = item['text']
+            item['department_url'] = item['url']
+            item['department_id'] = department_id
+
+            yield Request(url = item['url'], callback = self.parseCategory, meta = {'item' : item,\
+             'department_url' : item['department_url'], 'department_text' : item['department_text'], 'department_id' : department_id})
 
     # receive one category url, add aditional info and return it; then extract its subcategories and parse them as well
     def parseCategory(self, response):
@@ -50,16 +59,22 @@ class TigerdirectSpider(BaseSpider):
             description_texts = description_holders.select(".//text()[not(ancestor::h2)]").extract()
 
             # replace all whitespace with one space, strip, and remove empty texts; then join them
-            item['description_text'] = " ".join([re.sub("\s+"," ", description_text.strip()) for description_text in description_texts if description_text.strip()])
+            desc_text = " ".join([re.sub("\s+"," ", description_text.strip()) for description_text in description_texts if description_text.strip()])
+            if desc_text:
+                item['description_text'] = desc_text
 
-            tokenized = Utils.normalize_text(item['description_text'])
-            item['description_wc'] = len(tokenized)
+                tokenized = Utils.normalize_text(item['description_text'])
+                item['description_wc'] = len(tokenized)
+            else:
+                item['description_wc'] = 0
 
             description_title = description_holders.select(".//h2/text()").extract()
             if description_title:
                 item['description_title'] = description_title[0].strip()
 
-                (item['keyword_count'], item['keyword_density']) = Utils.phrases_freq(item['description_title'], item['description_text'])
+                if desc_text:
+
+                    (item['keyword_count'], item['keyword_density']) = Utils.phrases_freq(item['description_title'], item['description_text'])
         else:
             item['description_wc'] = 0
 
@@ -67,6 +82,56 @@ class TigerdirectSpider(BaseSpider):
 
         yield item
 
-        #TODO
         # extract subcategories
-        parent = item
+        product_links = hxs.select("//div[@class='resultsWrap listView']//h3[@class='itemName']/a/@href").extract()
+        # only extract subcategories if product links not found on page
+        if not product_links:
+            print 'no product links ', response.url
+
+            parent = item
+
+            # search for a link to "See All Products"
+            seeall = hxs.select("//span[text()='See All Products']/parent::node()/@href").extract()
+            if seeall:
+                print 'see all ', response.url
+                # pass the page with subcategories menu to a method to parse it
+                yield Request(url = Utils.add_domain(seeall[0], "http://www.tigerdirect.com"), callback = self.parseSubcats, \
+                    meta = {'parent' : parent,\
+                     'department_text' : response.meta['department_text'], 'department_url' : response.meta['department_url'],\
+                     'department_id' : response.meta['department_id']})
+            else:
+                print 'no see all ', response.url
+                # pass the current page (with subcategories menu on it) to a method to parse it
+                yield Request(url = response.url, callback = self.parseSubcats, meta = {'parent' : parent,\
+                    'department_text' : response.meta['department_text'], 'department_url' : response.meta['department_url'],\
+                    'department_id' : response.meta['department_id']})
+
+    
+    def parseSubcats(self, response):
+        print 'in subcats'
+        hxs = HtmlXPathSelector(response)
+
+        parent = response.meta['parent']
+
+        # extract subcategories
+        subcats_links = hxs.select("//div[@class='sideNav']/div[@class='innerWrap'][1]//ul/li/a")
+        for subcat_link in subcats_links:
+            item = CategoryItem()
+
+            item['url'] = Utils.add_domain(subcat_link.select("@href").extract()[0], "http://www.tigerdirect.com")
+            item['text'] = subcat_link.select("text()").extract()[0]
+
+            item['parent_text'] = parent['text']
+            item['parent_url'] = parent['url']
+            item['level'] = parent['level'] - 1
+
+            item['department_text'] = response.meta['department_text']
+            item['department_id'] = response.meta['department_id']
+            item['department_text'] = response.meta['department_text']
+
+            print item
+
+            yield Request(url = item['url'], callback = self.parseCategory,\
+             meta = {'item' : item,\
+             'department_text' : response.meta['department_text'], 'department_url' : response.meta['department_url'],\
+              'department_id' : response.meta['department_id']})

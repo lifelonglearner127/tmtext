@@ -12,5 +12,8 @@ SPIDER_MODULES = ['Tigerdirect.spiders']
 NEWSPIDER_MODULE = 'Tigerdirect.spiders'
 ITEM_PIPELINES = ['Tigerdirect.pipelines.TigerdirectPipeline']
 
+# allow duplicates
+DUPEFILTER_CLASS = 'scrapy.dupefilter.BaseDupeFilter'
+
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'Tigerdirect (+http://www.yourdomain.com)'

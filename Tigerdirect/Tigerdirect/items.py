@@ -5,7 +5,7 @@
 
 from scrapy.item import Item, Field
 
-class TigerdirectItem(Item):
+class CategoryItem(Item):
     url = Field()
     text = Field()
     parent_text = Field() # name of parent category
