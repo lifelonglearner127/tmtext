@@ -93,7 +93,11 @@
 	});
 
 	function activateDepRepPreview() {
-		
+		$("#dcsr_control_panel_modal").modal('hide');
+		$.post(base_url + 'index.php/measure/activate_dep_rep_preview_list', {}, function(data) {
+			$("#dep_rep_preview_list_modal").html(data);
+			$("#dep_rep_preview_list_modal").modal('show');
+		});
 	}
 
 	function saveSets() {

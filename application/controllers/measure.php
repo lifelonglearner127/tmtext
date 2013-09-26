@@ -1213,6 +1213,13 @@ class Measure extends MY_Controller {
         $this->load->view('measure/get_dep_rep_comparison_row', $data);
     }
 
+    public function activate_dep_rep_preview_list() {
+        $uid = $this->ion_auth->get_user_id();
+        $this->load->model('department_members_model');
+        $data['user_dep_rep_sets'] = $this->department_members_model->getUserDepRepSets($uid);
+        $this->load->view('measure/activate_dep_rep_preview_list', $data);
+    }
+
     public function get_cats_screens_rep() {
         $uid = $this->ion_auth->get_user_id();
         $this->load->model('helpers_model');
