@@ -339,7 +339,6 @@ class Research extends MY_Controller {
             $params->date_to = $build_assess_params->date_to;
 
             $results = $this->get_data_for_assess($params);
-
             $output = $this->build_asses_table($results, $build_assess_params, $batch_id);
 
             $this->output->set_content_type('application/json')
@@ -1854,5 +1853,27 @@ class Research extends MY_Controller {
         }
         $this->output->set_content_type('application/json')
             ->set_output(json_encode($res));
+    }
+    
+    public function export_assess_all() {
+        $this->load->database();
+        $query = $this->db->query('
+            SELECT 
+                `s`.`created` AS `Date`, 
+                (SELECT `value` FROM imported_data_parsed WHERE `key`="Product Name" AND `imported_data_id` = `s`.`imported_data_id` AND `revision`=`s`.`revision` LIMIT 1) AS `Product Name`, 
+                (SELECT `value` FROM imported_data_parsed WHERE `key`="Url" AND `imported_data_id` = `s`.`imported_data_id` AND `revision`=`s`.`revision` LIMIT 1) AS `URL`, 
+                `s`.`short_description_wc` AS `Word Count (S)`, 
+                `s`.`short_seo_phrases` AS `SEO Phrases (S)`, 
+                `s`.`long_description_wc` AS `Word Count (L)`, 
+                `s`.`long_seo_phrases` AS `SEO Phrases (L)`, 
+                "-" as `Duplicate Content`,
+                `s`.`price_diff` AS `Price`
+            FROM 
+                (`statistics_new` AS s) 
+            LEFT JOIN 
+                `crawler_list` AS cl ON `cl`.`imported_data_id` = `s`.`imported_data_id`
+                ');
+        $this->load->helper('csv');
+        query_to_csv($query, TRUE, 'assess_data.csv');
     }
 }

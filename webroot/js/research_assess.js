@@ -940,4 +940,7 @@ $(function () {
     $(document).on('mouseleave', '#assess_preview_crawl_snap_modal', function () {
         $(this).modal('hide');
     });
+    $('#exportAssessButton').click(function(){
+        window.location.href = base_url + 'index.php/research/export_assess_all';
+    });
 });

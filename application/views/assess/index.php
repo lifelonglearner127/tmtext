@@ -1,5 +1,8 @@
 <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/smoothness/jquery-ui-1.8.2.custom.css" />
 <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/styles.css" />
+<div class="row-fluid" >
+    <button id="exportAssessButton" class="btn" style="margin: 8px 5px;float: right;" >Export</button>
+</div>
 <ul class="research_table_filter">
     <li class="boxes hideBox">
         <h3>
