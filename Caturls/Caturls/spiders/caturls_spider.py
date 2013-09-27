@@ -548,6 +548,23 @@ class CaturlsSpider(BaseSpider):
 		hxs = HtmlXPathSelector(response)
 
 		product_links = hxs.select("//div[@class='itemText']/div[@class='wrapper']/a")
+
+		# if you don't find any product links, try to crawl subcategories in left menu,
+		# but only the ones under the first part of the menu
+		# do this by selecting all dd elements in the menu until a dt (another title) element is found
+		if not product_links:
+			# select first element in menu
+			el = hxs.select("//dl[@class='categoryList primaryNav']//dd[1]")
+
+			# while we still find another subcategory in the menu before the next title
+			while el:
+				# parse the link as a subcategory
+				subcat_url = el.select("a/@href").extract()[0]
+				yield Request(url = subcat_url, callback = self.parsePage_newegg, meta = {'page' : 1})
+
+				# get next element in menu (that is not a title)
+				el = el.select("following-sibling::*[1][self::dd]")
+
 		for product_link in product_links:
 			item = ProductItem()
 			item['product_url'] = product_link.select("@href").extract()[0]
