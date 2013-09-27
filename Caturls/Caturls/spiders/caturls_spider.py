@@ -36,6 +36,11 @@ class CaturlsSpider(BaseSpider):
 		self.start_urls = [cat_page]
 		self.outfile = outfile
 		self.use_proxy = use_proxy
+
+		# keep track of parsed pages to avoid duplicates
+		# used for newegg motherboards
+		self.parsed_pages = []
+
 		# staples televisions
 		#self.start_urls = ["http://www.staples.com/Televisions/cat_CL142471"]
 		# bloomingdales sneakers
@@ -547,6 +552,11 @@ class CaturlsSpider(BaseSpider):
 	def parsePage_newegg(self, response):
 		hxs = HtmlXPathSelector(response)
 
+		if response.url in self.parsed_pages:
+			return
+		else:
+			self.parsed_pages.append(response.url)
+
 		product_links = hxs.select("//div[@class='itemText']/div[@class='wrapper']/a")
 
 		# if you don't find any product links, try to crawl subcategories in left menu,
@@ -582,6 +592,9 @@ class CaturlsSpider(BaseSpider):
 				m = re.match("(http://www.newegg.com/.*Page-)[0-9]+", response.url)
 				if m:
 					next_url = m.group(1) + str(page)
+				else:
+					print 'not ok url ', response.url, page
+			print 'next url ', next_url
 			yield Request(url = next_url, callback = self.parsePage_newegg, meta = {'page' : page})
 
 	# parse a Tigerdirect category page and extract product URLs
