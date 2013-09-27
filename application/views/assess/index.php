@@ -5,9 +5,6 @@
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_departments');?>">Categories</a></li>
         <li class="active"><a data-toggle="tab" href="<?php echo site_url('assess');?>">Products</a></li>
     </ul>
-<div class="row-fluid" >
-    <button id="exportAssessButton" class="btn" style="margin: 8px 5px;float: right;" >Export</button>
-</div>
 <ul class="research_table_filter">
     <li class="boxes hideBox">
         <h3>

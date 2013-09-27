@@ -940,7 +940,7 @@ $(function () {
     $(document).on('mouseleave', '#assess_preview_crawl_snap_modal', function () {
         $(this).modal('hide');
     });
-    $('#exportAssessButton').click(function(){
-        window.location.href = base_url + 'index.php/research/export_assess_all';
+    $('#research_assess_export').click(function(){
+        window.location.href = base_url + 'index.php/research/export_assess?batch='+$("select[name='batches']").find("option:selected").text();;
     });
 });

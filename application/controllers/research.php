@@ -1855,7 +1855,13 @@ class Research extends MY_Controller {
             ->set_output(json_encode($res));
     }
     
-    public function export_assess_all() {
+    public function export_assess() {
+        
+        $this->load->model('batches_model');
+        $batch_id = $this->input->get('batch');
+        $customer_name = $this->batches_model->getCustomerById($batch_id);
+        if(empty($batch_id))
+            $batch_id = '';
         $this->load->database();
         $query = $this->db->query('
             SELECT 
@@ -1871,9 +1877,58 @@ class Research extends MY_Controller {
             FROM 
                 (`statistics_new` AS s) 
             LEFT JOIN 
-                `crawler_list` AS cl ON `cl`.`imported_data_id` = `s`.`imported_data_id`
-                ');
+                `crawler_list` AS cl ON `cl`.`imported_data_id` = `s`.`imported_data_id`'
+                );
+        $result = $query->result_array();
+        foreach($result as $key=>$row){
+            if(trim($row['SEO Phrases (S)']) != 'None'){
+                $shortArr = unserialize($row['SEO Phrases (S)']);
+                if($shortArr){
+                    $shortString = '';
+                    foreach($shortArr as $value){
+                        $shortString .= $value['ph']."\r\n";
+                    }
+                    $result[$key]['SEO Phrases (S)'] = trim($shortString);
+                }
+            }
+            if(trim($row['SEO Phrases (L)']) != 'None'){
+                $longArr = unserialize($row['SEO Phrases (L)']);
+                if($longArr){
+                    $longString = '';
+                    foreach($longArr as $value){
+                        $longString .= $value['ph']."\r\n";
+                    }
+                    $result[$key]['SEO Phrases (L)'] = trim($longString);
+                }
+            }
+            $price_diff = unserialize($row['Price']);
+            if($price_diff){
+                $own_price = floatval($price_diff['own_price']);
+                $own_site = str_replace('www.', '', $price_diff['own_site']);
+                $own_site = str_replace('www1.', '', $own_site);
+                $price_diff_res = $own_site." - $".$price_diff['own_price'];
+                $flag_competitor = false;
+                for($i=0; $i<count($price_diff['competitor_customer']); $i++){
+                    if($customer_url["host"] != $price_diff['competitor_customer'][$i]){
+                        if ($own_price > floatval($price_diff['competitor_price'][$i])) {
+                            $competitor_site = str_replace('www.', '', $price_diff['competitor_customer'][$i]);
+                            $competitor_site = str_replace('www.', '', $competitor_site);
+                            $price_diff_res .= "\r\n".$competitor_site." - $".$price_diff['competitor_price'][$i];
+                        }
+                    }
+                }
+                $result[$key]['Price'] = $price_diff_res;
+            } else {
+                $result[$key]['Price'] = '';
+            }
+        }
+        $line = array();
+        foreach ($query->list_fields() as $name)
+        {
+                $line[] = $name;
+        }
+        array_unshift($result, $line);
         $this->load->helper('csv');
-        query_to_csv($query, TRUE, 'assess_data.csv');
+        array_to_csv($result, date("Y-m-d H:i").'.csv');
     }
 }
