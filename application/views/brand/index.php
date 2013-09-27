@@ -106,3 +106,8 @@ $pervious_month = date("m", strtotime("first day of previous month"));
         </div>
     </div>
 </div>
+<script>
+            $(function() {
+                $('head').find('title').text('Social');
+            });
+ </script>

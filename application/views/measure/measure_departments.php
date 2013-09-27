@@ -36,15 +36,12 @@
 </style>
 <div class="tabbable">
     <ul class="nav nav-tabs jq-measure-tabs">
-        <li class=""><a data-toggle="tab" href="<?php echo site_url('measure'); ?>">Home Pages</a></li>
-        <li class="active"><a data-toggle="tab" href="<?php echo site_url('measure/measure_departments'); ?>">Categories</a></li>
-        <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_products'); ?>">Products</a></li>
-        <!--<li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_social'); ?>">Social</a></li>-->
-        <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_pricing'); ?>">Pricing</a></li>
+        <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/home');?>">Home Pages</a></li>
+        <li class="active"><a data-toggle="tab" href="<?php echo site_url('measure/measure_departments');?>">Categories</a></li>
+        <li class=""><a data-toggle="tab" href="<?php echo site_url('assess');?>">Products</a></li>
         <li class='pull_right_navlink'><a href="javascript:void(0)" onclick="viewRecipientsList()">Configure Recipients</a></li>
         <li class='pull_right_navlink'><a href="javascript:void(0)" onclick="viewCatsScreensCp()">Departments screenshot report</a></li>
     </ul>
-
 
 
     <div class="tab-content">
@@ -292,3 +289,8 @@
 <!-- MODALS (END) -->
 
 <div id="mypopup" style="display:none;"></div>
+<script>
+            $(function() {
+                $('head').find('title').text('Reports');
+            });
+ </script>

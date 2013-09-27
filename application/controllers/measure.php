@@ -23,7 +23,7 @@ class Measure extends MY_Controller {
         }
     }
 
-    public function index() {
+    public function home() {
         $this->load->model('webshoots_model');
         $this->data['customers_list'] = $this->customers_list_new();
         $this->data['user_id'] = $this->ion_auth->get_user_id();
@@ -1273,7 +1273,7 @@ class Measure extends MY_Controller {
         $this->load->view('measure/get_cats_screens_rep', $data);
     }
 
-    public function measure_products() {
+    public function index() {
         // === API -> DB sync launcher (end)
         $this->load->model('rankapi_model');
         $api_username = $this->config->item('ranking_api_username');

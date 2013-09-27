@@ -1,5 +1,10 @@
 <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/smoothness/jquery-ui-1.8.2.custom.css" />
 <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/styles.css" />
+    <ul class="nav nav-tabs jq-measure-tabs">
+        <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/home');?>">Home Pages</a></li>
+        <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_departments');?>">Categories</a></li>
+        <li class="active"><a data-toggle="tab" href="<?php echo site_url('assess');?>">Products</a></li>
+    </ul>
 <div class="row-fluid" >
     <button id="exportAssessButton" class="btn" style="margin: 8px 5px;float: right;" >Export</button>
 </div>
@@ -385,6 +390,6 @@
 </div>
 <script>
             $(function() {
-                $('head').find('title').text('Assess');
+                $('head').find('title').text('Reports');
             });
  </script>

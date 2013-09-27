@@ -9,10 +9,10 @@
 
 $menu = array(
     array('controller' => 'batches', 'name' => 'Batches'),
-    array('controller' => 'measure', 'name' => 'Competitive Intelligence'),
-    array('controller' => 'assess', 'name' => 'Assess'),
+    array('controller' => 'measure', 'name' => 'Researche'),
+    array('controller' => 'assess', 'name' => 'Reports'),
     array('controller' => 'research', 'name' => 'Edit'),
-    array('controller' => 'brand', 'name' => 'Brand Rankings'),
+    array('controller' => 'brand', 'name' => 'Social'),
     //array('controller' => 'editor', 'name' => 'Create'),
     //array('controller' => 'validate', 'name' => 'Validate'),
 	array('controller' => 'customer', 'name' => 'Settings'),
