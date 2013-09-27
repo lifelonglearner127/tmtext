@@ -6,7 +6,6 @@
 		<?php } ?>
 	</select>
 	<select style='display: none;' class='sec_dep_chooser'></select>
-	<label style='display: none; margin-top: 0px !important;' class="checkbox"><input type="checkbox"> Select competitor</label>
 	<div style='display: none; margin-bottom: 10px;' class='comparison_row_cnt'>
 		<button type='button' class='btn btn-success' onclick="addCompetitorRow(this)">Add Competitor</button>
 	</div>

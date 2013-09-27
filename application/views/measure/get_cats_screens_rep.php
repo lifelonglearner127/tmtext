@@ -6,14 +6,14 @@
 	<table id='dcsr_control_panel_tabel' class='table table-striped'>
 		<thead>
 			<tr>
-				<th><input type='checkbox' name="cat_report_ch_all" id="cat_report_ch_all"></th>
+				<th>&nbsp;</th>
 				<th>Choose Department</th>
 				<th>Competitors</th>
 			</tr>
 		</thead>
 		<tbody>
 			<tr data-id="<?php echo $helpers_model->random_string_gen(11); ?>">
-				<td><input type='checkbox' class='cat_report_ch'></td>
+				<td>&nbsp;</td>
 				<td>
 					<?php if (count($sites_list) > 0) { ?>
 						<select class='main_site_chooser' onchange="mainSiteChooserHandler(this)">
@@ -34,7 +34,6 @@
 							<?php } ?>
 						</select>
 						<select style='display: none;' class='sec_dep_chooser'></select>
-						<label style='display: none; margin-top: 0px !important;' class="checkbox"><input type="checkbox"> Select competitor</label>
 						<div style='display: none; margin-bottom: 10px;' class='comparison_row_cnt'>
 							<button type='button' class='btn btn-success' onclick="addCompetitorRow(this)">Add Competitor</button>
 						</div>
@@ -58,39 +57,55 @@
 
 <script type='text/javascript'>
 	
-	$(document).ready(function() {
-		$("#cat_report_ch_all").on('change', function(e) {
-			if($(e.target).is(":checked")) {
-				$('.cat_report_ch').attr('checked', true);
-				$('#btn_dep_rep_save_set').removeAttr('disabled');
-			} else {
-				$('.cat_report_ch').removeAttr('checked');
-				$('#btn_dep_rep_save_set').attr('disabled', true);
+	function saveSetButtonStateScaner() {
+		var sets = [];
+		// === prepare selected sets data for analyzer (start)
+		$("#dcsr_control_panel_tabel > tbody > tr").each(function(index, value) {
+			var mid = {
+				id: $(value).data('id'),
+				main_choose_site: '0',
+				main_choose_dep: '0',
+				competitors: [],
+				valid: false
+			};
+			mid.main_choose_site = $(value).find('.main_site_chooser > option:selected').val();
+			if( $(value).find('.main_dep_chooser').is(':visible') ) {
+				mid.main_choose_dep = $(value).find('.main_dep_chooser > option:selected').val();
 			}
-		});
-
-		$(".cat_report_ch").on('change', function(e) {
-			var checked_count = $(".cat_report_ch").length;
-			setTimeout(function() {
-				var count_s = 0;
-				$(".cat_report_ch").each(function(index, val) {
-					if($(val).is(':checked')) count_s++;
-				});
-				if(checked_count == count_s) {
-					$("#cat_report_ch_all").attr('checked', true);
-				} else {
-					$("#cat_report_ch_all").removeAttr('checked');
+			$(value).find('.comparison_row').each(function(index, value) {
+				if( $(value).find('.sec_site_chooser > option:selected').val() != 0 && $(value).find('.sec_dep_chooser').is(':visible') && $(value).find('.sec_dep_chooser > option:selected').val() != 0 ) {
+					var com_mid = {
+						sec_site_chooser: $(value).find('.sec_site_chooser > option:selected').val(),
+						sec_dep_chooser: $(value).find('.sec_dep_chooser > option:selected').val()
+					};
+					mid.competitors.push(com_mid);
 				}
-				if(count_s == 0) {
-					$("#cat_report_ch_all").removeAttr('checked');
-					$("#btn_dep_rep_save_set").attr('disabled', true);
-				} else {
-					$('#btn_dep_rep_save_set').removeAttr('disabled');
-				} 
-			}, 100);
+			});
+			sets.push(mid);  
 		});
+		// === prepare selected sets data for analyzer (end)
 
-	});
+		// === sets validation (start)
+		var v_status = false;
+		for(var i = 0; i < sets.length; i++) {
+			if( sets[i]['main_choose_site'] != "0" && sets[i]['main_choose_dep'] != "0" && sets[i]['competitors'].length > 0 ) {
+				sets[i]['valid'] = true;
+			}
+		}
+		// === sets validation (end)
+		var overall_valid = true;
+		for(var j = 0; j < sets.length; j++) {
+			if(!sets[j]['valid']) {
+				overall_valid = false;
+				break;
+			}
+		}
+		if(overall_valid) {
+			$("#btn_dep_rep_save_set").removeAttr('disabled');
+		} else {
+			$("#btn_dep_rep_save_set").attr('disabled', true);
+		}
+	}
 
 	function activateDepRepPreview() {
 		$("#dcsr_control_panel_modal").modal('hide');
@@ -116,14 +131,12 @@
 				mid.main_choose_dep = $(value).find('.main_dep_chooser > option:selected').val();
 			}
 			$(value).find('.comparison_row').each(function(index, value) {
-				if( $(value).find("input[type='checkbox']").is(':checked') ) {
-					if( $(value).find('.sec_site_chooser > option:selected').val() != 0 && $(value).find('.sec_dep_chooser').is(':visible') && $(value).find('.sec_dep_chooser > option:selected').val() != 0 ) {
-						var com_mid = {
-							sec_site_chooser: $(value).find('.sec_site_chooser > option:selected').val(),
-							sec_dep_chooser: $(value).find('.sec_dep_chooser > option:selected').val()
-						};
-						mid.competitors.push(com_mid);
-					}	
+				if( $(value).find('.sec_site_chooser > option:selected').val() != 0 && $(value).find('.sec_dep_chooser').is(':visible') && $(value).find('.sec_dep_chooser > option:selected').val() != 0 ) {
+					var com_mid = {
+						sec_site_chooser: $(value).find('.sec_site_chooser > option:selected').val(),
+						sec_dep_chooser: $(value).find('.sec_dep_chooser > option:selected').val()
+					};
+					mid.competitors.push(com_mid);
 				}
 			});
 			sets.push(mid);  
@@ -153,7 +166,7 @@
 	function addNewFullRow() {
 		$.post(base_url + 'index.php/measure/get_full_dep_rep_comparison_row', {}, function(data) {
 			$("#dcsr_control_panel_tabel tbody").append(data);
-			$("#cat_report_ch_all").removeAttr('checked');
+			saveSetButtonStateScaner();
 		});
 	}
 
@@ -161,12 +174,14 @@
 		if(confirm('Are you sure?')) {
 			var full_row = $(e).parent().parent();
 			full_row.remove();
+			saveSetButtonStateScaner();
 		}
 	}
 
 	function removeCompetitorRow(e) {
 		var comparison_row = $(e).parent().parent();
 		comparison_row.remove();
+		saveSetButtonStateScaner();
 	}
 
 	function addCompetitorRow(e) {
@@ -178,6 +193,7 @@
 			if(rows_count == 5) {
 				$('.comparison_row').last().find('.comparison_row_cnt').remove();
 			}
+			saveSetButtonStateScaner();
 		}); 
 	}
 
@@ -185,8 +201,7 @@
 		var site_id = $(e).val();
 		// ==== elements detection (start)
 		var sec_dep_dropdown = $(e).next();
-		var sec_dep_checkbox = $(e).next().next();
-		var sec_dep_cnt = $(e).next().next().next();
+		var sec_dep_cnt = $(e).next().next();
 		// ==== elements detection (end)
 		sec_dep_dropdown.empty();
 		$.post(base_url + 'index.php/measure/getDepartmentsByCustomerNew', {site_id: site_id}, function(data) {
@@ -197,13 +212,12 @@
 				}
 				sec_dep_dropdown.append(dep_options);
 				sec_dep_dropdown.show();
-				sec_dep_checkbox.show();
 				sec_dep_cnt.show();
 			} else {
 				sec_dep_dropdown.hide();
-				sec_dep_checkbox.hide();
 				sec_dep_cnt.hide();
 			}
+			saveSetButtonStateScaner();
 		});
 	}
 
@@ -224,6 +238,7 @@
 			} else {
 				sec_dep_dropdown.hide();
 			}
+			saveSetButtonStateScaner();
 		});
 	}
 
