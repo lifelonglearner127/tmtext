@@ -596,7 +596,7 @@ foreach ($same_pr as $ks => $vs) {
 <div class="p_feature" >
 <?php if(!empty($vs['features'])): ?>
         <span class="analysis_content_head">Product Features:</span>
-        <p style="float:none; word-wrap: break-word;white-space: pre; " class="short_product_name grid_product_name"><?php echo $vs['features']; ?></p>
+        <p style="float:none;white-space: pre; " class="short_product_name grid_product_name"><?php echo $vs['features']; ?></p>
 <?php endif; ?>
 </div>
 
