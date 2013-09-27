@@ -1395,21 +1395,25 @@ class Measure extends MY_Controller {
     }
 
     private function sites_list_new() {
+        $this->load->model('department_members_model');
         $this->load->model('sites_model');
         $output = array();
         $sites_init_list = $this->sites_model->getAll();
         if (count($sites_init_list) > 0) {
             foreach ($sites_init_list as $key => $value) {
-                $c_url = preg_replace('#^https?://#', '', $value->url);
-                $c_url = preg_replace('#^www.#', '', $c_url);
-                $mid = array(
-                    'id' => $value->id,
-                    'image_url' => $value->image_url,
-                    'name' => $value->name,
-                    'name_val' => $value->name,
-                    'c_url' => $c_url
-                );
-                $output[] = $mid;
+                $deps_exist = $this->department_members_model->getDepartmentsBySiteId($value->id);
+                if(!empty($deps_exist)){
+                    $c_url = preg_replace('#^https?://#', '', $value->url);
+                    $c_url = preg_replace('#^www.#', '', $c_url);
+                    $mid = array(
+                        'id' => $value->id,
+                        'image_url' => $value->image_url,
+                        'name' => $value->name,
+                        'name_val' => $value->name,
+                        'c_url' => $c_url
+                    );
+                    $output[] = $mid;
+                }
             }
         }
         return $output;
