@@ -21,6 +21,8 @@ class TigerdirectSpider(BaseSpider):
         "http://www.tigerdirect.com/computerproducts.asp",
     ]
 
+    parsed_urls = []
+
     def parse(self, response):
         hxs = HtmlXPathSelector(response)
         links = hxs.select("//table//tr[1]/td//a[ancestor::h4]")
@@ -78,7 +80,7 @@ class TigerdirectSpider(BaseSpider):
         else:
             item['description_wc'] = 0
 
-
+        self.parsed_urls.append(item['url'])
 
         yield item
 
@@ -93,12 +95,14 @@ class TigerdirectSpider(BaseSpider):
             seeall = hxs.select("//span[text()='See All Products']/parent::node()/@href").extract()
             if seeall:
                 # pass the page with subcategories menu to a method to parse it
+                print 'parsing seeall: from ', response.url, ' to ', Utils.add_domain(seeall[0], "http://www.tigerdirect.com")
                 yield Request(url = Utils.add_domain(seeall[0], "http://www.tigerdirect.com"), callback = self.parseSubcats, \
                     meta = {'parent' : parent,\
                      'department_text' : response.meta['department_text'], 'department_url' : response.meta['department_url'],\
                      'department_id' : response.meta['department_id']})
             else:
                 # pass the current page (with subcategories menu on it) to a method to parse it
+                print 'parsing for subcategories ', response.url
                 yield Request(url = response.url, callback = self.parseSubcats, meta = {'parent' : parent,\
                     'department_text' : response.meta['department_text'], 'department_url' : response.meta['department_url'],\
                     'department_id' : response.meta['department_id']})
@@ -125,8 +129,11 @@ class TigerdirectSpider(BaseSpider):
             item['department_id'] = response.meta['department_id']
             item['department_text'] = response.meta['department_text']
 
+            print 'passing to parse category ', item
 
-            yield Request(url = item['url'], callback = self.parseCategory,\
-             meta = {'item' : item,\
-             'department_text' : response.meta['department_text'], 'department_url' : response.meta['department_url'],\
-              'department_id' : response.meta['department_id']})
+            # there are some loops in their categories tree, so we need to check this to avoid infinite loops in crawling
+            if item['url'] not in self.parsed_urls:
+                yield Request(url = item['url'], callback = self.parseCategory,\
+                 meta = {'item' : item,\
+                 'department_text' : response.meta['department_text'], 'department_url' : response.meta['department_url'],\
+                  'department_id' : response.meta['department_id']})
