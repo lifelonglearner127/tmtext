@@ -1879,6 +1879,11 @@ class Research extends MY_Controller {
             LEFT JOIN 
                 `crawler_list` AS cl ON `cl`.`imported_data_id` = `s`.`imported_data_id`'
                 );
+        $line = array();
+        foreach ($query->list_fields() as $name)
+        {
+                $line[] = $name;
+        }
         $result = $query->result_array();
         foreach($result as $key=>$row){
             if(trim($row['SEO Phrases (S)']) != 'None'){
@@ -1921,11 +1926,6 @@ class Research extends MY_Controller {
             } else {
                 $result[$key]['Price'] = '';
             }
-        }
-        $line = array();
-        foreach ($query->list_fields() as $name)
-        {
-                $line[] = $name;
         }
         array_unshift($result, $line);
         $this->load->helper('csv');
