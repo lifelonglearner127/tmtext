@@ -11,12 +11,15 @@ class TigerdirectPipeline(object):
 
 		# pairs of catgory urls and parent urls (to identify a unique category)
 		self.cats = []
+		self.urls = []
 
 	def process_item(self, item, spider):
 		line = json.dumps(dict(item)) + "\n"
-		if 'parent_url' not in item or\
-		(item['url'], item['parent_url']) not in self.cats:
+		# if 'parent_url' not in item or\
+		# (item['url'], item['parent_url']) not in self.cats:
+		if item['url'] not in self.urls:
 			self.file.write(line)
-			if 'parent_url' in item:
-				self.cats.append((item['url'], item['parent_url']))
+			# if 'parent_url' in item:
+			# 	self.cats.append((item['url'], item['parent_url']))
+			self.urls.append(item['url'])
 			return item
