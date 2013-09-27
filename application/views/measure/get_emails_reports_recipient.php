@@ -1,6 +1,6 @@
 <div class="modal-header">
 	<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-	<h3>Recipients Control Panel</h3>
+	<h3>Configure Recipients</h3>
 	<label class="checkbox">
 		<input type="checkbox" id='c_week_up_confirm' name='c_week_up_confirm' checked value="1">
 		Update screenshots to current week before sending
@@ -26,7 +26,18 @@
 					<tr class='report_bean_line' data-id="<?php echo $v->id; ?>" data-email="<?php echo $v->email; ?>" data-day="<?php echo $v->day; ?>">
 						<td><input type='checkbox' name="send_report_ch" id="send_report_ch_<?php echo $v->id; ?>"></td>
 						<td><span class='recipients_control_panel_txt'><?php echo $v->email; ?></span></td>
-						<td><span class='recipients_control_panel_txt'><?php echo ucfirst($v->day); ?></span></td>
+						<td>
+							<select data-id="<?php echo $v->id ?>" class='recipients_week_day_ex'>
+	                <option value='monday' <?php if(ucfirst($v->day) == 'Monday') { ?> selected <?php } ?>>Monday</option>
+	                <option value='tuesday' <?php if(ucfirst($v->day) == 'Tuesday') { ?> selected <?php } ?>>Tuesday</option>
+	                <option value='wednesday' <?php if(ucfirst($v->day) == 'Wednesday') { ?> selected <?php } ?>>Wednesday</option>
+	                <option value='thursday' <?php if(ucfirst($v->day) == 'Thursday') { ?> selected <?php } ?>>Thursday</option>
+	                <option value="friday" <?php if(ucfirst($v->day) == 'Friday') { ?> selected <?php } ?>>Friday</option>
+	                <option value='saturday' <?php if(ucfirst($v->day) == 'Saturday') { ?> selected <?php } ?>> Saturday</option>
+	                <option value='sunday' <?php if(ucfirst($v->day) == 'Sunday') { ?> selected <?php } ?>>Sunday</option>
+	            </select>
+          	</td>
+						<!-- <td><span class='recipients_control_panel_txt'><?php echo ucfirst($v->day); ?></span></td> -->
 						<td nowrap>
 							<button type='button' onclick="sendRecipientReport('<?php echo $v->id; ?>', '<?php echo $v->email; ?>', '<?php echo $v->day; ?>', '<?php echo $c_week ?>', '<?php echo $c_year ?>', '<?php echo $user_id ?>')" class='btn btn-success btn-rec-ind-send'><i class='icon-fire'></i></button>
 							<button type='button' onclick="deleteRecipient('<?php echo $v->id; ?>')" class='btn btn-danger btn-rec-remove'><i class='icon-remove'></i></button>
@@ -35,7 +46,7 @@
 				<?php } ?>
                 <tr id="new_row" class="new_row">
                     <td>&nbsp;</td>
-                    <td><input type="text" id="recipients_rec" name="recipients_rec" placeholder="recipients.." style="width:150px"></td>
+                    <td><input type="text" id="recipients_rec" name="recipients_rec" placeholder="New email" style="width:150px"></td>
                     <td><select id="recipients_week_day" name="recipients_week_day">
                             <option value='monday' selected>Monday</option>
                             <option value='tuesday'>Tuesday</option>
@@ -94,6 +105,20 @@
 	$(document).ready(function() {
 		// --- 'Recipients Control Panel' UI (start)
 		var checked_count = $("input[type='checkbox'][name='send_report_ch']").length;
+
+		$(".recipients_week_day_ex").live('change', function(e) {
+			var id = $(e.target).data('id');
+			var week_day = $(e.target).val();
+			console.log($(e.target), id, week_day);
+			var send_data = {
+				'id': id,
+				'week_day': week_day
+			};
+			$.post(base_url + 'index.php/measure/update_rec_week_day', {send_data: send_data}, function(data) {
+				console.log("UPDATE RESPONSE : ", data);
+			});
+		});
+
 		$("#send_report_ch_all").on('change', function(e) {
 			$(".report_bean_line").removeClass('selected');
 			if($(e.target).is(":checked")) {
@@ -108,7 +133,7 @@
 				$("#send_now_btn").addClass('disabled');
 			}
 		});
-		$("input[type='checkbox'][name='send_report_ch']").on('change', function(e) {
+		$("input[type='checkbox'][name='send_report_ch']").live('change', function(e) {
 			setTimeout(function() {
 				// ---- mark / unmark tr line as selected (start)
 				if($(e.target).is(":checked")) {

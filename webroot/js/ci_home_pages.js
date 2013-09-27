@@ -439,7 +439,7 @@ function newRecipient() {
     num++;
         $('tr.no_recipients').remove();
         $('table.table-striped').append('<tr id="new_row_'+num+'">' +
-            '<td>&nbsp;</td><td><input type="text" placeholder="recipients.." name="new_recipients_'+num+'" style="width:150px;">' +
+            '<td>&nbsp;</td><td><input type="text" placeholder="New email" name="new_recipients_'+num+'" style="width:150px;">' +
             '</td><td><select name="new_week_day_rep_'+num+'">' +
             '<option value="monday" selected>Monday</option>' +
             '<option value="tuesday">Tuesday</option>' +
