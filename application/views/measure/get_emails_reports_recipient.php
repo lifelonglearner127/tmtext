@@ -109,12 +109,11 @@
 		$(".recipients_week_day_ex").live('change', function(e) {
 			var id = $(e.target).data('id');
 			var week_day = $(e.target).val();
-			console.log($(e.target), id, week_day);
 			var send_data = {
-				'id': id,
-				'week_day': week_day
+				id: id,
+				week_day: week_day
 			};
-			$.post(base_url + 'index.php/measure/update_rec_week_day', {send_data: send_data}, function(data) {
+			$.post(base_url + 'index.php/measure/update_rec_week_day', send_data, function(data) {
 				console.log("UPDATE RESPONSE : ", data);
 			});
 		});
