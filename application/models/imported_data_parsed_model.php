@@ -1985,8 +1985,8 @@ class Imported_data_parsed_model extends CI_Model {
 //                    $rows[$key]['customer'] = $cus_val;
 //            }
 
-         echo "mtela".'<br>';
-         print_r($for_groups );
+         
+       
          
                 if($model==Null){
                     $model=time();
