@@ -39,8 +39,10 @@ class Measure extends MY_Controller {
     }
 
     public function update_rec_week_day() {
+        $this->load->model('webshoots_model');
         $id = $this->input->post('id');
         $week_day = $this->input->post('week_day');
+        $this->webshoots_model->changeHomePageRecipients($id, $week_day);
         $this->output->set_content_type('application/json')->set_output(json_encode(true));
     }
 

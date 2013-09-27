@@ -28,6 +28,13 @@ class Webshoots_model extends CI_Model {
         return $pos;
     }
 
+    public function changeHomePageRecipients($id, $week_day) {
+        $update_object = array(
+            'day' => $week_day
+        );
+        return $this->db->update($this->tables['ci_home_page_recipients'], $update_object, array('id' => $id));
+    }
+
     public function scanForProductSnap($im_data_id) {
         $res_data = array(
             'snap' => '',
