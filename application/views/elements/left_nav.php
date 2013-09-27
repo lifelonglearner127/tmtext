@@ -9,7 +9,7 @@
 
 $menu = array(
     array('controller' => 'batches', 'name' => 'Batches'),
-    array('controller' => 'measure', 'name' => 'Competitive Intelligence'),
+    array('controller' => 'measure', 'name' => 'Research'),
     array('controller' => 'assess', 'name' => 'Reports'),
     array('controller' => 'research', 'name' => 'Edit'),
     array('controller' => 'brand', 'name' => 'Social'),
