@@ -2,7 +2,7 @@
 CREATE  TABLE IF NOT EXISTS `site_departments_reports` (
   `id` INT NOT NULL AUTO_INCREMENT ,
   `uid` INT NULL DEFAULT NULL ,
-  'set_id' VARCHAR(45) NULL DEFAULT NULL,
+  `set_id` VARCHAR(45) NULL DEFAULT NULL,
   `main_choose_dep` INT NULL DEFAULT NULL ,
   `main_choose_site` INT NULL DEFAULT NULL ,
   `json_encode_com` TEXT NULL DEFAULT NULL ,
