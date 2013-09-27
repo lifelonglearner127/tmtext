@@ -15,6 +15,10 @@ class Department_members_model extends CI_Model {
         parent::__construct();
     }
 
+    function deleteDepRecSet($id) {
+        return $this->db->delete($this->tables['site_departments_reports'], array('id' => $id));
+    }
+
     function getUserObjectById($uid) {
         $res = null;
         $check_obj = array(

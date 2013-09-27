@@ -3,7 +3,6 @@
 	<h3>Departments screenshot reports list</h3>
 </div>
 <div class="modal-body">
-	<?php // echo var_dump($user_dep_rep_sets); ?>
 	<table id='dcsr_control_panel_tabel' class='table table-striped'>
 		<thead>
 			<tr>
@@ -16,7 +15,11 @@
 			<?php if(count($user_dep_rep_sets) > 0) { ?>
 				<?php foreach($user_dep_rep_sets as $k => $v) { ?>
 				<tr>
-					<td><input type='checkbox' value="<?php echo $v->id ?>" class='clst_report_ch'></td>
+					<td>
+						<input type='checkbox' value="<?php echo $v->id ?>" class='clst_report_ch'>
+						<br>
+						<button class='btn btn-danger small_custom_icon_btn mt_5' data-id="<?php echo $v->id; ?>" onclick="removeExistedSet(this)"><i class='icon-remove-circle icon-white'></i></button>
+					</td>
 					<td>
 						<?php $main_dep_snap = $this->department_members_model->getLatestDepartmentScreen($v->main_choose_dep); ?>
 						<?php if($main_dep_snap['img_av_status']) { ?> 
@@ -87,6 +90,17 @@
 		});
 
 	});
+
+	function removeExistedSet(e) {
+		if(confirm('Are you sure?')) {
+			var remove_row = $(e).parent().parent();
+			var id = $(e).data('id');
+			$.post(base_url + 'index.php/measure/delete_dep_rec_set', {id: id}, function(data) {
+				remove_row.remove();
+				console.log(data);	
+			});
+		}
+	}
 
 	function sendDepSnapsReport() {
 		var rep_ids = [];

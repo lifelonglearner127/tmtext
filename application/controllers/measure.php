@@ -38,6 +38,13 @@ class Measure extends MY_Controller {
         $this->render();
     }
 
+    public function delete_dep_rec_set() {
+        $this->load->model('department_members_model');
+        $id = $this->input->post('id');
+        $res = $this->department_members_model->deleteDepRecSet($id);
+        $this->output->set_content_type('application/json')->set_output(json_encode($res));
+    }
+
     public function update_rec_week_day() {
         $this->load->model('webshoots_model');
         $id = $this->input->post('id');
