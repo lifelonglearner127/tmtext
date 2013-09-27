@@ -1,10 +1,8 @@
 <script type='text/javascript'>
 jQuery(document).ready(function($) {
     $("#compare_text").focus();
-   
+    
          
- 
-
 
 });
 
@@ -12,7 +10,7 @@ jQuery(document).ready(function($) {
 <div class="main_content_other"></div>
 <div class="tabbable">
     <ul class="nav nav-tabs jq-measure-tabs">
-        <li class="active"><a id ="click" data-toggle="tab" href="<?php echo site_url('measure');?>">Products</a></li>
+        <li class="active"><a id ="first_a_clicked" data-toggle="tab" href="<?php echo site_url('measure');?>">Products</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_pricing');?>">Pricing</a></li>
     </ul>
     <div class="tab-content">
