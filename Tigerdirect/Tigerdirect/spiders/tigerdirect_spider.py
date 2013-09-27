@@ -95,14 +95,14 @@ class TigerdirectSpider(BaseSpider):
             seeall = hxs.select("//span[text()='See All Products']/parent::node()/@href").extract()
             if seeall:
                 # pass the page with subcategories menu to a method to parse it
-                print 'parsing seeall: from ', response.url, ' to ', Utils.add_domain(seeall[0], "http://www.tigerdirect.com")
+                #print 'parsing seeall: from ', response.url, ' to ', Utils.add_domain(seeall[0], "http://www.tigerdirect.com")
                 yield Request(url = Utils.add_domain(seeall[0], "http://www.tigerdirect.com"), callback = self.parseSubcats, \
                     meta = {'parent' : parent,\
                      'department_text' : response.meta['department_text'], 'department_url' : response.meta['department_url'],\
                      'department_id' : response.meta['department_id']})
             else:
                 # pass the current page (with subcategories menu on it) to a method to parse it
-                print 'parsing for subcategories ', response.url
+                #print 'parsing for subcategories ', response.url
                 yield Request(url = response.url, callback = self.parseSubcats, meta = {'parent' : parent,\
                     'department_text' : response.meta['department_text'], 'department_url' : response.meta['department_url'],\
                     'department_id' : response.meta['department_id']})
@@ -129,7 +129,7 @@ class TigerdirectSpider(BaseSpider):
             item['department_id'] = response.meta['department_id']
             item['department_text'] = response.meta['department_text']
 
-            print 'passing to parse category ', item
+            #print 'passing to parse category ', item
 
             # there are some loops in their categories tree, so we need to check this to avoid infinite loops in crawling
             if item['url'] not in self.parsed_urls:
