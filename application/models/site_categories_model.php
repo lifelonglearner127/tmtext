@@ -181,14 +181,14 @@ class Site_categories_model extends CI_Model {
 
     function getCategoriesByWc($site_id)
     {
-        $sql = "SELECT * FROM `site_categories` WHERE `site_id` = '".$site_id."' and `description_words` > 0 order by `text` asc";
+        $sql = "SELECT * FROM `site_categories` WHERE `site_id` = '".$site_id."' and `description_words` > 0  group by `text` order by `text` asc";
         $query = $this->db->query($sql);
         return $query->result();
     }
 
     function getCatData($site_id, $condition)
     {
-        $sql = "SELECT `text`, `url`, `description_words`, `title_keyword_description_density` FROM `site_categories` WHERE `site_id`=".$site_id." and ".$condition." order by `text` asc";
+        $sql = "SELECT `text`, `url`, `description_words`, `title_keyword_description_density` FROM `site_categories` WHERE `site_id`=".$site_id." and ".$condition." group by `text` order by `text` asc";
         $query = $this->db->query($sql);
         return $query->result();
     }
