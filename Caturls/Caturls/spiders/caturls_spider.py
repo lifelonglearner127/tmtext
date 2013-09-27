@@ -565,22 +565,24 @@ class CaturlsSpider(BaseSpider):
 				# get next element in menu (that is not a title)
 				el = el.select("following-sibling::*[1][self::dd]")
 
-		for product_link in product_links:
-			item = ProductItem()
-			item['product_url'] = product_link.select("@href").extract()[0]
-			yield item
-
-		# crawl further pages
-		# will automatically stop when it doesn't find any more pages because the URL won't be valid
-		page = int(response.meta['page']) + 1
-		next_url = ""
-		if page == 2:
-			next_url = response.url + "/Page-2"
 		else:
-			m = re.match("(http://www.newegg.com/.*Page-)[0-9]+", response.url)
-			if m:
-				next_url = m.group(1) + str(page)
-		yield Request(url = next_url, callback = self.parsePage_newegg, meta = {'page' : page})
+
+			for product_link in product_links:
+				item = ProductItem()
+				item['product_url'] = product_link.select("@href").extract()[0]
+				yield item
+
+			# crawl further pages
+			# will automatically stop when it doesn't find any more pages because the URL won't be valid
+			page = int(response.meta['page']) + 1
+			next_url = ""
+			if page == 2:
+				next_url = response.url + "/Page-2"
+			else:
+				m = re.match("(http://www.newegg.com/.*Page-)[0-9]+", response.url)
+				if m:
+					next_url = m.group(1) + str(page)
+			yield Request(url = next_url, callback = self.parsePage_newegg, meta = {'page' : page})
 
 	# parse a Tigerdirect category page and extract product URLs
 	def parsePage_tigerdirect(self, response):
