@@ -37,5 +37,21 @@ class Similar_product_groups_model extends CI_Model {
    }
    return false;
    }
+   function checkIfIdExists($imported_data_id){
+       $query= $this->db->where('imported_data_id',$imported_data_id)
+                        ->where("revision = (SELECT  MAX(revision) as revision
+                                FROM imported_data_parsed WHERE `imported_data_id`= $imported_data_id
+                                GROUP BY imported_data_id)", NULL, FALSE)
+                        ->where('key','Product Name')
+                        ->where('model IS NOT NULL',NULL, FALSE)
+               ->get('imported_data_parsed');
+   if($query->num_rows() > 0){
+       return true;
+   }
+   return false;
+       
+                         
+               
+   }
     
 }

@@ -47,4 +47,8 @@ class Similar_data_model extends CI_Model {
     		->get($this->tables['similar_data'])
     		->result_array();;
     }
+    
+    function get_new_group(){
+        
+    }
 }
