@@ -36,9 +36,9 @@
 </style>
 <div class="tabbable">
     <ul class="nav nav-tabs jq-measure-tabs">
-        <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/home');?>">Home Pages</a></li>
+        <li class=""><a data-toggle="tab" href="<?php echo site_url('assess');?>">Home Pages</a></li>
         <li class="active"><a data-toggle="tab" href="<?php echo site_url('measure/measure_departments');?>">Categories</a></li>
-        <li class=""><a data-toggle="tab" href="<?php echo site_url('assess');?>">Products</a></li>
+        <li class=""><a data-toggle="tab" href="<?php echo site_url('assess/products');?>">Products</a></li>
         <li class='pull_right_navlink'><a href="javascript:void(0)" onclick="viewRecipientsList()">Configure Recipients</a></li>
         <li class='pull_right_navlink'><a href="javascript:void(0)" onclick="viewCatsScreensCp()">Configure Screenshots Report</a></li>
     </ul>
