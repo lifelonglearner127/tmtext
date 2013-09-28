@@ -1,6 +1,6 @@
 <div class="modal-header">
 	<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-	<h3>Departments screenshot reports</h3>
+	<h3>Configure Screenshots Report</h3>
 </div>
 <div class="modal-body">
 	<table id='dcsr_control_panel_tabel' class='table table-striped'>

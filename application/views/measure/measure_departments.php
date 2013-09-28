@@ -40,7 +40,7 @@
         <li class="active"><a data-toggle="tab" href="<?php echo site_url('measure/measure_departments');?>">Categories</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('assess');?>">Products</a></li>
         <li class='pull_right_navlink'><a href="javascript:void(0)" onclick="viewRecipientsList()">Configure Recipients</a></li>
-        <li class='pull_right_navlink'><a href="javascript:void(0)" onclick="viewCatsScreensCp()">Departments screenshot report</a></li>
+        <li class='pull_right_navlink'><a href="javascript:void(0)" onclick="viewCatsScreensCp()">Configure Screenshots Report</a></li>
     </ul>
 
 
