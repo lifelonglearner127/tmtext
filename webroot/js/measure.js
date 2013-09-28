@@ -852,7 +852,7 @@ function keywordsAnalizer() {
 // --- KEYWORDS ANALYZER (END)
 
 $(document).ready(function() {
-    $('#first_a_clicked').trigger( "click" );
+ 
     
     $(".mismatch_image").live('click', function() {
         $(this).closest('.grid_se_section').hide();

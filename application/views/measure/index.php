@@ -9,10 +9,7 @@ jQuery(document).ready(function($) {
 </script>
 <div class="main_content_other"></div>
 <div class="tabbable">
-    <ul class="nav nav-tabs jq-measure-tabs">
-        <li class="active"><a id ="first_a_clicked" data-toggle="tab" href="<?php echo site_url('measure');?>">Products</a></li>
-        <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_pricing');?>">Pricing</a></li>
-    </ul>
+
     <div class="tab-content">
         <div class="measure-products">
             <div class="row-fluid mb_20">
@@ -180,8 +177,8 @@ $(document).ready(function(){
                     <option value='all'>All Categories</option>
                     <?php } ?>
                 </select-->
-                <?php  echo form_dropdown('cats_an', $departmens_list, null, 'id="cat_an" class="inline_block lh_30 w_375 mb_reset" style="width:135px!important"'); ?>
-                <button type="submit" id="an_search" onclick="return startMeasureCompareV2()" class="btn btn-success pull-right">Search</button>
+                <!--?php  echo form_dropdown('cats_an', $departmens_list, null, 'id="cat_an" class="inline_block lh_30 w_375 mb_reset" style="width:135px!important"'); ?-->
+                <button type="submit" id="an_search" style="float:left;" onclick="return startMeasureCompareV2()" class="btn btn-success pull-right">Search</button>
                 <!-- <button type="submit" id="an_search" class="btn btn-success pull-right">Search</button> -->
             <?php // echo form_close();?>
             </form>
