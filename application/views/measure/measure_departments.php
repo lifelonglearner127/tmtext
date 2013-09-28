@@ -80,7 +80,7 @@
                         }
                         ?>
                         <div id="departmentDropdown"  class="btn-group" style="display: none">
-                            <button id="departmentDropdown_first" class="btn btn-danger btn_caret_sign1" style="width:165px" >Choose Department</button>
+                            <button id="departmentDropdown_first" class="btn btn-danger btn_caret_sign1" style="width:165px" >Choose Category</button>
                             <button class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
                                 <span class="caret"></span>
                             </button>
@@ -100,7 +100,7 @@
 
                     <div style="float:right;">
                         <div id="departmentDropdownSec" style="float:right;display: none"  class="btn-group">
-                            <button id="departmentDropdownSec_first" class="btn btn-danger btn_caret_sign_sec1" style="width:165px" >Choose Department</button>
+                            <button id="departmentDropdownSec_first" class="btn btn-danger btn_caret_sign_sec1" style="width:165px" >Choose Category</button>
                             <button class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
                                 <span class="caret"></span>
                             </button>
@@ -214,13 +214,13 @@
                         <tr>
                             <th>
                                         <div id="hp_boot_drop_sec_dashboard"  class="btn-group hp_boot_drop_sec_dashboard  mr_10" style="float:left;">
-                                            <button class="btn btn-danger btn_caret_sign_sec" >Departments</button>
+                                            <button class="btn btn-danger btn_caret_sign_sec" >Categories</button>
                                             <button class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
                                                 <span class="caret"></span>
                                             </button>
                                             <ul class="dropdown-menu">
-                                                <li><a data-item="departments" data-value="Departments" href="javascript:void(0)">Departments</a></li>
-                                                <li><a data-item="categories" data-value="Categories" href="javascript:void(0)">Categories</a></li>
+                                                <li><a data-item="departments" data-value="Categories" href="javascript:void(0)">Categories</a></li>
+                                                <li><a data-item="categories" data-value="Sub Categories" href="javascript:void(0)">Sub Categories</a></li>
                                             </ul>
                                         </div>
                             </th>

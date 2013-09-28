@@ -178,14 +178,14 @@ $( function() {
                     $(".dashboard").hide();
                     $('#tabs').hide();
                     $('#department_url').hide();
-                    $('#departmentDropdown .btn_caret_sign1').text('Choose Department');
+                    $('#departmentDropdown .btn_caret_sign1').text('Choose Category');
                     $("#hp_boot_drop .btn_caret_sign").text(new_caret);
                     $('#departments_content').html('');
                 }
             });
         }else{
             $(".dashboard").hide();
-            $('#departmentDropdown .btn_caret_sign1').text('Choose Department');
+            $('#departmentDropdown .btn_caret_sign1').text('Choose Category');
             $('#departments_content').html('');
         }
 
@@ -198,10 +198,10 @@ $( function() {
             $("#departmentDropdown .dropdown-menu").empty();
             if(data.length > 0){
 				$("#departmentDropdown").show();
-                $("#departmentDropdown .dropdown-menu").append("<li><a data-item=\"empty\" data-value=\"\" href=\"javascript:void(0);\">Choose department</a></li><li><a data-item=\"\" data-value=\"All\" href=\"javascript:void(0);\">All</a></li>");
+                $("#departmentDropdown .dropdown-menu").append("<li><a data-item=\"empty\" data-value=\"\" href=\"javascript:void(0);\">Choose Category</a></li><li><a data-item=\"\" data-value=\"All\" href=\"javascript:void(0);\">All</a></li>");
                 for(var i=0; i<data.length; i++){
                     if(i == 0){
-                        $('#departmentDropdown .btn_caret_sign1').text('Choose Department');
+                        $('#departmentDropdown .btn_caret_sign1').text('Choose Category');
                     }
                     $("#departmentDropdown .dropdown-menu").append("<li><a data-item="+data[i].id+" data-value="+data[i].text+" href=\"javascript:void(0);\">"+data[i].text+"</a></li>");
                 }
@@ -214,7 +214,7 @@ $( function() {
                     $("#dashboard_recommend").hide();
 
                     var selected_type = $('#hp_boot_drop_sec_dashboard .btn_caret_sign_sec').text();
-                    if(selected_type == "Departments"){
+                    if(selected_type == "Categories"){
                         $("tbody#department_data").show();
                         $("tbody#category_data").hide();
                         allDepDashboard(new_caret, site_name_sec);
@@ -224,7 +224,7 @@ $( function() {
                         allCatDashboard(new_caret, site_name_sec);
                     }
                 } else {
-                    $("#hp_boot_drop_sec_dashboard .btn_caret_sign_sec").text('Departments');
+                    $("#hp_boot_drop_sec_dashboard .btn_caret_sign_sec").text('Categories');
                     globalDepDashboard(new_caret);
                 }
             } else {
@@ -296,10 +296,10 @@ $( function() {
         }, function(data) {
             $("#departmentDropdownSec .dropdown-menu").empty();
             if(data.length > 0){
-                $("#departmentDropdownSec .dropdown-menu").append("<li><a data-item=\"empty\" data-value=\"\" href=\"javascript:void(0);\">Choose department</a></li><li><a data-item=\"\" data-value=\"All\" href=\"javascript:void(0);\">All</a></li>");
+                $("#departmentDropdownSec .dropdown-menu").append("<li><a data-item=\"empty\" data-value=\"\" href=\"javascript:void(0);\">Choose Category</a></li><li><a data-item=\"\" data-value=\"All\" href=\"javascript:void(0);\">All</a></li>");
                 for(var i=0; i<data.length; i++){
                     if(i == 0){
-                        $('#departmentDropdownSec .btn_caret_sign_sec1').text('Choose Department');
+                        $('#departmentDropdownSec .btn_caret_sign_sec1').text('Choose Category');
                     }
                     $("#departmentDropdownSec .dropdown-menu").append("<li><a data-item="+data[i].id+" data-value="+data[i].text+" href=\"javascript:void(0);\">"+data[i].text+"</a></li>");
                 }
@@ -344,7 +344,7 @@ $( function() {
             $(".hp_boot_drop_sec .dropdown-menu > li > a").bind('click', function(e) {
                 var new_caret = $.trim($(this).text());
                 if(new_caret == 'Choose comparison site'){
-                    $("#departmentDropdownSec_first").text('Choose Department');
+                    $("#departmentDropdownSec_first").text('Choose Category');
                     $("#hp_boot_drop_sec .btn_caret_sign_sec").text(new_caret);
                     $('#departments_content').html('');
                     $("tbody#category_data").empty();
@@ -360,7 +360,7 @@ $( function() {
                 }
             });
         }else{
-            $("#departmentDropdownSec_first").text('Choose Department');
+            $("#departmentDropdownSec_first").text('Choose Category');
             $('#departments_content').html('');
         }
     });

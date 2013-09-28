@@ -2196,6 +2196,14 @@ tbody#category_data tr td, tbody#department_data tr td{
 #department_data ul li, #category_data ul li{
     clear: both;
 }
+
+#department_data ul li:hover{
+    background-color: #EBEBEB;
+    height: 100%;
+    display: table;
+    width: 100%;
+}
+
 #department_data ul li.dep_header, #category_data ul li.cat_header{
     font-size: 14px;
     background-color: #EBEBEB;
