@@ -1696,13 +1696,17 @@ class Research extends MY_Controller {
 
         $added = $this->insert_rows($batch_id, $_rows);
 
-
         $str = $added;
-        if($added==1){
+        if($str==1 && count($_rows)>0){
             $str .= ' record';
-        } else if($added>1){
+        } else if($str > 1 && count($_rows)>0){
             $str .= ' records';
+        } else if($str == 0 && count($_rows)>0){
+            $str .= ' items uploaded -- all items already exist in database';
+        } else if($str == 0 && count($_rows)==0){
+            $str .= ' items uploaded';
         }
+
         $response['batch_id'] = $batch_id;
         $response['message'] = $str .' added to batch';
          $this->output->set_content_type('application/json')
