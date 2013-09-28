@@ -127,7 +127,7 @@
             </div>
             <div style="float: right;">
                 <button id="research_assess_update" class="btn btn-success">Update</button>
-                <button id="research_assess_export" class="btn">Export</button>
+                <a href="/index.php/research/export_assess" class="fileDownloadPromise btn" id="research_assess_export" >Export</a>
             </div>
         </div>
     </li>
@@ -379,8 +379,8 @@
 
                 <script type="text/javascript" src="<?php echo base_url();?>js/jquery.dataTables.min.js"></script>
                 <script type="text/javascript" src="<?php echo base_url();?>js/jquery.json-2.4.min.js"></script>
+                <script type="text/javascript" src="<?php echo base_url();?>js/jquery.fileDownload.js"></script>
                 <script type="text/javascript" src="<?php echo base_url();?>js/research_assess.js"></script>
-
             </div>
         </div>
     </div>

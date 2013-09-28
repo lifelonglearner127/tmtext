@@ -27,21 +27,21 @@ $(function () {
 
     var tableCase = {
         details: [
-            "created",
-            "product_name",
-            "url",
-            "short_description_wc",
-            "short_seo_phrases",
-            "long_description_wc",
-            "long_seo_phrases",
-            "duplicate_content",
-            "price_diff",
-            "product_selection"
+        "created",
+        "product_name",
+        "url",
+        "short_description_wc",
+        "short_seo_phrases",
+        "long_description_wc",
+        "long_seo_phrases",
+        "duplicate_content",
+        "price_diff",
+        "product_selection"
         ],
         recommendations: [
-            "product_name",
-            "url",
-            "recommendations"
+        "product_name",
+        "url",
+        "recommendations"
         ]
     }
 
@@ -77,35 +77,35 @@ $(function () {
         "bServerSide": true,
         "sAjaxSource": readAssessUrl,
         "fnServerData": function (sSource, aoData, fnCallback) {
-                aoData = buildTableParams(aoData);
-                $.getJSON(sSource, aoData, function (json) {
-                    if (json.ExtraData != undefined) {
-                        buildReport(json);
+            aoData = buildTableParams(aoData);
+            $.getJSON(sSource, aoData, function (json) {
+                if (json.ExtraData != undefined) {
+                    buildReport(json);
+                }
+                fnCallback(json);
+                setTimeout(function(){
+                    tblAssess.fnProcessingIndicator( false );
+                }, 100);
+                if($('select[name="research_assess_batches"]').find('option:selected').val() == "0"){
+                    $('#assess_report_total_items').html("");
+                    $('#assess_report_items_priced_higher_than_competitors').html("");
+                    $('#assess_report_items_have_more_than_20_percent_duplicate_content').html("");
+                    $('#assess_report_items_unoptimized_product_content').html("");
+                    $('#assess_report_items_have_product_short_descriptions_that_are_too_short').html("");
+                    $('#assess_report_items_have_product_long_descriptions_that_are_too_short').html("");
+                }
+                if(json.iTotalRecords == 0){
+                    $('#assess_report_compare_panel').hide();
+                    $('#assess_report_numeric_difference').hide();
+                    if($('select[name="research_assess_batches"]').find('option:selected').val() != ""){
+                        $('#summary_message').html(" - Processing data. Check back soon.");
+                        //                                $('#research_assess_filter_short_descriptions_panel').show();
+                        //                                $('#research_assess_filter_long_descriptions_panel').show();
+                        $('#assess_report_items_1_descriptions_pnl').hide();
+                        $('#assess_report_items_2_descriptions_pnl').hide();
                     }
-                    fnCallback(json);
-                    setTimeout(function(){
-                        tblAssess.fnProcessingIndicator( false );
-                    }, 100);
-                    if($('select[name="research_assess_batches"]').find('option:selected').val() == "0"){
-                        $('#assess_report_total_items').html("");
-                        $('#assess_report_items_priced_higher_than_competitors').html("");
-                        $('#assess_report_items_have_more_than_20_percent_duplicate_content').html("");
-                        $('#assess_report_items_unoptimized_product_content').html("");
-                        $('#assess_report_items_have_product_short_descriptions_that_are_too_short').html("");
-                        $('#assess_report_items_have_product_long_descriptions_that_are_too_short').html("");
-                    }
-                    if(json.iTotalRecords == 0){
-                        $('#assess_report_compare_panel').hide();
-                        $('#assess_report_numeric_difference').hide();
-                        if($('select[name="research_assess_batches"]').find('option:selected').val() != ""){
-                            $('#summary_message').html(" - Processing data. Check back soon.");
-//                                $('#research_assess_filter_short_descriptions_panel').show();
-//                                $('#research_assess_filter_long_descriptions_panel').show();
-                            $('#assess_report_items_1_descriptions_pnl').hide();
-                            $('#assess_report_items_2_descriptions_pnl').hide();
-                        }
-                    }
-                });
+                }
+            });
         },
         "fnRowCallback": function(nRow, aData, iDisplayIndex) {
             $(nRow).attr("add_data", aData[10]);
@@ -125,17 +125,72 @@ $(function () {
             "sInfoFiltered": ""
         },
         "aoColumns": [
-            {"sTitle" : "Date", "sName":"created", "sWidth": "7%"},
-            {"sTitle" : "Product Name", "sName":"product_name", "sWidth": "25%"},
-            {"sTitle" : "URL", "sName":"url", "sWidth": "30%"},
-            {"sTitle" : "Word Count (S)", "sName":"short_description_wc", "sWidth": "4%"},
-            {"sTitle" : "SEO Phrases (S)", "sName":"short_seo_phrases", "sWidth": "10%"},
-            {"sTitle" : "Word Count (L)", "sName":"long_description_wc", "sWidth": "4%"},
-            {"sTitle" : "SEO Phrases (L)", "sName":"long_seo_phrases", "sWidth": "10%"},
-            {"sTitle" : "Duplicate Content", "sName":"duplicate_content", "sWidth": "5%"},
-            {"sTitle" : "Price", "sName":"price_diff", "sWidth": "10%"},
-            {"sTitle" : "Recommendations", "sName":"recommendations", "sWidth": "45%", "bVisible": false, "bSortable": false},
-            {"sName":"add_data", "bVisible": false}
+        {
+            "sTitle" : "Date", 
+            "sName":"created", 
+            "sWidth": "7%"
+        },
+
+        {
+            "sTitle" : "Product Name", 
+            "sName":"product_name", 
+            "sWidth": "25%"
+        },
+
+        {
+            "sTitle" : "URL", 
+            "sName":"url", 
+            "sWidth": "30%"
+        },
+
+        {
+            "sTitle" : "Word Count (S)", 
+            "sName":"short_description_wc", 
+            "sWidth": "4%"
+        },
+
+        {
+            "sTitle" : "SEO Phrases (S)", 
+            "sName":"short_seo_phrases", 
+            "sWidth": "10%"
+        },
+
+        {
+            "sTitle" : "Word Count (L)", 
+            "sName":"long_description_wc", 
+            "sWidth": "4%"
+        },
+
+        {
+            "sTitle" : "SEO Phrases (L)", 
+            "sName":"long_seo_phrases", 
+            "sWidth": "10%"
+        },
+
+        {
+            "sTitle" : "Duplicate Content", 
+            "sName":"duplicate_content", 
+            "sWidth": "5%"
+        },
+
+        {
+            "sTitle" : "Price", 
+            "sName":"price_diff", 
+            "sWidth": "10%"
+        },
+
+        {
+            "sTitle" : "Recommendations", 
+            "sName":"recommendations", 
+            "sWidth": "45%", 
+            "bVisible": false, 
+            "bSortable": false
+        },
+
+        {
+            "sName":"add_data", 
+            "bVisible": false
+        }
         ]
     });
 
@@ -292,7 +347,7 @@ $(function () {
                 $('#comparison_detail').html(data.comparison_detail);
                 $('#comparison_pagination').html(data.comparison_pagination);
             }
-        );
+            );
     }
 
     $(document).on('click', '#comparison_pagination a', function(event){
@@ -312,7 +367,7 @@ $(function () {
             data,
             function(data){
             }
-        );
+            );
     });
 
     $('#tblAssess tbody').click(function(event) {
@@ -384,7 +439,7 @@ $(function () {
                 assessDetailsDialog_chkIncludeInReport.attr('research_data_id', add_data.research_data_id);
                 $('#assessDetailsDialog').dialog('open');
             }
-        );
+            );
 
         $('#ajaxLoadAni').fadeOut('slow');
     });
@@ -444,13 +499,15 @@ $(function () {
                     $('#assessDetailsDialog').dialog('close');
                     readAssessData();
                 }
-            );
+                );
         }
     });
 
     $('select[name="research_assess_customers"]').on("change", function(res) {
         var research_assess_batches = $("select[name='research_assess_batches']");
-        $.post(base_url + 'index.php/research/filterBatchByCustomerName', { 'customer_name': res.target.value}, function(data){
+        $.post(base_url + 'index.php/research/filterBatchByCustomerName', {
+            'customer_name': res.target.value
+            }, function(data){
             if(data.length>0){
                 research_assess_batches.empty();
                 for(var i=0; i<data.length; i++){
@@ -466,8 +523,8 @@ $(function () {
     });
     
     $('#research_assess_flagged').live('click', function(){
-		$('#research_assess_update').click();
-	});
+        $('#research_assess_update').click();
+    });
 
     function fill_lists_batches_compare(own_customer) {
         var research_assess_compare_batches_customer = $('#research_assess_compare_batches_customer');
@@ -496,7 +553,7 @@ $(function () {
                     research_assess_compare_batches_customer.find('option[value="'+own_customer+'"]').remove();
                 }
             }
-        );
+            );
 
         $.get(
             base_url + 'index.php/assess/batches_get_all',
@@ -511,12 +568,14 @@ $(function () {
                     research_assess_compare_batches_batch.find('option[value="'+own_batch_id+'"]').remove();
                 }
             }
-        );
+            );
     }
 
     $('#research_assess_compare_batches_customer').change(function(res){
         var research_assess_compare_batches_batch = $("#research_assess_compare_batches_batch");
-        $.post(base_url + 'index.php/research/filterBatchByCustomerName', { 'customer_name': res.target.value}, function(data){
+        $.post(base_url + 'index.php/research/filterBatchByCustomerName', {
+            'customer_name': res.target.value
+            }, function(data){
             if(data.length>0){
                 research_assess_compare_batches_batch.empty();
                 for(var i=0; i<data.length; i++){
@@ -573,7 +632,7 @@ $(function () {
             buildReport(data);
         }
         $.post(base_url + 'index.php/research/filterCustomerByBatch', {
-                'batch': selectedBatch
+            'batch': selectedBatch
         }, function(data){
             var research_assess_customers = $('select[name="research_assess_customers"]');
             if(data != ''){
@@ -639,30 +698,30 @@ $(function () {
     });
     
     function addColumn_url_class(){
-		//Denis add class to URL column
-		if(  $("#column_url").attr('checked') == 'checked' ){
+        //Denis add class to URL column
+        if(  $("#column_url").attr('checked') == 'checked' ){
 			
-			table = $('#assess_tbl_show_case').find('.active_link').data('case')
-			column = '';
-			if( table == 'recommendations' ){
-				column = 'td:eq(1)';
-			}else if( table == 'details' ){
-				column = 'td:eq(2)';
-			}
+            table = $('#assess_tbl_show_case').find('.active_link').data('case')
+            column = '';
+            if( table == 'recommendations' ){
+                column = 'td:eq(1)';
+            }else if( table == 'details' ){
+                column = 'td:eq(2)';
+            }
 			
-//			setTimeout(function(){
-//				//console.log( $("#tblAssess").html() );
-//				$("#tblAssess").find('tr').each(function(){
-//					//$(this).find('td:eq(2)').addClass('column_url');
-//					$(this).find(column).addClass('column_url');
-//				});
-//			}, 2000);
+            //			setTimeout(function(){
+            //				//console.log( $("#tblAssess").html() );
+            //				$("#tblAssess").find('tr').each(function(){
+            //					//$(this).find('td:eq(2)').addClass('column_url');
+            //					$(this).find(column).addClass('column_url');
+            //				});
+            //			}, 2000);
             $("#tblAssess").find('tr').each(function(){
                 $(this).find(column).addClass('column_url');
             });
-		}
-		//----------------------
-	}
+        }
+    //----------------------
+    }
 
     $('#assess_report_download_panel > a').click(function(){
         var type_doc = $(this).data('type');
@@ -678,11 +737,11 @@ $(function () {
             price_diff = true;
         }
         var url = base_url
-            + 'index.php/research/assess_report_download?batch_name=' + batch_name
-            + '&type_doc=' + type_doc
-            //+ '&batch_id=' + batch_id
-            + '&compare_batch_id=' + compare_batch_id
-            + '&price_diff=' + price_diff
+        + 'index.php/research/assess_report_download?batch_name=' + batch_name
+        + '&type_doc=' + type_doc
+        //+ '&batch_id=' + batch_id
+        + '&compare_batch_id=' + compare_batch_id
+        + '&price_diff=' + price_diff
         var assessRequestParams = collectionParams();
         for (var p in assessRequestParams) {
             url = url + '&'+p+'='+assessRequestParams[p];
@@ -759,7 +818,7 @@ $(function () {
                     assess_report_competitors.append('<option value="'+value.id+'" '+selected+'>'+value.name+'</option>');
                 });
             }
-        );
+            );
         $('#assess_report_options_dialog').parent().find('.ui-dialog-buttonpane button[id="assess_report_options_dialog_save"]').addClass("btn btn-success");
         $('#assess_report_options_dialog').parent().find('.ui-dialog-buttonpane button[id="assess_report_options_dialog_cancel"]').addClass("btn");
         $('#assess_report_options_dialog').dialog('open');
@@ -790,7 +849,7 @@ $(function () {
                     $.post(
                         base_url + 'index.php/assess/research_assess_report_options_set',
                         data
-                    );
+                        );
                     assess_report_options_dialog_close();
                 }
             }
@@ -840,7 +899,7 @@ $(function () {
         } else if (table_case == 'report') {
             reportPanel(true);
             var batch_id = $('select[name="research_assess_batches"]').find('option:selected').val();
-            //$('#assess_report_download_pdf').attr('href', base_url + 'index.php/research/assess_download_pdf?batch_name=' + batch_name);
+        //$('#assess_report_download_pdf').attr('href', base_url + 'index.php/research/assess_download_pdf?batch_name=' + batch_name);
         }
     }
 
@@ -860,7 +919,10 @@ $(function () {
         var assessRequestParams = collectionParams();
 
         for (var p in assessRequestParams) {
-            existingParams.push({"name": p, "value": assessRequestParams[p]});
+            existingParams.push({
+                "name": p, 
+                "value": assessRequestParams[p]
+                });
         }
 
         return existingParams;
@@ -876,7 +938,7 @@ $(function () {
         var assess_filter_dateto = $('#assess_filter_dateto').val();
         if (assess_filter_datefrom && assess_filter_dateto) {
             assessRequestParams.date_from = assess_filter_datefrom,
-                assessRequestParams.date_to = assess_filter_dateto
+            assessRequestParams.date_to = assess_filter_dateto
         }
 
         if ($('#research_assess_flagged').is(':checked')) {
@@ -940,7 +1002,15 @@ $(function () {
     $(document).on('mouseleave', '#assess_preview_crawl_snap_modal', function () {
         $(this).modal('hide');
     });
-    $('#research_assess_export').click(function(){
-        window.location.href = base_url + 'index.php/research/export_assess?batch='+$("select[name='batches']").find("option:selected").text();;
+    $('#research_assess_export').click(function () {
+        $(this).attr('disabled', true);
+        $(this).text('Exporting...');
+        $.fileDownload($(this).prop('href'))
+        .done(function () { 
+            $('#research_assess_export').removeAttr('disabled');
+            $('#research_assess_export').text('Export');
+            })
+        .fail(function () {
+        });
     });
 });

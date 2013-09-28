@@ -1,11 +1,11 @@
 <div class="tabbable">
-    <ul class="nav nav-tabs jq-customer-tabs">
+<!--    <ul class="nav nav-tabs jq-customer-tabs">
         <li class="active"><a data-toggle="tab" href="<?php echo site_url('customer');?>"><b>Account Configuration</b></a></li>
         <?php  if (!$this->ion_auth->is_editor($this->ion_auth->get_user_id())): ?>
             <li class=""><a data-toggle="tab" href="<?php echo site_url('customer/product_description');?>"><b>Product Description Defaults</b></a></li>
             <li class=""><a data-toggle="tab" href="<?php echo site_url('customer/style_guide');?>"><b>Style Guide</b></a></li>
         <?php endif; ?>
-    </ul>
+    </ul>-->
     <div class="tab-content">
         <div class="main_content_editor">
             <script>
@@ -38,7 +38,7 @@
 						    </div>
 						    <div class="control-group">
 							    <div class="controls">
-								    <button type="submit" class="btn btn-success"><i class="icon-white icon-ok"></i>&nbsp;Save</button>
+								    <button type="button" class="btn btn-success"><i class="icon-white icon-ok"></i>&nbsp;Save</button>
 							    </div>
 						    </div>
 					    </form>						

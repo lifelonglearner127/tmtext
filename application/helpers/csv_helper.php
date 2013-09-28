@@ -26,6 +26,8 @@ if ( ! function_exists('array_to_csv'))
 		{	
 			header('Content-Type: application/csv');
 			header('Content-Disposition: attachement; filename="' . $download . '"');
+                        header('Set-Cookie: fileDownload=true; path=/');
+                         
 		}		
 
 		ob_start();
@@ -50,7 +52,8 @@ if ( ! function_exists('array_to_csv'))
 		else
 		{	
 			echo $str;
-		}		
+		}
+                exit();
 	}
 }
 
