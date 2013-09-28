@@ -28,8 +28,3 @@ $menu = array(
 <?php } ?>
 				</ul>
 <?php } ?>
-<script>
-    $(function() {
-        $('.jq-measure').trigger( "click" );
-    });
-</script>

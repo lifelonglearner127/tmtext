@@ -1349,6 +1349,13 @@ class Measure extends MY_Controller {
 
         $this->load->model('sites_model');
         $sites = $this->sites_model->getAll();
+        $site_names = $sites;
+        $site_names_list = array(0 =>'All');
+        foreach ($site_names as $site_name) {
+            $site_names_list[$site_name->name] = $site_name->name;
+        }
+        $this->data['site_names_list'] = $site_names_list;
+        
         $this->data['sites'] = $sites;
         $this->data['customers_list'] = $this->category_customers_list();
         $this->load->model('department_members_model');

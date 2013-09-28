@@ -1,10 +1,17 @@
 <script type='text/javascript'>
 jQuery(document).ready(function($) {
     $("#compare_text").focus();
-    
-         
 
 });
+    $('#grid_sw_grid').click(function(){
+        $('#drop_cat').css('display','block');
+        $('.drop_cat').css('display','block');
+        switchToGridView();
+    });
+    $(function() {
+        if($('.jq-measure').parent().hasClass('active'))
+            $('.jq-measure').trigger( "click" );
+    });
 
 </script>
 <div class="main_content_other"></div>
@@ -21,20 +28,27 @@ jQuery(document).ready(function($) {
                     <?php  echo form_dropdown('product_batches', $batches_list, array(), 'class="mt_10 mr_10" id="batchess" style="width: 145px;"');//max ?>
                     <span class="product_batches_items"></span>
                 </div>
-                <a href="#myModal" style="float:right;margin-top:10px "role="button"  data-toggle="modal"><img  style="width:30px; heihgt: 30px;"src ="<?php echo base_url() ?>/img/ico-gear.png"></a>
-                <ul class='grid_switcher' data-status='grid-switch' style="margin-top: 10px;position: relative;left: 105px;">
-                        <li style="float: left;">
-                            <button style="margin-right: 9px" class='btn' onclick="switchToGridView();" id='grid_sw_grid' type='button'><i class="icon-th-large"></i>&nbsp;Comparison</button>
-                            <button style="margin-right: 9px" class='btn' onclick="switchToTableView();" id='table_grid' type='button'><i class="icon-th-table"></i>&nbsp;Summary</button>
-                            <button class='btn' onclick="switchToListView();" id='grid_sw_list' type='button'><i class="icon-th-list"></i>&nbsp;SEO</button>
-<!--                            <a href="#myModal" role="button"  data-toggle="modal"><img  style="width:30px; heihgt: 30px;"src ="<?php echo base_url() ?>/img/ico-gear.png"></a>-->
-                            
-                        </li>
-<!--                        <li style="float: left; margin-top: 6px;margin-left: 15px;">
-                        	
-                        	<input style="position: relative;top: -3px;" id="strict_grid" type="checkbox" name="strict_grid" value="1"> Exact Match
-                        </li>-->
-                </ul>
+                <div style="width: 399px;float: right;">
+                    <a href="#myModal" style="float:right; "role="button"  data-toggle="modal"><img  style="width:30px; heihgt: 30px;"src ="<?php echo base_url() ?>/img/ico-gear.png"></a>
+                    <button class='btn' style="margin-right: 9px;float:right;" onclick="switchToListView();" id='grid_sw_list' type='button'><i class="icon-th-list"></i>&nbsp;SEO</button>
+                    <button style="margin-right: 9px;float:right;" class='btn' id='grid_sw_grid' type='button'><i class="icon-th-large"></i>&nbsp;Comparison</button>
+                </div>
+                <div style="width: 343px;float: right;margin-top: 10px;">
+                    <select size="10" id="drop_cat" multiple="multiple" style="float:left;display:none;margin-top: 5px;">
+                         <?php
+                         
+                            foreach($site_names_list as $cite){
+                                
+                                 ?>
+                                 <option value="<?php echo $cite; ?>"><?php echo $cite; ?></option>
+                                <?php
+                            }
+                         ?>
+                    </select>
+                    <button class="drop_cat" style="margin-right: 9px;display:none;float:right;">Save changes</button>
+                    <!--button style="margin-right: 9px" class='btn' onclick="switchToTableView();" id='table_grid' type='button'><i class="icon-th-table"></i>&nbsp;Summary</button-->
+                </div>    
+                  
                 
 
  
@@ -84,11 +98,12 @@ jQuery(document).ready(function($) {
 <script>
 $(document).ready(function(){
                                       
-  
+                        
     
                         $('#scroll_all').attr('checked',true).addClass('check');
                         $("#popup_save").live('click',function(){
-                        
+                       $.removeCookie('status_showing_results', {path: '/'});
+                       $.removeCookie('selected_cites_cookie', {path: '/'})
                         selected_cites=$("#popup_sites").val();
                         
                         //$("input['name=show_results']").val();
@@ -137,7 +152,31 @@ $(document).ready(function(){
                         
                        $('#myModal').modal('hide');
                     });
+                    
+                        $(".drop_cat").live('click',function(){
+                       $.removeCookie('status_showing_results', {path: '/'});
+                       $.removeCookie('selected_cites_cookie', {path: '/'})
+                          var status=$("input[name='show_results']:checked").val();
+                           var selected_cites_drop = $("#drop_cat").val();
+                           //selected_cites_drop = $.cookie('selected_cites_cookie')
+                           if(selected_cites_drop!=='All'){
+                               if(status!=='all'){
+                                  $("input[name='show_results']:checked").removeAttr('checked');
+                                    if($("input[name='show_results']").val() == 'matchon'){
+                                        $("input[name='show_results']").attr('checked','checked'); 
+                                    }
+                                }
+                                $.cookie("selected_cites_cookie", selected_cites_drop);
+                            }else{
 
+                                $.cookie("selected_cites_cookie",null);
+                            }
+                             
+                                $('#drop_cat').css('display','none');
+                                $('.drop_cat').css('display','none');
+                          
+                        });
+                        
                         status_showing_results= $.cookie('status_showing_results');
                        
                         if (typeof( status_showing_results) !== 'undefined' ){

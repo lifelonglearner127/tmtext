@@ -132,6 +132,8 @@ function initGrid() {
 }
 
 function switchToListView() {
+    $('#drop_cat').css('display','none');
+    $('.drop_cat').css('display','none');
     viewIconsReset();
     $('#grid_sw_list').addClass('btn-primary');
     $('#grid_sw_list > i').addClass('icon-white');
@@ -851,9 +853,7 @@ function keywordsAnalizer() {
 }
 // --- KEYWORDS ANALYZER (END)
 
-$(document).ready(function() {
- 
-    
+$(document).ready(function() {   
     $(".mismatch_image").live('click', function() {
         $(this).closest('.grid_se_section').hide();
         var im_data_id = $(this).data('value');
