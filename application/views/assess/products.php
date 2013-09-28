@@ -293,11 +293,11 @@
                 </table>
                 <div id="assess_tbl_show_case" class="assess_tbl_show_case">
                     Show:
-                    <a id="assess_tbl_show_case_report" data-case="report" title="Report" href="#" class="active_link">Report</a> |
-                    <a id="assess_tbl_show_case_recommendations" data-case="recommendations" title="Recommendations" href="#">Recommendations</a> |
+                    <a id="assess_tbl_show_case_recommendations" data-case="recommendations" title="Recommendations" href="#" class="active_link">Recommendations</a> |
+                    <a id="assess_tbl_show_case_report" data-case="report" title="Report" href="#">Summary</a> |
                     <a id="assess_tbl_show_case_details" data-case="details" title="Details" href="#">Details</a>
                 </div>
-                <button id="research_batches_columns" class="btn ml_5 float_r">Columns...</button>
+                <a id="research_batches_columns" class="btn ml_5 float_r" title="Customize..."><img  style="width:30px; heihgt: 30px;"src ="<?php echo base_url() ?>/img/ico-gear.png"></a>
                 <div id="assess_report">
                     <ul class="ui-sortable">
                         <li class="boxes">
