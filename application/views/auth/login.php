@@ -1,4 +1,9 @@
 <div class="row-fluid">
+    <div class="pull-left">
+        <div class="solution-logo"></div>
+    </div>
+</div>
+<div class="row-fluid">
 	<div class="span6 offset3">
 		<div class="login_container">
 			<div class="login_header">
@@ -19,15 +24,15 @@
 						</div>
 					</div>
 					<div class="control-group">
-						<?php echo lang('login_remember_label', 'remember', ' class="control-label"');?>
-						<div class="controls">
-							<?php echo form_checkbox('remember', '1', FALSE, 'id="remember"');?>
+						<div class="controls remember_me">
+                            <?php echo form_checkbox('remember', '1', FALSE, 'id="remember"');?>
 						</div>
+                        <?php echo lang('login_remember_label', 'remember', ' class="control-label label_remember"');?>
 					</div>
 					<div class="control-group">
 						<a href="forgot_password" class="control-label"><?php echo lang('login_forgot_password');?></a>
 						<div class="controls">
-							<?php echo form_submit('submit', lang('login_submit_btn'), ' class="btn login_btn"');?>
+							<?php echo form_submit('submit', lang('login_submit_btn'), ' class="btn login_btn btn-success"');?>
 						</div>
 					</div>
 				<?php echo form_close();?>
@@ -35,7 +40,6 @@
 		</div>
 		<div class='add_login_lnk'>
 			<div class='add_login_lnk_left'><a href="<?php echo base_url(); ?>index.php/auth/clientreg">New Client</a></div>
-			<div class='add_login_lnk_right'><a href="<?php echo base_url(); ?>index.php/auth/writereg">New Writer</a></div>
 		</div>
 	</div>
 </div>
