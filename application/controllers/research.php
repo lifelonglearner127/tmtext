@@ -1683,6 +1683,7 @@ class Research extends MY_Controller {
         $this->load->model('customers_model');
 
         $file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
+        var_dump($file);
         $_rows = array();
         if (($handle = fopen($file, "r")) !== FALSE) {
             while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
@@ -1692,6 +1693,7 @@ class Research extends MY_Controller {
             }
             fclose($handle);
         }
+        var_dump($_rows);
         $batch_id = $this->batches_model->getIdByName($this->input->post('batch_name'));
 
         $added = $this->insert_rows($batch_id, $_rows);
