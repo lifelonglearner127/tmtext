@@ -2015,7 +2015,7 @@ class Imported_data_parsed_model extends CI_Model {
 
     }
     public function getByProductName($im_data_id, $selected_product_name = '', $manufacturer = '', $strict = false) {
-        $special_list= array('extractor','maker','cooker',' tv ','laptop','belt','blender', 'tablet','toaster', 'kettle', 'watch', 'sneakers', 'griddle', 'grinder', 'camera');
+        $special_list= array('extractor', 'maker','cooker',' tv ','laptop','belt','blender', 'tablet','toaster', 'kettle', 'watch', 'sneakers', 'griddle', 'grinder', 'camera');
         $this->db->select('p.imported_data_id, p.key, p.value')
                 ->from($this->tables['imported_data_parsed'] . ' as p')
                 ->or_where('p.key', 'parsed_attributes')
@@ -2054,7 +2054,7 @@ class Imported_data_parsed_model extends CI_Model {
 
         $urls = array($this->get_base_url($selected_url));
         $for_groups[]=$im_data_id;
-         $selected_product='';
+        $selected_product='';
          foreach($special_list as $product){
                         if(substr_count(strtolower($selected_product_name),$product)>0){
                             $selected_product=$product;
@@ -2065,21 +2065,21 @@ class Imported_data_parsed_model extends CI_Model {
            if($selected_product != '' && substr_count(strtolower($val1['product_name']),$selected_product)<=0){
                     continue;
            }
-           
-           if($selected_product == ''){
-               $other_product=false;
-               foreach($special_list as $product){
-                   if(substr_count(strtolower($val1['product_name']),$product)>0){
-                            $other_product=true;
-                            break;
-                        }
-               }
-               
-               if($other_product){
-                   continue;
-               }
-           }
-           
+//           $other_product=false;
+//           if($selected_product == ''){
+//               
+//               foreach($special_list as $prd){
+//                   if(substr_count(strtolower($val1['product_name']),$prd)>0){
+//                            $other_product=true;
+//                            break;
+//                        }
+//               }
+//               
+//               
+//           }
+//           if($other_product){
+//                   continue;
+//           }
            
             if (isset($val1['product_name']) && isset($val1['url'])) {
 
