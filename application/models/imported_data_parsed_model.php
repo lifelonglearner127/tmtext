@@ -1610,7 +1610,7 @@ class Imported_data_parsed_model extends CI_Model {
         
         
         
-         $special_list= array(' tv ','laptop','belt','blender', 'tablet','toaster', 'kettle', 'watch', 'sneakers', 'griddle', 'grinder', 'camera');
+         $special_list= array('extractor','maker','cooker',' tv ','laptop','belt','blender', 'tablet','toaster', 'kettle', 'watch', 'sneakers', 'griddle', 'grinder', 'camera');
         $this->load->model('similar_product_groups_model');
         $existing_groups = $this->similar_product_groups_model->get_all();
 
@@ -1715,7 +1715,7 @@ class Imported_data_parsed_model extends CI_Model {
         }
      }
     public function similiarity_cron() {
-        $special_list= array(' tv ','laptop','belt','blender', 'tablet','toaster', 'kettle', 'watch', 'sneakers', 'griddle', 'grinder', 'camera');
+        $special_list= array( 'extractor','maker','cooker',' tv ','laptop','belt','blender', 'tablet','toaster', 'kettle', 'watch', 'sneakers', 'griddle', 'grinder', 'camera');
         $this->load->model('similar_product_groups_model');
         $existing_groups = $this->similar_product_groups_model->get_all();
 
@@ -2015,7 +2015,7 @@ class Imported_data_parsed_model extends CI_Model {
 
     }
     public function getByProductName($im_data_id, $selected_product_name = '', $manufacturer = '', $strict = false) {
-        $special_list= array('maker','cooker','tv','laptop','belt','blender', 'tablet','toaster', 'kettle', 'watch', 'sneakers', 'griddle', 'grinder', 'camera');
+        $special_list= array('extractor','maker','cooker',' tv ','laptop','belt','blender', 'tablet','toaster', 'kettle', 'watch', 'sneakers', 'griddle', 'grinder', 'camera');
         $this->db->select('p.imported_data_id, p.key, p.value')
                 ->from($this->tables['imported_data_parsed'] . ' as p')
                 ->or_where('p.key', 'parsed_attributes')
