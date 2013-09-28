@@ -1771,7 +1771,7 @@ class Imported_data_parsed_model extends CI_Model {
                 if($selected_product != '' && substr_count(strtolower($val1['product_name']),$selected_product)<=0){
                     continue;
                 }
-               if($selected_product != ''){
+               if($selected_product == ''){
                $other_product=false;
                foreach($special_list as $product){
                    if(substr_count(strtolower($val1['product_name']),$product)>0){
@@ -2066,7 +2066,7 @@ class Imported_data_parsed_model extends CI_Model {
                     continue;
            }
            
-           if($selected_product != ''){
+           if($selected_product == ''){
                $other_product=false;
                foreach($special_list as $product){
                    if(substr_count(strtolower($val1['product_name']),$product)>0){
