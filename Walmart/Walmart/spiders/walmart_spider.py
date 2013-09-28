@@ -96,7 +96,26 @@ class WalmartSpider(BaseSpider):
 
         # Extract description title, text, wordcount, and keyword density (if any)
 
-        description_holder = hxs.select("//div[@id='detailedPageDescriptionCopyBlock']")
+        description_holder = hxs.select("//div[@id='detailedPageDescriptionCopyBlock'] | //div[@class='CustomPOV ReminderBubbleSeeAll']")
+
+        # if none was found, try to find an element with much text (> 200 characters) and assume that's it
+        #TODO: needs work
+        if not description_holder:
+            description_holder = hxs.select("//*[not(self::script or self::style)]//text()[string-length() > 500]")
+
+        # select element with most text from these
+        if description_holder:
+            desc_winner = description_holder[0]
+            max_text = 0
+            for desc_candidate in description_holder:
+                # compute approximate length of description text
+                description_texts = desc_candidate.select(".//text()").extract()
+                text_len = len(" ".join(description_texts))
+                if text_len > max_text:
+                    max_text = text_len
+                    desc_winner = desc_candidate
+
+            description_holder = desc_winner
 
         # try to find description title in <b> tag in the holder;
         # if it's not find, try to find it in the first <p> if the description
