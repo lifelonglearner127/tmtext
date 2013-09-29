@@ -175,9 +175,12 @@ input[type=text] {
     float: right;
     width: 230px;
 }
+.dataTables_filter{
+    width: 200px;
+}
 #tblAssess_length{
     position: relative;
-    left: 542px;
+    left: 575px;
     top: 5px;
 }
 #tblAssess_filter label{
