@@ -355,7 +355,16 @@ ul.research_table_filter h3 {
     font-weight: bold;
     font-size: 16px;
 }
-#tblAssess tr th:first-child{
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+    #tblAssess tr th:first-child{
+        display: block;
+        max-width: 315px!important;
+        width: 100%!important;
+    }
+}
+#tblAssess td table a.active_link{
+    word-wrap: break-word;
+    max-width: 325px!important;
     display: block;
 }
 .assess_tbl_show_case a {
@@ -390,6 +399,7 @@ div.fg-toolbar label, div.fg-toolbar select, div.fg-toolbar input {
 ul.assess_recommendations {
     padding: 0;
     margin: 0 0 0 5px;
+    min-width: 265px!important;
 }
 ul.assess_recommendations li {
     list-style-type: none;
@@ -519,6 +529,7 @@ ul.ui-sortable {
 }
 .block_data_table table#tblAssess td{
     padding: 5px;
+    max-width:340px;
 }
 .brand_most_type{
     width: 100px;

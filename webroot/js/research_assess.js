@@ -142,7 +142,7 @@ $(function () {
         {
             "sTitle" : "URL", 
             "sName":"url", 
-            "sWidth": "10%"
+            "sWidth": "7%"
         },
 
         {
@@ -184,7 +184,7 @@ $(function () {
         {
             "sTitle" : "Recommendations", 
             "sName":"recommendations", 
-            "sWidth": "25%",
+            "sWidth": "30%",
             "bVisible": false, 
             "bSortable": false
         },

@@ -2262,3 +2262,8 @@ span.dep_left_part{
 .compare li{
     list-style: disc;
 }
+
+#research_batches_columns{
+    background-color: transparent;
+    background-image: none;
+}
