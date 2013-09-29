@@ -631,12 +631,12 @@ function globalDepDashboard(site_name){
             })
             $(this).css({'border-bottom':'1px solid #000'});
         });
-        /*$("span.dep_text a").mouseover(function() {
-            var dep_url =
-            $.post(base_url + 'index.php/system/scanForDepartmentSnap', {'dep_url': dep_url}, function(data) {
-
+        $("span.dep_text a").mouseover(function() {
+            var dep_id = $(this).attr('id');
+            $.post(base_url + 'index.php/system/scanForDepartmentSnap', {'dep_id': dep_id}, function(data) {
+                    console.log(data);
             });
-        });*/
+        });
     });
 }
 
@@ -722,6 +722,12 @@ function globalCatDashboard(site_name){
                 el.css({'display':'none'});
                 $(this).css({'border-bottom':'none'});
             }
+        });
+        $("span.dep_text a").mouseover(function() {
+            var dep_id = $(this).attr('id');
+            $.post(base_url + 'index.php/system/scanForCatSnap', {'cat_id': cat_id}, function(data) {
+                console.log(data);
+            });
         });
     });
 }

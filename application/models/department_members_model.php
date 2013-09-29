@@ -295,11 +295,11 @@ class Department_members_model extends CI_Model {
             count(if(`description_words`>0, id, null)) as more_than_0
             FROM `department_members` WHERE `site_id`=".$site_id."");
         $result = $sql->result();
-        $sql_more_data = $this->db->query("SELECT `text`, `url`, `description_words`, `title_keyword_description_density` FROM `department_members` WHERE `site_id`=".$site_id." and (`description_words`>0 and `description_words`<250)");
+        $sql_more_data = $this->db->query("SELECT `id`, `text`, `url`, `description_words`, `title_keyword_description_density` FROM `department_members` WHERE `site_id`=".$site_id." and (`description_words`>0 and `description_words`<250)");
         $result_more_data = $sql_more_data->result();
-        $sql_data_more_than_0 = $this->db->query("SELECT `text`,`url`, `description_words`, `title_keyword_description_density` FROM `department_members` WHERE `site_id`=".$site_id." and `description_words` > 0");
+        $sql_data_more_than_0 = $this->db->query("SELECT `id`, `text`,`url`, `description_words`, `title_keyword_description_density` FROM `department_members` WHERE `site_id`=".$site_id." and `description_words` > 0");
         $res_data_more_than_0 = $sql_data_more_than_0->result();
-        $sql0 = $this->db->query("SELECT `text`, `url`, `description_words`, `title_keyword_description_density` FROM `department_members` WHERE `site_id`=".$site_id." and `description_words`=0");
+        $sql0 = $this->db->query("SELECT `id`, `text`, `url`, `description_words`, `title_keyword_description_density` FROM `department_members` WHERE `site_id`=".$site_id." and `description_words`=0");
         $result0 = $sql0->result();
         return array('total' => $result[0]->total, 'result0'=> $result0,
             'res_avg' => $result[0]->res_avg, 'res_more' => $result[0]->more, 'res_more_data' => $result_more_data,

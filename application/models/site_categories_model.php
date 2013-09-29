@@ -188,7 +188,7 @@ class Site_categories_model extends CI_Model {
 
     function getCatData($site_id, $condition)
     {
-        $sql = "SELECT `text`, `url`, `description_words`, `title_keyword_description_density` FROM `site_categories` WHERE `site_id`=".$site_id." and ".$condition." group by `text` order by `text` asc";
+        $sql = "SELECT `id`, `text`, `url`, `description_words`, `title_keyword_description_density` FROM `site_categories` WHERE `site_id`=".$site_id." and ".$condition." group by `text` order by `text` asc";
         $query = $this->db->query($sql);
         return $query->result();
     }
