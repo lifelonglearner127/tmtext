@@ -178,11 +178,11 @@ input[type=text] {
 #tblAssess_length{
     position: relative;
     left: 542px;
-    top: 3px;
+    top: 5px;
 }
-.dataTables_filter label{
+#tblAssess_filter label{
     float: left;
-    margin-top: 3px;
+    margin-top: 5px;
 }
 .DataTables_sort_wrapper {
     cursor: pointer;
