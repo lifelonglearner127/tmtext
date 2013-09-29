@@ -635,12 +635,12 @@ function globalDepDashboard(site_name){
         $("span.dep_text a").mouseover(function() {
             var dep_id = $(this).attr('id');
             var pos = $(this).offset().top;
+            var tr_height = parseInt(pos) + 300;
+            $("span.snap_img").parent().parent().css({'height': ''+tr_height + ' px'});
             $.post(base_url + 'index.php/system/scanForDepartmentSnap', {'dep_id': dep_id}, function(data) {
                     if(data.snap_path != '' && data.snap_path != undefined){
                         $("span.snap_img").html('<img src="'+data.snap_path+'">');
                         $("span.snap_img").offset({'top':pos});
-                        var tr_height = parseInt(pos) + 300;
-                        $("span.snap_img").parent().parent().css({'height': ''+tr_height + ' px'});
                     } else {
                         $("span.snap_img").html('');
                     }
@@ -736,12 +736,12 @@ function globalCatDashboard(site_name){
         $("span.dep_text a").mouseover(function() {
             var cat_id = $(this).attr('id');
             var pos = $(this).offset().top;
+            var tr_height = parseInt(pos) + 300;
+            $("span.snap_img").parent().parent().css({'height': ''+tr_height + ' px'});
             $.post(base_url + 'index.php/system/scanForCatSnap', {'cat_id': cat_id}, function(data) {
                 if(data.snap_path != '' && data.snap_path != undefined){
                     $("span.snap_img").html('<img src="'+data.snap_path+'">');
                     $("span.snap_img").offset({'top':pos});
-                    var tr_height = parseInt(pos) + 300;
-                    $("span.snap_img").parent().parent().css({'height': ''+tr_height + ' px'});
                 } else {
                     $("span.snap_img").html('');
                 }
