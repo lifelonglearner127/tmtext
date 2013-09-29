@@ -639,11 +639,8 @@ function globalDepDashboard(site_name){
                     if(data.snap_path != '' && data.snap_path != undefined){
                         $("span.snap_img").html('<img src="'+data.snap_path+'">');
                         $("span.snap_img").offset({'top':pos});
-                        var el = $("span.snap_img").parent().parent();
-                        console.log(el);
                         var tr_height = parseInt(pos) + 300;
-                        console.log(tr_height);
-                        el.css({'height': tr_height + ' px'});
+                        $("span.snap_img").parent().parent().css({'height': ''+tr_height + ' px'});
                     } else {
                         $("span.snap_img").html('');
                     }
@@ -743,9 +740,8 @@ function globalCatDashboard(site_name){
                 if(data.snap_path != '' && data.snap_path != undefined){
                     $("span.snap_img").html('<img src="'+data.snap_path+'">');
                     $("span.snap_img").offset({'top':pos});
-                    var el = $("span.snap_img").parent().parent();
                     var tr_height = parseInt(pos) + 300;
-                    el.css({'height': tr_height + ' px'});
+                    $("span.snap_img").parent().parent().css({'height': ''+tr_height + ' px'});
                 } else {
                     $("span.snap_img").html('');
                 }
