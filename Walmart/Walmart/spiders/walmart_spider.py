@@ -9,6 +9,9 @@ import datetime
 
 from spiders_utils import Utils
 
+# minimum length for a text to be an eligible description text
+DESC_LEN = 800
+
 ################################
 # Run with 
 #
@@ -101,17 +104,24 @@ class WalmartSpider(BaseSpider):
         # if none was found, try to find an element with much text (> 200 characters) and assume that's it
         #TODO: needs work
         if not description_holder:
-            description_holder = hxs.select("//*[not(self::script or self::style)]//text()[string-length() > 500]")
+            # # if I do this, it will only select element texts that are > 500 each, not in total for a parent node
+            # description_holder = hxs.select("//*[not(self::script or self::style)]//text()[string-length() > 500]")
+            description_holder = hxs.select("//*[not(self::script or self::style)]")
 
         # select element with most text from these
         if description_holder:
-            desc_winner = description_holder[0]
+            desc_winner = None
             max_text = 0
+
+            #TODO: though this is not a good idea, it could select really high level items (like <hmtl>, why not?)
+            # there should also be a way to test the depth of the element or how close it is to a <p> child
             for desc_candidate in description_holder:
                 # compute approximate length of description text
                 description_texts = desc_candidate.select(".//text()").extract()
                 text_len = len(" ".join(description_texts))
-                if text_len > max_text:
+                # manually check if text length > 800
+                if text_len > DESC_LEN and text_len > max_text:
+                    print response.url, description_texts
                     max_text = text_len
                     desc_winner = desc_candidate
 
@@ -120,30 +130,34 @@ class WalmartSpider(BaseSpider):
         # try to find description title in <b> tag in the holder;
         # if it's not find, try to find it in the first <p> if the description
         # if fund there, exclude it from the description body
-        description_title = description_holder.select(".//b/text()").extract()
-        if description_title:
-            item['description_title'] = description_title[0]
+        if description_holder:
+            description_title = description_holder.select(".//b/text()").extract()
+            if description_title:
+                item['description_title'] = description_title[0]
 
-        description_texts = description_holder.select("./div[position()<2]//p//text()[not(ancestor::b)] | ./p//text()[not(ancestor::b)]").extract()
+            description_texts = description_holder.select("./div[position()<2]//p//text()[not(ancestor::b)] | ./p//text()[not(ancestor::b)]").extract()
 
-        # if the list is not empty and contains at least one non-whitespace item
-        if description_texts and reduce(lambda x,y: x or y, [line.strip() for line in description_texts]):
+            # if the list is not empty and contains at least one non-whitespace item
+            if description_texts and reduce(lambda x,y: x or y, [line.strip() for line in description_texts]):
 
-            # replace all whitespace with one space, strip, and remove empty texts; then join them
-            item['description_text'] = " ".join([re.sub("\s+"," ", description_text.strip()) for description_text in description_texts if description_text.strip()])
+                # replace all whitespace with one space, strip, and remove empty texts; then join them
+                item['description_text'] = " ".join([re.sub("\s+"," ", description_text.strip()) for description_text in description_texts if description_text.strip()])
 
-        if 'description_text' in item:
-            tokenized = Utils.normalize_text(item['description_text'])
-            item['description_wc'] = len(tokenized)
+            if 'description_text' in item:
+                tokenized = Utils.normalize_text(item['description_text'])
+                item['description_wc'] = len(tokenized)
 
-            # sometimes here there is no description title because of malformed html
-            # if we can find description text but not description title, title is probably malformed - get first text in div instead
-            if 'description_title' not in item:
-                desc_texts = description_holder.select("./text()").extract()
-                desc_texts = [text for text in desc_texts if text.strip()]
-                item['description_title'] = desc_texts[0]
+                # sometimes here there is no description title because of malformed html
+                # if we can find description text but not description title, title is probably malformed - get first text in div instead
+                if 'description_title' not in item:
+                    desc_texts = description_holder.select("./text()").extract()
+                    desc_texts = [text for text in desc_texts if text.strip()]
+                    item['description_title'] = desc_texts[0]
 
-            (item['keyword_count'], item['keyword_density']) = Utils.phrases_freq(item['description_title'], item['description_text'])
+                (item['keyword_count'], item['keyword_density']) = Utils.phrases_freq(item['description_title'], item['description_text'])
+
+            else:
+                item['description_wc'] = 0
 
         else:
             item['description_wc'] = 0
