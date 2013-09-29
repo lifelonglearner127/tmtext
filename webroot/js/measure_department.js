@@ -634,9 +634,11 @@ function globalDepDashboard(site_name){
         });
         $("span.dep_text a").mouseover(function() {
             var dep_id = $(this).attr('id');
+            var pos = $(this).offset().top;
             $.post(base_url + 'index.php/system/scanForDepartmentSnap', {'dep_id': dep_id}, function(data) {
                     if(data.snap_path != '' && data.snap_path != undefined){
                         $("span.snap_img").html('<img src="'+data.snap_path+'">');
+                        $("span.snap_img").offset({'top':pos});
                     } else {
                         $("span.snap_img").html('');
                     }
@@ -656,7 +658,8 @@ function globalCatDashboard(site_name){
             '<span class="dep_title"><span class="dep_left_part">Categories that have content:  </span>' +
             '<span class="dep_total_numbers">'+data.res_more_than_0+'/'+data.total+'</span></span>';
         data_str += '<ul></ul></td>';
-        data_str += '<td class="dep_second_part span6" onclick="getCatData(\''+site_name+'\', this, \'`description_words` = 0\', 0);"><span class="dep_title">Create content for '+dep_content+' categories</span>';
+        data_str += '<td class="dep_second_part span6" onclick="getCatData(\''+site_name+'\', this, \'`description_words` = 0\', 0);"><span class="dep_title">Create content for '+dep_content+' categories</span>' +
+            '<span class="snap_img"></span>';
         data_str += '<ul></ul></td></tr>';
 
         data_str += '<tr><td nowrap class="span6 dep_first_part" onclick="getCatData(\''+site_name+'\', this, \'(`description_words`>0 and `description_words`<250)\', 1);"><span class="dep_title"><span class="dep_left_part">Average content word count: </span>' +
@@ -727,6 +730,18 @@ function globalCatDashboard(site_name){
                 el.css({'display':'none'});
                 $(this).css({'border-bottom':'none'});
             }
+        });
+        $("span.dep_text a").mouseover(function() {
+            var cat_id = $(this).attr('id');
+            var pos = $(this).offset().top;
+            $.post(base_url + 'index.php/system/scanForCatSnap', {'cat_id': cat_id}, function(data) {
+                if(data.snap_path != '' && data.snap_path != undefined){
+                    $("span.snap_img").html('<img src="'+data.snap_path+'">');
+                    $("span.snap_img").offset({'top':pos});
+                } else {
+                    $("span.snap_img").html('');
+                }
+            });
         });
     });
 }
