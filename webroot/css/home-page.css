@@ -22,7 +22,9 @@ root {
     margin-top: 33px;
     margin-left: 38px;
 }
-
+.header_container .solution-logo {
+    margin-top: 0px;
+}
 .navigation {
     height: 44px;
     background: url('../img/top-bar.png') repeat-x left top;
