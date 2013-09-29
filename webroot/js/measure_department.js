@@ -639,6 +639,9 @@ function globalDepDashboard(site_name){
                     if(data.snap_path != '' && data.snap_path != undefined){
                         $("span.snap_img").html('<img src="'+data.snap_path+'">');
                         $("span.snap_img").offset({'top':pos});
+                        var el = $(this).parent().parent().parent().parent().parent();
+                        var tr_height = pos + 300;
+                        el.css({'height': tr_height + ' px'});
                     } else {
                         $("span.snap_img").html('');
                     }
@@ -738,6 +741,9 @@ function globalCatDashboard(site_name){
                 if(data.snap_path != '' && data.snap_path != undefined){
                     $("span.snap_img").html('<img src="'+data.snap_path+'">');
                     $("span.snap_img").offset({'top':pos});
+                    var el = $(this).parent().parent().parent().parent().parent();
+                    var tr_height = pos + 300;
+                    el.css({'height': tr_height + ' px'});
                 } else {
                     $("span.snap_img").html('');
                 }
