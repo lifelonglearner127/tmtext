@@ -2268,3 +2268,8 @@ span.dep_left_part{
     background-image: none;
     margin-top: 3px;
 }
+
+.snap_img{
+    max-width: 400px;
+    float: right;
+}
