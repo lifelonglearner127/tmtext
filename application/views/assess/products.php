@@ -152,19 +152,19 @@
             </p>
             <p>
                 <input type="checkbox" id="column_short_description_wc" data-col_name="short_description_wc" name="column_short_description_wc_name" <?php echo($columns['short_description_wc'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="column_short_description_wc">Word Count (S)</label>
+                <label for="column_short_description_wc">Word (S)</label>
             </p>
             <p>
                 <input type="checkbox" id="column_short_seo_phrases" data-col_name="short_seo_phrases" name="column_short_seo_phrases_name" <?php echo($columns['short_seo_phrases'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="column_short_seo_phrases">SEO Phrases (S)</label>
+                <label for="column_short_seo_phrases">Keywords (S)</label>
             </p>
             <p>
                 <input type="checkbox" id="column_long_description_wc" data-col_name="long_description_wc" name="column_long_description_wc_name" <?php echo($columns['long_description_wc'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="column_short_description_wc">Word Count (L)</label>
+                <label for="column_short_description_wc">Word (L)</label>
             </p>
             <p>
                 <input type="checkbox" id="column_long_seo_phrases" data-col_name="long_seo_phrases" name="column_long_seo_phrases_name" <?php echo($columns['long_seo_phrases'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="column_long_seo_phrases">SEO Phrases (S)</label>
+                <label for="column_long_seo_phrases">Keywords (S)</label>
             </p>
             <p>
                 <input type="checkbox" id="column_duplicate_content" data-col_name="duplicate_content" name="column_duplicate_content_name" <?php echo($columns['duplicate_content'] == 'true' ? 'checked="checked"' : ''); ?> />
@@ -292,7 +292,6 @@
                     <tbody></tbody>
                 </table>
                 <div id="assess_tbl_show_case" class="assess_tbl_show_case">
-                    Show:
                     <a id="assess_tbl_show_case_recommendations" data-case="recommendations" title="Recommendations" href="#" class="active_link">Recommendations</a> |
                     <a id="assess_tbl_show_case_report" data-case="report" title="Report" href="#">Summary</a> |
                     <a id="assess_tbl_show_case_details" data-case="details" title="Details" href="#">Details</a>

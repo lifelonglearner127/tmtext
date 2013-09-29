@@ -17,7 +17,7 @@ box['related_keywords'] = '<h3>Related Keywords</h3><div class="boxes_content"><
         '<li class="primary"><span>HDTV</span></li><li class="secondary"><span>3D</span></li>' +
         '<li class="tertiary"><span>HDMI</span></li><li class="primary"><span>2D</span></li>' +
         '<li class="secondary"><span>TFT</span></li><li class="tertiary"><span>USB</span></li></ul></div>';
-box['seo_phrases'] = '<h3>SEO Phrases</h3><div class="boxes_content">' +
+box['seo_phrases'] = '<h3>Keywords</h3><div class="boxes_content">' +
         '<ul class="less_b_margin ml_0" data-status="seo_an"></ul>' +
         '<ul class="less_b_margin ml_0" data-st-id="short_desc_seo" data-status="seo_an"></ul>' +
         '<ul class="less_b_margin ml_0" data-st-id="long_desc_seo" data-status="seo_an"></ul></div>';
@@ -302,7 +302,7 @@ jQuery(document).ready(function($) {
                                 </div>
                             </li>
                             <li class="boxes mt_10">
-                                <h3><a href="#" onclick="return false;" class="hideShow"><img style="width:12px;margin-right: 10px" src="<?php echo base_url();?>img/arrow-down.png" /></a>SEO Phrases<a href="#" class="ml_10 research_arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
+                                <h3><a href="#" onclick="return false;" class="hideShow"><img style="width:12px;margin-right: 10px" src="<?php echo base_url();?>img/arrow-down.png" /></a>Keywords<a href="#" class="ml_10 research_arrow"><img src="<?php echo base_url(); ?>/webroot/img/arrow.png"></a></h3>
                                 <div class="boxes_content">
                                     <ul class='less_b_margin ml_0' data-status='seo_an'>
                                     </ul>

@@ -5,10 +5,10 @@
             <th>Date</th>
             <th>Product Name</th>
             <th>URL</th>
-            <th>Word Count (S)</th>
-            <th>SEO Phrases(S)</th>
-            <th>Word Count (L)</th>
-            <th>SEO Phrases(L)</th>
+            <th>Word (S)</th>
+            <th>Keywords(S)</th>
+            <th>Word (L)</th>
+            <th>Keywords(L)</th>
             <th>Duplicate Content</th>
             <th>Price</th>
         </tr>

@@ -146,25 +146,25 @@ $(function () {
         },
 
         {
-            "sTitle" : "Word Count (S)", 
+            "sTitle" : "Word (S)",
             "sName":"short_description_wc", 
             "sWidth": "4%"
         },
 
         {
-            "sTitle" : "SEO Phrases (S)", 
+            "sTitle" : "Keywords (S)",
             "sName":"short_seo_phrases", 
             "sWidth": "10%"
         },
 
         {
-            "sTitle" : "Word Count (L)", 
+            "sTitle" : "Word (L)",
             "sName":"long_description_wc", 
             "sWidth": "4%"
         },
 
         {
-            "sTitle" : "SEO Phrases (L)", 
+            "sTitle" : "Keywords (L)",
             "sName":"long_seo_phrases", 
             "sWidth": "10%"
         },
