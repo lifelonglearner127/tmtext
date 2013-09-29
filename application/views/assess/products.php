@@ -296,7 +296,7 @@
                     <a id="assess_tbl_show_case_report" data-case="report" title="Report" href="#">Summary</a> |
                     <a id="assess_tbl_show_case_details" data-case="details" title="Details" href="#">Details</a>
                 </div>
-                <a id="research_batches_columns" class="btn ml_5 float_r" title="Customize..."><img  style="width:32px; heihgt: 32px;"src ="<?php echo base_url() ?>/img/settings@2x.png"></a>
+                <a id="research_batches_columns" class="ml_5 float_r" title="Customize..."><img  style="width:32px; heihgt: 32px;"src ="<?php echo base_url() ?>/img/settings@2x.png"></a>
                 <div id="assess_report">
                     <ul class="ui-sortable">
                         <li class="boxes">

@@ -348,8 +348,9 @@ ul.research_table_filter h3 {
 .assess_tbl_show_case {
     margin-top: 9px;
     float: left;
-    text-align: center;
+    text-align: left;
     width: 450px;
+    margin-left: -100px;
 }
 #tblAssess tr th{
     font-weight: bold;

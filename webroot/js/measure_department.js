@@ -463,7 +463,7 @@ function globalDepDashboard(site_name){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                data_str += '<li><span class="dep_text"><a href="'+data.res_data_more_than_0[j].url+'" target="_blank">'+data.res_data_more_than_0[j].text+'</a></span><span class="dep_numbers">';
+                data_str += '<li><span class="dep_text"><a id="'+data.res_data_more_than_0[j].id+'" href="'+data.res_data_more_than_0[j].url+'" target="_blank">'+data.res_data_more_than_0[j].text+'</a></span><span class="dep_numbers">';
                 if(data.res_data_more_than_0[j].description_words > 0){
                     data_str += data.res_data_more_than_0[j].description_words;
                 }
@@ -489,7 +489,7 @@ function globalDepDashboard(site_name){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                data_str += '<span class="dep_text"><a href="'+data.result0[j].url+'" target="_blank">'+data.result0[j].text+'</a></span><span class="dep_numbers">';
+                data_str += '<span class="dep_text"><a id="'+data.result0[j].id+'" href="'+data.result0[j].url+'" target="_blank">'+data.result0[j].text+'</a></span><span class="dep_numbers">';
                 if(data.result0[j].description_words > 0){
                     data_str += data.result0[j].description_words;
                 }
@@ -517,7 +517,7 @@ function globalDepDashboard(site_name){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                data_str += '<li><span class="dep_text"><a href="'+data.res_more_data[j].url+'" target="_blank">'+data.res_more_data[j].text+'</a></span><span class="dep_numbers">';
+                data_str += '<li><span class="dep_text"><a id="'+data.res_more_data[j].id+'" href="'+data.res_more_data[j].url+'" target="_blank">'+data.res_more_data[j].text+'</a></span><span class="dep_numbers">';
                 if(data.res_more_data[j].description_words > 0){
                     data_str += data.res_more_data[j].description_words;
                 }
@@ -542,7 +542,7 @@ function globalDepDashboard(site_name){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                data_str += '<li><span class="dep_text"><a href="'+data.res_more_data[j].url+'" target="_blank">'+data.res_more_data[j].text+'</a></span><span class="dep_numbers">';
+                data_str += '<li><span class="dep_text"><a id="'+data.res_more_data[j].id+'" href="'+data.res_more_data[j].url+'" target="_blank">'+data.res_more_data[j].text+'</a></span><span class="dep_numbers">';
                 if(data.res_more_data[j].description_words > 0){
                     data_str += data.res_more_data[j].description_words;
                 }
@@ -571,7 +571,7 @@ function globalDepDashboard(site_name){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                data_str += '<li><span class="dep_text"><a href="'+data.keyword_optimize_data[j].url+'" target="_blank">'+data.keyword_optimize_data[j].text+'</a></span><span class="dep_numbers">';
+                data_str += '<li><span class="dep_text"><a id="'+data.keyword_optimize_data[j].id+'" href="'+data.keyword_optimize_data[j].url+'" target="_blank">'+data.keyword_optimize_data[j].text+'</a></span><span class="dep_numbers">';
                 if(data.keyword_optimize_data[j].description_words > 0){
                     data_str += data.keyword_optimize_data[j].description_words;
                 }
@@ -596,7 +596,7 @@ function globalDepDashboard(site_name){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                data_str += '<li><span class="dep_text"><a href="'+data.dep_optimize[j].url+'" target="_blank">'+data.dep_optimize[j].text
+                data_str += '<li><span class="dep_text"><a id="'+data.dep_optimize[j].id+'" href="'+data.dep_optimize[j].url+'" target="_blank">'+data.dep_optimize[j].text
                     +'</a></span><span class="dep_numbers">';
                 if(data.dep_optimize[j].description_words > 0){
                     data_str += data.dep_optimize[j].description_words;
@@ -631,6 +631,12 @@ function globalDepDashboard(site_name){
             })
             $(this).css({'border-bottom':'1px solid #000'});
         });
+        /*$("span.dep_text a").mouseover(function() {
+            var dep_url =
+            $.post(base_url + 'index.php/system/scanForDepartmentSnap', {'dep_url': dep_url}, function(data) {
+
+            });
+        });*/
     });
 }
 
@@ -663,7 +669,7 @@ function globalCatDashboard(site_name){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                data_str += '<li><span class="dep_text"><a href="'+data.keyword_optimize_data[j].url+'" target="_blank">'+data.keyword_optimize_data[j].text+'</a></span><span class="dep_numbers">';
+                data_str += '<li><span class="dep_text"><a id="'+data.keyword_optimize_data[j].id+'" href="'+data.keyword_optimize_data[j].url+'" target="_blank">'+data.keyword_optimize_data[j].text+'</a></span><span class="dep_numbers">';
                 if(data.keyword_optimize_data[j].description_words > 0){
                     data_str += data.keyword_optimize_data[j].description_words;
                 }
@@ -688,7 +694,7 @@ function globalCatDashboard(site_name){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                data_str += '<li><span class="dep_text"><a href="'+data.dep_optimize[j].url+'" target="_blank">'+data.dep_optimize[j].text+'</a></span><span class="dep_numbers">';
+                data_str += '<li><span class="dep_text"><a id="'+data.dep_optimize[j].id+'" href="'+data.dep_optimize[j].url+'" target="_blank">'+data.dep_optimize[j].text+'</a></span><span class="dep_numbers">';
                 if(data.dep_optimize[j].description_words > 0){
                     data_str += data.dep_optimize[j].description_words;
                 }
@@ -740,7 +746,7 @@ function allDepDashboard(site_name, site_name_sec){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                first_part_table += '<li><span class="dep_text"><a href="'+data.res_data_more_than_0[j].url+'" target="_blank">'+data.res_data_more_than_0[j].text+'</a></span><span class="dep_numbers">';
+                first_part_table += '<li><span class="dep_text"><a id="'+data.res_data_more_than_0[j].id+'" href="'+data.res_data_more_than_0[j].url+'" target="_blank">'+data.res_data_more_than_0[j].text+'</a></span><span class="dep_numbers">';
                 if(data.res_data_more_than_0[j].description_words > 0){
                     first_part_table += data.res_data_more_than_0[j].description_words;
                 }
@@ -767,7 +773,7 @@ function allDepDashboard(site_name, site_name_sec){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                second_part_table += '<li><span class="dep_text"><a href="'+data.res_more_data[j].url+'" target="_blank">'+data.res_more_data[j].text+'</a></span><span class="dep_numbers">';
+                second_part_table += '<li><span class="dep_text"><a id="'+data.res_more_data[j].id+'" href="'+data.res_more_data[j].url+'" target="_blank">'+data.res_more_data[j].text+'</a></span><span class="dep_numbers">';
                 if(data.res_more_data[j].description_words > 0){
                     second_part_table += data.res_more_data[j].description_words;
                 }
@@ -794,7 +800,7 @@ function allDepDashboard(site_name, site_name_sec){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                third_part_table += '<li><span class="dep_text"><a href="'+data.keyword_optimize_data[j].url+'" target="_blank">'+data.keyword_optimize_data[j].text+'</a></span><span class="dep_numbers">';
+                third_part_table += '<li><span class="dep_text"><a id="'+data.keyword_optimize_data[j].id+'" href="'+data.keyword_optimize_data[j].url+'" target="_blank">'+data.keyword_optimize_data[j].text+'</a></span><span class="dep_numbers">';
                 if(data.keyword_optimize_data[j].description_words > 0){
                     third_part_table += data.keyword_optimize_data[j].description_words;
                 }
@@ -827,7 +833,7 @@ function allDepDashboard(site_name, site_name_sec){
                     if(json != ''){
                         var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                     }
-                    first_part_table += '<li><span class="dep_text"><a href="'+data.res_data_more_than_0[j].url+'" target="_blank">'+data.res_data_more_than_0[j].text+'</a></span><span class="dep_numbers">';
+                    first_part_table += '<li><span class="dep_text"><a id="'+data.res_data_more_than_0[j].id+'" href="'+data.res_data_more_than_0[j].url+'" target="_blank">'+data.res_data_more_than_0[j].text+'</a></span><span class="dep_numbers">';
                     if(data.res_data_more_than_0[j].description_words > 0){
                         first_part_table += data.res_data_more_than_0[j].description_words;
                     }
@@ -854,7 +860,7 @@ function allDepDashboard(site_name, site_name_sec){
                     if(json != ''){
                         var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                     }
-                    second_part_table += '<li><span class="dep_text"><a href="'+data.res_more_data[j].url+'" target="_blank">'+data.res_more_data[j].text+'</a></span><span class="dep_numbers">';
+                    second_part_table += '<li><span class="dep_text"><a id="'+data.res_more_data[j].id+'" href="'+data.res_more_data[j].url+'" target="_blank">'+data.res_more_data[j].text+'</a></span><span class="dep_numbers">';
                     if(data.res_more_data[j].description_words > 0){
                         second_part_table += data.res_more_data[j].description_words;
                     }
@@ -881,7 +887,7 @@ function allDepDashboard(site_name, site_name_sec){
                     if(json != ''){
                         var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                     }
-                    third_part_table += '<li><span class="dep_text"><a href="'+data.keyword_optimize_data[j].url+'" target="_blank">'+data.keyword_optimize_data[j].text+'</a></span><span class="dep_numbers">';
+                    third_part_table += '<li><span class="dep_text"><a id="'+data.keyword_optimize_data[j].id+'" href="'+data.keyword_optimize_data[j].url+'" target="_blank">'+data.keyword_optimize_data[j].text+'</a></span><span class="dep_numbers">';
                     if(data.keyword_optimize_data[j].description_words > 0){
                         third_part_table += data.keyword_optimize_data[j].description_words;
                     }
@@ -948,7 +954,7 @@ function allCatDashboard(site_name, site_name_sec){
                 if(json != ''){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
-                third_part_table += '<li><span class="dep_text"><a href="'+data.keyword_optimize_data[j].url+'" target="_blank">'+data.keyword_optimize_data[j].text+'</a></span><span class="dep_numbers">';
+                third_part_table += '<li><span class="dep_text"><a id="'+data.keyword_optimize_data[j].id+'" href="'+data.keyword_optimize_data[j].url+'" target="_blank">'+data.keyword_optimize_data[j].text+'</a></span><span class="dep_numbers">';
                 if(data.keyword_optimize_data[j].description_words > 0){
                     third_part_table += data.keyword_optimize_data[j].description_words;
                 }
@@ -989,7 +995,7 @@ function allCatDashboard(site_name, site_name_sec){
                     if(json != ''){
                         var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                     }
-                    third_part_table += '<li><span class="dep_text"><a href="'+data.keyword_optimize_data[j].url+'" target="_blank">'+data.keyword_optimize_data[j].text+'</a></span><span class="dep_numbers">';
+                    third_part_table += '<li><span class="dep_text"><a id="'+data.keyword_optimize_data[j].id+'" href="'+data.keyword_optimize_data[j].url+'" target="_blank">'+data.keyword_optimize_data[j].text+'</a></span><span class="dep_numbers">';
                     if(data.keyword_optimize_data[j].description_words > 0){
                         third_part_table += data.keyword_optimize_data[j].description_words;
                     }
@@ -1040,7 +1046,7 @@ function getCatData(site_name, obj, condition, state){
                     var keywords = $.parseJSON(json.replace(/&quot;/ig, '"'));
                 }
                 data_str += '<li><span class="dep_text">';
-                data_str += '<a href="'+data[j].url+'" target="_blank">'+data[j].text+'</a>';
+                data_str += '<a id="'+data[j].id+'"  href="'+data[j].url+'" target="_blank">'+data[j].text+'</a>';
                 data_str += '</span><span class="dep_numbers">';
                 if(data[j].description_words > 0){
                     data_str += data[j].description_words;
