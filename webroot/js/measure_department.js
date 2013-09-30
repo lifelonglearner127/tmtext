@@ -906,7 +906,21 @@ function allDepDashboard(site_name, site_name_sec){
             third_part_table += '<td><span class="dep_title"><span class="dep_left_part">Departments optimized: </span>' +
                 '<span class="dep_total_numbers">'+data.keyword_optimize+'/'+data.res_more_than_0+'</span></span>';
             if(data.keyword_optimize_data.length > 0){
-                third_part_table += '<ul><li class="dep_header"><span class="dep_text">CATEGORY</span><span class="dep_numbers">WORDS</span><span class="dep_keywords">KEYWORDS - DENSITY</span></li>';
+               $("span.dep_text a").mouseover(function() {
+            var cat_id = $(this).attr('id');
+            var pos = $(this).offset().top;
+            var tr_height = parseInt(pos);
+            $("span.snap_img").parent().parent().css({'height': tr_height});
+            $.post(base_url + 'index.php/system/scanForCatSnap', {'cat_id': cat_id}, function(data) {
+                console.log(data);
+                if(data.snap_path != '' && data.snap_path != undefined){
+                    $("span.snap_img").html('<img src="'+data.snap_path+'">');
+                    $("span.snap_img").offset({'top':pos});
+                } else {
+                    $("span.snap_img").html('');
+                }
+            });
+        }); third_part_table += '<ul><li class="dep_header"><span class="dep_text">CATEGORY</span><span class="dep_numbers">WORDS</span><span class="dep_keywords">KEYWORDS - DENSITY</span></li>';
                 for(var j=0; j<data.keyword_optimize_data.length; j++){
                     var json = data.keyword_optimize_data[j].title_keyword_description_density;
                     if(json != ''){
@@ -1088,6 +1102,21 @@ function getCatData(site_name, obj, condition, state){
             }
             var el = $(obj).find('ul');
             el.html(data_str);
+            $("span.dep_text a").mouseover(function() {
+                var cat_id = $(this).attr('id');
+                var pos = $(this).offset().top;
+                var tr_height = parseInt(pos);
+                $("span.snap_img").parent().parent().css({'height': tr_height});
+                $.post(base_url + 'index.php/system/scanForCatSnap', {'cat_id': cat_id}, function(data) {
+                    console.log(data);
+                    if(data.snap_path != '' && data.snap_path != undefined){
+                        $("span.snap_img").html('<img src="'+data.snap_path+'">');
+                        $("span.snap_img").offset({'top':pos});
+                    } else {
+                        $("span.snap_img").html('');
+                    }
+                });
+            });
         }
 
     });
