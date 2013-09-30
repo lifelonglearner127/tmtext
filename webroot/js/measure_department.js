@@ -454,7 +454,7 @@ function globalDepDashboard(site_name){
 
         var data_str = '<tr><td nowrap><span class="dep_left_part">Categories Analyzed:</span> <span class="dep_total_numbers">'+data.total+'</span></td><td>&nbsp;</td></tr>';
         data_str += '<tr><td nowrap class="dep_first_part span6"><span class="dep_title"><span class="dep_left_part">Categories that have content:  </span>' +
-            '<span class="dep_total_numbers">'+data.res_more_than_0+'/'+data.total+'</span></span>';
+            '<span class="dep_total_numbers">'+data.res_more_than_0+'/'+data.total+'</span></span><span class="snap_img_left"></span>';
         if(data.res_data_more_than_0.length > 0){
             data_str += '<ul>';
             data_str += '<li class="dep_header"><span class="dep_text">CATEGORY</span><span class="dep_numbers">WORDS</span><span class="dep_keywords">KEYWORDS - DENSITY</span></li>';
@@ -632,19 +632,34 @@ function globalDepDashboard(site_name){
             })
             $(this).css({'border-bottom':'1px solid #000'});
         });
-        $("tbody#department_data tr td ul li").mouseover(function() {
+        $("tbody#department_data tr td:first-child ul li").mouseover(function() {
             var dep_id = $(this).find('span.dep_text').find('a').attr('id');
             var pos = $(this).offset().top;
             var tr_height = parseInt(pos);
-            $("span.snap_img").parent().parent().css({'height': tr_height});
             $.post(base_url + 'index.php/system/scanForDepartmentSnap', {'dep_id': dep_id}, function(data) {
                     if(data.snap_path != '' && data.snap_path != undefined){
                         $("span.snap_img").html('<img src="'+data.snap_path+'">');
                         $("span.snap_img").offset({'top':pos});
+                        $("span.snap_img").parent().parent().css({'height': tr_height});
                     } else {
                         $("span.snap_img").html('');
                         $("span.snap_img").parent().parent().css({'height': 'auto'});
                     }
+            });
+        });
+        $("tbody#department_data tr td:nth-child(2) ul li").mouseover(function() {
+            var dep_id = $(this).find('span.dep_text').find('a').attr('id');
+            var pos = $(this).offset().top;
+            var tr_height = parseInt(pos);
+            $.post(base_url + 'index.php/system/scanForDepartmentSnap', {'dep_id': dep_id}, function(data) {
+                if(data.snap_path != '' && data.snap_path != undefined){
+                    $("span.snap_img_left").html('<img src="'+data.snap_path+'">');
+                    $("span.snap_img_left").offset({'top':pos});
+                    $("span.snap_img_left").parent().parent().css({'height': tr_height});
+                } else {
+                    $("span.snap_img_left").html('');
+                    $("span.snap_img_left").parent().parent().css({'height': 'auto'});
+                }
             });
         });
     });
@@ -659,7 +674,7 @@ function globalCatDashboard(site_name){
         var data_str = '<tr><td nowrap><span class="dep_title"><span class="dep_left_part">Sub-Categories Analyzed: </span><span class="dep_total_numbers">'+data.total+'</span></span></td><td>&nbsp;</td></tr>';
         data_str += '<tr><td nowrap class="dep_first_part span6" onclick="getCatData(\''+site_name+'\', this, \'`description_words` > 0\', 1);">' +
             '<span class="dep_title"><span class="dep_left_part">Sub-Categories that have content:  </span>' +
-            '<span class="dep_total_numbers">'+data.res_more_than_0+'/'+data.total+'</span></span>';
+            '<span class="dep_total_numbers">'+data.res_more_than_0+'/'+data.total+'</span></span><span class="snap_img_left"></span>';
         data_str += '<ul></ul></td>';
         data_str += '<td class="dep_second_part span6" onclick="getCatData(\''+site_name+'\', this, \'`description_words` = 0\', 0);"><span class="dep_title">Create content for '+dep_content+' sub-categories</span>' +
             '<span class="snap_img"></span>';
@@ -734,15 +749,15 @@ function globalCatDashboard(site_name){
                 $(this).css({'border-bottom':'none'});
             }
         });
-        $("tbody#category_data tr td ul li").mouseover(function() {
+        $("tbody#category_data tr td:first-child ul li").mouseover(function() {
             var cat_id = $(this).find('span.dep_text').find('a').attr('id');
             var pos = $(this).offset().top;
             var tr_height = parseInt(pos);
-            $("span.snap_img").parent().parent().css({'height': tr_height});
             $.post(base_url + 'index.php/system/scanForCatSnap', {'cat_id': cat_id}, function(data) {
                 if(data.snap_path != '' && data.snap_path != undefined){
                     $("span.snap_img").html('<img src="'+data.snap_path+'">');
                     $("span.snap_img").offset({'top':pos});
+                    $("span.snap_img").parent().parent().css({'height': tr_height});
                 } else {
                     $("span.snap_img").html('');
                     $("span.snap_img").parent().parent().css({'height': 'auto'});
@@ -1089,16 +1104,16 @@ function getCatData(site_name, obj, condition, state){
             }
             var el = $(obj).find('ul');
             el.html(data_str);
-            $("tbody#category_data tr td ul li").mouseover(function() {
+            $("tbody#category_data tr td:first-child ul li").mouseover(function() {
                 var cat_id = $(this).find('span.dep_text').find('a').attr('id');
                 var pos = $(this).offset().top;
                 var tr_height = parseInt(pos);
-                $("span.snap_img").parent().parent().css({'height': tr_height});
                 $.post(base_url + 'index.php/system/scanForCatSnap', {'cat_id': cat_id}, function(data) {
                     console.log(data);
                     if(data.snap_path != '' && data.snap_path != undefined){
                         $("span.snap_img").html('<img src="'+data.snap_path+'">');
                         $("span.snap_img").offset({'top':pos});
+                        $("span.snap_img").parent().parent().css({'height': tr_height});
                     } else {
                         $("span.snap_img").html('');
                         $("span.snap_img").parent().parent().css({'height': 'auto'});
