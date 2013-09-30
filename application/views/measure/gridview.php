@@ -1270,7 +1270,7 @@ $(document).click(function(e) {
         height: auto !important;
 
     }
-    p{
+    p,.compare{
         font-size: 13px;
     }
     .primary_speed{
