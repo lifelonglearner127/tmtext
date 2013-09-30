@@ -2268,13 +2268,16 @@ span.dep_left_part{
     background-image: none;
     margin-top: 3px;
 }
-
 #research_batches_columns{
     cursor:pointer;
 }
-
 .snap_img{
     max-width: 400px;
     float: right;
+    border:1px solid #ccc;
+}
+.snap_img_left{
+    max-width: 400px;
+    float: left;
     border:1px solid #ccc;
 }
