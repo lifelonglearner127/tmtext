@@ -51,8 +51,8 @@
 			$sets_disabled_state = "";
 		}
 	?>
-	<button id='btn_dep_rep_preview_set' <?php echo $sets_disabled_state; ?> onclick="activateDepRepPreview()" class="btn btn-success btn-rec-all-send" type="button">Preview saved sets</button>
-	<button id='btn_dep_rep_save_set' class="btn btn-primary btn-rec-all-send" disabled="" type="button" onclick="saveSets()">Save sets</button>
+	<button id='btn_dep_rep_preview_set' <?php echo $sets_disabled_state; ?> onclick="activateDepRepPreview()" class="btn btn-success btn-rec-all-send" type="button">Preview</button>
+	<button id='btn_dep_rep_save_set' class="btn btn-primary btn-rec-all-send" disabled="" type="button" onclick="saveSets()">Save</button>
 </div>
 
 <script type='text/javascript'>
@@ -60,7 +60,8 @@
 	function saveSetButtonStateScaner() {
 		var sets = [];
 		// === prepare selected sets data for analyzer (start)
-		$("#dcsr_control_panel_tabel > tbody > tr").each(function(index, value) {
+		$("#dcsr_control_panel_modal table > tbody > tr").each(function(index, value) {
+			console.log("VALUE : ", value);
 			var mid = {
 				id: $(value).data('id'),
 				main_choose_site: '0',
@@ -100,20 +101,22 @@
 				break;
 			}
 		}
+		// console.log(sets);
 		if(overall_valid) {
 			$("#btn_dep_rep_save_set").removeAttr('disabled');
 		} else {
 			$("#btn_dep_rep_save_set").attr('disabled', true);
 		}
+		// console.log("VALID : ", overall_valid);
 	}
 
-	function activateDepRepPreview() {
-		$("#dcsr_control_panel_modal").modal('hide');
-		$.post(base_url + 'index.php/measure/activate_dep_rep_preview_list', {}, function(data) {
-			$("#dep_rep_preview_list_modal").html(data);
-			$("#dep_rep_preview_list_modal").modal('show');
-		});
-	}
+	// function activateDepRepPreview() {
+	// 	$("#dcsr_control_panel_modal").modal('hide');
+	// 	$.post(base_url + 'index.php/measure/activate_dep_rep_preview_list', {}, function(data) {
+	// 		$("#dep_rep_preview_list_modal").html(data);
+	// 		$("#dep_rep_preview_list_modal").modal('show');
+	// 	});
+	// }
 
 	function saveSets() {
 		var sets = [];

@@ -67,6 +67,14 @@ function openScreensModalSlider() {
 	$("#screens_modal_slider").modal('show');
 }
 
+function activateDepRepPreview() {
+	$("#dcsr_control_panel_modal").modal('hide');
+	$.post(base_url + 'index.php/measure/activate_dep_rep_preview_list', {}, function(data) {
+		$("#dep_rep_preview_list_modal").html(data);
+		$("#dep_rep_preview_list_modal").modal('show');
+	});
+}
+
 function drop_selecction_scan() {
 	// --- screens dropdowns selections scanner (start)
     var send_data = {
@@ -98,6 +106,7 @@ function drop_selecction_scan() {
 }
 
 function viewCatsScreensCp() {
+	$("#dep_rep_preview_list_modal").modal('hide');
 	$("#dcsr_control_panel_modal").modal('show');
 	// --- refresh listing (start)
 	var send_data = {};

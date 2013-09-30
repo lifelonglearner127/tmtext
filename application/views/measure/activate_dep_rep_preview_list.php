@@ -52,6 +52,7 @@
 	</table>
 </div>
 <div class="modal-footer">
+	<button type='button' class='btn btn-success' onclick='viewCatsScreensCp()'>Add Categories</button>
 	<button id='btn_dep_rep_send_set' class="btn btn-primary btn-rec-all-send" type="button" onclick="sendDepSnapsReport()">Send report</button>
 </div>
 
