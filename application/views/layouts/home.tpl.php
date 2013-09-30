@@ -17,7 +17,7 @@
                     <li class="pull-left"><a href="#">HOME</a></li>
                     <li class="pull-left"><a href="#">PRODUCT</a></li>
                     <li class="pull-left"><a href="#">COMPANY</a></li>
-                    <li class="pull-right"><a href="<?php echo base_url() ?>auth/login">SIGN IN</a></li>
+                    <li class="pull-right"><a href="<?php echo base_url() ?>index.php/auth/login">SIGN IN</a></li>
                     <!-- <li class="pull-right"><a href="http://dev.contentanalyticsinc.com/producteditor/index.php/auth/login<?php //echo site_url('auth/login');?>">SIGN IN</a></li> -->
                 </ul>
             </div>

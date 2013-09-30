@@ -24,7 +24,9 @@
 					?>
 					<?php $main_dep_snap = $this->department_members_model->getLatestDepartmentScreen($v->main_choose_dep); ?>
 					<?php if($main_dep_snap['img_av_status']) { ?>
-					<div style='width: 400px;'><?php echo $cover_text; ?></div> 
+					<div style='width: 400px;'>
+						<p><?php echo $cover_text; ?></p>
+					</div> 
 					<div style='width: 400px;'>
 						<img style='width: 100%' src="<?php echo base_url() ?>webshoots/<?php echo $main_dep_snap['snap_name']; ?>">
 					</div>
