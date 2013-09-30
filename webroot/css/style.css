@@ -2269,6 +2269,10 @@ span.dep_left_part{
     margin-top: 3px;
 }
 
+#research_batches_columns{
+    cursor:pointer;
+}
+
 .snap_img{
     max-width: 400px;
     float: right;
