@@ -632,7 +632,7 @@ function globalDepDashboard(site_name){
             })
             $(this).css({'border-bottom':'1px solid #000'});
         });
-        $("li").mouseover(function() {
+        $("tbody#department_data tr td ul li").mouseover(function() {
             var dep_id = $(this).find('span.dep_text').find('a').attr('id');
             var pos = $(this).offset().top;
             var tr_height = parseInt(pos);
@@ -643,6 +643,7 @@ function globalDepDashboard(site_name){
                         $("span.snap_img").offset({'top':pos});
                     } else {
                         $("span.snap_img").html('');
+                        $("span.snap_img").parent().parent().css({'height': 'auto'});
                     }
             });
         });
@@ -733,7 +734,7 @@ function globalCatDashboard(site_name){
                 $(this).css({'border-bottom':'none'});
             }
         });
-        $("li").mouseover(function() {
+        $("tbody#category_data tr td ul li").mouseover(function() {
             var cat_id = $(this).find('span.dep_text').find('a').attr('id');
             var pos = $(this).offset().top;
             var tr_height = parseInt(pos);
@@ -744,6 +745,7 @@ function globalCatDashboard(site_name){
                     $("span.snap_img").offset({'top':pos});
                 } else {
                     $("span.snap_img").html('');
+                    $("span.snap_img").parent().parent().css({'height': 'auto'});
                 }
             });
         });
@@ -905,21 +907,6 @@ function allDepDashboard(site_name, site_name_sec){
             third_part_table += '<td><span class="dep_title"><span class="dep_left_part">Categories optimized: </span>' +
                 '<span class="dep_total_numbers">'+data.keyword_optimize+'/'+data.res_more_than_0+'</span></span>';
             if(data.keyword_optimize_data.length > 0){
-               $("li").mouseover(function() {
-                var cat_id = $(this).find('span.dep_text').find('a').attr('id');
-                var pos = $(this).offset().top;
-                var tr_height = parseInt(pos);
-                $("span.snap_img").parent().parent().css({'height': tr_height});
-                $.post(base_url + 'index.php/system/scanForCatSnap', {'cat_id': cat_id}, function(data) {
-                    console.log(data);
-                    if(data.snap_path != '' && data.snap_path != undefined){
-                        $("span.snap_img").html('<img src="'+data.snap_path+'">');
-                        $("span.snap_img").offset({'top':pos});
-                    } else {
-                        $("span.snap_img").html('');
-                    }
-                });
-                });
                 third_part_table += '<ul><li class="dep_header"><span class="dep_text">CATEGORY</span><span class="dep_numbers">WORDS</span><span class="dep_keywords">KEYWORDS - DENSITY</span></li>';
                 for(var j=0; j<data.keyword_optimize_data.length; j++){
                     var json = data.keyword_optimize_data[j].title_keyword_description_density;
@@ -1102,7 +1089,7 @@ function getCatData(site_name, obj, condition, state){
             }
             var el = $(obj).find('ul');
             el.html(data_str);
-            $("li").mouseover(function() {
+            $("tbody#category_data tr td ul li").mouseover(function() {
                 var cat_id = $(this).find('span.dep_text').find('a').attr('id');
                 var pos = $(this).offset().top;
                 var tr_height = parseInt(pos);
@@ -1114,6 +1101,7 @@ function getCatData(site_name, obj, condition, state){
                         $("span.snap_img").offset({'top':pos});
                     } else {
                         $("span.snap_img").html('');
+                        $("span.snap_img").parent().parent().css({'height': 'auto'});
                     }
                 });
             });
