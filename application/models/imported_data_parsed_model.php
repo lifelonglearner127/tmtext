@@ -1639,11 +1639,11 @@ class Imported_data_parsed_model extends CI_Model {
                 ->where('p.revision = (SELECT  MAX(revision) as revision
                       FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
                       GROUP BY imported_data_id)', NULL, FALSE)
-                 ->limit(50);
+                 ->limit(10);
          $query = $this->db->get();
          $for_group_ids = $query->result_array();
          echo "<pre>";
-         print_r($for_group_ids);exit;
+         print_r($for_group_ids);
           foreach($for_group_ids as $val){
               $for_group[$val['imported_data_id']]= $data['imported_data_id'];
           }
@@ -1664,7 +1664,9 @@ class Imported_data_parsed_model extends CI_Model {
             
             $urls = array($this->get_base_url($val['url']));
             foreach ($data as $key => $val1) {
-               
+                if(!isset($val1['product_name'])){
+                    continue;
+                }
                 if($selected_product != '' && substr_count(strtolower($val1['product_name']),$selected_product)<=0){
                     continue;
                 }
@@ -1737,13 +1739,11 @@ class Imported_data_parsed_model extends CI_Model {
                
                 $groups[$im_data_id]['model']=time();
             }
-            $groups[$im_data_id][] = $im_data_id;
+            $groups[$im_data_id]['ids'][] = $im_data_id;
         }
 //
-        
-        if($model==Null){
-                    $model=time();
-                }
+         echo "for_insert= ";
+         print_r($groups);
                 foreach ($groups as $im_data_id => $val) {
                     foreach($val['ids'] as $id){
                         
@@ -1919,7 +1919,9 @@ class Imported_data_parsed_model extends CI_Model {
         
         $urls = array($this->get_base_url($selected_url));
         foreach ($data as $key => $val1) {
-            
+            if(!isset($val1['product_name'])){
+                    continue;
+              }
             if (isset($val1['product_name']) && isset($val1['url'])) {
 
                 if ($key == $im_data_id) {
