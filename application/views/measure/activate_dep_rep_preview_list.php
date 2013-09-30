@@ -6,7 +6,7 @@
 	<table id='dcsr_control_panel_tabel' class='table table-striped'>
 		<thead>
 			<tr>
-				<th><input type='checkbox' name="clst_report_ch_all" id="clst_report_ch_all"></th>
+				<th><input type='checkbox' checked name="clst_report_ch_all" id="clst_report_ch_all"></th>
 				<th>Main</th>
 				<th>Competitors</th>
 			</tr>
@@ -16,7 +16,7 @@
 				<?php foreach($user_dep_rep_sets as $k => $v) { ?>
 				<tr>
 					<td>
-						<input type='checkbox' value="<?php echo $v->id ?>" class='clst_report_ch'>
+						<input checked type='checkbox' value="<?php echo $v->id ?>" class='clst_report_ch'>
 						<br>
 						<button class='btn btn-danger small_custom_icon_btn mt_5' data-id="<?php echo $v->id; ?>" onclick="removeExistedSet(this)"><i class='icon-remove-circle icon-white'></i></button>
 					</td>
