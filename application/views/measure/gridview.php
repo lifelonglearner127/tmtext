@@ -235,7 +235,7 @@ foreach ($same_pr as $ks => $vs) {
                                 <i style='float: right;' class='snap_ico_gridview icon-picture' data-snap="<?php echo $snap_data['snap']; ?>"></i>
                             <?php } ?>
     <?php if ($s_product_short_desc_count > 0) { ?>
-                            <span class='analysis_content_head' style="width: 100%;"><img style="height: 9px;width: 9px;background: rgb(207, 207, 207);padding: 2px;margin-top: -3px;margin-right: 4px;" src="<?php echo base_url() ?>/img/arrow-down.png"><?php
+                            <span class='analysis_content_head' style="width: 100%;"><img  class="desc_show_hide_short" style="height: 9px;width: 9px;background: rgb(207, 207, 207);padding: 2px;margin-top: -3px;margin-right: 4px;" src="<?php echo base_url() ?>/img/arrow-right.png"><?php
                             if ($s_product_long_description == '') {
                                 echo "Description";
                             } else {
@@ -244,7 +244,7 @@ foreach ($same_pr as $ks => $vs) {
                             }
                             ?>
                             <span class='short_desc_wc' style="float:left;width: 100%;"></span></span>
-                            <p class="heading_text">Words: <b><?php echo $s_product_short_desc_count; ?></b></p>
+                            <p class="heading_text"><span class="desc_show_hide_short_w">Words: </span><b><?php echo $s_product_short_desc_count; ?></b></p>
                             <div class="p_seo<?php echo $row; ?>short seo_container" style="clear:left;">
 
                                    <div style="float: left;width: 100%;"> <p class="heading_text">SEO Keywords: </p>
@@ -366,7 +366,7 @@ foreach ($same_pr as $ks => $vs) {
                                     <p style="float: left;width: 100%;" class="heading_text list_section"><span style="font-weight: bold;">None</span></p>
         <?php } ?>
                             </div>
-                            <div class="cmp-area" style="float: left;">
+                            <div class="cmp-area">
         <?php if (isset($vs['short_original']) && $vs['short_original'] != "Insufficient data") { ?>
                                     <p><img class="cmp-btn" src="<?php echo base_url() ?>/img/icon.png" title='Click to see dublicates words'/>Duplicate content: <b><?php echo $vs['short_original']; ?> </b></p>
                                 <?php } else { ?>
@@ -379,14 +379,14 @@ foreach ($same_pr as $ks => $vs) {
     if ($s_product_long_desc_count > 0) {
         ?>
 
-                            <span class='analysis_content_head' style="width: 100%;float:left;"><img style="height: 9px;width: 9px;background: rgb(207, 207, 207);padding: 2px;margin-top: -3px;margin-right: 4px;" src="<?php echo base_url() ?>/img/arrow-down.png"><?php
+                            <span class='analysis_content_head' style="width: 100%;float:left;"><img class="desc_show_hide" style="height: 9px;width: 9px;background: rgb(207, 207, 207);padding: 2px;margin-top: -3px;margin-right: 4px;" src="<?php echo base_url() ?>/img/arrow-right.png"><?php
                     if ($s_product_description == '') {
                         echo "Description";
                     } else {
                         echo "Long Description";
                     }
         ?><span class='long_desc_wc'style="float:left;width: 100%;" ></span></span>
-                            <p class="heading_text" style="clear: left;">Words: <b><?php echo $s_product_long_desc_count; ?></b></p>
+                            <p class="heading_text" style="clear: left;"><span class="desc_show_hide_w">Words: </span><b><?php echo $s_product_long_desc_count; ?></b></p>
                             <div class="p_seo<?php
                         if ($s_product_description == '') {
                             echo $row . 'short';
@@ -570,7 +570,7 @@ foreach ($same_pr as $ks => $vs) {
                                     <p style="float: left;width: 100%;" class="heading_text list_section"><span style="font-weight: bold;">None</span></p>
         <?php } ?>
                             </div>
-                            <div class="cmp-area" style="float: left;">
+                            <div class="cmp-area">
         <?php if (isset($vs['long_original']) && $vs['long_original'] != "Insufficient data") { ?>
                                     <p><img class="cmp-btn" src="<?php echo base_url() ?>/img/icon.png" title='Click to see dublicates words'/>Duplicate content: <b><?php echo $vs['long_original']; ?> </b></p>
                                 <?php } else { ?>
@@ -927,8 +927,7 @@ if (($i - 1) % 3 != 0) {
     selectedCustomer();
 
  $(document).ready(function(){
-
-            
+       
             $(".grid_se_section .c_content").scroll(function(){
                 
                 if($("#scroll_all").hasClass( "check" )){
@@ -1212,10 +1211,52 @@ $(document).click(function(e) {
 			}
         }
     });
+
+    $('.cmp-area').find('.short_desc_con').hide(); 
+    $('.cmp-area').find('.compare_long').hide();
+  
+
     
    });//document ready end
 
-
+  
+    
+        $('.desc_show_hide_short').toggle(
+                        function () {
+                         $(this).parent().siblings('.cmp-area').find('.short_desc_con').show("5000");
+                          $(this).attr('src','<?php echo base_url() ?>/img/arrow-down.png');
+                        },
+                        function () {
+                         $(this).parent().siblings('.cmp-area').find('.short_desc_con').hide("5000");
+                          $(this).attr('src','<?php echo base_url() ?>/img/arrow-right.png');
+                        }
+       );
+        $('.desc_show_hide').toggle(
+                         function () {
+                          $(this).parent().siblings('.cmp-area').find('.compare_long').show("5000");
+                           $(this).attr('src','<?php echo base_url() ?>/img/arrow-down.png');
+                         },
+                         function () {
+                          $(this).parent().siblings('.cmp-area').find('.compare_long').hide("5000");
+                           $(this).attr('src','<?php echo base_url() ?>/img/arrow-right.png');
+                         }
+        );
+        $('.desc_show_hide_short_w').toggle(
+                function () {
+                     $(this).parent().siblings('.cmp-area').find('.short_desc_con').show("5000");
+                    },
+                    function () {
+                     $(this).parent().siblings('.cmp-area').find('.short_desc_con').hide("5000");
+                    }
+            );
+           $('.desc_show_hide_w').toggle(
+                     function () {
+                      $(this).parent().siblings('.cmp-area').find('.compare_long').show("5000");
+                     },
+                     function () {
+                      $(this).parent().siblings('.cmp-area').find('.compare_long').hide("5000");
+                     }
+             );
 
 
 </script>
@@ -1228,6 +1269,9 @@ $(document).click(function(e) {
     .primary{
         height: auto !important;
 
+    }
+    p{
+        font-size: 13px;
     }
     .primary_speed{
         float: left;
