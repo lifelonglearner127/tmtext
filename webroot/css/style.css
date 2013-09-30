@@ -2276,4 +2276,5 @@ span.dep_left_part{
 .snap_img{
     max-width: 400px;
     float: right;
+    border:1px solid #ccc;
 }
