@@ -521,7 +521,7 @@ $('#myModal').modal('hide');
 width:180px;
   height:220px;
   position:absolute;
-  top:260px;
+  top:205px;
   left:828px;
   z-index: 1;
 background-repeat:no-repeat;
