@@ -29,7 +29,7 @@ for line in f:
 			fields.append(item[field])
 
 for el in sorted(fields):
-	print el
+	print el.encode("utf-8")
 
 print len(fields), len(set(fields))
 
