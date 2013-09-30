@@ -61,7 +61,6 @@
 		var sets = [];
 		// === prepare selected sets data for analyzer (start)
 		$("#dcsr_control_panel_modal table > tbody > tr").each(function(index, value) {
-			console.log("VALUE : ", value);
 			var mid = {
 				id: $(value).data('id'),
 				main_choose_site: '0',
@@ -101,13 +100,11 @@
 				break;
 			}
 		}
-		// console.log(sets);
 		if(overall_valid) {
 			$("#btn_dep_rep_save_set").removeAttr('disabled');
 		} else {
 			$("#btn_dep_rep_save_set").attr('disabled', true);
 		}
-		// console.log("VALID : ", overall_valid);
 	}
 
 	// function activateDepRepPreview() {
