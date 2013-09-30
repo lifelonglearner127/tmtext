@@ -1,6 +1,6 @@
 <div class="row-fluid">
     <div class="pull-left">
-        <div class="solution-logo"></div>
+        <div class="solution-logo-page"></div>
     </div>
 </div>
 <div class="row-fluid">
