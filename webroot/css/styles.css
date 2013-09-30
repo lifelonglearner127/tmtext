@@ -598,3 +598,8 @@ span.highlight{
 #report_options input[type=checkbox]{
     margin-top: -5px;
 }
+.snap_img_left{
+    max-width: 400px;
+    float: left;
+    border:1px solid #ccc;
+}
