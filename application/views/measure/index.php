@@ -4,10 +4,12 @@ jQuery(document).ready(function($) {
 
 });
     $('#grid_sw_grid').click(function(){
+        $('#shadow').css('display','block');
         $('#drop_cat').css('display','block');
-        $('.drop_cat').css('display','block');
+        //$('.drop_cat').css('display','block');
         switchToGridView();
     });
+
     $(function() {
         if($('.jq-measure').parent().hasClass('active'))
             $('.jq-measure').trigger( "click" );
@@ -28,26 +30,16 @@ jQuery(document).ready(function($) {
                     <?php  echo form_dropdown('product_batches', $batches_list, array(), 'class="mt_10 mr_10" id="batchess" style="width: 145px;"');//max ?>
                     <span class="product_batches_items"></span>
                 </div>
-                <div style="width: 399px;float: right;">
+                <div style="width: 399px;float: right;padding-top: 10px;">
                     <a href="#myModal" style="float:right; "role="button"  data-toggle="modal"><img  style="width:30px; heihgt: 30px;"src ="<?php echo base_url() ?>/img/ico-gear.png"></a>
                     <button class='btn' style="margin-right: 9px;float:right;" onclick="switchToListView();" id='grid_sw_list' type='button'><i class="icon-th-list"></i>&nbsp;SEO</button>
                     <button style="margin-right: 9px;float:right;" class='btn' id='grid_sw_grid' type='button'><i class="icon-th-large"></i>&nbsp;Comparison</button>
                 </div>
-                <div style="width: 343px;float: right;margin-top: 10px;">
-                    <select size="10" id="drop_cat" multiple="multiple" style="float:left;display:none;margin-top: 5px;">
-                         <?php
-                         
-                            foreach($site_names_list as $cite){
-                                
-                                 ?>
-                                 <option value="<?php echo $cite; ?>"><?php echo $cite; ?></option>
-                                <?php
-                            }
-                         ?>
-                    </select>
-                    <button class="drop_cat" style="margin-right: 9px;display:none;float:right;">Save changes</button>
+               
+                    
+                    <!--button class="drop_cat" style="margin-right: 9px;display:none;float:right;">Save changes</button-->
                     <!--button style="margin-right: 9px" class='btn' onclick="switchToTableView();" id='table_grid' type='button'><i class="icon-th-table"></i>&nbsp;Summary</button-->
-                </div>    
+                  
                   
                 
 
@@ -153,29 +145,59 @@ $(document).ready(function(){
                        $('#myModal').modal('hide');
                     });
                     
-                        $(".drop_cat").live('click',function(){
-                       $.removeCookie('status_showing_results', {path: '/'});
-                       $.removeCookie('selected_cites_cookie', {path: '/'})
-                          var status=$("input[name='show_results']:checked").val();
-                           var selected_cites_drop = $("#drop_cat").val();
-                           //selected_cites_drop = $.cookie('selected_cites_cookie')
-                           if(selected_cites_drop!=='All'){
-                               if(status!=='all'){
-                                  $("input[name='show_results']:checked").removeAttr('checked');
-                                    if($("input[name='show_results']").val() == 'matchon'){
-                                        $("input[name='show_results']").attr('checked','checked'); 
-                                    }
-                                }
-                                $.cookie("selected_cites_cookie", selected_cites_drop);
-                            }else{
+                    
+                    
+                       
+        
 
-                                $.cookie("selected_cites_cookie",null);
-                            }
+                        
+                        $('#shadow').click(function(){
+                               var status=$("input[name='show_results']:checked").val();
+                                var selected_cites_drop = $("#drop_cat").val();
+                                //selected_cites_drop = $.cookie('selected_cites_cookie')
+                                if(selected_cites_drop !='All'){
+                                    
+                                     $("input[name='show_results']:checked").removeAttr('checked');
+                                     $.cookie('status_showing_results', 'matchon', {expires: 7, path: '/'});
+                                     $.cookie("selected_cites_cookie", selected_cites_drop);
+                                     status_showing_results= $.cookie('status_showing_results');
+
+                                    if (typeof( status_showing_results) !== 'undefined' ){
+
+                                        status_showing_results = $.cookie('status_showing_results');
+
+                                        $('input[value="'+status_showing_results+'"]').attr('checked',true);
+                                        if(status_showing_results=='matchon'){
+                                            selected_cites_cookie = $.cookie('selected_cites_cookie');
+                                            var dataarray=selected_cites_cookie.split(",");
+                                            $("#popup_sites").val(dataarray);
+
+                                        }
+                                    }else{
+                                      $('input[value="all"]').attr('checked',true);  
+                                    }
+                                     
+     
+                                     
+                                     
+                                 }else{
+                                     $('input[value="all"]').attr('checked',true); 
+                                     $.cookie("selected_cites_cookie",null);
+                                     $.cookie('status_showing_results', 'all', {expires: 7, path: '/'});
+                                 }
+                             $('#shadow').css('display','none');
+                             $('#drop_cat').css('display','none');
                              
-                                $('#drop_cat').css('display','none');
-                                $('.drop_cat').css('display','none');
-                          
+                            batch_title= $("#batchess").val();
+                                if(batch_title!=0){
+                                show_from_butches();
+                                $('#products li:eq(0)').trigger('click');
+                            }
+
                         });
+                        
+                        
+                        
                         
                         status_showing_results= $.cookie('status_showing_results');
                        
@@ -469,6 +491,44 @@ $('#myModal').modal('hide');
         <a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
     </div>
 </div>
+<div id="shadow">
+</div>
+<select size="10" id="drop_cat" multiple="multiple" style="float:left;margin-top: 5px;">
+     <?php
+
+        foreach($site_names_list as $cite){
+
+             ?>
+             <option value="<?php echo $cite; ?>"><?php echo $cite; ?></option>
+            <?php
+        }
+     ?>
+</select>
+<style>
+    #shadow {
+  width:100%;
+  height:100%;
+  /*background:black;*/
+  position:absolute;
+  top:0;
+  left:0;
+  /*opacity:0.4;
+  filter: alpha (apacity=40);*/
+  display:none;
+ 
+ }
+    #drop_cat {
+width:180px;
+  height:220px;
+  position:absolute;
+  top:205px;
+  left:828px;
+  z-index: 1;
+background-repeat:no-repeat;
+/*background-position:center center;*/
+  display:none;
+}
+</style>
 <!-- MODALS (END) -->
 <script>
             $(function() {

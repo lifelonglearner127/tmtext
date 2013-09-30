@@ -132,8 +132,8 @@ function initGrid() {
 }
 
 function switchToListView() {
+    $('#shadow').css('display','none');
     $('#drop_cat').css('display','none');
-    $('.drop_cat').css('display','none');
     viewIconsReset();
     $('#grid_sw_list').addClass('btn-primary');
     $('#grid_sw_list > i').addClass('icon-white');
