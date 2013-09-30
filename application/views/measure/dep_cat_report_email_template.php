@@ -1,9 +1,9 @@
 <?php 
 	$file = realpath(BASEPATH . "../webroot/emails_logos/$email_logo");
-    $file_size = filesize($file);
-    if($file_size === false) {
-    	$email_logo = 'default_logo.jpg';
-    }
+  $file_size = filesize($file);
+  if($file_size === false) {
+  	$email_logo = 'default_logo.jpg';
+  }
 ?>
 <img style='max-width: 240px;' src="<?php echo base_url() ?>/emails_logos/<?php echo $email_logo; ?>">
 
@@ -20,6 +20,7 @@
 							$cover_text = $md_data->text;
 							$desc_words_data = $md_data->description_words;
 						} else {
+							$md_data = null;
 							$cover_text = "no name";
 							$desc_words_data = "no data";
 						}
@@ -34,6 +35,27 @@
 					</div>
 					<div style='width: 400px;'>
 						<p style='font-weight: bold;'>Description words count: <?php echo $desc_words_data; ?></p>
+						<?php if($md_data !== null) { ?>
+								<?php $tkdc_decoded = json_decode($md_data->title_keyword_description_count); ?>
+								<?php if(count($tkdc_decoded) > 0) { ?>
+									<p style='font-weight: bold;'>Title Description Keywords:</p>
+									<ul>
+									<?php foreach($tkdc_decoded as $ki => $vi) { ?>
+										<li><?php echo $ki." : ".$vi ?></li>
+									<?php } ?>
+									</ul>
+								<?php } ?>
+
+								<?php $tkdd_decoded = json_decode($md_data->title_keyword_description_density); ?>
+								<?php if(count($tkdd_decoded) > 0) { ?>
+									<p style='font-weight: bold;'>Title Description Keywords Density:</p>
+									<ul>
+									<?php foreach($tkdd_decoded as $kd => $vd) { ?>
+										<li><?php echo $kd." : ".$vd ?></li>
+									<?php } ?>
+									</ul>
+								<?php } ?>
+						<?php } ?>
 					</div>
 					<?php } else { ?>
 					<p>not exist or broken</p>
@@ -50,6 +72,7 @@
 									$cover_text = $sd_data->text;
 									$desc_words_data = $sd_data->description_words;
 								} else {
+									$sd_data = null;
 									$cover_text = "no name";
 									$desc_words_data = "no data";
 								}
@@ -64,6 +87,28 @@
 							</div>
 							<div style='width: 400px;'>
 								<p style='font-weight: bold;'>Description words count: <?php echo $desc_words_data; ?></p>
+								<?php if($sd_data !== null) { ?>
+										<?php $tkdc_decoded = json_decode($sd_data->title_keyword_description_count); ?>
+										<?php if(count($tkdc_decoded) > 0) { ?>
+											<p style='font-weight: bold;'>Title Description Keywords:</p>
+											<ul>
+											<?php foreach($tkdc_decoded as $ki => $vi) { ?>
+												<li><?php echo $ki." : ".$vi ?></li>
+											<?php } ?>
+											</ul>
+										<?php } ?>
+
+										<?php $tkdd_decoded = json_decode($sd_data->title_keyword_description_density); ?>
+										<?php if(count($tkdd_decoded) > 0) { ?>
+											<p style='font-weight: bold;'>Title Description Keywords Density:</p>
+											<ul>
+											<?php foreach($tkdd_decoded as $kd => $vd) { ?>
+												<li><?php echo $kd." : ".$vd ?></li>
+											<?php } ?>
+											</ul>
+										<?php } ?>
+
+								<?php } ?>
 							</div>	
 							<?php } else { ?>
 							<p>not exists or broken</p>
