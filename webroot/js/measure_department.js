@@ -159,6 +159,10 @@ $( function() {
 	
     $(".hp_boot_drop .dropdown-menu > li > a").bind('click', function(e) {
         var new_caret = $.trim($(this).text());
+        $.removeCookie('hp_boot_drop', {path: '/'}); // destroy
+        $.removeCookie('hp_boot_drop_sec', {path: '/'}); // destroy
+        $.cookie('hp_boot_drop', new_caret, {expires: 7, path: '/'}); // re-create
+        $.cookie('hp_boot_drop_sec', $("#hp_boot_drop_sec .btn_caret_sign_sec").text(), {expires: 7, path: '/'}); // re-create
         var item_id = $(this).data('item');
         $('#departments_content').html('');
         $("#hp_boot_drop .btn_caret_sign").text(new_caret);
@@ -287,6 +291,10 @@ $( function() {
 		
     $(".hp_boot_drop_sec .dropdown-menu > li > a").bind('click', function(e) {
         var new_caret = $.trim($(this).text());
+        $.removeCookie('hp_boot_drop', {path: '/'}); // destroy
+        $.removeCookie('hp_boot_drop_sec', {path: '/'}); // destroy
+        $.cookie('hp_boot_drop', $("#hp_boot_drop .btn_caret_sign").text(), {expires: 7, path: '/'}); // re-create
+        $.cookie('hp_boot_drop_sec', new_caret, {expires: 7, path: '/'}); // re-create
         $("#hp_boot_drop_sec .btn_caret_sign_sec").text(new_caret);
         var site_name=$('#hp_boot_drop .btn_caret_sign').text();
         var item_id = $(this).data('item');
