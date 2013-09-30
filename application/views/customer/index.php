@@ -8,11 +8,26 @@
     </ul>-->
     <div class="tab-content">
         <div class="main_content_editor">
-            <script>
-            $(function() {
-                $('head').find('title').text('Settings');
+    <script>
+    $(function() {
+        $('head').find('title').text('Settings');
+    });
+    function saveData(){
+        var customerObj = $('#customer_name');
+        if(customerObj.val().trim() != ''){
+            customerObj.closest('.control-group').removeClass('error');
+            $.ajax({
+                type: "POST",
+                url: "<?= site_url('customer/changeCustomerData'); ?>",
+                data: {customer_name: customerObj.val().trim()}
+            }).done(function(data){
+                customerObj.val(data);
             });
-            </script>
+        } else {
+            customerObj.closest('.control-group').addClass('error');
+        }
+    }
+    </script>
 	
 	
 					<div class="row-fluid">
@@ -20,13 +35,13 @@
 						    <div class="control-group">
 							    <label class="control-label" for="customer_name">Name:</label>
 							    <div class="controls">
-								    <input type="text" id="customer_name" placeholder="Customer" class="span8" value="<?php echo $email; ?>">
+								    <input type="text" id="customer_name" placeholder="Customer" class="span8" value="<?php echo $username; ?>">
 							    </div>
 						    </div>
 						    <div class="control-group">
 							    <label class="control-label" for="login">Login:</label>
 							    <div class="controls">
-								    <input type="text" id="login" placeholder="Email" class="span8" value="<?php echo $identity; ?>">
+								    <input type="text" id="login" placeholder="Email" class="span8" value="<?php echo $email; ?>">
 							    </div>
 						    </div>
 						    <div class="control-group">
@@ -38,7 +53,7 @@
 						    </div>
 						    <div class="control-group">
 							    <div class="controls">
-								    <button type="button" class="btn btn-success"><i class="icon-white icon-ok"></i>&nbsp;Save</button>
+								    <button id="submitButton" onclick="saveData();" type="button" class="btn btn-success"><i class="icon-white icon-ok"></i>&nbsp;Save</button>
 							    </div>
 						    </div>
 					    </form>						

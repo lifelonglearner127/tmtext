@@ -21,7 +21,8 @@ class Customer extends MY_Controller {
 	{
             $info = $this->ion_auth->get_user_data();
             $this->data['email'] = $info['email'];
-            $this->data['identity'] = $info['identity'];
+//            $this->data['identity'] = $info['identity'];
+            $this->data['username'] = $info['username'];
             $this->data['title'] = 'Customer Settings';
                     $this->render();
 	}
@@ -147,5 +148,19 @@ class Customer extends MY_Controller {
         }
        
         
+    }
+    
+    public function changeCustomerData(){
+        $id = $this->ion_auth->get_user_id();
+        $customerName = trim($_POST['customer_name']);
+        if($customerName != ''){
+            $data = array(
+                'username' => $customerName
+            );
+            $this->db->where('id', $id);
+            $this->db->update('users', $data); 
+            $this->session->set_userdata('username', $customerName);
+            echo $_POST['customer_name'];
+        }
     }
 }
