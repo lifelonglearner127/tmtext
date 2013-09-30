@@ -121,9 +121,10 @@ class WalmartSpider(BaseSpider):
         # if it's not found, try to find it in the first <p> if the description
         # if found there, exclude it from the description body
         if description_holder:
+            #TODO: also account for h1?
             description_title = description_holder.select(".//b/text()").extract()
             if description_title:
-                item['description_title'] = description_title[0]
+                item['description_title'] = description_title[0].strip()
 
             description_texts = description_holder.select("./div[position()<2]//p//text()[not(ancestor::b)] | ./p//text()[not(ancestor::b)]").extract()
 
