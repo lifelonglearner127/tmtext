@@ -18,14 +18,15 @@
 						if(count($main_dep_data) > 0) {
 							$md_data = $main_dep_data[0];
 							$cover_text = $md_data->text;
+
 						} else {
-							$cover_text = "";
+							$cover_text = "no name";
 						}
 					?>
 					<?php $main_dep_snap = $this->department_members_model->getLatestDepartmentScreen($v->main_choose_dep); ?>
 					<?php if($main_dep_snap['img_av_status']) { ?>
 					<div style='width: 400px;'>
-						<p><?php echo $cover_text; ?></p>
+						<p style='font-weight: bold;'><?php echo $cover_text; ?></p>
 					</div> 
 					<div style='width: 400px;'>
 						<img style='width: 100%' src="<?php echo base_url() ?>webshoots/<?php echo $main_dep_snap['snap_name']; ?>">
@@ -44,12 +45,14 @@
 									$sd_data = $sec_dep_data[0];
 									$cover_text = $sd_data->text;
 								} else {
-									$cover_text = "";
+									$cover_text = "no name";
 								}
 							?>
 							<?php $sec_dep_snap = $this->department_members_model->getLatestDepartmentScreen($v->sec_dep_chooser); ?>
 							<?php if($sec_dep_snap['img_av_status']) { ?>
-							<div style='width: 400px;'><?php echo $cover_text; ?></div>
+							<div style='width: 400px;'>
+								<p style='font-weight: bold;'><?php echo $cover_text; ?></p>
+							</div>
 							<div style='margin-bottom: 10px; width: 400px;'>
 								<img style='width: 100%' src="<?php echo base_url() ?>webshoots/<?php echo $sec_dep_snap['snap_name']; ?>">
 							</div>	
