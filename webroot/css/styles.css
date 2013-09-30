@@ -229,9 +229,16 @@ input[type=text] {
     display: inline;
     font-size: 1em;
 }
-#research_assess_choiceColumnDialog label {
+#research_assess_choiceColumnDialog label, #add_department_dialog label, #add_category_dialog label {
     display: inline;
     font-size: 1em;
+}
+#add_department_dialog input, #add_category_dialog input,
+#add_department_dialog textarea, #add_category_dialog textarea{
+    width: 100%;
+}
+.ui-widget-overlay{
+    min-height: 1600px;
 }
 .ui-dialog .ui-dialog-buttonpane button.popupGreen {
     background-color: #5BB75B;

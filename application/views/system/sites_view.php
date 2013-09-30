@@ -1,3 +1,5 @@
+<link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/smoothness/jquery-ui-1.8.2.custom.css" />
+<link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/styles.css" />
 <div class="tabbable">
     <ul class="nav nav-tabs jq-system-tabs">
         <li class=""><a data-toggle="tab" href="<?php echo site_url('system');?>">General</a></li>
@@ -195,11 +197,74 @@
                 return false;
             });
             $("button#add_department").button().click(function(){
+                $('#add_department_dialog').dialog('open');
                 return false;
+            });
+            $('#add_department_dialog').dialog({
+                autoOpen: false,
+                resizable: false,
+                modal: true,
+                buttons: {
+                    'Save': function() {
+                        // save params to DB
+                        $.ajax({
+                            url: base_url + 'index.php/system/save_department',
+                            dataType : 'json',
+                            type : 'post',
+                            data : {
+                                department : $("#column_department").val(),
+                                url : $("#column_department_url").val(),
+                                text : $("#column_department_text").val(),
+                                wc : $("#column_department_wc").val(),
+                                site_id: $("#sites .btn_caret_sign").attr("id")
+                            },
+                            success : function( data ) {
+                                console.log(data);
+                            }
+                        });
+                        $(this).dialog('close');
+                    },
+                    'Cancel': function() {
+                        $(this).dialog('close');
+                    }
+                },
+                width: '250px'
             });
 
             $("button#add_category").click(function(){
+                $('#add_category_dialog').dialog('open');
                 return false;
+            });
+            $('#add_category_dialog').dialog({
+                autoOpen: false,
+                resizable: false,
+                modal: true,
+                buttons: {
+                    'Save': function() {
+                        // save params to DB
+                        $.ajax({
+                            url: base_url + 'index.php/system/save_category',
+                            dataType : 'json',
+                            type : 'post',
+                            data : {
+                                category : $("#column_category").val(),
+                                url : $("#column_category_url").val(),
+                                text : $("#column_category_text").val(),
+                                wc : $("#column_category_wc").val(),
+                                site_id: $("#sites .btn_caret_sign").attr("id"),
+                                department_id: $("select[name='department']").find('option:selected').val()
+                            },
+                            success : function( data ) {
+                                console.log(data);
+                            }
+                        });
+                        $(this).dialog('close');
+                    },
+                    'Cancel': function() {
+                        $(this).dialog('close');
+                    }
+                },
+                width: '250px'
             });
 
             $('select#sites').keypress(function(e){
@@ -655,3 +720,52 @@
         });
     });
 </script>
+
+<div id="add_department_dialog" title="Add new department">
+    <div>
+        <form action="" method="post">
+            <p>
+                <label for="column_department">Department:</label>
+                <input type="text" id="column_department" data-col_name="department" name="column_department" />
+            </p>
+            <p>
+                <label for="column_url">URL:</label>
+                <input type="text" id="column_department_url" data-col_name="url" name="column_url" />
+            </p>
+            <p>
+                <label for="column_text">Text:</label>
+                <textarea cols="10" rows="5" id="column_department_text" data-col_name="text" name="column_text"></textarea>
+            </p>
+            <p>
+                <label for="column_wc">Word count:</label>
+                <input type="text" id="column_department_wc" data-col_name="wc" name="column_wc" />
+            </p>
+        </form>
+    </div>
+</div>
+
+<div id="add_category_dialog" title="Add new category">
+    <div>
+        <form action="" method="post">
+            <p>
+                <label for="column_category">Category:</label>
+                <input type="text" id="column_category" data-col_name="category" name="column_category" />
+            </p>
+            <p>
+                <label for="column_url">URL:</label>
+                <input type="text" id="column_category_url" data-col_name="url" name="column_url" />
+            </p>
+            <p>
+                <label for="column_text">Text:</label>
+                <textarea cols="10" rows="5" id="column_category_text" data-col_name="text" name="column_text"></textarea>
+            </p>
+            <p>
+                <label for="column_wc">Word count:</label>
+                <input type="text" id="column_category_wc" data-col_name="wc" name="column_wc" />
+            </p>
+        </form>
+    </div>
+</div>
+
+
+

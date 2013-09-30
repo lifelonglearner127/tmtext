@@ -1656,19 +1656,66 @@ class System extends MY_Controller {
 		$this->load->model('keyword_model_system');
 		$response['data'] = $this->keyword_model_system->get_keywords();
         $this->output->set_content_type('application/json')->set_output(json_encode($response));
-	}   
-        public function add_new_keywords()
-        {
-            $this->load->model('keyword_model_system');
-            $new_keyword = $this->input->post('new_keyword');
-            $new_data_source_name = $this->input->post('new_data_source_name');
-            $new_volume = $this->input->post('new_volume');
-            $new_search_engine = $this->input->post('new_search_engine');
-            $new_region = $this->input->post('new_region');
-            $response['data'] = $this->keyword_model_system->insertKeywords($new_keyword,$new_volume,$new_search_engine,$new_region,$new_data_source_name);
-            $response['message'] =  'keyword was added successfully';
+	}
+    public function add_new_keywords() {
+        $this->load->model('keyword_model_system');
+        $new_keyword = $this->input->post('new_keyword');
+        $new_data_source_name = $this->input->post('new_data_source_name');
+        $new_volume = $this->input->post('new_volume');
+        $new_search_engine = $this->input->post('new_search_engine');
+        $new_region = $this->input->post('new_region');
+        $response['data'] = $this->keyword_model_system->insertKeywords($new_keyword,$new_volume,$new_search_engine,$new_region,$new_data_source_name);
+        $response['message'] =  'keyword was added successfully';
+        $this->output->set_content_type('application/json')->set_output(json_encode($response));
+    }
+    public function save_category(){
+        $this->load->model('site_categories_model');
+        $site_id = $this->input->post('site_id');
+        $category_text = $this->input->post('category');
+        $description_text = $this->input->post('text');
+        $url = $this->input->post('url');
+        $wc = $this->input->post('wc');
+        $department_members_id = $this->input->post('department_id');
+        if($category_text!=''){
+            $parent_id =  $this->site_categories_model->checkExist($site_id, $category_text, $department_members_id);
+            if($parent_id == false){
+                $response['data'] = $this->site_categories_model->insert(0, $site_id, $category_text,
+                    $url, 0, '', $department_members_id, 0, $wc, '', '', '', $description_text, 0);
+            }else{
+                $response['data'] = $this->site_categories_model->insert($parent_id, $site_id, $category_text,
+                    $url, 0, '', $department_members_id, 0, $wc, '', '', '', $description_text, 0);
+            }
+            $response['message'] =  'category was added successfully';
             $this->output->set_content_type('application/json')->set_output(json_encode($response));
-            
-            
         }
+    }
+    public function save_department(){
+        $this->load->model('department_model');
+        $this->load->model('department_members_model');
+        $site_id = $this->input->post('site_id');
+        $url = $this->input->post('url');
+        $department_text = $this->input->post('department');
+        $description_text = $this->input->post('text');
+        $wc = $this->input->post('wc');
+        $department_id = 0;
+       
+        $check_department_id = $this->department_model->checkExist($department_text);
+        if($check_department_id == false){
+            $department_id = $this->department_model->insert($department_text, $department_text);
+        } else {
+            $department_id = $check_department_id;
+        }
+        $parent_id = 0;
+        if($department_text!=''){
+            $parent_id =  $this->department_members_model->checkExist($site_id, $department_text);
+            if($parent_id == false){
+                $response['data'] = $this->department_members_model->insert(0, $site_id, $department_id, $department_text, $url, $wc, $description_text, '', '', '', 0);
+            } else{
+                $response['data'] = $this->department_members_model->insert($parent_id, $site_id, $department_id, $department_text,
+                    $url, $wc, $description_text, '', '', '', 0);
+            }
+            $response['message'] =  'department was added successfully';
+            $this->output->set_content_type('application/json')->set_output(json_encode($response));
+        }
+    }
 }

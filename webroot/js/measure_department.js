@@ -679,22 +679,22 @@ function globalCatDashboard(site_name){
     }, function(data) {
         var dep_content = data.total - data.res_more_than_0;
         var dep_optimize = data.res_more_than_0 - data.keyword_optimize;
-        var data_str = '<tr><td nowrap><span class="dep_title"><span class="dep_left_part">Sub-Categories Analyzed: </span><span class="dep_total_numbers">'+data.total+'</span></span></td><td>&nbsp;</td></tr>';
+        var data_str = '<tr><td nowrap><span class="dep_title"><span class="dep_left_part">Sub Categories Analyzed: </span><span class="dep_total_numbers">'+data.total+'</span></span></td><td>&nbsp;</td></tr>';
         data_str += '<tr><td nowrap class="dep_first_part span6" onclick="getCatData(\''+site_name+'\', this, \'`description_words` > 0\', 1);">' +
-            '<span class="dep_title"><span class="dep_left_part">Sub-Categories that have content:  </span>' +
+            '<span class="dep_title"><span class="dep_left_part">Sub Categories that have content:  </span>' +
             '<span class="dep_total_numbers">'+data.res_more_than_0+'/'+data.total+'</span></span><span class="snap_img_left"></span>';
         data_str += '<ul></ul></td>';
-        data_str += '<td class="dep_second_part span6" onclick="getCatData(\''+site_name+'\', this, \'`description_words` = 0\', 0);"><span class="dep_title">Create content for '+dep_content+' sub-categories</span>' +
+        data_str += '<td class="dep_second_part span6" onclick="getCatData(\''+site_name+'\', this, \'`description_words` = 0\', 0);"><span class="dep_title">Create content for '+dep_content+' sub categories</span>' +
             '<span class="snap_img"></span>';
         data_str += '<ul></ul></td></tr>';
 
         data_str += '<tr><td nowrap class="span6 dep_first_part" onclick="getCatData(\''+site_name+'\', this, \'(`description_words`>0 and `description_words`<250)\', 1);"><span class="dep_title"><span class="dep_left_part">Average content word count: </span>' +
             '<span class="dep_total_numbers">'+data.res_avg+'</span></span>';
         data_str += '<ul></ul></td>';
-        data_str += '<td class="span6 dep_second_part" onclick="getCatData(\''+site_name+'\', this, \'(`description_words`>0 and `description_words`<250)\', 0);"><span class="dep_title">Add more words to '+data.res_more+' sub-categories</span>';
+        data_str += '<td class="span6 dep_second_part" onclick="getCatData(\''+site_name+'\', this, \'(`description_words`>0 and `description_words`<250)\', 0);"><span class="dep_title">Add more words to '+data.res_more+' sub categories</span>';
         data_str += '<ul></ul></td></tr>';
 
-        data_str += '<tr><td><span class="dep_title">Sub-Categories optimized: <span class="dep_total_numbers">'+data.keyword_optimize+'/'+data.res_more_than_0+'</span></span>';
+        data_str += '<tr><td><span class="dep_title">Sub Categories optimized: <span class="dep_total_numbers">'+data.keyword_optimize+'/'+data.res_more_than_0+'</span></span>';
         if(data.keyword_optimize_data.length > 0){
             data_str += '<ul>';
             data_str += '<li class="cat_header"><span class="dep_text">CATEGORY</span><span class="dep_numbers">WORDS</span><span class="dep_keywords">KEYWORDS - DENSITY</span></li>';
@@ -720,7 +720,7 @@ function globalCatDashboard(site_name){
             data_str += '</ul>';
         }
         data_str += '</td>';
-        data_str += '<td><span class="dep_title">Optimize '+dep_optimize+' sub-categories</span>';
+        data_str += '<td><span class="dep_title">Optimize '+dep_optimize+' sub categories</span>';
         if(data.dep_optimize.length > 0){
             data_str += '<ul><li class="cat_header"><span class="dep_text_rec">RECOMMENDATIONS</span></li>';
             for(var j=0; j<data.dep_optimize.length; j++){
@@ -1000,9 +1000,9 @@ function allCatDashboard(site_name, site_name_sec){
     }, function(data) {
         var dep_content = data.total - data.res_more_than_0;
         var dep_optimize = data.res_more_than_0 - data.keyword_optimize;
-        header_first_table += '<tr><td nowrap><span class="dep_title"><span class="dep_left_part">Sub-Categories Analyzed: </span><span class="dep_total_numbers">'+data.total+'</span></span></td>';
+        header_first_table += '<tr><td nowrap><span class="dep_title"><span class="dep_left_part">Sub Categories Analyzed: </span><span class="dep_total_numbers">'+data.total+'</span></span></td>';
         first_part_table += '<tr><td nowrap class="dep_first_part span6" onclick="getCatData(\''+site_name+'\', this, \'`description_words` > 0\', 1);">' +
-            '<span class="dep_title"><span class="dep_left_part">Sub-Categories that have content:  </span>' +
+            '<span class="dep_title"><span class="dep_left_part">Sub Categories that have content:  </span>' +
             '<span class="dep_total_numbers">'+data.res_more_than_0+'/'+data.total+'</span></span>';
         first_part_table += '<ul></ul></td>';
 
@@ -1010,7 +1010,7 @@ function allCatDashboard(site_name, site_name_sec){
             '<span class="dep_total_numbers">'+data.res_avg+'</span></span>';
         second_part_table += '<ul></ul></td>';
 
-        third_part_table += '<tr><td><span class="dep_title">Sub-Categories optimized: <span class="dep_total_numbers">'+data.keyword_optimize+'/'+data.res_more_than_0+'</span></span>';
+        third_part_table += '<tr><td><span class="dep_title">Sub Categories optimized: <span class="dep_total_numbers">'+data.keyword_optimize+'/'+data.res_more_than_0+'</span></span>';
         if(data.keyword_optimize_data.length > 0){
             third_part_table += '<ul><li class="cat_header"><span class="dep_text">CATEGORY</span><span class="dep_numbers">WORDS</span><span class="dep_keywords">KEYWORDS - DENSITY</span></li>';
             for(var j=0; j<data.keyword_optimize_data.length; j++){
@@ -1041,9 +1041,9 @@ function allCatDashboard(site_name, site_name_sec){
         }, function(data) {
             var dep_content = data.total - data.res_more_than_0;
             var dep_optimize = data.res_more_than_0 - data.keyword_optimize;
-            header_first_table += '<td nowrap><span class="dep_title"><span class="dep_left_part">Sub-Categories Analyzed: </span><span class="dep_total_numbers">'+data.total+'</span></span></td></tr>';
+            header_first_table += '<td nowrap><span class="dep_title"><span class="dep_left_part">Sub Categories Analyzed: </span><span class="dep_total_numbers">'+data.total+'</span></span></td></tr>';
             first_part_table += '<td nowrap class="dep_first_part span6" onclick="getCatData(\''+site_name_sec+'\', this, \'`description_words` > 0\', 1);">' +
-                '<span class="dep_title"><span class="dep_left_part">Sub-Categories that have content:  </span>' +
+                '<span class="dep_title"><span class="dep_left_part">Sub Categories that have content:  </span>' +
                 '<span class="dep_total_numbers">'+data.res_more_than_0+'/'+data.total+'</span></span>';
             first_part_table += '<ul></ul></td></tr>';
 
@@ -1051,7 +1051,7 @@ function allCatDashboard(site_name, site_name_sec){
                 '<span class="dep_total_numbers">'+data.res_avg+'</span></span>';
             second_part_table += '<ul></ul></td></tr>';
 
-            third_part_table += '<td><span class="dep_title">Sub-Categories optimized: <span class="dep_total_numbers">'+data.keyword_optimize+'/'+data.res_more_than_0+'</span></span>';
+            third_part_table += '<td><span class="dep_title">Sub Categories optimized: <span class="dep_total_numbers">'+data.keyword_optimize+'/'+data.res_more_than_0+'</span></span>';
             if(data.keyword_optimize_data.length > 0){
                 third_part_table += '<ul><li class="cat_header"><span class="dep_text">CATEGORY</span><span class="dep_numbers">WORDS</span><span class="dep_keywords">KEYWORDS - DENSITY</span></li>';
                 for(var j=0; j<data.keyword_optimize_data.length; j++){
