@@ -12,15 +12,16 @@
 		<?php if(count($reports) > 0) { ?>
 			<?php foreach($reports as $k => $v) { ?>
 			<tr>
-				<td style='vertical-align: top'>
+				<td style='vertical-align: top; padding-bottom: 15px;'>
 					<?php 
 						$main_dep_data = $this->department_members_model->get($v->main_choose_dep); 
 						if(count($main_dep_data) > 0) {
 							$md_data = $main_dep_data[0];
 							$cover_text = $md_data->text;
-
+							$desc_words_data = $md_data->description_words;
 						} else {
 							$cover_text = "no name";
+							$desc_words_data = "no data";
 						}
 					?>
 					<?php $main_dep_snap = $this->department_members_model->getLatestDepartmentScreen($v->main_choose_dep); ?>
@@ -31,11 +32,14 @@
 					<div style='width: 400px;'>
 						<img style='width: 100%' src="<?php echo base_url() ?>webshoots/<?php echo $main_dep_snap['snap_name']; ?>">
 					</div>
+					<div style='width: 400px;'>
+						<p style='font-weight: bold;'>Description words count: <?php echo $desc_words_data; ?></p>
+					</div>
 					<?php } else { ?>
 					<p>not exist or broken</p>
 					<?php } ?>
 				</td>
-				<td style='vertical-align: top'>
+				<td style='vertical-align: top; padding-bottom: 15px;'>
 					<?php $decode_com = json_decode($v->json_encode_com); ?>
 					<?php if(count($decode_com) > 0) { ?>
 						<?php foreach($decode_com as $k => $v) { ?>
@@ -44,8 +48,10 @@
 								if(count($sec_dep_data) > 0) {
 									$sd_data = $sec_dep_data[0];
 									$cover_text = $sd_data->text;
+									$desc_words_data = $sd_data->description_words;
 								} else {
 									$cover_text = "no name";
+									$desc_words_data = "no data";
 								}
 							?>
 							<?php $sec_dep_snap = $this->department_members_model->getLatestDepartmentScreen($v->sec_dep_chooser); ?>
@@ -55,6 +61,9 @@
 							</div>
 							<div style='margin-bottom: 10px; width: 400px;'>
 								<img style='width: 100%' src="<?php echo base_url() ?>webshoots/<?php echo $sec_dep_snap['snap_name']; ?>">
+							</div>
+							<div style='width: 400px;'>
+								<p style='font-weight: bold;'>Description words count: <?php echo $desc_words_data; ?></p>
 							</div>	
 							<?php } else { ?>
 							<p>not exists or broken</p>
