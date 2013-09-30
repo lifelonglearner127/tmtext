@@ -2197,7 +2197,7 @@ tbody#category_data tr td, tbody#department_data tr td{
     clear: both;
 }
 
-#department_data ul li:hover{
+#department_data ul li:hover, #category_data ul li:hover{
     background-color: #EBEBEB;
     height: 100%;
     display: table;

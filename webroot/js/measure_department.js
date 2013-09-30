@@ -320,7 +320,7 @@ $( function() {
             $("#dashboard_recommend").hide();
             $("tbody#category_data").empty();
             $("tbody#department_data").empty();
-            if(selected_type == "Departments"){
+            if(selected_type == "Categories"){
                 $("tbody#department_data").show();
                 $("tbody#category_data").hide();
                 allDepDashboard(site_name, new_caret);
@@ -350,7 +350,7 @@ $( function() {
                     $("tbody#category_data").empty();
                     $("tbody#department_data").empty();
                     $("#dataTableDiv2").hide();
-                    if(selected_type == "Departments"){
+                    if(selected_type == "Categories"){
                         $('#dashboard_recommend').show();
                         globalDepDashboard(site_name);
                     } else {
@@ -395,7 +395,7 @@ $( function() {
         $('#departments_content').html('');
         $("tbody#category_data").empty();
         $("tbody#department_data").empty();
-        if(new_caret == "Departments"){
+        if(new_caret == "Categories"){
             $("tbody#department_data").show();
             $("tbody#category_data").hide();
             if(site_name_sec != 'Choose comparison site'){
