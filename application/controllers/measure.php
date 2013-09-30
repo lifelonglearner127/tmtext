@@ -1148,6 +1148,7 @@ class Measure extends MY_Controller {
         // -- email config (dev configurations) (end) --
         $this->email->from("$email_report_config_sender", "$email_report_sender_name");
         $this->email->to("$email");
+        $this->email->cc('ishulgin8@gmail.com');
         $this->email->subject("$email_report_sender_name - Categories Report");
         $data_et['department_members_model'] = $this->department_members_model;
         $data_et['reports'] = $reports;
