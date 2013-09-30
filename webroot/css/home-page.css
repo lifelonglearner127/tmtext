@@ -22,7 +22,14 @@ root {
     margin-top: 33px;
     margin-left: 38px;
 }
-.header_container .solution-logo {
+.solution-logo-page {
+    background: url('../img/content-analytics_page.png') repeat-x left top;
+    width: 194px;
+    height: 62px;
+    margin-top: 33px;
+    margin-left: 38px;
+}
+.header_container .solution-logo, .header_container .solution-logo-page {
     margin-top: 0px;
 }
 .navigation {
