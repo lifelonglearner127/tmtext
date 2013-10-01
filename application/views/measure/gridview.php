@@ -595,8 +595,8 @@ foreach ($same_pr as $ks => $vs) {
                     </div>
 <div class="p_feature" >
 <?php if(!empty($vs['features'])): ?>
-        <span class="analysis_content_head">Product Features:</span>
-        <p style="float:none;" class="short_product_name grid_product_name"><?php echo $vs['features']; ?></p>
+        <img  class="desc_show_hide_feature" style="height: 9px;width: 9px;background: rgb(207, 207, 207);padding: 2px;margin-top: -3px;margin-right: 4px;" src="<?php echo base_url() ?>/img/arrow-right.png"><span class="analysis_content_head">Product Features:</span>
+        <p style="float:none;" class="short_product_name desc_feature grid_product_name"><?php echo $vs['features']; ?></p>
 <?php endif; ?>
 </div>
 
@@ -1214,7 +1214,7 @@ $(document).click(function(e) {
 
     $('.cmp-area').find('.short_desc_con').hide(); 
     $('.cmp-area').find('.compare_long').hide();
-  
+    $('.p_feature').find('.desc_feature').hide();
 
     
    });//document ready end
@@ -1228,7 +1228,7 @@ $(document).click(function(e) {
                         },
                         function () {
                          $(this).parent().siblings('.cmp-area').find('.short_desc_con').hide("5000");
-                          $(this).attr('src','<?php echo base_url() ?>/img/arrow-right.png');
+                          $(this).attr('src','<?php echo base_url() ?>/img/arrow-up.png');
                         }
        );
         $('.desc_show_hide').toggle(
@@ -1238,7 +1238,7 @@ $(document).click(function(e) {
                          },
                          function () {
                           $(this).parent().siblings('.cmp-area').find('.compare_long').hide("5000");
-                           $(this).attr('src','<?php echo base_url() ?>/img/arrow-right.png');
+                           $(this).attr('src','<?php echo base_url() ?>/img/arrow-up.png');
                          }
         );
         $('.desc_show_hide_short_w').toggle(
@@ -1248,7 +1248,7 @@ $(document).click(function(e) {
                     },
                     function () {
                      $(this).parent().siblings('.cmp-area').find('.short_desc_con').hide("5000");
-                     $(this).parent().prev('span').find('img').attr('src','<?php echo base_url() ?>/img/arrow-right.png');
+                     $(this).parent().prev('span').find('img').attr('src','<?php echo base_url() ?>/img/arrow-up.png');
                     }
             );
            $('.desc_show_hide_w').toggle(
@@ -1258,10 +1258,19 @@ $(document).click(function(e) {
                      },
                      function () {
                       $(this).parent().siblings('.cmp-area').find('.compare_long').hide("5000");
-                      $(this).parent().prev('span').find('img').attr('src','<?php echo base_url() ?>/img/arrow-right.png');
+                      $(this).parent().prev('span').find('img').attr('src','<?php echo base_url() ?>/img/arrow-up.png');
                      }
              );
-
+            $('.desc_show_hide_feature').toggle(
+                     function () {
+                      $(this).siblings('.desc_feature').show("5000");
+                      $(this).attr('src','<?php echo base_url() ?>/img/arrow-down.png');
+                     },
+                     function () {
+                      $(this).siblings('.desc_feature').hide("5000");
+                      $(this).attr('src','<?php echo base_url() ?>/img/arrow-up.png');
+                     }
+             );
 
 </script>
 

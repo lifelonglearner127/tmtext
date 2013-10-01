@@ -2279,7 +2279,7 @@ span.dep_left_part{
     float: right;
     border:1px solid #ccc;
 }
-.desc_show_hide:hover,.desc_show_hide_short:hover,.desc_show_hide_short_w:hover,.desc_show_hide_w:hover{
+.desc_show_hide:hover,.desc_show_hide_short:hover,.desc_show_hide_short_w:hover,.desc_show_hide_w:hover,.desc_show_hide_feature:hover{
     cursor: pointer;
     
 }
