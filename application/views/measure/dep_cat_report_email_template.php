@@ -34,27 +34,40 @@
 						<img style='width: 100%' src="<?php echo base_url() ?>webshoots/<?php echo $main_dep_snap['snap_name']; ?>">
 					</div>
 					<div style='width: 400px;'>
-						<p style='font-weight: bold;'>Description words count: <?php echo $desc_words_data; ?></p>
-						<?php if($md_data !== null) { ?>
-								<?php $tkdc_decoded = json_decode($md_data->title_keyword_description_count); ?>
-								<?php if(count($tkdc_decoded) > 0) { ?>
-									<p style='font-weight: bold;'>Title Description Keywords:</p>
-									<ul>
-									<?php foreach($tkdc_decoded as $ki => $vi) { ?>
-										<li><?php echo $ki." : ".$vi ?></li>
-									<?php } ?>
-									</ul>
-								<?php } ?>
-
-								<?php $tkdd_decoded = json_decode($md_data->title_keyword_description_density); ?>
-								<?php if(count($tkdd_decoded) > 0) { ?>
-									<p style='font-weight: bold;'>Title Description Keywords Density:</p>
-									<ul>
-									<?php foreach($tkdd_decoded as $kd => $vd) { ?>
-										<li><?php echo $kd." : ".$vd ?></li>
-									<?php } ?>
-									</ul>
-								<?php } ?>
+						<p style='font-weight: bold;'>Description word count: <?php echo $desc_words_data; ?></p>
+						<?php 
+							if($md_data !== null) {
+								$k_words = array();
+								$tkdc_decoded = json_decode($md_data->title_keyword_description_count);
+								if(count($tkdc_decoded) > 0) {
+									foreach($tkdc_decoded as $ki => $vi) {
+										$mid = array(
+											'w' => $ki,
+											'c' => $vi,
+											'd' => 0
+										);
+										$k_words[] = $mid;
+									}
+								}
+								if(count($k_words) > 0) { 
+									$tkdd_decoded = json_decode($md_data->title_keyword_description_density);
+									if(count($tkdd_decoded) > 0) {
+										foreach($tkdd_decoded as $kd => $vd) { // === search for density
+											foreach ($k_words as $ks => $vs) {
+												if($vs['w'] == $kd) {
+													$k_words[$ks]['d'] = $vd;
+												}
+											}
+										}
+									}
+								}
+							}
+						?>
+						<?php if(count($k_words) > 0) { ?>
+							<p style='font-weight: bold; font-size: 12px;'>Keywords (frequency, density):</p>
+							<?php foreach($k_words as $kw => $vw) { ?>
+								<p style='font-size: 12px;'><span><?php echo $vw['w']; ?> : </span><span><?php echo $vw['c']; ?></span> - <span><?php echo $vw['d'] ?>%</span></p>
+							<?php } ?>
 						<?php } ?>
 					</div>
 					<?php } else { ?>
@@ -86,28 +99,40 @@
 								<img style='width: 100%' src="<?php echo base_url() ?>webshoots/<?php echo $sec_dep_snap['snap_name']; ?>">
 							</div>
 							<div style='width: 400px;'>
-								<p style='font-weight: bold;'>Description words count: <?php echo $desc_words_data; ?></p>
-								<?php if($sd_data !== null) { ?>
-										<?php $tkdc_decoded = json_decode($sd_data->title_keyword_description_count); ?>
-										<?php if(count($tkdc_decoded) > 0) { ?>
-											<p style='font-weight: bold;'>Title Description Keywords:</p>
-											<ul>
-											<?php foreach($tkdc_decoded as $ki => $vi) { ?>
-												<li><?php echo $ki." : ".$vi ?></li>
-											<?php } ?>
-											</ul>
-										<?php } ?>
-
-										<?php $tkdd_decoded = json_decode($sd_data->title_keyword_description_density); ?>
-										<?php if(count($tkdd_decoded) > 0) { ?>
-											<p style='font-weight: bold;'>Title Description Keywords Density:</p>
-											<ul>
-											<?php foreach($tkdd_decoded as $kd => $vd) { ?>
-												<li><?php echo $kd." : ".$vd ?></li>
-											<?php } ?>
-											</ul>
-										<?php } ?>
-
+								<p style='font-weight: bold;'>Description word count: <?php echo $desc_words_data; ?></p>
+								<?php 
+									if($sd_data !== null) {
+										$k_words = array();
+										$tkdc_decoded = json_decode($sd_data->title_keyword_description_count);
+										if(count($tkdc_decoded) > 0) {
+											foreach($tkdc_decoded as $ki => $vi) {
+												$mid = array(
+													'w' => $ki,
+													'c' => $vi,
+													'd' => 0
+												);
+												$k_words[] = $mid;
+											}
+										}
+										if(count($k_words) > 0) { 
+											$tkdd_decoded = json_decode($sd_data->title_keyword_description_density);
+											if(count($tkdd_decoded) > 0) {
+												foreach($tkdd_decoded as $kd => $vd) { // === search for density
+													foreach ($k_words as $ks => $vs) {
+														if($vs['w'] == $kd) {
+															$k_words[$ks]['d'] = $vd;
+														}
+													}
+												}
+											}
+										}
+									}
+								?>
+								<?php if(count($k_words) > 0) { ?>
+									<p style='font-weight: bold; font-size: 12px;'>Keywords (frequency, density):</p>
+									<?php foreach($k_words as $kw => $vw) { ?>
+										<p style='font-size: 12px;'><span><?php echo $vw['w']; ?> : </span><span><?php echo $vw['c']; ?></span> - <span><?php echo $vw['d'] ?>%</span></p>
+									<?php } ?>
 								<?php } ?>
 							</div>	
 							<?php } else { ?>
