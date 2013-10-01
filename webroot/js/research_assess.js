@@ -128,9 +128,9 @@ $(function () {
         },
         "aoColumns": [
         {
-            "sTitle" : "Date", 
+            "sTitle" : "Date",
             "sName":"created", 
-            "sWidth": "7%"
+            "sWidth": "5%"
         },
 
         {
@@ -146,7 +146,7 @@ $(function () {
         },
 
         {
-            "sTitle" : "Word (S)",
+            "sTitle" : "Words (S)",
             "sName":"short_description_wc", 
             "sWidth": "4%"
         },
@@ -158,7 +158,7 @@ $(function () {
         },
 
         {
-            "sTitle" : "Word (L)",
+            "sTitle" : "Words (L)",
             "sName":"long_description_wc", 
             "sWidth": "4%"
         },

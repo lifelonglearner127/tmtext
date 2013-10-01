@@ -366,13 +366,6 @@ ul.research_table_filter h3 {
     font-weight: bold;
     font-size: 16px;
 }
-@media screen and (-webkit-min-device-pixel-ratio:0) {
-    #tblAssess tr th:first-child{
-        display: block;
-        max-width: 315px!important;
-        width: 100%!important;
-    }
-}
 #tblAssess td table a.active_link{
     word-wrap: break-word;
     max-width: 325px!important;
