@@ -200,6 +200,11 @@ $(function () {
     $('#tblAssess_length').after($('#assess_tbl_show_case'));
     $('#assess_tbl_show_case a').on('click', function(event) {
         event.preventDefault();
+        if($(this).text()=='Details'){
+            $('#research_batches_columns').show();
+        } else {
+            $('#research_batches_columns').hide();
+        }
         assess_tbl_show_case(this);
     });
 

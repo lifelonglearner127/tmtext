@@ -2270,9 +2270,8 @@ span.dep_left_part{
     background-color: transparent;
     background-image: none;
     margin-top: 3px;
-}
-#research_batches_columns{
     cursor:pointer;
+    display: none;
 }
 .snap_img{
     max-width: 400px;
