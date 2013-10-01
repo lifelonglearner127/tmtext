@@ -146,25 +146,25 @@ $(function () {
         },
 
         {
-            "sTitle" : "Words (S)",
+            "sTitle" : "Words <span style='font-size: 10px'>Short</span>",
             "sName":"short_description_wc", 
             "sWidth": "4%"
         },
 
         {
-            "sTitle" : "Keywords (S)",
+            "sTitle" : "Keywords <span style='font-size: 10px'>Short</span>",
             "sName":"short_seo_phrases", 
             "sWidth": "10%"
         },
 
         {
-            "sTitle" : "Words (L)",
+            "sTitle" : "Words <span style='font-size: 10px'>Long</span>",
             "sName":"long_description_wc", 
             "sWidth": "4%"
         },
 
         {
-            "sTitle" : "Keywords (L)",
+            "sTitle" : "Keywords <span style='font-size: 10px'>Long</span>",
             "sName":"long_seo_phrases", 
             "sWidth": "10%"
         },
