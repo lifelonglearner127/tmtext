@@ -376,7 +376,7 @@
 			placement: 'bottom',
 			title: 'Open Screenshot Control Panel'
 		});
-        $('title').text("Competitive Intelligence");
+        $('title').text("Reports");
 
         // --- screens dropdowns selections scanner (start)
     var send_data = {

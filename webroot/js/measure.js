@@ -878,7 +878,7 @@ $(document).ready(function() {
         dropdown = $("select[name='customers_list']").msDropdown().data("dd");
     });
     //Max
-    $('title').text("Competitive Intelligence");
+   // $('title').text("Competitive Research");
 
     $("#measureFormMetrics").submit(function(e) {
         e.preventDefault();

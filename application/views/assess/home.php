@@ -376,7 +376,7 @@
 			placement: 'bottom',
 			title: 'Open Screenshot Control Panel'
 		});
-        $('title').text("Competitive Intelligence");
+        $('title').text("Reports");
 
         // --- screens dropdowns selections scanner (start)
     var send_data = {
@@ -421,8 +421,3 @@
 
 <script src="<?php echo base_url();?>js/ci_home_pages.js"></script>
 
-<script>
-            $(function() {
-                $('head').find('title').text('Reports');
-            });
- </script>
