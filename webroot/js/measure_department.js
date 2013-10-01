@@ -640,7 +640,13 @@ function globalDepDashboard(site_name){
             })
             $(this).css({'border-bottom':'1px solid #000'});
         });
-        $("tbody#department_data tr td:first-child ul li").mouseover(function() {
+        $("tbody#department_data tr td:first-child ul li").on('mouseover', function() {
+            $("tbody#department_data tr td:first-child ul li").each(function(i){
+                if(i > 0){
+                    $(this).css({'background-color':'#fff'});
+                }
+            });
+            $(this).css({'background-color':'#EBEBEB'});
             var dep_id = $(this).find('span.dep_text').find('a').attr('id');
             var pos = $(this).offset().top;
             var tr_height = parseInt(pos);
@@ -655,7 +661,13 @@ function globalDepDashboard(site_name){
                     }
             });
         });
-        $("tbody#department_data tr td:nth-child(2) ul li").mouseover(function() {
+        $("tbody#department_data tr td:nth-child(2) ul li").on('mouseover', function() {
+            $("tbody#department_data tr td:nth-child(2) ul li").each(function(i){
+                if(i > 0){
+                    $(this).css({'background-color':'#fff'});
+                }
+            });
+            $(this).css({'background-color':'#EBEBEB'});
             var dep_id = $(this).find('span.dep_text').find('a').attr('id');
             var pos = $(this).offset().top;
             var tr_height = parseInt(pos);
@@ -757,7 +769,13 @@ function globalCatDashboard(site_name){
                 $(this).css({'border-bottom':'none'});
             }
         });
-        $("tbody#category_data tr td:first-child ul li").mouseover(function() {
+        $("tbody#category_data tr td:first-child ul li").on('mouseover', function() {
+            $("tbody#category_data tr td:first-child ul li").each(function(i){
+                if(i > 0){
+                    $(this).css({'background-color':'#fff'});
+                }
+            });
+            $(this).css({'background-color':'#EBEBEB'});
             var cat_id = $(this).find('span.dep_text').find('a').attr('id');
             var pos = $(this).offset().top;
             var tr_height = parseInt(pos);
@@ -772,7 +790,13 @@ function globalCatDashboard(site_name){
                 }
             });
         });
-        $("tbody#category_data tr td:nth-child(2) ul li").mouseover(function() {
+        $("tbody#category_data tr td:nth-child(2) ul li").mouseenter(function() {
+            $("tbody#category_data tr td:nth-child(2) ul li").each(function(i){
+                if(i > 0){
+                    $(this).css({'background-color':'#fff'});
+                }
+            });
+            $(this).css({'background-color':'#EBEBEB'});
             var dep_id = $(this).find('span.dep_text').find('a').attr('id');
             var pos = $(this).offset().top;
             var tr_height = parseInt(pos);
@@ -979,7 +1003,7 @@ function allDepDashboard(site_name, site_name_sec){
                     el.css({'display':'none'});
                 }
             });
-            $("tbody#department_data tr td span.dep_title").mouseover(function() {
+            $("tbody#department_data tr td span.dep_title").mouseenter(function() {
                 $("tbody#department_data tr td span.dep_title").each(function(){
                     $(this).css({'border-bottom':'none'});
                 })
@@ -1127,7 +1151,13 @@ function getCatData(site_name, obj, condition, state){
             }
             var el = $(obj).find('ul');
             el.html(data_str);
-            $("tbody#category_data tr td:first-child ul li").mouseover(function() {
+            $("tbody#category_data tr td:first-child ul li").mouseenter(function() {
+                $("tbody#category_data tr td::first-child ul li").each(function(i){
+                    if(i > 0){
+                        $(this).css({'background-color':'#fff'});
+                    }
+                });
+                $(this).css({'background-color':'#EBEBEB'});
                 var cat_id = $(this).find('span.dep_text').find('a').attr('id');
                 var pos = $(this).offset().top;
                 var tr_height = parseInt(pos);
@@ -1142,7 +1172,13 @@ function getCatData(site_name, obj, condition, state){
                     }
                 });
             });
-            $("tbody#category_data tr td:nth-child(2) ul li").mouseover(function() {
+            $("tbody#category_data tr td:nth-child(2) ul li").mouseenter(function() {
+                $("tbody#category_data tr td:nth-child(2) ul li").each(function(i){
+                    if(i > 0){
+                        $(this).css({'background-color':'#fff'});
+                    }
+                });
+                $(this).css({'background-color':'#EBEBEB'});
                 var cat_id = $(this).find('span.dep_text').find('a').attr('id');
                 var pos = $(this).offset().top;
                 var tr_height = parseInt(pos);

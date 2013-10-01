@@ -2200,8 +2200,7 @@ tbody#category_data tr td, tbody#department_data tr td{
     width: 100%;
 }
 
-#department_data ul li:hover, #category_data ul li:hover{
-    background-color: #EBEBEB;
+tbody#department_data ul li, tbody#category_data ul li{
     height: 100%;
     display: table;
     width: 100%;
