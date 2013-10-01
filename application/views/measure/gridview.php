@@ -1244,17 +1244,21 @@ $(document).click(function(e) {
         $('.desc_show_hide_short_w').toggle(
                 function () {
                      $(this).parent().siblings('.cmp-area').find('.short_desc_con').show("5000");
+                      $(this).parent().prev('span').find('img').attr('src','<?php echo base_url() ?>/img/arrow-down.png');
                     },
                     function () {
                      $(this).parent().siblings('.cmp-area').find('.short_desc_con').hide("5000");
+                     $(this).parent().prev('span').find('img').attr('src','<?php echo base_url() ?>/img/arrow-right.png');
                     }
             );
            $('.desc_show_hide_w').toggle(
                      function () {
                       $(this).parent().siblings('.cmp-area').find('.compare_long').show("5000");
+                       $(this).parent().prev('span').find('img').attr('src','<?php echo base_url() ?>/img/arrow-down.png');
                      },
                      function () {
                       $(this).parent().siblings('.cmp-area').find('.compare_long').hide("5000");
+                      $(this).parent().prev('span').find('img').attr('src','<?php echo base_url() ?>/img/arrow-right.png');
                      }
              );
 
