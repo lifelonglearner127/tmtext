@@ -2195,6 +2195,9 @@ tbody#category_data tr td, tbody#department_data tr td{
 
 #department_data ul li, #category_data ul li{
     clear: both;
+    display: block;
+    height: 20px;
+    width: 100%;
 }
 
 #department_data ul li:hover, #category_data ul li:hover{
