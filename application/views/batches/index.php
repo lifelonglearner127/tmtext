@@ -1,3 +1,5 @@
+<link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/smoothness/jquery-ui-1.8.2.custom.css" />
+<link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/styles.css" />
         <?php echo form_open("research/save", array("class"=>"form-horizontal", "id"=>"create_batch_save"));?>
         <div class="row-fluid">
             <div class="span12">
@@ -120,8 +122,9 @@
             A CSV containing one URL or Manufacturer ID per line
         </div>
         <div class="row-fluid mt_20">
-            <textarea id="urls" class="span10" style="min-height: 100px"></textarea >
+            <textarea id="urls" class="span10" style="min-height: 111px"></textarea>
             <button class="btn ml_10" id="add_to_batch" ><i class="icon-white icon-ok"></i>&nbsp;Add to batch</button>
+            <button class="btn ml_10 mt_10" id="rename_batch" ><i class="icon-white icon-ok"></i>&nbsp;Rename</button>
             <button class="btn btn-danger ml_10 mt_10" id="delete_from_batch"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
         </div>
         <div class="row-fluid mt_20">
@@ -135,7 +138,59 @@
         <script>
             $(function() {
                 $('head').find('title').text('Batches');
+                
+                $("button#rename_batch").click(function(){
+                    var renameBatchValue;
+                    var renameBatchId;
+                    if($('select[name="batches"] option').is(':selected'))
+                    {
+                        renameBatchValue = $('select[name="batches"] option:selected').text().trim();
+                        renameBatchId = $('select[name="batches"] option:selected').val().trim();
+                    } else {
+                        renameBatchValue = '';
+                        renameBatchId = '';
+                    }
+                    $('#rename_batch_value').val(renameBatchValue);
+                    $('#rename_batch_id').val(renameBatchId);
+                    $('#rename_batch_dialog').dialog('open');
+                    return false;
+                });
+                $('#rename_batch_dialog').dialog({
+                    autoOpen: false,
+                    resizable: false,
+                    modal: true,
+                    buttons: {
+                        'Cancel': function() {
+                            $(this).dialog('close');
+                        },
+                        'Rename': function() {
+                            $.ajax({
+                                url: base_url + 'index.php/batches/batches_rename',
+//                                dataType : 'json',
+                                type : 'post',
+                                data : {
+                                    batch_id : $('#rename_batch_id').val().trim(),
+                                    batch_name : $('#rename_batch_value').val().trim()
+                                }
+                            }).done(function(data){
+                                $('select[name="batches"] option:selected').text($('#rename_batch_value').val().trim());
+                                $('#rename_batch_dialog').dialog('close');
+                            });
+                        }
+                    },
+                    width: '250px'
+                });
+                
             });
         </script>
         <?php echo form_close();?>
        
+<div id="rename_batch_dialog" title="Rename batch">
+    <div>
+            <p>
+                <label for="column_category">Batch Name:</label>
+                <input type="hidden" id="rename_batch_id" value="" />
+                <input type="text" id="rename_batch_value" value="" />
+            </p>
+    </div>
+</div>

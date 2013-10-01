@@ -63,4 +63,11 @@ class Batches extends MY_Controller {
         return $customer_list;
 
     }
+    
+    public function batches_rename(){
+        $this->load->model('batches_model');
+        if(!empty($_POST['batch_id']) && !empty($_POST['batch_name'])){
+            $this->batches_model->updateById($_POST['batch_id'],$_POST['batch_name']);
+        }
+    }
 }

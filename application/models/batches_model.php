@@ -165,4 +165,16 @@ class Batches_model extends CI_Model {
 
         return $query->result();
     }
+    
+    public function updateById($id,$title){
+        $result = $this->db->query("
+            UPDATE 
+                `batches`
+            SET 
+                `title`='{$title}'
+            WHERE 
+                `id`='{$id}'
+                ");
+        return $result;
+    }
 }
