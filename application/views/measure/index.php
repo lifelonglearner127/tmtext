@@ -89,8 +89,7 @@ jQuery(document).ready(function($) {
 </div>
 <script>
 $(document).ready(function(){
-                                      
-                        
+                    
     
                         $('#scroll_all').attr('checked',true).addClass('check');
                         $("#popup_save").live('click',function(){
@@ -127,6 +126,9 @@ $(document).ready(function(){
                             
                             if(status==='matchon'){
                                 $.cookie("selected_cites_cookie", selected_cites);
+                                selected_cites_cookie = $.cookie('selected_cites_cookie');
+                                var dataarray=selected_cites_cookie.split(",");
+                                $("#drop_cat").val(dataarray);
                             }else{
 
                                 $.cookie("selected_cites_cookie",null);
@@ -161,7 +163,7 @@ $(document).ready(function(){
                                      $.cookie('status_showing_results', 'matchon', {expires: 7, path: '/'});
                                      $.cookie("selected_cites_cookie", selected_cites_drop);
                                      status_showing_results= $.cookie('status_showing_results');
-
+                                      
                                     if (typeof( status_showing_results) !== 'undefined' ){
 
                                         status_showing_results = $.cookie('status_showing_results');
@@ -171,6 +173,7 @@ $(document).ready(function(){
                                             selected_cites_cookie = $.cookie('selected_cites_cookie');
                                             var dataarray=selected_cites_cookie.split(",");
                                             $("#popup_sites").val(dataarray);
+                                            $("#drop_cat").val(dataarray);
 
                                         }
                                     }else{
@@ -183,7 +186,7 @@ $(document).ready(function(){
                                  }else{
                                      $('input[value="all"]').attr('checked',true); 
                                      $.cookie("selected_cites_cookie",null);
-                                     $.cookie('status_showing_results', 'all', {expires: 7, path: '/'});
+                                     $.cookie('status_showing_results', 'undefined', {expires: 7, path: '/'});
                                  }
                              $('#shadow').css('display','none');
                              $('#drop_cat').css('display','none');
@@ -207,7 +210,7 @@ $(document).ready(function(){
 
                             $('input[value="'+status_showing_results+'"]').attr('checked',true);
                             if(status_showing_results=='matchon'){
-                                selected_cites_cookie = $.cookie('selected_cites_cookie');
+                                selected_cites_cookie = $.cookie('selected_cites_cookie');                              
                                 var dataarray=selected_cites_cookie.split(",");
                                 $("#popup_sites").val(dataarray);
 
@@ -532,7 +535,7 @@ background-repeat:no-repeat;
 <!-- MODALS (END) -->
 <script>
             $(function() {
-                $('head').find('title').text('Research');
+                $('head').find('title').text('Competitive Research');
             });
 
  </script>  

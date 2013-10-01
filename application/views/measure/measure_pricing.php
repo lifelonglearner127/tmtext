@@ -80,6 +80,6 @@
 </div>
 <script>
             $(function() {
-                $('head').find('title').text('Research');
+                $('head').find('title').text('System');
             });
  </script>

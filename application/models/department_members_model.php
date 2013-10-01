@@ -19,6 +19,19 @@ class Department_members_model extends CI_Model {
         return $this->db->delete($this->tables['site_departments_reports'], array('id' => $id));
     }
 
+    function getUserObjectByEmail($email) {
+        $res = null;
+        $check_obj = array(
+            'email' => $email
+        );
+        $query = $this->db->where($check_obj)->get($this->tables['users']);
+        $res_query = $query->result();
+        if(count($res_query) > 0) {
+            $res = $res_query[0];
+        }
+        return $res;
+    }
+
     function getUserObjectById($uid) {
         $res = null;
         $check_obj = array(
@@ -30,6 +43,14 @@ class Department_members_model extends CI_Model {
             $res = $res_query[0];
         }
         return $res;
+    }
+
+    function getDepReportsByUserId($uid) {
+        $check_obj = array(
+            'uid' => $uid
+        );
+        $query = $this->db->where($check_obj)->order_by('stamp desc')->get($this->tables['site_departments_reports']);
+        return $query->result();
     }
 
     function getDepReportsByIds($rep_ids) {

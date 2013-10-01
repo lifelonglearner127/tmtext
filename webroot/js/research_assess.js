@@ -146,25 +146,25 @@ $(function () {
         },
 
         {
-            "sTitle" : "Words (S)",
+            "sTitle" : "Words <span style='font-size: 10px'>Short</span>",
             "sName":"short_description_wc", 
             "sWidth": "4%"
         },
 
         {
-            "sTitle" : "Keywords (S)",
+            "sTitle" : "Keywords <span style='font-size: 10px'>Short</span>",
             "sName":"short_seo_phrases", 
             "sWidth": "10%"
         },
 
         {
-            "sTitle" : "Words (L)",
+            "sTitle" : "Words <span style='font-size: 10px'>Long</span>",
             "sName":"long_description_wc", 
             "sWidth": "4%"
         },
 
         {
-            "sTitle" : "Keywords (L)",
+            "sTitle" : "Keywords <span style='font-size: 10px'>Long</span>",
             "sName":"long_seo_phrases", 
             "sWidth": "10%"
         },
@@ -200,6 +200,11 @@ $(function () {
     $('#tblAssess_length').after($('#assess_tbl_show_case'));
     $('#assess_tbl_show_case a').on('click', function(event) {
         event.preventDefault();
+        if($(this).text()=='Details'){
+            $('#research_batches_columns').show();
+        } else {
+            $('#research_batches_columns').hide();
+        }
         assess_tbl_show_case(this);
     });
 
@@ -866,7 +871,7 @@ $(function () {
 
     $('#research_batches_columns').on('click', function() {
         $('#research_assess_choiceColumnDialog').dialog('open');
-        $('#research_assess_choiceColumnDialog').parent().find('button:first').addClass("popupGreen");
+        $('#research_assess_choiceColumnDialog').parent().find('button:first-child').addClass("popupGreen");
     });
 
     var tblAllColumns = tblAssess.fnGetAllSColumnNames();

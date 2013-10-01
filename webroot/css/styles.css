@@ -409,6 +409,7 @@ ul.assess_recommendations li {
     list-style-type: none;
     padding: 0;
     line-height: 14px;
+    font-weight:bold;
 }
 ul.assess_recommendations li img {
     padding-right: 5px;

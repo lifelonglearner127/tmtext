@@ -21,9 +21,63 @@
 						<button class='btn btn-danger small_custom_icon_btn mt_5' data-id="<?php echo $v->id; ?>" onclick="removeExistedSet(this)"><i class='icon-remove-circle icon-white'></i></button>
 					</td>
 					<td>
+						<?php 
+							$main_dep_data = $this->department_members_model->get($v->main_choose_dep); 
+							if(count($main_dep_data) > 0) {
+								$md_data = $main_dep_data[0];
+								$cover_text = $md_data->text;
+								$desc_words_data = $md_data->description_words;
+							} else {
+								$md_data = null;
+								$cover_text = "no name";
+								$desc_words_data = "no data";
+							}
+						?>
 						<?php $main_dep_snap = $this->department_members_model->getLatestDepartmentScreen($v->main_choose_dep); ?>
 						<?php if($main_dep_snap['img_av_status']) { ?> 
-						<div><img style='width: 100%' src="<?php echo base_url() ?>webshoots/<?php echo $main_dep_snap['snap_name']; ?>"></div>	
+						<div>
+							<p style='font-weight: bold; font-size: 12px;'><?php echo $cover_text; ?></p>
+						</div>
+						<div style='margin-bottom: 10px;'><img style='width: 100%' src="<?php echo base_url() ?>webshoots/<?php echo $main_dep_snap['snap_name']; ?>"></div>	
+						<div>
+							<p style='font-weight: bold; font-size: 12px;'>Description word count: <?php echo $desc_words_data; ?></p>
+							<?php 
+								if($md_data !== null) {
+									$k_words = array();
+									$tkdc_decoded = json_decode($md_data->title_keyword_description_count);
+									if(count($tkdc_decoded) > 0) {
+										foreach($tkdc_decoded as $ki => $vi) {
+											$mid = array(
+												'w' => $ki,
+												'c' => $vi,
+												'd' => 0
+											);
+											$k_words[] = $mid;
+										}
+									}
+									if(count($k_words) > 0) { 
+										$tkdd_decoded = json_decode($md_data->title_keyword_description_density);
+										if(count($tkdd_decoded) > 0) {
+											foreach($tkdd_decoded as $kd => $vd) { // === search for density
+												foreach ($k_words as $ks => $vs) {
+													if($vs['w'] == $kd) {
+														$k_words[$ks]['d'] = $vd;
+													}
+												}
+											}
+										}
+									}
+								}
+							?>
+							<?php if(count($k_words) > 0) { ?>
+								<p style='font-weight: bold; font-size: 12px;'>Keywords (frequency, density):</p>
+								<ul style='margin-left: 0px;'>
+								<?php foreach($k_words as $kw => $vw) { ?>
+									<li style='font-size: 12px; list-style: none; list-style-position: inside;'><span><?php echo $vw['w']; ?> : </span><span><?php echo $vw['c']; ?></span> - <span><?php echo $vw['d'] ?>%</span></li>
+								<?php } ?>
+								</ul>
+							<?php } ?>
+						</div>
 						<?php } else { ?>
 						<p>not exist or broken <a href='javascript:void(0)' class='btn btn-success'>re-crawl</a></p>
 						<?php } ?>
@@ -32,9 +86,63 @@
 						<?php $decode_com = json_decode($v->json_encode_com); ?>
 						<?php if(count($decode_com) > 0) { ?>
 							<?php foreach($decode_com as $k => $v) { ?>
+								<?php 
+									$sec_dep_data = $this->department_members_model->get($v->sec_dep_chooser);
+									if(count($sec_dep_data) > 0) {
+										$sd_data = $sec_dep_data[0];
+										$cover_text = $sd_data->text;
+										$desc_words_data = $sd_data->description_words;
+									} else {
+										$sd_data = null;
+										$cover_text = "no name";
+										$desc_words_data = "no data";
+									}
+								?>
 								<?php $sec_dep_snap = $this->department_members_model->getLatestDepartmentScreen($v->sec_dep_chooser); ?>
 								<?php if($sec_dep_snap['img_av_status']) { ?>
+								<div>
+									<p style='font-weight: bold; font-size: 12px;'><?php echo $cover_text; ?></p>
+								</div>
 								<div style='margin-bottom: 10px;'><img style='width: 100%' src="<?php echo base_url() ?>webshoots/<?php echo $sec_dep_snap['snap_name']; ?>"></div>	
+								<div>
+									<p style='font-weight: bold; font-size: 12px;'>Description word count: <?php echo $desc_words_data; ?></p>
+									<?php 
+										if($sd_data !== null) {
+											$k_words = array();
+											$tkdc_decoded = json_decode($sd_data->title_keyword_description_count);
+											if(count($tkdc_decoded) > 0) {
+												foreach($tkdc_decoded as $ki => $vi) {
+													$mid = array(
+														'w' => $ki,
+														'c' => $vi,
+														'd' => 0
+													);
+													$k_words[] = $mid;
+												}
+											}
+											if(count($k_words) > 0) { 
+												$tkdd_decoded = json_decode($sd_data->title_keyword_description_density);
+												if(count($tkdd_decoded) > 0) {
+													foreach($tkdd_decoded as $kd => $vd) { // === search for density
+														foreach ($k_words as $ks => $vs) {
+															if($vs['w'] == $kd) {
+																$k_words[$ks]['d'] = $vd;
+															}
+														}
+													}
+												}
+											}
+										}
+									?>
+									<?php if(count($k_words) > 0) { ?>
+										<p style='font-weight: bold; font-size: 12px;'>Keywords (frequency, density):</p>
+										<ul style='margin-left: 0px;'>
+										<?php foreach($k_words as $kw => $vw) { ?>
+											<li style='font-size: 12px; list-style: none; list-style-position: inside;'><span><?php echo $vw['w']; ?> : </span><span><?php echo $vw['c']; ?></span> - <span><?php echo $vw['d'] ?>%</span></li>
+										<?php } ?>
+										</ul>
+									<?php } ?>
+								</div>
 								<?php } else { ?>
 								<p>not exists or broken <a href='javascript:void(0)' class='btn btn-success'>re-crawl</a></p>
 								<?php } ?>
@@ -52,7 +160,8 @@
 	</table>
 </div>
 <div class="modal-footer">
-	<button type='button' class='btn btn-success' onclick='viewCatsScreensCp()'>Add Categories</button>
+	<button type='button' class='btn btn-success' onclick='viewRecipientsListCats()'>Configure recipients</button>
+	<button type='button' class='btn btn-success' onclick='viewCatsScreensCp()'>Add categories</button>
 	<button id='btn_dep_rep_send_set' class="btn btn-primary btn-rec-all-send" type="button" onclick="sendDepSnapsReport()">Send report</button>
 </div>
 
