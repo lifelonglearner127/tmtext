@@ -144,7 +144,7 @@ class WalmartSpider(BaseSpider):
                     desc_texts = description_holder.select("./text()").extract()
                     desc_texts = [text for text in desc_texts if text.strip()]
                     if desc_texts:
-                        item['description_title'] = desc_texts[0]
+                        item['description_title'] = desc_texts[0].strip()
 
                 if 'description_title' in item:
                     (item['keyword_count'], item['keyword_density']) = Utils.phrases_freq(item['description_title'], item['description_text'])
