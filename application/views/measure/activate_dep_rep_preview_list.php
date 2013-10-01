@@ -160,7 +160,7 @@
 	</table>
 </div>
 <div class="modal-footer">
-	<button type='button' class='btn btn-success' onclick='viewRecipientsList()'>Configure recipients</button>
+	<button type='button' class='btn btn-success' onclick='viewRecipientsListCats()'>Configure recipients</button>
 	<button type='button' class='btn btn-success' onclick='viewCatsScreensCp()'>Add categories</button>
 	<button id='btn_dep_rep_send_set' class="btn btn-primary btn-rec-all-send" type="button" onclick="sendDepSnapsReport()">Send report</button>
 </div>

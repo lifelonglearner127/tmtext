@@ -336,6 +336,29 @@ function redirectToRecipientsListAfterAdd() {
 	viewRecipientsList();
 }
 
+function sendRecipientCategorySnapsReport(email) {
+	$("#recipients_control_panel_modal").modal('hide');
+	$("#loader_emailsend_modal").modal('show');
+	var send_data = {
+		email: email
+	};
+	var rec = $.post(base_url + 'index.php/measure/send_recipient_category_snaps_report', send_data, function(data) {
+		console.log(data);
+		$("#loader_emailsend_modal").modal('hide');
+		$("#success_emailsend_modal").modal('show');
+	});
+}
+
+function viewRecipientsListCats() {
+	if($("#dep_rep_preview_list_modal").is(":visible")) {
+		$("#dep_rep_preview_list_modal").modal('hide');
+	}
+	$("#recipients_control_panel_modal").modal('show');
+	var rec = $.post(base_url + 'index.php/measure/get_emails_reports_recipient_cat', {}, function(data) {
+		$("#recipients_control_panel_modal").html(data);
+	});
+}
+
 function viewRecipientsList() {
 	if($("#dep_rep_preview_list_modal").is(":visible")) {
 		$("#dep_rep_preview_list_modal").modal('hide');
