@@ -276,7 +276,7 @@ class Research extends MY_Controller {
         $batch_id = $this->input->get('batch_id');
         $compare_batch_id = $this->input->get('compare_batch_id');
 
-        if($batch_id == ''){
+        if($batch_id == 0){
             $output = array(
                 "sEcho"                     => 1,
                 "iTotalRecords"             => 0,
