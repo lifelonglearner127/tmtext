@@ -337,6 +337,9 @@ function redirectToRecipientsListAfterAdd() {
 }
 
 function viewRecipientsList() {
+	if($("#dep_rep_preview_list_modal").is(":visible")) {
+		$("#dep_rep_preview_list_modal").modal('hide');
+	}
 	$("#recipients_control_panel_modal").modal('show');
 	// --- refresh listing (start)
 	var send_data = {
