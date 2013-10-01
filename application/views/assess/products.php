@@ -152,7 +152,7 @@
             </p>
             <p>
                 <input type="checkbox" id="column_short_description_wc" data-col_name="short_description_wc" name="column_short_description_wc_name" <?php echo($columns['short_description_wc'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="column_short_description_wc">Word (S)</label>
+                <label for="column_short_description_wc">Words (S)</label>
             </p>
             <p>
                 <input type="checkbox" id="column_short_seo_phrases" data-col_name="short_seo_phrases" name="column_short_seo_phrases_name" <?php echo($columns['short_seo_phrases'] == 'true' ? 'checked="checked"' : ''); ?> />
@@ -160,11 +160,11 @@
             </p>
             <p>
                 <input type="checkbox" id="column_long_description_wc" data-col_name="long_description_wc" name="column_long_description_wc_name" <?php echo($columns['long_description_wc'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="column_short_description_wc">Word (L)</label>
+                <label for="column_long_description_wc">Words (L)</label>
             </p>
             <p>
                 <input type="checkbox" id="column_long_seo_phrases" data-col_name="long_seo_phrases" name="column_long_seo_phrases_name" <?php echo($columns['long_seo_phrases'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="column_long_seo_phrases">Keywords (S)</label>
+                <label for="column_long_seo_phrases">Keywords (L)</label>
             </p>
             <p>
                 <input type="checkbox" id="column_duplicate_content" data-col_name="duplicate_content" name="column_duplicate_content_name" <?php echo($columns['duplicate_content'] == 'true' ? 'checked="checked"' : ''); ?> />
@@ -172,7 +172,7 @@
             </p>
             <p>
                 <input type="checkbox" id="column_price_diff" data-col_name="price_diff" name="column_price_diff" <?php echo($columns['price_diff'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="column_actions">Price diff</label>
+                <label for="column_actions">Price difference</label>
             </p>
         </form>
     </div>

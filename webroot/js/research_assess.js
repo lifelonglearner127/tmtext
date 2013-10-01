@@ -866,7 +866,7 @@ $(function () {
 
     $('#research_batches_columns').on('click', function() {
         $('#research_assess_choiceColumnDialog').dialog('open');
-        $('#research_assess_choiceColumnDialog').parent().find('button:first').addClass("popupGreen");
+        $('#research_assess_choiceColumnDialog').parent().find('button:first-child').addClass("popupGreen");
     });
 
     var tblAllColumns = tblAssess.fnGetAllSColumnNames();
