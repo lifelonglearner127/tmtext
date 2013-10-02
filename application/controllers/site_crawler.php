@@ -334,7 +334,7 @@ class Site_Crawler extends MY_Controller {
 		} else {
 			$rows = $this->crawler_list_model->getAll(1000, false);
 		}
-
+                
 		foreach( $rows as $data) {
 			$this->crawler_list_model->updateStatus($data->id, 'lock');
 

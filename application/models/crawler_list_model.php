@@ -252,14 +252,12 @@ class Crawler_List_model extends CI_Model {
     }
 
     function getNewByBatchId($batch_id)
-    {
+    {$array = array('rd.batch_id' => $batch_id, 'cl.status' => 'new');
     	$this->db->select('cl.*')
     		->from($this->tables['crawler_list'].' as cl')
 			->join('research_data_to_crawler_list as rc', 'cl.id = rc.crawler_list_id' )
 			->join('research_data as rd', 'rd.id = rc.research_data_id')
-			->where('rd.batch_id',$batch_id)
-			->where('cl.status', 'new');
-
+			->where($array);
         $query = $this->db->get();
 
         return $query->result();
