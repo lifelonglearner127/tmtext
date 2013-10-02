@@ -605,6 +605,7 @@ span.highlight{
     max-width: 400px;
     float: left;
     border:1px solid #ccc;
+    border:1px solid #ccc;
 }
 .url_table .active_link {
     font-weight: normal !important;
@@ -614,4 +615,7 @@ span.highlight{
 }
 #batchesDiv {
     padding: 25px;
+}
+.forgot_pass{
+    float: left!important;
 }

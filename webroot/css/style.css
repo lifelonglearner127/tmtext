@@ -267,17 +267,21 @@
 
 /* --- OVERALL LOGIN FORM ADDITION (START) --- */
 .add_login_lnk {
-    float: left;
     width: 100%;
     margin-top: 15px;
 }
 .add_login_lnk .add_login_lnk_left {
-    float: left;
     padding-left: 5px;
+    text-align: center;
+}
+.add_login_lnk_left a{
+    color: #E1472F;
+    font-size: 24px;
 }
 .add_login_lnk .add_login_lnk_right {
     float: right;
     padding-right: 5px;
+    text-align: center;
 }
 /* --- OVERALL LOGIN FORM ADDITION (END) --- */
 
@@ -650,18 +654,17 @@ body{
 .login_container{
     width:100%;
     float:left;
-    margin-top:20%;
+    margin-top:5%;
     -webkit-box-shadow: 0 0px 8px 3px rgba(0, 0, 0, 0.1);
     -moz-box-shadow: 0 0px 8px 3px rgba(0, 0, 0, 0.1);
     box-shadow: 0 0px 8px 3px rgba(0, 0, 0, 0.1);
     background:#ffffff;
+    margin-bottom: 20px;
 }
 
 .login_header{
     float:left;
     width:100%;
-    -webkit-box-shadow: 0 11px 3px rgba(0, 0, 0, 0.1);
-    -moz-box-shadow: 0 11px 3px rgba(0, 0, 0, 0.1);
     background-repeat: repeat-x;
     /*filter: progid:dximagetransform.microsoft.gradient(startColorstr='#ff0088cc', endColorstr='#ff0044cc', GradientType=0);
     filter: progid:dximagetransform.microsoft.gradient(enabled=false);
@@ -673,6 +676,14 @@ body{
 .login_header h3{
     color:#E1472F;
     margin:5px 0;
+    border-button: 1px solid #ccc;
+    font-size: 24px;
+    font-family: "Open Sans", sans-serif;
+    font-weight: lighter;
+    padding: 0px 10px;
+    margin: 15px 15px 5px;
+    border-bottom: 1px solid #ccc;
+    text-align: left;
 }
 
 .login_content{
@@ -680,9 +691,14 @@ body{
     float:left;
     padding:20px 0 0 0;
 }
+.login_content input{
+    border-radius: 0px!important;
+}
 
 .login_btn{
-    margin-left:30px;
+    background: #E1472F;
+    padding: 3px 50px;
+    color: #fff;
 }
 
 .remember_me{

@@ -30,6 +30,14 @@ root {
     margin-left: 38px;
 }
 
+.solution-login{
+    background: url('../img/logo-back.jpg');
+    width: 239px;
+    height: 89px;
+    margin-top: 70px;
+    margin-left: 100px;
+}
+
 ul.menu {
     margin: 0px;
     padding: 0px;
