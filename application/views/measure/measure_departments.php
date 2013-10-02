@@ -237,7 +237,7 @@
 </div>
 
 <!-- MODALS (START) -->
-<div class="modal hide fade ci_hp_modals crawl_launch_panel" style='top: 35%' id='dep_rep_preview_list_modal'></div>
+<div class="modal hide fade ci_hp_modals" style='top: 35%' id='dep_rep_preview_list_modal'></div>
 
 <div class="modal hide fade ci_hp_modals crawl_launch_panel" style='top: 35%' id='dcsr_control_panel_modal'></div>
 
