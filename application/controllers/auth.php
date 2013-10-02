@@ -238,6 +238,8 @@ class Auth extends MY_Controller {
                         $url = $group[0]["default_controller"];
                     }
                 }
+                var_dump($url);
+                die('aaaa');
                 if($url!=''){
                     redirect($url.'/index', 'refresh');
                 } else{
