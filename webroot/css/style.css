@@ -699,6 +699,7 @@ body{
     background: #E1472F;
     padding: 3px 50px;
     color: #fff;
+    border-radius: 0px;
 }
 
 .remember_me{

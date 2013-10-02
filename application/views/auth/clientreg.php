@@ -1,5 +1,6 @@
 <div class="row-fluid">
 	<div class="span6 offset3">
+        <div class="solution-login"></div>
 		<div class="login_container">
 			<div class="login_header">
 				<h3 class="text-center">New Client Registration</h3>
@@ -7,9 +8,9 @@
 			<div class="login_content">
 				<?php echo form_open("auth/clientreg", array("class"=>"form-horizontal", "id"=>"clientreg_form", "name"=>"clientreg_form"));?>
 					<div class="control-group">
-						<label for='fname' class='control-label'>First Name:</label>
+						<label for='fname' class='control-label'>Name:</label>
 						<div class="controls">
-							<?php echo form_input($fname, null, 'placeholder="First Name" required');?>
+							<?php echo form_input($fname, null, 'placeholder="Name" required');?>
 							<p class='help-block form_hb_error' id='fname_error'>&nbsp;</p>
 						</div>
 					</div>
@@ -35,7 +36,7 @@
 					</div>
 					<div class="control-group">
 						<div class="controls">
-							<button id='reg_form_sbm_btn' type='submit' class='btn disabled' disabled='true' onclick="return submitRegForm();">Create Account</button>
+							<button id='reg_form_sbm_btn' type='submit' class='btn login_btn' onclick="return submitRegForm();">Create Account</button>
 						</div>
 					</div>
 				<?php echo form_close();?>
