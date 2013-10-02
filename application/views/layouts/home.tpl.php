@@ -39,13 +39,13 @@
             <div class="row-fluid posts">
                 <div class="span6">
                     <img src="<?php echo base_url() ?>img/cart-icon.jpg"><div class="mid-title">For Ecommerce<br />
-                        <span>Lorem ispums</span></div>
+                        <!--span>Lorem ispums</span--></div>
                     <p>Find out which content is SEO optimized and which isn’t, so you know what to work on and where to invest time and money. Easily find out which product descriptions and category landing pages are effective, and which ones contain poor, unoptimized content., descriptions that are too short or too long, or contain mis-spellings.</p>
                     <a href="javascript:void(0)" class="learn_more">LEARN MORE</a>
                 </div>
                 <div class="span6">
                     <img src="<?php echo base_url() ?>img/brand-icon.jpg"><div class="mid-title">For Branding<br />
-                        <span>Lorem ispums</span></div>
+                        <!--span>Lorem ispums</span--></div>
                     <p>Find out which content is SEO optimized and which isn’t, so you know what to work on and where to invest time and money. Easily find out which product descriptions and category landing pages are effective, and which ones contain poor, unoptimized content., descriptions that are too short or too long, or contain mis-spellings.</p>
                     <a href="javascript:void(0)" class="learn_more">LEARN MORE</a>
                 </div>
@@ -67,7 +67,7 @@
                             </div>
                         </div>
                         <i>August 2012</i><br/>
-                        <span class="sub-title">Lorem ispums content ispums content ispums content</span>
+                        <!--span class="sub-title">Lorem ispums content ispums content ispums content</span-->
                         <p>Find out which content is SEO optimized and which isn’t, so you know what to work on and where to invest time and money.</p>
                         <p>Easily find out which product descriptions and category landing pages are effective, and which ones contain poor, unoptimized content, descriptions that are too short or too long, or contain mis-spellings.</p>
                     </div>
@@ -84,8 +84,20 @@
     </div>
     <div class="clearfix"></div>
 
-    <div class="home-footer">
+    <div class="footer_block">
         <div class="container margin-top-50">
+            <div class="row-fluid">
+                <div class="span7">
+                    <span>Twiiter Feed</span>
+                </div>
+                <div class="span5">
+                    <span>Get in Touch with Us</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="home-footer">
+        <div class="container">
             <div class="row-fluid">
                 <div class="span7">
                     &COPY; <?php echo date('Y'); ?>. <?php echo isset($settings['company_name'])? $settings['company_name']:'' ?> All Rights Reserved.
