@@ -211,6 +211,7 @@ class Auth extends MY_Controller {
 
 		if ($this->form_validation->run() == true)
 		{
+            die('aaa');
 			//check to see if the user is logging in
 			//check for "remember me"
 			$remember = (bool) $this->input->post('remember');
@@ -238,8 +239,6 @@ class Auth extends MY_Controller {
                         $url = $group[0]["default_controller"];
                     }
                 }
-                var_dump($url);
-                die('aaaa');
                 if($url!=''){
                     redirect($url.'/index', 'refresh');
                 } else{
