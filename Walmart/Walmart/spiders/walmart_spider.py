@@ -122,8 +122,10 @@ class WalmartSpider(BaseSpider):
         # if found there, exclude it from the description body
         if description_holder:
             #TODO: also account for h1?
-            description_title = description_holder.select(".//b/text()").extract()
+            description_title = description_holder.select(".//b/text() | .//h1/text()").extract()
             if description_title:
+                # this will implicitly get thle first occurence of either a <b> element or an <h1> element,
+                # which is likely to be the title (the title usually comes first)
                 item['description_title'] = description_title[0].strip()
 
             description_texts = description_holder.select("./div[position()<2]//p//text()[not(ancestor::b)] | ./p//text()[not(ancestor::b)]").extract()
