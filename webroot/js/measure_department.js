@@ -661,6 +661,13 @@ function globalDepDashboard(site_name){
                     }
             });
         });
+        $("tbody#department_data tr td:first-child ul li").on('mouseout', function() {
+            $("tbody#department_data tr td:first-child ul li").each(function(i){
+                if(i > 0){
+                    $(this).css({'background-color':'#fff'});
+                }
+            });
+        });
         $("tbody#department_data tr td:nth-child(2) ul li").on('mouseover', function() {
             $("tbody#department_data tr td:nth-child(2) ul li").each(function(i){
                 if(i > 0){
@@ -679,6 +686,13 @@ function globalDepDashboard(site_name){
                 } else {
                     $("span.snap_img_left").html('');
                     $("span.snap_img_left").parent().parent().css({'height': 'auto'});
+                }
+            });
+        });
+        $("tbody#department_data tr td:nth-child(2) ul li").on('mouseout', function() {
+            $("tbody#department_data tr td:nth-child(2) ul li").each(function(i){
+                if(i > 0){
+                    $(this).css({'background-color':'#fff'});
                 }
             });
         });
@@ -790,6 +804,14 @@ function globalCatDashboard(site_name){
                 }
             });
         });
+        $("tbody#category_data tr td:first-child ul li").on('mouseout', function() {
+            $("tbody#category_data tr td:first-child ul li").each(function(i){
+                if(i > 0){
+                    $(this).css({'background-color':'#fff'});
+                }
+            });
+        });
+
         $("tbody#category_data tr td:nth-child(2) ul li").mouseenter(function() {
             $("tbody#category_data tr td:nth-child(2) ul li").each(function(i){
                 if(i > 0){
@@ -808,6 +830,13 @@ function globalCatDashboard(site_name){
                 } else {
                     $("span.snap_img_left").html('');
                     $("span.snap_img_left").parent().parent().css({'height': 'auto'});
+                }
+            });
+        });
+        $("tbody#category_data tr td:nth-child(2) ul li").on('mouseout', function() {
+            $("tbody#category_data tr td:nth-child(2) ul li").each(function(i){
+                if(i > 0){
+                    $(this).css({'background-color':'#fff'});
                 }
             });
         });
@@ -1172,6 +1201,13 @@ function getCatData(site_name, obj, condition, state){
                     }
                 });
             });
+            $("tbody#category_data tr td:first-child ul li").on('mouseout', function() {
+                $("tbody#category_data tr td:first-child ul li").each(function(i){
+                    if(i > 0){
+                        $(this).css({'background-color':'#fff'});
+                    }
+                });
+            });
             $("tbody#category_data tr td:nth-child(2) ul li").mouseenter(function() {
                 $("tbody#category_data tr td:nth-child(2) ul li").each(function(i){
                     if(i > 0){
@@ -1190,6 +1226,13 @@ function getCatData(site_name, obj, condition, state){
                     } else {
                         $("span.snap_img_left").html('');
                         $("span.snap_img_left").parent().parent().css({'height': 'auto'});
+                    }
+                });
+            });
+            $("tbody#category_data tr td:nth-child(2) ul li").on('mouseout', function() {
+                $("tbody#category_data tr td:nth-child(2) ul li").each(function(i){
+                    if(i > 0){
+                        $(this).css({'background-color':'#fff'});
                     }
                 });
             });
