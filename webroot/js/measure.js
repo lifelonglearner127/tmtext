@@ -269,6 +269,7 @@ function switchToGridView() {
                         $(".grid_se_section .c_content").css('overflow-y', 'auto');
                         $(".grid_se_section .c_content").css('overflow-x', 'hidden');
                         $(".grid_se_section .c_content .p_description").css('height', 'auto');
+                    $(".grid_se_section .c_content .p_feature").css('height', 'auto');
                     }
                 });
                 // gridsCustomersListLoader();
@@ -290,7 +291,8 @@ function switchToGridView() {
                     $(".grid_se_section .c_content").css('height', '700');
                     $(".grid_se_section .c_content").css('overflow-y', 'auto');
                     $(".grid_se_section .c_content").css('overflow-x', 'hidden');
-                    $(".grid_se_section .c_content .p_description").css('height', 'auto');
+                    $(".grid_se_section .c_content .p_description").css('height', 'auto')
+                    $(".grid_se_section .c_content .p_feature").css('height', 'auto');
                 }
             });
             // gridsCustomersListLoader();
@@ -1128,7 +1130,7 @@ function fixGridHeights() {
 //            $(selectorssaa).height( aaa);
 //        } 
 //    });
-    var selectors = new Array('.p_url','.p_name', '.p_meta', '.p_price','.review_count','.feature_count','.parsed_attributes','.compare_long','.short_desc_con', '.p_feature', '.p_description');
+    var selectors = new Array('.p_url','.p_name', '.p_meta', '.p_price','.review_count','.feature_count','.parsed_attributes','.compare_long','.short_desc_con'/*, '.p_feature', '.p_description'*/);
     var wrapper = $('.wrapper');
     if (wrapper.length > 0) {
         $.each(wrapper, function(k, v) {
