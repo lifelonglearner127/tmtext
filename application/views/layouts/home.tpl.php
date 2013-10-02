@@ -71,14 +71,14 @@
                         <p>Find out which content is SEO optimized and which isn’t, so you know what to work on and where to invest time and money.</p>
                         <p>Easily find out which product descriptions and category landing pages are effective, and which ones contain poor, unoptimized content, descriptions that are too short or too long, or contain mis-spellings.</p>
                     </div>
-                    <div class="span12 ml_0 general_clients">
+                    <!--div class="span12 ml_0 general_clients">
                         <div class="mid-title">Clients That Trust Us</div>
                         <a href="javascript:void(0)"><img src="<?php echo base_url() ?>img/splunk-icon.jpg"></a>
                         <a href="javascript:void(0)"><img src="<?php echo base_url() ?>img/qlik-icon.jpg"></a>
                         <a href="javascript:void(0)"><img src="<?php echo base_url() ?>img/recom-icon.jpg"></a>
                         <a href="javascript:void(0)"><img src="<?php echo base_url() ?>img/cloudera-icon.jpg"></a>
                         <a href="javascript:void(0)"><img src="<?php echo base_url() ?>img/mapr-icon.jpg"></a>
-                    </div>
+                    </div-->
         </div>
 	</div>
     </div>
