@@ -187,6 +187,9 @@ input[type=text] {
     float: left;
     margin-top: 5px;
 }
+#tblAssess img{
+    max-width: 73px;
+}
 .DataTables_sort_wrapper {
     cursor: pointer;
     padding: 4px;
