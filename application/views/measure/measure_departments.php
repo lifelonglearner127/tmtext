@@ -42,7 +42,7 @@
 <!--        <li class='pull_right_navlink'><a href="javascript:void(0)" onclick="viewRecipientsListCats()">Configure Recipients</a></li>
         <li class='pull_right_navlink'><a href="javascript:void(0)" onclick="activateDepRepPreview()">Configure Screenshots Report</a></li>-->
         <li class='pull_right_navlink'><a href="javascript:void(0);" onclick="viewRecipientsListCats()">New Batch</a></li>
-        <li class='pull_right_navlink'><a href="javascript:void(0);" onclick="activateDepRepPreview()">Configure Recipients</a></li>
+        <li class='pull_right_navlink'><a href="javascript:void(0);" onclick="activateDepRepPreview()">Configure Reports</a></li>
     </ul>
 
 
