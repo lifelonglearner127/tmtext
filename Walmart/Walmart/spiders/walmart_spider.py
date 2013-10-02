@@ -133,14 +133,15 @@ class WalmartSpider(BaseSpider):
         # if it's not found, try to find it in the first <p> if the description
         # if found there, exclude it from the description body
         if description_holder:
-            description_title = description_holder.select(".//b/text() | .//h1/text()").extract()
+            description_title = description_holder.select(".//b/text() | .//h1/text() | .//strong/text()").extract()
             #description_title = description_holder.select(".//b/text()").extract()
             if description_title:
                 # this will implicitly get thle first occurence of either a <b> element or an <h1> element,
                 # which is likely to be the title (the title usually comes first)
                 item['description_title'] = description_title[0].strip()
 
-            description_texts = description_holder.select("./div[position()<2]//p//text()[not(ancestor::b)] | ./p//text()[not(ancestor::b)]").extract()
+            description_texts = description_holder.select("./div[position()<2]//p//text()[not(ancestor::b) and not(ancestor::h1) and not(ancestor::strong)] \
+                | ./p//text()[not(ancestor::b) and not(ancestor::h1) and not(ancestor::strong)]").extract()
 
             # if the list is not empty and contains at least one non-whitespace item
             if description_texts and reduce(lambda x,y: x or y, [line.strip() for line in description_texts]):
