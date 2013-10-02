@@ -1698,7 +1698,7 @@ class System extends MY_Controller {
         $description_text = $this->input->post('text');
         $wc = $this->input->post('wc');
         $department_id = 0;
-       
+
         $check_department_id = $this->department_model->checkExist($department_text);
         if($check_department_id == false){
             $department_id = $this->department_model->insert($department_text, $department_text);

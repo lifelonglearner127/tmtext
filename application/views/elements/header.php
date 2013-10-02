@@ -21,6 +21,7 @@
     <link href="<?php echo base_url();?>css/home-page.css" rel="stylesheet">
     <link href="<?php echo base_url();?>css/bootstrap-lightbox.min.css" rel="stylesheet">
     <link href="<?php echo base_url();?>css/anythingslider.css" rel="stylesheet">
+    <link href=' http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
 
 	<!--[if lt IE 9]>
 		<script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>

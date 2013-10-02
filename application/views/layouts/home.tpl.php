@@ -7,90 +7,95 @@
                 <div class="pull-left">
                     <div class="solution-logo-page"></div>
                 </div>
-            </div>
-        </div>
-    </div>
-    <div class="navigation">
-        <div class="container">
-            <div class="row-fluid">
-                <ul class="top-navigation">
-                    <li class="pull-left"><a href="#">HOME</a></li>
-                    <li class="pull-left"><a href="#">PRODUCT</a></li>
-                    <li class="pull-left"><a href="#">COMPANY</a></li>
-                    <li class="pull-right"><a href="<?php echo base_url() ?>index.php/auth/login">SIGN IN</a></li>
-                    <!-- <li class="pull-right"><a href="http://dev.contentanalyticsinc.com/producteditor/index.php/auth/login<?php //echo site_url('auth/login');?>">SIGN IN</a></li> -->
-                </ul>
+                <div class="pull-right">
+                    <ul class="menu">
+                        <li class="active"><a href="#">HOME</a></li>
+                        <li><a href="#">REPORTS</a></li>
+                        <li><a href="#">NEWS</a></li>
+                        <li><a href="#">ABOUT</a></li>
+                        <li><a href="#">THE BOOK</a></li>
+                        <li><a href="#">CONTACT</a></li>
+                        <li><a href="<?php echo base_url() ?>index.php/auth/login">SIGN IN</a></li>
+                        <!-- <li class="pull-right"><a href="http://dev.contentanalyticsinc.com/producteditor/index.php/auth/login<?php //echo site_url('auth/login');?>">SIGN IN</a></li> -->
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
     <div class="below-nav">
-        <div class="container">
-            <div class="row-fluid right-bg">
-                <div class="span8">
-                    <div class="chart-img"></div>
+           <div class="container">
+                <div class="left_block">
+                        <span class="txt_container">REAL-TIME INSIGHT</span><br /><br />
+                        <span class="txt_container">FOR <span class="txt_or_container">ECOMMERCE</span></span>
+                        <p>Product Pricing, Selection and Content Marketing</p>
+                        <a href="javascript:void(0)">LEARN MORE</a>
                 </div>
-                <div class="span4 ">
-                    <div class="text-center text-color-white">
-                        Your Real-Time Content Solution
-                    </div>
-                    <div class="text-center">
-                        <a href="#">
-                            <?php echo img('../img/request-demo-btn.png', TRUE); ?>
-                        </a>
-                    </div>
-                </div>
-            </div>
+           </div>
+        <div class="right_block">
         </div>
     </div>
-    <div class="bottom-border"></div>
-	<div class="content-container">
-        <div class="container margin-top-50">
-            <div class="row-fluid" style="padding-left: 60px;">
-                <div class="span4">
-                    <?php echo img('../img/graphic.png', TRUE); ?>
+    <div class="content-container">
+        <div class="container">
+            <div class="row-fluid posts">
+                <div class="span6">
+                    <img src="<?php echo base_url() ?>img/cart-icon.jpg"><div class="mid-title">For Ecommerce<br />
+                        <span>Lorem ispums</span></div>
+                    <p>Find out which content is SEO optimized and which isn’t, so you know what to work on and where to invest time and money. Easily find out which product descriptions and category landing pages are effective, and which ones contain poor, unoptimized content., descriptions that are too short or too long, or contain mis-spellings.</p>
+                    <a href="javascript:void(0)" class="learn_more">LEARN MORE</a>
                 </div>
                 <div class="span6">
-                    <div class="mid-title">Assess the effectiveness of your existing content</div>
-                    <p>Find out which content is SEO optimized and which isn’t, so you know what to work on and where to invest time and money.</p>
-                    <p>Easily find out which product descriptions and category landing pages are effective, and which ones contain poor, unoptimized content, descriptions that are too short or too long, or contain mis-spellings.</p>
+                    <img src="<?php echo base_url() ?>img/brand-icon.jpg"><div class="mid-title">For Branding<br />
+                        <span>Lorem ispums</span></div>
+                    <p>Find out which content is SEO optimized and which isn’t, so you know what to work on and where to invest time and money. Easily find out which product descriptions and category landing pages are effective, and which ones contain poor, unoptimized content., descriptions that are too short or too long, or contain mis-spellings.</p>
+                    <a href="javascript:void(0)" class="learn_more">LEARN MORE</a>
                 </div>
             </div>
+        </div>
+        <div class="container">
+            <div class="row-fluid general_posts">
+                    <div class="span7">
+                        <div class="mid-title">About Us</div>
+                        <p>Find out which content is SEO optimized and which isn’t, so you know what to work on and where to invest time and money.</p>
+                        <p>Easily find out which product descriptions and category landing pages are effective, and which ones contain poor, unoptimized content, descriptions that are too short or too long, or contain mis-spellings.</p>
+                    </div>
+                    <div class="span5">
+                        <div class="mid-title">
+                            News
+                            <div class="pull-right">
+                                <a href="javascript:void(0)"><img src="<?php echo base_url() ?>img/left-arrow.jpg"></a>
+                                <a href="javascript:void(0)"><img src="<?php echo base_url() ?>img/right-arrow.jpg"></a>
+                            </div>
+                        </div>
+                        <i>August 2012</i><br/>
+                        <span class="sub-title">Lorem ispums content ispums content ispums content</span>
+                        <p>Find out which content is SEO optimized and which isn’t, so you know what to work on and where to invest time and money.</p>
+                        <p>Easily find out which product descriptions and category landing pages are effective, and which ones contain poor, unoptimized content, descriptions that are too short or too long, or contain mis-spellings.</p>
+                    </div>
+                    <div class="span12 ml_0 general_clients">
+                        <div class="mid-title">Clients That Trust Us</div>
+                        <a href="javascript:void(0)"><img src="<?php echo base_url() ?>img/splunk-icon.jpg"></a>
+                        <a href="javascript:void(0)"><img src="<?php echo base_url() ?>img/qlik-icon.jpg"></a>
+                        <a href="javascript:void(0)"><img src="<?php echo base_url() ?>img/recom-icon.jpg"></a>
+                        <a href="javascript:void(0)"><img src="<?php echo base_url() ?>img/cloudera-icon.jpg"></a>
+                        <a href="javascript:void(0)"><img src="<?php echo base_url() ?>img/mapr-icon.jpg"></a>
+                    </div>
         </div>
 	</div>
-    <div class="ideas margin-top-50">
-        <div class="container">
-            <div class="row-fluid">
-                <div class="span4 border-box">
-                    <div class="ideas-title">Research the Competition</div>
-                    <p>Compare your home page, department pages, category landing pages, and individual product pages to your competition.</p>
-                    <a href="#" class="learn-more-btn">
-                        <?php echo img('../img/bottom-button.png', TRUE); ?>
-                    </a>
-                    <div class="box-shadow-img"></div>
-                </div>
-                <div class="span4 border-box">
-                    <div class="ideas-title">Create and Refresh Content</div>
-                    <p>Designed for content creation, optimization, and refresh at scale, our workflow system manages thousands of content creators and editors.</p>
-                    <a href="#" class="learn-more-btn">
-                        <?php echo img('../img/bottom-button.png', TRUE); ?>
-                    </a>
-                    <div class="box-shadow-img"></div>
-                </div>
-                <div class="span4 border-box" style="min-height: 244px;">
-                    <div class="ideas-title">Bring Meaning To Unstructured Web Site Data</div>
-                    <p>Extract, compare, assess pricing and product information.</p>
-                    <a href="#" class="learn-more-btn">
-                        <?php echo img('../img/bottom-button.png', TRUE); ?>
-                    </a>
-                    <div class="box-shadow-img"></div>
-                </div>
-            </div>
-        </div>
     </div>
+    <div class="clearfix"></div>
+
     <div class="home-footer">
         <div class="container margin-top-50">
-            <div class="row-fluid text-center">
-                Copyright &COPY; <?php echo date('Y'); ?>. <b><?php echo isset($settings['company_name'])? $settings['company_name']:'' ?></b> All Rights Reserved.
+            <div class="row-fluid">
+                <div class="span7">
+                    &COPY; <?php echo date('Y'); ?>. <?php echo isset($settings['company_name'])? $settings['company_name']:'' ?> All Rights Reserved.
+                </div>
+                <div class="span5">
+                    We are social:
+                    <a href="javascript:void(0)"><img src="<?php echo base_url() ?>img/facebook-hover-icon.jpg"></a>
+                    <a href="javascript:void(0)"><img src="<?php echo base_url() ?>img/twitter-icon.jpg"></a>
+                    <a href="javascript:void(0)"><img src="<?php echo base_url() ?>img/youtube-icon.jpg"></a>
+                </div>
             </div>
         </div> 
     </div>
