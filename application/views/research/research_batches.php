@@ -13,7 +13,7 @@
             <div class="row-fluid">
                 <div class='span12'>
                     Batch:
-                    <div id="research_customers" class="customer_dropdown"></div>
+                    <div id="research_customers1" class="customer_dropdown"></div>
                     <?php echo form_dropdown('research_batches', $batches_list, array(), 'class="mt_10 mr_10" style="width: 175px;"'); ?>
                     Edit Name:<input type="text" class="mt_10 ml_10" name="batche_name" />
                     <button id="research_batches_save" type="button" class="btn btn-success ml_5">Save</button>
@@ -135,7 +135,7 @@
                 <script type="text/javascript" src="<?php echo base_url();?>js/jquery.dataTables.min.js"></script>
                 <script type="text/javascript" src="<?php echo base_url();?>js/jquery.json-2.4.min.js"></script>
                 <script type="text/javascript" src="<?php echo base_url();?>js/edit_review.js"></script>
-
+                
             </div>
             <div class="row-fluid mt_20">
                 <button id="research_batches_undo" type="button" class="btn ml_10">Undo</button>

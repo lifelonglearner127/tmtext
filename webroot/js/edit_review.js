@@ -7,7 +7,7 @@ var readUrl   = base_url + 'index.php/research/get_research_info',
     deleteId;
 var editAfterReload = false;
 
-$(function(){
+$(function(){ 
     $.fn.dataTableExt.oApi.fnStandingRedraw = function(oSettings) {
         if(oSettings.oFeatures.bServerSide === false){
             var before = oSettings._iDisplayStart;
@@ -447,6 +447,32 @@ $(function(){
             return false;
         }
     });*/
+
+
+    function getEditCustomerDropdown(){
+        var customers_list_ci = $.post(base_url + 'index.php/measure/getcustomerslist_new', { }, function(c_data) {
+            var jsn = $('#research_customers1').msDropDown({byJson:{data:c_data, name:'customers_list'}}).data("dd");
+            if(jsn != undefined){
+                jsn.on("change", function(res) {
+                    $.post(base_url + 'index.php/research/filterBatchByCustomer', { 'customer_name': res.target.value}, function(data){
+                        var research_edit_batches = $("select[name='research_batches']");
+                        if(data.length>0){
+                            research_edit_batches.empty();
+                            for(var i=0; i<data.length; i++){
+                                research_edit_batches.append('<option>'+data[i]+'</option>');
+                            }
+                        } else if(data.length==0 && res.target.value !="All customers"){
+                            research_edit_batches.empty();
+                        }
+                        readReviewData();
+                    });
+                });
+            }
+        }, 'json');
+    }
+
+    getEditCustomerDropdown();
+
 
     $('select[name="research_batches"]').on("change", function(){
         readReviewData();
