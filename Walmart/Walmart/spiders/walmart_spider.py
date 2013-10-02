@@ -9,6 +9,11 @@ import datetime
 
 from spiders_utils import Utils
 
+# minimum description length
+DESC_LEN = 200
+# minimum description paragraph length
+DESC_PAR_LEN = 30
+
 ################################
 # Run with 
 #
@@ -98,22 +103,29 @@ class WalmartSpider(BaseSpider):
 
         description_holder = hxs.select("//div[@id='detailedPageDescriptionCopyBlock'] | //div[@class='CustomPOV ReminderBubbleSeeAll']")
 
-        # if none was found, try to find an element with much text (> 200 characters)
+        # if none was found, try to find an element with much text (> DESC_LEN (200) characters)
         # this is gonna pe a paragraph in the description, look for its parent (containing the entire description)
         if not description_holder:
-            description_holder = hxs.select("//*[not(self::script or self::style)]/text()[string-length() > 200]/parent::*/parent::*")
+            description_holder = hxs.select("//*[not(self::script or self::style)]/text()[string-length() > " + str(DESC_LEN) + "]/parent::*/parent::*")
 
         # select element among these with most text
         if description_holder:
             desc_winner = description_holder[0]
             max_text = 0
             for desc_candidate in description_holder:
-                # compute approximate length of description text
-                description_texts = desc_candidate.select(".//text()").extract()
+                # consider only text that is under a <p> tag and that has more than DESC_PAR_LEN (30) characters - then it's likely a description paragraph
+                description_texts = desc_candidate.select(".//p//text()[string-length()>" + str(DESC_PAR_LEN) + "]").extract()
                 text_len = len(" ".join(description_texts))
                 if text_len > max_text:
                     max_text = text_len
                     desc_winner = desc_candidate
+                # if text length is the same, assume one of them is parent of the other
+                #  and select the one with greater depth (fewer children)
+                elif text_len == max_text and text_len != 0:
+                    children_old = float(desc_winner.select("count(*)").extract()[0])
+                    children_new = float(desc_candidate.select("count(*)").extract()[0])
+                    if children_new < children_old:
+                        desc_winner = desc_candidate
 
             description_holder = desc_winner
 
