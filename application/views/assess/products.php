@@ -139,6 +139,10 @@
     <div>
         <form action="" method="post">
             <p>
+                <input type="checkbox" id="column_snap" data-col_name="snap" name="column_snap_name" <?php echo($columns['snap'] == 'true' ? 'checked="checked"' : ''); ?> />
+                <label for="column_snap">Snap</label>
+            </p>
+            <p>
                 <input type="checkbox" id="column_created" data-col_name="created" name="column_created_name" <?php echo($columns['created'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="column_editor">Date</label>
             </p>

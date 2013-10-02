@@ -27,6 +27,7 @@ $(function () {
 
     var tableCase = {
         details: [
+        "snap",
         "created",
         "product_name",
         "url",
@@ -128,8 +129,13 @@ $(function () {
         },
         "aoColumns": [
         {
+             "sTitle" : "Snap",
+             "sName":"snap",
+             "sWidth": "10%"
+        },
+        {
             "sTitle" : "Date",
-            "sName":"created", 
+            "sName":"created",
             "sWidth": "5%"
         },
 
@@ -180,7 +186,6 @@ $(function () {
             "sName":"price_diff", 
             "sWidth": "10%"
         },
-
         {
             "sTitle" : "Recommendations", 
             "sName":"recommendations", 
@@ -764,6 +769,7 @@ $(function () {
             'Save': function() {
                 // get columns params
                 var columns = {
+                    snap : $("#column_snap").attr('checked') == 'checked',
                     created : $("#column_created").attr('checked') == 'checked',
                     product_name : $("#column_product_name").attr('checked') == 'checked',
                     url : $("#column_url").attr('checked') == 'checked',

@@ -842,19 +842,21 @@ class Research extends MY_Controller {
                     $row_created_array = explode(' ', $data_row->created);
                     $row_created = '<nobr>'.$row_created_array[0].'</nobr><br/>';
                     $row_created = $row_created.'<nobr>'.$row_created_array[1].'</nobr>';
-
+                    $snap = '';
                     $row_url = '<table class="url_table"><tr><td style="padding:5px;"><a class="active_link" href="'.$data_row->url.'" target="_blank">'.$data_row->url.'</a></td></tr>';
                     if ($data_row->snap != ''){
                         $file = realpath(BASEPATH . "../webroot/webshoots").'/'.$data_row->snap;
                         if (file_exists($file)){
                             if (filesize($file) > 1024){
                                 $row_url = $row_url.'<tr style="height:1px;"><td style="text-align:right; padding: 0px;"><i class="snap_ico icon-picture" snap="'.$data_row->snap.'"></i></tr></td>';
+                                $snap = "<img src='".base_url()."webshoots/".$data_row->snap."' />";
                             }
                         }
                     }
                     $row_url = $row_url.'</table>';
 
                     $output['aaData'][] = array(
+                        $snap,
                         $row_created,
                         $data_row->product_name,
                         $row_url,
