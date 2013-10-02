@@ -41,8 +41,8 @@
         <li class=""><a data-toggle="tab" href="<?php echo site_url('assess/products');?>">Products</a></li>
         <!-- <li class='pull_right_navlink'><a href="javascript:void(0)" onclick="viewRecipientsListCats()">Configure Recipients</a></li> -->
         <!-- <li class='pull_right_navlink'><a href="javascript:void(0)" onclick="viewRecipientsList()">Configure Recipients</a></li> -->
-        <li class='pull_right_navlink'><a href="javascript:void(0)" onclick="activateDepRepPreview()">Configure Recipients</a></li>
-        <!-- <li class='pull_right_navlink'><a href="javascript:void(0)" onclick="viewCatsScreensCp()">Configure Screenshots Report</a></li> -->
+        <!-- <li class='pull_right_navlink'><a href="javascript:void(0)" onclick="activateDepRepPreview()">Configure Recipients</a></li> -->
+        <li class='pull_right_navlink'><a href="javascript:void(0)" onclick="viewCatsScreensCp()">Configure Reports</a></li>
     </ul>
 
 
