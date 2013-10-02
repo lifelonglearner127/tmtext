@@ -31,7 +31,11 @@
 						<p style='font-weight: bold;'><?php echo $cover_text; ?></p>
 					</div> 
 					<div style='width: 400px;'>
+						<?php if($md_data !== null) { ?>
+						<a href="<?php echo $md_data->url; ?>"><img style='width: 100%; cursor: pointer' src="<?php echo base_url() ?>webshoots/<?php echo $main_dep_snap['snap_name']; ?>"></a>
+						<?php } else { ?>
 						<img style='width: 100%' src="<?php echo base_url() ?>webshoots/<?php echo $main_dep_snap['snap_name']; ?>">
+						<?php } ?>
 					</div>
 					<div style='width: 400px;'>
 						<p style='font-weight: bold;'>Description word count: <?php echo $desc_words_data; ?></p>
@@ -96,7 +100,11 @@
 								<p style='font-weight: bold;'><?php echo $cover_text; ?></p>
 							</div>
 							<div style='margin-bottom: 10px; width: 400px;'>
+								<?php if($sd_data !== null) { ?>
+								<a href="<?php echo $sd_data->url ?>"><img style='width: 100%; cursor: pointer' src="<?php echo base_url() ?>webshoots/<?php echo $sec_dep_snap['snap_name']; ?>"></a>
+								<?php } else { ?>
 								<img style='width: 100%' src="<?php echo base_url() ?>webshoots/<?php echo $sec_dep_snap['snap_name']; ?>">
+								<?php } ?>
 							</div>
 							<div style='width: 400px;'>
 								<p style='font-weight: bold;'>Description word count: <?php echo $desc_words_data; ?></p>
