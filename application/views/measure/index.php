@@ -89,8 +89,7 @@ jQuery(document).ready(function($) {
 </div>
 <script>
 $(document).ready(function(){
-                    
-    
+
                         $('#scroll_all').attr('checked',true).addClass('check');
                         $("#popup_save").live('click',function(){
                        $.removeCookie('status_showing_results', {path: '/'});
@@ -204,18 +203,20 @@ $(document).ready(function(){
                         
                         status_showing_results= $.cookie('status_showing_results');
                        
-                        if (typeof( status_showing_results) !== 'undefined' ){
+                        if (typeof( status_showing_results) != 'undefined' ){ 
                           
-                            status_showing_results = $.cookie('status_showing_results');
+                            //status_showing_results = $.cookie('status_showing_results');
 
                             $('input[value="'+status_showing_results+'"]').attr('checked',true);
                             if(status_showing_results=='matchon'){
-                                selected_cites_cookie = $.cookie('selected_cites_cookie');                              
-                                var dataarray=selected_cites_cookie.split(",");
-                                $("#popup_sites").val(dataarray);
-
+                                
+                                selected_cites_cookie = $.cookie('selected_cites_cookie');
+                                if(selected_cites_cookie){                              
+                                    var dataarray=selected_cites_cookie.split(",");
+                                    $("#popup_sites").val(dataarray);
+                                }
                             }
-                        }else{
+                        }else{ 
                           $('input[value="all"]').attr('checked',true);  
                         }
                     });
