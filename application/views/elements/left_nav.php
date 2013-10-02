@@ -8,7 +8,7 @@
 // );
 
 $menu = array(
-    array('controller' => 'batches', 'name' => 'Batches'),
+//    array('controller' => 'batches', 'name' => 'Batches'),
     array('controller' => 'measure', 'name' => 'Competitive Research'),
     array('controller' => 'assess', 'name' => 'Reports'),
     array('controller' => 'research', 'name' => 'Edit'),

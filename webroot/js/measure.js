@@ -1072,7 +1072,6 @@ for (var i = 1; i <= rows_count; i++) {
 $.each(selectorssaa, function(k1, v1) {
     new_height_[v1] = 0;
 });
-console.log(new_height_);
 var seo_custom_height;
 function fixSeoHeights() {
     var selectorss = [];

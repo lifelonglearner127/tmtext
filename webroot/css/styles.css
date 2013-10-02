@@ -409,7 +409,6 @@ ul.assess_recommendations li {
     list-style-type: none;
     padding: 0;
     line-height: 14px;
-    font-weight:bold;
 }
 ul.assess_recommendations li img {
     padding-right: 5px;
@@ -603,4 +602,13 @@ span.highlight{
     max-width: 400px;
     float: left;
     border:1px solid #ccc;
+}
+.url_table .active_link {
+    font-weight: normal !important;
+} 
+.ui-dialog {
+    z-index: 100000 !important;
+}
+#batchesDiv {
+    padding: 25px;
 }

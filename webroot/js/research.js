@@ -606,7 +606,7 @@ $(document).ready(function () {
         }
         $.post(base_url + 'index.php/research/new_batch', {
             'batch': $('input[name="new_batch"]').val(),
-            'customer_name': oDropdown.getData().data.value,
+            'customer_name': oDropdown.getData().data.value
         }).done(function(data) {
                 if($('input[name="new_batch"]').val() !='' ){
                     var cat_exist = 0;

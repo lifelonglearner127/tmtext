@@ -1,8 +1,8 @@
 <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/smoothness/jquery-ui-1.8.2.custom.css" />
 <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/styles.css" />
         <?php echo form_open("research/save", array("class"=>"form-horizontal", "id"=>"create_batch_save"));?>
-        <div class="row-fluid">
-            <div class="span12">
+        <div id="batchesDiv">
+            <div class="span12 mb_10">
                 <div class="span11">
                     Batch:
                     <div id="customer_dr" class="customer_dropdown"></div>
@@ -10,7 +10,7 @@
                     <?php echo form_dropdown('batches', $batches_list, array(), ' style="width: 145px;margin-left:20px"'); ?>
 
                     <script>
-                  
+                    
                     function doconfirm()
                     {
                         var batch_name = $('select[name="batches"]').find('option:selected').text();
@@ -185,12 +185,13 @@
         </script>
         <?php echo form_close();?>
        
-<div id="rename_batch_dialog" title="Rename batch">
-    <div>
-            <p>
-                <label for="column_category">Batch Name:</label>
-                <input type="hidden" id="rename_batch_id" value="" />
-                <input type="text" id="rename_batch_value" value="" />
-            </p>
+    <div id="rename_batch_dialog" title="Rename batch">
+        <div>
+                <p>
+                    <label for="column_category">Batch Name:</label>
+                    <input type="hidden" id="rename_batch_id" value="" />
+                    <input type="text" id="rename_batch_value" value="" />
+                </p>
+        </div>
     </div>
 </div>
