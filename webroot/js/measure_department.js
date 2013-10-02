@@ -662,6 +662,7 @@ function globalDepDashboard(site_name){
             });
         });
         $("tbody#department_data tr td:first-child ul li").on('mouseout', function() {
+            $("span.snap_img").html('');
             $("tbody#department_data tr td:first-child ul li").each(function(i){
                 if(i > 0){
                     $(this).css({'background-color':'#fff'});
@@ -690,6 +691,7 @@ function globalDepDashboard(site_name){
             });
         });
         $("tbody#department_data tr td:nth-child(2) ul li").on('mouseout', function() {
+            $("span.snap_img_left").html('');
             $("tbody#department_data tr td:nth-child(2) ul li").each(function(i){
                 if(i > 0){
                     $(this).css({'background-color':'#fff'});
@@ -805,6 +807,7 @@ function globalCatDashboard(site_name){
             });
         });
         $("tbody#category_data tr td:first-child ul li").on('mouseout', function() {
+            $("span.snap_img").html('');
             $("tbody#category_data tr td:first-child ul li").each(function(i){
                 if(i > 0){
                     $(this).css({'background-color':'#fff'});
@@ -834,6 +837,7 @@ function globalCatDashboard(site_name){
             });
         });
         $("tbody#category_data tr td:nth-child(2) ul li").on('mouseout', function() {
+            $("span.snap_img_left").html('');
             $("tbody#category_data tr td:nth-child(2) ul li").each(function(i){
                 if(i > 0){
                     $(this).css({'background-color':'#fff'});
@@ -1202,6 +1206,7 @@ function getCatData(site_name, obj, condition, state){
                 });
             });
             $("tbody#category_data tr td:first-child ul li").on('mouseout', function() {
+                $("span.snap_img").html('');
                 $("tbody#category_data tr td:first-child ul li").each(function(i){
                     if(i > 0){
                         $(this).css({'background-color':'#fff'});
@@ -1230,6 +1235,7 @@ function getCatData(site_name, obj, condition, state){
                 });
             });
             $("tbody#category_data tr td:nth-child(2) ul li").on('mouseout', function() {
+                $("span.snap_img_left").html('');
                 $("tbody#category_data tr td:nth-child(2) ul li").each(function(i){
                     if(i > 0){
                         $(this).css({'background-color':'#fff'});
