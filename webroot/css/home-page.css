@@ -79,9 +79,6 @@ ul.menu li.active a{
 ul.menu li.active a span{
     border-bottom: 1px dotted #FFFFFF;
 }
-ul.menu li.active a span:nth-child(2){
-    margin-left: 5px;
-}
 
 ul.menu li.active a:hover, ul.menu li.active a{
     color: #fff;

@@ -9,7 +9,7 @@
 
 $menu = array(
 //    array('controller' => 'batches', 'name' => 'Batches'),
-    array('controller' => 'measure', 'name' => '<span>COMPETITIVE</span><span>RESEARCH</span>'),
+    array('controller' => 'measure', 'name' => '<span>COMPETITIVE</span><span class="ml_5">RESEARCH</span>'),
     array('controller' => 'assess', 'name' => '<span>REPORTS</span>'),
     array('controller' => 'research', 'name' => '<span>EDIT</span>'),
     array('controller' => 'brand', 'name' => '<span>SOCIAL</span>'),
