@@ -63,8 +63,8 @@
                         -->
 
                         <?php
-                        if ($this->ion_auth->is_admin($this->ion_auth->get_user_id())) {
-                            if (count($sites_list) > 0) {
+                       // if ($this->ion_auth->is_admin($this->ion_auth->get_user_id())) {
+                           if (count($sites_list) > 0) {
                                 ?>
                                 <div id="hp_boot_drop" style="float:left;margin-left:8px" class="btn-group <?php echo $dropup; ?> hp_boot_drop  mr_10">
                                     <button class="btn btn-danger btn_caret_sign" >Choose Site</button>
@@ -79,7 +79,7 @@
                                 </div>
                             <?php
                             }
-                        }
+                      //  }
                         ?>
                         <div id="departmentDropdown"  class="btn-group" style="display: none">
                             <button id="departmentDropdown_first" class="btn btn-danger btn_caret_sign1" style="width:165px" >Choose Category</button>
@@ -92,7 +92,7 @@
                         <a id="department_url" href="" style="display: none;" target="_blank">
                             <img src="<?php echo base_url();?>webroot/img/next_blue.png" >
                         </a>
-                        <img class='monitor_icon hidden' id='dep_monitor' src="<?php echo base_url() ?>/img/monitor.png">
+                      <img class='monitor_icon hidden' id='dep_monitor' src="<?php echo base_url() ?>/img/monitor.png">
                         <input type="hidden" name="selected_department_id" />
                     </div>
 
@@ -110,7 +110,7 @@
                             </ul>
                         </div>
                         <?php
-                        if ($this->ion_auth->is_admin($this->ion_auth->get_user_id())) {
+                     //   if ($this->ion_auth->is_admin($this->ion_auth->get_user_id())) {
                             if (count($sites_list) > 0) {
                                 ?>
                                 <div id="hp_boot_drop_sec"  class="btn-group <?php echo $dropup; ?> hp_boot_drop_sec  mr_10">
@@ -126,7 +126,7 @@
                                 </div>
                             <?php
                             }
-                        }
+                      //  }
                         ?>
                     </div>
 
