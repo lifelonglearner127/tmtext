@@ -1436,18 +1436,28 @@ class PageProcessor {
 			$title = $item['#text'][0];
 		}
 
-		foreach($this->nokogiri->get('#Overview_Content .itmDesc #overview-content') as $item) {
+		foreach($this->nokogiri->get('.grpDesc .itemColumn li') as $item) {
 			foreach($item['#text'] as $i) {
 				$description[] = trim($i);
 			}
 		}
 		$description = trim(implode(' ',$description));
 
-		if (empty($description)) {
-			foreach($this->nokogiri->get('#Overview_Content .itmDesc p') as $item) {
-				$description[] = trim($item['#text'][0]);
+		foreach($this->nokogiri->get('#Overview_Content .itmDesc #overview-content') as $item) {
+			foreach($item['#text'] as $i) {
+				$descriptionLong[] = trim($i);
 			}
-			$description = trim(implode(' ',$description));
+		}
+		$descriptionLong = trim(implode(' ',$descriptionLong));
+
+		if (empty($descriptionLong)) {
+			foreach($this->nokogiri->get('#Overview_Content .itmDesc p') as $item) {
+				foreach($item['#text'] as $i) {
+					$descriptionLong[] = trim($i);
+				}
+			}
+
+			$descriptionLong = trim(implode(' ',$descriptionLong));
 		}
 
 		foreach($this->nokogiri->get('#Details_Content #Specs dl') as $item) {
@@ -1481,6 +1491,8 @@ class PageProcessor {
 				$line = trim($item['dt'][0]["#text"][0]);
 				if (!empty($line) && stristr($line, 'brand')!== false) {
 					$result['manufacturer'] = trim($item['dd'][0]['#text'][0]);
+				} else if (!empty($line) && stristr($line, 'Part#')!== false) {
+					$result['model'] = trim($item['dd'][0]['#text'][0]);
 				} else if (!empty($line) && stristr($line, 'model')!== false) {
 					$result['model'] = trim($item['dd'][0]['#text'][0]);
 				}
