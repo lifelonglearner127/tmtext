@@ -110,13 +110,17 @@ foreach ($same_pr as $ks => $vs) {
                     <div class="p_url">
     <?php if ($ks > 0 && $mismatch_button == true) { ?>
                             <input data-value="<?php echo $vs['imported_data_id']; ?>"class="mismatch_image" style="float: right; margin-top: 0;position: relative;z-index: 200;" type="button" value="" title="">
+                            <div class='missmatch_section'>
                             <div class='missmatch_popup'style="display: none;">
                              <span class="first_line">Mark as incorrect match  </span>
                              <span class="second_line">Enter URL of match... </span>
                              <span class="second_line2">Enter model of match... </span>
                             </div>
                             <div class="missmatch_popup_input">
-                                <input type="text" name="missmatch_input" value=''/>
+                                <img class='close_btn_15' src="<?php echo base_url() ?>/img/15.png">
+                                <input class='for_typing' type="text" name="missmatch_input" value=''/>
+                                <img class='green_cycle' src="<?php echo base_url() ?>/img/assess_grid/check_circle_green.png">
+                            </div>
                             </div>
                         <?php }
 
@@ -932,14 +936,20 @@ if (($i - 1) % 3 != 0) {
     selectedCustomer();
 
  $(document).ready(function(){
-       
-            $(".grid_se_section .c_content").scroll(function(){
-                
-                if($("#scroll_all").hasClass( "check" )){
-                  
-                    $(".grid_se_section .c_content").scrollTop($(this).scrollTop());
-                } 
-            });
+     $(".missmatch_popup_input").css('display','none');
+     $('.second_line2').mouseover(function(){
+         $(".missmatch_popup_input").css('display','block');
+     });
+     $(".close_btn_15").on('click',function(){
+         $(".missmatch_popup_input").css('display','none');
+     });
+    $(".grid_se_section .c_content").scroll(function(){
+
+        if($("#scroll_all").hasClass( "check" )){
+
+            $(".grid_se_section .c_content").scrollTop($(this).scrollTop());
+        } 
+    });
            
    $('.coustom_keyword_density').live('click',function(){
         $(this).hide();
@@ -996,12 +1006,11 @@ if (($i - 1) % 3 != 0) {
    
    $(".mismatch_image").live('mouseover', function() {
 
-        var item = "<div class='missmatch_popup'>Aaaaaaaaaa</div>";
         $(".missmatch_popup").css('display', 'block');
 
     });
 
-    $(".missmatch_popup").live('mouseleave', function() {
+    $(".missmatch_section").live('mouseleave', function() {
         $(".missmatch_popup").css('display', 'none');
     });
 // Maxik

@@ -2286,3 +2286,25 @@ body.login_block{
 .mismatch_image{
     margin-top:7px !important;
 }
+.missmatch_popup_input{
+    display: block;
+    background: aliceblue;
+    position: relative;
+    top: 97px;
+    border: 1px solid #606C5E;
+    border-radius: 10px;
+    overflow: hidden;
+}
+.close_btn_15{
+    margin-left: 3px;
+    float: left;
+}
+.for_typing{
+    border: none !important;
+    margin-top: 6px;
+    width: 220px;
+    float: left;
+}
+.green_cycle{
+    
+}
