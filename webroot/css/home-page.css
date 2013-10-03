@@ -73,6 +73,7 @@ ul.menu li.active{
 
 ul.menu li.item_active, ul.menu li.item_active ul.sub_menu li.inner_active{
     background:#E1472F;
+    text-decoration: none;
 }
 
 ul.menu li.active a, ul.menu li.item_active a{
@@ -92,6 +93,7 @@ ul.menu li.active a span, ul.menu li.item_active a span, ul.menu li.item_active 
 
 ul.menu li.active a:hover, ul.menu li.active a, ul.menu li.item_active a, ul.menu li.item_active ul.sub_menu li.inner_active a{
     color: #fff;
+    text-decoration: none;
 }
 
 ul.menu li ul.sub_menu{
