@@ -956,10 +956,10 @@ if (($i - 1) % 3 != 0) {
     
     $(".green_cycle").live('click', function() {
 
-      $(this).closest('.grid_se_section').find(".missmatch_popup").css('display', 'block');
-      if($(this).closest('.missmatch_popup_input').find('input').val()!=='') {
-            var im_data_id = $(this).data('value');
-            var aaa = $.post(base_url + 'index.php/measure/give_model_from_missmatch_div', {group_id: group_id, im_data_id: im_data_id}, 'json').done(function(data) {
+           if($(this).closest('.missmatch_section').find('.missmatch_popup_input input').val()!=='') {
+            var im_data_id = $(this).closest('.c').find('.mismatch_image').data('value');
+            var model = $(this).closest('.missmatch_popup_input').find('input').val();
+            var aaa = $.post(base_url + 'index.php/measure/give_model_from_missmatch_div', {model: model, im_data_id: im_data_id}, 'json').done(function(data) {
             $(this).closest('.grid_se_section').hide();
         });
       }

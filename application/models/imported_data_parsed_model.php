@@ -2452,6 +2452,14 @@ class Imported_data_parsed_model extends CI_Model {
             $this->db->update($this->tables['imported_data_parsed'], $update_object);
         }
     }
+    
+    function give_model_from_missmatch_div($im_id, $model){
+        $update_object = array(
+                'model' => $model,
+            );
+            $this->db->where('imported_data_id', $im_id);
+            $this->db->update($this->tables['imported_data_parsed'], $update_object);
+    }
 
 }
 

@@ -1923,10 +1923,9 @@ class Measure extends MY_Controller {
 
     public function report_mismatch() {
 
-        $group_id = $this->input->post('group_id');
         $im_data_id = $this->input->post('im_data_id');
-        $this->load->model('similar_data_model');
-        $this->similar_data_model->update($group_id, $im_data_id, 1);
+        $this->load->model('imported_data_parsed_model');
+        $this->imported_data_parsed_model->report_missamtch($im_data_id);
         $this->output->set_content_type('application/json')->set_output(json_encode("aaaaaaaa"));
     }
 
@@ -2234,55 +2233,56 @@ class Measure extends MY_Controller {
 
                 $data['mismatch_button'] = true;
                 
-               // if ($model=$this->imported_data_parsed_model->check_if_exists_custom_model($im_data_id)) {
+               if ($model=$this->imported_data_parsed_model->check_if_exists_custom_model($im_data_id)) {
                    
-                     //$same_pr = $this->imported_data_parsed_model->get_by_custom_model($model,$im_data_id);
-                     if (!$this->similar_product_groups_model->checkIfgroupExists($im_data_id)) {
-
-                    if (!isset($data_import['parsed_attributes'])) {
-
-                        $same_pr = $this->imported_data_parsed_model->getByProductName($im_data_id, $data_import['product_name'], '', $strict);
-                    }
-                    if (isset($data_import['parsed_attributes'])) {
-
-                        $same_pr = $this->imported_data_parsed_model->getByProductName($im_data_id, $data_import['product_name'], $data_import['parsed_attributes']['manufacturer'], $strict);
-                    }
+                     $same_pr = $this->imported_data_parsed_model->get_by_custom_model($model,$im_data_id);
+//                     if (!$this->similar_product_groups_model->checkIfgroupExists($im_data_id)) {
+//
+//                    if (!isset($data_import['parsed_attributes'])) {
+//
+//                        $same_pr = $this->imported_data_parsed_model->getByProductName($im_data_id, $data_import['product_name'], '', $strict);
+//                    }
+//                    if (isset($data_import['parsed_attributes'])) {
+//
+//                        $same_pr = $this->imported_data_parsed_model->getByProductName($im_data_id, $data_import['product_name'], $data_import['parsed_attributes']['manufacturer'], $strict);
+//                    }
+               }
                 } else {
                     
-                      //$this->imported_data_parsed_model->getByProductNameNew($im_data_id, $data_import['product_name'], '', $strict);
-                    $this->load->model('similar_imported_data_model');
-                    $customers_list = array();
-                    $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('sites');
-                    $query_cus_res = $query_cus->result();
-                    if (count($query_cus_res) > 0) {
-                        foreach ($query_cus_res as $key => $value) {
-                            $n = parse_url($value->url);
-                            $customers_list[] = $n['host'];
-                        }
-                    }
-                    $customers_list = array_unique($customers_list);
-                    $rows = $this->similar_data_model->getByGroupId($im_data_id);
-                    $data_similar = array();
-
-                    foreach ($rows as $key => $row) {
-                        $data_similar[$key] = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
-                        $data_similar[$key]['imported_data_id'] = $row->imported_data_id;
-
-                        $cus_val = "";
-                        foreach ($customers_list as $ki => $vi) {
-                            if (strpos($data_similar[$key]['url'], "$vi") !== false) {
-                                $cus_val = $vi;
-                            }
-                        }
-
-                        if ($cus_val !== "")
-                            $data_similar[$key]['customer'] = $cus_val;
-                    }
-
-                    if (!empty($data_similar)) {
-                        $same_pr = $data_similar;
-                    }
-                }
+                    $this->imported_data_parsed_model->getByProductNameNew($im_data_id, $data_import['product_name'], '', $strict);
+//                    $this->load->model('similar_imported_data_model');
+//                    $customers_list = array();
+//                    $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('sites');
+//                    $query_cus_res = $query_cus->result();
+//                    if (count($query_cus_res) > 0) {
+//                        foreach ($query_cus_res as $key => $value) {
+//                            $n = parse_url($value->url);
+//                            $customers_list[] = $n['host'];
+//                        }
+//                    }
+//                    $customers_list = array_unique($customers_list);
+//                    $rows = $this->similar_data_model->getByGroupId($im_data_id);
+//                    $data_similar = array();
+//
+//                    foreach ($rows as $key => $row) {
+//                        $data_similar[$key] = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
+//                        $data_similar[$key]['imported_data_id'] = $row->imported_data_id;
+//
+//                        $cus_val = "";
+//                        foreach ($customers_list as $ki => $vi) {
+//                            if (strpos($data_similar[$key]['url'], "$vi") !== false) {
+//                                $cus_val = $vi;
+//                            }
+//                        }
+//
+//                        if ($cus_val !== "")
+//                            $data_similar[$key]['customer'] = $cus_val;
+//                    }
+//
+//                    if (!empty($data_similar)) {
+//                        $same_pr = $data_similar;
+//                    }
+//                }
             }
             // get similar for first row
             $this->load->model('similar_imported_data_model');
@@ -3329,7 +3329,10 @@ class Measure extends MY_Controller {
         return substr_count($desc, $phrase);
     }
     public function give_model_from_missmatch_div(){
-        
+        $this->load->model('imported_data_parsed_model');
+        $im_id= $this->input->post('im_data_id');
+        $model = $this->input->post('model');
+        $this->imported_data_parsed_model->give_model_from_missmatch_div($im_id, $model);
     }
 
 }
