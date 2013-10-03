@@ -76,8 +76,13 @@ ul.menu li.active a{
     padding: 0;
 }
 
+ul.menu li:first-child a{
+    margin-top:22px;
+}
+
 ul.menu li.active a span{
     border-bottom: 1px dotted #FFFFFF;
+    padding-bottom: 2px;
 }
 
 ul.menu li.active a:hover, ul.menu li.active a{
