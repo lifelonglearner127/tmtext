@@ -71,7 +71,10 @@ ul.menu li.active{
 }
 
 ul.menu li.active a{
-    background:url("../img/bottom_back.jpg") center bottom no-repeat;
+    border-bottom: 1px dotted #FFFFFF;
+    margin-left: 12px;
+    margin-right: 12px;
+    padding: 0;
 }
 
 ul.menu li.active a:hover, ul.menu li.active a{
