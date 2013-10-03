@@ -1758,7 +1758,7 @@ class Imported_data_parsed_model extends CI_Model {
             }
             $groups[$im_data_id]['ids'][] = $im_data_id;
         }
-        
+        echo "<pre>";
         print_r($groups);
         foreach ($groups as $im_data_id => $val) {
             foreach ($val['ids'] as $id) {
