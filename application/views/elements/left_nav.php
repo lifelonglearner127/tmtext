@@ -20,7 +20,7 @@ $menu = array(
 
 ?>
 <?php if (!empty($menu)) {?>
-<ul class="menu">
+<ul class="left_nav_content menu ">
 <?php foreach ($menu as $item) {?>
 					<?php if($this->ion_auth->check_user_permission($item['controller'])){ ?>
 					<li<?php echo ($this->router->class==$item['controller']) ? " class=\"active\"":"";?>><a class="jq-<?=$item['controller']?>" href="<?php echo site_url($item['controller']);?>"><?php echo $item['name'];?></a></li>
