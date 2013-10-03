@@ -2065,7 +2065,7 @@ class Imported_data_parsed_model extends CI_Model {
         }
 
         $urls = array($this->get_base_url($selected_url));
-        print_r($data['179']);
+        
         foreach ($data as $key => $val1) {
             if (!isset($val1['product_name'])) {
                 continue;
