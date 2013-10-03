@@ -64,13 +64,18 @@ ul.menu li a{
     padding: 0 12px;
     font-family: 'Open Sans', arial, serif;
     font-weight: bold;
+    text-transform: uppercase;
 }
 
 ul.menu li.active{
     background:#E1472F;
 }
 
-ul.menu li.active a{
+ul.menu li.item_active, ul.menu li.item_active ul.sub_menu li.inner_active{
+    background:#E1472F;
+}
+
+ul.menu li.active a, ul.menu li.item_active a{
     margin-left: 12px;
     margin-right: 12px;
     padding: 0;
@@ -80,13 +85,60 @@ ul.menu li:first-child a{
     margin-top:22px;
 }
 
-ul.menu li.active a span{
+ul.menu li.active a span, ul.menu li.item_active a span, ul.menu li.item_active ul.sub_menu li.inner_active a span{
     border-bottom: 1px dotted #FFFFFF;
     padding-bottom: 2px;
 }
 
-ul.menu li.active a:hover, ul.menu li.active a{
+ul.menu li.active a:hover, ul.menu li.active a, ul.menu li.item_active a, ul.menu li.item_active ul.sub_menu li.inner_active a{
     color: #fff;
+}
+
+ul.menu li ul.sub_menu{
+    display: none;
+    background-color: #fff;
+    z-index: 9999;
+    position: relative;
+    padding: 0;
+    margin: 0;
+    -webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+    -moz-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+    margin-top: 35px;
+}
+ul.menu li ul.sub_menu li:first-child{
+    height: 40px;
+}
+
+ul.menu li ul.sub_menu li:first-child a{
+    padding-top: 10px;
+    display: block;
+}
+
+ul.menu li ul.sub_menu li{
+    display: block;
+    float: none;
+    overflow: visible;
+    z-index: 9999;
+    position: relative;
+    border: none;
+    background: #fff;
+    height: 40px;
+    text-transform: uppercase;
+    margin: 0px;
+    border-bottom: 1px solid #ccc;
+}
+
+ul.menu li ul.sub_menu li a{
+    color:#686868;
+    text-align: center;
+    padding-top:10px;
+    display: inherit;
+    font-size: 12px;
+    font-family: 'Open Sans', arial, serif;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin: 0px;
 }
 
 .below-nav {
