@@ -47,7 +47,7 @@ class Auth extends MY_Controller {
 		}
 		elseif (!$this->ion_auth->is_admin())
 		{
-			//redirect them to the home page because they must be an administrator to view this
+            //redirect them to the home page because they must be an administrator to view this
 			redirect('/', 'refresh');
 		}
 		else
@@ -211,7 +211,7 @@ class Auth extends MY_Controller {
 
 		if ($this->form_validation->run() == true)
 		{
-			//check to see if the user is logging in
+            //check to see if the user is logging in
 			//check for "remember me"
 			$remember = (bool) $this->input->post('remember');
 

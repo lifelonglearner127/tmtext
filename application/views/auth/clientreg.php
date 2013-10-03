@@ -128,7 +128,7 @@
 					};
 					$.post(clRegBaseUrl, obj, 'json').done(function(data) {
 						fullFormReset();
-						if(data) location.href = base_url + 'index.php/research/index';
+						if(data) location.href = base_url + 'index.php/measure/index';
 				    });
 				} else {
 					$('#email_error').text('that email already exists');
