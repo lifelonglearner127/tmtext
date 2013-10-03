@@ -101,12 +101,38 @@ class WalmartSpider(BaseSpider):
 
         # Extract description title, text, wordcount, and keyword density (if any)
 
-        description_holder = hxs.select("//div[@id='detailedPageDescriptionCopyBlock'] | //div[@class='CustomPOV ReminderBubbleSeeAll']")
+
+        ###########################################
+        #TODO:
+        # Exceptions: 
+        #   http://www.walmart.com/cp/5431?povid=cat1078944-env506746-moduleA030213-lLinkLHNRelatedCategories2Pharmacy - finds wrong title (also wrong description holder - too high level)
+        #   http://www.walmart.com/cp/1102793?povid=cat1094926-env999999-moduleA030713-lLinkLHNLearnmoreAbouttheprogram - finds description, actually no description, CustomPOV... with large text inside, hard to fix
+        #   http://brands.walmart.com/fishing/essential-rods-and-reels/ - finds description, actually no description. Just an element with much text
+        #   http://brands.walmart.com/fishing/get-salty-with-your-bass-skills/ - finds description, actually no description. Just an element with much text
+        #   http://instoresnow.walmart.com/article.aspx?Center=Pets&id=104225 - finds description, actually no description. Just an element with much text
+        #   http://brands.walmart.com/fishing/turn-a-kid-on-to-flyfishing/ - finds description, actually no description. Just an element with much text
+        #   http://www.walmart.com/cp/1094926?povid=cat121828-env999999-moduleA030713-lLinkGNAV1_Campaign_EmpoweringWomenTogether - finds description, actually no description. Just an element with much text
+        #   http://www.walmart.com/ip/Straight-Talk-Samsung-Galaxy-S-III/23573710?povid=cat1105910-env542259-moduleA092613-lLinkLHNWhatsNewSamsungSIIIStraightTalk - finds description, actually no description. Just an element with much text
+        #   http://www.walmart.com/cp/Bakery/120764 - finds description, actually no description. Just an element with much text, also title problem
+        #   http://www.walmart.com/cp/1078665 - not a description, also imperfect title extraction
+        #   http://www.walmart.com/cp/1101244?povid=cat1100706-env999999-module122012-LHN_HealthyLivingTips - wrong title extraction, extracts too much as a description holder
+        #   http://www.walmart.com/cp/flexible-spending-account/555326 - finds description though no description, just large text (also bad title extraction)
+
+
+        # Idea for excluding elements with much text that are false positives: check if element is composed of many sibling paragraphs or so
+        ###########################################
+
+        # first search for the description id they usually use,
+        # second one is used more rarely and also with some false positives so needs to be checked for text length as well
+        description_holder = hxs.select("//div[@id='detailedPageDescriptionCopyBlock'] \
+            | //div[@class='CustomPOV ReminderBubbleSeeAll']//p/text()[string-length() > " + str(DESC_LEN) + "]/parent::*/parent::*")
 
         # if none was found, try to find an element with much text (> DESC_LEN (200) characters)
         # this is gonna pe a paragraph in the description, look for its parent (containing the entire description)
         if not description_holder:
             #description_holder = hxs.select("//*[not(self::script or self::style)]/text()[string-length() > " + str(DESC_LEN) + "]/parent::*/parent::*")
+            #TODO: !!does this mean string length for one paragraph is > DESC_LEN, or string length for entinre text content?
+            # I think it means entire text content. We're ok
             description_holder = hxs.select("//p/text()[string-length() > " + str(DESC_LEN) + "]/parent::*/parent::*")
 
         # select element among these with most text
@@ -134,8 +160,7 @@ class WalmartSpider(BaseSpider):
         # if it's not found, try to find it in the first <p> if the description
         # if found there, exclude it from the description body
         if description_holder:
-            description_title = description_holder.select(".//b/text() | .//h1/text() | .//strong/text()").extract()
-            #description_title = description_holder.select(".//b/text()").extract()
+            description_title = description_holder.select(".//b/text() | .//h1/text() | .//h3/text() | .//strong/text() ").extract()
             if description_title:
                 # this will implicitly get thle first occurence of either a <b> element or an <h1> element,
                 # which is likely to be the title (the title usually comes first)
