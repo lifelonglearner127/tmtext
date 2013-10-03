@@ -396,33 +396,33 @@ function sendRecipientCategorySnapsReport(email) {
 	});
 }
 
-function viewRecipientsListCats() {
-//        $( ".left_nav_content li a, .right_nav_content li a" ).trigger( "click" );
-        getCustomerDropdown();
-	if($("#dep_rep_preview_list_modal").is(":visible")) {
-		$("#dep_rep_preview_list_modal").modal('hide');
-	}
-	$("#recipients_control_panel_modal").modal('show').css({
-                width: $(window).width() * 70 / 100,
-                height: '60%',
-                left: '50%',
-                'margin-left': function() {
-                    return -($(window).width() * 70 / 200);
-                }});
-	var rec = $.post(base_url + 'index.php/batches/index', {}, function(data) {
-		$("#recipients_control_panel_modal").html(data);
-	});
-}
-
 // function viewRecipientsListCats() {
+// //        $( ".left_nav_content li a, .right_nav_content li a" ).trigger( "click" );
+//         getCustomerDropdown();
 // 	if($("#dep_rep_preview_list_modal").is(":visible")) {
 // 		$("#dep_rep_preview_list_modal").modal('hide');
 // 	}
-// 	$("#recipients_control_panel_modal").modal('show');
-// 	var rec = $.post(base_url + 'index.php/measure/get_emails_reports_recipient_cat', {}, function(data) {
+// 	$("#recipients_control_panel_modal").modal('show').css({
+//                 width: $(window).width() * 70 / 100,
+//                 height: '60%',
+//                 left: '50%',
+//                 'margin-left': function() {
+//                     return -($(window).width() * 70 / 200);
+//                 }});
+// 	var rec = $.post(base_url + 'index.php/batches/index', {}, function(data) {
 // 		$("#recipients_control_panel_modal").html(data);
 // 	});
 // }
+
+function viewRecipientsListCats() {
+	if($("#dep_rep_preview_list_modal").is(":visible")) {
+		$("#dep_rep_preview_list_modal").modal('hide');
+	}
+	$("#recipients_control_panel_modal").modal('show');
+	var rec = $.post(base_url + 'index.php/measure/get_emails_reports_recipient_cat', {}, function(data) {
+		$("#recipients_control_panel_modal").html(data);
+	});
+}
 
 function viewRecipientsList() {
 	if($("#dep_rep_preview_list_modal").is(":visible")) {
