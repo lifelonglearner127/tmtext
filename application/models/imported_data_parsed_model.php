@@ -1640,8 +1640,8 @@ class Imported_data_parsed_model extends CI_Model {
                 ->limit(50);
         $query = $this->db->get();
         $for_group_ids = $query->result_array();
-       echo "<pre>";
-       print_r($for_group_ids);
+//       echo "<pre>";
+//       print_r($for_group_ids);
        if(count($for_group_ids)==0){
            return false;
        }
