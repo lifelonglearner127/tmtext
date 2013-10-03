@@ -101,7 +101,8 @@
 			</select>
 			<button id='snap_selected_batch' onclick="submitBatchSnapProcess()" disabled class='btn btn-success new_btn mt_15 ml_10'>Snap</button>
 			<button id="crawl_batch" class="btn new_btn btn-success mt_15 ml_10">Crawl</button>
-            <input type="text" class="span3 pull-left mt_15 ml_10" name="search_crawl_data" >
+			<button id="re_crawl_batch" class="btn new_btn btn-success mt_15 ml_10">Re-Crawl</button>
+            <input type="text" class="span2 pull-left mt_15 ml_10" name="search_crawl_data" >
             <button id="apply_search_data" class="btn new_btn btn-success mt_15 ml_10"><i class="icon-white icon-ok"></i>&nbsp;Apply</button>
             <button id="clear_search_data" class="btn new_btn btn-success mt_15 ml_10"><i class="icon-white icon-ok"></i>&nbsp;Clear</button>
 
@@ -473,6 +474,12 @@ $(function () {
 
 	$(document).on("click", "button#crawl_batch", function(){
 		$.post('<?php echo site_url('site_crawler/crawl_all');?>', {batch_id: $('#batches option:selected').val() }, function(data) {
+			loadCurrentList();
+		});
+	});
+
+	$(document).on("click", "button#re_crawl_batch", function(){
+		$.post('<?php echo site_url('site_crawler/crawl_all');?>', {recrawl: 1, batch_id: $('#batches option:selected').val() }, function(data) {
 			loadCurrentList();
 		});
 	});
