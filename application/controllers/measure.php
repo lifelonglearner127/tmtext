@@ -3328,5 +3328,8 @@ class Measure extends MY_Controller {
         $desc= strip_tags($desc);
         return substr_count($desc, $phrase);
     }
+    public function give_model_from_missmatch_div(){
+        
+    }
 
 }

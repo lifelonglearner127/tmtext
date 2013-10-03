@@ -937,11 +937,40 @@ if (($i - 1) % 3 != 0) {
 
  $(document).ready(function(){
      $(".missmatch_popup_input").css('display','none');
+     
+      $(".grid_se_section").live('mouseout', function() {
+
+      //$(this).find(".missmatch_popup_input").css('display', 'none');
+
+     });
+    
+     $(".mismatch_image").live('mouseover', function() {
+
+      $(this).closest('.grid_se_section').find(".missmatch_popup").css('display', 'block');
+//       $(this).closest('.grid_se_section').hide();
+//        var im_data_id = $(this).data('value');
+//        var aaa = $.post(base_url + 'index.php/measure/report_mismatch', {group_id: group_id, im_data_id: im_data_id}, 'json').done(function(data) {
+
+//        });
+    });
+    
+    $(".green_cycle").live('click', function() {
+
+      $(this).closest('.grid_se_section').find(".missmatch_popup").css('display', 'block');
+      if($(this).closest('.missmatch_popup_input').find('input').val()!=='') {
+            var im_data_id = $(this).data('value');
+            var aaa = $.post(base_url + 'index.php/measure/give_model_from_missmatch_div', {group_id: group_id, im_data_id: im_data_id}, 'json').done(function(data) {
+            $(this).closest('.grid_se_section').hide();
+        });
+      }
+       
+        
+    });
      $('.second_line2').mouseover(function(){
-         $(".missmatch_popup_input").css('display','block');
+          $(this).closest('.grid_se_section').find(".missmatch_popup_input").css('display','block');
      });
      $(".close_btn_15").on('click',function(){
-         $(".missmatch_popup_input").css('display','none');
+         $(this).closest('.grid_se_section').find(".missmatch_popup_input").css('display','none');
      });
     $(".grid_se_section .c_content").scroll(function(){
 
@@ -1004,14 +1033,9 @@ if (($i - 1) % 3 != 0) {
 
     });
    
-   $(".mismatch_image").live('mouseover', function() {
-
-        $(".missmatch_popup").css('display', 'block');
-
-    });
-
+  
     $(".missmatch_section").live('mouseleave', function() {
-        $(".missmatch_popup").css('display', 'none');
+        $(this).closest('.grid_se_section').find(".missmatch_popup").css('display', 'none');
     });
 // Maxik
     $(".primary").css('display', 'none');

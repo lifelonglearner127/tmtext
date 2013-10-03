@@ -1894,6 +1894,9 @@ select#sites option{
     width: 19px !important;
     height: 19px;
     opacity:0.5;
+    margin-right: 0px;
+    left:0px;
+    
 }
 .mismatch_image:hover{
     cursor:pointer;
@@ -2075,11 +2078,12 @@ span.highlight { background-color:yellow;}
     border: 1px solid #606C5E;
     border-radius: 15px;
     position: absolute;
-    right: 1px;
+    margin-left: 110px;
     overflow: hidden;
     width: 171px;
     background: white;
     padding-top: 6px;
+    font-size: 12px;
 }
 .first_line{
     position: relative;
@@ -2289,11 +2293,12 @@ body.login_block{
 .missmatch_popup_input{
     display: block;
     background: aliceblue;
-    position: relative;
-    top: 97px;
+    position: absolute;
+    top: 102px;
+    right:3px;
     border: 1px solid #606C5E;
     border-radius: 10px;
-    overflow: hidden;
+  
 }
 .close_btn_15{
     margin-left: 3px;
