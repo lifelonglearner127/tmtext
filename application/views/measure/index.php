@@ -4,8 +4,8 @@ jQuery(document).ready(function($) {
 
 });
     $('#grid_sw_grid').click(function(){
-        $('#shadow').css('display','block');
-        $('#drop_cat').css('display','block');
+        //$('#shadow').css('display','block');
+        //$('#drop_cat').css('display','block');
         //$('.drop_cat').css('display','block');
         switchToGridView();
     });
@@ -18,22 +18,22 @@ jQuery(document).ready(function($) {
 </script>
 <div class="main_content_other"></div>
 <div class="tabbable">
-
+    <h2> Competitive Research
+        <span>
+            <a href="#myModal" style="float:right; "role="button"  data-toggle="modal"><img  style="width:30px; heihgt: 30px;"src ="<?php echo base_url() ?>/img/ico-gear.png"></a>
+            <button class='btn' style="float:right;" onclick="switchToListView();" id='grid_sw_list' type='button'><i class="icon-th-list"></i>&nbsp;SEO</button>
+            <button style="float:right;" class='btn' id='grid_sw_grid' type='button'><i class="icon-th-large"></i>&nbsp;COMPARISION</button>
+        </span>
+    </h2>
     <div class="tab-content">
         <div class="measure-products">
             <div class="row-fluid mb_20">
                 <div class="span6">
 
                     <div id="product_customers" class="customer_dropdown"></div>
-                 
                     <?php  echo form_dropdown('product_batches_hidden', $batches_list, array(), 'class="mt_10 mr_10" id="batchess_hidden" style="width: 145px; display: none;"');//max ?>
                     <?php  echo form_dropdown('product_batches', $batches_list, array(), 'class="mt_10 mr_10" id="batchess" style="width: 145px;"');//max ?>
                     <span class="product_batches_items"></span>
-                </div>
-                <div style="width: 399px;float: right;padding-top: 10px;">
-                    <a href="#myModal" style="float:right; "role="button"  data-toggle="modal"><img  style="width:30px; heihgt: 30px;"src ="<?php echo base_url() ?>/img/ico-gear.png"></a>
-                    <button class='btn' style="margin-right: 9px;float:right;" onclick="switchToListView();" id='grid_sw_list' type='button'><i class="icon-th-list"></i>&nbsp;SEO</button>
-                    <button style="margin-right: 9px;float:right;" class='btn' id='grid_sw_grid' type='button'><i class="icon-th-large"></i>&nbsp;Comparison</button>
                 </div>
                
                     
@@ -243,7 +243,7 @@ $(document).ready(function(){
                     <?php } ?>
                 </select-->
                 <!--?php  echo form_dropdown('cats_an', $departmens_list, null, 'id="cat_an" class="inline_block lh_30 w_375 mb_reset" style="width:135px!important"'); ?-->
-                <button type="submit" id="an_search" style="float:left;" onclick="return startMeasureCompareV2()" class="btn btn-success pull-right">Search</button>
+                <button type="submit" id="an_search" style="float:left;" onclick="return startMeasureCompareV2()" class="btn btn-search pull-right">SEARCH</button>
                 <!-- <button type="submit" id="an_search" class="btn btn-success pull-right">Search</button> -->
             <?php // echo form_close();?>
             </form>
