@@ -9,13 +9,13 @@
 
 $menu = array(
 //    array('controller' => 'batches', 'name' => 'Batches'),
-    array('controller' => 'measure', 'name' => 'Competitive Research'),
-    array('controller' => 'assess', 'name' => 'Reports'),
-    array('controller' => 'research', 'name' => 'Edit'),
-    array('controller' => 'brand', 'name' => 'Social'),
+    array('controller' => 'measure', 'name' => 'COMPETITIVE RESEARCH'),
+    array('controller' => 'assess', 'name' => 'REPORTS'),
+    array('controller' => 'research', 'name' => 'EDIT'),
+    array('controller' => 'brand', 'name' => 'SOCIAL'),
     //array('controller' => 'editor', 'name' => 'Create'),
     //array('controller' => 'validate', 'name' => 'Validate'),
-	array('controller' => 'customer', 'name' => 'Settings'),
+	array('controller' => 'customer', 'name' => 'SETTINGS'),
 );
 
 ?>
