@@ -1893,12 +1893,28 @@ class Measure extends MY_Controller {
             return $dubl_arr;
         }
     }
+    
+    public function model_to_all_columns(){
+        $this->load->model('imported_data_parsed_model');
+        
+        $this->imported_data_parsed_model->change_model();
+    }
 
     public function similar_groups() {
 
         $this->load->model('imported_data_parsed_model');
         
-        $this->imported_data_parsed_model->similiarity_cron();
+        $this->imported_data_parsed_model->similiarity_cron_new();
+        if($this->imported_data_parsed_model->similiarity_cron_new()){
+            shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/measure/similar_groups > /dev/null 2>/dev/null &");
+        }else{
+             $data = array(
+                'description' => 0
+            );
+
+            $this->db->where('key', 'custom_model_offset');
+            $this->db->update('settings', $data);
+        }
         
     }
 
@@ -2214,7 +2230,11 @@ class Measure extends MY_Controller {
                // $this->imported_data_parsed_model->getByProductNameNew($im_data_id, $data_import['product_name'], '', $strict);
 
                 $data['mismatch_button'] = true;
-                if (!$this->similar_product_groups_model->checkIfgroupExists($im_data_id)) {
+                
+               // if ($model=$this->imported_data_parsed_model->check_if_exists_custom_model($im_data_id)) {
+                   
+                     //$same_pr = $this->imported_data_parsed_model->get_by_custom_model($model,$im_data_id);
+                     if (!$this->similar_product_groups_model->checkIfgroupExists($im_data_id)) {
 
                     if (!isset($data_import['parsed_attributes'])) {
 
@@ -2225,6 +2245,8 @@ class Measure extends MY_Controller {
                         $same_pr = $this->imported_data_parsed_model->getByProductName($im_data_id, $data_import['product_name'], $data_import['parsed_attributes']['manufacturer'], $strict);
                     }
                 } else {
+                    
+                      //$this->imported_data_parsed_model->getByProductNameNew($im_data_id, $data_import['product_name'], '', $strict);
                     $this->load->model('similar_imported_data_model');
                     $customers_list = array();
                     $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('sites');
