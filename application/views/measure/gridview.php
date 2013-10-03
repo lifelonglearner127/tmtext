@@ -111,8 +111,12 @@ foreach ($same_pr as $ks => $vs) {
     <?php if ($ks > 0 && $mismatch_button == true) { ?>
                             <input data-value="<?php echo $vs['imported_data_id']; ?>"class="mismatch_image" style="float: right; margin-top: 0;position: relative;z-index: 200;" type="button" value="" title="">
                             <div class='missmatch_popup'style="display: none;">
-                             <span class="first_line">Mark as incorrect match  </span><br/>
+                             <span class="first_line">Mark as incorrect match  </span>
                              <span class="second_line">Enter URL of match... </span>
+                             <span class="second_line2">Enter model of match... </span>
+                            </div>
+                            <div class="missmatch_popup_input">
+                                <input type="text" name="missmatch_input" value=''/>
                             </div>
                         <?php }
 

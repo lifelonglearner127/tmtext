@@ -597,6 +597,7 @@ span[class*="hilite"] { background: yellow; }
     padding: 5px;
     margin-left: 3px;
     overflow: hidden;
+    position:relative;
 }
 #compet_area_grid .grid_se_section .c .preloader_grids_box {
     display: block;
@@ -2072,35 +2073,34 @@ span.highlight { background-color:yellow;}
 }
 .missmatch_popup{
     border: 1px solid #606C5E;
-   
     border-radius: 15px;
     position: absolute;
-    left: 58%;
+    right: 1px;
     overflow: hidden;
+    width: 171px;
     background: white;
+    padding-top: 6px;
 }
 .first_line{
-    
-    padding-left: 32px;
-    padding-right: 9px;
-    padding-top: 7px;
-    padding-bottom: 7px;
     position: relative;
     z-index: 1;
+    padding:7px 22px 7px 6px;
 }
 .second_line{
-    background: url("../img/magnifying_glass.png") 11px 3px no-repeat;
-    padding-left: 32px;
-    padding-right: 9px;
-    padding-top: 2px;
-    padding-bottom: 4px;
+    background: url("../img/magnifying_glass.png") 147px 9px no-repeat;
     display: block;
-    margin-top: 7px;
-    margin-bottom: -1px;
+    padding:7px 9px 7px 6px;
+   
 }
-.first_line:hover,.second_line:hover {
+.second_line2{
+    
+   padding:7px 9px 7px 6px;
+   display: block;
+    
+}
+.first_line:hover,.second_line:hover,.second_line2:hover  {
     background-color: #6DAB5A;
-    border: 1px solid #C6C9C6;
+  
     border-radius: 15px;
     cursor:pointer;
 }
@@ -2282,4 +2282,7 @@ span.dep_left_part{
 
 body.login_block{
     background: url('../img/login-back.jpg') repeat-x!important;
+}
+.mismatch_image{
+    margin-top:7px !important;
 }
