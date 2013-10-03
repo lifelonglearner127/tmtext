@@ -1906,6 +1906,7 @@ class Measure extends MY_Controller {
         
         $this->imported_data_parsed_model->similiarity_cron_new();
         if($this->imported_data_parsed_model->similiarity_cron_new()){
+            echo 'call by wget';
             shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/measure/similar_groups > /dev/null 2>/dev/null &");
         }else{
              $data = array(
