@@ -9,7 +9,8 @@ class Research extends MY_Controller {
         $this->load->library('form_validation');
         $this->load->library('helpers');
         $this->data['title'] = 'Research & Edit';
-
+        var_dump($this->ion_auth->logged_in());
+        die('aa');
         if (!$this->ion_auth->logged_in())
         {
             //redirect them to the login page
