@@ -652,17 +652,20 @@ function globalDepDashboard(site_name){
             var tr_height = parseInt(pos);
             $.post(base_url + 'index.php/system/scanForDepartmentSnap', {'dep_id': dep_id}, function(data) {
                     if(data.snap_path != '' && data.snap_path != undefined){
+                        $("span.snap_img").show();
                         $("span.snap_img").html('<img src="'+data.snap_path+'">');
                         $("span.snap_img").offset({'top':pos});
                         $("span.snap_img").parent().parent().css({'height': tr_height});
                     } else {
                         $("span.snap_img").html('');
+                        $("span.snap_img").hide();
                         $("span.snap_img").parent().parent().css({'height': 'auto'});
                     }
             });
         });
         $("tbody#department_data tr td:first-child ul li").on('mouseout', function() {
             $("span.snap_img").html('');
+            $("span.snap_img").hide();
             $("tbody#department_data tr td:first-child ul li").each(function(i){
                 if(i > 0){
                     $(this).css({'background-color':'#fff'});
@@ -684,14 +687,17 @@ function globalDepDashboard(site_name){
                     $("span.snap_img_left").html('<img src="'+data.snap_path+'">');
                     $("span.snap_img_left").offset({'top':pos});
                     $("span.snap_img_left").parent().parent().css({'height': tr_height});
+                    $("span.snap_img_left").show();
                 } else {
                     $("span.snap_img_left").html('');
+                    $("span.snap_img_left").hide();
                     $("span.snap_img_left").parent().parent().css({'height': 'auto'});
                 }
             });
         });
         $("tbody#department_data tr td:nth-child(2) ul li").on('mouseout', function() {
             $("span.snap_img_left").html('');
+            $("span.snap_img_left").hide();
             $("tbody#department_data tr td:nth-child(2) ul li").each(function(i){
                 if(i > 0){
                     $(this).css({'background-color':'#fff'});
@@ -800,14 +806,17 @@ function globalCatDashboard(site_name){
                     $("span.snap_img").html('<img src="'+data.snap_path+'">');
                     $("span.snap_img").offset({'top':pos});
                     $("span.snap_img").parent().parent().css({'height': tr_height});
+                    $("span.snap_img").show();
                 } else {
                     $("span.snap_img").html('');
+                    $("span.snap_img").hide();
                     $("span.snap_img").parent().parent().css({'height': 'auto'});
                 }
             });
         });
         $("tbody#category_data tr td:first-child ul li").on('mouseout', function() {
             $("span.snap_img").html('');
+            $("span.snap_img").hide();
             $("tbody#category_data tr td:first-child ul li").each(function(i){
                 if(i > 0){
                     $(this).css({'background-color':'#fff'});
@@ -830,14 +839,17 @@ function globalCatDashboard(site_name){
                     $("span.snap_img_left").html('<img src="'+data.snap_path+'">');
                     $("span.snap_img_left").offset({'top':pos});
                     $("span.snap_img_left").parent().parent().css({'height': tr_height});
+                    $("span.snap_img_left").show();
                 } else {
                     $("span.snap_img_left").html('');
+                    $("span.snap_img_left").hide();
                     $("span.snap_img_left").parent().parent().css({'height': 'auto'});
                 }
             });
         });
         $("tbody#category_data tr td:nth-child(2) ul li").on('mouseout', function() {
             $("span.snap_img_left").html('');
+            $("span.snap_img_left").hide();
             $("tbody#category_data tr td:nth-child(2) ul li").each(function(i){
                 if(i > 0){
                     $(this).css({'background-color':'#fff'});
@@ -1199,14 +1211,17 @@ function getCatData(site_name, obj, condition, state){
                         $("span.snap_img").html('<img src="'+data.snap_path+'">');
                         $("span.snap_img").offset({'top':pos});
                         $("span.snap_img").parent().parent().css({'height': tr_height});
+                        $("span.snap_img").show();
                     } else {
                         $("span.snap_img").html('');
+                        $("span.snap_img").hide();
                         $("span.snap_img").parent().parent().css({'height': 'auto'});
                     }
                 });
             });
             $("tbody#category_data tr td:first-child ul li").on('mouseout', function() {
                 $("span.snap_img").html('');
+                $("span.snap_img").hide();
                 $("tbody#category_data tr td:first-child ul li").each(function(i){
                     if(i > 0){
                         $(this).css({'background-color':'#fff'});
@@ -1228,14 +1243,17 @@ function getCatData(site_name, obj, condition, state){
                         $("span.snap_img_left").html('<img src="'+data.snap_path+'">');
                         $("span.snap_img_left").offset({'top':pos});
                         $("span.snap_img_left").parent().parent().css({'height': tr_height});
+                        $("span.snap_img_left").show();
                     } else {
                         $("span.snap_img_left").html('');
+                        $("span.snap_img_left").hide();
                         $("span.snap_img_left").parent().parent().css({'height': 'auto'});
                     }
                 });
             });
             $("tbody#category_data tr td:nth-child(2) ul li").on('mouseout', function() {
                 $("span.snap_img_left").html('');
+                $("span.snap_img_left").hide();
                 $("tbody#category_data tr td:nth-child(2) ul li").each(function(i){
                     if(i > 0){
                         $(this).css({'background-color':'#fff'});
