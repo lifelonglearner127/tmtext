@@ -106,7 +106,8 @@ class WalmartSpider(BaseSpider):
         # if none was found, try to find an element with much text (> DESC_LEN (200) characters)
         # this is gonna pe a paragraph in the description, look for its parent (containing the entire description)
         if not description_holder:
-            description_holder = hxs.select("//*[not(self::script or self::style)]/text()[string-length() > " + str(DESC_LEN) + "]/parent::*/parent::*")
+            #description_holder = hxs.select("//*[not(self::script or self::style)]/text()[string-length() > " + str(DESC_LEN) + "]/parent::*/parent::*")
+            description_holder = hxs.select("//p/text()[string-length() > " + str(DESC_LEN) + "]/parent::*/parent::*")
 
         # select element among these with most text
         if description_holder:
