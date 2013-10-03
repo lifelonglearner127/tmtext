@@ -1,15 +1,20 @@
-<link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/smoothness/jquery-ui-1.8.2.custom.css" />
-<link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/styles.css" />
-        <?php echo form_open("research/save", array("class"=>"form-horizontal", "id"=>"create_batch_save"));?>
-        <div id="batchesDiv">
-            <div class="span12 mb_10">
-                <div class="span11">
-                    Batch:
-                    <div id="customer_dr" class="customer_dropdown"></div>
-                  
-                    <?php echo form_dropdown('batches', $batches_list, array(), ' style="width: 145px;margin-left:20px"'); ?>
+<link type="text/css" rel="stylesheet" href="<?php echo base_url(); ?>css/smoothness/jquery-ui-1.8.2.custom.css" />
+<link type="text/css" rel="stylesheet" href="<?php echo base_url(); ?>css/styles.css" />
+<div class="modal-header">
+	<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+	<h3>Custom Batch</h3>
+</div>
+<div class="modal-body">
+    <?php echo form_open("research/save", array("class" => "form-horizontal", "id" => "create_batch_save")); ?>
+    <div id="batchesDiv">
+        <div class="span12 mb_10">
+            <div class="span11">
+                Batch:
+                <div id="customer_dr" class="customer_dropdown"></div>
 
-                    <script>
+                <?php echo form_dropdown('batches', $batches_list, array(), ' style="width: 145px;margin-left:20px"'); ?>
+
+                <script>
                     
                     function doconfirm()
                     {
@@ -67,12 +72,12 @@
             <div class="admin_system_content">
                 <div class="controls span7">
                     <button class="btn btn-success" id="csv_import_create_batch" style="display:none"><i class="icon-white icon-ok"></i>&nbsp;Import</button>
-                                <span class="btn btn-success ml_10 pull-left" style="" onclick="doupload();">Upload<i class="icon-plus icon-white"></i></span>
-								<span class="btn btn-success fileinput-button ml_10 pull-left" style="display: none">
-									Upload
-									<i class="icon-plus icon-white"></i>
-									<input type="file" multiple="" name="files[]" id="fileupload">
-								</span>
+                    <span class="btn btn-success ml_10 pull-left" style="" onclick="doupload();">Upload<i class="icon-plus icon-white"></i></span>
+                    <span class="btn btn-success fileinput-button ml_10 pull-left" style="display: none">
+                        Upload
+                        <i class="icon-plus icon-white"></i>
+                        <input type="file" multiple="" name="files[]" id="fileupload">
+                    </span>
                     <div class="progress progress-success progress-striped span7" id="progress">
                         <div class="bar"></div>
                     </div>
@@ -82,7 +87,7 @@
                 <div class="info ml_10 "></div>
                 <script>
                     $(function () {
-                        var url = '<?php echo site_url('research/upload_csv');?>';
+                        var url = '<?php echo site_url('research/upload_csv'); ?>';
                         $('#fileupload').fileupload({
                             url: url,
                             dataType: 'json',
@@ -106,9 +111,9 @@
                             progressall: function (e, data) {
                                 var progress = parseInt(data.loaded / data.total * 100, 10);
                                 $('#progress .bar').css(
-                                    'width',
-                                    progress + '%'
-                                );
+                                'width',
+                                progress + '%'
+                            );
                                 if (progress == 100) {
 
                                 }
@@ -166,7 +171,7 @@
                         'Rename': function() {
                             $.ajax({
                                 url: base_url + 'index.php/batches/batches_rename',
-//                                dataType : 'json',
+                                //                                dataType : 'json',
                                 type : 'post',
                                 data : {
                                     batch_id : $('#rename_batch_id').val().trim(),
@@ -183,15 +188,16 @@
                 
             });
         </script>
-        <?php echo form_close();?>
-       
-    <div id="rename_batch_dialog" title="Rename batch">
-        <div>
+
+        <div id="rename_batch_dialog" title="Rename batch">
+            <div>
                 <p>
                     <label for="column_category">Batch Name:</label>
                     <input type="hidden" id="rename_batch_id" value="" />
                     <input type="text" id="rename_batch_value" value="" />
                 </p>
+            </div>
         </div>
     </div>
+    <?php echo form_close(); ?>
 </div>
