@@ -585,7 +585,7 @@ $(document).ready(function () {
 
     $(document).on("change", 'select[name="research_batches"]', function() {
         $.post(base_url + 'index.php/research/filterCustomerByBatch', { 'batch': $("select[name='research_batches']").find("option:selected").text()}, function(data){
-            var oDropdown = $("#research_customers").msDropdown().data("dd");
+            var oDropdown = $("#research_customers1").msDropdown().data("dd");
             if(data != ''){
                 oDropdown.setIndexByValue(data);
 
@@ -597,7 +597,7 @@ $(document).ready(function () {
         $('button#research_batches_search').trigger('click');
         //dataTable.fnFilter( $('select[name="research_batches"]').find('option:selected').text(), 7);
     });
-    $('select[name="research_batches"]').trigger('change');
+       $('select[name="research_batches"]').trigger('change');
 
     $(document).on("click", "button#new_batch", function(){
         var oDropdown = $("#customers").msDropdown().data("dd");
