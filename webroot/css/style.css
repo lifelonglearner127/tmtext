@@ -2304,6 +2304,7 @@ span.dep_left_part{
     max-width: 400px;
     float: right;
     border:1px solid #ccc;
+    display: none;
 }
 .desc_show_hide:hover,.desc_show_hide_short:hover,.desc_show_hide_short_w:hover,.desc_show_hide_w:hover,.desc_show_hide_feature:hover{
     cursor: pointer;

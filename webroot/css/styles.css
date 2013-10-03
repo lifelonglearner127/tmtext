@@ -606,6 +606,7 @@ span.highlight{
     float: left;
     border:1px solid #ccc;
     border:1px solid #ccc;
+    display: none;
 }
 .url_table .active_link {
     font-weight: normal !important;
