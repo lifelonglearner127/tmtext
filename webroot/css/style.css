@@ -2365,4 +2365,10 @@ body.login_block{
 #assess_view{
     border: 1px solid #ccc;
     padding: 10px;
+    overflow: hidden;
+}
+
+#assess_view .board_item{
+    width:177px;
+    height:177px;
 }
