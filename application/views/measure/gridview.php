@@ -119,7 +119,7 @@ foreach ($same_pr as $ks => $vs) {
                             </div>
                             <div class="missmatch_popup_input">
                                 <img class='close_btn_15' src="<?php echo base_url() ?>/img/15.png">
-                                <input class='for_typing' type="text" name="missmatch_input" value=''/>
+                                <input placeholder="Enter model" class='for_typing' type="text" name="missmatch_input" value=''/>
                                 <img class='green_cycle' src="<?php echo base_url() ?>/img/assess_grid/check_circle_green.png">
                             </div>
                             </div>
@@ -127,7 +127,22 @@ foreach ($same_pr as $ks => $vs) {
 
                     if ($ks ==0 && $mismatch_button == true) { ?>
                             <input data-value="<?php echo $vs['imported_data_id']; ?>"class="missmatch_first" style="float: right; margin-top: 0;" type="button" value="" title="Report mismatch">
-                        <?php }
+                            <div class='missmatch_section missmatch_section_first'>
+                            <div class='missmatch_popup'style="display: none;">
+                             
+                             <span class="second_line">Enter URL of match... </span>
+                             <?php if(!isset($vs['parsed_attributes']['model'])){ ?>
+                             <span class="first_line">Give new unique model  </span>
+                             <span class="second_line2">Enter new model ... </span>
+                             <?php } ?>
+                            </div>
+                            <div class="missmatch_popup_input">
+                                <img class='close_btn_15' src="<?php echo base_url() ?>/img/15.png">
+                                <input placeholder="Enter model" class='for_typing' type="text" name="missmatch_input" value=''/>
+                                <img class='green_cycle_first' src="<?php echo base_url() ?>/img/assess_grid/check_circle_green.png">
+                            </div>
+                            </div>
+                         <?php }
 
                         ?>
                         <span class='analysis_content_head'>URL:</span>
@@ -954,6 +969,15 @@ if (($i - 1) % 3 != 0) {
 
 //        });
     });
+    $(".missmatch_first").live('mouseover', function() {
+
+      $(this).closest('.grid_se_section').find(".missmatch_popup").css('display', 'block');
+//       $(this).closest('.grid_se_section').hide();
+//        var im_data_id = $(this).data('value');
+//        var aaa = $.post(base_url + 'index.php/measure/report_mismatch', {group_id: group_id, im_data_id: im_data_id}, 'json').done(function(data) {
+
+//        });
+    });
     
     $(".green_cycle").live('click', function() {
 
@@ -965,6 +989,21 @@ if (($i - 1) % 3 != 0) {
         });
       }
        
+        
+    });
+    
+    $(".green_cycle_first").live('click', function() {
+
+           if($(this).closest('.missmatch_section').find('.missmatch_popup_input input').val()!=='') {
+            var im_data_id = $(this).closest('.c').find('.mismatch_image').data('value');
+            var model = $(this).closest('.missmatch_popup_input').find('input').val();
+            var aaa = $.post(base_url + 'index.php/measure/give_model_from_missmatch_div', {model: model, im_data_id: im_data_id}, 'json').done(function(data) {
+            
+        });
+        $("#products li[data-status='selected']").trigger('click');
+      }
+    
+    
         
     });
      $('.second_line2').mouseover(function(){
