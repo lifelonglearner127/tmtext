@@ -298,7 +298,8 @@
                 <div id="assess_tbl_show_case" class="assess_tbl_show_case">
                     <a id="assess_tbl_show_case_recommendations" data-case="recommendations" title="Recommendations" href="#" class="active_link">Recommendations</a> |
                     <a id="assess_tbl_show_case_report" data-case="report" title="Report" href="#">Summary</a> |
-                    <a id="assess_tbl_show_case_details" data-case="details" title="Details" href="#">Details</a>
+                    <a id="assess_tbl_show_case_details" data-case="details" title="Details" href="#">Details</a> |
+                    <a id="assess_tbl_show_case_view" data-case="view" title="Board View" href="#">Board View</a>
                 </div>
                 <a id="research_batches_columns" class="ml_5 float_r" title="Customize..."><img  style="width:32px; heihgt: 32px;"src ="<?php echo base_url() ?>/img/settings@2x.png"></a>
                 <div id="assess_report">
@@ -380,6 +381,10 @@
                     </ul>
                 </div>
 
+                <div id="assess_view">
+                </div>
+
+
                 <script type="text/javascript" src="<?php echo base_url();?>js/jquery.dataTables.min.js"></script>
                 <script type="text/javascript" src="<?php echo base_url();?>js/jquery.json-2.4.min.js"></script>
                 <script type="text/javascript" src="<?php echo base_url();?>js/jquery.fileDownload.js"></script>
@@ -388,6 +393,16 @@
         </div>
     </div>
 </div>
+
+<div class="modal hide fade ci_hp_modals" id='preview_crawl_snap_modal'>
+    <div class="modal-body" style='overflow: hidden'>
+        <div class='snap_holder'>&nbsp;</div>
+    </div>
+    <div class="modal-footer">
+        <a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
+    </div>
+</div>
+
 <script>
             $(function() {
                 $('head').find('title').text('Reports');

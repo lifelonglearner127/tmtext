@@ -106,6 +106,22 @@ $(function () {
                         $('#assess_report_items_2_descriptions_pnl').hide();
                     }
                 }
+                if(json.aaData.length > 0){
+                    var str = '';
+                    for(var i=0; i<json.aaData.length; i++){
+                        if(json.aaData[i][2] != null && json.aaData[i][2] != '' && json.aaData[i][0]!=''){
+                            str += '<div class="board_item"><span>'+json.aaData[i][2]+'</span><br />'+json.aaData[i][0]+'</div>';
+                        }
+                    }
+                    if(str == ''){
+                        str = '<p>Snapshot images are not exists on server</p>';
+                    }
+                    $('#assess_view').html(str);
+                    $('#assess_view .board_item img').on('mouseover', function(){
+                        showSnap('<img src="'+$(this).attr('src')+'">');
+                    });
+                }
+
             });
         },
         "fnRowCallback": function(nRow, aData, iDisplayIndex) {
@@ -212,6 +228,11 @@ $(function () {
         }
         assess_tbl_show_case(this);
     });
+
+    function showSnap(data) {
+        $("#preview_crawl_snap_modal").modal('show');
+        $("#preview_crawl_snap_modal .snap_holder").html(data);
+    }
 
     function assess_tbl_show_case(obj) {
         if (obj) {
@@ -913,6 +934,35 @@ $(function () {
             reportPanel(true);
             var batch_id = $('select[name="research_assess_batches"]').find('option:selected').val();
         //$('#assess_report_download_pdf').attr('href', base_url + 'index.php/research/assess_download_pdf?batch_name=' + batch_name);
+        } else if (table_case == 'view') {
+            $('#tblAssess').hide();
+            $('#tblAssess').parent().find('div.ui-corner-bl').hide();
+            $('#assess_view').show();
+            $('#assess_report').hide();
+            var batch_id = $('select[name="research_assess_batches"]').find('option:selected').val();
+            $("#board_view").click(function(e){
+                e.stopPropagation();
+                if($('.board_view').css('display') == 'none'){
+                    $('.dashboard').hide();
+                    $.post(base_url + 'index.php/measure/getBoardView', {'site_name': $("#hp_boot_drop .btn_caret_sign").text()}, function(data) {
+                        var str = '';
+                        if(data.length > 0){
+                            for(var i=0; i < data.length; i++){
+                                str += '<div class="board_item"><span>'+data[i].text+'</span><br /><img src="'+data[i].snap+'"/></div>';
+                            }
+
+                        }
+                        $('.board_view').html(str);
+                        $('.board_view .board_item img').on('mouseover', function(){
+                            showSnap('<img src="'+$(this).attr('src')+'">');
+                        });
+                    });
+                    $('.board_view').show();
+                } else {
+                    $('.board_view').hide();
+                    $('.dashboard').show();
+                }
+            });
         }
     }
 
@@ -925,6 +975,7 @@ $(function () {
             $('#tblAssess').show();
             $('#tblAssess').parent().find('div.ui-corner-bl').show();
             $('#assess_report').hide();
+            $('#assess_view').hide();
         }
     }
 

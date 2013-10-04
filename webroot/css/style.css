@@ -2361,3 +2361,8 @@ body.login_block{
 .board_item img{
     max-width:160px;
 }
+
+#assess_view{
+    border: 1px solid #ccc;
+    padding: 10px;
+}
