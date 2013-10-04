@@ -718,7 +718,7 @@ function globalDepDashboard(site_name){
                 }
             });
             $(this).css({'background-color':'#EBEBEB'});
-            var td = $(this).parent().parent().find("span.snap_img_left");
+            var td = $(this).parent().parent().parent().find("span.snap_img_left");
             var dep_id = $(this).find('span.dep_text').find('a').attr('id');
             var pos = $(this).offset().top;
             var tr_height = parseInt(pos);
