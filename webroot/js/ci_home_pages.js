@@ -516,14 +516,46 @@ function submitEmailReportsConfig() {
     }
     var rec = $.post(base_url + 'index.php/measure/rec_emails_reports_recipient', send_data, function(data) {
         if(data.length > 0) {
-            for(var i=0; i<data.length; i++){
-                $("<tr class='report_bean_line' data-id="+data[i][0].id+" data-email="+data[i][0].email+" data-day="+data[i][0].day+" >" +
+            for(var i=0; i<data.length; i++) {
+            		// === REBUILD THIS RENDERING PART (START)
+            		var mon_selected = "";
+            		if(capitaliseFirstLetter(data[i][0].day) == 'Monday') mon_selected = 'selected';
+            		var tue_selected = "";
+            		if(capitaliseFirstLetter(data[i][0].day) == 'Tuesday') tue_selected = 'selected';
+            		var wed_selected = "";
+            		if(capitaliseFirstLetter(data[i][0].day) == 'Wednesday') wed_selected = 'selected';
+            		var thu_selected = "";
+            		if(capitaliseFirstLetter(data[i][0].day) == 'Thursday') thu_selected = 'selected';
+            		var fri_selected = "";
+            		if(capitaliseFirstLetter(data[i][0].day) == 'Friday') fri_selected = 'selected';
+            		var sat_selected = "";
+            		if(capitaliseFirstLetter(data[i][0].day) == 'Saturday') sat_selected = 'selected';
+            		var sun_selected = "";
+            		if(capitaliseFirstLetter(data[i][0].day) == 'Sunday') sun_selected = 'selected';
+            		var days_line = "<select data-id='" + data[i][0].id + "' class='recipients_week_day_ex'>";
+            		days_line += "<option " + mon_selected + " value='monday'>Monday</option>";
+            		days_line += "<option " + tue_selected + " value='tuesday'>Tuesday</option>";
+            		days_line += "<option " + wed_selected + " value='wednesday'>Wednesday</option>";
+            		days_line += "<option " + thu_selected + " value='thursday'>Thursday</option>";
+            		days_line += "<option " + fri_selected + " value='friday'>Friday</option>";
+            		days_line += "<option " + sat_selected + " value='saturday'>Saturday</option>";
+            		days_line += "<option " + sun_selected + " value='sunday'>Sunday</option>";
+            		days_line += "</select>";
+            		// === REBUILD THIS RENDERING PART (END)
+            		$("<tr class='report_bean_line' data-id="+data[i][0].id+" data-email="+data[i][0].email+" data-day="+data[i][0].day+" >" +
                     "<td><input type='checkbox' name='send_report_ch' id='send_report_ch_"+data[i][0].id+"'>" +
                     "</td><td><span class='recipients_control_panel_txt'>"+data[i][0].email+"</span></td>" +
-                    "<td><span class='recipients_control_panel_txt'>"+capitaliseFirstLetter(data[i][0].day)+"</span></td>" +
+                    "<td>" + days_line + "</td>" +
                     "<td nowrap><button type='button' class='btn btn-success btn-rec-ind-send fire_rec' id="+data[i][0].id+"><i class='icon-fire'></i></button>" +
                     " <button type='button' class='btn btn-danger btn-rec-remove' onclick=\"deleteRecipient('" + data[i][0].id + "');\" id='"+data[i][0].id+"'><i class='icon-remove'></i></button>" +
                     "</td></tr>").insertBefore('#new_row');
+                // $("<tr class='report_bean_line' data-id="+data[i][0].id+" data-email="+data[i][0].email+" data-day="+data[i][0].day+" >" +
+                //     "<td><input type='checkbox' name='send_report_ch' id='send_report_ch_"+data[i][0].id+"'>" +
+                //     "</td><td><span class='recipients_control_panel_txt'>"+data[i][0].email+"</span></td>" +
+                //     "<td><span class='recipients_control_panel_txt'>"+capitaliseFirstLetter(data[i][0].day)+"</span></td>" +
+                //     "<td nowrap><button type='button' class='btn btn-success btn-rec-ind-send fire_rec' id="+data[i][0].id+"><i class='icon-fire'></i></button>" +
+                //     " <button type='button' class='btn btn-danger btn-rec-remove' onclick=\"deleteRecipient('" + data[i][0].id + "');\" id='"+data[i][0].id+"'><i class='icon-remove'></i></button>" +
+                //     "</td></tr>").insertBefore('#new_row');
             }
             $('input[name="recipients_rec"]').val('');
             $('input[name="recipients_rec"]').blur('');
