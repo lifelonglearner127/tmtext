@@ -469,6 +469,9 @@ $( function() {
 
                 }
                 $('.board_view').html(str);
+                $('.board_view .board_item img').on('mouseover', function(){
+                    showSnap('<img src="'+$(this).attr('src')+'">');
+                });
             });
             $('.board_view').show();
         } else {
@@ -481,6 +484,11 @@ $( function() {
 
 
 }); //end document ready
+
+function showSnap(data) {
+    $("#preview_crawl_snap_modal").modal('show');
+    $("#preview_crawl_snap_modal .snap_holder").html(data);
+}
 
 function globalDepDashboard(site_name){
     $.post(base_url + 'index.php/measure/getDashboardDepData', {
