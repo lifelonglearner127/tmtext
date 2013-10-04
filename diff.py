@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 # Get set difference between two lists of lines
 # (different from diff because it doesn't consider order of lines)
 
