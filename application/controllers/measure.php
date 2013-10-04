@@ -678,46 +678,28 @@ class Measure extends MY_Controller {
         );
         return $res;
     }
-
-    // public function crawlsnapshoot() {
-    //     $this->load->model('webshoots_model');
-    //     $urls = $this->input->post('urls');
-    //     if(count($urls) > 0) {
-    //         $primary_source_res = $this->urlExists('http://snapito.com');
-    //         $format = "png";
-    //         if($primary_source_res) { // ===== PRIMARY SCREENCAPTURE API (http://snapito.com/)
-    //             $screen_api = 'snapito.com';
-    //             $api_key = $this->config->item('snapito_api_secret');
-    //         } else { 
-    //             $screen_api = 'webyshots.com';
-    //             $api_key = $this->config->item('webyshots_api_key');
-    //             $api_secret = $this->config->item('webyshots_api_secret');
-    //             $size = "w800";
-    //         }
-    //         foreach ($urls as $k => $v) {
-    //             // ---- snap it and update crawler_list table (start)
-    //             $orig_url = $v['url'];
-    //             $url = preg_replace('#^https?://#', '', $v['url']);
-    //             $r_url = urlencode(trim($url));
-    //             if($screen_api == 'snapito.com') {
-    //                 $call_url = "http://api.snapito.com/web/$api_key/mc/$url";
-    //             } else {
-    //                 $token = md5("$api_secret+$url");
-    //                 $call_url = "http://api.webyshots.com/v1/shot/$api_key/$token/?url=$r_url&dimension=$size&format=$format";
-    //             }
-    //             $snap_res = $this->crawl_webshoot($call_url, $v['id']);
-    //             $this->webshoots_model->updateCrawlListWithSnap($v['id'], $snap_res['img']);
-    //             // ---- snap it and update crawler_list table (end)
-    //         }
-    //     }
-    //     $this->output->set_content_type('application/json')->set_output(true);
-    // }
+//
+//    public function crawlsnapshoot() {
+//        $this->load->model('webshoots_model');
+//        $urls = $this->input->post('urls');
+//        if (count($urls) > 0) {
+//            foreach ($urls as $k => $v) {
+//                $http_status = $this->urlExistsCode($v['url']);
+//                $orig_url = $v['url'];
+//                $url = preg_replace('#^https?://#', '', $v['url']);
+//                $r_url = urlencode(trim($url));
+//                $call_url = $this->webthumb_call_link($url);
+//                $snap_res = $this->crawl_webshoot($call_url, $v['id']);
+//                $this->webshoots_model->updateCrawlListWithSnap($v['id'], $snap_res['img'], $http_status);
+//            }
+//        }
+//        $this->output->set_content_type('application/json')->set_output(true);
+//    }
 
     public function crawlsnapshoot() {
         $this->load->model('webshoots_model');
-        $urls = $this->input->post('urls');
-        if (count($urls) > 0) {
-            foreach ($urls as $k => $v) {
+        $v = $this->input->post('url');
+        if (!empty($v)) {
                 $http_status = $this->urlExistsCode($v['url']);
                 $orig_url = $v['url'];
                 $url = preg_replace('#^https?://#', '', $v['url']);
@@ -726,7 +708,6 @@ class Measure extends MY_Controller {
                 $snap_res = $this->crawl_webshoot($call_url, $v['id']);
                 $this->webshoots_model->updateCrawlListWithSnap($v['id'], $snap_res['img'], $http_status);
             }
-        }
         $this->output->set_content_type('application/json')->set_output(true);
     }
 

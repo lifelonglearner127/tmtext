@@ -427,14 +427,15 @@ class System extends MY_Controller {
 	{
 		$response = array();
 		//validate form input
-		$this->form_validation->set_rules('user_name', 'User name', 'required|xss_clean|is_unique[users.username]');
+//		$this->form_validation->set_rules('user_name', 'User name', 'required|xss_clean|is_unique[users.username]');
 		$this->form_validation->set_rules('user_mail', 'User mail', 'required|valid_email|is_unique[users.email]');
 		$this->form_validation->set_rules('user_password', 'User password','required|min_length[' . $this->config->item('min_password_length', 'ion_auth') . ']|max_length[' . $this->config->item('max_password_length', 'ion_auth') . ']');
 		$this->form_validation->set_rules('user_role', 'User role', 'required|xss_clean]');
 
 		if ($this->form_validation->run() == true)
 		{
-			$username = strtolower($this->input->post('user_name'));
+//			$username = strtolower($this->input->post('user_name'));
+			$username = $this->input->post('user_name');
 			$email    = $this->input->post('user_mail');
 			$password = $this->input->post('user_password');
 			$customers = $this->input->post('user_customers');
@@ -530,8 +531,9 @@ class System extends MY_Controller {
 		}
 
 		if($old_user_info[0]['username'] != $this->input->post('user_name')){
-			$this->form_validation->set_rules('user_name', 'User name', 'required|xss_clean|is_unique[users.username]');
-			$new_data['username'] = strtolower($this->input->post('user_name'));
+//			$this->form_validation->set_rules('user_name', 'User name', 'required|xss_clean|is_unique[users.username]');
+//			$new_data['username'] = strtolower($this->input->post('user_name'));
+			$new_data['username'] = $this->input->post('user_name');
 		}
 
 		if($old_user_info[0]['email'] != $this->input->post('user_mail')){

@@ -117,7 +117,7 @@
 				<button id="crawl_new" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Crawl New</button>
 				<button id="crawl_all" class="btn new_btn btn-success mt_10 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Crawl All</button>
 				<button id="current_crawl" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Crawl</button>
-				<button id="current_snapshot" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Snapshot</button>
+				<button id="current_snapshot" onclick="currentSnapshot();" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Snapshot</button>
 				<button id="current_snapshot_cmd" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Snap (cmd)</button>
 				<p class='help-block'>* use checkboxes in table list to activate snapshot button</p>
 			</div>
@@ -168,7 +168,7 @@ function loadCurrentList(url) {
 
 	$.get(url, {'search_crawl_data': search_crawl_data, 'batch_id': batch_id}, function(data) {
 		$('#Current_List ul li').remove();
-
+                console.log(data);
 		if(data.new_urls.length > 0) {
 			$("button#crawl_new").removeAttr('disabled');
 		} else {
@@ -193,7 +193,7 @@ function loadCurrentList(url) {
                 imported_data_id = node.imported_data_id;
             }
 
-            var snap_line = "<a class='btn btn-primary btn-small btn-make-snap' href='javascript:void(0)' onclick=\"snapshotIt('" + node.id + "', '" + node.url + "', false);\"><i class='icon-screenshot icon-white'></i></a>";;
+            var snap_line = "<a class='btn btn-primary btn-small btn-make-snap' href='javascript:void(0)' onclick=\"snapshotIt('" + node.id + "', '" + node.url + "', false);\"><i class='icon-screenshot icon-white'></i></a>";
             if(node.snap !== null && node.snap !== "") {
             	snap_line = "<a class='btn btn-success btn-small btn-snap-done' href='javascript:void(0)' onclick=\"showSnap('" + node.snap + "', '" + node.id + "', '" + node.url + "');\"><i class='icon-ok icon-white'></i></a>";
             }
@@ -221,10 +221,21 @@ function loadCurrentList(url) {
 					});
 				}
 			}
-
 		});
-
   		$('#Current_List_Pager').html(data.pager);
+                        
+                if (urls.length > 0) {
+                    $('#current_snapshot').attr('disabled', true);
+                    $('#current_snapshot_cmd').attr('disabled', true);
+                    for(var i = 0;i < urls.length; i++){
+                        $('#id_'+urls[i].id).find('a').attr('disabled',true);
+                        $('#id_'+urls[i].id).find('a').attr('onclick','return false;');
+                    }
+                    currentSnapshotAjax();
+                } else {
+                    $('#current_snapshot').removeAttr('disabled');
+                    $('#current_snapshot_cmd').removeAttr('disabled');
+                }
     });
 }
 
@@ -254,22 +265,29 @@ function closeInputs(event) {
 }
 
 function snapshotIt(id, url, modal_close) {
-	if(modal_close) $("#preview_crawl_snap_modal").modal('hide');
+	if(modal_close) 
+            $("#preview_crawl_snap_modal").modal('hide');
+        $('#id_'+id).children().eq(1).children('a').hide();
+        $('#id_'+id).children().eq(1).append('<img style="margin-left: 10px;" src="'+base_url+'webroot/img/ajax-loader.gif" />');
 	var urls = [];
 	var mid = {
 		id: id,
 		url: url
 	}
-	urls.push(mid);
 	var send_data = {
-		urls: urls
+		url: mid
 	};
-	$("#loading_crawl_snap_modal").modal('show');
+//	$("#loading_crawl_snap_modal").modal('show');
 	$.post(base_url + 'index.php/measure/crawlsnapshoot', send_data, function(data) {
-		console.log(data);
-		$("#loading_crawl_snap_modal").modal('hide');
+//		$("#loading_crawl_snap_modal").modal('hide');
 		$('#current_snapshot').attr('disabled', 'disabled');
-		loadCurrentList();
+                var curUrl;
+                var currentPage = $('#Current_List_Pager').children('strong').text();
+                if(currentPage == '1')
+                    curUrl = base_url + 'index.php/site_crawler/all_urls/';
+                else
+                    curUrl = base_url + 'index.php/site_crawler/all_urls/'+(currentPage-1)+'0';
+		loadCurrentList(curUrl);
 	});
 }
 
@@ -302,49 +320,48 @@ $(function () {
     	});
     });
 
-    $("#current_snapshot").click(function(e) {
-    	var urls = [];
-    	$("#Current_List > ul > li input[type='checkbox']:checked").each(function(index, value) {
-    		var mid = {
-    			id: $(value).data('id'),
-    			url: $(value).data('url')
-    		}
-    		urls.push(mid);
-    	});
-    	var send_data = {
-    		urls: urls
-    	};
-    	$("#loading_crawl_snap_modal").modal('show');
-    	$.post(base_url + 'index.php/measure/crawlsnapshoot', send_data, function(data) {
-    		$("#loading_crawl_snap_modal").modal('hide');
-    		$('#current_snapshot').attr('disabled', 'disabled');
-    		$('#current_snapshot_cmd').attr('disabled', 'disabled');
-    		loadCurrentList();
-    	});
-    });
+//    $("#current_snapshot").click(function(e) {
+//    	var urls = [];
+//    	$("#Current_List > ul > li input[type='checkbox']:checked").each(function(index, value) {
+//    		var mid = {
+//    			id: $(value).data('id'),
+//    			url: $(value).data('url')
+//    		}
+//    		urls.push(mid);
+//    	});
+//    	var send_data = {
+//    		urls: urls
+//    	};
+//    	$("#loading_crawl_snap_modal").modal('show');
+//    	$.post(base_url + 'index.php/measure/crawlsnapshoot', send_data, function(data) {
+//    		$("#loading_crawl_snap_modal").modal('hide');
+//    		$('#current_snapshot').attr('disabled', 'disabled');
+//    		$('#current_snapshot_cmd').attr('disabled', 'disabled');
+//    		loadCurrentList();
+//    	});
+//    });
 
-    $('html').click(function(event) {
-        if(!$(event.target).is('#current_list_delete') && !$(event.target).is('#current_crawl')){
-            $('#current_list_delete').attr('disabled', 'disabled');
-            $('#Current_List li').removeClass('active');
-//            $('#current_crawl').attr('disabled', 'disabled');
-			if( $("#Current_List > ul > li input[type='checkbox']:checked").length > 0 ) {
-				$('#current_snapshot').removeAttr('disabled');
-				$('#current_snapshot_cmd').removeAttr('disabled');
-			} else {
-				$('#current_snapshot').attr('disabled', 'disabled');
-				$('#current_snapshot_cmd').attr('disabled', 'disabled');
-			}
-
-            var ids = [];
-    		$("#Current_List > ul > li input[name='ids[]']:checked").each(function () {
-    			ids.push(parseInt($(this).val()));
-    		});
-    		if (ids.length==0) {
-    			$('button#current_crawl').attr('disabled', 'disabled');
-    		}
-        }
-    });
+//    $('html').click(function(event) {
+//        if(!$(event.target).is('#current_list_delete') && !$(event.target).is('#current_crawl')){
+//            $('#current_list_delete').attr('disabled', 'disabled');
+//            $('#Current_List li').removeClass('active');
+//			if( $("#Current_List > ul > li input[type='checkbox']:checked").length > 0 ) {
+//				$('#current_snapshot').removeAttr('disabled');
+//				$('#current_snapshot_cmd').removeAttr('disabled');
+//			} else {
+//				$('#current_snapshot').attr('disabled', 'disabled');
+//				$('#current_snapshot_cmd').attr('disabled', 'disabled');
+//			}
+//
+//            var ids = [];
+//    		$("#Current_List > ul > li input[name='ids[]']:checked").each(function () {
+//    			ids.push(parseInt($(this).val()));
+//    		});
+//    		if (ids.length==0) {
+//    			$('button#current_crawl').attr('disabled', 'disabled');
+//    		}
+//        }
+//    });
 
     setTimeout(function(){
         $('title').text("Site Crawler");
@@ -524,4 +541,52 @@ $(function () {
 		loadCurrentList();
 	});
 });
+
+var urls = [];
+
+function currentSnapshot(){
+        $('#current_snapshot').attr('disabled', true);
+        $('#current_snapshot_cmd').attr('disabled', true);
+    	$("#Current_List > ul > li input[type='checkbox']:checked").each(function(index, value) {
+    		var mid = {
+    			id: $(value).data('id'),
+    			url: $(value).data('url')
+    		}
+    		urls.push(mid);
+                $(value).parent().next().children('a').attr('disabled',true);
+                $(value).parent().next().children('a').attr('onclick','return false;')
+    	});
+        
+        currentSnapshotAjax();
+}
+
+function currentSnapshotAjax() {
+    var url = urls.shift();
+    $('#id_'+url.id).children().eq(1).children('a').hide();
+    $('#id_'+url.id).children().eq(1).append('<img style="margin-left: 10px;" src="'+base_url+'webroot/img/ajax-loader.gif" />');
+    $('#current_snapshot').attr('disabled', true);
+    $('#current_snapshot_cmd').attr('disabled', true);
+    $.ajax({
+        type: "POST",
+        url: base_url + 'index.php/measure/crawlsnapshoot',
+        data: { url: url }
+    }).done(function(){
+        var curUrl;
+        var currentPage = $('#Current_List_Pager').children('strong').text();
+        if(currentPage == '1')
+            curUrl = base_url + 'index.php/site_crawler/all_urls/';
+        else
+            curUrl = base_url + 'index.php/site_crawler/all_urls/'+(currentPage-1)+'0';
+        loadCurrentList(curUrl);
+    });
+}
+//function loadCurrentRow(url) {
+//    $.ajax({
+//        type: "POST",
+//        url: '<?php echo site_url('site_crawler/current_url'); ?>',
+//        data: { url: url }
+//    }).done(function(){
+//        
+//    });
+//}
 </script>
