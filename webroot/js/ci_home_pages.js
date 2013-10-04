@@ -82,7 +82,7 @@ function boardView(){
             var str = '';
             if(data.length > 0){
                 for(var i=0; i < data.length; i++){
-                    str += '<div class="board_item"><span>'+data[i].text+'</span><br /><img src="'+data[i].snap_path+'"/></div>';
+                    str += '<div class="board_item"><span>'+data[i].text+'</span><br /><img src="'+data[i].snap+'"/></div>';
                 }
 
             }
