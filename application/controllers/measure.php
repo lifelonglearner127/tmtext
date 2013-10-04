@@ -3412,5 +3412,11 @@ class Measure extends MY_Controller {
         $model = $this->input->post('model');
         $this->imported_data_parsed_model->give_model_from_missmatch_div($im_id, $model);
     }
+    
+    public function delete_custom_models(){
+        $this->load->model('imported_data_parsed_model');
+        $this->imported_data_parsed_model->delete_custom_models();
+        echo 'is done';
+    }
 
 }

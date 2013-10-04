@@ -1786,7 +1786,45 @@ class Imported_data_parsed_model extends CI_Model {
         }
         return true;
     }
+   function delete_custom_models(){
+       $this->db->select('p.imported_data_id, p.key, p.value, p.model')
+                ->from($this->tables['imported_data_parsed'] . ' as p')
+                ->where('p.key', 'Product Name')
+                ->or_where('p.key', 'parsed_attributes')
+                ->or_where('p.key', 'URL')
+                ->where('p.revision = (SELECT  MAX(revision) as revision
+                      FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
+                      GROUP BY imported_data_id)', NULL, FALSE);
 
+        $query = $this->db->get();
+        $results = $query->result();
+        $time_end = microtime(true);
+        $data = array();
+
+        foreach ($results as $result) {
+            if ($result->key === 'URL') {
+                $data[$result->imported_data_id]['url'] = $result->value;
+            }
+            if ($result->key === 'Product Name') {
+                $data[$result->imported_data_id]['product_name'] = $result->value;
+                $data[$result->imported_data_id]['model'] = $result->model;
+            }
+
+            if ($result->key === 'parsed_attributes') {
+                $data[$result->imported_data_id]['parsed_attributes'] = unserialize($result->value);
+            }
+        }
+        $have_not_model=array();
+        foreach($data as $key => $val){
+            if(!isset($val['parsed_attributes']['model'])){
+                $have_not_model[]=$key;
+            }
+         }
+         
+         foreach($have_not_model as $val){
+             $this->db->update($this->tables['imported_data_parsed'], array('model' => NULL), array('imported_data_id' => $val));
+         }
+   }
     public function similiarity_cron() {
         $special_list = array('mixer','oven','masher', 'extractor', 'maker', 'cooker', 'tv', 'laptop', 'belt', 'blender', 'tablet', 'toaster', 'kettle', 'watch', 'sneakers', 'griddle', 'grinder', 'camera');
         $this->load->model('similar_product_groups_model');
