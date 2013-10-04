@@ -382,6 +382,7 @@
                 </div>
 
                 <div id="assess_view">
+                    <p>No images available for this batch</p>
                 </div>
 
 
