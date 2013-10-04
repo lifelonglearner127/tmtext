@@ -469,7 +469,7 @@ $( function() {
 
                 }
                 $('.board_view').html(str);
-                $('.board_view .board_item img').on('mouseover', function(){
+                $('.board_view .board_item img').on('click', function(){
                     showSnap('<img src="'+$(this).attr('src')+'">');
                 });
             });
@@ -1522,7 +1522,7 @@ function departmentAjax(department_id,site_name){
 }
 
 function showSnap(data) {
-    $("#preview_crawl_snap_modal").modal('show');
+    $("#preview_crawl_snap_modal").modal();
     $("#preview_crawl_snap_modal .snap_holder").html(data);
 }
 

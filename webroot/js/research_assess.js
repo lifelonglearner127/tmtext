@@ -117,7 +117,7 @@ $(function () {
                         str = '<p>No images available for this batch</p>';
                     }
                     $('#assess_view').html(str);
-                    $('#assess_view .board_item img').on('mouseover', function(){
+                    $('#assess_view .board_item img').on('click', function(){
                         showSnap('<img src="'+$(this).attr('src')+'">');
                     });
                 }
@@ -690,7 +690,7 @@ $(function () {
                 str = '<p>No images available for this batch</p>';
             }
             $('#assess_view').html(str);
-            $('#assess_view .board_item img').on('mouseover', function(){
+            $('#assess_view .board_item img').on('click', function(){
                 showSnap('<img src="'+$(this).attr('src')+'">');
             });
         }
@@ -968,7 +968,7 @@ $(function () {
 
                         }
                         $('.board_view').html(str);
-                        $('.board_view .board_item img').on('mouseover', function(){
+                        $('.board_view .board_item img').on('click', function(){
                             showSnap('<img src="'+$(this).attr('src')+'">');
                         });
                     });
