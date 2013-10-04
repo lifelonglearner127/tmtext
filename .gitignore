@@ -2,3 +2,4 @@
 *.jl
 *.txt
 *.out
+*.sublime-*
