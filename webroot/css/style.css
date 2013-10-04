@@ -2346,7 +2346,9 @@ body.login_block{
 .green_cycle{
     
 }
-
+.board_view{
+    display: none;
+}
 .board_item{
     float:left;
     width:180px;
