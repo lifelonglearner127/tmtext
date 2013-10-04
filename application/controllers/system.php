@@ -9,7 +9,7 @@ class System extends MY_Controller {
   		parent::__construct();
 
 		$this->data['title'] = 'System Settings';
-		$this->data['checked_controllers'] = array( 'batches','measure', 'assess', 'research', 'customer');
+		$this->data['checked_controllers'] = array( 'batches','measure', 'assess', 'research','brand', 'customer');
 		$this->data['admin_controllers'] = array('system', 'admin_customer', 'admin_editor', 'admin_tag_editor');
 
 

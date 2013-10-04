@@ -34,8 +34,8 @@
                                             }
                                             ?>
                                         </div>
-                                        <div class="span1 admin_system_content" style="width:85px;">
-                                            <p>CI</p>
+                                        <div class="span1 admin_system_content">
+                                            <p>CR</p>
                                             <div class="clear-fix"></div>
                                             <?php
                                             foreach ($user_groups as $user_group) {	?>
@@ -46,7 +46,7 @@
                                             ?>
                                         </div>
                                         <div class="span1 admin_system_content">
-                                            <p>Assess</p>
+                                            <p>Reports</p>
                                             <div class="clear-fix"></div>
                                             <?php
                                             foreach ($user_groups as $user_group) {	?>
@@ -56,17 +56,17 @@
                                             }
                                             ?>
                                         </div>
-										<div class="span1 admin_system_content">
-											<p>R&E</p>
-											<div class="clear-fix"></div>
-											<?php
-											foreach ($user_groups as $user_group) {	?>
-												<input type="checkbox" name="research_<?php echo $user_group->id;?>" <?php if(isset($checked[$user_group->id]['research'])){print 'checked';}?> value="1"/>
-												<div class="clear-fix"></div>
-											<?php
-												}
-											 ?>
-										</div>
+                                        <div class="span1 admin_system_content">
+                                                <p>Edit</p>
+                                                <div class="clear-fix"></div>
+                                                <?php
+                                                foreach ($user_groups as $user_group) {	?>
+                                                        <input type="checkbox" name="research_<?php echo $user_group->id;?>" <?php if(isset($checked[$user_group->id]['research'])){print 'checked';}?> value="1"/>
+                                                        <div class="clear-fix"></div>
+                                                <?php
+                                                        }
+                                                 ?>
+                                        </div>
 
                                         <!--div class="span1 admin_system_content">
                                             <p>Job Board</p>
@@ -79,17 +79,28 @@
                                             }
                                             ?>
                                         </div-->
-										<div class="span1 admin_system_content">
-											<p>Settings</p>
-											<div class="clear-fix"></div>
-											<?php
-											foreach ($user_groups as $user_group) {	?>
-												<input type="checkbox" name="customer_<?php echo $user_group->id;?>" <?php if(isset($checked[$user_group->id]['customer'])){print 'checked';}?> value="1"/>
-												<div class="clear-fix"></div>
-											<?php
-												}
-											 ?>
-										</div>
+                                        <div class="span1 admin_system_content">
+                                                <p>Social</p>
+                                                <div class="clear-fix"></div>
+                                                <?php
+                                                foreach ($user_groups as $user_group) {	?>
+                                                        <input type="checkbox" name="brand_<?php echo $user_group->id;?>" value="1"/>
+                                                        <div class="clear-fix"></div>
+                                                <?php
+                                                        }
+                                                 ?>
+                                        </div>
+                                        <div class="span1 admin_system_content">
+                                                <p>Settings</p>
+                                                <div class="clear-fix"></div>
+                                                <?php
+                                                foreach ($user_groups as $user_group) {	?>
+                                                        <input type="checkbox" name="customer_<?php echo $user_group->id;?>" <?php if(isset($checked[$user_group->id]['customer'])){print 'checked';}?> value="1"/>
+                                                        <div class="clear-fix"></div>
+                                                <?php
+                                                        }
+                                                 ?>
+                                        </div>
                                         <div class="span1 admin_system_content">
                                             <p>Default</p>
                                             <div class="clear-fix"></div>
@@ -105,11 +116,13 @@
                                                                 } else if($checked_controller=='batches'){
                                                                     echo 'Batches';
                                                                 } else if($checked_controller=='measure'){
-                                                                    echo 'CI';
+                                                                    echo 'CR';
                                                                 } else if($checked_controller=='assess'){
-                                                                    echo 'Assess';
+                                                                    echo 'Reports';
                                                                 } else if($checked_controller=='research'){
-                                                                    echo 'R&E';
+                                                                    echo 'Edit';
+                                                                }else if($checked_controller=='brand'){
+                                                                    echo 'Social';
                                                                 } else if($checked_controller=='customer'){
                                                                     echo 'Settings';
                                                                 } else if($checked_controller=='job_board'){
