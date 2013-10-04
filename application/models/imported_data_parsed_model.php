@@ -1689,7 +1689,7 @@ class Imported_data_parsed_model extends CI_Model {
 
                 if ($key != $im_data_id && $this->get_base_url($val1['url']) != $this->get_base_url($val['url'])) {
                     
-                    if (!in_array($this->get_base_url($val1['url']), $urls)) {
+                    if (!in_array($this->get_base_url($val1['url']), $urls) && $this->min_two_words($val1['product_name'], $val['product_name'])) {
                         if (isset($val['parsed_attributes']['manufacturer'])) {
                             if (preg_match('/' . $val['parsed_attributes']['manufacturer'] . '/', $val1['product_name'])) {
                                 if (leven_algoritm(strtolower($val1['product_name']), strtolower($val['product_name'])) > 37) {

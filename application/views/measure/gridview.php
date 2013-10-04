@@ -108,7 +108,8 @@ foreach ($same_pr as $ks => $vs) {
                 <img class='preloader_grids_box' src="<?php echo base_url() ?>/img/grids_boxes_preloader.gif">
                 <div class='c_content'>
                     <div class="p_url">
-    <?php if ($ks > 0 && $mismatch_button == true) { ?>
+    <?php // if ($ks > 0 && $mismatch_button == true) { ?>
+                         <?php if ($ks > 0 && !isset($vs['parsed_attributes']['model'])){ ?>
                             <input data-value="<?php echo $vs['imported_data_id']; ?>"class="mismatch_image" style="float: right; margin-top: 0;position: relative;z-index: 200;" type="button" value="" title="">
                             <div class='missmatch_section'>
                             <div class='missmatch_popup'style="display: none;">
