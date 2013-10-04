@@ -18,6 +18,8 @@ class Crons extends MY_Controller {
             'do_duplicate_content' => true,
             'ranking_api_exp' => true
         ));
+        $this->load->library('helpers');
+        $this->load->helper('algoritm');
     }
 
     public function index() {
