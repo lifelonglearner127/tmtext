@@ -75,6 +75,27 @@ function activateDepRepPreview() {
 	});
 }
 
+function boardView(){
+    if($('.board_view').css('display') == 'none'){
+        $('.dashboard').hide();
+        $.post(base_url + 'index.php/measure/getBoardView', {'site_name': $("#hp_boot_drop .btn_caret_sign").text()}, function(data) {
+            var str = '';
+            if(data.length > 0){
+                for(var i=0; i < data.length; i++){
+                    str += '<div class="board_item"><span>'+data[i].text+'</span><br /><img src="'+data[i].snap_path+'"/></div>';
+                }
+
+            }
+            $('.board_view').html(str);
+        });
+        $('.board_view').show();
+    } else {
+        $('.board_view').hide();
+        $('.dashboard').show();
+    }
+
+}
+
 function drop_selecction_scan() {
 	// --- screens dropdowns selections scanner (start)
     var send_data = {

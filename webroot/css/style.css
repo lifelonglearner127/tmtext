@@ -2346,3 +2346,16 @@ body.login_block{
 .green_cycle{
     
 }
+
+.board_item{
+    float:left;
+    width:180px;
+    height:180px;
+    padding:10px;
+    border:1px solid #ccc;
+    margin: 0 10px;
+}
+
+.board_item img{
+    max-width:160px;
+}

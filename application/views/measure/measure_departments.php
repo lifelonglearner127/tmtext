@@ -43,6 +43,7 @@
         <li class='pull_right_navlink'><a href="javascript:void(0)" onclick="activateDepRepPreview()">Configure Screenshots Report</a></li>-->
         <li class='pull_right_navlink'><a href="javascript:void(0);" onclick="viewCustomBatches()">Custom Batch</a></li>
         <li class='pull_right_navlink'><a href="javascript:void(0);" onclick="activateDepRepPreview()">Configure Reports</a></li>
+        <li class='pull_right_navlink'><a href="javascript:void(0);" onclick="boardView()" >Board View</a></li>
     </ul>
 
 
@@ -232,6 +233,10 @@
                     <tbody id="department_data" style="display: none"></tbody>
                     <tbody id="category_data" style="display: none"></tbody>
             </table>
+        </div>
+
+        <div class="board_view">
+
         </div>
     </div>
 </div>

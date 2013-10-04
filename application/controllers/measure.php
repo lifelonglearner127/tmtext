@@ -1705,6 +1705,19 @@ class Measure extends MY_Controller {
         $this->output->set_content_type('application/json')->set_output(json_encode($data));
     }
 
+    public function getBoardView(){
+        $this->load->model('sites_model');
+        $this->load->model('department_members_model');
+        $site_id = $this->sites_model->getIdByName($this->input->post('site_name'));
+        $this->data['board_departments_list'][] = 'All';
+        $data = $this->department_members_model->getAllSnapsByCustomerID($site_id);
+        $board_list = array();
+        foreach ($data as $row) {
+            $board_list[] = array('id' => $row->id, 'text'=>$row->text, 'snap' => $row->snap_path);
+        }
+        $this->output->set_content_type('application/json')->set_output(json_encode($board_list));
+    }
+
     public function getDepartmentsByCustomerNew() {
         $this->load->model('webshoots_model');
         $this->load->model('department_members_model');
