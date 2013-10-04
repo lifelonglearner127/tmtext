@@ -226,12 +226,10 @@ class WalmartSpider(BaseSpider):
             # look for links to subcategory pages in menu
             # subcategories_links = hxs.select("//div[@class='G1001 LeftNavRM']/div[@class='yuimenuitemlabel browseInOuter leftnav-item leftnav-depth-1']/a[@class='browseIn'] | \
             #     //div[@class='G1001 LeftNavRM wmCatPage']/div[@class='yuimenuitemlabel browseInOuter']/a[@class='browseIn']")
-            # check with this one
 
             subcategories_links = hxs.select("//div[contains(@class, 'G1001 LeftNavRM')]/div[contains(@class, 'yuimenuitemlabel browseInOuter')]/a[@class='browseIn']")
 
             if not subcategories_links:
-                print "no subcategories ", response.url
             # # if we haven't found them, try to find subcategories in menu on the left under a "Shop by Category" header
             #     subcategories_links = hxs.select("//div[@class='MainCopy']/div[@class='Header' and text()='\nShop by Category']/following-sibling::node()//a")
 
@@ -240,8 +238,7 @@ class WalmartSpider(BaseSpider):
                     and not(contains(text(),'Special Offers')) and not(contains(text(),'View Top Registry Items')) and not(contains(text(),'Featured Content'))\
                     and not(contains(text(), 'Featured Brands'))]\
                     /following-sibling::node()//a")
-            else:
-                print "found subcategories ", response.url
+            
             # if we found them, create new category for each and parse it from the beginning
 
             #TODO
@@ -299,8 +296,6 @@ class WalmartSpider(BaseSpider):
                         yield Request(item['url'], callback = self.parseCategory, meta = {'item' : item, \
                             'department_text' : response.meta['department_text'], 'department_url' : response.meta['department_url'], 'department_id' : response.meta['department_id']})
                         self.crawled.append((item['url'], item['parent_url']))
-                    else:
-                        print 'been here: ', (item['url'], item['parent_url'])
 
                 # idea for sending parent and collecting nr products. send all of these subcats as a list in meta, pass it on, when list becomes empty, yield the parent
                 yield parent_item

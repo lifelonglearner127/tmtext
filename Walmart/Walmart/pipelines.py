@@ -20,5 +20,3 @@ class WalmartPipeline(object):
 			if 'parent_url' in item:
 				self.crawled.append((item['url'], item['parent_url']))
 			return item
-		else:
-			print 'already been here: ', (item['url'], item['parent_url'])
