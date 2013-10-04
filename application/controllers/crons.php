@@ -14,6 +14,7 @@ class Crons extends MY_Controller {
             'do_stats' => true,
             'duplicate_content' => true,
             'do_stats_new' => true,
+            'similar_groups' => true,
             'do_duplicate_content' => true,
             'ranking_api_exp' => true
         ));
@@ -22,7 +23,24 @@ class Crons extends MY_Controller {
     public function index() {
 
     }
+    public function similar_groups(){
+        $this->load->model('imported_data_parsed_model');
+        
+        $result = $this->imported_data_parsed_model->similiarity_cron_new();
+        if($result){
+            echo 'call by wget';
+            shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/similar_groups > /dev/null 2>/dev/null &");
+            echo 'call by wget AFTER';
+            
+        }else{
+             $data = array(
+                'description' => 0
+            );
 
+            $this->db->where('key', 'custom_model_offset');
+            $this->db->update('settings', $data);
+        }
+    }
     private function urlExists($url) {
         if ($url === null || trim($url) === "")
             return false;
