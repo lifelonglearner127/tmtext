@@ -1981,8 +1981,8 @@ class Measure extends MY_Controller {
 
         $this->load->model('imported_data_parsed_model');
         
-        $this->imported_data_parsed_model->similiarity_cron_new();
-        if($this->imported_data_parsed_model->similiarity_cron_new()){
+        $result = $this->imported_data_parsed_model->similiarity_cron_new();
+        if($result){
             echo 'call by wget';
             shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/measure/similar_groups > /dev/null 2>/dev/null &");
             echo 'call by wget AFTER';
