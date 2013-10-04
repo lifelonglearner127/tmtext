@@ -165,6 +165,7 @@ $( function() {
         $.cookie('hp_boot_drop_sec', $("#hp_boot_drop_sec .btn_caret_sign_sec").text(), {expires: 7, path: '/'}); // re-create
         var item_id = $(this).data('item');
         $('#departments_content').html('');
+        $('.board_view').hide();
         $("#hp_boot_drop .btn_caret_sign").text(new_caret);
         if(new_caret != 'Choose Site'){
             var checking = false;
@@ -254,6 +255,7 @@ $( function() {
         var department_id = $(this).data('item');
         $("input[name='selected_department_id']").val(department_id);
         $(".dashboard").hide();
+        $('.board_view').hide();
         var site_name=$('.btn_caret_sign').text();
         $("#departmentDropdown_first").text(departmentValue);
         readBestSellers(department_id,site_name,'records');
@@ -291,6 +293,7 @@ $( function() {
 		
     $(".hp_boot_drop_sec .dropdown-menu > li > a").bind('click', function(e) {
         var new_caret = $.trim($(this).text());
+        $('.board_view').hide();
         $.removeCookie('hp_boot_drop', {path: '/'}); // destroy
         $.removeCookie('hp_boot_drop_sec', {path: '/'}); // destroy
         $.cookie('hp_boot_drop', $("#hp_boot_drop .btn_caret_sign").text(), {expires: 7, path: '/'}); // re-create
@@ -378,6 +381,7 @@ $( function() {
         var department_id = $(this).data('item');
         var site_name=$('#hp_boot_drop_sec .btn_caret_sign_sec').text();
         $("#departmentDropdownSec_first").text(departmentValue);
+        $('.board_view').hide();
         readBestSellers(department_id,site_name,'recordSec');
         $(".dashboard").hide();
         /*****departmentAjax****/
@@ -396,6 +400,7 @@ $( function() {
 
     $(".hp_boot_drop_sec_dashboard .dropdown-menu > li > a").bind('click', function(e) {
         var new_caret = $.trim($(this).text());
+        $('.board_view').hide();
         $("#hp_boot_drop_sec_dashboard .btn_caret_sign_sec").text(new_caret);
         var item_id = $(this).data('item');
         var site_name = $('#hp_boot_drop .btn_caret_sign').text();
@@ -450,6 +455,30 @@ $( function() {
             console.log(111);
         }
     });
+
+    $("#board_view").click(function(e){
+        e.stopPropagation();
+        if($('.board_view').css('display') == 'none'){
+            $('.dashboard').hide();
+            $.post(base_url + 'index.php/measure/getBoardView', {'site_name': $("#hp_boot_drop .btn_caret_sign").text()}, function(data) {
+                var str = '';
+                if(data.length > 0){
+                    for(var i=0; i < data.length; i++){
+                        str += '<div class="board_item"><span>'+data[i].text+'</span><br /><img src="'+data[i].snap+'"/></div>';
+                    }
+
+                }
+                $('.board_view').html(str);
+            });
+            $('.board_view').show();
+        } else {
+            $('.board_view').hide();
+            $('.dashboard').show();
+        }
+    });
+
+
+
 
 }); //end document ready
 
