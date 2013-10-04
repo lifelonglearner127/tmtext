@@ -666,7 +666,9 @@ function globalDepDashboard(site_name){
             var el = $(this).parent().find('ul');
             if(el.css('display') == 'none'){
                 $(this).css({'border-bottom':'1px solid #000'});
-                el.css({'display':'block'});
+                if($(this).find('span.dep_left_part').text()!='Average content word count: '){
+                    el.css({'display':'block'});
+                }
             } else {
                 el.css({'display':'none'});
             }
@@ -822,7 +824,9 @@ function globalCatDashboard(site_name){
             var el = $(this).parent().find('ul');
             if(el.css('display') == 'none'){
                 $(this).css({'border-bottom':'1px solid #000'});
-                el.css({'display':'block'});
+                if($(this).find('span.dep_left_part').text()!='Average content word count: '){
+                        el.css({'display':'block'});
+                }
             } else {
                 el.css({'display':'none'});
                 $(this).css({'border-bottom':'none'});
@@ -1080,7 +1084,9 @@ function allDepDashboard(site_name, site_name_sec){
                 var el = $(this).parent().find('ul');
                 if(el.css('display') == 'none'){
                     $(this).css({'border-bottom':'1px solid #000'});
-                    el.css({'display':'block'});
+                    if($(this).find('span.dep_left_part').text()!='Average content word count: '){
+                        el.css({'display':'block'});
+                    }
                 } else {
                     el.css({'display':'none'});
                 }
@@ -1188,7 +1194,9 @@ function allCatDashboard(site_name, site_name_sec){
                 var el = $(this).parent().find('ul');
                 if(el.css('display') == 'none'){
                     $(this).css({'border-bottom':'1px solid #000'});
-                    el.css({'display':'block'});
+                    if($(this).find('span.dep_left_part').text()!='Average content word count: '){
+                        el.css({'display':'block'});
+                    }
                 } else {
                     el.css({'display':'none'});
                     $(this).css({'border-bottom':'none'});
