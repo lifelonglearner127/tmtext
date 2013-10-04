@@ -30,6 +30,10 @@ class WalmartSpider(BaseSpider):
     ]
     root_url = "http://www.walmart.com"
 
+    # keep crawled items represented by (url, parent_url) pairs
+    # to eliminate duplicates
+    crawled = []
+
     def parse(self, response):
         hxs = HtmlXPathSelector(response)
         links = hxs.select("//div[@class='MidContainer']/div[3]//a[@class='NavM']")
@@ -198,11 +202,15 @@ class WalmartSpider(BaseSpider):
 
 
         # find if there is a wc field on the page
-        wc_field = hxs.select("//div[@class='mrl mod-toggleItemCount']/span/text()").extract()
+        wc_field = hxs.select("//div[@class='mrl mod-toggleItemCount']/span/text() |\
+            //div[@class='SPRecordCount']/text()").extract()
         if wc_field:
-            m = re.match("([0-9]+) Results", wc_field[0])
-            if m:
-                item['nr_products'] = int(m.group(1))
+            m1 = re.match("([0-9]+) Results", wc_field[0])
+            if m1:
+                item['nr_products'] = int(m1.group(1))
+            m2 = m2 = re.match("\s*Items\s*[0-9\-]+\s*of\s*([0-9]+)\s*total\s*", wc_field[0])
+            if m2:
+                item['nr_products'] = int(m2.group(1))
             yield item
         # # find if there are any products on this page
         # product_holders = hxs.select("//a[@class='prodLink ListItemLink']").extract()
@@ -216,17 +224,34 @@ class WalmartSpider(BaseSpider):
 
         else:
             # look for links to subcategory pages in menu
-            subcategories_links = hxs.select("//div[@class='G1001 LeftNavRM']/div[@class='yuimenuitemlabel browseInOuter leftnav-item leftnav-depth-1']/a[@class='browseIn']")
+            # subcategories_links = hxs.select("//div[@class='G1001 LeftNavRM']/div[@class='yuimenuitemlabel browseInOuter leftnav-item leftnav-depth-1']/a[@class='browseIn'] | \
+            #     //div[@class='G1001 LeftNavRM wmCatPage']/div[@class='yuimenuitemlabel browseInOuter']/a[@class='browseIn']")
+            # check with this one
+
+            subcategories_links = hxs.select("//div[contains(@class, 'G1001 LeftNavRM')]/div[contains(@class, 'yuimenuitemlabel browseInOuter')]/a[@class='browseIn']")
 
             if not subcategories_links:
+                print "no subcategories ", response.url
             # # if we haven't found them, try to find subcategories in menu on the left under a "Shop by Category" header
             #     subcategories_links = hxs.select("//div[@class='MainCopy']/div[@class='Header' and text()='\nShop by Category']/following-sibling::node()//a")
 
             # if we haven't found them, try to find subcategories in menu on the left - get almost anything
-            #TODO: because of this there are some problems with the level, there are -6 which could be -2 (extracting same stuff from all sorts of related cats)
-                subcategories_links = hxs.select("//div[@class='MainCopy']/div[@class='Header' and text()!='\nRelated Categories' and text()!='\nSpecial Offers' and text()!='\nView Top Registry Items' and text()!='\nFeatured Content']/following-sibling::node()//a")
-            
+                subcategories_links = hxs.select("//div[@class='MainCopy']/div[@class='Header' and not(contains(text(),'Related Categories')) \
+                    and not(contains(text(),'Special Offers')) and not(contains(text(),'View Top Registry Items')) and not(contains(text(),'Featured Content'))\
+                    and not(contains(text(), 'Featured Brands'))]\
+                    /following-sibling::node()//a")
+            else:
+                print "found subcategories ", response.url
             # if we found them, create new category for each and parse it from the beginning
+
+            #TODO
+            ########################################
+            # Exceptions - doesn't find anything for:
+            #   http://photos.walmart.com/walmart/welcome?povid=cat121828-env999999-moduleA072012-lLinkGNAV5_PhotoCenter
+            #
+            #
+            ########################################
+
             if subcategories_links:
 
                 # new categories are subcategories of current one - calculate and store their level
@@ -270,8 +295,12 @@ class WalmartSpider(BaseSpider):
                     # #TODO: i don't even know this
                     # item['description_wc'] = 0
                     # yield item
-                    yield Request(item['url'], callback = self.parseCategory, meta = {'item' : item, \
-                        'department_text' : response.meta['department_text'], 'department_url' : response.meta['department_url'], 'department_id' : response.meta['department_id']})
+                    if (item['url'], item['parent_url']) not in self.crawled:
+                        yield Request(item['url'], callback = self.parseCategory, meta = {'item' : item, \
+                            'department_text' : response.meta['department_text'], 'department_url' : response.meta['department_url'], 'department_id' : response.meta['department_id']})
+                        self.crawled.append((item['url'], item['parent_url']))
+                    else:
+                        print 'been here: ', (item['url'], item['parent_url'])
 
                 # idea for sending parent and collecting nr products. send all of these subcats as a list in meta, pass it on, when list becomes empty, yield the parent
                 yield parent_item
