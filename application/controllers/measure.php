@@ -2313,6 +2313,7 @@ class Measure extends MY_Controller {
                if ($model=$this->imported_data_parsed_model->check_if_exists_custom_model($im_data_id)) {
                    
                      $same_pr = $this->imported_data_parsed_model->get_by_custom_model($model,$im_data_id);
+                    
 //                     if (!$this->similar_product_groups_model->checkIfgroupExists($im_data_id)) {
 //
 //                    if (!isset($data_import['parsed_attributes'])) {
@@ -2323,10 +2324,10 @@ class Measure extends MY_Controller {
 //
 //                        $same_pr = $this->imported_data_parsed_model->getByProductName($im_data_id, $data_import['product_name'], $data_import['parsed_attributes']['manufacturer'], $strict);
 //                    }
-               }
-                } else {
-                    
-                    $this->imported_data_parsed_model->getByProductNameNew($im_data_id, $data_import['product_name'], '', $strict);
+               }else {
+                  
+                   $same_pr = $this->imported_data_parsed_model->getByProductNameNew($im_data_id, $data_import['product_name'], '', $strict);
+                                     
 //                    $this->load->model('similar_imported_data_model');
 //                    $customers_list = array();
 //                    $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('sites');
@@ -2362,43 +2363,43 @@ class Measure extends MY_Controller {
 //                }
             }
             // get similar for first row
-            $this->load->model('similar_imported_data_model');
+            //$this->load->model('similar_imported_data_model');
 
-            $customers_list = array();
-            $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('sites');
-            $query_cus_res = $query_cus->result();
-            if (count($query_cus_res) > 0) {
-                foreach ($query_cus_res as $key => $value) {
-                    $n = parse_url($value->url);
-                    $customers_list[] = $n['host'];
-                }
+//            $customers_list = array();
+//            $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('sites');
+//            $query_cus_res = $query_cus->result();
+//            if (count($query_cus_res) > 0) {
+//                foreach ($query_cus_res as $key => $value) {
+//                    $n = parse_url($value->url);
+//                    $customers_list[] = $n['host'];
+//                }
+//            }
+//            $customers_list = array_unique($customers_list);
+//
+//            if (empty($same_pr) && ($group_id = $this->similar_imported_data_model->findByImportedDataId($im_data_id))) {
+//                if ($rows = $this->similar_imported_data_model->getImportedDataByGroupId($group_id)) {
+//                    $data_similar = array();
+//
+//                    foreach ($rows as $key => $row) {
+//                        $data_similar[$key] = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
+//                        $data_similar[$key]['imported_data_id'] = $row->imported_data_id;
+//
+//                        $cus_val = "";
+//                        foreach ($customers_list as $ki => $vi) {
+//                            if (strpos($data_similar[$key]['url'], "$vi") !== false) {
+//                                $cus_val = $vi;
+//                            }
+//                        }
+//                        if ($cus_val !== "")
+//                            $data_similar[$key]['customer'] = $cus_val;
+//                    }
+//
+//                    if (!empty($data_similar)) {
+//                        $same_pr = $data_similar;
+//                    }
+//                }
+//            }
             }
-            $customers_list = array_unique($customers_list);
-
-            if (empty($same_pr) && ($group_id = $this->similar_imported_data_model->findByImportedDataId($im_data_id))) {
-                if ($rows = $this->similar_imported_data_model->getImportedDataByGroupId($group_id)) {
-                    $data_similar = array();
-
-                    foreach ($rows as $key => $row) {
-                        $data_similar[$key] = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
-                        $data_similar[$key]['imported_data_id'] = $row->imported_data_id;
-
-                        $cus_val = "";
-                        foreach ($customers_list as $ki => $vi) {
-                            if (strpos($data_similar[$key]['url'], "$vi") !== false) {
-                                $cus_val = $vi;
-                            }
-                        }
-                        if ($cus_val !== "")
-                            $data_similar[$key]['customer'] = $cus_val;
-                    }
-
-                    if (!empty($data_similar)) {
-                        $same_pr = $data_similar;
-                    }
-                }
-            }
-
             foreach ($same_pr as $ks => $vs) {
 
                 $this->load->model('sites_model');
