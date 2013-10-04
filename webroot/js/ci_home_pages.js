@@ -496,7 +496,7 @@ function internalRecipientFunc(){
 function submitEmailReportsConfig() {
     $('tr.no_recipients').remove();
     // --- collect data (start)
-    var email_pattern = /^([a-z0-9_\-]+\.\+)*[a-z0-9_\-\+]+@([a-z0-9][a-z0-9\-]*[a-z0-9]\.)+[a-z]{2,4}$/i;
+    var email_pattern = /^([a-z0-9_\-]+\.\+)*[a-z0-9_\-\+\.]+@([a-z0-9][a-z0-9\-]*[a-z0-9]\.)+[a-z]{2,4}$/i;
     var recs_arr = [];
     var recs = $.trim($('input[name="recipients_rec"]').val());
     if(recs !== "") {
