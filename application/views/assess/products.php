@@ -127,7 +127,7 @@
             </div>
             <div style="float: right;">
                 <button id="research_assess_update" class="btn btn-success">Update</button>
-                <a href="<?php echo base_url();?>index.php/research/export_assess" class="fileDownloadPromise btn" id="research_assess_export" >Export</a>
+                <a href="<?php echo base_url();?>index.php/assess/export_assess" class="fileDownloadPromise btn" id="research_assess_export" >Export</a>
             </div>
         </div>
     </li>
