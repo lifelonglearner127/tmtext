@@ -2362,6 +2362,10 @@ body.login_block{
     max-width:160px;
 }
 
+.board_item img:hover{
+    cursor:pointer;
+}
+
 #assess_view{
     border: 1px solid #ccc;
     padding: 10px;
