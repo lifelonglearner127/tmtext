@@ -1598,6 +1598,19 @@ class Imported_data_parsed_model extends CI_Model {
     function report_missamtch($imported_data_id){
         $this->db->update($this->tables['imported_data_parsed'], array('model' => time()), array('imported_data_id' => $imported_data_id));
     }
+    function get_model($imported_data_id){
+        $this->db->select('model')
+                ->from($this->tables['imported_data_parsed'])
+                ->where('imported_data_id', $imported_data_id)
+                ->where('key', 'Product Name')->where('model IS NOT NULL', null, false);
+        $query =  $this->db->get();
+        if($query->num_rows()>0){
+           $res=$query->row_array();
+            echo $res['model'];
+            return  $res['model'];
+        }
+        return NULL;
+    }
     function similiarity_cron_new() {
         
         $special_list = array('mixer','oven','masher', 'extractor', 'maker', 'cooker', 'tv', 'laptop', 'belt', 'blender', 'tablet', 'toaster', 'kettle', 'watch', 'sneakers', 'griddle', 'grinder', 'camera');
@@ -1655,6 +1668,7 @@ class Imported_data_parsed_model extends CI_Model {
               
         $time_start = microtime(true);
         foreach ($for_group as $im_data_id => $val) {
+            
             $model = '';
             $selected_product = '';
             foreach ($special_list as $product) {
@@ -1688,7 +1702,7 @@ class Imported_data_parsed_model extends CI_Model {
                 }
 
                 if ($key != $im_data_id && $this->get_base_url($val1['url']) != $this->get_base_url($val['url'])) {
-                    
+                  
                     if (!in_array($this->get_base_url($val1['url']), $urls) && $this->min_two_words($val1['product_name'], $val['product_name'])) {
                         if (isset($val['parsed_attributes']['manufacturer'])) {
                             if (preg_match('/' . $val['parsed_attributes']['manufacturer'] . '/', $val1['product_name'])) {
@@ -1699,7 +1713,21 @@ class Imported_data_parsed_model extends CI_Model {
                                          $model = $val1['model'];
                                          $groups[$im_data_id]['model'] = $model;
                                     }else{
-                                        $groups[$im_data_id]['ids'][] = $key;
+                                        
+                                        if(!is_null($this->get_model($key))){
+                                            $model = $this->get_model($key);
+                                            $groups[$im_data_id]['model'] = $model;
+                                            
+                                        }else{
+                                          
+                                            if(isset($groups[$key]['model'])){
+                                                $model = $groups[$key]['model'];
+                                                $groups[$im_data_id]['model'] = $model;
+                                                $groups[$im_data_id]['ids'][] = $key;
+                                            }else{
+                                                $groups[$im_data_id]['ids'][] = $key;
+                                            }
+                                        }
                                     }
 //                                    if (isset($val1['parsed_attributes']['model'])) {
 //                                        $model = $val1['parsed_attributes']['model'];
@@ -1718,7 +1746,22 @@ class Imported_data_parsed_model extends CI_Model {
                                          $model = $val1['model'];
                                          $groups[$im_data_id]['model'] = $model;
                                     }else{
-                                        $groups[$im_data_id]['ids'][] = $key;
+                                                                               
+                                        if(!is_null($this->get_model($key))){
+                                            $model = $this->get_model($key);
+                                            $groups[$im_data_id]['model'] = $model;
+                                            
+                                        }else{
+                                            
+                                            if(isset($groups[$key]['model'])){
+                                                
+                                                $model = $groups[$key]['model'];
+                                                $groups[$im_data_id]['model'] = $model;
+                                                $groups[$im_data_id]['ids'][] = $key;
+                                            }else{
+                                                $groups[$im_data_id]['ids'][] = $key;
+                                            }
+                                        }
                                     }
 //                                        if (isset($val1['parsed_attributes']['model'])) {
 //                                            $model = $val1['parsed_attributes']['model'];
@@ -1736,7 +1779,21 @@ class Imported_data_parsed_model extends CI_Model {
                                          $model = $val1['model'];
                                          $groups[$im_data_id]['model'] = $model;
                                     }else{
-                                        $groups[$im_data_id]['ids'][] = $key;
+                                        
+                                        if(!is_null($this->get_model($key))){
+                                            $model = $this->get_model($key);
+                                            $groups[$im_data_id]['model'] = $model;
+                                            
+                                        }else{
+                                            
+                                            if(isset($groups[$key]['model'])){
+                                                $model = $groups[$key]['model'];
+                                                $groups[$im_data_id]['model'] = $model;
+                                                $groups[$im_data_id]['ids'][] = $key;
+                                            }else{
+                                                $groups[$im_data_id]['ids'][] = $key;
+                                            }
+                                        }
                                     }
 //                                    if (isset($val1['parsed_attributes']['model'])) {
 //                                        $model = $val1['parsed_attributes']['model'];
@@ -1973,7 +2030,7 @@ class Imported_data_parsed_model extends CI_Model {
     }
     
     function get_by_custom_model($model, $imp_id){
-       
+       echo $model;
           $this->db->select('p.imported_data_id, p.key, p.value, p.revision')
                 ->from($this->tables['imported_data_parsed'] . ' as p')
                 ->where('`p`.key','Product Name');
@@ -1993,7 +2050,9 @@ class Imported_data_parsed_model extends CI_Model {
         foreach ($results as $result) {
          $im_ids[]=$result->imported_data_id;
         }
+        
          $im_ids=  array_unique($im_ids);
+         
          $leseced_site='';
         foreach ($im_ids as $imported_data_id) {
 
@@ -2008,8 +2067,11 @@ class Imported_data_parsed_model extends CI_Model {
             foreach ($res as $val) {
                 if ($val['key'] == 'URL') {
                     $url = $val['value'];
+                     echo $val['imported_data_id'].' '.$imp_id."<br>";
                     if($val['imported_data_id']==$imp_id){
+                        
                         $leseced_site=$this->get_base_url($url);
+                       
                     }
                 }
                 if ($val['key'] == 'Description') {
@@ -2054,11 +2116,12 @@ class Imported_data_parsed_model extends CI_Model {
             }
             if ($cus_val !== "")
                 $rows[$key]['customer'] = $cus_val;
+            
             foreach ($rows as $key1 => $row1) {
                 if($this->get_base_url($row1['url'])== $leseced_site && $row1['imported_data_id'] != $imp_id ){
                     unset($rows[$key1]);
                 }else{
-                    if (($key1 != $key) && ($key['imported_data_id']!=$imp_id) && ($this->get_base_url($row['url']) == $this->get_base_url($row1['url']))) {
+                    if (($key1 != $key) && ($row['imported_data_id']!=$imp_id) && ($this->get_base_url($row['url']) == $this->get_base_url($row1['url']))) {
                         unset($rows[$key]);
                     }
                 }
