@@ -25,12 +25,18 @@ class BloomingdalesSpider(BaseSpider):
         "http://www1.bloomingdales.com/service/sitemap/index.ognc?cm_sp=NAVIGATION-_-BOTTOM_LINKS-_-SITE_MAP",
     ]
 
+    # keep crawled items represented by (url, parent_url, level) tuples
+    # to eliminate duplicates
+    crawled = []
+
     def parse(self, response):
         hxs = HtmlXPathSelector(response)
         links = hxs.select("//div[@class='sr_siteMap_container']/div[position()>2 and position()<5]//a")
         root_url = "http://www1.bloomingdales.com"
 
         #TODO: add registry as special category?
+
+        department_id = 0
 
         for link in links:
             item = CategoryItem()
@@ -42,25 +48,59 @@ class BloomingdalesSpider(BaseSpider):
 
             item['url'] = url
             item['level'] = 1
-            yield item
+
+            department_id += 1
+
+            item['department_text'] = item['text']
+            item['department_url'] = item['url']
+            item['department_id'] = department_id
+
+            #yield item
 
             # create request to extract subcategories for this category
-            yield Request(item['url'], callback = self.parseCategory, meta = {'parent' : item['text'], "dont_merge_cookies" : True}, \
+            yield Request(item['url'], callback = self.parseCategory, meta = {'parent' : item, \
+                "department_text" : item['text'], "department_url" : item['url'], "department_id" : department_id, \
+                "dont_merge_cookies" : True}, \
                 cookies = {"shippingCountry" : "US"}, headers = {"Cookie" : "shippingCountry=" + "US"})
 
     # extract subcategories from each category
     def parseCategory(self, response):
         hxs = HtmlXPathSelector(response)
+        parent = response.meta['parent']
+
+        # extract product count if any
+        #TODO
+
+        # yield parent item (if it hasn't been output before)
+        if 'parent_url' not in parent or (parent['url'], parent['parent_url'], parent['level']) not in self.crawled:
+            if 'parent_url' in parent:
+                self.crawled.append((parent['url'], parent['parent_url'], parent['level']))
+            yield parent
+
+        # extract subcategories
         subcats = hxs.select("//div[@class='gn_left_nav2_standard']//a")
         for subcat in subcats:
             item = CategoryItem()
             item['text'] = subcat.select('text()').extract()[0]
             item['url'] = subcat.select('@href').extract()[0]
-            item['level'] = 0
-            item['parent_text'] = response.meta['parent']
+            item['level'] = parent['level'] - 1
+            item['parent_text'] = response.meta['parent']['text']
             item['parent_url'] = response.url
+            item['department_text'] = response.meta['department_text']
+            item['department_url'] = response.meta['department_url']
+            item['department_id'] = response.meta['department_id']
 
-            yield item
+            # create request to extract subcategories for this category
+            yield Request(item['url'], callback = self.parseCategory, meta = {'parent' : item, \
+                "department_text" : item['department_text'], "department_url" : item['department_url'], "department_id" : item['department_id'], \
+                "dont_merge_cookies" : True}, \
+                cookies = {"shippingCountry" : "US"}, headers = {"Cookie" : "shippingCountry=" + "US"})
+            # yield item
+
+        # if not subcats:
+        #     print 'no subcats ', response.meta['parent']['text'].encode("utf-8"), response.url
+        # else:
+        #     print 'yes subcats ', response.meta['parent']['text'].encode("utf-8"), response.url
 
 
 
