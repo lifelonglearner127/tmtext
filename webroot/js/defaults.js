@@ -722,7 +722,6 @@ jQuery(document).ready(function($) {
     });
 
     $(document).on("click", ".left_nav_content li a, .right_nav_content li a", function(e){
-        console.log($(this).text() != 'LOG OUT');
         if($(this).text() != 'LOG OUT'){
             e.preventDefault();
             if($(this).parent().hasClass('active')){
