@@ -84,7 +84,7 @@
                                                 <div class="clear-fix"></div>
                                                 <?php
                                                 foreach ($user_groups as $user_group) {	?>
-                                                        <input type="checkbox" name="brand_<?php echo $user_group->id;?>" value="1"/>
+                                                        <input type="checkbox" class="brand" name="brand_<?php echo $user_group->id;?>"  <?php if(isset($checked[$user_group->id]['brand'])){print 'checked';}?> value="1"/>
                                                         <div class="clear-fix"></div>
                                                 <?php
                                                         }
@@ -149,3 +149,13 @@
 
 				              </div>
 				            </div>
+
+<script>
+$(document).ready(function () {
+$.each( $('.brand'), function( key, value ) {
+    $(this).checked = false;
+})
+
+});
+
+</script>
