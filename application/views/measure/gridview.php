@@ -127,7 +127,7 @@ foreach ($same_pr as $ks => $vs) {
 
                     if ($ks ==0 && $mismatch_button == true) { ?>
                             <input data-value="<?php echo $vs['imported_data_id']; ?>"class="missmatch_first" style="float: right; margin-top: 0;" type="button" value="" title="Report mismatch">
-                            <div class='missmatch_section '>
+                            <div class='missmatch_section missmatch_section_first'>
                             <div class='missmatch_popup'style="display: none;">
                              
                              <span class="second_line">Enter URL of match... </span>
@@ -969,6 +969,8 @@ if (($i - 1) % 3 != 0) {
 
 //        });
     });
+    
+    
     $(".missmatch_first").live('mouseover', function() {
 
       $(this).closest('.grid_se_section').find(".missmatch_popup").css('display', 'block');
@@ -1012,6 +1014,19 @@ if (($i - 1) % 3 != 0) {
     
         
     });
+    $(".missmatch_section_first  .first_line").live('click', function(){
+        
+        var im_data_id = $(this).closest('.c').find('.missmatch_first').data('value');
+        var aaa = $.post(base_url + 'index.php/measure/report_mismatch', {group_id: group_id, im_data_id: im_data_id}, 'json').done(function(data) {
+            setTimeout(function() {
+                 $("#products li[data-status='selected']").trigger('click');
+
+            }, 500);
+        });
+    });
+    
+    
+    
      $('.second_line2').mouseover(function(){
           $(this).closest('.grid_se_section').find(".missmatch_popup_input").css('display','block');
      });
