@@ -1058,9 +1058,9 @@ class Imported_data_parsed_model extends CI_Model {
             $start = 0;
         }
 
-        $limit = 100;
+        $limit = 80;
 
-        $start = $start * 100 + 1;
+        $start = $start * 80 + 1;
 
         $this->db->select('p.imported_data_id')
                 ->from($this->tables['imported_data_parsed'] . ' as p');
@@ -2030,7 +2030,7 @@ class Imported_data_parsed_model extends CI_Model {
     }
     
     function get_by_custom_model($model, $imp_id){
-       echo $model;
+      
           $this->db->select('p.imported_data_id, p.key, p.value, p.revision')
                 ->from($this->tables['imported_data_parsed'] . ' as p')
                 ->where('`p`.key','Product Name');
@@ -2067,7 +2067,7 @@ class Imported_data_parsed_model extends CI_Model {
             foreach ($res as $val) {
                 if ($val['key'] == 'URL') {
                     $url = $val['value'];
-                     echo $val['imported_data_id'].' '.$imp_id."<br>";
+                    
                     if($val['imported_data_id']==$imp_id){
                         
                         $leseced_site=$this->get_base_url($url);
