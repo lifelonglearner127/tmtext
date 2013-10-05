@@ -1508,6 +1508,13 @@ class PageProcessor {
 			}
 		}
 
+		foreach($this->nokogiri->get('#Details_Content #Specs dl') as $item) {
+			if (isset($item['dt']) && isset($item['dd'])) {
+				$features[] = trim($item['dt'][0]['#text'][0]).': '.trim($item['dd'][0]['#text'][0]);
+			}
+		}
+		$result['feature_count'] = count($features);
+
 		return $result;
 	}
 }
