@@ -37,14 +37,16 @@ $sub_menu = array(
 <?php } ?>
                 <li>
                     <a href="#"><span><?php echo $info['username']; ?></span></a>
-                    <?php if (!empty($sub_menu)) {?>
+                    
+                   <?php  if (!empty($sub_menu)) {?>
                         <ul class="sub_menu">
-                            <?php foreach ($sub_menu as $sub_item) {?>
+                           <?php if ($this->ion_auth->is_admin($this->ion_auth->get_user_id())) {
+                             foreach ($sub_menu as $sub_item) {?>
                                 <li<?php echo ($this->router->class==$sub_item['controller']) ? " class=\"active\"":"";?>><a href="<?php echo site_url($sub_item['controller']);?>"><span><?php echo $sub_item['name'];?></span></a></li>
-                            <?php } ?>
+                           <?php }} ?>
                             <li><a href="<?php echo site_url('auth/logout');?>">LOG OUT</a></li>
                         </ul>
-                    <?php } ?>
+                   <?php } ?>
                 </li>
 				</ul>
 <?php } ?>

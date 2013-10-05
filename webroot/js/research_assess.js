@@ -1,4 +1,4 @@
-var readAssessUrl = base_url + 'index.php/research/get_assess_info';
+var readAssessUrl = base_url + 'index.php/assess/get_assess_info';
 
 $(function () {
     $.fn.serializeObject = function(){
@@ -371,7 +371,7 @@ $(function () {
             batch_id:batch_id
         };
         if (url == undefined) {
-            url = base_url + 'index.php/research/comparison_detail';
+            url = base_url + 'index.php/assess/comparison_detail';
         }
         $.post(
             url,
@@ -538,7 +538,7 @@ $(function () {
 
     $('select[name="research_assess_customers"]').on("change", function(res) {
         var research_assess_batches = $("select[name='research_assess_batches']");
-        $.post(base_url + 'index.php/research/filterBatchByCustomerName', {
+        $.post(base_url + 'index.php/assess/filterBatchByCustomerName', {
             'customer_name': res.target.value
             }, function(data){
             if(data.length>0){
@@ -606,7 +606,7 @@ $(function () {
 
     $('#research_assess_compare_batches_customer').change(function(res){
         var research_assess_compare_batches_batch = $("#research_assess_compare_batches_batch");
-        $.post(base_url + 'index.php/research/filterBatchByCustomerName', {
+        $.post(base_url + 'index.php/assess/filterBatchByCustomerName', {
             'customer_name': res.target.value
             }, function(data){
             if(data.length>0){
@@ -622,7 +622,7 @@ $(function () {
 
     $('#research_assess_compare_batches_batch').change(function(){
         var selectedBatch = $(this).find("option:selected").text();
-        $.post(base_url + 'index.php/research/filterCustomerByBatch', {
+        $.post(base_url + 'index.php/assess/filterCustomerByBatch', {
             'batch': selectedBatch
         }, function(data){
             var research_assess_compare_batches_customer = $('#research_assess_compare_batches_customer');
@@ -664,7 +664,7 @@ $(function () {
             }
             buildReport(data);
         }
-        $.post(base_url + 'index.php/research/filterCustomerByBatch', {
+        $.post(base_url + 'index.php/assess/filterCustomerByBatch', {
             'batch': selectedBatch
         }, function(data){
             var research_assess_customers = $('select[name="research_assess_customers"]');
@@ -785,7 +785,7 @@ $(function () {
             price_diff = true;
         }
         var url = base_url
-        + 'index.php/research/assess_report_download?batch_name=' + batch_name
+        + 'index.php/assess/assess_report_download?batch_name=' + batch_name
         + '&type_doc=' + type_doc
         //+ '&batch_id=' + batch_id
         + '&compare_batch_id=' + compare_batch_id
@@ -819,7 +819,7 @@ $(function () {
 
                 // save params to DB
                 $.ajax({
-                    url: base_url + 'index.php/research/assess_save_columns_state',
+                    url: base_url + 'index.php/assess/assess_save_columns_state',
                     dataType : 'json',
                     type : 'post',
                     data : {
