@@ -11,6 +11,8 @@ BOT_NAME = 'Bloomingdales'
 SPIDER_MODULES = ['Bloomingdales.spiders']
 NEWSPIDER_MODULE = 'Bloomingdales.spiders'
 ITEM_PIPELINES = ['Bloomingdales.pipelines.BloomingdalesPipeline']
+
+# allow for duplicates
 DUPEFILTER_CLASS = 'scrapy.dupefilter.BaseDupeFilter'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent

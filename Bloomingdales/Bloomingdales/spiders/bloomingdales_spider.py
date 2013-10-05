@@ -45,12 +45,13 @@ class BloomingdalesSpider(BaseSpider):
             yield item
 
             # create request to extract subcategories for this category
-            yield Request(item['url'], callback = self.parseCategory, meta = {'parent' : item['text']})
+            yield Request(item['url'], callback = self.parseCategory, meta = {'parent' : item['text'], "dont_merge_cookies" : True}, \
+                cookies = {"shippingCountry" : "US"}, headers = {"Cookie" : "shippingCountry=" + "US"})
 
     # extract subcategories from each category
     def parseCategory(self, response):
         hxs = HtmlXPathSelector(response)
-        subcats = hxs.select("//li[@class='gn_left_nav2_standard']/a")
+        subcats = hxs.select("//div[@class='gn_left_nav2_standard']//a")
         for subcat in subcats:
             item = CategoryItem()
             item['text'] = subcat.select('text()').extract()[0]
@@ -60,6 +61,7 @@ class BloomingdalesSpider(BaseSpider):
             item['parent_url'] = response.url
 
             yield item
+
 
 
 ################################
