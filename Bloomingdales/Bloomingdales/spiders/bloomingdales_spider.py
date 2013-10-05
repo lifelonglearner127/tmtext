@@ -69,7 +69,13 @@ class BloomingdalesSpider(BaseSpider):
         parent = response.meta['parent']
 
         # extract product count if any
-        #TODO
+        product_count_holder = hxs.select("//span[@class='productCount'][1]/text()").extract()
+        if product_count_holder:
+            parent['nr_products'] = int(product_count_holder[0])
+
+        # extract description if any
+        # just assume no description (haven't found any page with descriptions for bloomingdales)
+        parent['description_wc'] = 0
 
         # yield parent item (if it hasn't been output before)
         if 'parent_url' not in parent or (parent['url'], parent['parent_url'], parent['level']) not in self.crawled:
@@ -95,12 +101,6 @@ class BloomingdalesSpider(BaseSpider):
                 "department_text" : item['department_text'], "department_url" : item['department_url'], "department_id" : item['department_id'], \
                 "dont_merge_cookies" : True}, \
                 cookies = {"shippingCountry" : "US"}, headers = {"Cookie" : "shippingCountry=" + "US"})
-            # yield item
-
-        # if not subcats:
-        #     print 'no subcats ', response.meta['parent']['text'].encode("utf-8"), response.url
-        # else:
-        #     print 'yes subcats ', response.meta['parent']['text'].encode("utf-8"), response.url
 
 
 
