@@ -114,6 +114,7 @@
 				</ul>
 				</div>
 				<button id="current_list_delete" class="btn new_btn btn-danger mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
+				<button id="list_failed" class="btn new_btn btn-danger mt_10 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Show Failed</button>
 				<button id="crawl_new" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Crawl New</button>
 				<button id="crawl_all" class="btn new_btn btn-success mt_10 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Crawl All</button>
 				<button id="current_crawl" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Crawl</button>
@@ -153,9 +154,11 @@ function showSnap(snap, id, url) {
 	$("#preview_crawl_snap_modal #snap_modal_refresh").attr("onclick", "snapshotIt('" + id + "', '" + url + "', true)");
 }
 
-function loadCurrentList(url) {
+function loadCurrentList(url,failed) {
 	$("#checkAll").removeAttr('checked');
 	url = typeof url !== 'undefined' ? url: '<?php echo site_url('site_crawler/all_urls');?>';
+	failed = typeof failed !== 'undefined' ? 1 : 0;
+
     var search_crawl_data = '';
     if($('input[name="search_crawl_data"]').val() != ''){
         search_crawl_data = $('input[name="search_crawl_data"]').val();
@@ -166,9 +169,9 @@ function loadCurrentList(url) {
     	batch_id = $('select[name="batch"]').val();
     }
 
-	$.get(url, {'search_crawl_data': search_crawl_data, 'batch_id': batch_id}, function(data) {
+	$.get(url, {'search_crawl_data': search_crawl_data, 'batch_id': batch_id, 'failed':failed}, function(data) {
 		$('#Current_List ul li').remove();
-                console.log(data);
+//                console.log(data);
 		if(data.new_urls.length > 0) {
 			$("button#crawl_new").removeAttr('disabled');
 		} else {
@@ -223,7 +226,7 @@ function loadCurrentList(url) {
 			}
 		});
   		$('#Current_List_Pager').html(data.pager);
-                        
+
                 if (urls.length > 0) {
                     $('#current_snapshot').attr('disabled', true);
                     $('#current_snapshot_cmd').attr('disabled', true);
@@ -265,7 +268,7 @@ function closeInputs(event) {
 }
 
 function snapshotIt(id, url, modal_close) {
-	if(modal_close) 
+	if(modal_close)
             $("#preview_crawl_snap_modal").modal('hide');
         $('#id_'+id).children().eq(1).children('a').hide();
         $('#id_'+id).children().eq(1).append('<img style="margin-left: 10px;" src="'+base_url+'webroot/img/ajax-loader.gif" />');
@@ -517,6 +520,10 @@ $(function () {
         }
     });
 
+    $(document).on("click", "button#list_failed", function(){
+    	loadCurrentList(undefined, true);
+    });
+
 	jQuery(document).ready(function($) {
 		loadCurrentList();
 	});
@@ -556,7 +563,7 @@ function currentSnapshot(){
                 $(value).parent().next().children('a').attr('disabled',true);
                 $(value).parent().next().children('a').attr('onclick','return false;')
     	});
-        
+
         currentSnapshotAjax();
 }
 
@@ -586,7 +593,7 @@ function currentSnapshotAjax() {
 //        url: '<?php echo site_url('site_crawler/current_url'); ?>',
 //        data: { url: url }
 //    }).done(function(){
-//        
+//
 //    });
 //}
 </script>

@@ -118,7 +118,7 @@ class Crawler_List_model extends CI_Model {
         return $query->result();
     }
 
-    function getAllLimit($limit, $start, $only_my=true, $search_crawl_data='')
+    function getAllLimit($limit, $start, $only_my=true, $search_crawl_data='', $failed = 0)
     {
     	$CI =& get_instance();
 
@@ -133,12 +133,16 @@ class Crawler_List_model extends CI_Model {
             $this->db->like('cl.url', $search_crawl_data)->or_like('c.name', $search_crawl_data)->or_like('cl.status', $search_crawl_data)->or_like('DATE(cl.updated)', $search_crawl_data);
         }
 
+    	if ($failed == 1) {
+			$this->db->where('cl.status','failed');
+		}
+
         $query = $this->db->order_by("cl.created", "desc")->limit($limit, $start)->get();
 
         return $query->result();
     }
 
-    function countAll($only_my=true, $search_crawl_data='')
+    function countAll($only_my=true, $search_crawl_data='', $failed=0)
     {
     	$CI =& get_instance();
 
@@ -153,6 +157,9 @@ class Crawler_List_model extends CI_Model {
             $this->db->like('cl.url', $search_crawl_data)->or_like('c.name', $search_crawl_data)->or_like('cl.status', $search_crawl_data)->or_like('DATE(cl.updated)', $search_crawl_data);
         }
 
+        if ($failed == 1) {
+			$this->db->where('cl.status','failed');
+		}
         return $this->db->count_all_results();
     }
 
@@ -196,7 +203,7 @@ class Crawler_List_model extends CI_Model {
         return $query->result();
     }
 
-    function getByBatchLimit($limit, $start, $batch_id)
+    function getByBatchLimit($limit, $start, $batch_id, $failed = 0)
     {
     	$this->db->select('cl.id, cl.imported_data_id, cl.url, cl.snap, cl.snap_date, c.name as name, cl.status, DATE(cl.updated) as updated')
     		->from($this->tables['crawler_list'].' as cl')
@@ -204,6 +211,10 @@ class Crawler_List_model extends CI_Model {
 			->join('research_data_to_crawler_list as rc', 'cl.id = rc.crawler_list_id' )
 			->join('research_data as rd', 'rd.id = rc.research_data_id')
 			->where('rd.batch_id',$batch_id);
+
+		if ($failed == 1) {
+			$this->db->where('cl.status','failed');
+		}
 
         $query = $this->db->order_by("cl.created", "desc")->limit($limit, $start)->get();
 
@@ -225,7 +236,7 @@ class Crawler_List_model extends CI_Model {
     }
 
 
-    function countByBatch($batch_id)
+    function countByBatch($batch_id, $failed=0)
     {
 
     	$this->db->select('cl.id')
@@ -234,6 +245,10 @@ class Crawler_List_model extends CI_Model {
 			->join('research_data_to_crawler_list as rc', 'cl.id = rc.crawler_list_id' )
 			->join('research_data as rd', 'rd.id = rc.research_data_id')
 			->where('rd.batch_id',$batch_id);
+
+    	if ($failed == 1) {
+			$this->db->where('cl.status','failed');
+		}
 
         return $this->db->count_all_results();
     }
