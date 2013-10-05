@@ -331,7 +331,8 @@ class Site_Crawler extends MY_Controller {
 			$rows = $this->crawler_list_model->getIds($this->input->post('ids'));
 		} else if ($this->input->post('batch_id')) {
 			if ($this->input->post('recrawl')) {
-				$rows = $this->crawler_list_model->getByBatchId($this->input->post('batch_id'));
+//				$rows = $this->crawler_list_model->getByBatchId($this->input->post('batch_id'));
+				$rows = $this->crawler_list_model->getOldByBatchId($this->input->post('batch_id'));
 			} else {
 				$rows = $this->crawler_list_model->getNewByBatchId($this->input->post('batch_id'));
 			}
