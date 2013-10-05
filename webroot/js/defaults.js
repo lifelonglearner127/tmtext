@@ -722,8 +722,8 @@ jQuery(document).ready(function($) {
     });
 
     $(document).on("click", ".left_nav_content li a, .right_nav_content li a", function(e){
-        console.log($(this).text());
-       /* if($(this).text() != 'LOG OUT'){
+        console.log($(this).text() != 'LOG OUT');
+        if($(this).text() != 'LOG OUT'){
             e.preventDefault();
             if($(this).parent().hasClass('active')){
     //            if($(this).hasClass('jq-measure')){
@@ -763,7 +763,7 @@ jQuery(document).ready(function($) {
             getWebsiteDropdown();
 
             if($("#an_search").length > 0) $("#an_search").removeAttr('disabled');
-        }*/
+        }
     });
 
     $(document).on("click", "#textarea #desc li span", function(){
