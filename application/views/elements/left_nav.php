@@ -15,10 +15,10 @@ $menu = array(
     array('controller' => 'brand', 'name' => '<span>SOCIAL</span>'),
     //array('controller' => 'editor', 'name' => 'Create'),
     //array('controller' => 'validate', 'name' => 'Validate'),
-	array('controller' => 'customer', 'name' => '<span>SETTINGS</span>'),
 );
 $info = $this->ion_auth->get_user_data();
 $sub_menu = array(
+    array('controller' => 'customer', 'name' => '<span>SETTINGS</span>'),
     array('controller' => 'system', 'name' => 'System'),
     array('controller' => 'admin_customer', 'name' => 'Accounts'),
     /*array('controller' => 'admin_editor', 'name' => 'Editors'),*/
