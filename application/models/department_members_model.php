@@ -321,7 +321,7 @@ class Department_members_model extends CI_Model {
     {
         $str = '';
         if($url != ''){
-            $str .= " and `url`='".$url."'";
+            $str .= " and `url`='".addslashes($url)."'";
         }
         $query = $this->db->query("SELECT `id` FROM `department_members` WHERE `site_id`= '".$site_id."' ".$str." and  `text` = '".$text."' limit 1");
         if($query->num_rows() > 0) {
