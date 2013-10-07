@@ -2380,3 +2380,9 @@ body.login_block{
 .prod_description{
     display: none;
 }
+
+.url-width span{
+    display: block;
+    overflow: hidden;
+    width: 300px;
+}
