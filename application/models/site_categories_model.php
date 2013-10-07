@@ -66,7 +66,7 @@ class Site_categories_model extends CI_Model {
 
     function get($id)
     {
-        $query = $this->db->where('id', $id)
+        $query = $this->db->where('id', $id)->where('flag', 'ready')
             ->limit(1)
             ->get($this->tables['site_categories']);
 
@@ -74,7 +74,7 @@ class Site_categories_model extends CI_Model {
     }
 
     function getCatsBySideId($site_id) {
-        $query = $this->db->where('site_id', $site_id)
+        $query = $this->db->where('site_id', $site_id)->where('flag', 'ready')
             ->limit(1)
             ->get($this->tables['site_categories']);
 
@@ -85,13 +85,13 @@ class Site_categories_model extends CI_Model {
         if($department_id != ''){
             $department_id = " and `department_members_id`='".$department_id."' ";
         }
-        $sql = "SELECT * FROM `site_categories` WHERE `site_id` = '".$site_id."' ".$department_id." ORDER BY `text` ASC";
+        $sql = "SELECT * FROM `site_categories` WHERE `flag`='ready' and `site_id` = '".$site_id."' ".$department_id." ORDER BY `text` ASC";
         $query = $this->db->query($sql);
         return $query->result();
     }
 	
 	function getDataByCategory($category_id){
-	$sql = "SELECT `description_text`, `description_words` FROM `site_categories` WHERE `id` = '".$category_id."'";
+	$sql = "SELECT `description_text`, `description_words` FROM `site_categories` WHERE `flag`='ready' and `id` = '".$category_id."'";
     $query = $this->db->query($sql);
 	$result = $query->result();
     return $result[0];
@@ -105,7 +105,7 @@ class Site_categories_model extends CI_Model {
 
 
     function getUrlByCategory($category_id){
-        $sql = "SELECT `url` FROM `site_categories` WHERE `id` = '".$category_id."'";
+        $sql = "SELECT `url` FROM `site_categories` WHERE `id` = '".$category_id."' and `flag`='ready'";
         $query = $this->db->query($sql);
         return $query->result();
     }
@@ -136,12 +136,24 @@ class Site_categories_model extends CI_Model {
 
     function delete($id)
     {
-        return $this->db->delete($this->tables['site_categories'], array('id' => $id));
+        $data = array(
+            'flag' => 'deleted'
+        );
+
+        $this->db->where('id', $id);
+        $this->db->update($this->tables['site_categories'], $data);
+        return $id;
     }
 
     function deleteAll($site_id)
     {
-        return $this->db->delete($this->tables['site_categories'], array('site_id' => $site_id));
+        $data = array(
+            'flag' => 'deleted'
+        );
+
+        $this->db->where('site_id', $site_id);
+        $this->db->update($this->tables['site_categories'], $data);
+        return $site_id;
     }
 
     function checkExist($site_id, $text, $department_id)
@@ -155,9 +167,21 @@ class Site_categories_model extends CI_Model {
         return false;
     }
 
+    function updateFlag($site_id, $text, $department_id)
+    {
+        $data = array(
+            'flag' => 'ready'
+        );
+
+        $this->db->where('site_id', $site_id);
+        $this->db->where('text', trim($text));
+        $this->db->where('department_members_id', $department_id);
+        $this->db->update($this->tables['site_categories'], $data);
+    }
+
     function checkDepartmentId($parent_id)
     {
-        $sql = "SELECT `department_members_id` FROM `site_categories` WHERE `id` = '".$parent_id."'";
+        $sql = "SELECT `department_members_id` FROM `site_categories` WHERE `id` = '".$parent_id."' and `flag`='ready'";
         $query = $this->db->query($sql);
         $result = $query->result();
         return $result[0];
@@ -169,7 +193,7 @@ class Site_categories_model extends CI_Model {
                 (SELECT round(avg(`description_words`)) AS c  FROM `site_categories` WHERE `site_id`=".$site_id." and `description_words`>0 GROUP BY `site_id`) as res_avg,
                 count(if((`description_words`>0 and `description_words`<250), id, null)) as more,
                 count(if(`description_words`>0, id, null)) as more_than_0
-                FROM  `site_categories` WHERE `site_id`=".$site_id."");
+                FROM  `site_categories` WHERE `site_id`=".$site_id." and `flag`='ready'");
         $result = $sql->result();
         return array(
             'total' => $result[0]->total,
@@ -181,14 +205,14 @@ class Site_categories_model extends CI_Model {
 
     function getCategoriesByWc($site_id)
     {
-        $sql = "SELECT * FROM `site_categories` WHERE `site_id` = '".$site_id."' and `description_words` > 0  group by `text` order by `text` asc";
+        $sql = "SELECT * FROM `site_categories` WHERE `site_id` = '".$site_id."' and `description_words` > 0  and `flag`='ready' group by `text` order by `text` asc";
         $query = $this->db->query($sql);
         return $query->result();
     }
 
     function getCatData($site_id, $condition)
     {
-        $sql = "SELECT `id`, `text`, `url`, `description_words`, `title_keyword_description_density` FROM `site_categories` WHERE `site_id`=".$site_id." and ".$condition." group by `text` order by `text` asc";
+        $sql = "SELECT `id`, `text`, `url`, `description_words`, `title_keyword_description_density` FROM `site_categories` WHERE `site_id`=".$site_id." and `flag`='ready' and ".$condition." group by `text` order by `text` asc";
         $query = $this->db->query($sql);
         return $query->result();
     }

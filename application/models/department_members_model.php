@@ -213,7 +213,7 @@ class Department_members_model extends CI_Model {
 
     function getAllByCustomerID($customerID)
     {
-        $sql = "SELECT `id`, `text`, `url` FROM `department_members` WHERE `site_id` = '".$customerID."' group by `text` ORDER BY `text` ASC";
+        $sql = "SELECT `id`, `text`, `url` FROM `department_members` WHERE `site_id` = '".$customerID."' and flag='ready' group by `text` ORDER BY `text` ASC";
         $query = $this->db->query($sql);
         return $query->result();
     }
@@ -221,7 +221,7 @@ class Department_members_model extends CI_Model {
     function getAllSnapsByCustomerID($customerID)
     {
         $sql = "SELECT `d`.`id`, `d`.`text`, `d`.`url`, `s`.`snap_path` FROM `department_members` as `d` left join `site_departments_snaps` as `s` on `d`.`id` = `s`.`dep_id`
-            WHERE `d`.`site_id` = '".$customerID."' and `s`.`dep_id` is not null";
+            WHERE `d`.`site_id` = '".$customerID."' and `d`.`flag`='ready' and `s`.`dep_id` is not null";
         $query = $this->db->query($sql);
         return $query->result();
     }
@@ -237,16 +237,16 @@ class Department_members_model extends CI_Model {
         if($department_id != ''){
             $department_id = " and `id`='".$department_id."' ";
         }
-        $sql = "SELECT  `id`, `description_title`, `title_keyword_description_density` ,`user_keyword_description_density`, `user_seo_keywords` FROM `department_members` WHERE `site_id` = '".$site_id."' ".$department_id." ORDER BY `text` ASC";
+        $sql = "SELECT  `id`, `description_title`, `title_keyword_description_density` ,`user_keyword_description_density`, `user_seo_keywords` FROM `department_members` WHERE `site_id` = '".$site_id."' ".$department_id." and `flag`='ready' ORDER BY `text` ASC";
         $query = $this->db->query($sql);
         return $query->result();
     }
     
     function getDataByDepartment($department_id){
-	$sql = "SELECT `description_text`, `description_words` FROM `department_members` WHERE `id` = '".$department_id."'";
-    $query = $this->db->query($sql);
-	$result = $query->result();
-    return $result[0];
+        $sql = "SELECT `description_text`, `description_words` FROM `department_members` WHERE `id` = '".$department_id."' and `flag`='ready'";
+        $query = $this->db->query($sql);
+        $result = $query->result();
+        return $result[0];
     }
     
      
@@ -285,7 +285,7 @@ class Department_members_model extends CI_Model {
             'department_id' => $department_id,
             'description_words' => $description_wc,
             'description_text' => $description_text,
-            'title_keyword_description_count' => $keyword_cout,
+            'title_keyword_description_count' => $keyword_count,
             'title_keyword_description_density' => $keyword_density,
             'description_title' => $description_title
         );
@@ -297,24 +297,50 @@ class Department_members_model extends CI_Model {
 
     function delete($id)
     {
-        return $this->db->delete($this->tables['department_members'], array('id' => $id));
+        $data = array(
+            'flag' => 'deleted'
+        );
+
+        $this->db->where('id', $id);
+        $this->db->update($this->tables['department_members'], $data);
+        return $id;
     }
 
     function deleteAll($site_id)
     {
-        return $this->db->delete($this->tables['department_members'], array('site_id' => $site_id));
+        $data = array(
+            'flag' => 'deleted'
+        );
+
+        $this->db->where('site_id', $site_id);
+        $this->db->update($this->tables['department_members'], $data);
+        return $site_id;
     }
 
-    function checkExist($site_id, $text)
+    function checkExist($site_id, $text, $url='')
     {
-        $query =  $this->db->select('id')
-            ->from($this->tables['department_members'])
-            ->where('site_id', trim($site_id))->where('text', trim($text))->limit(1)->get();
+        $str = '';
+        if($url != ''){
+            $str .= " and `url`='".$url."'";
+        }
+        $query = $this->db->query("SELECT `id` FROM `department_members` WHERE `site_id`= '".$site_id."' ".$str." and  `text` = '".$text."' limit 1");
         if($query->num_rows() > 0) {
             return $query->row()->id;
         }
         return false;
     }
+
+    function updateFlag($site_id, $text)
+    {
+        $data = array(
+            'flag' => 'ready'
+        );
+
+        $this->db->where('site_id', $site_id);
+        $this->db->where('text', trim($text));
+        $this->db->update($this->tables['department_members'], $data);
+    }
+
 
     function getDescriptionData($site_id)
     {
@@ -324,11 +350,11 @@ class Department_members_model extends CI_Model {
             count(if(`description_words`>0, id, null)) as more_than_0
             FROM `department_members` WHERE `site_id`=".$site_id."");
         $result = $sql->result();
-        $sql_more_data = $this->db->query("SELECT `id`, `text`, `url`, `description_words`, `title_keyword_description_density` FROM `department_members` WHERE `site_id`=".$site_id." and (`description_words`>0 and `description_words`<250) order by `text` asc");
+        $sql_more_data = $this->db->query("SELECT `id`, `text`, `url`, `description_words`, `title_keyword_description_density` FROM `department_members` WHERE `site_id`=".$site_id." and (`description_words`>0 and `description_words`<250) and `flag`='ready' order by `text` asc");
         $result_more_data = $sql_more_data->result();
-        $sql_data_more_than_0 = $this->db->query("SELECT `id`, `text`,`url`, `description_words`, `title_keyword_description_density` FROM `department_members` WHERE `site_id`=".$site_id." and `description_words` > 0 order by `text` asc");
+        $sql_data_more_than_0 = $this->db->query("SELECT `id`, `text`,`url`, `description_words`, `title_keyword_description_density` FROM `department_members` WHERE `site_id`=".$site_id." and `description_words` > 0 and `flag`='ready' order by `text` asc");
         $res_data_more_than_0 = $sql_data_more_than_0->result();
-        $sql0 = $this->db->query("SELECT `id`, `text`, `url`, `description_words`, `title_keyword_description_density` FROM `department_members` WHERE `site_id`=".$site_id." and `description_words`=0 order by `text` asc");
+        $sql0 = $this->db->query("SELECT `id`, `text`, `url`, `description_words`, `title_keyword_description_density` FROM `department_members` WHERE `site_id`=".$site_id." and `description_words`=0 and `flag`='ready' order by `text` asc");
         $result0 = $sql0->result();
         return array('total' => $result[0]->total, 'result0'=> $result0,
             'res_avg' => $result[0]->res_avg, 'res_more' => $result[0]->more, 'res_more_data' => $result_more_data,
@@ -337,7 +363,7 @@ class Department_members_model extends CI_Model {
 
     function getDepartmentsByWc($site_id)
     {
-        $sql = "SELECT * FROM `department_members` WHERE `site_id` = '".$site_id."' and `description_words` > 0 order by `text` asc";
+        $sql = "SELECT * FROM `department_members` WHERE `site_id` = '".$site_id."' and `description_words` > 0 and `flag`='ready' order by `text` asc";
         $query = $this->db->query($sql);
         return $query->result();
     }

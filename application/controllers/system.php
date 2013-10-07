@@ -700,15 +700,18 @@ class System extends MY_Controller {
                 }
                 $parent_id = 0;
                 if($parent_text!=''){
-                    $parent_id =  $this->department_members_model->checkExist($site_id, $department_text);
+                    $parent_id =  $this->department_members_model->checkExist($site_id, $department_text, $url);
                     if($parent_id == false){
                         $parent_id = $this->department_members_model->insert(0, $site_id, $department_id, $department_text, $url, $description_wc, $description_text, $keyword_count, $keyword_density, $description_title, $level);
+                    } else {
+                        $this->department_members_model->updateFlag($site_id, $department_text);
                     }
                 }
-                $check_id = $this->department_members_model->checkExist( $site_id, $department_text);
+                $check_id = $this->department_members_model->checkExist( $site_id, $department_text, $url);
                 if($check_id == false){
                     $this->department_members_model->insert($parent_id, $site_id, $department_id, $department_text, $url, $description_wc, $description_text, $keyword_count, $keyword_density, $description_title, $level);
                 } else {
+                    $this->department_members_model->updateFlag($site_id, $department_text);
                     $this->department_members_model->update($check_id, $department_id, $description_wc, $description_text, $keyword_count, $keyword_density, $description_title, $level);
                 }
             }
@@ -757,7 +760,7 @@ class System extends MY_Controller {
 
                 $department_members_id = 0;
                 if($department_text!=''){
-                    $check_id = $this->department_members_model->checkExist( $site_id, $department_text);
+                    $check_id = $this->department_members_model->checkExist( $site_id, $department_text, $url);
                     if($check_id){
                         $department_members_id = $check_id;
                     }
@@ -804,6 +807,8 @@ class System extends MY_Controller {
                     if($parent_id == false){
                         $parent_id = $this->site_categories_model->insert(0, $site_id, $text, $url, $special, $parent_text,
                             $department_members_id, $nr_products, $description_wc, $keyword_count, $keyword_density, $description_title, $description_text,$level);
+                    }else{
+                        $this->site_categories_model->updateFlag($site_id, $parent_text,  $department_members_id);
                     }
                 }
 
@@ -818,6 +823,8 @@ class System extends MY_Controller {
                     if($check_site == false){
                         $this->site_categories_model->insert($parent_id, $site_id, $text, $url, $special, $parent_text,
                             $department_members_id, $nr_products, $description_wc, $keyword_count, $keyword_density,$description_title,$description_text,$level);
+                    }else{
+                        $this->site_categories_model->updateFlag($site_id, $text, $department_members_id);
                     }
                 }
             }
