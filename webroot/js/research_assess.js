@@ -107,6 +107,7 @@ $(function () {
                     }
                 }
                 if(json.aaData.length > 0){
+                    console.log(json.aaData);
                     var str = '';
                     for(var i=0; i<json.aaData.length; i++){
                         if(json.aaData[i][2] != null && json.aaData[i][2] != '' && json.aaData[i][0]!=''){
@@ -121,7 +122,7 @@ $(function () {
                     }
                     $('#assess_view').html(str);                   
                     $('#assess_view .board_item img').on('click', function(){
-                        showSnap('<img src="'+$(this).attr('src')+'">');
+                        showSnap('<img src="'+$(this).attr('src')+'"><div style="float:left; width:200px; background:red;">Description word cont: 350</div>');
                     });
                 }
 
