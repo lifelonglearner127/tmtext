@@ -596,13 +596,14 @@
                 <div class="row-fluid mt_10">
                     <label>Categories:</label>
                     <?php // echo form_dropdown('category', $category_list ); ?>
-                    <?php if(count($category_list) > 0) { ?>
+                    <?php //if(count($category_list) > 0) { ?>
                         <select id='category_sites_frow' name='category'>
-                        <?php foreach($category_list as $kc => $kv) { ?>
-                            <option value="<?php echo $kv['id']; ?>"><?php echo $kv['text']; ?></option>
-                        <?php } ?>
+                        <?php //foreach($category_list as $kc => $kv) { ?>
+                            <!--option value="<?php echo $kv['id']; ?>"><?php echo $kv['text']; ?></option-->
+                            <option value=""></option>
+                        <?php //} ?>
                         </select>
-                    <?php } ?>
+                    <?php //} ?>
                     <img class='monitor_icon hidden mr10' id='cat_monitor' src="<?php echo base_url() ?>/img/monitor.png">
                     <button id="delete_category" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
                     <button id="delete_all_categories" class="btn btn-danger" onclick="doconfirm('categories');return false;"><i class="icon-white icon-ok"></i>&nbsp;Delete All</button>
