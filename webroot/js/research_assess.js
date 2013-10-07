@@ -113,12 +113,12 @@ $(function () {
                         if(json.aaData[i][2] != null && json.aaData[i][2] != '' && json.aaData[i][0]!=''){
                             if(json.aaData[i][2].length > 75)
                               str += '<div class="board_item"><span class="span_img">'+json.aaData[i][2]+'</span><br />'+json.aaData[i][0]+
-                                  '<div class="prod_description">URL:'+obj.url+'<br />Product name: '+obj.product_name+
-                                  '<br />Price: '+obj.own_price+'</div></div>';
+                                  '<div class="prod_description">URL:<br/>'+obj.url+'<br />Product name: <br/>'+obj.product_name+
+                                  '<br />Price: <br/>'+obj.own_price+'</div></div>';
                             else
                               str += '<div class="board_item"><span>'+json.aaData[i][2]+'</span><br />'+json.aaData[i][0]+
-                                  '<div class="prod_description">URL:'+obj.url+'<br />Product name: '+obj.product_name
-                                  +'<br />Price: '+obj.own_price+'</div></div>';
+                                  '<div class="prod_description">URL:<br/>'+obj.url+'<br />Product name: <br/>'+obj.product_name
+                                  +'<br />Price: <br/>'+obj.own_price+'</div></div>';
                         }
                     }                   
                     if(str == ''){
@@ -240,6 +240,8 @@ $(function () {
 
     function showSnap(data) {
         $("#preview_crawl_snap_modal").modal('show');
+        $("#preview_crawl_snap_modal").css({'top':'38%'});
+        $("#preview_crawl_snap_modal").css({'width':'1000px'});
         $("#preview_crawl_snap_modal .snap_holder").html(data);
     }
 
