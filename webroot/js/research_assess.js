@@ -120,8 +120,10 @@ $(function () {
                     if(str == ''){
                         str = '<p>No images available for this batch</p>';
                     }
-                    $('#assess_view').html(str);                   
+                    $('#assess_view').html(str);
+                    console.log(555);
                     $('#assess_view .board_item img').on('click', function(){
+                        console.log(666);
                         showSnap('<img src="'+$(this).attr('src')+'"><div style="float:left; width:200px; background:red;">Description word cont: 350</div>');
                     });
                 }
@@ -694,7 +696,9 @@ $(function () {
                 str = '<p>No images available for this batch</p>';
             }
             $('#assess_view').html(str);
+            console.log(111);
             $('#assess_view .board_item img').on('click', function(){
+                console.log(222);
                 showSnap('<img src="'+$(this).attr('src')+'">');
             });
         }
@@ -972,7 +976,9 @@ $(function () {
 
                         }
                         $('.board_view').html(str);
+                        console.log(333);
                         $('.board_view .board_item img').on('click', function(){
+                            console.log(444);
                             showSnap('<img src="'+$(this).attr('src')+'">');
                         });
                     });
