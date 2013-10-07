@@ -40,8 +40,9 @@ $sub_menu = array(
                     
                    <?php  if (!empty($sub_menu)) {?>
                         <ul class="sub_menu">
-                           <?php if ($this->ion_auth->is_admin($this->ion_auth->get_user_id())) {
-                             foreach ($sub_menu as $sub_item) {?>
+                          <?php  foreach ($sub_menu as $sub_item) {
+                            if($this->ion_auth->check_user_permission($sub_item['controller'])){ ?>
+                             
                                 <li<?php echo ($this->router->class==$sub_item['controller']) ? " class=\"active\"":"";?>><a href="<?php echo site_url($sub_item['controller']);?>"><span><?php echo $sub_item['name'];?></span></a></li>
                            <?php }} ?>
                             <li><a href="<?php echo site_url('auth/logout');?>">LOG OUT</a></li>
