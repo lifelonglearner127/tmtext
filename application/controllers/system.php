@@ -617,6 +617,7 @@ class System extends MY_Controller {
         ));
     }
 
+
     public function save_departments_categories()
     {
         $this->load->model('department_model');
@@ -717,7 +718,6 @@ class System extends MY_Controller {
             }
         }
         foreach($_rows as $row){
-            $this->db->reconnect();
             $special = 0;
             $parent_text = '';
             $department_text = '';
@@ -802,6 +802,7 @@ class System extends MY_Controller {
                 } else if(isset($row->description_title) && !is_array($row->description_title) && !is_null($row->description_title) && $row->description_title!=''){
                     $description_title = $row->description_title;
                 }
+                $this->load->database();
                 $parent_id = 0;
                 if($parent_text!=''){
                     $parent_id =  $this->site_categories_model->checkExist($site_id, $parent_text);
