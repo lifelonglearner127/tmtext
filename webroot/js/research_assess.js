@@ -109,18 +109,16 @@ $(function () {
                 if(json.aaData.length > 0){
                     var str = '';
                     for(var i=0; i<json.aaData.length; i++){
-                        console.log(json.aaData[i]);
-                        console.log(json.aaData[i][11]);
                         var obj = jQuery.parseJSON(json.aaData[i][11]);
-                        console.log(obj);
-                        console.log(obj.url);
                         if(json.aaData[i][2] != null && json.aaData[i][2] != '' && json.aaData[i][0]!=''){
                             if(json.aaData[i][2].length > 75)
                               str += '<div class="board_item"><span class="span_img">'+json.aaData[i][2]+'</span><br />'+json.aaData[i][0]+
-                                  '<div class="prod_description">URL:</div></div>';
+                                  '<div class="prod_description">URL:'+obj.url+'<br />Product name: '+obj.product_name+
+                                  '<br />Price: '+obj.own_price+'</div></div>';
                             else
                               str += '<div class="board_item"><span>'+json.aaData[i][2]+'</span><br />'+json.aaData[i][0]+
-                                  '<div class="prod_description">URL:</div></div>';
+                                  '<div class="prod_description">URL:'+obj.url+'<br />Product name: '+obj.product_name
+                                  +'<br />Price: '+obj.own_price+'</div></div>';
                         }
                     }                   
                     if(str == ''){
