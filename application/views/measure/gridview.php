@@ -952,6 +952,13 @@ if (($i - 1) % 3 != 0) {
     selectedCustomer();
 
  $(document).ready(function(){
+     
+    $(".missmatch_section").live('mouseleave', function() {
+        $(this).closest('.grid_se_section').find(".missmatch_popup").css('display', 'none');
+        $(".missmatch_popup_input").css('display','none');
+    });
+     
+     
      $(".missmatch_popup_input").css('display','none');
      
       $(".grid_se_section").live('mouseout', function() {
@@ -1093,11 +1100,7 @@ if (($i - 1) % 3 != 0) {
        gridKeywordDensity(selected_item);
 
     });
-   
-  
-    $(".missmatch_section").live('mouseleave', function() {
-        $(this).closest('.grid_se_section').find(".missmatch_popup").css('display', 'none');
-    });
+        
 // Maxik
     $(".primary").css('display', 'none');
     $(".seo_meta_section").css('display', 'none');
