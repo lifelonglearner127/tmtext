@@ -54,7 +54,11 @@ class Crawler_List_model extends CI_Model {
     }
 
     function updated($id) {
-    	 return $this->db->update($this->tables['crawler_list'], array('updated' => date('Y-m-d h:i:s')), array('id' => $id));
+//    	 return $this->db->update($this->tables['crawler_list'], array('updated' => date('Y-m-d h:i:s')), array('id' => $id));
+
+    	 $this->db->set('updated', 'NOW()',FALSE);
+    	 $this->db->where('id', $id);
+    	 return $this->db->update($this->tables['crawler_list']);
     }
 
 	function updateImportedDataId($id, $imported_id) {
