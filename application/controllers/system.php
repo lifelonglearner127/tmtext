@@ -660,7 +660,7 @@ class System extends MY_Controller {
                     $level = $row->level;
                 }
                 if(isset($row->url) && !is_null($row->url) && $row->url!=''){
-                    $url = $row->url;
+                    $url = addslashes($row->url);
                 }
                 if(isset($row->description_wc) && is_array($row->description_wc)){
                     $description_wc = $row->description_wc[0];
