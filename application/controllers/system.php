@@ -1103,7 +1103,7 @@ class System extends MY_Controller {
         $this->load->model('site_categories_model');
         $categories = $this->site_categories_model->getAll();
         $category_list = array();
-        foreach($categories as $category) {
+        /*foreach($categories as $category) {
         	$mid = array(
         		'id' => $category->id,
         		'site_id' => $category->site_id,
@@ -1114,7 +1114,7 @@ class System extends MY_Controller {
         		'department_members_id' => $category->department_members_id
         	);
         	$category_list[] = $mid;
-        }
+        }*/
         return $category_list;
     }
 
