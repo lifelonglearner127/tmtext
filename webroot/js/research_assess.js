@@ -107,24 +107,22 @@ $(function () {
                     }
                 }
                 if(json.aaData.length > 0){
-                    console.log(json.aaData);
                     var str = '';
                     for(var i=0; i<json.aaData.length; i++){
                         if(json.aaData[i][2] != null && json.aaData[i][2] != '' && json.aaData[i][0]!=''){
                             if(json.aaData[i][2].length > 75)
-                              str += '<div class="board_item"><span class="span_img">'+json.aaData[i][2]+'</span><br />'+json.aaData[i][0]+'</div>';
+                              str += '<div class="board_item"><span class="span_img">'+json.aaData[i][2]+'</span><br />--'+json.aaData[i][0]+'</div>';
                             else
-                              str += '<div class="board_item"><span>'+json.aaData[i][2]+'</span><br />'+json.aaData[i][0]+'</div>';
+                              str += '<div class="board_item"><span>'+json.aaData[i][2]+'</span><br />----'+json.aaData[i][0]+'</div>';
                         }
                     }                   
                     if(str == ''){
                         str = '<p>No images available for this batch</p>';
                     }
                     $('#assess_view').html(str);
-                    console.log(555);
                     $('#assess_view .board_item img').on('click', function(){
-                        console.log(666);
-                        showSnap('<img src="'+$(this).attr('src')+'"><div style="float:left; width:200px; background:red;">Description word cont: 350</div>');
+                        showSnap('<img src="'+$(this).attr('src')+'" style="float:left">' +
+                            '<div style="float:left; width:200px; background:red;">Description word cont: </div>');
                     });
                 }
 
