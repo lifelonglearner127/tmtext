@@ -4,7 +4,7 @@
             <li class=""><a data-toggle="tab" href="<?php echo site_url('system/sites_view');?>">Sites</a></li>
             <li class=""><a data-toggle="tab" href="<?php echo site_url('site_crawler');?>">Site Crawler</a></li>
             <li class=""><a data-toggle="tab" href="<?php echo site_url('brand/import');?>">Brands</a></li>
-            <li class="active"><a data-toggle="tab" href="<?php echo site_url('system/batch_review');?>">Batch Review</a></li>
+            <li ><a data-toggle="tab" href="<?php echo site_url('system/batch_review');?>">Batch Review</a></li>
             <li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_compare');?>">Product Compare</a></li>
             <li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_productsmatch');?>">Product Match</a></li>
            <li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_reports');?>">Reports</a></li>
@@ -12,7 +12,7 @@
            <li class=""><a data-toggle="tab" href="<?php echo site_url('system/keywords');?>">Keywords</a></li>
            <li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_rankings');?>">Rankings</a></li>
            <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_pricing');?>">Pricing </a></li>
-           <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/product_models');?>">Product models </a></li>
+           <li class="active"><a data-toggle="tab" href="<?php echo site_url('measure/product_models');?>">Product models </a></li>
         </ul>
     <div class="tab-content">
         <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/smoothness/jquery-ui-1.8.2.custom.css" />
@@ -33,10 +33,10 @@
                     <table id="records">
                         <thead>
                         <tr>
-                            <th>Date Created</th>
-                            <th>Customer</th>
-                            <th>Batch Name</th>
-                            <th># Items</th>
+                            <th>Product name</th>
+                            <th>URL</th>
+                            <th>Model</th>
+                                                      
                             <th><div class="draggable">Actions</div></th>
                         </tr>
                         </thead>
@@ -49,11 +49,11 @@
             </div> <!-- end tabs -->
 
             <!-- update form in dialog box -->
-            <div id="updateDialog" title="Update">
+            <div id="updateDialog1" title="Update">
                 <div>
                     <form action="" method="post">
                         <p>
-                            <label for="title">Batch Name:</label>
+                            <label for="title">Model:</label>
                             <input type="text" id="title" name="title" />
                         </p>
 
@@ -63,28 +63,32 @@
             </div>
 
             <!-- delete confirmation dialog box -->
-            <div id="delConfDialog" title="Confirm">
-                <p>Are you sure you want to delete batch <span class="batch_name"></span>?</p>
+            <div id="delConfDialog1" title="Confirm">
+                <p>Are you sure you want to delete model<br><span class="batch_name"></span>?</p>
             </div>
 
 
             <!-- message dialog box -->
             <div id="msgDialog"><p></p></div>
-
-         
-            <script type="text/template" id="readTemplate">
-                <tr id="${id}">
-                    <td>${created}</td>
-                    <td>${name}</td>
-                    <td>${title}</td>
-                    <td>${items}</td>
-                   <td nowrap><a class="updateBtn icon-edit" style="float:left;" href="${updateLink}"></a>
+ 
+            <script type="text/template" id="readTemplate1">
+                 <tr id="${imported_data_id}">
+                    <td class="name-width"><span>${product_name}</span></td>
+                    <td class="url-width"><span>${url}</span></td>
+                    <td class="modle-width"><span>${model}</span></td>
+                 <td nowrap><a class="updateBtn icon-edit" style="float:left;" href="${updateLink}"></a>
                         <a class="deleteBtn icon-remove ml_5" href="${deleteLink}"></a>
                     </td>
                 </tr>
             </script>
 
-            <script type="text/javascript" src="<?php echo base_url();?>js/batch_review.js"></script>
+            <script type="text/javascript" src="<?php echo base_url();?>js/change_model.js"></script>
         </div>
     </div>
 </div>
+<style>
+     /*#records  td{
+        width: 100px !important;
+        word-wrap: break-word;
+    } */
+</style>

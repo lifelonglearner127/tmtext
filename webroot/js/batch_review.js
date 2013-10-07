@@ -4,7 +4,8 @@ var readUrl   = base_url + 'index.php/system/get_batch_review',
     delHref,
     updateHref,
     updateId,
-    delId;
+    delId,
+    dataTable;
 
 
 $( function() {
@@ -147,6 +148,7 @@ function readBatchReview() {
         dataType: 'json',
         data:{},
         success: function( response ) {
+           
             for( var i in response ) {
                 response[ i ].updateLink = updateUrl + '/' + response[ i ].id;
                 response[ i ].deleteLink = delUrl + '/' + response[ i ].id;
@@ -157,10 +159,9 @@ function readBatchReview() {
 
             //append new rows
             $( '#readTemplate' ).render( response ).appendTo( "#records > tbody" );
-
             //apply dataTable to #records table and save its object in dataTable variable
-            if( typeof dataTable == 'undefined' )
-                dataTable = $( '#records' ).dataTable({"bJQueryUI": true});
+            //if( typeof dataTable == 'undefined' )
+            dataTable = $( '#records' ).dataTable({"bJQueryUI": true,"bPaginate": true, "aaSorting": [[ 10, "desc" ]], 'bRetrieve':true});
 
             //hide ajax loader animation here...
             $( '#ajaxLoadAni' ).fadeOut( 'slow' );

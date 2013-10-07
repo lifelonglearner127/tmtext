@@ -31,7 +31,8 @@
     <script src="<?php echo base_url();?>js/jsdiff.js"></script>
 	<!--<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>-->
 	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-	<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
+<!--	<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>-->
+        <script src="<?php echo base_url();?>js/jquery-ui.js"></script>
     <script type='text/javascript' src="<?php echo base_url();?>js/jquery.dd.js"></script>
 	<!--<script src="<?php echo base_url();?>js/bootstrap.min.js"></script>-->
 	<script src="<?php echo base_url();?>js/bootstrap.js"></script>
@@ -53,6 +54,9 @@
     <script type='text/javascript' src="<?php echo base_url();?>js/research.js"></script>
     <script type='text/javascript' src="<?php echo base_url();?>js/measure.js"></script>
     <script type='text/javascript' src="<?php echo base_url();?>js/jquery.highlight-3.js"></script>
+    <script type="text/javascript" src="<?php echo base_url();?>js/jquery-templ.js"></script>
+    <script type="text/javascript" src="<?php echo base_url();?>js/jquery.validate.min.js"></script>
+    <script type="text/javascript" src="<?php echo base_url();?>js/jquery.dataTables.min.js"></script>
 
 
 	<!-- script src="<?php echo base_url();?>js/main.js"></script-->

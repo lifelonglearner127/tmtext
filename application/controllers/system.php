@@ -1720,4 +1720,13 @@ class System extends MY_Controller {
             $this->output->set_content_type('application/json')->set_output(json_encode($response));
         }
     }
+    
+     public function get_custom_models(){
+        
+        $this->load->model('imported_data_parsed_model');
+        $results = $this->imported_data_parsed_model->get_custom_models();
+        $this->output->set_content_type('application/json')
+            ->set_output(json_encode($results));
+        
+    }
 }

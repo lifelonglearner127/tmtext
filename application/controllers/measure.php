@@ -3412,5 +3412,9 @@ class Measure extends MY_Controller {
         $this->imported_data_parsed_model->delete_custom_models();
         echo 'is done';
     }
-
+    
+    public function product_models(){
+        $this->render();
+    }
+    
 }
