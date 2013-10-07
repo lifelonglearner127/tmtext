@@ -717,6 +717,7 @@ class System extends MY_Controller {
             }
         }
         foreach($_rows as $row){
+            $this->db->reconnect();
             $special = 0;
             $parent_text = '';
             $department_text = '';
