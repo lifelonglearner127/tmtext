@@ -110,13 +110,16 @@ $(function () {
                     var str = '';
                     for(var i=0; i<json.aaData.length; i++){
                         if(json.aaData[i][2] != null && json.aaData[i][2] != '' && json.aaData[i][0]!=''){
-                            str += '<div class="board_item"><span>'+json.aaData[i][2]+'</span><br />'+json.aaData[i][0]+'</div>';
+                            if(json.aaData[i][2].length > 75)
+                              str += '<div class="board_item"><span class="span_img">'+json.aaData[i][2]+'</span><br />'+json.aaData[i][0]+'</div>';
+                            else
+                              str += '<div class="board_item"><span>'+json.aaData[i][2]+'</span><br />'+json.aaData[i][0]+'</div>';
                         }
-                    }
+                    }                   
                     if(str == ''){
                         str = '<p>No images available for this batch</p>';
                     }
-                    $('#assess_view').html(str);
+                    $('#assess_view').html(str);                   
                     $('#assess_view .board_item img').on('click', function(){
                         showSnap('<img src="'+$(this).attr('src')+'">');
                     });

@@ -403,7 +403,17 @@
         <a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
     </div>
 </div>
-
+<style>
+    .span_img{
+        overflow:hidden;
+        display:block;
+        height:60px;
+    }
+    .span_img:hover{
+        height:auto;
+    }
+   
+</style>
 <script>
             $(function() {
                 $('head').find('title').text('Reports');
