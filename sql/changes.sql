@@ -1,3 +1,8 @@
+# 07/10 Tatiana
+ALTER TABLE `site_categories` ADD `flag` ENUM( 'ready', 'deleted' ) NOT NULL DEFAULT 'ready' AFTER `description_title`;
+ALTER TABLE `department_members` ADD `flag` ENUM( 'ready', 'deleted' ) NOT NULL DEFAULT 'ready' AFTER `description_title`;
+
+
 # 25/09 Ilya
 CREATE  TABLE IF NOT EXISTS `site_departments_reports` (
   `id` INT NOT NULL AUTO_INCREMENT ,
