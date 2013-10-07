@@ -109,12 +109,14 @@ $(function () {
                 if(json.aaData.length > 0){
                     var str = '';
                     for(var i=0; i<json.aaData.length; i++){
-                        console.log(json.aaData[i]);
+                        console.log(json.aaData[i][11]['url']);
                         if(json.aaData[i][2] != null && json.aaData[i][2] != '' && json.aaData[i][0]!=''){
                             if(json.aaData[i][2].length > 75)
-                              str += '<div class="board_item"><span class="span_img">'+json.aaData[i][2]+'</span><br />'+json.aaData[i][0]+'</div>';
+                              str += '<div class="board_item"><span class="span_img">'+json.aaData[i][2]+'</span><br />'+json.aaData[i][0]+
+                                  '<div class="prod_description">URL:'+json.aaData[i][11]['url']+'</div></div>';
                             else
-                              str += '<div class="board_item"><span>'+json.aaData[i][2]+'</span><br />'+json.aaData[i][0]+'</div>';
+                              str += '<div class="board_item"><span>'+json.aaData[i][2]+'</span><br />'+json.aaData[i][0]+
+                                  '<div class="prod_description">URL:'+json.aaData[i][11]['url']+'</div></div>';
                         }
                     }                   
                     if(str == ''){
@@ -122,8 +124,8 @@ $(function () {
                     }
                     $('#assess_view').html(str);
                     $('#assess_view .board_item img').on('click', function(){
-                        showSnap('<img src="'+$(this).attr('src')+'" style="float:left">' +
-                            '<div style="float:left; width:200px; background:red;">Description word cont: </div>');
+                        var info = $(this).parent().find('div.prod_description').html();
+                        showSnap('<img src="'+$(this).attr('src')+'" style="float:left">'+info);
                     });
                 }
 
