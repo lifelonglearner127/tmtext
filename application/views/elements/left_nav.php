@@ -18,7 +18,7 @@ $menu = array(
 );
 $info = $this->ion_auth->get_user_data();
 $sub_menu = array(
-    array('controller' => 'customer', 'name' => '<span>SETTINGS</span>'),
+    array('controller' => 'customer', 'name' => 'Settings'),
     array('controller' => 'system', 'name' => 'System'),
     array('controller' => 'admin_customer', 'name' => 'Accounts'),
     /*array('controller' => 'admin_editor', 'name' => 'Editors'),*/
