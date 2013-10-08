@@ -627,15 +627,7 @@ class System extends MY_Controller {
         $site_name = explode(".", strtolower($this->input->post('site_name')));
         $file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
         $_rows = array();
-        $opts = array(
-            'http'=>array(
-                'method'=>"POST",
-                'header'=>"Accept-language: en\r\n" .
-                "Cookie: foo=bar\r\n"
-            )
-        );
 
-        $context = stream_context_create($opts);
         /*if (($handle = fopen($file, "r")) !== FALSE) {
             while (($data = fgets($handle, 50000))  !== FALSE) {
                 var_dump($data);
@@ -649,11 +641,23 @@ class System extends MY_Controller {
             }
             fclose($handle);
         }*/
-        $data = file_get_contents($file, false, $context);
+        $handle = fopen($file, "rb");
+
+        if ($handle != false){
+            while (!feof($handle)){
+                $fileData = fread($handle, 15000);
+                $_rows[] = $fileData;
+                // Process the contents of the uploaded file here...
+            }
+
+            fclose($handle);
+        }
+
+        /*$data = file_get_contents($file, false, $context);
         $data = utf8_encode("[". trim($data,'"')."]");
         var_dump($data);
-        $data = json_decode($data);
-        var_dump($data);
+        $data = json_decode($data);*/
+        var_dump($_rows);
         /*$highest_level = $_rows[0]->level;
         foreach($_rows as $key=>$one){
             if((int)$highest_level <= (int)$one->level)
