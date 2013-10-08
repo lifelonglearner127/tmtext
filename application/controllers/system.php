@@ -627,6 +627,15 @@ class System extends MY_Controller {
         $site_name = explode(".", strtolower($this->input->post('site_name')));
         $file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
         $_rows = array();
+        $opts = array(
+            'http'=>array(
+                'method'=>"GET",
+                'header'=>"Accept-language: en\r\n" .
+                "Cookie: foo=bar\r\n"
+            )
+        );
+
+        $context = stream_context_create($opts);
         /*if (($handle = fopen($file, "r")) !== FALSE) {
             while (($data = fgets($handle, 50000))  !== FALSE) {
                 var_dump($data);
@@ -640,8 +649,7 @@ class System extends MY_Controller {
             }
             fclose($handle);
         }*/
-        $data = file_get_contents($file);
-        var_dump($data);
+        $data = file_get_contents($file, false, $context);
         $data = utf8_encode("[". trim($data,'"')."]");
         var_dump($data);
         $data = json_decode($data);
