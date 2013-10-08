@@ -1538,6 +1538,9 @@ function departmentAjax(department_id,site_name){
 
 function showSnap(data) {
     $("#preview_crawl_snap_modal").modal('show');
+    $("#preview_crawl_snap_modal").css({'left':'inherit'});
+    $("#preview_crawl_snap_modal").css({'margin':'-250px auto'});
+    $("#preview_crawl_snap_modal").css({'width':'1000px'});
     $("#preview_crawl_snap_modal .snap_holder").html(data);
 }
 
