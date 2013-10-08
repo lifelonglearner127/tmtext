@@ -26,7 +26,7 @@ class Crons extends MY_Controller {
 
     }
     public function similar_groups(){
-       
+       exit;
         $this->load->model('imported_data_parsed_model');
         
         $result = $this->imported_data_parsed_model->similiarity_cron_new();
@@ -43,7 +43,7 @@ class Crons extends MY_Controller {
             $this->db->where('key', 'custom_model_offset');
             $this->db->update('settings', $data);
         }
-         exit;
+         
     }
     private function urlExists($url) {
         if ($url === null || trim($url) === "")
