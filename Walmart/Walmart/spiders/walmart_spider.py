@@ -128,8 +128,10 @@ class WalmartSpider(BaseSpider):
 
         # first search for the description id they usually use,
         # second one is used more rarely and also with some false positives so needs to be checked for text length as well
-        description_holder = hxs.select("//div[@id='detailedPageDescriptionCopyBlock'] \
-            | //div[@class='CustomPOV ReminderBubbleSeeAll']//p/text()[string-length() > " + str(DESC_LEN) + "]/parent::*/parent::*")
+        # try to find div with detailedPageDescriptionCopyBlock id; move on only if not found
+        description_holder = hxs.select("//div[@id='detailedPageDescriptionCopyBlock']")
+        if not description_holder:
+            description_holder = hxs.select("//div[@class='CustomPOV ReminderBubbleSeeAll']//p/text()[string-length() > " + str(DESC_LEN) + "]/parent::*/parent::*")
 
         # if none was found, try to find an element with much text (> DESC_LEN (200) characters)
         # this is gonna pe a paragraph in the description, look for its parent (containing the entire description)
@@ -166,7 +168,7 @@ class WalmartSpider(BaseSpider):
         if description_holder:
             #TODO:
             # try this instead: ".//p//b/text() | .//h1/text() | .//h3/text() | .//strong/text() "
-            # to fix Money Center problem
+            # to fix Money Center problem. but maybe it's not always inside p?
             description_title = description_holder.select(".//b/text() | .//h1/text() | .//h3/text() | .//strong/text() ").extract()
             if description_title:
                 # this will implicitly get thle first occurence of either a <b> element or an <h1> element,
