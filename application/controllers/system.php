@@ -641,8 +641,8 @@ class System extends MY_Controller {
             if((int)$highest_level <= (int)$one->level)
                 $highest_level = $one->level;
         }
-        
-        foreach($_rows as $row){
+        var_dump($_rows);
+        /*foreach($_rows as $row){
             $special = 0;
             $parent_text = '';
             $department_text = '';
@@ -819,7 +819,6 @@ class System extends MY_Controller {
                     $department_members_id = $res->department_members_id;
                 }
 
-                /*end new columns*/
                 if($text != ''){
                     $check_site = $this->site_categories_model->checkExist($site_id, $text, $department_members_id);
                     if($check_site == false){
@@ -830,7 +829,7 @@ class System extends MY_Controller {
                     }
                 }
             }
-        }
+        }*/
         $response['message'] =  'File was added successfully';
         $this->output->set_content_type('application/json')->set_output(json_encode($response));
     }
