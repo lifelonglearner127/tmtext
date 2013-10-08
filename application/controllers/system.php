@@ -641,7 +641,7 @@ class System extends MY_Controller {
             fclose($handle);
         }*/
         $data = file_get_contents($file);
-        $data = preg_replace('/[ ]{2,}|[\t]/', ' ', "'". trim($data,'"')."'");
+        $data = preg_replace('/[ ]{2,}|[\t]/', ' ', "[". trim($data,'"')."]");
         var_dump($data);
         var_dump(json_decode($data));
         var_dump(json_decode($data, true));
