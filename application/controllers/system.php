@@ -629,6 +629,7 @@ class System extends MY_Controller {
         $file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
         $_rows = array();
 
+        $contents = '';
         $handle = fopen($file, "rb");
         $contents = fread($handle, filesize($file));
         var_dump($contents);
@@ -636,10 +637,10 @@ class System extends MY_Controller {
         //var_dump($data);
         fclose($handle);
 
-        //$data = '['.trim($contents,'"').']';
-        //var_dump($data);
-        //$test = json_decode($data);
-        //var_dump($test);
+        $data = '['.trim($contents,'"').']';
+        var_dump($data);
+        $test = json_decode($data);
+        var_dump($test);
 
         die('aaa');
         $data = file_get_contents($file);
