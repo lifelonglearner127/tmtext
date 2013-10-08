@@ -590,7 +590,7 @@ function globalDepDashboard(site_name){
         data_str += '</td></tr>';
         var res_avg = data.res_avg;  
         if(res_avg == null) res_avg = 'N/A';
-        data_str += '<tr><td nowrap class="span6 dep_first_part"><span class="dep_title"><span class="dep_left_part">Average content word count: </span>' +
+        data_str += '<tr><td nowrap class="span6 dep_first_part"><span class="dep_title" style="border-bottom:none!important"><span class="dep_left_part">Average content word count: </span>' +
             '<span class="dep_total_numbers">'+res_avg+'</span></span><span class="snap_img_left"></span>';
         if(data.res_more_data.length > 0){
             data_str += '<ul>';
@@ -699,10 +699,10 @@ function globalDepDashboard(site_name){
         data_str += '</td></tr>';
 
         $("tbody#department_data").append(data_str);
-        $("tbody#department_data tr td span.dep_left_part").click(function() {
+        $("tbody#department_data tr td span.dep_title").click(function() {
             var el = $(this).parent().find('ul');
             if(el.css('display') == 'none'){
-               // $(this).css({'border-bottom':'1px solid #000'});
+                $(this).css({'border-bottom':'1px solid #000'});
                 if($(this).find('span.dep_left_part').text()!='Average content word count: '){
                     el.css({'display':'block'});
                 }
@@ -710,11 +710,11 @@ function globalDepDashboard(site_name){
                 el.css({'display':'none'});
             }
         });
-        $("tbody#department_data tr td span.dep_left_part").mouseover(function() {
-            $("tbody#department_data tr td span.dep_left_part").each(function(){
+        $("tbody#department_data tr td span.dep_title").mouseover(function() {
+            $("tbody#department_data tr td span.dep_title").each(function(){
                 $(this).css({'border-bottom':'none'});
             })
-           // $(this).css({'border-bottom':'1px solid #000'});
+            $(this).css({'border-bottom':'1px solid #000'});
         });
         $("tbody#department_data tr td:first-child ul li").on('mouseover', function() {
             $("tbody#department_data tr td:first-child ul li").each(function(i){
@@ -801,7 +801,7 @@ function globalCatDashboard(site_name){
         data_str += '<ul></ul></td></tr>';
         var res_avg = data.res_avg;  
         if(res_avg == null) res_avg = 'N/A';
-        data_str += '<tr><td nowrap class="span6 dep_first_part" onclick="getCatData(\''+site_name+'\', this, \'(`description_words`>0 and `description_words`<250)\', 1);"><span class="dep_title"><span class="dep_left_part">Average content word count: </span>' +
+        data_str += '<tr><td nowrap class="span6 dep_first_part" onclick="getCatData(\''+site_name+'\', this, \'(`description_words`>0 and `description_words`<250)\', 1);"><span class="dep_title" style="border-bottom:none!important"><span class="dep_left_part">Average content word count: </span>' +
             '<span class="dep_total_numbers">'+res_avg+'</span></span><span class="snap_img_left"></span>';
         data_str += '<ul></ul></td>';
         data_str += '<td class="span6 dep_second_part" onclick="getCatData(\''+site_name+'\', this, \'(`description_words`>0 and `description_words`<250)\', 0);"><span class="dep_title">Add more words to '+data.res_more+' sub categories</span>';
@@ -980,7 +980,7 @@ function allDepDashboard(site_name, site_name_sec){
         first_part_table += '</td>';
         var res_avg = data.res_avg;  
         if(res_avg == null) res_avg = 'N/A';
-        second_part_table += '<tr><td nowrap class="span6 dep_first_part"><span class="dep_title"><span class="dep_left_part">Average content word count: </span>' +
+        second_part_table += '<tr><td nowrap class="span6 dep_first_part"><span class="dep_title" style="border-bottom:none!important"><span class="dep_left_part" >Average content word count: </span>' +
             '<span class="dep_total_numbers">'+res_avg+'</span></span><span class="snap_img_left"></span>';
         if(data.res_more_data.length > 0){
             second_part_table += '<ul><li class="dep_header"><span class="dep_text">CATEGORY</span><span class="dep_numbers">WORDS</span><span class="dep_keywords">KEYWORDS - DENSITY</span></li>';
@@ -1068,7 +1068,7 @@ function allDepDashboard(site_name, site_name_sec){
             first_part_table += '</td></tr>';
         var res_avg = data.res_avg;  
         if(res_avg == null) res_avg = 'N/A';
-            second_part_table += '<td nowrap class="span6 dep_first_part"><span class="dep_title"><span class="dep_left_part">Average content word count: </span>' +
+            second_part_table += '<td nowrap class="span6 dep_first_part avg_content"><span class="dep_title"><span class="dep_left_part">Average content word count: </span>' +
                 '<span class="dep_total_numbers">'+res_avg+'</span></span><span class="snap_img_left"></span>';
             if(data.res_more_data.length > 0){
                 second_part_table += '<ul><li class="dep_header"><span class="dep_text">CATEGORY</span><span class="dep_numbers">WORDS</span><span class="dep_keywords">KEYWORDS - DENSITY</span></li>';
@@ -1134,11 +1134,11 @@ function allDepDashboard(site_name, site_name_sec){
                     el.css({'display':'none'});
                 }
             });
-            $("tbody#department_data tr td span.dep_left_part").mouseenter(function() {
-                $("tbody#department_data tr td span.dep_left_part").each(function(){
+            $("tbody#department_data tr td span.dep_title").mouseenter(function() {
+                $("tbody#department_data tr td span.dep_title").each(function(){
                     $(this).css({'border-bottom':'none'});
                 })
-                //$(this).css({'border-bottom':'1px solid #000'});
+                $(this).css({'border-bottom':'1px solid #000'});
             });
         });
     });
@@ -1162,7 +1162,7 @@ function allCatDashboard(site_name, site_name_sec){
         first_part_table += '<ul></ul></td>';
         var res_avg = data.res_avg;  
         if(res_avg == null) res_avg = 'N/A';
-        second_part_table += '<tr><td nowrap class="span6 dep_first_part" onclick="getCatData(\''+site_name+'\', this, \'(`description_words`>0 and `description_words`<250)\', 1);"><span class="dep_title"><span class="dep_left_part">Average content word count: </span>' +
+        second_part_table += '<tr><td nowrap class="span6 dep_first_part" onclick="getCatData(\''+site_name+'\', this, \'(`description_words`>0 and `description_words`<250)\', 1);"><span class="dep_title" style="border-bottom:none!important"><span class="dep_left_part">Average content word count: </span>' +
             '<span class="dep_total_numbers">'+res_avg+'</span></span><span class="snap_img_left"></span>';
         second_part_table += '<ul></ul></td>';
 
@@ -1204,7 +1204,7 @@ function allCatDashboard(site_name, site_name_sec){
             first_part_table += '<ul></ul></td></tr>';
         var res_avg = data.res_avg;  
         if(res_avg == null) res_avg = 'N/A';
-            second_part_table += '<td nowrap class="span6 dep_first_part" onclick="getCatData(\''+site_name_sec+'\', this, \'(`description_words`>0 and `description_words`<250)\', 1);"><span class="dep_title"><span class="dep_left_part">Average content word count: </span>' +
+            second_part_table += '<td nowrap class="span6 dep_first_part" onclick="getCatData(\''+site_name_sec+'\', this, \'(`description_words`>0 and `description_words`<250)\', 1);"><span class="dep_title" style="border-bottom:none!important"><span class="dep_left_part">Average content word count: </span>' +
                 '<span class="dep_total_numbers">'+res_avg+'</span></span><span class="snap_img_left"></span>';
             second_part_table += '<ul></ul></td></tr>';
 
