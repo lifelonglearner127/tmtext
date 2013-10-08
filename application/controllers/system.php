@@ -621,7 +621,6 @@ class System extends MY_Controller {
 
     public function save_departments_categories()
     {
-        ini_set("output_buffering", "10000");
         $this->load->model('department_model');
         $this->load->model('department_members_model');
         $this->load->model('site_categories_model');
@@ -632,10 +631,11 @@ class System extends MY_Controller {
 
         $handle = fopen($file, "rb");
         $contents = fread($handle, filesize($file));
-        fclose($handle);
         var_dump($contents);
-        $data = '['.trim($contents,'"').']';
-        var_dump($data);
+        fclose($handle);
+
+        // = '['.trim($contents,'"').']';
+        //var_dump($data);
         //$test = json_decode($data);
         //var_dump($test);
 
