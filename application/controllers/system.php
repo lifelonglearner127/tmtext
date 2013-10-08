@@ -640,7 +640,7 @@ class System extends MY_Controller {
             }
             fclose($handle);
         }*/
-        $data = fle_get_contents($file);
+        $data = file_get_contents($file);
         var_dump($data);
         var_dump(json_decode($data));
 
