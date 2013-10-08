@@ -2194,15 +2194,15 @@ span.highlight { background-color:yellow;}
     margin-right: 17px;
 }
 
-tbody#category_data tr td span.dep_title:hover, tbody#department_data tr td span.dep_title:hover,
-tbody#category_data tr td span.dep_title:active, tbody#department_data tr td span.dep_title:active{
+tbody#category_data tr td span.dep_title:hover, tbody#department_data tr td span.dep_left_part:hover,
+tbody#category_data tr td span.dep_title:active, tbody#department_data tr td span.dep_left_part:active{
     cursor: pointer;
     border-bottom:1px solid transparent;
 }
-tbody#category_data tr td span.dep_title:hover, tbody#department_data tr td span.dep_title:hover
+/*tbody#category_data tr td span.dep_title:hover, tbody#department_data tr td span.dep_left_part:hover
 {
     border-bottom:1px solid #000;
-}
+}*/
 
 tbody#category_data tr td, tbody#department_data tr td{
     vertical-align: top;
