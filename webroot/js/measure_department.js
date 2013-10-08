@@ -469,7 +469,7 @@ $( function() {
                         var json = $.parseJSON(data[i].title_keyword_description_density);
                         console.log(json);
                         str += '<div class="board_item"><span>'+data[i].text+'</span><br /><img src="'+
-                            data[i].snap+'"/><div class="prod_description"></div><b>Description word count:'+
+                            data[i].snap+'"/><div class="prod_description"><b>Description word count:'+
                             data[i].description_words+'</b><br /><br />';
                         if(json != null){
                             str += '<b>Keywords (frequency, density)</b><br />';
@@ -478,7 +478,7 @@ $( function() {
                             });
                         }
 
-                        str += '<b>Category Description:</b><br />'+data[i].description_text +'</div>';
+                        str += '<b>Category Description:</b><br />'+data[i].description_text +'</div></div>';
                     }
 
                 }
