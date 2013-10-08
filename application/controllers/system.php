@@ -641,6 +641,7 @@ class System extends MY_Controller {
             fclose($handle);
         }*/
         $data = file_get_contents($file);
+        var_dump($data);
         $data = utf8_encode("[". trim($data,'"')."]");
         var_dump($data);
         $data = json_decode($data);
