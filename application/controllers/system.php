@@ -621,6 +621,7 @@ class System extends MY_Controller {
     public function save_departments_categories()
     {
         error_reporting(E_ALL);
+        ini_set('post_max_size', 100);
         $this->load->model('department_model');
         $this->load->model('department_members_model');
         $this->load->model('site_categories_model');
