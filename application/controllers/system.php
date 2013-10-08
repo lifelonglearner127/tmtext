@@ -631,7 +631,7 @@ class System extends MY_Controller {
         $file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
         $_rows = array();
 
-        /*if (($handle = fopen($file, "r")) !== FALSE) {
+        if (($handle = fopen($file, "r")) !== FALSE) {
             while (($data = fgets($handle, 50000))  !== FALSE) {
                 var_dump($data);
                 var_dump(utf8_encode($data));
@@ -643,19 +643,13 @@ class System extends MY_Controller {
                 }
             }
             fclose($handle);
-        }*/
-        $opts = array(
-            'http'=>array(
-                'method'=>"POST",
-            )
-        );
-
-        $context = stream_context_create($opts);
+        }
+        /*echo '----';
         $data = file_get_contents($file);
         var_dump($data);
         $data = utf8_encode("[". trim($data,'"')."]");
         var_dump($data);
-        $data = json_decode($data);
+        $data = json_decode($data);*/
         var_dump($_rows);
         /*$highest_level = $_rows[0]->level;
         foreach($_rows as $key=>$one){
