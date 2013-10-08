@@ -634,6 +634,7 @@ class System extends MY_Controller {
         $contents = fread($handle, filesize($file));
         $data = json_decode($data);
         var_dump($contents);
+        var_dump($data);
         fclose($handle);
 
         die('aaa');
