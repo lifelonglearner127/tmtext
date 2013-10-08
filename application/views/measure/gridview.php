@@ -154,6 +154,20 @@ foreach ($same_pr as $ks => $vs) {
                         <span class='analysis_content_head'>Product Name:</span>
                         <p style="float:none;" class='short_product_name grid_product_name'  ><?php echo $vs['product_name'];?></p>
                     </div>
+                    <?php $snap_data = $this->webshoots_model->scanForProductSnap($vs['imported_data_id']); ?>
+                            <?php 
+                                $debug_id = $vs['imported_data_id'];
+                                $debug_snap = $snap_data['snap'];
+                                $debug_av = $snap_data['img_av_status'];
+                                $debug_status = $snap_data['status'];
+                                $debug_fs = $snap_data['fs'];
+                                $url = $snap_data['url'];
+                    ?>
+                    <div class="p_snap" style="margin-bottom: 20px;" >
+                        <?php if($snap_data['img_av_status']) { ?>
+                        <a href="<?php echo $url ?>" target="_brank"><img style="width: 210px;height: 190px;margin-left: 20px;" src="<?php echo base_url() ?>/webshoots/<?php echo $snap_data['snap']; ?>"></a>
+                        <?php }?>
+                    </div>    
                     <div class="p_meta" style="margin-bottom: 20px;" >
                         <?php if(isset($vs['parsed_meta']['description'])): ?>
                             <span style="margin: 0;" class="analysis_content_head">Meta Description:</span>
@@ -245,19 +259,13 @@ foreach ($same_pr as $ks => $vs) {
                         </div>
                     <!--                            //Max-->
                     <div class="p_description" style="overflow:hidden;">
-                            <?php $snap_data = $this->webshoots_model->scanForProductSnap($vs['imported_data_id']); ?>
-                            <?php 
-                                $debug_id = $vs['imported_data_id'];
-                                $debug_snap = $snap_data['snap'];
-                                $debug_av = $snap_data['img_av_status'];
-                                $debug_status = $snap_data['status'];
-                                $debug_fs = $snap_data['fs'];
-                            ?>
+                            
                             <input type='hidden' value="<?php echo $debug_id; ?>">
                             <input type='hidden' value="<?php echo $debug_snap; ?>">
                             <input type='hidden' value="<?php echo $debug_av; ?>">
                             <input type='hidden' value="<?php echo $debug_status; ?>">
                             <input type='hidden' value="<?php echo $debug_fs; ?>">
+                            
                             <?php if($snap_data['img_av_status']) { ?>
                                 <i style='float: right;' class='snap_ico_gridview icon-picture' data-snap="<?php echo $snap_data['snap']; ?>"></i>
                             <?php } ?>

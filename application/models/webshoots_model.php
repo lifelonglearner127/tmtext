@@ -52,8 +52,10 @@ class Webshoots_model extends CI_Model {
         if(count($query_res) > 0) {
             $r = $query_res[0];
             $snap = $r->snap;
+            $url = $r->url;
             $fs = filesize(realpath(BASEPATH . "../webroot/webshoots/$snap"));
             $res_data['snap'] = $snap;
+            $res_data['url'] = $url;
             if($fs !== false || $fs > 10000) {
                 $res_data['img_av_status'] = true;
                 $res_data['status'] = 'ok';
