@@ -641,15 +641,14 @@ class System extends MY_Controller {
             }
             fclose($handle);
         }*/
-        $handle = fopen($file, "rb");
-
-        if ($handle != false){
-            while (!feof($handle)){
-                $fileData = fread($handle, 15000);
-                $_rows[] = $fileData;
-                // Process the contents of the uploaded file here...
+        $handle = @fopen($file, "r");
+        if ($handle) {
+            while (($buffer = fgets($handle, 100000)) !== false) {
+                $_rows[] = $buffer;
             }
-
+            if (!feof($handle)) {
+                echo "Error: unexpected fgets() fail\n";
+            }
             fclose($handle);
         }
 
