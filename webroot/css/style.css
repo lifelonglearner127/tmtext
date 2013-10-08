@@ -4,12 +4,12 @@
 }
 .preview_board_item_modal .snap_area {
     float: left; 
-    max-width: 490px;
+    max-width: 500px; /* 490 */
 }
 .preview_board_item_modal .info_area {
     float: left; 
     margin-left: 15px;
-    max-width: 200px;
+    max-width: 220px; /* 200 */
     height: 390px;
     overflow: auto;
     border-left: solid 4px #666;
