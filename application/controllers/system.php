@@ -620,7 +620,7 @@ class System extends MY_Controller {
 
     public function save_departments_categories()
     {
-        ini_set("memory_limit","12M");
+        error_reporting(E_ALL);
         $this->load->model('department_model');
         $this->load->model('department_members_model');
         $this->load->model('site_categories_model');
