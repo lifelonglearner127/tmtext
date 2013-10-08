@@ -641,17 +641,16 @@ class System extends MY_Controller {
             }
             fclose($handle);
         }*/
-        $handle = @fopen($file, "r");
+        $handle = fopen($file, "r") or die("Couldn't get handle");
         if ($handle) {
-            while (($buffer = fgets($handle, 100000)) !== false) {
-                $_rows[] = $buffer;
-            }
-            if (!feof($handle)) {
-                echo "Error: unexpected fgets() fail\n";
+            while (!feof($handle)) {
+                $buffer = fgets($handle, 4096);
+                var_dump($buffer);
+                // Process buffer here..
             }
             fclose($handle);
         }
-
+        var_dump($buffer);
         /*$data = file_get_contents($file, false, $context);
         $data = utf8_encode("[". trim($data,'"')."]");
         var_dump($data);
