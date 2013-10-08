@@ -469,7 +469,11 @@ $( function() {
                     for(var i=0; i < data.length; i++) {
                         var json = $.parseJSON(data[i].title_keyword_description_density);
                         console.log(json);
-                        str += "<div class='board_item'><input type='hidden' name='dm_id' value='" + data[i].id + "'><span>" + data[i].text + "</span><br /><img src='" + data[i].snap + "'/><div class='prod_description'><b>Description word count:" + data[i].description_words + "</b><br /><br />";
+                        var red_border_cl = "";
+                        if(data[i].description_words == 0) {
+                            red_border_cl = " red_border_cl";
+                        }
+                        str += "<div class='board_item" + red_border_cl + "'><input type='hidden' name='dm_id' value='" + data[i].id + "'><span>" + data[i].text + "</span><br /><img src='" + data[i].snap + "'/><div class='prod_description'><b>Description word count:" + data[i].description_words + "</b><br /><br />";
                         if(json != null){
                             str += '<b>Keywords (frequency, density)</b><br />';
                             $.each(json, function(m, item) {
