@@ -164,6 +164,9 @@ class WalmartSpider(BaseSpider):
         # if it's not found, try to find it in the first <p> if the description
         # if found there, exclude it from the description body
         if description_holder:
+            #TODO:
+            # try this instead: ".//p//b/text() | .//h1/text() | .//h3/text() | .//strong/text() "
+            # to fix Money Center problem
             description_title = description_holder.select(".//b/text() | .//h1/text() | .//h3/text() | .//strong/text() ").extract()
             if description_title:
                 # this will implicitly get thle first occurence of either a <b> element or an <h1> element,
