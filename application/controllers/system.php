@@ -620,6 +620,7 @@ class System extends MY_Controller {
 
     public function save_departments_categories()
     {
+        ini_set("memory_limit","12M");
         $this->load->model('department_model');
         $this->load->model('department_members_model');
         $this->load->model('site_categories_model');
@@ -644,7 +645,7 @@ class System extends MY_Controller {
         $handle = fopen($file, "r") or die("Couldn't get handle");
         if ($handle) {
             while (!feof($handle)) {
-                $buffer = fgets($handle, 4096);
+                $buffer = fgets($handle, 15000);
                 var_dump($buffer);
                 // Process buffer here..
             }
