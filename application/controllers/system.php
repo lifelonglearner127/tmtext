@@ -640,9 +640,12 @@ class System extends MY_Controller {
             }
             fclose($handle);
         }*/
-        $data = json_decode(file_get_contents($file), true);
+        $data = file_get_contents($file);
+        $data = utf8_encode($data);
         var_dump($data);
-        
+        var_dump(json_decode($data));
+        var_dump(json_decode($data, true));
+
         /*$highest_level = $_rows[0]->level;
         foreach($_rows as $key=>$one){
             if((int)$highest_level <= (int)$one->level)
