@@ -462,6 +462,8 @@ $( function() {
             $('.dashboard').hide();
             $.post(base_url + 'index.php/measure/getBoardView', {'site_name': $("#hp_boot_drop .btn_caret_sign").text()}, function(data) {
                 var str = '';
+                console.log(data);
+                console.log(data.length);
                 if(data.length > 0){
                     for(var i=0; i < data.length; i++){
                         var json = $.parseJSON(data[i].title_keyword_description_density);
@@ -479,7 +481,7 @@ $( function() {
                 $('.board_view').html(str);
                 $('.board_view .board_item img').on('click', function(){
                     var info = $(this).parent().find('div.prod_description').html();
-                    showSnap('<img src="'+$(this).attr('src')+'">'+info);
+                    showSnap('<img src="'+$(this).attr('src')+'" style="float:left">'+info);
                 });
             });
             $('.board_view').show();
