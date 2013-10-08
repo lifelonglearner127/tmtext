@@ -632,12 +632,12 @@ class System extends MY_Controller {
 
         $handle = fopen($file, "rb");
         $contents = fread($handle, filesize($file));
+        fclose($handle);
         var_dump($contents);
         $data = '['.trim($contents,'"').']';
         var_dump($data);
-        $test = json_decode($data);
-        var_dump($test);
-        fclose($handle);
+        //$test = json_decode($data);
+        //var_dump($test);
 
         die('aaa');
         $data = file_get_contents($file);
