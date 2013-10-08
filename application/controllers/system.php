@@ -630,7 +630,7 @@ class System extends MY_Controller {
         if (($handle = fopen($file, "r")) !== FALSE) {
             while (($data = fgetcsv($handle, 15000, "\n")) !== FALSE) {
                 var_dump($data[0]);
-                var_dump(json_decode(addslashes($data[0])));
+                var_dump(json_decode(str_replace ('\"','"', $data[0])));
                 if(!is_null($data[0]) && $data[0]!=''){
                     $_rows[] = json_decode($data[0]);
                 }
