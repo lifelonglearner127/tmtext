@@ -629,7 +629,7 @@ class System extends MY_Controller {
         $_rows = array();
         $opts = array(
             'http'=>array(
-                'method'=>"GET",
+                'method'=>"POST",
                 'header'=>"Accept-language: en\r\n" .
                 "Cookie: foo=bar\r\n"
             )
