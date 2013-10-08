@@ -464,13 +464,22 @@ $( function() {
                 var str = '';
                 if(data.length > 0){
                     for(var i=0; i < data.length; i++){
-                        str += '<div class="board_item"><span>'+data[i].text+'</span><br /><img src="'+data[i].snap+'"/></div>';
+                        var json = $.parseJSON(data[i].title_keyword_description_density);
+                        str += '<div class="board_item"><span>'+data[i].text+'</span><br /><img src="'+
+                            data[i].snap+'"/><div class="prod_description"></div><b>Description word count:'+
+                            data[i].description_words+'</b><br /><br /><b>Keywords (frequency, density)</b><br />';
+
+                        $.each(json, function(m, item) {
+                            str += m+': '+item+'<br />';
+                        });
+                        str += '<b>Category Description:</b><br />'+data[i].description_text +'</div>';
                     }
 
                 }
                 $('.board_view').html(str);
                 $('.board_view .board_item img').on('click', function(){
-                    showSnap('<img src="'+$(this).attr('src')+'">');
+                    var info = $(this).parent().find('div.prod_description').html();
+                    showSnap('<img src="'+$(this).attr('src')+'">'+info);
                 });
             });
             $('.board_view').show();
