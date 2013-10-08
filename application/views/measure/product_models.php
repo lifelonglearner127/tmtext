@@ -64,7 +64,8 @@
 
             <!-- delete confirmation dialog box -->
             <div id="delConfDialog1" title="Confirm">
-                <p>Are you sure you want to delete model<br><span class="batch_name"></span>?</p>
+                <p>Are you sure you want to delete model<br><span class="imported_data_id_"></span>?</p>
+                <input type="hidden" id="" name="del_im_id" />
             </div>
 
 

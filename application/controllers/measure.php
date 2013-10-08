@@ -2401,7 +2401,7 @@ class Measure extends MY_Controller {
                 $this->load->model('sites_model');
                 //echo $this->get_base_url($vs['url']);
                 //echo 'bbb'.strtolower($this->sites_model->get_name_by_url($this->get_base_url($vs['url']))).'aaaaaaaaa';
-
+               
                 $same_pr[$ks]['customer'] = strtolower($this->sites_model->get_name_by_url($same_pr[$ks]['customer']));
                 $same_pr[$ks]['seo']['short'] = $this->helpers->measure_analyzer_start_v2_product_name($vs['product_name'], preg_replace('/\s+/', ' ', $vs['description']));
                 $same_pr[$ks]['seo']['long'] = $this->helpers->measure_analyzer_start_v2_product_name($vs['product_name'], preg_replace('/\s+/', ' ', $vs['long_description']));
@@ -3408,7 +3408,7 @@ class Measure extends MY_Controller {
         $this->load->model('imported_data_parsed_model');
         $im_id= $this->input->post('im_data_id');
         $model = $this->input->post('model');
-        $this->imported_data_parsed_model->give_model_from_missmatch_div($im_id, $model);
+        $this->imported_data_parsed_model->give_model($im_id, $model);
     }
     
     public function delete_custom_models(){

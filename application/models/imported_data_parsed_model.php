@@ -2105,7 +2105,7 @@ class Imported_data_parsed_model extends CI_Model {
 
         
         $customers_list = array();
-        $query_cus = $this->db->order_by('name', 'asc')->get($this->tables['customers']);
+        $query_cus = $this->db->order_by('name', 'asc')->get('sites');
         $query_cus_res = $query_cus->result();
         if (count($query_cus_res) > 0) {
             foreach ($query_cus_res as $key => $value) {
@@ -2616,13 +2616,23 @@ class Imported_data_parsed_model extends CI_Model {
         }
     }
     
-    function give_model_from_missmatch_div($im_id, $model){
+    function give_model($im_id, $model){
         $update_object = array(
                 'model' => $model,
             );
             $this->db->where('imported_data_id', $im_id);
             $this->db->update($this->tables['imported_data_parsed'], $update_object);
     }
+    function delete_model($im_id){
+        
+        echo "im_id = ".$im_id;
+        $update_object = array(
+                'model' => NULL,
+            );
+            $this->db->where('imported_data_id', $im_id);
+            $this->db->update($this->tables['imported_data_parsed'], $update_object);
+    }
+    
     function min_two_words($str1, $str2){
         $ar1=explode(' ', strtolower($str1));
         $ar2=explode(' ',strtolower($str2));

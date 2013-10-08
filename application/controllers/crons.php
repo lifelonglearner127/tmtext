@@ -26,10 +26,11 @@ class Crons extends MY_Controller {
 
     }
     public function similar_groups(){
-       exit;
+       
         $this->load->model('imported_data_parsed_model');
         
         $result = $this->imported_data_parsed_model->similiarity_cron_new();
+        exit;
         if($result){
             echo 'call by wget';
             shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/similar_groups > /dev/null 2>/dev/null &");

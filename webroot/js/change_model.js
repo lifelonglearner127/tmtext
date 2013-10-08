@@ -1,6 +1,6 @@
 var readUrl   = base_url + 'index.php/system/get_custom_models',
-    updateUrl = base_url + 'index.php/system/update_model',
-    delUrl    = base_url + 'index.php/system/delete_model',
+    updateUrl = base_url + 'index.php/system/update_custom_model',
+    delUrl    = base_url + 'index.php/system/delete_custom_model',
     delHref,
     updateHref,
     updateId,
@@ -25,21 +25,18 @@ $( function() {
 
     $( '#updateDialog1' ).dialog({
         autoOpen: false,
+                
         buttons: {
             'Update': function() {
-//                $( '#ajaxLoadAni' ).fadeIn( 'slow' );
-//                $( this ).dialog( 'close' );
-//
-//                $.ajax({
-//                    url: updateHref,
-//                    type: 'POST',
-//                    data: $( '#updateDialog1 form' ).serialize(),
-//
-//                    success: function( response ) {
-//                        
-//                    } //end success
-//
-//                }); //end ajax()
+             var aaa = $.post(updateUrl, {model: $( '#updateDialog1 input[name=title]' ).val(), imported_data_id: $( '#updateDialog1 input[name=id]' ).val()}, 'json').done(function(data) {
+             delId=$( '#updateDialog1 input[name=id]' ).val();
+             $( 'tr#'+delId+' td:nth-child(3)' ).text($( '#updateDialog1 input[name=title]' ).val());
+            
+        });
+         $( this ).dialog( 'close' );
+//            console.log($( '#updateDialog1 input[name=title]' ).val());
+//            console.log('second');
+//            console.log($( '#updateDialog1 input[name=id]' ).val());
             },
 
             'Cancel': function() {
@@ -59,27 +56,12 @@ $( function() {
 
             'Yes': function() {
                 //display ajax loader animation here...
-                $( '#ajaxLoadAni' ).fadeIn( 'slow' );
-                $( this ).dialog( 'close' );
-
-//                $.ajax({
-//                    url: delHref,
-//                    type:'POST',
-//                    data:{'id': delId},
-//                    success: function( response ) {
-//                        //hide ajax loader animation here...
-//                        $( '#ajaxLoadAni' ).fadeOut( 'slow' );
-//
-//                        //$( '#msgDialog > p' ).html( response );
-//                        //$( '#msgDialog' ).dialog( 'option', 'title', 'Success' ).dialog( 'open' );
-//
-//                        $( 'a[href=' + delHref + ']' ).parents( 'tr' )
-//                            .fadeOut( 'slow', function() {
-//                                $( this ).remove();
-//                            });
-//
-//                    } //end success
-//                });
+//                $( '#ajaxLoadAni' ).fadeIn( 'slow' );
+               
+                var aaa = $.post(delUrl, {imported_data_id: $('#delConfDialog1 input[name=del_im_id]').val()}, 'json').done(function(data) {
+                 $( 'tr#'+delId+' td:nth-child(3)' ).text('');
+        });
+        $( this ).dialog( 'close' );
 
             } //end Yes
 
@@ -90,21 +72,9 @@ $( function() {
     $( '#records' ).delegate( 'a.updateBtn', 'click', function() {
         updateHref = $( this ).attr( 'href' );
         updateId = $( this ).parents( 'tr' ).attr( "id" );
+        
+        $( '#updateDialog1 input[name=id]' ).val(updateId);
 
-//        $( '#ajaxLoadAni' ).fadeIn( 'slow' );
-//
-//        $.ajax({
-//            url: base_url + 'index.php/system/getBatchById/' + updateId,
-//            dataType: 'json',
-//
-//            success: function( response ) {
-//                
-//                $( 'input#model' ).val( response[0].model );
-//
-//                $( '#ajaxLoadAni' ).fadeOut( 'slow' );
-//
-//                //--- assign id to hidden field ---
-//                
                 $( '#updateDialog1' ).dialog( 'open' );
 //            }
 //        });
@@ -115,7 +85,9 @@ $( function() {
     $( '#records' ).delegate( 'a.deleteBtn', 'click', function() {
         delHref = $( this ).attr( 'href' );
         delId = $( this ).parents( 'tr' ).attr( "id" );
-        $('span.batch_name').text($( 'tr#'+delId+' td:nth-child(3)' ).text());
+        
+        $('#delConfDialog1 input[name=del_im_id]').val(delId);
+        $('span.imported_data_id_').text($( 'tr#'+delId+' td:nth-child(3)' ).text());
         $( '#delConfDialog1' ).dialog( 'open' );
 
         return false;
@@ -134,7 +106,7 @@ function read_models() {
         dataType: 'json',
         data:{},
         success: function( response ) {
-           console.log(response);
+           
             for( var i in response ) {
                 response[ i ].updateLink = updateUrl + '/' + response[ i ].imported_data_id;
                 response[ i ].deleteLink = delUrl + '/' + response[ i ].imported_data_id;
