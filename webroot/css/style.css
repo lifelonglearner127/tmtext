@@ -1,11 +1,16 @@
 /* BOARD ITEM MODAL PREVIEW (START) */
 .preview_board_item_modal .snap_area {
     float: left; 
-    max-width: 500px;
+    max-width: 490px;
 }
 .preview_board_item_modal .info_area {
     float: left; 
     margin-left: 15px;
+    max-width: 200px;
+    height: 390px;
+    overflow: auto;
+    border-left: solid 4px #666;
+    padding-left: 10px;
 }
 /* BOARD ITEM MODAL PREVIEW (END) */
 
