@@ -1749,12 +1749,14 @@ class System extends MY_Controller {
         
     }
     
-    public function ubdate_custom_model(){
-        $results = $this->imported_data_parsed_model->get_custom_models();
-        $this->output->set_content_type('application/json')
-        ->set_output(json_encode($results));
+    public function update_custom_model(){
+        $model= $this->input->post('model');
+        $imported_data_id = $this->input->post('imported_data_id');
+        $results = $this->imported_data_parsed_model->give_model($imported_data_id, $model);
+        echo 'ok';
     }
     public function delete_custom_model(){
-        
+        $imported_data_id = $this->input->post('imported_data_id');
+        $this->imported_data_parsed_model->delete_model($imported_data_id);
     }
 }
