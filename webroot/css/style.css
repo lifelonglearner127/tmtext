@@ -11,7 +11,8 @@
     margin-left: 15px;
     max-width: 220px; /* 200 */
     height: 390px;
-    overflow: auto;
+    /*overflow: auto;*/
+    overflow-y: auto;
     border-left: solid 4px #666;
     padding-left: 10px;
 }
