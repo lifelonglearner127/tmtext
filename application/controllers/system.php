@@ -605,7 +605,7 @@ class System extends MY_Controller {
 
     public function upload_departments_categories()
     {
-        ini_set('post_max_size', '100M'); 
+        ini_set('post_max_size', '100M');
         $this->load->library('UploadHandler');
 
         $this->output->set_content_type('application/json');
@@ -621,7 +621,8 @@ class System extends MY_Controller {
 
     public function save_departments_categories()
     {
-        //error_reporting(E_ALL);
+        error_reporting(E_ALL);
+        ini_set('odbc.defaultlrl', '10000');
         $this->load->model('department_model');
         $this->load->model('department_members_model');
         $this->load->model('site_categories_model');
