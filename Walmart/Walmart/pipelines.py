@@ -16,9 +16,9 @@ class WalmartPipeline(object):
 		line = json.dumps(dict(item))
 		if self.started:
 			self.file.write(",\n" + line)
-			self.started = True
 		else:
 			self.file.write(line)
+			self.started = True
 		return item
 
 	def close_spider(self, spider):
