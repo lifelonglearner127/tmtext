@@ -627,28 +627,31 @@ class System extends MY_Controller {
         $site_name = explode(".", strtolower($this->input->post('site_name')));
         $file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
         $_rows = array();
-        if (($handle = fopen($file, "r")) !== FALSE) {
+        /*if (($handle = fopen($file, "r")) !== FALSE) {
             while (($data = fgets($handle, 50000))  !== FALSE) {
                 var_dump($data);
                 var_dump(utf8_encode($data));
                 var_dump(json_decode(utf8_encode($data)));
-                
+
 
                 if(!is_null($data[0]) && $data[0]!=''){
                     $_rows[] = json_decode($data[0]);
                 }
             }
             fclose($handle);
-        }
-        
-        $highest_level = $_rows[0]->level;
+        }*/
+        $data = fle_get_contents($file);
+        var_dump($data);
+        var_dump(json_decode($data));
+
+        /*$highest_level = $_rows[0]->level;
         foreach($_rows as $key=>$one){
             if((int)$highest_level <= (int)$one->level)
                 $highest_level = $one->level;
         }
         echo "\n\n\n";
         var_dump($_rows);
-        /*foreach($_rows as $row){
+        foreach($_rows as $row){
             $special = 0;
             $parent_text = '';
             $department_text = '';
