@@ -1267,6 +1267,8 @@ class Imported_data_parsed_model extends CI_Model {
             $long_description = '';
             $url = '';
             $features = '';
+            $model='';
+            $parsed_attributes =array();
             foreach ($res as $val) {
                 if ($val['key'] == 'URL') {
                     $url = $val['value'];
@@ -1280,13 +1282,17 @@ class Imported_data_parsed_model extends CI_Model {
 
                 if ($val['key'] == 'Product Name') {
                     $product_name = $val['value'];
+                    $model = $val['model'];
+                }
+                if ($val['key'] == 'parsed_attributes') {
+                    $parsed_attributes = unserialize($val['value']);
                 }
                 if ($val['key'] == 'Features') {
                     $features = $val['value'];
                 }
             }
             array_push($data, array('imported_data_id' => $result->imported_data_id, 'product_name' => $result->value,
-                'description' => $description, 'long_description' => $long_description, 'url' => $url, 'product_name' => $product_name, 'features' => $features));
+                'description' => $description, 'long_description' => $long_description, 'url' => $url, 'parsed_attributes'=>$parsed_attributes,'product_name' => $product_name, "model"=>$model, 'features' => $features));
         }
 
         return $data;
@@ -2064,6 +2070,8 @@ class Imported_data_parsed_model extends CI_Model {
             $long_description = '';
             $url = '';
             $features = '';
+            $model='';
+            $parsed_attributes=array();
             foreach ($res as $val) {
                 if ($val['key'] == 'URL') {
                     $url = $val['value'];
@@ -2080,16 +2088,19 @@ class Imported_data_parsed_model extends CI_Model {
                 if ($val['key'] == 'Long_Description') {
                     $long_description = $val['value'];
                 }
-
+               if ($val['key'] == 'parsed_attributes') {
+                    $parsed_attributes = unserialize($val['value']);
+               }
                 if ($val['key'] == 'Product Name') {
                     $product_name = $val['value'];
+                    $model= $val['model'];
                 }
                 if ($val['key'] == 'Features') {
                     $features = $val['value'];
                 }
             }
             array_push($data, array('imported_data_id' => $imported_data_id, 'product_name' => $product_name,
-                'description' => $description, 'long_description' => $long_description, 'url' => $url, 'product_name' => $product_name, 'features' => $features));
+                'description' => $description, 'long_description' => $long_description, 'url' => $url, 'product_name' => $product_name, 'parsed_attributes'=>$parsed_attributes,'model'=>$model, 'features' => $features));
         }
 
         
@@ -2271,13 +2282,15 @@ class Imported_data_parsed_model extends CI_Model {
             $long_description = '';
             $url = '';
             $product_name = '';
-
+            $parsed_attributes=array();
+            $model='';
             foreach ($res as $val) {
                 if ($val['key'] == 'Product Name') {
                     $product_name = $val['value'];
 //                    if (leven_algoritm(strtolower($selected_product_name), strtolower($product_name)) > 35) {
 //                        $is_similiar = 1;
 //                    }
+                    $model= $val['model'];
                 }
                 if ($val['key'] == 'URL') {
                     $url = $val['value'];
@@ -2291,7 +2304,10 @@ class Imported_data_parsed_model extends CI_Model {
                 if ($val['key'] == 'Long_Description') {
                     $long_description = $val['value'];
                 }
-
+                
+                if($val['key'] == 'parsed_attributes'){
+                    $parsed_attributes = unserialize($val['value']);
+                }
 
                 if ($val['key'] == 'Features') {
                     $features = $val['value'];
@@ -2299,7 +2315,7 @@ class Imported_data_parsed_model extends CI_Model {
             }
             //if ($is_similiar == 1) {
             array_push($data1, array('imported_data_id' => $result,
-                'description' => $description, 'long_description' => $long_description, 'url' => $url, 'product_name' => $product_name, 'features' => $features));
+                'description' => $description, 'long_description' => $long_description, 'url' => $url, 'product_name' => $product_name, 'parsed_attributes' => $parsed_attributes, 'features' => $features));
             // }
         }
     

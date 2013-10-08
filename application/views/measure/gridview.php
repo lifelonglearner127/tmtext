@@ -238,7 +238,10 @@ foreach ($same_pr as $ks => $vs) {
                         <div class="parsed_attributes"  style="width: 100%;margin-bottom: 10px;">
                     <?php if(isset($vs['parsed_attributes']['model'])){ ?>
                         <p style="font-weight:bold;margin:0;">Model: </p>                                                                     
-                            <?php echo $vs['parsed_attributes']['model'];  } ?>                                                                                              
+                            <?php echo $vs['parsed_attributes']['model'];  }else{if(isset($vs['model'])&& !is_null($vs['model']) && $vs['model']!='' ){ ?>
+                        <p style="font-weight:bold;margin:0;">Model(custom): </p>                                                                     
+                            <?php echo $vs['model'];  } ?>
+                            <?php }?>
                         </div>
                     <!--                            //Max-->
                     <div class="p_description" style="overflow:hidden;">
