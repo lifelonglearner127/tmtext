@@ -21,6 +21,6 @@ class WalmartPipeline(object):
 			self.file.write(line)
 		return item
 
-	def close_spider(self):
+	def close_spider(self, spider):
 		self.file.close()
 
