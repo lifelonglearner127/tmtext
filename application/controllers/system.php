@@ -632,6 +632,7 @@ class System extends MY_Controller {
 
         $handle = fopen($file, "rb");
         $contents = fread($handle, filesize($file));
+        $data = utf8_encode("[". trim($contents,'"')."]");
         $data = json_decode($data);
         var_dump($contents);
         var_dump($data);
