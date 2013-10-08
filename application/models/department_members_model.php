@@ -220,7 +220,9 @@ class Department_members_model extends CI_Model {
 
     function getAllSnapsByCustomerID($customerID)
     {
-        $sql = "SELECT `d`.`id`, `d`.`text`, `d`.`url`, `s`.`snap_path` FROM `department_members` as `d` left join `site_departments_snaps` as `s` on `d`.`id` = `s`.`dep_id`
+        $sql = "SELECT `d`.`id`, `d`.`text`, `d`.`description_text`, `d`.`description_words`, `d`.`title_keyword_description_density`,
+        `d`.`url`, `s`.`snap_path` FROM `department_members` as `d`
+        left join `site_departments_snaps` as `s` on `d`.`id` = `s`.`dep_id`
             WHERE `d`.`site_id` = '".$customerID."' and `d`.`flag`='ready' and `s`.`dep_id` is not null";
         $query = $this->db->query($sql);
         return $query->result();

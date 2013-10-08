@@ -113,12 +113,12 @@ $(function () {
                         if(json.aaData[i][2] != null && json.aaData[i][2] != '' && json.aaData[i][0]!=''){
                             if(json.aaData[i][2].length > 75)
                               str += '<div class="board_item"><span class="span_img">'+json.aaData[i][2]+'</span><br />'+json.aaData[i][0]+
-                                  '<div class="prod_description">URL:<br/>'+obj.url+'<br />Product name: <br/>'+obj.product_name+
-                                  '<br />Price: <br/>'+obj.own_price+'</div></div>';
+                                  '<div class="prod_description"><b>URL:</b><br/>'+obj.url+'<br /><br /><b>Product name:</b><br/>'+obj.product_name+
+                                  '<br /><br/><b>Price:</b><br/>'+obj.own_price+'</div></div>';
                             else
                               str += '<div class="board_item"><span>'+json.aaData[i][2]+'</span><br />'+json.aaData[i][0]+
-                                  '<div class="prod_description">URL:<br/>'+obj.url+'<br />Product name: <br/>'+obj.product_name
-                                  +'<br />Price: <br/>'+obj.own_price+'</div></div>';
+                                  '<div class="prod_description"><b>URL:</b><br/>'+obj.url+'<br /><br /><b>Product name:</b><br/>'+obj.product_name
+                                  +'<br /><br/><b>Price:</b><br/>'+obj.own_price+'</div></div>';
                         }
                     }                   
                     if(str == ''){
@@ -702,9 +702,7 @@ $(function () {
                 str = '<p>No images available for this batch</p>';
             }
             $('#assess_view').html(str);
-            console.log(111);
             $('#assess_view .board_item img').on('click', function(){
-                console.log(222);
                 showSnap('<img src="'+$(this).attr('src')+'">');
             });
         }
@@ -977,15 +975,22 @@ $(function () {
                         var str = '';
                         if(data.length > 0){
                             for(var i=0; i < data.length; i++){
-                                str += '<div class="board_item"><span>'+data[i].text+'</span><br /><img src="'+data[i].snap+'"/></div>';
+                                var json = $.parseJSON(data[i].title_keyword_description_density);
+                                str += '<div class="board_item"><span>'+data[i].text+'</span><br /><img src="'+
+                                    data[i].snap+'"/><div class="prod_description"></div><b>Description word count:'+
+                                    data[i].description_words+'</b><br /><br /><b>Keywords (frequency, density)</b><br />';
+
+                                $.each(json, function(m, item) {
+                                    str += m+': '+item+'<br />';
+                                });
+                                str += '<b>Category Description:</b><br />'+data[i].description_text +'</div>';
                             }
 
                         }
                         $('.board_view').html(str);
-                        console.log(333);
                         $('.board_view .board_item img').on('click', function(){
-                            console.log(444);
-                            showSnap('<img src="'+$(this).attr('src')+'">');
+                            var info = $(this).parent().find('div.prod_description').html();
+                            showSnap('<img src="'+$(this).attr('src')+'" style="float:left">'+info);
                         });
                     });
                     $('.board_view').show();

@@ -1694,7 +1694,9 @@ class Measure extends MY_Controller {
         $data = $this->department_members_model->getAllSnapsByCustomerID($site_id);
         $board_list = array();
         foreach ($data as $row) {
-            $board_list[] = array('id' => $row->id, 'text'=>$row->text, 'snap' => $row->snap_path);
+            $board_list[] = array('id' => $row->id, 'text'=>$row->text, 'snap' => $row->snap_path,
+            'description_words' => $row->description_words, 'description_text' => $row->description_text,
+            'title_keyword_description_density' => $row->title_keyword_description_density);
         }
         $this->output->set_content_type('application/json')->set_output(json_encode($board_list));
     }
