@@ -24,7 +24,7 @@ $sub_menu = array(
     /*array('controller' => 'admin_editor', 'name' => 'Editors'),*/
     array('controller' => 'admin_tag_editor', 'name' => 'Tag Editor'),
     /*array('controller' => 'site_crawler', 'name' => 'Site Crawler'),*/
-    array('controller' => 'job_board', 'name' => 'Job Board'),
+    //array('controller' => 'job_board', 'name' => 'Job Board'),
 );
 ?>
 <?php if (!empty($menu)) {?>
@@ -45,6 +45,9 @@ $sub_menu = array(
                              
                                 <li<?php echo ($this->router->class==$sub_item['controller']) ? " class=\"active\"":"";?>><a href="<?php echo site_url($sub_item['controller']);?>"><span><?php echo $sub_item['name'];?></span></a></li>
                            <?php }} ?>
+                                <?php if ($this->ion_auth->is_admin($this->ion_auth->get_user_id())) { ?>
+                                    <li<?php echo ($this->router->class=='job_board') ? " class=\"active\"":"";?>><a href="<?php echo site_url('job_board');?>"><span>Job Board</span></a></li>
+                                <?php }?>    
                             <li><a href="<?php echo site_url('auth/logout');?>">LOG OUT</a></li>
                         </ul>
                    <?php } ?>
