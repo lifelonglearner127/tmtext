@@ -629,6 +629,7 @@ class System extends MY_Controller {
         $_rows = array();
         if (($handle = fopen($file, "r")) !== FALSE) {
             while (($data = fgetcsv($handle, 15000, "\n")) !== FALSE) {
+                var_dump($data);
                 if(!is_null($data[0]) && $data[0]!=''){
                     $_rows[] = json_decode($data[0]);
                 }
@@ -641,6 +642,7 @@ class System extends MY_Controller {
             if((int)$highest_level <= (int)$one->level)
                 $highest_level = $one->level;
         }
+        echo "\n\n\n";
         var_dump($_rows);
         /*foreach($_rows as $row){
             $special = 0;
