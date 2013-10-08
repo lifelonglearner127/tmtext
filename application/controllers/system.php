@@ -641,11 +641,10 @@ class System extends MY_Controller {
             fclose($handle);
         }*/
         $data = file_get_contents($file);
-        $data = preg_replace('/[ ]{2,}|[\t]/', ' ', "[". trim($data,'"')."]");
+        $data = utf8_encode("[". trim($data,'"')."]");
         var_dump($data);
-        var_dump(json_decode($data));
-        var_dump(json_decode($data, true));
-
+        $data = json_decode($data);
+        var_dump($data);
         /*$highest_level = $_rows[0]->level;
         foreach($_rows as $key=>$one){
             if((int)$highest_level <= (int)$one->level)
