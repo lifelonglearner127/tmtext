@@ -1686,6 +1686,13 @@ class Measure extends MY_Controller {
         $this->output->set_content_type('application/json')->set_output(json_encode($data));
     }
 
+    public function getBoardViewItemData() {
+        $this->load->model('department_members_model');
+        $dm_id = $this->input->post('dm_id');
+        $data = $this->department_members_model->getDataByDepMemberId($dm_id);
+        $this->output->set_content_type('application/json')->set_output(json_encode($data));
+    }
+
     public function getBoardView(){
         $this->load->model('sites_model');
         $this->load->model('department_members_model');

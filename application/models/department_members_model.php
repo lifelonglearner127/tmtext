@@ -218,6 +218,20 @@ class Department_members_model extends CI_Model {
         return $query->result();
     }
 
+    function getDataByDepMemberId($dm_id) {
+        $sql = "SELECT `d`.`id`, `d`.`text`, `d`.`description_text`, `d`.`description_words`, `d`.`title_keyword_description_density`,
+        `d`.`url`, `s`.`snap_path` FROM `department_members` as `d`
+        left join `site_departments_snaps` as `s` on `d`.`id` = `s`.`dep_id`
+            WHERE `d`.`id` = '".$dm_id."' and `d`.`flag`='ready' and `s`.`dep_id` is not null";
+        $query = $this->db->query($sql);
+        $res = $query->result();
+        if(count($res) > 0) {
+            return $res[0];
+        } else {
+            return array();
+        }
+    }
+
     function getAllSnapsByCustomerID($customerID)
     {
         $sql = "SELECT `d`.`id`, `d`.`text`, `d`.`description_text`, `d`.`description_words`, `d`.`title_keyword_description_density`,

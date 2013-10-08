@@ -456,7 +456,8 @@ $( function() {
         }
     });
 
-    $("#board_view").click(function(e){
+
+    $("#board_view").click(function(e) {
         e.stopPropagation();
         if($('.board_view').css('display') == 'none'){
             $('.dashboard').hide();
@@ -465,12 +466,13 @@ $( function() {
                 console.log(data);
                 console.log(data.length);
                 if(data.length > 0){
-                    for(var i=0; i < data.length; i++){
+                    for(var i=0; i < data.length; i++) {
                         var json = $.parseJSON(data[i].title_keyword_description_density);
                         console.log(json);
-                        str += '<div class="board_item"><span>'+data[i].text+'</span><br /><img src="'+
-                            data[i].snap+'"/><div class="prod_description"><b>Description word count:'+
-                            data[i].description_words+'</b><br /><br />';
+                        str += "<div class='board_item'><input type='hidden' name='dm_id' value='" + data[i].id + "'><span>" + data[i].text + "</span><br /><img src='" + data[i].snap + "'/><div class='prod_description'><b>Description word count:" + data[i].description_words + "</b><br /><br />";
+                        // str += '<div class="board_item"><span>'+data[i].text+'</span><br /><img src="'+
+                        //     data[i].snap+'"/><div class="prod_description"><b>Description word count:'+
+                        //     data[i].description_words+'</b><br /><br />';
                         if(json != null){
                             str += '<b>Keywords (frequency, density)</b><br />';
                             $.each(json, function(m, item) {
@@ -483,22 +485,45 @@ $( function() {
 
                 }
                 $('.board_view').html(str);
-                $('.board_view .board_item img').on('click', function(){
-                    var info = $(this).parent().find('div.prod_description').html();
-                    showSnap('<img src="'+$(this).attr('src')+'" style="float:left">'+info);
+                $('.board_view .board_item img').on('click', function() {
+                    var dm_id = $(this).parent().find("input[type='hidden'][name='dm_id']").val();
+                    console.log("ID : ", dm_id);
+                    $.post(base_url + 'index.php/measure/getBoardViewItemData', {'dm_id': dm_id}, function(data) {
+                        console.log("DATA FOR ME : ", data);
+                        showBoardItemPreviewModal(data);
+                        // showSnap('<img src="'+data['snap_path']+'" style="float:left">'+data['description_text']);
+                    });
                 });
+                // $('.board_view .board_item img').on('click', function(){
+                //     var info = $(this).parent().find('div.prod_description').html();
+                //     showSnap('<img src="'+$(this).attr('src')+'" style="float:left">'+info);
+                // });
             });
             $('.board_view').show();
         } else {
             $('.board_view').hide();
             $('.dashboard').show();
         }
+
     });
 
 
-
-
 }); //end document ready
+
+function showBoardItemPreviewModal(data) {
+    $("#preview_crawl_snap_modal").css('width', '780px');
+    $("#preview_crawl_snap_modal").modal('show');
+    var data_html = "<div style='float: left; max-width: 500px;'><img src='" + data['snap_path'] + "'></div>";
+    data_html += "<div style='float: left; margin-left: 15px;'>";
+    data_html += "<b>Description word count: " + data['description_words'] + "</b><br><br>";
+    if(typeof(data['description_words']) !== 'undefined' && data['description_words'] != 0) {
+        data_html += "<b>Category description: " + data['description_text'] + "</b><br>";
+    } else {
+        data_html += "<b>Category description: N/A</b><br>";
+    }
+    data_html += "</div>";
+    $("#preview_crawl_snap_modal .snap_holder").html(data_html);
+}
 
 function showSnap(data) {
     $("#preview_crawl_snap_modal").modal('show');
