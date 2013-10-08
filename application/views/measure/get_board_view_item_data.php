@@ -39,8 +39,8 @@
             <?php } ?>
             <?php if($data->description_words != 0) { ?>
             <div>
-                <p style='font-weight: bold; font-size: 12px;'>Category description:</p>
-                <div><?php echo $data->description_text; ?></div>
+                <p class='bitem_desc_text_head' style='font-weight: bold; font-size: 12px; cursor: pointer;'>Category description:</p>
+                <div class='bitem_desc_text' style='display: none;'><?php echo $data->description_text; ?></div>
             </div>
             <?php } else { ?>
             <p>Category description: N/A</p>
@@ -51,3 +51,15 @@
 <div class="modal-footer">
     <a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
 </div>
+
+<script type='text/javascript'>
+    $(document).ready(function() {
+        $(".bitem_desc_text_head").click(function(e) {
+            if($(".bitem_desc_text").is(":visible")) {
+                $(".bitem_desc_text").slideUp();
+            } else {
+                $(".bitem_desc_text").slideDown();
+            }
+        });
+    });
+</script>
