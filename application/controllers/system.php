@@ -621,7 +621,6 @@ class System extends MY_Controller {
 
     public function save_departments_categories()
     {
-        die('aaa');
         $this->load->model('department_model');
         $this->load->model('department_members_model');
         $this->load->model('site_categories_model');
@@ -629,6 +628,13 @@ class System extends MY_Controller {
         $site_name = explode(".", strtolower($this->input->post('site_name')));
         $file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
         $_rows = array();
+        $data = file_get_contents($file);
+        var_dump($data);
+        $data = utf8_encode("[". trim($data,'"')."]");
+        var_dump($data);
+        $data = json_decode($data);
+        die('aaa');
+
 
         if (($handle = fopen($file, "r")) !== FALSE) {
             while (($data = fgets($handle, 50000))  !== FALSE) {
