@@ -30,6 +30,9 @@ f = codecs.open(options.filename, "rb", "utf-8")
 fields = []
 
 for line in f:
+	if line.strip() == ",":
+		continue
+
 	item = json.loads(line.strip())
 
 	if options.field in item:
