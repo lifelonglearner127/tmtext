@@ -297,20 +297,60 @@
                 }
             });
 
+//            $("#department_snapshot").click(function(){
+//                $("#loading_crawl_snap_modal").modal('show');
+//                $.post(base_url + 'index.php/system/system_sites_department_snap', {
+//                    'id': $('select[name="department"]').find('option:selected').val()
+//                }, function(data){
+//                    $("#loading_crawl_snap_modal").modal('hide');
+//                    if(data['status']) {
+//                        showSnap("<img src='" + data['snap'] + "'>");
+//                        standaloneDepartmentScreenDetector();
+//                    } else {
+//                        showSnap("<p>" + data['msg'] + "</p>");
+//                    }
+//                });
+//                return false;
+//            });
+
+            var ids = new Array();
+            var refreshIntervalId = 0;
             $("#department_snapshot").click(function(){
-                $("#loading_crawl_snap_modal").modal('show');
-                $.post(base_url + 'index.php/system/system_sites_department_snap', {
-                    'id': $('select[name="department"]').find('option:selected').val()
+                $('#department_snapshot').hide();
+                $('#add_snapshot_queue').hide();
+                $('#department_snapshot_process').show();
+                $('#department_loader').show();
+                if(ids.length > 0){
+                    refreshIntervalId = setInterval(function(){
+                        $.ajax({
+                            type: "POST",
+                            url: base_url + 'index.php/system/department_snaps_ajax',
+                            data: { ajax: "ajax" },
+                            dataType: 'json'
+                        }).done(function( data ) {
+                            $('#department_snapshot_process').text('In process: '+data.process+' Done: '+data.done);
+                        });
+                    },500);
+                    $.post(base_url + 'index.php/system/system_sites_department_snaps', {
+                        'ids': ids
                 }, function(data){
-                    $("#loading_crawl_snap_modal").modal('hide');
-                    console.log(data);
-                    if(data['status']) {
-                        showSnap("<img src='" + data['snap'] + "'>");
-                        standaloneDepartmentScreenDetector();
-                    } else {
-                        showSnap("<p>" + data['msg'] + "</p>");
+                        clearInterval(refreshIntervalId);
+                        ids = new Array();
+                        $('#department_snapshot_process').hide();
+                        $('#department_loader').hide();
+                        $('#department_snapshot').show();
+                        $('#department_snapshot').attr('disabled',true);
+                        $('#add_snapshot_queue').show();
+                        $( "select[name='department']" ).trigger( "change" );
+                    });
                     }
+                return false;
                 });
+            $('#add_snapshot_queue').click(function(){
+                $('#department_snapshot').removeAttr('disabled');
+                var departmentValue = $('select[name="department"]').children('option:selected').val();
+                if($.inArray(departmentValue, ids) == -1)
+                    ids.push(departmentValue);
                 return false;
             });
 
@@ -590,20 +630,22 @@
 
                     <button id="delete_department" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
                     <button class="btn btn-danger" onclick="doconfirm('departments');return false;"><i class="icon-white icon-ok"></i>&nbsp;Delete All</button>
-                    <button id="department_snapshot" class="btn btn-success"><i class="icon-white icon-ok"></i>&nbsp;Snapshot</button>
+                    <button id="department_snapshot" class="btn btn-success" disabled="disabled" ><i class="icon-white icon-ok"></i>&nbsp;Snapshot</button>
+                    <span id="department_snapshot_process" style="width: 30px;height: 104px;display: none;font-weight: bold;" ></span>
+                    <button id="add_snapshot_queue" style="height: 30px;" class="btn btn-success"><i class="icon-plus icon-white"></i></button>
+                    <span id="department_loader" style="display: none;width: 40px;height: 30px;" ><img style="margin-left: 10px;" src="<?php echo base_url(); ?>webroot/img/ajax-loader.gif" /></span>
                     <button id="add_department" class="btn btn-success"><i class="icon-white icon-ok"></i>&nbsp;Add...</button>
                 </div>
                 <div class="row-fluid mt_10">
                     <label>Categories:</label>
                     <?php // echo form_dropdown('category', $category_list ); ?>
-                    <?php //if(count($category_list) > 0) { ?>
+                    <?php if(count($category_list) > 0) { ?>
                         <select id='category_sites_frow' name='category'>
-                        <?php //foreach($category_list as $kc => $kv) { ?>
-                            <!--option value="<?php echo $kv['id']; ?>"><?php echo $kv['text']; ?></option-->
-                            <option value=""></option>
-                        <?php //} ?>
+                        <?php foreach($category_list as $kc => $kv) { ?>
+                            <option value="<?php echo $kv['id']; ?>"><?php echo $kv['text']; ?></option>
+                        <?php } ?>
                         </select>
-                    <?php //} ?>
+                    <?php } ?>
                     <img class='monitor_icon hidden mr10' id='cat_monitor' src="<?php echo base_url() ?>/img/monitor.png">
                     <button id="delete_category" class="btn btn-danger" type="submit"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
                     <button id="delete_all_categories" class="btn btn-danger" onclick="doconfirm('categories');return false;"><i class="icon-white icon-ok"></i>&nbsp;Delete All</button>

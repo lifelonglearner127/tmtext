@@ -1130,17 +1130,73 @@ class System extends MY_Controller {
         return $category_list;
     }
 
-    public function system_sites_department_snap() {
-    	$res = array(
+//    public function system_sites_department_snap() {
+//    	$res = array(
+//    		'status' => false,
+//    		'snap' => '',
+//    		'msg' => '',
+//    		'site' => ''
+//    	);
+//    	$id = $this->input->post('id');
+//    	$this->load->model('webshoots_model');
+//    	$this->load->model('department_members_model');
+//    	$this->load->model('sites_model');
+//    	$department = $this->department_members_model->get($id);
+//
+//    	if(count($department) > 0) {
+//    		$dep = $department[0];
+//    		if(isset($dep->url) && trim($dep->url) !== "") {
+//    			$url = $dep->url;
+//    			$http_status = $this->webshoots_model->urlExistsCode($url);
+//    			if($http_status >= 200 && $http_status <= 302) {
+//    					$url = preg_replace('#^https?://#', '', $url);
+//	            $call_url = $this->webshoots_model->webthumb_call_link($url);
+//	            $snap_res = $this->webshoots_model->crawl_webshoot($call_url, $dep->id, 'sites_dep_snap-');
+//	            // ==== check image (if we need to repeat snap craw, but using snapito.com) (start)
+//	            $fs = filesize($snap_res['dir']);
+//	            if($fs === false || $fs < 10000) { // === so re-craw it
+//	            	@unlink($snap_res['dir']);
+//	            	$api_key = $this->config->item('snapito_api_secret');
+//	            	$call_url = "http://api.snapito.com/web/$api_key/mc/$url";
+//	    					$snap_res = $this->webshoots_model->crawl_webshoot($call_url, $dep->id, 'sites_dep_snap-');
+//	            }
+//	            // ==== check image (if we need to repeat snap craw, but using snapito.com) (end)
+//	            $res_insert = $this->department_members_model->insertSiteDepartmentSnap($dep->id, $snap_res['img'], $snap_res['path'], $snap_res['dir'], $http_status);
+//			    		if($res_insert > 0) {
+//			    			$res['snap'] = $snap_res['path'];
+//			    			$res['site'] = $url;
+//			    			$res['status'] = true;
+//			    			$res['msg'] = 'Ok';
+//			    		}
+//    			} else {
+//    				$res['site'] = $url;
+//    				$res['msg'] = "Department url is unreachable. Snapshot attempt is canceled. HTTP STATUS: $http_status";
+//    			}
+//    		} else {
+//    			$res['msg'] = "Url field is empty DB. Unable to process snapshot process";
+//    		}
+//    	} else {
+//    		$res['msg'] = "Such department don't exists in DB. Snapshot attempt is canceled.";
+//    	}
+//    	$this->output->set_content_type('application/json')->set_output(json_encode($res));
+//    }
+
+    public function system_sites_department_snaps() {
+    	$ids = $this->input->post('ids');
+    	$this->load->model('webshoots_model');
+    	$this->load->model('department_members_model');
+    	$this->load->model('sites_model');
+    	$this->load->model('snapshot_queue_model');
+        
+        $this->snapshot_queue_model->insertCount(count($ids));
+        
+        foreach($ids as $id){
+            $res[$id] = array(
     		'status' => false,
     		'snap' => '',
     		'msg' => '',
     		'site' => ''
     	);
-    	$id = $this->input->post('id');
-    	$this->load->model('webshoots_model');
-    	$this->load->model('department_members_model');
-    	$this->load->model('sites_model');
     	$department = $this->department_members_model->get($id);
 
     	if(count($department) > 0) {
@@ -1163,22 +1219,33 @@ class System extends MY_Controller {
 	            // ==== check image (if we need to repeat snap craw, but using snapito.com) (end)
 	            $res_insert = $this->department_members_model->insertSiteDepartmentSnap($dep->id, $snap_res['img'], $snap_res['path'], $snap_res['dir'], $http_status);
 			    		if($res_insert > 0) {
-			    			$res['snap'] = $snap_res['path'];
-			    			$res['site'] = $url;
-			    			$res['status'] = true;
-			    			$res['msg'] = 'Ok';
+                                                    $res[$id]['snap'] = $snap_res['path'];
+                                                    $res[$id]['site'] = $url;
+                                                    $res[$id]['status'] = true;
+                                                    $res[$id]['msg'] = 'Ok';
 			    		}
     			} else {
-    				$res['site'] = $url;
-    				$res['msg'] = "Department url is unreachable. Snapshot attempt is canceled. HTTP STATUS: $http_status";
+                                    $res[$id]['site'] = $url;
+                                    $res[$id]['msg'] = "Department url is unreachable. Snapshot attempt is canceled. HTTP STATUS: $http_status";
     			}
     		} else {
-    			$res['msg'] = "Url field is empty DB. Unable to process snapshot process";
+                            $res[$id]['msg'] = "Url field is empty DB. Unable to process snapshot process";
     		}
     	} else {
-    		$res['msg'] = "Such department don't exists in DB. Snapshot attempt is canceled.";
+                    $res[$id]['msg'] = "Such department don't exists in DB. Snapshot attempt is canceled.";
     	}
+            $this->snapshot_queue_model->updateCount();
+        }
+        $this->snapshot_queue_model->deleteCount();
     	$this->output->set_content_type('application/json')->set_output(json_encode($res));
+    }
+
+    public function department_snaps_ajax(){
+        if(isset($_POST['ajax'])){
+            $this->load->model('snapshot_queue_model');
+            $result = $this->snapshot_queue_model->checkCount();
+            echo json_encode($result);
+        }
     }
 
     // public function system_sites_department_snap() {
