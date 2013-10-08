@@ -57,6 +57,9 @@ class Utils():
     # return normalized string
     @staticmethod
     def normalize_text(text):
+        # replace &nbsp with space
+        text = re.sub("&nbsp", " ", text)
+
         # tokenize
         tokens = filter(None, re.split("[^\w\.,]+", text))
 
