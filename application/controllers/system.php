@@ -642,20 +642,11 @@ class System extends MY_Controller {
             }
             fclose($handle);
         }*/
-        $handle = fopen($file, "r") or die("Couldn't get handle");
-        if ($handle) {
-            while (!feof($handle)) {
-                $buffer = fgets($handle, 15000);
-                var_dump($buffer);
-                // Process buffer here..
-            }
-            fclose($handle);
-        }
-        var_dump($buffer);
-        /*$data = file_get_contents($file, false, $context);
+        $data = file_get_contents($file);
+        var_dump($data);
         $data = utf8_encode("[". trim($data,'"')."]");
         var_dump($data);
-        $data = json_decode($data);*/
+        $data = json_decode($data);
         var_dump($_rows);
         /*$highest_level = $_rows[0]->level;
         foreach($_rows as $key=>$one){
