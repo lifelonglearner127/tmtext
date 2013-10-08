@@ -89,7 +89,7 @@ $( function() {
 
     $( '#records' ).delegate( 'a.updateBtn', 'click', function() {
         updateHref = $( this ).attr( 'href' );
-        updateId = $( this ).parents( 'tr' ).attr( "ipmorted_data_id" );
+        updateId = $( this ).parents( 'tr' ).attr( "id" );
 
 //        $( '#ajaxLoadAni' ).fadeIn( 'slow' );
 //

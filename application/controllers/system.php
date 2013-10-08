@@ -12,7 +12,7 @@ class System extends MY_Controller {
 		$this->data['checked_controllers'] = array( 'batches','measure', 'assess', 'research','brand', 'customer');
 		$this->data['admin_controllers'] = array('system', 'admin_customer', 'admin_editor', 'admin_tag_editor');
 
-
+                $this->load->model('imported_data_parsed_model');
 		$this->load->library('form_validation');
 
  	}
@@ -1732,10 +1732,19 @@ class System extends MY_Controller {
     
      public function get_custom_models(){
         
-        $this->load->model('imported_data_parsed_model');
+        
         $results = $this->imported_data_parsed_model->get_custom_models();
         $this->output->set_content_type('application/json')
             ->set_output(json_encode($results));
+        
+    }
+    
+    public function ubdate_custom_model(){
+        $results = $this->imported_data_parsed_model->get_custom_models();
+        $this->output->set_content_type('application/json')
+        ->set_output(json_encode($results));
+    }
+    public function delete_custom_model(){
         
     }
 }
