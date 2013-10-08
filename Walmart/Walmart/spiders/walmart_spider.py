@@ -183,7 +183,7 @@ class WalmartSpider(BaseSpider):
                 item['description_text'] = " ".join([re.sub("\s+"," ", description_text.strip()) for description_text in description_texts if description_text.strip()])
 
                 # replace line breaks with space
-                item['descrption_text'] = re.sub("\n+", " ", item['description_text'])
+                item['description_text'] = re.sub("\n+", " ", item['description_text'])
 
             if 'description_text' in item:
                 tokenized = Utils.normalize_text(item['description_text'])
