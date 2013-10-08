@@ -628,9 +628,12 @@ class System extends MY_Controller {
         $file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
         $_rows = array();
         if (($handle = fopen($file, "r")) !== FALSE) {
-            while (($data = utf8_encode(fgetcsv($handle, 15000, "\n"))) !== FALSE) {
+            while (($data = fgetcsv($handle, 15000, "\n")) !== FALSE) {
                 var_dump($data[0]);
-                var_dump(json_decode(str_replace ('\"','"', $data[0])));
+                var_dump(utf8_encode($data[0]));
+                var_dump(json_decode(str_replace ('"','\"', utf8_encode($data[0]))));
+
+
                 if(!is_null($data[0]) && $data[0]!=''){
                     $_rows[] = json_decode($data[0]);
                 }
