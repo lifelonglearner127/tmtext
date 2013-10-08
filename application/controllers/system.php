@@ -629,9 +629,9 @@ class System extends MY_Controller {
         $_rows = array();
         if (($handle = fopen($file, "r")) !== FALSE) {
             while (($data = fgets($handle, 2000))  !== FALSE) {
-                var_dump($data[0]);
-                var_dump(utf8_encode($data[0]));
-                var_dump(json_decode(str_replace ('"','\"', utf8_encode($data[0]))));
+                var_dump($data);
+                var_dump(utf8_encode($data));
+                var_dump(json_decode(str_replace ('"','\"', utf8_encode($data))));
 
 
                 if(!is_null($data[0]) && $data[0]!=''){
