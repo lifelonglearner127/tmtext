@@ -412,7 +412,15 @@
     .span_img:hover{
         height:auto;
     }
-
+    .span_img:before {
+        content: "...";
+        float: right;
+        position: relative;
+        top: 42px;
+    }
+.span_img:hover.span_img:before{
+        content: " ";
+}
 </style>
 <script>
             $(function() {
