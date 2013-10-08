@@ -2322,7 +2322,7 @@ class Imported_data_parsed_model extends CI_Model {
         if ($data1) {
             $rows = $data1;
             $customers_list = array();
-            $query_cus = $this->db->order_by('name', 'asc')->get($this->tables['customers']);
+            $query_cus = $this->db->order_by('name', 'asc')->get('sites');
             $query_cus_res = $query_cus->result();
             if (count($query_cus_res) > 0) {
                 foreach ($query_cus_res as $key => $value) {
