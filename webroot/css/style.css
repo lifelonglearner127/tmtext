@@ -1,3 +1,17 @@
+/* BOARD ITEM MODAL PREVIEW (START) */
+.preview_board_item_modal .snap_area {
+    float: left; 
+    max-width: 500px;
+}
+.preview_board_item_modal .info_area {
+    float: left; 
+    margin-left: 15px;
+}
+/* BOARD ITEM MODAL PREVIEW (END) */
+
+.width_780 {
+    width: 780px;
+}
 .small_custom_icon_btn {
     padding: 3px 4px !important;
 }

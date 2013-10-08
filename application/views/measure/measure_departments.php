@@ -285,6 +285,8 @@
     </div>
 </div>
 
+<div class="modal hide fade ci_hp_modals width_780 preview_board_item_modal" id='preview_board_item_modal'></div>
+
 <div class="modal hide fade ci_hp_modals" id='preview_crawl_snap_modal'>
     <div class="modal-body" style='overflow: hidden'>
         <div class='snap_holder'>&nbsp;</div>
