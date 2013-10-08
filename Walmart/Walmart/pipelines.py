@@ -10,6 +10,6 @@ class WalmartPipeline(object):
 		self.file = open('walmart_categories.jl', 'wb')
 
 	def process_item(self, item, spider):
-		line = json.dumps(dict(item)) + "\n,\n"
+		line = json.dumps(dict(item)) + ",\n"
 		self.file.write(line)
 		return item
