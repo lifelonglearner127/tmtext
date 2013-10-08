@@ -605,6 +605,7 @@ class System extends MY_Controller {
 
     public function upload_departments_categories()
     {
+        ini_set('post_max_size', '100M'); 
         $this->load->library('UploadHandler');
 
         $this->output->set_content_type('application/json');
@@ -620,8 +621,7 @@ class System extends MY_Controller {
 
     public function save_departments_categories()
     {
-        error_reporting(E_ALL);
-        ini_set('post_max_size', 100);
+        //error_reporting(E_ALL);
         $this->load->model('department_model');
         $this->load->model('department_members_model');
         $this->load->model('site_categories_model');
@@ -643,6 +643,13 @@ class System extends MY_Controller {
             }
             fclose($handle);
         }*/
+        $opts = array(
+            'http'=>array(
+                'method'=>"POST",
+            )
+        );
+
+        $context = stream_context_create($opts);
         $data = file_get_contents($file);
         var_dump($data);
         $data = utf8_encode("[". trim($data,'"')."]");
