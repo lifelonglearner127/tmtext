@@ -30,10 +30,12 @@ f = codecs.open(options.filename, "rb", "utf-8")
 fields = []
 
 for line in f:
-	if line.strip() == ",":
-		continue
+	# eliminate separator (comma), if any, and line break
+	line = line.strip()
+	if line[-1] == ",":
+		line = line[:-1]
 
-	item = json.loads(line.strip())
+	item = json.loads(line)
 
 	if options.field in item:
 		if options.filter_field and options.filter_value:
