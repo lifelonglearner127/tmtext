@@ -835,8 +835,7 @@ class Crons extends MY_Controller {
                     $time_end = microtime(true);
                     $time = $time_end - $time_start;
                     echo "SEO Long phrases - $time seconds\n";
-                    echo "tesnenq minchev similarity incha katarvum";
-                    exit;
+                   
                     $time_start = microtime(true);
                     if (isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
                         echo "</br>isset model</br>";
