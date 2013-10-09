@@ -1083,7 +1083,7 @@ class Imported_data_parsed_model extends CI_Model {
             array_push($data, (object) array('imported_data_id' =>$id,
                         'description' => $description, 'long_description' => $long_description, 'url' => $url, 'product_name' => $product_name, 'features' => $features, 'parsed_attributes' => $parsed_attributes, 'revision' => $revision));
         }
-        exit('modelio vra tesnenq inchqan jamnaka gnum');
+        
         return $data;
     }
     function do_stats($truncate) {
