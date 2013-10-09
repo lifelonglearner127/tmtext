@@ -937,7 +937,6 @@ $(function () {
             columns_checkboxes_checked.push($(value).data('col_name'));
         });
         if (table_case == 'recommendations') {
-            $('#assess_tbl_show_case_view').text('Dashboard');
             reportPanel(false);
             $.each(tblAllColumns, function(index, value) {
                 if ($.inArray(value, tableCase.recommendations) > -1) {
@@ -949,7 +948,6 @@ $(function () {
             });
             addColumn_url_class();
         } else if (table_case == 'details') {
-            $('#assess_tbl_show_case_view').text('Dashboard');
             reportPanel(false);
             $.each(tblAllColumns, function(index, value) {
                 if ($.inArray(value, columns_checkboxes_checked) > -1) {
@@ -960,12 +958,10 @@ $(function () {
             });
             addColumn_url_class();
         } else if (table_case == 'report') {
-            $('#assess_tbl_show_case_view').text('Dashboard');
             reportPanel(true);
             var batch_id = $('select[name="research_assess_batches"]').find('option:selected').val();
         //$('#assess_report_download_pdf').attr('href', base_url + 'index.php/research/assess_download_pdf?batch_name=' + batch_name);
         } else if (table_case == 'view') {
-            $('#assess_tbl_show_case_view').text('Board View');
             $('#tblAssess').hide();
             $('#tblAssess').parent().find('div.ui-corner-bl').hide();
             $('#assess_view').show();
