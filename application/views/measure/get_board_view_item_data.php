@@ -47,7 +47,7 @@
                 <p>Category description: N/A</p>
                 <?php } ?>
             </div>
-            <div style='float: left; width: 40px;'><button id='bi_expand_bar_cnt' type='button' class='btn btn-success'><i class='icon-arrow-right icon-white'></i></button></div>
+            <div style='float: left; width: 40px;'><button id='bi_expand_bar_cnt' type='button' class='btn btn-success'><i class='icon-arrow-left icon-white'></i></button></div>
         </div>
     </div>
 </div>
