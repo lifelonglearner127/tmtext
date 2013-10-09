@@ -629,62 +629,21 @@ class System extends MY_Controller {
         $file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
         $_rows = array();
 
-        $contents = '';
-        $handle = fopen($file, "rb");
-        $contents = fread($handle, filesize($file));
-        //$data = '['.trim($contents,'"').']';
-        //var_dump($data);
-        fclose($handle);
-
-        $data = '['.trim($contents,'"').']';
-        $test = json_decode($data);
-        for($i=0; $i<count($test); $i++){
-            if($i==5){
-                break;
-            } else {
-                var_dump($test[$i]);
-            }
-
-        }
-
-
-        die('aaa');
-        $data = file_get_contents($file);
-        var_dump($data);
-        $data = utf8_encode("[". trim($data,'"')."]");
-        var_dump($data);
-        $data = json_decode($data);
-
-
-
-        if (($handle = fopen($file, "r")) !== FALSE) {
-            while (($data = fgets($handle, 50000))  !== FALSE) {
-                var_dump($data);
-                var_dump(utf8_encode($data));
-                var_dump(json_decode(utf8_encode($data)));
-
-
-                if(!is_null($data[0]) && $data[0]!=''){
-                    $_rows[] = json_decode($data[0]);
-                }
-            }
-            fclose($handle);
-        }
-        /*echo '----';
-        $data = file_get_contents($file);
-        var_dump($data);
-        $data = utf8_encode("[". trim($data,'"')."]");
-        var_dump($data);
-        $data = json_decode($data);*/
-        var_dump($_rows);
-        /*$highest_level = $_rows[0]->level;
+        $highest_level = $_rows[0]->level;
         foreach($_rows as $key=>$one){
             if((int)$highest_level <= (int)$one->level)
                 $highest_level = $one->level;
         }
-        echo "\n\n\n";
-        var_dump($_rows);
-        foreach($_rows as $row){
+
+        $handle = fopen($file, "rb");
+        $contents = fread($handle, filesize($file));
+        fclose($handle);
+
+        $data = '['.trim($contents,'"').']';
+        $json_obj = json_decode($data);
+
+
+        foreach($json_obj as $row){
             $special = 0;
             $parent_text = '';
             $department_text = '';
@@ -759,7 +718,7 @@ class System extends MY_Controller {
                 }
             }
         }
-        foreach($_rows as $row){
+        foreach($json_obj as $row){
             $special = 0;
             $parent_text = '';
             $department_text = '';
@@ -871,7 +830,7 @@ class System extends MY_Controller {
                     }
                 }
             }
-        }*/
+        }
         $response['message'] =  'File was added successfully';
         $this->output->set_content_type('application/json')->set_output(json_encode($response));
     }
