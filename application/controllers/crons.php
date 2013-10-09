@@ -839,6 +839,7 @@ class Crons extends MY_Controller {
 
                     $time_start = microtime(true);
                     if (isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
+                        echo "</br>isset model</br>";
                         //$this->imported_data_parsed_model->model_info($data_import['imported_data_id'],$data_import['parsed_attributes']['model'],$data_import['revision']);
                         try {
                             $own_prices = $this->imported_data_parsed_model->getLastPrices($obj->imported_data_id);
@@ -985,12 +986,12 @@ class Crons extends MY_Controller {
 //                                $same_pr = $this->imported_data_parsed_model->getByProductName($im_data_id, $data_import['product_name'], $data_import['parsed_attributes']['manufacturer'],0);
 //                            }
                         if ($model = $this->imported_data_parsed_model->check_if_exists_custom_model($im_data_id)) {
-
+                            echo "exists custom model";
                             $same_pr = $this->imported_data_parsed_model->get_by_custom_model($model, $im_data_id);
                         } else {
-
+                            echo "geting custom model";
                             $same_pr = $this->imported_data_parsed_model->getByProductNameNew($im_data_id, $data_import['product_name'], '', 0);
-                            
+                            echo "custom model is ready";
                         }
 
                         foreach ($same_pr as $key => $val) {
