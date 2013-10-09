@@ -730,10 +730,8 @@ class System extends MY_Controller {
             $keyword_density = '';
             $description_title = '';
             $level = 0;
-            var_dump($row_data->level);
+
             if($row_data->level < $highest_level){
-                var_dump($row_data);
-                die('sss');
                 if($row_data->special!='' && !is_null($row_data->special)){
                     $special = $row_data->special;
                 }
