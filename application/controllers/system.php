@@ -629,12 +629,6 @@ class System extends MY_Controller {
         $file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
         $_rows = array();
 
-        $highest_level = $_rows[0]->level;
-        foreach($_rows as $key=>$one){
-            if((int)$highest_level <= (int)$one->level)
-                $highest_level = $one->level;
-        }
-
         $handle = fopen($file, "rb");
         $contents = fread($handle, filesize($file));
         fclose($handle);
@@ -642,6 +636,11 @@ class System extends MY_Controller {
         $data = '['.trim($contents,'"').']';
         $json_obj = json_decode($data);
 
+        $highest_level = $json_obj[0]->level;
+        foreach($json_obj as $key=>$one){
+            if((int)$highest_level <= (int)$one->level)
+                $highest_level = $one->level;
+        }
 
         foreach($json_obj as $row){
             $special = 0;
@@ -718,7 +717,7 @@ class System extends MY_Controller {
                 }
             }
         }
-        foreach($json_obj as $row){
+        foreach($json_obj as $row_data){
             $special = 0;
             $parent_text = '';
             $department_text = '';
@@ -731,31 +730,32 @@ class System extends MY_Controller {
             $keyword_density = '';
             $description_title = '';
             $level = 0;
-            if($row->level < $highest_level){
-                var_dump($row);
+            var_dump($row_data->level);
+            if($row_data->level < $highest_level){
+                var_dump($row_data);
                 die('sss');
-                if($row->special!='' && !is_null($row->special)){
-                    $special = $row->special;
+                if($row_data->special!='' && !is_null($row_data->special)){
+                    $special = $row_data->special;
                 }
-                if(isset($row->parent_text) && is_array($row->parent_text)){
-                    $parent_text = $row->parent_text[0];
-                } else if(isset($row->parent_text) && !is_array($row->parent_text) && !is_null($row->parent_text) && $row->parent_text!=''){
-                    $parent_text = $row->parent_text;
+                if(isset($row_data->parent_text) && is_array($row_data->parent_text)){
+                    $parent_text = $row_data->parent_text[0];
+                } else if(isset($row_data->parent_text) && !is_array($row_data->parent_text) && !is_null($row_data->parent_text) && $row_data->parent_text!=''){
+                    $parent_text = $row_data->parent_text;
                 }
-                if(isset($row->department_text) && is_array($row->department_text)){
-                    $department_text = $row->department_text[0];
-                } else if(isset($row->department_text) && !is_array($row->department_text) && !is_null($row->department_text) && $row->department_text!=''){
-                    $department_text = $row->department_text;
+                if(isset($row_data->department_text) && is_array($row_data->department_text)){
+                    $department_text = $row_data->department_text[0];
+                } else if(isset($row_data->department_text) && !is_array($row_data->department_text) && !is_null($row_data->department_text) && $row_data->department_text!=''){
+                    $department_text = $row_data->department_text;
                 }
-                if(isset($row->text) && is_array($row->text)){
-                    $text = $row->text[0];
-                } else if(isset($row->text) && !is_array($row->text) && !is_null($row->text)){
-                    $text = $row->text;
+                if(isset($row_data->text) && is_array($row_data->text)){
+                    $text = $row_data->text[0];
+                } else if(isset($row_data->text) && !is_array($row_data->text) && !is_null($row_data->text)){
+                    $text = $row_data->text;
                 }
-                if(isset($row->url) && is_array($row->url)){
-                    $url = $row->url[0];
-                } else if(isset($row->url) && !is_array($row->url) && !is_null($row->url)){
-                    $url = $row->url;
+                if(isset($row_data->url) && is_array($row_data->url)){
+                    $url = $row_data->url[0];
+                } else if(isset($row_data->url) && !is_array($row_data->url) && !is_null($row_data->url)){
+                    $url = $row_data->url;
                 }
                 if(substr_count($url, 'http://') == 0 && $this->input->post('site_name')!='[Choose site]'){
                     $url = str_replace('..', '', $url);
@@ -770,40 +770,40 @@ class System extends MY_Controller {
                     }
                 }
 
-                if(isset($row->level) && is_array($row->level)){
-                    $level = $row->level[0];
-                } else if(isset($row->level) && !is_array($row->level) && !is_null($row->level) && $row->level!=''){
-                    $level = $row->level;
+                if(isset($row_data->level) && is_array($row_data->level)){
+                    $level = $row_data->level[0];
+                } else if(isset($row_data->level) && !is_array($row_data->level) && !is_null($row_data->level) && $row_data->level!=''){
+                    $level = $row_data->level;
                 }
-                if(isset($row->nr_products) && is_array($row->nr_products)){
-                    $nr_products = $row->nr_products[0];
-                } else if(isset($row->nr_products) && !is_array($row->nr_products) && !is_null($row->nr_products) && $row->nr_products!=''){
-                    $nr_products = $row->nr_products;
+                if(isset($row_data->nr_products) && is_array($row_data->nr_products)){
+                    $nr_products = $row_data->nr_products[0];
+                } else if(isset($row_data->nr_products) && !is_array($row_data->nr_products) && !is_null($row_data->nr_products) && $row_data->nr_products!=''){
+                    $nr_products = $row_data->nr_products;
                 }
-                if(isset($row->description_wc) && is_array($row->description_wc)){
-                    $description_wc = $row->description_wc[0];
-                } else if(isset($row->description_wc) && !is_array($row->description_wc) && !is_null($row->description_wc) && $row->description_wc!=''){
-                    $description_wc = $row->description_wc;
+                if(isset($row_data->description_wc) && is_array($row_data->description_wc)){
+                    $description_wc = $row_data->description_wc[0];
+                } else if(isset($row_data->description_wc) && !is_array($row_data->description_wc) && !is_null($row_data->description_wc) && $row_data->description_wc!=''){
+                    $description_wc = $row_data->description_wc;
                 }
-                if(isset($row->description_text) && is_array($row->description_text)){
-                    $description_text = $row->description_text[0];
-                } else if(isset($row->description_text) && !is_array($row->description_text) && !is_null($row->description_text) && $row->description_text!=''){
-                    $description_text = $row->description_text;
+                if(isset($row_data->description_text) && is_array($row_data->description_text)){
+                    $description_text = $row_data->description_text[0];
+                } else if(isset($row_data->description_text) && !is_array($row_data->description_text) && !is_null($row_data->description_text) && $row_data->description_text!=''){
+                    $description_text = $row_data->description_text;
                 }
-                if(isset($row->keyword_count) && is_array($row->keyword_count)){
-                    $keyword_count = $row->keyword_count[0];
-                } else if(isset($row->keyword_count) && !is_array($row->keyword_count) && !is_null($row->keyword_count) && $row->keyword_count!=''){
-                    $keyword_count = json_encode($row->keyword_count);
+                if(isset($row_data->keyword_count) && is_array($row_data->keyword_count)){
+                    $keyword_count = $row_data->keyword_count[0];
+                } else if(isset($row_data->keyword_count) && !is_array($row_data->keyword_count) && !is_null($row_data->keyword_count) && $row_data->keyword_count!=''){
+                    $keyword_count = json_encode($row_data->keyword_count);
                 }
-                if(isset($row->keyword_density) && is_array($row->keyword_density)){
-                    $keyword_density = $row->keyword_density[0];
-                } else if(isset($row->keyword_density) && !is_array($row->keyword_density) && !is_null($row->keyword_density) && $row->keyword_density!=''){
-                    $keyword_density = json_encode($row->keyword_density);
+                if(isset($row_data->keyword_density) && is_array($row_data->keyword_density)){
+                    $keyword_density = $row_data->keyword_density[0];
+                } else if(isset($row_data->keyword_density) && !is_array($row_data->keyword_density) && !is_null($row_data->keyword_density) && $row_data->keyword_density!=''){
+                    $keyword_density = json_encode($row_data->keyword_density);
                 }
-                if(isset($row->description_title) && is_array($row->description_title)){
-                    $description_title = $row->description_title[0];
-                } else if(isset($row->description_title) && !is_array($row->description_title) && !is_null($row->description_title) && $row->description_title!=''){
-                    $description_title = $row->description_title;
+                if(isset($row_data->description_title) && is_array($row_data->description_title)){
+                    $description_title = $row_data->description_title[0];
+                } else if(isset($row_data->description_title) && !is_array($row_data->description_title) && !is_null($row_data->description_title) && $row_data->description_title!=''){
+                    $description_title = $row_data->description_title;
                 }
                 $this->load->database();
                 $parent_id = 0;
