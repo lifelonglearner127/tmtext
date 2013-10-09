@@ -1028,7 +1028,63 @@ class Imported_data_parsed_model extends CI_Model {
         $sql_cmd = "TRUNCATE TABLE `duplicate_content_new";
         return $this->db->query($sql_cmd);
     }
+    function do_stats_newupdated(){
+        
+       $query = $this->db->query("SELECT p.imported_data_id, p.revision 
+       FROM `imported_data_parsed` AS `p` 
+       LEFT JOIN `statistics_new` AS sn ON `p`.`imported_data_id` = sn.`imported_data_id` 
+       WHERE `key`= 'URL' AND  
+       `p`.`revision` = (SELECT  MAX(idp.revision) AS revision FROM imported_data_parsed AS idp WHERE `p`.`imported_data_id`= idp.`imported_data_id`) AND   
+       (`p`.`revision` != sn.`revision` OR `sn`.`revision` IS NULL)  LIMIT 50");
+       $rows = $query->result_array();
+       $ids= array();
+       foreach($rows as $row){
+          $ids[] = $row['imported_data_id'];
+       }
+       $data = array();
+        foreach ($ids as $id) {
 
+            $this->db->select('p.imported_data_id, p.key, p.value, p.revision')
+                    ->from($this->tables['imported_data_parsed'] . ' as p')
+                    ->where('p.revision = (SELECT  MAX(revision) as revision
+                      FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
+                      GROUP BY imported_data_id)', NULL, FALSE)
+                    ->where('p.imported_data_id', $id);
+            $query = $this->db->get();
+            $res = $query->result();
+            $parsed_attributes = '';
+            $description = '';
+            $long_description = '';
+            $url = '';
+            $revision = 1;
+            $features = '';
+            foreach ($res as $val) {
+                $revision = $val->revision;
+                if ($val->key == 'URL') {
+                    $url = $val->value;
+                }
+                if ($val->key == 'Description') {
+                    $description = $val->value;
+                }
+                if ($val->key == 'Long_Description') {
+                    $long_description = $val->value;
+                }
+                if ($val->key === 'parsed_attributes') {
+                    $parsed_attributes = unserialize($val->value);
+                }
+                if ($val->key == 'Product Name') {
+                    $product_name = $val->value;
+                }
+                if ($val->key == 'Features') {
+                    $features = $val->value;
+                }
+            }
+            array_push($data, (object) array('imported_data_id' =>$id,
+                        'description' => $description, 'long_description' => $long_description, 'url' => $url, 'product_name' => $product_name, 'features' => $features, 'parsed_attributes' => $parsed_attributes, 'revision' => $revision));
+        }
+
+        return $data;
+    }
     function do_stats($truncate) {
 
         $q = $this->db->select('key,description')->from('settings')->where('key', 'cron_job_offset');
