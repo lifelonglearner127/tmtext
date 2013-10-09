@@ -22,7 +22,7 @@ function fnFormatDetails ( nTr )
 
 
 $( function() {
-
+    
     // readBestSellers();
     dataTable = $( '#records' ).dataTable({
         "bJQueryUI": true
@@ -211,6 +211,7 @@ $( function() {
                     $("#departmentDropdown .dropdown-menu").append("<li><a data-item="+data[i].id+" data-value="+data[i].text+" href=\"javascript:void(0);\">"+data[i].text+"</a></li>");
                 }
                 $(".dashboard").show();
+                $('#board_view').text('Board View');
                 $("tbody#department_data").show();
                 $("tbody#category_data").empty();
                 $("tbody#department_data").empty();
@@ -328,6 +329,7 @@ $( function() {
         var selected_type = $('#hp_boot_drop_sec_dashboard .btn_caret_sign_sec').text();
         if($("#hp_boot_drop .btn_caret_sign").text() != 'Choose Site'){
             $(".dashboard").show();
+            $('#board_view').text('Board View');
             $("#dashboard_recommend").hide();
             $("tbody#category_data").empty();
             $("tbody#department_data").empty();
@@ -341,7 +343,7 @@ $( function() {
                 allCatDashboard(site_name, new_caret);
             }
         }
-
+        
         if(new_caret != 'Choose comparison site'){
             var checking = false;
             $(".hp_boot_drop_sec .dropdown-menu > li > a").each(function(){
@@ -496,9 +498,11 @@ $( function() {
                 });
             });
             $('.board_view').show();
+            $('#board_view').text('Dashboard');
         } else {
             $('.board_view').hide();
             $('.dashboard').show();
+            $('#board_view').text('Board View');
         }
 
     });
