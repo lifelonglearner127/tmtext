@@ -2,8 +2,8 @@
 <div class="tabbable">
 
     <ul class="nav nav-tabs jq-measure-tabs">
-        <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_departments');?>">Categories</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('assess');?>">Products</a></li>
+        <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_departments');?>">Categories</a></li>
         <li class="active"><a data-toggle="tab" href="<?php echo site_url('measure/home');?>">Home Pages</a></li>
     </ul>
     <div class="tab-content">

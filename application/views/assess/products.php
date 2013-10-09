@@ -1,8 +1,8 @@
 <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/smoothness/jquery-ui-1.8.2.custom.css" />
 <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/styles.css" />
     <ul class="nav nav-tabs jq-measure-tabs">
-        <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_departments');?>">Categories</a></li>
         <li class="active"><a data-toggle="tab" href="<?php echo site_url('assess/products');?>">Products</a></li>
+        <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_departments');?>">Categories</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('assess');?>">Home Pages</a></li>
     </ul>
 <ul class="research_table_filter">
