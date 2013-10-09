@@ -40,7 +40,7 @@
                 <?php } ?>
                 <?php if($data->description_words != 0) { ?>
                 <div>
-                    <p class='bitem_desc_text_head' style='font-weight: bold; font-size: 12px; cursor: pointer;'>Category description:</p>
+                    <p class='bitem_desc_text_head'>Category description:</p>
                     <div class='bitem_desc_text' style='display: none;'><?php echo $data->description_text; ?></div>
                 </div>
                 <?php } else { ?>
