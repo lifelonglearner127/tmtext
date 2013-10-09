@@ -806,7 +806,7 @@ class System extends MY_Controller {
                 $this->load->database();
                 $parent_id = 0;
                 if($parent_text!=''){
-                    $parent_id =  $this->site_categories_model->checkExist($site_id, $parent_text);
+                    $parent_id =  $this->site_categories_model->checkExist($site_id, $parent_text, $department_members_id);
                     if($parent_id == false){
                         $parent_id = $this->site_categories_model->insert(0, $site_id, $text, $url, $special, $parent_text,
                             $department_members_id, $nr_products, $description_wc, $keyword_count, $keyword_density, $description_title, $description_text,$level);
