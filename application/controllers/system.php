@@ -732,6 +732,8 @@ class System extends MY_Controller {
             $description_title = '';
             $level = 0;
             if($row->level < $highest_level){
+                var_dump($row);
+                die('sss');
                 if($row->special!='' && !is_null($row->special)){
                     $special = $row->special;
                 }
