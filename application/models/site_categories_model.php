@@ -156,11 +156,13 @@ class Site_categories_model extends CI_Model {
         return $site_id;
     }
 
-    function checkExist($site_id, $text, $department_id)
+    function checkExist($site_id, $text, $department_id='')
     {
-        $query =  $this->db->select('id')
-            ->from($this->tables['site_categories'])
-            ->where('site_id', $site_id)->where('text', trim($text))->where('department_members_id', $department_id)->limit(1)->get();
+        $str = "";
+        if($department_id!=''){
+            $str .= " and `department_members_id` = '".$department_id."'";
+        }
+        $sql = $this->db->query("SELECT `id` FROM `site_categories` WHERE `site_id` = '".$site_id."' and `flag`='ready' ".$str." and `text`='".trim($text)."' limit 1");
         if($query->num_rows() > 0) {
             return $query->row()->id;
         }
