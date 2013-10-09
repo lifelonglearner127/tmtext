@@ -334,14 +334,14 @@
                     $("#hp_boot_drop .dropdown-menu > li > a").each(function(){
                         if($(this).text() == auto_mode_hp_boot_drop){
                             $(this).trigger('click');
-                           // $('#board_view').trigger('click');
+                            $('#board_view').trigger('click');
                         }
                     });
                     $("#hp_boot_drop_sec .dropdown-menu > li > a").each(function(){
                         if($(this).text() == auto_mode_hp_boot_drop_sec){
                             console.log($(this).text());
                             $(this).trigger('click');
-                            $('#board_view').trigger('click');
+                            //$('#board_view').trigger('click');
                         }
                     });
                 }
