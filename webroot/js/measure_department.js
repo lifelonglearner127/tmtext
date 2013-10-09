@@ -492,7 +492,6 @@ $( function() {
                     var dm_id = $(this).parent().find("input[type='hidden'][name='dm_id']").val();
                     console.log("ID : ", dm_id);
                     $.post(base_url + 'index.php/measure/get_board_view_item_data', {'dm_id': dm_id}, function(data) {
-                        console.log("DATA FOR ME : ", data);
                         showBoardItemPreviewModal(data);
                     });
                 });
@@ -560,7 +559,7 @@ $( function() {
             $('.board_view .board_item img').on('click', function() {
                 var dm_id = $(this).parent().find("input[type='hidden'][name='dm_id']").val();
                 $.post(base_url + 'index.php/measure/get_board_view_item_data', {'dm_id': dm_id}, function(data) {
-                    console.log("DATA FOR ME : ", data);
+                    showBoardItemPreviewModal(data);
                 });
             });
         });
