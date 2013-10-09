@@ -1035,7 +1035,7 @@ class Imported_data_parsed_model extends CI_Model {
        LEFT JOIN `statistics_new` AS sn ON `p`.`imported_data_id` = sn.`imported_data_id` 
        WHERE `key`= 'URL' AND  
        `p`.`revision` = (SELECT  MAX(idp.revision) AS revision FROM imported_data_parsed AS idp WHERE `p`.`imported_data_id`= idp.`imported_data_id`) AND   
-       (`p`.`revision` != sn.`revision` OR `sn`.`revision` IS NULL)  LIMIT 50");
+       (`p`.`revision` != sn.`revision` OR `sn`.`revision` IS NULL)  LIMIT 5");
        $rows = $query->result_array();
        $ids= array();
        foreach($rows as $row){
@@ -1712,7 +1712,7 @@ class Imported_data_parsed_model extends CI_Model {
                 ->from($this->tables['imported_data_parsed'] . ' as p')
                 ->where('p.key', 'Product Name')->where('model IS NULL', null, false)
                 ->group_by("imported_data_id")
-                ->limit(5);
+                ->limit(50);
         $query = $this->db->get();
         $for_group_ids = $query->result_array();
 //       echo "<pre>";
