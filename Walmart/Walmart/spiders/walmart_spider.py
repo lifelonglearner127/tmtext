@@ -178,33 +178,36 @@ class WalmartSpider(BaseSpider):
             description_texts = description_holder.select("./div[position()<2]//p//text()[not(ancestor::b) and not(ancestor::h1) and not(ancestor::strong)] \
                 | ./p//text()[not(ancestor::b) and not(ancestor::h1) and not(ancestor::strong)]").extract()
 
-            # # if the list is not empty and contains at least one non-whitespace item
-            # if description_texts and reduce(lambda x,y: x or y, [line.strip() for line in description_texts]):
+            # if the list is not empty and contains at least one non-whitespace item
+            if description_texts and reduce(lambda x,y: x or y, [line.strip() for line in description_texts]):
+                description_text = " ".join([re.sub("\s+"," ", description_text.strip()) for description_text in description_texts if description_text.strip()])
 
-            #     # replace all whitespace with one space, strip, and remove empty texts; then join them
-            #     item['description_text'] = " ".join([re.sub("\s+"," ", description_text.strip()) for description_text in description_texts if description_text.strip()])
+                # if it's larger than 4096 characters it's probably not a descriptions; causes problem to PHP script as well. Ignore it
+                if len(description_text) < 4096:
 
-            #     # replace line breaks with space
-            #     item['description_text'] = re.sub("\n+", " ", item['description_text'])
+                    # replace all whitespace with one space, strip, and remove empty texts; then join them
+                    item['description_text'] = description_text
 
-            # if 'description_text' in item:
-            #     tokenized = Utils.normalize_text(item['description_text'])
-            #     item['description_wc'] = len(tokenized)
+                    # replace line breaks with space
+                    item['description_text'] = re.sub("\n+", " ", item['description_text'])
 
-            #     # sometimes here there is no description title because of malformed html
-            #     # if we can find description text but not description title, title is probably malformed - get first text in div instead
-            #     if 'description_title' not in item:
-            #         desc_texts = description_holder.select("./text()").extract()
-            #         desc_texts = [text for text in desc_texts if text.strip()]
-            #         if desc_texts:
-            #             item['description_title'] = desc_texts[0].strip()
+            if 'description_text' in item:
+                tokenized = Utils.normalize_text(item['description_text'])
+                item['description_wc'] = len(tokenized)
 
-            #     if 'description_title' in item:
-            #         (item['keyword_count'], item['keyword_density']) = Utils.phrases_freq(item['description_title'], item['description_text'])
+                # sometimes here there is no description title because of malformed html
+                # if we can find description text but not description title, title is probably malformed - get first text in div instead
+                if 'description_title' not in item:
+                    desc_texts = description_holder.select("./text()").extract()
+                    desc_texts = [text for text in desc_texts if text.strip()]
+                    if desc_texts:
+                        item['description_title'] = desc_texts[0].strip()
 
-            # else:
-            #     item['description_wc'] = 0
-            item['description_wc'] = 0
+                if 'description_title' in item:
+                    (item['keyword_count'], item['keyword_density']) = Utils.phrases_freq(item['description_title'], item['description_text'])
+
+            else:
+                item['description_wc'] = 0
 
         else:
             item['description_wc'] = 0
@@ -382,14 +385,6 @@ class WalmartSpider(BaseSpider):
             #     yield parent_item
 
 
-
-################################
-# Run with 
-#
-# scrapy crawl bestseller [-a inspect=1]
-#
-################################
-
 # scrape bestsellers lists and extract products
 class BestsellerSpider(BaseSpider):
     name = "bestseller"
@@ -397,10 +392,6 @@ class BestsellerSpider(BaseSpider):
     start_urls = [
         "http://www.walmart.com/cp/Best-Sellers/1095979",
     ]
-    root_url = "http://www.walmart.com"
-
-    def __init__(self, inspect = False):
-        self.inspect = inspect
 
     def parse(self, response):
         hxs = HtmlXPathSelector(response)
@@ -422,7 +413,6 @@ class BestsellerSpider(BaseSpider):
 
             yield request
 
-    # parse page containing product lists, then pass product pages URLs found on it to another method for further info extraction
     def parseDepartment(self, response):
 
         # some of the products are duplicates across departments, they will only appear once on the final list
@@ -440,13 +430,6 @@ class BestsellerSpider(BaseSpider):
 
         for product in products:
             item = ProductItem()
-
-
-            # if inspect option is activated, add a field to each item containing the context in which the product info box appears (html structure)
-            # add "context" field containing html content of grandparent of element
-            if self.inspect:
-                context = product.select("ancestor::*/ancestor::*").extract()[0]
-                item['prod_context'] = context
 
             rank += 1
             item['rank'] = str(rank)
@@ -496,7 +479,6 @@ class BestsellerSpider(BaseSpider):
 
             yield request
 
-    # parse product landing page and extract info on it
     def parseProduct(self, response):
         hxs = HtmlXPathSelector(response)
 
