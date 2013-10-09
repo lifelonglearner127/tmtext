@@ -1046,10 +1046,11 @@ class Imported_data_parsed_model extends CI_Model {
 
             $this->db->select('p.imported_data_id, p.key, p.value, p.revision')
                     ->from($this->tables['imported_data_parsed'] . ' as p')
-                    ->where('p.revision = (SELECT  MAX(revision) as revision
-                      FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
-                      GROUP BY imported_data_id)', NULL, FALSE)
-                    ->where('p.imported_data_id', $id);
+                    ->where('p.imported_data_id', $id)
+                    ->where("p.revision = (SELECT  MAX(revision) as revision
+                      FROM imported_data_parsed WHERE `imported_data_id`= $id
+                      )", NULL, FALSE)
+                    ;
             $query = $this->db->get();
             $res = $query->result();
             $parsed_attributes = '';
