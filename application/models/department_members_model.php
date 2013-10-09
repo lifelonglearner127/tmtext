@@ -383,4 +383,9 @@ class Department_members_model extends CI_Model {
         $query = $this->db->query($sql);
         return $query->result();
     }
+    
+    function updateDepartment($id,$data){
+        $this->db->where('id', $id);
+        $this->db->update($this->tables['department_members'], $data);
+    }
 }

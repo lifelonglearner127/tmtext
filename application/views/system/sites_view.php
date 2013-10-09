@@ -625,6 +625,53 @@
                                     }, 'json');
                                 }
                             });
+                            $('#modify_department').click(function(){
+                                $.ajax({
+                                    url: base_url + 'index.php/system/get_department',
+                                    dataType : 'json',
+                                    type : 'post',
+                                    data : {
+                                        id: $('#second_department').val()
+                                    }
+                                }).done(function(data){
+                                    console.log(data);
+                                    $("#modify_department_name").val(data[0].text);
+                                    $("#modify_department_url").val(data[0].url);
+                                    $("#modify_department_text").val(data[0].description_text);
+                                    $("#modify_department_wc").val(data[0].description_words);
+                                    $('#modify_department_dialog').dialog('open');
+                                });
+                                return false;
+                            });
+                            
+                            $('#modify_department_dialog').dialog({
+                                autoOpen: false,
+                                resizable: false,
+                                modal: true,
+                                buttons: {
+                                    'Save': function() {
+                                        $.ajax({
+                                            url: base_url + 'index.php/system/edit_department',
+                                            dataType : 'json',
+                                            type : 'post',
+                                            data : {
+                                                text : $("#modify_department_name").val(),
+                                                url : $("#modify_department_url").val(),
+                                                description_text : $("#modify_department_text").val(),
+                                                description_words : $("#modify_department_wc").val(),
+                                                id: $('#second_department').val()
+                                            }
+                                        }).done(function(){
+                                            $('#second_department option:selected').text($("#modify_department_name").val());
+                                        });
+                                        $(this).dialog('close');
+                                    },
+                                    'Cancel': function() {
+                                        $(this).dialog('close');
+                                    }
+                                },
+                                width: '250px'
+                            });
                         });
                     </script>
 
@@ -635,10 +682,11 @@
                     <button id="add_snapshot_queue" style="height: 30px;" class="btn btn-success"><i class="icon-plus icon-white"></i></button>
                     <span id="department_loader" style="display: none;width: 40px;height: 30px;" ><img style="margin-left: 10px;" src="<?php echo base_url(); ?>webroot/img/ajax-loader.gif" /></span>
                     <button id="add_department" class="btn btn-success"><i class="icon-white icon-ok"></i>&nbsp;Add...</button>
+                    <button id="modify_department" class="btn btn-success"><i class="icon-white icon-ok"></i>&nbsp;Modify...</button>
                 </div>
                 <div class="row-fluid mt_10">
                     <label>Categories:</label>
-                    <?php // echo form_dropdown('category', $category_list ); ?>
+                    <?php echo form_dropdown('category', $category_list ); ?>
                     <?php if(count($category_list) > 0) { ?>
                         <select id='category_sites_frow' name='category'>
                         <?php foreach($category_list as $kc => $kv) { ?>
@@ -783,6 +831,29 @@
             <p>
                 <label for="column_wc">Word count:</label>
                 <input type="text" id="column_department_wc" data-col_name="wc" name="column_wc" />
+            </p>
+        </form>
+    </div>
+</div>
+
+<div id="modify_department_dialog" title="Modify department">
+    <div>
+        <form action="" method="post">
+            <p>
+                <label for="column_department">Department:</label>
+                <input type="text" id="modify_department_name" data-col_name="department" name="modify_department" />
+            </p>
+            <p>
+                <label for="column_url">URL:</label>
+                <input type="text" id="modify_department_url" data-col_name="url" name="modify_url" />
+            </p>
+            <p>
+                <label for="column_text">Text:</label>
+                <textarea cols="10" rows="5" id="modify_department_text" data-col_name="text" name="modify_text"></textarea>
+            </p>
+            <p>
+                <label for="column_wc">Word count:</label>
+                <input type="text" id="modify_department_wc" data-col_name="wc" name="modify_wc" />
             </p>
         </form>
     </div>

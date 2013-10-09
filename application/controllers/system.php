@@ -1797,7 +1797,27 @@ class System extends MY_Controller {
         }
     }
     
-     public function get_custom_models(){
+    public function edit_department(){
+        if(isset($_POST['id']) && isset($_POST['text']) && isset($_POST['url']) && isset($_POST['description_text']) && isset($_POST['description_words'])){
+            $id = $_POST['id'];
+            $data['text'] = $_POST['text'];
+            $data['url'] = $_POST['url'];
+            $data['description_text'] = $_POST['description_text'];
+            $data['description_words'] = $_POST['description_words'];
+            $this->load->model('department_members_model');
+            $this->department_members_model->updateDepartment($id,$data);
+        }
+    }
+    
+    public function get_department(){
+        if($_POST['id']){
+            $this->load->model('department_members_model');
+            $result = $this->department_members_model->get($_POST['id']);
+            echo json_encode($result);
+        }
+    }
+
+    public function get_custom_models(){
         
         
         $results = $this->imported_data_parsed_model->get_custom_models();
