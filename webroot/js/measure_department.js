@@ -500,7 +500,6 @@ $( function() {
             $("#board_view_filter_cnt").show();
             $("#board_view_filter_cnt select > option[value='all']").attr('selected', true);
             $('#board_view').text('Dashboard');
-            $('.dashboard').hide(); // exp
         } else {
             $('.board_view').hide();
             $("#board_view_filter_cnt").hide();
