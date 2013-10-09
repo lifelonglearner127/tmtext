@@ -498,13 +498,72 @@ $( function() {
                 });
             });
             $('.board_view').show();
+            $("#board_view_filter_cnt").show();
+            $("#board_view_filter_cnt select > option[value='all']").attr('selected', true);
             $('#board_view').text('Dashboard');
+            $('.dashboard').hide(); // exp
         } else {
             $('.board_view').hide();
+            $("#board_view_filter_cnt").hide();
             $('.dashboard').show();
             $('#board_view').text('Board View');
         }
 
+    });
+
+    $("#board_view_filter_cnt select").bind('change', function(e) {
+        var ch_val = $(e.target).val();
+        $.post(base_url + 'index.php/measure/getBoardView', {'site_name': $("#hp_boot_drop .btn_caret_sign").text()}, function(data) {
+            var str = '';
+            if(data.length > 0) {
+                for(var i=0; i < data.length; i++) {
+                    var json = $.parseJSON(data[i].title_keyword_description_density);
+                    var red_border_cl = "";
+                    if(data[i].description_words == 0) {
+                        red_border_cl = " red_border_cl";
+                    }
+                    if(ch_val == 'all') {
+                        str += "<div class='board_item" + red_border_cl + "'><input type='hidden' name='dm_id' value='" + data[i].id + "'><span>" + data[i].text + "</span><br /><img src='" + data[i].snap + "'/><div class='prod_description'><b>Description word count:" + data[i].description_words + "</b><br /><br />";
+                        if(json != null){
+                            str += '<b>Keywords (frequency, density)</b><br />';
+                            $.each(json, function(m, item) {
+                                str += m+': '+item+'<br />';
+                            });
+                        }
+                        str += '<b>Category Description:</b><br />'+data[i].description_text +'</div></div>';
+                    } else if(ch_val == 'miss_desc') {
+                        if(data[i].description_words == 0) {
+                            str += "<div class='board_item" + red_border_cl + "'><input type='hidden' name='dm_id' value='" + data[i].id + "'><span>" + data[i].text + "</span><br /><img src='" + data[i].snap + "'/><div class='prod_description'><b>Description word count:" + data[i].description_words + "</b><br /><br />";
+                            if(json != null){
+                                str += '<b>Keywords (frequency, density)</b><br />';
+                                $.each(json, function(m, item) {
+                                    str += m+': '+item+'<br />';
+                                });
+                            }
+                            str += '<b>Category Description:</b><br />'+data[i].description_text +'</div></div>';
+                        }
+                    } else if(ch_val == 'have_desc') {
+                        if(data[i].description_words > 0) {
+                            str += "<div class='board_item" + red_border_cl + "'><input type='hidden' name='dm_id' value='" + data[i].id + "'><span>" + data[i].text + "</span><br /><img src='" + data[i].snap + "'/><div class='prod_description'><b>Description word count:" + data[i].description_words + "</b><br /><br />";
+                            if(json != null){
+                                str += '<b>Keywords (frequency, density)</b><br />';
+                                $.each(json, function(m, item) {
+                                    str += m+': '+item+'<br />';
+                                });
+                            }
+                            str += '<b>Category Description:</b><br />'+data[i].description_text +'</div></div>';
+                        }
+                    }
+                }
+            }
+            $('.board_view').html(str);
+            $('.board_view .board_item img').on('click', function() {
+                var dm_id = $(this).parent().find("input[type='hidden'][name='dm_id']").val();
+                $.post(base_url + 'index.php/measure/get_board_view_item_data', {'dm_id': dm_id}, function(data) {
+                    console.log("DATA FOR ME : ", data);
+                });
+            });
+        });
     });
 
 

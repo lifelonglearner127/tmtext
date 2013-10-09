@@ -99,7 +99,20 @@
 
                     <!-- Compare with Begin-->
 
-
+                    <div id='board_view_filter_cnt' class='board_view_filter_cnt'>
+                        <form class="form-horizontal">
+                            <div class="control-group">
+                                <label class="control-label" for="inputEmail">Show:</label>
+                                <div class="controls">
+                                    <select>
+                                        <option value='all'>All</option>
+                                        <option value='miss_desc'>Missing description</option>
+                                        <option value='have_desc'>Have description</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
 
                     <div style="float:right;">
                         <div id="departmentDropdownSec" style="float:right;display: none"  class="btn-group">

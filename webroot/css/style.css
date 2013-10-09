@@ -1,4 +1,16 @@
 /* BOARD ITEM MODAL PREVIEW (START) */
+.board_view_filter_cnt {
+    display: none;
+    float: left;
+    width: 200px;
+    margin-left: 15px;
+}
+.board_view_filter_cnt .control-group label {
+    width: auto;
+}
+.board_view_filter_cnt .controls {
+    margin-left: 43px;
+}
 .bitem_desc_text_head {
     font-weight: bold; 
     font-size: 12px; 
