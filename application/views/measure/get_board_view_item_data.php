@@ -2,7 +2,7 @@
     <div class='snap_holder'>
         <div class='snap_area'><a target='_blank' href="<?php echo $data->url ?>"><img src="<?php echo $data->snap_path ?>"></a></div>
         <div class='info_area'>
-            <div id='bi_info_bar' style='float: left; width: 182px;'>
+            <div id='bi_info_bar' style='float: left; width: 180px; padding-top: 20px;'>
                 <p style='font-weight: bold; font-size: 12px;'>Description word count: <?php echo $data->description_words; ?></p>
                 <?php 
                     $k_words = array();
@@ -47,7 +47,7 @@
                 <p>Category description: N/A</p>
                 <?php } ?>
             </div>
-            <div style='float: left; width: 38px;'><button id='bi_expand_bar_cnt' type='button' class='btn btn-success'><i class='icon-arrow-right icon-white'></i></button></div>
+            <div style='float: left; width: 40px;'><button id='bi_expand_bar_cnt' type='button' class='btn btn-success'><i class='icon-arrow-right icon-white'></i></button></div>
         </div>
     </div>
 </div>
@@ -68,21 +68,19 @@
         $("#bi_expand_bar_cnt").click(function(e) {
             if($("#bi_info_bar").is(":visible")) {
                $("#bi_info_bar").fadeOut('fast', function() {
+                    $("#bi_expand_bar_cnt > i").removeClass('icon-arrow-left');
+                    $("#bi_expand_bar_cnt > i").addClass('icon-arrow-right');
                     $("#preview_board_item_modal").animate({
                         width: '602px'
-                    }, 200, function() {
-                        $("#bi_expand_bar_cnt > i").removeClass('icon-arrow-left');
-                        $("#bi_expand_bar_cnt > i").addClass('icon-arrow-right');
-                    });
+                    }, 200);
                }); 
             } else {
+                $("#bi_expand_bar_cnt > i").removeClass('icon-arrow-right');
+                $("#bi_expand_bar_cnt > i").addClass('icon-arrow-left');
                 $("#preview_board_item_modal").animate({
                     width: '780px'
                 }, 200, function() {
-                    $("#bi_info_bar").fadeIn('fast', function() {
-                        $("#bi_expand_bar_cnt > i").removeClass('icon-arrow-right');
-                        $("#bi_expand_bar_cnt > i").addClass('icon-arrow-left');
-                    });
+                    $("#bi_info_bar").fadeIn('fast');
                 });
             }
         });
