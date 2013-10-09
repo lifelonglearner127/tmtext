@@ -1712,7 +1712,7 @@ class Imported_data_parsed_model extends CI_Model {
                 ->from($this->tables['imported_data_parsed'] . ' as p')
                 ->where('p.key', 'Product Name')->where('model IS NULL', null, false)
                 ->group_by("imported_data_id")
-                ->limit(50);
+                ->limit(5);
         $query = $this->db->get();
         $for_group_ids = $query->result_array();
 //       echo "<pre>";
