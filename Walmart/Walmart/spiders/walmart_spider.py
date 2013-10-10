@@ -130,7 +130,12 @@ class WalmartSpider(BaseSpider):
         # second one is used more rarely and also with some false positives so needs to be checked for text length as well
         # try to find div with detailedPageDescriptionCopyBlock id; move on only if not found
         description_holder = hxs.select("//div[@id='detailedPageDescriptionCopyBlock']")
+
+        # flag to tell if we found it with basic rule
+        found = True
+
         if not description_holder:
+            found = False
             description_holder = hxs.select("//div[@class='CustomPOV ReminderBubbleSeeAll']//p/text()[string-length() > " + str(DESC_LEN) + "]/parent::*/parent::*")
 
         # if none was found, try to find an element with much text (> DESC_LEN (200) characters)
@@ -182,8 +187,8 @@ class WalmartSpider(BaseSpider):
             if description_texts and reduce(lambda x,y: x or y, [line.strip() for line in description_texts]):
                 description_text = " ".join([re.sub("\s+"," ", description_text.strip()) for description_text in description_texts if description_text.strip()])
 
-                # if it's larger than 4096 characters it's probably not a descriptions; causes problem to PHP script as well. Ignore it
-                if len(description_text) < 4096:
+                # if it's larger than 4096 characters and not found with main rule it's probably not a descriptions; causes problem to PHP script as well. Ignore it
+                if len(description_text) < 4096 or found:
 
                     # replace all whitespace with one space, strip, and remove empty texts; then join them
                     item['description_text'] = description_text
