@@ -1515,6 +1515,10 @@ class PageProcessor {
 		}
 		$result['feature_count'] = count($features);
 
+		if ( strpos($this->html, 'ccs-inline-content')!==false && strpos($this->html, 'cdn.cnetcontent.com')!==false ) {
+			$result['cnetcontent']=true;
+		}
+
 		return $result;
 	}
 }
