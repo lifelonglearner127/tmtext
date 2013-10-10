@@ -1023,13 +1023,15 @@ class Crons extends MY_Controller {
 
                     $time_start = microtime(true);
 
-                    $query_research_data_id = 0;
+                    $query_c_id = 0;
                     $query_batch_id = 0;
                     if ($query = $this->statistics_new_model->getResearchDataAndBatchIds($obj->imported_data_id)) {
                         $query_research_data_id = $query[0]->research_data_id;
                         $query_batch_id = $query[0]->batch_id;
                     }
-                 
+                    $time_end = microtime(true);
+                    $time = $time_end - $time_start;
+                    echo "research_data--".$time ;
                     try {
                         $insert_id = $this->statistics_new_model->insert_updated($obj->imported_data_id, $obj->revision, $short_description_wc, $long_description_wc, $short_seo_phrases, $long_seo_phrases, $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors, serialize($similar_products_competitors), $query_research_data_id, $query_batch_id
                         );
@@ -1047,7 +1049,7 @@ class Crons extends MY_Controller {
 
                     echo '.';
                 }
-                 exit;
+                 
                 $q = $this->db->select('key,description')->from('settings')->where('key', 'cron_job_offset');
                 $res = $q->get()->row_array();
                 $start = $res['description'];

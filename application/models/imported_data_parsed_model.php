@@ -1035,7 +1035,7 @@ class Imported_data_parsed_model extends CI_Model {
        LEFT JOIN `statistics_new` AS sn ON `p`.`imported_data_id` = sn.`imported_data_id` 
        WHERE `key`= 'URL' AND  
        `p`.`revision` = (SELECT  MAX(idp.revision) AS revision FROM imported_data_parsed AS idp WHERE `p`.`imported_data_id`= idp.`imported_data_id`) AND   
-       (`p`.`revision` != sn.`revision` OR `sn`.`revision` IS NULL)  LIMIT 1");
+       (`p`.`revision` != sn.`revision` OR `sn`.`revision` IS NULL)  LIMIT 50");
        $rows = $query->result_array();
        $ids= array();
        foreach($rows as $row){
@@ -2597,7 +2597,10 @@ class Imported_data_parsed_model extends CI_Model {
     }
 
     function getByParsedAttributes($search, $strict = false) {
+        $start_time=  microtime();
         if ($rows = $this->getData($search, null, null, null, 'parsed_attributes', $strict)) {
+            $end_time=  microtime();
+            
             $customers_list = array();
             $query_cus = $this->db->order_by('name', 'asc')->get($this->tables['customers']);
             $query_cus_res = $query_cus->result();
@@ -2626,7 +2629,7 @@ class Imported_data_parsed_model extends CI_Model {
                 }
             }
             sort($rows);
-
+           
             return $rows;
         }
     }
@@ -2656,7 +2659,7 @@ class Imported_data_parsed_model extends CI_Model {
         }
         return false;
     }
-
+    
     function change_model() {
         $this->db->select('p.imported_data_id, p.key, p.value,p.model')
                 ->from($this->tables['imported_data_parsed'] . ' as p')->where('model IS NOT NULL', null, false)
