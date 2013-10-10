@@ -12,6 +12,7 @@ class Services extends REST_Controller {
 			'get_data_from_url' => true,
 			'get_data_from_text' => true,
 			'get_new_urls' => true,
+			'get_queued_urls' => true,
 			'save_parsed_from_text' => true
   		));
 	}
@@ -45,6 +46,23 @@ class Services extends REST_Controller {
     	$limit = $this->get('limit');
     	$block = $this->get('block');
 		$rows = $this->crawler_list_model->getAllNew($limit, false);
+
+		if ($block) {
+			foreach( $rows as $data) {
+				$this->crawler_list_model->updateStatus($data->id, 'lock');
+			}
+		}
+
+		$this->response($rows);
+    }
+
+    function get_queued_urls_get()
+    {
+    	$this->load->model('crawler_list_model');
+
+    	$limit = $this->get('limit');
+    	$block = $this->get('block');
+		$rows = $this->crawler_list_model->getAllQueued($limit, false);
 
 		if ($block) {
 			foreach( $rows as $data) {
@@ -113,7 +131,7 @@ class Services extends REST_Controller {
 			$this->crawler_list_model->updated($id);
 			$this->response($imported_id);
 		} else {
-			$this->crawler_list_model->updateStatus($id, 'new');
+			$this->crawler_list_model->updateStatus($id, 'failed');
 		}
 
 		$this->response(false);

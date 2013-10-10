@@ -341,50 +341,56 @@ class Site_Crawler extends MY_Controller {
 		}
 
 		foreach( $rows as $data) {
-			$this->crawler_list_model->updateStatus($data->id, 'lock');
 
-			if ($page_data = $this->pageprocessor->get_data($data->url)) {
-				$page_data['URL'] = $data->url;
-				// save data
-				$page_data_without_price = $page_data;
-				if (isset($page_data_without_price['Price'])) {
-					unset($page_data_without_price['Price']);
-					$this->crawler_list_prices_model->insert($data->id, $page_data['Price']);
-				}
-				$csv_row = $this->arrayToCsv($page_data_without_price);
-				$key = $this->imported_data_model->_get_key($csv_row);
+			if($this->input->post('crawl')) {
+				$this->crawler_list_model->updateStatus($data->id, 'lock');
 
-				$revision = 1;
-				if ((!$this->imported_data_model->findByKey($key)) && ($data->imported_data_id == null)) {
-					$imported_id = $this->imported_data_model->insert($csv_row, $data->category_id);
-					$this->crawler_list_model->updateImportedDataId($data->id, $imported_id);
-				} else if ($data->imported_data_id !== null) {
-					$imported_id = $data->imported_data_id;
-					$revision = $this->imported_data_parsed_model->getMaxRevision($imported_id);
-					$revision++;
-				}
-
-				$model = null;
-				if (($attributes = $this->pageprocessor->attributes()) !== false) {
-					if (isset($attributes['model'])) {
-						$model = $attributes['model'];
+				if ($page_data = $this->pageprocessor->get_data($data->url)) {
+					$page_data['URL'] = $data->url;
+					// save data
+					$page_data_without_price = $page_data;
+					if (isset($page_data_without_price['Price'])) {
+						unset($page_data_without_price['Price']);
+						$this->crawler_list_prices_model->insert($data->id, $page_data['Price']);
 					}
-					$this->imported_data_parsed_model->insert($imported_id, 'parsed_attributes', serialize($attributes), $revision, $model);
-				}
+					$csv_row = $this->arrayToCsv($page_data_without_price);
+					$key = $this->imported_data_model->_get_key($csv_row);
 
-				foreach($page_data_without_price as $key=>$value) {
-					$value = (!is_null($value))?$value: '';
-					$this->imported_data_parsed_model->insert($imported_id, $key, $value, $revision, $model);
-				}
+					$revision = 1;
+					if ((!$this->imported_data_model->findByKey($key)) && ($data->imported_data_id == null)) {
+						$imported_id = $this->imported_data_model->insert($csv_row, $data->category_id);
+						$this->crawler_list_model->updateImportedDataId($data->id, $imported_id);
+					} else if ($data->imported_data_id !== null) {
+						$imported_id = $data->imported_data_id;
+						$revision = $this->imported_data_parsed_model->getMaxRevision($imported_id);
+						$revision++;
+					}
 
-				if (($meta = $this->pageprocessor->meta()) !== false) {
-					$this->imported_data_parsed_model->insert($imported_id, 'parsed_meta', serialize($meta), $revision);
-				}
+					$model = null;
+					if (($attributes = $this->pageprocessor->attributes()) !== false) {
+						if (isset($attributes['model'])) {
+							$model = $attributes['model'];
+						}
+						$this->imported_data_parsed_model->insert($imported_id, 'parsed_attributes', serialize($attributes), $revision, $model);
+					}
 
-				$this->crawler_list_model->updateStatus($data->id, 'finished');
-				$this->crawler_list_model->updated($data->id);
+					foreach($page_data_without_price as $key=>$value) {
+						$value = (!is_null($value))?$value: '';
+						$this->imported_data_parsed_model->insert($imported_id, $key, $value, $revision, $model);
+					}
+
+					if (($meta = $this->pageprocessor->meta()) !== false) {
+						$this->imported_data_parsed_model->insert($imported_id, 'parsed_meta', serialize($meta), $revision);
+					}
+
+					$this->crawler_list_model->updateStatus($data->id, 'finished');
+					$this->crawler_list_model->updated($data->id);
+				} else {
+					$this->crawler_list_model->updateStatus($data->id, 'failed');
+				}
 			} else {
-				$this->crawler_list_model->updateStatus($data->id, 'new');
+				// Don't crawl only mark 'queued'
+				$this->crawler_list_model->updateStatus($data->id, 'queued');
 			}
 		}
 

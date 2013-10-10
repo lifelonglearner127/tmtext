@@ -459,7 +459,9 @@ $(function () {
 		if (ids.length==0) {
 			$('button#current_crawl').attr('disabled', 'disabled');
 		} else {
-			$.post('<?php echo site_url('site_crawler/crawl_all');?>', {ids: ids}, function(data) {});
+			$.post('<?php echo site_url('site_crawler/crawl_all');?>', {ids: ids}, function(data) {
+				loadCurrentList();
+			});
 		}
 	});
 
