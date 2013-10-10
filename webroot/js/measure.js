@@ -1129,7 +1129,7 @@ function fixGridHeights() {
 //            $(selectorssaa).height( aaa);
 //        } 
 //    });
-    var selectors = new Array('.p_url','.p_name','.p_snap', '.p_meta', '.p_price','.review_count','.feature_count','.parsed_attributes'/*,'.compare_long','.short_desc_con', '.p_feature', '.p_description'*/);
+    var selectors = new Array('.p_url','.p_name','.p_snap', '.p_meta', '.p_price','.review_count','.feature_count','.parsed_attributes','.cnetcontent'/*,'.compare_long','.short_desc_con', '.p_feature', '.p_description'*/);
     var wrapper = $('.wrapper');
     if (wrapper.length > 0) {
         $.each(wrapper, function(k, v) {
