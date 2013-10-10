@@ -1360,39 +1360,6 @@ class Crons extends MY_Controller {
                         );
 
 
-
-                        $rows = $this->similar_data_model->get_group_id($data_import['imported_data_id']);
-                        if (count($rows) > 0) {
-
-                            foreach ($similar_products_competitors as $val) {
-                                foreach ($rows as $key => $row) {
-                                    if ($row['group_id'] == $val['imported_data_id']) {
-                                        unset($rows[$key]);
-                                    }
-                                }
-                            }
-                        }
-                        if (count($rows) > 0) {
-                            $url = array();
-                            foreach ($rows as $row) {
-                                $data_similar = $this->imported_data_parsed_model->getByImId($row['group_id']);
-                                $n = parse_url($data_similar['url']);
-                                $customer = $n['host'];
-                                $data_similar[$key]['customer'] = $customer;
-
-                                if (!in_array($customer, $url)) {
-                                    $url[] = $customer;
-                                    $customer = "";
-                                    foreach ($sites_list as $ki => $vi) {
-                                        if (strpos($data_similar['url'], "$vi") !== false) {
-                                            $customer = $vi;
-                                        }
-                                    }
-                                    $customer = strtolower($this->sites_model->get_name_by_url($customer));
-                                    $similar_products_competitors[] = array('imported_data_id' => $row['group_id'], 'customer' => $customer);
-                                }
-                            }
-                        }
                     } else {
                         $im_data_id = $data_import['imported_data_id'];
 //                        if (!$this->similar_product_groups_model->checkIfgroupExists($data_import['imported_data_id'])) {
