@@ -1047,7 +1047,7 @@ class Crons extends MY_Controller {
 
                     echo '.';
                 }
-
+                 exit;
                 $q = $this->db->select('key,description')->from('settings')->where('key', 'cron_job_offset');
                 $res = $q->get()->row_array();
                 $start = $res['description'];
@@ -1063,7 +1063,7 @@ class Crons extends MY_Controller {
             echo 'Error', $e->getMessage(), "\n";
             unlink($tmp_dir . ".locked");
         }
-        exit;
+       
         unlink($tmp_dir . ".locked");
         $data_arr = $this->imported_data_parsed_model->do_stats_newupdated();
         $q = $this->db->select('key,description')->from('settings')->where('key', 'cron_job_offset');
