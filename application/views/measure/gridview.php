@@ -251,9 +251,9 @@ foreach ($same_pr as $ks => $vs) {
                         <!--                            //Model-->
                         <div class="parsed_attributes"  style="width: 100%;margin-bottom: 10px;">
                     <?php if(isset($vs['parsed_attributes']['model'])){ ?>
-                        <p style="font-weight:bold;margin:0;">Model: </p>                                                                     
+                        <p style="font-weight:bold;margin:0;float: left;margin-right: 5px;">Model: </p>                                                                     
                             <?php echo $vs['parsed_attributes']['model'];  }else{if(isset($vs['model'])&& !is_null($vs['model']) && $vs['model']!='' ){ ?>
-                        <p style="font-weight:bold;margin:0;">Model(custom): </p>                                                                     
+                        <p style="font-weight:bold;margin:0;float: left;margin-right: 5px;">Model(custom): </p>                                                                     
                             <?php echo $vs['model'];  } ?>
                             <?php }?>
                         </div>
