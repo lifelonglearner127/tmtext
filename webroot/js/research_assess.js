@@ -691,21 +691,23 @@ $(function () {
             fill_lists_batches_compare(own_customer);
             $('#research_assess_update').click();
         });
-        if(data.length > 0){
-            var str = '';
-            for(var i=0; i<data.length; i++){
-                if(data[i][2] != null && data[i][2] != '' && data[i][0]!=''){
-                    str += '<div class="board_item"><span>'+data[i][2]+'</span><br />'+data[i][0]+'</div>';
+        if(typeof data !='undefined'){
+                if(data.length > 0){
+                    var str = '';
+                    for(var i=0; i<data.length; i++){
+                        if(data[i][2] != null && data[i][2] != '' && data[i][0]!=''){
+                            str += '<div class="board_item"><span>'+data[i][2]+'</span><br />'+data[i][0]+'</div>';
+                        }
+                    }
+                    if(str == ''){
+                        str = '<p>No images available for this batch</p>';
+                    }
+                    $('#assess_view').html(str);
+                    $('#assess_view .board_item img').on('click', function(){
+                        showSnap('<img src="'+$(this).attr('src')+'">');
+                    });
                 }
-            }
-            if(str == ''){
-                str = '<p>No images available for this batch</p>';
-            }
-            $('#assess_view').html(str);
-            $('#assess_view .board_item img').on('click', function(){
-                showSnap('<img src="'+$(this).attr('src')+'">');
-            });
-        }
+        }  
     });
 
     $('#research_assess_select_all').on('click', function() {
