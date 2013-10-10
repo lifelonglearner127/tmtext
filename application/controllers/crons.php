@@ -970,7 +970,7 @@ class Crons extends MY_Controller {
 
 
                     } else {
-                        exit('hasa tegh model chka');
+                        
                         $im_data_id = $data_import['imported_data_id'];
                         
                         echo "im+daat+id= ".$im_data_id;
@@ -1005,6 +1005,7 @@ class Crons extends MY_Controller {
                             $similar_products_competitors[] = array('imported_data_id' => $val['imported_data_id'], 'customer' => $customer);
                         }
                     }
+                    exit('hasa tegh bu ha ha ha');
                     $time_end = microtime(true);
                     $time = $time_end - $time_start;
 //                          echo "price_diff - $time seconds\n";
