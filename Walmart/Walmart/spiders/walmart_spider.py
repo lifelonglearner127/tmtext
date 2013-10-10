@@ -403,6 +403,7 @@ class BestsellerSpider(BaseSpider):
     start_urls = [
         "http://www.walmart.com/cp/Best-Sellers/1095979",
     ]
+    root_url = "http://www.walmart.com"
 
     def __init__(self, inspect=False):
         self.inspect = inspect
@@ -446,7 +447,8 @@ class BestsellerSpider(BaseSpider):
             item = ProductItem()
 
             # if inspect option was activated, add info on the context of the product element on the page
-            item['prod_context'] = product.select("ancestor::*").extract()
+            if self.inspect:
+                item['prod_context'] = product.select("ancestor::*").extract()
 
             rank += 1
             item['rank'] = str(rank)
