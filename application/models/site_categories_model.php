@@ -162,7 +162,7 @@ class Site_categories_model extends CI_Model {
         if($department_id!=''){
             $str .= " and `department_members_id` = '".$department_id."'";
         }
-        $sql = $this->db->query("SELECT `id` FROM `site_categories` WHERE `site_id` = '".$site_id."' and `flag`='ready' ".$str." and `text`='".trim($text)."' limit 1");
+        $query = $this->db->query("SELECT `id` FROM `site_categories` WHERE `site_id` = '".$site_id."' and `flag`='ready' ".$str." and `text`='".addslashes(trim($text))."' limit 1");
         if($query->num_rows() > 0) {
             return $query->row()->id;
         }
@@ -171,14 +171,14 @@ class Site_categories_model extends CI_Model {
 
     function updateFlag($site_id, $text, $department_id)
     {
-        $data = array(
-            'flag' => 'ready'
-        );
-
-        $this->db->where('site_id', $site_id);
-        $this->db->where('text', trim($text));
-        $this->db->where('department_members_id', $department_id);
-        $this->db->update($this->tables['site_categories'], $data);
+        $str = '';
+        if($department_id != ''){
+            $str .= " and `department_members_id`='".$department_id."'";
+        }
+        $sql = "update `site_categories` set `flag`='ready' where `site_id`='".$site_id."'
+        and `text`='".addslashes(trim($text))."' ".$str;
+        $query = $this->db->query($sql);
+        return $query->result();
     }
 
     function checkDepartmentId($parent_id)
