@@ -607,7 +607,6 @@ class System extends MY_Controller {
     {
         ini_set('post_max_size', '100M');
         $this->load->library('UploadHandler');
-
         $this->output->set_content_type('application/json');
         $this->uploadhandler->upload(array(
             'script_url' => site_url('system/upload_departments_categories'),
@@ -628,7 +627,6 @@ class System extends MY_Controller {
         $site_name = explode(".", strtolower($this->input->post('site_name')));
         $file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
         $_rows = array();
-
         $handle = fopen($file, "rb");
         $contents = fread($handle, filesize($file));
         fclose($handle);

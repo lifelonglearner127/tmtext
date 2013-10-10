@@ -598,6 +598,7 @@
                                 url: url,
                                 dataType: 'json',
                                 done: function (e, data) {
+                                    // console.log(e, data);
                                     $('input[name="choosen_file"]').val(data.result.files[0].name);
 
                                     var url = base_url+'index.php/system/save_departments_categories';
@@ -605,6 +606,7 @@
                                             'site_id':  $("#sites .btn_caret_sign").attr('id'),
                                             'site_name':  $("#sites .btn_caret_sign").text()
                                         }, function(data) {
+                                            console.log(data);
                                             $.post(base_url + 'index.php/measure/getDepartmentsByCustomer', {'customer_name':  $("#sites .btn_caret_sign").text()}, function(data) {
                                                 $("select[name='department']").empty();
                                                 if(data.length > 0){
