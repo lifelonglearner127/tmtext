@@ -34,13 +34,13 @@
                     <p style='font-weight: bold; font-size: 12px;'>Keywords (frequency, density):</p>
                     <ul style='margin-left: 0px;'>
                     <?php foreach($k_words as $kw => $vw) { ?>
-                        <li style='font-size: 12px; list-style: none; list-style-position: inside;'><span><?php echo $vw['w']; ?> : </span><span><?php echo $vw['c']; ?></span> - <span><?php echo $vw['d'] ?>%</span></li>
+                        <li style='font-size: 12px; list-style: none; list-style-position: inside;'><span><?php echo $vw['w']; ?>: </span><span><?php echo $vw['c']; ?></span> - <span><?php echo $vw['d'] ?>%</span></li>
                     <?php } ?>
                     </ul>
                 <?php } ?>
                 <?php if($data->description_words != 0) { ?>
                 <div>
-                    <p class='bitem_desc_text_head'>Category description:</p>
+                    <p class='bitem_desc_text_head'>Category description</p>
                     <div class='bitem_desc_text' style='display: none;'><?php echo $data->description_text; ?></div>
                 </div>
                 <?php } else { ?>
