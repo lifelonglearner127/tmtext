@@ -1035,7 +1035,7 @@ class Imported_data_parsed_model extends CI_Model {
        LEFT JOIN `statistics_new` AS sn ON `p`.`imported_data_id` = sn.`imported_data_id` 
        WHERE `key`= 'URL' AND  
        `p`.`revision` = (SELECT  MAX(idp.revision) AS revision FROM imported_data_parsed AS idp WHERE `p`.`imported_data_id`= idp.`imported_data_id`) AND   
-       (`p`.`revision` != sn.`revision` OR `sn`.`revision` IS NULL)  LIMIT 100");
+       (`p`.`revision` != sn.`revision` OR `sn`.`revision` IS NULL)  LIMIT 50");
        $rows = $query->result_array();
        $ids= array();
        foreach($rows as $row){
