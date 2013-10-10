@@ -723,20 +723,20 @@ class Crons extends MY_Controller {
             if ($trnc === false) {
                 $trnc = 1;
             }
-
+            $timesart = microtime(true);
             $data_arr = $this->imported_data_parsed_model->do_stats_newupdated();
-            
-            if (count($data_arr) > 1) {
+            $timeend= microtime(true);
+            if (count($data_arr) > 0) {
 
-                $sites_list = array();
-                $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('sites');
-                $query_cus_res = $query_cus->result();
-                if (count($query_cus_res) > 0) {
-                    foreach ($query_cus_res as $key => $value) {
-                        $n = parse_url($value->url);
-                        $sites_list[] = $n['host'];
-                    }
-                }
+//                $sites_list = array();
+//                $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('sites');
+//                $query_cus_res = $query_cus->result();
+//                if (count($query_cus_res) > 0) {
+//                    foreach ($query_cus_res as $key => $value) {
+//                        $n = parse_url($value->url);
+//                        $sites_list[] = $n['host'];
+//                    }
+//                }
 
                 foreach ($data_arr as $obj) {
                     $own_price = 0;
@@ -837,6 +837,8 @@ class Crons extends MY_Controller {
                     echo "SEO Long phrases - $time seconds\n";
                    
                     $time_start = microtime(true);
+                    
+                   
                     if (isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
                         echo "</br>isset model</br>";
                         //$this->imported_data_parsed_model->model_info($data_import['imported_data_id'],$data_import['parsed_attributes']['model'],$data_import['revision']);
@@ -984,6 +986,9 @@ class Crons extends MY_Controller {
 //
 //                                $same_pr = $this->imported_data_parsed_model->getByProductName($im_data_id, $data_import['product_name'], $data_import['parsed_attributes']['manufacturer'],0);
 //                            }
+                        
+                       
+                        $time_start= microtime(true);
                         if ($model = $this->imported_data_parsed_model->check_if_exists_custom_model($im_data_id)) {
                             echo "exists custom model";
                             $same_pr = $this->imported_data_parsed_model->get_by_custom_model($model, $im_data_id);
@@ -992,6 +997,9 @@ class Crons extends MY_Controller {
                             $same_pr = $this->imported_data_parsed_model->getByProductNameNew($im_data_id, $data_import['product_name'], '', 0);
                             echo "custom model is ready";
                         }
+                        $time_end = microtime(true);
+                        $time = $time_end - $time_start;
+                        echo $time."__important";
 
                         foreach ($same_pr as $key => $val) {
                             $customer = "";
@@ -1021,7 +1029,7 @@ class Crons extends MY_Controller {
                         $query_research_data_id = $query[0]->research_data_id;
                         $query_batch_id = $query[0]->batch_id;
                     }
-                   exit('hasa tegh bu ha ha ha ha ha haaaaaaaaaa');
+                 
                     try {
                         $insert_id = $this->statistics_new_model->insert_updated($obj->imported_data_id, $obj->revision, $short_description_wc, $long_description_wc, $short_seo_phrases, $long_seo_phrases, $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors, serialize($similar_products_competitors), $query_research_data_id, $query_batch_id
                         );
