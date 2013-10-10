@@ -144,10 +144,13 @@ a.url{
     border: 1px solid black;
 }
 .product_details td.date{
+    width: 10%;
+}
+.product_details td.date{
     width: 5%;
 }
 .product_details td.name{
-    width: 35%;
+    width: 15%;
 }
 .product_details td.url{
     font-size: 5px;

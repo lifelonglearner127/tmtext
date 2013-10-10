@@ -884,55 +884,6 @@ class Research extends MY_Controller {
         return $output;
     }
 
-    private function get_report_presetted_pages($params){
-        $this->load->model('reports_model');
-        $report = $this->reports_model->get_by_name($params->report_name);
-        $report_pages = array();
-
-        $report_page = new stdClass();
-        $report_page->name = $report[0]->about_page_name;
-        $report_page->order = intval($report[0]->about_page_order);
-        $report_page->layout = $report[0]->about_page_layout;
-        $report_page->body = $report[0]->about_page_body;
-        $report_pages[] = $report_page;
-
-        $report_page = new stdClass();
-        $report_page->name = $report[0]->cover_page_name;
-        $report_page->order = intval($report[0]->cover_page_order);
-        $report_page->layout = $report[0]->cover_page_layout;
-        $report_page->body = $report[0]->cover_page_body;
-        $report_pages[] = $report_page;
-
-        $report_page = new stdClass();
-        $report_page->name = $report[0]->recommendations_page_name;
-        $report_page->order = intval($report[0]->recommendations_page_order);
-        $report_page->layout = $report[0]->recommendations_page_layout;
-        $report_page->body = $report[0]->recommendations_page_body;
-        $report_pages[] = $report_page;
-
-        // sort by page order
-        $this->sort_column = 'order';
-        $this->sort_type = 'num';
-        $this->sort_direction = 'asc';
-        usort($report_pages, array("Research", "assess_sort"));
-
-        // replace patterns (#date#, #customer name#... etc)
-        foreach($report_pages as $page){
-            $page_body = $page->body;
-            $page_body = str_replace('#date#', $params->current_date, $page_body);
-            $page_body = str_replace('#customer name#', $params->customer_name, $page_body);
-            $page->body = $page_body;
-        }
-
-        $report_parts = unserialize($report[0]->parts);
-
-        $report_params = array(
-            'report_pages'=>$report_pages,
-            'report_parts'=>$report_parts,
-        );
-        return $report_params;
-    }
-
     public function comparison_detail(){
         $this->load->model('statistics_model');
         $batch_id = $this->input->post('batch_id');
