@@ -389,6 +389,12 @@ class WalmartSpider(BaseSpider):
             # if 'parent_item' in response.meta:
             #     yield parent_item
 
+################################
+# Run with 
+#
+# scrapy crawl bestseller [-a inspect=1]
+#
+################################
 
 # scrape bestsellers lists and extract products
 class BestsellerSpider(BaseSpider):
@@ -397,6 +403,9 @@ class BestsellerSpider(BaseSpider):
     start_urls = [
         "http://www.walmart.com/cp/Best-Sellers/1095979",
     ]
+
+    def __init__(self, inspect=False):
+        self.inspect = inspect
 
     def parse(self, response):
         hxs = HtmlXPathSelector(response)
@@ -435,6 +444,9 @@ class BestsellerSpider(BaseSpider):
 
         for product in products:
             item = ProductItem()
+
+            # if inspect option was activated, add info on the context of the product element on the page
+            item['prod_context'] = product.select("ancestor::*").extract()
 
             rank += 1
             item['rank'] = str(rank)
