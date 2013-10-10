@@ -2120,7 +2120,7 @@ class Measure extends MY_Controller {
                             
                                         if (strpos($data_similar['url'], "$vi") !== false) {
                                             $customer = $vi;
-                                        }
+                                }
                         }
                  $matched_sites[]= $customer;  
       }
