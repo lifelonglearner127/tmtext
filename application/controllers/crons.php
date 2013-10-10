@@ -1005,7 +1005,7 @@ class Crons extends MY_Controller {
                             $similar_products_competitors[] = array('imported_data_id' => $val['imported_data_id'], 'customer' => $customer);
                         }
                     }
-                    exit('hasa tegh bu ha ha ha');
+                    
                     $time_end = microtime(true);
                     $time = $time_end - $time_start;
 //                          echo "price_diff - $time seconds\n";
@@ -1021,7 +1021,7 @@ class Crons extends MY_Controller {
                         $query_research_data_id = $query[0]->research_data_id;
                         $query_batch_id = $query[0]->batch_id;
                     }
-
+                   exit('hasa tegh bu ha ha ha ha ha haaaaaaaaaa');
                     try {
                         $insert_id = $this->statistics_new_model->insert_updated($obj->imported_data_id, $obj->revision, $short_description_wc, $long_description_wc, $short_seo_phrases, $long_seo_phrases, $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors, serialize($similar_products_competitors), $query_research_data_id, $query_batch_id
                         );
@@ -1033,7 +1033,7 @@ class Crons extends MY_Controller {
                         $insert_id = $this->statistics_new_model->insert_updated($obj->imported_data_id, $obj->revision, $short_description_wc, $long_description_wc, $short_seo_phrases, $long_seo_phrases, $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors, serialize($similar_products_competitors), $query_research_data_id, $query_batch_id
                         );
                     }
-
+                   
                     $time_end = microtime(true);
                     $time = $time_end - $time_start;
 
@@ -1515,6 +1515,7 @@ class Crons extends MY_Controller {
     }
 
     public function do_stats_test() {
+        exit('');
         echo "Script start working";
         $tmp_dir = sys_get_temp_dir() . '/';
         unlink($tmp_dir . ".locked");
@@ -1741,6 +1742,7 @@ class Crons extends MY_Controller {
     }
 
     public function do_stats($clear = false) {
+        exit();
         echo "Script start working";
         $tmp_dir = sys_get_temp_dir() . '/';
         unlink($tmp_dir . ".locked");
