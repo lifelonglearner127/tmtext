@@ -448,7 +448,7 @@ class BestsellerSpider(BaseSpider):
 
             # if inspect option was activated, add info on the context of the product element on the page
             if self.inspect:
-                item['prod_context'] = product.select("ancestor::*").extract()
+                item['prod_context'] = product.select("ancestor::*[1]").extract()
 
             rank += 1
             item['rank'] = str(rank)
