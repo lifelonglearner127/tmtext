@@ -11,5 +11,7 @@ BOT_NAME = 'General'
 SPIDER_MODULES = ['General.spiders']
 NEWSPIDER_MODULE = 'General.spiders'
 
+ITEM_PIPELINES = ['General.pipelines.GeneralPipeline']
+
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'General (+http://www.yourdomain.com)'
