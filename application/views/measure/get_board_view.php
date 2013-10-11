@@ -1,4 +1,29 @@
 <?php if(count($board_list) > 0) { ?>
+	
+	<?php 
+		// === re-order stack of items (start)
+		$board_list_empty = array();
+		$board_list_full = array();
+		foreach ($board_list as $key => $value) {
+			if($value['description_words'] == 0) {
+				$board_list_empty[] = $value;
+			} else {
+				$board_list_full[] = $value;
+			}
+		}
+		$sort_e = array();
+    foreach ($board_list_empty as $k => $v) {
+        $sort_e['text'][$k] = $v['text'];
+    }
+    array_multisort($sort_e['text'], SORT_ASC, $board_list_empty);
+    $sort_f = array();
+    foreach ($board_list_full as $k => $v) {
+        $sort_e['text'][$k] = $v['text'];
+    }
+    array_multisort($sort_f['text'], SORT_ASC, $board_list_full);
+		$board_list = array_merge($board_list_empty, $board_list_full);
+		// === re-order stack of items (end)
+	?>
 
 	<?php 
 		$item_per_row = 4;
