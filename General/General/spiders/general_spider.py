@@ -9,15 +9,11 @@ import datetime
 
 from spiders_utils import Utils
 
-# minimum description length
-DESC_LEN = 200
-# minimum description paragraph length
-DESC_PAR_LEN = 30
 
 ################################
 # Run with 
 #
-# scrapy crawl walmart
+# scrapy crawl general
 #
 ################################
 
