@@ -47,34 +47,49 @@ class ProductsSpider(BaseSpider):
     def parseProdpage(self, response):
         hxs = HtmlXPathSelector(response)
 
-        # walmart
-        product_name = hxs.select("//h1[@class='productTitle']/text()").extract()[0]
-        item['product_name'] = product_name
-
-        # bestbuy
-        item['product_name'] = hxs.select("//h1/text()").extract()[0].strip()
-
-        # newegg
-
-        # tigerdirect
-
-        # overstock
-        product_name = hxs.select("//h1/text()").extract()[0]
-
-        # bloomingdales
-        product_name = hxs.select("//h1[@id='productTitle']/text()").extract()[0]
-
-        # macys
-
-        # amazon
-        product_name = hxs.select("//span[@id='btAsinTitle']/text()").extract()
-        if not product_name:
-            product_name = hxs.select("//h1[@id='title']/text()").extract()
-        if not product_name:
-            product_name = hxs.select("//h1[@class='parseasinTitle']/text()").extract()
-        if not product_name:
-            product_name = hxs.select("//h1[@class='parseasintitle']/text()").extract()
-
         item = ProductItem()
         item['url'] = response.url
+
+        # select h1 tags. if there are more than one, select those with "Title" or "title" in their class or id
+        # if more than one?
+        # if none?
+        h1s = hxs.select("//h1/text()")
+        if len(h1s) == 1:
+            item['product_name'] = h1s.extract()[0]
+        else:
+            product_name = hxs.select("//*[contains(id, 'Title') or contains(class, 'Title')\
+                or contains(id, 'title') or contains(class, 'title')]/text()")
+            if product_name:
+                item['product_name'] = product_name.extract()[0]
+            else:
+                print 'Error: no product name: ', response.url
+
+        # # walmart
+        # product_name = hxs.select("//h1[@class='productTitle']/text()").extract()[0]
+        # item['product_name'] = product_name
+
+        # # bestbuy
+        # item['product_name'] = hxs.select("//h1/text()").extract()[0].strip()
+
+        # # newegg
+
+        # # tigerdirect
+
+        # # overstock
+        # product_name = hxs.select("//h1/text()").extract()[0]
+
+        # # bloomingdales
+        # product_name = hxs.select("//h1[@id='productTitle']/text()").extract()[0]
+
+        # # macys
+
+        # # amazon
+        # product_name = hxs.select("//span[@id='btAsinTitle']/text()").extract()
+        # if not product_name:
+        #     product_name = hxs.select("//h1[@id='title']/text()").extract()
+        # if not product_name:
+        #     product_name = hxs.select("//h1[@class='parseasinTitle']/text()").extract()
+        # if not product_name:
+        #     product_name = hxs.select("//h1[@class='parseasintitle']/text()").extract()
+
         yield item
