@@ -35,13 +35,10 @@ class ProductsSpider(BaseSpider):
         self.prod_urls = []
         for line in urlsfile:
             self.prod_urls.append(line.strip())
-        print self.prod_urls
         urlsfile.close()
 
     def parse(self, response):
-        #print self.prod_urls
         for url in self.prod_urls:
-            print url
             yield Request(url, callback = self.parseProdpage)
 
     def parseProdpage(self, response):
@@ -50,19 +47,44 @@ class ProductsSpider(BaseSpider):
         item = ProductItem()
         item['url'] = response.url
 
-        # select h1 tags. if there are more than one, select those with "Title" or "title" in their class or id
+        #########################
+        # Works for:
+        #
+        #   macys
+        #   amazon
+        #   bloomingdales
+        #   overstock
+        #   
+        #
+        # Doesn't work for:
+        #   newegg - partially
+        #
+
+
+        # select tags with "Title", then with "title" in their class or id
+        # if none, select h1 tags, if there is only one assume that's the title
         # if more than one?
         # if none?
-        h1s = hxs.select("//h1/text()")
-        if len(h1s) == 1:
-            item['product_name'] = h1s.extract()[0]
+        # eliminate ones with just whitespace
+        product_name = hxs.select("//h1[contains(@id, 'Title') or contains(@class, 'Title')]//text()[normalize-space()!='']")
+        # if there are more than 2, exclude them, it can't be right
+        if product_name and len(product_name) < 2:
+            # select ones that don't only contain whitespace
+            item['product_name'] = product_name.extract()[0].strip()
         else:
-            product_name = hxs.select("//*[contains(id, 'Title') or contains(class, 'Title')\
-                or contains(id, 'title') or contains(class, 'title')]/text()")
-            if product_name:
-                item['product_name'] = product_name.extract()[0]
+            product_name = hxs.select("//*[contains(@id, 'Title') or contains(@class, 'Title')]//text()[normalize-space()!='']")
+            if product_name and len(product_name) < 2:
+                item['product_name'] = product_name.extract()[0].strip()
             else:
-                print 'Error: no product name: ', response.url
+                product_name = hxs.select("//*[contains(@id, 'title') or contains(@class, 'title')]//text()[normalize-space()!='']")
+                if product_name and len(product_name) < 2:
+                    item['product_name'] = product_name.extract()[0].strip()
+                else:
+                    h1s = hxs.select("//h1//text()[normalize-space()!='']")
+                    if len(h1s) == 1:
+                        item['product_name'] = h1s.extract()[0].strip()
+                    else:
+                        print 'Error: no product name: ', response.url
 
         # # walmart
         # product_name = hxs.select("//h1[@class='productTitle']/text()").extract()[0]
