@@ -207,7 +207,7 @@ class Assess extends MY_Controller {
         $this->sort_column = 'order';
         $this->sort_type = 'num';
         $this->sort_direction = 'asc';
-        usort($report_pages, array("Research", "assess_sort"));
+        usort($report_pages, array("Assess", "assess_sort"));
 
         // replace patterns (#date#, #customer name#... etc)
         foreach($report_pages as $page){
@@ -227,7 +227,24 @@ class Assess extends MY_Controller {
     }
 
     
-    
+     private function assess_sort($a, $b) {
+        $column = $this->sort_column;
+        $key1 = $a->$column;
+        $key2 = $b->$column;
+
+        if ($this->sort_type == "num") {
+            $result = intval($key1) - intval($key2);
+        } else {
+            $result = strcmp(strval($key1), strval($key2));
+        }
+
+        if ($this->sort_direction == "asc") {
+            return $result;
+        } else {
+            return -$result;
+        }
+    }
+
     
     public function assess_report_download() {
         $report_name = 'Assess';
@@ -1138,7 +1155,7 @@ class Assess extends MY_Controller {
                 $this->sort_direction = $sort_direction;
             }
             $this->sort_type = is_numeric($result_table[0]->$s_column) ? "num" : "";
-            usort($result_table, array("Research", "assess_sort"));
+            usort($result_table, array("Assess", "assess_sort"));
         }
 
         $total_rows = count($result_table);
