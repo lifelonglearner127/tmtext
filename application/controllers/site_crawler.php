@@ -342,7 +342,7 @@ class Site_Crawler extends MY_Controller {
 
 		foreach( $rows as $data) {
 
-			if($this->input->post('crawl')) {
+			if($this->input->post('crawl') && ($this->input->post('crawl')=='true')) {
 				$this->crawler_list_model->updateStatus($data->id, 'lock');
 
 				if ($page_data = $this->pageprocessor->get_data($data->url)) {

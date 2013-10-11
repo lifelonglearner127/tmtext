@@ -121,6 +121,10 @@
 				<button id="current_crawl" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Crawl</button>
 				<button id="current_snapshot" onclick="currentSnapshot();" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Snapshot</button>
 				<button id="current_snapshot_cmd" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Snap (cmd)</button>
+				<div class="span2 mt_15" style="width: 11%;">
+					<input type="checkbox" name="cb_crawl_now" value="1" id="cb_crawl_now" style="width:20px;">
+					<label class="control-label" for="use_files" style="display: inline;">immediately</label>
+				</div>
 				<p class='help-block'>* use checkboxes in table list to activate snapshot button</p>
 			</div>
 			<div class="row-fluid">
@@ -459,7 +463,7 @@ $(function () {
 		if (ids.length==0) {
 			$('button#current_crawl').attr('disabled', 'disabled');
 		} else {
-			$.post('<?php echo site_url('site_crawler/crawl_all');?>', {ids: ids}, function(data) {
+			$.post('<?php echo site_url('site_crawler/crawl_all');?>', {ids: ids, crawl: $('#cb_crawl_now').is(':checked') }, function(data) {
 				loadCurrentList();
 			});
 		}
@@ -490,19 +494,19 @@ $(function () {
 	});
 
 	$(document).on("click", "button#crawl_all", function(){
-		$.post('<?php echo site_url('site_crawler/crawl_all');?>', function(data) {
+		$.post('<?php echo site_url('site_crawler/crawl_all');?>', { crawl: $('#cb_crawl_now').is(':checked') } , function(data) {
 			loadCurrentList();
 		});
 	});
 
 	$(document).on("click", "button#crawl_batch", function(){
-		$.post('<?php echo site_url('site_crawler/crawl_all');?>', {batch_id: $('#batches option:selected').val() }, function(data) {
+		$.post('<?php echo site_url('site_crawler/crawl_all');?>', {batch_id: $('#batches option:selected').val(), crawl: $('#cb_crawl_now').is(':checked') }, function(data) {
 			loadCurrentList();
 		});
 	});
 
 	$(document).on("click", "button#re_crawl_batch", function(){
-		$.post('<?php echo site_url('site_crawler/crawl_all');?>', {recrawl: 1, batch_id: $('#batches option:selected').val() }, function(data) {
+		$.post('<?php echo site_url('site_crawler/crawl_all');?>', {recrawl: 1, batch_id: $('#batches option:selected').val(), crawl: $('#cb_crawl_now').is(':checked') }, function(data) {
 			loadCurrentList();
 		});
 	});
