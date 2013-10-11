@@ -71,14 +71,14 @@
                     $("#bi_expand_bar_cnt > i").removeClass('icon-arrow-left');
                     $("#bi_expand_bar_cnt > i").addClass('icon-arrow-right');
                     $("#preview_board_item_modal").animate({
-                        width: '602px'
+                        width: '652px'
                     }, 200);
                }); 
             } else {
                 $("#bi_expand_bar_cnt > i").removeClass('icon-arrow-right');
                 $("#bi_expand_bar_cnt > i").addClass('icon-arrow-left');
                 $("#preview_board_item_modal").animate({
-                    width: '780px'
+                    width: '830px'
                 }, 200, function() {
                     $("#bi_info_bar").fadeIn('fast');
                 });

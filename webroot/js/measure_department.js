@@ -504,7 +504,7 @@ $( function() {
 
 function showBoardItemPreviewModal(data) {
     $("#preview_board_item_modal").html(data);
-    $("#preview_board_item_modal").css('width', '780px');
+    $("#preview_board_item_modal").css('width', '830px');
     $("#preview_board_item_modal").modal('show');
 }
 
