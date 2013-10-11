@@ -38,7 +38,7 @@ class BloomingdalesSpider(BaseSpider):
 
         department_id = 0
 
-        for link in links:
+        for link in [links[0]]:
             item = CategoryItem()
             item['text'] = link.select('text()').extract()[0]
             url = link.select('@href').extract()[0]
