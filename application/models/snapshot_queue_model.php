@@ -12,8 +12,14 @@ class snapshot_queue_model extends CI_Model {
     }
     
     function insertCount($processCount){
+        if($this->ion_auth->logged_in()){
+            $user_id = $this->ion_auth->get_user_id();
+        } else {
+            $user_id = 0;
+        }
+        
         $data = array(
-            'user_id' => $this->ion_auth->get_user_id(),
+            'user_id' => $user_id,
             'process' => $processCount
         );
 
@@ -21,7 +27,12 @@ class snapshot_queue_model extends CI_Model {
     }
     
     function updateCount(){
-        $query = $this->db->query("SELECT process,done FROM {$this->tables['snapshot_queue']} WHERE user_id = {$this->ion_auth->get_user_id()}");
+        if($this->ion_auth->logged_in()){
+            $user_id = $this->ion_auth->get_user_id();
+        } else {
+            $user_id = 0;
+        }
+        $query = $this->db->query("SELECT process,done FROM {$this->tables['snapshot_queue']} WHERE user_id = {$user_id}");
         $result = $query->result_array();
         
         $data = array(
@@ -34,7 +45,12 @@ class snapshot_queue_model extends CI_Model {
     }
     
     function deleteCount(){
-        $this->db->delete($this->tables['snapshot_queue'], array('user_id' => $this->ion_auth->get_user_id())); 
+        if($this->ion_auth->logged_in()){
+            $user_id = $this->ion_auth->get_user_id();
+        } else {
+            $user_id = 0;
+        }
+        $this->db->delete($this->tables['snapshot_queue'], array('user_id' => $user_id)); 
     }
     
     function checkCount(){
