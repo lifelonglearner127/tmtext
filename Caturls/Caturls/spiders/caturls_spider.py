@@ -81,11 +81,8 @@ class CaturlsSpider(BaseSpider):
 		items = []
 
 		# extract site domain
-		m = re.match("http://((www1?)|(shop))\.([^\.]+)\.com.*", response.url)
-		if m:
-			site = m.group(4)
-		else:
-			sys.stderr.write('Can\'t extract domain from URL.\n')
+		site = Utils.extract_domain(response.url)
+		if not site:
 			return items
 
 		# handle staples televisions

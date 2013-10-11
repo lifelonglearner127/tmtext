@@ -39,7 +39,13 @@ class ProductsSpider(BaseSpider):
 
     def parse(self, response):
         for url in self.prod_urls:
-            yield Request(url, callback = self.parseProdpage)
+            domain =  Utils.extract_domain(response.url)
+            if domain != 'staples':
+                yield Request(url, callback = self.parseProdpage)
+            # for staples we need extra cookies
+            else:
+                #TODO
+                pass
 
     def parseProdpage(self, response):
         hxs = HtmlXPathSelector(response)
@@ -54,10 +60,9 @@ class ProductsSpider(BaseSpider):
         #   amazon
         #   bloomingdales
         #   overstock
-        #   
+        #   newegg
         #
         # Doesn't work for:
-        #   newegg - partially
         #
 
 
@@ -66,13 +71,15 @@ class ProductsSpider(BaseSpider):
         # if more than one?
         # if none?
         # eliminate ones with just whitespace
+        #TODO: idea: check similarity with page title
         product_name = hxs.select("//h1[contains(@id, 'Title') or contains(@class, 'Title')]//text()[normalize-space()!='']")
         # if there are more than 2, exclude them, it can't be right
         if product_name and len(product_name) < 2:
             # select ones that don't only contain whitespace
             item['product_name'] = product_name.extract()[0].strip()
         else:
-            product_name = hxs.select("//*[contains(@id, 'Title') or contains(@class, 'Title')]//text()[normalize-space()!='']")
+            # find which sites need this
+            #product_name = hxs.select("//*[contains(@id, 'Title') or contains(@class, 'Title')]//text()[normalize-space()!='']")
             if product_name and len(product_name) < 2:
                 item['product_name'] = product_name.extract()[0].strip()
             else:

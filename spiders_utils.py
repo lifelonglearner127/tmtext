@@ -12,6 +12,16 @@ class Utils():
             url = root_url + url
         return url
 
+    @staticmethod
+    def extract_domain(url):
+        m = re.match("http://((www1?)|(shop))\.([^\.]+)\.com.*", url)
+        if m:
+            site = m.group(4)
+        else:
+            sys.stderr.write('Can\'t extract domain from URL.\n')
+            site = None
+        return site
+
     # find frequency of phrases from a text in another text, and density (% of length of text)
     # (will be used with description title and description text)
     @staticmethod
