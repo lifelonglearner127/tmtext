@@ -248,12 +248,11 @@
             </table>
         </div>
 
-        <div class="board_view">
+        <div class="board_view row-fluid">
 
         </div>
     </div>
 </div>
-hjbkl
 <!-- MODALS (START) -->
 <div class="modal hide fade ci_hp_modals" style='top: 35%' id='dep_rep_preview_list_modal'></div>
 

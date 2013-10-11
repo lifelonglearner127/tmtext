@@ -1704,17 +1704,48 @@ class Measure extends MY_Controller {
     public function getBoardView(){
         $this->load->model('sites_model');
         $this->load->model('department_members_model');
+        $ch_val = $this->input->post('ch_val');
         $site_id = $this->sites_model->getIdByName($this->input->post('site_name'));
         $this->data['board_departments_list'][] = 'All';
         $data = $this->department_members_model->getAllSnapsByCustomerID($site_id);
         $board_list = array();
         foreach ($data as $row) {
-            $board_list[] = array('id' => $row->id, 'text'=>$row->text, 'snap' => $row->snap_path,
-            'description_words' => $row->description_words, 'description_text' => $row->description_text,
-            'title_keyword_description_density' => $row->title_keyword_description_density);
+            if($ch_val == 'miss_desc') {
+                if($row->description_words == 0) {
+                    $board_list[] = array('id' => $row->id, 'text'=>$row->text, 'snap' => $row->snap_path,
+                    'description_words' => $row->description_words, 'description_text' => $row->description_text,
+                    'title_keyword_description_density' => $row->title_keyword_description_density);
+                }
+            } else if($ch_val == 'have_desc') {
+                if($row->description_words > 0) {
+                    $board_list[] = array('id' => $row->id, 'text'=>$row->text, 'snap' => $row->snap_path,
+                    'description_words' => $row->description_words, 'description_text' => $row->description_text,
+                    'title_keyword_description_density' => $row->title_keyword_description_density);
+                }
+            } else {
+                $board_list[] = array('id' => $row->id, 'text'=>$row->text, 'snap' => $row->snap_path,
+                'description_words' => $row->description_words, 'description_text' => $row->description_text,
+                'title_keyword_description_density' => $row->title_keyword_description_density);
+            }
         }
-        $this->output->set_content_type('application/json')->set_output(json_encode($board_list));
+        $data['board_list'] = $board_list;
+        $this->load->view('measure/get_board_view', $data); 
     }
+
+    // public function getBoardView(){
+    //     $this->load->model('sites_model');
+    //     $this->load->model('department_members_model');
+    //     $site_id = $this->sites_model->getIdByName($this->input->post('site_name'));
+    //     $this->data['board_departments_list'][] = 'All';
+    //     $data = $this->department_members_model->getAllSnapsByCustomerID($site_id);
+    //     $board_list = array();
+    //     foreach ($data as $row) {
+    //         $board_list[] = array('id' => $row->id, 'text'=>$row->text, 'snap' => $row->snap_path,
+    //         'description_words' => $row->description_words, 'description_text' => $row->description_text,
+    //         'title_keyword_description_density' => $row->title_keyword_description_density);
+    //     }
+    //     $this->output->set_content_type('application/json')->set_output(json_encode($board_list));
+    // }
 
     public function getDepartmentsByCustomerNew() {
         $this->load->model('webshoots_model');

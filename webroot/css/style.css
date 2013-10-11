@@ -2400,15 +2400,22 @@ body.login_block{
 .board_view{
     display: none;
 }
+.board_item_row {
+    float: left;
+}
 .board_item{
     float:left;
     width:180px;
     /*min-height:180px;*/
-    min-height:205px;
+    /*min-height:205px;*/
     height: auto;
     padding:10px;
     border:1px solid #ccc;
-    margin: 10px 10px;
+    /*margin: 10px 10px;*/
+    margin: 10px 0 10px 0;
+}
+.board_item.board_item_ml {
+    margin-left: 31px;
 }
 
 .board_item img{
