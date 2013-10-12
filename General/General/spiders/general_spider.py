@@ -60,10 +60,11 @@ class ProductsSpider(BaseSpider):
         #   macys
         #   amazon              //span[@id='btAsinTitle']/text(), //h1[@id='title']/text(), //h1[@class='parseasinTitle, //h1[@class='parseasintitle']/text()
         #   bloomingdales       //h1[@id='productTitle']/text()
-        #   overstock           "//h1/text()"
-        #   newegg
+        #   overstock           //h1/text()
+        #   newegg              //h1/span[@itemprop='name']/text()
         #   tigerdirect
         #   walmart             //h1[@class='productTitle']/text()
+        #   bestbuy             //hi[@itemprop='name']/text()
         #
         # Doesn't work for:
         #   staples - a few exceptions
@@ -101,8 +102,13 @@ class ProductsSpider(BaseSpider):
                         else:
                             print 'Error: no product name: ', response.url
 
+        # normalize spaces in product name
+        if 'product_name' in item:
+            item['product_name'] = re.sub("\s+", " ", item['product_name'])
+
 
         #TODO: needs improvement
+        # maybe write some rule to exclude prices that are not in a normal range. somehow...look at neighboring products, look at category name?
         # extract price
         price_holder = hxs.select("//text()[normalize-space()='$' or normalize-space()='USD' or normalize-space()='usd']/parent::*/parent::*")
         # look for number regular expressions
@@ -112,7 +118,8 @@ class ProductsSpider(BaseSpider):
             #TODO: errors for tigerdirect when price is > 1000 => 1.999
             price_string = "$" + price[0] + "." + price[1]
         else:
-            price_string = price[0]
+            if price:
+                price_string = "$" + price[0]
         if price:
             item['price'] = price_string
             #TODO: what if there are more prices on the page, like for other products? see tigerdirect
