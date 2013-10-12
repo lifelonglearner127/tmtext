@@ -154,7 +154,7 @@ $(function () {
         },
         "aoColumns": [
         {
-             "sTitle" : "Snap",
+             "sTitle" : "Snapshot",
              "sName":"snap",
              "sWidth": "10%"
         },

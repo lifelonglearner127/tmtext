@@ -140,7 +140,7 @@
         <form action="" method="post">
             <p>
                 <input type="checkbox" id="column_snap" data-col_name="snap" name="column_snap_name" <?php echo($columns['snap'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="column_snap">Snap</label>
+                <label for="column_snap">Snapshot</label>
             </p>
             <p>
                 <input type="checkbox" id="column_created" data-col_name="created" name="column_created_name" <?php echo($columns['created'] == 'true' ? 'checked="checked"' : ''); ?> />
@@ -420,6 +420,10 @@
     }
 .span_img:hover.span_img:before{
         content: " ";
+}
+#tblAssess tr th{
+    font-weight: bold;
+    font-size: 13px;
 }
 </style>
 <script>
