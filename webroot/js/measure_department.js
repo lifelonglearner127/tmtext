@@ -748,6 +748,7 @@ function globalDepDashboard(site_name){
                     $(this).css({'background-color':'#fff'});
                 }
             });
+            $(this).find("span.dep_title").css({'border-bottom':'none'});
         });
         $("tbody#department_data tr td:nth-child(2) ul li").on('mouseover', function() {
             $("tbody#department_data tr td:nth-child(2) ul li").each(function(i){
@@ -782,6 +783,7 @@ function globalDepDashboard(site_name){
                     $(this).css({'background-color':'#fff'});
                 }
             });
+            $(this).find("span.dep_title").css({'border-bottom':'none'});
         });
     });
 }
@@ -904,6 +906,7 @@ function globalCatDashboard(site_name){
                     $(this).css({'background-color':'#fff'});
                 }
             });
+            $(this).find("span.dep_title").css({'border-bottom':'none'});
         });
 
         $("tbody#category_data tr td:nth-child(2) ul li").mouseenter(function() {
@@ -938,6 +941,7 @@ function globalCatDashboard(site_name){
                     $(this).css({'background-color':'#fff'});
                 }
             });
+            $(this).find("span.dep_title").css({'border-bottom':'none'});
         });
     });
 }
@@ -1318,6 +1322,7 @@ function getCatData(site_name, obj, condition, state){
                         $(this).css({'background-color':'#fff'});
                     }
                 });
+                $(this).find("span.dep_title").css({'border-bottom':'none'});
             });
             $("tbody#category_data tr td:nth-child(2) ul li").mouseenter(function() {
                 $("tbody#category_data tr td:nth-child(2) ul li").each(function(i){
@@ -1351,6 +1356,7 @@ function getCatData(site_name, obj, condition, state){
                         $(this).css({'background-color':'#fff'});
                     }
                 });
+                $(this).find("span.dep_title").css({'border-bottom':'none'});
             });
         }
 

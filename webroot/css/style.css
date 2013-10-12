@@ -2253,11 +2253,11 @@ span.highlight { background-color:yellow;}
 tbody#category_data tr td span.dep_title:hover, tbody#department_data tr td span.dep_title:hover,
 tbody#category_data tr td span.dep_title:active, tbody#department_data tr td span.dep_title:active{
     cursor: pointer;
-    border-bottom:1px solid transparent;
+    border-bottom:1px solid transparent!important;
 }
 tbody#category_data tr td span.dep_title:hover, tbody#department_data tr td span.dep_title:hover
 {
-    border-bottom:1px solid #000;
+    border-bottom:1px solid #000!important;
 }
 
 tbody#category_data tr td, tbody#department_data tr td{
@@ -2318,6 +2318,7 @@ span.dep_text{
     background-color: #EBEBEB;
     display: block;
     margin-bottom: 0px;
+    width: 100%;
 }
 span.dep_numbers{
      width:45px;
@@ -2330,6 +2331,8 @@ span.dep_title{
     display: block;
     float: left;
     width: 100%;
+    border-bottom: none!important;
+    padding: 2px;
 }
 span.dep_left_part{
     float: left;
