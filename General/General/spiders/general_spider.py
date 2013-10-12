@@ -57,10 +57,12 @@ class ProductsSpider(BaseSpider):
         # Works for:
         #
         #   macys
-        #   amazon
+        #   amazon              //span[@id='btAsinTitle']/text(), //h1[@id='title']/text(), //h1[@class='parseasinTitle, //h1[@class='parseasintitle']/text()
         #   bloomingdales
         #   overstock
         #   newegg
+        #   tigerdirect
+        #   walmart             //h1[@class='productTitle']/text()
         #
         # Doesn't work for:
         #   staples - a few exceptions
@@ -117,13 +119,5 @@ class ProductsSpider(BaseSpider):
 
         # # macys
 
-        # # amazon
-        # product_name = hxs.select("//span[@id='btAsinTitle']/text()").extract()
-        # if not product_name:
-        #     product_name = hxs.select("//h1[@id='title']/text()").extract()
-        # if not product_name:
-        #     product_name = hxs.select("//h1[@class='parseasinTitle']/text()").extract()
-        # if not product_name:
-        #     product_name = hxs.select("//h1[@class='parseasintitle']/text()").extract()
 
         yield item
