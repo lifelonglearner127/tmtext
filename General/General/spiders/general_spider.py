@@ -21,10 +21,10 @@ from spiders_utils import Utils
 class ProductsSpider(BaseSpider):
     name = "products"
     allowed_domains = ["walmart.com", "bestbuy.com", "newegg.com", "tigerdirect.com", "overstock.com", "bloomingdales.com", "macys.com",\
-    "amazon.com"] # to be added - check bitbucket
+    "amazon.com", "staples.com"] # to be added - check bitbucket
     start_urls = [
         # random url
-        "http://www.walmart.com/cp/All-Departments/121828",
+        "http://www.staples.com",
     ]
 
     # store the cateory page url given as an argument into a field and add it to the start_urls list
@@ -39,13 +39,13 @@ class ProductsSpider(BaseSpider):
 
     def parse(self, response):
         for url in self.prod_urls:
-            domain =  Utils.extract_domain(response.url)
+            domain =  Utils.extract_domain(url)
             if domain != 'staples':
                 yield Request(url, callback = self.parseProdpage)
             # for staples we need extra cookies
             else:
-                #TODO
-                pass
+                yield Request(url, callback = self.parseProdpage, cookies = {"zipcode" : "1234"}, \
+            headers = {"Cookie" : "zipcode=" + "1234"}, meta = {"dont_redirect" : True, "dont_merge_cookies" : True})
 
     def parseProdpage(self, response):
         hxs = HtmlXPathSelector(response)
@@ -63,6 +63,7 @@ class ProductsSpider(BaseSpider):
         #   newegg
         #
         # Doesn't work for:
+        #   staples - a few exceptions
         #
 
 
@@ -83,15 +84,20 @@ class ProductsSpider(BaseSpider):
             if product_name and len(product_name) < 2:
                 item['product_name'] = product_name.extract()[0].strip()
             else:
-                product_name = hxs.select("//*[contains(@id, 'title') or contains(@class, 'title')]//text()[normalize-space()!='']")
+                product_name = hxs.select("//*[contains(@id, 'title') or contains(@class, 'title')\
+                    or contains(@class, 'Title') or contains(@id, 'Title')]//text()[normalize-space()!='']")
                 if product_name and len(product_name) < 2:
                     item['product_name'] = product_name.extract()[0].strip()
                 else:
-                    h1s = hxs.select("//h1//text()[normalize-space()!='']")
-                    if len(h1s) == 1:
-                        item['product_name'] = h1s.extract()[0].strip()
+                    product_name = hxs.select("//*[contains(@id, 'name') or contains(@class, 'name')]//text()[normalize-space()!='']")
+                    if product_name and len(product_name) < 2:
+                        item['product_name'] = product_name.extract()[0].strip()
                     else:
-                        print 'Error: no product name: ', response.url
+                        h1s = hxs.select("//h1//text()[normalize-space()!='']")
+                        if len(h1s) == 1:
+                            item['product_name'] = h1s.extract()[0].strip()
+                        else:
+                            print 'Error: no product name: ', response.url
 
         # # walmart
         # product_name = hxs.select("//h1[@class='productTitle']/text()").extract()[0]
