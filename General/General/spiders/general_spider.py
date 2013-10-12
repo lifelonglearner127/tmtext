@@ -21,7 +21,7 @@ from spiders_utils import Utils
 class ProductsSpider(BaseSpider):
     name = "products"
     allowed_domains = ["walmart.com", "bestbuy.com", "newegg.com", "tigerdirect.com", "overstock.com", "bloomingdales.com", "macys.com",\
-    "amazon.com", "staples.com"] # to be added - check bitbucket
+    "amazon.com", "staples.com", "williams-sonoma.com"] # to be added - check bitbucket
     start_urls = [
         # random url
         "http://www.staples.com",
@@ -84,12 +84,11 @@ class ProductsSpider(BaseSpider):
             if product_name and len(product_name) < 2:
                 item['product_name'] = product_name.extract()[0].strip()
             else:
-                product_name = hxs.select("//*[contains(@id, 'title') or contains(@class, 'title')\
-                    or contains(@class, 'Title') or contains(@id, 'Title')]//text()[normalize-space()!='']")
+                product_name = hxs.select("//h1[contains(@*, 'title') or contains(@*, 'Title') or contains (@*, 'name')]//text()[normalize-space()!='']")
                 if product_name and len(product_name) < 2:
                     item['product_name'] = product_name.extract()[0].strip()
                 else:
-                    product_name = hxs.select("//*[contains(@id, 'name') or contains(@class, 'name')]//text()[normalize-space()!='']")
+                    product_name = hxs.select("//*[contains(@*, 'Title') or contains(@*,'title')]//text()[normalize-space()!='']")
                     if product_name and len(product_name) < 2:
                         item['product_name'] = product_name.extract()[0].strip()
                     else:
