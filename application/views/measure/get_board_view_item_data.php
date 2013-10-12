@@ -46,6 +46,9 @@
                 <?php } else { ?>
                 <p>Category description: N/A</p>
                 <?php } ?>
+                <?php if($data->description_words == 0){ ?>
+                    <p><b style="font-size: 12px">Recommendations:</b ><br />Add 250 words of category content</p>
+                <?php } ?>
             </div>
             <div style='float: left; width: 40px;'><button id='bi_expand_bar_cnt' type='button' class='btn btn-success'><i class='icon-arrow-left icon-white'></i></button></div>
         </div>
