@@ -58,8 +58,8 @@ class ProductsSpider(BaseSpider):
         #
         #   macys
         #   amazon              //span[@id='btAsinTitle']/text(), //h1[@id='title']/text(), //h1[@class='parseasinTitle, //h1[@class='parseasintitle']/text()
-        #   bloomingdales
-        #   overstock
+        #   bloomingdales       //h1[@id='productTitle']/text()
+        #   overstock           "//h1/text()"
         #   newegg
         #   tigerdirect
         #   walmart             //h1[@class='productTitle']/text()
@@ -100,16 +100,14 @@ class ProductsSpider(BaseSpider):
                         else:
                             print 'Error: no product name: ', response.url
 
-        # # walmart
-        # product_name = hxs.select("//h1[@class='productTitle']/text()").extract()[0]
-        # item['product_name'] = product_name
+        # extract price
+        price_holder = hxs.select("//text()[normalize-space()='$' or normalize-space()='USD' or normalize-space()='usd']/parent::*/parent::*")
+        # look for number regular expressions
+        price = price_holder.select("//text")
+
 
         # # bestbuy
         # item['product_name'] = hxs.select("//h1/text()").extract()[0].strip()
-
-        # # newegg
-
-        # # tigerdirect
 
         # # overstock
         # product_name = hxs.select("//h1/text()").extract()[0]
