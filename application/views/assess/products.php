@@ -328,7 +328,7 @@
                                 <div class="mt_10 ml_15">
                                     <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_dollar.png"><span id="assess_report_items_priced_higher_than_competitors" class="mr_10"></span>items priced higher than competitors</div>
                                 </div>
-                                <div class="mt_10 ml_15">
+                                <div class="mt_10 ml_15 items_have_more_than_20_percent_duplicate_content">
                                     <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_D.png"><span id="assess_report_items_have_more_than_20_percent_duplicate_content" class="mr_10"></span>items have more than 20% duplicate content</div>
                                 </div>
                                 <div class="mt_10 ml_15">
