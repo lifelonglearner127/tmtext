@@ -23,7 +23,7 @@ class ProductsSpider(BaseSpider):
     allowed_domains = ["walmart.com", "bestbuy.com", "newegg.com", "tigerdirect.com", "overstock.com", "bloomingdales.com", "macys.com",\
     "amazon.com", "staples.com", "williams-sonoma.com"] # to be added - check bitbucket
     start_urls = [
-        # random url
+        # random url, will not be used
         "http://www.walmart.com",
     ]
 
@@ -42,19 +42,21 @@ class ProductsSpider(BaseSpider):
             domain =  Utils.extract_domain(url)
             #TODO: pass some cookie with country value for sites where price for example is displayed in local currency
             if domain != 'staples':
-                yield Request(url, callback = self.parseProdpage)
+                yield Request(url, callback = self.parseProdpage, meta = {"site" : domain})
             # for staples we need extra cookies
             else:
                 yield Request(url, callback = self.parseProdpage, cookies = {"zipcode" : "1234"}, \
-            headers = {"Cookie" : "zipcode=" + "1234"}, meta = {"dont_redirect" : True, "dont_merge_cookies" : True})
+            headers = {"Cookie" : "zipcode=" + "1234"}, meta = {"dont_redirect" : True, "dont_merge_cookies" : True, "site" : domain})
 
     def parseProdpage(self, response):
         hxs = HtmlXPathSelector(response)
 
         item = ProductItem()
         item['url'] = response.url
+        item['site'] = response.meta['site']
 
         #########################
+        # Product title:
         # Works for:
         #
         #   macys
@@ -69,6 +71,14 @@ class ProductsSpider(BaseSpider):
         # Doesn't work for:
         #   staples - a few exceptions
         #
+        #############################
+        # Price:
+        # Works for:
+        #
+        #
+        #
+        #
+        #
 
 
         # select tags with "Title", then with "title" in their class or id
@@ -77,6 +87,7 @@ class ProductsSpider(BaseSpider):
         # if none?
         # eliminate ones with just whitespace
         #TODO: idea: check similarity with page title
+        #TODO: idea - also look into text, see which is more belivable
         product_name = hxs.select("//h1[contains(@id, 'Title') or contains(@class, 'Title')]//text()[normalize-space()!='']")
         # if there are more than 2, exclude them, it can't be right
         if product_name and len(product_name) < 2:
@@ -110,9 +121,9 @@ class ProductsSpider(BaseSpider):
         #TODO: needs improvement
         # maybe write some rule to exclude prices that are not in a normal range. somehow...look at neighboring products, look at category name?
         # extract price
-        price_holder = hxs.select("//text()[normalize-space()='$' or normalize-space()='USD' or normalize-space()='usd']/parent::*/parent::*")
-        # look for number regular expressions
-        price = price_holder.select(".//text()").re("[0-9\s]+")
+        price_holder = hxs.select("//*[contains(text(), '$') or contains(text(), 'USD') or contains(text(), 'usd')]/parent::*/parent::*")
+        # look for number regular expressions - accept anything that could occur in a price string, in case it's all inside one tag (.,$ etc)
+        price = price_holder.select(".//text()").re("[0-9\s\.,$USDusd]+")
         # assume first value is dollars and second is cents (if they are different)
         if len(price) > 1 and price[0] != price[1]:
             #TODO: errors for tigerdirect when price is > 1000 => 1.999

@@ -26,6 +26,7 @@ class CategoryItem(Item):
 
 class ProductItem(Item):
 	url = Field() # url of product page
+	site = Field() # site (domain) this product was extracted from
 	list_name = Field() # name of product - from bestsellers list
 	product_name = Field() # name of product - from product page
 	page_title = Field() # title (title tag text) of product page
