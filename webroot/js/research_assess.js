@@ -134,7 +134,7 @@ $(function () {
             });
         },
         "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-            $(nRow).attr("add_data", aData[10]);
+            $(nRow).attr("add_data", aData[11]);
             return nRow;
         },
         "fnDrawCallback": function(oSettings) {
