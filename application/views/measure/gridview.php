@@ -261,7 +261,7 @@ foreach ($same_pr as $ks => $vs) {
                          <!--            //CNET Content-->
                         <div class="cnetcontent"  style="width: 100%;margin-bottom: 10px;">
                              <?php if(isset($vs['parsed_attributes']['cnetcontent']) == '1'){ ?>
-                                   <span style="margin:0;margin-right:4px;font-weight:bold;">CNET Content:</span>True                                                                    
+                                   <span style="margin:0;margin-right:4px;font-weight:bold;">External Content:</span>CNET                                                                    
                             <?php  }?> 
                               
                         </div>   
