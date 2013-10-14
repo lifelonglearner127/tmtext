@@ -76,11 +76,11 @@ class Assess extends MY_Controller {
                 $cmp[]=$val;
             }
         }
-        $this->data['results']=$cmp;
+        $data['results']=$cmp;
 //        echo "<pre>";
 //        print_r($cmp);
 //        echo "</pre>";
-        $this->load->view('assess/compare', $this);
+        $this->load->view('assess/compare', $data);
         
         
     }
