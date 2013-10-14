@@ -57,8 +57,8 @@ class Assess extends MY_Controller {
     
     public function get_assess_info(){
         $txt_filter = '';
-        if($this->input->get('search_text') != ''){
-            $txt_filter = $this->input->get('search_text');
+        if($this->input->get('sSearch') != ''){
+            $txt_filter = $this->input->get('sSearch');
         }
 
         $batch_id = $this->input->get('batch_id');

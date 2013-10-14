@@ -139,21 +139,20 @@ class Statistics_new_model extends CI_Model {
         } else {
             $batch_id = $params->batch_id;
         }
+        if(empty($params->txt_filter)){
+            $txt_filter_part1 = '';
+            $txt_filter_part2 = '';
+        } else {
+            $txt_filter_part1 = 'select * from (';
+            $txt_filter_part2 = ')  as `data` where `data`.`product_name` like "%'.$params->txt_filter.'%"';
 
-//        $query = $this->db->where('batch_id', $batch_id)
-//            ->like('product_name', $txt_filter)
-//            ->get($this->tables['statistics']);
-
-        $query = $this->db
-            ->select('s.*, cl.snap, cl.snap_date, cl.snap_state,
+        }
+        $query = $this->db->query($txt_filter_part1 . 'select `s`.*, `cl`.`snap`, `cl`.`snap_date`, `cl`.`snap_state`,
             (select `value` from imported_data_parsed where `key`="Product Name" and `imported_data_id` = `s`.`imported_data_id` and `revision`=`s`.`revision` limit 1) as `product_name`,
             (select `value` from imported_data_parsed where `key`="Description" and `imported_data_id` = `s`.`imported_data_id` and `revision`=`s`.`revision` limit 1) as `short_description`,
             (select `value` from imported_data_parsed where `key`="Long_Description" and `imported_data_id` = `s`.`imported_data_id` and `revision`=`s`.`revision` limit 1) as `long_description`,
             (select `value` from imported_data_parsed where `key`="Url" and `imported_data_id` = `s`.`imported_data_id` and `revision`=`s`.`revision` limit 1) as `url`
-            ')
-            ->from($this->tables['statistics_new'].' as s')
-            ->join($this->tables['crawler_list'].' as cl', 'cl.imported_data_id = s.imported_data_id', 'left')
-            ->where('s.batch_id', $batch_id)->get();
+            from '.$this->tables['statistics_new'].' as `s` left join '.$this->tables['crawler_list'].' as `cl` on `cl`.`imported_data_id` = `s`.`imported_data_id` where `s`.`batch_id`='.$batch_id.$txt_filter_part2);
         $result =  $query->result();
         return $result;
     }
