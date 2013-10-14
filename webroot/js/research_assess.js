@@ -36,6 +36,9 @@ $(function () {
         "long_description_wc",
         "long_seo_phrases",
         "duplicate_content",
+        "column_external_content",
+        "column_reviews",
+        "column_features",
         "price_diff",
         "product_selection"
         ],
@@ -161,13 +164,13 @@ $(function () {
         {
             "sTitle" : "Date",
             "sName":"created",
-            "sWidth": "5%"
+            "sWidth": "3%"
         },
 
         {
             "sTitle" : "Product Name", 
             "sName":"product_name", 
-            "sWidth": "25%"
+            "sWidth": "20%"
         },
 
         {
@@ -185,7 +188,7 @@ $(function () {
         {
             "sTitle" : "Keywords <span style='font-size: 10px'>Short</span>",
             "sName":"short_seo_phrases", 
-            "sWidth": "10%"
+            "sWidth": "8%"
         },
 
         {
@@ -197,19 +200,34 @@ $(function () {
         {
             "sTitle" : "Keywords <span style='font-size: 10px'>Long</span>",
             "sName":"long_seo_phrases", 
-            "sWidth": "10%"
+            "sWidth": "8%"
         },
 
         {
             "sTitle" : "Duplicate Content", 
             "sName":"duplicate_content", 
-            "sWidth": "5%"
+            "sWidth": "4%"
         },
-
+        
+        {
+            "sTitle" : "Content", 
+            "sName":"column_external_content", 
+            "sWidth": "6%"
+        },
+        {
+            "sTitle" : "Reviews", 
+            "sName":"column_reviews", 
+            "sWidth": "6%"
+        },
+        {
+            "sTitle" : "Features", 
+            "sName":"column_features", 
+            "sWidth": "6%"
+        },        
         {
             "sTitle" : "Price", 
             "sName":"price_diff", 
-            "sWidth": "10%"
+            "sWidth": "7%"
         },
         {
             "sTitle" : "Recommendations", 
@@ -833,6 +851,9 @@ $(function () {
                     long_description_wc : $("#column_long_description_wc").attr('checked') == 'checked',
                     long_seo_phrases : $("#column_long_seo_phrases").attr('checked') == 'checked',
                     duplicate_content : $("#column_duplicate_content").attr('checked') == 'checked',
+                    column_external_content : $("#column_external_content").attr('checked') == 'checked',
+                    column_reviews : $("#column_reviews").attr('checked') == 'checked',
+                    column_features : $("#column_features").attr('checked') == 'checked',
                     price_diff : $("#column_price_diff").attr('checked') == 'checked'
                 };
 

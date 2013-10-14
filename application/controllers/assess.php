@@ -815,7 +815,7 @@ class Assess extends MY_Controller {
         $this->load->model('imported_data_parsed_model');
         $this->load->model('statistics_model');
         $this->load->model('statistics_duplicate_content_model');
-
+        
         $customer_name = $this->batches_model->getCustomerById($batch_id);
         $customer_url = parse_url($customer_name[0]->url);
         $result_table = array();
@@ -848,11 +848,28 @@ class Assess extends MY_Controller {
             $result_row->short_seo_phrases = "None";
             $result_row->long_seo_phrases = "None";
             $result_row->price_diff = "-";
+            $result_row->column_external_content = " ";
+            $result_row->column_reviews = " ";
+            $result_row->column_features = " ";
             $result_row->duplicate_content = "-";
             $result_row->own_price = floatval($row->own_price);
             $price_diff = unserialize($row->price_diff);
             $result_row->lower_price_exist = false;
             $result_row->snap = '';
+                 
+            $pars_atr = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
+            
+            if($pars_atr['parsed_attributes']['cnetcontent'] == 1 && $pars_atr['parsed_attributes']['webcollage'] == 1)
+                $result_row->column_external_content = 'CNET, WC';
+            elseif($pars_atr['parsed_attributes']['cnetcontent'] == 1 && $pars_atr['parsed_attributes']['webcollage'] != 1) 
+                $result_row->column_external_content = 'CNET';
+            elseif($pars_atr['parsed_attributes']['cnetcontent'] != 1 && $pars_atr['parsed_attributes']['webcollage'] == 1) 
+                $result_row->column_external_content = 'WC';
+            else 
+                $result_row->column_external_content = ' ';
+            $result_row->column_reviews = $pars_atr['parsed_attributes']['review_count'];
+            $result_row->column_features =$pars_atr['parsed_attributes']['feature_count'];        
+            
             if ($row->snap != null && $row->snap != ''){
                 $result_row->snap = $row->snap;
             }
@@ -1312,6 +1329,9 @@ class Assess extends MY_Controller {
                         $data_row->long_description_wc,
                         $data_row->long_seo_phrases,
                         $data_row->duplicate_content,
+                        $data_row->column_external_content,
+                        $data_row->column_reviews,
+                        $data_row->column_features,
                         $data_row->price_diff,
                         $recommendations_html,
                         json_encode($data_row),

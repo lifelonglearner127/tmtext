@@ -175,6 +175,18 @@
                 <label for="column_batch_name">Duplicate content</label>
             </p>
             <p>
+                <input type="checkbox" id="column_external_content" data-col_name="column_external_content" name="column_external_content" <?php echo($columns['column_external_content'] == 'true' ? 'checked="checked"' : ''); ?> />
+                <label for="column_external_content">External Content</label>
+            </p>
+            <p>
+                <input type="checkbox" id="column_reviews" data-col_name="column_reviews" name="column_reviews" <?php echo($columns['column_reviews'] == 'true' ? 'checked="checked"' : ''); ?> />
+                <label for="column_reviews">Reviews</label>
+            </p>
+            <p>
+                <input type="checkbox" id="column_features" data-col_name="column_features" name="column_features" <?php echo($columns['column_features'] == 'true' ? 'checked="checked"' : ''); ?> />
+                <label for="column_features">Features</label>
+            </p>
+            <p>
                 <input type="checkbox" id="column_price_diff" data-col_name="price_diff" name="column_price_diff" <?php echo($columns['price_diff'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="column_actions">Price difference</label>
             </p>
