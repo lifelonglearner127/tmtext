@@ -442,6 +442,11 @@ $(function () {
         if ($(event.target).is('a')) {
             return;
         }
+        if ($(event.target).is('td.sorting_1') || $(event.target).is('img')) {
+            var data = JSON.parse($(event.target).parents('tr').attr('add_data'));
+            showSnap('<img src="'+base_url+'webshoots/'+data.snap+'">');
+            return;
+        }
         var target = $(event.target);
         if (target.parents('table').attr('class') == 'url_table')
             target = target.parents('table');
