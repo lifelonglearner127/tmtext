@@ -130,8 +130,36 @@ class Statistics_new_model extends CI_Model {
         return $result;
 
     }
-
-
+    function get_for_compare($batch_id){
+         $query = $this->db
+            ->select('s.imported_data_id,s.long_description_wc,s.short_description_wc,s.similar_products_competitors, cl.snap, cl.snap_date, cl.snap_state,
+            (select `value` from imported_data_parsed where `key`="Product Name" and `imported_data_id` = `s`.`imported_data_id` and `revision`=`s`.`revision` limit 1) as `product_name`,
+            
+            (select `value` from imported_data_parsed where `key`="Url" and `imported_data_id` = `s`.`imported_data_id` and `revision`=`s`.`revision` limit 1) as `url`
+            ')
+            ->from($this->tables['statistics_new'].' as s')
+            ->join($this->tables['crawler_list'].' as cl', 'cl.imported_data_id = s.imported_data_id', 'left')
+            ->where('s.batch_id', $batch_id)->get();
+        $result =  $query->result();
+        return $result;
+    }
+    
+    function get_compare_item($imported_data_id){
+        $query = $this->db
+            ->select('s.imported_data_id,s.long_description_wc,s.short_description_wc, cl.snap, cl.snap_date, cl.snap_state,
+            (select `value` from imported_data_parsed where `key`="Product Name" and `imported_data_id` = `s`.`imported_data_id` and `revision`=`s`.`revision` limit 1) as `product_name`,
+            
+            (select `value` from imported_data_parsed where `key`="Url" and `imported_data_id` = `s`.`imported_data_id` and `revision`=`s`.`revision` limit 1) as `url`
+            ')
+            ->from($this->tables['statistics_new'].' as s')
+            ->join($this->tables['crawler_list'].' as cl', 'cl.imported_data_id = s.imported_data_id', 'left')
+            ->where('s.imported_data_id', $imported_data_id)->get();
+        $result =  $query->row();
+        return $result;
+    }
+    
+    
+    
     function getStatsData($params)
     {
         if(empty($params->batch_id)){

@@ -54,11 +54,41 @@ class Assess extends MY_Controller {
         return $output;
     }
 
+    public function compare(){
+        $batch1 = $this->input->post('batch1');
+        $batch2 = $this->input->post('batch2');
+        $this->load->model('batches_model');
+        $customer_name = $this->batches_model->getCustomerUrlByBatch($batch2);
+        $this->load->model('statistics_new_model');
+        $data =  $this->statistics_new_model->get_for_compare($batch1);
+        $cmp= array();
+        foreach($data as $val){
+    
+            if(substr_count($val->similar_products_competitors, $customer_name)>0){
+                $similar_items= unserialize($val->similar_products_competitors);
+                
+                foreach($similar_items as $key => $item){
+                    if(substr_count($customer_name,$item['customer'])>0){
+                        $val->cmp_item = $this->statistics_new_model->get_compare_item($similar_items[$key]['imported_data_id']);
+                      
+                    }
+                }
+                $cmp[]=$val;
+            }
+        }
+        $this->data['results']=$cmp;
+//        echo "<pre>";
+//        print_r($cmp);
+//        echo "</pre>";
+        $this->load->view('assess/compare', $this);
+        
+        
+    }
     
     public function get_assess_info(){
         $txt_filter = '';
-        if($this->input->get('sSearch') != ''){
-            $txt_filter = $this->input->get('sSearch');
+        if($this->input->get('search_text') != ''){
+            $txt_filter = $this->input->get('search_text');
         }
 
         $batch_id = $this->input->get('batch_id');

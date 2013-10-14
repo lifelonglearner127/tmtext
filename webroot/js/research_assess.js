@@ -421,7 +421,21 @@ $(function () {
             }
             );
     }
-
+    
+    var research_compare = base_url + 'index.php/assess/compare';
+    $(document).ready(function(){
+          
+        $("#research_assess_update").live('click', function(){
+            batch1id= $("select[name='research_assess_batches']").val();
+            batch2id= $("#research_assess_compare_batches_batch").val();
+            if(batch1id!=0 && batch2id != null ){
+            var analyzer_attr = $.post(research_compare, {batch1: batch1id, batch2: batch2id}, 'json').done(function(data) {
+            $("#records_wrapper").html(data);
+            });
+            }
+        });
+    });
+    
     $(document).on('click', '#comparison_pagination a', function(event){
         event.preventDefault();
         comparison_details_load($(this).attr('href'));

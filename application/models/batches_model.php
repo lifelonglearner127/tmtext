@@ -120,7 +120,25 @@ class Batches_model extends CI_Model {
         }
         return false;
     }
-
+    
+    
+     function getCustomerUrlByBatch($batch_id)
+    {
+        $query =  $this->db->select('c.url')
+            ->from($this->tables['batches'].' as b')
+            ->join($this->tables['customers'].' as c', 'c.id = b.customer_id', 'left')
+            ->where('b.id', $batch_id)->limit(1)->get();
+        if($query->num_rows() > 0) {
+            $url=$query->row()->url;
+            $n = parse_url($url);
+            $url = $n['host'];
+            $url = str_replace("www1.", "", $url);
+            $url = str_replace("www.", "", $url);
+            return $url;
+        }
+        return false;
+    }
+    
     function getAllCustomerDataByBatch($batch) {
         $query =  $this->db->select('*')
             ->from($this->tables['batches'].' as b')

@@ -2458,3 +2458,21 @@ body.login_block{
 .subtitle_word_short, .subtitle_word_long{
     font-size: 10px!important;
 }
+.products_tb tr, .products_tb td{
+    border: 1px solid rgb(182, 173, 173);
+    padding: 5px;
+}
+.products_tb_heading{
+    font-weight: bold;
+    text-align: center;
+    font-size: 11px;
+}
+.url_style{
+    width:110px !important;
+    word-wrap: break-word;
+}
+.url_style span {
+ display: block;
+ overflow: hidden;
+    width: 110px;
+}

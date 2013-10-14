@@ -702,7 +702,7 @@ class Crons extends MY_Controller {
         if (file_exists($tmp_dir . ".locked")) {
             exit;
         }
-
+        $first_sart= time();
         touch($tmp_dir . ".locked");
         try {
             $this->load->model('imported_data_parsed_model');
@@ -723,9 +723,11 @@ class Crons extends MY_Controller {
             if ($trnc === false) {
                 $trnc = 1;
             }
-            $timesart = microtime(true);
+            $timesart = time();
             $data_arr = $this->imported_data_parsed_model->do_stats_newupdated();
-            $timeend= microtime(true);
+            $timeend= time(true);
+            $time=  $timesart - $timeend;
+            echo "get_data=----".$time;
             if (count($data_arr) > 0) {
 
 //                $sites_list = array();
@@ -739,6 +741,7 @@ class Crons extends MY_Controller {
 //                }
 
                 foreach ($data_arr as $obj) {
+                    $foreach_start = time();
                     $own_price = 0;
                     $competitors_prices = array();
                     $price_diff = '';
@@ -970,6 +973,10 @@ class Crons extends MY_Controller {
                             'customer' => $customer
                         );
 
+                    $time_end = microtime(true);
+                    
+                    $time= $time_end- $time_start;
+                    echo "model exists_and some actions--".$time;
 
                     } else {
                         
@@ -1048,6 +1055,11 @@ class Crons extends MY_Controller {
                     $time = $time_end - $time_start;
 
                     echo '.';
+                    
+                    
+                    $foreach_end= time();
+                    $time = $foreach_end - $foreach_start;
+                    echo "<br>foreach_----".$time."<br>";
                 }
                  
                 $q = $this->db->select('key,description')->from('settings')->where('key', 'cron_job_offset');
@@ -1065,7 +1077,9 @@ class Crons extends MY_Controller {
             echo 'Error', $e->getMessage(), "\n";
             unlink($tmp_dir . ".locked");
         }
-       
+         $end_time= time();
+         $time= $end_time -$first_sart;
+         echo "<br>alll--".$time."<br>";
         unlink($tmp_dir . ".locked");
         $data_arr = $this->imported_data_parsed_model->do_stats_newupdated();
         $q = $this->db->select('key,description')->from('settings')->where('key', 'cron_job_offset');
