@@ -244,7 +244,23 @@ class Assess extends MY_Controller {
             return -$result;
         }
     }
+     private function assess_sort_ignore($a, $b) {
+        $column = $this->sort_column;
+        $key1 = $a->$column;
+        $key2 = $b->$column;
 
+        if ($this->sort_type == "num") {
+            $result = intval($key1) - intval($key2);
+        } else {
+            $result = strcasecmp(strval($key1), strval($key2));
+        }
+
+        if ($this->sort_direction == "asc") {
+            return $result;
+        } else {
+            return -$result;
+        }
+    }
     
     public function assess_report_download() {
         $report_name = 'Assess';
@@ -662,6 +678,9 @@ class Assess extends MY_Controller {
                 'long_description_wc'           => 'true',
                 'long_seo_phrases'              => 'true',
                 'duplicate_context'             => 'true',
+                'column_external_content'       => 'true',
+                'column_reviews'                => 'true',
+                'column_features'               => 'true',
                 'price_diff'                    => 'true',
             );
         }
@@ -1172,7 +1191,10 @@ class Assess extends MY_Controller {
                 $this->sort_direction = $sort_direction;
             }
             $this->sort_type = is_numeric($result_table[0]->$s_column) ? "num" : "";
-            usort($result_table, array("Assess", "assess_sort"));
+            if($s_column == 'product_name'){
+                 usort($result_table, array("Assess", "assess_sort_ignore"));}
+            else{
+                usort($result_table, array("Assess", "assess_sort"));}
         }
 
         $total_rows = count($result_table);

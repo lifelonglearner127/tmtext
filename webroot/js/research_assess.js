@@ -220,7 +220,6 @@ $(function () {
             "sWidth": "6%"
         },
         {
-            //fortest
             "sTitle" : "Features", 
             "sName":"column_features", 
             "sWidth": "6%"
