@@ -79,3 +79,9 @@ class Utils():
 
         #return " ".join(tokens)
         return tokens
+
+    @staticmethod
+    def prettify_html(html_text):
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(html_text)
+        return soup.prettify().encode("utf-8")

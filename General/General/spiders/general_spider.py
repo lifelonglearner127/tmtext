@@ -121,7 +121,12 @@ class ProductsSpider(BaseSpider):
         #TODO: needs improvement
         # maybe write some rule to exclude prices that are not in a normal range. somehow...look at neighboring products, look at category name?
         # extract price
-        price_holder = hxs.select("//*[contains(text(), '$') or contains(text(), 'USD') or contains(text(), 'usd')]/parent::*/parent::*")
+
+        #TODO
+        # go progressively up until you think you've captured the entire price
+        #price_holder = hxs.select("//*[contains(text(), '$') or contains(text(), 'USD') or contains(text(), 'usd')]/parent::*/parent::*")
+        #price_holder = hxs.select("//*[(contains(text(), '$') or contains(text(), 'USD') or contains(text(), 'usd')) and (contains(@*, 'Price') or contains(@*, 'price'))]")
+        price_holder = hxs.select("//*[contains(text(), '$') or contains(text(), 'USD') or contains(text(), 'usd')]")
         # look for number regular expressions - accept anything that could occur in a price string, in case it's all inside one tag (.,$ etc)
         price = price_holder.select(".//text()").re("[0-9\s\.,$USDusd]+")
         # assume first value is dollars and second is cents (if they are different)
@@ -134,6 +139,8 @@ class ProductsSpider(BaseSpider):
         if price:
             item['price'] = price_string
             #TODO: what if there are more prices on the page, like for other products? see tigerdirect
+
+        #print item['site'], Utils.prettify_html("".join([s if type(s) is str else s.encode("utf-8", errors="ignore") for s in price_holder.extract()]))
 
 
         # # bestbuy
