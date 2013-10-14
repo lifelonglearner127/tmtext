@@ -85,7 +85,7 @@ class Crawler_List_model extends CI_Model {
     {
     	$CI =& get_instance();
 
-    	$this->db->select('id, url, category_id')
+    	$this->db->select('id, url, category_id, imported_data_id')
     		->where('status', 'new');
 
     	if ($only_my) {
@@ -105,7 +105,7 @@ class Crawler_List_model extends CI_Model {
     {
     	$CI =& get_instance();
 
-    	$this->db->select('id, url, category_id')
+    	$this->db->select('id, url, category_id, imported_data_id')
     		->where('status', 'queued');
 
     	if ($only_my) {
