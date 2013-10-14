@@ -1197,7 +1197,7 @@ class System extends MY_Controller {
     		if(isset($dep->url) && trim($dep->url) !== "") {
     			$url = $dep->url;
     			$http_status = $this->webshoots_model->urlExistsCode($url);
-    			if($http_status >= 200 && $http_status <= 302) {
+    			if($http_status >= 200 && $http_status <= 302 || $http_status == 400) {
     					$url = preg_replace('#^https?://#', '', $url);
 	            $call_url = $this->webshoots_model->webthumb_call_link($url);
 	            $snap_res = $this->webshoots_model->crawl_webshoot($call_url, $dep->id, 'sites_dep_snap-');
@@ -1872,13 +1872,12 @@ class System extends MY_Controller {
                     'site' => ''
             );
             $department = $this->department_members_model->get($id);
-//            echo json_encode($department).'<br>';
             if(count($department) > 0) {
                     $dep = $department[0];
                     if(isset($dep->url) && trim($dep->url) !== "") {
                             $url = $dep->url;
                             $http_status = $this->webshoots_model->urlExistsCode($url);
-                            if($http_status >= 200 && $http_status <= 302) {
+                            if($http_status >= 200 && $http_status <= 302 || $http_status == 400) {
                                             $url = preg_replace('#^https?://#', '', $url);
                         $call_url = $this->webshoots_model->webthumb_call_link($url);
                         $snap_res = $this->webshoots_model->crawl_webshoot($call_url, $dep->id, 'sites_dep_snap-');
@@ -1905,7 +1904,7 @@ class System extends MY_Controller {
                     } else {
                                 $res[$id]['msg'] = "Url field is empty DB. Unable to process snapshot process";
                     }
-                    echo "Done: ".$dep->text."<br>";
+                    echo "Done: ".$dep->text.",  ";
             } else {
                         $res[$id]['msg'] = "Such department don't exists in DB. Snapshot attempt is canceled.";
             }
