@@ -2454,3 +2454,7 @@ body.login_block{
     overflow: hidden;
     width: 300px;
 }
+
+.subtitle_word_short, .subtitle_word_long{
+    font-size: 10px!important;
+}

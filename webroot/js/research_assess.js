@@ -147,6 +147,7 @@ $(function () {
                 return;
             }
             hideColumns();
+            check_word_columns();
         },
         "oLanguage": {
             "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
@@ -180,9 +181,10 @@ $(function () {
         },
 
         {
-            "sTitle" : "Words <span style='font-size: 10px'>Short</span>",
+            "sTitle" : "Words <span class='subtitle_word_short' >Short</span>",
             "sName":"short_description_wc", 
-            "sWidth": "4%"
+            "sWidth": "4%",
+            "sClass": "word_short"
         },
 
         {
@@ -192,9 +194,10 @@ $(function () {
         },
 
         {
-            "sTitle" : "Words <span style='font-size: 10px'>Long</span>",
+            "sTitle" : "Words <span class='subtitle_word_long' >Long</span>",
             "sName":"long_description_wc", 
-            "sWidth": "4%"
+            "sWidth": "4%",
+            "sClass": "word_long"
         },
 
         {
@@ -275,6 +278,7 @@ $(function () {
             }
             hideColumns();
             tblAssess_postRenderProcessing();
+            check_word_columns();
         }
     }
 
@@ -593,6 +597,7 @@ $(function () {
         });
         var own_customer = $(this).val();
         fill_lists_batches_compare(own_customer);
+        check_word_columns();
     });
     
     $('#research_assess_flagged').live('click', function(){
@@ -785,6 +790,7 @@ $(function () {
     $('#research_assess_update').on('click', function() {
         readAssessData();
         addColumn_url_class();
+        check_word_columns();
     });
     
     function addColumn_url_class(){
@@ -811,6 +817,38 @@ $(function () {
             });
         }
     //----------------------
+    }
+
+    function check_word_columns(){
+        var word_short_num = 0;
+        var word_long_num = 0;
+        $('td.word_short').each(function(){
+            var txt = parseInt($(this).text());
+            if( txt > 0){
+                word_short_num += 1;
+            }
+        });
+        $('td.word_long').each(function(){
+            var txt = parseInt($(this).text());
+            if( txt > 0){
+                word_long_num += 1;
+            }
+        });
+
+        $.each(tblAllColumns, function(index, value) {
+            if((value == 'short_description_wc' && word_short_num == 0) || (value == 'long_description_wc' && word_long_num == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+            }
+        });
+        $('.subtitle_word_long').show();
+        $('.subtitle_word_short').show();
+        if(word_short_num == 0 && word_long_num != 0){
+            $('.subtitle_word_long').hide();
+        } else if(word_short_num != 0 && word_long_num == 0){
+            $('.subtitle_word_short').hide();
+        }
+        //console.log();
+        //console.log(tblAssess.fnGetSColumnIndexByName('long_description_wc'));
     }
 
     $('#assess_report_download_panel > a').click(function(){
@@ -874,6 +912,7 @@ $(function () {
                         if(data == true) {
                             hideColumns();
                             addColumn_url_class();
+                            check_word_columns();
                         }
                     }
                 });
@@ -980,6 +1019,7 @@ $(function () {
                 }
             });
             addColumn_url_class();
+            check_word_columns();
         } else if (table_case == 'details') {
             reportPanel(false);
             $.each(tblAllColumns, function(index, value) {
@@ -988,8 +1028,10 @@ $(function () {
                 } else {
                     tblAssess.fnSetColumnVis(index, false, false);
                 }
+                //tblAssess.fnSetColumnVis(, false, false);
             });
             addColumn_url_class();
+            check_word_columns();
         } else if (table_case == 'report') {
             reportPanel(true);
             var batch_id = $('select[name="research_assess_batches"]').find('option:selected').val();
@@ -1125,6 +1167,7 @@ $(function () {
     }
 
     hideColumns();
+    check_word_columns();
     $('#assess_report_download_panel').hide();
 
     $(document).on('mouseenter', 'i.snap_ico', function () {
