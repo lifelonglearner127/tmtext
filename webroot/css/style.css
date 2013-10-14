@@ -2410,6 +2410,7 @@ body.login_block{
 }
 .board_item_row {
     float: left;
+    width: 100%;
 }
 .board_item{
     float:left;
