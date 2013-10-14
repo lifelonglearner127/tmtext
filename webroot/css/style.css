@@ -2422,6 +2422,18 @@ body.login_block{
     /*margin: 10px 10px;*/
     margin: 10px 0 10px 0;
 }
+.board_item .st {
+    display: inline-block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 180px;
+}
+.board_item .st.full {
+    overflow: auto;
+    text-overflow: clip;
+    white-space: normal;
+}
 .board_item.board_item_ml {
     margin-left: 31px;
 }
