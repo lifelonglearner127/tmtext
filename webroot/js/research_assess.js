@@ -424,7 +424,7 @@ $(function () {
         if ($(event.target).is('a')) {
             return;
         }
-        if ($(event.target).is('td.sorting_1')) {
+        if ($(event.target).is('td.sorting_1') || $(event.target).is('td.sorting_1 img')) {
             console.log(111);
             var data = JSON.parse($(event.target).parents('tr').attr('add_data'));
             console.log(data);
