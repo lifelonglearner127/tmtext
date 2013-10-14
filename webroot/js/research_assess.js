@@ -425,7 +425,10 @@ $(function () {
             return;
         }
         if ($(event.target).is('td.sorting_1')) {
+            console.log(111);
             var data = JSON.parse($(event.target).parents('tr').attr('add_data'));
+            console.log(data);
+            console.log(base_url+'webshoots/'+data.snap);
             showSnap('<img src="'+base_url+'webshoots/'+data.snap+'">');
             return;
         }
