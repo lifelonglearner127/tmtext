@@ -17,7 +17,7 @@ class System extends MY_Controller {
 		$this->load->library('form_validation');
                 
 		$this->ion_auth->add_auth_rules(array(
-                        'urls_spanshot' => true
+                        'urls_snapshot' => true
   		));
 
  	}
@@ -1840,7 +1840,7 @@ class System extends MY_Controller {
         $this->imported_data_parsed_model->delete_model($imported_data_id);
     }
     
-    public function urls_spanshot(){
+    public function urls_snapshot(){
         if(isset($_GET['count'])){
             $query = $this->db->query("
                     SELECT 
