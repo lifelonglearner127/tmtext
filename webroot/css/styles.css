@@ -538,6 +538,9 @@ ul.ui-sortable {
     padding: 5px;
     max-width:340px;
 }
+table#tblAssess tbody td:first-child img:hover{
+    cursor: pointer;
+}
 .brand_most_type{
     width: 100px;
 }
