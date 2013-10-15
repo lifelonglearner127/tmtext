@@ -460,13 +460,9 @@ $(function () {
         if ($(event.target).is('a')) {
             return;
         }
-        console.log($(event.target));
-        console.log($(event.target).is('img'));
         if ($(event.target).is('td.sorting_1') || $(event.target).is('img')) {
-            //var data = JSON.parse($(event.target).parents('tr').attr('add_data'));
-            console.log($(event.currentTarget).attr('src'));
-            console.log($(event.currentTarget));
             console.log($(event.target).attr('src'));
+            console.log($(event.target).children().attr('src'));
             //showSnap('<img src="'+base_url+'webshoots/'+data.snap+'">');
             return;
         }
