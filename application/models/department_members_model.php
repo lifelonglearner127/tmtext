@@ -155,7 +155,7 @@ class Department_members_model extends CI_Model {
         $query_res = $query->result();
         if(count($query_res) > 0) {
             $r = $query_res[0];
-            $fs = filesize($r->snap_path);
+            $fs = filesize($r->snap_dir);
             $res_data['dep_id'] = $r->dep_id;
             $res_data['snap_name'] = $r->snap_name;
             $res_data['snap_path'] = $r->snap_path;
