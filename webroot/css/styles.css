@@ -538,7 +538,7 @@ ul.ui-sortable {
     padding: 5px;
     max-width:340px;
 }
-table#tblAssess tbody td:first-child img:hover{
+table#tblAssess tbody td:first-child img:hover, table#tblAssess tbody i.snap_ico{
     cursor: pointer;
 }
 .brand_most_type{
