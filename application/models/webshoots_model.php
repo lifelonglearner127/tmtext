@@ -101,7 +101,7 @@ class Webshoots_model extends CI_Model {
     public function crawl_webshoot($call_url, $id, $prefix) {
         $file = file_get_contents($call_url);
         $type = 'png';
-        $dir = realpath(BASEPATH . "../webroot/webshoots");
+        echo $dir = realpath(BASEPATH . "../webroot/webshoots");
         if (!file_exists($dir)) {
             mkdir($dir);
             chmod($dir, 0777);
