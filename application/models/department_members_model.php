@@ -162,9 +162,9 @@ class Department_members_model extends CI_Model {
             $res_data['snap_dir'] = $r->snap_dir;
             $res_data['http_status'] = $r->http_status;
             $res_data['stamp'] = $r->stamp;
-            if($fs !== false || $fs > 10000) {
+//            if($fs !== false || $fs > 10000) {
                 $res_data['img_av_status'] = true;
-            }
+//            }
         }
         return $res_data;
     }
