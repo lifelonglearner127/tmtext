@@ -113,10 +113,8 @@ $(function () {
                     var str = '';
                     console.log(json.aaData);
                     for(var i=0; i<json.aaData.length; i++){
-                        //var obj = jQuery.parseJSON(json.aaData[i][12]);
-                        console.log(json.aaData[i][12]);
-                        console.log(json.aaData[i][13]);
-                        console.log(json.aaData[i][14]);
+                        var obj = jQuery.parseJSON(json.aaData[i][14]);
+                        console.log(obj);
                         /*if(json.aaData[i][2] != null && json.aaData[i][2] != '' && json.aaData[i][0]!=''){
                             if(json.aaData[i][2].length > 93)
                               str += '<div class="board_item"><span class="span_img">'+json.aaData[i][2]+'</span><br />'+json.aaData[i][0]+
