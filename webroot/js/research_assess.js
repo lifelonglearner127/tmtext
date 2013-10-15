@@ -478,12 +478,9 @@ $(function () {
             );
     });
 
-    $('#tblAssess tbody').on('mouseenter', function(event) {
-        if($(event.target).is('i')){
-            var snap = "webshoots/" + $(event.target).attr('snap');
-            showSnap('<img src="'+base_url+snap+'">');
-            return;
-        }
+    $(document).on('mouseenter', 'i.snap_ico', function () {
+        var snap = "webshoots/" + $(this).attr('snap');
+        showSnap('<img src="'+base_url+snap+'">');
     });
 
     $('#tblAssess tbody').click(function(event) {
