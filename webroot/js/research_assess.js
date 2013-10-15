@@ -111,7 +111,6 @@ $(function () {
                 }
                 if(json.aaData.length > 0){
                     var str = '';
-                    console.log(json.aaData);
                     for(var i=0; i<json.aaData.length; i++){
                         var obj = jQuery.parseJSON(json.aaData[i][14]);
                         if(json.aaData[i][2] != null && json.aaData[i][2] != '' && json.aaData[i][0]!=''){
@@ -465,8 +464,9 @@ $(function () {
         console.log($(event.target).is('img'));
         if ($(event.target).is('td.sorting_1') || $(event.target).is('img')) {
             var data = JSON.parse($(event.target).parents('tr').attr('add_data'));
-            console.log(data);
-            console.log(base_url+'webshoots/'+data.snap);
+            console.log($(event.currentTarget).attr('src'));
+            console.log($(event.currentTarget));
+            console.log($(event.target).children().attr('src'));
             showSnap('<img src="'+base_url+'webshoots/'+data.snap+'">');
             return;
         }
