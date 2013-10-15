@@ -140,7 +140,7 @@ class ProductsSpider(BaseSpider):
             item['price'] = price_string
             #TODO: what if there are more prices on the page, like for other products? see tigerdirect
 
-        print item['site'],'\n', "\n--------------------------------\n".join(map(lambda x: Utils.prettify_html(x),[s if type(s) is str else s.encode("utf-8", errors="ignore") for s in price_holder.extract()]))
+        print item['site'], item['url'], '\n', "\n--------------------------------\n".join(map(lambda x: Utils.prettify_html(x),[s if type(s) is str else s.encode("utf-8", errors="ignore") for s in price_holder.extract()]))
 
 
         # # bestbuy
