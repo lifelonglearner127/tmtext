@@ -2469,7 +2469,7 @@ body.login_block{
     width: 300px;
 }
 
-.subtitle_word_short, .subtitle_word_long{
+.subtitle_word_short, .subtitle_word_long, .subtitle_keyword_short, .subtitle_keyword_long{
     font-size: 10px!important;
 }
 .products_tb tr, .products_tb td{

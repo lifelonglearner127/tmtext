@@ -202,9 +202,10 @@ $(function () {
         },
 
         {
-            "sTitle" : "Keywords <span style='font-size: 10px'>Short</span>",
+            "sTitle" : "Keywords <span class='subtitle_keyword_short'>Short</span>",
             "sName":"short_seo_phrases", 
-            "sWidth": "8%"
+            "sWidth": "8%",
+            "sClass": "keyword_short"
         },
 
         {
@@ -215,9 +216,10 @@ $(function () {
         },
 
         {
-            "sTitle" : "Keywords <span style='font-size: 10px'>Long</span>",
+            "sTitle" : "Keywords <span class='subtitle_keyword_long'>Long</span>",
             "sName":"long_seo_phrases", 
-            "sWidth": "8%"
+            "sWidth": "8%",
+            "sClass": "keyword_long"
         },
 
         {
@@ -881,6 +883,8 @@ $(function () {
     function check_word_columns(){
         var word_short_num = 0;
         var word_long_num = 0;
+        var keyword_short_num = 0;
+        var keyword_long_num = 0;
         $('td.word_short').each(function(){
             var txt = parseInt($(this).text());
             if( txt > 0){
@@ -893,18 +897,39 @@ $(function () {
                 word_long_num += 1;
             }
         });
+        $('td.keyword_short').each(function(){
+            var txt = parseInt($(this).text());
+            if( txt > 0){
+                keyword_short_num += 1;
+            }
+        });
+        $('td.keyword_long').each(function(){
+            var txt = parseInt($(this).text());
+            if( txt > 0){
+                keyword_long_num += 1;
+            }
+        });
 
         $.each(tblAllColumns, function(index, value) {
             if((value == 'short_description_wc' && word_short_num == 0) || (value == 'long_description_wc' && word_long_num == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
             }
+            if((value == 'short_seo_phrases' && keyword_short_num == 0) || (value == 'long_seo_phrases' && keyword_long_num == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+            }
         });
         $('.subtitle_word_long').show();
         $('.subtitle_word_short').show();
+        $('.subtitle_keyword_short').show();
+        $('.subtitle_keyword_long').show();
         if(word_short_num == 0 && word_long_num != 0){
             $('.subtitle_word_long').hide();
         } else if(word_short_num != 0 && word_long_num == 0){
             $('.subtitle_word_short').hide();
+        } else if(keyword_short_num == 0 && keyword_long_num != 0){
+            $('.subtitle_keyword_long').hide();
+        } else if(keyword_short_num != 0 && keyword_long_num == 0){
+            $('.subtitle_keyword_short').hide();
         }
         //console.log();
         //console.log(tblAssess.fnGetSColumnIndexByName('long_description_wc'));
