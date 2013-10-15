@@ -914,9 +914,9 @@ $(function () {
             if((value == 'short_description_wc' && word_short_num == 0) || (value == 'long_description_wc' && word_long_num == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
             }
-            if((value == 'short_seo_phrases' && keyword_short_num == 0) || (value == 'long_seo_phrases' && keyword_long_num == 0)){
+            /*if((value == 'short_seo_phrases' && keyword_short_num == 0) || (value == 'long_seo_phrases' && keyword_long_num == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
-            }
+            }*/
         });
         $('.subtitle_word_long').show();
         $('.subtitle_word_short').show();
