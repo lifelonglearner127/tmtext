@@ -41,8 +41,9 @@ $(function () {
         "column_features",
         "price_diff",
         "product_selection"
+        
         ],
-        details_comare: [
+        details_compare: [
         "snap",
         "product_name",
         "url",
@@ -1100,7 +1101,7 @@ $(function () {
         $.each(columns_checkboxes, function(index, value) {
             columns_checkboxes_checked.push($(value).data('col_name'));
         });
-        $("#comare_table").hide();
+        
         if (table_case == 'recommendations') {
             reportPanel(false);
             $.each(tblAllColumns, function(index, value) {
