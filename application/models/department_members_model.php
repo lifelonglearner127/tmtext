@@ -358,7 +358,7 @@ class Department_members_model extends CI_Model {
 
         $this->db->where('site_id', $site_id);
         $this->db->where('text', trim($text));
-        $this->db->update($this->tables['department_members'], $data);
+        return $this->db->update($this->tables['department_members'], $data);
     }
 
 

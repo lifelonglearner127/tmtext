@@ -622,6 +622,261 @@ class System extends MY_Controller {
         ));
     }
 
+    public function save_departments_categories_new_debug() {
+        $this->load->model('department_model');
+        $this->load->model('department_members_model');
+        $this->load->model('site_categories_model');
+        $site_id = $this->input->post('site_id');
+        $site_name = explode(".", strtolower($this->input->post('site_name')));
+        $file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
+        $_rows = array();
+        $handle = fopen($file, "rb");
+        $contents = fread($handle, filesize($file));
+        fclose($handle);
+
+        $data = '['.trim($contents,'"').']';
+        $json_obj = json_decode($data);
+
+        $debug_stack = array();
+
+				foreach($json_obj as $row) {
+					// === DB table decision (start)
+					$level = '';
+					$work_table = "";
+          if(isset($row->level) && !is_null($row->level) && $row->level != ''){
+	          $level = $row->level;
+	          if($level >= 1) {
+	          	$work_table = 'department_members';
+	          } else {
+	          	$work_table = 'site_categories';
+	          }
+          }
+					// === DB table decision (end)
+
+          if($work_table != "") { // === work table define, ok, otherwise !!! DO NOTHING !!!
+          	// ==== 'department_members' DB table actions stuffs (start)
+          	if($work_table == 'department_members') {
+          		// === default values for 'department_members' table actions (start)
+          		$department_text = "";
+          		$url = "";
+          		$text = "";
+          		$department_url = "";
+          		$description_title = "";
+          		$keyword_count = null;
+          		$description_wc  = 0;
+          		$description_text = "";
+          		$keyword_density = null;
+          		$department_id = 0;
+          		// === default values for 'department_members' table actions (end)
+
+          		// === collect possible values for 'department_members' table actions (start)
+          		if(isset($row->department_text) && is_array($row->department_text)) {
+                $department_text = $row->department_text[0];
+              } else if(isset($row->department_text) && !is_array($row->department_text) && !is_null($row->department_text) && $row->department_text != '') {
+                $department_text = $row->department_text;
+              }
+              if(isset($row->url) && is_array($row->url)) {
+                $url = addslashes($row->url[0]);
+              } else if(isset($row->url) && !is_array($row->url) && !is_null($row->url)) {
+                $url = addslashes($row->url);
+              }
+              if(isset($row->text) && is_array($row->text)) {
+                $text = $row->text[0];
+              } else if(isset($row->text) && !is_array($row->text) && !is_null($row->text)) {
+                $text = $row->text;
+              }
+              if(isset($row->department_url) && !is_null($row->department_url) && $row->department_url != '') {
+                $department_url = addslashes($row->department_url);
+              }
+              if(isset($row->description_title) && is_array($row->description_title)) {
+								$description_title = $row->description_title[0];
+              } else if(isset($row->description_title) && !is_array($row->description_title) && !is_null($row->description_title) && $row->description_title != '') {
+                $description_title = $row->description_title;
+              }
+              if(isset($row->keyword_count) && is_array($row->keyword_count)){
+                $keyword_count = $row->keyword_count[0];
+              } else if(isset($row->keyword_count) && !is_array($row->keyword_count) && !is_null($row->keyword_count) && $row->keyword_count != '') {
+                $keyword_count = json_encode($row->keyword_count);
+              }
+              if(isset($row->description_wc) && is_array($row->description_wc)) {
+                $description_wc = $row->description_wc[0];
+              } else if(isset($row->description_wc) && !is_array($row->description_wc) && !is_null($row->description_wc) && $row->description_wc != '') {
+                $description_wc = $row->description_wc;
+              }
+              if(isset($row->description_text) && is_array($row->description_text)) {
+                $description_text = $row->description_text[0];
+              } else if(isset($row->description_text) && !is_array($row->description_text) && !is_null($row->description_text) && $row->description_text != '') {
+                $description_text = $row->description_text;
+              }
+              if(isset($row->keyword_density) && is_array($row->keyword_density)) {
+                $keyword_density = $row->keyword_density[0];
+              } else if(isset($row->keyword_density) && !is_array($row->keyword_density) && !is_null($row->keyword_density) && $row->keyword_density != '') {
+                $keyword_density = json_encode($row->keyword_density);
+              }
+          		// === collect possible values for 'department_members' table actions (end)
+
+          		// === debuging stack (start)
+              $debug_stack_mid = array(
+              	'status' => 'department_members',
+          			'department_text' => $department_text,
+          			'url' => $url,
+          			'text' => $text,
+          			'department_url' => $department_url,
+          			'description_title' => $description_title,
+          			'keyword_count' => $keyword_count,
+          			'description_wc' => $description_wc,
+          			'description_text' => $description_text,
+          			'keyword_density' => $keyword_density,
+          			'department_id' => null,
+          			'check_id' => null,
+          			'department_members_model_insert_id' => null,
+          			'department_members_model_up_flag' => null,
+          			'department_members_model_update' => null
+          		);
+              // === debuging stack (end)
+
+          		// === insert / update decisions stuffs (start)
+              $check_department_id = $this->department_model->checkExist($department_text);
+              if($check_department_id == false){
+                $department_id = $this->department_model->insert($department_text, $department_text);
+              } else {
+                $department_id = $check_department_id;
+              }
+              $debug_stack_mid['department_id'] = $department_id; 
+              $parent_id = 0;
+              $check_id = $this->department_members_model->checkExist($site_id, $department_text, $url);
+              $debug_stack_mid['check_id'] = $check_id; 
+              if($check_id == false) {
+                $department_members_model_insert_id = $this->department_members_model->insert($parent_id, $site_id, $department_id, $department_text, $url, $description_wc, $description_text, $keyword_count, $keyword_density, $description_title, $level);
+              	$debug_stack_mid['department_members_model_insert_id'] = $department_members_model_insert_id;
+              } else {
+                $department_members_model_up_flag = $this->department_members_model->updateFlag($site_id, $department_text);
+                $debug_stack_mid['department_members_model_up_flag'] = $department_members_model_up_flag;
+                $department_members_model_update = $this->department_members_model->update($check_id, $department_id, $description_wc, $description_text, $keyword_count, $keyword_density, $description_title, $level);
+                $debug_stack_mid['department_members_model_update'] = $department_members_model_update;
+              }
+          		// === insert / update decisions stuffs (end)
+          		$debug_stack[] = $debug_stack_mid;
+          	}
+          	// ==== 'department_members' DB table actions stuffs (end)
+
+          	// ==== 'site_categories' DB table actions stuffs (start)
+          	if($work_table == 'site_categories') {
+          		// === default values for 'site_categories' table actions (start)
+          		$nr_products = 0;
+          		$url = "";
+          		$text = "";
+          		$department_url = "";
+          		$description_wc  = 0;
+          		$parent_url = "";
+          		$parent_text = "";
+          		$department_text = "";
+          		$department_id = 0;
+          		// === default values for 'site_categories' table actions (end)
+
+          		// === collect possible values for 'site_categories' table actions (start)
+          		if(isset($row->nr_products) && is_array($row->nr_products)) {
+                $nr_products = $row->nr_products[0];
+              } else if(isset($row->nr_products) && !is_array($row->nr_products) && !is_null($row->nr_products) && $row->nr_products != '') {
+                $nr_products = $row->nr_products;
+              }
+              if(isset($row->url) && is_array($row->url)) {
+                $url = addslashes($row->url[0]);
+              } else if(isset($row->url) && !is_array($row->url) && !is_null($row->url)) {
+                $url = addslashes($row->url);
+              }
+              if(isset($row->text) && is_array($row->text)) {
+                $text = $row->text[0];
+              } else if(isset($row->text) && !is_array($row->text) && !is_null($row->text)) {
+                $text = $row->text;
+              }
+              if(isset($row->department_url) && !is_null($row->department_url) && $row->department_url != '') {
+                $department_url = addslashes($row->department_url);
+              }
+              if(isset($row->description_wc) && is_array($row->description_wc)) {
+                $description_wc = $row->description_wc[0];
+              } else if(isset($row->description_wc) && !is_array($row->description_wc) && !is_null($row->description_wc) && $row->description_wc != '') {
+                $description_wc = $row->description_wc;
+              }
+              if(isset($row->parent_url) && is_array($row->parent_url)) {
+                $parent_url = addslashes($row->parent_url[0]);
+              } else if(isset($row->parent_url) && !is_array($row->parent_url) && !is_null($row->parent_url) && $row->parent_url != '') {
+                $parent_url = addslashes($row->parent_url);
+              }
+              if(isset($row->parent_text) && is_array($row->parent_text)) {
+                $parent_text = $row->parent_text[0];
+              } else if(isset($row->parent_text) && !is_array($row->parent_text) && !is_null($row->parent_text) && $row->parent_text!='') {
+                $parent_text = $row->parent_text;
+              }
+              if(isset($row->department_text) && is_array($row->department_text)) {
+                $department_text = $row->department_text[0];
+              } else if(isset($row->department_text) && !is_array($row->department_text) && !is_null($row->department_text) && $row->department_text != '') {
+                $department_text = $row->department_text;
+              }
+          		// === collect possible values for 'site_categories' table actions (end)
+
+              // === debuging stack (start)
+              $debug_stack_mid = array(
+              	'status' => 'site_categories',
+          			'nr_products' => $nr_products,
+          			'url' => $url,
+          			'text' => $text,
+          			'department_url' => $department_url,
+          			'description_wc' => $description_wc,
+          			'parent_url' => $parent_url,
+          			'parent_text' => $parent_text,
+          			'department_text' => $department_text,
+          			'parent_id' => 0,
+          			'site_categories_model_update_flag_one' => null,
+          			'department_members_id' => null,
+          			'check_site' => null,
+          			'site_categories_model_insert' => null,
+          			'site_categories_model_update_flag_two' => null
+          		);
+              // === debuging stack (end)
+
+              // === insert / update decisions stuffs (start)
+              $parent_id = 0;
+              if($parent_text != '') {
+                $parent_id =  $this->site_categories_model->checkExist($site_id, $parent_text);
+                if($parent_id == false){
+                  $parent_id = $this->site_categories_model->insert(0, $site_id, $text, $url, $special, $parent_text, $department_members_id, $nr_products, $description_wc, $keyword_count, $keyword_density, $description_title, $description_text, $level);
+    							$debug_stack_mid['parent_id'] = $parent_id; 
+                } else{
+                  $site_categories_model_update_flag_one = $this->site_categories_model->updateFlag($site_id, $parent_text,  $department_members_id);
+                	$debug_stack_mid['site_categories_model_update_flag_one'] = $site_categories_model_update_flag_one;
+                }
+              }
+
+              if($parent_id != 0 && $department_members_id == 0) {
+                $res = $this->site_categories_model->checkDepartmentId($parent_id);
+                $department_members_id = $res->department_members_id;
+                $debug_stack_mid['department_members_id'] = $department_members_id;
+              }
+
+              if($text != '') {	
+                $check_site = $this->site_categories_model->checkExist($site_id, $text, $department_members_id);
+                $debug_stack_mid['check_site'] = $check_site;
+                if($check_site == false){
+                  $site_categories_model_insert = $this->site_categories_model->insert($parent_id, $site_id, $text, $url, $special, $parent_text, $department_members_id, $nr_products, $description_wc, $keyword_count, $keyword_density, $description_title, $description_text, $level);
+                	$debug_stack_mid['site_categories_model_insert'] = $site_categories_model_insert;
+                } else{
+                  $site_categories_model_update_flag_two = $this->site_categories_model->updateFlag($site_id, $text, $department_members_id);
+                	$debug_stack_mid['site_categories_model_update_flag_two'] = $site_categories_model_update_flag_two;
+                }
+              }
+              // === insert / update decisions stuffs (end)
+              $debug_stack[] = $debug_stack_mid;
+          	}
+          	// ==== 'site_categories' DB table actions stuffs (end)	
+
+          }
+
+				}	        
+
+        $this->output->set_content_type('application/json')->set_output(json_encode($debug_stack));
+    }
+
     public function save_departments_categories()
     {
         $this->load->model('department_model');
@@ -643,7 +898,7 @@ class System extends MY_Controller {
             if((int)$highest_level <= (int)$one->level)
                 $highest_level = $one->level;
         }
-        $debug_stack = array();
+
         foreach($json_obj as $row){
             $special = 0;
             $parent_text = '';
@@ -657,12 +912,7 @@ class System extends MY_Controller {
             $keyword_count = '';
             $description_title = '';
             $level = '';
-            $debug_mid = array(
-            	'full_json_object' => $row,
-            	'highest_level' => $highest_level,
-            	'entry' => "$row->level | $highest_level"
-            );
-            $debug_stack[] = $debug_mid;
+
             if($row->level == $highest_level){
                 if(isset($row->level) && !is_null($row->level) && $row->level!=''){
                     $level = $row->level;
@@ -737,14 +987,8 @@ class System extends MY_Controller {
             $keyword_density = '';
             $description_title = '';
             $level = 0;
-            $debug_mid = array(
-            	'full_json_object' => $row_data,
-            	'highest_level' => $highest_level,
-            	'entry' => "$row->level | $highest_level"
-            );
-            $debug_stack[] = $debug_mid;
+
             if($row_data->level < $highest_level){
-            		$debug_stack['level_check'] = "$row_data->level < $highest_level";
                 if($row_data->special!='' && !is_null($row_data->special)){
                     $special = $row_data->special;
                 }
@@ -818,7 +1062,7 @@ class System extends MY_Controller {
                 }
                 $this->load->database();
                 $parent_id = 0;
-                if($parent_text!='' && $level <= 0) {
+                if($parent_text!=''){
                     $parent_id =  $this->site_categories_model->checkExist($site_id, $parent_text);
                     if($parent_id == false){
                         $parent_id = $this->site_categories_model->insert(0, $site_id, $text, $url, $special, $parent_text,
@@ -833,7 +1077,7 @@ class System extends MY_Controller {
                     $department_members_id = $res->department_members_id;
                 }
 
-                if($text != '' && $level >= 1) {	
+                if($text != ''){	
                     $check_site = $this->site_categories_model->checkExist($site_id, $text, $department_members_id);
                     if($check_site == false){
                         $this->site_categories_model->insert($parent_id, $site_id, $text, $url, $special, $parent_text,
@@ -844,227 +1088,9 @@ class System extends MY_Controller {
                 }
             }
         }
-        $response['message'] = 'File was added successfully';
-        $response['debug_stack'] = $debug_stack;
+        $response['message'] =  'File was added successfully';
         $this->output->set_content_type('application/json')->set_output(json_encode($response));
     }
-
-    // public function save_departments_categories()
-    // {
-    //     $this->load->model('department_model');
-    //     $this->load->model('department_members_model');
-    //     $this->load->model('site_categories_model');
-    //     $site_id = $this->input->post('site_id');
-    //     $site_name = explode(".", strtolower($this->input->post('site_name')));
-    //     $file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
-    //     $_rows = array();
-    //     $handle = fopen($file, "rb");
-    //     $contents = fread($handle, filesize($file));
-    //     fclose($handle);
-
-    //     $data = '['.trim($contents,'"').']';
-    //     $json_obj = json_decode($data);
-
-    //     $highest_level = $json_obj[0]->level;
-    //     foreach($json_obj as $key=>$one){
-    //         if((int)$highest_level <= (int)$one->level)
-    //             $highest_level = $one->level;
-    //     }
-
-    //     foreach($json_obj as $row){
-    //         $special = 0;
-    //         $parent_text = '';
-    //         $department_text = '';
-    //         $text = '';
-    //         $url = '';
-    //         $nr_products = 0;
-    //         $description_wc = 0;
-    //         $description_text = '';
-    //         $keyword_density = '';
-    //         $keyword_count = '';
-    //         $description_title = '';
-    //         $level = '';
-
-    //         if($row->level == $highest_level){
-    //             if(isset($row->level) && !is_null($row->level) && $row->level!=''){
-    //                 $level = $row->level;
-    //             }
-    //             if(isset($row->url) && !is_null($row->url) && $row->url!=''){
-    //                 $url = addslashes($row->url);
-    //             }
-    //             if(isset($row->description_wc) && is_array($row->description_wc)){
-    //                 $description_wc = $row->description_wc[0];
-    //             } else if(isset($row->description_wc) && !is_array($row->description_wc) && !is_null($row->description_wc) && $row->description_wc!=''){
-    //                 $description_wc = $row->description_wc;
-    //             }
-    //             if(isset($row->department_text) && is_array($row->department_text)){
-    //                 $department_text = $row->department_text[0];
-    //             } else if(isset($row->department_text) && !is_array($row->department_text) && !is_null($row->department_text) && $row->department_text!=''){
-    //                 $department_text = $row->department_text;
-    //             }
-		  //       if(isset($row->keyword_density) && is_array($row->keyword_density)){
-    //                 $keyword_density = $row->keyword_density[0];
-    //             } else if(isset($row->keyword_density) && !is_array($row->keyword_density) && !is_null($row->keyword_density) && $row->keyword_density!=''){
-    //                 $keyword_density = json_encode($row->keyword_density);
-    //             }
-    //             if(isset($row->keyword_count) && is_array($row->keyword_count)){
-    //                 $keyword_count = $row->keyword_count[0];
-    //             } else if(isset($row->keyword_count) && !is_array($row->keyword_count) && !is_null($row->keyword_count) && $row->keyword_count!=''){
-    //                 $keyword_count = json_encode($row->keyword_count);
-    //             }
-		  //       if(isset($row->description_title) && is_array($row->description_title)){
-    //                 $description_title = $row->description_title[0];
-    //             } else if(isset($row->description_title) && !is_array($row->description_title) && !is_null($row->description_title) && $row->description_title!=''){
-    //                 $description_title = $row->description_title;
-    //             }
-		  //       if(isset($row->description_text) && is_array($row->description_text)){
-    //                 $description_text = $row->description_text[0];
-    //             } else if(isset($row->description_text) && !is_array($row->description_text) && !is_null($row->description_text) && $row->description_text!=''){
-    //                 $description_text = $row->description_text;
-    //             }
-    //             $check_department_id = $this->department_model->checkExist($department_text);
-    //             if($check_department_id == false){
-    //                 $department_id = $this->department_model->insert($department_text, $department_text);
-    //             } else {
-    //                 $department_id = $check_department_id;
-    //             }
-    //             $parent_id = 0;
-    //             if($parent_text!=''){
-    //                 $parent_id =  $this->department_members_model->checkExist($site_id, $department_text, $url);
-    //                 if($parent_id == false){
-    //                     $parent_id = $this->department_members_model->insert(0, $site_id, $department_id, $department_text, $url, $description_wc, $description_text, $keyword_count, $keyword_density, $description_title, $level);
-    //                 } else {
-    //                     $this->department_members_model->updateFlag($site_id, $department_text);
-    //                 }
-    //             }
-    //             $check_id = $this->department_members_model->checkExist( $site_id, $department_text, $url);
-    //             if($check_id == false){
-    //                 $this->department_members_model->insert($parent_id, $site_id, $department_id, $department_text, $url, $description_wc, $description_text, $keyword_count, $keyword_density, $description_title, $level);
-    //             } else {
-    //                 $this->department_members_model->updateFlag($site_id, $department_text);
-    //                 $this->department_members_model->update($check_id, $department_id, $description_wc, $description_text, $keyword_count, $keyword_density, $description_title, $level);
-    //             }
-    //         }
-    //     }
-    //     foreach($json_obj as $row_data){
-    //         $special = 0;
-    //         $parent_text = '';
-    //         $department_text = '';
-    //         $text = '';
-    //         $url = '';
-    //         $nr_products = 0;
-    //         $description_wc = 0;
-    //         $description_text = '';
-    //         $keyword_count = '';
-    //         $keyword_density = '';
-    //         $description_title = '';
-    //         $level = 0;
-
-    //         if($row_data->level < $highest_level){
-    //             if($row_data->special!='' && !is_null($row_data->special)){
-    //                 $special = $row_data->special;
-    //             }
-    //             if(isset($row_data->parent_text) && is_array($row_data->parent_text)){
-    //                 $parent_text = $row_data->parent_text[0];
-    //             } else if(isset($row_data->parent_text) && !is_array($row_data->parent_text) && !is_null($row_data->parent_text) && $row_data->parent_text!=''){
-    //                 $parent_text = $row_data->parent_text;
-    //             }
-    //             if(isset($row_data->department_text) && is_array($row_data->department_text)){
-    //                 $department_text = $row_data->department_text[0];
-    //             } else if(isset($row_data->department_text) && !is_array($row_data->department_text) && !is_null($row_data->department_text) && $row_data->department_text!=''){
-    //                 $department_text = $row_data->department_text;
-    //             }
-    //             if(isset($row_data->text) && is_array($row_data->text)){
-    //                 $text = $row_data->text[0];
-    //             } else if(isset($row_data->text) && !is_array($row_data->text) && !is_null($row_data->text)){
-    //                 $text = $row_data->text;
-    //             }
-    //             if(isset($row_data->url) && is_array($row_data->url)){
-    //                 $url = $row_data->url[0];
-    //             } else if(isset($row_data->url) && !is_array($row_data->url) && !is_null($row_data->url)){
-    //                 $url = $row_data->url;
-    //             }
-    //             if(substr_count($url, 'http://') == 0 && $this->input->post('site_name')!='[Choose site]'){
-    //                 $url = str_replace('..', '', $url);
-    //                 $url = 'http://'.strtolower($this->input->post('site_name')).$url;
-    //             }
-
-    //             $department_members_id = 0;
-    //             if($department_text!=''){
-    //                 $check_id = $this->department_members_model->checkExist( $site_id, $department_text, $url);
-    //                 if($check_id){
-    //                     $department_members_id = $check_id;
-    //                 }
-    //             }
-
-    //             if(isset($row_data->level) && is_array($row_data->level)){
-    //                 $level = $row_data->level[0];
-    //             } else if(isset($row_data->level) && !is_array($row_data->level) && !is_null($row_data->level) && $row_data->level!=''){
-    //                 $level = $row_data->level;
-    //             }
-    //             if(isset($row_data->nr_products) && is_array($row_data->nr_products)){
-    //                 $nr_products = $row_data->nr_products[0];
-    //             } else if(isset($row_data->nr_products) && !is_array($row_data->nr_products) && !is_null($row_data->nr_products) && $row_data->nr_products!=''){
-    //                 $nr_products = $row_data->nr_products;
-    //             }
-    //             if(isset($row_data->description_wc) && is_array($row_data->description_wc)){
-    //                 $description_wc = $row_data->description_wc[0];
-    //             } else if(isset($row_data->description_wc) && !is_array($row_data->description_wc) && !is_null($row_data->description_wc) && $row_data->description_wc!=''){
-    //                 $description_wc = $row_data->description_wc;
-    //             }
-    //             if(isset($row_data->description_text) && is_array($row_data->description_text)){
-    //                 $description_text = $row_data->description_text[0];
-    //             } else if(isset($row_data->description_text) && !is_array($row_data->description_text) && !is_null($row_data->description_text) && $row_data->description_text!=''){
-    //                 $description_text = $row_data->description_text;
-    //             }
-    //             if(isset($row_data->keyword_count) && is_array($row_data->keyword_count)){
-    //                 $keyword_count = $row_data->keyword_count[0];
-    //             } else if(isset($row_data->keyword_count) && !is_array($row_data->keyword_count) && !is_null($row_data->keyword_count) && $row_data->keyword_count!=''){
-    //                 $keyword_count = json_encode($row_data->keyword_count);
-    //             }
-    //             if(isset($row_data->keyword_density) && is_array($row_data->keyword_density)){
-    //                 $keyword_density = $row_data->keyword_density[0];
-    //             } else if(isset($row_data->keyword_density) && !is_array($row_data->keyword_density) && !is_null($row_data->keyword_density) && $row_data->keyword_density!=''){
-    //                 $keyword_density = json_encode($row_data->keyword_density);
-    //             }
-    //             if(isset($row_data->description_title) && is_array($row_data->description_title)){
-    //                 $description_title = $row_data->description_title[0];
-    //             } else if(isset($row_data->description_title) && !is_array($row_data->description_title) && !is_null($row_data->description_title) && $row_data->description_title!=''){
-    //                 $description_title = $row_data->description_title;
-    //             }
-    //             $this->load->database();
-    //             $parent_id = 0;
-    //             // if($parent_text!=''){
-    //             if($parent_text!='' && $level <= 0){
-    //                 $parent_id =  $this->site_categories_model->checkExist($site_id, $parent_text);
-    //                 if($parent_id == false){
-    //                     $parent_id = $this->site_categories_model->insert(0, $site_id, $text, $url, $special, $parent_text,
-    //                         $department_members_id, $nr_products, $description_wc, $keyword_count, $keyword_density, $description_title, $description_text,$level);
-    //                 }else{
-    //                     $this->site_categories_model->updateFlag($site_id, $parent_text,  $department_members_id);
-    //                 }
-    //             }
-
-    //             if($parent_id !=0 && $department_members_id == 0) {
-    //                 $res = $this->site_categories_model->checkDepartmentId($parent_id);
-    //                 $department_members_id = $res->department_members_id;
-    //             }
-
-    //             if($text != '' && $level >= 1){
-    //             // if($text != ''){	
-    //                 $check_site = $this->site_categories_model->checkExist($site_id, $text, $department_members_id);
-    //                 if($check_site == false){
-    //                     $this->site_categories_model->insert($parent_id, $site_id, $text, $url, $special, $parent_text,
-    //                         $department_members_id, $nr_products, $description_wc, $keyword_count, $keyword_density,$description_title,$description_text,$level);
-    //                 }else{
-    //                     $this->site_categories_model->updateFlag($site_id, $text, $department_members_id);
-    //                 }
-    //             }
-    //         }
-    //     }
-    //     $response['message'] =  'File was added successfully';
-    //     $this->output->set_content_type('application/json')->set_output(json_encode($response));
-    // }
 
     public function delete_department()
     {
