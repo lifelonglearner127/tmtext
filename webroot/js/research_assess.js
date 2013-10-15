@@ -483,7 +483,10 @@ $(function () {
 
     $(document).on('mouseenter', 'i.snap_ico', function () {
         var snap = "webshoots/" + $(this).attr('snap');
+        console.log($(this).parent());
+        console.log($(this).parent().parent());
         var row = $(this).parent().parent();
+        console.log(row);
         var txt = '<b>URL:</b><br/>'+row.find('td.url_text').text()+'<br /><br /><b>Product name:</b><br/>'+row.find('td.product_name_text').text()+
         '<br /><br/><b>Price:</b><br/>'+row.find('td.price_text').text();
         showSnap('<img src="'+base_url+snap+'">'+txt);
