@@ -42,6 +42,18 @@ $(function () {
         "price_diff",
         "product_selection"
         ],
+        details_comare: [
+        "snap",
+        "product_name",
+        "url",
+        "short_description_wc",
+        "long_description_wc",
+        "snap1",
+        "product_name1",
+        "url1",
+        "short_description_wc1",
+        "long_description_wc1"
+        ],        
         recommendations: [
         "product_name",
         "url",
@@ -123,7 +135,7 @@ $(function () {
                                   '<div class="prod_description"><b>URL:</b><br/>'+obj.url+'<br /><br /><b>Product name:</b><br/>'+obj.product_name
                                   +'<br /><br/><b>Price:</b><br/>'+obj.own_price+'</div></div>';
                         }
-                    }
+                    }                   
                     if(str == ''){
                         str = '<p>No images available for this batch</p>';
                     }
@@ -426,12 +438,22 @@ $(function () {
     $(document).ready(function(){
           
         $("#research_assess_update").live('click', function(){
+            var table_case = $('#assess_tbl_show_case a[class=active_link]').data('case');
             batch1id= $("select[name='research_assess_batches']").val();
             batch2id= $("#research_assess_compare_batches_batch").val();
-            if(batch1id!=0 && batch2id != null ){
+            if(table_case == 'details' && batch1id!=0 && batch2id != null && batch2id != 0 ){
             var analyzer_attr = $.post(research_compare, {batch1: batch1id, batch2: batch2id}, 'json').done(function(data) {
-            $("#records_wrapper").html(data);
+            $('#tblAssess').hide();
+            
+            $("#comare_table").show();
+            $("#comare_table").html(data);   
             });
+            }else{
+                $("#comare_table").hide();
+                $('#tblAssess').show();
+                readAssessData();
+                addColumn_url_class();
+                check_word_columns();
             }
         });
     });
@@ -815,9 +837,9 @@ $(function () {
     });
 
     $('#research_assess_update').on('click', function() {
-        readAssessData();
-        addColumn_url_class();
-        check_word_columns();
+//        readAssessData();
+//        addColumn_url_class();
+//        check_word_columns();
     });
     
     function addColumn_url_class(){
@@ -1035,6 +1057,7 @@ $(function () {
         $.each(columns_checkboxes, function(index, value) {
             columns_checkboxes_checked.push($(value).data('col_name'));
         });
+        $("#comare_table").hide();
         if (table_case == 'recommendations') {
             reportPanel(false);
             $.each(tblAllColumns, function(index, value) {
@@ -1048,6 +1071,7 @@ $(function () {
             addColumn_url_class();
             check_word_columns();
         } else if (table_case == 'details') {
+           
             reportPanel(false);
             $.each(tblAllColumns, function(index, value) {
                 if ($.inArray(value, columns_checkboxes_checked) > -1) {

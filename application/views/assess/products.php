@@ -307,6 +307,7 @@
                     </thead>
                     <tbody></tbody>
                 </table>
+                <div id="comare_table"></div>
                 <div id="assess_tbl_show_case" class="assess_tbl_show_case">
                     <a id="assess_tbl_show_case_recommendations" data-case="recommendations" title="Recommendations" href="#"  class="active_link">Recommendations</a> |
                     <a id="assess_tbl_show_case_report" data-case="report" title="Report" href="#">Summary</a> |
