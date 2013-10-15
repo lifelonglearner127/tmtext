@@ -111,7 +111,9 @@ $(function () {
                 }
                 if(json.aaData.length > 0){
                     var str = '';
-                    for(var i=0; i<json.aaData.length; i++){
+                    console.log(json.aaData);
+                    console.log(jQuery.parseJSON(json.aaData[i][11]));
+                    /*for(var i=0; i<json.aaData.length; i++){
                         var obj = jQuery.parseJSON(json.aaData[i][11]);
                         if(json.aaData[i][2] != null && json.aaData[i][2] != '' && json.aaData[i][0]!=''){
                             if(json.aaData[i][2].length > 93)
@@ -123,7 +125,7 @@ $(function () {
                                   '<div class="prod_description"><b>URL:</b><br/>'+obj.url+'<br /><br /><b>Product name:</b><br/>'+obj.product_name
                                   +'<br /><br/><b>Price:</b><br/>'+obj.own_price+'</div></div>';
                         }
-                    }                   
+                    }*/
                     if(str == ''){
                         str = '<p>No images available for this batch</p>';
                     }
