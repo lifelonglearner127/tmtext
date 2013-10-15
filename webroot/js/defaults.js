@@ -333,7 +333,7 @@ jQuery(document).ready(function($) {
         }, 100);
     }
 
-    wrapper();
+    //wrapper();
 
     // --- destroy search strings from cookie ('Competitive Intelligence' and 'Validate' tabs) (start)
     $(window).unload(function() {
