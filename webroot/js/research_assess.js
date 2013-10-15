@@ -460,6 +460,13 @@ $(function () {
         if ($(event.target).is('a')) {
             return;
         }
+        if($(event.target).is('i')){
+            console.log(111);
+            var snap = "webshoots/" + $(event.target).attr('snap');
+            console.log(snap);
+            showSnap('<img src="'+snap+'">');
+            return;
+        }
         if ($(event.target).is('td.sorting_1') || $(event.target).is('img')) {
             var str = '';
             if($(event.target).attr('src') != undefined ){
@@ -470,6 +477,7 @@ $(function () {
             showSnap('<img src="'+str+'">');
             return;
         }
+
         var target = $(event.target);
         if (target.parents('table').attr('class') == 'url_table')
             target = target.parents('table');
@@ -1189,11 +1197,11 @@ $(function () {
     check_word_columns();
     $('#assess_report_download_panel').hide();
 
-    $(document).on('mouseenter', 'i.snap_ico', function () {
+    /*$(document).on('mouseenter', 'i.snap_ico', function () {
         var snap = "webshoots/" + $(this).attr('snap');
         $("#assess_preview_crawl_snap_modal .snap_holder").html("<img src='" + base_url +  snap + "'>");
         $("#assess_preview_crawl_snap_modal").modal('show');
-    });
+    });*/
     $(document).on('mouseleave', '#assess_preview_crawl_snap_modal', function () {
         $(this).modal('hide');
     });
