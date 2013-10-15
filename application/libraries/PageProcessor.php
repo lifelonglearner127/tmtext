@@ -596,6 +596,12 @@ class PageProcessor {
 			}
 		}
 
+		foreach($this->nokogiri->get('#userReviewsTab a') as $item) {
+			if ((stripos($item['#text'][0], 'Product Reviews')!==false)&&(preg_match('/.*\(([0-9]*)\).*/i', $item['#text'][0], $match))) {
+				$result['review_count'] = $match[1];
+			}
+		}
+
 		return $result;
 	}
 
