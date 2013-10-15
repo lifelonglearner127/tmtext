@@ -456,15 +456,18 @@ $(function () {
             );
     });
 
-    $('#tblAssess tbody').click(function(event) {
-        if ($(event.target).is('a')) {
+    $('#tblAssess tbody').mouseenter(function(event) {
+        if($(event.target).is('i')){
+            var snap = "webshoots/" + $(event.target).attr('snap');
+            var info = $(this).parent().find('div.prod_description').html();
+
+            showSnap('<img src="'+base_url+''+snap+'">');
             return;
         }
-        if($(event.target).is('i')){
-            console.log(111);
-            var snap = "webshoots/" + $(event.target).attr('snap');
-            console.log(snap);
-            showSnap('<img src="'+snap+'">');
+    });
+
+    $('#tblAssess tbody').click(function(event) {
+        if ($(event.target).is('a')) {
             return;
         }
         if ($(event.target).is('td.sorting_1') || $(event.target).is('img')) {
