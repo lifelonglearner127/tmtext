@@ -478,12 +478,10 @@ $(function () {
             );
     });
 
-    $('#tblAssess tbody').mouseenter(function(event) {
+    $('#tblAssess tbody').on('mouseenter', function(event) {
         if($(event.target).is('i')){
             var snap = "webshoots/" + $(event.target).attr('snap');
-            var info = $(this).parent().find('div.prod_description').html();
-
-            showSnap('<img src="'+base_url+''+snap+'">');
+            showSnap('<img src="'+base_url+snap+'">');
             return;
         }
     });
