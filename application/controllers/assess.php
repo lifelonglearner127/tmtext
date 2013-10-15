@@ -947,11 +947,11 @@ class Assess extends MY_Controller {
             $price_diff = unserialize($row->price_diff);
             $result_row->lower_price_exist = false;
             $result_row->snap = '';
-            $result_row->snap1='1';
-            $result_row->product_name1='1';
-            $result_row->url1='1';
-            $result_row->short_description_wc1='1';
-            $result_row->long_description_wc1='1';
+            $result_row->snap1='';
+            $result_row->product_name1='';
+            $result_row->url1='';
+            $result_row->short_description_wc1='';
+            $result_row->long_description_wc1='';
             
             if($row->snap1){
                 $result_row->snap1 = $row->snap1;
