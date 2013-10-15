@@ -461,9 +461,13 @@ $(function () {
             return;
         }
         if ($(event.target).is('td.sorting_1') || $(event.target).is('img')) {
-            console.log($(event.target).attr('src'));
-            console.log($(event.target).children().attr('src'));
-            //showSnap('<img src="'+base_url+'webshoots/'+data.snap+'">');
+            var str = '';
+            if($(event.target).attr('src') != undefined ){
+                str = base_url+'webshoots/'+$(event.target).attr('src');
+            } else if ($(event.target).children().attr('src') != undefined){
+                str = base_url+'webshoots/'+$(event.target).attr('src');
+            }
+            showSnap('<img src="'+str+'">');
             return;
         }
         var target = $(event.target);
