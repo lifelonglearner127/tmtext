@@ -89,8 +89,10 @@ class Assess extends MY_Controller {
         $txt_filter = '';
         if($this->input->get('search_text') != ''){
             $txt_filter = $this->input->get('search_text');
-        }
-
+         }
+         if($this->input->get('sSearch') != ''){
+              $txt_filter = $this->input->get('sSearch');   
+         }
         $batch_id = $this->input->get('batch_id');
         $compare_batch_id = $this->input->get('compare_batch_id');
 
@@ -861,7 +863,7 @@ class Assess extends MY_Controller {
     
     
     
-    
+       
     private function build_asses_table($results, $build_assess_params, $batch_id='') {
         $duplicate_content_range = 25;
         $this->load->model('batches_model');
