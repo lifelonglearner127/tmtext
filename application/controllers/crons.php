@@ -17,14 +17,15 @@ class Crons extends MY_Controller {
             'similar_groups' => true,
             'do_stats_forupdated' => true,
             'do_duplicate_content' => true,
-            'ranking_api_exp' => true
+            'ranking_api_exp' => true,
+        	'archive_imported_data_parsed' =>true
         ));
         $this->load->library('helpers');
         $this->load->helper('algoritm');
     }
 
     public function index() {
-        
+
     }
 
     public function similar_groups() {
@@ -765,7 +766,7 @@ class Crons extends MY_Controller {
 
                     $data_import = (array) $obj;
                      $im_data_id = $data_import['imported_data_id'];
-                        
+
                     echo "<br>"."im+daat+id= ".$im_data_id."</br>";
                     if ($data_import['description'] !== null && trim($data_import['description']) !== "") {
 
@@ -838,10 +839,10 @@ class Crons extends MY_Controller {
                     $time_end = microtime(true);
                     $time = $time_end - $time_start;
                     echo "SEO Long phrases - $time seconds\n";
-                   
+
                     $time_start = microtime(true);
-                    
-                   
+
+
                     if (isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
                         echo "</br>isset model</br>";
                         //$this->imported_data_parsed_model->model_info($data_import['imported_data_id'],$data_import['parsed_attributes']['model'],$data_import['revision']);
@@ -974,14 +975,14 @@ class Crons extends MY_Controller {
                         );
 
                     $time_end = microtime(true);
-                    
+
                     $time= $time_end- $time_start;
                     echo "model exists_and some actions--".$time;
 
                     } else {
-                        
+
                         $im_data_id = $data_import['imported_data_id'];
-                        
+
                         echo "im+daat+id= ".$im_data_id;
 //                        if (!$this->similar_product_groups_model->checkIfgroupExists($data_import['imported_data_id'])) {
 //
@@ -993,8 +994,8 @@ class Crons extends MY_Controller {
 //
 //                                $same_pr = $this->imported_data_parsed_model->getByProductName($im_data_id, $data_import['product_name'], $data_import['parsed_attributes']['manufacturer'],0);
 //                            }
-                        
-                       
+
+
                         $time_start= microtime(true);
                         if ($model = $this->imported_data_parsed_model->check_if_exists_custom_model($im_data_id)) {
                             echo "exists custom model";
@@ -1020,7 +1021,7 @@ class Crons extends MY_Controller {
                             $similar_products_competitors[] = array('imported_data_id' => $val['imported_data_id'], 'customer' => $customer);
                         }
                     }
-                    
+
                     $time_end = microtime(true);
                     $time = $time_end - $time_start;
 //                          echo "price_diff - $time seconds\n";
@@ -1050,18 +1051,18 @@ class Crons extends MY_Controller {
                         $insert_id = $this->statistics_new_model->insert_updated($obj->imported_data_id, $obj->revision, $short_description_wc, $long_description_wc, $short_seo_phrases, $long_seo_phrases, $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors, serialize($similar_products_competitors), $query_research_data_id, $query_batch_id
                         );
                     }
-                   
+
                     $time_end = microtime(true);
                     $time = $time_end - $time_start;
 
                     echo '.';
-                    
-                    
+
+
                     $foreach_end= time();
                     $time = $foreach_end - $foreach_start;
                     echo "<br>foreach_----".$time."<br>";
                 }
-                 
+
                 $q = $this->db->select('key,description')->from('settings')->where('key', 'cron_job_offset');
                 $res = $q->get()->row_array();
                 $start = $res['description'];
@@ -2343,4 +2344,17 @@ class Crons extends MY_Controller {
         }
     }
 
+    public function archive_imported_data_parsed(){
+		$this->load->model('imported_data_parsed_model');
+		$this->load->model('imported_data_parsed_archived_model');
+
+		$processed = 0;
+		foreach ($this->imported_data_parsed_model->getAllIds() as $row) {
+			if($this->imported_data_parsed_archived_model->saveToArchive($row['imported_data_id'],$row['max_revision'])) {
+				$this->imported_data_parsed_model->deleteRows($row['imported_data_id'],$row['max_revision']);
+				$processed++;
+			}
+		}
+		echo "Reviewed/archived ".$processed." items.\n";
+    }
 }

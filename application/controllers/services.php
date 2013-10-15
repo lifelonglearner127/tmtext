@@ -83,6 +83,7 @@ class Services extends REST_Controller {
 
     	$this->load->model('imported_data_model');
 		$this->load->model('imported_data_parsed_model');
+		$this->load->model('imported_data_parsed_archived_model');
 		$this->load->model('crawler_list_model');
 		$this->load->model('crawler_list_prices_model');
     	$this->load->library('PageProcessor');
@@ -125,6 +126,12 @@ class Services extends REST_Controller {
 
 			if (($meta = $this->pageprocessor->meta()) !== false) {
 				$this->imported_data_parsed_model->insert($imported_id, 'parsed_meta', serialize($meta), $revision);
+			}
+
+			if ($revision!==1) {
+				if($this->imported_data_parsed_archived_model->saveToArchive($imported_id,$revision)) {
+					$this->imported_data_parsed_model->deleteRows($imported_id,$revision);
+				}
 			}
 
 			$this->crawler_list_model->updateStatus($id, 'finished');

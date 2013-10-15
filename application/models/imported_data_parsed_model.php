@@ -1031,11 +1031,11 @@ class Imported_data_parsed_model extends CI_Model {
 
     function do_stats_newupdated() {
 
-        $query = $this->db->query("SELECT p.imported_data_id, p.revision 
-       FROM `imported_data_parsed` AS `p` 
-       LEFT JOIN `statistics_new` AS sn ON `p`.`imported_data_id` = sn.`imported_data_id` 
-       WHERE `key`= 'URL' AND  
-       `p`.`revision` = (SELECT  MAX(idp.revision) AS revision FROM imported_data_parsed AS idp WHERE `p`.`imported_data_id`= idp.`imported_data_id`) AND   
+        $query = $this->db->query("SELECT p.imported_data_id, p.revision
+       FROM `imported_data_parsed` AS `p`
+       LEFT JOIN `statistics_new` AS sn ON `p`.`imported_data_id` = sn.`imported_data_id`
+       WHERE `key`= 'URL' AND
+       `p`.`revision` = (SELECT  MAX(idp.revision) AS revision FROM imported_data_parsed AS idp WHERE `p`.`imported_data_id`= idp.`imported_data_id`) AND
        (`p`.`revision` != sn.`revision` OR `sn`.`revision` IS NULL)  LIMIT 50");
         $rows = $query->result_array();
         $ids = array();
@@ -2763,6 +2763,21 @@ class Imported_data_parsed_model extends CI_Model {
             }
         }
         return $have_not_model;
+    }
+
+    function deleteRows($imported_data_id, $without=null) {
+    	$query = "delete from `".$this->tables['imported_data_parsed']."` where imported_data_id = ".$imported_data_id;
+    	if (isset($without)) {
+			$query .= " and revision<>".$without;
+    	}
+
+    	return $this->db->query($query);
+    }
+
+    function getAllIds() {
+    	$query = "SELECT `imported_data_id`, MAX( revision ) as max_revision FROM `".$this->tables['imported_data_parsed']."` GROUP BY  `imported_data_id`";
+ 		$res = $this->db->query($query);
+ 		return $res->result_array();
     }
 
 }
