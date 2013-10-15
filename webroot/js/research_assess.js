@@ -465,7 +465,7 @@ $(function () {
             if($(event.target).attr('src') != undefined ){
                 str = base_url+'webshoots/'+$(event.target).attr('src');
             } else if ($(event.target).children().attr('src') != undefined){
-                str = base_url+'webshoots/'+$(event.target).attr('src');
+                str = base_url+'webshoots/'+$(event.target).children().attr('src');
             }
             showSnap('<img src="'+str+'">');
             return;
