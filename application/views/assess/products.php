@@ -190,6 +190,33 @@
                 <input type="checkbox" id="column_price_diff" data-col_name="price_diff" name="column_price_diff" <?php echo($columns['price_diff'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="column_actions">Price difference</label>
             </p>
+<!--            <p>
+                <input type="checkbox" id="column_snap1" data-col_name="snap" name="column_snap_name1" <?php echo($columns['snap1'] == 'true' ? 'checked="checked"' : ''); ?> />
+                <label for="column_snap1">Snapshot</label>
+            </p>
+            
+            <p>
+                <input type="checkbox" id="column_product_name1" data-col_name="product_name1" name="column_product_name_name1" <?php echo($columns['product_name1'] == 'true' ? 'checked="checked"' : ''); ?> />
+                <label for="column_product_name1">Product name</label>
+            </p>
+            
+            <p>
+                <input type="checkbox" id="column_url1" data-col_name="url1" name="column_url_name1" <?php echo($columns['url1'] == 'true' ? 'checked="checked"' : ''); ?> />
+                <label for="column_url1">Url</label>
+            </p>
+            
+            <p>
+                <input type="checkbox" id="column_short_description_wc1" data-col_name="short_description_wc1" name="column_short_description_wc_name1" <?php echo($columns['short_description_wc1'] == 'true' ? 'checked="checked"' : ''); ?> />
+                <label for="column_short_description_wc1">Words Short</label>
+            </p>
+            
+            <p>
+                <input type="checkbox" id="column_long_description_wc1" data-col_name="long_description_wc1" name="column_long_description_wc_name1" <?php echo($columns['long_description_wc1'] == 'true' ? 'checked="checked"' : ''); ?> />
+                <label for="column_long_description_wc1">Words Long</label>
+            </p>-->
+            
+            
+            
         </form>
     </div>
 </div>
@@ -312,6 +339,7 @@
                     <a id="assess_tbl_show_case_recommendations" data-case="recommendations" title="Recommendations" href="#"  class="active_link">Recommendations</a> |
                     <a id="assess_tbl_show_case_report" data-case="report" title="Report" href="#">Summary</a> |
                     <a id="assess_tbl_show_case_details" data-case="details" title="Details" href="#">Details</a> |
+                    <a id="assess_tbl_show_case_details_compare" data-case="details_compare" title="Details_compare" href="#">Details(compare)</a> |
                     <a id="assess_tbl_show_case_view" data-case="view" title="Board View" href="#">Board View</a>
                 </div>
                 <a id="research_batches_columns" class="ml_5 float_r" title="Customize..."><img  style="width:32px; heihgt: 32px;"src ="<?php echo base_url() ?>/img/settings@2x.png"></a>

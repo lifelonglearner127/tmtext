@@ -1,5 +1,5 @@
 var readAssessUrl = base_url + 'index.php/assess/get_assess_info';
-
+var readAssessUrlCompare = base_url + 'index.php/assess/compare';
 $(function () {
     $.fn.serializeObject = function(){
         var o = {};
@@ -94,6 +94,7 @@ $(function () {
         "sAjaxSource": readAssessUrl,
         "fnServerData": function (sSource, aoData, fnCallback) {
             aoData = buildTableParams(aoData);
+            
             $.getJSON(sSource, aoData, function (json) {
                 if (json.ExtraData != undefined) {
                     buildReport(json);
@@ -174,7 +175,7 @@ $(function () {
              "sName":"snap",
              "sWidth": "10%"
         },
-        {
+                 {
             "sTitle" : "Date",
             "sName":"created",
             "sWidth": "3%"
@@ -183,29 +184,26 @@ $(function () {
         {
             "sTitle" : "Product Name", 
             "sName":"product_name", 
-            "sWidth": "20%",
-            "sClass": "product_name_text"
+            "sWidth": "20%"
         },
-
+       
         {
             "sTitle" : "URL", 
             "sName":"url", 
-            "sWidth": "7%",
-            "sClass": "url_text"
+            "sWidth": "7%"
         },
-
+       
         {
             "sTitle" : "Words <span class='subtitle_word_short' >Short</span>",
             "sName":"short_description_wc", 
             "sWidth": "4%",
             "sClass": "word_short"
         },
-
+       
         {
-            "sTitle" : "Keywords <span class='subtitle_keyword_short'>Short</span>",
+            "sTitle" : "Keywords <span style='font-size: 10px'>Short</span>",
             "sName":"short_seo_phrases", 
-            "sWidth": "8%",
-            "sClass": "keyword_short"
+            "sWidth": "8%"
         },
 
         {
@@ -214,12 +212,11 @@ $(function () {
             "sWidth": "4%",
             "sClass": "word_long"
         },
-
+       
         {
-            "sTitle" : "Keywords <span class='subtitle_keyword_long'>Long</span>",
+            "sTitle" : "Keywords <span style='font-size: 10px'>Long</span>",
             "sName":"long_seo_phrases", 
-            "sWidth": "8%",
-            "sClass": "keyword_long"
+            "sWidth": "8%"
         },
 
         {
@@ -246,8 +243,7 @@ $(function () {
         {
             "sTitle" : "Price", 
             "sName":"price_diff", 
-            "sWidth": "7%",
-            "sClass": "price_text"
+            "sWidth": "7%"
         },
         {
             "sTitle" : "Recommendations", 
@@ -260,7 +256,35 @@ $(function () {
         {
             "sName":"add_data", 
             "bVisible": false
+        },
+        {
+             "sTitle" : "Snapshot",
+             "sName":"snap1",
+             "sWidth": "10%"
+        },
+         {
+            "sTitle" : "Product Name", 
+            "sName":"product_name1", 
+            "sWidth": "20%"
+        },
+         {
+            "sTitle" : "URL", 
+            "sName":"url1", 
+            "sWidth": "7%"
+        },
+         {
+            "sTitle" : "Words <span class='subtitle_word_short' >Short</span>",
+            "sName":"short_description_wc1", 
+            "sWidth": "4%",
+            "sClass": "word_short"
+        },
+         {
+            "sTitle" : "Words <span class='subtitle_word_long' >Long</span>",
+            "sName":"long_description_wc1", 
+            "sWidth": "4%",
+            "sClass": "word_long"
         }
+                
         ]
     });
 
@@ -439,29 +463,29 @@ $(function () {
             );
     }
     
-    var research_compare = base_url + 'index.php/assess/compare';
-    $(document).ready(function(){
-          
-        $("#research_assess_update").live('click', function(){
-            var table_case = $('#assess_tbl_show_case a[class=active_link]').data('case');
-            batch1id= $("select[name='research_assess_batches']").val();
-            batch2id= $("#research_assess_compare_batches_batch").val();
-            if(table_case == 'details' && batch1id!=0 && batch2id != null && batch2id != 0 ){
-            var analyzer_attr = $.post(research_compare, {batch1: batch1id, batch2: batch2id}, 'json').done(function(data) {
-            $('#tblAssess').hide();
-            
-            $("#comare_table").show();
-            $("#comare_table").html(data);   
-            });
-            }else{
-                $("#comare_table").hide();
-                $('#tblAssess').show();
-                readAssessData();
-                addColumn_url_class();
-                check_word_columns();
-            }
-        });
-    });
+//    var research_compare = base_url + 'index.php/assess/compare';
+//    $(document).ready(function(){
+//          
+//        $("#research_assess_update").live('click', function(){
+//            var table_case = $('#assess_tbl_show_case a[class=active_link]').data('case');
+//            batch1id= $("select[name='research_assess_batches']").val();
+//            batch2id= $("#research_assess_compare_batches_batch").val();
+//            if(table_case == 'details' && batch1id!=0 && batch2id != null && batch2id != 0 ){
+//            var analyzer_attr = $.post(research_compare, {batch1: batch1id, batch2: batch2id}, 'json').done(function(data) {
+//            $('#tblAssess').hide();
+//            
+//            $("#comare_table").show();
+//            $("#comare_table").html(data);   
+//            });
+//            }else{
+//                $("#comare_table").hide();
+//                $('#tblAssess').show();
+//                readAssessData();
+//                addColumn_url_class();
+//                check_word_columns();
+//            }
+//        });
+//    });
     
     $(document).on('click', '#comparison_pagination a', function(event){
         event.preventDefault();
@@ -849,9 +873,9 @@ $(function () {
     });
 
     $('#research_assess_update').on('click', function() {
-//        readAssessData();
-//        addColumn_url_class();
-//        check_word_columns();
+        readAssessData();
+        addColumn_url_class();
+        check_word_columns();
     });
     
     function addColumn_url_class(){
@@ -1102,6 +1126,20 @@ $(function () {
             });
             addColumn_url_class();
             check_word_columns();
+        } 
+        else if (table_case == 'details_compare') {
+           
+            reportPanel(false);
+            $.each(tblAllColumns, function(index, value) {
+                if ($.inArray(value, tableCase.details_compare) > -1) {
+                    tblAssess.fnSetColumnVis(index, true, false);
+                }
+                else {
+                    tblAssess.fnSetColumnVis(index, false, false);
+                }
+            });
+            addColumn_url_class();
+            check_word_columns();
         } else if (table_case == 'report') {
             reportPanel(true);
             var batch_id = $('select[name="research_assess_batches"]').find('option:selected').val();
@@ -1185,7 +1223,10 @@ $(function () {
             assessRequestParams.date_from = assess_filter_datefrom,
             assessRequestParams.date_to = assess_filter_dateto
         }
-
+        if($("select[name='research_assess_batches'").val()!=0 && $("#research_assess_compare_batches_batch").val()!=0 && $("#research_assess_compare_batches_batch").val()!=null ){
+            assessRequestParams.batch2= $('#research_assess_compare_batches_batch').find('option:selected').val();
+            
+        }
         if ($('#research_assess_flagged').is(':checked')) {
             assessRequestParams.flagged = true;
         }

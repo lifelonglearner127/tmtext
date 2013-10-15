@@ -69,8 +69,12 @@ class Assess extends MY_Controller {
                 
                 foreach($similar_items as $key => $item){
                     if(substr_count($customer_name,$item['customer'])>0){
-                        $val->cmp_item = $this->statistics_new_model->get_compare_item($similar_items[$key]['imported_data_id']);
-                      
+                        $cmpare = $this->statistics_new_model->get_compare_item($similar_items[$key]['imported_data_id']);
+                        $val->snap1= $cmpare->snap;
+                        $val->product_name1= $cmpare->product_name;
+                        $val->url1= $cmpare->url;
+                        $val->short_description_wc1= $cmpare->short_description_wc;
+                        $val->long_description_wc1= $cmpare->long_description_wc;
                     }
                 }
                 $cmp[]=$val;
@@ -82,7 +86,7 @@ class Assess extends MY_Controller {
 //        echo "</pre>";
         $this->load->view('assess/compare', $data);
         
-        
+       
     }
     
     public function get_assess_info(){
@@ -159,6 +163,37 @@ class Assess extends MY_Controller {
             $params->date_to = $build_assess_params->date_to;
 
             $results = $this->get_data_for_assess($params);
+            
+            $batch2 = $this->input->get('date_from') == 'undefined' ? '' : $this->input->get('batch2');
+           
+            if($batch2!=''){
+            $this->load->model('batches_model');
+            $customer_name = $this->batches_model->getCustomerUrlByBatch($batch2);
+            $cmp= array();
+            foreach($results as $val){
+    
+            if(substr_count($val->similar_products_competitors, $customer_name)>0){
+                $similar_items= unserialize($val->similar_products_competitors);
+                
+                foreach($similar_items as $key => $item){
+                    if(substr_count($customer_name,$item['customer'])>0){
+                        $cmpare = $this->statistics_new_model->get_compare_item($similar_items[$key]['imported_data_id']);
+                        $val->snap1= $cmpare->snap;
+                        $val->product_name1= $cmpare->product_name;
+                        $val->url1= $cmpare->url;
+                        $val->short_description_wc1= $cmpare->short_description_wc;
+                        $val->long_description_wc1= $cmpare->long_description_wc;
+                    }
+                }
+                $cmp[]=$val;
+                 
+            }
+        }
+                $results = $cmp;
+        }
+            
+                                            
+            
             $output = $this->build_asses_table($results, $build_assess_params, $batch_id);
 
             $this->output->set_content_type('application/json')
@@ -865,6 +900,7 @@ class Assess extends MY_Controller {
     
        
     private function build_asses_table($results, $build_assess_params, $batch_id='') {
+       // echO"<pre>";print_r($results);die;
         $duplicate_content_range = 25;
         $this->load->model('batches_model');
         $this->load->model('imported_data_parsed_model');
@@ -911,7 +947,27 @@ class Assess extends MY_Controller {
             $price_diff = unserialize($row->price_diff);
             $result_row->lower_price_exist = false;
             $result_row->snap = '';
-                 
+            $result_row->snap1='1';
+            $result_row->product_name1='1';
+            $result_row->url1='1';
+            $result_row->short_description_wc1='1';
+            $result_row->long_description_wc1='1';
+            
+            if($row->snap1){
+                $result_row->snap1 = $row->snap1;
+            }
+            if($row->product_name1){
+                $result_row->product_name1 = $row->product_name1;
+            }  
+            if($row->url1){
+                $result_row->url1 = $row->url1;
+            } 
+            if($row->short_description_wc1){
+                $result_row->short_description_wc1 = $row->short_description_wc1;
+            } 
+            if($row->long_description_wc1){
+                $result_row->long_description_wc1 = $row->long_description_wc1;
+            } 
             $pars_atr = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
             
             if($pars_atr['parsed_attributes']['cnetcontent'] == 1 && $pars_atr['parsed_attributes']['webcollage'] == 1)
@@ -963,7 +1019,7 @@ class Assess extends MY_Controller {
             if (intval($row->include_in_assess_report) > 0) {
                 $detail_comparisons_total += 1;
             }
-
+           
             if($this->settings['statistics_table'] == "statistics_new"){
                 $short_seo = unserialize($row->short_seo_phrases);
                 if($short_seo){
@@ -1054,11 +1110,11 @@ class Assess extends MY_Controller {
 //                ($result_row->long_description_wc <= 100 && $build_assess_params->short_less == -1)){
 //                $items_short_products_content++;
 //            }
-
+            
             if ($result_row->short_description_wc > 0) {
                 $short_wc_total_not_0++;
             }
-
+            
             if ($result_row->long_description_wc > 0) {
                 $long_wc_total_not_0++;
             }
@@ -1152,7 +1208,8 @@ class Assess extends MY_Controller {
         $report['summary']['long_wc_total_not_0'] = $long_wc_total_not_0;
         $report['summary']['short_description_wc_lower_range'] = $build_assess_params->short_less;
         $report['summary']['long_description_wc_lower_range'] = $build_assess_params->long_less;
-
+        
+       
         // only if second batch select - get absent products, merge it with result_table
         if (isset($build_assess_params->compare_batch_id) && $build_assess_params->compare_batch_id > 0) {
             $absent_items = $this->statistics_model->batches_compare($batch_id, $build_assess_params->compare_batch_id);
@@ -1393,6 +1450,11 @@ class Assess extends MY_Controller {
                         $data_row->price_diff,
                         $recommendations_html,
                         json_encode($data_row),
+                        $data_row->snap1,
+                        $data_row->product_name1,
+                        $data_row->url1,
+                        $data_row->short_description_wc1,
+                        $data_row->long_description_wc1,
                     );
                 }
                 if ($display_length > 0) {
@@ -1405,7 +1467,7 @@ class Assess extends MY_Controller {
         }
 
         $output['ExtraData']['report'] = $report;
-
+       
         return $output;
     }
 
