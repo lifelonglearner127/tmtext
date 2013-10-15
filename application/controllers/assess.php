@@ -171,12 +171,16 @@ class Assess extends MY_Controller {
         $this->load->model('customers_model');
         $customer_id = $this->customers_model->getIdByName($this->input->post('customer_name'));
         $batches = $this->batches_model->getAllByCustomer($customer_id);
-        if(strtolower($this->input->post('customer_name')) ==  "all customers"){
-            $batches = $this->batches_model->getAll();
-        }
         $batches_list = array();
+        if(strtolower($this->input->post('customer_name')) ==  "select customer"){
+            $batches = $this->batches_model->getAll();
+            $batches_list[] = array('id' => 0, 'title' => 'Select batch');
+        }
+        
         if(!empty($batches)){
+            
             foreach($batches as $batch){
+                
                 $batches_list[] = array('id' => $batch->id, 'title' => $batch->title);
             }
         }
