@@ -466,7 +466,7 @@ $(function () {
             //var data = JSON.parse($(event.target).parents('tr').attr('add_data'));
             console.log($(event.currentTarget).attr('src'));
             console.log($(event.currentTarget));
-            console.log($(event.target).children().attr('src'));
+            console.log($(event.target).attr('src'));
             //showSnap('<img src="'+base_url+'webshoots/'+data.snap+'">');
             return;
         }
