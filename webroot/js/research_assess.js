@@ -463,9 +463,9 @@ $(function () {
         if ($(event.target).is('td.sorting_1') || $(event.target).is('img')) {
             var str = '';
             if($(event.target).attr('src') != undefined ){
-                str = base_url+'webshoots/'+$(event.target).attr('src');
+                str = $(event.target).attr('src');
             } else if ($(event.target).children().attr('src') != undefined){
-                str = base_url+'webshoots/'+$(event.target).children().attr('src');
+                str = $(event.target).children().attr('src');
             }
             showSnap('<img src="'+str+'">');
             return;
