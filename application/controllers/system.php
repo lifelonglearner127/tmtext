@@ -809,7 +809,7 @@ class System extends MY_Controller {
                 $this->load->database();
                 $parent_id = 0;$level
                 // if($parent_text!=''){
-                if($parent_text!='' && $level < 0){
+                if($parent_text!='' && $level <= 0){
                     $parent_id =  $this->site_categories_model->checkExist($site_id, $parent_text);
                     if($parent_id == false){
                         $parent_id = $this->site_categories_model->insert(0, $site_id, $text, $url, $special, $parent_text,
@@ -824,7 +824,7 @@ class System extends MY_Controller {
                     $department_members_id = $res->department_members_id;
                 }
 
-                if($text != '' && $level > 1){
+                if($text != '' && $level >= 1){
                     $check_site = $this->site_categories_model->checkExist($site_id, $text, $department_members_id);
                     if($check_site == false){
                         $this->site_categories_model->insert($parent_id, $site_id, $text, $url, $special, $parent_text,
