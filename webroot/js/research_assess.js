@@ -183,13 +183,15 @@ $(function () {
         {
             "sTitle" : "Product Name", 
             "sName":"product_name", 
-            "sWidth": "20%"
+            "sWidth": "20%",
+            "sClass": "product_name_text"
         },
 
         {
             "sTitle" : "URL", 
             "sName":"url", 
-            "sWidth": "7%"
+            "sWidth": "7%",
+            "sClass": "url_text"
         },
 
         {
@@ -242,7 +244,8 @@ $(function () {
         {
             "sTitle" : "Price", 
             "sName":"price_diff", 
-            "sWidth": "7%"
+            "sWidth": "7%",
+            "sClass": "price_text"
         },
         {
             "sTitle" : "Recommendations", 
@@ -480,7 +483,10 @@ $(function () {
 
     $(document).on('mouseenter', 'i.snap_ico', function () {
         var snap = "webshoots/" + $(this).attr('snap');
-        showSnap('<img src="'+base_url+snap+'">');
+        var row = $(this).parents().parent();
+        var txt = '<b>URL:</b><br/>'+row.find('td.url_text').text()+'<br /><br /><b>Product name:</b><br/>'+row.find('td.product_name_text').text()+
+        '<br /><br/><b>Price:</b><br/>'+row.find('td.price_text').text();
+        showSnap('<img src="'+base_url+snap+'">'+txt);
     });
 
     $('#tblAssess tbody').click(function(event) {
@@ -489,12 +495,18 @@ $(function () {
         }
         if ($(event.target).is('td.sorting_1') || $(event.target).is('img')) {
             var str = '';
+            var row;
             if($(event.target).attr('src') != undefined ){
                 str = $(event.target).attr('src');
+                row = $(this).parents().parent();
             } else if ($(event.target).children().attr('src') != undefined){
                 str = $(event.target).children().attr('src');
+                row = $(this).parents();
             }
-            showSnap('<img src="'+str+'">');
+
+            var txt = '<b>URL:</b><br/>'+row.find('td.url_text').text()+'<br /><br /><b>Product name:</b><br/>'+row.find('td.product_name_text').text()+
+                '<br /><br/><b>Price:</b><br/>'+row.find('td.price_text').text();
+            showSnap('<img src="'+str+'">'+txt);
             return;
         }
 
