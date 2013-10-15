@@ -883,8 +883,6 @@ $(function () {
     function check_word_columns(){
         var word_short_num = 0;
         var word_long_num = 0;
-        var keyword_short_num = 0;
-        var keyword_long_num = 0;
         $('td.word_short').each(function(){
             var txt = parseInt($(this).text());
             if( txt > 0){
@@ -897,26 +895,14 @@ $(function () {
                 word_long_num += 1;
             }
         });
-        $('td.keyword_short').each(function(){
-            var txt = parseInt($(this).text());
-            if( txt > 0){
-                keyword_short_num += 1;
-            }
-        });
-        $('td.keyword_long').each(function(){
-            var txt = parseInt($(this).text());
-            if( txt > 0){
-                keyword_long_num += 1;
-            }
-        });
 
         $.each(tblAllColumns, function(index, value) {
             if((value == 'short_description_wc' && word_short_num == 0) || (value == 'long_description_wc' && word_long_num == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
             }
-            /*if((value == 'short_seo_phrases' && keyword_short_num == 0) || (value == 'long_seo_phrases' && keyword_long_num == 0)){
+            if((value == 'short_seo_phrases' && word_short_num == 0) || (value == 'long_seo_phrases' && word_long_num == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
-            }*/
+            }
         });
         $('.subtitle_word_long').show();
         $('.subtitle_word_short').show();
@@ -924,11 +910,9 @@ $(function () {
         $('.subtitle_keyword_long').show();
         if(word_short_num == 0 && word_long_num != 0){
             $('.subtitle_word_long').hide();
+            $('.subtitle_keyword_long').hide();
         } else if(word_short_num != 0 && word_long_num == 0){
             $('.subtitle_word_short').hide();
-        } else if(keyword_short_num == 0 && keyword_long_num != 0){
-            $('.subtitle_keyword_long').hide();
-        } else if(keyword_short_num != 0 && keyword_long_num == 0){
             $('.subtitle_keyword_short').hide();
         }
         //console.log();
