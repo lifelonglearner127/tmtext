@@ -484,13 +484,9 @@ $(function () {
     $(document).on('mouseenter', 'i.snap_ico', function () {
         var snap = "webshoots/" + $(this).attr('snap');
         var row = $(this).parent().parent().parent().parent().parent().parent();
-        var url = row.find('td.url_text').text();
-        var product_name = row.find('td.product_name_text').text();
-        var price = row.find('td.price_text').text();
-        console.log(row);
-        console.log(row.find('td.url_text').text());
-        var txt = '<b>URL:</b><br/>'+url+'<br /><br /><b>Product name:</b><br/>'+product_name+'<br /><br/><b>Price:</b><br/>'+price;
-        showSnap('<img src="'+base_url+snap+'">'+txt);
+        var txt = '<b>URL:</b><br/>'+row.find('td.url_text').text()+'<br /><br /><b>Product name:</b><br/>'+
+            row.find('td.product_name_text').text()+'<br /><br/><b>Price:</b><br/>'+row.find('td.price_text').text();
+        showSnap('<img style="float:left" src="'+base_url+snap+'">'+txt);
     });
 
     $('#tblAssess tbody').click(function(event) {
@@ -510,7 +506,7 @@ $(function () {
 
             var txt = '<b>URL:</b><br/>'+row.find('td.url_text').text()+'<br /><br /><b>Product name:</b><br/>'+row.find('td.product_name_text').text()+
                 '<br /><br/><b>Price:</b><br/>'+row.find('td.price_text').text();
-            showSnap('<img src="'+str+'">'+txt);
+            showSnap('<img style="float:left" src="'+str+'">'+txt);
             return;
         }
 
