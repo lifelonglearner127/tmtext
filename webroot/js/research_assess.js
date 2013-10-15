@@ -498,10 +498,10 @@ $(function () {
             var row;
             if($(event.target).attr('src') != undefined ){
                 str = $(event.target).attr('src');
-                row = $(this).parent().parent().parent().parent().parent().parent();
+                row = $(this).parent().parent();
             } else if ($(event.target).children().attr('src') != undefined){
                 str = $(event.target).children().attr('src');
-                row = $(this).parent().parent().parent().parent().parent();
+                row = $(this).parent();
             }
 
             var txt = '<b>URL:</b><br/>'+row.find('td.url_text').text()+'<br /><br /><b>Product name:</b><br/>'+row.find('td.product_name_text').text()+
