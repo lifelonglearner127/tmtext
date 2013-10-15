@@ -101,7 +101,10 @@ class Webshoots_model extends CI_Model {
     public function crawl_webshoot($call_url, $id, $prefix) {
         $file = file_get_contents($call_url);
         $type = 'png';
-        echo $dir = realpath(BASEPATH . "../webroot/webshoots");
+        if(PHP_SAPI == 'cli')
+            $dir = "/ebs/sites/client38/web49/web/producteditor/webroot/webshoots";
+        else
+            $dir = realpath(BASEPATH . "../webroot/webshoots");
         if (!file_exists($dir)) {
             mkdir($dir);
             chmod($dir, 0777);
