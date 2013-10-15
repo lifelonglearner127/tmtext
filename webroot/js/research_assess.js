@@ -114,8 +114,7 @@ $(function () {
                     console.log(json.aaData);
                     for(var i=0; i<json.aaData.length; i++){
                         var obj = jQuery.parseJSON(json.aaData[i][14]);
-                        console.log(obj);
-                        /*if(json.aaData[i][2] != null && json.aaData[i][2] != '' && json.aaData[i][0]!=''){
+                        if(json.aaData[i][2] != null && json.aaData[i][2] != '' && json.aaData[i][0]!=''){
                             if(json.aaData[i][2].length > 93)
                               str += '<div class="board_item"><span class="span_img">'+json.aaData[i][2]+'</span><br />'+json.aaData[i][0]+
                                   '<div class="prod_description"><b>URL:</b><br/>'+obj.url+'<br /><br /><b>Product name:</b><br/>'+obj.product_name+
@@ -124,7 +123,7 @@ $(function () {
                               str += '<div class="board_item"><span>'+json.aaData[i][2]+'</span><br />'+json.aaData[i][0]+
                                   '<div class="prod_description"><b>URL:</b><br/>'+obj.url+'<br /><br /><b>Product name:</b><br/>'+obj.product_name
                                   +'<br /><br/><b>Price:</b><br/>'+obj.own_price+'</div></div>';
-                        }*/
+                        }
                     }
                     if(str == ''){
                         str = '<p>No images available for this batch</p>';
