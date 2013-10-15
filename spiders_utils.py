@@ -84,4 +84,12 @@ class Utils():
     def prettify_html(html_text):
         from bs4 import BeautifulSoup
         soup = BeautifulSoup(html_text)
-        return soup.prettify().encode("utf-8")
+        text = soup.prettify()
+
+        # remove <html> and <body> tags added by prettify
+        # only remove first occurence, in case there actually were any in the original text
+        text = re.sub("<html> *\n\s*","",text,1)
+        text = re.sub("\n *</html>","",text,1)
+        text = re.sub("<body> *\n","",text,1)
+        text = re.sub("\n *</body>","",text,1)
+        return text.encode("utf-8")
