@@ -347,10 +347,19 @@
                 return false;
                 });
             $('#add_snapshot_queue').click(function(){
+            
                 $('#department_snapshot').removeAttr('disabled');
                 var departmentValue = $('select[name="department"]').children('option:selected').val();
                 if($.inArray(departmentValue, ids) == -1)
                     ids.push(departmentValue);
+            
+                $.ajax({
+                    type: "POST",
+                    url: base_url + 'index.php/system/add_snapshot_queue',
+                    data: { dep_id: departmentValue }
+                }).done(function( data ) {
+                });
+                
                 return false;
             });
 
