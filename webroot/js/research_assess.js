@@ -330,6 +330,13 @@ $(function () {
                 });
             }
         });
+        $(".left_snap").on("click", function(){
+            console.log($(this).parent().parent().find("div.snap_area").find('img'));
+        });
+
+        $(".right_snap").on("click", function(){
+
+        });
     }
 
     function assess_tbl_show_case(obj) {

@@ -321,6 +321,8 @@
         <div class='snap_holder'>&nbsp;</div>
     </div>
     <div class="modal-footer">
+        <a href="" class="left_snap"> < </a>
+        <a href="" class="right_snap"> > </a>
         <a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
     </div>
 </div>
