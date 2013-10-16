@@ -9,6 +9,7 @@ class PageProcessor {
 	private $allowed_meta = array(
 					'name' => array('description', 'keywords')
 				);
+	private $load_time = 0;
 
 	public function __construct() {
 		$this->load->library('nokogiri', null, 'noko');
@@ -50,6 +51,8 @@ class PageProcessor {
 
         	// TODO: add caching
 			if ($this->html = $this->curl->simple_get($this->url)) {
+				$this->setLoadTime($this->curl->info);
+
 				$this->nokogiri = new nokogiri($this->html);
 				return true;
 			}
@@ -67,6 +70,10 @@ class PageProcessor {
 
 	public function get_html() {
 		return $this->html;
+	}
+
+	public function setLoadTime($info) {
+		$this->load_time = $info['total_time'] - $info['namelookup_time'];
 	}
 
 	public function getDomainPart($url) {
@@ -119,6 +126,7 @@ class PageProcessor {
 			}
 
 			if (!empty($result)) {
+				$result['loaded_in_seconds'] = number_format($this->load_time,5);
         		return $result;
 			}
         }

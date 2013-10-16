@@ -80,6 +80,7 @@ class Services extends REST_Controller {
     	$id = $this->post('id');
     	$imported_data_id  = $this->post('imported_data_id');
     	$category_id  = $this->post('category_id');
+    	$info = $this->post('info');
 
     	$this->load->model('imported_data_model');
 		$this->load->model('imported_data_parsed_model');
@@ -89,6 +90,7 @@ class Services extends REST_Controller {
     	$this->load->library('PageProcessor');
 
     	$this->pageprocessor->loadHtml($text, $url);
+		$this->pageprocessor->setLoadTime($info);
 
 		if ($page_data = $this->pageprocessor->process()) {
 			$page_data['URL'] = $url;
