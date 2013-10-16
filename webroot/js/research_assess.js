@@ -151,7 +151,7 @@ $(function () {
             });
         },
         "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-            $(nRow).attr("add_data", aData[11]);
+            $(nRow).attr("add_data", aData[14]);
             return nRow;
         },
         "fnDrawCallback": function(oSettings) {
@@ -512,11 +512,13 @@ $(function () {
             );
     });
 
-    $(document).on('mouseenter', 'i.snap_ico', function () {
+    $(document).on('click', 'i.snap_ico', function () {
         var snap = "webshoots/" + $(this).attr('snap');
         var row = $(this).parent().parent().parent().parent().parent().parent();
-        var txt = '<b>URL:</b><br/>'+row.find('td.url_text').text()+'<br /><br /><b>Product name:</b><br/>'+
-            row.find('td.product_name_text').text()+'<br /><br/><b>Price:</b><br/>'+row.find('td.price_text').text();
+        var txt = '<div class="info_area" style="max-width: 240px;"><div id="bi_info_bar" style="float: left; width: 200px; padding-top: 20px; display: block;">'+
+            '<p style="font-size: 16px;margin-bottom: 20px;">Character Corner</p><p>Category description: N/A</p><p><b style="font-size: 12px">Recommendations:</b>'+
+            '<br>Add 250 words of category content</p></div><div style="float: right; width: 40px;">'+
+            '<button id="bi_expand_bar_cnt" type="button" class="btn btn-success"><i class="icon-white icon-arrow-left"></i></button></div></div>';
         showSnap('<img style="float:left; max-width: 600px; margin-right: 10px" src="'+base_url+snap+'">'+txt);
     });
 
