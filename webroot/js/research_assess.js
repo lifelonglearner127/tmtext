@@ -330,16 +330,33 @@ $(function () {
                 });
             }
         });
+
         $(".left_snap").on("click", function(){
-            var im = $(this).parent().parent().find("div.snap_area").find('img');
-            console.log(im);
-            console.log(im.next());
-            return false;
+
         });
 
         $(".right_snap").on("click", function(){
-
+            var cur_img = $(this).parent().parent().find("div.snap_area").find('img').attr('src');
+            var im;
+            var im_next;
+            var product_name, url, price;
+            $("#tblAssess tbody tr img").each(function(){
+                if(cur_img == $(this).attr('src')){
+                    im = $(this);
+                    im_next = $(this).parent().parent().next().find('img').attr("src");
+                    product_name = $(this).parent().parent().next().find('td.product_name_text').text();
+                    url = $(this).parent().parent().next().find('td.url_text').text();
+                    price = $(this).parent().parent().next().find('td.price_text').text();
+                }
+            });
+            $(this).parent().parent().find("div.snap_area").find('img').attr({'src': im_next});
+            $(this).parent().parent().find("div.info_area").find('span.product_name').text(product_name);
+            $(this).parent().parent().find("div.info_area").find('span.url').text(url);
+            $(this).parent().parent().find("div.info_area").find('span.price').text(price);
+            return false;
         });
+
+
     }
 
     function assess_tbl_show_case(obj) {
@@ -545,9 +562,10 @@ $(function () {
         var snap = "webshoots/" + $(this).attr('snap');
         var row = $(this).parent().parent().parent().parent().parent().parent();
         var txt = '<div class="info_area" style="max-width: 240px;"><div id="bi_info_bar" style="float: left; width: 200px; padding-top: 20px; display: block;">'+
-            '<p style="font-size: 16px;margin-bottom: 20px;">Character Corner</p><p><b>URL:</b><br/>'+row.find('td.url_text').text()+'</p>' +
-            '<p><b>Product name:</b><br/>'+row.find('td.product_name_text').text()+'</p>' +
-            '<p><b>Price:</b><br/>'+row.find('td.price_text').text()+'</p></div><div style="float: right; width: 40px;">'+
+            '<p style="font-size: 16px;margin-bottom: 20px;">Character Corner</p><p><b>URL:</b><br/><span class="ur">'+
+            row.find('td.url_text').text()+'</span></p>' +
+            '<p><b>Product name:</b><br/><span class="product_name">'+row.find('td.product_name_text').text()+'</span></p>' +
+            '<p><b>Price:</b><br/><span class="price">'+row.find('td.price_text').text()+'</span></p></div><div style="float: right; width: 40px;">'+
             '<button id="bi_expand_bar_cnt" type="button" class="btn btn-success"><i class="icon-white icon-arrow-left"></i></button></div></div>';
         showSnap('<div class="snap_area"><a target="_blank" href=""><img src="'+base_url+snap+'"></a></div>'+txt);
     });
@@ -571,9 +589,9 @@ $(function () {
             }
 
             var txt = '<div class="info_area" style="max-width: 240px;"><div id="bi_info_bar" style="float: left; width: 200px; padding-top: 20px; display: block;">'+
-                '<p style="font-size: 16px;margin-bottom: 20px;">Character Corner</p><p><b>URL:</b><br/>'+row.find('td.url_text').text()+'</p>' +
-                '<p><b>Product name:</b><br/>'+row.find('td.product_name_text').text()+'</p>' +
-                '<p><b>Price:</b><br/>'+row.find('td.price_text').text()+'</p></div><div style="float: right; width: 40px;">'+
+                '<p style="font-size: 16px;margin-bottom: 20px;">Character Corner</p><p><b>URL:</b><br/><span class="url">'+row.find('td.url_text').text()+'</span></p>' +
+                '<p><b>Product name:</b><br/><span class="product_name">'+row.find('td.product_name_text').text()+'</span></p>' +
+                '<p><b>Price:</b><br/><span class="price">'+row.find('td.price_text').text()+'</span></p></div><div style="float: right; width: 40px;">'+
                 '<button id="bi_expand_bar_cnt" type="button" class="btn btn-success"><i class="icon-white icon-arrow-left"></i></button></div></div>';
             showSnap('<div class="snap_area"><a target="_blank" href=""><img src="'+str+'"></a></div>'+txt);
             return;
