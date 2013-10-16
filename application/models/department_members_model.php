@@ -155,14 +155,14 @@ class Department_members_model extends CI_Model {
         $query_res = $query->result();
         if(count($query_res) > 0) {
             $r = $query_res[0];
-            $fs = filesize($r->snap_dir);
+            $fs = file_get_contents($r->snap_path);
             $res_data['dep_id'] = $r->dep_id;
             $res_data['snap_name'] = $r->snap_name;
             $res_data['snap_path'] = $r->snap_path;
             $res_data['snap_dir'] = $r->snap_dir;
             $res_data['http_status'] = $r->http_status;
             $res_data['stamp'] = $r->stamp;
-            if($fs !== false || $fs > 10000) {
+            if($fs !== false) {
                 $res_data['img_av_status'] = true;
             }
         }
