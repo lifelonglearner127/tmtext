@@ -519,7 +519,7 @@ $(function () {
             '<p style="font-size: 16px;margin-bottom: 20px;">Character Corner</p><p>Category description: N/A</p><p><b style="font-size: 12px">Recommendations:</b>'+
             '<br>Add 250 words of category content</p></div><div style="float: right; width: 40px;">'+
             '<button id="bi_expand_bar_cnt" type="button" class="btn btn-success"><i class="icon-white icon-arrow-left"></i></button></div></div>';
-        showSnap('<img style="float:left; max-width: 600px; margin-right: 10px" src="'+base_url+snap+'">'+txt);
+        showSnap('<div class="snap_area"><a target="_blank" href=""><img src="'+base_url+snap+'"></a></div>'+txt);
     });
 
     $('#tblAssess tbody').click(function(event) {
