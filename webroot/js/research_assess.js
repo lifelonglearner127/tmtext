@@ -312,7 +312,6 @@ $(function () {
         $("#preview_crawl_snap_modal").css({'width':'1000px'});
         $("#preview_crawl_snap_modal .snap_holder").html(data);
         $("#bi_expand_bar_cnt").click(function(e) {
-            console.log(222);
             if($("#bi_info_bar").is(":visible")) {
                 $("#bi_info_bar").fadeOut('fast', function() {
                     $("#bi_expand_bar_cnt > i").removeClass('icon-arrow-left');
@@ -536,39 +535,11 @@ $(function () {
         var snap = "webshoots/" + $(this).attr('snap');
         var row = $(this).parent().parent().parent().parent().parent().parent();
         var txt = '<div class="info_area" style="max-width: 240px;"><div id="bi_info_bar" style="float: left; width: 200px; padding-top: 20px; display: block;">'+
-            '<p style="font-size: 16px;margin-bottom: 20px;">Character Corner</p><p>Category description: N/A</p><p><b style="font-size: 12px">Recommendations:</b>'+
-            '<br>Add 250 words of category content</p></div><div style="float: right; width: 40px;">'+
+            '<p style="font-size: 16px;margin-bottom: 20px;">Character Corner</p><p><b>URL:</b><br/>'+row.find('td.url_text').text()+'</p>' +
+            '<p><b style="font-size: 12px"><b>Product name:</b><br/>'+row.find('td.product_name_text').text()+'</p>' +
+            '<p><b>Price:</b><br/>'+row.find('td.price_text').text()+'</p></div><div style="float: right; width: 40px;">'+
             '<button id="bi_expand_bar_cnt" type="button" class="btn btn-success"><i class="icon-white icon-arrow-left"></i></button></div></div>';
         showSnap('<div class="snap_area"><a target="_blank" href=""><img src="'+base_url+snap+'"></a></div>'+txt);
-    });
-
-    $(".bitem_desc_text_head").click(function(e) {
-        if($(".bitem_desc_text").is(":visible")) {
-            $(".bitem_desc_text").slideUp();
-        } else {
-            $(".bitem_desc_text").slideDown();
-        }
-    });
-
-    $("#bi_expand_bar_cnt").click(function(e) {
-        console.log(111);
-        if($("#bi_info_bar").is(":visible")) {
-            $("#bi_info_bar").fadeOut('fast', function() {
-                $("#bi_expand_bar_cnt > i").removeClass('icon-arrow-left');
-                $("#bi_expand_bar_cnt > i").addClass('icon-arrow-right');
-                $("#preview_crawl_snap_modal").animate({
-                    width: '652px'
-                }, 200);
-            });
-        } else {
-            $("#bi_expand_bar_cnt > i").removeClass('icon-arrow-right');
-            $("#bi_expand_bar_cnt > i").addClass('icon-arrow-left');
-            $("#preview_crawl_snap_modal").animate({
-                width: '850px'
-            }, 200, function() {
-                $("#bi_info_bar").fadeIn('fast');
-            });
-        }
     });
 
     $('#tblAssess tbody').click(function(event) {
@@ -589,9 +560,12 @@ $(function () {
                 row = $(event.target).parent();
             }
 
-            var txt = '<b>URL:</b><br/>'+row.find('td.url_text').text()+'<br /><br /><b>Product name:</b><br/>'+row.find('td.product_name_text').text()+
-                '<br /><br/><b>Price:</b><br/>'+row.find('td.price_text').text();
-            showSnap('<img style="float:left" src="'+str+'">'+txt);
+            var txt = '<div class="info_area" style="max-width: 240px;"><div id="bi_info_bar" style="float: left; width: 200px; padding-top: 20px; display: block;">'+
+                '<p style="font-size: 16px;margin-bottom: 20px;">Character Corner</p><p><b>URL:</b><br/>'+row.find('td.url_text').text()+'</p>' +
+                '<p><b style="font-size: 12px"><b>Product name:</b><br/>'+row.find('td.product_name_text').text()+'</p>' +
+                '<p><b>Price:</b><br/>'+row.find('td.price_text').text()+'</p></div><div style="float: right; width: 40px;">'+
+                '<button id="bi_expand_bar_cnt" type="button" class="btn btn-success"><i class="icon-white icon-arrow-left"></i></button></div></div>';
+            showSnap('<div class="snap_area"><a target="_blank" href=""><img src="'+base_url+snap+'"></a></div>'+txt);
             return;
         }
 
