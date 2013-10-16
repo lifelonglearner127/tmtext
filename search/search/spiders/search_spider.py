@@ -4,6 +4,8 @@ from scrapy.http import Request
 from scrapy.http import TextResponse
 from scrapy.exceptions import CloseSpider
 from search.items import SearchItem
+
+from spiders_utils import Utils
 #import urllib
 import re
 import itertools
@@ -283,7 +285,7 @@ class SearchSpider(BaseSpider):
 				if m:
 					product_url = m.group(1)
 
-				item['product_url'] = product_url
+				item['product_url'] = Utils.add_domain(product_url, "http://www.amazon.com")
 
 				if 'origin_url' in response.meta:
 					item['origin_url'] = response.meta['origin_url']
