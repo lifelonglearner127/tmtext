@@ -169,16 +169,15 @@ class Assess extends MY_Controller {
             if($batch2!=''){
             $this->load->model('batches_model');
             $customer_name = $this->batches_model->getCustomerUrlByBatch($batch2);
-            
             $cmp= array();
             foreach($results as $val){
-          
+            
             if(substr_count(strtolower($val->similar_products_competitors), strtolower($customer_name))>0){
                
                 $similar_items = unserialize($val->similar_products_competitors);
              
                 foreach($similar_items as $key => $item){
-                    if(substr_count(strtolower($customer_name),strtolower($$item['customer']))>0){
+                    if(substr_count(strtolower($customer_name),strtolower($item['customer']))>0){
                         $cmpare = $this->statistics_new_model->get_compare_item($similar_items[$key]['imported_data_id']);
                         $val->snap1= $cmpare->snap;
                         $val->product_name1= $cmpare->product_name;
@@ -191,6 +190,8 @@ class Assess extends MY_Controller {
                  
             }
         }
+        
+        
                 $results = $cmp;
         }
             
@@ -952,8 +953,8 @@ class Assess extends MY_Controller {
             $result_row->snap1='';
             $result_row->product_name1='';
             $result_row->url1='';
-            $result_row->short_description_wc1='';
-            $result_row->long_description_wc1='';
+            $result_row->short_description_wc1='-';
+            $result_row->long_description_wc1='-';
             
             if($row->snap1){
                 $result_row->snap1 = $row->snap1;
