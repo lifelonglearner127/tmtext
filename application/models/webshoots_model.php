@@ -104,7 +104,7 @@ class Webshoots_model extends CI_Model {
 //        if(PHP_SAPI == 'cli')
 //            $dir = "/ebs/sites/client38/web49/web/producteditor/webroot/webshoots";
 //        else
-            $dir = realpath(BASEPATH . "../webroot/webshoots");
+            $dir =  dirname(__FILE__) .  "../../webroot/webshoots";
         if (!file_exists($dir)) {
             mkdir($dir);
             chmod($dir, 0777);
