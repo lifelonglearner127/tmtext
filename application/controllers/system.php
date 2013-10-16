@@ -622,7 +622,7 @@ class System extends MY_Controller {
         ));
     }
 
-    public function save_departments_categories_new_debug() {
+    public function save_departments_categories() {
         $this->load->model('department_model');
         $this->load->model('department_members_model');
         $this->load->model('site_categories_model');
@@ -653,68 +653,87 @@ class System extends MY_Controller {
           }
 					// === DB table decision (end)
 
+					// === all possible values and default values (start)
+					$special = 0;
+          $department_text = "";
+      		$url = "";
+      		$text = "";
+      		$department_url = "";
+      		$description_title = "";
+      		$keyword_count = null;
+      		$description_wc  = 0;
+      		$description_text = "";
+      		$keyword_density = null;
+      		$nr_products = 0;
+      		$parent_url = "";
+      		$parent_text = "";
+
+      		if(isset($row->special) && $row->special != '' && !is_null($row->special)) {
+            $special = $row->special;
+          }
+          if(isset($row->department_text) && is_array($row->department_text)) {
+            $department_text = $row->department_text[0];
+          } else if(isset($row->department_text) && !is_array($row->department_text) && !is_null($row->department_text) && $row->department_text != '') {
+            $department_text = $row->department_text;
+          }
+          if(isset($row->url) && is_array($row->url)) {
+            $url = addslashes($row->url[0]);
+          } else if(isset($row->url) && !is_array($row->url) && !is_null($row->url)) {
+            $url = addslashes($row->url);
+          }
+          if(isset($row->text) && is_array($row->text)) {
+            $text = $row->text[0];
+          } else if(isset($row->text) && !is_array($row->text) && !is_null($row->text)) {
+            $text = $row->text;
+          }
+          if(isset($row->department_url) && !is_null($row->department_url) && $row->department_url != '') {
+            $department_url = addslashes($row->department_url);
+          }
+          if(isset($row->description_title) && is_array($row->description_title)) {
+						$description_title = $row->description_title[0];
+          } else if(isset($row->description_title) && !is_array($row->description_title) && !is_null($row->description_title) && $row->description_title != '') {
+            $description_title = $row->description_title;
+          }
+          if(isset($row->keyword_count) && is_array($row->keyword_count)){
+            $keyword_count = $row->keyword_count[0];
+          } else if(isset($row->keyword_count) && !is_array($row->keyword_count) && !is_null($row->keyword_count) && $row->keyword_count != '') {
+            $keyword_count = json_encode($row->keyword_count);
+          }
+          if(isset($row->description_wc) && is_array($row->description_wc)) {
+            $description_wc = $row->description_wc[0];
+          } else if(isset($row->description_wc) && !is_array($row->description_wc) && !is_null($row->description_wc) && $row->description_wc != '') {
+            $description_wc = $row->description_wc;
+          }
+          if(isset($row->description_text) && is_array($row->description_text)) {
+            $description_text = $row->description_text[0];
+          } else if(isset($row->description_text) && !is_array($row->description_text) && !is_null($row->description_text) && $row->description_text != '') {
+            $description_text = $row->description_text;
+          }
+          if(isset($row->keyword_density) && is_array($row->keyword_density)) {
+            $keyword_density = $row->keyword_density[0];
+          } else if(isset($row->keyword_density) && !is_array($row->keyword_density) && !is_null($row->keyword_density) && $row->keyword_density != '') {
+            $keyword_density = json_encode($row->keyword_density);
+          }
+          if(isset($row->nr_products) && is_array($row->nr_products)) {
+            $nr_products = $row->nr_products[0];
+          } else if(isset($row->nr_products) && !is_array($row->nr_products) && !is_null($row->nr_products) && $row->nr_products != '') {
+            $nr_products = $row->nr_products;
+          }
+          if(isset($row->parent_url) && is_array($row->parent_url)) {
+            $parent_url = addslashes($row->parent_url[0]);
+          } else if(isset($row->parent_url) && !is_array($row->parent_url) && !is_null($row->parent_url) && $row->parent_url != '') {
+            $parent_url = addslashes($row->parent_url);
+          }
+          if(isset($row->parent_text) && is_array($row->parent_text)) {
+            $parent_text = $row->parent_text[0];
+          } else if(isset($row->parent_text) && !is_array($row->parent_text) && !is_null($row->parent_text) && $row->parent_text!='') {
+            $parent_text = $row->parent_text;
+          }
+					// === all possible values and default values (end)
+
           if($work_table != "") { // === work table define, ok, otherwise !!! DO NOTHING !!!
           	// ==== 'department_members' DB table actions stuffs (start)
           	if($work_table == 'department_members') {
-          		// === default values for 'department_members' table actions (start)
-          		$department_text = "";
-          		$url = "";
-          		$text = "";
-          		$department_url = "";
-          		$description_title = "";
-          		$keyword_count = null;
-          		$description_wc  = 0;
-          		$description_text = "";
-          		$keyword_density = null;
-          		$department_id = 0;
-          		// === default values for 'department_members' table actions (end)
-
-          		// === collect possible values for 'department_members' table actions (start)
-          		if(isset($row->department_text) && is_array($row->department_text)) {
-                $department_text = $row->department_text[0];
-              } else if(isset($row->department_text) && !is_array($row->department_text) && !is_null($row->department_text) && $row->department_text != '') {
-                $department_text = $row->department_text;
-              }
-              if(isset($row->url) && is_array($row->url)) {
-                $url = addslashes($row->url[0]);
-              } else if(isset($row->url) && !is_array($row->url) && !is_null($row->url)) {
-                $url = addslashes($row->url);
-              }
-              if(isset($row->text) && is_array($row->text)) {
-                $text = $row->text[0];
-              } else if(isset($row->text) && !is_array($row->text) && !is_null($row->text)) {
-                $text = $row->text;
-              }
-              if(isset($row->department_url) && !is_null($row->department_url) && $row->department_url != '') {
-                $department_url = addslashes($row->department_url);
-              }
-              if(isset($row->description_title) && is_array($row->description_title)) {
-								$description_title = $row->description_title[0];
-              } else if(isset($row->description_title) && !is_array($row->description_title) && !is_null($row->description_title) && $row->description_title != '') {
-                $description_title = $row->description_title;
-              }
-              if(isset($row->keyword_count) && is_array($row->keyword_count)){
-                $keyword_count = $row->keyword_count[0];
-              } else if(isset($row->keyword_count) && !is_array($row->keyword_count) && !is_null($row->keyword_count) && $row->keyword_count != '') {
-                $keyword_count = json_encode($row->keyword_count);
-              }
-              if(isset($row->description_wc) && is_array($row->description_wc)) {
-                $description_wc = $row->description_wc[0];
-              } else if(isset($row->description_wc) && !is_array($row->description_wc) && !is_null($row->description_wc) && $row->description_wc != '') {
-                $description_wc = $row->description_wc;
-              }
-              if(isset($row->description_text) && is_array($row->description_text)) {
-                $description_text = $row->description_text[0];
-              } else if(isset($row->description_text) && !is_array($row->description_text) && !is_null($row->description_text) && $row->description_text != '') {
-                $description_text = $row->description_text;
-              }
-              if(isset($row->keyword_density) && is_array($row->keyword_density)) {
-                $keyword_density = $row->keyword_density[0];
-              } else if(isset($row->keyword_density) && !is_array($row->keyword_density) && !is_null($row->keyword_density) && $row->keyword_density != '') {
-                $keyword_density = json_encode($row->keyword_density);
-              }
-          		// === collect possible values for 'department_members' table actions (end)
-
           		// === debuging stack (start)
               $debug_stack_mid = array(
               	'status' => 'department_members',
@@ -762,59 +781,13 @@ class System extends MY_Controller {
 
           	// ==== 'site_categories' DB table actions stuffs (start)
           	if($work_table == 'site_categories') {
-          		// === default values for 'site_categories' table actions (start)
-          		$nr_products = 0;
-          		$url = "";
-          		$text = "";
-          		$department_url = "";
-          		$description_wc  = 0;
-          		$parent_url = "";
-          		$parent_text = "";
-          		$department_text = "";
-          		$department_id = 0;
-          		// === default values for 'site_categories' table actions (end)
-
-          		// === collect possible values for 'site_categories' table actions (start)
-          		if(isset($row->nr_products) && is_array($row->nr_products)) {
-                $nr_products = $row->nr_products[0];
-              } else if(isset($row->nr_products) && !is_array($row->nr_products) && !is_null($row->nr_products) && $row->nr_products != '') {
-                $nr_products = $row->nr_products;
+              $department_members_id = 0;
+              if($department_text != '') {
+                  $check_id = $this->department_members_model->checkExist($site_id, $department_text, $url);
+                  if($check_id) {
+                      $department_members_id = $check_id;
+                  }
               }
-              if(isset($row->url) && is_array($row->url)) {
-                $url = addslashes($row->url[0]);
-              } else if(isset($row->url) && !is_array($row->url) && !is_null($row->url)) {
-                $url = addslashes($row->url);
-              }
-              if(isset($row->text) && is_array($row->text)) {
-                $text = $row->text[0];
-              } else if(isset($row->text) && !is_array($row->text) && !is_null($row->text)) {
-                $text = $row->text;
-              }
-              if(isset($row->department_url) && !is_null($row->department_url) && $row->department_url != '') {
-                $department_url = addslashes($row->department_url);
-              }
-              if(isset($row->description_wc) && is_array($row->description_wc)) {
-                $description_wc = $row->description_wc[0];
-              } else if(isset($row->description_wc) && !is_array($row->description_wc) && !is_null($row->description_wc) && $row->description_wc != '') {
-                $description_wc = $row->description_wc;
-              }
-              if(isset($row->parent_url) && is_array($row->parent_url)) {
-                $parent_url = addslashes($row->parent_url[0]);
-              } else if(isset($row->parent_url) && !is_array($row->parent_url) && !is_null($row->parent_url) && $row->parent_url != '') {
-                $parent_url = addslashes($row->parent_url);
-              }
-              if(isset($row->parent_text) && is_array($row->parent_text)) {
-                $parent_text = $row->parent_text[0];
-              } else if(isset($row->parent_text) && !is_array($row->parent_text) && !is_null($row->parent_text) && $row->parent_text!='') {
-                $parent_text = $row->parent_text;
-              }
-              if(isset($row->department_text) && is_array($row->department_text)) {
-                $department_text = $row->department_text[0];
-              } else if(isset($row->department_text) && !is_array($row->department_text) && !is_null($row->department_text) && $row->department_text != '') {
-                $department_text = $row->department_text;
-              }
-          		// === collect possible values for 'site_categories' table actions (end)
-
               // === debuging stack (start)
               $debug_stack_mid = array(
               	'status' => 'site_categories',
@@ -828,21 +801,25 @@ class System extends MY_Controller {
           			'department_text' => $department_text,
           			'parent_id' => 0,
           			'site_categories_model_update_flag_one' => null,
-          			'department_members_id' => null,
+          			'department_members_id' => $department_members_id,
           			'check_site' => null,
           			'site_categories_model_insert' => null,
-          			'site_categories_model_update_flag_two' => null
+          			'site_categories_model_update_flag_two' => null,
+          			'description_text' => $description_text,
+          			'keyword_count' => $keyword_count,
+          			'keyword_density' => $keyword_density,
+          			'description_title' => $description_title
           		);
               // === debuging stack (end)
 
-              // === insert / update decisions stuffs (start)
+              // === insert / update decisions stuffs (start) 
               $parent_id = 0;
               if($parent_text != '') {
                 $parent_id =  $this->site_categories_model->checkExist($site_id, $parent_text);
-                if($parent_id == false){
+                if($parent_id == false) {
                   $parent_id = $this->site_categories_model->insert(0, $site_id, $text, $url, $special, $parent_text, $department_members_id, $nr_products, $description_wc, $keyword_count, $keyword_density, $description_title, $description_text, $level);
     							$debug_stack_mid['parent_id'] = $parent_id; 
-                } else{
+                } else {
                   $site_categories_model_update_flag_one = $this->site_categories_model->updateFlag($site_id, $parent_text,  $department_members_id);
                 	$debug_stack_mid['site_categories_model_update_flag_one'] = $site_categories_model_update_flag_one;
                 }
@@ -857,10 +834,10 @@ class System extends MY_Controller {
               if($text != '') {	
                 $check_site = $this->site_categories_model->checkExist($site_id, $text, $department_members_id);
                 $debug_stack_mid['check_site'] = $check_site;
-                if($check_site == false){
+                if($check_site == false) {
                   $site_categories_model_insert = $this->site_categories_model->insert($parent_id, $site_id, $text, $url, $special, $parent_text, $department_members_id, $nr_products, $description_wc, $keyword_count, $keyword_density, $description_title, $description_text, $level);
                 	$debug_stack_mid['site_categories_model_insert'] = $site_categories_model_insert;
-                } else{
+                } else {
                   $site_categories_model_update_flag_two = $this->site_categories_model->updateFlag($site_id, $text, $department_members_id);
                 	$debug_stack_mid['site_categories_model_update_flag_two'] = $site_categories_model_update_flag_two;
                 }
@@ -877,7 +854,7 @@ class System extends MY_Controller {
         $this->output->set_content_type('application/json')->set_output(json_encode($debug_stack));
     }
 
-    public function save_departments_categories()
+    public function save_departments_categories_old()
     {
         $this->load->model('department_model');
         $this->load->model('department_members_model');
