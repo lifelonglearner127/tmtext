@@ -3,7 +3,7 @@
         <div class='snap_area'><a target='_blank' href="<?php echo $data->url ?>"><img src="<?php echo $data->snap_path ?>"></a></div>
         <div class='info_area' style="max-width: 240px;">
             <div id='bi_info_bar' style='float: left; width: 200px; padding-top: 20px;'>
-                <p style='font-size: 16px;margin-bottom: 20px;'>Character Corner</p>
+                <p style='font-size: 16px;margin-bottom: 20px;'><?php echo $data->text; ?></p>
                 <?php 
                     $k_words = array();
                     $tkdc_decoded = json_decode($data->title_keyword_description_count);
