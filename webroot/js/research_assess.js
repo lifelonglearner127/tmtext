@@ -333,7 +333,7 @@ $(function () {
 
         $(".left_snap").on("click", function(){
             var cur_img = $(this).parent().parent().find("div.snap_area").find('img').attr('src');
-            var im;
+            var im = '';
             var im_next;
             var product_name, url, price;
             $("#tblAssess tbody tr img").each(function(){
@@ -345,16 +345,18 @@ $(function () {
                     price = $(this).parent().parent().prev().find('td.price_text').text();
                 }
             });
-            $(this).parent().parent().find("div.snap_area").find('img').attr({'src': im_next});
-            $(this).parent().parent().find("div.info_area").find('span.product_name').text(product_name);
-            $(this).parent().parent().find("div.info_area").find('span.url').text(url);
-            $(this).parent().parent().find("div.info_area").find('span.price').text(price);
+            if(im != ''){
+                $(this).parent().parent().find("div.snap_area").find('img').attr({'src': im_next});
+                $(this).parent().parent().find("div.info_area").find('span.product_name').text(product_name);
+                $(this).parent().parent().find("div.info_area").find('span.url').text(url);
+                $(this).parent().parent().find("div.info_area").find('span.price').text(price);
+            }
             return false;
         });
 
         $(".right_snap").on("click", function(){
             var cur_img = $(this).parent().parent().find("div.snap_area").find('img').attr('src');
-            var im;
+            var im='';
             var im_next;
             var product_name, url, price;
             $("#tblAssess tbody tr img").each(function(){
@@ -366,10 +368,12 @@ $(function () {
                     price = $(this).parent().parent().next().find('td.price_text').text();
                 }
             });
-            $(this).parent().parent().find("div.snap_area").find('img').attr({'src': im_next});
-            $(this).parent().parent().find("div.info_area").find('span.product_name').text(product_name);
-            $(this).parent().parent().find("div.info_area").find('span.url').text(url);
-            $(this).parent().parent().find("div.info_area").find('span.price').text(price);
+            if(im != ''){
+                $(this).parent().parent().find("div.snap_area").find('img').attr({'src': im_next});
+                $(this).parent().parent().find("div.info_area").find('span.product_name').text(product_name);
+                $(this).parent().parent().find("div.info_area").find('span.url').text(url);
+                $(this).parent().parent().find("div.info_area").find('span.price').text(price);
+            }
             return false;
         });
 
