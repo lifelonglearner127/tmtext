@@ -151,7 +151,7 @@ $(function () {
             });
         },
         "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-            $(nRow).attr("add_data", aData[11]);
+            $(nRow).attr("add_data", aData[14]);
             return nRow;
         },
         "fnDrawCallback": function(oSettings) {
