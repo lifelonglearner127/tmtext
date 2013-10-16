@@ -963,7 +963,7 @@ class Assess extends MY_Controller {
                 $result_row->product_name1 = $row->product_name1;
             }  
             if($row->url1){
-                $result_row->url1 = $row->url1;
+                $result_row->url1 = "<a href='".$row->url1."' target='_blank'>$row->url1</a>";
             } 
             if($row->short_description_wc1){
                 $result_row->short_description_wc1 = $row->short_description_wc1;
