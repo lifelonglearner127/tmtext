@@ -164,19 +164,21 @@ class Assess extends MY_Controller {
 
             $results = $this->get_data_for_assess($params);
             
-            $batch2 = $this->input->get('date_from') == 'undefined' ? '' : $this->input->get('batch2');
-           
+            $batch2 = $this->input->get('batch2') == 'undefined' ? '' : $this->input->get('batch2');
+            
             if($batch2!=''){
             $this->load->model('batches_model');
             $customer_name = $this->batches_model->getCustomerUrlByBatch($batch2);
+            
             $cmp= array();
             foreach($results as $val){
-    
-            if(substr_count($val->similar_products_competitors, $customer_name)>0){
-                $similar_items= unserialize($val->similar_products_competitors);
-                
+          
+            if(substr_count(strtolower($val->similar_products_competitors), strtolower($customer_name))>0){
+               
+                $similar_items = unserialize($val->similar_products_competitors);
+             
                 foreach($similar_items as $key => $item){
-                    if(substr_count($customer_name,$item['customer'])>0){
+                    if(substr_count(strtolower($customer_name),strtolower($$item['customer']))>0){
                         $cmpare = $this->statistics_new_model->get_compare_item($similar_items[$key]['imported_data_id']);
                         $val->snap1= $cmpare->snap;
                         $val->product_name1= $cmpare->product_name;
