@@ -331,7 +331,10 @@ $(function () {
             }
         });
         $(".left_snap").on("click", function(){
-            console.log($(this).parent().parent().find("div.snap_area").find('img'));
+            var im = $(this).parent().parent().find("div.snap_area").find('img');
+            console.log(im);
+            console.log(im.next());
+            return false;
         });
 
         $(".right_snap").on("click", function(){
