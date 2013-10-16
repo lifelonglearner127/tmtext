@@ -522,6 +522,34 @@ $(function () {
         showSnap('<div class="snap_area"><a target="_blank" href=""><img src="'+base_url+snap+'"></a></div>'+txt);
     });
 
+    $(".bitem_desc_text_head").click(function(e) {
+        if($(".bitem_desc_text").is(":visible")) {
+            $(".bitem_desc_text").slideUp();
+        } else {
+            $(".bitem_desc_text").slideDown();
+        }
+    });
+
+    $("#bi_expand_bar_cnt").click(function(e) {
+        if($("#bi_info_bar").is(":visible")) {
+            $("#bi_info_bar").fadeOut('fast', function() {
+                $("#bi_expand_bar_cnt > i").removeClass('icon-arrow-left');
+                $("#bi_expand_bar_cnt > i").addClass('icon-arrow-right');
+                $("#preview_crawl_snap_modal").animate({
+                    width: '652px'
+                }, 200);
+            });
+        } else {
+            $("#bi_expand_bar_cnt > i").removeClass('icon-arrow-right');
+            $("#bi_expand_bar_cnt > i").addClass('icon-arrow-left');
+            $("#preview_crawl_snap_modal").animate({
+                width: '850px'
+            }, 200, function() {
+                $("#bi_info_bar").fadeIn('fast');
+            });
+        }
+    });
+
     $('#tblAssess tbody').click(function(event) {
         if ($(event.target).is('a')) {
             return;
