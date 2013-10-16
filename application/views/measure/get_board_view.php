@@ -44,7 +44,9 @@
 					<div class="board_item red_border_cl<?php echo $item_lm; ?>">
 						<input type='hidden' name='dm_id' value="<?php echo $v['id'] ?>">
 						<p class='board_item_title st'><?php echo $v['text']; ?></p>
+                        <?php if(file_exists($v['snap'])): ?>
 						<img src="<?php echo $v['snap'] ?>">
+                        <?php endif;?>
 						<div class='prod_description_new'>
 							<p style='font-size: 11px; margin-top: 15px; margin-bottom: 0px; color: #949494'>Description: <?php echo $v['description_words'] ?> words</p>
 						</div>
