@@ -731,15 +731,15 @@ class Crons extends MY_Controller {
             echo "get_data=----".$time;
             if (count($data_arr) > 0) {
 
-//                $sites_list = array();
-//                $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('sites');
-//                $query_cus_res = $query_cus->result();
-//                if (count($query_cus_res) > 0) {
-//                    foreach ($query_cus_res as $key => $value) {
-//                        $n = parse_url($value->url);
-//                        $sites_list[] = $n['host'];
-//                    }
-//                }
+                $sites_list = array();
+                $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('sites');
+                $query_cus_res = $query_cus->result();
+                if (count($query_cus_res) > 0) {
+                    foreach ($query_cus_res as $key => $value) {
+                        $n = parse_url($value->url);
+                        $sites_list[] = $n['host'];
+                    }
+                }
 
                 foreach ($data_arr as $obj) {
                     $foreach_start = time();
@@ -1150,6 +1150,7 @@ class Crons extends MY_Controller {
                 }
 
                 foreach ($data_arr as $obj) {
+                    echo $obj->imported_data_id."<br>";
                     $own_price = 0;
                     $competitors_prices = array();
                     $price_diff = '';
