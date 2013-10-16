@@ -299,7 +299,7 @@ ul.top-navigation li a {
     margin-right: 10px;
 }
 
-.mid-title {
+.mid-title, .mid-title a{
     margin-bottom: 20px;
     color: #E1472F;
     font-size: 28px;
