@@ -13,7 +13,8 @@ class Services extends REST_Controller {
 			'get_data_from_text' => true,
 			'get_new_urls' => true,
 			'get_queued_urls' => true,
-			'save_parsed_from_text' => true
+			'save_parsed_from_text' => true,
+			'url_load_failed' => true
   		));
 	}
 
@@ -144,6 +145,14 @@ class Services extends REST_Controller {
 		}
 
 		$this->response(false);
+    }
+
+    function url_load_failed_post()
+    {
+    	$id = $this->post('id');
+
+    	$this->load->model('crawler_list_model');
+    	$this->crawler_list_model->updateStatus($id, 'failed');
     }
 
 	private function arrayToCsv( array &$fields, $delimiter = ',', $enclosure = '"', $encloseAll = false, $nullToMysqlNull = false ) {
