@@ -55,6 +55,19 @@ class ProductsSpider(BaseSpider):
         item['url'] = response.url
         item['site'] = response.meta['site']
 
+        product_name = self.extractProdname(hxs)
+        if product_name:
+            item['product_name'] = product_name
+
+        product_price = self.extractProdprice(selector=hxs, item=item)
+        if product_price:
+            item['price'] = product_price
+
+        yield item
+
+
+    # given a selector for a product's page, extract and return the product's name
+    def extractProdname(self, selector):
         #########################
         # Product title:
         # Works for:
@@ -88,35 +101,54 @@ class ProductsSpider(BaseSpider):
         # eliminate ones with just whitespace
         #TODO: idea: check similarity with page title
         #TODO: idea - also look into text, see which is more belivable
-        product_name = hxs.select("//h1[contains(@id, 'Title') or contains(@class, 'Title')]//text()[normalize-space()!='']")
+        product_name_holder = selector.select("//h1[contains(@id, 'Title') or contains(@class, 'Title')]//text()[normalize-space()!='']")
+        product_name = None
         # if there are more than 2, exclude them, it can't be right
-        if product_name and len(product_name) < 2:
+        if product_name_holder and len(product_name_holder) < 2:
             # select ones that don't only contain whitespace
-            item['product_name'] = product_name.extract()[0].strip()
+            product_name = product_name_holder.extract()[0].strip()
         else:
             # find which sites need this
-            #product_name = hxs.select("//*[contains(@id, 'Title') or contains(@class, 'Title')]//text()[normalize-space()!='']")
-            if product_name and len(product_name) < 2:
-                item['product_name'] = product_name.extract()[0].strip()
+            #product_name_holder = selector.select("//*[contains(@id, 'Title') or contains(@class, 'Title')]//text()[normalize-space()!='']")
+            if product_name_holder and len(product_name_holder) < 2:
+                product_name = product_name_holder.extract()[0].strip()
             else:
-                product_name = hxs.select("//h1[contains(@*, 'title') or contains(@*, 'Title') or contains (@*, 'name')]//text()[normalize-space()!='']")
-                if product_name and len(product_name) < 2:
-                    item['product_name'] = product_name.extract()[0].strip()
+                product_name_holder = selector.select("//h1[contains(@*, 'title') or contains(@*, 'Title') or contains (@*, 'name')]//text()[normalize-space()!='']")
+                if product_name_holder and len(product_name_holder) < 2:
+                    product_name = product_name_holder.extract()[0].strip()
                 else:
-                    product_name = hxs.select("//*[contains(@*, 'Title') or contains(@*,'title')]//text()[normalize-space()!='']")
-                    if product_name and len(product_name) < 2:
-                        item['product_name'] = product_name.extract()[0].strip()
+                    product_name_holder = selector.select("//*[contains(@*, 'Title') or contains(@*,'title')]//text()[normalize-space()!='']")
+                    if product_name_holder and len(product_name_holder) < 2:
+                        product_name = product_name_holder.extract()[0].strip()
                     else:
-                        h1s = hxs.select("//h1//text()[normalize-space()!='']")
+                        h1s = selector.select("//h1//text()[normalize-space()!='']")
                         if len(h1s) == 1:
-                            item['product_name'] = h1s.extract()[0].strip()
+                            product_name = h1s.extract()[0].strip()
                         else:
                             print 'Error: no product name: ', response.url
 
         # normalize spaces in product name
-        if 'product_name' in item:
-            item['product_name'] = re.sub("\s+", " ", item['product_name'])
+        if product_name:
+            product_name = re.sub("\s+", " ", product_name)
 
+
+         # # bestbuy
+        # item['product_name'] = selector.select("//h1/text()").extract()[0].strip()
+
+        # # overstock
+        # product_name = selector.select("//h1/text()").extract()[0]
+
+        # # bloomingdales
+        # product_name = selector.select("//h1[@id='productTitle']/text()").extract()[0]
+
+        # # macys
+
+
+        return product_name
+
+    # given a selector for a product's page, extract and return the product's price
+    #TODO: using item argument only for testing
+    def extractProdprice(self, item, selector):
 
         #TODO: needs improvement
         # maybe write some rule to exclude prices that are not in a normal range. somehow...look at neighboring products, look at category name?
@@ -124,9 +156,9 @@ class ProductsSpider(BaseSpider):
 
         #TODO
         # go progressively up until you think you've captured the entire price
-        #price_holder = hxs.select("//*[contains(text(), '$') or contains(text(), 'USD') or contains(text(), 'usd')]/parent::*/parent::*")
-        #price_holder = hxs.select("//*[(contains(text(), '$') or contains(text(), 'USD') or contains(text(), 'usd')) and (contains(@*, 'Price') or contains(@*, 'price'))]")
-        price_holder = hxs.select("//*[contains(text(), '$') or contains(text(), 'USD') or contains(text(), 'usd')]")
+        #price_holder = selector.select("//*[contains(text(), '$') or contains(text(), 'USD') or contains(text(), 'usd')]/parent::*/parent::*")
+        #price_holder = selector.select("//*[(contains(text(), '$') or contains(text(), 'USD') or contains(text(), 'usd')) and (contains(@*, 'Price') or contains(@*, 'price'))]")
+        price_holder = selector.select("//*[not(self::script or self::style) and contains(text(), '$') or contains(text(), 'USD') or contains(text(), 'usd')]")
         # look for number regular expressions - accept anything that could occur in a price string, in case it's all inside one tag (.,$ etc)
         price = price_holder.select(".//text()").re("[0-9\s\.,$USDusd]+")
         # assume first value is dollars and second is cents (if they are different)
@@ -136,23 +168,17 @@ class ProductsSpider(BaseSpider):
         else:
             if price:
                 price_string = "$" + price[0]
-        if price:
-            item['price'] = price_string
+
+
             #TODO: what if there are more prices on the page, like for other products? see tigerdirect
+            # with css, get largest element on the page?
+            # for now try to get all prices on the page. then focus on filtering only the right one
 
-        print item['site'], item['url'], '\n', "\n--------------------------------\n".join(map(lambda x: Utils.prettify_html(x),[s if type(s) is str else s.encode("utf-8", errors="ignore") for s in price_holder.extract()]))
+        print "\n*******************\n", item['site'], item['url'], '\n', "\n--------------------------------\n".join(\
+            map(lambda x: Utils.prettify_html(x),[s if type(s) is str else s.encode("utf-8", errors="ignore") \
+                for s in price_holder.select("parent::*").extract()]))
+        
+        if price:
+            return price_string
 
-
-        # # bestbuy
-        # item['product_name'] = hxs.select("//h1/text()").extract()[0].strip()
-
-        # # overstock
-        # product_name = hxs.select("//h1/text()").extract()[0]
-
-        # # bloomingdales
-        # product_name = hxs.select("//h1[@id='productTitle']/text()").extract()[0]
-
-        # # macys
-
-
-        yield item
+        return None
