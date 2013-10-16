@@ -767,10 +767,13 @@ class Assess extends MY_Controller {
     {
         $this->load->model('batches_model');
         $batches = $this->batches_model->getAll();
-        $batches_list = array('0'=>'Select batch');
+        //$batches_list = array('0'=>'Select batch');
+        $batches_list = array('0'=>'0');
         foreach($batches as $batch){
             $batches_list[$batch->id] = $batch->title;
         }
+        sort($batches_list);
+        $batches_list[0]='Select batch';
         return $batches_list;
     }
 
