@@ -46,7 +46,7 @@
                 <div class="span6">
                     <img src="<?php echo base_url() ?>img/brand-icon.jpg"><div class="mid-title">For Branding<br />
                         <!--span>Lorem ispums</span--></div>
-                    <p>Content Analytics provides leading edge social and mobile analytics to help brands better understand their followers and performance.</p><p> In addition we offer a variety of industry indexes in partnership with our publishing partners. </p>
+                    <p>Content Analytics provides leading edge social and mobile analytics to help brands better understand their followers and performance.</p><p> In addition we offer a variety of industry indexes in partnership with our <a href="http://www.slideshare.net/bigdatalandscape/the-most-social-big-data-companies">publishing partners</a>. </p>
                     <a href="javascript:void(0)" class="learn_more">LEARN MORE</a>
                 </div>
             </div>
