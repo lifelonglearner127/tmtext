@@ -565,7 +565,7 @@ $(function () {
                 '<p><b>Product name:</b><br/>'+row.find('td.product_name_text').text()+'</p>' +
                 '<p><b>Price:</b><br/>'+row.find('td.price_text').text()+'</p></div><div style="float: right; width: 40px;">'+
                 '<button id="bi_expand_bar_cnt" type="button" class="btn btn-success"><i class="icon-white icon-arrow-left"></i></button></div></div>';
-            showSnap('<div class="snap_area"><a target="_blank" href=""><img src="'+base_url+snap+'"></a></div>'+txt);
+            showSnap('<div class="snap_area"><a target="_blank" href=""><img src="'+str+'"></a></div>'+txt);
             return;
         }
 
