@@ -327,48 +327,21 @@ $(function () {
     		loadCurrentList();
     	});
     });
-
-//    $("#current_snapshot").click(function(e) {
-//    	var urls = [];
+    
+    
+//    $("#current_snapshot_cmd").click(function(e) { // ==== !!! EXPREIMENTAL OPTION !!!
+//    	var dep_id_arr = [];
 //    	$("#Current_List > ul > li input[type='checkbox']:checked").each(function(index, value) {
-//    		var mid = {
-//    			id: $(value).data('id'),
-//    			url: $(value).data('url')
-//    		}
-//    		urls.push(mid);
+//    		dep_id_arr.push($(value).data('id'));
 //    	});
-//    	var send_data = {
-//    		urls: urls
-//    	};
-//    	$("#loading_crawl_snap_modal").modal('show');
-//    	$.post(base_url + 'index.php/measure/crawlsnapshoot', send_data, function(data) {
-//    		$("#loading_crawl_snap_modal").modal('hide');
-//    		$('#current_snapshot').attr('disabled', 'disabled');
-//    		$('#current_snapshot_cmd').attr('disabled', 'disabled');
-//    		loadCurrentList();
-//    	});
-//    });
-
-//    $('html').click(function(event) {
-//        if(!$(event.target).is('#current_list_delete') && !$(event.target).is('#current_crawl')){
-//            $('#current_list_delete').attr('disabled', 'disabled');
-//            $('#Current_List li').removeClass('active');
-//			if( $("#Current_List > ul > li input[type='checkbox']:checked").length > 0 ) {
-//				$('#current_snapshot').removeAttr('disabled');
-//				$('#current_snapshot_cmd').removeAttr('disabled');
-//			} else {
-//				$('#current_snapshot').attr('disabled', 'disabled');
-//				$('#current_snapshot_cmd').attr('disabled', 'disabled');
-//			}
-//
-//            var ids = [];
-//    		$("#Current_List > ul > li input[name='ids[]']:checked").each(function () {
-//    			ids.push(parseInt($(this).val()));
-//    		});
-//    		if (ids.length==0) {
-//    			$('button#current_crawl').attr('disabled', 'disabled');
-//    		}
-//        }
+//        $.ajax({
+//            type: "POST",
+//            url: base_url + 'index.php/system/add_snapshot_queue',
+//            data: { dep_id_arr: dep_id_arr }
+//        }).done(function( data ) {
+//            loadCurrentList();
+//        });
+//        
 //    });
 
     setTimeout(function(){

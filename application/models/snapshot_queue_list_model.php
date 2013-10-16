@@ -11,15 +11,17 @@ class snapshot_queue_list_model extends CI_Model {
         parent::__construct();
     }
     
-    public function insert($dep_id){
-        $query = $this->db->get_where($this->tables['snapshot_queue_list'], array('dep_id' => $dep_id,'user_id' => $this->ion_auth->get_user_id()));
-        $result = $query->result();
-        if(!$result){
-            $data = array(
-                'dep_id' => $dep_id,
-                'user_id' => $this->ion_auth->get_user_id()
-            );
-            $this->db->insert($this->tables['snapshot_queue_list'], $data);
+    public function insert($dep_id_arr){
+        foreach($dep_id_arr as $dep_id){
+            $query = $this->db->get_where($this->tables['snapshot_queue_list'], array('dep_id' => $dep_id,'user_id' => $this->ion_auth->get_user_id()));
+            $result = $query->result();
+            if(!$result){
+                $data = array(
+                    'dep_id' => $dep_id,
+                    'user_id' => $this->ion_auth->get_user_id()
+                );
+                $this->db->insert($this->tables['snapshot_queue_list'], $data);
+            }
         }
     }
     

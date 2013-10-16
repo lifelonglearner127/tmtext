@@ -356,7 +356,7 @@
                 $.ajax({
                     type: "POST",
                     url: base_url + 'index.php/system/add_snapshot_queue',
-                    data: { dep_id: departmentValue }
+                    data: { dep_id_arr: [departmentValue] }
                 }).done(function( data ) {
                 });
                 
