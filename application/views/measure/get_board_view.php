@@ -45,9 +45,11 @@
 						<input type='hidden' name='dm_id' value="<?php echo $v['id'] ?>">
 						<p class='board_item_title st'><?php echo $v['text']; ?></p>
                         <?php $handle = @fopen($v['snap'],'r');
-                              if($handle !== false): ?>
+                              if($handle !== false){ ?>
 						        <img src="<?php echo $v['snap']; ?>">
-                        <?php endif;?>
+                        <?php } else { ?>
+                            <div style="height: 120px; display: block"></div>
+                        <?php } ?>
 						<div class='prod_description_new'>
 							<p style='font-size: 11px; margin-top: 15px; margin-bottom: 0px; color: #949494'>Description: <?php echo $v['description_words'] ?> words</p>
 						</div>
@@ -76,9 +78,11 @@
 						<input type='hidden' name='dm_id' value="<?php echo $v['id'] ?>">
 						<p class='board_item_title st'><?php echo $v['text']; ?></p>
                         <?php $handle = @fopen($v['snap'],'r');
-                              if($handle !== false): ?>
+                              if($handle !== false){ ?>
 						        <img src="<?php echo $v['snap']; ?>">
-                        <?php endif; ?>
+                        <?php } else { ?>
+                                <div style="height: 120px;display: block"></div>
+                        <?php } ?>
 						<div class='prod_description_new'>
 							<p style='font-size: 11px; margin-top: 15px; margin-bottom: 0px; color: #949494'>Description: <?php echo $v['description_words'] ?> words</p>
 						</div>
