@@ -526,6 +526,9 @@ $(function () {
         if ($(event.target).is('a')) {
             return;
         }
+        if ($(event.target).is('i.snap_ico')) {
+            return;
+        }
         if ($(event.target).is('td.sorting_1') || $(event.target).is('img')) {
             var str = '';
             var row;
