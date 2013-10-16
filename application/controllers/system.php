@@ -637,7 +637,10 @@ class System extends MY_Controller {
         $data = '['.trim($contents,'"').']';
         $json_obj = json_decode($data);
 
-        $debug_stack = array();
+        $debug_stack = array(
+        	'department_members' => array(),
+        	'site_categories' => array()
+        );
 
 				foreach($json_obj as $row) {
 					// === DB table decision (start)
@@ -775,7 +778,7 @@ class System extends MY_Controller {
                 $debug_stack_mid['department_members_model_update'] = $department_members_model_update;
               }
           		// === insert / update decisions stuffs (end)
-          		$debug_stack[] = $debug_stack_mid;
+          		$debug_stack['department_members'][] = $debug_stack_mid;
           	}
           	// ==== 'department_members' DB table actions stuffs (end)
 
@@ -843,7 +846,7 @@ class System extends MY_Controller {
                 }
               }
               // === insert / update decisions stuffs (end)
-              $debug_stack[] = $debug_stack_mid;
+              $debug_stack['site_categories'][] = $debug_stack_mid;
           	}
           	// ==== 'site_categories' DB table actions stuffs (end)	
 
