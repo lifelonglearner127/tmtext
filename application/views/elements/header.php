@@ -16,12 +16,12 @@
 	<link href="<?php echo base_url();?>css/style.css" rel="stylesheet">
 	<link href="<?php echo base_url();?>css/chosen.css" rel="stylesheet">
 	<link href="<?php echo base_url();?>css/fileupload/jquery.fileupload-ui.css" rel="stylesheet">
-    <link href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.17/themes/base/jquery-ui.css" rel="stylesheet">
+    <link href="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.17/themes/base/jquery-ui.css" rel="stylesheet">
     <link href="<?php echo base_url();?>css/dd.css" rel="stylesheet">
     <link href="<?php echo base_url();?>css/home-page.css" rel="stylesheet">
     <link href="<?php echo base_url();?>css/bootstrap-lightbox.min.css" rel="stylesheet">
     <link href="<?php echo base_url();?>css/anythingslider.css" rel="stylesheet">
-    <link href=' http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+    <link href='//fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
 
 	<!--[if lt IE 9]>
 		<script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
