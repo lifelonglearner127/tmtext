@@ -1,9 +1,9 @@
 <div class="modal-body" style='overflow: hidden'>
     <div class='snap_holder'>
         <div class='snap_area'><a target='_blank' href="<?php echo $data->url ?>"><img src="<?php echo $data->snap_path ?>"></a></div>
-        <div class='info_area'>
-            <div id='bi_info_bar' style='float: left; width: 180px; padding-top: 20px;'>
-                <p style='font-weight: bold; font-size: 12px;'>Description word count: <?php echo $data->description_words; ?></p>
+        <div class='info_area' style="max-width: 240px;">
+            <div id='bi_info_bar' style='float: left; width: 200px; padding-top: 20px;'>
+                <p style='font-size: 16px;margin-bottom: 20px;'>Character Corner</p>
                 <?php 
                     $k_words = array();
                     $tkdc_decoded = json_decode($data->title_keyword_description_count);
@@ -40,17 +40,15 @@
                 <?php } ?>
                 <?php if($data->description_words != 0) { ?>
                 <div>
-                    <p class='bitem_desc_text_head'>Category description</p>
+                    <p class='bitem_desc_text_head'>Category description (<?php echo $data->description_words; ?> words)</p>
                     <div class='bitem_desc_text' style='display: none;'><?php echo $data->description_text; ?></div>
                 </div>
                 <?php } else { ?>
                 <p>Category description: N/A</p>
-                <?php } ?>
-                <?php if($data->description_words == 0){ ?>
-                    <p><b style="font-size: 12px">Recommendations:</b ><br />Add 250 words of category content</p>
+                <p><b style="font-size: 12px">Recommendations:</b ><br />Add 250 words of category content</p>
                 <?php } ?>
             </div>
-            <div style='float: left; width: 40px;'><button id='bi_expand_bar_cnt' type='button' class='btn btn-success'><i class='icon-arrow-left icon-white'></i></button></div>
+            <div style='float: right; width: 40px;'><button id='bi_expand_bar_cnt' type='button' class='btn btn-success'><i class='icon-arrow-left icon-white'></i></button></div>
         </div>
     </div>
 </div>
@@ -81,7 +79,7 @@
                 $("#bi_expand_bar_cnt > i").removeClass('icon-arrow-right');
                 $("#bi_expand_bar_cnt > i").addClass('icon-arrow-left');
                 $("#preview_board_item_modal").animate({
-                    width: '830px'
+                    width: '850px'
                 }, 200, function() {
                     $("#bi_info_bar").fadeIn('fast');
                 });
