@@ -1525,6 +1525,11 @@ class PageProcessor {
 			$result['cnetcontent']=true;
 		}
 
+		if ( strpos($this->html, 'webcollage_ppp')!==false && strpos($this->html, 'content.webcollage.net')!==false ) {
+			$result['webcollage']=true;
+		}
+
+
 		return $result;
 	}
 }
