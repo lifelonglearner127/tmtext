@@ -144,7 +144,7 @@ $(function () {
                     $('#assess_view').html(str);
                     $('#assess_view .board_item img').on('click', function(){
                         var info = $(this).parent().find('div.prod_description').html();
-                        showSnap('<img src="'+$(this).attr('src')+'" style="float:left">'+info);
+                        showSnap('<img src="'+$(this).attr('src')+'" style="float:left; max-width: 600px; margin-right: 10px">'+info);
                     });
                 }
 
@@ -204,7 +204,7 @@ $(function () {
         },
        
         {
-            "sTitle" : "Keywords <span style='font-size: 10px'>Short</span>",
+            "sTitle" : "Keywords <span class='subtitle_keyword_short'>Short</span>",
             "sName":"short_seo_phrases", 
             "sWidth": "8%",
             "sClass": "keyword_short"
@@ -218,7 +218,7 @@ $(function () {
         },
        
         {
-            "sTitle" : "Keywords <span style='font-size: 10px'>Long</span>",
+            "sTitle" : "Keywords <span class='subtitle_keyword_long'>Long</span>",
             "sName":"long_seo_phrases", 
             "sWidth": "8%",
             "sClass": "keyword_long"
@@ -517,7 +517,7 @@ $(function () {
         var row = $(this).parent().parent().parent().parent().parent().parent();
         var txt = '<b>URL:</b><br/>'+row.find('td.url_text').text()+'<br /><br /><b>Product name:</b><br/>'+
             row.find('td.product_name_text').text()+'<br /><br/><b>Price:</b><br/>'+row.find('td.price_text').text();
-        showSnap('<img style="float:left" src="'+base_url+snap+'">'+txt);
+        showSnap('<img style="float:left; max-width: 600px; margin-right: 10px" src="'+base_url+snap+'">'+txt);
     });
 
     $('#tblAssess tbody').click(function(event) {
