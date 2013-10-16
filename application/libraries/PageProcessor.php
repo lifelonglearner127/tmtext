@@ -1444,7 +1444,7 @@ class PageProcessor {
 
 		foreach($this->nokogiri->get('.grpDesc .itemColumn li') as $item) {
 			foreach($item['#text'] as $i) {
-				$description[] = trim($i);
+				$description[] = '<li>'.trim($i).'</li>';
 			}
 		}
 		$description = trim(implode(' ',$description));
