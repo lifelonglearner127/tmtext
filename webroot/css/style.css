@@ -45,6 +45,9 @@
     padding-top: 10px;
     padding-bottom: 10px;
 }
+#preview_crawl_snap_modal .info_area span{
+    font-size: 12px;
+}
 .preview_board_item_modal .modal-body, #preview_crawl_snap_modal .modal-body {
     padding-top: 0px;
     padding-bottom: 0px;
