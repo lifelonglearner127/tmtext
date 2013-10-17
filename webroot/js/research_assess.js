@@ -87,9 +87,7 @@ $(function () {
     };
 
     var tblAssess = $('#tblAssess').dataTable({
-        "sScrollX": "100%",
-	"sScrollXInner": "110%",
-	"bScrollCollapse": true,
+        
         "bJQueryUI": true,
         "bDestroy": true,
         "sPaginationType": "full_numbers",
