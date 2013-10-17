@@ -588,7 +588,7 @@
             </div>
             <div class="span12 mt_20 general ml_0">
                 <div class="row-fluid">
-                    <input type='hidden' name='update_mark' name='update_mark' value='2'>
+                    <input type='hidden' name='update_mark' name='update_mark' value='3'>
                     <label>Department:</label>
                     <?php  echo form_dropdown('department', $departmens_list, null, 'class="inline_block lh_30 w_375 mb_reset" id="second_department"'); ?>
                     <img class='monitor_icon hidden' id='dep_monitor' src="<?php echo base_url() ?>/img/monitor.png">

@@ -176,8 +176,13 @@ class Site_categories_model extends CI_Model {
             $str .= " and `department_members_id`='".$department_id."'";
         }
         $sql = "update `site_categories` set `flag`='ready' where `site_id`='".$site_id."' and `text`='".addslashes(trim($text))."' ".$str;
-        return $this->db->query($sql);
-        // return $query->result();
+        try {
+            $r = $this->db->query($sql);
+        } catch(Exception $e) {
+            $this->load->database();
+            $r = $this->db->query($sql);
+        }
+        return $r;
     }
 
     function checkDepartmentId($parent_id)
