@@ -604,11 +604,9 @@ $(function () {
             var row, ob;
             if($(event.target).attr('src') != undefined ){
                 str = $(event.target).attr('src');
-                row = $(event.target).parent().parent();
                 ob =  JSON.parse($(event.target).parents('tr').attr('add_data'));
             } else if ($(event.target).children().attr('src') != undefined){
                 str = $(event.target).children().attr('src');
-                row = $(event.target).parent();
                 ob =  JSON.parse($(event.target).children().parents('tr').attr('add_data'));
             }
             console.log(ob.price_diff);
@@ -616,7 +614,7 @@ $(function () {
             var txt = '<div class="info_area" style="max-width: 240px;"><div id="bi_info_bar" style="float: left; width: 200px; padding-top: 20px; display: block;">'+
                 '<p style="font-size: 16px;margin-bottom: 20px;">Character Corner</p><p><b>URL:</b><br/><span class="url">'+ob.url+'</span></p>' +
                 '<p><b>Product name:</b><br/><span class="product_name">'+ob.product_name+'</span></p>' +
-                '<p><b>Price:</b><br/><span class="price">'+ob.own_price+'</span></p></div><div style="float: right; width: 40px;">'+
+                '<p><b>Price:</b><br/><span class="price">'+ob.price_diff+'</span></p></div><div style="float: right; width: 40px;">'+
                 '<button id="bi_expand_bar_cnt" type="button" class="btn btn-success"><i class="icon-white icon-arrow-left"></i></button></div></div>';
             showSnap('<div class="snap_area"><a target="_blank" href=""><img src="'+str+'"></a></div>'+txt);
             return;
