@@ -583,6 +583,8 @@ $(function () {
     $(document).on('click', 'i.snap_ico', function () {
         var snap = "webshoots/" + $(this).attr('snap');
         var row = $(this).parent().parent().parent().parent().parent().parent();
+        var ob = JSON.parse(row.attr('add_data'));
+        console.log(ob);
         var txt = '<div class="info_area" style="max-width: 240px;"><div id="bi_info_bar" style="float: left; width: 200px; padding-top: 20px; display: block;">'+
             '<p style="font-size: 16px;margin-bottom: 20px;">Character Corner</p><p><b>URL:</b><br/><span class="ur">'+
             row.find('td.url_text').text()+'</span></p>' +
@@ -609,7 +611,6 @@ $(function () {
                 str = $(event.target).children().attr('src');
                 ob =  JSON.parse($(event.target).children().parents('tr').attr('add_data'));
             }
-            console.log(ob.price_diff);
 
             var txt = '<div class="info_area" style="max-width: 240px;"><div id="bi_info_bar" style="float: left; width: 200px; padding-top: 20px; display: block;">'+
                 '<p style="font-size: 16px;margin-bottom: 20px;">Character Corner</p><p><b>URL:</b><br/><span class="url">'+ob.url+'</span></p>' +
