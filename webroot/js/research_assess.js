@@ -199,35 +199,35 @@ $(function () {
         {
             "sTitle" : "Words <span class='subtitle_word_short' >Short</span>",
             "sName":"short_description_wc", 
-            "sWidth": "4%",
+            "sWidth": "2%",
             "sClass": "word_short"
         },
        
         {
             "sTitle" : "Keywords <span class='subtitle_keyword_short'>Short</span>",
             "sName":"short_seo_phrases", 
-            "sWidth": "4%",
+            "sWidth": "2%",
             "sClass": "keyword_short"
         },
 
         {
             "sTitle" : "Words <span class='subtitle_word_long' >Long</span>",
             "sName":"long_description_wc", 
-            "sWidth": "4%",
+            "sWidth": "2%",
             "sClass": "word_long"
         },
        
         {
             "sTitle" : "Keywords <span class='subtitle_keyword_long'>Long</span>",
             "sName":"long_seo_phrases", 
-            "sWidth": "4%",
+            "sWidth": "2%",
             "sClass": "keyword_long"
         },
 
         {
             "sTitle" : "Duplicate Content", 
             "sName":"duplicate_content", 
-            "sWidth": "4%"
+            "sWidth": "2%"
         },
         
         {
@@ -280,13 +280,13 @@ $(function () {
          {
             "sTitle" : "Words <span class='subtitle_word_short' >Short</span>",
             "sName":"short_description_wc1", 
-            "sWidth": "4%",
+            "sWidth": "2%",
             "sClass": "word_short"
         },
          {
             "sTitle" : "Words <span class='subtitle_word_long' >Long</span>",
             "sName":"long_description_wc1", 
-            "sWidth": "4%",
+            "sWidth": "2%",
             "sClass": "word_long"
         }
                 
