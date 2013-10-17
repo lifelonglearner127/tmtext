@@ -797,11 +797,7 @@ $(function () {
                 if (data) {
                     $.each(data, function(i, v){
                         research_assess_compare_batches_customer.append('<option value="'+v.toLowerCase()+'">'+v+'</option>');
-                        if(i==0 && $.trim($('#research_assess_compare_batches_customer').val()) == "select customer"){
-                       
-                         research_assess_compare_batches_batch.find('option[value="0"]').after('<option value="all">'+"All"+'</option>');
-                    }
-                    
+                                            
                     });
                     research_assess_compare_batches_customer.find('option[value="'+own_customer+'"]').remove();
                 }
@@ -814,8 +810,16 @@ $(function () {
             function(data){
                 research_assess_compare_batches_batch.empty();
                 if (data) {
+                    
                     $.each(data, function(i, v){
+                       
                         research_assess_compare_batches_batch.append('<option value="'+i+'">'+v+'</option>');
+                        if(i==0 && $.trim($('#research_assess_compare_batches_customer').val()) == "select customer"){
+                         
+                         research_assess_compare_batches_batch.append('<option value="all">All</option>');
+                         
+                    }
+                    
                     });
                     var own_batch_id = $("select[name='research_assess_batches']").find("option:selected").val();
                     research_assess_compare_batches_batch.find('option[value="'+own_batch_id+'"]').remove();
