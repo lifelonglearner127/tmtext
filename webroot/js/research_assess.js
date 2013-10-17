@@ -185,7 +185,7 @@ $(function () {
         {
             "sTitle" : "Product Name", 
             "sName":"product_name", 
-            "sWidth": "20%",
+            "sWidth": "10%",
             "sClass": "product_name_text"
         },
        
@@ -206,7 +206,7 @@ $(function () {
         {
             "sTitle" : "Keywords <span class='subtitle_keyword_short'>Short</span>",
             "sName":"short_seo_phrases", 
-            "sWidth": "8%",
+            "sWidth": "4%",
             "sClass": "keyword_short"
         },
 
@@ -220,7 +220,7 @@ $(function () {
         {
             "sTitle" : "Keywords <span class='subtitle_keyword_long'>Long</span>",
             "sName":"long_seo_phrases", 
-            "sWidth": "8%",
+            "sWidth": "4%",
             "sClass": "keyword_long"
         },
 
@@ -270,7 +270,7 @@ $(function () {
          {
             "sTitle" : "Product Name", 
             "sName":"product_name1", 
-            "sWidth": "20%"
+            "sWidth": "10%"
         },
          {
             "sTitle" : "URL", 
