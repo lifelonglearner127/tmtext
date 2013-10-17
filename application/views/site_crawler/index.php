@@ -79,15 +79,22 @@
 
 			function submitBatchSnapProcess() {
 				var batch_id = $('select[name="batch"] > option:selected').val();
-				var send_data = {
-	    		batch_id: batch_id
-	    	};
-	    	$("#loading_crawl_snap_modal").modal('show');
-	    	$.post(base_url + 'index.php/measure/batch_snap_process', send_data, function(data) {
-	    		console.log("BATCH SNAP PROCESS RESPONSE : ", data);
-	    		$("#loading_crawl_snap_modal").modal('hide');
-	    		loadCurrentList();
-	    	});
+//				var send_data = {
+//                                        batch_id: batch_id
+//                                };
+//                                $("#loading_crawl_snap_modal").modal('show');
+//                                $.post(base_url + 'index.php/measure/batch_snap_process', send_data, function(data) {
+//                                        console.log("BATCH SNAP PROCESS RESPONSE : ", data);
+//                                        $("#loading_crawl_snap_modal").modal('hide');
+//                                        loadCurrentList();
+//                                });
+                                $.ajax({
+                                    type: "POST",
+                                    url: base_url + 'index.php/system/add_snapshot_queue',
+                                    data: { batch_id: batch_id,type: 'site_crawl_snapshoot' }
+                                }).done(function( data ) {
+                                });
+
 			}
 
       </script>
@@ -306,43 +313,42 @@ $(function () {
         this.val($initialVal);
     };
 
-    $("#current_snapshot_cmd").click(function(e) { // ==== !!! EXPREIMENTAL OPTION !!!
-    	var urls = [];
-    	$("#Current_List > ul > li input[type='checkbox']:checked").each(function(index, value) {
-    		var mid = {
-    			id: $(value).data('id'),
-    			url: $(value).data('url')
-    		}
-    		urls.push(mid);
-    	});
-    	var send_data = {
-    		urls: urls
-    	};
-    	$("#loading_crawl_snap_modal").modal('show');
-    	$.post(base_url + 'index.php/measure/crawlsnapshootcmd', send_data, function(data) {
-    		console.log("CMD PATH: ", data);
-    		$("#loading_crawl_snap_modal").modal('hide');
-    		$('#current_snapshot').attr('disabled', 'disabled');
-    		$('#current_snapshot_cmd').attr('disabled', 'disabled');
-    		loadCurrentList();
-    	});
-    });
-    
-    
 //    $("#current_snapshot_cmd").click(function(e) { // ==== !!! EXPREIMENTAL OPTION !!!
-//    	var dep_id_arr = [];
+//    	var urls = [];
 //    	$("#Current_List > ul > li input[type='checkbox']:checked").each(function(index, value) {
-//    		dep_id_arr.push($(value).data('id'));
+//    		var mid = {
+//    			id: $(value).data('id'),
+//    			url: $(value).data('url')
+//    		}
+//    		urls.push(mid);
 //    	});
-//        $.ajax({
-//            type: "POST",
-//            url: base_url + 'index.php/system/add_snapshot_queue',
-//            data: { dep_id_arr: dep_id_arr }
-//        }).done(function( data ) {
-//            loadCurrentList();
-//        });
-//        
+//    	var send_data = {
+//    		urls: urls
+//    	};
+//    	$("#loading_crawl_snap_modal").modal('show');
+//    	$.post(base_url + 'index.php/measure/crawlsnapshootcmd', send_data, function(data) {
+//    		console.log("CMD PATH: ", data);
+//    		$("#loading_crawl_snap_modal").modal('hide');
+//    		$('#current_snapshot').attr('disabled', 'disabled');
+//    		$('#current_snapshot_cmd').attr('disabled', 'disabled');
+//    		loadCurrentList();
+//    	});
 //    });
+    
+    
+    $("#current_snapshot_cmd").click(function(e) { // ==== !!! EXPREIMENTAL OPTION !!!
+    	var dep_id_arr = [];
+    	$("#Current_List > ul > li input[type='checkbox']:checked").each(function(index, value) {
+    		dep_id_arr.push($(value).data('id'));
+    	});
+        $.ajax({
+            type: "POST",
+            url: base_url + 'index.php/system/add_snapshot_queue',
+            data: { dep_id_arr: dep_id_arr,type: 'site_crawl_snapshoot' }
+        }).done(function( data ) {
+            loadCurrentList();
+        });
+    });
 
     setTimeout(function(){
         $('title').text("Site Crawler");

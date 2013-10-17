@@ -22,28 +22,33 @@ class Crawl extends MY_Controller {
     }
 
     public function urls_snapshot() {
-//        $query = $this->db->query("
-//                    SELECT 
-//                        `department_members`.`id` ,
-//                        `department_members`.`url` 
-//                      FROM
-//                        `department_members` 
-//                        LEFT OUTER JOIN `site_departments_snaps` 
-//                          ON `department_members`.`id` = `site_departments_snaps`.`dep_id` 
-//                      WHERE `site_departments_snaps`.`dep_id` IS NULL AND url != ''
-//                      LIMIT 3     
-//            ");
-//        $result = $query->result_array();
         
         $this->load->model('snapshot_queue_list_model');
         $result = $this->snapshot_queue_list_model->select();
         
-        $ids = array();
+        $siteViewIds = array();
+        $siteCrawlIds = array();
         foreach ($result as $value) {
-            $ids[] = $value['dep_id'];
+            switch ($value['type']) {
+                case 'sites_view_snapshoot':{
+                    $siteViewIds[] = $value['dep_id'];
+                }
+                    break;
+                case 'site_crawl_snapshoot':{
+                    $siteCrawlIds[] = $value['dep_id'];
+                }
+                    break;
+            }
         }
-        
-        
+        if(!empty($siteViewIds))
+            $this->sites_view_snapshoot($siteViewIds);
+        if(!empty($siteCrawlIds))
+            $this->site_crawl_snapshoot($siteCrawlIds);
+        $this->snapshot_queue_list_model->delete();
+    }
+    
+    
+    public function sites_view_snapshoot($ids){
         
         $this->load->model('webshoots_model');
         $this->load->model('department_members_model');
@@ -99,7 +104,74 @@ class Crawl extends MY_Controller {
             $this->snapshot_queue_model->updateCount();
         }
         $this->snapshot_queue_model->deleteCount();
-        $this->snapshot_queue_list_model->delete();
+    }
+
+    
+
+    public function site_crawl_snapshoot($ids) {
+        $this->load->model('webshoots_model');
+        $this->load->model('crawler_list_model');
+        foreach ($ids as $id) {
+            $result = $this->crawler_list_model->get($id);
+            $v['url'] = $result[0]->url;
+            $v['id'] = $result[0]->id;
+            if (!empty($v)) {
+                    $http_status = $this->urlExistsCode($v['url']);
+                    $orig_url = $v['url'];
+                    $url = preg_replace('#^https?://#', '', $v['url']);
+                    $r_url = urlencode(trim($url));
+                    $call_url = $this->webthumb_call_link($url);
+                    $snap_res = $this->crawl_webshoot($call_url, $v['id']);
+                    $this->webshoots_model->updateCrawlListWithSnap($v['id'], $snap_res['img'], $http_status);
+            }
+            echo "\n Snapshot created:  " . $v['id'] . " - " . $v['url'] . "\n";
+        }
+    }
+    
+    private function urlExistsCode($url) {
+        if ($url === null || trim($url) === "")
+            return false;
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $data = curl_exec($ch);
+        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        return $httpcode;
+    }
+    
+    private function webthumb_call_link($url) {
+        $webthumb_user_id = $this->config->item('webthumb_user_id');
+        $api_key = $this->config->item('webthumb_api_key');
+        $url = "http://$url";
+        $c_date = gmdate('Ymd', time());
+        $hash = md5($c_date . $url . $api_key);
+        $e_url = urlencode(trim($url));
+        $call = "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=large&cache=1";
+        return $call;
+    }
+    
+    private function crawl_webshoot($call_url, $id) {
+        $file = file_get_contents($call_url);
+        $type = 'png';
+        $dir = realpath(BASEPATH . "../webroot/webshoots");
+        if (!file_exists($dir)) {
+            mkdir($dir);
+            chmod($dir, 0777);
+        }
+        // --- NEW STUFF (TIMESTAMP BASED IMAGES NAMES) (START)
+        $url_name = "crawl_snap-" . $id . "-" . date('Y-m-d-H-i-s', time());
+        // --- NEW STUFF (TIMESTAMP BASED IMAGES NAMES) (END)
+        $t = file_put_contents($dir . "/$url_name.$type", $file);
+        $path = base_url() . "webshoots/$url_name.$type";
+        $res = array(
+            'path' => $path,
+            'dir' => $dir . "/$url_name.$type",
+            'img' => $url_name . "." . $type,
+            'call' => $call_url
+        );
+        return $res;
     }
 
 }
