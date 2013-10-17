@@ -812,9 +812,9 @@ $(function () {
                 if (data) {
                     
                     $.each(data, function(i, v){
-                       
+                        
                         research_assess_compare_batches_batch.append('<option value="'+i+'">'+v+'</option>');
-                        if(i==0 && $.trim($('#research_assess_compare_batches_customer').val()) == "select customer"){
+                        if(i==0){
                          
                          research_assess_compare_batches_batch.append('<option value="all">All</option>');
                          
