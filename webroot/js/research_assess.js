@@ -248,7 +248,8 @@ $(function () {
         {
             "sTitle" : "Price", 
             "sName":"price_diff", 
-            "sWidth": "7%"
+            "sWidth": "7%",
+            "sClass": "price_text"
         },
         {
             "sTitle" : "Recommendations", 
