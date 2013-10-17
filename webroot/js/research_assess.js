@@ -87,6 +87,9 @@ $(function () {
     };
 
     var tblAssess = $('#tblAssess').dataTable({
+        "sScrollX": "100%",
+	"sScrollXInner": "110%",
+	"bScrollCollapse": true,
         "bJQueryUI": true,
         "bDestroy": true,
         "sPaginationType": "full_numbers",
@@ -577,7 +580,7 @@ $(function () {
             }
             );
     });
-
+    
     $(document).on('click', 'i.snap_ico', function () {
         var snap = "webshoots/" + $(this).attr('snap');
         var row = $(this).parent().parent().parent().parent().parent().parent();
@@ -764,7 +767,7 @@ $(function () {
         });
         var own_customer = $(this).val();
         fill_lists_batches_compare(own_customer);
-        check_word_columns();
+        check_word_columns();       
     });
     
     $('#research_assess_flagged').live('click', function(){
@@ -779,7 +782,7 @@ $(function () {
         if (own_customer == 'Select customer') {
             return;
         }
-
+        
         if (own_customer == 'select customer') {
             research_assess_compare_batches_customer.empty();
             research_assess_compare_batches_batch.empty();
@@ -794,6 +797,11 @@ $(function () {
                 if (data) {
                     $.each(data, function(i, v){
                         research_assess_compare_batches_customer.append('<option value="'+v.toLowerCase()+'">'+v+'</option>');
+                        if(i==0 && $.trim($('#research_assess_compare_batches_customer').val()) == "select customer"){
+                       
+                         research_assess_compare_batches_batch.find('option[value="0"]').after('<option value="all">'+"All"+'</option>');
+                    }
+                    
                     });
                     research_assess_compare_batches_customer.find('option[value="'+own_customer+'"]').remove();
                 }
@@ -815,7 +823,7 @@ $(function () {
             }
             );
     }
-
+     
     $('#research_assess_compare_batches_customer').change(function(res){
         var research_assess_compare_batches_batch = $("#research_assess_compare_batches_batch");
         $.post(base_url + 'index.php/assess/filterBatchByCustomerName', {
@@ -825,8 +833,12 @@ $(function () {
                 research_assess_compare_batches_batch.empty();
                 for(var i=0; i<data.length; i++){
                     research_assess_compare_batches_batch.append('<option value="'+data[i]['id']+'">'+data[i]['title']+'</option>');
-                }
-            } else if(data.length==0 && res.target.value !="select customer"){
+                    if(i==0 && $.trim($('#research_assess_compare_batches_customer').val()) == "select customer"){
+                       
+                         research_assess_compare_batches_batch.append('<option value="all">'+"All"+'</option>');
+                    }
+            } 
+            }else if(data.length==0 && res.target.value !="select customer"){
                 research_assess_compare_batches_batch.empty();
             }
         });

@@ -55,36 +55,43 @@ class Assess extends MY_Controller {
     }
 
     public function compare(){
-        $batch1 = $this->input->post('batch1');
-        $batch2 = $this->input->post('batch2');
-        $this->load->model('batches_model');
-        $customer_name = $this->batches_model->getCustomerUrlByBatch($batch2);
-        $this->load->model('statistics_new_model');
-        $data =  $this->statistics_new_model->get_for_compare($batch1);
-        $cmp= array();
-        foreach($data as $val){
-    
-            if(substr_count($val->similar_products_competitors, $customer_name)>0){
-                $similar_items= unserialize($val->similar_products_competitors);
-                
-                foreach($similar_items as $key => $item){
-                    if(substr_count($customer_name,$item['customer'])>0){
-                        $cmpare = $this->statistics_new_model->get_compare_item($similar_items[$key]['imported_data_id']);
-                        $val->snap1= $cmpare->snap;
-                        $val->product_name1= $cmpare->product_name;
-                        $val->url1= $cmpare->url;
-                        $val->short_description_wc1= $cmpare->short_description_wc;
-                        $val->long_description_wc1= $cmpare->long_description_wc;
-                    }
-                }
-                $cmp[]=$val;
-            }
+        $arr=array();
+        for($i=1; $i<3; $i++){
+                                   
+           $arr[]= array("sTitle"=>"Snapshot","sName"=>'snap'.$i ); 
         }
-        $data['results']=$cmp;
-//        echo "<pre>";
-//        print_r($cmp);
-//        echo "</pre>";
-        $this->load->view('assess/compare', $data);
+        
+        echo json_encode($arr);exit;
+//        $batch1 = $this->input->post('batch1');
+//        $batch2 = $this->input->post('batch2');
+//        $this->load->model('batches_model');
+//        $customer_name = $this->batches_model->getCustomerUrlByBatch($batch2);
+//        $this->load->model('statistics_new_model');
+//        $data =  $this->statistics_new_model->get_for_compare($batch1);
+//        $cmp= array();
+//        foreach($data as $val){
+//    
+//            if(substr_count($val->similar_products_competitors, $customer_name)>0){
+//                $similar_items= unserialize($val->similar_products_competitors);
+//                
+//                foreach($similar_items as $key => $item){
+//                    if(substr_count($customer_name,$item['customer'])>0){
+//                        $cmpare = $this->statistics_new_model->get_compare_item($similar_items[$key]['imported_data_id']);
+//                        $val->snap1= $cmpare->snap;
+//                        $val->product_name1= $cmpare->product_name;
+//                        $val->url1= $cmpare->url;
+//                        $val->short_description_wc1= $cmpare->short_description_wc;
+//                        $val->long_description_wc1= $cmpare->long_description_wc;
+//                    }
+//                }
+//                $cmp[]=$val;
+//            }
+//        }
+//        $data['results']=$cmp;
+////        echo "<pre>";
+////        print_r($cmp);
+////        echo "</pre>";
+//        $this->load->view('assess/compare', $data);
         
        
     }
@@ -98,6 +105,8 @@ class Assess extends MY_Controller {
               $txt_filter = $this->input->get('sSearch');   
          }
         $batch_id = $this->input->get('batch_id');
+        
+        
         $compare_batch_id = $this->input->get('compare_batch_id');
 
         if($batch_id == 0){
@@ -163,10 +172,10 @@ class Assess extends MY_Controller {
             $params->date_to = $build_assess_params->date_to;
 
             $results = $this->get_data_for_assess($params);
-            
+           
             $batch2 = $this->input->get('batch2') == 'undefined' ? '' : $this->input->get('batch2');
             
-            if($batch2!=''){
+            if($batch2!='' && $batch2!= 0 ){
             $this->load->model('batches_model');
             $customer_name = $this->batches_model->getCustomerUrlByBatch($batch2);
             $cmp= array();
@@ -772,7 +781,7 @@ class Assess extends MY_Controller {
         foreach($batches as $batch){
             $batches_list[$batch->id] = $batch->title;
         }
-        sort($batches_list);
+        asort($batches_list);
         $batches_list[0]='Select batch';
         return $batches_list;
     }
