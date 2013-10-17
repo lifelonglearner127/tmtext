@@ -334,21 +334,22 @@ $(function () {
 
         $(".left_snap").on("click", function(){
             var im = '';
-            var cur_img, im_prev, row, ob;
+            var cur_img, im_prev, row, row_prev, ob;
             row = $(this).parent().parent();
             cur_img = row.find("div.snap_area").find('img').attr('src');
             $("#tblAssess tbody tr img").each(function(){
                 if(cur_img == $(this).attr('src')){
                     im = $(this);
-                    im_prev = row.prev().find('img').attr("src");
+                    row_prev = $(this).parent().parent().prev();
+                    im_prev = row_prev.find('img').attr("src");
                 }
             });
             if(im != ''){
-                ob = JSON.parse(row.prev().attr('add_data'));
+                ob = JSON.parse(row_prev.attr('add_data'));
                 row.find("div.snap_area").find('img').attr({'src': im_prev});
-                row.find("div.info_area").find('span.product_name').text(ob.product_name);
-                row.find("div.info_area").find('span.url').text(ob.url);
-                row.find("div.info_area").find('span.price').text(ob.price_diff);
+                row.find("div.info_area").find('span.product_name').html(ob.product_name);
+                row.find("div.info_area").find('span.url').html(ob.url);
+                row.find("div.info_area").find('span.price').html(ob.price_diff);
             }
             return false;
         });
@@ -365,14 +366,12 @@ $(function () {
                     im_next = row_next.find('img').attr("src");
                 }
             });
-            console.log(row_next);
             if(im != ''){
                 ob = JSON.parse(row_next.attr('add_data'));
-                console.log(ob);
                 row.find("div.snap_area").find('img').attr({'src': im_next});
-                row.find("div.info_area").find('span.product_name').text(ob.product_name);
-                row.find("div.info_area").find('span.url').text(ob.url);
-                row.find("div.info_area").find('span.price').text(ob.price_diff);
+                row.find("div.info_area").find('span.product_name').html(ob.product_name);
+                row.find("div.info_area").find('span.url').html(ob.url);
+                row.find("div.info_area").find('span.price').html(ob.price_diff);
             }
             return false;
         });
