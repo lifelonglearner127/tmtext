@@ -70,7 +70,7 @@ class SearchSpider(BaseSpider):
 						"overstock" : "http://www.overstock.com/search?keywords=%s" % search_query, \
 						"wayfair" : "http://www.wayfair.com/keyword.php?keyword=%s" % search_query, \
 						# #TODO: check this URL
-						# "bestbuy" : "http://www.bestbuy.com/site/searchpage.jsp?_dyncharset=ISO-8859-1&_dynSessConf=-26268873911681169&id=pcat17071&type=page&st=%s&sc=Global&cp=1&nrp=15&sp=&qp=&list=n&iht=y&fs=saas&usc=All+Categories&ks=960&saas=saas" % search_query, \
+						"bestbuy" : "http://www.bestbuy.com/site/searchpage.jsp?_dyncharset=ISO-8859-1&_dynSessConf=-26268873911681169&id=pcat17071&type=page&st=%s&sc=Global&cp=1&nrp=15&sp=&qp=&list=n&iht=y&fs=saas&usc=All+Categories&ks=960&saas=saas" % search_query, \
 						"toysrus": "http://www.toysrus.com/search/index.jsp?kw=%s" % search_query, \
 						# #TODO: check the keywords, they give it as caps
 						# "bjs" : "http://www.bjs.com/webapp/wcs/stores/servlet/Search?catalogId=10201&storeId=10201&langId=-1&pageSize=40&currentPage=1&searchKeywords=%s&tASearch=&originalSearchKeywords=lg+life+is+good&x=-1041&y=-75" % search_query, \
@@ -377,7 +377,22 @@ class SearchSpider(BaseSpider):
 
 				items.append(item)
 
+		#TODO: currently only extracting first page - should I extract all pages?
 		# bestbuy
+		if (site == 'bestbuy'):
+			results = hxs.select("//div[@class='hproduct']/div[@class='info-main']/h3/a")
+
+			for result in results:
+				item = SearchItem()
+				item['site'] = site
+				item['product_url'] = result.select("text()").extract()[0].strip()
+				item['product_name'] = Utils.add_domain(result.select("@href").extract()[0], "http://www.bestbuy.com")
+
+				if 'origin_url' in response.meta:
+					item['origin_url'] = response.meta['origin_url']
+
+				items.append(item)
+
 
 		# toysrus
 		if (site == 'toysrus'):
