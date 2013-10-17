@@ -333,49 +333,43 @@ $(function () {
         });
 
         $(".left_snap").on("click", function(){
-            var cur_img = $(this).parent().parent().find("div.snap_area").find('img').attr('src');
             var im = '';
-            var im_next;
-            var ob;
+            var cur_img, im_prev, row, ob;
+            row = $(this).parent().parent();
+            cur_img = row.find("div.snap_area").find('img').attr('src');
             $("#tblAssess tbody tr img").each(function(){
                 if(cur_img == $(this).attr('src')){
                     im = $(this);
-                    im_next = $(this).parent().parent().prev().find('img').attr("src");
-                    ob = JSON.parse($(this).parent().parent().prev().attr('add_data'));
-                    /*product_name = $(this).parent().parent().prev().find('td.product_name_text').text();
-                    url = $(this).parent().parent().prev().find('td.url_text').text();
-                    price = $(this).parent().parent().prev().find('td.price_text').text();*/
+                    im_prev = row.prev().find('img').attr("src");
                 }
             });
-            console.log(ob);
             if(im != ''){
-                $(this).parent().parent().find("div.snap_area").find('img').attr({'src': im_next});
-                /*$(this).parent().parent().find("div.info_area").find('span.product_name').text(product_name);
-                $(this).parent().parent().find("div.info_area").find('span.url').text(url);
-                $(this).parent().parent().find("div.info_area").find('span.price').text(price);*/
+                ob = JSON.parse(row.attr('add_data'));
+                row.find("div.snap_area").find('img').attr({'src': im_prev});
+                row.find("div.info_area").find('span.product_name').text(ob.product_name);
+                row.find("div.info_area").find('span.url').text(ob.url);
+                row.find("div.info_area").find('span.price').text(ob.price_diff);
             }
             return false;
         });
 
         $(".right_snap").on("click", function(){
-            var cur_img = $(this).parent().parent().find("div.snap_area").find('img').attr('src');
             var im='';
-            var im_next;
-            var product_name, url, price;
+            var cur_img, im_next, row, ob;
+            row = $(this).parent().parent();
+            cur_img = row.find("div.snap_area").find('img').attr('src');
             $("#tblAssess tbody tr img").each(function(){
                 if(cur_img == $(this).attr('src')){
                     im = $(this);
-                    im_next = $(this).parent().parent().next().find('img').attr("src");
-                    product_name = $(this).parent().parent().next().find('td.product_name_text').text();
-                    url = $(this).parent().parent().next().find('td.url_text').text();
-                    price = $(this).parent().parent().next().find('td.price_text').text();
+                    im_next = row.next().find('img').attr("src");
                 }
             });
             if(im != ''){
-                $(this).parent().parent().find("div.snap_area").find('img').attr({'src': im_next});
-                $(this).parent().parent().find("div.info_area").find('span.product_name').text(product_name);
-                $(this).parent().parent().find("div.info_area").find('span.url').text(url);
-                $(this).parent().parent().find("div.info_area").find('span.price').text(price);
+                ob = JSON.parse(row.attr('add_data'));
+                row.find("div.snap_area").find('img').attr({'src': im_next});
+                row.find("div.info_area").find('span.product_name').text(ob.product_name);
+                row.find("div.info_area").find('span.url').text(ob.url);
+                row.find("div.info_area").find('span.price').text(ob.price_diff);
             }
             return false;
         });
