@@ -1,5 +1,5 @@
 <?php if(count($board_list) > 0) { ?>
-	
+	<div style='width: 100%; margin-top: 15px;'><a target="_blank" href="<?php echo base_url() ?>index.php/measure/get_board_view_pdf?site_id=<?php echo $site_id; ?>" class='btn btn-primary'>PDF Export</a></div>
 	<?php 
 		// === re-order stack of items (start)
 		$board_list_empty = array();

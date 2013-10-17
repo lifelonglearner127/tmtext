@@ -1614,6 +1614,95 @@ class Measure extends MY_Controller {
     //     $this->output->set_content_type('application/json')->set_output(json_encode($data));
     // }
 
+    public function get_board_view_pdf() {
+        $this->load->model('department_members_model');
+        $site_id = $this->input->get('site_id');
+        $board_data = $this->department_members_model->getAllSnapsByCustomerID($site_id);
+        $assess_report_page_layout = 'Portrait';
+
+        $img_path = APPPATH.".."."/webroot/img/";
+        $css_file = APPPATH.".."."/webroot/css/get_board_view_pdf.css";
+
+        // ==== params (start)
+        $logo = $img_path."content-analytics.png";
+        // ==== params (end)
+
+        $this->load->library('pdf');
+        $pdf = $this->pdf->load();
+        $pdf = new mPDF('', 'Letter', 0, '', 10, 10, 40, 10, 8, 8);
+        $stylesheet = file_get_contents($css_file);
+        $pdf->WriteHTML($stylesheet, 1);
+        $header = '<table border=0 width=100%>';
+        $header = $header.'<tr>';
+        $header = $header.'<td style="text-align: left;">';
+        $header = $header.'<img src="'.$logo.'" />';
+        $header = $header.'</td>';
+        $header = $header.'<td style="text-align: right;"></td>';
+        $header = $header.'</tr>';
+        $header = $header.'</table>';
+        $header = $header.'<hr color="#C31233" height="10">';
+        $pdf->SetHTMLHeader($header);
+        $pdf->SetHTMLFooter('<span style="font-size: 8px;">Copyright © 2013 Content Solutions, Inc.</span>');
+        $html = '';
+        // ==== add data to pdf body (start)
+        if(count($board_data) > 0) {
+            $board_list_empty = array();
+            $board_list_full = array();
+            foreach ($board_data as $key => $value) {
+                if($value->description_words == 0) {
+                    $board_list_empty[] = $value;
+                } else {
+                    $board_list_full[] = $value;
+                }
+            }
+            $sort_e = array();
+            foreach ($board_list_empty as $k => $v) {
+                $sort_e['text'][$k] = $v->text;
+            }
+            array_multisort($sort_e['text'], SORT_ASC, $board_list_empty);
+            $sort_f = array();
+            foreach ($board_list_full as $k => $v) {
+                $sort_e['text'][$k] = $v->text;
+            }
+            array_multisort($sort_f['text'], SORT_ASC, $board_list_full);
+            $board_list = array_merge($board_list_empty, $board_list_full);
+            if(count($board_list) > 0) {
+                $html .= '<table class="product_recommendations" border="0" cellspacing="0" cellpadding="0">';
+                $html .= "<thead>";
+                $html .= "<tr>";
+                $html .= "<th>Category name</th>";
+                $html .= "<th>Image</th>";
+                $html .= "<th>Word Count</th>";
+                $html .= "<th>Description text</th>";
+                $html .= "</tr>";
+                $html .= "</thead>";
+                $html .= "<tbody>";
+                foreach ($board_list as $key => $value) {
+                    $text = $value->text;
+                    $description_text = $value->description_text;
+                    $description_words = $value->description_words;
+                    $handle = @fopen($value->snap_path,'r');
+                    if($handle !== false) {
+                        $snap_row = "<img style='max-width: 160px' src='".$value->snap_path."'>";
+                    } else {
+                        $snap_row = "<div style='height: 120px; width: 160px; background: #000; display: block'></div>";
+                    }
+                    $html .= "<tr style='border: 0px'>";
+                    $html .= "<td style='border: 0px'>$text</td>";
+                    $html .= "<td style='border: 0px'>$snap_row</td>";
+                    $html .= "<td style='border: 0px'>$description_words</td>";
+                    $html .= "<td style='border: 0px'>$description_text</td>";
+                    $html .= "</tr>";
+                }
+                $html .= "</tbody>";
+                $html .= "</table>";
+            }
+        }
+        // ==== add data to pdf body (end)
+        $pdf->WriteHTML($html);
+        $pdf->Output('board_view_report.pdf', 'I');
+    }
+
     public function getBoardView(){
         $this->load->model('sites_model');
         $this->load->model('department_members_model');
@@ -1642,6 +1731,7 @@ class Measure extends MY_Controller {
             }
         }
         $data['board_list'] = $board_list;
+        $data['site_id'] = $site_id;
         $this->load->view('measure/get_board_view', $data); 
     }
 
