@@ -355,19 +355,20 @@ $(function () {
 
         $(".right_snap").on("click", function(){
             var im='';
-            var cur_img, im_next, row, ob;
+            var cur_img, im_next, row, row_next, ob;
             row = $(this).parent().parent();
             cur_img = row.find("div.snap_area").find('img').attr('src');
             $("#tblAssess tbody tr img").each(function(){
                 if(cur_img == $(this).attr('src')){
                     im = $(this);
-                    im_next = row.next().find('img').attr("src");
+                    row_next = $(this).parent().parent().next();
+                    im_next = row_next.find('img').attr("src");
                 }
             });
-            console.log(im);
-            console.log(row.next());
+            console.log(row_next);
             if(im != ''){
-                ob = JSON.parse(row.next().attr('add_data'));
+                ob = JSON.parse(row_next.attr('add_data'));
+                console.log(ob);
                 row.find("div.snap_area").find('img').attr({'src': im_next});
                 row.find("div.info_area").find('span.product_name').text(ob.product_name);
                 row.find("div.info_area").find('span.url').text(ob.url);
