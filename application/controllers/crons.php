@@ -959,20 +959,20 @@ class Crons extends MY_Controller {
 //                                     $customer=  strtolower($n['host']);
 //                                     $customer = str_replace("www1.", "",$customer);
 //                                     $customer =str_replace("www.", "", $customer);
-
-                        $customer = "";
-                        foreach ($sites_list as $ki => $vi) {
-                            if (strpos($data_import['url'], "$vi") !== false) {
-                                $customer = $vi;
-                            }
-                        }
-
-                        $customer = strtolower($this->sites_model->get_name_by_url($customer));
-
-                        $similar_products_competitors[] = array(
-                            'imported_data_id' => $data_import['imported_data_id'],
-                            'customer' => $customer
-                        );
+//repeating
+//                        $customer = "";
+//                        foreach ($sites_list as $ki => $vi) {
+//                            if (strpos($data_import['url'], "$vi") !== false) {
+//                                $customer = $vi;
+//                            }
+//                        }
+//
+//                        $customer = strtolower($this->sites_model->get_name_by_url($customer));
+//
+//                        $similar_products_competitors[] = array(
+//                            'imported_data_id' => $data_import['imported_data_id'],
+//                            'customer' => $customer
+//                        );
 
                     $time_end = microtime(true);
 
