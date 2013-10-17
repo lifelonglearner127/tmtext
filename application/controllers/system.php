@@ -638,6 +638,7 @@ class System extends MY_Controller {
         $json_obj = json_decode($data);
 
         $debug_stack = array(
+        	'indexes' => 0,
         	'department_members' => array(),
         	'site_categories' => array()
         );
@@ -814,7 +815,7 @@ class System extends MY_Controller {
           			'description_title' => $description_title
           		);
               // === debuging stack (end)
-
+              $this->load->database();
               // === insert / update decisions stuffs (start) 
               $parent_id = 0;
               if($parent_text != '') {
