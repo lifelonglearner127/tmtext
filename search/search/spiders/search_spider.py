@@ -114,8 +114,7 @@ class SearchSpider(BaseSpider):
 
 		for product_url in product_urls:
 			# extract site domain
-			print "in parse: ", product_url
-
+			
 			m = re.match("http://www1?\.([^\.]+)\.com.*", product_url)
 			origin_site = ""
 			if m:
@@ -133,8 +132,6 @@ class SearchSpider(BaseSpider):
 
 	# parse a product page (given its URL) and extract product's name
 	def parseURL(self, response):
-
-		print "in parseURL: ", response.url
 
 		site = response.meta['site']
 		hxs = HtmlXPathSelector(response)
@@ -410,12 +407,13 @@ class SearchSpider(BaseSpider):
 
 
 		#print stuff
-		print "PRODUCT: ", response.meta['origin_name'].encode("utf-8")
-		print "QUERY: ", response.meta['query']
-		print "MATCHES: "
+		self.log("PRODUCT: " + response.meta['origin_name'].encode("utf-8"), level="INFO")
+		#print 
+		self.log( "QUERY: " + response.meta['query'], level="INFO")
+		self.log( "MATCHES: ", level="INFO")
 		for item in items:
-			print item['product_name'].encode("utf-8")
-		print '\n'
+			self.log( item['product_name'].encode("utf-8"), level="INFO")
+		self.log( '\n', level="INFO")
 
 
 		# if there is a pending request (current request used product model, and pending request is to use product name),
@@ -444,16 +442,16 @@ class SearchSpider(BaseSpider):
 
 				if items:
 					# from all results, select the product whose name is most similar with the original product's name
-					best_match = ProcessText.similar(origin_name, items, self.threshold)
+					best_match = ProcessText.similar(self, origin_name, items, self.threshold)
 
-					# #print "ALL MATCHES: "
+					# #self.log( "ALL MATCHES: ", level="INFO")					
 					# for item in items:
 					# 	#print item['product_name'].encode("utf-8")
 					# #print '\n'
 
-					print "FINAL: ", best_match
+					self.log( "FINAL: " + str(best_match), level="INFO")
 
-				print "\n----------------------------------------------\n"
+				self.log( "\n----------------------------------------------\n", level="INFO")
 
 				if not best_match:
 					# if there are no results but the option was to include original product URL, create an item with just that
@@ -475,7 +473,7 @@ class SearchSpider(BaseSpider):
 				item['origin_url'] = response.meta['origin_url']
 
 
-				print "FINAL: no items"
+				self.log( "FINAL: no items", level="INFO")
 
 				return [item]
 
@@ -577,7 +575,7 @@ class ProcessText():
 	#			param - threshold for accepting a product name as similar or not (float between 0-1)
 	#TODO: import this from match_product, as a library function
 	@staticmethod
-	def similar(product_name, products2, param):
+	def similar(spider, product_name, products2, param):
 		result = None
 		products_found = []
 		#print "PR2:", len(products2)
@@ -586,7 +584,7 @@ class ProcessText():
 			words1 = ProcessText.normalize(product_name)
 			words2 = ProcessText.normalize(product2['product_name'])
 
-			(score, threshold) = ProcessText.similar_names(words1, words2, param)
+			(score, threshold) = ProcessText.similar_names(spider, words1, words2, param)
 
 			# try it with alternative model numbers as well, and keep the one with highest score
 			alt_words1 = ProcessText.name_with_alt_modelnr(words1)
@@ -594,17 +592,17 @@ class ProcessText():
 
 			if alt_words1:
 				# compute weights differently if we used alternative model numbers
-				(score1, threshold1) = ProcessText.similar_names(alt_words1, words2, param, altModels=True)
+				(score1, threshold1) = ProcessText.similar_names(spider, alt_words1, words2, param, altModels=True)
 				if score1 > score:
 					(score, threshold) = (score1, threshold1)
 
 			if (alt_words1 and alt_words2):
-				(score2, threshold2) = ProcessText.similar_names(alt_words1, alt_words2, param, altModels=True)
+				(score2, threshold2) = ProcessText.similar_names(spider, alt_words1, alt_words2, param, altModels=True)
 				if score2 > score:
 					(score, threshold) = (score2, threshold2)
 
 			if alt_words2:
-				(score3, threshold3) = ProcessText.similar_names(words1, alt_words2, param, altModels=True)
+				(score3, threshold3) = ProcessText.similar_names(spider, words1, alt_words2, param, altModels=True)
 				if score3 > score:
 					(score, threshold) = (score3, threshold3)
 			
@@ -626,7 +624,7 @@ class ProcessText():
 
 	# compute similarity for two names given as token lists
 	@staticmethod
-	def similar_names(words1, words2, param, altModels = False):
+	def similar_names(spider, words1, words2, param, altModels = False):
 		common_words = set(words1).intersection(set(words2))
 
 		# assign weigths - 1 to normal words, 2 to nondictionary words
@@ -657,12 +655,12 @@ class ProcessText():
 		score = sum(weights_common)
 
 		#print "WORDS: ", product_name.encode("utf-8"), product2['product_name'].encode("utf-8")
-		print "W1: ", words1
-		print "W2: ", words2
-		print "COMMON: ", common_words
-		print "WEIGHTS: ", weights1, weights2, weights_common
+		spider.log( "W1: " + str(words1))
+		spider.log( "W2: " + str(words2))
+		spider.log( "COMMON: " + str(common_words))
+		spider.log( "WEIGHTS: " + str(weights1) + str(weights2) + str(weights_common))
 
-		print "SCORE: ", score, "THRESHOLD: ", threshold
+		spider.log( "SCORE: " + str(score) + "THRESHOLD: " + str(threshold))
 
 		return (score, threshold)
 

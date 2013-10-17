@@ -11,8 +11,10 @@ BOT_NAME = 'search'
 SPIDER_MODULES = ['search.spiders']
 NEWSPIDER_MODULE = 'search.spiders'
 ITEM_PIPELINES = ['search.pipelines.URLsPipeline']
-LOG_ENABLED = False
 LOG_STDOUT = True
+LOG_ENABLED = False
+LOG_FILE = "search_log.out"
+LOG_LEVEL="INFO"
 DUPEFILTER_CLASS = 'scrapy.dupefilter.BaseDupeFilter'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
