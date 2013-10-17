@@ -601,14 +601,17 @@ $(function () {
         }
         if ($(event.target).is('td.sorting_1') || $(event.target).is('img')) {
             var str = '';
-            var row;
+            var row, ob;
             if($(event.target).attr('src') != undefined ){
                 str = $(event.target).attr('src');
                 row = $(event.target).parent().parent();
+                ob =  JSON.parse($(event.target).parents('tr').attr('add_data'));
             } else if ($(event.target).children().attr('src') != undefined){
                 str = $(event.target).children().attr('src');
                 row = $(event.target).parent();
+                ob =  JSON.parse($(event.target).children().parents('tr').attr('add_data'));
             }
+            console.log(ob);
 
             var txt = '<div class="info_area" style="max-width: 240px;"><div id="bi_info_bar" style="float: left; width: 200px; padding-top: 20px; display: block;">'+
                 '<p style="font-size: 16px;margin-bottom: 20px;">Character Corner</p><p><b>URL:</b><br/><span class="url">'+row.find('td.url_text').text()+'</span></p>' +
