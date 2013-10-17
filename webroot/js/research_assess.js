@@ -344,7 +344,7 @@ $(function () {
                 }
             });
             if(im != ''){
-                ob = JSON.parse(row.attr('add_data'));
+                ob = JSON.parse(row.prev().attr('add_data'));
                 row.find("div.snap_area").find('img').attr({'src': im_prev});
                 row.find("div.info_area").find('span.product_name').text(ob.product_name);
                 row.find("div.info_area").find('span.url').text(ob.url);
@@ -364,8 +364,10 @@ $(function () {
                     im_next = row.next().find('img').attr("src");
                 }
             });
+            console.log(im);
+            console.log(row.next());
             if(im != ''){
-                ob = JSON.parse(row.attr('add_data'));
+                ob = JSON.parse(row.next().attr('add_data'));
                 row.find("div.snap_area").find('img').attr({'src': im_next});
                 row.find("div.info_area").find('span.product_name').text(ob.product_name);
                 row.find("div.info_area").find('span.url').text(ob.url);
