@@ -385,8 +385,8 @@ class SearchSpider(BaseSpider):
 			for result in results:
 				item = SearchItem()
 				item['site'] = site
-				item['product_url'] = result.select("text()").extract()[0].strip()
-				item['product_name'] = Utils.add_domain(result.select("@href").extract()[0], "http://www.bestbuy.com")
+				item['product_name'] = result.select("text()").extract()[0].strip()
+				item['product_url'] = Utils.add_domain(result.select("@href").extract()[0], "http://www.bestbuy.com")
 
 				if 'origin_url' in response.meta:
 					item['origin_url'] = response.meta['origin_url']
@@ -670,12 +670,12 @@ class ProcessText():
 		score = sum(weights_common)
 
 		#print "WORDS: ", product_name.encode("utf-8"), product2['product_name'].encode("utf-8")
-		spider.log( "W1: " + str(words1))
-		spider.log( "W2: " + str(words2))
-		spider.log( "COMMON: " + str(common_words))
-		spider.log( "WEIGHTS: " + str(weights1) + str(weights2) + str(weights_common))
+		spider.log( "W1: " + str(words1), level="INFO")
+		spider.log( "W2: " + str(words2), level="INFO")
+		spider.log( "COMMON: " + str(common_words), level="INFO")
+		spider.log( "WEIGHTS: " + str(weights1) + str(weights2) + str(weights_common), level="INFO")
 
-		spider.log( "SCORE: " + str(score) + "THRESHOLD: " + str(threshold))
+		spider.log( "SCORE: " + str(score) + "THRESHOLD: " + str(threshold), level="INFO")
 
 		return (score, threshold)
 
