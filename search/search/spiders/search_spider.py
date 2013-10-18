@@ -643,44 +643,44 @@ class ProcessText():
 			matched = False
 			if product_model and (product_model == model2):
 				matched = True
-				#sys.stderr.write("\nMATCHED1:" + " model1: " + str(product_model) + " model2: " + str(model2))
+				sys.stderr.write("\nMATCHED1:" + " model1: " + str(product_model) + " model2: " + str(model2))
 			elif (model2 and ProcessText.alt_modelnr(product_model) == model2):
 				matched = True
-				#sys.stderr.write("\nMATCHED2:" + " model1: " + str(ProcessText.alt_modelnr(product_model)) + " model2: " + str(model2))
+				sys.stderr.write("\nMATCHED2:" + " model1: " + str(ProcessText.alt_modelnr(product_model)) + " model2: " + str(model2))
 			elif (product_model and product_model == ProcessText.alt_modelnr(model2)):
 				matched = True
-				#sys.stderr.write("\nMATCHED3:" + " model1: " + str(product_model) + " model2: " + str(ProcessText.alt_modelnr(model2)))
+				sys.stderr.write("\nMATCHED3:" + " model1: " + str(product_model) + " model2: " + str(ProcessText.alt_modelnr(model2)))
 			elif ProcessText.alt_modelnr(product_model) and (ProcessText.alt_modelnr(product_model) == ProcessText.alt_modelnr(model2)):
 				matched = True
-				#sys.stderr.write("\nMATCHED4:" + " model1: " + product_model + ", " + str(ProcessText.alt_modelnr(product_model)) + " model2: " + str(ProcessText.alt_modelnr(model2)))
+				sys.stderr.write("\nMATCHED4:" + " model1: " + product_model + ", " + str(ProcessText.alt_modelnr(product_model)) + " model2: " + str(ProcessText.alt_modelnr(model2)))
 			elif product_model in words2:
 				matched = True
-				#sys.stderr.write("\nMATCHED5:" + " model1: " + str(product_model) + " words2: " + str(words2))
+				sys.stderr.write("\nMATCHED5:" + " model1: " + str(product_model) + " words2: " + str(words2))
 			elif ProcessText.alt_modelnr(product_model) in words2:
 				matched = True
-				#sys.stderr.write("\nMATCHED6:" + " model1: " + str(ProcessText.alt_modelnr(product_model)) + " words2: " + str(words2))
+				sys.stderr.write("\nMATCHED6:" + " model1: " + str(ProcessText.alt_modelnr(product_model)) + " words2: " + str(words2))
 			elif product_model in alt_words2:
 				matched = True
-				#sys.stderr.write("\nMATCHED7:" + " model1: " + str(product_model) + " words2: " + str(alt_words2))
+				sys.stderr.write("\nMATCHED7:" + " model1: " + str(product_model) + " words2: " + str(alt_words2))
 			elif ProcessText.alt_modelnr(product_model) in alt_words2:
 				matched = True
-				#sys.stderr.write("\nMATCHED8:" + " model1: " + str(ProcessText.alt_modelnr(product_model)) + " words2: " + str(alt_words2))
+				sys.stderr.write("\nMATCHED8:" + " model1: " + str(ProcessText.alt_modelnr(product_model)) + " words2: " + str(alt_words2))
 			elif model2 in words1:
 				matched = True
-				#sys.stderr.write("\nMATCHED9:" + " model2: " + str(model2) + " words1: " + str(words1))
+				sys.stderr.write("\nMATCHED9:" + " model2: " + str(model2) + " words1: " + str(words1))
 			elif ProcessText.alt_modelnr(model2) in words1:
 				matched = True
-				#sys.stderr.write("\nMATCHED10:" + " model2: " + str(ProcessText.alt_modelnr(model2)) + " words1: " + str(words1))
+				sys.stderr.write("\nMATCHED10:" + " model2: " + str(ProcessText.alt_modelnr(model2)) + " words1: " + str(words1))
 			elif model2 in alt_words1:
 				matched = True
-				#sys.stderr.write("\nMATCHED11:" + " model2: " + str(model2) + " words1: " + str(alt_words1))
+				sys.stderr.write("\nMATCHED11:" + " model2: " + str(model2) + " words1: " + str(alt_words1))
 			elif ProcessText.alt_modelnr(model2) in alt_words1:
 				matched = True
-				#sys.stderr.write("\nMATCHED12:" + " model2: " + str(ProcessText.alt_model(model2)) + " words1: " + str(alt_words1))
+				sys.stderr.write("\nMATCHED12:" + " model2: " + str(ProcessText.alt_model(model2)) + " words1: " + str(alt_words1))
 
 			else:
 				pass
-				#sys.stderr.write("\nNOT MATCHED:" + "model1: " + str(product_model) + " model2: " + str(model2) + " words1: " + str(words1) + " words2: " + str(words2))
+				sys.stderr.write("\nNOT MATCHED:" + "model1: " + str(product_model) + " model2: " + str(model2) + " words1: " + str(words1) + " words2: " + str(words2))
 
 			if matched:
 				score += MODEL_MATCH_WEIGHT
@@ -772,12 +772,11 @@ class ProcessText():
 		# assume this is the model number and assign it a higher weight
 		letters = len(re.findall("[a-zA-Z]", word))
 		numbers = len(re.findall("[0-9]", word))
-		nonwords = len(re.findall("\W", word))
-		
 
-		#if letters > 1 and numbers > 1 and nonwords==0 \
-		#TODO: check
-		if (letters + numbers > 2) and nonwords==0 \
+		# some models on bestbuy have a - . but check (was not tested)
+		nonwords = len(re.findall("[^\w-]", word))
+		
+		if ((letters > 1 and numbers > 1) or numbers > 3) and nonwords==0 \
 		and not word.endswith("in") and not word.endswith("inch") and not word.endswith("hz"):
 			return True
 
