@@ -783,9 +783,11 @@ class Imported_data_parsed_model extends CI_Model {
     function getByImId($im_data_id) {
         $f_res = array();
         $this->db->select('imported_data_id, key, value');
-        $this->db->where('imported_data_id', $im_data_id)->where("revision = (SELECT  MAX(revision) as revision
-                      FROM imported_data_parsed WHERE `imported_data_id`= $im_data_id
-                      GROUP BY imported_data_id)", NULL, FALSE);
+        $this->db->where('imported_data_id', $im_data_id)
+//                ->where("revision = (SELECT  MAX(revision) as revision
+//                      FROM imported_data_parsed WHERE `imported_data_id`= $im_data_id
+//                      GROUP BY imported_data_id)", NULL, FALSE)
+                ;
         $query = $this->db->get($this->tables['imported_data_parsed']);
         $results = $query->result();
         $data = array('url' => '', 'product_name' => '', 'description' => '', 'long_description' => '');
@@ -980,9 +982,9 @@ class Imported_data_parsed_model extends CI_Model {
     function do_stats_new_test($id) {
         $this->db->select('p.imported_data_id, p.key, p.value, p.revision')
                 ->from($this->tables['imported_data_parsed'] . ' as p')
-                ->where('p.revision = (SELECT  MAX(revision) as revision
-                      FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
-                      GROUP BY imported_data_id)', NULL, FALSE)
+//                ->where('p.revision = (SELECT  MAX(revision) as revision
+//                      FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
+//                      GROUP BY imported_data_id)', NULL, FALSE)
                 ->where('p.imported_data_id', $id);
         $query = $this->db->get();
         $res = $query->result();
@@ -1035,8 +1037,9 @@ class Imported_data_parsed_model extends CI_Model {
        FROM `imported_data_parsed` AS `p`
        LEFT JOIN `statistics_new` AS sn ON `p`.`imported_data_id` = sn.`imported_data_id`
        WHERE `key`= 'URL' AND
-       `p`.`revision` = (SELECT  MAX(idp.revision) AS revision FROM imported_data_parsed AS idp WHERE `p`.`imported_data_id`= idp.`imported_data_id`) AND
        (`p`.`revision` != sn.`revision` OR `sn`.`revision` IS NULL)  LIMIT 50");
+//       `p`.`revision` = (SELECT  MAX(idp.revision) AS revision FROM imported_data_parsed AS idp WHERE `p`.`imported_data_id`= idp.`imported_data_id`) AND
+//       (`p`.`revision` != sn.`revision` OR `sn`.`revision` IS NULL)  LIMIT 50");
         $rows = $query->result_array();
         $ids = array();
         foreach ($rows as $row) {
@@ -1048,9 +1051,9 @@ class Imported_data_parsed_model extends CI_Model {
             $this->db->select('p.imported_data_id, p.key, p.value, p.revision')
                     ->from($this->tables['imported_data_parsed'] . ' as p')
                     ->where('p.imported_data_id', $id)
-                    ->where("p.revision = (SELECT  MAX(revision) as revision
-                      FROM imported_data_parsed WHERE `imported_data_id`= $id
-                      )", NULL, FALSE)
+//                    ->where("p.revision = (SELECT  MAX(revision) as revision
+//                      FROM imported_data_parsed WHERE `imported_data_id`= $id
+//                      )", NULL, FALSE)
             ;
             $query = $this->db->get();
             $res = $query->result();
@@ -1062,27 +1065,62 @@ class Imported_data_parsed_model extends CI_Model {
             $features = '';
             foreach ($res as $val) {
                 $revision = $val->revision;
+                //*
+                switch ($val->key){
+                    case 'URL': $url = $val->value; break;
+                    case 'Description': $description = $val->value; break;
+                    case 'Long_Description': $long_description = $val->value; break;
+                    case 'parsed_attributes': $parsed_attributes = $val->value; break;
+                    case 'Product Name': $product_name = $val->value; break;
+                    case 'Features': $features = $val->value; break;
+                }//*/
+                
+                /*
                 if ($val->key == 'URL') {
                     $url = $val->value;
                 }
-                if ($val->key == 'Description') {
+                elseif ($val->key == 'Description') {
                     $description = $val->value;
                 }
-                if ($val->key == 'Long_Description') {
+                elseif ($val->key == 'Long_Description') {
                     $long_description = $val->value;
                 }
-                if ($val->key === 'parsed_attributes') {
+                elseif ($val->key === 'parsed_attributes') {
                     $parsed_attributes = unserialize($val->value);
                 }
-                if ($val->key == 'Product Name') {
+                elseif ($val->key == 'Product Name') {
                     $product_name = $val->value;
                 }
-                if ($val->key == 'Features') {
+                elseif ($val->key == 'Features') {
                     $features = $val->value;
-                }
+                }//*/
             }
             array_push($data, (object) array('imported_data_id' => $id,
-                        'description' => $description, 'long_description' => $long_description, 'url' => $url, 'product_name' => $product_name, 'features' => $features, 'parsed_attributes' => $parsed_attributes, 'revision' => $revision));
+                        'description' => $description, 
+                'long_description' => $long_description, 
+                'url' => $url, 'product_name' => $product_name, 
+                'features' => $features, 
+                'parsed_attributes' => $parsed_attributes, 
+                'revision' => $revision));
+
+//            $res = $query->result();
+//            $arrayMap =array(     
+//                'URL' => 'url',
+//                'Description' => 'description',
+//                'Long_Description' => 'long_description',
+//                'parsed_attributes' => 'parsed_attributes',
+//                'Product Name' => 'product_name',
+//                'Features' => 'features', 
+//            );
+//            foreach ($res as $val) {
+//                if(isset($val->value) and isset($arrayMap[$val->key]))
+//                {
+//                    $newData[$arrayMap[$val->key]] = $val->value; 
+//                }
+//            }
+//            $newData['imported_data_id']=$res[0]->imported_data_id;
+//            $newData['parsed_attributes']=unserialize($newData['parsed_attributes']);
+//            array_push($data, (object) $newData);
         }
 
         return $data;
@@ -1134,9 +1172,9 @@ class Imported_data_parsed_model extends CI_Model {
 
             $this->db->select('p.imported_data_id, p.key, p.value, p.revision')
                     ->from($this->tables['imported_data_parsed'] . ' as p')
-                    ->where('p.revision = (SELECT  MAX(revision) as revision
-                      FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
-                      GROUP BY imported_data_id)', NULL, FALSE)
+//                    ->where('p.revision = (SELECT  MAX(revision) as revision
+//                      FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
+//                      GROUP BY imported_data_id)', NULL, FALSE)
                     ->where('p.imported_data_id', $result->imported_data_id);
             $query = $this->db->get();
             $res = $query->result();
@@ -1148,24 +1186,32 @@ class Imported_data_parsed_model extends CI_Model {
             $features = '';
             foreach ($res as $val) {
                 $revision = $val->revision;
-                if ($val->key == 'URL') {
-                    $url = $val->value;
+                switch ($val->key){
+                    case 'URL' : $url = $val->value; break;
+                    case 'Description' : $description = $val->value; break;
+                    case 'Long_Description' : $long_description = $val->value; break;
+                    case 'parsed_attributes' : $parsed_attributes = unserialize($val->value); break;
+                    case 'Product Name' : $product_name = $val->value; break;
+                    case 'Features' : $features = $val->value; break;
                 }
-                if ($val->key == 'Description') {
-                    $description = $val->value;
-                }
-                if ($val->key == 'Long_Description') {
-                    $long_description = $val->value;
-                }
-                if ($val->key === 'parsed_attributes') {
-                    $parsed_attributes = unserialize($val->value);
-                }
-                if ($val->key == 'Product Name') {
-                    $product_name = $val->value;
-                }
-                if ($val->key == 'Features') {
-                    $features = $val->value;
-                }
+//                if ($val->key == 'URL') {
+//                    $url = $val->value;
+//                }
+//                if ($val->key == 'Description') {
+//                    $description = $val->value;
+//                }
+//                if ($val->key == 'Long_Description') {
+//                    $long_description = $val->value;
+//                }
+//                if ($val->key === 'parsed_attributes') {
+//                    $parsed_attributes = unserialize($val->value);
+//                }
+//                if ($val->key == 'Product Name') {
+//                    $product_name = $val->value;
+//                }
+//                if ($val->key == 'Features') {
+//                    $features = $val->value;
+//                }
             }
             array_push($data, (object) array('imported_data_id' => $result->imported_data_id,
                         'description' => $description, 'long_description' => $long_description, 'url' => $url, 'product_name' => $product_name, 'features' => $features, 'parsed_attributes' => $parsed_attributes, 'revision' => $revision));
@@ -1196,9 +1242,10 @@ class Imported_data_parsed_model extends CI_Model {
                 ->from($this->tables['imported_data_parsed'] . ' as p')
                 ->join($this->tables['imported_data'] . ' as i', 'i.id = p.imported_data_id', 'left')
                 ->where('p.key', 'Product name')
-                ->where('`p`.`revision` = (SELECT  MAX(revision) as revision
-                      FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
-                      GROUP BY imported_data_id)', NULL, FALSE);
+//                ->where('`p`.`revision` = (SELECT  MAX(revision) as revision
+//                      FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
+//                      GROUP BY imported_data_id)', NULL, FALSE)
+                ;
 
 
         $value1 = $this->db->escape($value . '%');
@@ -1212,31 +1259,40 @@ class Imported_data_parsed_model extends CI_Model {
         $data = array();
         foreach ($results as $result) {
 
-            $query = $this->db->where('imported_data_id', $result->imported_data_id)->where("revision = (SELECT  MAX(revision) as revision
-                      FROM imported_data_parsed WHERE `imported_data_id`= $result->imported_data_id
-                      GROUP BY imported_data_id)", NULL, FALSE)->get($this->tables['imported_data_parsed']);
+            $query = $this->db->where('imported_data_id', $result->imported_data_id)
+//                    ->where("revision = (SELECT  MAX(revision) as revision
+//                      FROM imported_data_parsed WHERE `imported_data_id`= $result->imported_data_id
+//                      GROUP BY imported_data_id)", NULL, FALSE)
+                    ->get($this->tables['imported_data_parsed']);
             $res = $query->result_array();
             $description = '';
             $long_description = '';
             $url = '';
             $features = '';
             foreach ($res as $val) {
-                if ($val['key'] == 'URL') {
-                    $url = $val['value'];
+                switch ($val['key']){
+                    case 'URL' : $url = $val['value'];break;
+                    case 'Description' :  $description = $val['value'];break;
+                    case 'Long_Description' : $long_description = $val['value'];break;
+                    case 'Product Name' : $product_name = $val['value'];break;
+                    case 'Features' : $features = $val['value'];break;
                 }
-                if ($val['key'] == 'Description') {
-                    $description = $val['value'];
-                }
-                if ($val['key'] == 'Long_Description') {
-                    $long_description = $val['value'];
-                }
-
-                if ($val['key'] == 'Product Name') {
-                    $product_name = $val['value'];
-                }
-                if ($val['key'] == 'Features') {
-                    $features = $val['value'];
-                }
+//                if ($val['key'] == 'URL') {
+//                    $url = $val['value'];
+//                }
+//                if ($val['key'] == 'Description') {
+//                    $description = $val['value'];
+//                }
+//                if ($val['key'] == 'Long_Description') {
+//                    $long_description = $val['value'];
+//                }
+//
+//                if ($val['key'] == 'Product Name') {
+//                    $product_name = $val['value'];
+//                }
+//                if ($val['key'] == 'Features') {
+//                    $features = $val['value'];
+//                }
             }
             array_push($data, array('imported_data_id' => $result->imported_data_id, 'product_name' => $result->value,
                 'description' => $description, 'long_description' => $long_description, 'url' => $url, 'product_name' => $product_name, 'features' => $features));
@@ -1283,9 +1339,10 @@ class Imported_data_parsed_model extends CI_Model {
                 ->from($this->tables['imported_data_parsed'] . ' as p')
                 ->join($this->tables['imported_data'] . ' as i', 'i.id = p.imported_data_id', 'left')
                 ->where('p.key', $key)
-                ->where('`p`.`revision` = (SELECT  MAX(revision) as revision
-                      FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
-                      GROUP BY imported_data_id)', NULL, FALSE);
+//                ->where('`p`.`revision` = (SELECT  MAX(revision) as revision
+//                      FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
+//                      GROUP BY imported_data_id)', NULL, FALSE)
+                ;
 
         if ($key == 'parsed_attributes') {
             $value1 = $this->db->escape($value . '%');
@@ -1318,9 +1375,11 @@ class Imported_data_parsed_model extends CI_Model {
         $data = array();
         foreach ($results as $result) {
 
-            $query = $this->db->where('imported_data_id', $result->imported_data_id)->where("revision = (SELECT  MAX(revision) as revision
-                      FROM imported_data_parsed WHERE `imported_data_id`= $result->imported_data_id
-                      GROUP BY imported_data_id)", NULL, FALSE)->get($this->tables['imported_data_parsed']);
+            $query = $this->db->where('imported_data_id', $result->imported_data_id)
+//                    ->where("revision = (SELECT  MAX(revision) as revision
+//                      FROM imported_data_parsed WHERE `imported_data_id`= $result->imported_data_id
+//                      GROUP BY imported_data_id)", NULL, FALSE)
+                    ->get($this->tables['imported_data_parsed']);
             $res = $query->result_array();
             $description = '';
             $long_description = '';
@@ -1914,9 +1973,10 @@ class Imported_data_parsed_model extends CI_Model {
                 ->where('p.key', 'Product Name')
                 ->or_where('p.key', 'parsed_attributes')
                 ->or_where('p.key', 'URL')
-                ->where('p.revision = (SELECT  MAX(revision) as revision
-                      FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
-                      GROUP BY imported_data_id)', NULL, FALSE);
+//                ->where('p.revision = (SELECT  MAX(revision) as revision
+//                      FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
+//                      GROUP BY imported_data_id)', NULL, FALSE)
+                ;
 
         $query = $this->db->get();
         $results = $query->result();
@@ -1958,9 +2018,10 @@ class Imported_data_parsed_model extends CI_Model {
                 ->where('p.key', 'Product Name')
                 ->or_where('p.key', 'parsed_attributes')
                 ->or_where('p.key', 'URL')
-                ->where('p.revision = (SELECT  MAX(revision) as revision
-                      FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
-                      GROUP BY imported_data_id)', NULL, FALSE);
+//                ->where('p.revision = (SELECT  MAX(revision) as revision
+//                      FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
+//                      GROUP BY imported_data_id)', NULL, FALSE)
+                ;
 
         $query = $this->db->get();
         $results = $query->result();
@@ -2070,9 +2131,12 @@ class Imported_data_parsed_model extends CI_Model {
     }
 
     function insert_custom_model($imported_data_id, $model = null) {
-        $this->db->where('imported_data_id', $imported_data_id)->where('key', 'parsed_attributes')->like('value', 'model')->where("revision = (SELECT  MAX(revision) as revision
-                      FROM imported_data_parsed WHERE `imported_data_id`= $imported_data_id
-                      GROUP BY imported_data_id)", NULL, FALSE)->where('`model` IS NOT NULL', null, false);
+        $this->db->where('imported_data_id', $imported_data_id)
+                ->where('key', 'parsed_attributes')->like('value', 'model')
+//                ->where("revision = (SELECT  MAX(revision) as revision
+//                      FROM imported_data_parsed WHERE `imported_data_id`= $imported_data_id
+//                      GROUP BY imported_data_id)", NULL, FALSE)
+                ->where('`model` IS NOT NULL', null, false);
         $query = $this->db->get($this->tables['imported_data_parsed']);
         if ($query->num_rows() <= 0) {
             $this->db->update($this->tables['imported_data_parsed'], array('model' => $model), array('imported_data_id' => $imported_data_id));
@@ -2104,9 +2168,10 @@ class Imported_data_parsed_model extends CI_Model {
         $value1 = $this->db->escape($model . '%');
         $value2 = $this->db->escape($model);
         $this->db->where("`p`.`model` like " . $value1 . " OR INSTR(" . $value2 . ", `p`.`model`)=1", NULL, FALSE)
-                ->where('p.revision = (SELECT  MAX(revision) as revision
-                      FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
-                      GROUP BY imported_data_id)', NULL, FALSE);
+//                ->where('p.revision = (SELECT  MAX(revision) as revision
+//                      FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
+//                      GROUP BY imported_data_id)', NULL, FALSE)
+                ;
 
         $query = $this->db->get();
 
@@ -2123,9 +2188,11 @@ class Imported_data_parsed_model extends CI_Model {
         $leseced_site = '';
         foreach ($im_ids as $imported_data_id) {
 
-            $query = $this->db->where('imported_data_id', $imported_data_id)->where("revision = (SELECT  MAX(revision) as revision
-                      FROM imported_data_parsed WHERE `imported_data_id`= $imported_data_id
-                      GROUP BY imported_data_id)", NULL, FALSE)->get($this->tables['imported_data_parsed']);
+            $query = $this->db->where('imported_data_id', $imported_data_id)
+//                    ->where("revision = (SELECT  MAX(revision) as revision
+//                      FROM imported_data_parsed WHERE `imported_data_id`= $imported_data_id
+//                      GROUP BY imported_data_id)", NULL, FALSE)
+                    ->get($this->tables['imported_data_parsed']);
             $res = $query->result_array();
             $description = '';
             $long_description = '';
@@ -2211,9 +2278,10 @@ class Imported_data_parsed_model extends CI_Model {
                 ->where('p.key', 'parsed_attributes')
                 ->or_where('p.key', 'URL')
                 ->or_where('p.key', 'Product Name')
-                ->where('p.revision = (SELECT  MAX(revision) as revision
-                      FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
-                      GROUP BY imported_data_id)', NULL, FALSE);
+//                ->where('p.revision = (SELECT  MAX(revision) as revision
+//                      FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
+//                      GROUP BY imported_data_id)', NULL, FALSE)
+                ;
         if ($strict) {
             $this->db->like('p.value', '"' . $manufacturer . '"');
         } else {
@@ -2333,9 +2401,11 @@ class Imported_data_parsed_model extends CI_Model {
         $all_items = array_unique($all_items);
         $data1 = array();
         foreach ($all_items as $result) {
-            $query = $this->db->where('imported_data_id', $result)->where("revision = (SELECT  MAX(revision) as revision
-                      FROM imported_data_parsed WHERE `imported_data_id`= $result
-                      GROUP BY imported_data_id)", NULL, FALSE)->get($this->tables['imported_data_parsed']);
+            $query = $this->db->where('imported_data_id', $result)
+//                    ->where("revision = (SELECT  MAX(revision) as revision
+//                      FROM imported_data_parsed WHERE `imported_data_id`= $result
+//                      GROUP BY imported_data_id)", NULL, FALSE)
+                    ->get($this->tables['imported_data_parsed']);
             $res = $query->result_array();
             $description = '';
             $long_description = '';
@@ -2421,9 +2491,10 @@ class Imported_data_parsed_model extends CI_Model {
                 ->where('p.key', 'Product Name')
                 ->or_where('p.key', 'parsed_attributes')
                 ->or_where('p.key', 'URL')
-                ->where('p.revision = (SELECT  MAX(revision) as revision
-                      FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
-                      GROUP BY imported_data_id)', NULL, FALSE);
+//                ->where('p.revision = (SELECT  MAX(revision) as revision
+//                      FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
+//                      GROUP BY imported_data_id)', NULL, FALSE)
+                ;
 
 
         if ($strict) {
@@ -2510,9 +2581,11 @@ class Imported_data_parsed_model extends CI_Model {
         $data1 = array();
 
         foreach ($for_groups as $result) {
-            $query = $this->db->where('imported_data_id', $result)->where("revision = (SELECT  MAX(revision) as revision
-                      FROM imported_data_parsed WHERE `imported_data_id`= $result
-                      GROUP BY imported_data_id)", NULL, FALSE)->get($this->tables['imported_data_parsed']);
+            $query = $this->db->where('imported_data_id', $result)
+//                    ->where("revision = (SELECT  MAX(revision) as revision
+//                      FROM imported_data_parsed WHERE `imported_data_id`= $result
+//                      GROUP BY imported_data_id)", NULL, FALSE)
+                    ->get($this->tables['imported_data_parsed']);
             $res = $query->result_array();
             $description = '';
             $long_description = '';
@@ -2622,7 +2695,8 @@ class Imported_data_parsed_model extends CI_Model {
                 }
                 if ($cus_val !== "")
                     $rows[$key]['customer'] = $cus_val;
-                foreach ($rows as $key1 => $row1) {
+                for ($key1 = $key+1;$key1<count($rows); ++$key1) {
+                     $row1 = $rows[$key1];
                     if ($key1 != $key && $this->get_base_url($row['url']) == $this->get_base_url($row1['url'])) {
                         unset($rows[$key]);
                     }
@@ -2732,9 +2806,10 @@ class Imported_data_parsed_model extends CI_Model {
                 ->where('p.key', 'Product Name')
                 ->or_where('p.key', 'parsed_attributes')
                 ->or_where('p.key', 'URL')
-                ->where('p.revision = (SELECT  MAX(revision) as revision
-                      FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
-                      GROUP BY imported_data_id)', NULL, FALSE);
+//                ->where('p.revision = (SELECT  MAX(revision) as revision
+//                      FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
+//                      GROUP BY imported_data_id)', NULL, FALSE)
+                ;
 
         $query = $this->db->get();
         $results = $query->result();
