@@ -663,10 +663,10 @@ class System extends MY_Controller {
       		$text = "";
       		$department_url = "";
       		$description_title = "";
-      		$keyword_count = null;
+      		$keyword_count = "";
       		$description_wc  = 0;
       		$description_text = "";
-      		$keyword_density = null;
+      		$keyword_density = "";
       		$nr_products = 0;
       		$parent_url = "";
       		$parent_text = "";
