@@ -449,6 +449,7 @@ class SearchSpider(BaseSpider):
 				# product page from source site
 				request.meta['origin_url'] = response.meta['origin_url']
 				request.meta['origin_name'] = response.meta['origin_name']
+				request.meta['origin_model'] = response.meta['origin_model']
 
 				return request
 
