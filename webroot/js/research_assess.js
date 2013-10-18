@@ -711,7 +711,7 @@ $(function () {
                 id: 'assessDetailsDialog_btnIncludeInReport'
             }
         },
-        width: 850
+        width: '850px'
     });
 
     $('#assessDetailsDialog input[type="text"], textarea').bind({
