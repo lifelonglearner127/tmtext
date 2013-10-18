@@ -390,6 +390,10 @@ class SearchSpider(BaseSpider):
 				if 'origin_url' in response.meta:
 					item['origin_url'] = response.meta['origin_url']
 
+				model_holder = result.select("parent::node()/parent::node()//strong[@itemprop='model']/text()")
+				if model_holder:
+					item['product_number'] = model_holder.extract()[0]
+
 				items.append(item)
 
 
@@ -634,8 +638,12 @@ class ProcessText():
 			if product_model == model2 or ProcessText.alt_modelnr(product_model) == model2 or product_model == ProcessText.alt_modelnr(model2) or ProcessText.alt_modelnr(product_model) == ProcessText.alt_modelnr(model2) or \
 				product_model in words2 or ProcessText.alt_modelnr(product_model) in words2 or product_model in alt_words2 or ProcessText.alt_modelnr(model1) in words2 or \
 				model2 in words1 or ProcessText.alt_modelnr(model2) in words1 or model2 in alt_words1 or ProcessText.alt_modelnr(model2) in words1:
+					sys.stderr.write("MATCHED:\n" + "model1: " + str(product_model) + " model2: " + str(model2) + " words1: " + str(words1) + " words2: " + str(words2))
 
 					score += MODEL_MATCH_WEIGHT
+
+			else:
+				sys.stderr.write("NOT MATCHED:\n" + "model1: " + str(product_model) + " model2: " + str(model2) + " words1: " + str(words1) + " words2: " + str(words2))
 
 
 

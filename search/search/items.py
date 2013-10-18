@@ -6,4 +6,5 @@ class SearchItem(Item):
     product_name = Field() # name of the search result product
     site = Field() # site result was found on
     product_url = Field() # url of result product page
+    product_number = Field() # product number of product as extracted from its page or the results page (if found somewhere other that inside its name)
     origin_url = Field() # original product url
