@@ -42,6 +42,7 @@
 				  	if($k != 0) $item_lm = " board_item_ml";
 				  ?>
 					<div class="board_item red_border_cl<?php echo $item_lm; ?>">
+						<div class='board_item_dicon'><img src="<?php echo base_url() ?>/img/diagramm_high.png"></div>
 						<input type='hidden' name='dm_id' value="<?php echo $v['id'] ?>">
 						<p class='board_item_title st'><?php echo $v['text']; ?></p>
                         <?php $handle = @fopen($v['snap'],'r');
@@ -75,6 +76,7 @@
 				  	if($k != 0) $item_lm = " board_item_ml";
 				  ?>
 					<div class="board_item <?php echo $item_lm; ?>">
+						<div class='board_item_dicon'><img src="<?php echo base_url() ?>/img/diagramm_low.png"></div>
 						<input type='hidden' name='dm_id' value="<?php echo $v['id'] ?>">
 						<p class='board_item_title st'><?php echo $v['text']; ?></p>
                         <?php $handle = @fopen($v['snap'],'r');
