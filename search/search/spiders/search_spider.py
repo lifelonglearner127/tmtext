@@ -640,15 +640,50 @@ class ProcessText():
 			# add to the score if their model numbers match
 			# check if the product models are the same, or if they are included in the other product's name
 			# for the original product models, as well as for the alternative ones, and alternative product names
-			if product_model == model2 or ProcessText.alt_modelnr(product_model) == model2 or product_model == ProcessText.alt_modelnr(model2) or (product_model and ProcessText.alt_modelnr(product_model) == ProcessText.alt_modelnr(model2)) or \
-				product_model in words2 or ProcessText.alt_modelnr(product_model) in words2 or product_model in alt_words2 or ProcessText.alt_modelnr(product_model) in alt_words2 or \
-				model2 in words1 or ProcessText.alt_modelnr(model2) in words1 or model2 in alt_words1 or ProcessText.alt_modelnr(model2) in words1:
-					sys.stderr.write("MATCHED:\n" + "model1: " + str(product_model) + " model2: " + str(model2) + " words1: " + str(words1) + " words2: " + str(words2))
-
-					score += MODEL_MATCH_WEIGHT
+			matched = False
+			if product_model and (product_model == model2):
+				matched = True
+				sys.stderr.write("\nMATCHED1:" + " model1: " + str(product_model) + " model2: " + str(model2))
+			elif (model2 and ProcessText.alt_modelnr(product_model) == model2):
+				matched = True
+				#sys.stderr.write("\nMATCHED2:" + " model1: " + str(ProcessText.alt_modelnr(product_model)) + " model2: " + str(model2))
+			elif (product_model and product_model == ProcessText.alt_modelnr(model2)):
+				matched = True
+				#sys.stderr.write("\nMATCHED3:" + " model1: " + str(product_model) + " model2: " + str(ProcessText.alt_modelnr(model2)))
+			elif ProcessText.alt_modelnr(product_model) and (ProcessText.alt_modelnr(product_model) == ProcessText.alt_modelnr(model2)):
+				matched = True
+				#sys.stderr.write("\nMATCHED4:" + " model1: " + product_model + ", " + str(ProcessText.alt_modelnr(product_model)) + " model2: " + str(ProcessText.alt_modelnr(model2)))
+			elif product_model in words2:
+				matched = True
+				#sys.stderr.write("\nMATCHED5:" + " model1: " + str(product_model) + " words2: " + str(words2))
+			elif ProcessText.alt_modelnr(product_model) in words2:
+				matched = True
+				#sys.stderr.write("\nMATCHED6:" + " model1: " + str(ProcessText.alt_modelnr(product_model)) + " words2: " + str(words2))
+			elif product_model in alt_words2:
+				matched = True
+				#sys.stderr.write("\nMATCHED7:" + " model1: " + str(product_model) + " words2: " + str(alt_words2))
+			elif ProcessText.alt_modelnr(product_model) in alt_words2:
+				matched = True
+				#sys.stderr.write("\nMATCHED8:" + " model1: " + str(ProcessText.alt_modelnr(product_model)) + " words2: " + str(alt_words2))
+			elif model2 in words1:
+				matched = True
+				#sys.stderr.write("\nMATCHED9:" + " model2: " + str(model2) + " words1: " + str(words1))
+			elif ProcessText.alt_modelnr(model2) in words1:
+				matched = True
+				#sys.stderr.write("\nMATCHED10:" + " model2: " + str(ProcessText.alt_modelnr(model2)) + " words1: " + str(words1))
+			elif model2 in alt_words1:
+				matched = True
+				#sys.stderr.write("\nMATCHED11:" + " model2: " + str(model2) + " words1: " + str(alt_words1))
+			elif ProcessText.alt_modelnr(model2) in alt_words1:
+				matched = True
+				#sys.stderr.write("\nMATCHED12:" + " model2: " + str(ProcessText.alt_model(model2)) + " words1: " + str(alt_words1))
 
 			else:
-				sys.stderr.write("NOT MATCHED:\n" + "model1: " + str(product_model) + " model2: " + str(model2) + " words1: " + str(words1) + " words2: " + str(words2))
+				pass
+				#sys.stderr.write("\nNOT MATCHED:" + "model1: " + str(product_model) + " model2: " + str(model2) + " words1: " + str(words1) + " words2: " + str(words2))
+
+			if matched:
+				score += MODEL_MATCH_WEIGHT
 
 
 
@@ -729,6 +764,7 @@ class ProcessText():
 		return 1
 
 	# check if word is a likely candidate to represent a model number
+	#Obs: currently finding years as model numbers (1951 will return True)
 	@staticmethod
 	def is_model_number(word):
 
