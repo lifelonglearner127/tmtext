@@ -52,8 +52,8 @@ $active_group = 'default';
 $active_record = TRUE;
 
 $db['default']['hostname'] = 'localhost';
-$db['default']['username'] = 'root';
-$db['default']['password'] = '';
+$db['default']['username'] = 'admin';
+$db['default']['password'] = 'admin';
 $db['default']['database'] = 'c38_devtrillionmonkeyscom';
 $db['default']['dbdriver'] = 'mysql';
 $db['default']['dbprefix'] = '';

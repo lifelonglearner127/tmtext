@@ -95,6 +95,7 @@ class Research_data_model extends CI_Model {
             $description = '';
             $long_description = '';
             $url = '';
+            $features=0;
             foreach($res as $val){
                 if($val['key'] == 'URL'){ $url = $val['value']; }
                 if($val['key'] == 'Description'){ $description = $val['value']; }
