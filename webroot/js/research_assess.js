@@ -299,7 +299,7 @@ $(function () {
     $('#tblAssess_length').after($('#assess_tbl_show_case'));
     $('#assess_tbl_show_case a').on('click', function(event) {
         event.preventDefault();
-        if($(this).text()=='Details'){
+        if($(this).text()=='Details' || $(this).text()=='Compare' ){
             $('#research_batches_columns').show();
         } else {
             $('#research_batches_columns').hide();
@@ -1192,6 +1192,8 @@ $(function () {
     function hideColumns() {
         var table_case = $('#assess_tbl_show_case a[class=active_link]').data('case');
         var columns_checkboxes = $('#research_assess_choiceColumnDialog').find('input[type=checkbox]:checked');
+        console.log('columns_checkboxes=');
+        console.log(columns_checkboxes);
         var columns_checkboxes_checked = [];
         $.each(columns_checkboxes, function(index, value) {
             columns_checkboxes_checked.push($(value).data('col_name'));
@@ -1227,7 +1229,8 @@ $(function () {
            
             reportPanel(false);
             $.each(tblAllColumns, function(index, value) {
-                if ($.inArray(value, tableCase.details_compare) > -1) {
+                value = value.replace("1", "");
+                if ($.inArray(value, tableCase.details_compare) > -1 && $.inArray(value, columns_checkboxes_checked) > -1 || $.inArray(value, columns_checkboxes_checked) > -1) {
                     tblAssess.fnSetColumnVis(index, true, false);
                 }
                 else {
