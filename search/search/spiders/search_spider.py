@@ -616,26 +616,6 @@ class ProcessText():
 			alt_words1 = ProcessText.name_with_alt_modelnr(words1)
 			alt_words2 = ProcessText.name_with_alt_modelnr(words2)
 
-			if alt_words1:
-				# compute weights differently if we used alternative model numbers
-				(score1, threshold1) = ProcessText.similar_names(spider, alt_words1, words2, param, altModels=True)
-				if score1 > score:
-					(score, threshold) = (score1, threshold1)
-
-			if (alt_words1 and alt_words2):
-				(score2, threshold2) = ProcessText.similar_names(spider, alt_words1, alt_words2, param, altModels=True)
-				if score2 > score:
-					(score, threshold) = (score2, threshold2)
-
-			if alt_words2:
-				(score3, threshold3) = ProcessText.similar_names(spider, words1, alt_words2, param, altModels=True)
-				if score3 > score:
-					(score, threshold) = (score3, threshold3)
-			
-			if score >= threshold:
-				products_found.append((product2, score))
-
-
 			MODEL_MATCH_WEIGHT = 7
 			# add to the score if their model numbers match
 			# check if the product models are the same, or if they are included in the other product's name
@@ -682,6 +662,28 @@ class ProcessText():
 				pass
 				sys.stderr.write("\nNOT MATCHED:" + "model1: " + str(product_model) + " model2: " + str(model2) + " words1: " + str(words1) + " words2: " + str(words2))
 
+
+			if alt_words1:
+				# compute weights differently if we used alternative model numbers
+				(score1, threshold1) = ProcessText.similar_names(spider, alt_words1, words2, param, altModels=True)
+				if score1 > score:
+					(score, threshold) = (score1, threshold1)
+
+			if (alt_words1 and alt_words2):
+				(score2, threshold2) = ProcessText.similar_names(spider, alt_words1, alt_words2, param, altModels=True)
+				if score2 > score:
+					(score, threshold) = (score2, threshold2)
+
+			if alt_words2:
+				(score3, threshold3) = ProcessText.similar_names(spider, words1, alt_words2, param, altModels=True)
+				if score3 > score:
+					(score, threshold) = (score3, threshold3)
+			
+			if score >= threshold:
+				products_found.append((product2, score))
+
+
+			
 			if matched:
 				score += MODEL_MATCH_WEIGHT
 
