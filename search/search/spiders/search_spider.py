@@ -130,7 +130,8 @@ class SearchSpider(BaseSpider):
 				request.meta['dont_redirect'] = True
 			yield request
 
-	# parse a product page (given its URL) and extract product's name
+	# parse a product page (given its URL) and extract product's name;
+	# create queries to search by (use model name, model number, and combinations of words from model name), then send them to parseResults
 	def parseURL(self, response):
 
 		site = response.meta['site']
@@ -182,10 +183,9 @@ class SearchSpider(BaseSpider):
 			page1 = search_pages1[self.target_site]
 			request1 = Request(page1, callback = self.parseResults, cookies=cookies)
 
-			#TODO: add query with model number and product name? that could narrow the results and make it faster. though it could also ommit some
+			#TODO: add query with model number and part of product name? that could narrow the results and make it faster. though it could also ommit some
 
 
-			#DEBUG
 			request1.meta['query'] = query1
 
 			##print "QUERY (MODEL)", query1
@@ -200,7 +200,6 @@ class SearchSpider(BaseSpider):
 		request2 = Request(page2, callback = self.parseResults, cookies=cookies)
 
 
-		#DEBUG
 		request2.meta['query'] = query2
 
 		##print "QUERY (PRODUCT)", query2
@@ -223,7 +222,6 @@ class SearchSpider(BaseSpider):
 			request3 = Request(page3, callback = self.parseResults, cookies=cookies)
 
 
-			#DEBUG
 			request3.meta['query'] = query3
 
 
@@ -235,8 +233,8 @@ class SearchSpider(BaseSpider):
 		# product page from source site
 		request.meta['origin_url'] = response.url
 
-		# include model in product name (if it was not there)
-		request.meta['origin_name'] = product_name + " " + product_model
+		request.meta['origin_name'] = product_name
+		request.meta['origin_model'] = product_model
 
 		yield request
 
@@ -258,6 +256,7 @@ class SearchSpider(BaseSpider):
 
 		site = response.meta['site']
 		origin_name = response.meta['origin_name']
+		origin_model = response.meta['origin_model']
 
 		# if this comes from a previous request, get last request's items and add to them the results
 
@@ -422,7 +421,7 @@ class SearchSpider(BaseSpider):
 
 
 		#print stuff
-		self.log("PRODUCT: " + response.meta['origin_name'].encode("utf-8"), level="INFO")
+		self.log("PRODUCT: " + response.meta['origin_name'].encode("utf-8") + " MODEL: " + response.meta['origin_model'].encode("utf-8"), level="INFO")
 		#print 
 		self.log( "QUERY: " + response.meta['query'], level="INFO")
 		self.log( "MATCHES: ", level="INFO")
@@ -457,7 +456,7 @@ class SearchSpider(BaseSpider):
 
 				if items:
 					# from all results, select the product whose name is most similar with the original product's name
-					best_match = ProcessText.similar(self, origin_name, items, self.threshold)
+					best_match = ProcessText.similar(self, origin_name, origin_model, items, self.threshold)
 
 					# #self.log( "ALL MATCHES: ", level="INFO")					
 					# for item in items:
@@ -586,11 +585,12 @@ class ProcessText():
 	# if none is similar enough, return None
 	# arguments:
 	#			product_name - name of target product
+	#			product_model - model number of target product, if available (as extracted from somewhere on the page other than its name)
 	#			products2 - list of product items for products to search through
 	#			param - threshold for accepting a product name as similar or not (float between 0-1)
 	#TODO: import this from match_product, as a library function
 	@staticmethod
-	def similar(spider, product_name, products2, param):
+	def similar(spider, product_name, product_model, products2, param):
 		result = None
 		products_found = []
 		#print "PR2:", len(products2)
@@ -598,6 +598,10 @@ class ProcessText():
 
 			words1 = ProcessText.normalize(product_name)
 			words2 = ProcessText.normalize(product2['product_name'])
+			if 'product_model' in product2:
+				model2 = product2['product_model']
+			else:
+				model2 = None
 
 			(score, threshold) = ProcessText.similar_names(spider, words1, words2, param)
 
@@ -624,6 +628,17 @@ class ProcessText():
 			if score >= threshold:
 				products_found.append((product2, score))
 
+
+			MODEL_MATCH_WEIGHT = 7
+			# add to the score if their model numbers match
+			if product_model == model2 or ProcessText.alt_modelnr(product_model) == model2 or product_model == ProcessText.alt_modelnr(model2) or ProcessText.alt_modelnr(product_model) == ProcessText.alt_modelnr(model2) or \
+				product_model in words2 or ProcessText.alt_modelnr(product_model) in words2 or product_model in alt_words2 or ProcessText.alt_modelnr(model1) in words2 or \
+				model2 in words1 or ProcessText.alt_modelnr(model2) in words1 or model2 in alt_words1 or ProcessText.alt_modelnr(model2) in words1:
+
+					score += MODEL_MATCH_WEIGHT
+
+
+
 		products_found = sorted(products_found, key = lambda x: x[1], reverse = True)
 
 		#TODO: handle ties?
@@ -637,7 +652,7 @@ class ProcessText():
 		return result
 
 
-	# compute similarity for two names given as token lists
+	# compute similarity between two products using their product names given as token lists
 	@staticmethod
 	def similar_names(spider, words1, words2, param, altModels = False):
 		common_words = set(words1).intersection(set(words2))
@@ -647,12 +662,14 @@ class ProcessText():
 		# or if the word looks like a combination of letters and numbers (assumed to be model number)
 		#TODO: update these if they're not relevant for a new category or site
 
+		FIRSTWORD_WEIGHT = 4
+
 		weights_common = []
 		for word in list(common_words):
 
 			# if they share the first word assume it's manufacturer and assign higher weight
 			if word == words1[0] and word == words2[0]:
-				weights_common.append(4)
+				weights_common.append(FIRSTWORD_WEIGHT)
 
 			else:
 				weights_common.append(ProcessText.weight(word, altModels))
@@ -708,7 +725,10 @@ class ProcessText():
 		numbers = len(re.findall("[0-9]", word))
 		nonwords = len(re.findall("\W", word))
 		
-		if letters > 1 and numbers > 1 and nonwords==0 \
+
+		#if letters > 1 and numbers > 1 and nonwords==0 \
+		#TODO: check
+		if (letters + numbers > 2) and nonwords==0 \
 		and not word.endswith("in") and not word.endswith("inch") and not word.endswith("hz"):
 			return True
 
