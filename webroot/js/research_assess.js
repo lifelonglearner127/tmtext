@@ -1228,7 +1228,7 @@ $(function () {
             reportPanel(false);
             $.each(tblAllColumns, function(index, value) {
                 value = value.replace("1", "");
-                if ($.inArray(value, tableCase.details_compare) > -1 && $.inArray(value, columns_checkboxes_checked) > -1 || $.inArray(value, columns_checkboxes_checked) > -1) {
+                if ($.inArray(value, tableCase.details_compare) > -1 && $.inArray(value, columns_checkboxes_checked) > -1 ) {
                     tblAssess.fnSetColumnVis(index, true, false);
                 }
                 else {
