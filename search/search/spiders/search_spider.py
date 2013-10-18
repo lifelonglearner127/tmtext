@@ -547,6 +547,8 @@ class ProcessText():
 	# (there is are cases like this, for example un32eh5300f)
 	@staticmethod
 	def alt_modelnr(word):
+		if not word:
+			return None
 		m = re.match("(.*[0-9]+)[a-zA-Z]+", word)
 		if m:
 			new_word = m.group(1)
@@ -635,8 +637,10 @@ class ProcessText():
 
 			MODEL_MATCH_WEIGHT = 7
 			# add to the score if their model numbers match
-			if product_model == model2 or ProcessText.alt_modelnr(product_model) == model2 or product_model == ProcessText.alt_modelnr(model2) or ProcessText.alt_modelnr(product_model) == ProcessText.alt_modelnr(model2) or \
-				product_model in words2 or ProcessText.alt_modelnr(product_model) in words2 or product_model in alt_words2 or ProcessText.alt_modelnr(model1) in words2 or \
+			# check if the product models are the same, or if they are included in the other product's name
+			# for the original product models, as well as for the alternative ones, and alternative product names
+			if product_model == model2 or ProcessText.alt_modelnr(product_model) == model2 or product_model == ProcessText.alt_modelnr(model2) or (product_model and ProcessText.alt_modelnr(product_model) == ProcessText.alt_modelnr(model2)) or \
+				product_model in words2 or ProcessText.alt_modelnr(product_model) in words2 or product_model in alt_words2 or ProcessText.alt_modelnr(product_model) in alt_words2 or \
 				model2 in words1 or ProcessText.alt_modelnr(model2) in words1 or model2 in alt_words1 or ProcessText.alt_modelnr(model2) in words1:
 					sys.stderr.write("MATCHED:\n" + "model1: " + str(product_model) + " model2: " + str(model2) + " words1: " + str(words1) + " words2: " + str(words2))
 
