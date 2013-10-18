@@ -968,8 +968,9 @@ class Assess extends MY_Controller {
             $result_row->short_description_wc1='-';
             $result_row->long_description_wc1='-';
             
-            if($row->snap1){
-                $result_row->snap1 = $row->snap1;
+            if($row->snap1 && $row->snap1!=''){
+                $result_row->snap1 = "<img src='".base_url()."webshoots/".$row->snap1."' />";
+                     
             }
             if($row->product_name1){
                 $result_row->product_name1 = $row->product_name1;
