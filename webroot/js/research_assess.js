@@ -1192,8 +1192,6 @@ $(function () {
     function hideColumns() {
         var table_case = $('#assess_tbl_show_case a[class=active_link]').data('case');
         var columns_checkboxes = $('#research_assess_choiceColumnDialog').find('input[type=checkbox]:checked');
-        console.log('columns_checkboxes=');
-        console.log(columns_checkboxes);
         var columns_checkboxes_checked = [];
         $.each(columns_checkboxes, function(index, value) {
             columns_checkboxes_checked.push($(value).data('col_name'));
