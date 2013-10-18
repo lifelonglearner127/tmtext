@@ -1,17 +1,18 @@
-<?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
+<?php
+
+if (!defined('BASEPATH'))
+    exit('No direct script access allowed');
 
 class Assess extends MY_Controller {
 
-    function __construct()
-    {
+    function __construct() {
         parent::__construct();
 
         $this->load->library('form_validation');
         $this->load->library('helpers');
         $this->data['title'] = 'Assess';
 
-        if (!$this->ion_auth->logged_in())
-        {
+        if (!$this->ion_auth->logged_in()) {
             //redirect them to the login page
             redirect('auth/login', 'refresh');
         }
@@ -54,14 +55,15 @@ class Assess extends MY_Controller {
         return $output;
     }
 
-    public function compare(){
-        $arr=array();
-        for($i=1; $i<3; $i++){
-                                   
-           $arr[]= array("sTitle"=>"Snapshot","sName"=>'snap'.$i ); 
+    public function compare() {
+        $arr = array();
+        for ($i = 1; $i < 3; $i++) {
+
+            $arr[] = array("sTitle" => "Snapshot", "sName" => 'snap' . $i);
         }
-        
-        echo json_encode($arr);exit;
+
+        echo json_encode($arr);
+        exit;
 //        $batch1 = $this->input->post('batch1');
 //        $batch2 = $this->input->post('batch2');
 //        $this->load->model('batches_model');
@@ -92,39 +94,37 @@ class Assess extends MY_Controller {
 ////        print_r($cmp);
 ////        echo "</pre>";
 //        $this->load->view('assess/compare', $data);
-        
-       
     }
-    
-    public function get_assess_info(){
+
+    public function get_assess_info() {
         $txt_filter = '';
-        if($this->input->get('search_text') != ''){
+        if ($this->input->get('search_text') != '') {
             $txt_filter = $this->input->get('search_text');
-         }
-         if($this->input->get('sSearch') != ''){
-              $txt_filter = $this->input->get('sSearch');   
-         }
+        }
+        if ($this->input->get('sSearch') != '') {
+            $txt_filter = $this->input->get('sSearch');
+        }
         $batch_id = $this->input->get('batch_id');
-        
-        
+
+
         $compare_batch_id = $this->input->get('compare_batch_id');
 
-        if($batch_id == 0){
+        if ($batch_id == 0) {
             $output = array(
-                "sEcho"                     => 1,
-                "iTotalRecords"             => 0,
-                "iTotalDisplayRecords"      => 0,
-                "iDisplayLength"            => 10,
-                "aaData"                    => array()
+                "sEcho" => 1,
+                "iTotalRecords" => 0,
+                "iTotalDisplayRecords" => 0,
+                "iDisplayLength" => 10,
+                "aaData" => array()
             );
 
             $this->output->set_content_type('application/json')
-                ->set_output(json_encode($output));
+                    ->set_output(json_encode($output));
         } else {
             $build_assess_params = new stdClass();
             $build_assess_params->date_from = $this->input->get('date_from') == 'undefined' ? '' : $this->input->get('date_from');
             $build_assess_params->date_to = $this->input->get('date_to') == 'undefined' ? '' : $this->input->get('date_to');
-            $build_assess_params->price_diff = $this->input->get('price_diff') == 'undefined' ? -1 :$this->input->get('price_diff');
+            $build_assess_params->price_diff = $this->input->get('price_diff') == 'undefined' ? -1 : $this->input->get('price_diff');
 
             $build_assess_params->short_less_check = $this->input->get('short_less_check') == 'true' ? true : false;
             if ($this->input->get('short_less')) {
@@ -172,84 +172,93 @@ class Assess extends MY_Controller {
             $params->date_to = $build_assess_params->date_to;
 
             $results = $this->get_data_for_assess($params);
-           
+
             $batch2 = $this->input->get('batch2') == 'undefined' ? '' : $this->input->get('batch2');
-            
-            if($batch2!='' && $batch2!= 0 ){
-            $this->load->model('batches_model');
-            $customer_name = $this->batches_model->getCustomerUrlByBatch($batch2);
-            $cmp= array();
-            foreach($results as $val){
-            
-            if(substr_count(strtolower($val->similar_products_competitors), strtolower($customer_name))>0){
-               
-                $similar_items = unserialize($val->similar_products_competitors);
-             
-                foreach($similar_items as $key => $item){
-                    if(substr_count(strtolower($customer_name),strtolower($item['customer']))>0){
-                        $cmpare = $this->statistics_new_model->get_compare_item($similar_items[$key]['imported_data_id']);
-                        $val->snap1= $cmpare->snap;
-                        $val->product_name1= $cmpare->product_name;
-                        $val->url1= $cmpare->url;
-                        $val->short_description_wc1= $cmpare->short_description_wc;
-                        $val->long_description_wc1= $cmpare->long_description_wc;
+
+            if ($batch2 != '' && $batch2 != 0) {
+                $this->load->model('batches_model');
+                $customer_name = $this->batches_model->getCustomerUrlByBatch($batch2);
+
+                $cmp = array();
+                foreach ($results as $val) {
+
+                    if (substr_count(strtolower($val->similar_products_competitors), strtolower($customer_name)) > 0) {
+
+                        $similar_items = unserialize($val->similar_products_competitors);
+
+                        foreach ($similar_items as $key => $item) {
+                            if (substr_count(strtolower($customer_name), strtolower($item['customer'])) > 0) {
+                                $cmpare = $this->statistics_new_model->get_compare_item($similar_items[$key]['imported_data_id']);
+                                $val->snap1 = $cmpare->snap;
+                                $val->product_name1 = $cmpare->product_name;
+                                $val->url1 = $cmpare->url;
+                                $val->short_description_wc1 = $cmpare->short_description_wc;
+                                $val->long_description_wc1 = $cmpare->long_description_wc;
+                            }
+                        }
+                        $cmp[] = $val;
                     }
                 }
-                $cmp[]=$val;
-                 
+//                $volume = array();
+//                $cmp_arr = array();
+//                foreach ($cmp as $key => $row) {
+//                    $row = (array) $row;
+//                    $cmp_arr[$key] = $row;
+//                    $volume[$key] = $row['product_name'];
+//                }
+//                array_multisort($volume, SORT_ASC, $cmp_arr);
+//                foreach ($cmp_arr as $key => $val) {
+//                    $cmp_arr[$key] = (object) $val;
+//                }
+//                $results = $cmp_arr;
+           $results = $cmp;
+           
             }
-        }
-        
-        
-                $results = $cmp;
-        }
-            
-                                            
-            
+
+
             $output = $this->build_asses_table($results, $build_assess_params, $batch_id);
 
             $this->output->set_content_type('application/json')
-                ->set_output(json_encode($output));
+                    ->set_output(json_encode($output));
         }
     }
 
-    
-    
-     public function filterBatchByCustomerName(){
+    public function filterBatchByCustomerName() {
         $this->load->model('batches_model');
         $this->load->model('customers_model');
         $customer_id = $this->customers_model->getIdByName($this->input->post('customer_name'));
         $batches = $this->batches_model->getAllByCustomer($customer_id);
         $batches_list = array();
-        if(strtolower($this->input->post('customer_name')) ==  "select customer"){
+        if (strtolower($this->input->post('customer_name')) == "select customer") {
             $batches = $this->batches_model->getAll();
             $batches_list[] = array('id' => 0, 'title' => 'Select batch');
         }
-        
-        if(!empty($batches)){
-            
-            foreach($batches as $batch){
-                
+
+        if (!empty($batches)) {
+
+            foreach ($batches as $batch) {
+
                 $batches_list[] = array('id' => $batch->id, 'title' => $batch->title);
             }
         }
         $this->output->set_content_type('application/json')
-            ->set_output(json_encode($batches_list));
+                ->set_output(json_encode($batches_list));
     }
- public function filterCustomerByBatch(){
+
+    public function filterCustomerByBatch() {
         $this->load->model('batches_model');
         $batch = $this->input->post('batch');
         $customer_name = $this->batches_model->getCustomerByBatch($batch);
         $this->output->set_content_type('application/json')
-            ->set_output(json_encode(strtolower($customer_name)));
+                ->set_output(json_encode(strtolower($customer_name)));
     }
-    
-     private function get_data_for_assess($params) {
+
+    private function get_data_for_assess($params) {
         $this->load->model('settings_model');
         $this->load->model('statistics_model');
         $this->load->model('statistics_new_model');
 
-        if($this->settings['statistics_table'] == "statistics_new"){
+        if ($this->settings['statistics_table'] == "statistics_new") {
             $results = $this->statistics_new_model->getStatsData($params);
         } else {
             $results = $this->statistics_model->getStatsData($params);
@@ -259,8 +268,8 @@ class Assess extends MY_Controller {
         //$results = $this->research_data_model->getInfoForAssess($params);
         return $results;
     }
-    
-        private function get_report_presetted_pages($params){
+
+    private function get_report_presetted_pages($params) {
         $this->load->model('reports_model');
         $report = $this->reports_model->get_by_name($params->report_name);
         $report_pages = array();
@@ -293,7 +302,7 @@ class Assess extends MY_Controller {
         usort($report_pages, array("Assess", "assess_sort"));
 
         // replace patterns (#date#, #customer name#... etc)
-        foreach($report_pages as $page){
+        foreach ($report_pages as $page) {
             $page_body = $page->body;
             $page_body = str_replace('#date#', $params->current_date, $page_body);
             $page_body = str_replace('#customer name#', $params->customer_name, $page_body);
@@ -303,14 +312,13 @@ class Assess extends MY_Controller {
         $report_parts = unserialize($report[0]->parts);
 
         $report_params = array(
-            'report_pages'=>$report_pages,
-            'report_parts'=>$report_parts,
+            'report_pages' => $report_pages,
+            'report_parts' => $report_parts,
         );
         return $report_params;
     }
 
-    
-     private function assess_sort($a, $b) {
+    private function assess_sort($a, $b) {
         $column = $this->sort_column;
         $key1 = $a->$column;
         $key2 = $b->$column;
@@ -327,7 +335,8 @@ class Assess extends MY_Controller {
             return -$result;
         }
     }
-     private function assess_sort_ignore($a, $b) {
+
+    private function assess_sort_ignore($a, $b) {
         $column = $this->sort_column;
         $key1 = $a->$column;
         $key2 = $b->$column;
@@ -344,7 +353,7 @@ class Assess extends MY_Controller {
             return -$result;
         }
     }
-    
+
     public function assess_report_download() {
         $report_name = 'Assess';
 
@@ -360,8 +369,6 @@ class Assess extends MY_Controller {
         $this->load->model('batches_model');
         $customer = $this->batches_model->getAllCustomerDataByBatch($params->batch_name);
         //$batch = $this->batches_model->getByName($batch_id);
-
-
         // Report options (layout)
         $assess_report_page_layout = 'Landscape';
         $user_id = $this->ion_auth->get_user_id();
@@ -375,9 +382,9 @@ class Assess extends MY_Controller {
             }
         }
 
-        $current_date = date('F j, Y');//new DateTime(date('Y-m-d H:i:s'));
-        $img_path = APPPATH.".."."/webroot/img/";
-        $css_path = APPPATH.".."."/webroot/css/";
+        $current_date = date('F j, Y'); //new DateTime(date('Y-m-d H:i:s'));
+        $img_path = APPPATH . ".." . "/webroot/img/";
+        $css_path = APPPATH . ".." . "/webroot/css/";
 
         $get_report_presetted_pages_params = new stdClass();
         $get_report_presetted_pages_params->report_name = $report_name;
@@ -397,7 +404,7 @@ class Assess extends MY_Controller {
         $build_assess_params->long_seo_phrases = true;
         $build_assess_params->long_duplicate_content = true;
         $build_assess_params->flagged = $this->input->get('flagged') == 'true' ? true : $this->input->get('flagged');
-        $price_diff = $this->input->get('price_diff') == 'undefined' ? -1 :$this->input->get('price_diff');
+        $price_diff = $this->input->get('price_diff') == 'undefined' ? -1 : $this->input->get('price_diff');
         $build_assess_params->price_diff = $price_diff === 'true' ? true : false;
         if (intval($compare_batch_id) > 0) {
             $build_assess_params->compare_batch_id = $compare_batch_id;
@@ -408,8 +415,8 @@ class Assess extends MY_Controller {
         $download_report_params = new stdClass();
         $download_report_params->img_path = $img_path;
         $download_report_params->css_path = $css_path;
-        $download_report_params->own_logo = $img_path."content-analytics.png";
-        $download_report_params->customer_logo = $img_path.$customer->image_url;
+        $download_report_params->own_logo = $img_path . "content-analytics.png";
+        $download_report_params->customer_logo = $img_path . $customer->image_url;
         $download_report_params->batch_id = $params->batch_id;
         $download_report_params->batch_name = $params->batch_name;
         $download_report_params->current_date = $current_date;
@@ -418,7 +425,7 @@ class Assess extends MY_Controller {
         $download_report_params->assess_data = $assess_data;
         $download_report_params->assess_report_page_layout = $assess_report_page_layout;
 
-        switch($type_doc) {
+        switch ($type_doc) {
             case 'pdf':
                 $this->download_pdf($download_report_params);
                 break;
@@ -428,9 +435,9 @@ class Assess extends MY_Controller {
                 break;
         }
     }
-    
-        private function download_pdf($download_report_params) {
-        $css_file = $download_report_params->css_path.'assess_report.css';
+
+    private function download_pdf($download_report_params) {
+        $css_file = $download_report_params->css_path . 'assess_report.css';
         $report_data = $download_report_params->assess_data['ExtraData']['report'];
         $report_details = $download_report_params->assess_data['aaData'];
         $assess_report_page_layout = $download_report_params->assess_report_page_layout;
@@ -452,135 +459,132 @@ class Assess extends MY_Controller {
         $pdf->WriteHTML($stylesheet, 1);
 
         $header = '<table border=0 width=100%>';
-        $header = $header.'<tr>';
-        $header = $header.'<td style="text-align: left;">';
-        $header = $header.'<img src="'.$download_report_params->own_logo.'" />';
-        $header = $header.'</td>';
-        $header = $header.'<td style="text-align: right;">';
-        $header = $header.'<img src="'.$download_report_params->customer_logo.'" style="max-height:60px;max-width:300px;" />';
-        $header = $header.'</td>';
-        $header = $header.'</tr>';
-        $header = $header.'</table>';
-        $header = $header.'<hr color="#C31233" height="10">';
+        $header = $header . '<tr>';
+        $header = $header . '<td style="text-align: left;">';
+        $header = $header . '<img src="' . $download_report_params->own_logo . '" />';
+        $header = $header . '</td>';
+        $header = $header . '<td style="text-align: right;">';
+        $header = $header . '<img src="' . $download_report_params->customer_logo . '" style="max-height:60px;max-width:300px;" />';
+        $header = $header . '</td>';
+        $header = $header . '</tr>';
+        $header = $header . '</table>';
+        $header = $header . '<hr color="#C31233" height="10">';
         $pdf->SetHTMLHeader($header);
 
         $pdf->SetHTMLFooter('<span style="font-size: 8px;">Copyright © 2013 Content Solutions, Inc.</span>');
 
         $html = '';
 
-        foreach($download_report_params->report_presetted_pages as $page){
+        foreach ($download_report_params->report_presetted_pages as $page) {
             if ($page->order < 5000) {
                 $pdf->AddPage($page->layout);
                 $html = '';
-                $html = $html.$page->body;
+                $html = $html . $page->body;
                 $pdf->WriteHTML($html);
             }
         }
 
-        if ($download_report_params->report_parts->summary == true){
+        if ($download_report_params->report_parts->summary == true) {
             $pdf->AddPage($layout);
             $html = '';
 
-            $html = $html.'<table width=100% border=0>';
-            $html = $html.'<tr><td style="text-align: left;font-weight: bold; font-style: italic;">Batch - '.$download_report_params->batch_name.'</td><td style="text-align: right;font-weight: bold; font-style: italic;">'.$download_report_params->current_date.'</td></tr>';
-            $html = $html.'<tr><td colspan="2"><hr height="3"></td></tr>';
-            $html = $html.'</table>';
+            $html = $html . '<table width=100% border=0>';
+            $html = $html . '<tr><td style="text-align: left;font-weight: bold; font-style: italic;">Batch - ' . $download_report_params->batch_name . '</td><td style="text-align: right;font-weight: bold; font-style: italic;">' . $download_report_params->current_date . '</td></tr>';
+            $html = $html . '<tr><td colspan="2"><hr height="3"></td></tr>';
+            $html = $html . '</table>';
 
-            $html = $html.'<table class="report" border="1" cellspacing="0" cellpadding="0">';
+            $html = $html . '<table class="report" border="1" cellspacing="0" cellpadding="0">';
 
-            $html = $html.'<tr><td class="tableheader">Summary</td></tr>';
+            $html = $html . '<tr><td class="tableheader">Summary</td></tr>';
 
             //if (!empty($report_data['summary']['total_items']) && intval($report_data['summary']['total_items'] > 0)) {
-                $html = $html.'<tr><td class="report_td">';
-                $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_number.png">'.$report_data['summary']['total_items'].' total Items</div>';
-                $html = $html.'</td></td></tr>';
+            $html = $html . '<tr><td class="report_td">';
+            $html = $html . '<div><img class="icon" src="' . $download_report_params->img_path . 'assess_report_number.png">' . $report_data['summary']['total_items'] . ' total Items</div>';
+            $html = $html . '</td></td></tr>';
             //}
-
             //if (!empty($report_data['summary']['items_priced_higher_than_competitors']) && intval($report_data['summary']['items_priced_higher_than_competitors'] > 0)) {
-                $html = $html.'<tr><td class="report_td">';
-                $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_dollar.png">'.$report_data['summary']['items_priced_higher_than_competitors'].' items priced higher than competitors</div>';
-                $html = $html.'</td></tr>';
+            $html = $html . '<tr><td class="report_td">';
+            $html = $html . '<div><img class="icon" src="' . $download_report_params->img_path . 'assess_report_dollar.png">' . $report_data['summary']['items_priced_higher_than_competitors'] . ' items priced higher than competitors</div>';
+            $html = $html . '</td></tr>';
             //}
-
             //if (!empty($report_data['summary']['items_have_more_than_20_percent_duplicate_content']) && intval($report_data['summary']['items_have_more_than_20_percent_duplicate_content'] > 0)) {
-                $html = $html.'<tr><td class="report_td">';
-                $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_D.png">'.$report_data['summary']['items_have_more_than_20_percent_duplicate_content'].' items have more than 20% duplicate content</div>';
-                $html = $html.'</td></tr>';
+            $html = $html . '<tr><td class="report_td">';
+            $html = $html . '<div><img class="icon" src="' . $download_report_params->img_path . 'assess_report_D.png">' . $report_data['summary']['items_have_more_than_20_percent_duplicate_content'] . ' items have more than 20% duplicate content</div>';
+            $html = $html . '</td></tr>';
             //}
-
             //if (!empty($report_data['summary']['items_unoptimized_product_content']) && intval($report_data['summary']['items_unoptimized_product_content'] > 0)) {
-                $html = $html.'<tr><td class="report_td">';
-                $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_seo.png">'.$report_data['summary']['items_unoptimized_product_content'].' items have non-keyword optimized product content</div>';
-                $html = $html.'</td></tr>';
+            $html = $html . '<tr><td class="report_td">';
+            $html = $html . '<div><img class="icon" src="' . $download_report_params->img_path . 'assess_report_seo.png">' . $report_data['summary']['items_unoptimized_product_content'] . ' items have non-keyword optimized product content</div>';
+            $html = $html . '</td></tr>';
             //}
 
             if ($report_data['summary']['short_wc_total_not_0'] > 0 && $report_data['summary']['long_wc_total_not_0'] > 0) {
-                $html = $html.'<tr><td class="report_td">';
-                $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_arrow_down.png">'.$report_data['summary']['items_short_products_content_short'].' items have short descriptions that are less than '.$report_data['summary']['short_description_wc_lower_range'].'</div>';
-                $html = $html.'</td></tr>';
-                $html = $html.'<tr><td class="report_td">';
-                $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_arrow_down.png">'.$report_data['summary']['items_long_products_content_short'].' items have long descriptions that are less than '.$report_data['summary']['long_description_wc_lower_range'].'</div>';
-                $html = $html.'</td></tr>';
+                $html = $html . '<tr><td class="report_td">';
+                $html = $html . '<div><img class="icon" src="' . $download_report_params->img_path . 'assess_report_arrow_down.png">' . $report_data['summary']['items_short_products_content_short'] . ' items have short descriptions that are less than ' . $report_data['summary']['short_description_wc_lower_range'] . '</div>';
+                $html = $html . '</td></tr>';
+                $html = $html . '<tr><td class="report_td">';
+                $html = $html . '<div><img class="icon" src="' . $download_report_params->img_path . 'assess_report_arrow_down.png">' . $report_data['summary']['items_long_products_content_short'] . ' items have long descriptions that are less than ' . $report_data['summary']['long_description_wc_lower_range'] . '</div>';
+                $html = $html . '</td></tr>';
             } else {
-                if ($report_data['summary']['short_wc_total_not_0'] == 0 && $report_data['summary']['long_wc_total_not_0'] != 0){
+                if ($report_data['summary']['short_wc_total_not_0'] == 0 && $report_data['summary']['long_wc_total_not_0'] != 0) {
                     $product_descriptions_that_are_too_short = $report_data['summary']['items_long_products_content_short'];
                     $product_descriptions_that_are_less_than = $report_data['summary']['long_description_wc_lower_range'];
                 } else {
                     $product_descriptions_that_are_too_short = $report_data['summary']['items_short_products_content_short'];
                     $product_descriptions_that_are_less_than = $report_data['summary']['short_description_wc_lower_range'];
                 }
-                $html = $html.'<tr><td class="report_td">';
-                $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_arrow_down.png">'.$product_descriptions_that_are_too_short.' items have long descriptions that are less than '.$product_descriptions_that_are_less_than.'</div>';
-                $html = $html.'</td></tr>';
+                $html = $html . '<tr><td class="report_td">';
+                $html = $html . '<div><img class="icon" src="' . $download_report_params->img_path . 'assess_report_arrow_down.png">' . $product_descriptions_that_are_too_short . ' items have long descriptions that are less than ' . $product_descriptions_that_are_less_than . '</div>';
+                $html = $html . '</td></tr>';
             }
 
             if (!empty($report_data['summary']['absent_items_count']) && intval($report_data['summary']['absent_items_count'] > 0)) {
-                $html = $html.'<tr><td class="report_td">';
-                $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_comparison.png">'.$report_data['summary']['absent_items_count'];
-                $html = $html.' items in '.$report_data['summary']['compare_customer_name'].' - '.$report_data['summary']['compare_batch_name'];
-                $html = $html.' are absent from '.$report_data['summary']['own_batch_name'];
-                $html = $html.'</div></td></tr>';
+                $html = $html . '<tr><td class="report_td">';
+                $html = $html . '<div><img class="icon" src="' . $download_report_params->img_path . 'assess_report_comparison.png">' . $report_data['summary']['absent_items_count'];
+                $html = $html . ' items in ' . $report_data['summary']['compare_customer_name'] . ' - ' . $report_data['summary']['compare_batch_name'];
+                $html = $html . ' are absent from ' . $report_data['summary']['own_batch_name'];
+                $html = $html . '</div></td></tr>';
             }
 
-            $html = $html.'</table>';
+            $html = $html . '</table>';
 
-            $html = $html.'<table class="report recommendations" border="1" cellspacing="0" cellpadding="0">';
+            $html = $html . '<table class="report recommendations" border="1" cellspacing="0" cellpadding="0">';
 
-            $html = $html.'<tr><td class="tableheader">Recommendations</td></tr>';
+            $html = $html . '<tr><td class="tableheader">Recommendations</td></tr>';
             if ($report_data['recommendations']['items_priced_higher_than_competitors']) {
-                $html = $html.'<tr><td class="report_td">';
-                $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_dollar.png">';
-                $html = $html.$report_data['recommendations']['items_priced_higher_than_competitors'].'</div>';
-                $html = $html.'</td></tr>';
+                $html = $html . '<tr><td class="report_td">';
+                $html = $html . '<div><img class="icon" src="' . $download_report_params->img_path . 'assess_report_dollar.png">';
+                $html = $html . $report_data['recommendations']['items_priced_higher_than_competitors'] . '</div>';
+                $html = $html . '</td></tr>';
             }
             if ($report_data['recommendations']['items_have_more_than_20_percent_duplicate_content']) {
-                $html = $html.'<tr><td class="report_td">';
-                $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_D.png">';
-                $html = $html.$report_data['recommendations']['items_have_more_than_20_percent_duplicate_content'].'</div>';
-                $html = $html.'</td></tr>';
+                $html = $html . '<tr><td class="report_td">';
+                $html = $html . '<div><img class="icon" src="' . $download_report_params->img_path . 'assess_report_D.png">';
+                $html = $html . $report_data['recommendations']['items_have_more_than_20_percent_duplicate_content'] . '</div>';
+                $html = $html . '</td></tr>';
             }
             if ($report_data['recommendations']['items_short_products_content']) {
-                $html = $html.'<tr><td class="report_td">';
-                $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_seo.png">';
-                $html = $html.$report_data['recommendations']['items_short_products_content'].'</div>';
-                $html = $html.'</td></tr>';
+                $html = $html . '<tr><td class="report_td">';
+                $html = $html . '<div><img class="icon" src="' . $download_report_params->img_path . 'assess_report_seo.png">';
+                $html = $html . $report_data['recommendations']['items_short_products_content'] . '</div>';
+                $html = $html . '</td></tr>';
             }
             if ($report_data['recommendations']['items_unoptimized_product_content']) {
-                $html = $html.'<tr><td class="report_td">';
-                $html = $html.'<div><img class="icon" src="'.$download_report_params->img_path.'assess_report_arrow_up.png">';
-                $html = $html.$report_data['recommendations']['items_unoptimized_product_content'].'</div>';
-                $html = $html.'</td></tr>';
+                $html = $html . '<tr><td class="report_td">';
+                $html = $html . '<div><img class="icon" src="' . $download_report_params->img_path . 'assess_report_arrow_up.png">';
+                $html = $html . $report_data['recommendations']['items_unoptimized_product_content'] . '</div>';
+                $html = $html . '</td></tr>';
             }
 
-            $html = $html.'</table>';
+            $html = $html . '</table>';
 
-            $html = $html.'<tr><td>';
-            $html = $html.'</table>';
+            $html = $html . '<tr><td>';
+            $html = $html . '</table>';
 
             $pdf->WriteHTML($html);
         }
 
-        if ($download_report_params->report_parts->recommendations == true && count($report_details) > 0){
+        if ($download_report_params->report_parts->recommendations == true && count($report_details) > 0) {
             $data['report_details'] = $report_details;
             $report_recommendations_view = $this->load->view('research/product_recommendations_pdf', $data, true);
             $html = $report_recommendations_view;
@@ -588,7 +592,7 @@ class Assess extends MY_Controller {
             $pdf->WriteHTML($html);
         }
 
-        if ($download_report_params->report_parts->details == true && count($report_details) > 0){
+        if ($download_report_params->report_parts->details == true && count($report_details) > 0) {
             $data['report_details'] = $report_details;
             $report_details_view = $this->load->view('research/product_details_pdf', $data, true);
             $html = $report_details_view;
@@ -603,24 +607,23 @@ class Assess extends MY_Controller {
                 $pdf->AddPage($layout);
                 $data['comparison_data'] = $comparison_data;
                 $comparison_details_view = $this->load->view('research/comparison_details_pdf', $data, true);
-                $html = $html.$comparison_details_view;
+                $html = $html . $comparison_details_view;
                 $pdf->WriteHTML($html);
             }
         }
 
-        foreach($download_report_params->report_presetted_pages as $page){
+        foreach ($download_report_params->report_presetted_pages as $page) {
             if ($page->order > 5000) {
                 $pdf->AddPage($page->layout);
                 $html = '';
-                $html = $html.$page->body;
+                $html = $html . $page->body;
                 $pdf->WriteHTML($html);
             }
         }
 
         $pdf->Output('report.pdf', 'I');
     }
-    
-    
+
     public function assess_save_columns_state() {
         $this->load->model('settings_model');
         $user_id = $this->ion_auth->get_user_id();
@@ -630,8 +633,8 @@ class Assess extends MY_Controller {
         $res = $this->settings_model->replace($user_id, $key, $value, $description);
         echo json_encode($res);
     }
-    
-     public function comparison_detail(){
+
+    public function comparison_detail() {
         $this->load->model('statistics_model');
         $batch_id = $this->input->post('batch_id');
 
@@ -639,7 +642,7 @@ class Assess extends MY_Controller {
 
         $page = intval($this->uri->segment(3));
         $this->load->library('pagination');
-        $config['base_url'] = $this->config->site_url().'/assess/comparison_detail';
+        $config['base_url'] = $this->config->site_url() . '/assess/comparison_detail';
         $config['total_rows'] = count($comparison_data);
         $config['per_page'] = '1';
         $config['uri_segment'] = 3;
@@ -652,17 +655,15 @@ class Assess extends MY_Controller {
         $comparison['comparison_detail'] = $comparison_details_view;
 
         $this->output->set_content_type('application/json')
-            ->set_output(json_encode($comparison));
+                ->set_output(json_encode($comparison));
     }
-    
-    
-    
-      public function export_assess() {
-        
+
+    public function export_assess() {
+
         $this->load->model('batches_model');
         $batch_id = $this->input->get('batch');
         $customer_name = $this->batches_model->getCustomerById($batch_id);
-        if(empty($batch_id))
+        if (empty($batch_id))
             $batch_id = '';
         $this->load->database();
         $query = $this->db->query('
@@ -680,47 +681,46 @@ class Assess extends MY_Controller {
                 (`statistics_new` AS s) 
             LEFT JOIN 
                 `crawler_list` AS cl ON `cl`.`imported_data_id` = `s`.`imported_data_id`'
-                );
+        );
         $line = array();
-        foreach ($query->list_fields() as $name)
-        {
-                $line[] = $name;
+        foreach ($query->list_fields() as $name) {
+            $line[] = $name;
         }
         $result = $query->result_array();
-        foreach($result as $key=>$row){
-            if(trim($row['SEO Phrases (S)']) != 'None'){
+        foreach ($result as $key => $row) {
+            if (trim($row['SEO Phrases (S)']) != 'None') {
                 $shortArr = unserialize($row['SEO Phrases (S)']);
-                if($shortArr){
+                if ($shortArr) {
                     $shortString = '';
-                    foreach($shortArr as $value){
-                        $shortString .= $value['ph']."\r\n";
+                    foreach ($shortArr as $value) {
+                        $shortString .= $value['ph'] . "\r\n";
                     }
                     $result[$key]['SEO Phrases (S)'] = trim($shortString);
                 }
             }
-            if(trim($row['SEO Phrases (L)']) != 'None'){
+            if (trim($row['SEO Phrases (L)']) != 'None') {
                 $longArr = unserialize($row['SEO Phrases (L)']);
-                if($longArr){
+                if ($longArr) {
                     $longString = '';
-                    foreach($longArr as $value){
-                        $longString .= $value['ph']."\r\n";
+                    foreach ($longArr as $value) {
+                        $longString .= $value['ph'] . "\r\n";
                     }
                     $result[$key]['SEO Phrases (L)'] = trim($longString);
                 }
             }
             $price_diff = unserialize($row['Price']);
-            if($price_diff){
+            if ($price_diff) {
                 $own_price = floatval($price_diff['own_price']);
                 $own_site = str_replace('www.', '', $price_diff['own_site']);
                 $own_site = str_replace('www1.', '', $own_site);
-                $price_diff_res = $own_site." - $".$price_diff['own_price'];
+                $price_diff_res = $own_site . " - $" . $price_diff['own_price'];
                 $flag_competitor = false;
-                for($i=0; $i<count($price_diff['competitor_customer']); $i++){
-                    if($customer_url["host"] != $price_diff['competitor_customer'][$i]){
+                for ($i = 0; $i < count($price_diff['competitor_customer']); $i++) {
+                    if ($customer_url["host"] != $price_diff['competitor_customer'][$i]) {
                         if ($own_price > floatval($price_diff['competitor_price'][$i])) {
                             $competitor_site = str_replace('www.', '', $price_diff['competitor_customer'][$i]);
                             $competitor_site = str_replace('www.', '', $competitor_site);
-                            $price_diff_res .= "\r\n".$competitor_site." - $".$price_diff['competitor_price'][$i];
+                            $price_diff_res .= "\r\n" . $competitor_site . " - $" . $price_diff['competitor_price'][$i];
                         }
                     }
                 }
@@ -731,40 +731,35 @@ class Assess extends MY_Controller {
         }
         array_unshift($result, $line);
         $this->load->helper('csv');
-        array_to_csv($result, date("Y-m-d H:i").'.csv');
+        array_to_csv($result, date("Y-m-d H:i") . '.csv');
     }
 
-
-    
-    
-    
-    public function products()
-    {
+    public function products() {
         $this->data['customer_list'] = $this->getCustomersByUserId();
         $this->data['category_list'] = $this->category_list();
-        if(!empty($this->data['customer_list'])){
+        if (!empty($this->data['customer_list'])) {
             $this->data['batches_list'] = $this->batches_list();
         }
 
         $user_id = $this->ion_auth->get_user_id();
         $key = 'research_assess';
         $columns = $this->settings_model->get_value($user_id, $key);
-        
+
         // if columns empty set default values for columns
-        if(empty($columns)) {
-            $columns = array (
-                'created'                       => 'true',
-                'product_name'                  => 'true',
-                'url'                           => 'true',
-                'short_description_wc'          => 'true',
-                'short_seo_phrases'             => 'true',
-                'long_description_wc'           => 'true',
-                'long_seo_phrases'              => 'true',
-                'duplicate_context'             => 'true',
-                'column_external_content'       => 'true',
-                'column_reviews'                => 'true',
-                'column_features'               => 'true',
-                'price_diff'                    => 'true',
+        if (empty($columns)) {
+            $columns = array(
+                'created' => 'true',
+                'product_name' => 'true',
+                'url' => 'true',
+                'short_description_wc' => 'true',
+                'short_seo_phrases' => 'true',
+                'long_description_wc' => 'true',
+                'long_seo_phrases' => 'true',
+                'duplicate_context' => 'true',
+                'column_external_content' => 'true',
+                'column_reviews' => 'true',
+                'column_features' => 'true',
+                'price_diff' => 'true',
             );
         }
         $this->data['columns'] = $columns;
@@ -772,66 +767,63 @@ class Assess extends MY_Controller {
         $this->render();
     }
 
-    public function batches_list()
-    {
+    public function batches_list() {
         $this->load->model('batches_model');
         $batches = $this->batches_model->getAll();
         //$batches_list = array('0'=>'Select batch');
-        $batches_list = array('0'=>'0');
-        foreach($batches as $batch){
+        $batches_list = array('0' => '0');
+        foreach ($batches as $batch) {
             $batches_list[$batch->id] = $batch->title;
         }
         asort($batches_list);
-        $batches_list[0]='Select batch';
+        $batches_list[0] = 'Select batch';
         return $batches_list;
     }
 
-    public function category_list()
-    {
+    public function category_list() {
         $this->load->model('category_model');
         $categories = $this->category_model->getAll();
         $category_list = array();
-        foreach($categories as $category){
+        foreach ($categories as $category) {
             array_push($category_list, $category->name);
         }
         return $category_list;
     }
 
-    public function getCustomersByUserId(){
+    public function getCustomersByUserId() {
         $this->load->model('batches_model');
         $this->load->model('customers_model');
         $this->load->model('users_to_customers_model');
-         
-       $customers = $this->users_to_customers_model->getByUserId($this->ion_auth->get_user_id());
-     if(!$this->ion_auth->is_admin($this->ion_auth->get_user_id())){
-            if(count($customers) == 0){
+
+        $customers = $this->users_to_customers_model->getByUserId($this->ion_auth->get_user_id());
+        if (!$this->ion_auth->is_admin($this->ion_auth->get_user_id())) {
+            if (count($customers) == 0) {
                 $customer_list = array();
-            }else{
-                $customer_list = array('0'=>'Select customer');
+            } else {
+                $customer_list = array('0' => 'Select customer');
             }
-            foreach($customers as $customer){
+            foreach ($customers as $customer) {
                 $batches = $this->batches_model->getAllByCustomer($customer->customer_id);
-                if(count($batches) > 0){
+                if (count($batches) > 0) {
                     array_push($customer_list, $customer->name);
                 }
-           }
-        }else{
-            if(count($customers) == 0){
+            }
+        } else {
+            if (count($customers) == 0) {
                 $customers = $this->customers_model->getAll();
             }
-            $customer_list = array('0'=>'Select customer');
-            foreach($customers as $customer){
+            $customer_list = array('0' => 'Select customer');
+            foreach ($customers as $customer) {
                 $batches = $this->batches_model->getAllByCustomer($customer->id);
-                if(count($batches) > 0){
+                if (count($batches) > 0) {
                     array_push($customer_list, $customer->name);
                 }
             }
         }
         return $customer_list;
-
     }
 
-    public function research_assess_report_options_get(){
+    public function research_assess_report_options_get() {
         $this->load->model('sites_model');
         $all_sites = $this->sites_model->getAll();
         $user_id = $this->ion_auth->get_user_id();
@@ -840,7 +832,7 @@ class Assess extends MY_Controller {
         $existing_settings = $this->settings_model->get_value($user_id, $key);
         $batch_settings = $existing_settings[$batch_id];
         $competitors = array();
-        foreach ($all_sites as $k => $v){
+        foreach ($all_sites as $k => $v) {
             if (in_array($v->id, $batch_settings->assess_report_competitors)) {
                 $selected = true;
             } else {
@@ -856,7 +848,7 @@ class Assess extends MY_Controller {
         echo json_encode($batch_settings);
     }
 
-    public function research_assess_report_options_set(){
+    public function research_assess_report_options_set() {
         $this->load->model('settings_model');
         $this->load->model('batches_model');
         $user_id = $this->ion_auth->get_user_id();
@@ -878,31 +870,31 @@ class Assess extends MY_Controller {
         echo json_encode($res);
     }
 
-    public function include_in_assess_report_check(){
+    public function include_in_assess_report_check() {
         $research_data_id = $this->input->get('research_data_id');
         $this->load->model('research_data_model');
         $result['checked'] = $this->research_data_model->include_in_assess_report_check($research_data_id);
         $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }
 
-    public function include_in_report(){
+    public function include_in_report() {
         $research_data_id = $this->input->post('research_data_id');
         $include_in_report = trim(strtolower($this->input->post('include_in_report'))) === 'true' ? true : false;
         $this->load->model('research_data_model');
         $this->research_data_model->include_in_assess_report($research_data_id, $include_in_report);
     }
 
-    public function customers_get_all(){
+    public function customers_get_all() {
         $output = $this->getCustomersByUserId();
         $this->output->set_content_type('application/json')->set_output(json_encode($output));
     }
 
-    public function batches_get_all(){
+    public function batches_get_all() {
         $output = $this->batches_list();
         $this->output->set_content_type('application/json')->set_output(json_encode($output));
     }
 
-    public function delete_from_batch(){
+    public function delete_from_batch() {
         $batch_id = $this->input->post('batch_id');
         $research_data_id = $this->input->post('research_data_id');
         $this->load->model('research_data_model');
@@ -910,18 +902,15 @@ class Assess extends MY_Controller {
         $this->research_data_model->delete($research_data_id);
         $this->statistics_model->delete_by_research_data_id($batch_id, $research_data_id);
     }
-    
-    
-    
-       
-    private function build_asses_table($results, $build_assess_params, $batch_id='') {
-       // echO"<pre>";print_r($results);die;
+
+    private function build_asses_table($results, $build_assess_params, $batch_id = '') {
+        // echO"<pre>";print_r($results);die;
         $duplicate_content_range = 25;
         $this->load->model('batches_model');
         $this->load->model('imported_data_parsed_model');
         $this->load->model('statistics_model');
         $this->load->model('statistics_duplicate_content_model');
-        
+
         $customer_name = $this->batches_model->getCustomerById($batch_id);
         $customer_url = parse_url($customer_name[0]->url);
         $result_table = array();
@@ -936,7 +925,7 @@ class Assess extends MY_Controller {
         $items_long_products_content_short = 0;
         $detail_comparisons_total = 0;
 
-        foreach($results as $row) {
+        foreach ($results as $row) {
 //            $long_description_wc = $row->long_description_wc;
 //            $short_description_wc = $row->short_description_wc;
 
@@ -945,7 +934,12 @@ class Assess extends MY_Controller {
             $result_row->imported_data_id = $row->imported_data_id;
             $result_row->research_data_id = $row->research_data_id;
             $result_row->created = $row->created;
-            $result_row->product_name = $row->product_name;
+            if(!$row->product_name ||  $row->product_name==''){
+               $result_row->product_name ='-' ;
+            }else{
+                $result_row->product_name = $row->product_name;
+            
+            }
             $result_row->url = $row->url;
             $result_row->short_description = $row->short_description;
             $result_row->long_description = $row->long_description;
@@ -962,42 +956,41 @@ class Assess extends MY_Controller {
             $price_diff = unserialize($row->price_diff);
             $result_row->lower_price_exist = false;
             $result_row->snap = '';
-            $result_row->snap1='';
-            $result_row->product_name1='';
-            $result_row->url1='';
-            $result_row->short_description_wc1='-';
-            $result_row->long_description_wc1='-';
-            
-            if($row->snap1 && $row->snap1!=''){
-                $result_row->snap1 = "<img src='".base_url()."webshoots/".$row->snap1."' />";
-                     
+            $result_row->snap1 = '';
+            $result_row->product_name1 = '';
+            $result_row->url1 = '';
+            $result_row->short_description_wc1 = '-';
+            $result_row->long_description_wc1 = '-';
+
+            if ($row->snap1 && $row->snap1 != '') {
+                $result_row->snap1 = "<img src='" . base_url() . "webshoots/" . $row->snap1 . "' />";
             }
-            if($row->product_name1){
+            if ($row->product_name1) {
                 $result_row->product_name1 = $row->product_name1;
-            }  
-            if($row->url1){
-                $result_row->url1 = "<span class='res_url'><a href='".$row->url1."' target='_blank'>$row->url1</a><span>";
-            } 
-            if($row->short_description_wc1){
+            }
+            if ($row->url1) {
+                $result_row->url1 = "<span class='res_url'><a href='" . $row->url1 . "' target='_blank'>$row->url1</a><span>";
+            }
+            if ($row->short_description_wc1) {
                 $result_row->short_description_wc1 = $row->short_description_wc1;
-            } 
-            if($row->long_description_wc1){
+            }
+            if ($row->long_description_wc1) {
                 $result_row->long_description_wc1 = $row->long_description_wc1;
-            } 
+            }
             $pars_atr = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
-            
-            if($pars_atr['parsed_attributes']['cnetcontent'] == 1 && $pars_atr['parsed_attributes']['webcollage'] == 1)
+
+            if ($pars_atr['parsed_attributes']['cnetcontent'] == 1 && $pars_atr['parsed_attributes']['webcollage'] == 1)
                 $result_row->column_external_content = 'CNET, WC';
-            elseif($pars_atr['parsed_attributes']['cnetcontent'] == 1 && $pars_atr['parsed_attributes']['webcollage'] != 1) 
+            elseif ($pars_atr['parsed_attributes']['cnetcontent'] == 1 && $pars_atr['parsed_attributes']['webcollage'] != 1)
                 $result_row->column_external_content = 'CNET';
-            elseif($pars_atr['parsed_attributes']['cnetcontent'] != 1 && $pars_atr['parsed_attributes']['webcollage'] == 1) 
+            elseif ($pars_atr['parsed_attributes']['cnetcontent'] != 1 && $pars_atr['parsed_attributes']['webcollage'] == 1)
                 $result_row->column_external_content = 'WC';
-            else 
+            else
                 $result_row->column_external_content = ' ';
             $result_row->column_reviews = $pars_atr['parsed_attributes']['review_count'];
-            $result_row->column_features =$pars_atr['parsed_attributes']['feature_count'];        
-            
-            if ($row->snap != null && $row->snap != ''){
+            $result_row->column_features = $pars_atr['parsed_attributes']['feature_count'];
+
+            if ($row->snap != null && $row->snap != '') {
                 $result_row->snap = $row->snap;
             }
 
@@ -1005,22 +998,22 @@ class Assess extends MY_Controller {
                 $own_site = parse_url($row->url, PHP_URL_HOST);
                 $own_site = str_replace('www.', '', $own_site);
                 $own_site = str_replace('www1.', '', $own_site);
-                $result_row->price_diff = "<nobr>".$own_site." - $".$row->own_price."</nobr><br />";
+                $result_row->price_diff = "<nobr>" . $own_site . " - $" . $row->own_price . "</nobr><br />";
             }
 
-            if(count($price_diff) > 1){
+            if (count($price_diff) > 1) {
                 $own_price = floatval($price_diff['own_price']);
                 $own_site = str_replace('www.', '', $price_diff['own_site']);
                 $own_site = str_replace('www1.', '', $own_site);
-                $price_diff_res = "<nobr>".$own_site." - $".$price_diff['own_price']."</nobr><br />";
+                $price_diff_res = "<nobr>" . $own_site . " - $" . $price_diff['own_price'] . "</nobr><br />";
                 $flag_competitor = false;
-                for($i=0; $i<count($price_diff['competitor_customer']); $i++){
-                    if($customer_url["host"] != $price_diff['competitor_customer'][$i]){
+                for ($i = 0; $i < count($price_diff['competitor_customer']); $i++) {
+                    if ($customer_url["host"] != $price_diff['competitor_customer'][$i]) {
                         if ($own_price > floatval($price_diff['competitor_price'][$i])) {
                             $result_row->lower_price_exist = true;
                             $competitor_site = str_replace('www.', '', $price_diff['competitor_customer'][$i]);
                             $competitor_site = str_replace('www.', '', $competitor_site);
-                            $price_diff_res .= "<input type='hidden'><nobr>".$competitor_site." - $".$price_diff['competitor_price'][$i]."</nobr><br />";
+                            $price_diff_res .= "<input type='hidden'><nobr>" . $competitor_site . " - $" . $price_diff['competitor_price'][$i] . "</nobr><br />";
                         }
                     }
                 }
@@ -1035,22 +1028,22 @@ class Assess extends MY_Controller {
             if (intval($row->include_in_assess_report) > 0) {
                 $detail_comparisons_total += 1;
             }
-           
-            if($this->settings['statistics_table'] == "statistics_new"){
+
+            if ($this->settings['statistics_table'] == "statistics_new") {
                 $short_seo = unserialize($row->short_seo_phrases);
-                if($short_seo){
+                if ($short_seo) {
                     $str_short_seo = '';
-                    foreach($short_seo as $val){
-                        $str_short_seo .= $val['ph'].', ';
+                    foreach ($short_seo as $val) {
+                        $str_short_seo .= $val['ph'] . ', ';
                     }
                     $str_short_seo = substr($str_short_seo, 0, -2);
                     $result_row->short_seo_phrases = $str_short_seo;
                 }
                 $long_seo = unserialize($row->long_seo_phrases);
-                if($long_seo){
+                if ($long_seo) {
                     $str_long_seo = '';
-                    foreach($long_seo as $val){
-                        $str_long_seo .= $val['ph'].', ';
+                    foreach ($long_seo as $val) {
+                        $str_long_seo .= $val['ph'] . ', ';
                     }
                     $str_long_seo = substr($str_long_seo, 0, -2);
                     $result_row->long_seo_phrases = $str_long_seo;
@@ -1061,49 +1054,49 @@ class Assess extends MY_Controller {
             }
 
             if ($build_assess_params->short_duplicate_content || $build_assess_params->long_duplicate_content) {
-               $dc = $this->statistics_duplicate_content_model->get($row->imported_data_id);
-               $duplicate_customers_short = '';
-               $duplicate_customers_long = '';
-               $duplicate_short_percent_total = 0;
-               $duplicate_long_percent_total = 0;
-               if (count($dc) > 1) {
+                $dc = $this->statistics_duplicate_content_model->get($row->imported_data_id);
+                $duplicate_customers_short = '';
+                $duplicate_customers_long = '';
+                $duplicate_short_percent_total = 0;
+                $duplicate_long_percent_total = 0;
+                if (count($dc) > 1) {
 
-                   foreach ($dc as $vs) {
-                       if($customer_url['host'] == $vs->customer){
-                           $short_percent = 0;
-                           $long_percent = 0;
-                           if ($build_assess_params->short_duplicate_content) {
-                               $duplicate_short_percent_total = 100 - round($vs->short_original, 1);
-                               $short_percent = 100 - round($vs->short_original, 1);
-                               if($short_percent > 0){
-                                   //$duplicate_customers_short = '<nobr>'.$vs->customer.' - '.$short_percent.'%</nobr><br />';
-                                   $duplicate_customers_short = '<nobr>'.$short_percent.'%</nobr><br />';
-                               }
-                           }
-                           if ($build_assess_params->long_duplicate_content) {
-                               $duplicate_long_percent_total = 100 - round($vs->long_original, 1);
-                               $long_percent = 100 - round($vs->long_original, 1);
-                               if($long_percent > 0){
-                                   $duplicate_customers_long = '<nobr>'.$vs->customer.' - '.$long_percent.'%</nobr><br />';
-                               }
-                           }
-                       }
-                   }
-                   if($duplicate_short_percent_total >= 20 || $duplicate_long_percent_total >= 20){
-                       $items_have_more_than_20_percent_duplicate_content += 1;
-                   }
-                   if($duplicate_customers_short !=''){
-                       $duplicate_customers = 'Duplicate short<br />'.$duplicate_customers_short;
-                   }
-                   if($duplicate_customers_long!=''){
-                       $duplicate_customers = $duplicate_customers.'Duplicate long<br />'.$duplicate_customers_long;
-                   }
+                    foreach ($dc as $vs) {
+                        if ($customer_url['host'] == $vs->customer) {
+                            $short_percent = 0;
+                            $long_percent = 0;
+                            if ($build_assess_params->short_duplicate_content) {
+                                $duplicate_short_percent_total = 100 - round($vs->short_original, 1);
+                                $short_percent = 100 - round($vs->short_original, 1);
+                                if ($short_percent > 0) {
+                                    //$duplicate_customers_short = '<nobr>'.$vs->customer.' - '.$short_percent.'%</nobr><br />';
+                                    $duplicate_customers_short = '<nobr>' . $short_percent . '%</nobr><br />';
+                                }
+                            }
+                            if ($build_assess_params->long_duplicate_content) {
+                                $duplicate_long_percent_total = 100 - round($vs->long_original, 1);
+                                $long_percent = 100 - round($vs->long_original, 1);
+                                if ($long_percent > 0) {
+                                    $duplicate_customers_long = '<nobr>' . $vs->customer . ' - ' . $long_percent . '%</nobr><br />';
+                                }
+                            }
+                        }
+                    }
+                    if ($duplicate_short_percent_total >= 20 || $duplicate_long_percent_total >= 20) {
+                        $items_have_more_than_20_percent_duplicate_content += 1;
+                    }
+                    if ($duplicate_customers_short != '') {
+                        $duplicate_customers = 'Duplicate short<br />' . $duplicate_customers_short;
+                    }
+                    if ($duplicate_customers_long != '') {
+                        $duplicate_customers = $duplicate_customers . 'Duplicate long<br />' . $duplicate_customers_long;
+                    }
 
-                   if ($duplicate_short_percent_total > $duplicate_content_range || $duplicate_long_percent_total > $duplicate_content_range) {
-                       $duplicate_customers = "<input type='hidden'/>".$duplicate_customers;
-                   }
-                   $result_row->duplicate_content = $duplicate_customers;
-               }
+                    if ($duplicate_short_percent_total > $duplicate_content_range || $duplicate_long_percent_total > $duplicate_content_range) {
+                        $duplicate_customers = "<input type='hidden'/>" . $duplicate_customers;
+                    }
+                    $result_row->duplicate_content = $duplicate_customers;
+                }
             }
 
             //$items_priced_higher_than_competitors = $this->statistics_model->countAllItemsHigher($batch_id);
@@ -1126,11 +1119,11 @@ class Assess extends MY_Controller {
 //                ($result_row->long_description_wc <= 100 && $build_assess_params->short_less == -1)){
 //                $items_short_products_content++;
 //            }
-            
+
             if ($result_row->short_description_wc > 0) {
                 $short_wc_total_not_0++;
             }
-            
+
             if ($result_row->long_description_wc > 0) {
                 $long_wc_total_not_0++;
             }
@@ -1184,9 +1177,8 @@ class Assess extends MY_Controller {
 //                $recomend = true;
 //            }
             if (($result_row->short_description_wc <= $build_assess_params->short_less ||
-                $result_row->long_description_wc <= $build_assess_params->long_less)
-                && ($build_assess_params->long_less_check || $build_assess_params->long_more_check)
-            ){
+                    $result_row->long_description_wc <= $build_assess_params->long_less) && ($build_assess_params->long_less_check || $build_assess_params->long_more_check)
+            ) {
                 $recomend = true;
             }
             if ($result_row->short_seo_phrases == 'None' && $result_row->long_seo_phrases == 'None') {
@@ -1208,7 +1200,7 @@ class Assess extends MY_Controller {
             $result_table[] = $result_row;
         }
 
-        if($this->settings['statistics_table'] == "statistics_new"){
+        if ($this->settings['statistics_table'] == "statistics_new") {
             $own_batch_total_items = $this->statistics_new_model->total_items_in_batch($batch_id);
         } else {
             $own_batch_total_items = $this->statistics_model->total_items_in_batch($batch_id);
@@ -1224,8 +1216,8 @@ class Assess extends MY_Controller {
         $report['summary']['long_wc_total_not_0'] = $long_wc_total_not_0;
         $report['summary']['short_description_wc_lower_range'] = $build_assess_params->short_less;
         $report['summary']['long_description_wc_lower_range'] = $build_assess_params->long_less;
-        
-       
+
+
         // only if second batch select - get absent products, merge it with result_table
         if (isset($build_assess_params->compare_batch_id) && $build_assess_params->compare_batch_id > 0) {
             $absent_items = $this->statistics_model->batches_compare($batch_id, $build_assess_params->compare_batch_id);
@@ -1254,7 +1246,7 @@ class Assess extends MY_Controller {
         $report['summary']['compare_batch_name'] = $compare_batch[0]->title;
 
         if ($items_priced_higher_than_competitors > 0) {
-            $report['recommendations']['items_priced_higher_than_competitors'] = 'Reduce pricing on '.$items_priced_higher_than_competitors.' item(s)';
+            $report['recommendations']['items_priced_higher_than_competitors'] = 'Reduce pricing on ' . $items_priced_higher_than_competitors . ' item(s)';
         }
         if ($items_have_more_than_20_percent_duplicate_content > 0) {
             $report['recommendations']['items_have_more_than_20_percent_duplicate_content'] = 'Create original product content';
@@ -1272,7 +1264,7 @@ class Assess extends MY_Controller {
         $report['detail_comparisons_total'] = $detail_comparisons_total;
 
         $this->load->library('pagination');
-        $config['base_url'] = $this->config->site_url().'/assess/comparison_detail';
+        $config['base_url'] = $this->config->site_url() . '/assess/comparison_detail';
         $config['total_rows'] = $detail_comparisons_total;
         $config['per_page'] = '1';
         $config['uri_segment'] = 3;
@@ -1288,22 +1280,21 @@ class Assess extends MY_Controller {
             if ($s_column == 'price_diff') {
                 if ($sort_direction == 'asc') {
                     $this->sort_direction = 'desc';
+                } else
+                if ($sort_direction == 'desc') {
+                    $this->sort_direction = 'asc';
+                } else {
+                    $this->sort_direction = 'asc';
                 }
-                else
-                    if ($sort_direction == 'desc') {
-                        $this->sort_direction = 'asc';
-                    }
-                    else {
-                        $this->sort_direction = 'asc';
-                    }
             } else {
                 $this->sort_direction = $sort_direction;
             }
             $this->sort_type = is_numeric($result_table[0]->$s_column) ? "num" : "";
-            if($s_column == 'product_name'){
-                 usort($result_table, array("Assess", "assess_sort_ignore"));}
-            else{
-                usort($result_table, array("Assess", "assess_sort"));}
+            if ($s_column == 'product_name') {
+                usort($result_table, array("Assess", "assess_sort_ignore"));
+            } else {
+                usort($result_table, array("Assess", "assess_sort"));
+            }
         }
 
         $total_rows = count($result_table);
@@ -1321,134 +1312,133 @@ class Assess extends MY_Controller {
         $echo = intval($this->input->get('sEcho'));
 
         $output = array(
-            "sEcho"                     => $echo,
-            "iTotalRecords"             => $total_rows,
-            "iTotalDisplayRecords"      => $total_rows,
-            "iDisplayLength"            => $display_length,
-            "aaData"                    => array()
+            "sEcho" => $echo,
+            "iTotalRecords" => $total_rows,
+            "iTotalDisplayRecords" => $total_rows,
+            "iDisplayLength" => $display_length,
+            "aaData" => array()
         );
 
-        if(!empty($result_table)) {
+        if (!empty($result_table)) {
             $c = 0;
-            foreach($result_table as $data_row) {
+            foreach ($result_table as $data_row) {
                 if ($c >= $display_start) {
                     if (isset($data_row->recommendations)) {
                         // this is for absent product in selected batch only
-                        $recommendations_html = '<ul class="assess_recommendations"><li>'.$data_row->recommendations.'</li></ul>';
+                        $recommendations_html = '<ul class="assess_recommendations"><li>' . $data_row->recommendations . '</li></ul>';
                     } else {
-                        $img_path = base_url()."img/";
+                        $img_path = base_url() . "img/";
                         $recommendations = array();
 
-                        if($data_row->short_description_wc == 0 && $data_row->long_description_wc == 0){
+                        if ($data_row->short_description_wc == 0 && $data_row->long_description_wc == 0) {
                             $recommendations[] = array(
-                                'img'=>'<img class="bullet" src="'.$img_path.'assess_report_D.png">',
-                                'msg'=>'Add product descriptions',
+                                'img' => '<img class="bullet" src="' . $img_path . 'assess_report_D.png">',
+                                'msg' => 'Add product descriptions',
                             );
                         }
 
-                        if($data_row->short_description_wc > 0 && $data_row->long_description_wc == 0){
-                            if($data_row->short_description_wc > 100){
+                        if ($data_row->short_description_wc > 0 && $data_row->long_description_wc == 0) {
+                            if ($data_row->short_description_wc > 100) {
                                 $sd_diff = 100 - $data_row->short_description_wc;
                             } else {
                                 $sd_diff = $build_assess_params->short_less - $data_row->short_description_wc;
                             }
-                            if($sd_diff > 0){
+                            if ($sd_diff > 0) {
                                 $recommendations[] = array(
-                                    'img'=>'<img class="bullet" src="'.$img_path.'assess_report_arrow_up.png">',
-                                    'msg'=>'Increase descriptions word count by '.$sd_diff.' words',
+                                    'img' => '<img class="bullet" src="' . $img_path . 'assess_report_arrow_up.png">',
+                                    'msg' => 'Increase descriptions word count by ' . $sd_diff . ' words',
                                 );
                             }
-
                         }
-                        if($data_row->long_description_wc > 0 && $data_row->short_description_wc == 0){
-                            if($data_row->long_description_wc > 200){
+                        if ($data_row->long_description_wc > 0 && $data_row->short_description_wc == 0) {
+                            if ($data_row->long_description_wc > 200) {
                                 $ld_diff = 200 - $data_row->long_description_wc;
                             } else {
                                 $ld_diff = $build_assess_params->long_less - $data_row->long_description_wc;
                             }
-                            if($ld_diff > 0){
+                            if ($ld_diff > 0) {
                                 $recommendations[] = array(
-                                    'img'=>'<img class="bullet" src="'.$img_path.'assess_report_arrow_up.png">',
-                                    'msg'=>'Increase descriptions word count by '.$ld_diff.' words',
+                                    'img' => '<img class="bullet" src="' . $img_path . 'assess_report_arrow_up.png">',
+                                    'msg' => 'Increase descriptions word count by ' . $ld_diff . ' words',
                                 );
                             }
                         }
 
-                        if($data_row->short_description_wc > 0 && $data_row->long_description_wc != 0){
-                            if($data_row->short_description_wc > 100){
+                        if ($data_row->short_description_wc > 0 && $data_row->long_description_wc != 0) {
+                            if ($data_row->short_description_wc > 100) {
                                 $sd_diff = 100 - $data_row->short_description_wc;
                             } else {
                                 $sd_diff = $build_assess_params->short_less - $data_row->short_description_wc;
                             }
-                            if($sd_diff > 0){
+                            if ($sd_diff > 0) {
                                 $recommendations[] = array(
-                                    'img'=>'<img class="bullet" src="'.$img_path.'assess_report_arrow_up.png">',
-                                    'msg'=>'Increase short descriptions word count by '.$sd_diff.' words',
+                                    'img' => '<img class="bullet" src="' . $img_path . 'assess_report_arrow_up.png">',
+                                    'msg' => 'Increase short descriptions word count by ' . $sd_diff . ' words',
                                 );
                             }
                         }
-                        if($data_row->long_description_wc > 0 && $data_row->short_description_wc != 0){
-                            if($data_row->long_description_wc > 200){
+                        if ($data_row->long_description_wc > 0 && $data_row->short_description_wc != 0) {
+                            if ($data_row->long_description_wc > 200) {
                                 $ld_diff = 200 - $data_row->long_description_wc;
                             } else {
                                 $ld_diff = $build_assess_params->long_less - $data_row->long_description_wc;
                             }
-                            if($ld_diff > 0){
+                            if ($ld_diff > 0) {
                                 $recommendations[] = array(
-                                    'img'=>'<img class="bullet" src="'.$img_path.'assess_report_arrow_up.png">',
-                                    'msg'=>'Increase long descriptions word count by '.$ld_diff.' words',
+                                    'img' => '<img class="bullet" src="' . $img_path . 'assess_report_arrow_up.png">',
+                                    'msg' => 'Increase long descriptions word count by ' . $ld_diff . ' words',
                                 );
                             }
                         }
 
-                        /*if ($data_row->short_description_wc <= $build_assess_params->short_less ||
-                            $data_row->long_description_wc <= $build_assess_params->long_less) {
-                            $sd_diff = $build_assess_params->short_less - $data_row->short_description_wc;
-                            $ld_diff = $build_assess_params->long_less - $data_row->long_description_wc;
-                            $increase_wc = max($sd_diff, $ld_diff);
-                            $recommendations[] = '<li>Increase descriptions word count by'.$increase_wc.' words</li>';
-                        }*/
+                        /* if ($data_row->short_description_wc <= $build_assess_params->short_less ||
+                          $data_row->long_description_wc <= $build_assess_params->long_less) {
+                          $sd_diff = $build_assess_params->short_less - $data_row->short_description_wc;
+                          $ld_diff = $build_assess_params->long_less - $data_row->long_description_wc;
+                          $increase_wc = max($sd_diff, $ld_diff);
+                          $recommendations[] = '<li>Increase descriptions word count by'.$increase_wc.' words</li>';
+                          } */
 
                         if ($data_row->short_seo_phrases == 'None' && $data_row->long_seo_phrases == 'None') {
                             $recommendations[] = array(
-                                'img'=>'<img class="bullet" src="'.$img_path.'assess_report_seo.png">',
-                                'msg'=>'Keyword optimize product content',
+                                'img' => '<img class="bullet" src="' . $img_path . 'assess_report_seo.png">',
+                                'msg' => 'Keyword optimize product content',
                             );
                         }
                         if ($data_row->lower_price_exist == true && !empty($data_row->competitors_prices)) {
                             if (min($data_row->competitors_prices) < $data_row->own_price) {
                                 $min_price_diff = $data_row->own_price - min($data_row->competitors_prices);
                                 $recommendations[] = array(
-                                    'img'=>'<img class="bullet" src="'.$img_path.'assess_report_dollar.png">',
-                                    'msg'=>'Lower price by $'.$min_price_diff.' to be competitive',
+                                    'img' => '<img class="bullet" src="' . $img_path . 'assess_report_dollar.png">',
+                                    'msg' => 'Lower price by $' . $min_price_diff . ' to be competitive',
                                 );
                             }
                         }
 
                         $data_row->recommendations = $recommendations;
 
-                        for ($i = 0; $i < count($recommendations); $i++){
-                            $recommendations[$i] = '<li>'.$recommendations[$i]['img'].$recommendations[$i]['msg'].'</li>';
+                        for ($i = 0; $i < count($recommendations); $i++) {
+                            $recommendations[$i] = '<li>' . $recommendations[$i]['img'] . $recommendations[$i]['msg'] . '</li>';
                         }
 
-                        $recommendations_html = '<ul class="assess_recommendations">'.implode('', $recommendations).'</ul>';
+                        $recommendations_html = '<ul class="assess_recommendations">' . implode('', $recommendations) . '</ul>';
                     }
 
                     $row_created_array = explode(' ', $data_row->created);
-                    $row_created = '<nobr>'.$row_created_array[0].'</nobr><br/>';
-                    $row_created = $row_created.'<nobr>'.$row_created_array[1].'</nobr>';
+                    $row_created = '<nobr>' . $row_created_array[0] . '</nobr><br/>';
+                    $row_created = $row_created . '<nobr>' . $row_created_array[1] . '</nobr>';
                     $snap = '';
-                    $row_url = '<table class="url_table"><tr><td style="padding:5px;"><a class="active_link" href="'.$data_row->url.'" target="_blank">'.$data_row->url.'</a></td></tr>';
-                    if ($data_row->snap != ''){
-                        $file = realpath(BASEPATH . "../webroot/webshoots").'/'.$data_row->snap;
-                        if (file_exists($file)){
-                            if (filesize($file) > 1024){
-                                $row_url = $row_url.'<tr style="height:1px;"><td style="text-align:right; padding: 0px;"><i class="snap_ico icon-picture" snap="'.$data_row->snap.'"></i></tr></td>';
-                                $snap = "<img src='".base_url()."webshoots/".$data_row->snap."' />";
+                    $row_url = '<table class="url_table"><tr><td style="padding:5px;"><a class="active_link" href="' . $data_row->url . '" target="_blank">' . $data_row->url . '</a></td></tr>';
+                    if ($data_row->snap != '') {
+                        $file = realpath(BASEPATH . "../webroot/webshoots") . '/' . $data_row->snap;
+                        if (file_exists($file)) {
+                            if (filesize($file) > 1024) {
+                                $row_url = $row_url . '<tr style="height:1px;"><td style="text-align:right; padding: 0px;"><i class="snap_ico icon-picture" snap="' . $data_row->snap . '"></i></tr></td>';
+                                $snap = "<img src='" . base_url() . "webshoots/" . $data_row->snap . "' />";
                             }
                         }
                     }
-                    $row_url = $row_url.'</table>';
+                    $row_url = $row_url . '</table>';
 
                     $output['aaData'][] = array(
                         $snap,
@@ -1481,9 +1471,10 @@ class Assess extends MY_Controller {
                 $c++;
             }
         }
-
+//        echo  "<pre>";
+//        print_r($output['aaData']);exit;
         $output['ExtraData']['report'] = $report;
-       
+
         return $output;
     }
 
