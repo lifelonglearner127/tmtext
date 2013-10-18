@@ -2155,18 +2155,18 @@ class System extends MY_Controller {
         $this->imported_data_parsed_model->delete_model($imported_data_id);
     }
     
-    public function add_snapshot_queue(){
-        if(isset($_POST['dep_id_arr']) && isset($_POST['type'])){
+     public function add_snapshot_queue(){
+        if(isset($_POST['snapshot_id_arr']) && isset($_POST['type'])){
             $this->load->model('snapshot_queue_list_model');
-            $this->snapshot_queue_list_model->insert($_POST['dep_id_arr'],$_POST['type']);
+            $this->snapshot_queue_list_model->insert($_POST['snapshot_id_arr'],$_POST['type']);
         } else if(isset($_POST['batch_id']) && isset($_POST['type'])){
             $this->load->model('crawler_list_model');
             $result = $this->crawler_list_model->getByBatchOverall($_POST['batch_id']);
             foreach($result as $value){
-                $dep_id_arr[] = $value->id;
+                $snapshot_id_arr[] = $value->id;
             }
             $this->load->model('snapshot_queue_list_model');
-            $this->snapshot_queue_list_model->insert($dep_id_arr,$_POST['type']);
+            $this->snapshot_queue_list_model->insert($snapshot_id_arr,$_POST['type']);
             
         }
     }

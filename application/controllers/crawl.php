@@ -31,11 +31,11 @@ class Crawl extends MY_Controller {
         foreach ($result as $value) {
             switch ($value['type']) {
                 case 'sites_view_snapshoot':{
-                    $siteViewIds[] = $value['dep_id'];
+                    $siteViewIds[] = $value['snapshot_id'];
                 }
                     break;
                 case 'site_crawl_snapshoot':{
-                    $siteCrawlIds[] = $value['dep_id'];
+                    $siteCrawlIds[] = $value['snapshot_id'];
                 }
                     break;
             }
@@ -115,6 +115,7 @@ class Crawl extends MY_Controller {
             $result = $this->crawler_list_model->get($id);
             $v['url'] = $result[0]->url;
             $v['id'] = $result[0]->id;
+            $v['imported_data_id'] = $result[0]->imported_data_id;
             if (!empty($v)) {
                     $http_status = $this->urlExistsCode($v['url']);
                     $orig_url = $v['url'];
@@ -124,7 +125,7 @@ class Crawl extends MY_Controller {
                     $snap_res = $this->crawl_webshoot($call_url, $v['id']);
                     $this->webshoots_model->updateCrawlListWithSnap($v['id'], $snap_res['img'], $http_status);
             }
-            echo "\n Snapshot created:  " . $v['id'] . " - " . $v['url'] . "\n";
+            echo "\n Snapshot created:  " . $v['imported_data_id'] . " - " . $v['url'] . "\n";
         }
     }
     

@@ -11,17 +11,17 @@ class snapshot_queue_list_model extends CI_Model {
         parent::__construct();
     }
     
-    public function insert($dep_id_arr,$type){
-        foreach($dep_id_arr as $dep_id){
+    public function insert($snapshot_id_arr,$type){
+        foreach($snapshot_id_arr as $snapshot_id){
             $query = $this->db->get_where($this->tables['snapshot_queue_list'], array(
-                    'dep_id' => $dep_id,
+                    'snapshot_id' => $snapshot_id,
                     'user_id' => $this->ion_auth->get_user_id(),
                     'type' => $type
                 ));
             $result = $query->result();
             if(!$result){
                 $data = array(
-                    'dep_id' => $dep_id,
+                    'snapshot_id' => $snapshot_id,
                     'user_id' => $this->ion_auth->get_user_id(),
                     'type' => $type
                 );
@@ -40,8 +40,8 @@ class snapshot_queue_list_model extends CI_Model {
         $this->db->empty_table($this->tables['snapshot_queue_list']);
     }
     
-    public function deleteByDepId($dep_id){
-        $this->db->delete($this->tables['snapshot_queue_list'], array('dep_id' => $dep_id,'user_id' => $this->ion_auth->get_user_id())); 
+    public function deleteByDepId($snapshot_id){
+        $this->db->delete($this->tables['snapshot_queue_list'], array('snapshot_id' => $snapshot_id,'user_id' => $this->ion_auth->get_user_id())); 
     }
 
 }

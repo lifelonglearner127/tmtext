@@ -1,3 +1,7 @@
+#18/10 Viktor
+ALTER TABLE  `snapshot_queue_list` CHANGE  `dep_id`  `snapshot_id` INT( 11 ) NULL DEFAULT NULL
+
+
 #15/10 Ruslan
 CREATE TABLE IF NOT EXISTS `imported_data_parsed_archived` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,

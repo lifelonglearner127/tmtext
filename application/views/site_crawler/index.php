@@ -312,39 +312,16 @@ $(function () {
         this.val('');
         this.val($initialVal);
     };
-
-//    $("#current_snapshot_cmd").click(function(e) { // ==== !!! EXPREIMENTAL OPTION !!!
-//    	var urls = [];
-//    	$("#Current_List > ul > li input[type='checkbox']:checked").each(function(index, value) {
-//    		var mid = {
-//    			id: $(value).data('id'),
-//    			url: $(value).data('url')
-//    		}
-//    		urls.push(mid);
-//    	});
-//    	var send_data = {
-//    		urls: urls
-//    	};
-//    	$("#loading_crawl_snap_modal").modal('show');
-//    	$.post(base_url + 'index.php/measure/crawlsnapshootcmd', send_data, function(data) {
-//    		console.log("CMD PATH: ", data);
-//    		$("#loading_crawl_snap_modal").modal('hide');
-//    		$('#current_snapshot').attr('disabled', 'disabled');
-//    		$('#current_snapshot_cmd').attr('disabled', 'disabled');
-//    		loadCurrentList();
-//    	});
-//    });
-    
     
     $("#current_snapshot_cmd").click(function(e) { // ==== !!! EXPREIMENTAL OPTION !!!
-    	var dep_id_arr = [];
+    	var snapshot_id_arr = [];
     	$("#Current_List > ul > li input[type='checkbox']:checked").each(function(index, value) {
-    		dep_id_arr.push($(value).data('id'));
+    		snapshot_id_arr.push($(value).data('id'));
     	});
         $.ajax({
             type: "POST",
             url: base_url + 'index.php/system/add_snapshot_queue',
-            data: { dep_id_arr: dep_id_arr,type: 'site_crawl_snapshoot' }
+            data: { snapshot_id_arr: snapshot_id_arr,type: 'site_crawl_snapshoot' }
         }).done(function( data ) {
             loadCurrentList();
         });
