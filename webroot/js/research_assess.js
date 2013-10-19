@@ -795,6 +795,7 @@ $(function () {
                 research_assess_compare_batches_customer.empty();
                 if (data) {
                     $.each(data, function(i, v){
+                       
                         research_assess_compare_batches_customer.append('<option value="'+v.toLowerCase()+'">'+v+'</option>');
                                             
                     });
@@ -812,7 +813,7 @@ $(function () {
                     
                     $.each(data, function(i, v){
                         
-                        research_assess_compare_batches_batch.append('<option value="'+i+'">'+v+'</option>');
+                        research_assess_compare_batches_batch.append('<option value="'+v.id+'">'+v.value+'</option>');
                         if(i==0){
                          
                          research_assess_compare_batches_batch.append('<option value="all">All</option>');

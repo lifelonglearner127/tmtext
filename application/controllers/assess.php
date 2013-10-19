@@ -780,6 +780,7 @@ class Assess extends MY_Controller {
         }
         asort($batches_list);
         $batches_list[0] = 'Select batch';
+             
         return $batches_list;
     }
 
@@ -894,7 +895,11 @@ class Assess extends MY_Controller {
 
     public function batches_get_all() {
         $output = $this->batches_list();
-        $this->output->set_content_type('application/json')->set_output(json_encode($output));
+        $batches=array();
+        foreach($output as $kay => $val){
+           $batches[]= array('id' => $kay, 'value' => $val) ;
+        }
+        $this->output->set_content_type('application/json')->set_output(json_encode($batches));
     }
 
     public function delete_from_batch() {
