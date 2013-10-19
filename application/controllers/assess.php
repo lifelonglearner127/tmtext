@@ -212,9 +212,12 @@ class Assess extends MY_Controller {
 //                }
 //                $results = $cmp_arr;
            $results = $cmp;
+          
+           
            
             }
-
+//            echo "<pre>";
+//            print_r($build_assess_params);
 
             $output = $this->build_asses_table($results, $build_assess_params, $batch_id);
 
@@ -1279,6 +1282,7 @@ class Assess extends MY_Controller {
 
         if ($build_assess_params->all_columns) {
             $s_columns = explode(',', $build_assess_params->all_columns);
+            $s_column_index_cmp = $build_assess_params->sort_columns;
             $s_column_index = intval($build_assess_params->sort_columns);
             $s_column = $s_columns[$s_column_index];
             $this->sort_column = $s_column;
@@ -1296,10 +1300,12 @@ class Assess extends MY_Controller {
                 $this->sort_direction = $sort_direction;
             }
             $this->sort_type = is_numeric($result_table[0]->$s_column) ? "num" : "";
+            
+          
             if ($s_column == 'product_name') {
                 usort($result_table, array("Assess", "assess_sort_ignore"));
             } else {
-                usort($result_table, array("Assess", "assess_sort"));
+                //usort($result_table, array("Assess", "assess_sort"));
             }
         }
 
