@@ -940,7 +940,13 @@ class Assess extends MY_Controller {
                 $result_row->product_name = $row->product_name;
             
             }
-            $result_row->url = $row->url;
+            if(!$row->url ||  $row->url==''){
+               $result_row->url ='-' ;
+            }else{
+                $result_row->url = $row->url;
+            
+            }
+            
             $result_row->short_description = $row->short_description;
             $result_row->long_description = $row->long_description;
             $result_row->short_description_wc = intval($row->short_description_wc);

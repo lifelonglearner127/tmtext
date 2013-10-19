@@ -92,6 +92,7 @@ $(function () {
         "bDestroy": true,
         "sPaginationType": "full_numbers",
         "bProcessing": true,
+        "bAutoWidth": false,
         "bServerSide": true,
         "sAjaxSource": readAssessUrl,
         "fnServerData": function (sSource, aoData, fnCallback) {
@@ -186,21 +187,21 @@ $(function () {
         {
             "sTitle" : "Product Name", 
             "sName":"product_name", 
-            "sWidth": "10%",
+            "sWidth": "15%",
             "sClass": "product_name_text"
         },
        
         {
             "sTitle" : "URL", 
             "sName":"url", 
-            "sWidth": "7%",
+            "sWidth": "15%",
             "sClass": "url_text"
         },
        
         {
             "sTitle" : "Words <span class='subtitle_word_short' >Short</span>",
             "sName":"short_description_wc", 
-            "sWidth": "2%",
+            "sWidth": "1%",
             "sClass": "word_short"
         },
        
@@ -214,7 +215,7 @@ $(function () {
         {
             "sTitle" : "Words <span class='subtitle_word_long' >Long</span>",
             "sName":"long_description_wc", 
-            "sWidth": "2%",
+            "sWidth": "1%",
             "sClass": "word_long"
         },
        
@@ -228,34 +229,34 @@ $(function () {
         {
             "sTitle" : "Duplicate Content", 
             "sName":"duplicate_content", 
-            "sWidth": "2%"
+            "sWidth": "1%"
         },
         
         {
             "sTitle" : "Content", 
             "sName":"column_external_content", 
-            "sWidth": "6%"
+            "sWidth": "2%"
         },
         {
             "sTitle" : "Reviews", 
             "sName":"column_reviews", 
-            "sWidth": "6%"
+            "sWidth": "3%"
         },
         {
             "sTitle" : "Features", 
             "sName":"column_features", 
-            "sWidth": "6%"
+            "sWidth": "4%"
         },        
         {
             "sTitle" : "Price", 
             "sName":"price_diff", 
-            "sWidth": "7%",
+            "sWidth": "2%",
             "sClass": "price_text"
         },
         {
             "sTitle" : "Recommendations", 
             "sName":"recommendations", 
-            "sWidth": "30%",
+            "sWidth": "15%",
             "bVisible": false, 
             "bSortable": false
         },
@@ -272,23 +273,23 @@ $(function () {
          {
             "sTitle" : "Product Name", 
             "sName":"product_name1", 
-            "sWidth": "10%"
+            "sWidth": "15%"
         },
          {
             "sTitle" : "URL", 
             "sName":"url1", 
-            "sWidth": "7%"
+            "sWidth": "15%"
         },
          {
             "sTitle" : "Words <span class='subtitle_word_short' >Short</span>",
             "sName":"short_description_wc1", 
-            "sWidth": "2%",
+            "sWidth": "1%",
             "sClass": "word_short"
         },
          {
             "sTitle" : "Words <span class='subtitle_word_long' >Long</span>",
             "sName":"long_description_wc1", 
-            "sWidth": "2%",
+            "sWidth": "1%",
             "sClass": "word_long"
         }
                 
