@@ -2159,9 +2159,9 @@ class System extends MY_Controller {
         if(isset($_POST['snapshot_id_arr']) && isset($_POST['type'])){
             $this->load->model('snapshot_queue_list_model');
             $this->snapshot_queue_list_model->insert($_POST['snapshot_id_arr'],$_POST['type']);
-        } else if(isset($_POST['batch_id']) && isset($_POST['type'])){
+        } else if(isset($_POST['batch_id']) && isset($_POST['type']) && isset($_POST['unsnapshoted_items'])){
             $this->load->model('crawler_list_model');
-            $result = $this->crawler_list_model->getByBatchOverall($_POST['batch_id']);
+            $result = $this->crawler_list_model->getByBatchOverall($_POST['batch_id'],$_POST['unsnapshoted_items']);
             foreach($result as $value){
                 $snapshot_id_arr[] = $value->id;
             }

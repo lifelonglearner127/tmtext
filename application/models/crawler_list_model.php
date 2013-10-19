@@ -244,7 +244,7 @@ class Crawler_List_model extends CI_Model {
         return $query->result();
     }
 
-    function getByBatchOverall($batch_id)
+    function getByBatchOverall($batch_id, $failed = 0)
     {
         $this->db->select('cl.id, cl.imported_data_id, cl.url, cl.snap, cl.snap_date, c.name as name, cl.status, DATE(cl.updated) as updated')
             ->from($this->tables['crawler_list'].' as cl')
@@ -253,8 +253,11 @@ class Crawler_List_model extends CI_Model {
             ->join('research_data as rd', 'rd.id = rc.research_data_id')
             ->where('rd.batch_id',$batch_id);
 
+        if ($failed == 1) {
+                $this->db->where('cl.snap IS NULL');
+        }
         $query = $this->db->get();
-
+        
         return $query->result();
     }
 

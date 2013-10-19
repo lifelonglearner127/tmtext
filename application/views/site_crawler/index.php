@@ -79,24 +79,19 @@
 
 			function submitBatchSnapProcess() {
 				var batch_id = $('select[name="batch"] > option:selected').val();
-//				var send_data = {
-//                                        batch_id: batch_id
-//                                };
-//                                $("#loading_crawl_snap_modal").modal('show');
-//                                $.post(base_url + 'index.php/measure/batch_snap_process', send_data, function(data) {
-//                                        console.log("BATCH SNAP PROCESS RESPONSE : ", data);
-//                                        $("#loading_crawl_snap_modal").modal('hide');
-//                                        loadCurrentList();
-//                                });
+                                var unsnapshoted_items = 0;
+                                
+                                if($('#unsnapshoted_items').is(':checked'))
+                                    unsnapshoted_items = 1;
+                                
                                 $.ajax({
                                     type: "POST",
                                     url: base_url + 'index.php/system/add_snapshot_queue',
-                                    data: { batch_id: batch_id,type: 'site_crawl_snapshoot' }
+                                    data: { batch_id: batch_id,type: 'site_crawl_snapshoot', unsnapshoted_items: unsnapshoted_items }
                                 }).done(function( data ) {
                                 });
 
 			}
-
       </script>
 
 
@@ -108,11 +103,15 @@
 				<?php endforeach;?>
 			</select>
 			<button id='snap_selected_batch' onclick="submitBatchSnapProcess()" disabled class='btn btn-success new_btn mt_15 ml_10'>Snap</button>
+                        <span class="item_span">Unsnapshoted Items</span>
+                        <input type="checkbox" id="unsnapshoted_items" value="on" />
 			<button id="crawl_batch" class="btn new_btn btn-success mt_15 ml_10">Crawl</button>
 			<button id="re_crawl_batch" class="btn new_btn btn-success mt_15 ml_10">Re-Crawl</button>
-            <input type="text" class="span2 pull-left mt_15 ml_10" name="search_crawl_data" >
-            <button id="apply_search_data" class="btn new_btn btn-success mt_15 ml_10"><i class="icon-white icon-ok"></i>&nbsp;Apply</button>
-            <button id="clear_search_data" class="btn new_btn btn-success mt_15 ml_10"><i class="icon-white icon-ok"></i>&nbsp;Clear</button>
+                        <div id="search_crawl_div" >
+                            <input type="text" class="span2 pull-left ml_10" name="search_crawl_data" >
+                            <button id="apply_search_data" class="btn new_btn btn-success ml_10"><i class="icon-white icon-ok"></i>&nbsp;Apply</button>
+                            <button id="clear_search_data" class="btn new_btn btn-success  ml_10"><i class="icon-white icon-ok"></i>&nbsp;Clear</button>
+                        </div>
 
 			<div class="row-fluid mt_5">
 				<div class="search_area uneditable-input span10" style="cursor: text; width: 765px; height: 320px; overflow : auto;" id="Current_List">
