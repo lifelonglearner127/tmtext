@@ -27,7 +27,7 @@
                 <div class="left_block">
                         <span class="txt_container">REAL-TIME INSIGHT</span><br /><br />
                         <span class="txt_container">FOR <span class="txt_or_container">ECOMMERCE</span></span>
-                        <p>Product Pricing, Assortment, Content Marketing and Demand</p>
+                        <p>Product Pricing, Assortment,<br /> Content Marketing and Demand</p>
                         <a href="javascript:void(0)">LEARN MORE</a>
                 </div>
            </div>
