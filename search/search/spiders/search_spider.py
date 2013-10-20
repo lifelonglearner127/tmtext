@@ -36,7 +36,7 @@ class SearchSpider(BaseSpider):
 
 	name = "search"
 	allowed_domains = ["amazon.com", "walmart.com", "bloomingdales.com", "overstock.com", "wayfair.com", "bestbuy.com", "toysrus.com",\
-					   "bjs.com", "sears.com", "staples.com"]
+					   "bjs.com", "sears.com", "staples.com", "newegg.com"]
 
 	# pass product as argument to constructor - either product name or product URL
 	# arguments:
@@ -158,6 +158,12 @@ class SearchSpider(BaseSpider):
 		elif site == 'walmart':
 			product_name = hxs.select("//h1[@class='productTitle']/text()").extract()[0]
 			product_model_holder = hxs.select("//td[contains(text(),'Model')]/following-sibling::*/text()").extract()
+			if product_model_holder:
+				product_model = product_model_holder[0]
+
+		elif site == 'newegg':
+			product_name = hxs.select("//span[@itemprop='name']/text()").extract()[0].strip()
+			product_model_holder = hxs.select("//dt[text()='Model']/following-sibling::*/text()").extract()
 			if product_model_holder:
 				product_model = product_model_holder[0]
 
