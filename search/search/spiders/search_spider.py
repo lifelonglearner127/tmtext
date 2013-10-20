@@ -311,7 +311,7 @@ class SearchSpider(BaseSpider):
 			for result in results:
 				item = SearchItem()
 				item['site'] = site
-				product_name = result.select("text()").extract()[0]
+				product_name = result.select(".//text()").extract()[0]
 				# append text that is in <span> if any
 				span_text = result.select("./span/text()")
 
