@@ -2695,8 +2695,7 @@ class Imported_data_parsed_model extends CI_Model {
                 }
                 if ($cus_val !== "")
                     $rows[$key]['customer'] = $cus_val;
-                for ($key1 = $key+1;$key1<count($rows); ++$key1) {
-                     $row1 = $rows[$key1];
+                foreach ($rows as $key1 => $row1) {
                     if ($key1 != $key && $this->get_base_url($row['url']) == $this->get_base_url($row1['url'])) {
                         unset($rows[$key]);
                     }
