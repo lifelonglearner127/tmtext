@@ -15,6 +15,7 @@
         <li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_rankings');?>">Rankings</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_pricing');?>">Pricing </a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/product_models');?>">Product models </a></li>
+        <li class=""><a data-toggle="tab" href="<?php echo site_url('system/snapshot_queue');?>">Snapshot Queue</a></li>
     </ul>
     <div class="tab-content">
         <script src="<?php echo base_url();?>js/tinysort.js"></script>
@@ -352,11 +353,13 @@
                 var departmentValue = $('select[name="department"]').children('option:selected').val();
                 if($.inArray(departmentValue, ids) == -1)
                     ids.push(departmentValue);
-            
+                var snapshot_arr = [];
+                snapshot_arr[0] = [];
+                snapshot_arr[0]['id'] = departmentValue;
                 $.ajax({
                     type: "POST",
                     url: base_url + 'index.php/system/add_snapshot_queue',
-                    data: { snapshot_id_arr: [departmentValue],type: 'sites_view_snapshoot' }
+                    data: { snapshot_arr: snapshot_arr,type: 'sites_view_snapshoot' }
                 }).done(function( data ) {
                 });
                 

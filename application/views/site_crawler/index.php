@@ -12,6 +12,7 @@
         <li class=""><a data-toggle="tab" href="<?php echo site_url('system/keywords');?>">Keywords</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_pricing');?>">Pricing </a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/product_models');?>">Product models </a></li>
+        <li class=""><a data-toggle="tab" href="<?php echo site_url('system/snapshot_queue');?>">Snapshot Queue</a></li>
     </ul>
 	  <div class="tab-content">
 
@@ -313,14 +314,17 @@ $(function () {
     };
     
     $("#current_snapshot_cmd").click(function(e) { // ==== !!! EXPREIMENTAL OPTION !!!
-    	var snapshot_id_arr = [];
+    	var snapshot_arr = [];
     	$("#Current_List > ul > li input[type='checkbox']:checked").each(function(index, value) {
-    		snapshot_id_arr.push($(value).data('id'));
+                snapshot_arr[index] = [];
+//    		snapshot_id_arr.push($(value).data('id'));
+                snapshot_arr[index]['id'] = $(value).data('id');
+                snapshot_arr[index]['url'] = $(value).data('url');
     	});
         $.ajax({
             type: "POST",
             url: base_url + 'index.php/system/add_snapshot_queue',
-            data: { snapshot_id_arr: snapshot_id_arr,type: 'site_crawl_snapshoot' }
+            data: { snapshot_arr: snapshot_arr,type: 'site_crawl_snapshoot' }
         }).done(function( data ) {
             loadCurrentList();
         });

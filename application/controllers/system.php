@@ -2156,18 +2156,27 @@ class System extends MY_Controller {
     }
     
      public function add_snapshot_queue(){
-        if(isset($_POST['snapshot_id_arr']) && isset($_POST['type'])){
+        if(isset($_POST['snapshot_arr']) && isset($_POST['type'])){
+            if(isset($_POST['site_name']))
+                $site_name = $_POST['site_name'];
+            else
+                $site_name = '';
             $this->load->model('snapshot_queue_list_model');
-            $this->snapshot_queue_list_model->insert($_POST['snapshot_id_arr'],$_POST['type']);
+            $this->snapshot_queue_list_model->insert($_POST['snapshot_arr'],$_POST['type'],$site_name);
         } else if(isset($_POST['batch_id']) && isset($_POST['type']) && isset($_POST['unsnapshoted_items'])){
             $this->load->model('crawler_list_model');
             $result = $this->crawler_list_model->getByBatchOverall($_POST['batch_id'],$_POST['unsnapshoted_items']);
             foreach($result as $value){
-                $snapshot_id_arr[] = $value->id;
+                $snapshot_arr[]['id'] = $value->id;
+                $snapshot_arr[]['url'] = $value->url;
             }
             $this->load->model('snapshot_queue_list_model');
-            $this->snapshot_queue_list_model->insert($snapshot_id_arr,$_POST['type']);
-            
+            $this->snapshot_queue_list_model->insert($snapshot_arr,$_POST['type']);
         }
     }
+    
+    public function snapshot_queue(){
+        $this->render();
+    }
+    
 }

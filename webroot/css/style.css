@@ -1997,7 +1997,8 @@ select#sites option{
     background: #e2e2e4;
 }
 .current_list_title{
-    width:195px!important;
+    width: 195px !important;
+    height: 54px;
 }
 .site_crawler_content h3 small{
     color:#555555;
