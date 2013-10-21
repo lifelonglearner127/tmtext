@@ -1104,6 +1104,7 @@ class Crons extends MY_Controller {
             $this->email->message('Cron job for do_statistics_new is done');
             $this->email->send();
         }
+        unlink($tmp_dir . ".locked");
     }
 
     public function do_stats_new() {

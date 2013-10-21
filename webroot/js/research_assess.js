@@ -92,6 +92,7 @@ $(function () {
         "bDestroy": true,
         "sPaginationType": "full_numbers",
         "bProcessing": true,
+        "aaSorting": [[ 5, "desc" ]],
         "bAutoWidth": false,
         "bServerSide": true,
         "sAjaxSource": readAssessUrl,

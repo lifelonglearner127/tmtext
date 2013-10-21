@@ -125,7 +125,7 @@ class Assess extends MY_Controller {
             $build_assess_params->date_from = $this->input->get('date_from') == 'undefined' ? '' : $this->input->get('date_from');
             $build_assess_params->date_to = $this->input->get('date_to') == 'undefined' ? '' : $this->input->get('date_to');
             $build_assess_params->price_diff = $this->input->get('price_diff') == 'undefined' ? -1 : $this->input->get('price_diff');
-
+            $build_assess_params->max_similar_item_count=1;
             $build_assess_params->short_less_check = $this->input->get('short_less_check') == 'true' ? true : false;
             if ($this->input->get('short_less')) {
                 $build_assess_params->short_less = $this->input->get('short_less') == 'undefined' ? -1 : intval($this->input->get('short_less'));
@@ -175,7 +175,7 @@ class Assess extends MY_Controller {
 
             $batch2 = $this->input->get('batch2') == 'undefined' ? '' : $this->input->get('batch2');
 
-            if ($batch2 != '' && $batch2 != 0) {
+            if ($batch2 != '' && $batch2 != 0 && $batch2 != 'all') {
                 $this->load->model('batches_model');
                 $customer_name = $this->batches_model->getCustomerUrlByBatch($batch2);
 
@@ -199,26 +199,54 @@ class Assess extends MY_Controller {
                         $cmp[] = $val;
                     }
                 }
-//                $volume = array();
-//                $cmp_arr = array();
-//                foreach ($cmp as $key => $row) {
-//                    $row = (array) $row;
-//                    $cmp_arr[$key] = $row;
-//                    $volume[$key] = $row['product_name'];
-//                }
-//                array_multisort($volume, SORT_ASC, $cmp_arr);
-//                foreach ($cmp_arr as $key => $val) {
-//                    $cmp_arr[$key] = (object) $val;
-//                }
-//                $results = $cmp_arr;
-           $results = $cmp;
+                $volume = array();
+                $cmp_arr = array();
+                foreach ($cmp as $key => $row) {
+                    $row = (array) $row;
+                    $cmp_arr[$key] = $row;
+                    $volume[$key] = $row['product_name'];
+                }
+                array_multisort($volume, SORT_ASC, $cmp_arr);
+                foreach ($cmp_arr as $key => $val) {
+                    $cmp_arr[$key] = (object) $val;
+                }
+                $results = $cmp_arr;
+             $results = $cmp;
           
            
            
             }
-//            echo "<pre>";
-//            print_r($build_assess_params);
-
+            $cmp= array();
+            if($batch2 == 'all'){
+                $max_similar_item_count=1;
+                $this->load->model('batches_model');
+                $customer_name = $this->batches_model->getCustomerUrlByBatch($batch_id);
+                $cmp = array();
+                foreach ($results as $key => $val) {
+                   $similar_items = unserialize($val->similar_products_competitors);
+                    $similar_items_data= array();
+                   if(count($similar_items)>1){
+                       foreach ($similar_items as $key => $item) {
+                            if (substr_count(strtolower($customer_name), strtolower($item['customer'])) == 0) {
+                                $cmpare = $this->statistics_new_model->get_compare_item($similar_items[$key]['imported_data_id']);
+                                
+                                $similar_items_data[]= $cmpare;
+                            }
+                        }
+                        $sim_item_count=count($similar_items_data);
+                        if($sim_item_count>$max_similar_item_count){
+                            $max_similar_item_count->$sim_item_count;
+                        }
+                        $results[$key]->similar_items = $similar_items_data;
+                   }
+                   else{
+                       unset($results[$key]);
+                   }
+                  
+                }
+                      $build_assess_params->max_similar_item_count= $max_similar_item_count;
+            }
+            
             $output = $this->build_asses_table($results, $build_assess_params, $batch_id);
 
             $this->output->set_content_type('application/json')
@@ -976,6 +1004,7 @@ class Assess extends MY_Controller {
             $result_row->short_description_wc1 = '-';
             $result_row->long_description_wc1 = '-';
 
+           
             if ($row->snap1 && $row->snap1 != '') {
                 $result_row->snap1 = "<img src='" . base_url() . "webshoots/" . $row->snap1 . "' />";
             }
@@ -991,6 +1020,11 @@ class Assess extends MY_Controller {
             if ($row->long_description_wc1) {
                 $result_row->long_description_wc1 = $row->long_description_wc1;
             }
+            
+            
+            
+            
+            
             $pars_atr = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
 
             if ($pars_atr['parsed_attributes']['cnetcontent'] == 1 && $pars_atr['parsed_attributes']['webcollage'] == 1)
@@ -1310,7 +1344,7 @@ class Assess extends MY_Controller {
             if ($s_column == 'product_name') {
                 usort($result_table, array("Assess", "assess_sort_ignore"));
             } else {
-                //usort($result_table, array("Assess", "assess_sort"));
+               //usort($result_table, array("Assess", "assess_sort"));
             }
         }
 
@@ -1457,7 +1491,8 @@ class Assess extends MY_Controller {
                     }
                     $row_url = $row_url . '</table>';
 
-                    $output['aaData'][] = array(
+                    
+                    $output_row=array(
                         $snap,
                         $row_created,
                         $data_row->product_name,
@@ -1472,13 +1507,27 @@ class Assess extends MY_Controller {
                         $data_row->column_features,
                         $data_row->price_diff,
                         $recommendations_html,
-                        json_encode($data_row),
-                        $data_row->snap1,
-                        $data_row->product_name1,
-                        $data_row->url1,
-                        $data_row->short_description_wc1,
-                        $data_row->long_description_wc1,
+                        json_encode($data_row)
+                        
                     );
+                  
+            if($build_assess_params->max_similar_item_count >1){
+                $sim_items=$row->similar_items;
+                for($i=1 ; $i<=$build_assess_params->max_similar_item_count; $i++ ){
+                    $output_row[]= $val->snap.$i =$sim_items[$i]->snap?$sim_items[$i]->snap:'-';
+                    $output_row[]= $val->product_name.$i =$sim_items[$i]->product_name?:"-";
+                    $output_row[]= $val->short_description_wc1.$i =$sim_items[$i]->short_description_wc1?$sim_items[$i]->short_description_wc1:'-';
+                    $output_row[]= $val->long_description_wc.$i =$sim_items[$i]->long_description_wc?$sim_items[$i]->long_description_wc:'-';
+                    
+                }
+            }else{
+                $output_row[]=$data_row->snap1;
+                $output_row[]= $data_row->product_name1;
+                $output_row[]= $data_row->url1;
+                $output_row[]= $data_row->short_description_wc1;
+                $output_row[]= $data_row->long_description_wc1;
+            }
+            $output['aaData'][] = $output_row;
                 }
                 if ($display_length > 0) {
                     if ($c >= ($display_start + $display_length - 1)) {
