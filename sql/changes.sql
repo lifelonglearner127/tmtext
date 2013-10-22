@@ -763,3 +763,14 @@ CREATE TABLE IF NOT EXISTS `keyword_data_sources` (
   `data_source_name` varchar(30) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1
+
+# 10/22 Fjodor
+ALTER TABLE  `site_categories` CHANGE  `title_seo_keywords`  `title_seo_keywords` 
+VARCHAR( 255 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NULL DEFAULT NULL ,
+CHANGE  `user_seo_keywords`  `user_seo_keywords` 
+VARCHAR( 255 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NULL DEFAULT NULL
+
+ALTER TABLE  `statistics_new` CHANGE  `short_seo_phrases`  `short_seo_phrases` 
+VARCHAR( 1000 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL ,
+CHANGE  `long_seo_phrases`  `long_seo_phrases` 
+VARCHAR( 2000 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL
