@@ -37,7 +37,20 @@
 			<?php $board_row = array_slice($board_list_empty, $position, $item_per_row); ?>
 			<div class='board_item_row'>
 				<?php foreach($board_row as $k => $v) { ?>
-					<?php $handle = @fopen($v['snap'],'r'); ?>
+					<?php 
+						// $handle = @fopen($v['snap'],'r');
+						$handle = false;
+						$ch = curl_init($v['snap']);
+		        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+		        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+		        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		        $data = curl_exec($ch);
+		        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+		        curl_close($ch);
+		        if ($httpcode >= 200 && $httpcode <= 302) {
+		        	$handle = true;
+		        } 
+					?>
 					<?php if($handle !== false) { ?>
 					  <?php 
 					  	$item_lm = "";
