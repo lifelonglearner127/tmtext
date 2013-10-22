@@ -82,24 +82,35 @@
 			<?php $board_row = array_slice($board_list_full, $position, $item_per_row); ?>
 			<div class='board_item_row'>
 				<?php foreach($board_row as $k => $v) { ?>
-				  <?php 
-				  	$item_lm = "";
-				  	if($k != 0) $item_lm = " board_item_ml";
-				  ?>
-					<div class="board_item <?php echo $item_lm; ?>">
-						<div class='board_item_dicon'><img src="<?php echo base_url() ?>/img/diagramm_low.png"></div>
-						<input type='hidden' name='dm_id' value="<?php echo $v['id'] ?>">
-						<p class='board_item_title st'><?php echo $v['text']; ?></p>
-                        <?php $handle = @fopen($v['snap'],'r');
-                              if($handle !== false){ ?>
-						        <img src="<?php echo $v['snap']; ?>">
-                        <?php } else { ?>
-                                <div style="height: 120px;display: block"></div>
-                        <?php } ?>
-						<div class='prod_description_new'>
-							<p style='font-size: 11px; margin-top: 15px; margin-bottom: 0px; color: #949494'>Description: <?php echo $v['description_words'] ?> words</p>
+					<?php 
+						// $handle = @fopen($v['snap'],'r');
+						$handle = false;
+						$ch = curl_init($v['snap']);
+		        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+		        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+		        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		        $data = curl_exec($ch);
+		        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+		        curl_close($ch);
+		        if ($httpcode >= 200 && $httpcode <= 302) {
+		        	$handle = true;
+		        } 
+					?>
+					<?php if($handle !== false) { ?>
+					  <?php 
+					  	$item_lm = "";
+					  	if($k != 0) $item_lm = " board_item_ml";
+					  ?>
+						<div class="board_item <?php echo $item_lm; ?>">
+							<div class='board_item_dicon'><img src="<?php echo base_url() ?>/img/diagramm_low.png"></div>
+							<input type='hidden' name='dm_id' value="<?php echo $v['id'] ?>">
+							<p class='board_item_title st'><?php echo $v['text']; ?></p>
+	            <img src="<?php echo $v['snap']; ?>">
+							<div class='prod_description_new'>
+								<p style='font-size: 11px; margin-top: 15px; margin-bottom: 0px; color: #949494'>Description: <?php echo $v['description_words'] ?> words</p>
+							</div>
 						</div>
-					</div>
+					<?php } ?>
 				<?php } ?>
 			</div>
 		<?php } ?>
