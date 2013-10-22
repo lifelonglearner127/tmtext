@@ -77,7 +77,7 @@ class Statistics_new_model extends CI_Model {
                          $short_seo_phrases, $long_seo_phrases,
                          $own_price, $price_diff, $competitors_prices, $items_priced_higher_than_competitors, $similar_products_competitors,
                          $research_data_id, $batch_id){
-        
+/* old script        
         $this->revision = $revision;
         $this->short_description_wc = (string)$short_description_wc;
         $this->long_description_wc = (string)$long_description_wc;
@@ -94,16 +94,35 @@ class Statistics_new_model extends CI_Model {
         
         $this->db->where('imported_data_id', $imported_data_id);
         $query= $this->db->get("statistics_new");
+ //*/
+        //new script
+        $idata['revision'] = $revision;
+        $idata['short_description_wc'] = (string)$short_description_wc;
+        $idata['long_description_wc'] = (string)$long_description_wc;
+        $idata['short_seo_phrases'] = (string)$short_seo_phrases;
+        $idata['long_seo_phrases'] = (string)$long_seo_phrases;
+        $idata['created'] = date('Y-m-d h:i:s');
+        $idata['own_price'] = (string)$own_price;
+        $idata['price_diff'] = (string)$price_diff;
+        $idata['competitors_prices'] = (string)$competitors_prices;
+        $idata['items_priced_higher_than_competitors'] = $items_priced_higher_than_competitors;
+        $idata['similar_products_competitors'] = $similar_products_competitors;
+        $idata['research_data_id'] = $research_data_id;
+        $idata['batch_id'] = $batch_id;
+        
+        $this->db->where('imported_data_id', $imported_data_id);
+        $query= $this->db->get("statistics_new");
+        
         if($query->num_rows()>0){
-         
-           $this->db->where('imported_data_id', $imported_data_id);
-           $this->db->update('statistics_new', $this);
+         $row = $query->first_row();
+           $this->db->where('id', $row->id);
+           $this->db->update('statistics_new', $idata);
         }else{
         
-        $this->imported_data_id = $imported_data_id;
+        $idata['imported_data_id'] = $imported_data_id;
         
 
-        $this->db->insert('statistics_new', $this);
+        $this->db->insert('statistics_new', $idata);
         return $this->db->insert_id();
         }
 
@@ -130,7 +149,7 @@ class Statistics_new_model extends CI_Model {
         return $result;
 
     }
-    
+            
     
     function get_compare_item($imported_data_id){
         $query = $this->db

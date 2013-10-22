@@ -2229,38 +2229,8 @@ class Measure extends MY_Controller {
             if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
 
                 $strict = $this->input->post('strict');
-                $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], $strict);
-                $rows = $this->similar_data_model->get_group_id($im_data_id);
-
-                //echo "<pre>";
-                // print_r($rows);
-                if (count($rows) > 0) {
-
-                    foreach ($same_pr as $val) {
-                        foreach ($rows as $key => $row) {
-                            if ($row['group_id'] == $val['imported_data_id']) {
-                                unset($rows[$key]);
-                            }
-                        }
-                    }
-                }
-                if (count($rows) > 0) {
-                    $url = array();
-                    foreach ($rows as $row) {
-                        $data_similar = $this->imported_data_parsed_model->getByImId($row['group_id']);
-                        $data_similar['imported_data_id'] = $row['group_id'];
-                        $n = parse_url($data_similar['url']);
-                        $customer = $n['host'];
-                        $customer = str_replace("www1.", "", $customer);
-                        $customer = str_replace("www.", "", $customer);
-                        $data_similar['customer'] = $customer;
-
-                        if (!in_array($customer, $url)) {
-                            $url[] = $customer;
-                            $same_pr[] = $data_similar;
-                        }
-                    }
-                }
+                $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], $strict, $im_data_id);
+               
             }
 
 //            if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['UPC/EAN/ISBN'])) {
@@ -2716,7 +2686,8 @@ class Measure extends MY_Controller {
                 if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
 
                     $strict = $this->input->post('strict');
-                    $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], $strict);
+                    echo "im+data_id == ".$im_data_id;
+                    $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], $strict,$im_data_id);
                 }
 
                 if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['UPC/EAN/ISBN'])) {

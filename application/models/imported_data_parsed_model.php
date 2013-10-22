@@ -33,6 +33,7 @@ class Imported_data_parsed_model extends CI_Model {
         'product_match_collections' => 'product_match_collections',
         'crawler_list_prices' => 'crawler_list_prices',
         'crawler_list' => 'crawler_list',
+        'settings'=>'settings'
     );
 
     function __construct() {
@@ -86,6 +87,49 @@ class Imported_data_parsed_model extends CI_Model {
             }
         }
         return $data;
+    }
+    public function getDoStatsStatus(){
+        $this->db->select('description , created');
+        $this->db->from($this->tables['settings']);
+        $this->db->where('key','do_stats_status');
+        $query = $this->db->get();
+        if($query->num_rows===0)return FALSE;
+        $result = $query->first_row();
+        return $result;
+    }
+    public function getTimeDif(){
+        $sql = "select TIMEDIFF(NOW(),`created`) as `td` From 
+            ".$this->tables['settings']." WHERE `key`='do_stats_status'";
+        $query = $this->db->query($sql);
+        if($query->num_rows===0)return FALSE;
+        return $query->first_row();
+    }
+    public function getLUTimeDiff(){
+        $sql = "select TIMEDIFF(NOW(),`modified`) as `td` From 
+            ".$this->tables['settings']." WHERE `key`='do_stats_status'";
+        $query = $this->db->query($sql);
+        if($query->num_rows===0)return FALSE;
+        return $query->first_row();
+    }
+    public function setDoStatsStatus(){
+        $data = array(
+            'key'=>'do_stats_status',
+            'description'=>'started',
+            'created'=>date("Y-m-d H:i:s",time()),
+            'modified'=>date("Y-m-d H:i:s",time())
+        );
+        $this->db->insert($this->tables['settings'],$data);
+    }
+    public function updDoStatsStatus(){
+        $data = array(
+            'modified'=>date("Y-m-d H:i:s",time())
+        );
+        $this->db->where('key','do_stats_status');
+        $this->db->update($this->tables['settings'],$data);
+    }
+    public function delDoStatsStatus(){
+        $this->db->where('key','do_stats_status');
+        $this->db->delete($this->tables['settings']);
     }
 
     private function get_random_right_compare_pr_regression($customer_exc, $customers_list, $ids) {
@@ -1030,9 +1074,25 @@ class Imported_data_parsed_model extends CI_Model {
         $sql_cmd = "TRUNCATE TABLE `duplicate_content_new";
         return $this->db->query($sql_cmd);
     }
+                    
+    function do_stats_newupdated($truncate=0) {
+      $q = $this->db->select('key,description')->from('settings')->where('key', 'cron_job_offset');
+        $res = $q->get()->row_array();
+        if (count($res) > 0) {
+            $start = $res['description'];
+        } else {
+            $d = array(
+                'key' => 'cron_job_offset',
+                'description' => '0',
+            );
 
-    function do_stats_newupdated() {
+            $this->db->insert('settings', $d);
 
+            $start = 0;
+        }   
+     if (($truncate == 1) && ($start == 0)) {
+            $this->truncate_stats_new();
+        }
         $query = $this->db->query("SELECT p.imported_data_id, p.revision
        FROM `imported_data_parsed` AS `p`
        LEFT JOIN `statistics_new` AS sn ON `p`.`imported_data_id` = sn.`imported_data_id`
@@ -1373,9 +1433,15 @@ class Imported_data_parsed_model extends CI_Model {
         $results = $query->result();
 
         $data = array();
-        foreach ($results as $result) {
+        $ids = array();
+         foreach ($results as $result) {
+            $ids[] =  $result->imported_data_id;
+         }
+         $ids = array_unique($ids);
+       
+        foreach ($ids as $id) {
 
-            $query = $this->db->where('imported_data_id', $result->imported_data_id)
+            $query = $this->db->where('imported_data_id', $id)
 //                    ->where("revision = (SELECT  MAX(revision) as revision
 //                      FROM imported_data_parsed WHERE `imported_data_id`= $result->imported_data_id
 //                      GROUP BY imported_data_id)", NULL, FALSE)
@@ -1409,7 +1475,7 @@ class Imported_data_parsed_model extends CI_Model {
                     $features = $val['value'];
                 }
             }
-            array_push($data, array('imported_data_id' => $result->imported_data_id, 'product_name' => $result->value,
+            array_push($data, array('imported_data_id' => $id, 'product_name' => $product_name,
                 'description' => $description, 'long_description' => $long_description, 'url' => $url, 'parsed_attributes' => $parsed_attributes, 'product_name' => $product_name, "model" => $model, 'features' => $features));
         }
 
@@ -2669,7 +2735,8 @@ class Imported_data_parsed_model extends CI_Model {
         return $query->result();
     }
 
-    function getByParsedAttributes($search, $strict = false) {
+    function getByParsedAttributes($search, $strict = false,$imp_id = false) {
+       
         $start_time = microtime();
         if ($rows = $this->getData($search, null, null, null, 'parsed_attributes', $strict)) {
             $end_time = microtime();
@@ -2685,24 +2752,26 @@ class Imported_data_parsed_model extends CI_Model {
             }
             $customers_list = array_unique($customers_list);
 
-
+            
             foreach ($rows as $key => $row) {
                 $cus_val = "";
                 foreach ($customers_list as $ki => $vi) {
                     if (strpos($rows[$key]['url'], "$vi") !== false) {
                         $cus_val = $vi;
+                        break;
                     }
                 }
                 if ($cus_val !== "")
                     $rows[$key]['customer'] = $cus_val;
-                foreach ($rows as $key1 => $row1) {
-                    if ($key1 != $key && $this->get_base_url($row['url']) == $this->get_base_url($row1['url'])) {
-                        unset($rows[$key]);
+
+                foreach ($rows as $key1=>$row1) {
+                    if (($imp_id!==false?($row1['imported_data_id']!=$imp_id):true) && ($key1 != $key) && ($this->get_base_url($row['url']) == $this->get_base_url($row1['url']))) {
+                        unset($rows[$key1]);
                     }
                 }
             }
             sort($rows);
-
+            
             return $rows;
         }
     }

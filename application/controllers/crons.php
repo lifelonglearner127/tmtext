@@ -720,12 +720,18 @@ class Crons extends MY_Controller {
             //$this->statistics_new_model->truncate();
 
             $trnc = $this->uri->segment(3);
-            var_dump($trnc);
-            if ($trnc === false) {
-                $trnc = 1;
-            }
+            $trnc = $trnc===FALSE?0:1;
+            //var_dump($trnc);
+            //if ($trnc !== false) {$trnc = 1;}
+            
             $timesart = time();
-            $data_arr = $this->imported_data_parsed_model->do_stats_newupdated();
+            $dss = $this->imported_data_parsed_model->getDoStatsStatus();
+            if(!$dss){
+                $this->imported_data_parsed_model->setDoStatsStatus();
+            }
+            else{
+            }
+            $data_arr = $this->imported_data_parsed_model->do_stats_newupdated($trnc);
             $timeend= time(true);
             $time=  $timesart - $timeend;
             echo "get_data=----".$time;
@@ -768,7 +774,7 @@ class Crons extends MY_Controller {
                      $im_data_id = $data_import['imported_data_id'];
 
                     echo "<br>"."im+daat+id= ".$im_data_id."</br>";
-                    if ($data_import['description'] !== null && trim($data_import['description']) !== "") {
+                    if (($data_import['description'] !== null||$data_import['description'] !== 'null') && trim($data_import['description']) !== "") {
 
                         $data_import['description'] = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $data_import['description']);
                         $data_import['description'] = preg_replace('/\s+/', ' ', $data_import['description']);
@@ -777,7 +783,7 @@ class Crons extends MY_Controller {
                     } else {
                         $short_description_wc = 0;
                     }
-                    if ($data_import['long_description'] !== null && trim($data_import['long_description']) !== "") {
+                    if (($data_import['long_description'] !== null||$data_import['long_description'] !== 'null') && trim($data_import['long_description']) !== "") {
 
                         $data_import['long_description'] = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $data_import['long_description']);
                         $data_import['long_description'] = preg_replace('/\s+/', ' ', $data_import['long_description']);
@@ -862,11 +868,11 @@ class Crons extends MY_Controller {
                             $price_diff_exists['own_price'] = floatval($own_price);
 
                             try {
-                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
+                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], 0,$data_import['imported_data_id'] );
                             } catch (Exception $e) {
                                 echo 'Error', $e->getMessage(), "\n";
 
-                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
+                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], 0,$data_import['imported_data_id'] );
                             }
 
                             if (!empty($similar_items)) {
@@ -921,11 +927,11 @@ class Crons extends MY_Controller {
                             }
                         } else {
                             try {
-                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
+                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'],  0,$data_import['imported_data_id'] );
                             } catch (Exception $e) {
                                 echo 'Error', $e->getMessage(), "\n";
 
-                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
+                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], 0,$data_import['imported_data_id'] );
                             }
 
                             if (!empty($similar_items)) {
@@ -942,6 +948,7 @@ class Crons extends MY_Controller {
                                     foreach ($sites_list as $ki => $vi) {
                                         if (strpos($vs['url'], "$vi") !== false) {
                                             $customer = $vi;
+                                            break;
                                         }
                                     }
 
@@ -1087,8 +1094,14 @@ class Crons extends MY_Controller {
         $res = $q->get()->row_array();
         $start = $res['description'];
         if (count($data_arr) > 1) {
-            shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/do_stats_forupdated > /dev/null 2>/dev/null &");
+            $utd = $this->imported_data_parsed_model->getLUTimeDiff();
+            
+            echo $utd->td;
+            shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/do_stats_forupdated/$trnc > /dev/null 2>/dev/null &");
         } else {
+            $mtd = $this->imported_data_parsed_model->getTimeDif();
+            echo $mtd->td;
+            $this->imported_data_parsed_model->delDoStatsStatus();
             $data = array(
                 'description' => 0
             );
@@ -1101,7 +1114,7 @@ class Crons extends MY_Controller {
             $this->email->to('bayclimber@gmail.com');
             $this->email->cc('max.kavelin@gmail.com');
             $this->email->subject('Cron job report');
-            $this->email->message('Cron job for do_statistics_new is done');
+            $this->email->message('Cron job for do_statistics_new is done.<br> Timeing = '.$mtd->td);
             $this->email->send();
         }
         unlink($tmp_dir . ".locked");
@@ -1266,11 +1279,11 @@ class Crons extends MY_Controller {
                             $price_diff_exists['own_price'] = floatval($own_price);
 
                             try {
-                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
+                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], 0,$data_import['imported_data_id'] );
                             } catch (Exception $e) {
                                 echo 'Error', $e->getMessage(), "\n";
 
-                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
+                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], 0,$data_import['imported_data_id'] );
                             }
 
                             if (!empty($similar_items)) {
@@ -1325,11 +1338,11 @@ class Crons extends MY_Controller {
                             }
                         } else {
                             try {
-                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
+                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], 0,$data_import['imported_data_id'] );
                             } catch (Exception $e) {
                                 echo 'Error', $e->getMessage(), "\n";
 
-                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model']);
+                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], 0,$data_import['imported_data_id'] );
                             }
 
                             if (!empty($similar_items)) {
