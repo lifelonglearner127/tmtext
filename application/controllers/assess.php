@@ -125,7 +125,7 @@ class Assess extends MY_Controller {
             $build_assess_params->date_from = $this->input->get('date_from') == 'undefined' ? '' : $this->input->get('date_from');
             $build_assess_params->date_to = $this->input->get('date_to') == 'undefined' ? '' : $this->input->get('date_to');
             $build_assess_params->price_diff = $this->input->get('price_diff') == 'undefined' ? -1 : $this->input->get('price_diff');
-            $build_assess_params->max_similar_item_count=1;
+            $build_assess_params->max_similar_item_count = 1;
             $build_assess_params->short_less_check = $this->input->get('short_less_check') == 'true' ? true : false;
             if ($this->input->get('short_less')) {
                 $build_assess_params->short_less = $this->input->get('short_less') == 'undefined' ? -1 : intval($this->input->get('short_less'));
@@ -164,7 +164,7 @@ class Assess extends MY_Controller {
             if (intval($compare_batch_id) > 0) {
                 $build_assess_params->compare_batch_id = intval($compare_batch_id);
             }
-
+            
             $params = new stdClass();
             $params->batch_id = $batch_id;
             $params->txt_filter = $txt_filter;
@@ -174,12 +174,13 @@ class Assess extends MY_Controller {
             $results = $this->get_data_for_assess($params);
 
             $batch2 = $this->input->get('batch2') == 'undefined' ? '' : $this->input->get('batch2');
-
+            $cmp = array();
             if ($batch2 != '' && $batch2 != 0 && $batch2 != 'all') {
                 $this->load->model('batches_model');
+                $build_assess_params->max_similar_item_count =2;
+
                 $customer_name = $this->batches_model->getCustomerUrlByBatch($batch2);
 
-                $cmp = array();
                 foreach ($results as $val) {
 
                     if (substr_count(strtolower($val->similar_products_competitors), strtolower($customer_name)) > 0) {
@@ -199,54 +200,54 @@ class Assess extends MY_Controller {
                         $cmp[] = $val;
                     }
                 }
-                $volume = array();
-                $cmp_arr = array();
-                foreach ($cmp as $key => $row) {
-                    $row = (array) $row;
-                    $cmp_arr[$key] = $row;
-                    $volume[$key] = $row['product_name'];
-                }
-                array_multisort($volume, SORT_ASC, $cmp_arr);
-                foreach ($cmp_arr as $key => $val) {
-                    $cmp_arr[$key] = (object) $val;
-                }
-                $results = $cmp_arr;
-             $results = $cmp;
-          
-           
-           
+//                $volume = array();
+//                $cmp_arr = array();
+//                foreach ($cmp as $key => $row) {
+//                    $row = (array) $row;
+//                    $cmp_arr[$key] = $row;
+//                    $volume[$key] = $row['product_name'];
+//                }
+//                array_multisort($volume, SORT_ASC, $cmp_arr);
+//                foreach ($cmp_arr as $key => $val) {
+//                    $cmp_arr[$key] = (object) $val;
+//                }
+//                $results = $cmp_arr;
+                $results = $cmp;
             }
-            $cmp= array();
-            if($batch2 == 'all'){
-                $max_similar_item_count=1;
+//           echo '<pre>';
+//           print_r($results);exit;
+            if ($batch2 == 'all') {
+                $max_similar_item_count = 1;
                 $this->load->model('batches_model');
                 $customer_name = $this->batches_model->getCustomerUrlByBatch($batch_id);
                 $cmp = array();
-                foreach ($results as $key => $val) {
-                   $similar_items = unserialize($val->similar_products_competitors);
-                    $similar_items_data= array();
-                   if(count($similar_items)>1){
-                       foreach ($similar_items as $key => $item) {
+                foreach ($results as $key1 => $val) {
+                    $similar_items = unserialize($val->similar_products_competitors);
+                    $similar_items_data = array();
+                    if (count($similar_items) > 1) {
+                        foreach ($similar_items as $key => $item) {
                             if (substr_count(strtolower($customer_name), strtolower($item['customer'])) == 0) {
                                 $cmpare = $this->statistics_new_model->get_compare_item($similar_items[$key]['imported_data_id']);
-                                
-                                $similar_items_data[]= $cmpare;
+
+                                $similar_items_data[] = $cmpare;
                             }
                         }
-                        $sim_item_count=count($similar_items_data);
-                        if($sim_item_count>$max_similar_item_count){
-                            $max_similar_item_count->$sim_item_count;
+                        $sim_item_count = count($similar_items_data);
+                        if ($sim_item_count > $max_similar_item_count) {
+                            $max_similar_item_count = $sim_item_count;
                         }
-                        $results[$key]->similar_items = $similar_items_data;
-                   }
-                   else{
-                       unset($results[$key]);
-                   }
-                  
+                        $val->similar_items = $similar_items_data;
+                        $results[$key1] = $val;
+                    } else {
+                        unset($results[$key1]);
+                    }
                 }
-                      $build_assess_params->max_similar_item_count= $max_similar_item_count;
+                $build_assess_params->max_similar_item_count = $max_similar_item_count;
             }
-            
+
+//           echo "<pre>";
+//            print_r($results);exit;
+
             $output = $this->build_asses_table($results, $build_assess_params, $batch_id);
 
             $this->output->set_content_type('application/json')
@@ -808,7 +809,7 @@ class Assess extends MY_Controller {
         }
         asort($batches_list);
         $batches_list[0] = 'Select batch';
-             
+
         return $batches_list;
     }
 
@@ -923,9 +924,9 @@ class Assess extends MY_Controller {
 
     public function batches_get_all() {
         $output = $this->batches_list();
-        $batches=array();
-        foreach($output as $kay => $val){
-           $batches[]= array('id' => $kay, 'value' => $val) ;
+        $batches = array();
+        foreach ($output as $kay => $val) {
+            $batches[] = array('id' => $kay, 'value' => $val);
         }
         $this->output->set_content_type('application/json')->set_output(json_encode($batches));
     }
@@ -940,7 +941,100 @@ class Assess extends MY_Controller {
     }
 
     private function build_asses_table($results, $build_assess_params, $batch_id = '') {
-        // echO"<pre>";print_r($results);die;
+        $columns=array(
+            
+            array(
+                "sTitle" => "Snapshot",
+                "sName" => "snap",
+                "sWidth" =>  "10%"
+            ),
+            array(
+                "sTitle" => "Date",
+                "sName" => "created",
+                "sWidth" =>"3%"
+            ),
+            array(
+                "sTitle" => "Product Name", 
+                "sName" =>"product_name", 
+                "sWidth" => "15%",
+                "sClass" => "product_name_text"
+            ),
+            
+            array(
+                "sTitle" => "URL", 
+                "sName" => "url", 
+                "sWidth" =>"15%",
+                "sClass" =>"url_text"
+            ),
+            array(
+                 "sTitle" => "Words <span class='subtitle_word_short' >Short</span>",
+                "sName" => "short_description_wc", 
+                "sWidth" => "1%",
+                "sClass" => "word_short"
+            ),
+            array(
+                 "sTitle" => "Keywords <span class='subtitle_keyword_short'>Short</span>",
+                "sName" => "short_seo_phrases", 
+                "sWidth" => "2%",
+                "sClass" => "keyword_short"
+            ),
+            array(
+                "sTitle" => "Words <span class='subtitle_word_long' >Long</span>",
+                "sName" =>"long_description_wc", 
+                "sWidth" => "1%",
+                "sClass" =>"word_long"
+            ),
+            array(
+                 "sTitle" => "Keywords <span class='subtitle_keyword_long'>Long</span>",
+                "sName" => "long_seo_phrases", 
+                "sWidth" => "2%",
+                "sClass" => "keyword_long"
+            ),
+              array(
+            "sTitle" =>"Duplicate Content", 
+            "sName" =>"duplicate_content", 
+            "sWidth" =>"1%"
+         ),
+        
+         array(
+            "sTitle" =>"Content", 
+            "sName" =>"column_external_content", 
+            "sWidth" =>"2%"
+        ),
+         array(
+            "sTitle" =>"Reviews", 
+            "sName" =>"column_reviews", 
+            "sWidth" =>"3%"
+       ),
+         array(
+            "sTitle" =>"Features", 
+            "sName" =>"column_features", 
+            "sWidth" => "4%"
+        ),        
+         array(
+            "sTitle"  =>"Price", 
+            "sName" =>"price_diff", 
+            "sWidth" =>"2%",
+            "sClass" =>"price_text"
+       ),
+         array(
+            "sTitle"  =>"Recommendations", 
+            "sName" =>"recommendations", 
+            "sWidth" =>"15%",
+            "bVisible" =>false, 
+            "bSortable" =>false
+       ),
+
+        array(
+            "sName" =>"add_data", 
+            "bVisible" => false
+        )
+        
+            
+            
+        );
+                
+         
         $duplicate_content_range = 25;
         $this->load->model('batches_model');
         $this->load->model('imported_data_parsed_model');
@@ -970,19 +1064,17 @@ class Assess extends MY_Controller {
             $result_row->imported_data_id = $row->imported_data_id;
             $result_row->research_data_id = $row->research_data_id;
             $result_row->created = $row->created;
-            if(!$row->product_name ||  $row->product_name==''){
-               $result_row->product_name ='-' ;
-            }else{
+            if (!$row->product_name || $row->product_name == '') {
+                $result_row->product_name = '-';
+            } else {
                 $result_row->product_name = $row->product_name;
-            
             }
-            if(!$row->url ||  $row->url==''){
-               $result_row->url ='-' ;
-            }else{
+            if (!$row->url || $row->url == '') {
+                $result_row->url = '-';
+            } else {
                 $result_row->url = $row->url;
-            
             }
-            
+
             $result_row->short_description = $row->short_description;
             $result_row->long_description = $row->long_description;
             $result_row->short_description_wc = intval($row->short_description_wc);
@@ -998,13 +1090,43 @@ class Assess extends MY_Controller {
             $price_diff = unserialize($row->price_diff);
             $result_row->lower_price_exist = false;
             $result_row->snap = '';
-            $result_row->snap1 = '';
-            $result_row->product_name1 = '';
-            $result_row->url1 = '';
-            $result_row->short_description_wc1 = '-';
-            $result_row->long_description_wc1 = '-';
 
-           
+            if ($build_assess_params->max_similar_item_count > 1) {
+                
+                $sim_items = $row->similar_items;
+                $max_similar_item_count = (int) $build_assess_params->max_similar_item_count;
+
+               if($max_similar_item_count>1){
+                   for ($i = 1; $i <= $max_similar_item_count; $i++) {
+
+                     $columns[] = array("sTitle" => "Snapshot", "sName" => 'snap' . $i);
+                     $columns[] = array("sTitle" => "Product Name", "sName" => 'product_name' . $i);
+                     $columns[] = array("sTitle" => "URL", "sName" => 'url' . $i);
+                     $columns[] = array("sTitle" => "Words <span class='subtitle_word_short' >Short</span>", "sName" => 'short_description_wc' . $i);
+                     $columns[] = array("sTitle" => "Words <span class='subtitle_word_long' >Long</span>", "sName" => 'long_description_wc' . $i);
+                   }
+
+              }
+
+                for ($i = 1; $i <= $max_similar_item_count; $i++) {
+
+                    $result_row = (array) $result_row;
+                    $result_row["snap$i"] = $sim_items[$i - 1]->snap !== false ? $sim_items["$i-1"]->snap : '-';
+
+                    $result_row['url' . $i] = $sim_items[$i - 1]->url !== false ? $sim_items[$i - 1]->url : "-";
+                    $result_row['product_name' . $i] = $sim_items[$i - 1]->product_name !== false ? $sim_items[$i - 1]->product_name : "-";
+                    $result_row['short_description_wc' . $i] = $sim_items[$i - 1]->short_description_wc !== false ? $sim_items[$i - 1]->short_description_wc : '-';
+                    $result_row['long_description_wc' . $i] = $sim_items[$i - 1]->long_description_wc !== false ? $sim_items[$i - 1]->long_description_wc : '-';
+                }
+                $result_row = (object)$result_row;
+            } else {
+                $result_row->snap1 = '';
+                $result_row->product_name1 = '';
+                $result_row->url1 = '';
+                $result_row->short_description_wc1 = '-';
+                $result_row->long_description_wc1 = '-';
+            }
+
             if ($row->snap1 && $row->snap1 != '') {
                 $result_row->snap1 = "<img src='" . base_url() . "webshoots/" . $row->snap1 . "' />";
             }
@@ -1020,11 +1142,8 @@ class Assess extends MY_Controller {
             if ($row->long_description_wc1) {
                 $result_row->long_description_wc1 = $row->long_description_wc1;
             }
-            
-            
-            
-            
-            
+
+
             $pars_atr = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
 
             if ($pars_atr['parsed_attributes']['cnetcontent'] == 1 && $pars_atr['parsed_attributes']['webcollage'] == 1)
@@ -1339,12 +1458,12 @@ class Assess extends MY_Controller {
                 $this->sort_direction = $sort_direction;
             }
             $this->sort_type = is_numeric($result_table[0]->$s_column) ? "num" : "";
-            
-          
+
+
             if ($s_column == 'product_name') {
                 usort($result_table, array("Assess", "assess_sort_ignore"));
             } else {
-               //usort($result_table, array("Assess", "assess_sort"));
+                //usort($result_table, array("Assess", "assess_sort"));
             }
         }
 
@@ -1491,8 +1610,8 @@ class Assess extends MY_Controller {
                     }
                     $row_url = $row_url . '</table>';
 
-                    
-                    $output_row=array(
+
+                    $output_row = array(
                         $snap,
                         $row_created,
                         $data_row->product_name,
@@ -1508,27 +1627,29 @@ class Assess extends MY_Controller {
                         $data_row->price_diff,
                         $recommendations_html,
                         json_encode($data_row)
-                        
                     );
-                  
-            if($build_assess_params->max_similar_item_count >1){
-                $sim_items=$row->similar_items;
-                for($i=1 ; $i<=$build_assess_params->max_similar_item_count; $i++ ){
-                    $output_row[]= $val->snap.$i =$sim_items[$i]->snap?$sim_items[$i]->snap:'-';
-                    $output_row[]= $val->product_name.$i =$sim_items[$i]->product_name?:"-";
-                    $output_row[]= $val->short_description_wc1.$i =$sim_items[$i]->short_description_wc1?$sim_items[$i]->short_description_wc1:'-';
-                    $output_row[]= $val->long_description_wc.$i =$sim_items[$i]->long_description_wc?$sim_items[$i]->long_description_wc:'-';
-                    
+
+                    if ($build_assess_params->max_similar_item_count > 1) {
+                        $data_row = (array)$data_row;
+                        for ($i = 1; $i <= $build_assess_params->max_similar_item_count; $i++) {
+                            $output_row[] = $data_row['snap' . $i];
+                            $output_row[] = $data_row['product_name' . $i];
+                            $output_row[] = $data_row['url' . $i];
+                            $output_row[] = $data_row['short_description_wc' . $i];
+                            $output_row[] = $data_row['long_description_wc' . $i];
+                        }
+                        $data_row = (object)$data_row;
+                    } else {
+
+                        $output_row[] = $data_row->snap1;
+                        $output_row[] = $data_row->product_name1;
+                        $output_row[] = $data_row->url1;
+                        $output_row[] = $data_row->short_description_wc1;
+                        $output_row[] = $data_row->long_description_wc1;
+                       
+                    }
                 }
-            }else{
-                $output_row[]=$data_row->snap1;
-                $output_row[]= $data_row->product_name1;
-                $output_row[]= $data_row->url1;
-                $output_row[]= $data_row->short_description_wc1;
-                $output_row[]= $data_row->long_description_wc1;
-            }
-            $output['aaData'][] = $output_row;
-                }
+                 $output['aaData'][] = $output_row;
                 if ($display_length > 0) {
                     if ($c >= ($display_start + $display_length - 1)) {
                         break;
@@ -1537,8 +1658,7 @@ class Assess extends MY_Controller {
                 $c++;
             }
         }
-//        echo  "<pre>";
-//        print_r($output['aaData']);exit;
+        $output['columns']= $columns;
         $output['ExtraData']['report'] = $report;
 
         return $output;

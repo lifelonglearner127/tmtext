@@ -53,7 +53,12 @@ $(function () {
         "product_name1",
         "url1",
         "short_description_wc1",
-        "long_description_wc1"
+        "long_description_wc1",
+        "snap2",
+        "product_name2",
+        "url2",
+        "short_description_wc2",
+        "long_description_wc2"
         ],        
         recommendations: [
         "product_name",
@@ -85,95 +90,7 @@ $(function () {
         }
         this.oApi._fnProcessingDisplay( oSettings, onoff );
     };
-
-    var tblAssess = $('#tblAssess').dataTable({
-        
-        "bJQueryUI": true,
-        "bDestroy": true,
-        "sPaginationType": "full_numbers",
-        "bProcessing": true,
-        "aaSorting": [[ 5, "desc" ]],
-        "bAutoWidth": false,
-        "bServerSide": true,
-        "sAjaxSource": readAssessUrl,
-        "fnServerData": function (sSource, aoData, fnCallback) {
-            aoData = buildTableParams(aoData);
-            
-            $.getJSON(sSource, aoData, function (json) {
-                if (json.ExtraData != undefined) {
-                    buildReport(json);
-                }
-                fnCallback(json);
-                setTimeout(function(){
-                    tblAssess.fnProcessingIndicator( false );
-                }, 100);
-                if($('select[name="research_assess_batches"]').find('option:selected').val() == "0"){
-                    $('#assess_report_total_items').html("");
-                    $('#assess_report_items_priced_higher_than_competitors').html("");
-                    $('#assess_report_items_have_more_than_20_percent_duplicate_content').html("");
-                    $('#assess_report_items_unoptimized_product_content').html("");
-                    $('#assess_report_items_have_product_short_descriptions_that_are_too_short').html("");
-                    $('#assess_report_items_have_product_long_descriptions_that_are_too_short').html("");
-                }
-                if(json.iTotalRecords == 0){
-                    $('#assess_report_compare_panel').hide();
-                    $('#assess_report_numeric_difference').hide();
-                    if($('select[name="research_assess_batches"]').find('option:selected').val() != ""){
-                        $('#summary_message').html(" - Processing data. Check back soon.");
-                        //                                $('#research_assess_filter_short_descriptions_panel').show();
-                        //                                $('#research_assess_filter_long_descriptions_panel').show();
-                        $('#assess_report_items_1_descriptions_pnl').hide();
-                        $('#assess_report_items_2_descriptions_pnl').hide();
-                    }
-                }
-                if(json.aaData.length > 0){
-                    var str = '';
-                    for(var i=0; i<json.aaData.length; i++){
-                        var obj = jQuery.parseJSON(json.aaData[i][14]);
-                        if(json.aaData[i][2] != null && json.aaData[i][2] != '' && json.aaData[i][0]!=''){
-                            if(json.aaData[i][2].length > 93)
-                              str += '<div class="board_item"><span class="span_img">'+json.aaData[i][2]+'</span><br />'+json.aaData[i][0]+
-                                  '<div class="prod_description"><b>URL:</b><br/>'+obj.url+'<br /><br /><b>Product name:</b><br/>'+obj.product_name+
-                                  '<br /><br/><b>Price:</b><br/>'+obj.own_price+'</div></div>';
-                            else
-                              str += '<div class="board_item"><span>'+json.aaData[i][2]+'</span><br />'+json.aaData[i][0]+
-                                  '<div class="prod_description"><b>URL:</b><br/>'+obj.url+'<br /><br /><b>Product name:</b><br/>'+obj.product_name
-                                  +'<br /><br/><b>Price:</b><br/>'+obj.own_price+'</div></div>';
-                        }
-                    }                   
-                    if(str == ''){
-                        str = '<p>No images available for this batch</p>';
-                    }
-                    $('#assess_view').html(str);
-                    $('#assess_view .board_item img').on('click', function(){
-                        var info = $(this).parent().find('div.prod_description').html();
-                        showSnap('<img src="'+$(this).attr('src')+'" style="float:left; max-width: 600px; margin-right: 10px">'+info);
-                    });
-                }
-
-            });
-        },
-        "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-            $(nRow).attr("add_data", aData[14]);
-            return nRow;
-        },
-        "fnDrawCallback": function(oSettings) {
-            tblAssess_postRenderProcessing();
-            if (zeroTableDraw) {
-                zeroTableDraw = false;
-                return;
-            }
-            hideColumns();
-            check_word_columns();
-        },
-        "oLanguage": {
-            "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
-            "sInfoEmpty": "Showing 0 to 0 of 0 records",
-            "sInfoFiltered": "",
-            "sSearch":"Filter:",
-            "sLengthMenu": "_MENU_ rows"
-        },
-        "aoColumns": [
+    var columns =  [
         {
              "sTitle" : "Snapshot",
              "sName":"snap",
@@ -294,7 +211,220 @@ $(function () {
             "sClass": "word_long"
         }
                 
-        ]
+        ];
+    var tblAssess = $('#tblAssess').dataTable({
+        
+        "bJQueryUI": true,
+        "bDestroy": true,
+        "sPaginationType": "full_numbers",
+        "bProcessing": true,
+        "aaSorting": [[ 5, "desc" ]],
+        "bAutoWidth": false,
+        "bServerSide": true,
+        "sAjaxSource": readAssessUrl,
+        "fnServerData": function (sSource, aoData, fnCallback) {
+            aoData = buildTableParams(aoData);
+            
+            $.getJSON(sSource, aoData, function (json) {
+                
+                if (json.ExtraData != undefined) {
+                    buildReport(json);
+                }
+                 columns = json.columns;
+                 
+                fnCallback(json);
+                setTimeout(function(){
+                    tblAssess.fnProcessingIndicator( false );
+                }, 100);
+                if($('select[name="research_assess_batches"]').find('option:selected').val() == "0"){
+                    $('#assess_report_total_items').html("");
+                    $('#assess_report_items_priced_higher_than_competitors').html("");
+                    $('#assess_report_items_have_more_than_20_percent_duplicate_content').html("");
+                    $('#assess_report_items_unoptimized_product_content').html("");
+                    $('#assess_report_items_have_product_short_descriptions_that_are_too_short').html("");
+                    $('#assess_report_items_have_product_long_descriptions_that_are_too_short').html("");
+                }
+                if(json.iTotalRecords == 0){
+                    $('#assess_report_compare_panel').hide();
+                    $('#assess_report_numeric_difference').hide();
+                    if($('select[name="research_assess_batches"]').find('option:selected').val() != ""){
+                        $('#summary_message').html(" - Processing data. Check back soon.");
+                        //                                $('#research_assess_filter_short_descriptions_panel').show();
+                        //                                $('#research_assess_filter_long_descriptions_panel').show();
+                        $('#assess_report_items_1_descriptions_pnl').hide();
+                        $('#assess_report_items_2_descriptions_pnl').hide();
+                    }
+                }
+                if(json.aaData.length > 0){
+                    var str = '';
+                    for(var i=0; i<json.aaData.length; i++){
+                        var obj = jQuery.parseJSON(json.aaData[i][14]);
+                        if(json.aaData[i][2] != null && json.aaData[i][2] != '' && json.aaData[i][0]!=''){
+                            if(json.aaData[i][2].length > 93)
+                              str += '<div class="board_item"><span class="span_img">'+json.aaData[i][2]+'</span><br />'+json.aaData[i][0]+
+                                  '<div class="prod_description"><b>URL:</b><br/>'+obj.url+'<br /><br /><b>Product name:</b><br/>'+obj.product_name+
+                                  '<br /><br/><b>Price:</b><br/>'+obj.own_price+'</div></div>';
+                            else
+                              str += '<div class="board_item"><span>'+json.aaData[i][2]+'</span><br />'+json.aaData[i][0]+
+                                  '<div class="prod_description"><b>URL:</b><br/>'+obj.url+'<br /><br /><b>Product name:</b><br/>'+obj.product_name
+                                  +'<br /><br/><b>Price:</b><br/>'+obj.own_price+'</div></div>';
+                        }
+                    }                   
+                    if(str == ''){
+                        str = '<p>No images available for this batch</p>';
+                    }
+                    $('#assess_view').html(str);
+                    $('#assess_view .board_item img').on('click', function(){
+                        var info = $(this).parent().find('div.prod_description').html();
+                        showSnap('<img src="'+$(this).attr('src')+'" style="float:left; max-width: 600px; margin-right: 10px">'+info);
+                    });
+                }
+
+            });
+        },
+        "fnRowCallback": function(nRow, aData, iDisplayIndex) {
+            $(nRow).attr("add_data", aData[14]);
+            return nRow;
+        },
+        "fnDrawCallback": function(oSettings) {
+            tblAssess_postRenderProcessing();
+            if (zeroTableDraw) {
+                zeroTableDraw = false;
+                return;
+            }
+            hideColumns();
+            check_word_columns();
+        },
+        "oLanguage": {
+            "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
+            "sInfoEmpty": "Showing 0 to 0 of 0 records",
+            "sInfoFiltered": "",
+            "sSearch":"Filter:",
+            "sLengthMenu": "_MENU_ rows"
+        },
+          "aoColumns":columns
+//         [
+//        {
+//             "sTitle" : "Snapshot",
+//             "sName":"snap",
+//             "sWidth": "10%"
+//        },
+//                 {
+//            "sTitle" : "Date",
+//            "sName":"created",
+//            "sWidth": "3%"
+//        },
+//
+//        {
+//            "sTitle" : "Product Name", 
+//            "sName":"product_name", 
+//            "sWidth": "15%",
+//            "sClass": "product_name_text"
+//        },
+//       
+//        {
+//            "sTitle" : "URL", 
+//            "sName":"url", 
+//            "sWidth": "15%",
+//            "sClass": "url_text"
+//        },
+//       
+//        {
+//            "sTitle" : "Words <span class='subtitle_word_short' >Short</span>",
+//            "sName":"short_description_wc", 
+//            "sWidth": "1%",
+//            "sClass": "word_short"
+//        },
+//       
+//        {
+//            "sTitle" : "Keywords <span class='subtitle_keyword_short'>Short</span>",
+//            "sName":"short_seo_phrases", 
+//            "sWidth": "2%",
+//            "sClass": "keyword_short"
+//        },
+//
+//        {
+//            "sTitle" : "Words <span class='subtitle_word_long' >Long</span>",
+//            "sName":"long_description_wc", 
+//            "sWidth": "1%",
+//            "sClass": "word_long"
+//        },
+//       
+//        {
+//            "sTitle" : "Keywords <span class='subtitle_keyword_long'>Long</span>",
+//            "sName":"long_seo_phrases", 
+//            "sWidth": "2%",
+//            "sClass": "keyword_long"
+//        },
+//
+//        {
+//            "sTitle" : "Duplicate Content", 
+//            "sName":"duplicate_content", 
+//            "sWidth": "1%"
+//        },
+//        
+//        {
+//            "sTitle" : "Content", 
+//            "sName":"column_external_content", 
+//            "sWidth": "2%"
+//        },
+//        {
+//            "sTitle" : "Reviews", 
+//            "sName":"column_reviews", 
+//            "sWidth": "3%"
+//        },
+//        {
+//            "sTitle" : "Features", 
+//            "sName":"column_features", 
+//            "sWidth": "4%"
+//        },        
+//        {
+//            "sTitle" : "Price", 
+//            "sName":"price_diff", 
+//            "sWidth": "2%",
+//            "sClass": "price_text"
+//        },
+//        {
+//            "sTitle" : "Recommendations", 
+//            "sName":"recommendations", 
+//            "sWidth": "15%",
+//            "bVisible": false, 
+//            "bSortable": false
+//        },
+//
+//        {
+//            "sName":"add_data", 
+//            "bVisible": false
+//        },
+//        {
+//             "sTitle" : "Snapshot",
+//             "sName":"snap1",
+//             "sWidth": "10%"
+//        },
+//         {
+//            "sTitle" : "Product Name", 
+//            "sName":"product_name1", 
+//            "sWidth": "15%"
+//        },
+//         {
+//            "sTitle" : "URL", 
+//            "sName":"url1", 
+//            "sWidth": "15%"
+//        },
+//         {
+//            "sTitle" : "Words <span class='subtitle_word_short' >Short</span>",
+//            "sName":"short_description_wc1", 
+//            "sWidth": "1%",
+//            "sClass": "word_short"
+//        },
+//         {
+//            "sTitle" : "Words <span class='subtitle_word_long' >Long</span>",
+//            "sName":"long_description_wc1", 
+//            "sWidth": "1%",
+//            "sClass": "word_long"
+//        }
+//                
+//        ]
     });
 
     $('#research_batches_columns').appendTo('div.dataTables_filter');
