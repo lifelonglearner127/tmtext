@@ -355,7 +355,7 @@
                     ids.push(departmentValue);
                 var snapshot_arr = [];
                 snapshot_arr[0] = [];
-                snapshot_arr[0]['id'] = departmentValue;
+                snapshot_arr[0][0] = departmentValue;
                 $.ajax({
                     type: "POST",
                     url: base_url + 'index.php/system/add_snapshot_queue',

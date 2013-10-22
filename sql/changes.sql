@@ -1,6 +1,9 @@
 #21/10 Viktor
-ALTER TABLE `c38_devtrillionmonkeyscom`.`snapshot_queue_list` ADD COLUMN `time_added` DATETIME NULL AFTER `type`; 
-ALTER TABLE `c38_devtrillionmonkeyscom`.`snapshot_queue_list` ADD COLUMN `site_name` VARCHAR(255) NULL AFTER `snapshot_id`, ADD COLUMN `url` VARCHAR(255) NULL AFTER `site_name`; 
+ALTER TABLE `snapshot_queue_list` ADD COLUMN `name` VARCHAR(255) NULL AFTER `snapshot_id`; 
+
+#21/10 Viktor
+ALTER TABLE `snapshot_queue_list` ADD COLUMN `time_added` DATETIME NULL AFTER `type`; 
+ALTER TABLE `snapshot_queue_list` ADD COLUMN `site_name` VARCHAR(255) NULL AFTER `snapshot_id`, ADD COLUMN `url` VARCHAR(255) NULL AFTER `site_name`; 
 
 #18/10 Viktor
 ALTER TABLE  `snapshot_queue_list` CHANGE  `dep_id`  `snapshot_id` INT( 11 ) NULL DEFAULT NULL
