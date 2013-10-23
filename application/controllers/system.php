@@ -643,6 +643,8 @@ class System extends MY_Controller {
         );
 
 				foreach($json_obj as $row) {
+                                    // new change 1 line
+                                    set_time_limit(300);
 					// === DB table decision (start)
 					$level = '';
 					$work_table = "";
