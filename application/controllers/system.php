@@ -642,9 +642,9 @@ class System extends MY_Controller {
         	'site_categories' => array()
         );
 
-				foreach($json_obj as $row) {
                                     // new change 1 line
-                                    set_time_limit(300);
+                                    set_time_limit(1000);
+				foreach($json_obj as $row) {
 					// === DB table decision (start)
 					$level = '';
 					$work_table = "";
