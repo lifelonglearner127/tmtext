@@ -5,10 +5,25 @@
 		$board_list_empty = array();
 		$board_list_full = array();
 		foreach ($board_list as $key => $value) {
-			if($value['description_words'] == 0) {
-				$board_list_empty[] = $value;
-			} else {
-				$board_list_full[] = $value;
+			// ==== check for 'dead' image (start)
+			$handle = false;
+			$ch = curl_init($value['snap']);
+      curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+      curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+      curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+      $data = curl_exec($ch);
+      $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+      curl_close($ch);
+      if ($httpcode >= 200 && $httpcode <= 302) {
+      	$handle = true;
+      }
+			// ==== check for 'dead' image (end)
+			if($handle) {
+				if($value['description_words'] == 0) {
+					$board_list_empty[] = $value;
+				} else {
+					$board_list_full[] = $value;
+				}
 			}
 		}
 		$sort_e = array();
@@ -37,35 +52,19 @@
 			<?php $board_row = array_slice($board_list_empty, $position, $item_per_row); ?>
 			<div class='board_item_row'>
 				<?php foreach($board_row as $k => $v) { ?>
-					<?php 
-						// $handle = @fopen($v['snap'],'r');
-						$handle = false;
-						$ch = curl_init($v['snap']);
-		        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-		        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-		        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-		        $data = curl_exec($ch);
-		        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-		        curl_close($ch);
-		        if ($httpcode >= 200 && $httpcode <= 302) {
-		        	$handle = true;
-		        } 
-					?>
-					<?php if($handle !== false) { ?>
-					  <?php 
-					  	$item_lm = "";
-					  	if($k != 0) $item_lm = " board_item_ml";
-					  ?>
-						<div class="board_item red_border_cl<?php echo $item_lm; ?>">
-							<div class='board_item_dicon'><img src="<?php echo base_url() ?>/img/diagramm_high.png"></div>
-							<input type='hidden' name='dm_id' value="<?php echo $v['id'] ?>">
-							<p class='board_item_title st'><?php echo $v['text']; ?></p>
-	            <img src="<?php echo $v['snap']; ?>">
-							<div class='prod_description_new'>
-								<p style='font-size: 11px; margin-top: 15px; margin-bottom: 0px; color: #949494'>Description: <?php echo $v['description_words'] ?> words</p>
-							</div>
+				  <?php 
+				  	$item_lm = "";
+				  	if($k != 0) $item_lm = " board_item_ml";
+				  ?>
+					<div class="board_item red_border_cl<?php echo $item_lm; ?>">
+						<div class='board_item_dicon'><img src="<?php echo base_url() ?>/img/diagramm_high.png"></div>
+						<input type='hidden' name='dm_id' value="<?php echo $v['id'] ?>">
+						<p class='board_item_title st'><?php echo $v['text']; ?></p>
+            <img src="<?php echo $v['snap']; ?>">
+						<div class='prod_description_new'>
+							<p style='font-size: 11px; margin-top: 15px; margin-bottom: 0px; color: #949494'>Description: <?php echo $v['description_words'] ?> words</p>
 						</div>
-					<?php } ?>
+					</div>
 				<?php } ?>
 			</div>
 		<?php } ?>
@@ -82,35 +81,19 @@
 			<?php $board_row = array_slice($board_list_full, $position, $item_per_row); ?>
 			<div class='board_item_row'>
 				<?php foreach($board_row as $k => $v) { ?>
-					<?php 
-						// $handle = @fopen($v['snap'],'r');
-						$handle = false;
-						$ch = curl_init($v['snap']);
-		        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-		        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-		        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-		        $data = curl_exec($ch);
-		        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-		        curl_close($ch);
-		        if ($httpcode >= 200 && $httpcode <= 302) {
-		        	$handle = true;
-		        } 
-					?>
-					<?php if($handle !== false) { ?>
-					  <?php 
-					  	$item_lm = "";
-					  	if($k != 0) $item_lm = " board_item_ml";
-					  ?>
-						<div class="board_item <?php echo $item_lm; ?>">
-							<div class='board_item_dicon'><img src="<?php echo base_url() ?>/img/diagramm_low.png"></div>
-							<input type='hidden' name='dm_id' value="<?php echo $v['id'] ?>">
-							<p class='board_item_title st'><?php echo $v['text']; ?></p>
-	            <img src="<?php echo $v['snap']; ?>">
-							<div class='prod_description_new'>
-								<p style='font-size: 11px; margin-top: 15px; margin-bottom: 0px; color: #949494'>Description: <?php echo $v['description_words'] ?> words</p>
-							</div>
+				  <?php 
+				  	$item_lm = "";
+				  	if($k != 0) $item_lm = " board_item_ml";
+				  ?>
+					<div class="board_item <?php echo $item_lm; ?>">
+						<div class='board_item_dicon'><img src="<?php echo base_url() ?>/img/diagramm_low.png"></div>
+						<input type='hidden' name='dm_id' value="<?php echo $v['id'] ?>">
+						<p class='board_item_title st'><?php echo $v['text']; ?></p>
+            <img src="<?php echo $v['snap']; ?>">
+						<div class='prod_description_new'>
+							<p style='font-size: 11px; margin-top: 15px; margin-bottom: 0px; color: #949494'>Description: <?php echo $v['description_words'] ?> words</p>
 						</div>
-					<?php } ?>
+					</div>
 				<?php } ?>
 			</div>
 		<?php } ?>
