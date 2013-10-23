@@ -376,7 +376,7 @@ class Department_members_model extends CI_Model {
             (SELECT round(avg(`description_words`)) AS c  FROM `department_members` WHERE `site_id`=".$site_id." and `description_words`>0 GROUP BY `site_id`) as res_avg,
             count(if((`description_words`>0 and `description_words`<250), id, null)) as more,
             count(if(`description_words`>0, id, null)) as more_than_0
-            FROM `department_members` WHERE `site_id`=".$site_id."");
+            FROM `department_members` WHERE `site_id`=".$site_id." AND `flag` = 'ready'");
         $result = $sql->result();
         $sql_more_data = $this->db->query("SELECT `id`, `text`, `url`, `description_words`, `title_keyword_description_density` FROM `department_members` WHERE `site_id`=".$site_id." and (`description_words`>0 and `description_words`<250) and `flag`='ready' order by `text` asc");
         $result_more_data = $sql_more_data->result();
