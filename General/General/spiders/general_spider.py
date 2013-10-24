@@ -160,7 +160,8 @@ class ProductsSpider(BaseSpider):
         #price_holder = selector.select("//*[(contains(text(), '$') or contains(text(), 'USD') or contains(text(), 'usd')) and (contains(@*, 'Price') or contains(@*, 'price'))]")
         price_holder = selector.select("//*[not(self::script or self::style) and contains(text(), '$') or contains(text(), 'USD') or contains(text(), 'usd')]")
         # look for number regular expressions - accept anything that could occur in a price string, in case it's all inside one tag (.,$ etc)
-        price = price_holder.select(".//text()").re("[0-9\s\.,$USDusd]+")
+        #TODO: also test if it contains either: usd, USD, $, number
+        price = price_holder.select(".//text()[string-length()<20 or (string-length()<20 and contains(.,'price'))]").re("[0-9\s\.,$USDusd]+")
         # assume first value is dollars and second is cents (if they are different)
         if len(price) > 1 and price[0] != price[1]:
             #TODO: errors for tigerdirect when price is > 1000 => 1.999

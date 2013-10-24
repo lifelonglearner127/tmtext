@@ -220,6 +220,7 @@ class SearchSpider(BaseSpider):
 		# 3) Search by combinations of words in product's name
 		# create queries
 
+		#TODO: for long titles all these combinations take too long. example: newegg
 		for words in ProcessText.words_combinations(product_name):
 			query3 = self.build_search_query(" ".join(words))
 			search_pages3 = self.build_search_pages(query3)
