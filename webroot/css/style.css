@@ -2433,11 +2433,11 @@ body.login_block{
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    max-width: 127px;
+    max-width: 180px; /* 127 */
 }
 .board_item_dicon {
     position: absolute; 
-    top: 5px; 
+    bottom: 5px; 
     right: 5px;
 }
 .board_item_dicon > img {
