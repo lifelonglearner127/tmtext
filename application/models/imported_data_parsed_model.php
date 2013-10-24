@@ -863,6 +863,10 @@ class Imported_data_parsed_model extends CI_Model {
         }
         return $f_res;
     }
+    //Get Model By Pharsed attribute
+    function getModelByPharsedAttribute(){
+        
+    }
 
     // function getByImId($im_data_id) {
     //     $this->db->select('imported_data_id, key, value');
@@ -1130,7 +1134,7 @@ class Imported_data_parsed_model extends CI_Model {
                     case 'URL': $url = $val->value; break;
                     case 'Description': $description = $val->value; break;
                     case 'Long_Description': $long_description = $val->value; break;
-                    case 'parsed_attributes': $parsed_attributes = $val->value; break;
+                    case 'parsed_attributes': $parsed_attributes = unserialize($val->value); break;
                     case 'Product Name': $product_name = $val->value; break;
                     case 'Features': $features = $val->value; break;
                 }//*/
@@ -1454,6 +1458,9 @@ class Imported_data_parsed_model extends CI_Model {
             $model = '';
             $parsed_attributes = array();
             foreach ($res as $val) {
+//                switch($val['key']){
+//                    case 'URL'
+//                }
                 if ($val['key'] == 'URL') {
                     $url = $val['value'];
                 }
@@ -2737,9 +2744,10 @@ class Imported_data_parsed_model extends CI_Model {
 
     function getByParsedAttributes($search, $strict = false,$imp_id = false) {
        
-        $start_time = microtime();
+        $start_time = microtime(true);
         if ($rows = $this->getData($search, null, null, null, 'parsed_attributes', $strict)) {
-            $end_time = microtime();
+            $end_time = microtime(true);
+            //echo "Get data ".($end_time - $start_time).'<br>';
 
             $customers_list = array();
             $query_cus = $this->db->order_by('name', 'asc')->get($this->tables['customers']);
