@@ -170,11 +170,11 @@ class Assess extends MY_Controller {
             $params->txt_filter = $txt_filter;
             $params->date_from = $build_assess_params->date_from;
             $params->date_to = $build_assess_params->date_to;
-
             $results = $this->get_data_for_assess($params);
 
             $batch2 = $this->input->get('batch2') == 'undefined' ? '' : $this->input->get('batch2');
             $cmp = array();
+                                   
             if ($batch2 != '' && $batch2 != 0 && $batch2 != 'all') {
                 $this->load->model('batches_model');
                 $build_assess_params->max_similar_item_count =2;
@@ -244,14 +244,11 @@ class Assess extends MY_Controller {
                 }
                 $build_assess_params->max_similar_item_count = $max_similar_item_count;
             }
+         
+         $output = $this->build_asses_table($results, $build_assess_params, $batch_id);
 
-//           echo "<pre>";
-//            print_r($results);exit;
-
-            $output = $this->build_asses_table($results, $build_assess_params, $batch_id);
-
-            $this->output->set_content_type('application/json')
-                    ->set_output(json_encode($output));
+         $this->output->set_content_type('application/json')
+         ->set_output(json_encode($output));
         }
     }
 
@@ -939,9 +936,8 @@ class Assess extends MY_Controller {
         $this->research_data_model->delete($research_data_id);
         $this->statistics_model->delete_by_research_data_id($batch_id, $research_data_id);
     }
-
-    private function build_asses_table($results, $build_assess_params, $batch_id = '') {
-        $columns=array(
+    function columns(){
+       $columns=array(
             
             array(
                 "sTitle" => "Snapshot",
@@ -1033,8 +1029,11 @@ class Assess extends MY_Controller {
             
             
         );
-                
-         
+        return $columns;         
+    }
+    private function build_asses_table($results, $build_assess_params, $batch_id = '') {
+        
+        $columns = $this->columns();
         $duplicate_content_range = 25;
         $this->load->model('batches_model');
         $this->load->model('imported_data_parsed_model');
@@ -1091,12 +1090,12 @@ class Assess extends MY_Controller {
             $result_row->lower_price_exist = false;
             $result_row->snap = '';
 
-            if ($build_assess_params->max_similar_item_count > 1) {
+            if ($build_assess_params->max_similar_item_count > 0) {
                 
                 $sim_items = $row->similar_items;
                 $max_similar_item_count = (int) $build_assess_params->max_similar_item_count;
 
-               if($max_similar_item_count>1){
+               if($max_similar_item_count>0){
                    for ($i = 1; $i <= $max_similar_item_count; $i++) {
 
                      $columns[] = array("sTitle" => "Snapshot", "sName" => 'snap' . $i);
@@ -1120,11 +1119,11 @@ class Assess extends MY_Controller {
                 }
                 $result_row = (object)$result_row;
             } else {
-                $result_row->snap1 = '';
-                $result_row->product_name1 = '';
-                $result_row->url1 = '';
-                $result_row->short_description_wc1 = '-';
-                $result_row->long_description_wc1 = '-';
+//                $result_row->snap1 = '';
+//                $result_row->product_name1 = '';
+//                $result_row->url1 = '';
+//                $result_row->short_description_wc1 = '-';
+//                $result_row->long_description_wc1 = '-';
             }
 
             if ($row->snap1 && $row->snap1 != '') {
@@ -1488,11 +1487,13 @@ class Assess extends MY_Controller {
             "iDisplayLength" => $display_length,
             "aaData" => array()
         );
-
+       
         if (!empty($result_table)) {
             $c = 0;
+                       
             foreach ($result_table as $data_row) {
-                if ($c >= $display_start) {
+                if ($c >=$display_start) {
+                   
                     if (isset($data_row->recommendations)) {
                         // this is for absent product in selected batch only
                         $recommendations_html = '<ul class="assess_recommendations"><li>' . $data_row->recommendations . '</li></ul>';
@@ -1629,7 +1630,7 @@ class Assess extends MY_Controller {
                         json_encode($data_row)
                     );
 
-                    if ($build_assess_params->max_similar_item_count > 1) {
+                    if ($build_assess_params->max_similar_item_count > 0) {
                         $data_row = (array)$data_row;
                         for ($i = 1; $i <= $build_assess_params->max_similar_item_count; $i++) {
                             $output_row[] = $data_row['snap' . $i];
@@ -1648,16 +1649,21 @@ class Assess extends MY_Controller {
                         $output_row[] = $data_row->long_description_wc1;
                        
                     }
+                    $output['aaData'][] = $output_row;
                 }
-                 $output['aaData'][] = $output_row;
+                  
+                 
                 if ($display_length > 0) {
                     if ($c >= ($display_start + $display_length - 1)) {
                         break;
                     }
                 }
-                $c++;
+              $c++;
             }
         }
+        
+//        echo  "<pre>";
+//        print_r($output['aaData']);exit;
         $output['columns']= $columns;
         $output['ExtraData']['report'] = $report;
 
