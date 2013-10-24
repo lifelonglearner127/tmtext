@@ -160,7 +160,7 @@
             </p>
             <p>
                 <input type="checkbox" id="column_short_seo_phrases" data-col_name="short_seo_phrases" name="column_short_seo_phrases_name" <?php echo($columns['short_seo_phrases'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="column_short_seo_phrases">Keywords Short</label>
+                <label for="column_short_seo_phrases">Found Keywords - Short Description</label>
             </p>
             <p>
                 <input type="checkbox" id="column_long_description_wc" data-col_name="long_description_wc" name="column_long_description_wc_name" <?php echo($columns['long_description_wc'] == 'true' ? 'checked="checked"' : ''); ?> />
@@ -168,7 +168,7 @@
             </p>
             <p>
                 <input type="checkbox" id="column_long_seo_phrases" data-col_name="long_seo_phrases" name="column_long_seo_phrases_name" <?php echo($columns['long_seo_phrases'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="column_long_seo_phrases">Keywords Long</label>
+                <label for="column_long_seo_phrases">Found Keywords - Long Description</label>
             </p>
             <p>
                 <input type="checkbox" id="column_duplicate_content" data-col_name="duplicate_content" name="column_duplicate_content_name" <?php echo($columns['duplicate_content'] == 'true' ? 'checked="checked"' : ''); ?> />
