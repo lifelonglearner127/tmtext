@@ -774,3 +774,9 @@ ALTER TABLE  `statistics_new` CHANGE  `short_seo_phrases`  `short_seo_phrases`
 VARCHAR( 1000 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL ,
 CHANGE  `long_seo_phrases`  `long_seo_phrases` 
 VARCHAR( 2000 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL
+
+# 10/24
+ALTER TABLE  `statistics_new` CHANGE  `short_seo_phrases`  `short_seo_phrases` 
+VARCHAR( 4000 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL ,
+CHANGE  `long_seo_phrases`  `long_seo_phrases` 
+VARCHAR( 4000 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL
