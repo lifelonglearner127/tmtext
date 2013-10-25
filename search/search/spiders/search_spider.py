@@ -46,7 +46,7 @@ class SearchSpider(BaseSpider):
 	#				target_site - the site to search on
 	#				output - integer(1/2) option indicating output type (either result URL (1), or result URL and source product URL (2))
 	#				threshold - parameter (0-1) for selecting results (the lower the value the more permissive the selection)
-	def __init__(self, product_name = None, product_url = None, product_urls_file = None, target_site = None, output = 1, threshold = 1.0, outfile = "search_results.txt"):
+	def __init__(self, product_name = None, product_url = None, product_urls_file = None, target_site = None, output = 1, threshold = 1.0, outfile = "search_results.txt", fast = 0):
 		self.product_url = product_url
 		self.product_name = product_name
 		self.target_site = target_site
@@ -54,6 +54,7 @@ class SearchSpider(BaseSpider):
 		self.product_urls_file = product_urls_file
 		self.threshold = float(threshold)
 		self.outfile = outfile
+		self.fast = fast
 		# bloomingales scraper only works with this in the start_urls list
 		# self.start_urls = ["http://www.amazon.com", "http://www.walmart.com", "http://www1.bloomingdales.com",\
 		# 				   "http://www.overstock.com", "http://www.wayfair.com", "http://www.bestbuy.com", \
@@ -221,7 +222,7 @@ class SearchSpider(BaseSpider):
 		# create queries
 
 		#TODO: for long titles all these combinations take too long. example: newegg
-		for words in ProcessText.words_combinations(product_name):
+		for words in ProcessText.words_combinations(product_name, fast=self.fast):
 			query3 = self.build_search_query(" ".join(words))
 			search_pages3 = self.build_search_pages(query3)
 			##print "QUERY", query3
@@ -580,7 +581,7 @@ class ProcessText():
 	# create combinations of comb_length words from original text (after normalization and tokenization and filtering out dictionary words)
 	# return a list of all combinations
 	@staticmethod
-	def words_combinations(orig_text, comb_length = 3):
+	def words_combinations(orig_text, comb_length = 3, fast = False):
 		norm_text = ProcessText.normalize(orig_text)
 
 		# exceptions to include even if they appear in wordnet
@@ -589,9 +590,17 @@ class ProcessText():
 		# only keep non dictionary words
 		norm_text_nondict = [word for word in norm_text if (not wordnet.synsets(word) or word in exceptions) and len(word) > 1]
 
+		# use fast option: use longer length combinations => fewer
+		if fast:
+			comb_length=2
 		combs = itertools.combinations(range(len(norm_text_nondict)), comb_length)
-		words=[map(lambda c: norm_text_nondict[c], x) for x in list(combs)]
 
+		# use fast option: only select combinations that include first or second word
+		if fast:
+			#words=[map(lambda c: norm_text_nondict[c], x) for x in filter(lambda x: 0 in x or 1 in x, list(combs))]
+			words=[map(lambda c: norm_text_nondict[c], x) for x in filter(lambda x: 0 in x or 1 in x, list(combs))]
+		else:
+			words=[map(lambda c: norm_text_nondict[c], x) for x in list(combs)]
 
 		return words
 
