@@ -167,6 +167,7 @@ class SearchSpider(BaseSpider):
 			if product_name_holder:
 				product_name = product_name_holder[0].strip()
 			else:
+				sys.stderr.write("Broken product page link (can't find item title): " + response.url)
 				return
 			product_model_holder = hxs.select("//dt[text()='Model']/following-sibling::*/text()").extract()
 			if product_model_holder:
@@ -225,7 +226,6 @@ class SearchSpider(BaseSpider):
 		# 3) Search by combinations of words in product's name
 		# create queries
 
-		#TODO: for long titles all these combinations take too long. example: newegg
 		for words in ProcessText.words_combinations(product_name, fast=self.fast):
 			query3 = self.build_search_query(" ".join(words))
 			search_pages3 = self.build_search_pages(query3)
