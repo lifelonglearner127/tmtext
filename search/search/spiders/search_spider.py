@@ -163,7 +163,11 @@ class SearchSpider(BaseSpider):
 				product_model = product_model_holder[0]
 
 		elif site == 'newegg':
-			product_name = hxs.select("//span[@itemprop='name']/text()").extract()[0].strip()
+			product_name_holder = hxs.select("//span[@itemprop='name']/text()").extract()
+			if product_name_holder:
+				product_name = product_name_holder[0].strip()
+			else:
+				return
 			product_model_holder = hxs.select("//dt[text()='Model']/following-sibling::*/text()").extract()
 			if product_model_holder:
 				product_model = product_model_holder[0]
@@ -590,7 +594,7 @@ class ProcessText():
 		# only keep non dictionary words
 		norm_text_nondict = [word for word in norm_text if (not wordnet.synsets(word) or word in exceptions) and len(word) > 1]
 
-		# use fast option: use longer length combinations => fewer
+		# use fast option: use shorter length of combinations
 		if fast:
 			comb_length=2
 		combs = itertools.combinations(range(len(norm_text_nondict)), comb_length)
