@@ -574,13 +574,22 @@ class ProcessText():
 	def name_with_alt_modelnr(words):
 		new_words = list(words)
 		# if there is a supposed model number among the words, replace it with its alternative
+		i = ProcessText.extract_model_nr_index(words)
+		if i >= 0:
+			alt_model = ProcessText.alt_modelnr(words[i])
+			if alt_model:
+				new_word = alt_model
+				new_words[i] = new_word
+		return new_words
+
+	# extract index of model number in list of words if any
+	# return -1 if none found
+	@staticmethod
+	def extract_model_nr_index(words):
 		for i in range(len(words)):
 			if ProcessText.is_model_number(words[i]):
-				alt_model = ProcessText.alt_modelnr(words[i])
-				if alt_model:
-					new_word = alt_model
-					new_words[i] = new_word
-		return new_words
+				return i
+		return -1
 
 	# create combinations of comb_length words from original text (after normalization and tokenization and filtering out dictionary words)
 	# return a list of all combinations
@@ -629,9 +638,9 @@ class ProcessText():
 			words1 = ProcessText.normalize(product_name)
 			words2 = ProcessText.normalize(product2['product_name'])
 			if 'product_model' in product2:
-				model2 = product2['product_model']
+				product2_model = product2['product_model']
 			else:
-				model2 = None
+				product2_model = None
 
 			(score, threshold) = ProcessText.similar_names(spider, words1, words2, param)
 
@@ -662,60 +671,51 @@ class ProcessText():
 			# check if the product models are the same, or if they are included in the other product's name
 			# for the original product models, as well as for the alternative ones, and alternative product names
 
-			# build a list with all words and possible model strings for product 1, the 2, see if they have anything in common
-			product_matched = False
-			extended_words1 = words1 + alt_words1 + [product_model] + [ProcessText.alt_modelnr(product_model)]
-			extended_words2 = words2 + alt_words2 + [model2] + [ProcessText.alt_modelnr(model2)]
-
-			if set(extended_words1).intersection(set(extended_words2))[0].is_model_number:
-				spider.log("MATCHED: " + str(extended_words1) + str(extended_words2), level="INFO")
-				product_matched = True
-			else:
-				spider.log("NOT MATCHED: " + str(extended_words1) + str(extended_words2), level="INFO")
+			alt_product_model = ProcessText.alt_modelnr(product_model)
+			alt_product2_model = ProcessText.alt_modelnr(product2_model)
 
 			matched = False
-			if product_model and (product_model == model2):
+			if product_model and (product_model == product2_model):
 				matched = True
-				#sys.stderr.write("\nMATCHED1:" + " model1: " + str(product_model) + " model2: " + str(model2))
-			elif (model2 and ProcessText.alt_modelnr(product_model) == model2):
+				#sys.stderr.write("\nMATCHED1:" + " model1: " + str(product_model) + " product2_model: " + str(product2_model))
+			elif (product2_model and alt_product_model == product2_model):
 				matched = True
-				#sys.stderr.write("\nMATCHED2:" + " model1: " + str(ProcessText.alt_modelnr(product_model)) + " model2: " + str(model2))
-			elif (product_model and product_model == ProcessText.alt_modelnr(model2)):
+				#sys.stderr.write("\nMATCHED2:" + " model1: " + str(ProcessText.alt_modelnr(product_model)) + " product2_model: " + str(product2_model))
+			elif (product_model and product_model == alt_product2_model):
 				matched = True
-				#sys.stderr.write("\nMATCHED3:" + " model1: " + str(product_model) + " model2: " + str(ProcessText.alt_modelnr(model2)))
-			elif ProcessText.alt_modelnr(product_model) and (ProcessText.alt_modelnr(product_model) == ProcessText.alt_modelnr(model2)):
+				#sys.stderr.write("\nMATCHED3:" + " model1: " + str(product_model) + " product2_model: " + str(ProcessText.alt_modelnr(product2_model)))
+			elif alt_product_model and (alt_product_model == alt_product2_model):
 				matched = True
-				#sys.stderr.write("\nMATCHED4:" + " model1: " + product_model + ", " + str(ProcessText.alt_modelnr(product_model)) + " model2: " + str(ProcessText.alt_modelnr(model2)))
+				#sys.stderr.write("\nMATCHED4:" + " model1: " + product_model + ", " + str(ProcessText.alt_modelnr(product_model)) + " product2_model: " + str(ProcessText.alt_modelnr(product2_model)))
 			elif product_model in words2:
 				matched = True
 				#sys.stderr.write("\nMATCHED5:" + " model1: " + str(product_model) + " words2: " + str(words2))
-			elif ProcessText.alt_modelnr(product_model) in words2:
+			elif alt_product_model in words2:
 				matched = True
 				#sys.stderr.write("\nMATCHED6:" + " model1: " + str(ProcessText.alt_modelnr(product_model)) + " words2: " + str(words2))
 			elif product_model in alt_words2:
 				matched = True
 				#sys.stderr.write("\nMATCHED7:" + " model1: " + str(product_model) + " words2: " + str(alt_words2))
-			elif ProcessText.alt_modelnr(product_model) in alt_words2:
+			elif alt_product_model in alt_words2:
 				matched = True
 				#sys.stderr.write("\nMATCHED8:" + " model1: " + str(ProcessText.alt_modelnr(product_model)) + " words2: " + str(alt_words2))
-			elif model2 in words1:
+			elif product2_model in words1:
 				matched = True
-				#sys.stderr.write("\nMATCHED9:" + " model2: " + str(model2) + " words1: " + str(words1))
-			elif ProcessText.alt_modelnr(model2) in words1:
+				#sys.stderr.write("\nMATCHED9:" + " product2_model: " + str(product2_model) + " words1: " + str(words1))
+			elif alt_product2_model in words1:
 				matched = True
-				#sys.stderr.write("\nMATCHED10:" + " model2: " + str(ProcessText.alt_modelnr(model2)) + " words1: " + str(words1))
-			elif model2 in alt_words1:
+				#sys.stderr.write("\nMATCHED10:" + " product2_model: " + str(ProcessText.alt_modelnr(product2_model)) + " words1: " + str(words1))
+			elif product2_model in alt_words1:
 				matched = True
-				#sys.stderr.write("\nMATCHED11:" + " model2: " + str(model2) + " words1: " + str(alt_words1))
-			elif ProcessText.alt_modelnr(model2) in alt_words1:
+				#sys.stderr.write("\nMATCHED11:" + " product2_model: " + str(product2_model) + " words1: " + str(alt_words1))
+			elif alt_product2_model in alt_words1:
 				matched = True
-				#sys.stderr.write("\nMATCHED12:" + " model2: " + str(ProcessText.alt_model(model2)) + " words1: " + str(alt_words1))
+				#sys.stderr.write("\nMATCHED12:" + " product2_model: " + str(ProcessText.alt_model(product2_model)) + " words1: " + str(alt_words1))
 
 			else:
 				pass
-				#sys.stderr.write("\nNOT MATCHED:" + "model1: " + str(product_model) + " model2: " + str(model2) + " words1: " + str(words1) + " words2: " + str(words2))
+				#sys.stderr.write("\nNOT MATCHED:" + "model1: " + str(product_model) + " product2_model: " + str(product2_model) + " words1: " + str(words1) + " words2: " + str(words2))
 
-			assert product_matched == matched
 
 			if matched:
 				score += MODEL_MATCH_WEIGHT
