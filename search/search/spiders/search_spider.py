@@ -562,7 +562,7 @@ class ProcessText():
 	def alt_modelnr(word):
 		if not word:
 			return None
-		m = re.match("(.*[0-9]+)[a-zA-Z]+", word)
+		m = re.match("(.*[0-9]+)[a-zA-Z\-]+", word)
 		if m:
 			new_word = m.group(1)
 			if len(new_word) > 2:
@@ -591,20 +591,23 @@ class ProcessText():
 		# exceptions to include even if they appear in wordnet
 		exceptions = ['nt']
 
-		# only keep non dictionary words
-		norm_text_nondict = [word for word in norm_text if (not wordnet.synsets(word) or word in exceptions) and len(word) > 1]
+		# if using fast option: don't look them up in wordnet
+		if not fast:
+
+			# only keep non dictionary words
+			norm_text = [word for word in norm_text if (not wordnet.synsets(word) or word in exceptions) and len(word) > 1]
 
 		# use fast option: use shorter length of combinations
 		if fast:
 			comb_length=2
-		combs = itertools.combinations(range(len(norm_text_nondict)), comb_length)
+		combs = itertools.combinations(range(len(norm_text)), comb_length)
 
 		# use fast option: only select combinations that include first or second word
 		if fast:
-			#words=[map(lambda c: norm_text_nondict[c], x) for x in filter(lambda x: 0 in x or 1 in x, list(combs))]
-			words=[map(lambda c: norm_text_nondict[c], x) for x in filter(lambda x: 0 in x or 1 in x, list(combs))]
+			#words=[map(lambda c: norm_text[c], x) for x in filter(lambda x: 0 in x or 1 in x, list(combs))]
+			words=[map(lambda c: norm_text[c], x) for x in filter(lambda x: 0 in x or 1 in x, list(combs))]
 		else:
-			words=[map(lambda c: norm_text_nondict[c], x) for x in list(combs)]
+			words=[map(lambda c: norm_text[c], x) for x in list(combs)]
 
 		return words
 
@@ -658,6 +661,18 @@ class ProcessText():
 			# add to the score if their model numbers match
 			# check if the product models are the same, or if they are included in the other product's name
 			# for the original product models, as well as for the alternative ones, and alternative product names
+
+			# build a list with all words and possible model strings for product 1, the 2, see if they have anything in common
+			product_matched = False
+			extended_words1 = words1 + alt_words1 + [product_model] + [ProcessText.alt_modelnr(product_model)]
+			extended_words2 = words2 + alt_words2 + [model2] + [ProcessText.alt_modelnr(model2)]
+
+			if set(extended_words1).intersection(set(extended_words2))[0].is_model_number:
+				spider.log("MATCHED: " + str(extended_words1) + str(extended_words2), level="INFO")
+				product_matched = True
+			else:
+				spider.log("NOT MATCHED: " + str(extended_words1) + str(extended_words2), level="INFO")
+
 			matched = False
 			if product_model and (product_model == model2):
 				matched = True
@@ -700,7 +715,8 @@ class ProcessText():
 				pass
 				#sys.stderr.write("\nNOT MATCHED:" + "model1: " + str(product_model) + " model2: " + str(model2) + " words1: " + str(words1) + " words2: " + str(words2))
 
-			
+			assert product_matched == matched
+
 			if matched:
 				score += MODEL_MATCH_WEIGHT
 
