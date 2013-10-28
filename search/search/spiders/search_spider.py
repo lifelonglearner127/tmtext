@@ -576,7 +576,7 @@ class ProcessText():
 	# normalize model numbers (remove dashes, lowercase)
 	@staticmethod
 	def normalize_modelnr(modelnr):
-		return re.sub("-", "", modelnr.lower())
+		return re.sub("[\- ]", "", modelnr.lower())
 
 	# build new tokenized list of words for a product name replacing (first found) the model number with the alternative one
 	@staticmethod
