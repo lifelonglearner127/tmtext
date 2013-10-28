@@ -686,7 +686,7 @@ class ProcessText():
 
 			# get product models extracted from product name, if found
 			model_index1 = ProcessText.extract_model_nr_index(words1)
-			if model_index1:
+			if model_index1 >= 0:
 				product_model_fromname = words1[model_index1]
 				alt_product_model_fromname = ProcessText.alt_modelnr(product_model_fromname)
 			else:
@@ -694,7 +694,7 @@ class ProcessText():
 				alt_product_model_fromname = None
 
 			model_index2 = ProcessText.extract_model_nr_index(words2)
-			if model_index2:
+			if model_index2 >= 0:
 				product2_model_fromname = words2[model_index2]
 				alt_product2_model_fromname = ProcessText.alt_modelnr(product2_model_fromname)
 			else:
