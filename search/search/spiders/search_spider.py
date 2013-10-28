@@ -192,6 +192,8 @@ class SearchSpider(BaseSpider):
 
 		##print "PRODUCT: ", product_name.encode("utf-8")
 
+		#TODO: search by alternative model numbers?
+
 		# 1) Search by model number
 		if product_model:
 			query1 = self.build_search_query(product_model)
@@ -605,11 +607,8 @@ class ProcessText():
 		# exceptions to include even if they appear in wordnet
 		exceptions = ['nt']
 
-		# if using fast option: don't look them up in wordnet
-		if not fast:
-
-			# only keep non dictionary words
-			norm_text = [word for word in norm_text if (not wordnet.synsets(word) or word in exceptions) and len(word) > 1]
+		# only keep non dictionary words
+		norm_text = [word for word in norm_text if (not wordnet.synsets(word) or word in exceptions) and len(word) > 1]
 
 		# use fast option: use shorter length of combinations
 		if fast:
