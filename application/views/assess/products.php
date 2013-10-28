@@ -468,6 +468,9 @@
     font-weight: bold;
     font-size: 13px;
 }
+#tblAssess tr td:first-child {
+    text-align: center;
+}
 </style>
 <script>
             $(function() {
