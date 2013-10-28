@@ -6,6 +6,8 @@
 #     http://doc.scrapy.org/topics/settings.html
 #
 
+import scrapy
+
 BOT_NAME = 'search'
 
 SPIDER_MODULES = ['search.spiders']
@@ -14,7 +16,7 @@ ITEM_PIPELINES = ['search.pipelines.URLsPipeline']
 LOG_STDOUT = True
 LOG_ENABLED = False
 #LOG_FILE = "search_log.out"
-LOG_LEVEL="INFO"
+LOG_LEVEL=scrapy.log.INFO
 DUPEFILTER_CLASS = 'scrapy.dupefilter.BaseDupeFilter'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent

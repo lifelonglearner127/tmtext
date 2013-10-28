@@ -117,7 +117,7 @@ class SearchSpider(BaseSpider):
 				product_urls.append(line.strip())
 			f.close()
 
-		for product_url in product_urls:
+		for product_url in [product_urls[0]]:
 			# extract site domain
 			
 			m = re.match("http://www1?\.([^\.]+)\.com.*", product_url)
@@ -441,13 +441,13 @@ class SearchSpider(BaseSpider):
 
 
 		#print stuff
-		self.log("PRODUCT: " + response.meta['origin_name'].encode("utf-8") + " MODEL: " + response.meta['origin_model'].encode("utf-8"), level="INFO")
+		self.log("PRODUCT: " + response.meta['origin_name'].encode("utf-8") + " MODEL: " + response.meta['origin_model'].encode("utf-8"), level=log.INFO)
 		#print 
-		self.log( "QUERY: " + response.meta['query'], level="INFO")
-		self.log( "MATCHES: ", level="DEBUG")
+		self.log( "QUERY: " + response.meta['query'], level=log.INFO)
+		self.log( "MATCHES: ", level=log.DEBUG)
 		for item in items:
-			self.log( item['product_name'].encode("utf-8"), level="DEBUG")
-		self.log( '\n', level="DEBUG")
+			self.log( item['product_name'].encode("utf-8"), level=log.DEBUG)
+		self.log( '\n', level=log.DEBUG)
 
 
 		# if there is a pending request (current request used product model, and pending request is to use product name),
@@ -479,14 +479,14 @@ class SearchSpider(BaseSpider):
 					# from all results, select the product whose name is most similar with the original product's name
 					best_match = ProcessText.similar(origin_name, origin_model, items, self.threshold)
 
-					# #self.log( "ALL MATCHES: ", level="INFO")					
+					# #self.log( "ALL MATCHES: ", level=log.INFO)					
 					# for item in items:
 					# 	#print item['product_name'].encode("utf-8")
 					# #print '\n'
 
-					self.log( "FINAL: " + str(best_match), level="INFO")
+					self.log( "FINAL: " + str(best_match), level=log.INFO)
 
-				self.log( "\n----------------------------------------------\n", level="INFO")
+				self.log( "\n----------------------------------------------\n", level=log.INFO)
 
 				if not best_match:
 					# if there are no results but the option was to include original product URL, create an item with just that
@@ -508,7 +508,7 @@ class SearchSpider(BaseSpider):
 				item['origin_url'] = response.meta['origin_url']
 
 
-				self.log( "FINAL: no items", level="INFO")
+				self.log( "FINAL: no items", level=log.INFO)
 
 				return [item]
 
@@ -678,9 +678,9 @@ class ProcessText():
 			
 
 			MODEL_MATCH_WEIGHT = 7
-			add to the score if their model numbers match
-			check if the product models are the same, or if they are included in the other product's name
-			for the original product models, as well as for the alternative ones, and alternative product names
+			# add to the score if their model numbers match
+			# check if the product models are the same, or if they are included in the other product's name
+			# for the original product models, as well as for the alternative ones, and alternative product names
 
 			alt_product_model = ProcessText.alt_modelnr(product_model)
 			alt_product2_model = ProcessText.alt_modelnr(product2_model)
@@ -717,7 +717,7 @@ class ProcessText():
 			if model_matched:
 				score += MODEL_MATCH_WEIGHT
 
-			log.msg( "SCORE: " + str(score) + " THRESHOLD: " + str(threshold), level="INFO")
+			log.msg( "SCORE: " + str(score) + " THRESHOLD: " + str(threshold), level=log.INFO)
 
 			if score >= threshold:
 				products_found.append((product2, score))
@@ -771,10 +771,10 @@ class ProcessText():
 		score = sum(weights_common)
 
 		#print "WORDS: ", product_name.encode("utf-8"), product2['product_name'].encode("utf-8")
-		log.msg( "W1: " + str(words1), level="DEBUG")
-		log.msg( "W2: " + str(words2), level="DEBUG")
-		log.msg( "COMMON: " + str(common_words), level="DEBUG")
-		log.msg( "WEIGHTS: " + str(weights1) + str(weights2) + str(weights_common), level="DEBUG")
+		log.msg( "W1: " + str(words1), level=log.DEBUG)
+		log.msg( "W2: " + str(words2), level=log.DEBUG)
+		log.msg( "COMMON: " + str(common_words), level=log.DEBUG)
+		log.msg( "WEIGHTS: " + str(weights1) + str(weights2) + str(weights_common), level=log.DEBUG)
 
 
 		return (score, threshold)
