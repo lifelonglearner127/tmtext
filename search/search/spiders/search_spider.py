@@ -23,11 +23,11 @@ import sys
 ################################
 # Run with 
 #
-# scrapy crawl search -a product_name="<name>" -a target_site="<site>" [-a output="<option(1/2)>"] [-a threshold=<value>] [a outfile="<filename>"]
+# scrapy crawl search -a product_name="<name>" -a target_site="<site>" [-a output="<option(1/2)>"] [-a threshold=<value>] [a outfile="<filename>"] [-a fast=1]
 #      -- or --
-# scrapy crawl search -a product_url="<url>" -a target_site="<site>" [-a output="<option(1/2)>"] [-a threshold=<value>] [a outfile="<filename>""]
+# scrapy crawl search -a product_url="<url>" -a target_site="<site>" [-a output="<option(1/2)>"] [-a threshold=<value>] [a outfile="<filename>""] [-a fast=1]
 #      -- or --
-# scrapy crawl search -a product_urls_file="<filename>" -a target_site="<site>" [-a output="<option(1/2)>"] [-a threshold=value] [a outfile="<filename>"]
+# scrapy crawl search -a product_urls_file="<filename>" -a target_site="<site>" [-a output="<option(1/2)>"] [-a threshold=value] [a outfile="<filename>"] [-a fast=1]
 #
 ################################
 
@@ -56,15 +56,9 @@ class SearchSpider(BaseSpider):
 		self.threshold = float(threshold)
 		self.outfile = outfile
 		self.fast = fast
-		# bloomingales scraper only works with this in the start_urls list
-		# self.start_urls = ["http://www.amazon.com", "http://www.walmart.com", "http://www1.bloomingdales.com",\
-		# 				   "http://www.overstock.com", "http://www.wayfair.com", "http://www.bestbuy.com", \
-		# 				   "http://www.toysrus.com", "http://www.bjs.com", "http://www.sears.com", "http://www.staples.com"]
 
+		# (bloomingales scraper only works with this in the start_urls list)
 		self.start_urls = ["http://www1.bloomingdales.com"]
-
-		#TODO start logging
-
 
 	def build_search_pages(self, search_query):
 		# build list of urls = search pages for each site
@@ -92,6 +86,12 @@ class SearchSpider(BaseSpider):
 		return search_query
 
 	def parse(self, response):
+
+
+		if not self.target_site:
+			raise CloseSpider("\n" + \
+			"You need to specify a target site.\nUsage:" + \
+			" scrapy crawl search -a product_urls_file='<filename>' -a target_site='<site>' [-a output='<option(1/2)>'] [-a threshold=value] [a outfile='<filename>'] [-a fast=1]")
 
 		# if we have product names, pass them to parseResults
 		if self.product_name:
@@ -522,13 +522,7 @@ class ProcessText():
 		# other preprocessing: -Inch = " - fitting for staples->amazon search
 		# TODO: suitable for all sites?
 		text = re.sub("[- ][iI]nch", "\"", text)
-		text2 = re.sub("(?<=[0-9])[iI][nN](?!=c)","\"", text)
-
-		
-		#print "BEFORE:", text.encode("utf-8"), " AFTER:", text2.encode("utf-8")
-
-		text=text2
-
+		text = re.sub("(?<=[0-9])[iI][nN](?!=c)","\"", text)
 
 		#! including ' as an exception keeps things like women's a single word. also doesn't find it as a word in wordnet -> too high a priority
 		# excluding it leads to women's->women (s is a stopword)
