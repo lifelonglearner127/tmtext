@@ -117,7 +117,7 @@ class SearchSpider(BaseSpider):
 				product_urls.append(line.strip())
 			f.close()
 
-		for product_url in [product_urls[0]]:
+		for product_url in product_urls:
 			# extract site domain
 			
 			m = re.match("http://www1?\.([^\.]+)\.com.*", product_url)
@@ -441,9 +441,9 @@ class SearchSpider(BaseSpider):
 
 
 		#print stuff
-		self.log("PRODUCT: " + response.meta['origin_name'].encode("utf-8") + " MODEL: " + response.meta['origin_model'].encode("utf-8"), level=log.INFO)
+		self.log("PRODUCT: " + response.meta['origin_name'].encode("utf-8") + " MODEL: " + response.meta['origin_model'].encode("utf-8"), level=log.DEBUG)
 		#print 
-		self.log( "QUERY: " + response.meta['query'], level=log.INFO)
+		self.log( "QUERY: " + response.meta['query'], level=log.DEBUG)
 		self.log( "MATCHES: ", level=log.DEBUG)
 		for item in items:
 			self.log( item['product_name'].encode("utf-8"), level=log.DEBUG)
@@ -717,7 +717,9 @@ class ProcessText():
 			if model_matched:
 				score += MODEL_MATCH_WEIGHT
 
-			log.msg( "SCORE: " + str(score) + " THRESHOLD: " + str(threshold), level=log.INFO)
+			log.msg("\nPRODUCT: " + unicode(product_name) + " MODEL: " + unicode(product_model) + \
+				"\nPRODUCT2: " + unicode(product2['product_name']) + " MODEL2: " + unicode(product2_model) + \
+				"\nSCORE: " + str(score) + " THRESHOLD: " + str(threshold) + "\n", level=log.INFO)
 
 			if score >= threshold:
 				products_found.append((product2, score))
