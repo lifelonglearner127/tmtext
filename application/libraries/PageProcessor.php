@@ -107,11 +107,28 @@ class PageProcessor {
 			}
 
 			$result['Date'] = date("Y-m-d H:i:s");
+			$result['HTags'] = $this->process_htags();
 
         	return $result;
         }
 
         return false;
+	}
+
+	public function process_htags() {
+		foreach($this->nokogiri->get('h1') as $item) {
+			$tag = trim($item['#text'][0]);
+			if (!empty($tag)) {
+				$result['h1'][] = $tag;
+			}
+		}
+		foreach($this->nokogiri->get('h2') as $item) {
+			$tag = trim($item['#text'][0]);
+			if (!empty($tag)) {
+				$result['h2'][] = $tag;
+			}
+		}
+		return $result;
 	}
 
 	public function attributes() {
