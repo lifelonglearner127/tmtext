@@ -4,6 +4,7 @@ from scrapy.http import Request
 from scrapy.http import TextResponse
 from scrapy.exceptions import CloseSpider
 from search.items import SearchItem
+from scrapy import log
 
 from spiders_utils import Utils
 #import urllib
@@ -61,6 +62,9 @@ class SearchSpider(BaseSpider):
 		# 				   "http://www.toysrus.com", "http://www.bjs.com", "http://www.sears.com", "http://www.staples.com"]
 
 		self.start_urls = ["http://www1.bloomingdales.com"]
+
+		#TODO start logging
+
 
 	def build_search_pages(self, search_query):
 		# build list of urls = search pages for each site
@@ -440,10 +444,10 @@ class SearchSpider(BaseSpider):
 		self.log("PRODUCT: " + response.meta['origin_name'].encode("utf-8") + " MODEL: " + response.meta['origin_model'].encode("utf-8"), level="INFO")
 		#print 
 		self.log( "QUERY: " + response.meta['query'], level="INFO")
-		self.log( "MATCHES: ", level="INFO")
+		self.log( "MATCHES: ", level="DEBUG")
 		for item in items:
-			self.log( item['product_name'].encode("utf-8"), level="INFO")
-		self.log( '\n', level="INFO")
+			self.log( item['product_name'].encode("utf-8"), level="DEBUG")
+		self.log( '\n', level="DEBUG")
 
 
 		# if there is a pending request (current request used product model, and pending request is to use product name),
@@ -473,7 +477,7 @@ class SearchSpider(BaseSpider):
 
 				if items:
 					# from all results, select the product whose name is most similar with the original product's name
-					best_match = ProcessText.similar(self, origin_name, origin_model, items, self.threshold)
+					best_match = ProcessText.similar(origin_name, origin_model, items, self.threshold)
 
 					# #self.log( "ALL MATCHES: ", level="INFO")					
 					# for item in items:
@@ -569,7 +573,12 @@ class ProcessText():
 				return new_word
 		return None
 
-	# build new tokenized list of words for a product name replacing the model number with the alternative one
+	# normalize model numbers (remove dashes, lowercase)
+	@staticmethod
+	def normalize_modelnr(modelnr):
+		return re.sub("-", "", modelnr.lower())
+
+	# build new tokenized list of words for a product name replacing (first found) the model number with the alternative one
 	@staticmethod
 	def name_with_alt_modelnr(words):
 		new_words = list(words)
@@ -582,12 +591,13 @@ class ProcessText():
 				new_words[i] = new_word
 		return new_words
 
-	# extract index of model number in list of words if any
+	# extract index of (first found) model number in list of words if any
 	# return -1 if none found
 	@staticmethod
 	def extract_model_nr_index(words):
 		for i in range(len(words)):
 			if ProcessText.is_model_number(words[i]):
+				log.msg("MODEL: " + words[i])
 				return i
 		return -1
 
@@ -629,7 +639,7 @@ class ProcessText():
 	#			param - threshold for accepting a product name as similar or not (float between 0-1)
 	#TODO: import this from match_product, as a library function
 	@staticmethod
-	def similar(spider, product_name, product_model, products2, param):
+	def similar(product_name, product_model, products2, param):
 		result = None
 		products_found = []
 		#print "PR2:", len(products2)
@@ -642,7 +652,7 @@ class ProcessText():
 			else:
 				product2_model = None
 
-			(score, threshold) = ProcessText.similar_names(spider, words1, words2, param)
+			(score, threshold) = ProcessText.similar_names(words1, words2, param)
 
 			# try it with alternative model numbers as well, and keep the one with highest score
 			alt_words1 = ProcessText.name_with_alt_modelnr(words1)
@@ -651,17 +661,17 @@ class ProcessText():
 
 			if alt_words1:
 				# compute weights differently if we used alternative model numbers
-				(score1, threshold1) = ProcessText.similar_names(spider, alt_words1, words2, param, altModels=True)
+				(score1, threshold1) = ProcessText.similar_names(alt_words1, words2, param, altModels=True)
 				if score1 > score:
 					(score, threshold) = (score1, threshold1)
 
 			if (alt_words1 and alt_words2):
-				(score2, threshold2) = ProcessText.similar_names(spider, alt_words1, alt_words2, param, altModels=True)
+				(score2, threshold2) = ProcessText.similar_names(alt_words1, alt_words2, param, altModels=True)
 				if score2 > score:
 					(score, threshold) = (score2, threshold2)
 
 			if alt_words2:
-				(score3, threshold3) = ProcessText.similar_names(spider, words1, alt_words2, param, altModels=True)
+				(score3, threshold3) = ProcessText.similar_names(words1, alt_words2, param, altModels=True)
 				if score3 > score:
 					(score, threshold) = (score3, threshold3)
 			
@@ -673,6 +683,35 @@ class ProcessText():
 
 			alt_product_model = ProcessText.alt_modelnr(product_model)
 			alt_product2_model = ProcessText.alt_modelnr(product2_model)
+
+			# get product models extracted from product name, if found
+			model_index1 = ProcessText.extract_model_nr_index(words1)
+			if model_index1:
+				product_model_fromname = words1[model_index1]
+				alt_product_model_fromname = ProcessText.alt_modelnr(product_model_fromname)
+			else:
+				product_model_fromname = None
+				alt_product_model_fromname = None
+
+			model_index2 = ProcessText.extract_model_nr_index(words2)
+			if model_index2:
+				product2_model_fromname = words2[model_index2]
+				alt_product2_model_fromname = ProcessText.alt_modelnr(product2_model_fromname)
+			else:
+				product2_model_fromname = None
+				alt_product2_model_fromname = None
+
+			product_matched = False
+			# to see if models match, build 2 lists with each of the products' possible models, and check their intersection
+			models1 = filter(None, [product_model, alt_product_model, product_model_fromname, alt_product_model_fromname])
+			models2 = filter(None, [product2_model, alt_product2_model, product2_model_fromname, alt_product2_model_fromname])
+
+			# normalize all product models
+			models1 = map(lambda x: ProcessText.normalize_modelnr(x), models1)
+			models2 = map(lambda x: ProcessText.normalize_modelnr(x), models2)
+
+			if set(models1).intersection(set(models2)):
+				product_matched = True
 
 			matched = False
 			if product_model and (product_model == product2_model):
@@ -717,10 +756,14 @@ class ProcessText():
 				#sys.stderr.write("\nNOT MATCHED:" + "model1: " + str(product_model) + " product2_model: " + str(product2_model) + " words1: " + str(words1) + " words2: " + str(words2))
 
 
+			assert matched == product_matched
+			if (matched == product_matched):
+				log.msg("OK! " + str(matched) + str(set(models1)) + str(set(models2)), level="INFO")
+
 			if matched:
 				score += MODEL_MATCH_WEIGHT
 
-			spider.log( "SCORE: " + str(score) + " THRESHOLD: " + str(threshold), level="INFO")
+			log.msg( "SCORE: " + str(score) + " THRESHOLD: " + str(threshold), level="INFO")
 
 			if score >= threshold:
 				products_found.append((product2, score))
@@ -741,7 +784,7 @@ class ProcessText():
 
 	# compute similarity between two products using their product names given as token lists
 	@staticmethod
-	def similar_names(spider, words1, words2, param, altModels = False):
+	def similar_names(words1, words2, param, altModels = False):
 		common_words = set(words1).intersection(set(words2))
 
 		# assign weigths - 1 to normal words, 2 to nondictionary words
@@ -774,10 +817,10 @@ class ProcessText():
 		score = sum(weights_common)
 
 		#print "WORDS: ", product_name.encode("utf-8"), product2['product_name'].encode("utf-8")
-		spider.log( "W1: " + str(words1), level="INFO")
-		spider.log( "W2: " + str(words2), level="INFO")
-		spider.log( "COMMON: " + str(common_words), level="INFO")
-		spider.log( "WEIGHTS: " + str(weights1) + str(weights2) + str(weights_common), level="INFO")
+		log.msg( "W1: " + str(words1), level="INFO")
+		log.msg( "W2: " + str(words2), level="INFO")
+		log.msg( "COMMON: " + str(common_words), level="INFO")
+		log.msg( "WEIGHTS: " + str(weights1) + str(weights2) + str(weights_common), level="INFO")
 
 
 		return (score, threshold)
@@ -805,16 +848,20 @@ class ProcessText():
 	@staticmethod
 	def is_model_number(word):
 
+		word = word.lower()
+
 		# if there are more than 2 numbers and 2 letters and no non-word characters, 
 		# assume this is the model number and assign it a higher weight
 		letters = len(re.findall("[a-zA-Z]", word))
 		numbers = len(re.findall("[0-9]", word))
 
 		# some models on bestbuy have a - . but check (was not tested)
-		nonwords = len(re.findall("[^\w-]", word))
+		# some models on bestbuy have . or /
+		nonwords = len(re.findall("[^\w\-/\.]", word))
 		
 		if ((letters > 1 and numbers > 1) or numbers > 3) and nonwords==0 \
-		and not word.endswith("in") and not word.endswith("inch") and not word.endswith("hz"):
+		and not word.endswith("in") and not word.endswith("inch") and not word.endswith("hz") and \
+		not re.match("[0-9]{,3}[kmgt]b", word): # word is not a memory size description
 			return True
 
 		return False
