@@ -562,12 +562,14 @@ class ProcessText():
 
 	# without the last letters, so as to match more possibilities
 	# (there is are cases like this, for example un32eh5300f)
+
+	#TODO: add maybe multiple alternate model nrs - split by dash
 	@staticmethod
 	def alt_modelnr(word):
 		if not word:
 			return None
-		m = re.match("(.*[0-9]+)[a-zA-Z\-]+", word)
-		if m:
+		m = re.match("(.*[0-9]+)([a-zA-Z\- ]+)", word)
+		if m and (len(m.group(1))/len(m.group(2)))>1:
 			new_word = m.group(1)
 			if len(new_word) > 2:
 				return new_word
@@ -597,7 +599,6 @@ class ProcessText():
 	def extract_model_nr_index(words):
 		for i in range(len(words)):
 			if ProcessText.is_model_number(words[i]):
-				log.msg("MODEL: " + words[i])
 				return i
 		return -1
 
@@ -677,9 +678,9 @@ class ProcessText():
 			
 
 			MODEL_MATCH_WEIGHT = 7
-			# add to the score if their model numbers match
-			# check if the product models are the same, or if they are included in the other product's name
-			# for the original product models, as well as for the alternative ones, and alternative product names
+			add to the score if their model numbers match
+			check if the product models are the same, or if they are included in the other product's name
+			for the original product models, as well as for the alternative ones, and alternative product names
 
 			alt_product_model = ProcessText.alt_modelnr(product_model)
 			alt_product2_model = ProcessText.alt_modelnr(product2_model)
@@ -701,7 +702,7 @@ class ProcessText():
 				product2_model_fromname = None
 				alt_product2_model_fromname = None
 
-			product_matched = False
+			model_matched = False
 			# to see if models match, build 2 lists with each of the products' possible models, and check their intersection
 			models1 = filter(None, [product_model, alt_product_model, product_model_fromname, alt_product_model_fromname])
 			models2 = filter(None, [product2_model, alt_product2_model, product2_model_fromname, alt_product2_model_fromname])
@@ -711,56 +712,9 @@ class ProcessText():
 			models2 = map(lambda x: ProcessText.normalize_modelnr(x), models2)
 
 			if set(models1).intersection(set(models2)):
-				product_matched = True
-
-			matched = False
-			if product_model and (product_model == product2_model):
-				matched = True
-				#sys.stderr.write("\nMATCHED1:" + " model1: " + str(product_model) + " product2_model: " + str(product2_model))
-			elif (product2_model and alt_product_model == product2_model):
-				matched = True
-				#sys.stderr.write("\nMATCHED2:" + " model1: " + str(ProcessText.alt_modelnr(product_model)) + " product2_model: " + str(product2_model))
-			elif (product_model and product_model == alt_product2_model):
-				matched = True
-				#sys.stderr.write("\nMATCHED3:" + " model1: " + str(product_model) + " product2_model: " + str(ProcessText.alt_modelnr(product2_model)))
-			elif alt_product_model and (alt_product_model == alt_product2_model):
-				matched = True
-				#sys.stderr.write("\nMATCHED4:" + " model1: " + product_model + ", " + str(ProcessText.alt_modelnr(product_model)) + " product2_model: " + str(ProcessText.alt_modelnr(product2_model)))
-			elif product_model in words2:
-				matched = True
-				#sys.stderr.write("\nMATCHED5:" + " model1: " + str(product_model) + " words2: " + str(words2))
-			elif alt_product_model in words2:
-				matched = True
-				#sys.stderr.write("\nMATCHED6:" + " model1: " + str(ProcessText.alt_modelnr(product_model)) + " words2: " + str(words2))
-			elif product_model in alt_words2:
-				matched = True
-				#sys.stderr.write("\nMATCHED7:" + " model1: " + str(product_model) + " words2: " + str(alt_words2))
-			elif alt_product_model in alt_words2:
-				matched = True
-				#sys.stderr.write("\nMATCHED8:" + " model1: " + str(ProcessText.alt_modelnr(product_model)) + " words2: " + str(alt_words2))
-			elif product2_model in words1:
-				matched = True
-				#sys.stderr.write("\nMATCHED9:" + " product2_model: " + str(product2_model) + " words1: " + str(words1))
-			elif alt_product2_model in words1:
-				matched = True
-				#sys.stderr.write("\nMATCHED10:" + " product2_model: " + str(ProcessText.alt_modelnr(product2_model)) + " words1: " + str(words1))
-			elif product2_model in alt_words1:
-				matched = True
-				#sys.stderr.write("\nMATCHED11:" + " product2_model: " + str(product2_model) + " words1: " + str(alt_words1))
-			elif alt_product2_model in alt_words1:
-				matched = True
-				#sys.stderr.write("\nMATCHED12:" + " product2_model: " + str(ProcessText.alt_model(product2_model)) + " words1: " + str(alt_words1))
-
-			else:
-				pass
-				#sys.stderr.write("\nNOT MATCHED:" + "model1: " + str(product_model) + " product2_model: " + str(product2_model) + " words1: " + str(words1) + " words2: " + str(words2))
-
-
-			assert matched == product_matched
-			if (matched == product_matched):
-				log.msg("OK! " + str(matched) + str(set(models1)) + str(set(models2)), level="INFO")
-
-			if matched:
+				model_matched = True
+			
+			if model_matched:
 				score += MODEL_MATCH_WEIGHT
 
 			log.msg( "SCORE: " + str(score) + " THRESHOLD: " + str(threshold), level="INFO")
@@ -817,10 +771,10 @@ class ProcessText():
 		score = sum(weights_common)
 
 		#print "WORDS: ", product_name.encode("utf-8"), product2['product_name'].encode("utf-8")
-		log.msg( "W1: " + str(words1), level="INFO")
-		log.msg( "W2: " + str(words2), level="INFO")
-		log.msg( "COMMON: " + str(common_words), level="INFO")
-		log.msg( "WEIGHTS: " + str(weights1) + str(weights2) + str(weights_common), level="INFO")
+		log.msg( "W1: " + str(words1), level="DEBUG")
+		log.msg( "W2: " + str(words2), level="DEBUG")
+		log.msg( "COMMON: " + str(common_words), level="DEBUG")
+		log.msg( "WEIGHTS: " + str(weights1) + str(weights2) + str(weights_common), level="DEBUG")
 
 
 		return (score, threshold)
