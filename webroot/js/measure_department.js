@@ -6,7 +6,7 @@ updateHref,
 updateId,
 delId;
 var oTable;
-
+console.log("UPDATED: 28.10.2013");
 /* Formating function for row details */
 function fnFormatDetails ( nTr )
 {
@@ -620,7 +620,8 @@ function globalDepDashboard(site_name){
         data_str += '</td>';
         data_str += '<td class="span6 dep_second_part"><span class="dep_title">Add more words to '+data.res_more+' categories</span>';
         if(data.res_more_data.length > 0){
-            data_str += '<ul><li class="dep_header"><span class="dep_text_rec">RECOMMENDATIONS</span></li>';
+            data_str += '<ul><li class="dep_header"><span class="dep_text_rec" style="width: 180px">Category</span><span class="dep_text_rec" style="width: 45px">Words</span><span class="dep_text_rec" style="width: 175px; text-align: right !important">Keywords</span></li>';
+            // data_str += '<ul><li class="dep_header"><span class="dep_text_rec">RECOMMENDATIONS TEST</span></li>';
             for(var j=0; j<data.res_more_data.length; j++){
                 var json = data.res_more_data[j].title_keyword_description_density;
                 if(json != ''){
@@ -1266,7 +1267,8 @@ function getCatData(site_name, obj, condition, state){
             if(state == 1){
                 var data_str = '<li class="cat_header"><span class="dep_text">CATEGORY</span><span class="dep_numbers">WORDS</span><span class="dep_keywords">KEYWORDS - DENSITY</span></li>';
             } else {
-                var data_str = '<li class="cat_header"><span class="dep_text_rec">RECOMMENDATIONS</span></li>';
+                // var data_str = '<li class="cat_header"><span class="dep_text_rec">RECOMMENDATIONS TEST</span></li>';
+                var data_str = '<li class="cat_header"><span class="dep_text_rec" style="width: 180px">Sub-Category</span><span class="dep_text_rec" style="width: 45px">Words</span><span class="dep_text_rec" style="width: 175px; text-align: right !important">Keywords</span></li>';
             }
             for(var j=0; j<data.length; j++){
                 var json = data[j].title_keyword_description_density;
