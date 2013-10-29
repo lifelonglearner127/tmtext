@@ -161,7 +161,12 @@ class SearchSpider(BaseSpider):
 					##print "MODEL: ", model_node.encode("utf-8")
 
 		elif site == 'walmart':
-			product_name = hxs.select("//h1[@class='productTitle']/text()").extract()[0]
+			product_name_holder = hxs.select("//h1[@class='productTitle']/text()").extract()
+			if product_name_holder:
+				product_name = product_name_holder[0].strip()
+			else:
+				sys.stderr.write("Broken product page link (can't find item title): " + response.url)
+				return
 			product_model_holder = hxs.select("//td[contains(text(),'Model')]/following-sibling::*/text()").extract()
 			if product_model_holder:
 				product_model = product_model_holder[0]
