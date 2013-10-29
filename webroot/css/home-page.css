@@ -144,7 +144,7 @@ ul.menu li ul.sub_menu li a{
 }
 
 .below-nav {
-    background:url('../img/line.jpg') repeat-x left top;
+    background:url("../img/medium-back.jpg") repeat scroll left top rgba(0, 0, 0, 0);
     height: 322px;
     padding-top: 77px;
 }
@@ -186,16 +186,6 @@ ul.menu li ul.sub_menu li a{
     text-align: center;
     margin-top: 30px;
     font-weight: bold;
-}
-
-.right_block{
-    background: url("../img/right_back.jpg") repeat-x scroll left top;
-    height: 398px;
-    left: 584px;
-    position: absolute;
-    top: 86px;
-    width: auto;
-    right: 0;
 }
 
 .content-container{

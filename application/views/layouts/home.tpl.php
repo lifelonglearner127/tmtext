@@ -31,8 +31,6 @@
                         <a href="javascript:void(0)">LEARN MORE</a>
                 </div>
            </div>
-        <div class="right_block">
-        </div>
     </div>
     <div class="content-container">
         <div class="container">
