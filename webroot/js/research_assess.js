@@ -1,4 +1,5 @@
 var readAssessUrl = base_url + 'index.php/assess/get_assess_info';
+var readBoardSnapUrl = base_url + 'index.php/assess/get_board_view_snap';
 var readAssessUrlCompare = base_url + 'index.php/assess/compare';
 $(function () {
     $.fn.serializeObject = function(){
@@ -255,21 +256,49 @@ $(function () {
                         $('#assess_report_items_2_descriptions_pnl').hide();
                     }
                 }
-                if(json.aaData.length > 0){
+//                if(json.aaData.length > 0){
+//                    var str = '';
+//                    for(var i=0; i<json.aaData.length; i++){
+//                        var obj = jQuery.parseJSON(json.aaData[i][14]);
+//                        if(json.aaData[i][2] != null && json.aaData[i][2] != '' && json.aaData[i][0]!=''){
+//                            if(json.aaData[i][2].length > 93)
+//                              str += '<div class="board_item"><span class="span_img">'+json.aaData[i][2]+'</span><br />'+json.aaData[i][0]+
+//                                  '<div class="prod_description"><b>URL:</b><br/>'+obj.url+'<br /><br /><b>Product name:</b><br/>'+obj.product_name+
+//                                  '<br /><br/><b>Price:</b><br/>'+obj.own_price+'</div></div>';
+//                            else
+//                              str += '<div class="board_item"><span>'+json.aaData[i][2]+'</span><br />'+json.aaData[i][0]+
+//                                  '<div class="prod_description"><b>URL:</b><br/>'+obj.url+'<br /><br /><b>Product name:</b><br/>'+obj.product_name
+//                                  +'<br /><br/><b>Price:</b><br/>'+obj.own_price+'</div></div>';
+//                        }
+//                    }                   
+//                    if(str == ''){
+//                        str = '<p>No images available for this batch</p>';
+//                    }
+//                    $('#assess_view').html(str);
+//                    $('#assess_view .board_item img').on('click', function(){
+//                        var info = $(this).parent().find('div.prod_description').html();
+//                        showSnap('<img src="'+$(this).attr('src')+'" style="float:left; max-width: 600px; margin-right: 10px">'+info);
+//                    });
+//                }
+
+            });
+            
+            $.ajax({
+                type: "POST",
+                url: readBoardSnapUrl,
+                data: {batch_id: $('select[name="research_assess_batches"]').find('option:selected').val()}
+            }).done(function(data){
+                if(data.length > 0){
                     var str = '';
-                    console.log(json.aaData);
-                    for(var i=0; i<json.aaData.length; i++){
-                        var obj = jQuery.parseJSON(json.aaData[i][14]);
-                        console.log('Begin:');
-                        console.log(obj);
-                        console.log('End;');
-                        if(json.aaData[i][2] != null && json.aaData[i][2] != '' && json.aaData[i][0]!=''){
-                            if(json.aaData[i][2].length > 93)
-                              str += '<div class="board_item"><span class="span_img">'+json.aaData[i][2]+'</span><br />'+json.aaData[i][0]+
+                    for(var i=0; i<data.length; i++){
+                        var obj = jQuery.parseJSON(data[i][2]);
+                        if(data[i][1] != null && data[i][1] != '' && data[i][0]!=''){
+                            if(data[i][1].length > 93)
+                              str += '<div class="board_item"><span class="span_img">'+data[i][1]+'</span><br />'+data[i][0]+
                                   '<div class="prod_description"><b>URL:</b><br/>'+obj.url+'<br /><br /><b>Product name:</b><br/>'+obj.product_name+
                                   '<br /><br/><b>Price:</b><br/>'+obj.own_price+'</div></div>';
                             else
-                              str += '<div class="board_item"><span>'+json.aaData[i][2]+'</span><br />'+json.aaData[i][0]+
+                              str += '<div class="board_item"><span>'+data[i][1]+'</span><br />'+data[i][0]+
                                   '<div class="prod_description"><b>URL:</b><br/>'+obj.url+'<br /><br /><b>Product name:</b><br/>'+obj.product_name
                                   +'<br /><br/><b>Price:</b><br/>'+obj.own_price+'</div></div>';
                         }
@@ -282,9 +311,9 @@ $(function () {
                         var info = $(this).parent().find('div.prod_description').html();
                         showSnap('<img src="'+$(this).attr('src')+'" style="float:left; max-width: 600px; margin-right: 10px">'+info);
                     });
-                }
-
+                 }
             });
+            
         },
         "fnRowCallback": function(nRow, aData, iDisplayIndex) {
             $(nRow).attr("add_data", aData[14]);
@@ -430,11 +459,62 @@ $(function () {
 //                
 //        ]
     });
+var scrollYesOrNot = true;
+    $(document).scroll(function() {
+        var docHeight = parseInt($(document).height());
+        var windHeight = parseInt($(window).height());
+        var scrollTop = parseInt($(document).scrollTop());
+        if(window.location.hash == '#board_view' && scrollYesOrNot && (docHeight - windHeight - scrollTop) < 100){
+            scrollYesOrNot = false;
+            $('#imgLoader').show();
+            setTimeout(function(){
+                
+                $.ajax({
+                    type: "POST",
+                    url: readBoardSnapUrl,
+                    data: {batch_id: $('select[name="research_assess_batches"]').find('option:selected').val(),next_id: $('#assess_view .board_item:last-child').children('img').attr('rel')}
+                }).done(function(data){
+                    $('#imgLoader').hide();
+                    if(data.length > 0){
+                        var str = '';
+                        for(var i=0; i<data.length; i++){
+                            var obj = jQuery.parseJSON(data[i][2]);
+                            if(data[i][1] != null && data[i][1] != '' && data[i][0]!=''){
+                                if(data[i][1].length > 93)
+                                  str += '<div class="board_item fadeout" style="display: none;" ><span class="span_img">'+data[i][1]+'</span><br />'+data[i][0]+
+                                      '<div class="prod_description"><b>URL:</b><br/>'+obj.url+'<br /><br /><b>Product name:</b><br/>'+obj.product_name+
+                                      '<br /><br/><b>Price:</b><br/>'+obj.own_price+'</div></div>';
+                                else
+                                  str += '<div class="board_item fadeout" style="display: none;"><span>'+data[i][1]+'</span><br />'+data[i][0]+
+                                      '<div class="prod_description"><b>URL:</b><br/>'+obj.url+'<br /><br /><b>Product name:</b><br/>'+obj.product_name
+                                      +'<br /><br/><b>Price:</b><br/>'+obj.own_price+'</div></div>';
+                            }
+                        }                   
+                        if(str == ''){
+                            str = '<p>No images available for this batch</p>';
+                        }
+                        $('#assess_view').append(str);
+                        $('#assess_view .board_item img').on('click', function(){
+                            var info = $(this).parent().find('div.prod_description').html();
+                            showSnap('<img src="'+$(this).attr('src')+'" style="float:left; max-width: 600px; margin-right: 10px">'+info);
+                        });
+                        $('.fadeout').each(function(){
+                            $(this).fadeIn('slow');
+                            $(this).removeClass('fadeout');
+                        })
+                        scrollYesOrNot = true;
+                     }
+                });
+                
+            },500);
+            
+        }
+    });
 
     $('#research_batches_columns').appendTo('div.dataTables_filter');
     $('#tblAssess_length').after($('#assess_tbl_show_case'));
     $('#assess_tbl_show_case a').on('click', function(event) {
-        event.preventDefault();
+//        event.preventDefault();
         if($(this).text()=='Details' || $(this).text()=='Compare' ){
             $('#research_batches_columns').show();
         } else {

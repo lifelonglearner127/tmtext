@@ -194,6 +194,11 @@ VALUES
             $txt_filter_part2 = ')  as `data` where `data`.`product_name` like "%'.$params->txt_filter.'%"';
 
         }
+        if(isset($params->id)){
+            $txt_filter_part2 = ' AND  '.(int)$params->id.' < `s`.`id` AND `s`.`id` < '.((int)$params->id+4).' AND `cl`.`snap` != "" ';
+        } else if(isset($params->snap_count)) {
+            $txt_filter_part2 = ' AND `cl`.`snap` != "" LIMIT 0,'.$params->snap_count.' ';
+        }
         $query = $this->db->query($txt_filter_part1 . 'select `s`.*, `cl`.`snap`, `cl`.`snap_date`, `cl`.`snap_state`,
             (select `value` from imported_data_parsed where `key`="Product Name" and `imported_data_id` = `s`.`imported_data_id` and `revision`=`s`.`revision` limit 1) as `product_name`,
             (select `value` from imported_data_parsed where `key`="Description" and `imported_data_id` = `s`.`imported_data_id` and `revision`=`s`.`revision` limit 1) as `short_description`,
