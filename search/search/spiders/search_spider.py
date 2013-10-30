@@ -814,7 +814,7 @@ class ProcessText():
 		
 		if ((letters > 1 and numbers > 1) or numbers > 4) and nonwords==0 \
 		and not word.endswith("in") and not word.endswith("inch") and not word.endswith("hz") and \
-		not re.match("[0-9]{,3}[kmgt]b", word): # word is not a memory size description
+		not re.match("[0-9]{3,}[kmgt]b", word): # word is not a memory size description
 			return True
 
 		return False
