@@ -20,7 +20,7 @@ with open(sys.argv[1], "r") as file1:
 		for line in file2:
 			lines2.add(line.strip())
 
-from pprint import pprint
-pprint(lines1.difference(lines2))
+for line in lines1.difference(lines2):
+	print line
 
 
