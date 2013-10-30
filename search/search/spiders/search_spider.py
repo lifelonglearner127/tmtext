@@ -165,7 +165,7 @@ class SearchSpider(BaseSpider):
 			if product_name_holder:
 				product_name = product_name_holder[0].strip()
 			else:
-				sys.stderr.write("Broken product page link (can't find item title): " + response.url)
+				sys.stderr.write("Broken product page link (can't find item title): " + response.url + "\n")
 				return
 			product_model_holder = hxs.select("//td[contains(text(),'Model')]/following-sibling::*/text()").extract()
 			if product_model_holder:
@@ -176,7 +176,7 @@ class SearchSpider(BaseSpider):
 			if product_name_holder:
 				product_name = product_name_holder[0].strip()
 			else:
-				sys.stderr.write("Broken product page link (can't find item title): " + response.url)
+				sys.stderr.write("Broken product page link (can't find item title): " + response.url + "\n")
 				return
 			product_model_holder = hxs.select("//dt[text()='Model']/following-sibling::*/text()").extract()
 			if product_model_holder:
