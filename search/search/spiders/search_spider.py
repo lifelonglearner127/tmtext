@@ -742,17 +742,17 @@ class ProcessText():
 		common_words = set(words1).intersection(set(words2))
 
 		# assign weigths - 1 to normal words, 2 to nondictionary words
-		# 3 to first word in text (assumed to be manufacturer)
+		# 6 to first word in text (assumed to be manufacturer)
 		# or if the word looks like a combination of letters and numbers (assumed to be model number)
 		#TODO: update these if they're not relevant for a new category or site
 
-		FIRSTWORD_WEIGHT = 4
+		FIRSTWORD_WEIGHT = 6
 
 		weights_common = []
 		for word in list(common_words):
 
-			# if they share the first word assume it's manufacturer and assign higher weight
-			if word == words1[0] and word == words2[0]:
+			# if they share the first word (and it's a non-dictionary word) assume it's manufacturer and assign higher weight
+			if word == words1[0] and word == words2[0] and not wordnet.synsets(word):
 				weights_common.append(FIRSTWORD_WEIGHT)
 
 			else:
@@ -770,7 +770,6 @@ class ProcessText():
 		threshold = param*(len(weights1) + len(weights2))/2
 		score = sum(weights_common)
 
-		#print "WORDS: ", product_name.encode("utf-8"), product2['product_name'].encode("utf-8")
 		log.msg( "W1: " + str(words1), level=log.DEBUG)
 		log.msg( "W2: " + str(words2), level=log.DEBUG)
 		log.msg( "COMMON: " + str(common_words), level=log.DEBUG)
@@ -788,9 +787,9 @@ class ProcessText():
 		if ProcessText.is_model_number(word):
 			# return lower weight if this comes from words with alternative models (not original words as found on site)
 			if not altModels:
-				return 7
+				return 10
 			else:
-				return 6
+				return 8
 
 		if not wordnet.synsets(word):
 			return 2
@@ -813,7 +812,7 @@ class ProcessText():
 		# some models on bestbuy have . or /
 		nonwords = len(re.findall("[^\w\-/\.]", word))
 		
-		if ((letters > 1 and numbers > 1) or numbers > 3) and nonwords==0 \
+		if ((letters > 1 and numbers > 1) or numbers > 4) and nonwords==0 \
 		and not word.endswith("in") and not word.endswith("inch") and not word.endswith("hz") and \
 		not re.match("[0-9]{,3}[kmgt]b", word): # word is not a memory size description
 			return True
