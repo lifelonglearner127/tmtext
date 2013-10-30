@@ -466,7 +466,8 @@ var scrollYesOrNot = true;
         var scrollTop = parseInt($(document).scrollTop());
         if(window.location.hash == '#board_view' && scrollYesOrNot && (docHeight - windHeight - scrollTop) < 100){
             scrollYesOrNot = false;
-            $('#imgLoader').show();
+            if($('.board_item').length >= 12)
+                $('#imgLoader').show();
             setTimeout(function(){
                 
                 $.ajax({
