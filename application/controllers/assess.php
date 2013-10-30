@@ -125,7 +125,7 @@ class Assess extends MY_Controller {
             $build_assess_params->date_from = $this->input->get('date_from') == 'undefined' ? '' : $this->input->get('date_from');
             $build_assess_params->date_to = $this->input->get('date_to') == 'undefined' ? '' : $this->input->get('date_to');
             $build_assess_params->price_diff = $this->input->get('price_diff') == 'undefined' ? -1 : $this->input->get('price_diff');
-            $build_assess_params->max_similar_item_count = 1;
+            $build_assess_params->max_similar_item_count = 0;
             $build_assess_params->short_less_check = $this->input->get('short_less_check') == 'true' ? true : false;
             if ($this->input->get('short_less')) {
                 $build_assess_params->short_less = $this->input->get('short_less') == 'undefined' ? -1 : intval($this->input->get('short_less'));
@@ -942,36 +942,36 @@ class Assess extends MY_Controller {
             array(
                 "sTitle" => "Snapshot",
                 "sName" => "snap",
-                "sWidth" =>  "10%"
+                //"sWidth" =>  "10%"
             ),
             array(
                 "sTitle" => "Date",
                 "sName" => "created",
-                "sWidth" =>"3%"
+                //"sWidth" =>"3%"
             ),
             array(
                 "sTitle" => "Product Name", 
                 "sName" =>"product_name", 
-                "sWidth" => "15%",
+                //"sWidth" => "15%",
                 "sClass" => "product_name_text"
             ),
             
             array(
                 "sTitle" => "URL", 
                 "sName" => "url", 
-                "sWidth" =>"15%",
+                //"sWidth" =>"15%",
                 "sClass" =>"url_text"
             ),
             array(
                  "sTitle" => "Words <span class='subtitle_word_short' >Short</span>",
                 "sName" => "short_description_wc", 
-                "sWidth" => "1%",
+               // "sWidth" => "1%",
                 "sClass" => "word_short"
             ),
             array(
                  "sTitle" => "Keywords <span class='subtitle_keyword_short'>Short</span>",
                 "sName" => "short_seo_phrases", 
-                "sWidth" => "2%",
+                //"sWidth" => "2%",
                 "sClass" => "keyword_short"
             ),
             array(
@@ -983,40 +983,40 @@ class Assess extends MY_Controller {
             array(
                  "sTitle" => "Keywords <span class='subtitle_keyword_long'>Long</span>",
                 "sName" => "long_seo_phrases", 
-                "sWidth" => "2%",
+                //"sWidth" => "2%",
                 "sClass" => "keyword_long"
             ),
               array(
             "sTitle" =>"Duplicate Content", 
             "sName" =>"duplicate_content", 
-            "sWidth" =>"1%"
+            //"sWidth" =>"1%"
          ),
         
          array(
             "sTitle" =>"Content", 
             "sName" =>"column_external_content", 
-            "sWidth" =>"2%"
+            //"sWidth" =>"2%"
         ),
          array(
             "sTitle" =>"Reviews", 
             "sName" =>"column_reviews", 
-            "sWidth" =>"3%"
+            //"sWidth" =>"3%"
        ),
          array(
             "sTitle" =>"Features", 
             "sName" =>"column_features", 
-            "sWidth" => "4%"
+            //"sWidth" => "4%"
         ),        
          array(
             "sTitle"  =>"Price", 
             "sName" =>"price_diff", 
-            "sWidth" =>"2%",
+            //"sWidth" =>"2%",
             "sClass" =>"price_text"
        ),
          array(
             "sTitle"  =>"Recommendations", 
             "sName" =>"recommendations", 
-            "sWidth" =>"15%",
+           // "sWidth" =>"15%",
             "bVisible" =>false, 
             "bSortable" =>false
        ),
@@ -1053,7 +1053,21 @@ class Assess extends MY_Controller {
         $items_short_products_content_short = 0;
         $items_long_products_content_short = 0;
         $detail_comparisons_total = 0;
+        if ($build_assess_params->max_similar_item_count > 0) {
+                
+              
+            $max_similar_item_count = (int) $build_assess_params->max_similar_item_count;
 
+            for ($i = 1; $i <= $max_similar_item_count; $i++) {
+
+              $columns[] = array("sTitle" => "Snapshot", "sName" => 'snap' . $i);
+              $columns[] = array("sTitle" => "Product Name", "sName" => 'product_name' . $i);
+              $columns[] = array("sTitle" => "URL", "sName" => 'url' . $i);
+              $columns[] = array("sTitle" => "Words <span class='subtitle_word_short' >Short</span>", "sName" => 'short_description_wc' . $i);
+              $columns[] = array("sTitle" => "Words <span class='subtitle_word_long' >Long</span>", "sName" => 'long_description_wc' . $i);
+            }
+
+        }
         foreach ($results as $row) {
 //            $long_description_wc = $row->long_description_wc;
 //            $short_description_wc = $row->short_description_wc;
@@ -1095,17 +1109,7 @@ class Assess extends MY_Controller {
                 $sim_items = $row->similar_items;
                 $max_similar_item_count = (int) $build_assess_params->max_similar_item_count;
 
-               if($max_similar_item_count>0){
-                   for ($i = 1; $i <= $max_similar_item_count; $i++) {
-
-                     $columns[] = array("sTitle" => "Snapshot", "sName" => 'snap' . $i);
-                     $columns[] = array("sTitle" => "Product Name", "sName" => 'product_name' . $i);
-                     $columns[] = array("sTitle" => "URL", "sName" => 'url' . $i);
-                     $columns[] = array("sTitle" => "Words <span class='subtitle_word_short' >Short</span>", "sName" => 'short_description_wc' . $i);
-                     $columns[] = array("sTitle" => "Words <span class='subtitle_word_long' >Long</span>", "sName" => 'long_description_wc' . $i);
-                   }
-
-              }
+               
 
                 for ($i = 1; $i <= $max_similar_item_count; $i++) {
 
@@ -1633,11 +1637,11 @@ class Assess extends MY_Controller {
                     if ($build_assess_params->max_similar_item_count > 0) {
                         $data_row = (array)$data_row;
                         for ($i = 1; $i <= $build_assess_params->max_similar_item_count; $i++) {
-                            $output_row[] = $data_row['snap' . $i];
-                            $output_row[] = $data_row['product_name' . $i];
-                            $output_row[] = $data_row['url' . $i];
-                            $output_row[] = $data_row['short_description_wc' . $i];
-                            $output_row[] = $data_row['long_description_wc' . $i];
+                            $output_row[] = $data_row['snap' . $i]!=null?$data_row['snap' . $i]:'-';
+                            $output_row[] = $data_row['product_name' . $i]!=null?$data_row['product_name' . $i]:'-';
+                            $output_row[] = $data_row['url' . $i]!=null?$data_row['url' . $i]:'-';
+                            $output_row[] = $data_row['short_description_wc' . $i]!=null?$data_row['short_description_wc' . $i]:'-';
+                            $output_row[] = $data_row['long_description_wc' . $i]!=null?$data_row['long_description_wc' . $i]:'-';
                         }
                         $data_row = (object)$data_row;
                     } else {
@@ -1662,14 +1666,15 @@ class Assess extends MY_Controller {
             }
         }
         
-//        echo  "<pre>";
-//        print_r($output['aaData']);exit;
+//       echo  "<pre>";
+//       print_r($columns);
+//       print_r($output['aaData']);exit;
         $output['columns']= $columns;
         $output['ExtraData']['report'] = $report;
 
         return $output;
     }
-    
+
     public function get_board_view_snap(){
         if(isset($_POST['batch_id']) && $_POST['batch_id'] != 0){
             $batch_id = $_POST['batch_id'];
@@ -1692,7 +1697,7 @@ class Assess extends MY_Controller {
                     if (file_exists($file)) {
                         if (filesize($file) > 1024) {
                             $snap = "<img src='" . base_url() . "webshoots/" . $data_row->snap . "' rel='" . $data_row->id . "' />";
-                        }
+}
                     }
                     $output = array(
                         $snap,
