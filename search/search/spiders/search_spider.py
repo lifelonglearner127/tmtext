@@ -408,7 +408,7 @@ class SearchSpider(BaseSpider):
 				item = SearchItem()
 				item['site'] = site
 				item['product_name'] = result.select("text()").extract()[0].strip()
-				item['product_url'] = Utils.add_domain(result.select("@href").extract()[0], "http://www.bestbuy.com")
+				item['product_url'] = Utils.clean_url(Utils.add_domain(result.select("@href").extract()[0], "http://www.bestbuy.com"))
 
 				if 'origin_url' in response.meta:
 					item['origin_url'] = response.meta['origin_url']
