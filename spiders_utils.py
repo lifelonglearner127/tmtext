@@ -12,6 +12,23 @@ class Utils():
             url = root_url + url
         return url
 
+    # clean url of extra parameters
+    @staticmethod
+    def clean_url(url):
+        # remove extra parameters (after ?)
+        m = re.match("(.*)\?.*", url)
+        if m:
+            url = m.group(1)
+
+        # remove part after ;
+        m = re.match("(.*);.*", url)
+        if m:
+            url = m.group(1)
+
+        return url
+
+
+    # extract domain from url
     @staticmethod
     def extract_domain(url):
         m = re.match("http://((www1?)|(shop))\.([^\.]+)\.com.*", url)
