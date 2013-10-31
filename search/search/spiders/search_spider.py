@@ -158,7 +158,6 @@ class SearchSpider(BaseSpider):
 				
 				if m:
 					product_model = m.group(2).strip()
-					##print "MODEL: ", model_node.encode("utf-8")
 
 		elif site == 'walmart':
 			product_name_holder = hxs.select("//h1[@class='productTitle']/text()").extract()
@@ -337,9 +336,9 @@ class SearchSpider(BaseSpider):
 					product_name += " " + text.extract()
 				item['product_name'] = product_name
 				rel_url = result.select("@href").extract()[0]
-				#TODO: maybe use urljoin
+				
 				root_url = "http://www.walmart.com"
-				item['product_url'] = root_url + rel_url
+				item['product_url'] = Utils.add_domain(rel_url, root_url)
 
 				if 'origin_url' in response.meta:
 					item['origin_url'] = response.meta['origin_url']
@@ -698,27 +697,6 @@ class ProcessText():
 
 			# check if product names match (a similarity score)
 			(score, threshold, brand_matched) = ProcessText.similar_names(words1, words2, param)
-
-			# # try it with alternative model numbers as well, and keep the one with highest score
-			# alt_words1 = ProcessText.name_with_alt_modelnr(words1)
-			# alt_words2 = ProcessText.name_with_alt_modelnr(words2)
-
-
-			# if alt_words1:
-			# 	# compute weights differently if we used alternative model numbers
-			# 	(score1, threshold1) = ProcessText.similar_names(alt_words1, words2, param, altModels=True)
-			# 	if score1 > score:
-			# 		(score, threshold) = (score1, threshold1)
-
-			# if (alt_words1 and alt_words2):
-			# 	(score2, threshold2) = ProcessText.similar_names(alt_words1, alt_words2, param, altModels=True)
-			# 	if score2 > score:
-			# 		(score, threshold) = (score2, threshold2)
-
-			# if alt_words2:
-			# 	(score3, threshold3) = ProcessText.similar_names(words1, alt_words2, param, altModels=True)
-			# 	if score3 > score:
-			# 		(score, threshold) = (score3, threshold3)
 			
 			# check if product models match (either from a "Model" field or extracted from their name)
 			model_matched = ProcessText.models_match(words1, words2, product_model, product2_model)
@@ -757,7 +735,8 @@ class ProcessText():
 
 		# assign weigths - 1 to normal words, 2 to nondictionary words
 		# 6 to first word in text (assumed to be manufacturer)
-		# or if the word looks like a combination of letters and numbers (assumed to be model number)
+		# or 10 if the word looks like a combination of letters and numbers (assumed to be model number)
+		# (values stored in the static fields of the class)
 		#TODO: update these if they're not relevant for a new category or site
 
 		brand_matched = False
