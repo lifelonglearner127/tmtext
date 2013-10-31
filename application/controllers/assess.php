@@ -1262,7 +1262,7 @@ class Assess extends MY_Controller {
                  if($row->short_description){
                     $_count = $this->keywords_appearence($row->short_description, $custom_seo['primary']);
                     $cnt = count(explode(' ',$custom_seo['primary'] ));
-                    $_count = round(($_count/$row->short_description_wc)*100, 2)."%";
+                    $_count = round(($_count*$cnt/$row->short_description_wc)*100, 2)."%";
                  }else{
                      $_count = ' ';
                  }
