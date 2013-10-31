@@ -286,7 +286,7 @@ class SearchSpider(BaseSpider):
 			items = response.meta['items']
 			##print "INITIAL ITEMS: ", items
 		else:
-			items = []
+			items = set()
 
 		
 		# handle parsing separately for each site
@@ -316,8 +316,7 @@ class SearchSpider(BaseSpider):
 				if 'origin_url' in response.meta:
 					item['origin_url'] = response.meta['origin_url']
 
-				items.append(item)
-
+				items.add(item)
 
 		# walmart
 		if (site == 'walmart'):
@@ -343,8 +342,7 @@ class SearchSpider(BaseSpider):
 				if 'origin_url' in response.meta:
 					item['origin_url'] = response.meta['origin_url']
 
-				items.append(item)
-
+				items.add(item)
 
 		# bloomingdales
 
@@ -361,8 +359,7 @@ class SearchSpider(BaseSpider):
 				if 'origin_url' in response.meta:
 					item['origin_url'] = response.meta['origin_url']
 
-				items.append(item)
-
+				items.add(item)
 
 		# overstock
 		if (site == 'overstock'):
@@ -377,8 +374,7 @@ class SearchSpider(BaseSpider):
 				if 'origin_url' in response.meta:
 					item['origin_url'] = response.meta['origin_url']
 
-				items.append(item)
-
+				items.add(item)
 		# wayfair
 		if (site == 'wayfair'):
 
@@ -396,8 +392,7 @@ class SearchSpider(BaseSpider):
 				if 'origin_url' in response.meta:
 					item['origin_url'] = response.meta['origin_url']
 
-				items.append(item)
-
+				items.add(item)
 		#TODO: currently only extracting first page - should I extract all pages?
 		# bestbuy
 		if (site == 'bestbuy'):
@@ -416,8 +411,7 @@ class SearchSpider(BaseSpider):
 				if model_holder:
 					item['product_model'] = model_holder[0]
 
-				items.append(item)
-
+				items.add(item)
 
 		# toysrus
 		if (site == 'toysrus'):
@@ -433,8 +427,7 @@ class SearchSpider(BaseSpider):
 				if 'origin_url' in response.meta:
 					item['origin_url'] = response.meta['origin_url']
 
-				items.append(item)
-
+				items.add(item)
 		# # bjs
 		# if (site == 'bjs'):
 		# 	results = hxs.select()
