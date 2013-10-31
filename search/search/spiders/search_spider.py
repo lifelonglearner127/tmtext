@@ -521,10 +521,14 @@ class SearchSpider(BaseSpider):
 
 # process text in product names, compute similarity between products
 class ProcessText():
+	# weight values
 	MODEL_MATCH_WEIGHT = 10
 	BRAND_MATCH_WEIGHT = 6
 	NONWORD_MATCH_WEIGHT = 2
 	DICTIONARY_WORD_MATCH_WEIGHT = 1
+
+	# exception brands - are brands names but are also found in the dictionary
+	brand_exceptions = ['philips']
 
 	# normalize text to list of lowercase words (no punctuation except for inches sign (") or /)
 	@staticmethod
@@ -747,7 +751,7 @@ class ProcessText():
 		for word in list(common_words):
 
 			# if they share the first word (and it's a non-dictionary word) assume it's manufacturer and assign higher weight
-			if word == words1[0] and word == words2[0] and not wordnet.synsets(word):
+			if word == words1[0] and word == words2[0] and (not wordnet.synsets(word) or word in ProcessText.brand_exceptions):
 				weights_common.append(ProcessText.BRAND_MATCH_WEIGHT)
 				brand_matched = True
 			else:
