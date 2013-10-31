@@ -527,6 +527,8 @@ class ProcessText():
 	NONWORD_MATCH_WEIGHT = 2
 	DICTIONARY_WORD_MATCH_WEIGHT = 1
 
+	#TODO: different weight if alt models match, not literal models?
+
 	# exception brands - are brands names but are also found in the dictionary
 	brand_exceptions = ['philips']
 
