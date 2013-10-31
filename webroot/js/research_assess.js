@@ -1,4 +1,5 @@
 var readAssessUrl = base_url + 'index.php/assess/get_assess_info';
+var readBoardSnapUrl = base_url + 'index.php/assess/get_board_view_snap';
 var readAssessUrlCompare = base_url + 'index.php/assess/compare';
 var serevr_side = true;
 var serverside_table;
@@ -511,31 +512,62 @@ $(function() {
                         $('#assess_report_items_2_descriptions_pnl').hide();
                     }
                 }
-                if (json.aaData.length > 0) {
+//                if (json.aaData.length > 0) {
+//                    var str = '';
+//                    for (var i = 0; i < json.aaData.length; i++) {
+//                        var obj = jQuery.parseJSON(json.aaData[i][14]);
+//                        if (json.aaData[i][2] != null && json.aaData[i][2] != '' && json.aaData[i][0] != '') {
+//                            if (json.aaData[i][2].length > 93)
+//                                str += '<div class="board_item"><span class="span_img">' + json.aaData[i][2] + '</span><br />' + json.aaData[i][0] +
+//                                        '<div class="prod_description"><b>URL:</b><br/>' + obj.url + '<br /><br /><b>Product name:</b><br/>' + obj.product_name +
+//                                        '<br /><br/><b>Price:</b><br/>' + obj.own_price + '</div></div>';
+//                            else
+//                                str += '<div class="board_item"><span>' + json.aaData[i][2] + '</span><br />' + json.aaData[i][0] +
+//                                        '<div class="prod_description"><b>URL:</b><br/>' + obj.url + '<br /><br /><b>Product name:</b><br/>' + obj.product_name
+//                                        + '<br /><br/><b>Price:</b><br/>' + obj.own_price + '</div></div>';
+//                        }
+//                    }
+//                    if (str == '') {
+//                        str = '<p>No images available for this batch</p>';
+//                    }
+//                    $('#assess_view').html(str);
+//                    $('#assess_view .board_item img').on('click', function() {
+//                        var info = $(this).parent().find('div.prod_description').html();
+//                        showSnap('<img src="' + $(this).attr('src') + '" style="float:left; max-width: 600px; margin-right: 10px">' + info);
+//                    });
+//                }
+
+            });
+            
+            $.ajax({
+                type: "POST",
+                url: readBoardSnapUrl,
+                data: {batch_id: $('select[name="research_assess_batches"]').find('option:selected').val()}
+            }).done(function(data){
+                if(data.length > 0){
                     var str = '';
-                    for (var i = 0; i < json.aaData.length; i++) {
-                        var obj = jQuery.parseJSON(json.aaData[i][14]);
-                        if (json.aaData[i][2] != null && json.aaData[i][2] != '' && json.aaData[i][0] != '') {
-                            if (json.aaData[i][2].length > 93)
-                                str += '<div class="board_item"><span class="span_img">' + json.aaData[i][2] + '</span><br />' + json.aaData[i][0] +
-                                        '<div class="prod_description"><b>URL:</b><br/>' + obj.url + '<br /><br /><b>Product name:</b><br/>' + obj.product_name +
-                                        '<br /><br/><b>Price:</b><br/>' + obj.own_price + '</div></div>';
+                    for(var i=0; i<data.length; i++){
+                        var obj = jQuery.parseJSON(data[i][2]);
+                        if(data[i][1] != null && data[i][1] != '' && data[i][0]!=''){
+                            if(data[i][1].length > 93)
+                              str += '<div class="board_item"><span class="span_img">'+data[i][1]+'</span><br />'+data[i][0]+
+                                  '<div class="prod_description"><b>URL:</b><br/>'+obj.url+'<br /><br /><b>Product name:</b><br/>'+obj.product_name+
+                                  '<br /><br/><b>Price:</b><br/>'+obj.own_price+'</div></div>';
                             else
-                                str += '<div class="board_item"><span>' + json.aaData[i][2] + '</span><br />' + json.aaData[i][0] +
-                                        '<div class="prod_description"><b>URL:</b><br/>' + obj.url + '<br /><br /><b>Product name:</b><br/>' + obj.product_name
-                                        + '<br /><br/><b>Price:</b><br/>' + obj.own_price + '</div></div>';
+                              str += '<div class="board_item"><span>'+data[i][1]+'</span><br />'+data[i][0]+
+                                  '<div class="prod_description"><b>URL:</b><br/>'+obj.url+'<br /><br /><b>Product name:</b><br/>'+obj.product_name
+                                  +'<br /><br/><b>Price:</b><br/>'+obj.own_price+'</div></div>';
                         }
-                    }
-                    if (str == '') {
+                    }                   
+                    if(str == ''){
                         str = '<p>No images available for this batch</p>';
                     }
                     $('#assess_view').html(str);
-                    $('#assess_view .board_item img').on('click', function() {
+                    $('#assess_view .board_item img').on('click', function(){
                         var info = $(this).parent().find('div.prod_description').html();
-                        showSnap('<img src="' + $(this).attr('src') + '" style="float:left; max-width: 600px; margin-right: 10px">' + info);
+                        showSnap('<img src="'+$(this).attr('src')+'" style="float:left; max-width: 600px; margin-right: 10px">'+info);
                     });
-                }
-
+                 }
             });
         },
         "fnRowCallback": function(nRow, aData, iDisplayIndex) {
@@ -599,7 +631,7 @@ var scrollYesOrNot = true;
                         $('#assess_view .board_item img').on('click', function(){
                             var info = $(this).parent().find('div.prod_description').html();
                             showSnap('<img src="'+$(this).attr('src')+'" style="float:left; max-width: 600px; margin-right: 10px">'+info);
-    });
+                        });
                         $('.fadeout').each(function(){
                             $(this).fadeIn('slow');
                             $(this).removeClass('fadeout');
