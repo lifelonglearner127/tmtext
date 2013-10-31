@@ -234,11 +234,17 @@ $(function() {
         var oSettings = $("#tblAssess").dataTable().fnSettings();
         var aoDataa = buildTableParams(oSettings.aoData);
         var newObject = jQuery.extend(true, {}, aoDataa);
-
+        
 
         $.getJSON(readAssessUrl, aoDataa, function(json) {
             highChart(json);
-
+            tblAllColumns = [];
+            for(p in json.columns){
+                if(json.columns[p].sName != undefined){
+                    tblAllColumns.push(json.columns[p].sName);
+                }
+//                
+       }
           $('#tblAssess_wrapper').remove();
           var th = '';
             for(var i =0;i<Object.keys(json.columns).length;i++){
@@ -278,7 +284,7 @@ $(function() {
                             zeroTableDraw = false;
                             return;
                         }
-//            hideColumns();
+         
                        // check_word_columns();
 
                     }
@@ -337,7 +343,7 @@ $(function() {
                     }
                     assess_tbl_show_case(this);
                 });
-               
+               hideColumns();
             }, 1000);
         });
 
