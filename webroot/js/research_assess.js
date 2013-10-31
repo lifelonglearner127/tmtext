@@ -648,7 +648,7 @@ var scrollYesOrNot = true;
     $('#research_batches_columns').appendTo('div.dataTables_filter');
     $('#tblAssess_length').after($('#assess_tbl_show_case'));
     $('#assess_tbl_show_case a').on('click', function(event) {
-        event.preventDefault();
+//        event.preventDefault();
         if ($(this).text() == 'Details' || $(this).text() == 'Compare') {
             $('#research_batches_columns').show();
         } else {

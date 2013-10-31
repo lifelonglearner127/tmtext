@@ -338,11 +338,11 @@
 <!--                </div>-->
                 <div id="comare_table"></div>
                 <div id="assess_tbl_show_case" class="assess_tbl_show_case">
-                    <a id="assess_tbl_show_case_recommendations" data-case="recommendations" title="Recommendations" href="#"  class="active_link">Recommendations</a> |
-                    <a id="assess_tbl_show_case_report" data-case="report" title="Report" href="#">Summary</a> |
-                    <a id="assess_tbl_show_case_details" data-case="details" title="Details" href="#">Details</a> |
-                    <a id="assess_tbl_show_case_details_compare" data-case="details_compare" title="Details_compare" href="#">Compare</a> |
-                    <a id="assess_tbl_show_case_view" data-case="view" title="Board View" href="#">Board View</a>
+                    <a id="assess_tbl_show_case_recommendations" data-case="recommendations" title="Recommendations" href="#recommendations"  class="active_link">Recommendations</a> |
+                    <a id="assess_tbl_show_case_report" data-case="report" title="Report" href="#summary">Summary</a> |
+                    <a id="assess_tbl_show_case_details" data-case="details" title="Details" href="#details">Details</a> |
+                    <a id="assess_tbl_show_case_details_compare" data-case="details_compare" title="Details_compare" href="#compare">Compare</a> |
+                    <a id="assess_tbl_show_case_view" data-case="view" title="Board View" href="#board_view">Board View</a>
                 </div>
                 <a id="research_batches_columns" class="ml_5 float_r" title="Customize..."><img  style="width:32px; heihgt: 32px;"src ="<?php echo base_url() ?>/img/settings@2x.png"></a>
                 <div id="assess_report">
