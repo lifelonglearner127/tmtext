@@ -585,8 +585,8 @@ class ProcessText():
 				alt_models.append(new_word)
 
 		# split word by -
-		if "-" in word:
-			sub_models = word.split("-")
+		if "-"  or "/" in word:
+			sub_models = re.split(r"[-/]",word)
 			for sub_model in sub_models:
 				if ProcessText.is_model_number(sub_model.strip()):
 					alt_models.append(sub_model.strip())
