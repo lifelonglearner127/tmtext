@@ -1196,7 +1196,7 @@ class Assess extends MY_Controller {
                 if(is_array($H1)){
                     $str_1 =  "<table  class='table_keywords_long'>";
                     foreach($H1 as $h1){
-                       $str_1.= "<tr><td>".$h1."-</td><td>".strlen($h1)."</td></tr>" ;
+                       $str_1.= "<tr><td>".$h1." - </td><td>".strlen($h1)."</td></tr>" ;
                     }
                     $str_1 .="</table>";
                 $result_row->H1_Tags = $str_1;
@@ -1210,7 +1210,7 @@ class Assess extends MY_Controller {
                 if(is_array($H2)){
                     $str_2 =  "<table  class='table_keywords_long'>";
                     foreach($H2 as $h2){
-                       $str_2.= "<tr><td>".$h2."-</td><td>".strlen($h2)."</td></tr>" ;
+                       $str_2.= "<tr><td>".$h2." - </td><td>".strlen($h2)."</td></tr>" ;
                     }
                     $str_2 .="</table>";
                 $result_row->H2_Tags =$str_2;
