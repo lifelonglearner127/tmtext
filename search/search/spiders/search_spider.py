@@ -563,40 +563,40 @@ class ProcessText():
 
 		return clean
 
-	# get alternative model number
+	# get list of alternative model numbers
 
 	# without the last letters, so as to match more possibilities
 	# (there is are cases like this, for example un32eh5300f)
 
+	# or split by dashes
+
 	#TODO: add maybe multiple alternate model nrs - split by dash
 	@staticmethod
-	def alt_modelnr(word):
+	def alt_modelnrs(word):
+		alt_models = []
 		if not word:
-			return None
+			return []
+
+		# remove last part of word
 		m = re.match("(.*[0-9]+)([a-zA-Z\- ]+)", word)
 		if m and (len(m.group(1))/len(m.group(2)))>1:
 			new_word = m.group(1)
 			if len(new_word) > 2:
-				return new_word
-		return None
+				alt_models.append(new_word)
+
+		# split word by -
+		if "-" in word:
+			sub_models = word.split("-")
+			for sub_model in sub_models:
+				if ProcessText.is_model_number(sub_model.strip()):
+					alt_models.append(sub_model.strip())
+
+		return alt_models
 
 	# normalize model numbers (remove dashes, lowercase)
 	@staticmethod
 	def normalize_modelnr(modelnr):
 		return re.sub("[\- ]", "", modelnr.lower())
-
-	# build new tokenized list of words for a product name replacing (first found) the model number with the alternative one
-	@staticmethod
-	def name_with_alt_modelnr(words):
-		new_words = list(words)
-		# if there is a supposed model number among the words, replace it with its alternative
-		i = ProcessText.extract_model_nr_index(words)
-		if i >= 0:
-			alt_model = ProcessText.alt_modelnr(words[i])
-			if alt_model:
-				new_word = alt_model
-				new_words[i] = new_word
-		return new_words
 
 	# extract index of (first found) model number in list of words if any
 	# return -1 if none found
@@ -613,30 +613,30 @@ class ProcessText():
 		# check if the product models are the same, or if they are included in the other product's name
 		# for the original product models, as well as for the alternative ones, and alternative product names
 
-		alt_product_model = ProcessText.alt_modelnr(model1)
-		alt_product2_model = ProcessText.alt_modelnr(model2)
+		alt_product_models = ProcessText.alt_modelnrs(model1)
+		alt_product2_models = ProcessText.alt_modelnrs(model2)
 
 		# get product models extracted from product name, if found
 		model_index1 = ProcessText.extract_model_nr_index(name1)
 		if model_index1 >= 0:
 			product_model_fromname = name1[model_index1]
-			alt_product_model_fromname = ProcessText.alt_modelnr(product_model_fromname)
+			alt_product_models_fromname = ProcessText.alt_modelnrs(product_model_fromname)
 		else:
 			product_model_fromname = None
-			alt_product_model_fromname = None
+			alt_product_models_fromname = []
 
 		model_index2 = ProcessText.extract_model_nr_index(name2)
 		if model_index2 >= 0:
 			product2_model_fromname = name2[model_index2]
-			alt_product2_model_fromname = ProcessText.alt_modelnr(product2_model_fromname)
+			alt_product2_models_fromname = ProcessText.alt_modelnrs(product2_model_fromname)
 		else:
 			product2_model_fromname = None
-			alt_product2_model_fromname = None
+			alt_product2_models_fromname = []
 
 		model_matched = False
 		# to see if models match, build 2 lists with each of the products' possible models, and check their intersection
-		models1 = filter(None, [model1, alt_product_model, product_model_fromname, alt_product_model_fromname])
-		models2 = filter(None, [model2, alt_product2_model, product2_model_fromname, alt_product2_model_fromname])
+		models1 = filter(None, [model1, product_model_fromname] + alt_product_models + alt_product_models_fromname)
+		models2 = filter(None, [model2, product2_model_fromname] + alt_product2_models + alt_product2_models_fromname)
 
 		# normalize all product models
 		models1 = map(lambda x: ProcessText.normalize_modelnr(x), models1)
@@ -644,6 +644,9 @@ class ProcessText():
 
 		if set(models1).intersection(set(models2)):
 			model_matched = True
+			log.msg("MATCHED: " + str(models1) + str(models2) + "\n", level=log.DEBUG)
+		else:
+			log.msg("NOT MATCHED: " + str(models1) + str(models2) + "\n", level=log.DEBUG)
 		
 		return model_matched
 
