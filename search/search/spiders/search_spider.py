@@ -752,7 +752,7 @@ class ProcessText():
 	# compute similarity between two products using their product names given as token lists
 	# return score, threshold (dependent on names' length) and a boolean indicating if brands matched
 	@staticmethod
-	def similar_names(words1, words2, param, altModels = False):
+	def similar_names(words1, words2, param):
 		common_words = set(words1).intersection(set(words2))
 
 		# assign weigths - 1 to normal words, 2 to nondictionary words
@@ -760,25 +760,24 @@ class ProcessText():
 		# or if the word looks like a combination of letters and numbers (assumed to be model number)
 		#TODO: update these if they're not relevant for a new category or site
 
+		brand_matched = False
 		weights_common = []
 		for word in list(common_words):
-
-			brand_matched = False
 
 			# if they share the first word (and it's a non-dictionary word) assume it's manufacturer and assign higher weight
 			if word == words1[0] and word == words2[0] and not wordnet.synsets(word):
 				weights_common.append(ProcessText.BRAND_MATCH_WEIGHT)
 				brand_matched = True
 			else:
-				weights_common.append(ProcessText.weight(word, altModels))
+				weights_common.append(ProcessText.weight(word))
 
 		weights1 = []
 		for word in list(set(words1)):
-			weights1.append(ProcessText.weight(word, altModels))
+			weights1.append(ProcessText.weight(word))
 
 		weights2 = []
 		for word in list(set(words2)):
-			weights2.append(ProcessText.weight(word, altModels))
+			weights2.append(ProcessText.weight(word))
 
 		#threshold = param*(sum(weights1) + sum(weights2))/2
 		threshold = param*(len(weights1) + len(weights2))/2
