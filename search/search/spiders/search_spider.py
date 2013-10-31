@@ -520,9 +520,14 @@ class SearchSpider(BaseSpider):
 				return [item]
 
 
+# process text in product names, compute similarity between products
 class ProcessText():
-	# normalize text to list of lowercase words (no punctuation except for inches sign (") or /)
+	MODEL_MATCH_WEIGHT = 10
+	BRAND_MATCH_WEIGHT = 6
+	NONWORD_MATCH_WEIGHT = 2
+	DICTIONARY_WORD_MATCH_WEIGHT = 1
 
+	# normalize text to list of lowercase words (no punctuation except for inches sign (") or /)
 	@staticmethod
 	def normalize(orig_text):
 		text = orig_text
@@ -603,6 +608,47 @@ class ProcessText():
 				return i
 		return -1
 
+	@staticmethod
+	def models_match(name1, name2, model1, model2):
+		# add to the score if their model numbers match
+		# check if the product models are the same, or if they are included in the other product's name
+		# for the original product models, as well as for the alternative ones, and alternative product names
+
+		alt_product_model = ProcessText.alt_modelnr(model1)
+		alt_product2_model = ProcessText.alt_modelnr(model2)
+
+		# get product models extracted from product name, if found
+		model_index1 = ProcessText.extract_model_nr_index(name1)
+		if model_index1 >= 0:
+			product_model_fromname = name1[model_index1]
+			alt_product_model_fromname = ProcessText.alt_modelnr(product_model_fromname)
+		else:
+			product_model_fromname = None
+			alt_product_model_fromname = None
+
+		model_index2 = ProcessText.extract_model_nr_index(name2)
+		if model_index2 >= 0:
+			product2_model_fromname = name2[model_index2]
+			alt_product2_model_fromname = ProcessText.alt_modelnr(product2_model_fromname)
+		else:
+			product2_model_fromname = None
+			alt_product2_model_fromname = None
+
+		model_matched = False
+		# to see if models match, build 2 lists with each of the products' possible models, and check their intersection
+		models1 = filter(None, [model1, alt_product_model, product_model_fromname, alt_product_model_fromname])
+		models2 = filter(None, [model2, alt_product2_model, product2_model_fromname, alt_product2_model_fromname])
+
+		# normalize all product models
+		models1 = map(lambda x: ProcessText.normalize_modelnr(x), models1)
+		models2 = map(lambda x: ProcessText.normalize_modelnr(x), models2)
+
+		if set(models1).intersection(set(models2)):
+			model_matched = True
+		
+		return model_matched
+
+
 	# create combinations of comb_length words from original text (after normalization and tokenization and filtering out dictionary words)
 	# return a list of all combinations
 	@staticmethod
@@ -636,12 +682,11 @@ class ProcessText():
 	#			product_model - model number of target product, if available (as extracted from somewhere on the page other than its name)
 	#			products2 - list of product items for products to search through
 	#			param - threshold for accepting a product name as similar or not (float between 0-1)
-	#TODO: import this from match_product, as a library function
+	
 	@staticmethod
 	def similar(product_name, product_model, products2, param):
 		result = None
 		products_found = []
-		#print "PR2:", len(products2)
 		for product2 in products2:
 
 			words1 = ProcessText.normalize(product_name)
@@ -651,92 +696,61 @@ class ProcessText():
 			else:
 				product2_model = None
 
-			(score, threshold) = ProcessText.similar_names(words1, words2, param)
+			# check if product names match (a similarity score)
+			(score, threshold, brand_matched) = ProcessText.similar_names(words1, words2, param)
 
-			# try it with alternative model numbers as well, and keep the one with highest score
-			alt_words1 = ProcessText.name_with_alt_modelnr(words1)
-			alt_words2 = ProcessText.name_with_alt_modelnr(words2)
+			# # try it with alternative model numbers as well, and keep the one with highest score
+			# alt_words1 = ProcessText.name_with_alt_modelnr(words1)
+			# alt_words2 = ProcessText.name_with_alt_modelnr(words2)
 
 
-			if alt_words1:
-				# compute weights differently if we used alternative model numbers
-				(score1, threshold1) = ProcessText.similar_names(alt_words1, words2, param, altModels=True)
-				if score1 > score:
-					(score, threshold) = (score1, threshold1)
+			# if alt_words1:
+			# 	# compute weights differently if we used alternative model numbers
+			# 	(score1, threshold1) = ProcessText.similar_names(alt_words1, words2, param, altModels=True)
+			# 	if score1 > score:
+			# 		(score, threshold) = (score1, threshold1)
 
-			if (alt_words1 and alt_words2):
-				(score2, threshold2) = ProcessText.similar_names(alt_words1, alt_words2, param, altModels=True)
-				if score2 > score:
-					(score, threshold) = (score2, threshold2)
+			# if (alt_words1 and alt_words2):
+			# 	(score2, threshold2) = ProcessText.similar_names(alt_words1, alt_words2, param, altModels=True)
+			# 	if score2 > score:
+			# 		(score, threshold) = (score2, threshold2)
 
-			if alt_words2:
-				(score3, threshold3) = ProcessText.similar_names(words1, alt_words2, param, altModels=True)
-				if score3 > score:
-					(score, threshold) = (score3, threshold3)
+			# if alt_words2:
+			# 	(score3, threshold3) = ProcessText.similar_names(words1, alt_words2, param, altModels=True)
+			# 	if score3 > score:
+			# 		(score, threshold) = (score3, threshold3)
 			
-
-			MODEL_MATCH_WEIGHT = 7
-			# add to the score if their model numbers match
-			# check if the product models are the same, or if they are included in the other product's name
-			# for the original product models, as well as for the alternative ones, and alternative product names
-
-			alt_product_model = ProcessText.alt_modelnr(product_model)
-			alt_product2_model = ProcessText.alt_modelnr(product2_model)
-
-			# get product models extracted from product name, if found
-			model_index1 = ProcessText.extract_model_nr_index(words1)
-			if model_index1 >= 0:
-				product_model_fromname = words1[model_index1]
-				alt_product_model_fromname = ProcessText.alt_modelnr(product_model_fromname)
-			else:
-				product_model_fromname = None
-				alt_product_model_fromname = None
-
-			model_index2 = ProcessText.extract_model_nr_index(words2)
-			if model_index2 >= 0:
-				product2_model_fromname = words2[model_index2]
-				alt_product2_model_fromname = ProcessText.alt_modelnr(product2_model_fromname)
-			else:
-				product2_model_fromname = None
-				alt_product2_model_fromname = None
-
-			model_matched = False
-			# to see if models match, build 2 lists with each of the products' possible models, and check their intersection
-			models1 = filter(None, [product_model, alt_product_model, product_model_fromname, alt_product_model_fromname])
-			models2 = filter(None, [product2_model, alt_product2_model, product2_model_fromname, alt_product2_model_fromname])
-
-			# normalize all product models
-			models1 = map(lambda x: ProcessText.normalize_modelnr(x), models1)
-			models2 = map(lambda x: ProcessText.normalize_modelnr(x), models2)
-
-			if set(models1).intersection(set(models2)):
-				model_matched = True
-			
+			# check if product models match (either from a "Model" field or extracted from their name)
+			model_matched = ProcessText.models_match(words1, words2, product_model, product2_model)
 			if model_matched:
-				score += MODEL_MATCH_WEIGHT
-
+				score += ProcessText.MODEL_MATCH_WEIGHT
+			
 			log.msg("\nPRODUCT: " + unicode(product_name) + " MODEL: " + unicode(product_model) + \
 				"\nPRODUCT2: " + unicode(product2['product_name']) + " MODEL2: " + unicode(product2_model) + \
 				"\nSCORE: " + str(score) + " THRESHOLD: " + str(threshold) + "\n", level=log.INFO)
 
 			if score >= threshold:
-				products_found.append((product2, score))
+				# append product along with score and a third variable:
+				# variable used for settling ties - aggregating product_matched and brand_matched
+				tie_break_score = 0
+				if model_matched:
+					tie_break_score += 2
+				if brand_matched:
+					tie_break_score += 1
+				products_found.append((product2, score, tie_break_score))
 
 
-		products_found = sorted(products_found, key = lambda x: x[1], reverse = True)
-
-		#TODO: handle ties?
+		products_found = sorted(products_found, key = lambda x: (x[1], x[2]), reverse = True)
 
 		# return most similar product or None
 		if products_found:
 			result = products_found[0][0]
 
-		##print "FINAL", product_name.encode("utf-8"), products_found, "\n-----------------------------------------\n"
-
 		return result
 
 
 	# compute similarity between two products using their product names given as token lists
+	# return score, threshold (dependent on names' length) and a boolean indicating if brands matched
 	@staticmethod
 	def similar_names(words1, words2, param, altModels = False):
 		common_words = set(words1).intersection(set(words2))
@@ -746,15 +760,15 @@ class ProcessText():
 		# or if the word looks like a combination of letters and numbers (assumed to be model number)
 		#TODO: update these if they're not relevant for a new category or site
 
-		FIRSTWORD_WEIGHT = 6
-
 		weights_common = []
 		for word in list(common_words):
 
+			brand_matched = False
+
 			# if they share the first word (and it's a non-dictionary word) assume it's manufacturer and assign higher weight
 			if word == words1[0] and word == words2[0] and not wordnet.synsets(word):
-				weights_common.append(FIRSTWORD_WEIGHT)
-
+				weights_common.append(ProcessText.BRAND_MATCH_WEIGHT)
+				brand_matched = True
 			else:
 				weights_common.append(ProcessText.weight(word, altModels))
 
@@ -776,25 +790,22 @@ class ProcessText():
 		log.msg( "WEIGHTS: " + str(weights1) + str(weights2) + str(weights_common), level=log.DEBUG)
 
 
-		return (score, threshold)
+		return (score, threshold, brand_matched)
 
 
 	# compute weight to be used for a word for measuring similarity between two texts
 	# assign lower weight to alternative product numbers (if they are, it's indicated by the boolean parameter altModels)
 	@staticmethod
-	def weight(word, altModels = False):
+	def weight(word):
 
 		if ProcessText.is_model_number(word):
-			# return lower weight if this comes from words with alternative models (not original words as found on site)
-			if not altModels:
-				return 10
-			else:
-				return 8
+			# model number matching is handled separately
+			return 0
 
 		if not wordnet.synsets(word):
-			return 2
+			return ProcessText.NONWORD_MATCH_WEIGHT
 
-		return 1
+		return ProcessText.DICTIONARY_WORD_MATCH_WEIGHT
 
 	# check if word is a likely candidate to represent a model number
 	#Obs: currently finding years as model numbers (1951 will return True)
