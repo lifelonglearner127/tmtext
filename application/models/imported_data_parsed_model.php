@@ -851,6 +851,9 @@ class Imported_data_parsed_model extends CI_Model {
             if ($result->key === 'Features') {
                 $data['features'] = $result->value;
             }
+            if ($result->key === 'HTags') {
+                $data['HTags'] = unserialize($result->value);
+            }
             if ($result->key === 'parsed_attributes') {
                 $data['parsed_attributes'] = unserialize($result->value);
             }

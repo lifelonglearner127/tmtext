@@ -785,6 +785,10 @@ class Assess extends MY_Controller {
                 'long_description_wc' => 'true',
                 'long_seo_phrases' => 'true',
                 'duplicate_context' => 'true',
+                'Custom_Keywords_Short_Description' => 'true',
+                'Custom_Keywords_Long_Description' => 'true',
+                'H1_Tags' => 'true',
+                'H2_Tags' => 'true',
                 'column_external_content' => 'true',
                 'column_reviews' => 'true',
                 'column_features' => 'true',
@@ -986,12 +990,34 @@ class Assess extends MY_Controller {
                 //"sWidth" => "2%",
                 "sClass" => "keyword_long"
             ),
+              
+           array (
+            "sTitle" => "Custom Keywords Short Description",
+            "sName" => "Custom_Keywords_Short_Description", 
+            "sWidth" =>  "4%",
+            "sClass" => "Custom_Keywords_Short_Description"
+        ),
+        array(
+            "sTitle" => "Custom Keywords Long Description",
+            "sName" => "Custom_Keywords_Long_Description", 
+            "sWidth" => "4%",
+            "sClass" =>  "Custom_Keywords_Long_Description"
+        ),
               array(
+            "sTitle" =>"H1 Tags", 
+            "sName" =>"H1_Tags", 
+            "sWidth" =>"1%"
+         ),
+              array(
+            "sTitle" =>"H2 Tags", 
+            "sName" =>"H2_Tags", 
+            "sWidth" =>"1%"
+         ),
+        array(
             "sTitle" =>"Duplicate Content", 
             "sName" =>"duplicate_content", 
             //"sWidth" =>"1%"
          ),
-        
          array(
             "sTitle" =>"Content", 
             "sName" =>"column_external_content", 
@@ -1037,6 +1063,7 @@ class Assess extends MY_Controller {
         $duplicate_content_range = 25;
         $this->load->model('batches_model');
         $this->load->model('imported_data_parsed_model');
+        $this->load->model('keywords_model');
         $this->load->model('statistics_model');
         $this->load->model('statistics_duplicate_content_model');
 
@@ -1096,6 +1123,10 @@ class Assess extends MY_Controller {
             $result_row->long_seo_phrases = "None";
             $result_row->price_diff = "-";
             $result_row->column_external_content = " ";
+            $result_row->Custom_Keywords_Short_Description = "";
+            $result_row->Custom_Keywords_Long_Description = "";
+            $result_row->H1_Tags = "-";
+            $result_row->H2_Tags = "-";
             $result_row->column_reviews = " ";
             $result_row->column_features = " ";
             $result_row->duplicate_content = "-";
@@ -1159,7 +1190,108 @@ class Assess extends MY_Controller {
                 $result_row->column_external_content = ' ';
             $result_row->column_reviews = $pars_atr['parsed_attributes']['review_count'];
             $result_row->column_features = $pars_atr['parsed_attributes']['feature_count'];
-
+            $result_row->H1_Tags= '-';
+            if($pars_atr['HTags']['h1'] && $pars_atr['HTags']['h1'] !=''){
+                $H1 = $pars_atr['HTags']['h1'];
+                if(is_array($H1)){
+                    $str_1 =  "<table  class='table_keywords_long'>";
+                    foreach($H1 as $h1){
+                       $str_1.= "<tr><td>".$h1."-</td><td>".strlen($h1)."</td></tr>" ;
+                    }
+                    $str_1 .="</table>";
+                $result_row->H1_Tags = $str_1;
+                }else{
+                   $result_row->H1_Tags = "<table  class='table_keywords_long'><tr><td>".$H1."</td><td>".strlen($H1)."</td></tr></table>";;
+                }   
+            }
+            $result_row->H2_Tags='-';
+            if($pars_atr['HTags']['h2'] && $pars_atr['HTags']['h2'] !=''){
+                $H2 = $pars_atr['HTags']['h2'];
+                if(is_array($H2)){
+                    $str_2 =  "<table  class='table_keywords_long'>";
+                    foreach($H2 as $h2){
+                       $str_2.= "<tr><td>".$h2."-</td><td>".strlen($h2)."</td></tr>" ;
+                    }
+                    $str_2 .="</table>";
+                $result_row->H2_Tags =$str_2;
+                }else{
+                   $result_row->H2_Tags = "<table  class='table_keywords_long'><tr><td>".$H2."</td><td>".strlen($H2)."</td></tr></table>";
+                }   
+            }
+            
+             $custom_seo = $this->keywords_model->get_by_imp_id($row->imported_data_id);
+             $Custom_Keywords_Long_Description = "<table class='table_keywords_long'>";
+             if($custom_seo['primary']){
+                 if($row->long_description){
+                     $_count = $this->keywords_appearence($row->long_description, $custom_seo['primary']);
+                     $cnt = count(explode(' ',$custom_seo['primary'] ));
+                     $_count = round(($_count*$cnt/$row->long_description_wc)*100, 2)."%";
+                 }else{
+                     $_count = ' ';
+                 }
+                 $Custom_Keywords_Long_Description .= "<tr><td>".$custom_seo['primary']."</td><td>$_count</td></tr>";
+             };
+             if($custom_seo['secondary']){
+                  if($row->long_description){
+                     $_count = $this->keywords_appearence($row->long_description, $custom_seo['secondary']);
+                     $cnt = count(explode(' ',$custom_seo['secondary'] ));
+                     $_count = round(($_count*$cnt/$row->long_description_wc)*100, 2)."%";
+                 }else{
+                     $_count = ' ';
+                 }
+                 $Custom_Keywords_Long_Description .= "<tr><td>".$custom_seo['secondary']."</td><td>$_count</td></tr>";
+             };
+             if($custom_seo['tertiary']){
+                 if($row->long_description){
+                     $_count = $this->keywords_appearence($row->long_description, $custom_seo['tertiary']);
+                     $cnt = count(explode(' ',$custom_seo['tertiary'] ));
+                     $_count = round(($_count*$cnt/$row->long_description_wc)*100, 2)."%";
+                 }else{
+                     $_count = ' ';
+                 }
+                 $Custom_Keywords_Long_Description .= "<tr><td>".$custom_seo['tertiary']."</td><td> $_count</td></tr>";
+             };
+             
+             
+             
+             $result_row->Custom_Keywords_Long_Description =  $Custom_Keywords_Long_Description."</table>";
+                
+             $Custom_Keywords_Short_Description = "<table class='table_keywords_short'>";
+             
+             if($custom_seo['primary']){
+                 if($row->short_description){
+                    $_count = $this->keywords_appearence($row->short_description, $custom_seo['primary']);
+                    $cnt = count(explode(' ',$custom_seo['primary'] ));
+                    $_count = round(($_count/$row->short_description_wc)*100, 2)."%";
+                 }else{
+                     $_count = ' ';
+                 }
+                 $Custom_Keywords_Short_Description .= "<tr><td>".$custom_seo['primary']."</td><td>$_count</td></tr>";
+             };
+             if($custom_seo['secondary']){
+                 if($row->short_description){
+                     $_count = $this->keywords_appearence($row->short_description, $custom_seo['secondary']);
+                     $cnt = count(explode(' ',$custom_seo['secondary'] ));
+                     $_count = round(($_count*$cnt/$row->short_description_wc)*100, 2)."%";
+                 }else{
+                     $_count = ' ';
+                 }
+                 $Custom_Keywords_Short_Description .= "<tr><td>".$custom_seo['secondary']."</td><td>$_count</td></tr>";
+             };
+             if($custom_seo['tertiary']){
+                 if($row->short_description){
+                     $_count = $this->keywords_appearence($row->short_description, $custom_seo['tertiary']);
+                     $cnt = count(explode(' ',$custom_seo['tertiary'] ));
+                     $_count = round(($_count*$cnt/$row->short_description_wc)*100, 2)."%";
+                 }else{
+                     $_count = ' ';
+                 }
+                 $Custom_Keywords_Short_Description .= "<tr><td>".$custom_seo['tertiary']."</td><td>$_count</td></tr>";
+             };
+                $result_row->Custom_Keywords_Short_Description =  $Custom_Keywords_Short_Description."</table>";
+             
+            
+            
             if ($row->snap != null && $row->snap != '') {
                 $result_row->snap = $row->snap;
             }
@@ -1202,21 +1334,19 @@ class Assess extends MY_Controller {
             if ($this->settings['statistics_table'] == "statistics_new") {
                 $short_seo = unserialize($row->short_seo_phrases);
                 if ($short_seo) {
-                    $str_short_seo = '';
+                    $str_short_seo = '<table class="table_keywords_short">';
                     foreach ($short_seo as $val) {
-                        $str_short_seo .= $val['ph'] . ', ';
+                        $str_short_seo .= '<tr><td>'.$val['ph'] . '</td><td>' . $val['prc'] . '%</td></tr>';
                     }
-                    $str_short_seo = substr($str_short_seo, 0, -2);
-                    $result_row->short_seo_phrases = $str_short_seo;
+                    $result_row->short_seo_phrases = $str_short_seo.'</table>';
                 }
                 $long_seo = unserialize($row->long_seo_phrases);
                 if ($long_seo) {
-                    $str_long_seo = '';
+                    $str_long_seo = '<table class="table_keywords_long">';
                     foreach ($long_seo as $val) {
-                        $str_long_seo .= $val['ph'] . ', ';
+                        $str_long_seo .= '<tr><td>'.$val['ph'] . '</td><td>' . $val['prc'] . '%</td></tr>';
                     }
-                    $str_long_seo = substr($str_long_seo, 0, -2);
-                    $result_row->long_seo_phrases = $str_long_seo;
+                    $result_row->long_seo_phrases = $str_long_seo.'</table>';
                 }
             } else {
                 $result_row->short_seo_phrases = $row->short_seo_phrases;
@@ -1625,6 +1755,10 @@ class Assess extends MY_Controller {
                         $data_row->short_seo_phrases,
                         $data_row->long_description_wc,
                         $data_row->long_seo_phrases,
+                        $data_row->Custom_Keywords_Short_Description,
+                        $data_row->Custom_Keywords_Long_Description,
+                        $data_row->H1_Tags,
+                        $data_row->H2_Tags,
                         $data_row->duplicate_content,
                         $data_row->column_external_content,
                         $data_row->column_reviews,
@@ -1711,6 +1845,10 @@ class Assess extends MY_Controller {
             $this->output->set_content_type('application/json')->set_output(json_encode($snap_data));
         }
     }
-    
+     private function keywords_appearence($desc, $phrase) {
+        
+        $desc= strip_tags($desc);
+        return substr_count($desc, $phrase);
+    }
     
 }

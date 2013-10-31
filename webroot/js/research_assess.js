@@ -41,6 +41,10 @@ $(function() {
             "long_description_wc",
             "long_seo_phrases",
             "duplicate_content",
+            "Custom_Keywords_Short_Description",
+            "Custom_Keywords_Long_Description",
+            "H1_Tags",
+            "H2_Tags",
             "column_external_content",
             "column_reviews",
             "column_features",
@@ -76,7 +80,7 @@ $(function() {
 
         $('#tblAssess_wrapper').remove();
         var th = '';
-        for(var i =0;i<14;i++){
+        for(var i =0;i<Object.keys(columns);i++){
             th += '<th with = "100px"></th>';
         }
         var newTable = '<table id="tblAssess" class="tblDataTable"><thead>'+th+'</thead><tbody></tbody></table>';
@@ -129,6 +133,8 @@ $(function() {
                         var str = '';
                         for (var i = 0; i < json.aaData.length; i++) {
                             var obj = jQuery.parseJSON(json.aaData[i][14]);
+                            console.log("aaData 14 serverside");
+                            console.log(json.aaData[i][14]);
                             if (json.aaData[i][2] != null && json.aaData[i][2] != '' && json.aaData[i][0] != '') {
                                 if (json.aaData[i][2].length > 93)
                                     str += '<div class="board_item"><span class="span_img">' + json.aaData[i][2] + '</span><br />' + json.aaData[i][0] +
@@ -257,6 +263,7 @@ $(function() {
                     buildReport(json);
                 }
                 tblAssess.fnDraw();
+                
                 serevr_side = false;
                 setTimeout(function() {
                     tblAssess.fnProcessingIndicator(false);
@@ -281,30 +288,9 @@ $(function() {
                     }
                 }
 
-                if (json.aaData.length > 0) {
-                    var str = '';
-                    for (var i = 0; i < json.aaData.length; i++) {
-                        var obj = jQuery.parseJSON(json.aaData[i][14]);
-                        if (json.aaData[i][2] != null && json.aaData[i][2] != '' && json.aaData[i][0] != '') {
-                            if (json.aaData[i][2].length > 93)
-                                str += '<div class="board_item"><span class="span_img">' + json.aaData[i][2] + '</span><br />' + json.aaData[i][0] +
-                                        '<div class="prod_description"><b>URL:</b><br/>' + obj.url + '<br /><br /><b>Product name:</b><br/>' + obj.product_name +
-                                        '<br /><br/><b>Price:</b><br/>' + obj.own_price + '</div></div>';
-                            else
-                                str += '<div class="board_item"><span>' + json.aaData[i][2] + '</span><br />' + json.aaData[i][0] +
-                                        '<div class="prod_description"><b>URL:</b><br/>' + obj.url + '<br /><br /><b>Product name:</b><br/>' + obj.product_name
-                                        + '<br /><br/><b>Price:</b><br/>' + obj.own_price + '</div></div>';
-                        }
-                    }
-                    if (str == '') {
-                        str = '<p>No images available for this batch</p>';
-                    }
-                    $('#assess_view').html(str);
-                    $('#assess_view .board_item img').on('click', function() {
-                        var info = $(this).parent().find('div.prod_description').html();
-                        showSnap('<img src="' + $(this).attr('src') + '" style="float:left; max-width: 600px; margin-right: 10px">' + info);
-                    });
-                }
+//                if (json.aaData.length > 0) {
+//                BOARD VIEW 
+//                }
                 $('#tblAssess_length').after('<div id="assess_tbl_show_case" class="assess_tbl_show_case">' +
                         '<a id="assess_tbl_show_case_recommendations" data-case="recommendations" title="Recommendations" href="#"  class="active_link">Recommendations</a> |' +
                         '<a id="assess_tbl_show_case_report" data-case="report" title="Report" href="#">Summary</a> |' +
@@ -402,6 +388,31 @@ $(function() {
             "sName": "long_seo_phrases",
             "sWidth": "2%",
             "sClass": "keyword_long"
+        },
+        {
+            "sTitle" : "Custom Keywords Short Description",
+            "sName" : "Custom_Keywords_Short_Description", 
+            "sWidth" :  "4%",
+            "sClass" : "Custom_Keywords_Short_Description"
+            
+        },
+        {
+            "sTitle" : "Custom Keywords Long Description",
+            "sName" : "Custom_Keywords_Long_Description", 
+            "sWidth" : "4%",
+            "sClass" : "Custom_Keywords_Long_Description"
+            
+        },
+        
+        {
+            "sTitle" : "H1 Tags", 
+            "sName":"H1_Tags", 
+            "sWidth": "1%"
+        },
+        {
+            "sTitle" : "H2 Tags", 
+            "sName":"H2_Tags", 
+            "sWidth": "1%"
         },
         {
             "sTitle": "Duplicate Content",
@@ -1377,6 +1388,8 @@ var scrollYesOrNot = true;
     function check_word_columns() {
         var word_short_num = 0;
         var word_long_num = 0;
+        var Custom_Keywords_Short_Description = 0;
+        var Custom_Keywords_Long_Description = 0;
         $('td.word_short').each(function() {
             var txt = parseInt($(this).text());
             if (txt > 0) {
@@ -1389,6 +1402,7 @@ var scrollYesOrNot = true;
                 word_long_num += 1;
             }
         });
+    
 
         $.each(tblAllColumns, function(index, value) {
             if ((value == 'short_description_wc' && word_short_num == 0) || (value == 'long_description_wc' && word_long_num == 0)) {
@@ -1397,6 +1411,12 @@ var scrollYesOrNot = true;
             if ((value == 'short_seo_phrases' && word_short_num == 0) || (value == 'long_seo_phrases' && word_long_num == 0)) {
                 tblAssess.fnSetColumnVis(index, false, false);
             }
+//            if((value == 'Custom_Keywords_Short_Description' && Custom_Keywords_Short_Description == 0)){
+//                tblAssess.fnSetColumnVis(index, false, false);
+//            }
+//            if((value == 'Custom_Keywords_Long_Description' && Custom_Keywords_Long_Description == 0)){
+//                tblAssess.fnSetColumnVis(index, false, false);
+//            }
         });
         $('.subtitle_word_long').show();
         $('.subtitle_word_short').show();
@@ -1455,6 +1475,10 @@ var scrollYesOrNot = true;
                     short_seo_phrases: $("#column_short_seo_phrases").attr('checked') == 'checked',
                     long_description_wc: $("#column_long_description_wc").attr('checked') == 'checked',
                     long_seo_phrases: $("#column_long_seo_phrases").attr('checked') == 'checked',
+                    Custom_Keywords_Short_Description : $("#Custom_Keywords_Short_Description").attr('checked') == 'checked',
+                    Custom_Keywords_Long_Description : $("#Custom_Keywords_Long_Description").attr('checked') == 'checked',
+                    H1_Tags : $("#H1_Tags").attr('checked') == 'checked',
+                    H2_Tags : $("#H2_Tags").attr('checked') == 'checked',
                     duplicate_content: $("#column_duplicate_content").attr('checked') == 'checked',
                     column_external_content: $("#column_external_content").attr('checked') == 'checked',
                     column_reviews: $("#column_reviews").attr('checked') == 'checked',
@@ -1566,6 +1590,9 @@ var scrollYesOrNot = true;
 
     function hideColumns() {
         var table_case = $('#assess_tbl_show_case a[class=active_link]').data('case');
+        
+        console.log('tablecase = ');
+        console.log(table_case);
         var columns_checkboxes = $('#research_assess_choiceColumnDialog').find('input[type=checkbox]:checked');
         var columns_checkboxes_checked = [];
         $.each(columns_checkboxes, function(index, value) {
@@ -1575,6 +1602,7 @@ var scrollYesOrNot = true;
         if (table_case == 'recommendations') {
             reportPanel(false);
             $.each(tblAllColumns, function(index, value) {
+                console.log(index);
                 if ($.inArray(value, tableCase.recommendations) > -1) {
                     tblAssess.fnSetColumnVis(index, true, false);
                 }
@@ -1606,6 +1634,8 @@ var scrollYesOrNot = true;
                 value = value.replace("2", "");
                 value = value.replace("3", "");
                 value = value.replace("4", "");
+                value = value.replace("5", "");
+                value = value.replace("6", "");
                 if ($.inArray(value, tableCase.details_compare) > -1 && $.inArray(value, columns_checkboxes_checked) > -1) {
                     tblAssess.fnSetColumnVis(index, true, false);
                 }

@@ -171,6 +171,22 @@
                 <label for="column_long_seo_phrases">Found Keywords - Long Description</label>
             </p>
             <p>
+                <input type="checkbox" id="Custom_Keywords_Short_Description" data-col_name="Custom_Keywords_Short_Description" name="Custom_Keywords_Short_Description" <?php echo($columns['Custom_Keywords_Short_Description'] == 'true' ? 'checked="checked"' : ''); ?> />
+                <label for="Custom_Keywords_Short_Description">Custom Keywords - Short Description</label>
+            </p>
+            <p>
+                <input type="checkbox" id="Custom_Keywords_Long_Description" data-col_name="Custom_Keywords_Long_Description" name="Custom_Keywords_Long_Description" <?php echo($columns['Custom_Keywords_Long_Description'] == 'true' ? 'checked="checked"' : ''); ?> />
+                <label for="Custom_Keywords_Long_Description">Custom Keywords - Long Description</label>
+            </p>
+            <p>
+                <input type="checkbox" id="H1_Tags" data-col_name="H1_Tags" name="H1_Tags" <?php echo($columns['H1_Tags'] == 'true' ? 'checked="checked"' : ''); ?> />
+                <label for="H1_Tags">H1_Tags</label>
+            </p>
+            <p>
+                <input type="checkbox" id="H2_Tags" data-col_name="H2_Tags" name="H2_Tags" <?php echo($columns['H2_Tags'] == 'true' ? 'checked="checked"' : ''); ?> />
+                <label for="H2_Tags">H2_Tags</label>
+            </p>
+            <p>
                 <input type="checkbox" id="column_duplicate_content" data-col_name="duplicate_content" name="column_duplicate_content_name" <?php echo($columns['duplicate_content'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="column_batch_name">Duplicate content</label>
             </p>
@@ -472,6 +488,12 @@
 }
 #tblAssess tr td:first-child {
     text-align: center;
+}.keyword_short,.Custom_Keywords_Description_Class{
+    padding: 0 !important;
+}
+.table_keywords_short td,.table_keywords_long td{
+
+ border: 0px solid #fff !important;
 }
 </style>
 <script>
