@@ -104,8 +104,8 @@ $(function() {
                     if (json.ExtraData != undefined) {
                         buildReport(json);
                     }
+                    highChart(json);
 
-                    
                     fnCallback(json);
                     setTimeout(function() {
                         tblAssess.fnProcessingIndicator(false);
@@ -133,8 +133,6 @@ $(function() {
                         var str = '';
                         for (var i = 0; i < json.aaData.length; i++) {
                             var obj = jQuery.parseJSON(json.aaData[i][14]);
-                            console.log("aaData 14 serverside");
-                            console.log(json.aaData[i][14]);
                             if (json.aaData[i][2] != null && json.aaData[i][2] != '' && json.aaData[i][0] != '') {
                                 if (json.aaData[i][2].length > 93)
                                     str += '<div class="board_item"><span class="span_img">' + json.aaData[i][2] + '</span><br />' + json.aaData[i][0] +
@@ -156,6 +154,37 @@ $(function() {
                         });
                     }
 
+                });
+            
+                $.ajax({
+                    type: "POST",
+                    url: readBoardSnapUrl,
+                    data: {batch_id: $('select[name="research_assess_batches"]').find('option:selected').val()}
+                }).done(function(data){
+                    if(data.length > 0){
+                        var str = '';
+                        for(var i=0; i<data.length; i++){
+                            var obj = jQuery.parseJSON(data[i][2]);
+                            if(data[i][1] != null && data[i][1] != '' && data[i][0]!=''){
+                                if(data[i][1].length > 93)
+                                  str += '<div class="board_item"><span class="span_img">'+data[i][1]+'</span><br />'+data[i][0]+
+                                      '<div class="prod_description"><b>URL:</b><br/>'+obj.url+'<br /><br /><b>Product name:</b><br/>'+obj.product_name+
+                                      '<br /><br/><b>Price:</b><br/>'+obj.own_price+'</div></div>';
+                                else
+                                  str += '<div class="board_item"><span>'+data[i][1]+'</span><br />'+data[i][0]+
+                                      '<div class="prod_description"><b>URL:</b><br/>'+obj.url+'<br /><br /><b>Product name:</b><br/>'+obj.product_name
+                                      +'<br /><br/><b>Price:</b><br/>'+obj.own_price+'</div></div>';
+                            }
+                        }                   
+                        if(str == ''){
+                            str = '<p>No images available for this batch</p>';
+                        }
+                        $('#assess_view').html(str);
+                        $('#assess_view .board_item img').on('click', function(){
+                            var info = $(this).parent().find('div.prod_description').html();
+                            showSnap('<img src="'+$(this).attr('src')+'" style="float:left; max-width: 600px; margin-right: 10px">'+info);
+                        });
+                     }
                 });
             },
             "fnRowCallback": function(nRow, aData, iDisplayIndex) {
@@ -208,8 +237,7 @@ $(function() {
 
 
         $.getJSON(readAssessUrl, aoDataa, function(json) {
-            console.log('json');
-            console.log(json);
+            highChart(json);
 
           $('#tblAssess_wrapper').remove();
           var th = '';
@@ -253,7 +281,7 @@ $(function() {
 //            hideColumns();
                        // check_word_columns();
 
-                    },
+                    }
                 });
 
                 $('#tblAssess').after('<div id="tableScrollWrapper" style="overflow-x:scroll"></div>');
@@ -263,7 +291,6 @@ $(function() {
                     buildReport(json);
                 }
                 tblAssess.fnDraw();
-                
                 serevr_side = false;
                 setTimeout(function() {
                     tblAssess.fnProcessingIndicator(false);
@@ -288,9 +315,6 @@ $(function() {
                     }
                 }
 
-//                if (json.aaData.length > 0) {
-//                BOARD VIEW 
-//                }
                 $('#tblAssess_length').after('<div id="assess_tbl_show_case" class="assess_tbl_show_case">' +
                         '<a id="assess_tbl_show_case_recommendations" data-case="recommendations" title="Recommendations" href="#"  class="active_link">Recommendations</a> |' +
                         '<a id="assess_tbl_show_case_report" data-case="report" title="Report" href="#">Summary</a> |' +
@@ -317,6 +341,36 @@ $(function() {
             }, 1000);
         });
 
+        $.ajax({
+            type: "POST",
+            url: readBoardSnapUrl,
+            data: {batch_id: $('select[name="research_assess_batches"]').find('option:selected').val()}
+        }).done(function(data){
+            if(data.length > 0){
+                var str = '';
+                for(var i=0; i<data.length; i++){
+                    var obj = jQuery.parseJSON(data[i][2]);
+                    if(data[i][1] != null && data[i][1] != '' && data[i][0]!=''){
+                        if(data[i][1].length > 93)
+                          str += '<div class="board_item"><span class="span_img">'+data[i][1]+'</span><br />'+data[i][0]+
+                              '<div class="prod_description"><b>URL:</b><br/>'+obj.url+'<br /><br /><b>Product name:</b><br/>'+obj.product_name+
+                              '<br /><br/><b>Price:</b><br/>'+obj.own_price+'</div></div>';
+                        else
+                          str += '<div class="board_item"><span>'+data[i][1]+'</span><br />'+data[i][0]+
+                              '<div class="prod_description"><b>URL:</b><br/>'+obj.url+'<br /><br /><b>Product name:</b><br/>'+obj.product_name
+                              +'<br /><br/><b>Price:</b><br/>'+obj.own_price+'</div></div>';
+                    }
+                }                   
+                if(str == ''){
+                    str = '<p>No images available for this batch</p>';
+                }
+                $('#assess_view').html(str);
+                $('#assess_view .board_item img').on('click', function(){
+                    var info = $(this).parent().find('div.prod_description').html();
+                    showSnap('<img src="'+$(this).attr('src')+'" style="float:left; max-width: 600px; margin-right: 10px">'+info);
+                });
+             }
+        });
        
     }
     $.fn.dataTableExt.oApi.fnGetAllSColumnNames = function(oSettings) {
@@ -495,7 +549,7 @@ $(function() {
             aoData = buildTableParams(aoData);
             first_aaData = aoData;
             $.getJSON(sSource, aoData, function(json) {
-
+                highChart(json);
                 if (json.ExtraData != undefined) {
                     buildReport(json);
                 }
@@ -523,30 +577,6 @@ $(function() {
                         $('#assess_report_items_2_descriptions_pnl').hide();
                     }
                 }
-//                if (json.aaData.length > 0) {
-//                    var str = '';
-//                    for (var i = 0; i < json.aaData.length; i++) {
-//                        var obj = jQuery.parseJSON(json.aaData[i][14]);
-//                        if (json.aaData[i][2] != null && json.aaData[i][2] != '' && json.aaData[i][0] != '') {
-//                            if (json.aaData[i][2].length > 93)
-//                                str += '<div class="board_item"><span class="span_img">' + json.aaData[i][2] + '</span><br />' + json.aaData[i][0] +
-//                                        '<div class="prod_description"><b>URL:</b><br/>' + obj.url + '<br /><br /><b>Product name:</b><br/>' + obj.product_name +
-//                                        '<br /><br/><b>Price:</b><br/>' + obj.own_price + '</div></div>';
-//                            else
-//                                str += '<div class="board_item"><span>' + json.aaData[i][2] + '</span><br />' + json.aaData[i][0] +
-//                                        '<div class="prod_description"><b>URL:</b><br/>' + obj.url + '<br /><br /><b>Product name:</b><br/>' + obj.product_name
-//                                        + '<br /><br/><b>Price:</b><br/>' + obj.own_price + '</div></div>';
-//                        }
-//                    }
-//                    if (str == '') {
-//                        str = '<p>No images available for this batch</p>';
-//                    }
-//                    $('#assess_view').html(str);
-//                    $('#assess_view .board_item img').on('click', function() {
-//                        var info = $(this).parent().find('div.prod_description').html();
-//                        showSnap('<img src="' + $(this).attr('src') + '" style="float:left; max-width: 600px; margin-right: 10px">' + info);
-//                    });
-//                }
 
             });
             
@@ -603,6 +633,29 @@ $(function() {
         },
           "aoColumns":columns
     });
+    
+function highChart(json){
+    console.log(json);
+//    var key = [];
+//    for(var i=0;i<value.length;i++){
+//        key[i] = i;
+//    }
+//    $('#highChartContainer').highcharts({
+//        chart: {
+//            renderTo: 'highChartContainer',
+//            zoomType: 'x',
+//            spacingRight: 20
+//        },
+//        xAxis: {
+//            min: 1,
+//            categories: key
+//        },
+//
+//        series: [{
+//                data: value
+//            }]
+//    });
+}
 var scrollYesOrNot = true;
     $(document).scroll(function() {
         var docHeight = parseInt($(document).height());
@@ -1403,7 +1456,6 @@ var scrollYesOrNot = true;
             }
         });
     
-
         $.each(tblAllColumns, function(index, value) {
             if ((value == 'short_description_wc' && word_short_num == 0) || (value == 'long_description_wc' && word_long_num == 0)) {
                 tblAssess.fnSetColumnVis(index, false, false);
@@ -1590,9 +1642,6 @@ var scrollYesOrNot = true;
 
     function hideColumns() {
         var table_case = $('#assess_tbl_show_case a[class=active_link]').data('case');
-        
-        console.log('tablecase = ');
-        console.log(table_case);
         var columns_checkboxes = $('#research_assess_choiceColumnDialog').find('input[type=checkbox]:checked');
         var columns_checkboxes_checked = [];
         $.each(columns_checkboxes, function(index, value) {
@@ -1600,9 +1649,9 @@ var scrollYesOrNot = true;
         });
 
         if (table_case == 'recommendations') {
+            $('#assess_graph').hide();
             reportPanel(false);
             $.each(tblAllColumns, function(index, value) {
-                console.log(index);
                 if ($.inArray(value, tableCase.recommendations) > -1) {
                     tblAssess.fnSetColumnVis(index, true, false);
                 }
@@ -1613,6 +1662,7 @@ var scrollYesOrNot = true;
             addColumn_url_class();
             check_word_columns();
         } else if (table_case == 'details') {
+            $('#assess_graph').hide();
 
             reportPanel(false);
             $.each(tblAllColumns, function(index, value) {
@@ -1627,6 +1677,7 @@ var scrollYesOrNot = true;
             check_word_columns();
         }
         else if (table_case == 'details_compare') {
+            $('#assess_graph').hide();
 
             reportPanel(false);
             $.each(tblAllColumns, function(index, value) {
@@ -1646,10 +1697,12 @@ var scrollYesOrNot = true;
             addColumn_url_class();
             check_word_columns();
         } else if (table_case == 'report') {
+            $('#assess_graph').hide();
             reportPanel(true);
             var batch_id = $('select[name="research_assess_batches"]').find('option:selected').val();
             //$('#assess_report_download_pdf').attr('href', base_url + 'index.php/research/assess_download_pdf?batch_name=' + batch_name);
         } else if (table_case == 'view') {
+            $('#assess_graph').hide();
             $('#tblAssess').hide();
             $('#tblAssess').parent().find('div.ui-corner-bl').hide();
             $('#assess_view').show();
@@ -1687,6 +1740,13 @@ var scrollYesOrNot = true;
                     $('.dashboard').show();
                 }
             });
+        } else if (table_case == 'graph') {
+            $('.board_view').hide();
+            $('#tblAssess').hide();
+            $('#tblAssess').parent().find('div.ui-corner-bl').hide();
+            $('#assess_report').hide();
+            $('#assess_view').hide();
+            $('#assess_graph').show();
         }
     }
 
