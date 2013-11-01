@@ -32,7 +32,8 @@ class BestbuySpider(BaseSpider):
         # product_links = hxs.select("//div[@id='container']/div/header//nav/ul[@id='nav']//li/a")
 
         # select all parent categories
-        parent_links = hxs.select("//div[@id='container']/div/header//nav/ul[@id='nav']//h4/a")
+        #parent_links = hxs.select("//div[@id='container']/div/header//nav/ul[@id='nav']//h4/a")
+        parent_links = hxs.select("//div[@id='container']/div[@id='header']//nav/ul[@id='nav-touch']//h4/a")
 
         #TODO: add extraction of level 3 categories (broadest: products, services,...)
         
