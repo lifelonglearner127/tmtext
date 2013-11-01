@@ -4,16 +4,18 @@
 # See: http://doc.scrapy.org/topics/item-pipeline.html
 
 import json
+from scrapy import spider
 
-class BloomingdalesPipeline(object):
+# write entire content as a JSON object in the output file
+class JSONObjectPipeline(object):
 	def __init__(self):
-		self.file = open('bloomingdales_categories.jl', 'wb')
-
 		self.items = []
 
+	def open_spider(self, spider):
+		filename = spider.name + "_categories.jl"
+		self.file = open(filename, 'wb')
+
 	def process_item(self, item, spider):
-		# line = json.dumps(dict(item)) + "\n"
-		# self.file.write(line)
 		self.items.append(item)
 		return item
 
