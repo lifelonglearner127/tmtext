@@ -1147,7 +1147,7 @@ class Assess extends MY_Controller {
                     $result_row = (array) $result_row;
                     $result_row["snap$i"] = $sim_items[$i - 1]->snap !== false ? $sim_items["$i-1"]->snap : '-';
 
-                    $result_row['url' . $i] = $sim_items[$i - 1]->url !== false ? $sim_items[$i - 1]->url : "-";
+                    $result_row['url' . $i] = $sim_items[$i - 1]->url !== false ? "<a target='_blank' href='".$sim_items[$i - 1]->url."'>".$sim_items[$i - 1]->url."</a>" : "-";
                     $result_row['product_name' . $i] = $sim_items[$i - 1]->product_name !== false ? $sim_items[$i - 1]->product_name : "-";
                     $result_row['short_description_wc' . $i] = $sim_items[$i - 1]->short_description_wc !== false ? $sim_items[$i - 1]->short_description_wc : '-';
                     $result_row['long_description_wc' . $i] = $sim_items[$i - 1]->long_description_wc !== false ? $sim_items[$i - 1]->long_description_wc : '-';
@@ -1519,25 +1519,25 @@ class Assess extends MY_Controller {
 
 
         // only if second batch select - get absent products, merge it with result_table
-        if (isset($build_assess_params->compare_batch_id) && $build_assess_params->compare_batch_id > 0) {
-            $absent_items = $this->statistics_model->batches_compare($batch_id, $build_assess_params->compare_batch_id);
-
-            foreach ($absent_items as $absent_item) {
-                $result_row = new stdClass();
-                $result_row->product_name = $absent_item['product_name'];
-                $result_row->url = $absent_item['url'];
-                $result_row->recommendations = $absent_item['recommendations'];
-                $result_table[] = $result_row;
-            }
-
-            $own_batch = $this->batches_model->get($batch_id);
-            $compare_customer = $this->batches_model->getCustomerById($build_assess_params->compare_batch_id);
-            $compare_batch = $this->batches_model->get($build_assess_params->compare_batch_id);
-
-            $compare_batch_total_items = $this->statistics_model->total_items_in_batch($build_assess_params->compare_batch_id);
-            $report['summary']['own_batch_total_items'] = $own_batch_total_items;
-            $report['summary']['compare_batch_total_items'] = $compare_batch_total_items;
-        }
+//        if (isset($build_assess_params->compare_batch_id) && $build_assess_params->compare_batch_id > 0) {
+//            $absent_items = $this->statistics_model->batches_compare($batch_id, $build_assess_params->compare_batch_id);
+//
+//            foreach ($absent_items as $absent_item) {
+//                $result_row = new stdClass();
+//                $result_row->product_name = $absent_item['product_name'];
+//                $result_row->url = $absent_item['url'];
+//                $result_row->recommendations = $absent_item['recommendations'];
+//                $result_table[] = $result_row;
+//            }
+//
+//            $own_batch = $this->batches_model->get($batch_id);
+//            $compare_customer = $this->batches_model->getCustomerById($build_assess_params->compare_batch_id);
+//            $compare_batch = $this->batches_model->get($build_assess_params->compare_batch_id);
+//
+//            $compare_batch_total_items = $this->statistics_model->total_items_in_batch($build_assess_params->compare_batch_id);
+//            $report['summary']['own_batch_total_items'] = $own_batch_total_items;
+//            $report['summary']['compare_batch_total_items'] = $compare_batch_total_items;
+//        }
 
         $report['recommendations']['absent_items'] = $absent_items;
         $report['summary']['absent_items_count'] = count($absent_items);
