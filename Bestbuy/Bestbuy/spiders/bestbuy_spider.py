@@ -150,7 +150,8 @@ class BestbuySpider(BaseSpider):
         yield item
 
         # extract its subcategories
-        subcats_holders = hxs.select("//div[@class='narrowcontent']/ul[@class='search']")
+        #subcats_holders = hxs.select("//div[@class='narrowcontent']/ul[@class='search']")
+        subcats_holders = hxs.select("//div[@class='narrowcontent']/ul[contains(@class,'search')]")
         if subcats_holders:
             subcats_holder = subcats_holders[0]
             # these are subcategories if they are preceded by the title "Shop ..."
