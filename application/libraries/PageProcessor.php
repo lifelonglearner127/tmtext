@@ -128,7 +128,7 @@ class PageProcessor {
 				$result['h2'][] = $tag;
 			}
 		}
-		return $result;
+		return serialize($result);
 	}
 
 	public function attributes() {
