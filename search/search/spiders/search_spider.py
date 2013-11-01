@@ -29,6 +29,11 @@ import sys
 #      -- or --
 # scrapy crawl search -a product_urls_file="<filename>" -a target_site="<site>" [-a output="<option(1/2)>"] [-a threshold=value] [a outfile="<filename>"] [-a fast=0]
 #
+#
+# Usage example:
+#
+# scrapy crawl search -a product_urls_file="../sample_output/walmart_televisions_urls.txt" -a target_site="bestbuy" -a output=2 -a outfile="search_results_1.4.txt" -a threshold=1.4 -s LOG_ENABLED=1 2>search_log_1.4.out
+#
 ################################
 
 

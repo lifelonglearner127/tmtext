@@ -10,7 +10,7 @@ BOT_NAME = 'Amazon'
 
 SPIDER_MODULES = ['Amazon.spiders']
 NEWSPIDER_MODULE = 'Amazon.spiders'
-ITEM_PIPELINES = ['Amazon.pipelines.AmazonPipeline']
+ITEM_PIPELINES = ['Amazon.pipelines.CommaSeparatedLinesPipeline']
 
 DUPEFILTER_CLASS = 'scrapy.dupefilter.BaseDupeFilter'
 
