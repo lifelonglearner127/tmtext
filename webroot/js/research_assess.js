@@ -275,7 +275,7 @@ $(function() {
                         "sLengthMenu": "_MENU_ rows"
                     },
                     "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-                        $(nRow).attr("add_data", aData[14]);
+                        $(nRow).attr("add_data", aData[18]);
                         return nRow;
                     },
                     "fnDrawCallback": function(oSettings) {
@@ -822,7 +822,7 @@ var scrollYesOrNot = true;
         $('#tblAssess tbody tr').each(function() {
             var row_height = $(this).height();
             if (row_height > 5) {
-                $(this).find('table.url_table').height(row_height - 11);
+                $(this).find('table.url_table').height('auto');
             }
         });
     }

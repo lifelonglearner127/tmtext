@@ -1733,7 +1733,7 @@ class Assess extends MY_Controller {
                     $row_created = '<nobr>' . $row_created_array[0] . '</nobr><br/>';
                     $row_created = $row_created . '<nobr>' . $row_created_array[1] . '</nobr>';
                     $snap = '';
-                    $row_url = '<table class="url_table"><tr><td style="padding:5px;"><a class="active_link" href="' . $data_row->url . '" target="_blank">' . $data_row->url . '</a></td></tr>';
+                    $row_url = '<table class="url_table" ><tr><td style="padding:5px;"><a class="active_link" href="' . $data_row->url . '" target="_blank">' . $data_row->url . '</a></td></tr>';
                     if ($data_row->snap != '') {
                         $file = realpath(BASEPATH . "../webroot/webshoots") . '/' . $data_row->snap;
                         if (file_exists($file)) {

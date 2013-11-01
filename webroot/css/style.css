@@ -2538,3 +2538,6 @@ input[name="search_crawl_data"] {
     padding: 10px;
     overflow: hidden;
 }
+.url_table{
+    width: 240px !important;
+}
