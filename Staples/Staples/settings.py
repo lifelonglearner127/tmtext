@@ -10,7 +10,7 @@ BOT_NAME = 'Staples'
 
 SPIDER_MODULES = ['Staples.spiders']
 NEWSPIDER_MODULE = 'Staples.spiders'
-ITEM_PIPELINES = ['Staples.pipelines.StaplesPipeline']
+ITEM_PIPELINES = ['Staples.pipelines.CommaSeparatedLinesPipeline']
 DUPEFILTER_CLASS = 'scrapy.dupefilter.BaseDupeFilter'
 
 
