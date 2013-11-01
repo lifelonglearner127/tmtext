@@ -955,29 +955,7 @@ var scrollYesOrNot = true;
         );
     }
 
-//    var research_compare = base_url + 'index.php/assess/compare';
-//    $(document).ready(function(){
-//          
-//        $("#research_assess_update").live('click', function(){
-//            var table_case = $('#assess_tbl_show_case a[class=active_link]').data('case');
-//            batch1id= $("select[name='research_assess_batches']").val();
-//            batch2id= $("#research_assess_compare_batches_batch").val();
-//            if(table_case == 'details' && batch1id!=0 && batch2id != null && batch2id != 0 ){
-//            var analyzer_attr = $.post(research_compare, {batch1: batch1id, batch2: batch2id}, 'json').done(function(data) {
-//            $('#tblAssess').hide();
-//            
-//            $("#comare_table").show();
-//            $("#comare_table").html(data);   
-//            });
-//            }else{
-//                $("#comare_table").hide();
-//                $('#tblAssess').show();
-//                readAssessData();
-//                addColumn_url_class();
-//                check_word_columns();
-//            }
-//        });
-//    });
+
 
     $(document).on('click', '#comparison_pagination a', function(event) {
         event.preventDefault();
@@ -1855,11 +1833,11 @@ var scrollYesOrNot = true;
     check_word_columns();
     $('#assess_report_download_panel').hide();
 
-    /*$(document).on('mouseenter', 'i.snap_ico', function () {
+    $(document).on('mouseenter', 'i.snap_ico', function () {
      var snap = "webshoots/" + $(this).attr('snap');
      $("#assess_preview_crawl_snap_modal .snap_holder").html("<img src='" + base_url +  snap + "'>");
      $("#assess_preview_crawl_snap_modal").modal('show');
-     });*/
+     });
     $(document).on('mouseleave', '#assess_preview_crawl_snap_modal', function() {
         $(this).modal('hide');
     });
