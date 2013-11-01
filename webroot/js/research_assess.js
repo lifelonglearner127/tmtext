@@ -104,7 +104,6 @@ $(function() {
                     if (json.ExtraData != undefined) {
                         buildReport(json);
                     }
-                    highChart(json);
 
                     fnCallback(json);
                     setTimeout(function() {
@@ -155,7 +154,7 @@ $(function() {
 //                    }
 
                 });
-            
+                highChart();
                 $.ajax({
                     type: "POST",
                     url: readBoardSnapUrl,
@@ -237,7 +236,6 @@ $(function() {
         
 
         $.getJSON(readAssessUrl, aoDataa, function(json) {
-            highChart(json);
             tblAllColumns = [];
             for(p in json.columns){
                 if(json.columns[p].sName != undefined){
@@ -346,7 +344,7 @@ $(function() {
                hideColumns();
             }, 1000);
         });
-
+        highChart();
         $.ajax({
             type: "POST",
             url: readBoardSnapUrl,
@@ -555,7 +553,6 @@ $(function() {
             aoData = buildTableParams(aoData);
             first_aaData = aoData;
             $.getJSON(sSource, aoData, function(json) {
-                highChart(json);
                 if (json.ExtraData != undefined) {
                     buildReport(json);
                 }
@@ -585,7 +582,7 @@ $(function() {
                 }
 
             });
-            
+            highChart();
             $.ajax({
                 type: "POST",
                 url: readBoardSnapUrl,
@@ -640,27 +637,24 @@ $(function() {
           "aoColumns":columns
     });
     
-function highChart(json){
-    console.log(json);
-//    var key = [];
-//    for(var i=0;i<value.length;i++){
-//        key[i] = i;
-//    }
-//    $('#highChartContainer').highcharts({
-//        chart: {
-//            renderTo: 'highChartContainer',
-//            zoomType: 'x',
-//            spacingRight: 20
-//        },
-//        xAxis: {
-//            min: 1,
-//            categories: key
-//        },
-//
-//        series: [{
-//                data: value
-//            }]
-//    });
+function highChart(){
+                $.ajax({
+                    type: "POST",
+                    url: readBoardSnapUrl,
+                    data: {
+                        batch_id: $('select[name="research_assess_batches"]').find('option:selected').val(),
+                        batch_compare_id: $('#research_assess_compare_batches_batch').children('option:selected').val(),
+                        high_chart: 1
+}
+                }).done(function(data){
+                    $('#imgLoader').hide();
+                    if(data.length > 0){
+                        var str = '';
+                        for(var i=0; i<data.length; i++){
+                        }
+                     }
+                });
+    
 }
 var scrollYesOrNot = true;
     $(document).scroll(function() {

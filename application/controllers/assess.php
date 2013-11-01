@@ -1818,11 +1818,12 @@ class Assess extends MY_Controller {
             $params->txt_filter = '';
             $params->date_from = '';
             $params->date_to = '';
+            if(!isset($_POST['high_chart'])){
             if(isset($_POST['next_id']))
                 $params->id = $_POST['next_id'];
             else
                 $params->snap_count = 12;
-            
+            }
             $results = $this->get_data_for_assess($params);
             /****Foreach Begin****/
             $snap_data = array();
