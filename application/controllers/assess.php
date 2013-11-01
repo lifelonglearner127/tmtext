@@ -1147,7 +1147,7 @@ class Assess extends MY_Controller {
                     $result_row = (array) $result_row;
                     $result_row["snap$i"] = $sim_items[$i - 1]->snap !== false ? $sim_items["$i-1"]->snap : '-';
 
-                    $result_row['url' . $i] = $sim_items[$i - 1]->url !== false ? "<a target='_blank' href='".$sim_items[$i - 1]->url."'>".$sim_items[$i - 1]->url."</a>" : "-";
+                    $result_row['url' . $i] = $sim_items[$i - 1]->url !== false ? "<span class='res_url'><a target='_blank' href='".$sim_items[$i - 1]->url."'>".$sim_items[$i - 1]->url."</a></span>" : "-";
                     $result_row['product_name' . $i] = $sim_items[$i - 1]->product_name !== false ? $sim_items[$i - 1]->product_name : "-";
                     $result_row['short_description_wc' . $i] = $sim_items[$i - 1]->short_description_wc !== false ? $sim_items[$i - 1]->short_description_wc : '-';
                     $result_row['long_description_wc' . $i] = $sim_items[$i - 1]->long_description_wc !== false ? $sim_items[$i - 1]->long_description_wc : '-';
