@@ -10,7 +10,7 @@ BOT_NAME = 'Walmart'
 
 SPIDER_MODULES = ['Walmart.spiders']
 NEWSPIDER_MODULE = 'Walmart.spiders'
-ITEM_PIPELINES = ['Walmart.pipelines.WalmartPipeline']
+ITEM_PIPELINES = ['Walmart.pipelines.CommaSeparatedLinesPipeline']
 
 # # allow duplicates
 #TODO: this makes it worse. definitely a bug in this
