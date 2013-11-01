@@ -1043,7 +1043,7 @@ class Assess extends MY_Controller {
             "sTitle"  =>"Recommendations", 
             "sName" =>"recommendations", 
            // "sWidth" =>"15%",
-            "bVisible" =>false, 
+           "bVisible" =>false, 
             "bSortable" =>false
        ),
 
@@ -1134,9 +1134,9 @@ class Assess extends MY_Controller {
             $price_diff = unserialize($row->price_diff);
             $result_row->lower_price_exist = false;
             $result_row->snap = '';
-
+            $class_for_all_case = '';
             if ($build_assess_params->max_similar_item_count > 0) {
-                
+                $class_for_all_case = "class_for_all_case";
                 $sim_items = $row->similar_items;
                 $max_similar_item_count = (int) $build_assess_params->max_similar_item_count;
 
@@ -1733,7 +1733,8 @@ class Assess extends MY_Controller {
                     $row_created = '<nobr>' . $row_created_array[0] . '</nobr><br/>';
                     $row_created = $row_created . '<nobr>' . $row_created_array[1] . '</nobr>';
                     $snap = '';
-                    $row_url = '<table class="url_table" ><tr><td style="padding:5px;"><a class="active_link" href="' . $data_row->url . '" target="_blank">' . $data_row->url . '</a></td></tr>';
+                    
+                    $row_url = '<table class="url_table '.$class_for_all_case.'" ><tr><td style="padding:5px;"><a class="active_link" href="' . $data_row->url . '" target="_blank">' . $data_row->url . '</a></td></tr>';
                     if ($data_row->snap != '') {
                         $file = realpath(BASEPATH . "../webroot/webshoots") . '/' . $data_row->snap;
                         if (file_exists($file)) {

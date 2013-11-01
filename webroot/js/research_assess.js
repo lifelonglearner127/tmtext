@@ -129,30 +129,30 @@ $(function() {
                             $('#assess_report_items_2_descriptions_pnl').hide();
                         }
                     }
-                    if (json.aaData.length > 0) {
-                        var str = '';
-                        for (var i = 0; i < json.aaData.length; i++) {
-                            var obj = jQuery.parseJSON(json.aaData[i][14]);
-                            if (json.aaData[i][2] != null && json.aaData[i][2] != '' && json.aaData[i][0] != '') {
-                                if (json.aaData[i][2].length > 93)
-                                    str += '<div class="board_item"><span class="span_img">' + json.aaData[i][2] + '</span><br />' + json.aaData[i][0] +
-                                            '<div class="prod_description"><b>URL:</b><br/>' + obj.url + '<br /><br /><b>Product name:</b><br/>' + obj.product_name +
-                                            '<br /><br/><b>Price:</b><br/>' + obj.own_price + '</div></div>';
-                                else
-                                    str += '<div class="board_item"><span>' + json.aaData[i][2] + '</span><br />' + json.aaData[i][0] +
-                                            '<div class="prod_description"><b>URL:</b><br/>' + obj.url + '<br /><br /><b>Product name:</b><br/>' + obj.product_name
-                                            + '<br /><br/><b>Price:</b><br/>' + obj.own_price + '</div></div>';
-                            }
-                        }
-                        if (str == '') {
-                            str = '<p>No images available for this batch</p>';
-                        }
-                        $('#assess_view').html(str);
-                        $('#assess_view .board_item img').on('click', function() {
-                            var info = $(this).parent().find('div.prod_description').html();
-                            showSnap('<img src="' + $(this).attr('src') + '" style="float:left; max-width: 600px; margin-right: 10px">' + info);
-                        });
-                    }
+//                    if (json.aaData.length > 0) {
+//                        var str = '';
+//                        for (var i = 0; i < json.aaData.length; i++) {
+//                            var obj = jQuery.parseJSON(json.aaData[i][14]);
+//                            if (json.aaData[i][2] != null && json.aaData[i][2] != '' && json.aaData[i][0] != '') {
+//                                if (json.aaData[i][2].length > 93)
+//                                    str += '<div class="board_item"><span class="span_img">' + json.aaData[i][2] + '</span><br />' + json.aaData[i][0] +
+//                                            '<div class="prod_description"><b>URL:</b><br/>' + obj.url + '<br /><br /><b>Product name:</b><br/>' + obj.product_name +
+//                                            '<br /><br/><b>Price:</b><br/>' + obj.own_price + '</div></div>';
+//                                else
+//                                    str += '<div class="board_item"><span>' + json.aaData[i][2] + '</span><br />' + json.aaData[i][0] +
+//                                            '<div class="prod_description"><b>URL:</b><br/>' + obj.url + '<br /><br /><b>Product name:</b><br/>' + obj.product_name
+//                                            + '<br /><br/><b>Price:</b><br/>' + obj.own_price + '</div></div>';
+//                            }
+//                        }
+//                        if (str == '') {
+//                            str = '<p>No images available for this batch</p>';
+//                        }
+//                        $('#assess_view').html(str);
+//                        $('#assess_view .board_item img').on('click', function() {
+//                            var info = $(this).parent().find('div.prod_description').html();
+//                            showSnap('<img src="' + $(this).attr('src') + '" style="float:left; max-width: 600px; margin-right: 10px">' + info);
+//                        });
+//                    }
 
                 });
             
@@ -1388,6 +1388,7 @@ var scrollYesOrNot = true;
                 //$("#tblAssess").dataTable().fnClearTable();
                 //$('#tblAssess_wrapper').remove();
                 createTableByServerSide();
+                tblAllColumns = tblAssess.fnGetAllSColumnNames();
                 serevr_side = true;
 
             } else {
