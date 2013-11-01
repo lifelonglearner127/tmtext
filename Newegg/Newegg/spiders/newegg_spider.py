@@ -41,7 +41,12 @@ class NeweggSpider(BaseSpider):
         for category_link in category_links:
 
             item = CategoryItem()
-            item['text'] = category_link.select("text()").extract()[0]
+            category_name = category_link.select("text()").extract()
+            if category_name:
+                item['text'] = category_name[0]
+            else:
+                sys.stderr.write("Error: no name for category in element " + category_link.extract())
+                continue
             item['url'] = self.clean_url(category_link.select("@href").extract()[0])
             # mark as department
             item['level'] = 1
