@@ -11,7 +11,7 @@ BOT_NAME = 'Macys'
 SPIDER_MODULES = ['Macys.spiders']
 NEWSPIDER_MODULE = 'Macys.spiders'
 
-ITEM_PIPELINES = ['Macys.pipelines.MacysPipeline']
+ITEM_PIPELINES = ['Macys.pipelines.CommaSeparatedLinesPipeline']
 DUPEFILTER_CLASS = 'scrapy.dupefilter.BaseDupeFilter'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
