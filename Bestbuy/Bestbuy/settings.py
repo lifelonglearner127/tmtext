@@ -10,7 +10,7 @@ BOT_NAME = 'Bestbuy'
 
 SPIDER_MODULES = ['Bestbuy.spiders']
 NEWSPIDER_MODULE = 'Bestbuy.spiders'
-ITEM_PIPELINES = ['Bestbuy.pipelines.BestbuyPipeline']
+ITEM_PIPELINES = ['Bestbuy.pipelines.CommaSeparatedLinesPipeline']
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'Bestbuy (+http://www.yourdomain.com)'
