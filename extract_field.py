@@ -39,7 +39,8 @@ for line in f:
 
 	if options.field in item:
 		if options.filter_field and options.filter_value:
-			if options.filter_field in item and item[options.filter_field] == options.filter_value:
+			# need to wrap value in unicode() for int items
+			if options.filter_field in item and unicode(item[options.filter_field]) == options.filter_value:
 				fields.append(item[options.field])
 		else:
 			if options.field2 and options.field2 in item:
@@ -49,9 +50,9 @@ for line in f:
 
 for el in sorted(fields):
 	if type(el) is tuple:
-		print map(lambda x: x.encode("utf-8"), el)
+		print map(lambda x: unicode(x), el)
 	else:
-		print el.encode("utf-8")
+		print unicode(el)
 
 print len(fields), len(set(fields))
 
