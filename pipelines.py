@@ -23,7 +23,7 @@ class CommaSeparatedLinesPipeline(object):
 		self.started = False
 
 	def open_spider(self, spider):
-		filename = spider.name + "_categories,jl"
+		filename = spider.name + "_categories.jl"
 		self.file = open(filename, 'wb')
 
 	def process_item(self, item, spider):
