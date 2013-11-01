@@ -11,7 +11,7 @@ BOT_NAME = 'Newegg'
 SPIDER_MODULES = ['Newegg.spiders']
 NEWSPIDER_MODULE = 'Newegg.spiders'
 
-ITEM_PIPELINES = ['Newegg.pipelines.NeweggPipeline']
+ITEM_PIPELINES = ['Newegg.pipelines.CommaSeparatedLinesPipeline']
 
 # # allow duplicates
 #DUPEFILTER_CLASS = 'scrapy.dupefilter.BaseDupeFilter'
