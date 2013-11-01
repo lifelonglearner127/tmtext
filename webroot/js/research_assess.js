@@ -1841,11 +1841,11 @@ var scrollYesOrNot = true;
     check_word_columns();
     $('#assess_report_download_panel').hide();
 
-    $(document).on('mouseenter', 'i.snap_ico', function () {
-     var snap = "webshoots/" + $(this).attr('snap');
-     $("#assess_preview_crawl_snap_modal .snap_holder").html("<img src='" + base_url +  snap + "'>");
-     $("#assess_preview_crawl_snap_modal").modal('show');
-     });
+//    $(document).on('mouseenter', 'i.snap_ico', function () {
+//     var snap = "webshoots/" + $(this).attr('snap');
+//     $("#assess_preview_crawl_snap_modal .snap_holder").html("<img src='" + base_url +  snap + "'>");
+//     $("#assess_preview_crawl_snap_modal").modal('show');
+//     });
     $(document).on('mouseleave', '#assess_preview_crawl_snap_modal', function() {
         $(this).modal('hide');
     });
