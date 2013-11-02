@@ -217,6 +217,13 @@ $(function() {
                 '<a id="assess_tbl_show_case_details_compare" data-case="details_compare" title="Details_compare" href="#">Compare</a> |' +
                 '<a id="assess_tbl_show_case_view" data-case="view" title="Board View" href="#">Board View</a>' +
                 '</div>');
+        
+        $('.dataTables_filter').append('<a id="research_batches_columns" class="ml_5 float_r" title="Customize..." style="display: none;"><img style="width:32px; heihgt: 32px;" src="http://tmeditor.dev//img/settings@2x.png"></a>');
+                $('#research_batches_columns').on('click', function() {
+                    $('#research_assess_choiceColumnDialog').dialog('open');
+                    $('#research_assess_choiceColumnDialog').parent().find('button:first-child').addClass("popupGreen");
+                });
+        
         $('#assess_tbl_show_case a').on('click', function(event) {
             event.preventDefault();
             if ($(this).text() == 'Details' || $(this).text() == 'Compare') {
