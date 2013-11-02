@@ -1448,7 +1448,18 @@ var scrollYesOrNot = true;
                 word_long_num += 1;
             }
         });
-    
+        $('td.Custom_Keywords_Short_Description').each(function() {
+            if ($(this).text() !='') {
+                Custom_Keywords_Short_Description += 1;
+            }
+        });
+        $('td.Custom_Keywords_Long_Description').each(function() {
+            
+            if ($(this).text()!='') {
+                Custom_Keywords_Long_Description += 1;
+            }
+        });
+     
         $.each(tblAllColumns, function(index, value) {
             if ((value == 'short_description_wc' && word_short_num == 0) || (value == 'long_description_wc' && word_long_num == 0)) {
                 tblAssess.fnSetColumnVis(index, false, false);
@@ -1456,12 +1467,12 @@ var scrollYesOrNot = true;
             if ((value == 'short_seo_phrases' && word_short_num == 0) || (value == 'long_seo_phrases' && word_long_num == 0)) {
                 tblAssess.fnSetColumnVis(index, false, false);
             }
-//            if((value == 'Custom_Keywords_Short_Description' && Custom_Keywords_Short_Description == 0)){
-//                tblAssess.fnSetColumnVis(index, false, false);
-//            }
-//            if((value == 'Custom_Keywords_Long_Description' && Custom_Keywords_Long_Description == 0)){
-//                tblAssess.fnSetColumnVis(index, false, false);
-//            }
+            if((value == 'Custom_Keywords_Short_Description' && Custom_Keywords_Short_Description == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+            }
+            if((value == 'Custom_Keywords_Long_Description' && Custom_Keywords_Long_Description == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+            }
         });
         $('.subtitle_word_long').show();
         $('.subtitle_word_short').show();

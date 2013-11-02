@@ -1226,30 +1226,33 @@ class Assess extends MY_Controller {
                      $_count = $this->keywords_appearence($row->long_description, $custom_seo['primary']);
                      $cnt = count(explode(' ',$custom_seo['primary'] ));
                      $_count = round(($_count*$cnt/$row->long_description_wc)*100, 2)."%";
+                     $Custom_Keywords_Long_Description .= "<tr><td>".$custom_seo['primary']."</td><td>$_count</td></tr>";
                  }else{
                      $_count = ' ';
                  }
-                 $Custom_Keywords_Long_Description .= "<tr><td>".$custom_seo['primary']."</td><td>$_count</td></tr>";
+                 
              };
              if($custom_seo['secondary']){
                   if($row->long_description){
                      $_count = $this->keywords_appearence($row->long_description, $custom_seo['secondary']);
                      $cnt = count(explode(' ',$custom_seo['secondary'] ));
                      $_count = round(($_count*$cnt/$row->long_description_wc)*100, 2)."%";
+                     $Custom_Keywords_Long_Description .= "<tr><td>".$custom_seo['secondary']."</td><td>$_count</td></tr>";
                  }else{
                      $_count = ' ';
                  }
-                 $Custom_Keywords_Long_Description .= "<tr><td>".$custom_seo['secondary']."</td><td>$_count</td></tr>";
+                 
              };
              if($custom_seo['tertiary']){
                  if($row->long_description){
                      $_count = $this->keywords_appearence($row->long_description, $custom_seo['tertiary']);
                      $cnt = count(explode(' ',$custom_seo['tertiary'] ));
                      $_count = round(($_count*$cnt/$row->long_description_wc)*100, 2)."%";
+                     $Custom_Keywords_Long_Description .= "<tr><td>".$custom_seo['tertiary']."</td><td> $_count</td></tr>";
                  }else{
                      $_count = ' ';
                  }
-                 $Custom_Keywords_Long_Description .= "<tr><td>".$custom_seo['tertiary']."</td><td> $_count</td></tr>";
+                
              };
              
              
@@ -1263,30 +1266,33 @@ class Assess extends MY_Controller {
                     $_count = $this->keywords_appearence($row->short_description, $custom_seo['primary']);
                     $cnt = count(explode(' ',$custom_seo['primary'] ));
                     $_count = round(($_count*$cnt/$row->short_description_wc)*100, 2)."%";
+                    $Custom_Keywords_Short_Description .= "<tr><td>".$custom_seo['primary']."</td><td>$_count</td></tr>";
                  }else{
                      $_count = ' ';
                  }
-                 $Custom_Keywords_Short_Description .= "<tr><td>".$custom_seo['primary']."</td><td>$_count</td></tr>";
+                 
              };
              if($custom_seo['secondary']){
                  if($row->short_description){
                      $_count = $this->keywords_appearence($row->short_description, $custom_seo['secondary']);
                      $cnt = count(explode(' ',$custom_seo['secondary'] ));
                      $_count = round(($_count*$cnt/$row->short_description_wc)*100, 2)."%";
+                     $Custom_Keywords_Short_Description .= "<tr><td>".$custom_seo['secondary']."</td><td>$_count</td></tr>";
                  }else{
                      $_count = ' ';
                  }
-                 $Custom_Keywords_Short_Description .= "<tr><td>".$custom_seo['secondary']."</td><td>$_count</td></tr>";
+                 
              };
              if($custom_seo['tertiary']){
                  if($row->short_description){
                      $_count = $this->keywords_appearence($row->short_description, $custom_seo['tertiary']);
                      $cnt = count(explode(' ',$custom_seo['tertiary'] ));
                      $_count = round(($_count*$cnt/$row->short_description_wc)*100, 2)."%";
+                     $Custom_Keywords_Short_Description .= "<tr><td>".$custom_seo['tertiary']."</td><td>$_count</td></tr>";
                  }else{
                      $_count = ' ';
                  }
-                 $Custom_Keywords_Short_Description .= "<tr><td>".$custom_seo['tertiary']."</td><td>$_count</td></tr>";
+                
              };
                 $result_row->Custom_Keywords_Short_Description =  $Custom_Keywords_Short_Description."</table>";
              
