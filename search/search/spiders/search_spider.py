@@ -545,7 +545,7 @@ class ProcessText():
 		# excluding it leads to women's->women (s is a stopword)
 
 		# replace 1/2 by .5 -> suitable for all sites?
-		text = re.sub(" 1/2", "\.5", text)
+		text = re.sub("[- ]1/2", ".5", text)
 		# also split by "/" after replacing "1/2"
 		text = re.sub("([^\w\"])|(u')", " ", text)
 		stopset = set(stopwords.words('english'))#["and", "the", "&", "for", "of", "on", "as", "to", "in"]
