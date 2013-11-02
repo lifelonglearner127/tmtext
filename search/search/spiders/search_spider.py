@@ -664,8 +664,9 @@ class ProcessText():
 				model_matched = 1
 				log.msg("MATCHED: " + str(models1) + str(models2) + "\n", level=log.DEBUG)
 			# if alternate models match
-			model_matched = 2
-			log.msg("ALT MATCHED: " + str(alt_models1) + str(alt_models2) + "\n", level=log.DEBUG)
+			else:
+				model_matched = 2
+				log.msg("ALT MATCHED: " + str(alt_models1) + str(alt_models2) + "\n", level=log.DEBUG)
 		# if models not matched
 		else:
 			log.msg("NOT MATCHED: " + str(alt_models1) + str(alt_models2) + "\n", level=log.DEBUG)
