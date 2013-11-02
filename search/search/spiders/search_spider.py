@@ -521,6 +521,7 @@ class SearchSpider(BaseSpider):
 class ProcessText():
 	# weight values
 	MODEL_MATCH_WEIGHT = 10
+	ALT_MODEL_MATCH_WEIGHT = 9
 	BRAND_MATCH_WEIGHT = 6
 	INCHES_MATCH_WEIGHT = 3
 	NONWORD_MATCH_WEIGHT = 2
@@ -612,6 +613,8 @@ class ProcessText():
 				return i
 		return -1
 
+	# check if model numbers of 2 products match
+	# return 1 if they match, 2 if they match including alternative model numbers, and 0 if they don't
 	@staticmethod
 	def models_match(name1, name2, model1, model2):
 		# add to the score if their model numbers match
@@ -638,20 +641,34 @@ class ProcessText():
 			product2_model_fromname = None
 			alt_product2_models_fromname = []
 
-		model_matched = False
+		model_matched = 0
 		# to see if models match, build 2 lists with each of the products' possible models, and check their intersection
-		models1 = filter(None, [model1, product_model_fromname] + alt_product_models + alt_product_models_fromname)
-		models2 = filter(None, [model2, product2_model_fromname] + alt_product2_models + alt_product2_models_fromname)
+		# actual models
+		models1 = filter(None, [model1, product_model_fromname])
+		models2 = filter(None, [model2, product2_model_fromname])
+
+		# including alternate models
+		alt_models1 = filter(None, [model1, product_model_fromname] + alt_product_models + alt_product_models_fromname)
+		alt_models2 = filter(None, [model2, product2_model_fromname] + alt_product2_models + alt_product2_models_fromname)
 
 		# normalize all product models
 		models1 = map(lambda x: ProcessText.normalize_modelnr(x), models1)
 		models2 = map(lambda x: ProcessText.normalize_modelnr(x), models2)
+		alt_models1 = map(lambda x: ProcessText.normalize_modelnr(x), alt_models1)
+		alt_models2 = map(lambda x: ProcessText.normalize_modelnr(x), alt_models2)
 
-		if set(models1).intersection(set(models2)):
-			model_matched = True
-			log.msg("MATCHED: " + str(models1) + str(models2) + "\n", level=log.DEBUG)
+		# if models match
+		if set(alt_models1).intersection(set(alt_models2)):
+			# if actual models match (excluding alternate models)
+			if set(models1).intersection(set(models2)):
+				model_matched = 1
+				log.msg("MATCHED: " + str(models1) + str(models2) + "\n", level=log.DEBUG)
+			# if alternate models match
+			model_matched = 2
+			log.msg("ALT MATCHED: " + str(alt_models1) + str(alt_models2) + "\n", level=log.DEBUG)
+		# if models not matched
 		else:
-			log.msg("NOT MATCHED: " + str(models1) + str(models2) + "\n", level=log.DEBUG)
+			log.msg("NOT MATCHED: " + str(alt_models1) + str(alt_models2) + "\n", level=log.DEBUG)
 		
 		return model_matched
 
@@ -709,7 +726,12 @@ class ProcessText():
 			# check if product models match (either from a "Model" field or extracted from their name)
 			model_matched = ProcessText.models_match(words1, words2, product_model, product2_model)
 			if model_matched:
-				score += ProcessText.MODEL_MATCH_WEIGHT
+				# if actual models matched
+				if (model_matched == 1):
+					score += ProcessText.MODEL_MATCH_WEIGHT
+				# if alternate models matched
+				elif (model_matched == 2):
+					score += ProcessText.ALT_MODEL_MATCH_WEIGHT
 			
 			log.msg("\nPRODUCT: " + unicode(product_name) + " MODEL: " + unicode(product_model) + \
 				"\nPRODUCT2: " + unicode(product2['product_name']) + " MODEL2: " + unicode(product2_model) + \
