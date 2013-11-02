@@ -10,7 +10,7 @@ BOT_NAME = 'Tigerdirect'
 
 SPIDER_MODULES = ['Tigerdirect.spiders']
 NEWSPIDER_MODULE = 'Tigerdirect.spiders'
-ITEM_PIPELINES = ['Tigerdirect.pipelines.TigerdirectPipeline']
+ITEM_PIPELINES = ['Tigerdirect.pipelines.CommaSeparatedLinesPipeline']
 
 # allow duplicates
 DUPEFILTER_CLASS = 'scrapy.dupefilter.BaseDupeFilter'
