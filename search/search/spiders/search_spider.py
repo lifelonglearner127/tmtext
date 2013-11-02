@@ -52,7 +52,7 @@ class SearchSpider(BaseSpider):
 	#				target_site - the site to search on
 	#				output - integer(1/2) option indicating output type (either result URL (1), or result URL and source product URL (2))
 	#				threshold - parameter (0-1) for selecting results (the lower the value the more permissive the selection)
-	def __init__(self, product_name = None, product_url = None, product_urls_file = None, target_site = None, output = 1, threshold = 1.4, outfile = "search_results.txt", fast = 1):
+	def __init__(self, product_name = None, product_url = None, product_urls_file = None, target_site = None, output = 1, threshold = 1.45, outfile = "search_results.txt", fast = 1):
 		self.product_url = product_url
 		self.product_name = product_name
 		self.target_site = target_site
