@@ -585,7 +585,7 @@ class ProcessText():
 
 		# remove last part of word
 		m = re.match("(.*[0-9]+)([a-zA-Z\- ]+)", word)
-		if m and (len(m.group(1))/len(m.group(2)))>1:
+		if m and float(len(m.group(1)))/len(m.group(2))>1:
 			new_word = m.group(1)
 			if len(new_word) > 2:
 				alt_models.append(new_word)
