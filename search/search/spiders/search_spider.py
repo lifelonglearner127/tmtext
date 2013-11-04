@@ -607,8 +607,6 @@ class SearchSpider(BaseSpider):
 
 		else:
 			item['product_name'] = product_name[0].strip()
-			if (item['product_name'].startswith("Amazon")):
-				sys.stderr.write("\nStarts with Amazon: " + item['product_name'] + "; " + item['product_url'])
 
 			# extract product model number
 			model_number_holder = hxs.select("//tr[@class='item-model-number']/td[@class='value']/text()").extract()
