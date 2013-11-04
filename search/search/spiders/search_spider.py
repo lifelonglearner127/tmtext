@@ -530,7 +530,7 @@ class ProcessText():
 	#TODO: different weight if alt models match, not literal models?
 
 	# exception brands - are brands names but are also found in the dictionary
-	brand_exceptions = ['philips']
+	brand_exceptions = ['philips', 'sharp']
 
 	# normalize text to list of lowercase words (no punctuation except for inches sign (") or /)
 	@staticmethod
