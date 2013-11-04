@@ -187,6 +187,11 @@ $(function() {
                         });
                      }
                 });
+                
+                if($("#tableScrollWrapper").length === 0){  
+                $('#tblAssess').after('<div id="tableScrollWrapper" style="overflow-x:scroll"></div>');
+                $('#tblAssess').appendTo('#tableScrollWrapper');
+             }
             },
             "fnRowCallback": function(nRow, aData, iDisplayIndex) {
                 $(nRow).attr("add_data", aData[14]);
@@ -606,6 +611,10 @@ $(function() {
                 }
 
             });
+             if($("#tableScrollWrapper").length === 0){  
+                $('#tblAssess').after('<div id="tableScrollWrapper" style="overflow-x:scroll"></div>');
+                $('#tblAssess').appendTo('#tableScrollWrapper');
+             }
             highChart();
             $.ajax({
                 type: "POST",
