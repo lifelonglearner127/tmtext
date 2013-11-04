@@ -212,7 +212,7 @@ class Assess extends MY_Controller {
 //                    $cmp_arr[$key] = (object) $val;
 //                }
 //                $results = $cmp_arr;
-                $results = $cmp;
+//                $results = $cmp;
             }
 //           echo '<pre>';
 //           print_r($results);exit;
@@ -1135,11 +1135,12 @@ class Assess extends MY_Controller {
             $result_row->lower_price_exist = false;
             $result_row->snap = '';
             $class_for_all_case = '';
+            $tb_product_name='';
             if ($build_assess_params->max_similar_item_count > 0) {
                 $class_for_all_case = "class_for_all_case";
                 $sim_items = $row->similar_items;
                 $max_similar_item_count = (int) $build_assess_params->max_similar_item_count;
-
+                $tb_product_name = 'tb_product_name';
                
 
                 for ($i = 1; $i <= $max_similar_item_count; $i++) {
@@ -1148,7 +1149,7 @@ class Assess extends MY_Controller {
                     $result_row["snap$i"] = $sim_items[$i - 1]->snap !== false ? $sim_items["$i-1"]->snap : '-';
 
                     $result_row['url' . $i] = $sim_items[$i - 1]->url !== false ? "<span class='res_url'><a target='_blank' href='".$sim_items[$i - 1]->url."'>".$sim_items[$i - 1]->url."</a></span>" : "-";
-                    $result_row['product_name' . $i] = $sim_items[$i - 1]->product_name !== false ? $sim_items[$i - 1]->product_name : "-";
+                    $result_row['product_name' . $i] = $sim_items[$i - 1]->product_name !== false ? "<span class='tb_product_name'>".$sim_items[$i - 1]->product_name."</span>" : "-";
                     $result_row['short_description_wc' . $i] = $sim_items[$i - 1]->short_description_wc !== false ? $sim_items[$i - 1]->short_description_wc : '-';
                     $result_row['long_description_wc' . $i] = $sim_items[$i - 1]->long_description_wc !== false ? $sim_items[$i - 1]->long_description_wc : '-';
                 }
@@ -1545,11 +1546,11 @@ class Assess extends MY_Controller {
 //            $report['summary']['compare_batch_total_items'] = $compare_batch_total_items;
 //        }
 
-        $report['recommendations']['absent_items'] = $absent_items;
-        $report['summary']['absent_items_count'] = count($absent_items);
-        $report['summary']['own_batch_name'] = $own_batch[0]->title;
-        $report['summary']['compare_customer_name'] = $compare_customer[0]->name;
-        $report['summary']['compare_batch_name'] = $compare_batch[0]->title;
+//        $report['recommendations']['absent_items'] = $absent_items;
+//        $report['summary']['absent_items_count'] = count($absent_items);
+//        $report['summary']['own_batch_name'] = $own_batch[0]->title;
+//        $report['summary']['compare_customer_name'] = $compare_customer[0]->name;
+//        $report['summary']['compare_batch_name'] = $compare_batch[0]->title;
 
         if ($items_priced_higher_than_competitors > 0) {
             $report['recommendations']['items_priced_higher_than_competitors'] = 'Reduce pricing on ' . $items_priced_higher_than_competitors . ' item(s)';
@@ -1602,7 +1603,7 @@ class Assess extends MY_Controller {
             if ($s_column == 'product_name') {
                 usort($result_table, array("Assess", "assess_sort_ignore"));
             } else {
-                //usort($result_table, array("Assess", "assess_sort"));
+                usort($result_table, array("Assess", "assess_sort"));
             }
         }
 
@@ -1756,7 +1757,7 @@ class Assess extends MY_Controller {
                     $output_row = array(
                         $snap,
                         $row_created,
-                        $data_row->product_name,
+                        '<span class= "'. $tb_product_name.'">'.$data_row->product_name."</span>",
                         $row_url,
                         $data_row->short_description_wc,
                         $data_row->short_seo_phrases,
