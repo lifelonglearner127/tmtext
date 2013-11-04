@@ -258,6 +258,7 @@ class SearchSpider(BaseSpider):
 		request.meta['pending_requests'] = pending_requests
 		request.meta['site'] = self.target_site
 		# product page from source site
+		#TODO: clean this URL? for walmart it added something with ?enlargedsearch=True
 		request.meta['origin_url'] = response.url
 
 		request.meta['origin_name'] = product_name
@@ -297,7 +298,6 @@ class SearchSpider(BaseSpider):
 		# handle parsing separately for each site
 
 		# amazon
-		#TODO: clean these URLs too (enlargedsearch smth?)
 		if (site == 'amazon'):
 			# amazon returns partial results as well so we can just search for the entire product name and select from there
 
