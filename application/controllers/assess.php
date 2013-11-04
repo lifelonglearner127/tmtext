@@ -1863,12 +1863,10 @@ class Assess extends MY_Controller {
             $params->txt_filter = '';
             $params->date_from = '';
             $params->date_to = '';
-            if(!isset($_POST['high_chart'])){
             if(isset($_POST['next_id']))
                 $params->id = $_POST['next_id'];
             else
                 $params->snap_count = 12;
-            }
             $results = $this->get_data_for_assess($params);
             /****Foreach Begin****/
             $snap_data = array();
@@ -1878,14 +1876,49 @@ class Assess extends MY_Controller {
                     if (file_exists($file)) {
                         if (filesize($file) > 1024) {
                             $snap = "<img src='" . base_url() . "webshoots/" . $data_row->snap . "' rel='" . $data_row->id . "' />";
+                        $output = array(
+                            $snap,
+                            $data_row->product_name,
+                            json_encode($data_row),
+                        );
+                        $snap_data[] = $output;
 }
                     }
+                }
+            }
+            /****Foreach End****/
+            $this->output->set_content_type('application/json')->set_output(json_encode($snap_data));
+        }
+    }
+
+    public function get_graph_batch_data(){
+        if(isset($_POST['batch_id']) && $_POST['batch_id'] != 0 && isset($_POST['batch_compare_id']) && $_POST['batch_compare_id'] != 0){
+            $batch_arr = array($_POST['batch_id'], $_POST['batch_compare_id']);
+            foreach($batch_arr as $batch_id){
+                $params = new stdClass();
+                $params->batch_id = $batch_id;
+                $params->txt_filter = '';
+                $params->date_from = '';
+                $params->date_to = '';
+
+                $results = $this->get_data_for_assess($params);
+                /****Foreach Begin****/
+                $snap_data = array();
+                foreach($results as $data_row){
+                    if ($data_row->snap != '') {
+                        $file = realpath(BASEPATH . "../webroot/webshoots") . '/' . $data_row->snap;
+                        if (file_exists($file)) {
+                            if (filesize($file) > 1024) {
+                                $snap = "<img src='" . base_url() . "webshoots/" . $data_row->snap . "' rel='" . $data_row->id . "' />";
                     $output = array(
                         $snap,
                         $data_row->product_name,
                         json_encode($data_row),
                     );
-                    $snap_data[] = $output;
+                            $snap_data[$key][] = $output;
+                }
+            }
+                    }
                 }
             }
             /****Foreach End****/

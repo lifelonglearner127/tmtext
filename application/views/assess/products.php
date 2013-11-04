@@ -454,8 +454,10 @@
                 </div>
                 <img id="imgLoader" style="display: none;margin-top: -16px;margin-left: 81px;" src="<?php echo base_url();?>img/img-loader.gif" />
                 <div id="assess_graph">
-                    <div id="highChartContainer" style="min-width: 150px; height: 300px; margin: 0 auto"></div>
+                    <div id="highChartContainer" style="min-width: 878px; height: 300px; margin: 0 auto"></div>
                 </div>
+                <script src="http://code.highcharts.com/highcharts.js"></script>
+                <script src="http://code.highcharts.com/modules/exporting.js"></script>
                 <script type="text/javascript" src="<?php echo base_url();?>js/jquery.dataTables.min.js"></script>
                 <script type="text/javascript" src="<?php echo base_url();?>js/jquery.json-2.4.min.js"></script>
                 <script type="text/javascript" src="<?php echo base_url();?>js/jquery.fileDownload.js"></script>

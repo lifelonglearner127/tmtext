@@ -1,5 +1,6 @@
 var readAssessUrl = base_url + 'index.php/assess/get_assess_info';
 var readBoardSnapUrl = base_url + 'index.php/assess/get_board_view_snap';
+var readGraphDataUrl = base_url + 'index.php/assess/get_graph_batch_data';
 var readAssessUrlCompare = base_url + 'index.php/assess/compare';
 var serevr_side = true;
 var serverside_table;
@@ -669,24 +670,55 @@ $(function() {
         },
           "aoColumns":columns
     });
-    
 function highChart(){
+//    console.log($('select[name="research_assess_batches"]').find('option:selected').val()+' - '+$('#research_assess_compare_batches_batch').children('option:selected').val());
+    var batch1Value = $('select[name="research_assess_batches"]').find('option:selected').val();
+    var batch2Value = $('#research_assess_compare_batches_batch').children('option:selected').val();
+    if(batch1Value = 0 || typeof batch1Value == 'undefined'){
+        batch1Value = '';
+    }
+    if(batch2Value = 0 || typeof batch2Value == 'undefined'){
+        batch2Value = '';
+    }
                 $.ajax({
                     type: "POST",
-                    url: readBoardSnapUrl,
+        url: readGraphDataUrl,
                     data: {
-                        batch_id: $('select[name="research_assess_batches"]').find('option:selected').val(),
-                        batch_compare_id: $('#research_assess_compare_batches_batch').children('option:selected').val(),
-                        high_chart: 1
+            batch_id: batch1Value,
+            batch_compare_id: batch2Value
 }
                 }).done(function(data){
-                    $('#imgLoader').hide();
+        var value1 = [];
+        var value2 = [];
                     if(data.length > 0){
-                        var str = '';
-                        for(var i=0; i<data.length; i++){
+            
                         }
+        var chart = new Highcharts.Chart({
+            title: {
+                text: ''
+            },
+            chart: {
+                renderTo: 'highChartContainer',
+                zoomType: 'x',
+                spacingRight: 20
+            },
+            xAxis: {
+                categories: []
+            },
+
+            series: [
+                        {
+                            name: 'Primary',
+                            data: value1
+                        },
+                        {
+                            name: 'Secondary',
+                            data: value2,
+                            color: '#71a75b'
                      }
+                    ]
                 });
+    });
     
 }
 var scrollYesOrNot = true;
