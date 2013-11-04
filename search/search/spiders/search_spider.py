@@ -475,13 +475,13 @@ class SearchSpider(BaseSpider):
 
 
 		#print stuff
-		self.log("PRODUCT: " + response.meta['origin_name'].encode("utf-8") + " MODEL: " + response.meta['origin_model'].encode("utf-8"), level=log.DEBUG)
+		self.log("PRODUCT: " + response.meta['origin_name'].encode("utf-8") + " MODEL: " + response.meta['origin_model'].encode("utf-8"), level=log.INFO)
 		#print 
-		self.log( "QUERY: " + response.meta['query'], level=log.DEBUG)
-		self.log( "MATCHES: ", level=log.DEBUG)
+		self.log( "QUERY: " + response.meta['query'], level=log.INFO)
+		self.log( "MATCHES: ", level=log.INFO)
 		for item in items:
-			self.log( item['product_name'].encode("utf-8"), level=log.DEBUG)
-		self.log( '\n', level=log.DEBUG)
+			self.log( item['product_name'].encode("utf-8"), level=log.INFO)
+		self.log( '\n', level=log.INFO)
 
 
 		# if there is a pending request (current request used product model, and pending request is to use product name),
@@ -513,14 +513,14 @@ class SearchSpider(BaseSpider):
 					# from all results, select the product whose name is most similar with the original product's name
 					best_match = ProcessText.similar(origin_name, origin_model, items, self.threshold)
 
-					# #self.log( "ALL MATCHES: ", level=log.INFO)					
+					# #self.log( "ALL MATCHES: ", level=log.WARNING)					
 					# for item in items:
 					# 	#print item['product_name'].encode("utf-8")
 					# #print '\n'
 
-					self.log( "FINAL: " + str(best_match), level=log.INFO)
+					self.log( "FINAL: " + str(best_match), level=log.WARNING)
 
-				self.log( "\n----------------------------------------------\n", level=log.INFO)
+				self.log( "\n----------------------------------------------\n", level=log.WARNING)
 
 				if not best_match:
 					# if there are no results but the option was to include original product URL, create an item with just that
@@ -542,7 +542,7 @@ class SearchSpider(BaseSpider):
 				item['origin_url'] = response.meta['origin_url']
 
 
-				self.log( "FINAL: no items", level=log.INFO)
+				self.log( "FINAL: no items", level=log.WARNING)
 
 				return [item]
 
@@ -600,7 +600,7 @@ class SearchSpider(BaseSpider):
 		# extract titles that are not empty (ignoring whitespace)
 		product_name = hxs.select("//h1//text()[normalize-space()!='']").extract()
 		if not product_name:
-			self.log("Error: No product name: " + str(response.url), level=log.DEBUG)
+			self.log("Error: No product name: " + str(response.url), level=log.INFO)
 			
 		else:
 			item['product_name'] = product_name[0].strip()
@@ -783,14 +783,14 @@ class ProcessText():
 			# if actual models match (excluding alternate models)
 			if set(models1).intersection(set(models2)):
 				model_matched = 1
-				log.msg("MATCHED: " + str(models1) + str(models2) + "\n", level=log.DEBUG)
+				log.msg("MATCHED: " + str(models1) + str(models2) + "\n", level=log.INFO)
 			# if alternate models match
 			else:
 				model_matched = 2
-				log.msg("ALT MATCHED: " + str(alt_models1) + str(alt_models2) + "\n", level=log.DEBUG)
+				log.msg("ALT MATCHED: " + str(alt_models1) + str(alt_models2) + "\n", level=log.INFO)
 		# if models not matched
 		else:
-			log.msg("NOT MATCHED: " + str(alt_models1) + str(alt_models2) + "\n", level=log.DEBUG)
+			log.msg("NOT MATCHED: " + str(alt_models1) + str(alt_models2) + "\n", level=log.INFO)
 		
 		return model_matched
 
@@ -857,7 +857,7 @@ class ProcessText():
 			
 			log.msg("\nPRODUCT: " + unicode(product_name) + " MODEL: " + unicode(product_model) + \
 				"\nPRODUCT2: " + unicode(product2['product_name']) + " MODEL2: " + unicode(product2_model) + \
-				"\nSCORE: " + str(score) + " THRESHOLD: " + str(threshold) + "\n", level=log.INFO)
+				"\nSCORE: " + str(score) + " THRESHOLD: " + str(threshold) + "\n", level=log.WARNING)
 
 			if score >= threshold:
 				# append product along with score and a third variable:
@@ -916,10 +916,10 @@ class ProcessText():
 		threshold = param*(len(weights1) + len(weights2))/2
 		score = sum(weights_common)
 
-		log.msg( "W1: " + str(words1), level=log.DEBUG)
-		log.msg( "W2: " + str(words2), level=log.DEBUG)
-		log.msg( "COMMON: " + str(common_words), level=log.DEBUG)
-		log.msg( "WEIGHTS: " + str(weights1) + str(weights2) + str(weights_common), level=log.DEBUG)
+		log.msg( "W1: " + str(words1), level=log.INFO)
+		log.msg( "W2: " + str(words2), level=log.INFO)
+		log.msg( "COMMON: " + str(common_words), level=log.INFO)
+		log.msg( "WEIGHTS: " + str(weights1) + str(weights2) + str(weights_common), level=log.INFO)
 
 
 		return (score, threshold, brand_matched)

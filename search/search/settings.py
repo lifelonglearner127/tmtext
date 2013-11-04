@@ -16,7 +16,7 @@ ITEM_PIPELINES = ['search.pipelines.URLsPipeline']
 #LOG_STDOUT = True
 LOG_ENABLED = False
 #LOG_FILE = "search_log.out"
-LOG_LEVEL=scrapy.log.INFO
+LOG_LEVEL=scrapy.log.WARNING
 DUPEFILTER_CLASS = 'scrapy.dupefilter.BaseDupeFilter'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
