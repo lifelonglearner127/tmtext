@@ -321,6 +321,9 @@ class SearchSpider(BaseSpider):
 
 				return request
 
+			else:
+				del response.meta['parsed']
+
 			#product = hxs.select("//div[@id='result_0']/h3/a/span/text()").extract()[0]
 			#TODO: refine this. get divs with id of the form result_<number>. not all of them have h3's (but this will exclude partial results?)
 			# results = hxs.select("//h3[@class='newaps']/a")
