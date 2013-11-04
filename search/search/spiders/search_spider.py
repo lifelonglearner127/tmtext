@@ -95,6 +95,8 @@ class SearchSpider(BaseSpider):
 
 
 		if not self.target_site:
+			sys.stderr.write("You need to specify a target site.\nUsage:" + \
+			" scrapy crawl search -a product_urls_file='<filename>' -a target_site='<site>' [-a output='<option(1/2)>'] [-a threshold=value] [a outfile='<filename>'] [-a fast=1]")
 			raise CloseSpider("\n" + \
 			"You need to specify a target site.\nUsage:" + \
 			" scrapy crawl search -a product_urls_file='<filename>' -a target_site='<site>' [-a output='<option(1/2)>'] [-a threshold=value] [a outfile='<filename>'] [-a fast=1]")
@@ -598,12 +600,15 @@ class SearchSpider(BaseSpider):
 		# extract product name
 		#TODO: id='title' doesn't work for all, should I use a 'contains' or something?
 		# extract titles that are not empty (ignoring whitespace)
-		product_name = hxs.select("//h1//text()[normalize-space()!='']").extract()
+		# eliminate "Amazon Prime Free Trial"
+		product_name = filter(lambda x: not x.startswith("Amazon Prime"), hxs.select("//h1//text()[normalize-space()!='']").extract())
 		if not product_name:
 			self.log("Error: No product name: " + str(response.url), level=log.INFO)
-			
+
 		else:
 			item['product_name'] = product_name[0].strip()
+			if (item['product_name'].startswith("Amazon")):
+				sys.stderr.write("\nStarts with Amazon: " + item['product_name'] + "; " + item['product_url'])
 
 			# extract product model number
 			model_number_holder = hxs.select("//tr[@class='item-model-number']/td[@class='value']/text()").extract()
@@ -665,6 +670,7 @@ class ProcessText():
 		#! including ' as an exception keeps things like women's a single word. also doesn't find it as a word in wordnet -> too high a priority
 		# excluding it leads to women's->women (s is a stopword)
 
+		#TODO: what happens to non word characters like )? eg (Black)
 		# replace 1/2 by .5 -> suitable for all sites?
 		text = re.sub("[- ]1/2", ".5", text)
 		# also split by "/" after replacing "1/2"
