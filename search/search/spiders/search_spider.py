@@ -598,7 +598,7 @@ class SearchSpider(BaseSpider):
 		# extract product name
 		#TODO: id='title' doesn't work for all, should I use a 'contains' or something?
 		# extract titles that are not empty (ignoring whitespace)
-		product_name = hxs.select("//h1/text()[normalize-space()!='']").extract()
+		product_name = hxs.select("//h1//text()[normalize-space()!='']").extract()
 		if not product_name:
 			self.log("Error: No product name: " + str(response.url), level=log.DEBUG)
 			
