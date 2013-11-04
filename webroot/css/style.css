@@ -2556,3 +2556,7 @@ input[name="search_crawl_data"] {
 #assess_tbl_show_case a {
     font-size: 14px ! important;
 }
+
+#preview_crawl_snap_modal{
+    width: 850px !important;
+}
