@@ -2552,3 +2552,7 @@ input[name="search_crawl_data"] {
     width: 200px !important;
    
 }
+
+#assess_tbl_show_case a {
+    font-size: 14px ! important;
+}

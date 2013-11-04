@@ -331,6 +331,7 @@ $(function() {
                         '<a id="assess_tbl_show_case_report" data-case="report" title="Report" href="#">Summary</a> |' +
                         '<a id="assess_tbl_show_case_details" data-case="details" title="Details" href="#">Details</a> |' +
                         '<a id="assess_tbl_show_case_details_compare" data-case="details_compare" title="Details_compare" href="#">Compare</a> |' +
+                        '<a id="assess_tbl_show_case_graph" data-case="graph" title="Graph" href="#graph">Graph</a> |'+
                         '<a id="assess_tbl_show_case_view" data-case="view" title="Board View" href="#">Board View</a>' +
                         '</div>');
 //        $('#research_batches_columns').appendTo('div.dataTables_filter');
