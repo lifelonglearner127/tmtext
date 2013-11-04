@@ -475,13 +475,13 @@ class SearchSpider(BaseSpider):
 
 
 		#print stuff
-		self.log("PRODUCT: " + response.meta['origin_name'].encode("utf-8") + " MODEL: " + response.meta['origin_model'].encode("utf-8"), level=log.INFO)
+		self.log("PRODUCT: " + response.meta['origin_name'].encode("utf-8") + " MODEL: " + response.meta['origin_model'].encode("utf-8"), level=log.DEBUG)
 		#print 
-		self.log( "QUERY: " + response.meta['query'], level=log.INFO)
-		self.log( "MATCHES: ", level=log.INFO)
+		self.log( "QUERY: " + response.meta['query'], level=log.DEBUG)
+		self.log( "MATCHES: ", level=log.DEBUG)
 		for item in items:
-			self.log( item['product_name'].encode("utf-8"), level=log.INFO)
-		self.log( '\n', level=log.INFO)
+			self.log( item['product_name'].encode("utf-8"), level=log.DEBUG)
+		self.log( '\n', level=log.DEBUG)
 
 
 		# if there is a pending request (current request used product model, and pending request is to use product name),
