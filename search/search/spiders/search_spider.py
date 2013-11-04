@@ -297,6 +297,7 @@ class SearchSpider(BaseSpider):
 		# handle parsing separately for each site
 
 		# amazon
+		#TODO: clean these URLs too (enlargedsearch smth?)
 		if (site == 'amazon'):
 			# amazon returns partial results as well so we can just search for the entire product name and select from there
 
@@ -776,6 +777,7 @@ class ProcessText():
 
 			# if they share the first word (and it's a non-dictionary word) assume it's manufacturer and assign higher weight
 			# this also eliminates high scores for matches like "Vizion TV"-"Cable for Vizio TV"
+			#TODO: maybe also accept it if it's on first position in a name and second in another (ex: 50" Vizio)
 			if word == words1[0] and word == words2[0] and (not wordnet.synsets(word) or word in ProcessText.brand_exceptions):
 				weights_common.append(ProcessText.BRAND_MATCH_WEIGHT)
 				brand_matched = True
