@@ -788,7 +788,9 @@ class Assess extends MY_Controller {
                 'Custom_Keywords_Short_Description' => 'true',
                 'Custom_Keywords_Long_Description' => 'true',
                 'H1_Tags' => 'true',
+                'H1_Tags_Count' => 'true',
                 'H2_Tags' => 'true',
+                'H2_Tags_Count' => 'true',
                 'column_external_content' => 'true',
                 'column_reviews' => 'true',
                 'column_features' => 'true',
@@ -1006,12 +1008,26 @@ class Assess extends MY_Controller {
               array(
             "sTitle" =>"H1 Tags", 
             "sName" =>"H1_Tags", 
-            "sWidth" =>"1%"
+            "sWidth" =>"1%",
+            "sClass" =>  "HTags_1"
+         ),
+              array(
+            "sTitle" =>"Words", 
+            "sName" =>"H1_Tags_Count", 
+            "sWidth" =>"1%",
+            "sClass" =>  "HTags"
          ),
               array(
             "sTitle" =>"H2 Tags", 
             "sName" =>"H2_Tags", 
-            "sWidth" =>"1%"
+            "sWidth" =>"1%",
+            "sClass" =>  "HTags_2"
+         ),
+              array(
+            "sTitle" =>"Words", 
+            "sName" =>"H2_Tags_Count", 
+            "sWidth" =>"1%",
+            "sClass" =>  "HTags"
          ),
         array(
             "sTitle" =>"Duplicate Content", 
@@ -1125,8 +1141,10 @@ class Assess extends MY_Controller {
             $result_row->column_external_content = " ";
             $result_row->Custom_Keywords_Short_Description = "";
             $result_row->Custom_Keywords_Long_Description = "";
-            $result_row->H1_Tags = "-";
-            $result_row->H2_Tags = "-";
+            $result_row->H1_Tags = "";
+            $result_row->H1_Tags_Count = "";
+            $result_row->H2_Tags = "";
+            $result_row->H2_Tags_Count = "";
             $result_row->column_reviews = " ";
             $result_row->column_features = " ";
             $result_row->duplicate_content = "-";
@@ -1191,33 +1209,51 @@ class Assess extends MY_Controller {
                 $result_row->column_external_content = ' ';
             $result_row->column_reviews = $pars_atr['parsed_attributes']['review_count'];
             $result_row->column_features = $pars_atr['parsed_attributes']['feature_count'];
-            $result_row->H1_Tags= '-';
+            
+            $result_row->H1_Tags= '';
+            $result_row->H1_Tags_Count= '';
             if($pars_atr['HTags']['h1'] && $pars_atr['HTags']['h1'] !=''){
                 $H1 = $pars_atr['HTags']['h1'];
                 if(is_array($H1)){
                     $str_1 =  "<table  class='table_keywords_long'>";
+                    $str_1_Count =  "<table  class='table_keywords_long'>";
                     foreach($H1 as $h1){
-                       $str_1.= "<tr><td>".$h1." - </td><td>".strlen($h1)."</td></tr>" ;
+                       $str_1.= "<tr><td>".$h1."</td></tr>" ;
+                       $str_1_Count.="<tr><td>".strlen($h1)."</td></tr>" ;
                     }
                     $str_1 .="</table>";
+                    $str_1_Count .="</table>";
                 $result_row->H1_Tags = $str_1;
+                $result_row->H1_Tags_Count= $str_1_Count;
                 }else{
-                   $result_row->H1_Tags = "<table  class='table_keywords_long'><tr><td>".$H1."</td><td>".strlen($H1)."</td></tr></table>";;
-                }   
+                   $H1_Count = strlen($pars_atr['HTags']['h1']);
+                   $result_row->H1_Tags = "<table  class='table_keywords_long'><tr><td>".$H1."</td></tr></table>";;
+                   $result_row->H1_Tags_Count = "<table  class='table_keywords_long'><tr><td>".$H1_Count."</td></tr></table>";;
+                }
+                
             }
-            $result_row->H2_Tags='-';
+            
+            $result_row->H2_Tags= '';
+            $result_row->H2_Tags_Count= '';
             if($pars_atr['HTags']['h2'] && $pars_atr['HTags']['h2'] !=''){
                 $H2 = $pars_atr['HTags']['h2'];
                 if(is_array($H2)){
                     $str_2 =  "<table  class='table_keywords_long'>";
+                    $str_2_Count =  "<table  class='table_keywords_long'>";
                     foreach($H2 as $h2){
-                       $str_2.= "<tr><td>".$h2." - </td><td>".strlen($h2)."</td></tr>" ;
+                       $str_2.= "<tr><td>".$h2."</td></tr>" ;
+                       $str_2_Count.="<tr><td>".strlen($h2)."</td></tr>" ;
                     }
                     $str_2 .="</table>";
-                $result_row->H2_Tags =$str_2;
+                    $str_2_Count .="</table>";
+                $result_row->H2_Tags = $str_2;
+                $result_row->H2_Tags_Count= $str_2_Count;
                 }else{
-                   $result_row->H2_Tags = "<table  class='table_keywords_long'><tr><td>".$H2."</td><td>".strlen($H2)."</td></tr></table>";
-                }   
+                   $H2_Count = strlen($pars_atr['HTags']['h2']);
+                   $result_row->H2_Tags = "<table  class='table_keywords_long'><tr><td>".$H2."</td></tr></table>";;
+                   $result_row->H2_Tags_Count = "<table  class='table_keywords_long'><tr><td>".$H2_Count."</td></tr></table>";;
+                }
+                
             }
             
              $custom_seo = $this->keywords_model->get_by_imp_id($row->imported_data_id);
@@ -1766,7 +1802,9 @@ class Assess extends MY_Controller {
                         $data_row->Custom_Keywords_Short_Description,
                         $data_row->Custom_Keywords_Long_Description,
                         $data_row->H1_Tags,
+                        $data_row->H1_Tags_Count,
                         $data_row->H2_Tags,
+                        $data_row->H2_Tags_Count,
                         $data_row->duplicate_content,
                         $data_row->column_external_content,
                         $data_row->column_reviews,

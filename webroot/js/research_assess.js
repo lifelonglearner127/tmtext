@@ -44,7 +44,9 @@ $(function() {
             "Custom_Keywords_Short_Description",
             "Custom_Keywords_Long_Description",
             "H1_Tags",
+            "H1_Tags_Count",
             "H2_Tags",
+            "H2_Tags_Count",
             "column_external_content",
             "column_reviews",
             "column_features",
@@ -470,15 +472,29 @@ $(function() {
             
         },
         
-        {
+         {
             "sTitle" : "H1 Tags", 
             "sName":"H1_Tags", 
-            "sWidth": "1%"
+            "sWidth": "1%",
+            "sClass" :  "HTags_1"
+        },
+        {
+            "sTitle" : "Words", 
+            "sName":"H1_Tags_Count", 
+            "sWidth": "1%",
+            "sClass" :  "HTags"
         },
         {
             "sTitle" : "H2 Tags", 
             "sName":"H2_Tags", 
-            "sWidth": "1%"
+            "sWidth": "1%",
+            "sClass" :  "HTags_2"
+        },
+        {
+            "sTitle" : "Words", 
+            "sName":"H2_Tags_Count", 
+            "sWidth": "1%",
+            "sClass" :  "HTags"
         },
         {
             "sTitle": "Duplicate Content",
@@ -1435,6 +1451,8 @@ var scrollYesOrNot = true;
     function check_word_columns() {
         var word_short_num = 0;
         var word_long_num = 0;
+        var HTags_1 = 0;
+        var HTags_2 = 0;
         var Custom_Keywords_Short_Description = 0;
         var Custom_Keywords_Long_Description = 0;
         $('td.word_short').each(function() {
@@ -1460,6 +1478,18 @@ var scrollYesOrNot = true;
                 Custom_Keywords_Long_Description += 1;
             }
         });
+        $('td.HTags_1').each(function() {
+            
+            if ($(this).text()!='') {
+                HTags_1 += 1;
+            }
+        });
+        $('td.HTags_2').each(function() {
+            
+            if ($(this).text()!='') {
+                HTags_2 += 1;
+            }
+        });
      
         $.each(tblAllColumns, function(index, value) {
             if ((value == 'short_description_wc' && word_short_num == 0) || (value == 'long_description_wc' && word_long_num == 0)) {
@@ -1473,6 +1503,15 @@ var scrollYesOrNot = true;
             }
             if((value == 'Custom_Keywords_Long_Description' && Custom_Keywords_Long_Description == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
+            }
+             if((value == 'H1_Tags' && HTags_1 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+                tblAssess.fnSetColumnVis(index+1, false, false);
+            }
+
+            if((value == 'H2_Tags' && HTags_2 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+                tblAssess.fnSetColumnVis(index+1, false, false);
             }
         });
         $('.subtitle_word_long').show();
@@ -1535,7 +1574,9 @@ var scrollYesOrNot = true;
                     Custom_Keywords_Short_Description : $("#Custom_Keywords_Short_Description").attr('checked') == 'checked',
                     Custom_Keywords_Long_Description : $("#Custom_Keywords_Long_Description").attr('checked') == 'checked',
                     H1_Tags : $("#H1_Tags").attr('checked') == 'checked',
+                    H1_Tags_Count : $("#H1_Tags_Count").attr('checked') == 'checked',
                     H2_Tags : $("#H2_Tags").attr('checked') == 'checked',
+                    H2_Tags_Count : $("#H2_Tags_Count").attr('checked') == 'checked',
                     duplicate_content: $("#column_duplicate_content").attr('checked') == 'checked',
                     column_external_content: $("#column_external_content").attr('checked') == 'checked',
                     column_reviews: $("#column_reviews").attr('checked') == 'checked',
@@ -1673,8 +1714,18 @@ var scrollYesOrNot = true;
             $.each(tblAllColumns, function(index, value) {
                 if ($.inArray(value, columns_checkboxes_checked) > -1) {
                     tblAssess.fnSetColumnVis(index, true, false);
-                } else {
+                    
+                }else if(value==='H1_Tags_Count' || value==='H2_Tags_Count'){
+                    if ($.inArray(tblAllColumns[index-1], columns_checkboxes_checked) > -1) {
+                    tblAssess.fnSetColumnVis(index, true, false);
+                    }
+                    else{
+                        tblAssess.fnSetColumnVis(index, false, false);
+                    }
+                }
+                else {
                     tblAssess.fnSetColumnVis(index, false, false);
+                    
                 }
                 //tblAssess.fnSetColumnVis(, false, false);
             });
