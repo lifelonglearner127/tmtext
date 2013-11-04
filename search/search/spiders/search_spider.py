@@ -587,12 +587,18 @@ class SearchSpider(BaseSpider):
 		hxs = HtmlXPathSelector(response)
 		items = response.meta['items']
 
+		site = response.meta['site']
+		origin_url = response.meta['origin_url']
+
 		item = SearchItem()
 		item['product_url'] = response.url
+		item['site'] = site
+		item['origin_url'] = origin_url
 
 		# extract product name
 		#TODO: id='title' doesn't work for all, should I use a 'contains' or something?
-		product_name = hxs.select("//h1/text()").extract()
+		# extract titles that are not empty (ignoring whitespace)
+		product_name = hxs.select("//h1/text()[normalize-space()!='']").extract()
 		if not product_name:
 			self.log("Error: No product name: " + str(response.url), level=log.DEBUG)
 			
