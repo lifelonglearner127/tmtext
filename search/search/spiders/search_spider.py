@@ -775,6 +775,7 @@ class ProcessText():
 		for word in list(common_words):
 
 			# if they share the first word (and it's a non-dictionary word) assume it's manufacturer and assign higher weight
+			# this also eliminates high scores for matches like "Vizion TV"-"Cable for Vizio TV"
 			if word == words1[0] and word == words2[0] and (not wordnet.synsets(word) or word in ProcessText.brand_exceptions):
 				weights_common.append(ProcessText.BRAND_MATCH_WEIGHT)
 				brand_matched = True
