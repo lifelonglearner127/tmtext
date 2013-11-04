@@ -2,6 +2,7 @@ from scrapy.spider import BaseSpider
 from scrapy.selector import HtmlXPathSelector
 from scrapy.http import Request
 from scrapy.http import TextResponse
+from scrapy.http import Response
 from scrapy.exceptions import CloseSpider
 from search.items import SearchItem
 from scrapy import log
@@ -298,31 +299,56 @@ class SearchSpider(BaseSpider):
 		# handle parsing separately for each site
 
 		# amazon
+		#TODO: to make this faster, maybe gather all product urls from all queries results into a set, then parse them
+		#there are probably many duplicates
 		if (site == 'amazon'):
+
 			# amazon returns partial results as well so we can just search for the entire product name and select from there
+
+			# for Amazon, extract product info from product page, that's the only place you can find the model
+			# so send a request to the method that does this, with the same meta info as the request to this method,
+			# then send it back here
+
+			# check if we already did this, by checking if we have a key in meta indicating it
+			# only proceed if we haven't
+			if 'parsed' not in response.meta:
+				request = Request(url = response.url, callback = self.parse_results_amazon, meta = response.meta)
+
+				# add to meta url of current page being parsed
+				request.meta['redirected_from'] = response.url
+
+				request.meta['items'] = items
+
+				return request
 
 			#product = hxs.select("//div[@id='result_0']/h3/a/span/text()").extract()[0]
 			#TODO: refine this. get divs with id of the form result_<number>. not all of them have h3's (but this will exclude partial results?)
-			results = hxs.select("//h3[@class='newaps']/a")
-			for result in results:
-				item = SearchItem()
-				item['site'] = site
+			# results = hxs.select("//h3[@class='newaps']/a")
+			# for result in results:
+			# 	item = SearchItem()
+			# 	item['site'] = site
 
-				#TODO: some of these product names are truncated ("..."); even though less relevant ones (special offers or so)
-				item['product_name'] = result.select("span/text()").extract()[0]
-				product_url = result.select("@href").extract()[0]
+			# 	#TODO: some of these product names are truncated ("..."); even though less relevant ones (special offers or so)
+			# this problem is solved by the direct extraction from the product page
+			# 	item['product_name'] = result.select("span/text()").extract()[0]
+			# 	product_url = result.select("@href").extract()[0]
 				
-				# remove the part after "/ref" containing details about the search query
-				m = re.match("(.*)/ref=(.*)", product_url)
-				if m:
-					product_url = m.group(1)
+			# 	# remove the part after "/ref" containing details about the search query
+			# 	m = re.match("(.*)/ref=(.*)", product_url)
+			# 	if m:
+			# 		product_url = m.group(1)
 
-				item['product_url'] = Utils.add_domain(product_url, "http://www.amazon.com")
+			# 	item['product_url'] = Utils.add_domain(product_url, "http://www.amazon.com")
 
-				if 'origin_url' in response.meta:
-					item['origin_url'] = response.meta['origin_url']
+			# 	# extract product model
+			# 	product_model = self.extract_model_amazon(str(item['product_url']))
+			# 	if product_model:
+			# 		item['product_model'] = product_model
 
-				items.add(item)
+			# 	if 'origin_url' in response.meta:
+			# 		item['origin_url'] = response.meta['origin_url']
+
+			# 	items.add(item)
 
 		# walmart
 		if (site == 'walmart'):
@@ -518,6 +544,91 @@ class SearchSpider(BaseSpider):
 				return [item]
 
 
+	# parse results page for amazon, extract info for all products returned by search (keep them in "meta")
+	def parse_results_amazon(self, response):
+		hxs = HtmlXPathSelector(response)
+
+		items = response.meta['items']
+
+		# build list of product pages to be parsed
+		product_urls = []
+
+		results = hxs.select("//h3[@class='newaps']/a")
+		for result in results:
+			product_url = result.select("@href").extract()[0]
+				
+			# remove the part after "/ref" containing details about the search query
+			m = re.match("(.*)/ref=(.*)", product_url)
+			if m:
+				product_url = m.group(1)
+
+			product_url = Utils.add_domain(product_url, "http://www.amazon.com")
+
+			product_urls.append(product_url)
+
+		# extract product info from product pages (send request to parse first URL in list)
+		# add as meta all that was received as meta, will pass it on to parseResults function in the end
+		# also send as meta the entire results list (the product pages URLs), will receive callback when they have all been parsed
+		if product_urls:
+			request = Request(product_urls[0], callback = self.parse_product_amazon, meta = response.meta)
+			request.meta['items'] = items
+			request.meta['search_results'] = product_urls[1:]
+
+			return request
+
+
+	# extract product info from a product page for amazon
+	# keep product pages left to parse in 'search_results' meta key, send back to parse_results_amazon when done with all
+	def parse_product_amazon(self, response):
+
+		hxs = HtmlXPathSelector(response)
+		items = response.meta['items']
+
+		item = SearchItem()
+		item['product_url'] = response.url
+
+		# extract product name
+		#TODO: id='title' doesn't work for all, should I use a 'contains' or something?
+		product_name = hxs.select("//h1/text()").extract()
+		if not product_name:
+			self.log("Error: No product name: " + str(response.url), level=log.DEBUG)
+			
+		else:
+			item['product_name'] = product_name[0].strip()
+
+			# extract product model number
+			model_number_holder = hxs.select("//tr[@class='item-model-number']/td[@class='value']/text()").extract()
+			if model_number_holder:
+				item['product_model'] = model_number_holder[0]
+
+			# add result to items
+			items.add(item)
+
+		# if there are any more results to be parsed, send a request back to this method with the next product to be parsed
+		results = response.meta['search_results']
+		if results:
+			request = Request(results[0], callback = self.parse_product_amazon, meta = response.meta)
+			request.meta['items'] = items
+			# eliminate next product from pending list
+			request.meta['search_results'] = results[1:]
+
+			return request
+		else:
+			# otherwise, we are done, send a request back to parseResults
+			# add as meta all that was received as meta, add newly added items
+			request = Request(response.meta['redirected_from'], callback = self.parseResults, meta = response.meta)
+			# remove unnecessary keys
+			del request.meta['redirected_from']
+			del request.meta['search_results']
+			request.meta['items'] = items
+
+			# add variable indicating results have been parsed
+			request.meta['parsed'] = True
+
+			return request
+
+
+		
 # process text in product names, compute similarity between products
 class ProcessText():
 	# weight values
