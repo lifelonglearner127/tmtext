@@ -134,7 +134,7 @@ class SearchSpider(BaseSpider):
 				origin_site = m.group(1)
 			else:
 				sys.stderr.write('Can\'t extract domain from URL.\n')
-			#print "PRODUCT_URL", product_url
+			
 			request = Request(product_url, callback = self.parseURL)
 			request.meta['site'] = origin_site
 			if origin_site == 'staples':
@@ -202,8 +202,6 @@ class SearchSpider(BaseSpider):
 
 		request = None
 
-		##print "PRODUCT: ", product_name.encode("utf-8")
-
 		#TODO: search by alternative model numbers?
 
 		# 1) Search by model number
@@ -217,8 +215,6 @@ class SearchSpider(BaseSpider):
 
 
 			request1.meta['query'] = query1
-
-			##print "QUERY (MODEL)", query1
 			
 			request = request1
 
@@ -229,10 +225,7 @@ class SearchSpider(BaseSpider):
 		page2 = search_pages2[self.target_site]
 		request2 = Request(page2, callback = self.parseResults, cookies=cookies)
 
-
 		request2.meta['query'] = query2
-
-		##print "QUERY (PRODUCT)", query2
 
 		pending_requests = []
 
@@ -247,7 +240,6 @@ class SearchSpider(BaseSpider):
 		for words in ProcessText.words_combinations(product_name, fast=self.fast):
 			query3 = self.build_search_query(" ".join(words))
 			search_pages3 = self.build_search_pages(query3)
-			##print "QUERY", query3
 			page3 = search_pages3[self.target_site]
 			request3 = Request(page3, callback = self.parseResults, cookies=cookies)
 
@@ -281,8 +273,6 @@ class SearchSpider(BaseSpider):
 	# and lastly select the best result by selecting the best match between the original product's name and the result products' names
 	def parseResults(self, response):
 
-		##print "RESULTS URL", response.url
-		
 		hxs = HtmlXPathSelector(response)
 
 		site = response.meta['site']
@@ -293,7 +283,6 @@ class SearchSpider(BaseSpider):
 
 		if 'items' in response.meta:
 			items = response.meta['items']
-			##print "INITIAL ITEMS: ", items
 		else:
 			items = set()
 
@@ -478,7 +467,6 @@ class SearchSpider(BaseSpider):
 
 		#print stuff
 		self.log("PRODUCT: " + response.meta['origin_name'].encode("utf-8") + " MODEL: " + response.meta['origin_model'].encode("utf-8"), level=log.DEBUG)
-		#print 
 		self.log( "QUERY: " + response.meta['query'], level=log.DEBUG)
 		self.log( "MATCHES: ", level=log.DEBUG)
 		for item in items:
@@ -581,6 +569,17 @@ class SearchSpider(BaseSpider):
 
 			return request
 
+		# if there were no results, the request will never get back to parseResults
+		# so send it from here so it can parse the next queries
+		else:
+			request = Request(response.meta['redirected_from'], callback = self.parseResults, meta = response.meta)
+			# remove unnecessary keys
+			del request.meta['redirected_from']
+
+			# add variable indicating results have been parsed
+			request.meta['parsed'] = True
+
+			return request
 
 	# extract product info from a product page for amazon
 	# keep product pages left to parse in 'search_results' meta key, send back to parse_results_amazon when done with all
