@@ -528,11 +528,9 @@ class SearchSpider(BaseSpider):
 			if self.output == 2:
 				item = SearchItem()
 				item['site'] = site
-				#if 'origin_url' in response.meta:
+				
 				item['origin_url'] = response.meta['origin_url']
 
-
-				self.log( "FINAL: no items", level=log.WARNING)
 
 				return [item]
 
@@ -612,6 +610,7 @@ class SearchSpider(BaseSpider):
 			if model_number_holder:
 				item['product_model'] = model_number_holder[0]
 
+			#TODO: add brand, and check if it matches the other product's
 			# add result to items
 			items.add(item)
 
@@ -653,7 +652,7 @@ class ProcessText():
 	#TODO: different weight if alt models match, not literal models?
 
 	# exception brands - are brands names but are also found in the dictionary
-	brand_exceptions = ['philips', 'sharp', 'sceptre', 'westinghouse', 'element']
+	brand_exceptions = ['philips', 'sharp', 'sceptre', 'westinghouse', 'element', 'curtis', 'emerson']
 
 	# normalize text to list of lowercase words (no punctuation except for inches sign (") or /)
 	@staticmethod
@@ -714,7 +713,7 @@ class ProcessText():
 			if len(new_word) > 2:
 				alt_models.append(new_word)
 
-		# split word by -
+		# split word by - or /
 		if "-"  or "/" in word:
 			sub_models = re.split(r"[-/]",word)
 			for sub_model in sub_models:
