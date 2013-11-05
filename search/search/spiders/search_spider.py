@@ -204,14 +204,14 @@ class SearchSpider(BaseSpider):
 
 		#TODO: search by alternative model numbers?
 
+		#TODO: search by model number extracted from product name?
+
 		# 1) Search by model number
 		if product_model:
 			query1 = self.build_search_query(product_model)
 			search_pages1 = self.build_search_pages(query1)
 			page1 = search_pages1[self.target_site]
 			request1 = Request(page1, callback = self.parseResults, cookies=cookies)
-
-			#TODO: add query with model number and part of product name? that could narrow the results and make it faster. though it could also ommit some
 
 
 			request1.meta['query'] = query1
@@ -231,8 +231,8 @@ class SearchSpider(BaseSpider):
 
 		if not request:
 			request = request2
-		# else:
-		# 	pending_requests.append(request2)
+		else:
+			pending_requests.append(request2)
 
 		# 3) Search by combinations of words in product's name
 		# create queries
