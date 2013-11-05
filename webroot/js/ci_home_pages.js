@@ -403,11 +403,11 @@ function sendRecipientCategorySnapsReport(email) {
  		$("#dep_rep_preview_list_modal").modal('hide');
  	}
  	$("#recipients_control_panel_modal").modal('show').css({
-                 width: $(window).width() * 70 / 100,
-                 height: '70%',
+                 width: $(window).width() * 75 / 100,
+                 height: '75%',
                  left: '50%',
                  'margin-left': function() {
-                     return -($(window).width() * 70 / 200);
+                     return -($(window).width() * 75 / 200);
                  }});
  	var rec = $.post(base_url + 'index.php/batches/index', {}, function(data) {
  		$("#recipients_control_panel_modal").html(data);

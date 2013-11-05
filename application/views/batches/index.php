@@ -4,15 +4,15 @@
 	<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 	<h3>Custom Batch</h3>
 </div>
-<div class="modal-body">
+<div class="modal-body" style="overflow: hidden !important;">
     <?php echo form_open("research/save", array("class" => "form-horizontal", "id" => "create_batch_save")); ?>
     <div id="batchesDiv">
         <div class="span12 mb_10">
             <div class="span11" style="width:100%;">
-                Batch:
-                <div id="customer_dr" class="customer_dropdown"></div>
+               <span style="float: left; margin-top: 5px;margin-right: 5px;">Batch:</span>
+                <div id="customer_dr" style="float: left;" class="customer_dropdown"></div>
 
-                <?php echo form_dropdown('batches', $batches_list, array(), ' style="width: 145px;margin-left:20px"'); ?>
+                <?php echo form_dropdown('batches', $batches_list, array(), ' style="width: 145px;margin-left:60px;float: left;"'); ?>
 
                 <script>
                     
@@ -55,9 +55,10 @@
                         return false;
                     }
                 </script>
-                <button class="btn btn-danger" type="button" style="margin-left:5px" onclick="doconfirm()">Delete</button>
-                <span class="ml_10">Add new:</span> <input type="text"  style="width:180px" name="new_batch">
-                <button id="new_batch" class="btn" type="button" style="margin-left:5px;">Create</button>
+                <button class="btn btn-danger" type="button" style="margin-left: 20px;float: left;" onclick="doconfirm()">Delete</button>
+                <span  style="float: left;margin-top: 5px;" class="ml_10">Add new:</span> 
+                <input type="text"  style="width:180px;float: left;margin-left: 10px;" name="new_batch">
+                <button id="new_batch" class="btn" type="button" style="margin-left:5px;float: left;">Create</button>
 
             </div>
         </div>
