@@ -671,29 +671,32 @@ $(function() {
           "aoColumns":columns
     });
 function highChart(){
-//    console.log($('select[name="research_assess_batches"]').find('option:selected').val()+' - '+$('#research_assess_compare_batches_batch').children('option:selected').val());
     var batch1Value = $('select[name="research_assess_batches"]').find('option:selected').val();
-    var batch2Value = $('#research_assess_compare_batches_batch').children('option:selected').val();
-    if(batch1Value = 0 || typeof batch1Value == 'undefined'){
-        batch1Value = '';
+    var batch2Value = $('#research_assess_compare_batches_batch').find('option:selected').val();
+    if(batch1Value == false || batch1Value == 0 || typeof batch1Value == 'undefined'){
+        batch1Value = -1;
     }
-    if(batch2Value = 0 || typeof batch2Value == 'undefined'){
-        batch2Value = '';
+    if(batch2Value == false || batch2Value == 0 || typeof batch2Value == 'undefined'){
+        batch2Value = -1;
     }
-                $.ajax({
-                    type: "POST",
+    $.ajax({
+        type: "POST",
         url: readGraphDataUrl,
-                    data: {
+        data: {
             batch_id: batch1Value,
             batch_compare_id: batch2Value
-}
-                }).done(function(data){
+        }
+    }).done(function(data){
         var value1 = [];
         var value2 = [];
-                    if(data.length > 0){
-            
-                        }
-        var chart = new Highcharts.Chart({
+            if(data[0] && data[0].length > 0){
+                value1 = data[0];
+            }
+            if(data[1] && data[1].length > 0){
+                value2 = data[1];
+            }
+            $('#highChartContainer').empty();
+            var chart1 = new Highcharts.Chart({
             title: {
                 text: ''
             },
@@ -708,16 +711,20 @@ function highChart(){
 
             series: [
                         {
-                            name: 'Primary',
+                            name: 'Short Description',
                             data: value1
                         },
                         {
-                            name: 'Secondary',
+                            name: 'Short Description',
                             data: value2,
                             color: '#71a75b'
                      }
                     ]
                 });
+        $('.highcharts-button').each(function(i){
+            if(i > 0)
+                $(this).remove();
+        });
     });
     
 }
