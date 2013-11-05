@@ -807,7 +807,8 @@ class ProcessText():
 		exceptions = ['nt']
 
 		# only keep non dictionary words
-		norm_text = [word for word in norm_text if (not wordnet.synsets(word) or word in exceptions) and len(word) > 1]
+		# also keep Brands that are exceptions
+		norm_text = [word for word in norm_text if (not wordnet.synsets(word) or word in exceptions or word in ProcessText.brand_exceptions) and len(word) > 1]
 
 		# use fast option: use shorter length of combinations
 		if fast:
