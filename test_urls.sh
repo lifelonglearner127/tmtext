@@ -13,6 +13,11 @@ for line in $(cat $filename)
 do
 	echo "$line" | cut -d',' -f1 | xargs google-chrome
 	echo "$line" | cut -d',' -f2 | xargs google-chrome
+	third=`echo "$line" | cut -d',' -f3`
+	if [ -n "$third" ]
+	then
+		google-chrome $third
+	fi
 
 	# print current line number
 	echo $linenr
