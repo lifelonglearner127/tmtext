@@ -482,7 +482,10 @@ class SearchSpider(BaseSpider):
 
 			if pending_requests:
 				request = pending_requests[0]
+
+				# update pending requests
 				request.meta['pending_requests'] = pending_requests[1:]
+
 				request.meta['items'] = items
 
 				request.meta['site'] = response.meta['site']
@@ -490,6 +493,10 @@ class SearchSpider(BaseSpider):
 				request.meta['origin_url'] = response.meta['origin_url']
 				request.meta['origin_name'] = response.meta['origin_name']
 				request.meta['origin_model'] = response.meta['origin_model']
+
+				# used for amazon product URLs
+				if 'search_results' in response.meta:
+					request.meta['search_results'] = response.meta['search_results']
 
 				return request
 
@@ -541,8 +548,11 @@ class SearchSpider(BaseSpider):
 
 		items = response.meta['items']
 
-		# build list of product pages to be parsed
-		product_urls = []
+		# add product URLs to be parsed to this list
+		if 'search_results' not in response.meta:
+			product_urls = set()
+		else:
+			product_urls = response.meta['search_results']
 
 		results = hxs.select("//h3[@class='newaps']/a")
 		for result in results:
@@ -555,15 +565,22 @@ class SearchSpider(BaseSpider):
 
 			product_url = Utils.add_domain(product_url, "http://www.amazon.com")
 
-			product_urls.append(product_url)
+			product_urls.add(product_url)
 
 		# extract product info from product pages (send request to parse first URL in list)
 		# add as meta all that was received as meta, will pass it on to parseResults function in the end
 		# also send as meta the entire results list (the product pages URLs), will receive callback when they have all been parsed
-		if product_urls:
-			request = Request(product_urls[0], callback = self.parse_product_amazon, meta = response.meta)
+
+		# send the request further to parse product pages only if we gathered all the product URLs from all the queries 
+		# (there are no more pending requests)
+		# otherwise send them back to parseResults and wait for the next query, save all product URLs in search_results
+		# this way we avoid duplicates
+		if product_urls and ('pending_requests' not in response.meta or not response.meta['pending_requests']):
+			request = Request(product_urls.pop(), callback = self.parse_product_amazon, meta = response.meta)
 			request.meta['items'] = items
-			request.meta['search_results'] = product_urls[1:]
+
+			# this will be the new product_urls list with the first item popped
+			request.meta['search_results'] = product_urls
 
 			return request
 
@@ -576,6 +593,9 @@ class SearchSpider(BaseSpider):
 
 			# add variable indicating results have been parsed
 			request.meta['parsed'] = True
+
+			# keep the search results in this variable until no more queries are added and we are ready to pass it to parse_product_amazon
+			request.meta['search_results'] = product_urls
 
 			return request
 
@@ -615,12 +635,13 @@ class SearchSpider(BaseSpider):
 			items.add(item)
 
 		# if there are any more results to be parsed, send a request back to this method with the next product to be parsed
-		results = response.meta['search_results']
-		if results:
-			request = Request(results[0], callback = self.parse_product_amazon, meta = response.meta)
+		product_urls = response.meta['search_results']
+
+		if product_urls:
+			request = Request(product_urls.pop(), callback = self.parse_product_amazon, meta = response.meta)
 			request.meta['items'] = items
-			# eliminate next product from pending list
-			request.meta['search_results'] = results[1:]
+			# eliminate next product from pending list (this will be the new list with the first item popped)
+			request.meta['search_results'] = product_urls
 
 			return request
 		else:
