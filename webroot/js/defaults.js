@@ -326,6 +326,12 @@ function afterAutocomplete(loadData){
     }
 
 jQuery(document).ready(function($) {
+    $(document).ajaxStart(function(){
+        $('html').addClass('busy');
+    });
+    $(document).ajaxStop(function(){
+            $('html').removeClass('busy');
+        });
     
 
     function getWebsiteDropdown(){
@@ -497,11 +503,11 @@ jQuery(document).ready(function($) {
         }
     });
 
-    $(document).ajaxStart(function(){
-        $('html').addClass('busy');
-    }).ajaxStop(function(){
-            $('html').removeClass('busy');
-        });
+//    $(document).ajaxStart(function(){
+//        $('html').addClass('busy');
+//    }).ajaxStop(function(){
+//            $('html').removeClass('busy');
+//        });
 
     $(document).on("click", "#validate", function(){
         if($('input[type=checkbox]').is(':checked')){
