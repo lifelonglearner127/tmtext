@@ -1035,7 +1035,8 @@ class ProcessText():
 			# if they share the first word (and it's a non-dictionary word) assume it's manufacturer and assign higher weight
 			# this also eliminates high scores for matches like "Vizion TV"-"Cable for Vizio TV"
 			#TODO: maybe also accept it if it's on first position in a name and second in another (ex: 50" Vizio)
-			if word == words1[0] and word == words2[0] and (not wordnet.synsets(word) or word in ProcessText.brand_exceptions):
+			# brand may have been already matched from if block below
+			if (not brand_matched) and word == words1[0] and word == words2[0] and ((not wordnet.synsets(word)) or word in ProcessText.brand_exceptions):
 				weights_common.append(ProcessText.BRAND_MATCH_WEIGHT)
 				brand_matched = True
 			else:
@@ -1045,9 +1046,7 @@ class ProcessText():
 			# also check if product2_brand matches first 2 words of product1 name (for brands made of 2 words)
 			#TODO: what if brand is like "Element Electronics" and the other is "Element"?
 
-			#TODO: restore this when it's fixed
-			if (not brand_matched) and (words1[0]==product2_brand or " ".join(words1[:2])==product2_brand) and (not wordnet.synsets(word) or word in ProcessText.brand_exceptions):
-				sys.err.write("BRANDMATCHED: " + str(brand_matched) + " PRODUCT BRAND: " + str(product_brand) + "; " + str(words1) + "; " + str(words2) + "\n")				
+			if (not brand_matched) and (words1[0]==product2_brand or " ".join(words1[:2])==product2_brand) and ((not wordnet.synsets(word)) or word in ProcessText.brand_exceptions):
 				weights_common.append(ProcessText.BRAND_MATCH_WEIGHT)
 			 	brand_matched = True
 
