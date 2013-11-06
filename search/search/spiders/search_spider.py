@@ -945,7 +945,7 @@ class ProcessText():
 				weights_common.append(ProcessText.weight(word))
 
 			# if brand in product name doesn't match but it matches the one extracted from the page
-			if not brand_matched and words1[0]==product_brand and (not wordnet.synsets(word) or word in ProcessText.brand_exceptions):
+			if not brand_matched and words1[0]==product2_brand and (not wordnet.synsets(word) or word in ProcessText.brand_exceptions):
 				weights_common.append(ProcessText.BRAND_MATCH_WEIGHT)
 				brand_matched = True
 
