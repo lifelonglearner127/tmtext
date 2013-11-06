@@ -723,6 +723,7 @@ $(document).ready(function () {
         $.post(base_url + 'index.php/research/get_urls_from_batch', {
             'batch': $(this).find("option:selected").val()
         }, function(data){
+            console.log(data);
             if(data.length > 0){
                 var str = '<ul>';
                 for(var i=0; i<data.length; i++){

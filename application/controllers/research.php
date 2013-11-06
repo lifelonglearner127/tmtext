@@ -203,6 +203,7 @@ class Research extends MY_Controller {
         $this->load->model('research_data_model');
         $batch = $this->input->post('batch');
         $response = $this->research_data_model->get_by_batch($batch);
+        var_dup($response);
         $this->output->set_content_type('application/json')
             ->set_output(json_encode($response));
     }
