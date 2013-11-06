@@ -761,7 +761,7 @@ class SearchSpider(BaseSpider):
 			return request
 
 	def extract_walmart_id(self, url):
-		m = re.match(".*/ip/([0-9]+)")
+		m = re.match(".*/ip/([0-9]+)", url)
 		if m:
 			return m.group(1)
 
@@ -1046,9 +1046,10 @@ class ProcessText():
 			#TODO: what if brand is like "Element Electronics" and the other is "Element"?
 
 			#TODO: restore this when it's fixed
-			# if (not brand_matched) and (words1[0]==product2_brand or " ".join(words1[:2])==product2_brand) and (not wordnet.synsets(word) or word in ProcessText.brand_exceptions):
-			# 	weights_common.append(ProcessText.BRAND_MATCH_WEIGHT)
-			# 	brand_matched = True
+			if (not brand_matched) and (words1[0]==product2_brand or " ".join(words1[:2])==product2_brand) and (not wordnet.synsets(word) or word in ProcessText.brand_exceptions):
+				sys.err.write("BRANDMATCHED: " + str(brand_matched) + " PRODUCT BRAND: " + str(product_brand) + "; " + str(words1) + "; " + str(words2) + "\n")				
+				weights_common.append(ProcessText.BRAND_MATCH_WEIGHT)
+			 	brand_matched = True
 
 
 			#sys.err.write("PRODUCT BRAND: " + str(product_brand) + "; " + str(words1) + "; " + str(words2) + "\n")
