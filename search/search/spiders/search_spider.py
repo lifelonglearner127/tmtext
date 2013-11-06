@@ -53,12 +53,14 @@ class SearchSpider(BaseSpider):
 	#				target_site - the site to search on
 	#				output - integer(1/2) option indicating output type (either result URL (1), or result URL and source product URL (2))
 	#				threshold - parameter (0-1) for selecting results (the lower the value the more permissive the selection)
-	def __init__(self, product_name = None, product_url = None, product_urls_file = None, target_site = None, output = 1, threshold = 1.45, outfile = "search_results.txt", fast = 1):
+	def __init__(self, product_name = None, product_url = None, product_urls_file = None, walmart_ids_file = None, target_site = None, \
+		output = 1, threshold = 1.45, outfile = "search_results.txt", fast = 1):
 		self.product_url = product_url
 		self.product_name = product_name
 		self.target_site = target_site
 		self.output = int(output)
 		self.product_urls_file = product_urls_file
+		self.walmart_ids_file = walmart_ids_file
 		self.threshold = float(threshold)
 		self.outfile = outfile
 		self.fast = fast
@@ -141,6 +143,21 @@ class SearchSpider(BaseSpider):
 				zipcode = "12345"
 				request.cookies = {"zipcode": zipcode}
 				request.meta['dont_redirect'] = True
+			yield request
+
+		# if we have a file with Walmart ids, create a list of the ids there
+		walmart_ids = []
+		if self.walmart_ids_file:
+			f = open(self.walmart_ids_file, "r")
+			for line in f:
+				walmart_ids.append(line.strip())
+			f.close()			
+
+		for walmart_id in walmart_ids:
+			# create Walmart URLs based on these IDs
+			walmart_url = Utils.add_domain(walmart_id, "http://www.walmart.com/ip/")
+			request = Request(walmart_url, callback = self.parseURL)
+			request.meta['site'] = 'walmart'
 			yield request
 
 	# parse a product page (given its URL) and extract product's name;
@@ -878,7 +895,7 @@ class ProcessText():
 			#TODO: currently only considering brand for target products
 			# and only available for Amazon
 			if 'product_brand' in product2:
-				product2_brand = product2['product_brand']
+				product2_brand = " ".join(ProcessText.normalize(product2['product_brand']))
 			else:
 				product2_brand = None
 
@@ -945,7 +962,8 @@ class ProcessText():
 				weights_common.append(ProcessText.weight(word))
 
 			# if brand in product name doesn't match but it matches the one extracted from the page
-			if not brand_matched and words1[0]==product2_brand and (not wordnet.synsets(word) or word in ProcessText.brand_exceptions):
+			# also check if product2_brand matches first 2 words of product1 name (for brands made of 2 words)
+			if not brand_matched and (words1[0]==product2_brand or " ".join(words[:2]==product2_brand) and (not wordnet.synsets(word) or word in ProcessText.brand_exceptions):
 				weights_common.append(ProcessText.BRAND_MATCH_WEIGHT)
 				brand_matched = True
 
