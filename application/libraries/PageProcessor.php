@@ -311,6 +311,9 @@ class PageProcessor {
 			}
 		}
 
+		$parts = split('/',$this->url);
+		$result['item_id'] = end($parts);
+
 		return $result;
 	}
 
