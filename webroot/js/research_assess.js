@@ -63,6 +63,8 @@ $(function() {
             "url",
             "short_description_wc",
             "long_description_wc",
+            "Meta_Description",
+            "Meta_Description_Count",
             "snap1",
             "product_name1",
             "url1",
@@ -1822,6 +1824,14 @@ var scrollYesOrNot = true;
                 value = value.replace("6", "");
                 if ($.inArray(value, tableCase.details_compare) > -1 && $.inArray(value, columns_checkboxes_checked) > -1) {
                     tblAssess.fnSetColumnVis(index, true, false);
+                }
+                else if(value ==='Meta_Description_Count'){
+                    if ($.inArray(tblAllColumns[index-1], columns_checkboxes_checked) > -1) {
+                    tblAssess.fnSetColumnVis(index, true, false);
+                    }
+                    else{
+                        tblAssess.fnSetColumnVis(index, false, false);
+                    }
                 }
                 else {
                     tblAssess.fnSetColumnVis(index, false, false);
