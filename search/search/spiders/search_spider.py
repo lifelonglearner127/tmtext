@@ -637,7 +637,8 @@ class SearchSpider(BaseSpider):
 			if brand_holder:
 				item['product_brand'] = brand_holder[0]
 			else:
-				sys.stderr.write("Didn't find product brand: " + response.url)
+				pass
+				#sys.stderr.write("Didn't find product brand: " + response.url + "\n")
 
 			# add result to items
 			items.add(item)
@@ -937,11 +938,19 @@ class ProcessText():
 			# if they share the first word (and it's a non-dictionary word) assume it's manufacturer and assign higher weight
 			# this also eliminates high scores for matches like "Vizion TV"-"Cable for Vizio TV"
 			#TODO: maybe also accept it if it's on first position in a name and second in another (ex: 50" Vizio)
-			if word == words1[0] and (word == words2[0] or word == product2_brand) and (not wordnet.synsets(word) or word in ProcessText.brand_exceptions):
+			if word == words1[0] and word == words2[0] and (not wordnet.synsets(word) or word in ProcessText.brand_exceptions):
 				weights_common.append(ProcessText.BRAND_MATCH_WEIGHT)
 				brand_matched = True
 			else:
 				weights_common.append(ProcessText.weight(word))
+
+			# if brand in product name doesn't match but it matches the one extracted from the page
+			if not brand_matched and words1[0]==product_brand and (not wordnet.synsets(word) or word in ProcessText.brand_exceptions):
+				weights_common.append(ProcessText.BRAND_MATCH_WEIGHT)
+				brand_matched = True
+
+
+			#sys.err.write("PRODUCT BRAND: " + str(product_brand) + "; " + str(words1) + "; " + str(words2) + "\n")
 
 		weights1 = []
 		for word in list(set(words1)):
