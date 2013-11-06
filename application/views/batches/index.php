@@ -128,7 +128,8 @@
             A CSV containing one URL or Manufacturer ID per line
         </div>
         <div class="row-fluid mt_20">
-            <textarea id="urls" class="span10" style="min-height: 111px"></textarea>
+            <!--textarea id="urls" class="span10" style="min-height: 111px"></textarea-->
+            <div class="search_area uneditable-input span9" onClick="this.contentEditable='true';" style="cursor: text; min-height: 111px; overflow : auto; float: left;" id="urls"></div>
             <button class="btn ml_10" id="add_to_batch" ><i class="icon-white icon-ok"></i>&nbsp;Add to batch</button>
             <button class="btn ml_10 mt_10" id="rename_batch" ><i class="icon-white icon-ok"></i>&nbsp;Rename</button>
             <button class="btn btn-danger ml_10 mt_10" id="delete_from_batch"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>

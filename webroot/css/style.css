@@ -2560,3 +2560,10 @@ input[name="search_crawl_data"] {
 #preview_crawl_snap_modal{
     width: 850px !important;
 }
+.jq-batches{
+    margin-top: 10px;
+}
+
+li.selected-url{
+    background:#ccc;
+}

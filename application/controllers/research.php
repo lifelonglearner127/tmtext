@@ -185,6 +185,28 @@ class Research extends MY_Controller {
         }
     }
 
+    public function deleteFromBatch(){
+        $this->load->model('batches_model');
+        $batch_id = $this->batches_model->getIdByName($this->input->post('batch'));
+        if($batch_id != false){
+            $lines = explode("\n", $this->input->post('urls'));
+            $response['batch_id'] = $batch_id;
+            if($this->delete_rows($batch_id, $lines)){
+                $response['message'] = 'Items were deleted successfully';
+            }
+            $this->output->set_content_type('application/json')
+                ->set_output(json_encode($response));
+        }
+    }
+
+    public function get_urls_from_batch(){
+        $this->load->model('research_data_model');
+        $batch = $this->input->post('batch');
+        $response = $this->research_data_model->get_by_batch($batch);
+        $this->output->set_content_type('application/json')
+            ->set_output(json_encode($response));
+    }
+
     public function research_batches(){
         $this->load->model('settings_model');
         $this->data['customer_list'] = $this->getCustomersByUserId();
@@ -1697,6 +1719,16 @@ class Research extends MY_Controller {
         $this->research_data_model->db->trans_complete();
 
         return $added;
+    }
+
+    private function delete_rows($batch_id, $_rows) {
+        $this->load->model('research_data_model');
+
+        $this->research_data_model->db->trans_start();
+        foreach($_rows as $_row){
+            $this->research_data_model->deleteItemUrl($batch_id, $_row);
+        }
+        $this->research_data_model->db->trans_complete();
     }
 
    private function insert_rows_batch($batch_id, $_rows) {

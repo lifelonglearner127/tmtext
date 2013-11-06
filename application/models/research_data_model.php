@@ -50,6 +50,14 @@ class Research_data_model extends CI_Model {
 
         return $query->row_array();
     }
+
+    function get_by_batch($batch_id){//max
+        $query = $this->db->where('batch_id', $batch_id)
+            ->get($this->tables['research_data']);
+
+        return $query->result();
+    }
+
     //Max
     function get_by_batch_id($batch_title){
 
@@ -368,6 +376,10 @@ class Research_data_model extends CI_Model {
     function delete($id)
     {
         return $this->db->delete($this->tables['research_data'], array('id' => $id));
+    }
+
+    public function deleteItemUrl($batch_id, $url){
+        return $this->db->delete($this->tables['research_data'], array('batch_id' => $batch_id, 'url' => $url));
     }
 
     public function checkItemUrl($batch_id, $url){

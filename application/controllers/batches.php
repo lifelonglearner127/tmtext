@@ -19,16 +19,13 @@ class Batches extends MY_Controller {
 
     public function index()
     {
-//        $this->data['customer_list'] = $this->getCustomersByUserId();
-//        if(!empty($this->data['customer_list'])){
-//            $this->data['batches_list'] = array('')+$this->batches_list();
-//        }
-//        $this->render();
-        $data['customer_list'] = $this->getCustomersByUserId();
-        if(!empty($data['customer_list'])){
-            $data['batches_list'] = array('')+$this->batches_list();
+        $this->data['customer_list'] = $this->getCustomersByUserId();
+        if(!empty($this->data['customer_list'])){
+            $this->data['batches_list'] = array('')+$this->batches_list();
         }
-        $this->load->view('batches/index',$data);
+        $this->render();
+
+        //$this->load->view('batches/index',$this);
     }
 
     public function batches_list()

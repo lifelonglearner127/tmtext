@@ -293,7 +293,7 @@ $(document).ready(function () {
                     $("ul[data-status='seo_an']").show();
                     var num = parseInt($('#research_wc').html())+parseInt($('#research_wc1').html());
                     $('#research_total').html(num);
-            }, 'json');
+                }, 'json');
         }
 
     });
@@ -327,7 +327,7 @@ $(document).ready(function () {
                 }
                 vbutton.html('<i class="icon-ok-sign"></i>&nbsp;Validate');
                 $('#long_description').html(description);
-        });
+            });
     });
 
     $(document).on("click", "button#save_in_batch", function(){
@@ -472,12 +472,12 @@ $(document).ready(function () {
     });
 
     /*$(document).on("click", 'button#research_generate', function(){
-        $.post(base_url + 'index.php/research/generateDesc', { 'product_name': $('input[name="research_text"]').val()}, function(data){
-            console.log(data);
-        });
-        return false;
-    });*/
-    
+     $.post(base_url + 'index.php/research/generateDesc', { 'product_name': $('input[name="research_text"]').val()}, function(data){
+     console.log(data);
+     });
+     return false;
+     });*/
+
     $(document).on("change", "select[name='batches']", function(){
         $.post(base_url + 'index.php/research/filterCustomerByBatch', { 'batch_id': $("select[name='batches']").find("option:selected").text()}, function(data){
             if(data != null){
@@ -506,10 +506,10 @@ $(document).ready(function () {
     $(document).on("click", "button#add_to_batch", function(){
         $.post(base_url + 'index.php/research/addToBatch', {
             'batch': $("select[name='batches']").find("option:selected").text(),
-            'urls': $("textarea#urls").val()
+            'urls': $("div#urls").text()
         }, function(data){
             $('.info-message').append(data.message).fadeOut(10000);
-            $("textarea#urls").val("");
+            $("div#urls").html("");
             $.post(base_url + 'index.php/research/getBatchInfo', { 'batch_id': data.batch_id}, function(data){
                 if(data.created != undefined){
                     $('.batch_info').html('<ul class="ml_0"><li>Created: '+data.created+'</li><li>Item Last Added: '+data.modified+'</li>' +
@@ -523,20 +523,41 @@ $(document).ready(function () {
     });
 
     $(document).on("click", "button#delete_from_batch", function(){
-        $("textarea#urls").val("");
+        var urls = '';
+        $('div#urls li').each(function(){
+            if($(this).hasClass('selected-url')){
+                urls += $(this).text();
+                $(this).hide();
+            }
+        });
+        $.post(base_url + 'index.php/research/deleteFromBatch', {
+            'batch': $("select[name='batches']").find("option:selected").text(),
+            'urls': urls
+        }, function(data){
+            $('.info-message').append(data.message).fadeOut(10000);
+            $("select[name='batches']").find("option").find($("select[name='batches']").find("option:selected").text()).trigger('change');
+            $.post(base_url + 'index.php/research/getBatchInfo', { 'batch_id': data.batch_id}, function(data){
+                if(data.created != undefined){
+                    $('.batch_info').html('<ul class="ml_0"><li>Created: '+data.created+'</li><li>Item Last Added: '+data.modified+'</li>' +
+                        '<li> Items: '+data.count_items+' </li></ul>');
+                }else{
+                    $('.batch_info').html('');
+                }
+            });
+        });
         return false;
     });
 
     $(document).on("change", "select[name='customersStyle']", function(){
         $.post(base_url + 'index.php/customer/getStyleByCustomer', { 'customer_name': $("select[name='customersStyle'] option:selected").text()}, function(data){
-           $("textarea[name='style_guide']").val('');
-           $("textarea[name='style_guide']").val(data);
+            $("textarea[name='style_guide']").val('');
+            $("textarea[name='style_guide']").val(data);
             if(data){
                 $("textarea[name='style_guide']").empty();
                 $("textarea[name='style_guide']").val(data);
-           } else if(data == undefined || data == '' || $("select[name='customersStyle'] option:selected").text()!="Select Customers"){
-               $("textarea[name='style_guide']").val('');
-           }
+            } else if(data == undefined || data == '' || $("select[name='customersStyle'] option:selected").text()!="Select Customers"){
+                $("textarea[name='style_guide']").val('');
+            }
         });
     });
 
@@ -597,7 +618,7 @@ $(document).ready(function () {
         $('button#research_batches_search').trigger('click');
         //dataTable.fnFilter( $('select[name="research_batches"]').find('option:selected').text(), 7);
     });
-       $('select[name="research_batches"]').trigger('change');
+    $('select[name="research_batches"]').trigger('change');
 
     $(document).on("click", "button#new_batch", function(){
         var oDropdown = $("#customers").msDropdown().data("dd");
@@ -622,7 +643,7 @@ $(document).ready(function () {
                     }
                 }
                 return false;
-        });
+            });
         $('.batch_info').html('');
         $('#files').html('');
     });
@@ -670,16 +691,16 @@ $(document).ready(function () {
     });
 
     $(document).on("click", "button#import_from_sitemap", function(event) {
-    	event.preventDefault();
+        event.preventDefault();
         var batch_name = $('select[name="batches"]').find('option:selected').text();
         var oDropdown = $("#customer_dr").msDropdown().data("dd");
 
         $.post($(this).parents().find('form').attr( 'action' ).replace('save', 'sitemap_import'),
-        	{'customer_name': oDropdown.getData().data.value, 'batch_name': batch_name},
-        	function(data) {
-        		$('#import_sitemap').html('<p class="alert-success">'+data.message+'</p>');
-        	},
-        'json');
+            {'customer_name': oDropdown.getData().data.value, 'batch_name': batch_name},
+            function(data) {
+                $('#import_sitemap').html('<p class="alert-success">'+data.message+'</p>');
+            },
+            'json');
 
         return false;
     });
@@ -698,6 +719,31 @@ $(document).ready(function () {
             }
             if (selectedBatch.length == 0)
                 oDropdown.setIndexByValue('All Customers');
+        });
+        $.post(base_url + 'index.php/research/get_urls_from_batch', {
+            'batch': $(this).find("option:selected").val()
+        }, function(data){
+            if(data.length > 0){
+                var str = '<ul>';
+                for(var i=0; i<data.length; i++){
+                    str += '<li>'+data[i].url+'\n</li>';
+                }
+                str += '</ul>';
+                $('div#urls').html(str);
+                this.contentEditable=false;
+                $('div#urls li').click(function(){
+                    if(!$(this).hasClass('selected-url')){
+                        $(this).addClass('selected-url');
+                    } else {
+                        $(this).removeClass('selected-url');
+                    }
+
+                });
+            } else {
+                $('div#urls').contentEditable=true;
+                $('div#urls').html('');
+            }
+
         });
     });
 });
