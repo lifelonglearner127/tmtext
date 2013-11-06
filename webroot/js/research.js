@@ -720,33 +720,32 @@ $(document).ready(function () {
             }
             if (selectedBatch.length == 0)
                 oDropdown.setIndexByValue('All Customers');
-
-            $.post(base_url + 'index.php/research/get_urls_from_batch', {
-                'batch': selectedBatchId
-            }, function(data){
-                console.log(data);
-                if(data.length > 0){
-                    var str = '<ul>';
-                    for(var i=0; i<data.length; i++){
-                        str += '<li>'+data[i].url+'\n</li>';
-                    }
-                    str += '</ul>';
-                    $('div#urls').html(str);
-                    this.contentEditable=false;
-                    $('div#urls li').click(function(){
-                        if(!$(this).hasClass('selected-url')){
-                            $(this).addClass('selected-url');
-                        } else {
-                            $(this).removeClass('selected-url');
-                        }
-
-                    });
-                } else {
-                    $('div#urls').contentEditable=true;
-                    $('div#urls').html('');
+        });
+        
+        $.post(base_url + 'index.php/research/get_urls_from_batch', {
+            'batch': selectedBatchId
+        }, function(data){
+            console.log(data);
+            if(data.length > 0){
+                var str = '<ul>';
+                for(var i=0; i<data.length; i++){
+                    str += '<li>'+data[i].url+'\n</li>';
                 }
+                str += '</ul>';
+                $('div#urls').html(str);
+                this.contentEditable=false;
+                $('div#urls li').click(function(){
+                    if(!$(this).hasClass('selected-url')){
+                        $(this).addClass('selected-url');
+                    } else {
+                        $(this).removeClass('selected-url');
+                    }
 
-            });
+                });
+            } else {
+                $('div#urls').contentEditable=true;
+                $('div#urls').html('');
+            }
         });
     });
 });
