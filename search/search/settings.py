@@ -19,5 +19,11 @@ LOG_ENABLED = False
 LOG_LEVEL=scrapy.log.WARNING
 DUPEFILTER_CLASS = 'scrapy.dupefilter.BaseDupeFilter'
 
+# use proxy
+DOWNLOADER_MIDDLEWARES = {
+    'scrapy.contrib.downloadermiddleware.httpproxy.HttpProxyMiddleware': 110,
+    'search.middlewares.ProxyMiddleware': 100,
+}
+
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'search (+http://www.yourdomain.com)'
