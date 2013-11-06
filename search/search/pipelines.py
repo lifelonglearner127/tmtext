@@ -41,6 +41,11 @@ class URLsPipeline(object):
 					line = ",".join([item['origin_id'], item['product_url']]) + "\n"
 				else:
 					line = ",".join([item['origin_url'], item['product_url']]) + "\n"
+			else:
+				if spider.by_id:
+					line = item['origin_id'] + "\n"
+				else:
+					line = item['origin_url'] + "\n"
 			self.file.write(line)
 		return item
 
