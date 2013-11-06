@@ -52,7 +52,7 @@ class Research_data_model extends CI_Model {
     }
 
     function get_by_batch($batch_id){//max
-        $query = $this->db->where('batch_id', $batch_id)
+        $query = $this->db->where('batch_iwd', $batch_id)
             ->get($this->tables['research_data']);
 
         return $query->result();
