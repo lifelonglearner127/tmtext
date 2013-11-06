@@ -965,9 +965,11 @@ class ProcessText():
 			# if brand in product name doesn't match but it matches the one extracted from the page
 			# also check if product2_brand matches first 2 words of product1 name (for brands made of 2 words)
 			#TODO: what if brand is like "Element Electronics" and the other is "Element"?
-			if not brand_matched and (words1[0]==product2_brand or " ".join(words1[:2])==product2_brand) and (not wordnet.synsets(word) or word in ProcessText.brand_exceptions):
-				weights_common.append(ProcessText.BRAND_MATCH_WEIGHT)
-				brand_matched = True
+
+			#TODO: restore this when it's fixed
+			# if (not brand_matched) and (words1[0]==product2_brand or " ".join(words1[:2])==product2_brand) and (not wordnet.synsets(word) or word in ProcessText.brand_exceptions):
+			# 	weights_common.append(ProcessText.BRAND_MATCH_WEIGHT)
+			# 	brand_matched = True
 
 
 			#sys.err.write("PRODUCT BRAND: " + str(product_brand) + "; " + str(words1) + "; " + str(words2) + "\n")
