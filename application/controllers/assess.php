@@ -792,6 +792,8 @@ class Assess extends MY_Controller {
                 'duplicate_context' => 'true',
                 'Custom_Keywords_Short_Description' => 'true',
                 'Custom_Keywords_Long_Description' => 'true',
+                'Meta_Description_Count' => 'true',
+                'Meta_Description' => 'true',
                 'H1_Tags' => 'true',
                 'H1_Tags_Count' => 'true',
                 'H2_Tags' => 'true',
@@ -1010,6 +1012,18 @@ class Assess extends MY_Controller {
             "sWidth" => "4%",
             "sClass" =>  "Custom_Keywords_Long_Description"
         ),
+        array(
+            "sTitle" => "Meta Description",
+            "sName" => "Meta_Description", 
+            "sWidth" => "4%",
+            "sClass" =>  "Meta_Description"
+        ),
+        array(
+            "sTitle" => "Words",
+            "sName" => "Meta_Description_Count", 
+            "sWidth" => "4%",
+            "sClass" =>  "Meta_Description_Count"
+        ),
               array(
             "sTitle" =>"H1 Tags", 
             "sName" =>"H1_Tags", 
@@ -1146,6 +1160,8 @@ class Assess extends MY_Controller {
             $result_row->column_external_content = " ";
             $result_row->Custom_Keywords_Short_Description = "";
             $result_row->Custom_Keywords_Long_Description = "";
+            $result_row->Meta_Description = "";
+            $result_row->Meta_Description_Count = "";
             $result_row->H1_Tags = "";
             $result_row->H1_Tags_Count = "";
             $result_row->H2_Tags = "";
@@ -1215,6 +1231,12 @@ class Assess extends MY_Controller {
                 $result_row->column_external_content = ' ';
             $result_row->column_reviews = $pars_atr['parsed_attributes']['review_count'];
             $result_row->column_features = $pars_atr['parsed_attributes']['feature_count'];
+            
+           if($pars_atr['parsed_meta']['description'] && $pars_atr['parsed_meta']['description'] !=''){
+                $result_row->Meta_Description = $pars_atr['parsed_meta']['description'];
+                $words_des = strlen($pars_atr['parsed_meta']['description']);
+                $result_row->Meta_Description_Count = $words_des;
+           }
             
             $result_row->H1_Tags= '';
             $result_row->H1_Tags_Count= '';
@@ -1808,6 +1830,8 @@ class Assess extends MY_Controller {
                         $data_row->long_seo_phrases,
                         $data_row->Custom_Keywords_Short_Description,
                         $data_row->Custom_Keywords_Long_Description,
+                        $data_row->Meta_Description,
+                        $data_row->Meta_Description_Count,
                         $data_row->H1_Tags,
                         $data_row->H1_Tags_Count,
                         $data_row->H2_Tags,

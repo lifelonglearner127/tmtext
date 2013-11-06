@@ -44,6 +44,8 @@ $(function() {
             "duplicate_content",
             "Custom_Keywords_Short_Description",
             "Custom_Keywords_Long_Description",
+            "Meta_Description",
+            "Meta_Description_Count",
             "H1_Tags",
             "H1_Tags_Count",
             "H2_Tags",
@@ -475,6 +477,20 @@ $(function() {
             "sName" : "Custom_Keywords_Long_Description", 
             "sWidth" : "4%",
             "sClass" : "Custom_Keywords_Long_Description"
+            
+        },
+        {
+            "sTitle" : "Meta Description",
+            "sName" : "Meta_Description", 
+            "sWidth" : "4%",
+            "sClass" : "Meta_Description"
+            
+        },
+        {
+            "sTitle" : "Words",
+            "sName" : "Meta_Description_Count", 
+            "sWidth" : "4%",
+            "sClass" : "Meta_Description_Count"
             
         },
         
@@ -1499,6 +1515,7 @@ var scrollYesOrNot = true;
     function check_word_columns() {
         var word_short_num = 0;
         var word_long_num = 0;
+        var Meta_Description =0;
         var HTags_1 = 0;
         var HTags_2 = 0;
         var Custom_Keywords_Short_Description = 0;
@@ -1538,6 +1555,12 @@ var scrollYesOrNot = true;
                 HTags_2 += 1;
             }
         });
+        $('td.Meta_Description').each(function() {
+            
+            if ($(this).text()!='') {
+                Meta_Description += 1;
+            }
+        });
      
         $.each(tblAllColumns, function(index, value) {
             if ((value == 'short_description_wc' && word_short_num == 0) || (value == 'long_description_wc' && word_long_num == 0)) {
@@ -1551,6 +1574,10 @@ var scrollYesOrNot = true;
             }
             if((value == 'Custom_Keywords_Long_Description' && Custom_Keywords_Long_Description == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
+            }
+             if((value == 'Meta_Description' && Meta_Description == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+                tblAssess.fnSetColumnVis(index+1, false, false);
             }
              if((value == 'H1_Tags' && HTags_1 == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
@@ -1621,6 +1648,8 @@ var scrollYesOrNot = true;
                     long_seo_phrases: $("#column_long_seo_phrases").attr('checked') == 'checked',
                     Custom_Keywords_Short_Description : $("#Custom_Keywords_Short_Description").attr('checked') == 'checked',
                     Custom_Keywords_Long_Description : $("#Custom_Keywords_Long_Description").attr('checked') == 'checked',
+                    Meta_Description : $("#Meta_Description").attr('checked') == 'checked',
+                    Meta_Description_Count : $("#Meta_Description_Count").attr('checked') == 'checked',
                     H1_Tags : $("#H1_Tags").attr('checked') == 'checked',
                     H1_Tags_Count : $("#H1_Tags_Count").attr('checked') == 'checked',
                     H2_Tags : $("#H2_Tags").attr('checked') == 'checked',
@@ -1763,7 +1792,7 @@ var scrollYesOrNot = true;
                 if ($.inArray(value, columns_checkboxes_checked) > -1) {
                     tblAssess.fnSetColumnVis(index, true, false);
                     
-                }else if(value==='H1_Tags_Count' || value==='H2_Tags_Count'){
+                }else if(value==='H1_Tags_Count' || value==='H2_Tags_Count' || value ==='Meta_Description_Count'){
                     if ($.inArray(tblAllColumns[index-1], columns_checkboxes_checked) > -1) {
                     tblAssess.fnSetColumnVis(index, true, false);
                     }

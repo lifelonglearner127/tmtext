@@ -183,21 +183,19 @@
                 <label for="Custom_Keywords_Long_Description">Custom Keywords - Long Description</label>
             </p>
             <p>
+                <input type="checkbox" id="Meta_Description" data-col_name="Meta_Description" name="Meta_Description" <?php echo($columns['Meta_Description'] == 'true' ? 'checked="checked"' : ''); ?> />
+                <label for="Meta_Description">Meta Description</label>
+            </p>
+            <p>
                 <input type="checkbox" id="H1_Tags" data-col_name="H1_Tags" name="H1_Tags" <?php echo($columns['H1_Tags'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="H1_Tags">H1_Tags</label>
             </p>
-<!--             <p>
-                <input type="checkbox" id="H1_Tags_Count" data-col_name="H1_Tags_Count" name="H1_Tags_Count" <?php echo($columns['H1_Tags_Count'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="H1_Tags_Count">H1 Tags Count</label>
-            </p>-->
+
             <p>
                 <input type="checkbox" id="H2_Tags" data-col_name="H2_Tags" name="H2_Tags" <?php echo($columns['H2_Tags'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="H2_Tags">H2_Tags</label>
             </p>
-<!--            <p>
-                <input type="checkbox" id="H2_Tags_Count" data-col_name="H2_Tags_Count" name="H2_Tags_Count" <?php echo($columns['H2_Tags_Count'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="H2_Tags_Count">H2 Tags Count</label>
-            </p>-->
+
             <p>
                 <input type="checkbox" id="column_duplicate_content" data-col_name="duplicate_content" name="column_duplicate_content_name" <?php echo($columns['duplicate_content'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="column_batch_name">Duplicate content</label>
