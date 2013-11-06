@@ -944,10 +944,12 @@ class Assess extends MY_Controller {
     public function delete_from_batch() {
         $batch_id = $this->input->post('batch_id');
         $research_data_id = $this->input->post('research_data_id');
-        $this->load->model('research_data_model');
+        //$this->load->model('research_data_model');
         $this->load->model('statistics_model');
-        $this->research_data_model->delete($research_data_id);
+        $this->load->model('statistics_new_model');
+        //$this->research_data_model->delete($research_data_id);
         $this->statistics_model->delete_by_research_data_id($batch_id, $research_data_id);
+        $this->statistics_new_model->delete_by_research_data_id($batch_id, $research_data_id);
     }
     function columns(){
        $columns=array(

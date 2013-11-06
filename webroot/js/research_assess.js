@@ -667,7 +667,7 @@ $(function() {
             });
         },
         "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-            $(nRow).attr("add_data", aData[20]);
+            $(nRow).attr("add_data", aData[22]);
             return nRow;
         },
         "fnDrawCallback": function(oSettings) {

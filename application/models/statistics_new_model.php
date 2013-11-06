@@ -209,5 +209,13 @@ VALUES
         return $result;
     }
 
-
+    function delete_by_research_data_id($batch_id, $research_data_id){
+        return $this->db->delete(
+            $this->tables['statistics_new'],
+            array(
+                'batch_id' => $batch_id,
+                'research_data_id' => $research_data_id
+            )
+        );
+    }
 }
