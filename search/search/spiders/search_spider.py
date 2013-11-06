@@ -701,7 +701,7 @@ class SearchSpider(BaseSpider):
 		item['origin_url'] = origin_url
 
 		if 'origin_id' in response.meta:
-			request.meta['origin_id'] = response.meta['origin_id']
+			item['origin_id'] = response.meta['origin_id']
 			assert self.by_id
 		else:
 			assert not self.by_id
