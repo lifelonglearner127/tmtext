@@ -692,8 +692,6 @@ function highChart(){
     var batch1Value = $('select[name="research_assess_batches"]').find('option:selected').val();
     var batch2Value = $('#research_assess_compare_batches_batch').find('option:selected').val();
     var batch1Name = $('select[name="research_assess_batches"]').find('option:selected').text();
-    if(batch1Name == "Select batch")
-        batch1Name = "Series 1";
     var batch2Name = $('#research_assess_compare_batches_batch').find('option:selected').text();
     if(batch1Value == false || batch1Value == 0 || typeof batch1Value == 'undefined'){
         batch1Value = -1;
@@ -717,8 +715,29 @@ function highChart(){
             if(data[1] && data[1].length > 0){
                 value2 = data[1];
             }
-            $('#highChartContainer').empty();
-            var chart1 = new Highcharts.Chart({
+        var seriesObj;
+        if(batch1Value != -1 && batch2Value != -1){
+            seriesObj = [
+                            {
+                                name: batch1Name,
+                                data: value1
+                            },
+                            {
+                                name: batch2Name,
+                                data: value2,
+                                color: '#71a75b'
+                         }
+                        ];
+        } else if(batch2Value == -1){
+            seriesObj = [
+                            {
+                                name: batch1Name,
+                                data: value1
+                            }
+                        ];
+        }
+        $('#highChartContainer').empty();
+        var chart1 = new Highcharts.Chart({
             title: {
                 text: ''
             },
@@ -734,18 +753,8 @@ function highChart(){
                 }
             },
 
-            series: [
-                        {
-                            name: batch1Name,
-                            data: value1
-                        },
-                        {
-                            name: batch2Name,
-                            data: value2,
-                            color: '#71a75b'
-                     }
-                    ]
-                });
+            series: seriesObj
+        });
         $('.highcharts-button').each(function(i){
             if(i > 0)
                 $(this).remove();
