@@ -204,7 +204,9 @@ function afterAutocomplete(loadData){
     function getCustomerDropdown(){
         setTimeout(function() {
             var customers_list_ci = $.post(base_url + 'index.php/measure/getcustomerslist_new', { }, function(c_data) {
-                var jsn = $('.customer_dropdown').msDropDown({byJson:{data:c_data, name:'customers_list'}}).data("dd");
+                if($('.customer_dropdown')){
+               if($('.customer_dropdown').length > 0){
+                var jsn = $('.customer_dropdown').msDropDown({byJson:{data:c_data, name:'customers_list'}}).data("dd");}}
 //                if (typeof selected_customer_for_review != 'undefined'){
 //                    $("#research_customers").msDropdown().data("dd").setIndexByValue(selected_customer_for_review);
 //                    delete selected_customer_for_review;
