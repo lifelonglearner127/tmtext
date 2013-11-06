@@ -23,9 +23,9 @@ class Batches extends MY_Controller {
         if(!empty($this->data['customer_list'])){
             $this->data['batches_list'] = array('')+$this->batches_list();
         }
-        $this->render();
-
-        //$this->load->view('batches/index',$this);
+       
+        $this->load->view('batches/index', $this->data);
+        
     }
 
     public function batches_list()

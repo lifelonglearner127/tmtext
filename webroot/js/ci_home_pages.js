@@ -403,8 +403,8 @@ function sendRecipientCategorySnapsReport(email) {
  		$("#dep_rep_preview_list_modal").modal('hide');
  	}
  	$("#recipients_control_panel_modal").modal('show').css({
-                 width: $(window).width() * 75 / 100,
-                 height: '95%',
+                 width: $(window).width() * 70 / 100,
+                 height: '70%',
                  left: '50%',
                  'margin-left': function() {
                      return -($(window).width() * 75 / 200);
