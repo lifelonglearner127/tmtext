@@ -724,7 +724,10 @@ function highChart(){
                 spacingRight: 20
             },
             xAxis: {
-                categories: []
+                categories: [],
+                labels: {
+                  enabled: false
+                }
             },
 
             series: [
