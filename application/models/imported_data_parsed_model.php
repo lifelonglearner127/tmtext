@@ -2767,29 +2767,52 @@ class Imported_data_parsed_model extends CI_Model {
                 }
             }
             $customers_list = array_unique($customers_list);
-
             
+            $urls= array();
+            $res= array();
             foreach ($rows as $key => $row) {
-               
+            if(!in_array($this->get_base_url($row['url']), $urls)){
+                $urls[]=$this->get_base_url($row['url']);
+                
                 $cus_val = "";
                 foreach ($customers_list as $ki => $vi) {
-                    if (strpos($rows[$key]['url'], "$vi") !== false) {
+                    if (strpos($row['url'], "$vi") !== false) {
                         $cus_val = $vi;
                         break;
                     }
                 }
                 if ($cus_val !== "")
-                    $rows[$key]['customer'] = $cus_val;
-
-                foreach ($rows as $key1=>$row1) {
-                    if (($imp_id!==false?($row1['imported_data_id']!=$imp_id):true) && ($key1 != $key) && ($row1['imported_data_id']!=$row['imported_data_id']) && ($this->get_base_url($row['url']) == $this->get_base_url($row1['url']))) {
-                        unset($rows[$key1]);
-                    }
-                }
+                $row['customer'] = $cus_val;
+                
+                
+                $res[]=$row;
             }
-            sort($rows);
+               
+//                $cus_val = "";
+//                foreach ($customers_list as $ki => $vi) {
+//                    if (strpos($rows[$key]['url'], "$vi") !== false) {
+//                        $cus_val = $vi;
+//                        break;
+//                    }
+//                }
+//                if ($cus_val !== "")
+//                    $rows[$key]['customer'] = $cus_val;
+//
+//                foreach ($rows as $key1 => $row1) {
+//                    echo $key1."<br>";
+//                    if (($row1['imported_data_id']!=$imp_id) && ($key1 !== $key) &&   ($this->get_base_url($row['url']) == $this->get_base_url($row1['url']))) {
+////                        echo  "ke1 = ".$key1."<br>";
+////                        echo  "ke2 = ".$key."<br>";
+//                        echo  $row1['url']."<br>";
+//                        unset($rows[$key1]);
+//                      
+//                    }
+//                }
+            }
             
-            return $rows;
+            sort($res);
+            
+            return $res;
         }
     }
 
