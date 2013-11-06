@@ -618,6 +618,9 @@ class SearchSpider(BaseSpider):
 		#TODO: id='title' doesn't work for all, should I use a 'contains' or something?
 		# extract titles that are not empty (ignoring whitespace)
 		# eliminate "Amazon Prime Free Trial"
+
+		#TODO: to test this
+		#product_name = filter(lambda x: not x.startswith("Amazon Prime"), hxs.select("//div[@id='title_feature_div']//h1//text()[normalize-space()!='']").extract())
 		product_name = filter(lambda x: not x.startswith("Amazon Prime"), hxs.select("//h1//text()[normalize-space()!='']").extract())
 		if not product_name:
 			self.log("Error: No product name: " + str(response.url), level=log.INFO)
@@ -630,7 +633,12 @@ class SearchSpider(BaseSpider):
 			if model_number_holder:
 				item['product_model'] = model_number_holder[0]
 
-			#TODO: add brand, and check if it matches the other product's
+			brand_holder = hxs.select("//div[@id='brandByline_feature_div']//a/text()").extract()
+			if brand_holder:
+				item['product_brand'] = brand_holder[0]
+			else:
+				sys.stderr.write("Didn't find product brand: " + response.url)
+
 			# add result to items
 			items.add(item)
 
@@ -866,8 +874,15 @@ class ProcessText():
 			else:
 				product2_model = None
 
+			#TODO: currently only considering brand for target products
+			# and only available for Amazon
+			if 'product_brand' in product2:
+				product2_brand = product2['product_brand']
+			else:
+				product2_brand = None
+
 			# check if product names match (a similarity score)
-			(score, threshold, brand_matched) = ProcessText.similar_names(words1, words2, param)
+			(score, threshold, brand_matched) = ProcessText.similar_names(words1, words2, product2_brand, param)
 			
 			# check if product models match (either from a "Model" field or extracted from their name)
 			model_matched = ProcessText.models_match(words1, words2, product_model, product2_model)
@@ -880,7 +895,7 @@ class ProcessText():
 					score += ProcessText.ALT_MODEL_MATCH_WEIGHT
 			
 			log.msg("\nPRODUCT: " + unicode(product_name) + " MODEL: " + unicode(product_model) + \
-				"\nPRODUCT2: " + unicode(product2['product_name']) + " MODEL2: " + unicode(product2_model) + \
+				"\nPRODUCT2: " + unicode(product2['product_name']) + " BRAND2: " + unicode(product2_brand) + " MODEL2: " + unicode(product2_model) + \
 				"\nSCORE: " + str(score) + " THRESHOLD: " + str(threshold) + "\n", level=log.WARNING)
 
 			if score >= threshold:
@@ -906,7 +921,7 @@ class ProcessText():
 	# compute similarity between two products using their product names given as token lists
 	# return score, threshold (dependent on names' length) and a boolean indicating if brands matched
 	@staticmethod
-	def similar_names(words1, words2, param):
+	def similar_names(words1, words2, product2_brand, param):
 		common_words = set(words1).intersection(set(words2))
 
 		# assign weigths - 1 to normal words, 2 to nondictionary words
@@ -922,7 +937,7 @@ class ProcessText():
 			# if they share the first word (and it's a non-dictionary word) assume it's manufacturer and assign higher weight
 			# this also eliminates high scores for matches like "Vizion TV"-"Cable for Vizio TV"
 			#TODO: maybe also accept it if it's on first position in a name and second in another (ex: 50" Vizio)
-			if word == words1[0] and word == words2[0] and (not wordnet.synsets(word) or word in ProcessText.brand_exceptions):
+			if word == words1[0] and (word == words2[0] or word == product2_brand) and (not wordnet.synsets(word) or word in ProcessText.brand_exceptions):
 				weights_common.append(ProcessText.BRAND_MATCH_WEIGHT)
 				brand_matched = True
 			else:

@@ -7,4 +7,5 @@ class SearchItem(Item):
     site = Field() # site result was found on
     product_url = Field() # url of result product page
     product_model = Field() # product model of product as extracted from its page or the results page (if found somewhere other that inside its name)
+    product_brand = Field() # product brand as extracted from special element in product page
     origin_url = Field() # original product url
