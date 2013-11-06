@@ -1048,7 +1048,7 @@ var scrollYesOrNot = true;
         var row = $(this).parent().parent().parent().parent().parent().parent();
         var ob = JSON.parse(row.attr('add_data'));
         var txt = '<div class="info_area" style="max-width: 240px;"><div id="bi_info_bar" style="float: left; width: 200px; padding-top: 20px; display: block;">' +
-                '<p style="font-size: 16px;margin-bottom: 20px;">Character Corner</p><p><b>URL:</b><br/><span class="ur">' +
+                '<p style="font-size: 16px;margin-bottom: 20px;">'+ob.product_name+'</p><p><b>URL:</b><br/><span class="ur">' +
                 ob.url + '</span></p>' +
                 '<p><b>Product name:</b><br/><span class="product_name">' + ob.product_name + '</span></p>' +
                 '<p><b>Price:</b><br/><span class="price">' + ob.price_diff + '</span></p></div><div style="float: right; width: 40px;">' +
@@ -1077,7 +1077,7 @@ var scrollYesOrNot = true;
             }
 
             var txt = '<div class="info_area" style="max-width: 240px;"><div id="bi_info_bar" style="float: left; width: 200px; padding-top: 20px; display: block;">' +
-                    '<p style="font-size: 16px;margin-bottom: 20px;">Character Corner</p><p><b>URL:</b><br/><span class="url">' + ob.url + '</span></p>' +
+                    '<p style="font-size: 16px;margin-bottom: 20px;">'+ob.product_name+'</p><p><b>URL:</b><br/><span class="url">' + ob.url + '</span></p>' +
                     '<p><b>Product name:</b><br/><span class="product_name">' + ob.product_name + '</span></p>' +
                     '<p><b>Price:</b><br/><span class="price">' + ob.price_diff + '</span></p></div><div style="float: right; width: 40px;">' +
                     '<button id="bi_expand_bar_cnt" type="button" class="btn btn-success"><i class="icon-white icon-arrow-left"></i></button></div></div>';
