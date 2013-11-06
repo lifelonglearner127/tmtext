@@ -144,6 +144,10 @@ class PageProcessor {
 
 			if (!empty($result)) {
 				$result['loaded_in_seconds'] = number_format($this->load_time,5);
+
+				if (!isset($result['review_count'])) {
+					$result['review_count'] = 0;
+				}
         		return $result;
 			}
         }
