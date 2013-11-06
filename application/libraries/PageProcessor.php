@@ -174,7 +174,7 @@ class PageProcessor {
         		if (isset($e[$k]) && in_array(strtolower($e[$k]), $v)) {
 					$l = trim($e['content']);
         			if (!empty($l)) {
-						$results[$e[$k]] = $l;
+						$results[strtolower($e[$k])] = $l;
         			}
         		}
         	}
