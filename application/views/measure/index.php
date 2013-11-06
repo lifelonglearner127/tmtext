@@ -18,7 +18,7 @@ jQuery(document).ready(function($) {
 </script>
 <div class="main_content_other"></div>
 <div class="tabbable">
-    <h2> Competitive Research
+    <h2> Competitive Research 
         <span>
             <a href="#myModal" style="float:right; "role="button"  data-toggle="modal"><img  style="width:30px; heihgt: 30px;"src ="<?php echo base_url() ?>/img/ico-gear.png"></a>
             <button class='btn' style="float:right;" onclick="switchToListView();" id='grid_sw_list' type='button'><i class="icon-th-list"></i>&nbsp;SEO</button>
