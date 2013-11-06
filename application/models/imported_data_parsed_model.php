@@ -1412,9 +1412,10 @@ class Imported_data_parsed_model extends CI_Model {
                 ;
 
         if ($key == 'parsed_attributes') {
+            $value = str_replace("-", "", $value);
             $value1 = $this->db->escape($value . '%');
-            $value2 = $this->db->escape($value);
-            $this->db->where("`p`.`model` like " . $value1 . " OR INSTR(" . $value2 . ", `p`.`model`)=1", NULL, FALSE);
+            $value2 = $this->db->escape($value); 
+            $this->db->where(" REPLACE(`p`.`model`,'-','')  like " . $value1 . " OR INSTR(" . $value2 . ", REPLACE(`p`.`model`,'-',''))=1", NULL, FALSE);
         } else {
             if ($strict) {
                 $this->db->like('p.value', '"' . $value . '"');
@@ -1489,7 +1490,10 @@ class Imported_data_parsed_model extends CI_Model {
                 'description' => $description, 'long_description' => $long_description, 'url' => $url, 'parsed_attributes' => $parsed_attributes, 'product_name' => $product_name, "model" => $model, 'features' => $features));
         }
 
+        
         return $data;
+        
+        
         $customers_list = array();
         $query_cus = $this->db->order_by('name', 'asc')->get($this->tables['customers']);
         $query_cus_res = $query_cus->result();
@@ -1518,7 +1522,7 @@ class Imported_data_parsed_model extends CI_Model {
             }
         }
         sort($rows);
-
+       
         return $rows;
     }
 
@@ -2749,6 +2753,7 @@ class Imported_data_parsed_model extends CI_Model {
        
         $start_time = microtime(true);
         if ($rows = $this->getData($search, null, null, null, 'parsed_attributes', $strict)) {
+            
             $end_time = microtime(true);
             //echo "Get data ".($end_time - $start_time).'<br>';
 
@@ -2765,6 +2770,7 @@ class Imported_data_parsed_model extends CI_Model {
 
             
             foreach ($rows as $key => $row) {
+               
                 $cus_val = "";
                 foreach ($customers_list as $ki => $vi) {
                     if (strpos($rows[$key]['url'], "$vi") !== false) {
@@ -2776,7 +2782,7 @@ class Imported_data_parsed_model extends CI_Model {
                     $rows[$key]['customer'] = $cus_val;
 
                 foreach ($rows as $key1=>$row1) {
-                    if (($imp_id!==false?($row1['imported_data_id']!=$imp_id):true) && ($key1 != $key) && ($this->get_base_url($row['url']) == $this->get_base_url($row1['url']))) {
+                    if (($imp_id!==false?($row1['imported_data_id']!=$imp_id):true) && ($key1 != $key) && ($row1['imported_data_id']!=$row['imported_data_id']) && ($this->get_base_url($row['url']) == $this->get_base_url($row1['url']))) {
                         unset($rows[$key1]);
                     }
                 }
