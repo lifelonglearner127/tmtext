@@ -19,6 +19,10 @@ LOG_ENABLED = False
 LOG_LEVEL=scrapy.log.WARNING
 DUPEFILTER_CLASS = 'scrapy.dupefilter.BaseDupeFilter'
 
+HTTPCACHE_STORAGE = 'scrapy.contrib.downloadermiddleware.httpcache.FilesystemCacheStorage'
+#HTTPCACHE_STORAGE = 'scrapy.contrib.httpcache.DbmCacheStorage'
+#HTTPCACHE_ENABLED = True
+
 # use proxy
 DOWNLOADER_MIDDLEWARES = {
     'scrapy.contrib.downloadermiddleware.httpproxy.HttpProxyMiddleware': 110,

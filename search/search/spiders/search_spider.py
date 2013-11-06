@@ -69,7 +69,8 @@ class SearchSpider(BaseSpider):
 		self.use_proxy = use_proxy
 
 		# (bloomingales scraper only works with this in the start_urls list)
-		self.start_urls = ["http://www1.bloomingdales.com"]
+		#self.start_urls = ["http://www1.bloomingdales.com"]
+		self.start_urls = [ "http://www.walmart.com" ]
 
 	def build_search_pages(self, search_query):
 		# build list of urls = search pages for each site

@@ -3,6 +3,8 @@ import re
 from nltk.util import ngrams
 from nltk.corpus import stopwords
 
+__init__=['Utils']
+
 class Utils():
         
     # append domain name in front of relative URL if it's missing
