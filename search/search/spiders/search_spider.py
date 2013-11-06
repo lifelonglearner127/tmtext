@@ -54,7 +54,7 @@ class SearchSpider(BaseSpider):
 	#				output - integer(1/2) option indicating output type (either result URL (1), or result URL and source product URL (2))
 	#				threshold - parameter (0-1) for selecting results (the lower the value the more permissive the selection)
 	def __init__(self, product_name = None, product_url = None, product_urls_file = None, walmart_ids_file = None, target_site = None, \
-		output = 1, threshold = 1.45, outfile = "search_results.txt", fast = 1, use_proxy = False):
+		output = 1, threshold = 1.45, outfile = "search_results.txt", outfile2 = "not_matched.txt", fast = 1, use_proxy = False):
 		self.product_url = product_url
 		self.product_name = product_name
 		self.target_site = target_site
@@ -63,6 +63,7 @@ class SearchSpider(BaseSpider):
 		self.walmart_ids_file = walmart_ids_file
 		self.threshold = float(threshold)
 		self.outfile = outfile
+		self.outfile2 = outfile2
 		self.fast = fast
 		self.use_proxy = use_proxy
 
@@ -147,19 +148,23 @@ class SearchSpider(BaseSpider):
 			yield request
 
 		# if we have a file with Walmart ids, create a list of the ids there
-		walmart_ids = []
 		if self.walmart_ids_file:
+			walmart_ids = []
 			f = open(self.walmart_ids_file, "r")
 			for line in f:
 				walmart_ids.append(line.strip())
 			f.close()			
 
-		for walmart_id in walmart_ids:
-			# create Walmart URLs based on these IDs
-			walmart_url = Utils.add_domain(walmart_id, "http://www.walmart.com/ip/")
-			request = Request(walmart_url, callback = self.parseURL)
-			request.meta['site'] = 'walmart'
-			yield request
+			for walmart_id in walmart_ids:
+				# create Walmart URLs based on these IDs
+				walmart_url = Utils.add_domain(walmart_id, "http://www.walmart.com/ip/")
+				request = Request(walmart_url, callback = self.parseURL)
+				request.meta['site'] = 'walmart'
+				yield request
+
+			self.by_id = True
+		else:
+			self.by_id = False
 
 	# parse a product page (given its URL) and extract product's name;
 	# create queries to search by (use model name, model number, and combinations of words from model name), then send them to parseResults
@@ -277,6 +282,9 @@ class SearchSpider(BaseSpider):
 		request.meta['origin_name'] = product_name
 		request.meta['origin_model'] = product_model
 
+		if self.by_id:
+			request.meta['origin_id'] = self.extract_walmart_id(response.url)
+
 		yield request
 
 
@@ -386,6 +394,13 @@ class SearchSpider(BaseSpider):
 				if 'origin_url' in response.meta:
 					item['origin_url'] = response.meta['origin_url']
 
+				if 'origin_id' in response.meta:
+					request.meta['origin_id'] = response.meta['origin_id']
+					assert self.by_id
+				else:
+					assert not self.by_id
+
+
 				items.add(item)
 
 		# bloomingdales
@@ -403,6 +418,13 @@ class SearchSpider(BaseSpider):
 				if 'origin_url' in response.meta:
 					item['origin_url'] = response.meta['origin_url']
 
+				if 'origin_id' in response.meta:
+					request.meta['origin_id'] = response.meta['origin_id']
+					assert self.by_id
+				else:
+					assert not self.by_id
+
+
 				items.add(item)
 
 		# overstock
@@ -417,6 +439,13 @@ class SearchSpider(BaseSpider):
 
 				if 'origin_url' in response.meta:
 					item['origin_url'] = response.meta['origin_url']
+
+				if 'origin_id' in response.meta:
+					request.meta['origin_id'] = response.meta['origin_id']
+					assert self.by_id
+				else:
+					assert not self.by_id
+
 
 				items.add(item)
 		# wayfair
@@ -436,6 +465,13 @@ class SearchSpider(BaseSpider):
 				if 'origin_url' in response.meta:
 					item['origin_url'] = response.meta['origin_url']
 
+				if 'origin_id' in response.meta:
+					request.meta['origin_id'] = response.meta['origin_id']
+					assert self.by_id
+				else:
+					assert not self.by_id
+
+
 				items.add(item)
 		#TODO: currently only extracting first page - should I extract all pages?
 		# bestbuy
@@ -450,6 +486,13 @@ class SearchSpider(BaseSpider):
 
 				if 'origin_url' in response.meta:
 					item['origin_url'] = response.meta['origin_url']
+
+				if 'origin_id' in response.meta:
+					request.meta['origin_id'] = response.meta['origin_id']
+					assert self.by_id
+				else:
+					assert not self.by_id
+
 
 				model_holder = result.select("parent::node()/parent::node()//strong[@itemprop='model']/text()").extract()
 				if model_holder:
@@ -470,6 +513,13 @@ class SearchSpider(BaseSpider):
 
 				if 'origin_url' in response.meta:
 					item['origin_url'] = response.meta['origin_url']
+
+				if 'origin_id' in response.meta:
+					request.meta['origin_id'] = response.meta['origin_id']
+					assert self.by_id
+				else:
+					assert not self.by_id
+
 
 				items.add(item)
 		# # bjs
@@ -512,6 +562,12 @@ class SearchSpider(BaseSpider):
 				request.meta['origin_name'] = response.meta['origin_name']
 				request.meta['origin_model'] = response.meta['origin_model']
 
+				if 'origin_id' in response.meta:
+					request.meta['origin_id'] = response.meta['origin_id']
+					assert self.by_id
+				else:
+					assert not self.by_id
+
 				# used for amazon product URLs
 				if 'search_results' in response.meta:
 					request.meta['search_results'] = response.meta['search_results']
@@ -539,23 +595,35 @@ class SearchSpider(BaseSpider):
 
 				if not best_match:
 					# if there are no results but the option was to include original product URL, create an item with just that
-					if self.output == 2:
-						item = SearchItem()
-						item['site'] = site
-						#if 'origin_url' in response.meta:
-						item['origin_url'] = response.meta['origin_url']
-						return [item]
+					# output item if match not found for either output type
+					#if self.output == 2:
+					item = SearchItem()
+					item['site'] = site
+					
+					item['origin_url'] = response.meta['origin_url']
+
+					if 'origin_id' in response.meta:
+						item['origin_id'] = response.meta['origin_id']
+						assert self.by_id
+					else:
+						assert not self.by_id
+					return [item]
 
 				return best_match
 
 		else:
+			# output item if match not found for either output type
+			#if self.output == 2:
+			item = SearchItem()
+			item['site'] = site
 			
-			if self.output == 2:
-				item = SearchItem()
-				item['site'] = site
-				
-				item['origin_url'] = response.meta['origin_url']
+			item['origin_url'] = response.meta['origin_url']
 
+			if 'origin_id' in response.meta:
+				item['origin_id'] = response.meta['origin_id']
+				assert self.by_id
+			else:
+				assert not self.by_id
 
 				return [item]
 
@@ -632,6 +700,13 @@ class SearchSpider(BaseSpider):
 		item['site'] = site
 		item['origin_url'] = origin_url
 
+		if 'origin_id' in response.meta:
+			request.meta['origin_id'] = response.meta['origin_id']
+			assert self.by_id
+		else:
+			assert not self.by_id
+
+
 		# extract product name
 		#TODO: id='title' doesn't work for all, should I use a 'contains' or something?
 		# extract titles that are not empty (ignoring whitespace)
@@ -685,6 +760,10 @@ class SearchSpider(BaseSpider):
 
 			return request
 
+	def extract_walmart_id(self, url):
+		m = re.match(".*/ip/([0-9]+)")
+		if m:
+			return m.group(1)
 
 		
 # process text in product names, compute similarity between products
