@@ -41,7 +41,7 @@
         <li class=""><a data-toggle="tab" href="<?php echo site_url('assess');?>">Home Pages</a></li>
 <!--        <li class='pull_right_navlink'><a href="javascript:void(0)" onclick="viewRecipientsListCats()">Configure Recipients</a></li>
         <li class='pull_right_navlink'><a href="javascript:void(0)" onclick="activateDepRepPreview()">Configure Screenshots Report</a></li>-->
-        <li class='pull_right_navlink'><a href="javascript:void(0);" onclick="viewCustomBatches()">Custom Batch</a></li>
+        
         <li class='pull_right_navlink'><a href="javascript:void(0);" onclick="activateDepRepPreview()">Configure Reports</a></li>
         <li class='pull_right_navlink'><a href="javascript:void(0);" id="board_view" >Board View</a></li>
     </ul>

@@ -4,7 +4,9 @@
         <li class="active"><a data-toggle="tab" href="<?php echo site_url('assess/products');?>">Products</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_departments');?>">Categories</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('assess');?>">Home Pages</a></li>
+        <li class='pull_right_navlink'><a href="javascript:void(0);" onclick="viewCustomBatches()">Custom Batch</a></li>
     </ul>
+
 <ul class="research_table_filter">
     <li class="boxes hideBox">
         <h3>
@@ -27,6 +29,8 @@
                 <img src="<?php echo base_url();?>img/arrow.png" />
             </a>
         </h3>
+        <div class="modal hide fade ci_hp_modals" style='top: 20%' id='dep_rep_preview_list_modal'></div>
+        <div class="modal hide fade ci_hp_modals crawl_launch_panel" id='recipients_control_panel_modal'></div>
         <div class="boxes_content">
             <div class="row-fluid">
                 <div class="span4">
@@ -462,6 +466,8 @@
                 <script type="text/javascript" src="<?php echo base_url();?>js/jquery.json-2.4.min.js"></script>
                 <script type="text/javascript" src="<?php echo base_url();?>js/jquery.fileDownload.js"></script>
                 <script type="text/javascript" src="<?php echo base_url();?>js/research_assess.js"></script>
+                <script type="text/javascript" src="<?php echo base_url(); ?>js/measure_department.js"></script>
+                <script type='text/javascript' src="<?php echo base_url();?>js/ci_home_pages.js"></script>
             </div>
         </div>
     </div>
