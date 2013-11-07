@@ -55,7 +55,7 @@ class SearchSpider(BaseSpider):
 	#				output - integer(1/2) option indicating output type (either result URL (1), or result URL and source product URL (2))
 	#				threshold - parameter (0-1) for selecting results (the lower the value the more permissive the selection)
 	def __init__(self, product_name = None, product_url = None, product_urls_file = None, walmart_ids_file = None, target_site = None, \
-		output = 1, threshold = 1.45, outfile = "search_results.txt", outfile2 = "not_matched.txt", fast = 1, use_proxy = False):
+		output = 1, threshold = 1.45, outfile = "search_results.txt", outfile2 = "not_matched.txt", fast = 1, use_proxy = False, by_id = False):
 		self.product_url = product_url
 		self.product_name = product_name
 		self.target_site = target_site
@@ -67,6 +67,7 @@ class SearchSpider(BaseSpider):
 		self.outfile2 = outfile2
 		self.fast = fast
 		self.use_proxy = use_proxy
+		self.by_id = by_id
 
 		# (bloomingales scraper only works with this in the start_urls list)
 		#self.start_urls = ["http://www1.bloomingdales.com"]
@@ -150,8 +151,6 @@ class SearchSpider(BaseSpider):
 				request.cookies = {"zipcode": zipcode}
 				request.meta['dont_redirect'] = True
 			yield request
-
-		self.by_id = False
 
 		# if we have a file with Walmart ids, create a list of the ids there
 		if self.walmart_ids_file:
