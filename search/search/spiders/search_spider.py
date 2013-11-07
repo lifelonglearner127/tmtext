@@ -1065,9 +1065,11 @@ class ProcessText():
 			# this also eliminates high scores for matches like "Vizion TV"-"Cable for Vizio TV"
 			#TODO: maybe also accept it if it's on first position in a name and second in another (ex: 50" Vizio)
 			# brand may have been already matched from if block below
-			if (not brand_matched) and word == words1[0] and word == words2[0] and ((not wordnet.synsets(word)) or word in ProcessText.brand_exceptions):
-				weights_common.append(ProcessText.BRAND_MATCH_WEIGHT)
-				brand_matched = True
+			if word == words1[0] and word == words2[0] and ((not wordnet.synsets(word)) or word in ProcessText.brand_exceptions):
+				if not brand_matched:
+					weights_common.append(ProcessText.BRAND_MATCH_WEIGHT)
+					brand_matched = True
+				# don't add it if it was already matched
 			else:
 				weights_common.append(ProcessText.weight(word))
 
