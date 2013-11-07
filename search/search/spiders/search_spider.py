@@ -213,6 +213,8 @@ class SearchSpider(BaseSpider):
 				item['origin_id'] = self.extract_walmart_id(item['origin_url'])
 				yield item
 				return
+
+			#TODO: if it contains 2 words, first could be brand - also add it in similar_names function
 			product_model_holder = hxs.select("//td[contains(text(),'Model')]/following-sibling::*/text()").extract()
 			if product_model_holder:
 				product_model = product_model_holder[0]
