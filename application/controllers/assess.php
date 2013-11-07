@@ -171,7 +171,10 @@ class Assess extends MY_Controller {
             $params->date_from = $build_assess_params->date_from;
             $params->date_to = $build_assess_params->date_to;
             $results = $this->get_data_for_assess($params);
-
+            
+             echo  "<pre>";
+             print_r($results);
+                
             $batch2 = $this->input->get('batch2') == 'undefined' ? '' : $this->input->get('batch2');
             $cmp = array();
                                
@@ -210,27 +213,7 @@ class Assess extends MY_Controller {
                         }
                     }
                 }
-//                $volume = array();
-//                $cmp_arr = array();
-//                foreach ($cmp as $key => $row) {
-//                    $row = (array) $row;
-//                    $cmp_arr[$key] = $row;
-//                    $volume[$key] = $row['product_name'];
-//                }
-//                array_multisort($volume, SORT_ASC, $cmp_arr);
-//                foreach ($cmp_arr as $key => $val) {
-//                    $cmp_arr[$key] = (object) $val;
-//                }
-//                $results = $cmp_arr;
-                $results = $cmp;
-                
-//                foreach($results as $val ){
-//                if($val->imported_data_id == 939){
-//                    echo  "<pre>";
-//                    print_r($val);exit;
-//                    
-//                }
-//            }
+
 
             }
 //           echo '<pre>';
