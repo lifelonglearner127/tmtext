@@ -23,7 +23,7 @@
                     <?php endforeach;?>
                 </select>
             </span>
-            <label class="research_assess_flagged"><input type="checkbox" id="research_assess_flagged" checked > Only show flagged items</label>
+            <label class="research_assess_flagged"><input type="checkbox" id="research_assess_flagged" > Only show flagged items</label>
             <div class="clear"></div>
             <a href="#" onclick="return false;" class="hideShow float_r">
                 <img src="<?php echo base_url();?>img/arrow.png" />
