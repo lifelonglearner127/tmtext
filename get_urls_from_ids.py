@@ -6,7 +6,7 @@ import sys
 import re
 from spiders_utils import Utils
 
-base_url = "http//www.walmart.com/ip/"
+base_url = "http://www.walmart.com/ip/"
 with open(sys.argv[1]) as idsfile:
 	for line in idsfile:
 		# if there are other fields ignore them (get the first one)
