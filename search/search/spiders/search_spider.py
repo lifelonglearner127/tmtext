@@ -804,7 +804,7 @@ class ProcessText():
 	# normalize text to list of lowercase words (no punctuation except for inches sign (") or /)
 	@staticmethod
 
-
+	def normalize(orig_text):
 		text = orig_text
 		# other preprocessing: -Inch = " - fitting for staples->amazon search
 		# TODO: suitable for all sites?
