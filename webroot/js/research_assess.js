@@ -199,7 +199,7 @@ $(function() {
              }
             },
             "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-                $(nRow).attr("add_data", aData[14]);
+                $(nRow).attr("add_data", aData[22]);
                 return nRow;
             },
             "fnDrawCallback": function(oSettings) {
@@ -292,7 +292,7 @@ $(function() {
                         "sLengthMenu": "_MENU_ rows"
                     },
                     "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-                        $(nRow).attr("add_data", aData[18]);
+                        $(nRow).attr("add_data", aData[22]);
                         return nRow;
                     },
                     "fnDrawCallback": function(oSettings) {
