@@ -1238,6 +1238,10 @@ class Assess extends MY_Controller {
                 $result_row->Meta_Description = $pars_atr['parsed_meta']['description'];
                 $words_des = strlen($pars_atr['parsed_meta']['description']);
                 $result_row->Meta_Description_Count = $words_des;
+           }else if($pars_atr['parsed_meta']['Description'] && $pars_atr['parsed_meta']['Description'] !=''){
+                $result_row->Meta_Description = $pars_atr['parsed_meta']['Description'];
+                $words_des = strlen($pars_atr['parsed_meta']['Description']);
+                $result_row->Meta_Description_Count = $words_des;
            }
             
             $result_row->H1_Tags= '';
@@ -1808,19 +1812,16 @@ class Assess extends MY_Controller {
                     $row_created = $row_created . '<nobr>' . $row_created_array[1] . '</nobr>';
                     $snap = '';
                     
-//                    $row_url = '<table class="url_table class_for_all_case" ><tr><td style="padding:5px;"><a class="active_link" href="' . $data_row->url . '" target="_blank">' . $data_row->url . '</a></td></tr>';
-//                    if ($data_row->snap != '') {
-//                        $file = realpath(BASEPATH . "../webroot/webshoots") . '/' . $data_row->snap;
-//                        if (file_exists($file)) {
-//                            if (filesize($file) > 1024) {
-//                                $row_url = $row_url . '<tr style="height:1px;"><td style="text-align:right; padding: 0px;"><i class="snap_ico icon-picture" snap="' . $data_row->snap . '"></i></tr></td>';
-//                                $snap = "<img src='" . base_url() . "webshoots/" . $data_row->snap . "' />";
-//                            }
-//                        }
-//                    }
-//                    $row_url = $row_url . '</table>';
-                    
-                    $row_url = $data_row->url;
+                    $row_url = '<a class="active_link" href="' . $data_row->url . '" target="_blank">' . $data_row->url . '</a>';
+                    if ($data_row->snap != '') {
+                        $file = realpath(BASEPATH . "../webroot/webshoots") . '/' . $data_row->snap;
+                        if (file_exists($file)) {
+                            if (filesize($file) > 1024) {
+                                $snap = "<img src='" . base_url() . "webshoots/" . $data_row->snap . "' />";
+                            }
+                        }
+                    }
+                   
 
                     $output_row = array(
                         $snap,
