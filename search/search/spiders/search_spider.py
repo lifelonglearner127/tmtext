@@ -815,9 +815,18 @@ class ProcessText():
 
 		#TODO: what happens to non word characters like )? eg (Black)
 		# replace 1/2 by .5 -> suitable for all sites?
-		text = re.sub("[- ]1/2", ".5", text)
+		text = re.sub("(?<=[^0-9])[- ]1/2", " 0.5", text)
+		text = re.sub("(?<=[0-9])[- ]1/2", ".5", text)
 		# also split by "/" after replacing "1/2"
-		text = re.sub("([^\w\"])|(u')", " ", text)
+
+		#TODO: test the dash rule
+		text = re.sub("u'", " ", text)
+		# replace all non-words except for " - . /
+		text = re.sub("[^\w\"\-\./]", " ", text)
+
+		# replace - . / if not part of a number - either a number is not before it or is not after it
+		text = re.sub("[\.\-/](?![0-9])", " ", text)
+		text = re.sub("(?<![0-9])[\.\-/]", " ", text)
 		stopset = set(stopwords.words('english'))#["and", "the", "&", "for", "of", "on", "as", "to", "in"]
 		
 		#TODO: maybe keep numbers like "50 1/2" together too somehow (originally they're "50-1/2")
