@@ -210,7 +210,7 @@ class Assess extends MY_Controller {
                         }
                     }
                 }
-
+                $results = $cmp;
 
             }
 
