@@ -965,8 +965,9 @@ class ProcessText():
 		# only keep non dictionary words
 		# also keep Brands that are exceptions
 		# keep first word because it's probably the brand
+		first_word = norm_text[0]
 		norm_text = [word for word in norm_text[1:] if (not wordnet.synsets(word) or word in exceptions or word in ProcessText.brand_exceptions) and len(word) > 1]
-		norm_text.append(norm_text[0])
+		norm_text.append(first_word)
 		#norm_text = [word for word in norm_text if (not wordnet.synsets(word) or word in exceptions or word in ProcessText.brand_exceptions) and len(word) > 1]
 
 		# use fast option: use shorter length of combinations
