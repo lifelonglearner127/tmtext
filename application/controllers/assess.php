@@ -187,7 +187,7 @@ class Assess extends MY_Controller {
 
                         $similar_items = unserialize($val->similar_products_competitors);
                        
-                        if(count($similar_items)>0){
+                        if(count($similar_items)>1){
                         foreach ($similar_items as $key => $item) {
                             if (substr_count(strtolower($customer_name), strtolower($item['customer'])) > 0) {
                                                                                           
