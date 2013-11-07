@@ -97,6 +97,8 @@ class SearchSpider(BaseSpider):
 		search_query = "+".join(ProcessText.normalize(product_name))
 		return search_query
 
+
+	# parse input and build list of URLs to find matches for, send them to parseURL
 	def parse(self, response):
 
 
@@ -154,7 +156,12 @@ class SearchSpider(BaseSpider):
 			walmart_ids = []
 			f = open(self.walmart_ids_file, "r")
 			for line in f:
-				walmart_ids.append(line.strip())
+				if "," in line:
+					id_string = line.strip().split(",")[0]
+				else:
+					id_string = line.strip()
+				if re.match("[0-9]+", id_string):
+					walmart_ids.append(id_string)
 			f.close()			
 
 			for walmart_id in walmart_ids:
