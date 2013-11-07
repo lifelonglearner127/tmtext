@@ -41,7 +41,6 @@ def split():
 		options.out_filename = options.in_filename
 	(outfiles_base, outfiles_extension) = extract_filename_and_extension(options.out_filename)
 
-	print outfiles_base, outfiles_extension
 
 	infile = open(options.in_filename, "r")
 
