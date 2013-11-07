@@ -182,24 +182,29 @@ class Assess extends MY_Controller {
                 $customer_name = $this->batches_model->getCustomerUrlByBatch($batch2);
 
                 foreach ($results as $val) {
-
+                    $similar_items_data = array();
                     if (substr_count(strtolower($val->similar_products_competitors), strtolower($customer_name)) > 0) {
 
                         $similar_items = unserialize($val->similar_products_competitors);
-                        if(count($similar_items)>1){
+                       
+                        if(count($similar_items)>0){
                         foreach ($similar_items as $key => $item) {
                             if (substr_count(strtolower($customer_name), strtolower($item['customer'])) > 0) {
-                                  $cmpare = $this->statistics_new_model->get_compare_item($similar_items[$key]['imported_data_id']);
-                                  
-                                $val->snap1 = $cmpare->snap;
-                                $val->product_name1 = $cmpare->product_name;
-                                $val->url1 = $cmpare->url;
-                                $val->short_description_wc1 = $cmpare->short_description_wc;
-                                $val->long_description_wc1 = $cmpare->long_description_wc;
-                                $similar_items_data[]=$cmpare;
+                                                                                          
+                                                                                             
+                               $cmpare = $this->statistics_new_model->get_compare_item($item['imported_data_id']);
+                               $val->snap1 = $cmpare->snap;
+                               $val->product_name1 = $cmpare->product_name;
+                               $val->url1 = $cmpare->url;
+                               $val->short_description_wc1 = $cmpare->short_description_wc;
+                               $val->long_description_wc1 = $cmpare->long_description_wc;
+                               $similar_items_data[]=$cmpare;
+                               $val->similar_items =  $similar_items_data; 
+                                
+                                
                             }
                         }
-                        $val->similar_items = $similar_items_data;
+                        
                         
                         $cmp[] = $val;
                         }
@@ -218,6 +223,15 @@ class Assess extends MY_Controller {
 //                }
 //                $results = $cmp_arr;
                 $results = $cmp;
+                
+//                foreach($results as $val ){
+//                if($val->imported_data_id == 939){
+//                    echo  "<pre>";
+//                    print_r($val);exit;
+//                    
+//                }
+//            }
+
             }
 //           echo '<pre>';
 //           print_r($results);exit;
