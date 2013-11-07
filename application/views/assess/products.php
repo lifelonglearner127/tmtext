@@ -136,7 +136,7 @@
 </ul>
 
         <div class="modal hide fade ci_hp_modals crawl_launch_panel" id='recipients_control_panel_modal'></div>
-        <div clas<s="modal hide fade ci_hp_modals" style='top: 20%' id='dep_rep_preview_list_modal'></div>
+        <div class="modal hide fade ci_hp_modals" style='top: 20%' id='dep_rep_preview_list_modal'></div>
 
 <!-- choise column dialog box -->
 <div id="research_assess_choiceColumnDialog" title="Select Table Columns">

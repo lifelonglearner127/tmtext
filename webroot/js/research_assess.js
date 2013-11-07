@@ -1790,7 +1790,10 @@ var scrollYesOrNot = true;
         });
 
         if (table_case == 'recommendations') {
+            $('#graphDropDown').remove();
             $('#assess_graph').hide();
+            $('#tblAssess_info').show();
+            $('#tblAssess_paginate').show();
             reportPanel(false);
             $.each(tblAllColumns, function(index, value) {
                 if ($.inArray(value, tableCase.recommendations) > -1) {
@@ -1803,8 +1806,10 @@ var scrollYesOrNot = true;
             addColumn_url_class();
             check_word_columns();
         } else if (table_case == 'details') {
+            $('#graphDropDown').remove();
             $('#assess_graph').hide();
-
+            $('#tblAssess_info').show();
+            $('#tblAssess_paginate').show();
             reportPanel(false);
             $.each(tblAllColumns, function(index, value) {
                 if ($.inArray(value, columns_checkboxes_checked) > -1) {
@@ -1828,8 +1833,10 @@ var scrollYesOrNot = true;
             check_word_columns();
         }
         else if (table_case == 'details_compare') {
+            $('#graphDropDown').remove();
             $('#assess_graph').hide();
-
+            $('#tblAssess_info').show();
+            $('#tblAssess_paginate').show();
             reportPanel(false);
             $.each(tblAllColumns, function(index, value) {
                 value = value.replace("1", "");
@@ -1856,11 +1863,17 @@ var scrollYesOrNot = true;
             addColumn_url_class();
             check_word_columns();
         } else if (table_case == 'report') {
+            $('#graphDropDown').remove();
+            $('#tblAssess_info').show();
+            $('#tblAssess_paginate').show();
             $('#assess_graph').hide();
             reportPanel(true);
             var batch_id = $('select[name="research_assess_batches"]').find('option:selected').val();
             //$('#assess_report_download_pdf').attr('href', base_url + 'index.php/research/assess_download_pdf?batch_name=' + batch_name);
         } else if (table_case == 'view') {
+            $('#graphDropDown').remove();
+            $('#tblAssess_info').hide();
+            $('#tblAssess_paginate').hide();
             $('#assess_graph').hide();
             $('#tblAssess').hide();
             $('#tblAssess').parent().find('div.ui-corner-bl').hide();
@@ -1870,6 +1883,8 @@ var scrollYesOrNot = true;
             $("#board_view").click(function(e) {
                 e.stopPropagation();
                 if ($('.board_view').css('display') == 'none') {
+                    $('#tblAssess_info').show();
+                    $('#tblAssess_paginate').show();
                     $('.dashboard').hide();
                     $.post(base_url + 'index.php/measure/getBoardView', {'site_name': $("#hp_boot_drop .btn_caret_sign").text()}, function(data) {
                         var str = '';
@@ -1895,11 +1910,27 @@ var scrollYesOrNot = true;
                     });
                     $('.board_view').show();
                 } else {
+                    $('#tblAssess_info').hide();
+                    $('#tblAssess_paginate').hide();
                     $('.board_view').hide();
                     $('.dashboard').show();
                 }
             });
         } else if (table_case == 'graph') {
+            $('#graphDropDown').remove();
+            $('#tblAssess_info').hide();
+            var dropDownString;
+            dropDownString = '<select id="graphDropDown" style="width: 235px" >';
+                dropDownString += '<option value="" >Short Description Word Counts</option>';
+                dropDownString += '<option value="" >Long Description Word Counts</option>';
+                dropDownString += '<option value="" >H1 Word Counts</option>';
+                dropDownString += '<option value="" >H2 Word Counts</option>';
+                dropDownString += '<option value="" >Reviews</option>';
+                dropDownString += '<option value="" >Features</option>';
+                dropDownString += '<option value="" >Prices</option>';
+            dropDownString += '</select>';
+            $('#tblAssess_info').after(dropDownString);
+            $('#tblAssess_paginate').hide();
             $('.board_view').hide();
             $('#tblAssess').hide();
             $('#tblAssess').parent().find('div.ui-corner-bl').hide();
