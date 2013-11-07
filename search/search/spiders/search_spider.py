@@ -151,6 +151,8 @@ class SearchSpider(BaseSpider):
 				request.meta['dont_redirect'] = True
 			yield request
 
+		self.by_id = False
+
 		# if we have a file with Walmart ids, create a list of the ids there
 		if self.walmart_ids_file:
 			walmart_ids = []
@@ -162,7 +164,9 @@ class SearchSpider(BaseSpider):
 					id_string = line.strip()
 				if re.match("[0-9]+", id_string):
 					walmart_ids.append(id_string)
-			f.close()			
+			f.close()		
+
+			self.by_id = True	
 
 			for walmart_id in walmart_ids:
 				# create Walmart URLs based on these IDs
@@ -170,10 +174,7 @@ class SearchSpider(BaseSpider):
 				request = Request(walmart_url, callback = self.parseURL)
 				request.meta['site'] = 'walmart'
 				yield request
-
-			self.by_id = True
-		else:
-			self.by_id = False
+		
 
 	# parse a product page (given its URL) and extract product's name;
 	# create queries to search by (use model name, model number, and combinations of words from model name), then send them to parseResults
@@ -205,6 +206,12 @@ class SearchSpider(BaseSpider):
 				product_name = product_name_holder[0].strip()
 			else:
 				sys.stderr.write("Broken product page link (can't find item title): " + response.url + "\n")
+				# return the item as a non-matched item
+				item = SearchItem()
+				item['site'] = site
+				item['origin_url'] = response.url
+				item['origin_id'] = self.extract_walmart_id(item['origin_url'])
+				yield item
 				return
 			product_model_holder = hxs.select("//td[contains(text(),'Model')]/following-sibling::*/text()").extract()
 			if product_model_holder:
@@ -216,6 +223,10 @@ class SearchSpider(BaseSpider):
 				product_name = product_name_holder[0].strip()
 			else:
 				sys.stderr.write("Broken product page link (can't find item title): " + response.url + "\n")
+				item = SearchItem()
+				item['site'] = site
+				item['origin_url'] = response.url
+				yield item
 				return
 			product_model_holder = hxs.select("//dt[text()='Model']/following-sibling::*/text()").extract()
 			if product_model_holder:
