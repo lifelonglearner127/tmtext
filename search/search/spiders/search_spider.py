@@ -803,7 +803,8 @@ class ProcessText():
 
 	# normalize text to list of lowercase words (no punctuation except for inches sign (") or /)
 	@staticmethod
-	def normalize(orig_text):
+
+
 		text = orig_text
 		# other preprocessing: -Inch = " - fitting for staples->amazon search
 		# TODO: suitable for all sites?
@@ -829,11 +830,10 @@ class ProcessText():
 		text = re.sub("(?<![0-9])[\.\-/]", " ", text)
 		stopset = set(stopwords.words('english'))#["and", "the", "&", "for", "of", "on", "as", "to", "in"]
 		
-		#TODO: maybe keep numbers like "50 1/2" together too somehow (originally they're "50-1/2")
-		#TODO: maybe handle numbers separately. sometimes we want / to split (in words), and . not to (in numbers)
-		# define a better regex above, or here at splitting
 		tokens = text.split()
-		clean = [token.lower() for token in tokens if token.lower() not in stopset and len(token) > 1]
+
+		#TODO: remove the len constraint? eg: kellogs k protein
+		clean = [token.lower() for token in tokens if token.lower() not in stopset and len(token) > 0]
 
 		# TODO:
 		# # add versions of the queries with different spelling
