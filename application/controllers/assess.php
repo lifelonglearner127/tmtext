@@ -172,9 +172,6 @@ class Assess extends MY_Controller {
             $params->date_to = $build_assess_params->date_to;
             $results = $this->get_data_for_assess($params);
             
-             echo  "<pre>";
-             print_r($results);
-                
             $batch2 = $this->input->get('batch2') == 'undefined' ? '' : $this->input->get('batch2');
             $cmp = array();
                                
@@ -216,8 +213,7 @@ class Assess extends MY_Controller {
 
 
             }
-//           echo '<pre>';
-//           print_r($results);exit;
+
             if ($batch2 == 'all') {
                 $max_similar_item_count = 1;
                 $this->load->model('batches_model');
