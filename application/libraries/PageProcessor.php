@@ -128,6 +128,20 @@ class PageProcessor {
 				$result['h2'][] = $tag;
 			}
 		}
+
+		// Amazon use span in H tags
+		foreach($this->nokogiri->get('h1 span') as $item) {
+			$tag = trim($item['#text'][0]);
+			if (!empty($tag)) {
+				$result['h1'][] = $tag;
+			}
+		}
+		foreach($this->nokogiri->get('h2 span') as $item) {
+			$tag = trim($item['#text'][0]);
+			if (!empty($tag)) {
+				$result['h2'][] = $tag;
+			}
+		}
 		return serialize($result);
 	}
 
@@ -863,6 +877,12 @@ class PageProcessor {
 	public function process_amazon(){
 		foreach($this->nokogiri->get('h1.parseasinTitle span') as $item) {
 			$title = $item['#text'][0];
+		}
+
+		if (empty($title)) {
+			foreach($this->nokogiri->get('h1 span') as $item) {
+				$title = $item['#text'][0];
+			}
 		}
 
 		foreach($this->nokogiri->get('.content .productDescriptionWrapper .productDescriptionWrapper') as $item) {
