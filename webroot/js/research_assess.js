@@ -1092,7 +1092,7 @@ var scrollYesOrNot = true;
     
     
 
-    $('#tblAssess tbody').click(function(event) {
+    $('#tblAssess tbody').live('click',function(event) {
         if ($(event.target).is('a')) {
             return;
         }

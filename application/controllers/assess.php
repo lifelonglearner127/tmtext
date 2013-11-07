@@ -1234,15 +1234,17 @@ class Assess extends MY_Controller {
             $result_row->column_reviews = $pars_atr['parsed_attributes']['review_count'];
             $result_row->column_features = $pars_atr['parsed_attributes']['feature_count'];
             
-           if($pars_atr['parsed_meta']['description'] && $pars_atr['parsed_meta']['description'] !=''){
-                $result_row->Meta_Description = $pars_atr['parsed_meta']['description'];
-                $words_des = strlen($pars_atr['parsed_meta']['description']);
+            if($pars_atr['parsed_meta']['description'] && $pars_atr['parsed_meta']['description'] !=''){
+                $pars_atr_array = $pars_atr['parsed_meta']['description'];
+                $result_row->Meta_Description = $pars_atr_array;
+                $words_des = count(explode(" ", $pars_atr_array));
                 $result_row->Meta_Description_Count = $words_des;
-           }else if($pars_atr['parsed_meta']['Description'] && $pars_atr['parsed_meta']['Description'] !=''){
-                $result_row->Meta_Description = $pars_atr['parsed_meta']['Description'];
-                $words_des = strlen($pars_atr['parsed_meta']['Description']);
+            }else if($pars_atr['parsed_meta']['Description'] && $pars_atr['parsed_meta']['Description'] !=''){
+                $pars_atr_array = $pars_atr['parsed_meta']['Description'];
+                $result_row->Meta_Description = $pars_atr_array;
+                $words_des = count(explode(" ", $pars_atr_array));
                 $result_row->Meta_Description_Count = $words_des;
-           }
+            }
             
             $result_row->H1_Tags= '';
             $result_row->H1_Tags_Count= '';
