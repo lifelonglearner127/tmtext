@@ -170,9 +170,13 @@ class Assess extends MY_Controller {
             $params->txt_filter = $txt_filter;
             $params->date_from = $build_assess_params->date_from;
             $params->date_to = $build_assess_params->date_to;
-            $results = $this->get_data_for_assess($params);
-            
-            $batch2 = $this->input->get('batch2') == 'undefined' ? '' : $this->input->get('batch2');
+            $batch2 = $this->input->get('batch2')&&$this->input->get('batch2') == 'undefined' ? '' : $this->input->get('batch2');
+            if($batch2===''){
+                $params->iDisplayLength = $this->input->get('iDisplayLength');
+                $params->iDisplayStart = $this->input->get('iDisplayStart');
+            }
+
+            $results = $this->get_data_for_assess($params,$build_assess_params);
             $cmp = array();
                                
             if ($batch2 != '' && $batch2 != 0 && $batch2 != 'all') {
@@ -1125,6 +1129,17 @@ class Assess extends MY_Controller {
             }
 
         }
+        $display_length = intval($this->input->get('iDisplayLength', TRUE));
+
+        $display_start = intval($this->input->get('iDisplayStart', TRUE));
+        if (empty($display_start)) {
+            $display_start = 0;
+        }
+
+        if (empty($display_length)) {
+            $display_length = $total_rows - $display_start;
+        }
+        $qty = 1;
         foreach ($results as $row) {
 //            $long_description_wc = $row->long_description_wc;
 //            $short_description_wc = $row->short_description_wc;
@@ -1570,6 +1585,8 @@ class Assess extends MY_Controller {
             }
 
             $result_table[] = $result_row;
+            ++$qty;
+            if($qty>$display_length+$display_start)break;
         }
 
         if ($this->settings['statistics_table'] == "statistics_new") {
@@ -1672,17 +1689,7 @@ class Assess extends MY_Controller {
             }
         }
 
-        $total_rows = count($result_table);
-        $display_length = intval($this->input->get('iDisplayLength', TRUE));
-
-        $display_start = intval($this->input->get('iDisplayStart', TRUE));
-        if (empty($display_start)) {
-            $display_start = 0;
-        }
-
-        if (empty($display_length)) {
-            $display_length = $total_rows - $display_start;
-        }
+        $total_rows = count($results);
 
         $echo = intval($this->input->get('sEcho'));
 

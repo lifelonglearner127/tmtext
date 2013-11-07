@@ -194,17 +194,75 @@ VALUES
             $txt_filter_part2 = ')  as `data` where `data`.`product_name` like "%'.$params->txt_filter.'%"';
 
         }
+        $limit=isset($params->iDisplayLength)&&$params->iDisplayLength!=0?"LIMIT $params->iDisplayStart, $params->iDisplayLength":"";
         if(isset($params->id)){
             $txt_filter_part2 = ' AND  '.(int)$params->id.' < `s`.`id` AND `s`.`id` < '.((int)$params->id+4).' AND `cl`.`snap` != "" ';
         } else if(isset($params->snap_count)) {
             $txt_filter_part2 = ' AND `cl`.`snap` != "" LIMIT 0,'.$params->snap_count.' ';
         }
-        $query = $this->db->query($txt_filter_part1 . 'select `s`.*, `cl`.`snap`, `cl`.`snap_date`, `cl`.`snap_state`,
-            (select `value` from imported_data_parsed where `key`="Product Name" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `product_name`,
-            (select `value` from imported_data_parsed where `key`="Description" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `short_description`,
-            (select `value` from imported_data_parsed where `key`="Long_Description" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `long_description`,
-            (select `value` from imported_data_parsed where `key`="URL" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `url`
-            from '.$this->tables['statistics_new'].' as `s` left join '.$this->tables['crawler_list'].' as `cl` on `cl`.`imported_data_id` = `s`.`imported_data_id` where `s`.`batch_id`='.$batch_id.$txt_filter_part2);
+////////////////////////////////////////////////
+        $bapslc = $build_assess_params->short_less_check?
+                " and short_description_wc<=$build_assess_params->short_less_check":"";
+//                if ($build_assess_params->short_less_check && $result_row->short_description_wc > $build_assess_params->short_less) {
+//                    continue;
+//                }
+        $bapsmc = $build_assess_params->short_more_check?
+                " and short_description_wc=>$build_assess_params->short_more_check":"";
+//                if ($build_assess_params->short_more_check && $result_row->short_description_wc < $build_assess_params->short_more) {
+//                    continue;
+//                }
+        $bapllc = $build_assess_params->long_less_check?
+                " and long_description_wc <= $build_assess_params->long_less":"";
+//                if ($build_assess_params->long_less_check && $result_row->long_description_wc > $build_assess_params->long_less) {
+//                    continue;
+//                }
+        $baplmc = $build_assess_params->long_more_check?
+                " and long_description_wc => $build_assess_params->long_more":"";
+//                if ($build_assess_params->long_more_check && $result_row->long_description_wc < $build_assess_params->long_more) {
+//                    continue;
+//                }
+        /*
+
+            $recomend = false;
+            $flagged = '';
+            if($build_assess_params->flagged){
+                $sdwldw = "";
+                if($build_assess_params->long_less_check || $build_assess_params->long_more_check){
+                    $sdwldw = "or short_description_wc <= $build_assess_params->short_less or ".
+                            "long_description_wc <= $build_assess_params->long_less";
+                }
+                $sphars = "short_seo_phrases == 'None' and long_seo_phrases == 'None'";
+                $flagged = "($sphars $sdwldw)";
+            }
+//            if (($result_row->short_description_wc <= $build_assess_params->short_less ||
+//                    $result_row->long_description_wc <= $build_assess_params->long_less) 
+//                    && ($build_assess_params->long_less_check || $build_assess_params->long_more_check)
+//            ) {
+//                $recomend = true;
+//            }
+//            if ($result_row->short_seo_phrases == 'None' && $result_row->long_seo_phrases == 'None') {
+//                $recomend = true;
+//            }
+            if ($result_row->lower_price_exist == true && !empty($result_row->competitors_prices)) {
+                if (min($result_row->competitors_prices) < $result_row->own_price) {
+                    $recomend = true;
+                }
+            }
+
+            if ($build_assess_params->flagged == true && $recomend == false) {
+                continue;
+            }
+            //*/
+        $sql = $txt_filter_part1 . 'select `s`.*, `cl`.`snap`, `cl`.`snap_date`, `cl`.`snap_state`,
+            (select `value` from imported_data_parsed where `key`="Product Name" and `imported_data_id` = `s`.`imported_data_id` and `revision`=`s`.`revision` limit 1) as `product_name`,
+            (select `value` from imported_data_parsed where `key`="Description" and `imported_data_id` = `s`.`imported_data_id` and `revision`=`s`.`revision` limit 1) as `short_description`,
+            (select `value` from imported_data_parsed where `key`="Long_Description" and `imported_data_id` = `s`.`imported_data_id` and `revision`=`s`.`revision` limit 1) as `long_description`,
+            (select `value` from imported_data_parsed where `key`="Url" and `imported_data_id` = `s`.`imported_data_id` and `revision`=`s`.`revision` limit 1) as `url`
+            from '.$this->tables['statistics_new'].' as `s` left join '.$this->tables['crawler_list'].' as `cl` on `cl`.`imported_data_id` = `s`.`imported_data_id` 
+                where `s`.`batch_id`='."'".$batch_id."'"//.$bapslc.$bapsmc.$bapllc.$baplmc
+                //.$limit
+                .$txt_filter_part2;
+        $query = $this->db->query($sql);
         $result =  $query->result();
         return $result;
     }
