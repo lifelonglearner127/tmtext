@@ -8,13 +8,21 @@ import re
 
 def extract_filename_and_extension(filename):
 	# remove directory name if any, extract file name and extension (if any)
-	m = re.match("(.*/)?([^/]*)\.((txt)|(csv))?", filename)
-	base = m.group(2)
-	if m.group(3):
-		extension = "." + m.group(3)
+	m = re.match("(.*/)?([^/]*)\.((txt)|(csv))", filename)
+	if m:
+		base = m.group(2)
+		if m.group(3):
+			extension = "." + m.group(3)
 	else:
-		# default extension is .txt
-		extension = ".txt"
+		# try without extension
+		m = re.match("(.*/)?([^/]*)", filename)
+		if m:
+			# default extension is .txt
+			base = m.group(2)
+			extension = ".txt"
+		else:
+			base = filename
+			extension = ".txt"
 
 	return (base, extension)
 
@@ -40,6 +48,8 @@ def split():
 	if not options.out_filename:
 		options.out_filename = options.in_filename
 	(outfiles_base, outfiles_extension) = extract_filename_and_extension(options.out_filename)
+
+	print outfiles_base, outfiles_extension
 
 	infile = open(options.in_filename, "r")
 
