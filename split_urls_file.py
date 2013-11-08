@@ -41,7 +41,6 @@ def split():
 		options.out_filename = options.in_filename
 	(outfiles_base, outfiles_extension) = extract_filename_and_extension(options.out_filename)
 
-
 	infile = open(options.in_filename, "r")
 
 	# output files
@@ -64,7 +63,7 @@ def split():
 		# number of lines in current output file
 		lines += 1
 
-		if lines > options.batch_size:
+		if lines > int(options.batch_size):
 			# reset line count
 			lines = 1
 
