@@ -781,6 +781,7 @@ class Assess extends MY_Controller {
             $columns = array(
                 'created' => 'true',
                 'product_name' => 'true',
+                'item_id' => 'true',
                 'url' => 'true',
                 'short_description_wc' => 'true',
                 'short_seo_phrases' => 'true',
@@ -966,6 +967,11 @@ class Assess extends MY_Controller {
                 "sName" =>"product_name", 
                 //"sWidth" => "15%",
                 "sClass" => "product_name_text"
+            ),
+            array(
+                "sTitle" => "item ID", 
+                "sName" =>"item_id", 
+                "sClass" => "item_id"
             ),
             
             array(
@@ -1172,6 +1178,7 @@ class Assess extends MY_Controller {
             $result_row->Custom_Keywords_Long_Description = "";
             $result_row->Meta_Description = "";
             $result_row->Meta_Description_Count = "";
+            $result_row->item_id = "";
             $result_row->H1_Tags = "";
             $result_row->H1_Tags_Count = "";
             $result_row->H2_Tags = "";
@@ -1252,6 +1259,9 @@ class Assess extends MY_Controller {
                 $result_row->Meta_Description = $pars_atr_array;
                 $words_des = count(explode(" ", $pars_atr_array));
                 $result_row->Meta_Description_Count = $words_des;
+            }
+            if($pars_atr['parsed_attributes']['item_id'] && $pars_atr['parsed_attributes']['item_id'] !=''){
+                $result_row->item_id = $pars_atr['parsed_attributes']['item_id'];
             }
             
             $result_row->H1_Tags= '';
@@ -1829,6 +1839,7 @@ class Assess extends MY_Controller {
                         '<span style="cursor:pointer;">'.$snap.'</span>',
                         $row_created,
                         '<span class= "'. $tb_product_name.'">'.$data_row->product_name."</span>",
+                        $data_row->item_id,
                         $row_url,
                         $data_row->short_description_wc,
                         $data_row->short_seo_phrases,

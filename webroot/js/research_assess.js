@@ -36,6 +36,7 @@ $(function() {
             "snap",
             "created",
             "product_name",
+            "item_id",
             "url",
             "short_description_wc",
             "short_seo_phrases",
@@ -60,6 +61,7 @@ $(function() {
         details_compare: [
             "snap",
             "product_name",
+            "item_id",
             "url",
             "short_description_wc",
             "long_description_wc",
@@ -436,6 +438,12 @@ $(function() {
             "sName": "product_name",
             "sWidth": "15%",
             "sClass": "product_name_text"
+        },
+        {
+            "sTitle": "item ID",
+            "sName": "item_id",
+            "sWidth": "15%",
+            "sClass": "item_id"
         },
         {
             "sTitle": "URL",
@@ -1536,6 +1544,7 @@ var scrollYesOrNot = true;
         var Meta_Description =0;
         var HTags_1 = 0;
         var HTags_2 = 0;
+        var item_id = 0;
         var Custom_Keywords_Short_Description = 0;
         var Custom_Keywords_Long_Description = 0;
         $('td.word_short').each(function() {
@@ -1579,6 +1588,12 @@ var scrollYesOrNot = true;
                 Meta_Description += 1;
             }
         });
+        $('td.item_id').each(function() {
+            
+            if ($(this).text()!='') {
+                item_id += 1;
+            }
+        });
      
         $.each(tblAllColumns, function(index, value) {
             if ((value == 'short_description_wc' && word_short_num == 0) || (value == 'long_description_wc' && word_long_num == 0)) {
@@ -1591,6 +1606,9 @@ var scrollYesOrNot = true;
                 tblAssess.fnSetColumnVis(index, false, false);
             }
             if((value == 'Custom_Keywords_Long_Description' && Custom_Keywords_Long_Description == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+            }
+            if((value == 'item_id' && item_id == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
             }
              if((value == 'Meta_Description' && Meta_Description == 0)){
@@ -1659,6 +1677,7 @@ var scrollYesOrNot = true;
                     snap: $("#column_snap").attr('checked') == 'checked',
                     created: $("#column_created").attr('checked') == 'checked',
                     product_name: $("#column_product_name").attr('checked') == 'checked',
+                    item_id: $("#item_id").attr('checked') == 'checked',
                     url: $("#column_url").attr('checked') == 'checked',
                     short_description_wc: $("#column_short_description_wc").attr('checked') == 'checked',
                     short_seo_phrases: $("#column_short_seo_phrases").attr('checked') == 'checked',

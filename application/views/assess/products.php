@@ -155,6 +155,10 @@
                 <label for="column_product_name">Product name</label>
             </p>
             <p>
+                <input type="checkbox" id="item_id" data-col_name="item_id" name="item_id" <?php echo($columns['item_id'] == 'true' ? 'checked="checked"' : ''); ?> />
+                <label for="item_id">item ID</label>
+            </p>
+            <p>
                 <input type="checkbox" id="column_url" data-col_name="url" name="column_url_name" <?php echo($columns['url'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="column_url">Url</label>
             </p>
