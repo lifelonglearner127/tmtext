@@ -808,9 +808,12 @@ class ProcessText():
 	def normalize(orig_text):
 		text = orig_text
 		# other preprocessing: -Inch = " - fitting for staples->amazon search
+		#						Feet = '
 		# TODO: suitable for all sites?
-		text = re.sub("[- ][iI]nch", "\"", text)
+		text = re.sub("[- ]*[iI]nch", "\"", text)
 		text = re.sub("(?<=[0-9])[iI][nN](?!=c)","\"", text)
+
+		text = re.sub("[- ]*[fF]eet", "\'", text)
 
 		#! including ' as an exception keeps things like women's a single word. also doesn't find it as a word in wordnet -> too high a priority
 		# excluding it leads to women's->women (s is a stopword)
@@ -823,12 +826,13 @@ class ProcessText():
 
 		#TODO: test the dash rule
 		text = re.sub("u'", " ", text)
-		# replace all non-words except for " - . /
-		text = re.sub("[^\w\"\-\./]", " ", text)
+		# replace all non-words except for " - . / '
+		text = re.sub("[^\w\"\'\-\./]", " ", text)
 
 		# replace - . / if not part of a number - either a number is not before it or is not after it
+		# replace ' if there's not a number before it
 		text = re.sub("[\.\-/](?![0-9])", " ", text)
-		text = re.sub("(?<![0-9])[\.\-/]", " ", text)
+		text = re.sub("(?<![0-9])[\.\-/\']", " ", text)
 		stopset = set(stopwords.words('english'))#["and", "the", "&", "for", "of", "on", "as", "to", "in"]
 		
 		tokens = text.split()
