@@ -194,14 +194,36 @@ class Assess extends MY_Controller {
                         if(count($similar_items)>1){
                         foreach ($similar_items as $key => $item) {
                             if (substr_count(strtolower($customer_name), strtolower($item['customer'])) > 0) {
-                                                                                          
-                                                                                             
+                               $parsed_attributes_unserialize_val ='';                                                           
+                               $parsed_meta_unserialize_val = ''; 
+                               $parsed_meta_unserialize_val_c = '';
                                $cmpare = $this->statistics_new_model->get_compare_item($item['imported_data_id']);
+                               
+                               $parsed_attributes_unserialize = unserialize($cmpare->parsed_attributes);
+                               if($parsed_attributes_unserialize['item_id'])
+                                  $parsed_attributes_unserialize_val = $parsed_attributes_unserialize['item_id']; 
+                               
+                               $parsed_meta_unserialize = unserialize($cmpare->parsed_meta);
+                               if($parsed_meta_unserialize['description']){
+                                $parsed_meta_unserialize_val = $parsed_meta_unserialize['description'];
+                                $parsed_meta_unserialize_val_c = count(explode(" ",$parsed_meta_unserialize_val));
+                                if($parsed_meta_unserialize_val_c !=1)
+                                    $parsed_meta_unserialize_val_count = $parsed_meta_unserialize_val_c;
+                               } 
+                               else if($parsed_meta_unserialize['Description']){
+                                $parsed_meta_unserialize_val = $parsed_meta_unserialize['Description'];
+                                $parsed_meta_unserialize_val_c = count(explode(" ",$parsed_meta_unserialize_val));
+                                if($parsed_meta_unserialize_val_c !=1)
+                                    $parsed_meta_unserialize_val_count = $parsed_meta_unserialize_val_c;
+                               }
                                $val->snap1 = $cmpare->snap;
                                $val->product_name1 = $cmpare->product_name;
+                               $val->item_id1 = $parsed_attributes_unserialize_val;
                                $val->url1 = $cmpare->url;
                                $val->short_description_wc1 = $cmpare->short_description_wc;
                                $val->long_description_wc1 = $cmpare->long_description_wc;
+                               $val->Meta_Description1 = $parsed_meta_unserialize_val;
+                               $val->Meta_Description_Count1 = $parsed_meta_unserialize_val_count;
                                $similar_items_data[]=$cmpare;
                                $val->similar_items =  $similar_items_data; 
                                 
@@ -790,8 +812,8 @@ class Assess extends MY_Controller {
                 'duplicate_context' => 'true',
                 'Custom_Keywords_Short_Description' => 'true',
                 'Custom_Keywords_Long_Description' => 'true',
-                'Meta_Description_Count' => 'true',
                 'Meta_Description' => 'true',
+                'Meta_Description_Count' => 'true',
                 'H1_Tags' => 'true',
                 'H1_Tags_Count' => 'true',
                 'H2_Tags' => 'true',
@@ -1129,9 +1151,12 @@ class Assess extends MY_Controller {
 
               $columns[] = array("sTitle" => "Snapshot", "sName" => 'snap' . $i);
               $columns[] = array("sTitle" => "Product Name", "sName" => 'product_name' . $i);
+              $columns[] = array("sTitle" => "item ID", "sName" => 'item_id' . $i);
               $columns[] = array("sTitle" => "URL", "sName" => 'url' . $i);
               $columns[] = array("sTitle" => "Words <span class='subtitle_word_short' >Short</span>", "sName" => 'short_description_wc' . $i);
               $columns[] = array("sTitle" => "Words <span class='subtitle_word_long' >Long</span>", "sName" => 'long_description_wc' . $i);
+              $columns[] = array("sTitle" => "Meta Description","sClass" => "Meta_Description", "sName" => 'Meta_Description' . $i);
+              $columns[] = array("sTitle" => "Words","sClass" => "Meta_Description_Count", "sName" => 'Meta_Description_Count' . $i);
             }
 
         }
@@ -1203,12 +1228,44 @@ class Assess extends MY_Controller {
 
                 for ($i = 1; $i <= $max_similar_item_count; $i++) {
                     
+                    
+                    $parsed_attributes_unserialize_val ='';                                                           
+                    $parsed_meta_unserialize_val = ''; 
+                    $parsed_meta_unserialize_val_c = '';
+
+                    $parsed_attributes_unserialize = unserialize($sim_items[$i - 1]->parsed_attributes);
+                    if($parsed_attributes_unserialize['item_id'])
+                       $parsed_attributes_unserialize_val = $parsed_attributes_unserialize['item_id']; 
+
+                    $parsed_meta_unserialize = unserialize($sim_items[$i - 1]->parsed_meta);
+                    if($parsed_meta_unserialize['description']){
+                     $parsed_meta_unserialize_val = $parsed_meta_unserialize['description'];
+                     $parsed_meta_unserialize_val_c = count(explode(" ",$parsed_meta_unserialize_val));
+                     if($parsed_meta_unserialize_val_c !=1)
+                         $parsed_meta_unserialize_val_count = $parsed_meta_unserialize_val_c;
+                     else
+                         $parsed_meta_unserialize_val_count = '';
+                    } 
+                    else if($parsed_meta_unserialize['Description']){
+                     $parsed_meta_unserialize_val = $parsed_meta_unserialize['Description'];
+                     $parsed_meta_unserialize_val_c = count(explode(" ",$parsed_meta_unserialize_val));
+                     if($parsed_meta_unserialize_val_c !=1)
+                         $parsed_meta_unserialize_val_count = $parsed_meta_unserialize_val_c;
+                     else
+                         $parsed_meta_unserialize_val_count = '';
+                    }
+                    
+                    
+                    
                     $result_row = (array) $result_row;
                     $result_row["snap$i"] = $sim_items[$i - 1]->snap !== false ? $sim_items["$i-1"]->snap : '-';
                     $result_row['url' . $i] = $sim_items[$i - 1]->url !== false ? "<span class='res_url'><a target='_blank' href='".$sim_items[$i - 1]->url."'>".$sim_items[$i - 1]->url."</a></span>" : "-";
                     $result_row['product_name' . $i] = $sim_items[$i - 1]->product_name !== false ? "<span class='tb_product_name'>".$sim_items[$i - 1]->product_name."</span>" : "-";
+                    $result_row['item_id' . $i] = $parsed_attributes_unserialize_val;
                     $result_row['short_description_wc' . $i] = $sim_items[$i - 1]->short_description_wc !== false ? $sim_items[$i - 1]->short_description_wc : '-';
                     $result_row['long_description_wc' . $i] = $sim_items[$i - 1]->long_description_wc !== false ? $sim_items[$i - 1]->long_description_wc : '-';
+                    $result_row['Meta_Description' . $i] = $parsed_meta_unserialize_val;
+                    $result_row['Meta_Description_Count' . $i] = $parsed_meta_unserialize_val_count;
                 }
                 $result_row = (object)$result_row;
             } else {
@@ -1219,21 +1276,30 @@ class Assess extends MY_Controller {
 //                $result_row->long_description_wc1 = '-';
             }
 
-            if ($row->snap1 && $row->snap1 != '') {
-                $result_row->snap1 = "<img src='" . base_url() . "webshoots/" . $row->snap1 . "' />";
-            }
-            if ($row->product_name1) {
-                $result_row->product_name1 = $row->product_name1;
-            }
-            if ($row->url1) {
-                $result_row->url1 = "<span class='res_url'><a href='" . $row->url1 . "' target='_blank'>$row->url1</a><span>";
-            }
-            if ($row->short_description_wc1) {
-                $result_row->short_description_wc1 = $row->short_description_wc1;
-            }
-            if ($row->long_description_wc1) {
-                $result_row->long_description_wc1 = $row->long_description_wc1;
-            }
+//            if ($row->snap1 && $row->snap1 != '') {
+//                $result_row->snap1 = "<img src='" . base_url() . "webshoots/" . $row->snap1 . "' />";
+//            }
+//            if ($row->product_name1) {
+//                $result_row->product_name1 = $row->product_name1;
+//            }
+//            if ($row->item_id1) {
+//                $result_row->item_id1 = $row->item_id1;
+//            }
+//            if ($row->url1) {
+//                $result_row->url1 = "<span class='res_url'><a href='" . $row->url1 . "' target='_blank'>$row->url1</a><span>";
+//            }
+//            if ($row->short_description_wc1) {
+//                $result_row->short_description_wc1 = $row->short_description_wc1;
+//            }
+//            if ($row->long_description_wc1) {
+//                $result_row->long_description_wc1 = $row->long_description_wc1;
+//            }
+//            if ($row->Meta_Description1) {
+//                $result_row->Meta_Description1 = $row->Meta_Description1;
+//            }
+//            if ($row->Meta_Description_Count1) {
+//                $result_row->Meta_Description_Count1 = $row->Meta_Description_Count1;
+//            }
 
 
             $pars_atr = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
@@ -1867,18 +1933,24 @@ class Assess extends MY_Controller {
                     for ($i = 1; $i <= $build_assess_params->max_similar_item_count; $i++) {
                             $output_row[] = $data_row['snap' . $i]!=null?$data_row['snap' . $i]:'-';
                             $output_row[] = $data_row['product_name' . $i]!=null?$data_row['product_name' . $i]:'-';
+                            $output_row[] = $data_row['item_id' . $i]!=null?$data_row['item_id' . $i]:'';
                             $output_row[] = $data_row['url' . $i]!=null?$data_row['url' . $i]:'-';
                             $output_row[] = $data_row['short_description_wc' . $i]!=null?$data_row['short_description_wc' . $i]:'-';
                             $output_row[] = $data_row['long_description_wc' . $i]!=null?$data_row['long_description_wc' . $i]:'-';
+                            $output_row[] = $data_row['Meta_Description' . $i]!=null?$data_row['Meta_Description' . $i]:'';
+                            $output_row[] = $data_row['Meta_Description_Count' . $i]!=null?$data_row['Meta_Description_Count' . $i]:'';
                         }
                         $data_row = (object)$data_row;
                     } else {
 
-                        $output_row[] = $data_row->snap1;
-                        $output_row[] = $data_row->product_name1;
-                        $output_row[] = $data_row->url1;
-                        $output_row[] = $data_row->short_description_wc1;
-                        $output_row[] = $data_row->long_description_wc1;
+//                        $output_row[] = $data_row->snap1;
+//                        $output_row[] = $data_row->product_name1;
+//                        $output_row[] = $data_row->item_id1;
+//                        $output_row[] = $data_row->url1;
+//                        $output_row[] = $data_row->short_description_wc1;
+//                        $output_row[] = $data_row->long_description_wc1;
+//                        $output_row[] = $data_row->Meta_Description1;
+//                        $output_row[] = $data_row->Meta_Description_Count1;
                        
                     }
                     $output['aaData'][] = $output_row;

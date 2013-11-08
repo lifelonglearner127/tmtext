@@ -67,16 +67,16 @@ $(function() {
             "long_description_wc",
             "Meta_Description",
             "Meta_Description_Count",
-            "snap1",
-            "product_name1",
-            "url1",
-            "short_description_wc1",
-            "long_description_wc1",
-            "snap2",
-            "product_name2",
-            "url2",
-            "short_description_wc2",
-            "long_description_wc2"
+//            "snap1",
+//            "product_name1",
+//            "url1",
+//            "short_description_wc1",
+//            "long_description_wc1",
+//            "snap2",
+//            "product_name2",
+//            "url2",
+//            "short_description_wc2",
+//            "long_description_wc2"
         ],
         recommendations: [
             "product_name",
@@ -576,6 +576,12 @@ $(function() {
             "sWidth": "15%"
         },
         {
+            "sTitle": "item ID",
+            "sName": "item_id",
+            "sWidth": "15%",
+            "sClass": "item_id"
+        },
+        {
             "sTitle": "URL",
             "sName": "url1",
             "sWidth": "15%"
@@ -591,7 +597,22 @@ $(function() {
             "sName": "long_description_wc1",
             "sWidth": "1%",
             "sClass": "word_long"
+        },
+        {
+            "sTitle" : "Meta Description",
+            "sName" : "Meta_Description", 
+            "sWidth" : "4%",
+            "sClass" : "Meta_Description"
+            
+        },
+        {
+            "sTitle" : "Words",
+            "sName" : "Meta_Description_Count", 
+            "sWidth" : "4%",
+            "sClass" : "Meta_Description_Count"
+            
         }
+        
 
     ];
 
@@ -1590,7 +1611,8 @@ var scrollYesOrNot = true;
         });
         $('td.item_id').each(function() {
             
-            if ($(this).text()!='') {
+           var txt = parseInt($(this).text());
+            if (txt > 0) {
                 item_id += 1;
             }
         });
