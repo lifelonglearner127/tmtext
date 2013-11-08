@@ -175,8 +175,8 @@ class Assess extends MY_Controller {
                 $params->iDisplayLength = $this->input->get('iDisplayLength');
                 $params->iDisplayStart = $this->input->get('iDisplayStart');
             }
-
-            $results = $this->get_data_for_assess($params,$build_assess_params);
+            
+            $results = $this->get_data_for_assess($params);
             $cmp = array();
                                
             if ($batch2 != '' && $batch2 != 0 && $batch2 != 'all') {
@@ -1003,7 +1003,7 @@ class Assess extends MY_Controller {
                 "sClass" =>"url_text"
             ),
             array(
-                 "sTitle" => "Words <span class='subtitle_word_short' >Short</span>",
+                 "sTitle" => "Short Desc <span class='subtitle_word_short' ># Words</span>",
                 "sName" => "short_description_wc", 
                // "sWidth" => "1%",
                 "sClass" => "word_short"
@@ -1015,7 +1015,7 @@ class Assess extends MY_Controller {
                 "sClass" => "keyword_short"
             ),
             array(
-                "sTitle" => "Words <span class='subtitle_word_long' >Long</span>",
+                "sTitle" => "Long Desc <span class='subtitle_word_long' ># Words</span>",
                 "sName" =>"long_description_wc", 
                 "sWidth" => "1%",
                 "sClass" =>"word_long"
@@ -1046,7 +1046,7 @@ class Assess extends MY_Controller {
             "sClass" =>  "Meta_Description"
         ),
         array(
-            "sTitle" => "Words",
+            "sTitle" => "Prod Desc <span class='subtitle_word_long' ># Words</span>",
             "sName" => "Meta_Description_Count", 
             "sWidth" => "4%",
             "sClass" =>  "Meta_Description_Count"
@@ -1661,8 +1661,8 @@ class Assess extends MY_Controller {
             }
 
             $result_table[] = $result_row;
-            ++$qty;
-            if($qty>$display_length+$display_start)break;
+//            ++$qty;
+//            if($qty>$display_length+$display_start)break;
         }
 
         if ($this->settings['statistics_table'] == "statistics_new") {

@@ -780,3 +780,7 @@ ALTER TABLE  `statistics_new` CHANGE  `short_seo_phrases`  `short_seo_phrases`
 VARCHAR( 4000 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL ,
 CHANGE  `long_seo_phrases`  `long_seo_phrases` 
 VARCHAR( 4000 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL
+
+# 11/8
+
+CREATE Index crawler_list_imp_data_id ON crawler_list (imported_data_id);

@@ -452,7 +452,7 @@ $(function() {
             "sClass": "url_text"
         },
         {
-            "sTitle": "Words <span class='subtitle_word_short' >Short</span>",
+            "sTitle": "Short Desc <span class='subtitle_word_short' ># Words</span>",
             "sName": "short_description_wc",
             "sWidth": "1%",
             "sClass": "word_short"
@@ -464,7 +464,7 @@ $(function() {
             "sClass": "keyword_short"
         },
         {
-            "sTitle": "Words <span class='subtitle_word_long' >Long</span>",
+            "sTitle": "Long Desc <span class='subtitle_word_long' ># Words</span>",
             "sName": "long_description_wc",
             "sWidth": "1%",
             "sClass": "word_long"
@@ -497,7 +497,7 @@ $(function() {
             
         },
         {
-            "sTitle" : "Words",
+            "sTitle" : "Prod Desc <span class='subtitle_word_long' ># Words</span>",
             "sName" : "Meta_Description_Count", 
             "sWidth" : "4%",
             "sClass" : "Meta_Description_Count"
