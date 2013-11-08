@@ -1826,7 +1826,7 @@ class Assess extends MY_Controller {
                    
 
                     $output_row = array(
-                        $snap,
+                        '<span style="cursor:pointer;">'.$snap.'</span>',
                         $row_created,
                         '<span class= "'. $tb_product_name.'">'.$data_row->product_name."</span>",
                         $row_url,
