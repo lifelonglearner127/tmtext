@@ -713,13 +713,174 @@ class Assess extends MY_Controller {
 
     public function export_assess() {
 
-        $this->load->model('batches_model');
-        $batch_id = $this->input->get('batch');
-        $customer_name = $this->batches_model->getCustomerById($batch_id);
-        if (empty($batch_id))
-            $batch_id = '';
-        $this->load->database();
-        $query = $this->db->query('
+  $this->load->model('statistics_new_model');
+        $batch_id = (int) trim($_GET['batch_id']);
+        $cmp_selected = trim(strtolower($_GET['cmp_selected']));
+        
+        if (($cmp_selected=='all') || ($cmp_selected >0)) {
+
+            $query = $this->db->query('select `s`.*,
+            (select `value` from imported_data_parsed where `key`="Product Name" and `imported_data_id` = `s`.`imported_data_id` limit 1) as `product_name`,
+            (select `value` from imported_data_parsed where `key`="Description" and `imported_data_id` = `s`.`imported_data_id` limit 1) as `short_description`,
+            (select `value` from imported_data_parsed where `key`="Long_Description" and `imported_data_id` = `s`.`imported_data_id` limit 1) as `long_description`,
+            (select `value` from imported_data_parsed where `key`="Url" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `url`
+            from `statistics_new` as `s`  where `s`.`batch_id`=' . $batch_id);
+            $results = $query->result();
+            $this->load->model('batches_model');
+
+            if ($cmp_selected != 'all' && $cmp_selected != null && $cmp_selected != 0) {
+
+
+                $max_similar_item_count = 1;
+
+                $customer_name = $this->batches_model->getCustomerUrlByBatch($cmp_selected);
+
+                foreach ($results as $val) {
+                    $similar_items_data = array();
+                    if (substr_count(strtolower($val->similar_products_competitors), strtolower($customer_name)) > 0) {
+
+                        $similar_items = unserialize($val->similar_products_competitors);
+
+                        if (count($similar_items) > 1) {
+                            foreach ($similar_items as $key => $item) {
+                                if (substr_count(strtolower($customer_name), strtolower($item['customer'])) > 0) {
+
+
+                                    $cmpare = $this->statistics_new_model->get_compare_item($item['imported_data_id']);
+                                    $val->snap1 = $cmpare->snap;
+                                    $val->product_name1 = $cmpare->product_name;
+                                    $val->url1 = $cmpare->url;
+                                    $val->short_description_wc1 = $cmpare->short_description_wc;
+                                    $val->long_description_wc1 = $cmpare->long_description_wc;
+                                    $similar_items_data[] = $cmpare;
+                                    $val->similar_items = $similar_items_data;
+                                }
+                            }
+
+
+                            $cmp[] = $val;
+                        }
+                    }
+                }
+                $results = $cmp;
+            }
+            if ($cmp_selected == 'all') {
+
+                $max_similar_item_count = 0;
+                $this->load->model('batches_model');
+                $customer_name = $this->batches_model->getCustomerUrlByBatch($batch_id);
+
+                foreach ($results as $key1 => $val) {
+                    $similar_items = unserialize($val->similar_products_competitors);
+                    $similar_items_data = array();
+                    if (count($similar_items) > 0) {
+                        foreach ($similar_items as $key => $item) {
+                            if (substr_count(strtolower($customer_name), strtolower($item['customer'])) == 0) {
+                                $cmpare = $this->statistics_new_model->get_compare_item($similar_items[$key]['imported_data_id']);
+
+                                $similar_items_data[] = $cmpare;
+                            }
+                        }
+                        $sim_item_count = count($similar_items_data);
+                        if ($sim_item_count > $max_similar_item_count) {
+                            $max_similar_item_count = $sim_item_count;
+                        }
+                        $val->similar_items = $similar_items_data;
+                        $results[$key1] = $val;
+                    }
+                }
+            }
+
+
+
+
+            $res_array = array();
+            $line = array('Product Name' => 'Product Name', 'Url' => 'Url', 'Word Count (S)' => 'Word Count (S)', 'Word Count (L)' => 'Word Count (L)', 'SEO Phrases (S)' => 'SEO Phrases (S)', 'SEO Phrases (L)' => 'SEO Phrases (L)', 'Price' => 'Price');
+            foreach ($results as $key => $row) {
+                $res_array[$key]['Product Name'] = $row->product_name;
+                $res_array[$key]['Url'] = $row->url;
+                $res_array[$key]['Word Count (S)'] = $row->short_description_wc;
+                $res_array[$key]['Word Count (L)'] = $row->long_description_wc;
+                $res_array[$key]['SEO Phrases (S)'] = $row->short_seo_phrases;
+                $res_array[$key]['SEO Phrases (L)'] = $row->long_seo_phrases;
+                $res_array[$key]['Price'] = $row->price_diff;
+
+
+
+                if (trim($res_array[$key]['SEO Phrases (S)']) != 'None') {
+                    $shortArr = unserialize($res_array[$key]['SEO Phrases (S)']);
+
+                    if ($shortArr) {
+                        $shortString = '';
+                        foreach ($shortArr as $value) {
+                            $shortString .= $value['ph'] . "\r\n";
+                        }
+                        $res_array[$key]['SEO Phrases (S)'] = trim($shortString);
+                    }
+                }
+                if (trim($res_array[$key]['SEO Phrases (L)']) != 'None') {
+
+                    $longArr = unserialize($res_array[$key]['SEO Phrases (L)']);
+
+                    if ($longArr) {
+                        $longString = '';
+                        foreach ($longArr as $value) {
+                            $longString .= $value['ph'] . "\r\n";
+                        }
+                        $res_array[$key]['SEO Phrases (L)'] = trim($longString);
+                    }
+                }
+
+
+                $price_diff = unserialize($res_array[$key]['Price']);
+                if ($price_diff) {
+                    $own_price = floatval($price_diff['own_price']);
+                    $own_site = str_replace('www.', '', $price_diff['own_site']);
+                    $own_site = str_replace('www1.', '', $own_site);
+                    $price_diff_res = $own_site . " - $" . $price_diff['own_price'];
+                    $flag_competitor = false;
+                    for ($i = 0; $i < count($price_diff['competitor_customer']); $i++) {
+                        if ($customer_url["host"] != $price_diff['competitor_customer'][$i]) {
+                            if ($own_price > floatval($price_diff['competitor_price'][$i])) {
+                                $competitor_site = str_replace('www.', '', $price_diff['competitor_customer'][$i]);
+                                $competitor_site = str_replace('www.', '', $competitor_site);
+                                $price_diff_res .= "\r\n" . $competitor_site . " - $" . $price_diff['competitor_price'][$i];
+                            }
+                        }
+                    }
+                    $res_array[$key]['Price'] = $price_diff_res;
+                } else {
+                    $res_array[$key]['Price'] = '';
+                }
+            }
+
+            if ($max_similar_item_count > 0) {
+                $sim_items = $row->similar_items;
+
+                for ($i = 1; $i <= $max_similar_item_count; $i++) {
+                    $res_array[$key]['Product Name (' . $i . ")"] = $sim_items[$i - 1]->product_name ? $sim_items[$i - 1]->product_name : '';
+                    $res_array[$key]['Url (' . $i . ")"] = $sim_items[$i - 1]->url ? $sim_items[$i - 1]->url : '';
+                    $res_array[$key]['Word Count (S) (' . $i . ")"] = $sim_items[$i - 1]->short_description_wc ? $sim_items[$i - 1]->short_description_wc : '';
+                    $res_array[$key]['Word Count (L) (' . $i . ")"] = $sim_items[$i - 1]->long_description_wc ? $sim_items[$i - 1]->long_description_wc : '';
+                }
+            }
+
+
+            for ($i = 1; $i <= $max_similar_item_count; $i++) {
+                $line[] = 'Product Name (' . $i . ")";
+                $line[] = 'Url (' . $i . ")";
+                $line[] = 'Word Count (S) (' . $i . ")";
+                $line[] = 'Word Count (L) (' . $i . ")";
+            }
+        } else {
+            
+            $this->load->model('batches_model');
+            $batch_id = $this->input->get('batch');
+            $customer_name = $this->batches_model->getCustomerById($batch_id);
+            if (empty($batch_id))
+                $batch_id = '';
+            $this->load->database();
+            $query = $this->db->query('
             SELECT 
                 `s`.`created` AS `Date`, 
                 (SELECT `value` FROM imported_data_parsed WHERE `key`="Product Name" AND `imported_data_id` = `s`.`imported_data_id` AND `revision`=`s`.`revision` LIMIT 1) AS `Product Name`, 
@@ -734,57 +895,60 @@ class Assess extends MY_Controller {
                 (`statistics_new` AS s) 
             LEFT JOIN 
                 `crawler_list` AS cl ON `cl`.`imported_data_id` = `s`.`imported_data_id`'
-        );
-        $line = array();
-        foreach ($query->list_fields() as $name) {
-            $line[] = $name;
-        }
-        $result = $query->result_array();
-        foreach ($result as $key => $row) {
-            if (trim($row['SEO Phrases (S)']) != 'None') {
-                $shortArr = unserialize($row['SEO Phrases (S)']);
-                if ($shortArr) {
-                    $shortString = '';
-                    foreach ($shortArr as $value) {
-                        $shortString .= $value['ph'] . "\r\n";
-                    }
-                    $result[$key]['SEO Phrases (S)'] = trim($shortString);
-                }
+            );
+            $line = array();
+            foreach ($query->list_fields() as $name) {
+                $line[] = $name;
             }
-            if (trim($row['SEO Phrases (L)']) != 'None') {
-                $longArr = unserialize($row['SEO Phrases (L)']);
-                if ($longArr) {
-                    $longString = '';
-                    foreach ($longArr as $value) {
-                        $longString .= $value['ph'] . "\r\n";
+            $result = $query->result_array();
+            foreach ($result as $key => $row) {
+                if (trim($row['SEO Phrases (S)']) != 'None') {
+                    $shortArr = unserialize($row['SEO Phrases (S)']);
+                    if ($shortArr) {
+                        $shortString = '';
+                        foreach ($shortArr as $value) {
+                            $shortString .= $value['ph'] . "\r\n";
+                        }
+                        $result[$key]['SEO Phrases (S)'] = trim($shortString);
                     }
-                    $result[$key]['SEO Phrases (L)'] = trim($longString);
                 }
-            }
-            $price_diff = unserialize($row['Price']);
-            if ($price_diff) {
-                $own_price = floatval($price_diff['own_price']);
-                $own_site = str_replace('www.', '', $price_diff['own_site']);
-                $own_site = str_replace('www1.', '', $own_site);
-                $price_diff_res = $own_site . " - $" . $price_diff['own_price'];
-                $flag_competitor = false;
-                for ($i = 0; $i < count($price_diff['competitor_customer']); $i++) {
-                    if ($customer_url["host"] != $price_diff['competitor_customer'][$i]) {
-                        if ($own_price > floatval($price_diff['competitor_price'][$i])) {
-                            $competitor_site = str_replace('www.', '', $price_diff['competitor_customer'][$i]);
-                            $competitor_site = str_replace('www.', '', $competitor_site);
-                            $price_diff_res .= "\r\n" . $competitor_site . " - $" . $price_diff['competitor_price'][$i];
+                if (trim($row['SEO Phrases (L)']) != 'None') {
+                    $longArr = unserialize($row['SEO Phrases (L)']);
+                    if ($longArr) {
+                        $longString = '';
+                        foreach ($longArr as $value) {
+                            $longString .= $value['ph'] . "\r\n";
+                        }
+                        $result[$key]['SEO Phrases (L)'] = trim($longString);
+                    }
+                }
+                $price_diff = unserialize($row['Price']);
+                if ($price_diff) {
+                    $own_price = floatval($price_diff['own_price']);
+                    $own_site = str_replace('www.', '', $price_diff['own_site']);
+                    $own_site = str_replace('www1.', '', $own_site);
+                    $price_diff_res = $own_site . " - $" . $price_diff['own_price'];
+                    $flag_competitor = false;
+                    for ($i = 0; $i < count($price_diff['competitor_customer']); $i++) {
+                        if ($customer_url["host"] != $price_diff['competitor_customer'][$i]) {
+                            if ($own_price > floatval($price_diff['competitor_price'][$i])) {
+                                $competitor_site = str_replace('www.', '', $price_diff['competitor_customer'][$i]);
+                                $competitor_site = str_replace('www.', '', $competitor_site);
+                                $price_diff_res .= "\r\n" . $competitor_site . " - $" . $price_diff['competitor_price'][$i];
+                            }
                         }
                     }
+                    $result[$key]['Price'] = $price_diff_res;
+                } else {
+                    $result[$key]['Price'] = '';
                 }
-                $result[$key]['Price'] = $price_diff_res;
-            } else {
-                $result[$key]['Price'] = '';
             }
+            array_unshift($result, $line);
+            $res_array = $result;
         }
-        array_unshift($result, $line);
+        array_unshift($res_array, $line);
         $this->load->helper('csv');
-        array_to_csv($result, date("Y-m-d H:i") . '.csv');
+        array_to_csv($res_array, date("Y-m-d H:i") . '.csv');
     }
 
     public function products() {

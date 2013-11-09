@@ -166,11 +166,11 @@ VALUES
     function get_compare_item($imported_data_id){
         $query = $this->db
             ->select('s.imported_data_id,s.long_description_wc,s.short_description_wc, cl.snap, cl.snap_date, cl.snap_state,
-            (select `value` from imported_data_parsed where `key`="Product Name" and `imported_data_id` = `s`.`imported_data_id` and `revision`=`s`.`revision` limit 1) as `product_name`,
-            (select `value` from imported_data_parsed where `key`="parsed_attributes" and `imported_data_id` = `s`.`imported_data_id` and `revision`=`s`.`revision` limit 1) as `parsed_attributes`,
-            (select `value` from imported_data_parsed where `key`="parsed_meta" and `imported_data_id` = `s`.`imported_data_id` and `revision`=`s`.`revision` limit 1) as `parsed_meta`,
+            (select `value` from imported_data_parsed where `key`="Product Name" and `imported_data_id` = `s`.`imported_data_id` limit 1) as `product_name`,
+            (select `value` from imported_data_parsed where `key`="parsed_attributes" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `parsed_attributes`,
+            (select `value` from imported_data_parsed where `key`="parsed_meta" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `parsed_meta`,
             
-            (select `value` from imported_data_parsed where `key`="Url" and `imported_data_id` = `s`.`imported_data_id` and `revision`=`s`.`revision` limit 1) as `url`
+            (select `value` from imported_data_parsed where `key`="Url" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `url`
             ')
             ->from($this->tables['statistics_new'].' as s')
             ->join($this->tables['crawler_list'].' as cl', 'cl.imported_data_id = s.imported_data_id', 'left')
