@@ -2088,7 +2088,7 @@ var scrollYesOrNot = true;
     $(document).on('mouseleave', '#assess_preview_crawl_snap_modal', function() {
         $(this).modal('hide');
     });
-    $('#research_assess_export').click(function() {
+    $('#research_assess_export').live('click',function() {
         
         $(this).attr('disabled', true);
         var batch_id= $('select[name="research_assess_batches"]').find('option:selected').val();
