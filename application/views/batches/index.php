@@ -82,7 +82,7 @@
                     <div class="progress progress-success progress-striped span7" id="progress">
                         <div class="bar"></div>
                     </div>
-                    <div id="files"></div>
+                    <div id="files" style="height: 20px; display: block;"><p>&nbsp;</p></div>
                     <input type="hidden" name="choosen_file" />
                 </div>
                 <div class="info ml_10 "></div>
