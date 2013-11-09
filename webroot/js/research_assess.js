@@ -67,11 +67,14 @@ $(function() {
             "long_description_wc",
             "Meta_Description",
             "Meta_Description_Count",
-//            "snap1",
-//            "product_name1",
-//            "url1",
-//            "short_description_wc1",
-//            "long_description_wc1",
+            "snap1",
+            "product_name1",
+            "item_id1",
+            "url1",
+            "short_description_wc1",
+            "long_description_wc1",
+            "Meta_Description1",
+            "Meta_Description_Count1"
 //            "snap2",
 //            "product_name2",
 //            "url2",
@@ -201,7 +204,7 @@ $(function() {
              }
             },
             "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-                $(nRow).attr("add_data", aData[22]);
+                $(nRow).attr("add_data", aData[32]);
                 return nRow;
             },
             "fnDrawCallback": function(oSettings) {
@@ -294,7 +297,7 @@ $(function() {
                         "sLengthMenu": "_MENU_ rows"
                     },
                     "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-                        $(nRow).attr("add_data", aData[22]);
+                        $(nRow).attr("add_data", aData[32]);
                         return nRow;
                     },
                     "fnDrawCallback": function(oSettings) {
@@ -577,9 +580,9 @@ $(function() {
         },
         {
             "sTitle": "item ID",
-            "sName": "item_id",
+            "sName": "item_id1",
             "sWidth": "15%",
-            "sClass": "item_id"
+            "sClass": "item_id1"
         },
         {
             "sTitle": "URL",
@@ -590,26 +593,26 @@ $(function() {
             "sTitle": "Words <span class='subtitle_word_short' >Short</span>",
             "sName": "short_description_wc1",
             "sWidth": "1%",
-            "sClass": "word_short"
+            "sClass": "word_short1"
         },
         {
             "sTitle": "Words <span class='subtitle_word_long' >Long</span>",
             "sName": "long_description_wc1",
             "sWidth": "1%",
-            "sClass": "word_long"
+            "sClass": "word_long1"
         },
         {
             "sTitle" : "Meta Description",
-            "sName" : "Meta_Description", 
+            "sName" : "Meta_Description1", 
             "sWidth" : "4%",
-            "sClass" : "Meta_Description"
+            "sClass" : "Meta_Description1"
             
         },
         {
             "sTitle" : "Words",
-            "sName" : "Meta_Description_Count", 
+            "sName" : "Meta_Description_Count1", 
             "sWidth" : "4%",
-            "sClass" : "Meta_Description_Count"
+            "sClass" : "Meta_Description_Count1"
             
         }
         
@@ -696,7 +699,7 @@ $(function() {
             });
         },
         "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-            $(nRow).attr("add_data", aData[22]);
+            $(nRow).attr("add_data", aData[25]);
             return nRow;
         },
         "fnDrawCallback": function(oSettings) {
@@ -1889,13 +1892,13 @@ var scrollYesOrNot = true;
                 if ($.inArray(value, tableCase.details_compare) > -1 && $.inArray(value, columns_checkboxes_checked) > -1) {
                     tblAssess.fnSetColumnVis(index, true, false);
                 }
-                else if(value ==='Meta_Description_Count'){
-                    if ($.inArray(tblAllColumns[index-1], columns_checkboxes_checked) > -1) {
+                else if(value ==='Meta_Description_Count' ||value ==='Meta_Description_Count1' ||value ==='Meta_Description_Count2' ||value ==='Meta_Description_Count3'){
+                    //if ($.inArray(tblAllColumns[index-1], columns_checkboxes_checked) > -1) {
                     tblAssess.fnSetColumnVis(index, true, false);
-                    }
-                    else{
-                        tblAssess.fnSetColumnVis(index, false, false);
-                    }
+//                    }
+//                    else{
+//                        tblAssess.fnSetColumnVis(index, false, false);
+//                    }
                 }
                 else {
                     tblAssess.fnSetColumnVis(index, false, false);
