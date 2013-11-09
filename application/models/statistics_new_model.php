@@ -259,7 +259,8 @@ VALUES
             (select `value` from imported_data_parsed where `key`="Product Name" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `product_name`,
             (select `value` from imported_data_parsed where `key`="Description" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `short_description`,
             (select `value` from imported_data_parsed where `key`="Long_Description" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `long_description`,
-            (select `value` from imported_data_parsed where `key`="URL" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `url`
+            (select `value` from imported_data_parsed where `key`="URL" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `url`,
+            (select `value` from imported_data_parsed where `key`="HTags" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `htags`
             from '.$this->tables['statistics_new'].' as `s` left join '.$this->tables['crawler_list'].' as `cl` on `cl`.`imported_data_id` = `s`.`imported_data_id` where `s`.`batch_id`='.$batch_id.$txt_filter_part2);
         $result =  $query->result();
         return $result;

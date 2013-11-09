@@ -2177,7 +2177,7 @@ class Assess extends MY_Controller {
     }
 
     public function get_graph_batch_data(){
-//        echo $_POST['batch_id'] . ' - ' . $_POST['batch_compare_id'];die;
+        
         if(isset($_POST['batch_id']) && isset($_POST['batch_compare_id'])){
             
             if(trim($_POST['batch_id']) == '')
@@ -2200,33 +2200,25 @@ class Assess extends MY_Controller {
                 $params->date_to = '';
                 $results = $this->get_data_for_assess($params);
 
-                /****Foreach Begin****/
-//                short_description_wc
                 foreach($results as $data_row){
-                    $snap_data[$key][] = (int)$data_row->short_description_wc;
+                    $snap_data[$key]['product_name'][] = (string)$data_row->product_name;
+                    $snap_data[$key]['url'][] = (string)$data_row->url;
+                    $snap_data[$key]['short_description_wc'][] = (int)$data_row->short_description_wc;
+                    $snap_data[$key]['long_description_wc'][] = (int)$data_row->long_description_wc;
+                    $snap_data[$key]['revision'][] = (int)$data_row->revision;
+                    $snap_data[$key]['own_price'][] = (float)$data_row->own_price;
+                    $htags = unserialize($data_row->htags);
+                    if($htags){
+                        $snap_data[$key]['h1_word_counts'][] = count($htags['h1']);
+                        $snap_data[$key]['h2_word_counts'][] = count($htags['h2']);
+                    } else {
+                        $snap_data[$key]['h1_word_counts'][] = 0;
+                        $snap_data[$key]['h2_word_counts'][] = 0;
+                }
                 }
                 
-//                foreach($results as $data_row){
-//                    if ($data_row->snap != '') {
-//                        $file = realpath(BASEPATH . "../webroot/webshoots") . '/' . $data_row->snap;
-//                        if (file_exists($file)) {
-//                            if (filesize($file) > 1024) {
-//                                $snap = "<img src='" . base_url() . "webshoots/" . $data_row->snap . "' rel='" . $data_row->id . "' />";
-//                    $output = array(
-//                        $snap,
-//                        $data_row->product_name,
-//                        json_encode($data_row),
-//                    );
-//                            $snap_data[][] = $output;
-//                }
-//            }
-//                    }
-//                }
             }
-//                echo '<pre>';
-//                print_r($snap_data);
-//                echo '</pre>';die;
-            /****Foreach End****/
+            
             $this->output->set_content_type('application/json')->set_output(json_encode($snap_data));
         }
     }

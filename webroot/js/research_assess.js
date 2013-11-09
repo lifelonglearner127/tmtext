@@ -739,20 +739,51 @@ function highChart(){
             batch_compare_id: batch2Value
         }
     }).done(function(data){
+        console.log(data);
         var value1 = [];
         var value2 = [];
-            if(data[0] && data[0].length > 0){
-                value1 = data[0];
+        var valueName = [];
+        valueName[0] = [];
+        valueName[1] = [];
+        var valueUrl = [];
+        valueUrl[0] = [];
+        valueUrl[1] = [];
+            /***First Batch - Begin***/
+            if(data[0] && data[0].short_description_wc.length > 0){
+                value1 = data[0].short_description_wc;
             }
-            if(data[1] && data[1].length > 0){
-                value2 = data[1];
+            if(data[0] && data[0].product_name.length > 0){
+                valueName[0] = data[0].product_name;
             }
+            if(data[0] && data[0].url.length > 0){
+                valueUrl[0] = data[0].url;
+            }
+            /***First Batch - End***/
+            /***Second Batch - Begin***/
+            if(data[1] && data[1].short_description_wc.length > 0){
+                value2 = data[1].short_description_wc;
+            }
+            if(data[1] && data[1].product_name.length > 0){
+                valueName[1] = data[1].product_name;
+            }
+            if(data[1] && data[1].url.length > 0){
+                valueUrl[1] = data[1].url;
+            }
+            /***Second Batch - End***/
+            
+//            if(parseInt(value2.length) > parseInt(value1.length)){
+//                for(var i = 0; i < parseInt(value2.length) - parseInt(value1.length); i++){
+//                    value1.push(0);
+//                }
+//            }
+            
         var seriesObj;
         if(batch1Value != -1 && batch2Value != -1){
             seriesObj = [
                             {
                                 name: batch1Name,
-                                data: value1
+                                data: value1,
+                                color: '#2f7ed8'
                             },
                             {
                                 name: batch2Name,
@@ -764,7 +795,8 @@ function highChart(){
             seriesObj = [
                             {
                                 name: batch1Name,
-                                data: value1
+                                data: value1,
+                                color: '#2f7ed8'
                             }
                         ];
         }
@@ -782,6 +814,19 @@ function highChart(){
                 categories: [],
                 labels: {
                   enabled: false
+                }
+            },
+            tooltip: {
+                shared: true,
+                formatter: function() {
+                    var result = '<small>'+this.x+'</small>';
+                    $.each(this.points, function(i, datum) {
+                        result += '<br /><b style="color: '+datum.series.color+';" >' + datum.series.name + '</b>';
+                        result += '<br /><span>' + valueName[i][datum.x] + '</span>';
+                        result += '<br /><a href="'+valueUrl[i][datum.x]+'" style="color: blue;" >' + valueUrl[i][datum.x] + '</a>';
+                        result += '<br /><span>Short description: ' + datum.y + ' words</span>';
+                    });
+                    return result;
                 }
             },
 
