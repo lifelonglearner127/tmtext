@@ -201,9 +201,11 @@ class Assess extends MY_Controller {
                                
                                $parsed_attributes_unserialize = unserialize($cmpare->parsed_attributes);
                                if($parsed_attributes_unserialize['item_id'])
-                                  $parsed_attributes_unserialize_val = $parsed_attributes_unserialize['item_id']; 
-                               
-                               $parsed_meta_unserialize = unserialize($cmpare->parsed_meta);
+                                  $parsed_attributes_unserialize_val = $parsed_attributes_unserialize['item_id'];
+                               if($parsed_attributes_unserialize['model'])
+                                  $parsed_attributes_unserialize_val = $parsed_attributes_unserialize['model'];
+
+                                $parsed_meta_unserialize = unserialize($cmpare->parsed_meta);
                                if($parsed_meta_unserialize['description']){
                                 $parsed_meta_unserialize_val = $parsed_meta_unserialize['description'];
                                 $parsed_meta_unserialize_val_c = count(explode(" ",$parsed_meta_unserialize_val));
@@ -219,6 +221,7 @@ class Assess extends MY_Controller {
                                $val->snap1 = $cmpare->snap;
                                $val->product_name1 = $cmpare->product_name;
                                $val->item_id1 = $parsed_attributes_unserialize_val;
+                               $val->model1 = '#';
                                $val->url1 = $cmpare->url;
                                $val->short_description_wc1 = $cmpare->short_description_wc;
                                $val->long_description_wc1 = $cmpare->long_description_wc;
@@ -968,6 +971,7 @@ class Assess extends MY_Controller {
                 'created' => 'true',
                 'product_name' => 'true',
                 'item_id' => 'true',
+                'model' => 'true',
                 'url' => 'true',
                 'short_description_wc' => 'true',
                 'short_seo_phrases' => 'true',
@@ -1159,7 +1163,11 @@ class Assess extends MY_Controller {
                 "sName" =>"item_id", 
                 "sClass" => "item_id"
             ),
-            
+           array(
+               "sTitle" => "Model",
+               "sName" =>"model",
+               "sClass" => "model"
+           ),
             array(
                 "sTitle" => "URL", 
                 "sName" => "url", 
@@ -1316,6 +1324,7 @@ class Assess extends MY_Controller {
               $columns[] = array("sTitle" => "Snapshot", "sName" => 'snap' . $i);
               $columns[] = array("sTitle" => "Product Name", "sName" => 'product_name' . $i);
               $columns[] = array("sTitle" => "item ID","sClass" => "item_id".$i, "sName" => 'item_id' . $i);
+              $columns[] = array("sTitle" => "Model","sClass" => "model".$i, "sName" => 'model' . $i);
               $columns[] = array("sTitle" => "URL", "sName" => 'url' . $i);
               $columns[] = array("sTitle" => "Words <span class='subtitle_word_short' >Short</span>", "sName" => 'short_description_wc' . $i);
               $columns[] = array("sTitle" => "Words <span class='subtitle_word_long' >Long</span>", "sName" => 'long_description_wc' . $i);
@@ -1368,6 +1377,7 @@ class Assess extends MY_Controller {
             $result_row->Meta_Description = "";
             $result_row->Meta_Description_Count = "";
             $result_row->item_id = "";
+            $result_row->model = "#";
             $result_row->H1_Tags = "";
             $result_row->H1_Tags_Count = "";
             $result_row->H2_Tags = "";
@@ -1400,7 +1410,9 @@ class Assess extends MY_Controller {
 
                     $parsed_attributes_unserialize = unserialize($sim_items[$i - 1]->parsed_attributes);
                     if($parsed_attributes_unserialize['item_id'])
-                       $parsed_attributes_unserialize_val = $parsed_attributes_unserialize['item_id']; 
+                       $parsed_attributes_unserialize_val = $parsed_attributes_unserialize['item_id'];
+                    if($parsed_attributes_unserialize['model'])
+                        $parsed_attributes_unserialize_val = $parsed_attributes_unserialize['model'];
 
                     $parsed_meta_unserialize = unserialize($sim_items[$i - 1]->parsed_meta);
                     if($parsed_meta_unserialize['description']){
@@ -1427,6 +1439,7 @@ class Assess extends MY_Controller {
                     $result_row['url' . $i] = $sim_items[$i - 1]->url !== false ? "<span class='res_url'><a target='_blank' href='".$sim_items[$i - 1]->url."'>".$sim_items[$i - 1]->url."</a></span>" : "-";
                     $result_row['product_name' . $i] = $sim_items[$i - 1]->product_name !== false ? "<span class='tb_product_name'>".$sim_items[$i - 1]->product_name."</span>" : "-";
                     $result_row['item_id' . $i] = $parsed_attributes_unserialize_val;
+                    $result_row['model' . $i] = '#';
                     $result_row['short_description_wc' . $i] = $sim_items[$i - 1]->short_description_wc !== false ? $sim_items[$i - 1]->short_description_wc : '-';
                     $result_row['long_description_wc' . $i] = $sim_items[$i - 1]->long_description_wc !== false ? $sim_items[$i - 1]->long_description_wc : '-';
                     $result_row['Meta_Description' . $i] = $parsed_meta_unserialize_val;
@@ -1449,6 +1462,9 @@ class Assess extends MY_Controller {
             }
             if ($row->item_id1) {
                 $result_row->item_id1 = $row->item_id1;
+            }
+            if ($row->model1) {
+                $result_row->model1 = $row->model1;
             }
             if ($row->url1) {
                 $result_row->url1 = "<span class='res_url'><a href='" . $row->url1 . "' target='_blank'>$row->url1</a><span>";
@@ -1493,6 +1509,9 @@ class Assess extends MY_Controller {
             }
             if($pars_atr['parsed_attributes']['item_id'] && $pars_atr['parsed_attributes']['item_id'] !=''){
                 $result_row->item_id = $pars_atr['parsed_attributes']['item_id'];
+            }
+            if($pars_atr['parsed_attributes']['model'] && $pars_atr['parsed_attributes']['model'] !=''){
+                $result_row->model = $pars_atr['parsed_attributes']['model'];
             }
             
             $result_row->H1_Tags= '';
@@ -2071,6 +2090,7 @@ class Assess extends MY_Controller {
                         $row_created,
                         '<span class= "'. $tb_product_name.'">'.$data_row->product_name."</span>",
                         $data_row->item_id,
+                        $data_row->model,
                         $row_url,
                         $data_row->short_description_wc,
                         $data_row->short_seo_phrases,
@@ -2099,6 +2119,7 @@ class Assess extends MY_Controller {
                             $output_row[] = $data_row['snap' . $i]!=null?$data_row['snap' . $i]:'-';
                             $output_row[] = $data_row['product_name' . $i]!=null?$data_row['product_name' . $i]:'-';
                             $output_row[] = $data_row['item_id' . $i]!=null?$data_row['item_id' . $i]:'';
+                            $output_row[] = $data_row['model' . $i]!=null?$data_row['model' . $i]:'';
                             $output_row[] = $data_row['url' . $i]!=null?$data_row['url' . $i]:'-';
                             $output_row[] = $data_row['short_description_wc' . $i]!=null?$data_row['short_description_wc' . $i]:'-';
                             $output_row[] = $data_row['long_description_wc' . $i]!=null?$data_row['long_description_wc' . $i]:'-';
@@ -2111,6 +2132,7 @@ class Assess extends MY_Controller {
                         $output_row[] = $data_row->snap1;
                         $output_row[] = $data_row->product_name1;
                         $output_row[] = $data_row->item_id1;
+                        $output_row[] = $data_row->model1;
                         $output_row[] = $data_row->url1;
                         $output_row[] = $data_row->short_description_wc1;
                         $output_row[] = $data_row->long_description_wc1;

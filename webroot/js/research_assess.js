@@ -37,6 +37,7 @@ $(function() {
             "created",
             "product_name",
             "item_id",
+            "model",
             "url",
             "short_description_wc",
             "short_seo_phrases",
@@ -62,6 +63,7 @@ $(function() {
             "snap",
             "product_name",
             "item_id",
+            "model",
             "url",
             "short_description_wc",
             "long_description_wc",
@@ -70,6 +72,7 @@ $(function() {
             "snap1",
             "product_name1",
             "item_id1",
+            "model1",
             "url1",
             "short_description_wc1",
             "long_description_wc1",
@@ -204,7 +207,7 @@ $(function() {
              }
             },
             "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-                $(nRow).attr("add_data", aData[32]);
+                //$(nRow).attr("add_data", aData[25]);
                 return nRow;
             },
             "fnDrawCallback": function(oSettings) {
@@ -297,7 +300,10 @@ $(function() {
                         "sLengthMenu": "_MENU_ rows"
                     },
                     "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-                        $(nRow).attr("add_data", aData[32]);
+                        console.log('----------'+aData+'------');
+                        console.log('index === '+iDisplayIndex);
+                        console.log('val === '+aData[iDisplayIndex]);
+                        $(nRow).attr("add_data", aData[34]);
                         return nRow;
                     },
                     "fnDrawCallback": function(oSettings) {
@@ -449,6 +455,12 @@ $(function() {
             "sClass": "item_id"
         },
         {
+            "sTitle": "Model",
+            "sName": "model",
+            "sWidth": "15%",
+            "sClass": "model"
+        },
+        {
             "sTitle": "URL",
             "sName": "url",
             "sWidth": "15%",
@@ -585,6 +597,12 @@ $(function() {
             "sClass": "item_id1"
         },
         {
+            "sTitle": "Model",
+            "sName": "model1",
+            "sWidth": "15%",
+            "sClass": "model1"
+        },
+        {
             "sTitle": "URL",
             "sName": "url1",
             "sWidth": "15%"
@@ -699,7 +717,10 @@ $(function() {
             });
         },
         "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-            $(nRow).attr("add_data", aData[25]);
+            console.log('----------'+aData+'------');
+            console.log('index === '+iDisplayIndex);
+            console.log('val === '+aData[iDisplayIndex]);
+            $(nRow).attr("add_data", aData[34]);
             return nRow;
         },
         "fnDrawCallback": function(oSettings) {
@@ -1614,6 +1635,7 @@ var scrollYesOrNot = true;
         var HTags_1 = 0;
         var HTags_2 = 0;
         var item_id = 0;
+        var model = 0;
         var Custom_Keywords_Short_Description = 0;
         var Custom_Keywords_Long_Description = 0;
         $('td.word_short').each(function() {
@@ -1664,6 +1686,11 @@ var scrollYesOrNot = true;
                 item_id += 1;
             }
         });
+        $('td.model').each(function() {
+            if ($(this).text()!='') {
+                model += 1;
+            }
+        });
      
         $.each(tblAllColumns, function(index, value) {
             if ((value == 'short_description_wc' && word_short_num == 0) || (value == 'long_description_wc' && word_long_num == 0)) {
@@ -1681,7 +1708,10 @@ var scrollYesOrNot = true;
             if((value == 'item_id' && item_id == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
             }
-             if((value == 'Meta_Description' && Meta_Description == 0)){
+            if((value == 'model' && model == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+            }
+            if((value == 'Meta_Description' && Meta_Description == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
                 tblAssess.fnSetColumnVis(index+1, false, false);
             }
@@ -1748,6 +1778,7 @@ var scrollYesOrNot = true;
                     created: $("#column_created").attr('checked') == 'checked',
                     product_name: $("#column_product_name").attr('checked') == 'checked',
                     item_id: $("#item_id").attr('checked') == 'checked',
+                    model: $("#model").attr('checked') == 'checked',
                     url: $("#column_url").attr('checked') == 'checked',
                     short_description_wc: $("#column_short_description_wc").attr('checked') == 'checked',
                     short_seo_phrases: $("#column_short_seo_phrases").attr('checked') == 'checked',
