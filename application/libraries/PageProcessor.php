@@ -885,6 +885,12 @@ class PageProcessor {
 			}
 		}
 
+		if (empty($title)) {
+			foreach($this->nokogiri->get('h1') as $item) {
+				$title = $item['#text'][0];
+			}
+		}
+
 		foreach($this->nokogiri->get('.content .productDescriptionWrapper .productDescriptionWrapper') as $item) {
 			$line = trim($item['#text'][0]);
 			if (!empty($line)) {
