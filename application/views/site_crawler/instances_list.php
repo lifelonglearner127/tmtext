@@ -1,0 +1,69 @@
+<div class="tabbable">
+    <ul class="nav nav-tabs jq-system-tabs">
+        <li class=""><a data-toggle="tab" href="<?php echo site_url('system');?>">General</a></li>
+        <li class=""><a data-toggle="tab" href="<?php echo site_url('system/sites_view');?>">Sites</a></li>
+        <li class=""><a data-toggle="tab" href="<?php echo site_url('site_crawler');?>">Site Crawler</a></li>
+        <li class="active"><a data-toggle="tab" href="<?php echo site_url('site_crawler/instances_list');?>">Crawler Instances</a></li>
+        <li class=""><a data-toggle="tab" href="<?php echo site_url('brand/import');?>">Brands</a></li>
+        <li class=""><a data-toggle="tab" href="<?php echo site_url('system/batch_review');?>">Batch Review</a></li>
+        <li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_compare');?>">Product Compare</a></li>
+        <li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_productsmatch');?>">Product Match</a></li>
+        <li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_reports');?>">Reports</a></li>
+        <li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_logins');?>">Logins</a></li>
+        <li class=""><a data-toggle="tab" href="<?php echo site_url('system/keywords');?>">Keywords</a></li>
+        <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_pricing');?>">Pricing </a></li>
+        <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/product_models');?>">Product models </a></li>
+        <li class=""><a data-toggle="tab" href="<?php echo site_url('system/snapshot_queue');?>">Snapshot Queue</a></li>
+    </ul>
+	  <div class="tab-content">
+
+		<div class="info-message"></div>
+		<div class="site_crawler_content">
+			<h3 class="span3 current_list_title">Instances: <br/></h3>
+
+			<div id="crawl_div" style="margin-top:15px;">
+                <input type="text" class="span1 ml_10" name="instances" >
+                <button id="run_instances" class="btn new_btn btn-success ml_10"><i class="icon-white icon-ok"></i>&nbsp;Run</button>
+                <button id="run_spot_instances" class="btn new_btn btn-success  ml_10"><i class="icon-white icon-ok"></i>&nbsp;Spot Run</button>
+            </div>
+			<div class="row-fluid mt_5">
+				<div class="search_area uneditable-input span10" style="cursor: text; width: 765px; height: 320px; overflow : auto;" id="Current_List">
+				<ul>
+					<lh><span><input type="checkbox" style='margin-top: -6px;' value="" id="checkAll"/></span>
+						<span style='width: 80px;'>Instance Id</span>
+						<span>Type</span>
+						<span>State</span>
+						<span>Public DNS Name</span>
+					</lh>
+				</ul>
+				</div>
+				<button id="terminate_instances" class="btn new_btn btn-danger mt_10 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Terminate</button>
+			</div>
+		</div>
+	  </div>
+</div>
+
+<script>
+
+function loadCurrentList(url) {
+	$("#checkAll").removeAttr('checked');
+	url = typeof url !== 'undefined' ? url: '<?php echo site_url('site_crawler/get_instances');?>';
+
+	$.get(url, function(data) {
+		$('#Current_List ul li').remove();
+//                console.log(data);
+		$.each(data.instances, function (index, node) {
+			$('#Current_List ul').append("<li id=\"id_"+node.id+"\"><span><input data-instance_id=\""+node.instance_id+"\" data-id=\""+node.id+"\" type=\"checkbox\" name=\"ids[]\" value=\""+node.id+"\"/></span><span style='width: 80px;'>"+node.instance_id+"</span><span>"+node.instance_type+"</span><span>"+node.state_name+"</span><span class=\"url ellipsis\">"+node.public_dns_name+"</span></li>");
+
+		});
+
+    });
+}
+
+$(function () {
+	jQuery(document).ready(function($) {
+		loadCurrentList();
+	});
+});
+
+</script>

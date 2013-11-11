@@ -403,4 +403,44 @@ class Site_Crawler extends MY_Controller {
 
 
 	}
+
+	public function instances_list()
+	{
+        $this->data['instances'] = $instances;
+		$this->render();
+	}
+
+	public function get_instances()
+	{
+		$this->load->model('crawler_instances_model');
+
+		$this->output->set_content_type('application/json')
+		 ->set_output( json_encode(array(
+			'instances' => $this->crawler_instances_model->getAll(),
+		)));
+	}
+
+	public function run_instances()
+	{
+		$quantity = 1;
+		if ($this->input->post('quantity')) {
+			$quantity = $this->input->post('quantity');
+		}
+
+		var_dump($quantity);
+		die();
+		$this->load->model('crawler_instances_model');
+		$this->load->library('awslib');
+
+		$result = $this->awslib->run($quantity,$quantity);
+ 		$ids = $result->getPath('Instances/*/InstanceId');
+
+		foreach($ids as $id) {
+			$this->crawler_instances_model->insert($id,  $this->config->item('aws_instance_type'), '', '');
+		}
+
+ 		var_dump($ids,$result->getPath('Instances'));
+
+	}
+
 }
