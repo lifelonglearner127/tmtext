@@ -800,8 +800,9 @@ class Assess extends MY_Controller {
             
 
             $res_array = array();
-            $line = array('Product Name' => 'Product Name', 'Url' => 'Url', 'Word Count (S)' => 'Word Count (S)', 'Word Count (L)' => 'Word Count (L)', 'SEO Phrases (S)' => 'SEO Phrases (S)', 'SEO Phrases (L)' => 'SEO Phrases (L)', 'Price' => 'Price');
+            $line = array('Date' => 'Date','Product Name' => 'Product Name', 'Url' => 'Url', 'Word Count (S)' => 'Word Count (S)', 'Word Count (L)' => 'Word Count (L)', 'SEO Phrases (S)' => 'SEO Phrases (S)', 'SEO Phrases (L)' => 'SEO Phrases (L)', 'Price' => 'Price');
             foreach ($results as $key => $row) {
+                $res_array[$key]['Date'] = $row->created;
                 $res_array[$key]['Product Name'] = $row->product_name;
                 $res_array[$key]['Url'] = $row->url;
                 $res_array[$key]['Word Count (S)'] = $row->short_description_wc;
