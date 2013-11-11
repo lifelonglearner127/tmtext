@@ -512,7 +512,7 @@ $(function() {
             
         },
         {
-            "sTitle" : "Prod Desc <span class='subtitle_word_long' ># Words</span>",
+            "sTitle" : "Meta Desc <span class='subtitle_word_long' ># Words</span>",
             "sName" : "Meta_Description_Count", 
             "sWidth" : "4%",
             "sClass" : "Meta_Description_Count"
