@@ -880,16 +880,20 @@ class Assess extends MY_Controller {
         } else {
             
             $this->load->model('batches_model');
-            $batch_id = $this->input->get('batch');
+            //$batch_id = $this->input->get('batch');
             $customer_name = $this->batches_model->getCustomerById($batch_id);
-            if (empty($batch_id))
+            if (empty($batch_id)){
                 $batch_id = '';
+                $qnd= '';
+            }else{
+                $qnd= " WHERE `s`.`batch_id` = $batch_id";
+            }
             $this->load->database();
             $query = $this->db->query('
             SELECT 
                 `s`.`created` AS `Date`, 
-                (SELECT `value` FROM imported_data_parsed WHERE `key`="Product Name" AND `imported_data_id` = `s`.`imported_data_id` AND `revision`=`s`.`revision` LIMIT 1) AS `Product Name`, 
-                (SELECT `value` FROM imported_data_parsed WHERE `key`="Url" AND `imported_data_id` = `s`.`imported_data_id` AND `revision`=`s`.`revision` LIMIT 1) AS `URL`, 
+                (SELECT `value` FROM imported_data_parsed WHERE `key`="Product Name" AND `imported_data_id` = `s`.`imported_data_id` LIMIT 1) AS `Product Name`, 
+                (SELECT `value` FROM imported_data_parsed WHERE `key`="Url" AND `imported_data_id` = `s`.`imported_data_id` LIMIT 1) AS `URL`, 
                 `s`.`short_description_wc` AS `Word Count (S)`, 
                 `s`.`short_seo_phrases` AS `SEO Phrases (S)`, 
                 `s`.`long_description_wc` AS `Word Count (L)`, 
@@ -899,7 +903,8 @@ class Assess extends MY_Controller {
             FROM 
                 (`statistics_new` AS s) 
             LEFT JOIN 
-                `crawler_list` AS cl ON `cl`.`imported_data_id` = `s`.`imported_data_id`'
+                `crawler_list` AS cl ON `cl`.`imported_data_id` = `s`.`imported_data_id`
+            '.$qnd
             );
             $line = array();
             foreach ($query->list_fields() as $name) {
