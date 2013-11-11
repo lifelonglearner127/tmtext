@@ -207,7 +207,7 @@ $(function() {
              }
             },
             "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-                $(nRow).attr("add_data", aData[32]);
+                $(nRow).attr("add_data", aData[24]);
                 return nRow;
             },
             "fnDrawCallback": function(oSettings) {
