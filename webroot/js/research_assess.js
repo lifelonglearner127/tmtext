@@ -2325,14 +2325,18 @@ var scrollYesOrNot = true;
         var batch_id= $('select[name="research_assess_batches"]').find('option:selected').val();
         var cmp_selected = $('#research_assess_compare_batches_batch').val();
         $(this).text('Exporting...');
-
+        var main_path=  $(this).prop('href');
         $(this).attr('href', $(this).prop('href')+'?batch_id='+batch_id+'&cmp_selected='+cmp_selected);
         $.fileDownload($(this).prop('href'))
                 .done(function() {
             $('#research_assess_export').removeAttr('disabled');
+            console.log('main_path = ');
+            console.log(main_path);
+            $('#research_assess_export').attr('href', main_path);
             $('#research_assess_export').text('Export');
         })
                 .fail(function() {
         });
+        
     });
 });
