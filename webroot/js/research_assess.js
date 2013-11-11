@@ -207,7 +207,7 @@ $(function() {
              }
             },
             "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-                //$(nRow).attr("add_data", aData[25]);
+                $(nRow).attr("add_data", aData[32]);
                 return nRow;
             },
             "fnDrawCallback": function(oSettings) {
@@ -303,7 +303,7 @@ $(function() {
                         console.log('----------'+aData+'------');
                         console.log('index === '+iDisplayIndex);
                         console.log('val === '+aData[iDisplayIndex]);
-                        $(nRow).attr("add_data", aData[34]);
+                        $(nRow).attr("add_data", aData[24]);
                         return nRow;
                     },
                     "fnDrawCallback": function(oSettings) {
@@ -627,7 +627,7 @@ $(function() {
             
         },
         {
-            "sTitle" : "Words",
+            "sTitle" : "Prod Desc <span class='subtitle_word_long' ># Words</span>",
             "sName" : "Meta_Description_Count1", 
             "sWidth" : "4%",
             "sClass" : "Meta_Description_Count1"
@@ -720,7 +720,7 @@ $(function() {
             console.log('----------'+aData+'------');
             console.log('index === '+iDisplayIndex);
             console.log('val === '+aData[iDisplayIndex]);
-            $(nRow).attr("add_data", aData[34]);
+            $(nRow).attr("add_data", aData[24]);
             return nRow;
         },
         "fnDrawCallback": function(oSettings) {
@@ -1630,11 +1630,27 @@ var scrollYesOrNot = true;
 
     function check_word_columns() {
         var word_short_num = 0;
+        var word_short_num1 = 0;
+        var word_short_num2 = 0;
+        var word_short_num3 = 0;
+        var word_short_num4 = 0;
         var word_long_num = 0;
+        var word_long_num1 = 0;
+        var word_long_num2 = 0;
+        var word_long_num3 = 0;
+        var word_long_num4 = 0;
         var Meta_Description =0;
+        var Meta_Description1 =0;
+        var Meta_Description2 =0;
+        var Meta_Description3 =0;
+        var Meta_Description4 =0;
         var HTags_1 = 0;
         var HTags_2 = 0;
         var item_id = 0;
+        var item_id1 = 0;
+        var item_id2 = 0;
+        var item_id3 = 0;
+        var item_id4 = 0;
         var model = 0;
         var Custom_Keywords_Short_Description = 0;
         var Custom_Keywords_Long_Description = 0;
@@ -1644,10 +1660,58 @@ var scrollYesOrNot = true;
                 word_short_num += 1;
             }
         });
+        $('td.word_short1').each(function() {
+            var txt = parseInt($(this).text());
+            if (txt > 0) {
+                word_short_num1 += 1;
+            }
+        });
+        $('td.word_short2').each(function() {
+            var txt = parseInt($(this).text());
+            if (txt > 0) {
+                word_short_num2 += 1;
+            }
+        });
+        $('td.word_short3').each(function() {
+            var txt = parseInt($(this).text());
+            if (txt > 0) {
+                word_short_num3 += 1;
+            }
+        });
+        $('td.word_short4').each(function() {
+            var txt = parseInt($(this).text());
+            if (txt > 0) {
+                word_short_num4 += 1;
+            }
+        });
         $('td.word_long').each(function() {
             var txt = parseInt($(this).text());
             if (txt > 0) {
                 word_long_num += 1;
+            }
+        });
+        $('td.word_long1').each(function() {
+            var txt = parseInt($(this).text());
+            if (txt > 0) {
+                word_long_num1 += 1;
+            }
+        });
+        $('td.word_long2').each(function() {
+            var txt = parseInt($(this).text());
+            if (txt > 0) {
+                word_long_num2 += 1;
+            }
+        });
+        $('td.word_long3').each(function() {
+            var txt = parseInt($(this).text());
+            if (txt > 0) {
+                word_long_num3 += 1;
+            }
+        });
+        $('td.word_long4').each(function() {
+            var txt = parseInt($(this).text());
+            if (txt > 0) {
+                word_long_num4 += 1;
             }
         });
         $('td.Custom_Keywords_Short_Description').each(function() {
@@ -1679,11 +1743,63 @@ var scrollYesOrNot = true;
                 Meta_Description += 1;
             }
         });
+        $('td.Meta_Description1').each(function() {
+            
+            if ($(this).text()!='') {
+                Meta_Description1 += 1;
+            }
+        });
+        $('td.Meta_Description2').each(function() {
+            
+            if ($(this).text()!='') {
+                Meta_Description2 += 1;
+            }
+        });
+        $('td.Meta_Description3').each(function() {
+            
+            if ($(this).text()!='') {
+                Meta_Description3 += 1;
+            }
+        });
+        $('td.Meta_Description4').each(function() {
+            
+            if ($(this).text()!='') {
+                Meta_Description4 += 1;
+            }
+        });
         $('td.item_id').each(function() {
             
            var txt = parseInt($(this).text());
             if (txt > 0) {
                 item_id += 1;
+            }
+        });
+        $('td.item_id1').each(function() {
+            
+           var txt = parseInt($(this).text());
+            if (txt > 0) {
+                item_id1 += 1;
+            }
+        });
+        $('td.item_id2').each(function() {
+            
+           var txt = parseInt($(this).text());
+            if (txt > 0) {
+                item_id2 += 1;
+            }
+        });
+        $('td.item_id3').each(function() {
+            
+           var txt = parseInt($(this).text());
+            if (txt > 0) {
+                item_id3 += 1;
+            }
+        });
+        $('td.item_id4').each(function() {
+            
+           var txt = parseInt($(this).text());
+            if (txt > 0) {
+                item_id4 += 1;
             }
         });
         $('td.model').each(function() {
@@ -1694,6 +1810,18 @@ var scrollYesOrNot = true;
      
         $.each(tblAllColumns, function(index, value) {
             if ((value == 'short_description_wc' && word_short_num == 0) || (value == 'long_description_wc' && word_long_num == 0)) {
+                tblAssess.fnSetColumnVis(index, false, false);
+            }
+            if ((value == 'short_description_wc1' && word_short_num1 == 0) || (value == 'long_description_wc1' && word_long_num1 == 0)) {
+                tblAssess.fnSetColumnVis(index, false, false);
+            }
+            if ((value == 'short_description_wc2' && word_short_num2 == 0) || (value == 'long_description_wc2' && word_long_num2 == 0)) {
+                tblAssess.fnSetColumnVis(index, false, false);
+            }
+            if ((value == 'short_description_wc3' && word_short_num3 == 0) || (value == 'long_description_wc3' && word_long_num3 == 0)) {
+                tblAssess.fnSetColumnVis(index, false, false);
+            }
+            if ((value == 'short_description_wc4' && word_short_num4 == 0) || (value == 'long_description_wc4' && word_long_num4 == 0)) {
                 tblAssess.fnSetColumnVis(index, false, false);
             }
             if ((value == 'short_seo_phrases' && word_short_num == 0) || (value == 'long_seo_phrases' && word_long_num == 0)) {
@@ -1708,10 +1836,38 @@ var scrollYesOrNot = true;
             if((value == 'item_id' && item_id == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
             }
+            if((value == 'item_id1' && item_id1 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+            }
+            if((value == 'item_id2' && item_id2 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+            }
+            if((value == 'item_id3' && item_id3 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+            }
+            if((value == 'item_id4' && item_id4 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+            }
             if((value == 'model' && model == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
             }
             if((value == 'Meta_Description' && Meta_Description == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+                tblAssess.fnSetColumnVis(index+1, false, false);
+            }
+            if((value == 'Meta_Description1' && Meta_Description1 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+                tblAssess.fnSetColumnVis(index+1, false, false);
+            }
+            if((value == 'Meta_Description2' && Meta_Description2 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+                tblAssess.fnSetColumnVis(index+1, false, false);
+            }
+            if((value == 'Meta_Description3' && Meta_Description3 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+                tblAssess.fnSetColumnVis(index+1, false, false);
+            }
+            if((value == 'Meta_Description4' && Meta_Description4 == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
                 tblAssess.fnSetColumnVis(index+1, false, false);
             }
@@ -1959,22 +2115,18 @@ var scrollYesOrNot = true;
             $('#tblAssess_paginate').show();
             reportPanel(false);
             $.each(tblAllColumns, function(index, value) {
-                value = value.replace("1", "");
-                value = value.replace("2", "");
-                value = value.replace("3", "");
-                value = value.replace("4", "");
-                value = value.replace("5", "");
-                value = value.replace("6", "");
+                value = value.replace(/[0-9]$/, "");
+              
                 if ($.inArray(value, tableCase.details_compare) > -1 && $.inArray(value, columns_checkboxes_checked) > -1) {
                     tblAssess.fnSetColumnVis(index, true, false);
                 }
-                else if(value ==='Meta_Description_Count' ||value ==='Meta_Description_Count1' ||value ==='Meta_Description_Count2' ||value ==='Meta_Description_Count3'){
-                    //if ($.inArray(tblAllColumns[index-1], columns_checkboxes_checked) > -1) {
+                else if(value ==='Meta_Description_Count'){
+                    if ($.inArray("Meta_Description", columns_checkboxes_checked) > -1) {
                     tblAssess.fnSetColumnVis(index, true, false);
-//                    }
-//                    else{
-//                        tblAssess.fnSetColumnVis(index, false, false);
-//                    }
+                    }
+                    else{
+                        tblAssess.fnSetColumnVis(index, false, false);
+                    }
                 }
                 else {
                     tblAssess.fnSetColumnVis(index, false, false);
