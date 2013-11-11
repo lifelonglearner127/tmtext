@@ -19,6 +19,7 @@ class Assess extends MY_Controller {
     }
 
     public function index() {
+        
         $this->load->model('webshoots_model');
         $this->data['customers_list'] = $this->customers_list_new();
         $this->data['user_id'] = $this->ion_auth->get_user_id();
@@ -790,12 +791,13 @@ class Assess extends MY_Controller {
                         }
                         $val->similar_items = $similar_items_data;
                         $results[$key1] = $val;
+                    }else{
+                        unset($results[$key1]);
                     }
                 }
             }
-
-
-
+            
+            
 
             $res_array = array();
             $line = array('Product Name' => 'Product Name', 'Url' => 'Url', 'Word Count (S)' => 'Word Count (S)', 'Word Count (L)' => 'Word Count (L)', 'SEO Phrases (S)' => 'SEO Phrases (S)', 'SEO Phrases (L)' => 'SEO Phrases (L)', 'Price' => 'Price');
@@ -855,7 +857,7 @@ class Assess extends MY_Controller {
                 } else {
                     $res_array[$key]['Price'] = '';
                 }
-            }
+           
 
             if ($max_similar_item_count > 0) {
                 $sim_items = $row->similar_items;
@@ -868,7 +870,7 @@ class Assess extends MY_Controller {
                 }
             }
 
-
+ }
             for ($i = 1; $i <= $max_similar_item_count; $i++) {
                 $line[] = 'Product Name (' . $i . ")";
                 $line[] = 'Url (' . $i . ")";
