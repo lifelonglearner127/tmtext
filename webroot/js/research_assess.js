@@ -839,12 +839,15 @@ function highChart(){
             },
             tooltip: {
                 shared: true,
+                useHTML: true,
                 formatter: function() {
-                    var result = '<small>'+this.x+'</small>';
+                    var result = '<small>'+this.x+'</small><br />';
                     $.each(this.points, function(i, datum) {
-                        result += '<br /><b style="color: '+datum.series.color+';" >' + datum.series.name + '</b>';
+                        if(i > 0)
+                            result += '<hr style="border-top: 1px solid #2f7ed8;" />';
+                        result += '<b style="color: '+datum.series.color+';" >' + datum.series.name + '</b>';
                         result += '<br /><span>' + valueName[i][datum.x] + '</span>';
-                        result += '<br /><a href="'+valueUrl[i][datum.x]+'" style="color: blue;" >' + valueUrl[i][datum.x] + '</a>';
+                        result += '<br /><a href="'+valueUrl[i][datum.x]+'" target="_blank" style="color: blue;" >' + valueUrl[i][datum.x] + '</a>';
                         result += '<br /><span>Short description: ' + datum.y + ' words</span>';
                     });
                     return result;
