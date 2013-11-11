@@ -251,7 +251,7 @@ class Assess extends MY_Controller {
                 foreach ($results as $key1 => $val) {
                     $similar_items = unserialize($val->similar_products_competitors);
                     $similar_items_data = array();
-                    if (count($similar_items) > 0) {
+                    if (count($similar_items) > 1) {
                         foreach ($similar_items as $key => $item) {
                             if (substr_count(strtolower($customer_name), strtolower($item['customer'])) == 0) {
                                 $cmpare = $this->statistics_new_model->get_compare_item($similar_items[$key]['imported_data_id']);
@@ -776,7 +776,7 @@ class Assess extends MY_Controller {
                 foreach ($results as $key1 => $val) {
                     $similar_items = unserialize($val->similar_products_competitors);
                     $similar_items_data = array();
-                    if (count($similar_items) > 0) {
+                    if (count($similar_items) > 1) {
                         foreach ($similar_items as $key => $item) {
                             if (substr_count(strtolower($customer_name), strtolower($item['customer'])) == 0) {
                                 $cmpare = $this->statistics_new_model->get_compare_item($similar_items[$key]['imported_data_id']);
