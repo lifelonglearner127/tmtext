@@ -882,7 +882,7 @@ class Assess extends MY_Controller {
             $this->load->model('batches_model');
             //$batch_id = $this->input->get('batch');
             $customer_name = $this->batches_model->getCustomerById($batch_id);
-            if (empty($batch_id)){
+            if (empty($batch_id) || $batch_id == 0){
                 $batch_id = '';
                 $qnd= '';
             }else{
