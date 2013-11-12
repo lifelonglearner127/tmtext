@@ -330,7 +330,10 @@ class Site_Crawler extends MY_Controller {
 			$rows = $this->crawler_list_model->get($id);
 		} else if ($this->input->post('ids')) {
 			$rows = $this->crawler_list_model->getIds($this->input->post('ids'));
-		} else if ($this->input->post('batch_id')) {
+		} else if ($this->input->post('url') && $this->input->post('recrawl')) {
+            $id = $this->crawler_list_model->getByUrl($this->input->post('url'));
+            $rows = $this->crawler_list_model->getIds($id);
+        } else if ($this->input->post('batch_id')) {
 			if ($this->input->post('recrawl')) {
 //				$rows = $this->crawler_list_model->getByBatchId($this->input->post('batch_id'));
 				$rows = $this->crawler_list_model->getOldByBatchId($this->input->post('batch_id'));
@@ -400,7 +403,7 @@ class Site_Crawler extends MY_Controller {
 				$this->crawler_list_model->updateStatus($data->id, 'queued');
 			}
 		}
-
+        
 
 	}
 

@@ -1395,7 +1395,13 @@ var scrollYesOrNot = true;
                 id: 'assessDetailsDialog_btnReCrawl',
                 style: 'margin-right:-210px; float:right; display:none',
                 click: function() {
-                    copyToClipboard(textToCopy);
+                     $.post(base_url+'index.php/site_crawler/crawl_all', {
+                         recrawl: 1,
+                         batch_id: $('select[name="research_assess_batches"]').find('option:selected').val(),
+                         url: $('input#assessDetails_url').val()
+                     }, function(data) {
+
+                     });
                 }
             },
             '': {
