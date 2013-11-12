@@ -723,7 +723,20 @@ class Assess extends MY_Controller {
         $cmp_selected = trim(strtolower($_GET['cmp_selected']));
         $selected_columns = $_GET['checked_columns'];
         $selected_columns = explode(',',trim($selected_columns));
-       
+//        echo "<pre>";
+//        print_r($selected_columns);
+//        
+        $line = array('created' => 'Date','product_name' => 'Product Name', 'url' => 'Url', 'short_description_wc' => 'Word Count (S)', 'long_description_wc' => 'Word Count (L)', 'short_seo_phrases' => 'SEO Phrases (S)', 'long_seo_phrases' => 'SEO Phrases (L)', 'price_diff' => 'Price');
+            
+        foreach($line as $key => $val){
+                if(!in_array($key , $selected_columns )){
+                    unset($line[$key]);
+                }
+        }
+        if(count($line)==0){
+            $this->load->helper('csv');
+            array_to_csv(array(), date("Y-m-d H:i") . '.csv');
+        }
         if (($cmp_selected=='all') || ($cmp_selected >0)) {
 
             $query = $this->db->query('select `s`.*,
@@ -803,18 +816,23 @@ class Assess extends MY_Controller {
             
 
             $res_array = array();
-            $line = array('created' => 'Date','product_name' => 'Product Name', 'url' => 'Url', 'word_count_S' => 'Word Count (S)', 'word_count_l' => 'Word Count (L)', 'short_seo_phrases' => 'SEO Phrases (S)', 'long_seo_phrases' => 'SEO Phrases (L)', 'price_diff' => 'Price');
+            
             foreach ($results as $key => $row) {
-                $res_array[$key]['Date'] = $row->created;
-                $res_array[$key]['Product Name'] = $row->product_name;
-                $res_array[$key]['Url'] = $row->url;
-                $res_array[$key]['Word Count (S)'] = $row->short_description_wc;
-                $res_array[$key]['Word Count (L)'] = $row->long_description_wc;
-                $res_array[$key]['SEO Phrases (S)'] = $row->short_seo_phrases;
-                $res_array[$key]['SEO Phrases (L)'] = $row->long_seo_phrases;
-                $res_array[$key]['Price'] = $row->price_diff;
-
-
+                $row = (array)$row;
+                foreach($line as $k => $v){
+                     $res_array[$key][$k]= $row[$k];
+                }
+                
+                $row = (object)$row;
+//                $res_array[$key]['Date'] = $row->created;
+//                $res_array[$key]['Product Name'] = $row->product_name;
+//                $res_array[$key]['Url'] = $row->url;
+//                $res_array[$key]['Word Count (S)'] = $row->short_description_wc;
+//                $res_array[$key]['Word Count (L)'] = $row->long_description_wc;
+//                //$res_array[$key]['duplicate_content'] = $row->duplicate_content;
+//                $res_array[$key]['SEO Phrases (S)'] = $row->short_seo_phrases;
+//                $res_array[$key]['SEO Phrases (L)'] = $row->long_seo_phrases;
+//                $res_array[$key]['Price'] = $row->price_diff;
 
                 if (trim($res_array[$key]['SEO Phrases (S)']) != 'None') {
                     $shortArr = unserialize($res_array[$key]['SEO Phrases (S)']);
@@ -867,22 +885,38 @@ class Assess extends MY_Controller {
                 $sim_items = $row->similar_items;
 
                 for ($i = 1; $i <= $max_similar_item_count; $i++) {
-                    $res_array[$key]['Product Name (' . $i . ")"] = $sim_items[$i - 1]->product_name ? $sim_items[$i - 1]->product_name : '';
-                    $res_array[$key]['Url (' . $i . ")"] = $sim_items[$i - 1]->url ? $sim_items[$i - 1]->url : '';
-                    $res_array[$key]['Word Count (S) (' . $i . ")"] = $sim_items[$i - 1]->short_description_wc ? $sim_items[$i - 1]->short_description_wc : '';
+                    if(in_array('product_name', $selected_columns)){
+                        $res_array[$key]['Product Name (' . $i . ")"] = $sim_items[$i - 1]->product_name ? $sim_items[$i - 1]->product_name : '';
+                    }
+                    if(in_array('url', $selected_columns)){
+                        $res_array[$key]['Url (' . $i . ")"] = $sim_items[$i - 1]->url ? $sim_items[$i - 1]->url : '';
+                    }
+                    if(in_array('short_description_wc', $selected_columns)){
+                        $res_array[$key]['Word Count (S) (' . $i . ")"] = $sim_items[$i - 1]->short_description_wc ? $sim_items[$i - 1]->short_description_wc : '';
+                    }
+                    if(in_array('long_description_wc', $selected_columns)){
                     $res_array[$key]['Word Count (L) (' . $i . ")"] = $sim_items[$i - 1]->long_description_wc ? $sim_items[$i - 1]->long_description_wc : '';
+                    }
                 }
             }
 
  }
             for ($i = 1; $i <= $max_similar_item_count; $i++) {
-                $line[] = 'Product Name (' . $i . ")";
-                $line[] = 'Url (' . $i . ")";
-                $line[] = 'Word Count (S) (' . $i . ")";
-                $line[] = 'Word Count (L) (' . $i . ")";
+                if(in_array('product_name', $selected_columns)){
+                    $line[] = 'Product Name (' . $i . ")";
+                }
+                if(in_array('url', $selected_columns)){
+                    $line[] = 'Url (' . $i . ")";
+                }
+                if(in_array('short_description_wc', $selected_columns)){
+                    $line[] = 'Word Count (S) (' . $i . ")";
+               }
+               if(in_array('long_description_wc', $selected_columns)){
+                    $line[] = 'Word Count (L) (' . $i . ")";
+               }
             }
             
-            array_unshift($res_array, $line);
+           
         } else {
             
             $this->load->model('batches_model');
@@ -894,28 +928,69 @@ class Assess extends MY_Controller {
             }else{
                 $qnd= " WHERE `s`.`batch_id` = $batch_id";
             }
+             $from_s_count = 0;
+             $query_part = '';
+             if(in_array('created', $selected_columns)){
+                $query_part[]= '`s`.`created` AS `Date` ';
+            }
+            if(in_array('product_name', $selected_columns)){
+               $query_part[]= '(SELECT `value` FROM imported_data_parsed WHERE `key`= "Product Name" AND `imported_data_id` = `s`.`imported_data_id` LIMIT 1) AS `Product Name`';
+            }
+            if(in_array('url', $selected_columns)){
+                $query_part[]= '(SELECT `value` FROM imported_data_parsed WHERE `key`="Url" AND `imported_data_id` = `s`.`imported_data_id` LIMIT 1) AS `URL` ';
+            }
+            if(in_array('short_description_wc', $selected_columns)){
+                $query_part[]= '`s`.`short_description_wc` AS `Word Count (S)`';
+                
+            }
+            if(in_array('short_seo_phrases', $selected_columns)){
+                $query_part[]= '(`s`.`short_seo_phrases` AS `SEO Phrases (S)` ';
+                $from_s_count++;
+            }
+            
+            if(in_array('long_description_wc', $selected_columns)){
+                $query_part[]= "`s`.`long_description_wc` AS `Word Count (L)` ";
+                
+            }
+            
+            if(in_array('long_description_wc', $selected_columns)){
+                $query_part[]= "`s`.`long_seo_phrases` AS `SEO Phrases (L)` ";
+                 
+            }
+           if(in_array('price_diff', $selected_columns)){
+                $query_part[]= "`s`.`price_diff` AS `Price` ";
+               
+            }
+//            if(in_array('duplicate_content', $selected_columns)){
+//                $query_part[]= '"-" as `Duplicate Content`';
+//               
+//            }
+           $query_part = implode(',',$query_part );
             $this->load->database();
             $query = $this->db->query('
             SELECT 
-                `s`.`created` AS `Date`, 
-                (SELECT `value` FROM imported_data_parsed WHERE `key`="Product Name" AND `imported_data_id` = `s`.`imported_data_id` LIMIT 1) AS `Product Name`, 
-                (SELECT `value` FROM imported_data_parsed WHERE `key`="Url" AND `imported_data_id` = `s`.`imported_data_id` LIMIT 1) AS `URL`, 
-                `s`.`short_description_wc` AS `Word Count (S)`, 
-                `s`.`short_seo_phrases` AS `SEO Phrases (S)`, 
-                `s`.`long_description_wc` AS `Word Count (L)`, 
-                `s`.`long_seo_phrases` AS `SEO Phrases (L)`, 
-                "-" as `Duplicate Content`,
-                `s`.`price_diff` AS `Price`
+
+            '.$query_part.' 
             FROM 
                 (`statistics_new` AS s) 
             LEFT JOIN 
                 `crawler_list` AS cl ON `cl`.`imported_data_id` = `s`.`imported_data_id`
             '.$qnd
             );
-            $line = array();
-            foreach ($query->list_fields() as $name) {
-                $line[] = $name;
-            }
+            
+            //                `s`.`created` AS `Date`, 
+//                (SELECT `value` FROM imported_data_parsed WHERE `key`="Product Name" AND `imported_data_id` = `s`.`imported_data_id` LIMIT 1) AS `Product Name`, 
+//                (SELECT `value` FROM imported_data_parsed WHERE `key`="Url" AND `imported_data_id` = `s`.`imported_data_id` LIMIT 1) AS `URL`, 
+//                `s`.`short_description_wc` AS `Word Count (S)`, 
+//                `s`.`short_seo_phrases` AS `SEO Phrases (S)`, 
+//                `s`.`long_description_wc` AS `Word Count (L)`, 
+//                `s`.`long_seo_phrases` AS `SEO Phrases (L)`, 
+//                "-" as `Duplicate Content`,
+//                `s`.`price_diff` AS `Price`
+//            //$line = array();
+//            foreach ($query->list_fields() as $name) {
+//                $line[] = $name;
+//            }
             $result = $query->result_array();
             foreach ($result as $key => $row) {
                 if (trim($row['SEO Phrases (S)']) != 'None') {
@@ -959,10 +1034,10 @@ class Assess extends MY_Controller {
                     $result[$key]['Price'] = '';
                 }
             }
-            array_unshift($result, $line);
+            
             $res_array = $result;
         }
-        
+        array_unshift($res_array, $line);    
         $this->load->helper('csv');
         array_to_csv($res_array, date("Y-m-d H:i") . '.csv');
     }

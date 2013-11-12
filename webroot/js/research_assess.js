@@ -232,7 +232,7 @@ $(function() {
         });
 
         $('#tblAssess_length').after('<div id="assess_tbl_show_case" class="assess_tbl_show_case">' +
-                '<a id="assess_tbl_show_case_recommendations" data-case="recommendations" title="Recommendations" href="#"  class="active_link">Recommendations</a> |' +
+                '<a id="assess_tbl_show_case_recommendations" data-case="recommendations" class="active_link" title="Recommendations" href="#" >Recommendations</a> |' +
                 '<a id="assess_tbl_show_case_report" data-case="report" title="Report" href="#">Summary</a> |' +
                 '<a id="assess_tbl_show_case_details" data-case="details" title="Details" href="#">Details</a> |' +
                 '<a id="assess_tbl_show_case_details_compare" data-case="details_compare" title="Details_compare" href="#">Compare</a> |' +
@@ -348,10 +348,10 @@ $(function() {
                 }
 
                 $('#tblAssess_length').after('<div id="assess_tbl_show_case" class="assess_tbl_show_case">' +
-                        '<a id="assess_tbl_show_case_recommendations" data-case="recommendations" title="Recommendations" href="#"  class="active_link">Recommendations</a> |' +
+                        '<a id="assess_tbl_show_case_recommendations" data-case="recommendations" title="Recommendations" href="#">Recommendations</a> |' +
                         '<a id="assess_tbl_show_case_report" data-case="report" title="Report" href="#">Summary</a> |' +
                         '<a id="assess_tbl_show_case_details" data-case="details" title="Details" href="#">Details</a> |' +
-                        '<a id="assess_tbl_show_case_details_compare" data-case="details_compare" title="Details_compare" href="#">Compare</a> |' +
+                        '<a id="assess_tbl_show_case_details_compare" data-case="details_compare" title="Details_compare" href="#" class="active_link">Compare</a> |' +
                         '<a id="assess_tbl_show_case_graph" data-case="graph" title="Graph" href="#graph">Graph</a> |'+
                         '<a id="assess_tbl_show_case_view" data-case="view" title="Board View" href="#">Board View</a>' +
                         '</div>');
