@@ -210,6 +210,10 @@ class SearchSpider(BaseSpider):
 				item = SearchItem()
 				item['site'] = site
 				item['origin_url'] = response.url
+				# remove unnecessary parameters
+				m = re.match("(.*)\?enlargedSearch.*", item['origin_url'])
+				if m:
+					item['origin_url'] = m.group(1)
 				item['origin_id'] = self.extract_walmart_id(item['origin_url'])
 				yield item
 				return
