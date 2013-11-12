@@ -11,13 +11,21 @@ linenr=1
 
 for line in $(cat $filename)
 do
-	echo "$line" | cut -d',' -f1 | xargs google-chrome
-	echo "$line" | cut -d',' -f2 | xargs google-chrome
-	third=`echo "$line" | cut -d',' -f3`
-	if [ -n "$third" ]
-	then
-		google-chrome $third
+	# if there's a match
+	if [[ "$line" == *,* ]]
+		then
+		echo "$line" | cut -d',' -f1 | xargs google-chrome
+		echo "$line" | cut -d',' -f2 | xargs google-chrome
+		third=`echo "$line" | cut -d',' -f3`
+		if [ -n "$third" ]
+		then
+			google-chrome $third
+		fi
+	# if there's only one result
+	else
+		google-chrome "$line"
 	fi
+
 
 	# print current line number
 	echo $linenr
