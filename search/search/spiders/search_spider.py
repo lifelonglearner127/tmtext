@@ -1024,12 +1024,14 @@ class ProcessText():
 			# check if product models match (either from a "Model" field or extracted from their name)
 			model_matched = ProcessText.models_match(words1, words2, product_model, product2_model)
 			if model_matched:
-				# if actual models matched
-				if (model_matched == 1):
-					score += ProcessText.MODEL_MATCH_WEIGHT
-				# if alternate models matched
-				elif (model_matched == 2):
-					score += ProcessText.ALT_MODEL_MATCH_WEIGHT
+				# only add to score if they have more than a word in common - otherwise assume it's a conincidence model match
+				if score > 1:
+					# if actual models matched
+					if (model_matched == 1):
+						score += ProcessText.MODEL_MATCH_WEIGHT
+					# if alternate models matched
+					elif (model_matched == 2):
+						score += ProcessText.ALT_MODEL_MATCH_WEIGHT
 			
 			log.msg("\nPRODUCT: " + unicode(product_name) + " MODEL: " + unicode(product_model) + \
 				"\nPRODUCT2: " + unicode(product2['product_name']) + " BRAND2: " + unicode(product2_brand) + " MODEL2: " + unicode(product2_model) + \
