@@ -721,7 +721,9 @@ class Assess extends MY_Controller {
   $this->load->model('statistics_new_model');
         $batch_id = (int) trim($_GET['batch_id']);
         $cmp_selected = trim(strtolower($_GET['cmp_selected']));
-        
+        $selected_columns = $_GET['checked_columns'];
+        $selected_columns = explode(',',trim($selected_columns));
+       
         if (($cmp_selected=='all') || ($cmp_selected >0)) {
 
             $query = $this->db->query('select `s`.*,
@@ -801,7 +803,7 @@ class Assess extends MY_Controller {
             
 
             $res_array = array();
-            $line = array('Date' => 'Date','Product Name' => 'Product Name', 'Url' => 'Url', 'Word Count (S)' => 'Word Count (S)', 'Word Count (L)' => 'Word Count (L)', 'SEO Phrases (S)' => 'SEO Phrases (S)', 'SEO Phrases (L)' => 'SEO Phrases (L)', 'Price' => 'Price');
+            $line = array('created' => 'Date','product_name' => 'Product Name', 'url' => 'Url', 'word_count_S' => 'Word Count (S)', 'word_count_l' => 'Word Count (L)', 'short_seo_phrases' => 'SEO Phrases (S)', 'long_seo_phrases' => 'SEO Phrases (L)', 'price_diff' => 'Price');
             foreach ($results as $key => $row) {
                 $res_array[$key]['Date'] = $row->created;
                 $res_array[$key]['Product Name'] = $row->product_name;
@@ -879,6 +881,8 @@ class Assess extends MY_Controller {
                 $line[] = 'Word Count (S) (' . $i . ")";
                 $line[] = 'Word Count (L) (' . $i . ")";
             }
+            
+            array_unshift($res_array, $line);
         } else {
             
             $this->load->model('batches_model');
@@ -958,7 +962,7 @@ class Assess extends MY_Controller {
             array_unshift($result, $line);
             $res_array = $result;
         }
-        array_unshift($res_array, $line);
+        
         $this->load->helper('csv');
         array_to_csv($res_array, date("Y-m-d H:i") . '.csv');
     }
