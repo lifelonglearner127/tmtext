@@ -2207,6 +2207,18 @@ class Assess extends MY_Controller {
         }
     }
 
+    public function save_statistic_data(){
+        $this->load->model('settings_model');
+        $this->load->model('statistics_model');
+        $this->load->model('statistics_new_model');
+        if ($this->settings['statistics_table'] == "statistics_new") {
+            $results = $this->statistics_new_model->updateStatsData($_POST);
+        } else {
+            $results = $this->statistics_model->updateStatsData($_POST);
+        }
+        return $results;
+    }
+
     public function get_graph_batch_data(){
         
         if(isset($_POST['batch_id']) && isset($_POST['batch_compare_id'])){

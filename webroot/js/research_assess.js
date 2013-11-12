@@ -207,6 +207,7 @@ $(function() {
              }
             },
             "fnRowCallback": function(nRow, aData, iDisplayIndex) {
+                console.log(aData[24]);
                 $(nRow).attr("add_data", aData[24]);
                 return nRow;
             },
@@ -300,9 +301,6 @@ $(function() {
                         "sLengthMenu": "_MENU_ rows"
                     },
                     "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-                        console.log('----------'+aData+'------');
-                        console.log('index === '+iDisplayIndex);
-                        console.log('val === '+aData[iDisplayIndex]);
                         $(nRow).attr("add_data", aData[24]);
                         return nRow;
                     },
@@ -717,9 +715,6 @@ $(function() {
             });
         },
         "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-            console.log('----------'+aData+'------');
-            console.log('index === '+iDisplayIndex);
-            console.log('val === '+aData[iDisplayIndex]);
             $(nRow).attr("add_data", aData[24]);
             return nRow;
         },
@@ -1232,6 +1227,7 @@ var scrollYesOrNot = true;
         }
         $('#ajaxLoadAni').fadeIn('slow');
         $('#assessDetails_ProductName').val(add_data.product_name);
+        $('#assessDetails_Model').val(add_data.model);
         $('#assessDetails_url').val(add_data.url);
         $('#assess_open_url_btn').attr('href', add_data.url);
         $('#assessDetails_Price').val(add_data.own_price);
@@ -1263,7 +1259,7 @@ var scrollYesOrNot = true;
             $('#assessDetails_LongSEO').val(add_data.long_seo_phrases);
         }
 
-        var chk_include_in_report = '<div id="assess_details_dialog_options" style="float: right;"><label><input id="assessDetailsDialog_chkIncludeInReport" type="checkbox">&nbspInclude in report</label></div>';
+        var chk_include_in_report = '<div id="assess_details_dialog_options" style="float: left; margin-left:30px;"><label><input id="assessDetailsDialog_chkIncludeInReport" type="checkbox">&nbspInclude in report</label></div>';
         var btn_delete_from_batch = '<button id="assess_details_delete_from_batch" class="btn btn-danger" style="float:left;">Delete</button>';
         var assessDetailsDialog_replace_element = $('#assessDetailsDialog').parent().find('.ui-dialog-buttonpane button[id="assessDetailsDialog_btnIncludeInReport"]');
         if (assessDetailsDialog_replace_element.length > 0) {
@@ -1301,14 +1297,31 @@ var scrollYesOrNot = true;
         resizable: false,
         buttons: {
             'Close': {
-                text: 'Close',
+                text: 'Cancel',
                 click: function() {
                     $(this).dialog('close');
+                }
+            },
+            'Save': {
+                text: 'Save',
+                id: 'assessDetailsDialog_btnSave',
+                class: 'btn-success',
+                click: function() {
+                    //saveData();
                 }
             },
             'Copy': {
                 text: 'Copy',
                 id: 'assessDetailsDialog_btnCopy',
+                style: 'margin-right:275px',
+                click: function() {
+                    copyToClipboard(textToCopy);
+                }
+            },
+            'Re-Crawl"': {
+                text: 'Re-Crawl',
+                id: 'assessDetailsDialog_btnReCrawl',
+                style: 'margin-right:-210px; float:right; display:none',
                 click: function() {
                     copyToClipboard(textToCopy);
                 }
@@ -1330,6 +1343,30 @@ var scrollYesOrNot = true;
             return false;
         }
     });
+
+    function saveData(){
+        var data = {
+            product_name: $('input#assessDetails_ProductName').val(),
+            model: $('input#assessDetails_Model').val(),
+            url: $('input#assessDetails_url').val(),
+            price: $('input#assessDetails_Price').val(),
+            short_description: $('textarea#assessDetails_ShortDescription').val(),
+            short_seo: $('input#assessDetails_ShortSEO').val(),
+            long_description: $('textarea#assessDetails_LongDescription').val(),
+            long_seo: $('input#assessDetails_LongSEO').val(),
+            description: $('textarea#assessDetails_Description').val(),
+            seo: $('input#assessDetails_SEO').val(),
+            batch_id: $("select[name='research_assess_batches']").find("option:selected").val()
+        };
+        $.post(
+            base_url + 'index.php/assess/save_statistic_data',
+            data,
+            function(data) {
+                $('#assessDetailsDialog').dialog('close');
+                readAssessData();
+            }
+        );
+    }
 
     function copyToClipboard(text) {
         window.prompt("Copy to clipboard: Ctrl+C, Enter (or Esc)", text);

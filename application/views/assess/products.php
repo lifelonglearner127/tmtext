@@ -256,20 +256,24 @@
 </div>
 
 <div id="assessDetailsDialog" title="Details">
+    <form name="access_details">
     <p>
         <label for="assessDetails_ProductName">Product Name:</label>
-        <input type="text" id="assessDetails_ProductName" readonly="true" />
+        <input type="text" id="assessDetails_ProductName" />
     </p>
-
+    <p>
+        <label for="assessDetails_Model">Model:</label>
+        <input type="text" id="assessDetails_Model" />
+    </p>
     <p>
         <label for="assessDetails_url">URL:</label>
-        <input type="text" id="assessDetails_url" readonly="true" />
+        <input type="text" id="assessDetails_url" />
         <a id="assess_open_url_btn" class="icon-hand-right" target="_blank"></a>
     </p>
 
     <p>
         <label for="assessDetails_Price">Price:</label>
-        <input type="text" id="assessDetails_Price" readonly="true" />
+        <input type="text" id="assessDetails_Price" />
     </p>
 
     <div id="assessDetails_short_and_long_description_panel">
@@ -277,7 +281,7 @@
             <span class="labeler">
                 <label for="assessDetails_ShortDescription">Short Description:</label>
             </span>
-            <textarea id="assessDetails_ShortDescription" readonly="true"></textarea>
+            <textarea id="assessDetails_ShortDescription" ></textarea>
             <div class="bottom-labeler">
                 <label><span id="assessDetails_ShortDescriptionWC">0</span> words</label>
             </div>
@@ -285,14 +289,14 @@
 
         <p>
             <label for="assessDetails_ShortSEO">Short SEO:</label>
-            <input type="text" id="assessDetails_ShortSEO" readonly="true" />
+            <input type="text" id="assessDetails_ShortSEO"/>
         </p>
 
         <div class="parag">
             <span class="labeler">
                 <label for="assessDetails_LongDescription">Long Description:</label>
             </span>
-            <textarea id="assessDetails_LongDescription" readonly="true"></textarea>
+            <textarea id="assessDetails_LongDescription"></textarea>
             <div class="bottom-labeler">
                 <label><span id="assessDetails_LongDescriptionWC">0</span> words</label>
             </div>
@@ -300,7 +304,7 @@
 
         <p>
             <label for="assessDetails_LongSEO">Long SEO:</label>
-            <input type="text" id="assessDetails_LongSEO" readonly="true" />
+            <input type="text" id="assessDetails_LongSEO"/>
         </p>
     </div>
     <div id="assessDetails_description_panel">
@@ -308,7 +312,7 @@
             <span class="labeler">
                 <label for="assessDetails_Description">Description:</label>
             </span>
-            <textarea id="assessDetails_Description" readonly="true"></textarea>
+            <textarea id="assessDetails_Description"></textarea>
             <div class="bottom-labeler">
                 <label><span id="assessDetails_DescriptionWC">0</span> words</label>
             </div>
@@ -316,9 +320,17 @@
 
         <p>
             <label for="assessDetails_SEO">SEO:</label>
-            <input type="text" id="assessDetails_SEO" readonly="true" />
+            <input type="text" id="assessDetails_SEO" />
         </p>
     </div>
+    </form>
+    <?php if ($this->ion_auth->is_admin($this->ion_auth->get_user_id())) { ?>
+        <style type="text/css">
+            #assessDetailsDialog_btnReCrawl{
+                display: block!important;
+            }
+        </style>
+    <?php } ?>
 </div>
 
 <div id="assess_report_options_dialog" title="Report Options" >

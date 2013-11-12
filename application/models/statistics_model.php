@@ -331,4 +331,23 @@ class Statistics_model extends CI_Model {
             )
         );
     }
+
+    public function updateStatsData($arr){
+        $str = "";
+        foreach($arr as $key => $val){
+            if($key != "batch_id" && $key != "url"){
+                $str .= " ".$key." = '".$val."', ";
+            }
+        }
+        $str = substr($str, 0, -2);
+        $result = $this->db->query("
+            UPDATE
+                `statistics`
+            SET ".$str."
+            WHERE
+                `batch_id`='{$arr["batch_id"]}' and
+                `url`='{$arr["url"]}'
+            ");
+        return $result;
+    }
 }
