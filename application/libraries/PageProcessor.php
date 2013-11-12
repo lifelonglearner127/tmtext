@@ -1014,6 +1014,17 @@ class PageProcessor {
 			}
 		}
 
+		if (!isset($result['model']) || empty($result['model'])) {
+			$url = parse_url($this->url);
+			$parts = explode('/',$url['path']);
+			if (isset($parts[1])) {
+				$parts2 = explode('-',$parts[1]);
+				if (isset($parts2[1])) {
+					$result['model'] = $parts2[1];
+				}
+			}
+		}
+
 		foreach($this->nokogiri->get('.attrG .pdTab table tr') as $item) {
 			if (stripos($item['td'][0]['#text'][0], 'brand name') !==false ) {
 				$result['manufacturer'] =  trim($item['td'][1]['#text'][0]);
