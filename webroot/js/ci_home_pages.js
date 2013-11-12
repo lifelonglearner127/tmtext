@@ -404,7 +404,7 @@ function sendRecipientCategorySnapsReport(email) {
  	}
  	$("#recipients_control_panel_modal").modal('show').css({
                  width: $(window).width() * 70 / 100,
-                 height: '70%',
+                 height: '80%',
                  left: '50%',
                  'margin-left': function() {
                      return -($(window).width() * 75 / 200);
