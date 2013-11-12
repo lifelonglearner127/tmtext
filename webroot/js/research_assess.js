@@ -169,7 +169,7 @@ $(function() {
 //                    }
 
                 });
-                highChart();
+                highChart('short_description_wc');
                 $.ajax({
                     type: "POST",
                     url: readBoardSnapUrl,
@@ -373,7 +373,7 @@ $(function() {
                hideColumns();
             }, 1000);
         });
-        highChart();
+        highChart('short_description_wc');
         $.ajax({
             type: "POST",
             url: readBoardSnapUrl,
@@ -682,7 +682,7 @@ $(function() {
                 $('#tblAssess').after('<div id="tableScrollWrapper" style="overflow-x:scroll"></div>');
                 $('#tblAssess').appendTo('#tableScrollWrapper');
              }
-            highChart();
+            highChart('short_description_wc');
             $.ajax({
                 type: "POST",
                 url: readBoardSnapUrl,
@@ -736,7 +736,7 @@ $(function() {
         },
           "aoColumns":columns
     });
-function highChart(){
+function highChart(graphBuild){
     var batch1Value = $('select[name="research_assess_batches"]').find('option:selected').val();
     var batch2Value = $('#research_assess_compare_batches_batch').find('option:selected').val();
     var batch1Name = $('select[name="research_assess_batches"]').find('option:selected').text();
@@ -755,7 +755,7 @@ function highChart(){
             batch_compare_id: batch2Value
         }
     }).done(function(data){
-        console.log(data);
+//        console.log(data);
         var value1 = [];
         var value2 = [];
         var valueName = [];
@@ -765,9 +765,6 @@ function highChart(){
         valueUrl[0] = [];
         valueUrl[1] = [];
             /***First Batch - Begin***/
-            if(data[0] && data[0].short_description_wc.length > 0){
-                value1 = data[0].short_description_wc;
-            }
             if(data[0] && data[0].product_name.length > 0){
                 valueName[0] = data[0].product_name;
             }
@@ -776,9 +773,6 @@ function highChart(){
             }
             /***First Batch - End***/
             /***Second Batch - Begin***/
-            if(data[1] && data[1].short_description_wc.length > 0){
-                value2 = data[1].short_description_wc;
-            }
             if(data[1] && data[1].product_name.length > 0){
                 valueName[1] = data[1].product_name;
             }
@@ -786,12 +780,81 @@ function highChart(){
                 valueUrl[1] = data[1].url;
             }
             /***Second Batch - End***/
+            /***Switch Begin***/
+            var graphName1;
+            var graphName2;
+            switch(graphBuild){
+                case 'short_description_wc':{
+                    if(data[0] && data[0].short_description_wc.length > 0){
+                        value1 = data[0].short_description_wc;
+                    }
+                    if(data[1] && data[1].short_description_wc.length > 0){
+                        value2 = data[1].short_description_wc;
+                    }
+                    graphName1 = 'Short Description:';
+                    graphName2 = 'words';
+                }
+                  break;
+                case 'long_description_wc':{
+                    if(data[0] && data[0].long_description_wc.length > 0){
+                        value1 = data[0].long_description_wc;
+                    }
+                    if(data[1] && data[1].long_description_wc.length > 0){
+                        value2 = data[1].long_description_wc;
+                    }
+                    graphName1 = 'Long Description:';
+                    graphName2 = 'words';
+                }
+                  break;
+                case 'revision':{
+                    if(data[0] && data[0].revision.length > 0){
+                        value1 = data[0].revision;
+                    }
+                    if(data[1] && data[1].revision.length > 0){
+                        value2 = data[1].revision;
+                    }
+                    graphName1 = 'Reviews:';
+                    graphName2 = '';
+                }
+                  break;
+                case 'own_price':{
+                    if(data[0] && data[0].own_price.length > 0){
+                        value1 = data[0].own_price;
+                    }
+                    if(data[1] && data[1].own_price.length > 0){
+                        value2 = data[1].own_price;
+                    }
+                    graphName1 = 'Price:';
+                    graphName2 = '';
+                }
+                  break;
+                case 'h1_word_counts':{
+                    if(data[0] && data[0].h1_word_counts.length > 0){
+                        value1 = data[0].h1_word_counts;
+                    }
+                    if(data[1] && data[1].h1_word_counts.length > 0){
+                        value2 = data[1].h1_word_counts;
+                    }
+                    graphName1 = 'H1 count:';
+                    graphName2 = 'words';
+                }
+                  break;
+                case 'h2_word_counts':{
+                    if(data[0] && data[0].h2_word_counts.length > 0){
+                        value1 = data[0].h2_word_counts;
+                    }
+                    if(data[1] && data[1].h2_word_counts.length > 0){
+                        value2 = data[1].h2_word_counts;
+                    }
+                    graphName1 = 'H2 count:';
+                    graphName2 = 'words';
+                }
+                  break;
+                default:{
             
-//            if(parseInt(value2.length) > parseInt(value1.length)){
-//                for(var i = 0; i < parseInt(value2.length) - parseInt(value1.length); i++){
-//                    value1.push(0);
-//                }
-//            }
+                }
+            }
+            /***Switch - End***/
             
         var seriesObj;
         if(batch1Value != -1 && batch2Value != -1){
@@ -837,13 +900,18 @@ function highChart(){
                 useHTML: true,
                 formatter: function() {
                     var result = '<small>'+this.x+'</small><br />';
+                    var j;
                     $.each(this.points, function(i, datum) {
                         if(i > 0)
                             result += '<hr style="border-top: 1px solid #2f7ed8;" />';
+                        if(datum.series.color == '#2f7ed8')
+                            j = 0;
+                        else
+                            j = 1;
                         result += '<b style="color: '+datum.series.color+';" >' + datum.series.name + '</b>';
-                        result += '<br /><span>' + valueName[i][datum.x] + '</span>';
-                        result += '<br /><a href="'+valueUrl[i][datum.x]+'" target="_blank" style="color: blue;" >' + valueUrl[i][datum.x] + '</a>';
-                        result += '<br /><span>Short description: ' + datum.y + ' words</span>';
+                        result += '<br /><span>' + valueName[j][datum.x] + '</span>';
+                        result += '<br /><a href="'+valueUrl[j][datum.x]+'" target="_blank" style="color: blue;" >' + valueUrl[j][datum.x] + '</a>';
+                        result += '<br /><span>'+graphName1+' ' + datum.y + ' '+graphName2+'</span>';
                     });
                     return result;
                 }
@@ -858,6 +926,10 @@ function highChart(){
     });
     
 }
+$('#graphDropDown').live('change',function(){
+    var graphDropDownValue = $(this).children('option:selected').val();
+    highChart(graphDropDownValue);
+});
 var scrollYesOrNot = true;
     $(document).scroll(function() {
         var docHeight = parseInt($(document).height());
