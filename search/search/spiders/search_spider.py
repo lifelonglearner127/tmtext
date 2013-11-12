@@ -11,6 +11,7 @@ from spiders_utils import Utils
 #import urllib
 import re
 import itertools
+import math
 
 import nltk
 from nltk.corpus import stopwords
@@ -55,7 +56,7 @@ class SearchSpider(BaseSpider):
 	#				output - integer(1/2) option indicating output type (either result URL (1), or result URL and source product URL (2))
 	#				threshold - parameter (0-1) for selecting results (the lower the value the more permissive the selection)
 	def __init__(self, product_name = None, product_url = None, product_urls_file = None, walmart_ids_file = None, target_site = None, \
-		output = 1, threshold = 1.45, outfile = "search_results.txt", outfile2 = "not_matched.txt", fast = 0, use_proxy = False, by_id = False):
+		output = 1, threshold = 1.0, outfile = "search_results.txt", outfile2 = "not_matched.txt", fast = 0, use_proxy = False, by_id = False):
 		self.product_url = product_url
 		self.product_name = product_name
 		self.target_site = target_site
@@ -1104,9 +1105,9 @@ class ProcessText():
 		for word in list(set(words2)):
 			weights2.append(ProcessText.weight(word))
 
-		#threshold = param*(sum(weights1) + sum(weights2))/2
 		#TODO: make the grwoth smaller with n, using log(len+len)*10
-		threshold = param*(len(weights1) + len(weights2))/2
+		#threshold = param*(len(weights1) + len(weights2))/2
+		threshold = param*(math.log((len(weights1) + len(weights2))/2))*10
 		score = sum(weights_common)
 
 		log.msg( "W1: " + str(words1), level=log.INFO)
