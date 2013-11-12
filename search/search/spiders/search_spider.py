@@ -1050,10 +1050,12 @@ class ProcessText():
 					tie_break_score += 2
 				if brand_matched:
 					tie_break_score += 1
-				products_found.append((product2, score, tie_break_score))
+				products_found.append((product2, score, tie_break_score, threshold))
 
 
-		products_found = sorted(products_found, key = lambda x: (x[1], x[2]), reverse = True)
+		# if score is the same, sort by tie_break_score (indicating if models and/or brands matched),
+		# if those are the same, use the threshold (in reverse order of threshold)
+		products_found = sorted(products_found, key = lambda x: (x[1], x[2], -x[3]), reverse = True)
 
 		# return most similar product or None
 		if products_found:
