@@ -1107,6 +1107,7 @@ class ProcessText():
 			weights2.append(ProcessText.weight(word))
 
 		#threshold = param*(sum(weights1) + sum(weights2))/2
+		#TODO: make the grwoth smaller with n, using log(len+len)*10
 		threshold = param*(len(weights1) + len(weights2))/2
 		score = sum(weights_common)
 
