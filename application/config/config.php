@@ -442,6 +442,13 @@ $config['webthumb_sites'] = array(
 $config['ranking_api_username'] = 'content';
 $config['ranking_api_key'] = 'MNl5FKbecbxv9EQAQ';
 
+$config['aws_access_key_id'] = '';
+$config['aws_secret_key'] = '';
+$config['aws_ami_id'] = '';
+$config['aws_region'] = '';
+$config['aws_instance_type'] = '';
+
+
 // allow the local environment to override the settings
 if (file_exists(APPPATH.'config/config.local.php')) {
 	@require_once APPPATH.'config/config.local.php';

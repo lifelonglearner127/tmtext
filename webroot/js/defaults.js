@@ -236,14 +236,14 @@ function afterAutocomplete(loadData){
                                     for(var i=0; i<data.length; i++){
 										select_batch = '';
 										if(i==0) select_batch = "selected='selected'";
-										
+
                                         $("select[name='product_batches']").append('<option '+select_batch+' value="'+data[i]+'">'+data[i]+'</option>');
                                        //$("select[name='product_batches']").append('<option value="'+data[i]+'">'+data[i]+'</option>');
                                     }
 
                                     //If user chooses a customer that only has one batch, automatically select that batch. Denis
                                     show_from_butches();
-                                    
+
                                     $.post(base_url + 'index.php/research/countAllItemsInBatch', {'batch': $("#batchess").val()}, function(data) {
 										$("span.product_batches_items").html(data + ' items');
 										$.removeCookie('product_batch_items', {path: '/'}); // destroy
@@ -271,7 +271,7 @@ function afterAutocomplete(loadData){
 										$('li.keywords_metrics_bl_res, li.keywords_metrics_bl_res ~ li, ul.less_b_margin').hide();
 									}
 									//----End automatically select that batch ---------------------------------------------------
-                                    
+
                                 } else if(data.length==0 && res.target.value !="All customers"){
                                     $("select[name='product_batches']").empty();
                                     $("select[name='product_batches']").append('<option value="0">Choose Batch</option>');
@@ -326,6 +326,7 @@ function afterAutocomplete(loadData){
     }
 
 jQuery(document).ready(function($) {
+<<<<<<< HEAD
     $(document).ajaxStart(function(){
         $('html').addClass('busy');
     });
@@ -333,6 +334,9 @@ jQuery(document).ready(function($) {
             $('html').removeClass('busy');
         });
     
+=======
+
+>>>>>>> aws
 
     function getWebsiteDropdown(){
         setTimeout(function() {
@@ -1093,6 +1097,25 @@ jQuery(document).ready(function($) {
             $('#pagination').html(getPager());
         }
     });
+
+    // Instances event handlers
+	$(document).on("click", "#run_instances", function(){
+		$.post(base_url+'index.php/site_crawler/run_instances', {quantity: $('input[name="instances"]').val() }, function(data) {
+			loadCurrentList(data.started, data.ids);
+		});
+	});
+
+	$(document).on("click", "#terminate_instances", function(){
+		var ids = [];
+		$("#Current_List > ul > li input[type='checkbox']:checked").each(function(index, value) {
+            ids[index] = $(value).data('instance_id');
+		});
+
+		$.post(base_url+'index.php/site_crawler/terminate_instances', { ids: ids }, function(data) {
+			loadCurrentListStop( true, ids );
+		});
+	});
+
 });
 //var start = new Date().getMilliseconds();
 //console.log("Executed in " + (new Date().getMilliseconds() - start) + " milliseconds");

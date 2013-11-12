@@ -403,4 +403,117 @@ class Site_Crawler extends MY_Controller {
 
 
 	}
+
+	public function instances_list()
+	{
+        $this->data['instances'] = $instances;
+		$this->render();
+	}
+
+	public function get_instances()
+	{
+		$this->load->model('crawler_instances_model');
+
+		$this->output->set_content_type('application/json')
+		 ->set_output( json_encode(array(
+			'instances' => $this->crawler_instances_model->getNotTerminated(),
+		)));
+	}
+
+	public function run_instances()
+	{
+		$quantity = 1;
+		$started = false;
+
+		if ($this->input->post('quantity')) {
+			$quantity = $this->input->post('quantity');
+		}
+
+		$this->load->model('crawler_instances_model');
+		$this->load->library('awslib');
+
+		if ($result = $this->awslib->run($quantity,$quantity)) {
+	 		$ids = $result->getPath('Instances/*/InstanceId');
+	 		$instances = $result->getPath('Instances');
+
+			foreach($instances as $instance) {
+				$this->crawler_instances_model->insert($instance['InstanceId'], $instance['InstanceType'], $instance['State']['Name'], $instance['PublicDnsName']);
+			}
+			$started = true;
+		}
+
+		$this->output->set_content_type('application/json')
+		 ->set_output( json_encode(array(
+			'started' => $started,
+		 	'ids' => $ids
+		)));
+	}
+
+	public function terminate_instances() {
+		$this->load->model('crawler_instances_model');
+		$this->load->library('awslib');
+
+		$stopping = false;
+		if ($this->input->post('ids')) {
+			$ids = $this->input->post('ids');
+
+			if ($result = $this->awslib->terminate($ids)) {
+		 		$ids = $result->getPath('TerminatingInstances/*/InstanceId');
+		 		$instances = $result->getPath('TerminatingInstances');
+
+//				foreach($instances as $instance) {
+//					$this->crawler_instances_model->updateState($instance['InstanceId'], $instance['CurrentState']['Name']);
+//				}
+
+				$stopping = true;
+			}
+
+			$this->output->set_content_type('application/json')
+			 ->set_output( json_encode(array(
+				'stopping' => $stopping,
+			 	'ids' => $ids
+			)));
+
+		}
+	}
+
+	public function wait_start_instances(){
+		$this->load->model('crawler_instances_model');
+		$this->load->library('awslib');
+
+		if ($this->input->post('ids')) {
+			$ids = $this->input->post('ids');
+
+			$this->awslib->waitRunning($ids);
+
+			if ($result = $this->awslib->describe($ids)) {
+				$instances = $result->getPath('Reservations/*/Instances');
+//				var_dump($result, $instances);
+
+				foreach($instances as $instance) {
+					$this->crawler_instances_model->update($instance['InstanceId'], $instance['InstanceType'], $instance['State']['Name'], $instance['PublicDnsName']);
+				}
+			}
+		}
+	}
+
+	public function wait_terminate_instances(){
+		$this->load->model('crawler_instances_model');
+		$this->load->library('awslib');
+
+		if ($this->input->post('ids')) {
+			$ids = $this->input->post('ids');
+
+			$this->awslib->waitTerminated($ids);
+
+			if ($result = $this->awslib->describe($ids)) {
+				$instances = $result->getPath('Reservations/*/Instances');
+//				var_dump($result, $instances);
+
+				foreach($instances as $instance) {
+					$this->crawler_instances_model->update($instance['InstanceId'], $instance['InstanceType'], $instance['State']['Name'], $instance['PublicDnsName']);
+				}
+			}
+		}
+	}
 }
