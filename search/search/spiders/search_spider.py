@@ -750,7 +750,7 @@ class SearchSpider(BaseSpider):
 			if model_number_holder:
 				item['product_model'] = model_number_holder[0]
 
-			brand_holder = hxs.select("//div[@id='brandByline_feature_div']//a/text()").extract()
+			brand_holder = hxs.select("//div[@id='brandByline_feature_div']//a/text() | //a[@id='brand']/text()").extract()
 			if brand_holder:
 				item['product_brand'] = brand_holder[0]
 			else:
