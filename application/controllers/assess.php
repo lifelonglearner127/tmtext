@@ -198,13 +198,14 @@ class Assess extends MY_Controller {
                                $parsed_attributes_unserialize_val ='';                                                           
                                $parsed_meta_unserialize_val = ''; 
                                $parsed_meta_unserialize_val_c = '';
+                               $parsed_model_unserialize_val = '';
                                $cmpare = $this->statistics_new_model->get_compare_item($item['imported_data_id']);
                                
                                $parsed_attributes_unserialize = unserialize($cmpare->parsed_attributes);
                                if($parsed_attributes_unserialize['item_id'])
                                   $parsed_attributes_unserialize_val = $parsed_attributes_unserialize['item_id'];
                                if($parsed_attributes_unserialize['model'])
-                                  $parsed_attributes_unserialize_val = $parsed_attributes_unserialize['model'];
+                                   $parsed_model_unserialize_val = $parsed_attributes_unserialize['model'];
 
                                 $parsed_meta_unserialize = unserialize($cmpare->parsed_meta);
                                if($parsed_meta_unserialize['description']){
@@ -212,7 +213,7 @@ class Assess extends MY_Controller {
                                 $parsed_meta_unserialize_val_c = count(explode(" ",$parsed_meta_unserialize_val));
                                 if($parsed_meta_unserialize_val_c !=1)
                                     $parsed_meta_unserialize_val_count = $parsed_meta_unserialize_val_c;
-                               } 
+                               }
                                else if($parsed_meta_unserialize['Description']){
                                 $parsed_meta_unserialize_val = $parsed_meta_unserialize['Description'];
                                 $parsed_meta_unserialize_val_c = count(explode(" ",$parsed_meta_unserialize_val));
@@ -222,7 +223,7 @@ class Assess extends MY_Controller {
                                $val->snap1 = $cmpare->snap;
                                $val->product_name1 = $cmpare->product_name;
                                $val->item_id1 = $parsed_attributes_unserialize_val;
-                               $val->model1 = '#';
+                               $val->model1 = $parsed_model_unserialize_val;
                                $val->url1 = $cmpare->url;
                                $val->short_description_wc1 = $cmpare->short_description_wc;
                                $val->long_description_wc1 = $cmpare->long_description_wc;
