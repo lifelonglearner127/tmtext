@@ -1088,7 +1088,18 @@ jQuery(document).ready(function($) {
     // Instances event handlers
 	$(document).on("click", "#run_instances", function(){
 		$.post(base_url+'index.php/site_crawler/run_instances', {quantity: $('input[name="instances"]').val() }, function(data) {
-			loadCurrentList();
+			loadCurrentList(data.started, data.ids);
+		});
+	});
+
+	$(document).on("click", "#terminate_instances", function(){
+		var ids = [];
+		$("#Current_List > ul > li input[type='checkbox']:checked").each(function(index, value) {
+            ids[index] = $(value).data('instance_id');
+		});
+
+		$.post(base_url+'index.php/site_crawler/terminate_instances', { ids: ids }, function(data) {
+			loadCurrentListStop( true, ids );
 		});
 	});
 

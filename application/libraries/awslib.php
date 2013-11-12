@@ -97,5 +97,24 @@ class Awslib {
 		return $result;
     }
 
+    function describe($ids) {
+    	$result = $this->ec2client->describeInstances(array(
+		    'InstanceIds' => $ids,
+		));
+		return $result;
+    }
+
+    function waitRunning($ids) {
+    	$this->ec2client->waitUntilInstanceRunning(array(
+		    'InstanceIds' => $ids,
+		));
+    }
+
+    function waitTerminated($ids) {
+    	$this->ec2client->waitUntilInstanceTerminated(array(
+		    'InstanceIds' => $ids,
+		));
+    }
+
 }
 ?>

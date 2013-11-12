@@ -24,7 +24,7 @@
 			<div id="crawl_div" style="margin-top:15px;">
                 <input type="text" class="span1 ml_10" name="instances" >
                 <button id="run_instances" class="btn new_btn btn-success ml_10"><i class="icon-white icon-ok"></i>&nbsp;Run</button>
-                <button id="run_spot_instances" class="btn new_btn btn-success  ml_10"><i class="icon-white icon-ok"></i>&nbsp;Spot Run</button>
+                <button id="run_spot_instances" class="btn new_btn btn-success  ml_10" disabled><i class="icon-white icon-ok"></i>&nbsp;Spot Run</button>
             </div>
 			<div class="row-fluid mt_5">
 				<div class="search_area uneditable-input span10" style="cursor: text; width: 765px; height: 320px; overflow : auto;" id="Current_List">
@@ -45,18 +45,41 @@
 
 <script>
 
-function loadCurrentList(url) {
+function loadCurrentList(wait, ids) {
 	$("#checkAll").removeAttr('checked');
-	url = typeof url !== 'undefined' ? url: '<?php echo site_url('site_crawler/get_instances');?>';
+	url = '<?php echo site_url('site_crawler/get_instances');?>';
 
 	$.get(url, function(data) {
 		$('#Current_List ul li').remove();
 //                console.log(data);
 		$.each(data.instances, function (index, node) {
 			$('#Current_List ul').append("<li id=\"id_"+node.id+"\"><span><input data-instance_id=\""+node.instance_id+"\" data-id=\""+node.id+"\" type=\"checkbox\" name=\"ids[]\" value=\""+node.id+"\"/></span><span style='width: 80px;'>"+node.instance_id+"</span><span>"+node.instance_type+"</span><span>"+node.state_name+"</span><span class=\"url ellipsis\">"+node.public_dns_name+"</span></li>");
-
 		});
 
+		if (wait !== 'undefined' && wait) {
+			$.post('<?php echo site_url('site_crawler/wait_start_instances');?>', { ids: ids }, function(data) {
+				loadCurrentList();
+			});
+		}
+    });
+}
+
+function loadCurrentListStop(wait, ids) {
+	$("#checkAll").removeAttr('checked');
+	url = '<?php echo site_url('site_crawler/get_instances');?>';
+
+	$.get(url, function(data) {
+		$('#Current_List ul li').remove();
+//                console.log(data);
+		$.each(data.instances, function (index, node) {
+			$('#Current_List ul').append("<li id=\"id_"+node.id+"\"><span><input data-instance_id=\""+node.instance_id+"\" data-id=\""+node.id+"\" type=\"checkbox\" name=\"ids[]\" value=\""+node.id+"\"/></span><span style='width: 80px;'>"+node.instance_id+"</span><span>"+node.instance_type+"</span><span>"+node.state_name+"</span><span class=\"url ellipsis\">"+node.public_dns_name+"</span></li>");
+		});
+
+		if (wait !== 'undefined' && wait) {
+			$.post('<?php echo site_url('site_crawler/wait_terminate_instances');?>', { ids: ids }, function(data) {
+				loadCurrentList();
+			});
+		}
     });
 }
 

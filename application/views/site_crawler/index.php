@@ -3,6 +3,7 @@
         <li class=""><a data-toggle="tab" href="<?php echo site_url('system');?>">General</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('system/sites_view');?>">Sites</a></li>
         <li class="active"><a data-toggle="tab" href="<?php echo site_url('site_crawler');?>">Site Crawler</a></li>
+        <li class=""><a data-toggle="tab" href="<?php echo site_url('site_crawler/instances_list');?>">Crawler Instances</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('brand/import');?>">Brands</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('system/batch_review');?>">Batch Review</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_compare');?>">Product Compare</a></li>
@@ -81,10 +82,10 @@
 			function submitBatchSnapProcess() {
 				var batch_id = $('select[name="batch"] > option:selected').val();
                                 var unsnapshoted_items = 0;
-                                
+
                                 if($('#unsnapshoted_items').is(':checked'))
                                     unsnapshoted_items = 1;
-                                
+
                                 $.ajax({
                                     type: "POST",
                                     url: base_url + 'index.php/system/add_snapshot_queue',
@@ -311,14 +312,14 @@ var v = 0;
 $(function () {
     v++;
 if(v === 1){
-    
+
 $.fn.setCursorToTextEnd = function() {
         $initialVal = this.val();
         this.val('');
         this.val($initialVal);
     };
 
-    
+
     $("#current_snapshot_cmd").click(function() {
     	var snapshot_arr = [];
     	$("#Current_List > ul > li input[type='checkbox']:checked").each(function(index, value) {

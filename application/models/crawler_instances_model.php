@@ -30,6 +30,12 @@ class Crawler_instances_model extends CI_Model {
         return $query->result();
     }
 
+    function getNotTerminated()
+    {
+    	$this->db->where('state_name !=', 'terminated');
+        $query = $this->db->get($this->tables['crawler_instances']);
+        return $query->result();
+    }
 
     function insert($instance_id, $instance_type, $state_name, $public_dns_name)
     {
@@ -42,8 +48,17 @@ class Crawler_instances_model extends CI_Model {
         return $this->db->insert_id();
     }
 
+    function update($instance_id, $instance_type, $state_name, $public_dns_name)
+    {
+    	$this->instance_id = $instance_id;
+        $this->instance_type = $instance_type;
+        $this->state_name = $state_name;
+        $this->public_dns_name = $public_dns_name;
 
-
+    	return $this->db->update($this->tables['crawler_instances'],
+                $this,
+                array('instance_id' => $instance_id));
+    }
 
     function delete($id)
     {
