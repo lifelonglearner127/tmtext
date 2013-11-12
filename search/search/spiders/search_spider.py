@@ -1096,8 +1096,21 @@ class ProcessText():
 
 			if (not brand_matched) and (words1[0]==product2_brand or " ".join(words1[:2])==product2_brand):# and ((not wordnet.synsets(word)) or word in ProcessText.brand_exceptions):
 				weights_common.append(ProcessText.BRAND_MATCH_WEIGHT)
-			 	brand_matched = True
+				brand_matched = True
 
+			# get first word from brand, remove plural marks
+			if product2_brand:
+				brand1 = words1[0]
+				if " " not in product2_brand:
+					brand2 = product2_brand
+				else:
+					brand2 = product2_brand.split(" ")[0]
+				brand1 = re.sub("s$","",brand1)
+				brand2 = re.sub("s$","",brand2)
+
+				if (not brand_matched) and (brand1 == brand2):
+					weights_common.append(ProcessText.BRAND_MATCH_WEIGHT)
+					brand_matched = True
 
 			#sys.err.write("PRODUCT BRAND: " + str(product_brand) + "; " + str(words1) + "; " + str(words2) + "\n")
 
