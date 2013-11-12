@@ -248,7 +248,7 @@ class SearchSpider(BaseSpider):
 
 		#TODO: search by alternative model numbers?
 
-		#TODO: search by model number extracted from product name?
+		#TODO: search by model number extracted from product name? Don't I do that implicitly? no, but in combinations
 
 		# 1) Search by model number
 		if product_model:
@@ -287,13 +287,13 @@ class SearchSpider(BaseSpider):
 			page3 = search_pages3[self.target_site]
 			request3 = Request(page3, callback = self.parseResults, cookies=cookies)
 
-
 			request3.meta['query'] = query3
 
 
 			pending_requests.append(request3)
 
-
+		print "WORDS COMBINATIONS for ", product_name, ": ", ProcessText.words_combinations(product_name, fast=self.fast)
+		print "PENDING REQUESTS: ", map(lambda x: x.meta, pending_requests)
 		request.meta['pending_requests'] = pending_requests
 		request.meta['site'] = self.target_site
 		# product page from source site
@@ -975,7 +975,7 @@ class ProcessText():
 		# also keep Brands that are exceptions
 		# keep first word because it's probably the brand
 		first_word = norm_text[0]
-		norm_text = [word for word in norm_text[1:] if (not wordnet.synsets(word) or word in exceptions or word in ProcessText.brand_exceptions) and len(word) > 1]
+		#norm_text = [word for word in norm_text[1:] if (not wordnet.synsets(word) or word in exceptions or word in ProcessText.brand_exceptions) and len(word) > 1]
 		norm_text.append(first_word)
 		#norm_text = [word for word in norm_text if (not wordnet.synsets(word) or word in exceptions or word in ProcessText.brand_exceptions) and len(word) > 1]
 
@@ -991,7 +991,10 @@ class ProcessText():
 		else:
 			words=[map(lambda c: norm_text[c], x) for x in list(combs)]
 
-		return words
+		# keep only unique sets of words (regardless of order), eliminate duplicates from each list
+		# use tuples because they are hashable (to put them in a set), then convert them back to lists
+		return map(lambda x: list(x), list(set(map(lambda x: tuple(set(sorted(x))), words))))
+		# return words
 
 	# return most similar product from a list to a target product (by their names)
 	# if none is similar enough, return None
