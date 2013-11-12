@@ -292,8 +292,6 @@ class SearchSpider(BaseSpider):
 
 			pending_requests.append(request3)
 
-		print "WORDS COMBINATIONS for ", product_name, ": ", ProcessText.words_combinations(product_name, fast=self.fast)
-		print "PENDING REQUESTS: ", map(lambda x: x.meta, pending_requests)
 		request.meta['pending_requests'] = pending_requests
 		request.meta['site'] = self.target_site
 		# product page from source site
