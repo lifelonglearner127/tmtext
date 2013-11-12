@@ -1071,7 +1071,7 @@ class ProcessText():
 	# return score, threshold (dependent on names' length) and a boolean indicating if brands matched
 	@staticmethod
 	def similar_names(words1, words2, product2_brand, param):
-		common_words = set(words1).intersection(set(words2))
+		
 
 		# assign weigths - 1 to normal words, 2 to nondictionary words
 		# 6 to first word in text (assumed to be manufacturer)
@@ -1081,6 +1081,19 @@ class ProcessText():
 
 		brand_matched = False
 		weights_common = []
+
+		# this creates imbalances with products where there is no product2_brand (but there is a brand in the name and they match)
+		# # first check if product2 brand matches first words in product1 (assumed to be brand), remove them from the words list if so
+		# if product2_brand and product2_brand in " ".join(words1):
+		# 	for word in product2_brand.split(" "):
+		# 		words1.remove(word)
+		# 		# add a dummy word to compensate for the lost length of the weight vector
+		# 		words1.append("")
+		# 	weights_common.append(ProcessText.BRAND_MATCH_WEIGHT)
+		# 	brand_matched = True
+
+		common_words = set(words1).intersection(set(words2))
+
 		for word in list(common_words):
 
 			# if they share the first word (and it's a non-dictionary word) assume it's manufacturer and assign higher weight
@@ -1099,7 +1112,7 @@ class ProcessText():
 			# also check if product2_brand matches first 2 words of product1 name (for brands made of 2 words)
 			#TODO: what if brand is like "Element Electronics" and the other is "Element"?
 
-			if (not brand_matched) and (words1[0]==product2_brand or " ".join(words1[:2])==product2_brand):# and ((not wordnet.synsets(word)) or word in ProcessText.brand_exceptions):
+			if (not brand_matched) and (words1[0]==product2_brand):# and ((not wordnet.synsets(word)) or word in ProcessText.brand_exceptions):
 				weights_common.append(ProcessText.BRAND_MATCH_WEIGHT)
 				brand_matched = True
 
