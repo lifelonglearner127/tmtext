@@ -326,17 +326,12 @@ function afterAutocomplete(loadData){
     }
 
 jQuery(document).ready(function($) {
-<<<<<<< HEAD
     $(document).ajaxStart(function(){
         $('html').addClass('busy');
     });
     $(document).ajaxStop(function(){
             $('html').removeClass('busy');
         });
-    
-=======
-
->>>>>>> aws
 
     function getWebsiteDropdown(){
         setTimeout(function() {
