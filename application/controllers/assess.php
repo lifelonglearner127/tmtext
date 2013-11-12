@@ -19,7 +19,7 @@ class Assess extends MY_Controller {
     }
 
     public function index() {
-        
+
         $this->load->model('webshoots_model');
         $this->data['customers_list'] = $this->customers_list_new();
         $this->data['user_id'] = $this->ion_auth->get_user_id();
@@ -54,47 +54,6 @@ class Assess extends MY_Controller {
             }
         }
         return $output;
-    }
-
-    public function compare() {
-        $arr = array();
-        for ($i = 1; $i < 3; $i++) {
-
-            $arr[] = array("sTitle" => "Snapshot", "sName" => 'snap' . $i);
-        }
-
-        echo json_encode($arr);
-        exit;
-//        $batch1 = $this->input->post('batch1');
-//        $batch2 = $this->input->post('batch2');
-//        $this->load->model('batches_model');
-//        $customer_name = $this->batches_model->getCustomerUrlByBatch($batch2);
-//        $this->load->model('statistics_new_model');
-//        $data =  $this->statistics_new_model->get_for_compare($batch1);
-//        $cmp= array();
-//        foreach($data as $val){
-//    
-//            if(substr_count($val->similar_products_competitors, $customer_name)>0){
-//                $similar_items= unserialize($val->similar_products_competitors);
-//                
-//                foreach($similar_items as $key => $item){
-//                    if(substr_count($customer_name,$item['customer'])>0){
-//                        $cmpare = $this->statistics_new_model->get_compare_item($similar_items[$key]['imported_data_id']);
-//                        $val->snap1= $cmpare->snap;
-//                        $val->product_name1= $cmpare->product_name;
-//                        $val->url1= $cmpare->url;
-//                        $val->short_description_wc1= $cmpare->short_description_wc;
-//                        $val->long_description_wc1= $cmpare->long_description_wc;
-//                    }
-//                }
-//                $cmp[]=$val;
-//            }
-//        }
-//        $data['results']=$cmp;
-////        echo "<pre>";
-////        print_r($cmp);
-////        echo "</pre>";
-//        $this->load->view('assess/compare', $data);
     }
 
     public function get_assess_info() {
@@ -165,24 +124,24 @@ class Assess extends MY_Controller {
             if (intval($compare_batch_id) > 0) {
                 $build_assess_params->compare_batch_id = intval($compare_batch_id);
             }
-            
+
             $params = new stdClass();
             $params->batch_id = $batch_id;
             $params->txt_filter = $txt_filter;
             $params->date_from = $build_assess_params->date_from;
             $params->date_to = $build_assess_params->date_to;
-            $batch2 = $this->input->get('batch2')&&$this->input->get('batch2') == 'undefined' ? '' : $this->input->get('batch2');
-            if($batch2===''){
+            $batch2 = $this->input->get('batch2') && $this->input->get('batch2') == 'undefined' ? '' : $this->input->get('batch2');
+            if ($batch2 === '') {
                 $params->iDisplayLength = $this->input->get('iDisplayLength');
                 $params->iDisplayStart = $this->input->get('iDisplayStart');
             }
-            
+
             $results = $this->get_data_for_assess($params);
             $cmp = array();
-                               
+
             if ($batch2 != '' && $batch2 != 0 && $batch2 != 'all') {
                 $this->load->model('batches_model');
-                $build_assess_params->max_similar_item_count =1;
+                $build_assess_params->max_similar_item_count = 1;
 
                 $customer_name = $this->batches_model->getCustomerUrlByBatch($batch2);
 
@@ -191,58 +150,55 @@ class Assess extends MY_Controller {
                     if (substr_count(strtolower($val->similar_products_competitors), strtolower($customer_name)) > 0) {
 
                         $similar_items = unserialize($val->similar_products_competitors);
-                       
-                        if(count($similar_items)>1){
-                        foreach ($similar_items as $key => $item) {
-                            if (substr_count(strtolower($customer_name), strtolower($item['customer'])) > 0) {
-                               $parsed_attributes_unserialize_val ='';                                                           
-                               $parsed_meta_unserialize_val = ''; 
-                               $parsed_meta_unserialize_val_c = '';
-                               $parsed_model_unserialize_val = '';
-                               $cmpare = $this->statistics_new_model->get_compare_item($item['imported_data_id']);
-                               
-                               $parsed_attributes_unserialize = unserialize($cmpare->parsed_attributes);
-                               if($parsed_attributes_unserialize['item_id'])
-                                  $parsed_attributes_unserialize_val = $parsed_attributes_unserialize['item_id'];
-                               if($parsed_attributes_unserialize['model'])
-                                   $parsed_model_unserialize_val = $parsed_attributes_unserialize['model'];
 
-                                $parsed_meta_unserialize = unserialize($cmpare->parsed_meta);
-                               if($parsed_meta_unserialize['description']){
-                                $parsed_meta_unserialize_val = $parsed_meta_unserialize['description'];
-                                $parsed_meta_unserialize_val_c = count(explode(" ",$parsed_meta_unserialize_val));
-                                if($parsed_meta_unserialize_val_c !=1)
-                                    $parsed_meta_unserialize_val_count = $parsed_meta_unserialize_val_c;
-                               }
-                               else if($parsed_meta_unserialize['Description']){
-                                $parsed_meta_unserialize_val = $parsed_meta_unserialize['Description'];
-                                $parsed_meta_unserialize_val_c = count(explode(" ",$parsed_meta_unserialize_val));
-                                if($parsed_meta_unserialize_val_c !=1)
-                                    $parsed_meta_unserialize_val_count = $parsed_meta_unserialize_val_c;
-                               }
-                               $val->snap1 = $cmpare->snap;
-                               $val->product_name1 = $cmpare->product_name;
-                               $val->item_id1 = $parsed_attributes_unserialize_val;
-                               $val->model1 = $parsed_model_unserialize_val;
-                               $val->url1 = $cmpare->url;
-                               $val->short_description_wc1 = $cmpare->short_description_wc;
-                               $val->long_description_wc1 = $cmpare->long_description_wc;
-                               $val->Meta_Description1 = $parsed_meta_unserialize_val;
-                               $val->Meta_Description_Count1 = $parsed_meta_unserialize_val_count;
-                               $similar_items_data[]=$cmpare;
-                               $val->similar_items =  $similar_items_data; 
-                                
-                                
+                        if (count($similar_items) > 1) {
+                            foreach ($similar_items as $key => $item) {
+                                if (substr_count(strtolower($customer_name), strtolower($item['customer'])) > 0) {
+                                    $parsed_attributes_unserialize_val = '';
+                                    $parsed_meta_unserialize_val = '';
+                                    $parsed_meta_unserialize_val_c = '';
+                                    $parsed_model_unserialize_val = '';
+                                    $cmpare = $this->statistics_new_model->get_compare_item($item['imported_data_id']);
+
+                                    $parsed_attributes_unserialize = unserialize($cmpare->parsed_attributes);
+                                    if ($parsed_attributes_unserialize['item_id'])
+                                        $parsed_attributes_unserialize_val = $parsed_attributes_unserialize['item_id'];
+                                    if ($parsed_attributes_unserialize['model'])
+                                        $parsed_model_unserialize_val = $parsed_attributes_unserialize['model'];
+
+                                    $parsed_meta_unserialize = unserialize($cmpare->parsed_meta);
+                                    if ($parsed_meta_unserialize['description']) {
+                                        $parsed_meta_unserialize_val = $parsed_meta_unserialize['description'];
+                                        $parsed_meta_unserialize_val_c = count(explode(" ", $parsed_meta_unserialize_val));
+                                        if ($parsed_meta_unserialize_val_c != 1)
+                                            $parsed_meta_unserialize_val_count = $parsed_meta_unserialize_val_c;
+                                    }
+                                    else if ($parsed_meta_unserialize['Description']) {
+                                        $parsed_meta_unserialize_val = $parsed_meta_unserialize['Description'];
+                                        $parsed_meta_unserialize_val_c = count(explode(" ", $parsed_meta_unserialize_val));
+                                        if ($parsed_meta_unserialize_val_c != 1)
+                                            $parsed_meta_unserialize_val_count = $parsed_meta_unserialize_val_c;
+                                    }
+                                    $val->snap1 = $cmpare->snap;
+                                    $val->product_name1 = $cmpare->product_name;
+                                    $val->item_id1 = $parsed_attributes_unserialize_val;
+                                    $val->model1 = $parsed_model_unserialize_val;
+                                    $val->url1 = $cmpare->url;
+                                    $val->short_description_wc1 = $cmpare->short_description_wc;
+                                    $val->long_description_wc1 = $cmpare->long_description_wc;
+                                    $val->Meta_Description1 = $parsed_meta_unserialize_val;
+                                    $val->Meta_Description_Count1 = $parsed_meta_unserialize_val_count;
+                                    $similar_items_data[] = $cmpare;
+                                    $val->similar_items = $similar_items_data;
+                                }
                             }
-                        }
-                        
-                        
-                        $cmp[] = $val;
+
+
+                            $cmp[] = $val;
                         }
                     }
                 }
                 $results = $cmp;
-
             }
 
             if ($batch2 == 'all') {
@@ -273,11 +229,11 @@ class Assess extends MY_Controller {
                 }
                 $build_assess_params->max_similar_item_count = $max_similar_item_count;
             }
-                 
-         $output = $this->build_asses_table($results, $build_assess_params, $batch_id);
-         
-         $this->output->set_content_type('application/json')
-         ->set_output(json_encode($output));
+
+            $output = $this->build_asses_table($results, $build_assess_params, $batch_id);
+
+            $this->output->set_content_type('application/json')
+                    ->set_output(json_encode($output));
         }
     }
 
@@ -718,26 +674,26 @@ class Assess extends MY_Controller {
 
     public function export_assess() {
 
-  $this->load->model('statistics_new_model');
+        $this->load->model('statistics_new_model');
         $batch_id = (int) trim($_GET['batch_id']);
         $cmp_selected = trim(strtolower($_GET['cmp_selected']));
         $selected_columns = $_GET['checked_columns'];
-        $selected_columns = explode(',',trim($selected_columns));
+        $selected_columns = explode(',', trim($selected_columns));
 //        echo "<pre>";
 //        print_r($selected_columns);
 //        
-        $line = array('created' => 'Date','product_name' => 'Product Name', 'url' => 'Url', 'short_description_wc' => 'Word Count (S)', 'long_description_wc' => 'Word Count (L)', 'short_seo_phrases' => 'SEO Phrases (S)', 'long_seo_phrases' => 'SEO Phrases (L)', 'price_diff' => 'Price');
-            
-        foreach($line as $key => $val){
-                if(!in_array($key , $selected_columns )){
-                    unset($line[$key]);
-                }
+        $line = array('created' => 'Date', 'product_name' => 'Product Name', 'url' => 'Url', 'short_description_wc' => 'Word Count (S)', 'long_description_wc' => 'Word Count (L)', 'short_seo_phrases' => 'SEO Phrases (S)', 'long_seo_phrases' => 'SEO Phrases (L)', 'price_diff' => 'Price');
+
+        foreach ($line as $key => $val) {
+            if (!in_array($key, $selected_columns)) {
+                unset($line[$key]);
+            }
         }
-        if(count($line)==0){
+        if (count($line) == 0) {
             $this->load->helper('csv');
             array_to_csv(array(), date("Y-m-d H:i") . '.csv');
         }
-        if (($cmp_selected=='all') || ($cmp_selected >0)) {
+        if (($cmp_selected == 'all') || ($cmp_selected > 0)) {
 
             $query = $this->db->query('select `s`.*,
             (select `value` from imported_data_parsed where `key`="Product Name" and `imported_data_id` = `s`.`imported_data_id` limit 1) as `product_name`,
@@ -807,23 +763,23 @@ class Assess extends MY_Controller {
                         }
                         $val->similar_items = $similar_items_data;
                         $results[$key1] = $val;
-                    }else{
+                    } else {
                         unset($results[$key1]);
                     }
                 }
             }
-            
-            
+
+
 
             $res_array = array();
-            
+
             foreach ($results as $key => $row) {
-                $row = (array)$row;
-                foreach($line as $k => $v){
-                     $res_array[$key][$k]= $row[$k];
+                $row = (array) $row;
+                foreach ($line as $k => $v) {
+                    $res_array[$key][$k] = $row[$k];
                 }
-                
-                $row = (object)$row;
+
+                $row = (object) $row;
 //                $res_array[$key]['Date'] = $row->created;
 //                $res_array[$key]['Product Name'] = $row->product_name;
 //                $res_array[$key]['Url'] = $row->url;
@@ -879,105 +835,98 @@ class Assess extends MY_Controller {
                 } else {
                     $res_array[$key]['Price'] = '';
                 }
-           
 
-            if ($max_similar_item_count > 0) {
-                $sim_items = $row->similar_items;
 
-                for ($i = 1; $i <= $max_similar_item_count; $i++) {
-                    if(in_array('product_name', $selected_columns)){
-                        $res_array[$key]['Product Name (' . $i . ")"] = $sim_items[$i - 1]->product_name ? $sim_items[$i - 1]->product_name : '';
-                    }
-                    if(in_array('url', $selected_columns)){
-                        $res_array[$key]['Url (' . $i . ")"] = $sim_items[$i - 1]->url ? $sim_items[$i - 1]->url : '';
-                    }
-                    if(in_array('short_description_wc', $selected_columns)){
-                        $res_array[$key]['Word Count (S) (' . $i . ")"] = $sim_items[$i - 1]->short_description_wc ? $sim_items[$i - 1]->short_description_wc : '';
-                    }
-                    if(in_array('long_description_wc', $selected_columns)){
-                    $res_array[$key]['Word Count (L) (' . $i . ")"] = $sim_items[$i - 1]->long_description_wc ? $sim_items[$i - 1]->long_description_wc : '';
+                if ($max_similar_item_count > 0) {
+                    $sim_items = $row->similar_items;
+
+                    for ($i = 1; $i <= $max_similar_item_count; $i++) {
+                        if (in_array('product_name', $selected_columns)) {
+                            $res_array[$key]['Product Name (' . $i . ")"] = $sim_items[$i - 1]->product_name ? $sim_items[$i - 1]->product_name : '';
+                        }
+                        if (in_array('url', $selected_columns)) {
+                            $res_array[$key]['Url (' . $i . ")"] = $sim_items[$i - 1]->url ? $sim_items[$i - 1]->url : '';
+                        }
+                        if (in_array('short_description_wc', $selected_columns)) {
+                            $res_array[$key]['Word Count (S) (' . $i . ")"] = $sim_items[$i - 1]->short_description_wc ? $sim_items[$i - 1]->short_description_wc : '';
+                        }
+                        if (in_array('long_description_wc', $selected_columns)) {
+                            $res_array[$key]['Word Count (L) (' . $i . ")"] = $sim_items[$i - 1]->long_description_wc ? $sim_items[$i - 1]->long_description_wc : '';
+                        }
                     }
                 }
             }
-
- }
             for ($i = 1; $i <= $max_similar_item_count; $i++) {
-                if(in_array('product_name', $selected_columns)){
+                if (in_array('product_name', $selected_columns)) {
                     $line[] = 'Product Name (' . $i . ")";
                 }
-                if(in_array('url', $selected_columns)){
+                if (in_array('url', $selected_columns)) {
                     $line[] = 'Url (' . $i . ")";
                 }
-                if(in_array('short_description_wc', $selected_columns)){
+                if (in_array('short_description_wc', $selected_columns)) {
                     $line[] = 'Word Count (S) (' . $i . ")";
-               }
-               if(in_array('long_description_wc', $selected_columns)){
+                }
+                if (in_array('long_description_wc', $selected_columns)) {
                     $line[] = 'Word Count (L) (' . $i . ")";
-               }
+                }
             }
-            
-           
         } else {
-            
+
             $this->load->model('batches_model');
             //$batch_id = $this->input->get('batch');
             $customer_name = $this->batches_model->getCustomerById($batch_id);
-            if (empty($batch_id) || $batch_id == 0){
+            if (empty($batch_id) || $batch_id == 0) {
                 $batch_id = '';
-                $qnd= '';
-            }else{
-                $qnd= " WHERE `s`.`batch_id` = $batch_id";
+                $qnd = '';
+            } else {
+                $qnd = " WHERE `s`.`batch_id` = $batch_id";
             }
-             $from_s_count = 0;
-             $query_part = '';
-             if(in_array('created', $selected_columns)){
-                $query_part[]= '`s`.`created` AS `Date` ';
+            $from_s_count = 0;
+            $query_part = '';
+            if (in_array('created', $selected_columns)) {
+                $query_part[] = '`s`.`created` AS `Date` ';
             }
-            if(in_array('product_name', $selected_columns)){
-               $query_part[]= '(SELECT `value` FROM imported_data_parsed WHERE `key`= "Product Name" AND `imported_data_id` = `s`.`imported_data_id` LIMIT 1) AS `Product Name`';
+            if (in_array('product_name', $selected_columns)) {
+                $query_part[] = '(SELECT `value` FROM imported_data_parsed WHERE `key`= "Product Name" AND `imported_data_id` = `s`.`imported_data_id` LIMIT 1) AS `Product Name`';
             }
-            if(in_array('url', $selected_columns)){
-                $query_part[]= '(SELECT `value` FROM imported_data_parsed WHERE `key`="Url" AND `imported_data_id` = `s`.`imported_data_id` LIMIT 1) AS `URL` ';
+            if (in_array('url', $selected_columns)) {
+                $query_part[] = '(SELECT `value` FROM imported_data_parsed WHERE `key`="Url" AND `imported_data_id` = `s`.`imported_data_id` LIMIT 1) AS `URL` ';
             }
-            if(in_array('short_description_wc', $selected_columns)){
-                $query_part[]= '`s`.`short_description_wc` AS `Word Count (S)`';
-                
+            if (in_array('short_description_wc', $selected_columns)) {
+                $query_part[] = '`s`.`short_description_wc` AS `Word Count (S)`';
             }
-            if(in_array('short_seo_phrases', $selected_columns)){
-                $query_part[]= '(`s`.`short_seo_phrases` AS `SEO Phrases (S)` ';
+            if (in_array('short_seo_phrases', $selected_columns)) {
+                $query_part[] = '(`s`.`short_seo_phrases` AS `SEO Phrases (S)` ';
                 $from_s_count++;
             }
-            
-            if(in_array('long_description_wc', $selected_columns)){
-                $query_part[]= "`s`.`long_description_wc` AS `Word Count (L)` ";
-                
+
+            if (in_array('long_description_wc', $selected_columns)) {
+                $query_part[] = "`s`.`long_description_wc` AS `Word Count (L)` ";
             }
-            
-            if(in_array('long_description_wc', $selected_columns)){
-                $query_part[]= "`s`.`long_seo_phrases` AS `SEO Phrases (L)` ";
-                 
+
+            if (in_array('long_description_wc', $selected_columns)) {
+                $query_part[] = "`s`.`long_seo_phrases` AS `SEO Phrases (L)` ";
             }
-           if(in_array('price_diff', $selected_columns)){
-                $query_part[]= "`s`.`price_diff` AS `Price` ";
-               
+            if (in_array('price_diff', $selected_columns)) {
+                $query_part[] = "`s`.`price_diff` AS `Price` ";
             }
 //            if(in_array('duplicate_content', $selected_columns)){
 //                $query_part[]= '"-" as `Duplicate Content`';
 //               
 //            }
-           $query_part = implode(',',$query_part );
+            $query_part = implode(',', $query_part);
             $this->load->database();
             $query = $this->db->query('
             SELECT 
 
-            '.$query_part.' 
+            ' . $query_part . ' 
             FROM 
                 (`statistics_new` AS s) 
             LEFT JOIN 
                 `crawler_list` AS cl ON `cl`.`imported_data_id` = `s`.`imported_data_id`
-            '.$qnd
+            ' . $qnd
             );
-            
+
             //                `s`.`created` AS `Date`, 
 //                (SELECT `value` FROM imported_data_parsed WHERE `key`="Product Name" AND `imported_data_id` = `s`.`imported_data_id` LIMIT 1) AS `Product Name`, 
 //                (SELECT `value` FROM imported_data_parsed WHERE `key`="Url" AND `imported_data_id` = `s`.`imported_data_id` LIMIT 1) AS `URL`, 
@@ -1034,10 +983,10 @@ class Assess extends MY_Controller {
                     $result[$key]['Price'] = '';
                 }
             }
-            
+
             $res_array = $result;
         }
-        array_unshift($res_array, $line);    
+        array_unshift($res_array, $line);
         $this->load->helper('csv');
         array_to_csv($res_array, date("Y-m-d H:i") . '.csv');
     }
@@ -1227,160 +1176,156 @@ class Assess extends MY_Controller {
         $this->statistics_model->delete_by_research_data_id($batch_id, $research_data_id);
         $this->statistics_new_model->delete_by_research_data_id($batch_id, $research_data_id);
     }
-    function columns(){
-       $columns=array(
-            
+
+    function columns() {
+        $columns = array(
             array(
                 "sTitle" => "Snapshot",
                 "sName" => "snap",
-                //"sWidth" =>  "10%"
+            //"sWidth" =>  "10%"
             ),
             array(
                 "sTitle" => "Date",
                 "sName" => "created",
-                //"sWidth" =>"3%"
+            //"sWidth" =>"3%"
             ),
             array(
-                "sTitle" => "Product Name", 
-                "sName" =>"product_name", 
+                "sTitle" => "Product Name",
+                "sName" => "product_name",
                 //"sWidth" => "15%",
                 "sClass" => "product_name_text"
             ),
             array(
-                "sTitle" => "item ID", 
-                "sName" =>"item_id", 
+                "sTitle" => "item ID",
+                "sName" => "item_id",
                 "sClass" => "item_id"
             ),
-           array(
-               "sTitle" => "Model",
-               "sName" =>"model",
-               "sClass" => "model"
-           ),
             array(
-                "sTitle" => "URL", 
-                "sName" => "url", 
-                //"sWidth" =>"15%",
-                "sClass" =>"url_text"
+                "sTitle" => "Model",
+                "sName" => "model",
+                "sClass" => "model"
             ),
             array(
-                 "sTitle" => "Short Desc <span class='subtitle_word_short' ># Words</span>",
-                "sName" => "short_description_wc", 
-               // "sWidth" => "1%",
+                "sTitle" => "URL",
+                "sName" => "url",
+                //"sWidth" =>"15%",
+                "sClass" => "url_text"
+            ),
+            array(
+                "sTitle" => "Short Desc <span class='subtitle_word_short' ># Words</span>",
+                "sName" => "short_description_wc",
+                // "sWidth" => "1%",
                 "sClass" => "word_short"
             ),
             array(
-                 "sTitle" => "Keywords <span class='subtitle_keyword_short'>Short</span>",
-                "sName" => "short_seo_phrases", 
+                "sTitle" => "Keywords <span class='subtitle_keyword_short'>Short</span>",
+                "sName" => "short_seo_phrases",
                 //"sWidth" => "2%",
                 "sClass" => "keyword_short"
             ),
             array(
                 "sTitle" => "Long Desc <span class='subtitle_word_long' ># Words</span>",
-                "sName" =>"long_description_wc", 
+                "sName" => "long_description_wc",
                 "sWidth" => "1%",
-                "sClass" =>"word_long"
+                "sClass" => "word_long"
             ),
             array(
-                 "sTitle" => "Keywords <span class='subtitle_keyword_long'>Long</span>",
-                "sName" => "long_seo_phrases", 
+                "sTitle" => "Keywords <span class='subtitle_keyword_long'>Long</span>",
+                "sName" => "long_seo_phrases",
                 //"sWidth" => "2%",
                 "sClass" => "keyword_long"
             ),
-              
-           array (
-            "sTitle" => "Custom Keywords Short Description",
-            "sName" => "Custom_Keywords_Short_Description", 
-            "sWidth" =>  "4%",
-            "sClass" => "Custom_Keywords_Short_Description"
-        ),
-        array(
-            "sTitle" => "Custom Keywords Long Description",
-            "sName" => "Custom_Keywords_Long_Description", 
-            "sWidth" => "4%",
-            "sClass" =>  "Custom_Keywords_Long_Description"
-        ),
-        array(
-            "sTitle" => "Meta Description",
-            "sName" => "Meta_Description", 
-            "sWidth" => "4%",
-            "sClass" =>  "Meta_Description"
-        ),
-        array(
-            "sTitle" => "Meta Desc <span class='subtitle_word_long' ># Words</span>",
-            "sName" => "Meta_Description_Count", 
-            "sWidth" => "4%",
-            "sClass" =>  "Meta_Description_Count"
-        ),
-              array(
-            "sTitle" =>"H1 Tags", 
-            "sName" =>"H1_Tags", 
-            "sWidth" =>"1%",
-            "sClass" =>  "HTags_1"
-         ),
-              array(
-            "sTitle" =>"Words", 
-            "sName" =>"H1_Tags_Count", 
-            "sWidth" =>"1%",
-            "sClass" =>  "HTags"
-         ),
-              array(
-            "sTitle" =>"H2 Tags", 
-            "sName" =>"H2_Tags", 
-            "sWidth" =>"1%",
-            "sClass" =>  "HTags_2"
-         ),
-              array(
-            "sTitle" =>"Words", 
-            "sName" =>"H2_Tags_Count", 
-            "sWidth" =>"1%",
-            "sClass" =>  "HTags"
-         ),
-        array(
-            "sTitle" =>"Duplicate Content", 
-            "sName" =>"duplicate_content", 
+            array(
+                "sTitle" => "Custom Keywords Short Description",
+                "sName" => "Custom_Keywords_Short_Description",
+                "sWidth" => "4%",
+                "sClass" => "Custom_Keywords_Short_Description"
+            ),
+            array(
+                "sTitle" => "Custom Keywords Long Description",
+                "sName" => "Custom_Keywords_Long_Description",
+                "sWidth" => "4%",
+                "sClass" => "Custom_Keywords_Long_Description"
+            ),
+            array(
+                "sTitle" => "Meta Description",
+                "sName" => "Meta_Description",
+                "sWidth" => "4%",
+                "sClass" => "Meta_Description"
+            ),
+            array(
+                "sTitle" => "Meta Desc <span class='subtitle_word_long' ># Words</span>",
+                "sName" => "Meta_Description_Count",
+                "sWidth" => "4%",
+                "sClass" => "Meta_Description_Count"
+            ),
+            array(
+                "sTitle" => "H1 Tags",
+                "sName" => "H1_Tags",
+                "sWidth" => "1%",
+                "sClass" => "HTags_1"
+            ),
+            array(
+                "sTitle" => "Words",
+                "sName" => "H1_Tags_Count",
+                "sWidth" => "1%",
+                "sClass" => "HTags"
+            ),
+            array(
+                "sTitle" => "H2 Tags",
+                "sName" => "H2_Tags",
+                "sWidth" => "1%",
+                "sClass" => "HTags_2"
+            ),
+            array(
+                "sTitle" => "Words",
+                "sName" => "H2_Tags_Count",
+                "sWidth" => "1%",
+                "sClass" => "HTags"
+            ),
+            array(
+                "sTitle" => "Duplicate Content",
+                "sName" => "duplicate_content",
             //"sWidth" =>"1%"
-         ),
-         array(
-            "sTitle" =>"Content", 
-            "sName" =>"column_external_content", 
+            ),
+            array(
+                "sTitle" => "Content",
+                "sName" => "column_external_content",
             //"sWidth" =>"2%"
-        ),
-         array(
-            "sTitle" =>"Reviews", 
-            "sName" =>"column_reviews", 
+            ),
+            array(
+                "sTitle" => "Reviews",
+                "sName" => "column_reviews",
             //"sWidth" =>"3%"
-       ),
-         array(
-            "sTitle" =>"Features", 
-            "sName" =>"column_features", 
+            ),
+            array(
+                "sTitle" => "Features",
+                "sName" => "column_features",
             //"sWidth" => "4%"
-        ),        
-         array(
-            "sTitle"  =>"Price", 
-            "sName" =>"price_diff", 
-            //"sWidth" =>"2%",
-            "sClass" =>"price_text"
-       ),
-         array(
-            "sTitle"  =>"Recommendations", 
-            "sName" =>"recommendations", 
-           // "sWidth" =>"15%",
-           "bVisible" =>false, 
-            "bSortable" =>false
-       ),
-
-        array(
-            "sName" =>"add_data", 
-            "bVisible" => false
-        )
-        
-            
-            
+            ),
+            array(
+                "sTitle" => "Price",
+                "sName" => "price_diff",
+                //"sWidth" =>"2%",
+                "sClass" => "price_text"
+            ),
+            array(
+                "sTitle" => "Recommendations",
+                "sName" => "recommendations",
+                // "sWidth" =>"15%",
+                "bVisible" => false,
+                "bSortable" => false
+            ),
+            array(
+                "sName" => "add_data",
+                "bVisible" => false
+            )
         );
-        return $columns;         
+        return $columns;
     }
+
     private function build_asses_table($results, $build_assess_params, $batch_id = '') {
-        
+
         $columns = $this->columns();
         $duplicate_content_range = 25;
         $this->load->model('batches_model');
@@ -1403,23 +1348,22 @@ class Assess extends MY_Controller {
         $items_long_products_content_short = 0;
         $detail_comparisons_total = 0;
         if ($build_assess_params->max_similar_item_count > 0) {
-                
-              
+
+
             $max_similar_item_count = (int) $build_assess_params->max_similar_item_count;
 
             for ($i = 1; $i <= $max_similar_item_count; $i++) {
 
-              $columns[] = array("sTitle" => "Snapshot", "sName" => 'snap' . $i);
-              $columns[] = array("sTitle" => "Product Name", "sName" => 'product_name' . $i);
-              $columns[] = array("sTitle" => "item ID","sClass" => "item_id".$i, "sName" => 'item_id' . $i);
-              $columns[] = array("sTitle" => "Model","sClass" => "model".$i, "sName" => 'model' . $i);
-              $columns[] = array("sTitle" => "URL", "sName" => 'url' . $i);
-              $columns[] = array("sTitle" => "Words <span class='subtitle_word_short' >Short</span>", "sName" => 'short_description_wc' . $i);
-              $columns[] = array("sTitle" => "Words <span class='subtitle_word_long' >Long</span>", "sName" => 'long_description_wc' . $i);
-              $columns[] = array("sTitle" => "Meta Description","sClass" => "Meta_Description".$i, "sName" => 'Meta_Description' . $i);
-              $columns[] = array("sTitle" => "Meta Desc <span class='subtitle_word_long' ># Words</span>","sClass" => "Meta_Description_Count".$i, "sName" => 'Meta_Description_Count' . $i);
+                $columns[] = array("sTitle" => "Snapshot", "sName" => 'snap' . $i);
+                $columns[] = array("sTitle" => "Product Name", "sName" => 'product_name' . $i);
+                $columns[] = array("sTitle" => "item ID", "sClass" => "item_id" . $i, "sName" => 'item_id' . $i);
+                $columns[] = array("sTitle" => "Model", "sClass" => "model" . $i, "sName" => 'model' . $i);
+                $columns[] = array("sTitle" => "URL", "sName" => 'url' . $i);
+                $columns[] = array("sTitle" => "Words <span class='subtitle_word_short' >Short</span>", "sName" => 'short_description_wc' . $i);
+                $columns[] = array("sTitle" => "Words <span class='subtitle_word_long' >Long</span>", "sName" => 'long_description_wc' . $i);
+                $columns[] = array("sTitle" => "Meta Description", "sClass" => "Meta_Description" . $i, "sName" => 'Meta_Description' . $i);
+                $columns[] = array("sTitle" => "Meta Desc <span class='subtitle_word_long' ># Words</span>", "sClass" => "Meta_Description_Count" . $i, "sName" => 'Meta_Description_Count' . $i);
             }
-
         }
         $display_length = intval($this->input->get('iDisplayLength', TRUE));
 
@@ -1435,7 +1379,7 @@ class Assess extends MY_Controller {
         foreach ($results as $row) {
 //            $long_description_wc = $row->long_description_wc;
 //            $short_description_wc = $row->short_description_wc;
-                
+
             $result_row = new stdClass();
             $result_row->id = $row->id;
             $result_row->imported_data_id = $row->imported_data_id;
@@ -1478,54 +1422,54 @@ class Assess extends MY_Controller {
             $result_row->lower_price_exist = false;
             $result_row->snap = '';
             //$class_for_all_case = '';
-            $tb_product_name='';
-            
-            
+            $tb_product_name = '';
+
+
             if ($build_assess_params->max_similar_item_count > 0) {
                 //$class_for_all_case = "class_for_all_case";
                 $sim_items = $row->similar_items;
                 $max_similar_item_count = (int) $build_assess_params->max_similar_item_count;
                 $tb_product_name = 'tb_product_name';
-               
+
 
                 for ($i = 1; $i <= $max_similar_item_count; $i++) {
-                    
-                    
-                    $parsed_attributes_unserialize_val ='';                                                           
-                    $parsed_meta_unserialize_val = ''; 
+
+
+                    $parsed_attributes_unserialize_val = '';
+                    $parsed_meta_unserialize_val = '';
                     $parsed_meta_unserialize_val_c = '';
-                    $parsed_meta_unserialize_val_count='';
+                    $parsed_meta_unserialize_val_count = '';
 
                     $parsed_attributes_unserialize = unserialize($sim_items[$i - 1]->parsed_attributes);
-                    if($parsed_attributes_unserialize['item_id'])
-                       $parsed_attributes_unserialize_val = $parsed_attributes_unserialize['item_id'];
-                    if($parsed_attributes_unserialize['model'])
+                    if ($parsed_attributes_unserialize['item_id'])
+                        $parsed_attributes_unserialize_val = $parsed_attributes_unserialize['item_id'];
+                    if ($parsed_attributes_unserialize['model'])
                         $parsed_attributes_unserialize_val = $parsed_attributes_unserialize['model'];
 
                     $parsed_meta_unserialize = unserialize($sim_items[$i - 1]->parsed_meta);
-                    if($parsed_meta_unserialize['description']){
-                     $parsed_meta_unserialize_val = $parsed_meta_unserialize['description'];
-                     $parsed_meta_unserialize_val_c = count(explode(" ",$parsed_meta_unserialize_val));
-                     if($parsed_meta_unserialize_val_c !=1)
-                         $parsed_meta_unserialize_val_count = $parsed_meta_unserialize_val_c;
-                     else
-                         $parsed_meta_unserialize_val_count = '';
-                    } 
-                    else if($parsed_meta_unserialize['Description']){
-                     $parsed_meta_unserialize_val = $parsed_meta_unserialize['Description'];
-                     $parsed_meta_unserialize_val_c = count(explode(" ",$parsed_meta_unserialize_val));
-                     if($parsed_meta_unserialize_val_c !=1)
-                         $parsed_meta_unserialize_val_count = $parsed_meta_unserialize_val_c;
-                     else
-                         $parsed_meta_unserialize_val_count = '';
+                    if ($parsed_meta_unserialize['description']) {
+                        $parsed_meta_unserialize_val = $parsed_meta_unserialize['description'];
+                        $parsed_meta_unserialize_val_c = count(explode(" ", $parsed_meta_unserialize_val));
+                        if ($parsed_meta_unserialize_val_c != 1)
+                            $parsed_meta_unserialize_val_count = $parsed_meta_unserialize_val_c;
+                        else
+                            $parsed_meta_unserialize_val_count = '';
                     }
-                    
-                    
-                    
+                    else if ($parsed_meta_unserialize['Description']) {
+                        $parsed_meta_unserialize_val = $parsed_meta_unserialize['Description'];
+                        $parsed_meta_unserialize_val_c = count(explode(" ", $parsed_meta_unserialize_val));
+                        if ($parsed_meta_unserialize_val_c != 1)
+                            $parsed_meta_unserialize_val_count = $parsed_meta_unserialize_val_c;
+                        else
+                            $parsed_meta_unserialize_val_count = '';
+                    }
+
+
+
                     $result_row = (array) $result_row;
                     $result_row["snap$i"] = $sim_items[$i - 1]->snap !== false ? $sim_items["$i-1"]->snap : '-';
-                    $result_row['url' . $i] = $sim_items[$i - 1]->url !== false ? "<span class='res_url'><a target='_blank' href='".$sim_items[$i - 1]->url."'>".$sim_items[$i - 1]->url."</a></span>" : "-";
-                    $result_row['product_name' . $i] = $sim_items[$i - 1]->product_name !== false ? "<span class='tb_product_name'>".$sim_items[$i - 1]->product_name."</span>" : "-";
+                    $result_row['url' . $i] = $sim_items[$i - 1]->url !== false ? "<span class='res_url'><a target='_blank' href='" . $sim_items[$i - 1]->url . "'>" . $sim_items[$i - 1]->url . "</a></span>" : "-";
+                    $result_row['product_name' . $i] = $sim_items[$i - 1]->product_name !== false ? "<span class='tb_product_name'>" . $sim_items[$i - 1]->product_name . "</span>" : "-";
                     $result_row['item_id' . $i] = $parsed_attributes_unserialize_val;
                     $result_row['model' . $i] = '#';
                     $result_row['short_description_wc' . $i] = $sim_items[$i - 1]->short_description_wc !== false ? $sim_items[$i - 1]->short_description_wc : '-';
@@ -1533,7 +1477,7 @@ class Assess extends MY_Controller {
                     $result_row['Meta_Description' . $i] = $parsed_meta_unserialize_val;
                     $result_row['Meta_Description_Count' . $i] = $parsed_meta_unserialize_val_count;
                 }
-                $result_row = (object)$result_row;
+                $result_row = (object) $result_row;
             } else {
 //                $result_row->snap1 = '';
 //                $result_row->product_name1 = '';
@@ -1583,150 +1527,146 @@ class Assess extends MY_Controller {
                 $result_row->column_external_content = ' ';
             $result_row->column_reviews = $pars_atr['parsed_attributes']['review_count'];
             $result_row->column_features = $pars_atr['parsed_attributes']['feature_count'];
-            
-            if($pars_atr['parsed_meta']['description'] && $pars_atr['parsed_meta']['description'] !=''){
+
+            if ($pars_atr['parsed_meta']['description'] && $pars_atr['parsed_meta']['description'] != '') {
                 $pars_atr_array = $pars_atr['parsed_meta']['description'];
                 $result_row->Meta_Description = $pars_atr_array;
                 $words_des = count(explode(" ", $pars_atr_array));
                 $result_row->Meta_Description_Count = $words_des;
-            }else if($pars_atr['parsed_meta']['Description'] && $pars_atr['parsed_meta']['Description'] !=''){
+            } else if ($pars_atr['parsed_meta']['Description'] && $pars_atr['parsed_meta']['Description'] != '') {
                 $pars_atr_array = $pars_atr['parsed_meta']['Description'];
                 $result_row->Meta_Description = $pars_atr_array;
                 $words_des = count(explode(" ", $pars_atr_array));
                 $result_row->Meta_Description_Count = $words_des;
             }
-            if($pars_atr['parsed_attributes']['item_id'] && $pars_atr['parsed_attributes']['item_id'] !=''){
+            if ($pars_atr['parsed_attributes']['item_id'] && $pars_atr['parsed_attributes']['item_id'] != '') {
                 $result_row->item_id = $pars_atr['parsed_attributes']['item_id'];
             }
-            if($pars_atr['parsed_attributes']['model'] && $pars_atr['parsed_attributes']['model'] !=''){
+            if ($pars_atr['parsed_attributes']['model'] && $pars_atr['parsed_attributes']['model'] != '') {
                 $result_row->model = $pars_atr['parsed_attributes']['model'];
             }
-            
-            $result_row->H1_Tags= '';
-            $result_row->H1_Tags_Count= '';
-            if($pars_atr['HTags']['h1'] && $pars_atr['HTags']['h1'] !=''){
+
+            $result_row->H1_Tags = '';
+            $result_row->H1_Tags_Count = '';
+            if ($pars_atr['HTags']['h1'] && $pars_atr['HTags']['h1'] != '') {
                 $H1 = $pars_atr['HTags']['h1'];
-                if(is_array($H1)){
-                    $str_1 =  "<table  class='table_keywords_long'>";
-                    $str_1_Count =  "<table  class='table_keywords_long'>";
-                    foreach($H1 as $h1){
-                       $str_1.= "<tr><td>".$h1."</td></tr>" ;
-                       $str_1_Count.="<tr><td>".strlen($h1)."</td></tr>" ;
+                if (is_array($H1)) {
+                    $str_1 = "<table  class='table_keywords_long'>";
+                    $str_1_Count = "<table  class='table_keywords_long'>";
+                    foreach ($H1 as $h1) {
+                        $str_1.= "<tr><td>" . $h1 . "</td></tr>";
+                        $str_1_Count.="<tr><td>" . strlen($h1) . "</td></tr>";
                     }
                     $str_1 .="</table>";
                     $str_1_Count .="</table>";
-                $result_row->H1_Tags = $str_1;
-                $result_row->H1_Tags_Count= $str_1_Count;
-                }else{
-                   $H1_Count = strlen($pars_atr['HTags']['h1']);
-                   $result_row->H1_Tags = "<table  class='table_keywords_long'><tr><td>".$H1."</td></tr></table>";;
-                   $result_row->H1_Tags_Count = "<table  class='table_keywords_long'><tr><td>".$H1_Count."</td></tr></table>";;
+                    $result_row->H1_Tags = $str_1;
+                    $result_row->H1_Tags_Count = $str_1_Count;
+                } else {
+                    $H1_Count = strlen($pars_atr['HTags']['h1']);
+                    $result_row->H1_Tags = "<table  class='table_keywords_long'><tr><td>" . $H1 . "</td></tr></table>";
+                    ;
+                    $result_row->H1_Tags_Count = "<table  class='table_keywords_long'><tr><td>" . $H1_Count . "</td></tr></table>";
+                    ;
                 }
-                
             }
-            
-            $result_row->H2_Tags= '';
-            $result_row->H2_Tags_Count= '';
-            if($pars_atr['HTags']['h2'] && $pars_atr['HTags']['h2'] !=''){
+
+            $result_row->H2_Tags = '';
+            $result_row->H2_Tags_Count = '';
+            if ($pars_atr['HTags']['h2'] && $pars_atr['HTags']['h2'] != '') {
                 $H2 = $pars_atr['HTags']['h2'];
-                if(is_array($H2)){
-                    $str_2 =  "<table  class='table_keywords_long'>";
-                    $str_2_Count =  "<table  class='table_keywords_long'>";
-                    foreach($H2 as $h2){
-                       $str_2.= "<tr><td>".$h2."</td></tr>" ;
-                       $str_2_Count.="<tr><td>".strlen($h2)."</td></tr>" ;
+                if (is_array($H2)) {
+                    $str_2 = "<table  class='table_keywords_long'>";
+                    $str_2_Count = "<table  class='table_keywords_long'>";
+                    foreach ($H2 as $h2) {
+                        $str_2.= "<tr><td>" . $h2 . "</td></tr>";
+                        $str_2_Count.="<tr><td>" . strlen($h2) . "</td></tr>";
                     }
                     $str_2 .="</table>";
                     $str_2_Count .="</table>";
-                $result_row->H2_Tags = $str_2;
-                $result_row->H2_Tags_Count= $str_2_Count;
-                }else{
-                   $H2_Count = strlen($pars_atr['HTags']['h2']);
-                   $result_row->H2_Tags = "<table  class='table_keywords_long'><tr><td>".$H2."</td></tr></table>";;
-                   $result_row->H2_Tags_Count = "<table  class='table_keywords_long'><tr><td>".$H2_Count."</td></tr></table>";;
+                    $result_row->H2_Tags = $str_2;
+                    $result_row->H2_Tags_Count = $str_2_Count;
+                } else {
+                    $H2_Count = strlen($pars_atr['HTags']['h2']);
+                    $result_row->H2_Tags = "<table  class='table_keywords_long'><tr><td>" . $H2 . "</td></tr></table>";
+                    ;
+                    $result_row->H2_Tags_Count = "<table  class='table_keywords_long'><tr><td>" . $H2_Count . "</td></tr></table>";
+                    ;
                 }
-                
             }
-            
-             $custom_seo = $this->keywords_model->get_by_imp_id($row->imported_data_id);
-             $Custom_Keywords_Long_Description = "<table class='table_keywords_long'>";
-             if($custom_seo['primary']){
-                 if($row->long_description){
-                     $_count = $this->keywords_appearence($row->long_description, $custom_seo['primary']);
-                     $cnt = count(explode(' ',$custom_seo['primary'] ));
-                     $_count = round(($_count*$cnt/$row->long_description_wc)*100, 2)."%";
-                     $Custom_Keywords_Long_Description .= "<tr><td>".$custom_seo['primary']."</td><td>$_count</td></tr>";
-                 }else{
-                     $_count = ' ';
-                 }
-                 
-             };
-             if($custom_seo['secondary']){
-                  if($row->long_description){
-                     $_count = $this->keywords_appearence($row->long_description, $custom_seo['secondary']);
-                     $cnt = count(explode(' ',$custom_seo['secondary'] ));
-                     $_count = round(($_count*$cnt/$row->long_description_wc)*100, 2)."%";
-                     $Custom_Keywords_Long_Description .= "<tr><td>".$custom_seo['secondary']."</td><td>$_count</td></tr>";
-                 }else{
-                     $_count = ' ';
-                 }
-                 
-             };
-             if($custom_seo['tertiary']){
-                 if($row->long_description){
-                     $_count = $this->keywords_appearence($row->long_description, $custom_seo['tertiary']);
-                     $cnt = count(explode(' ',$custom_seo['tertiary'] ));
-                     $_count = round(($_count*$cnt/$row->long_description_wc)*100, 2)."%";
-                     $Custom_Keywords_Long_Description .= "<tr><td>".$custom_seo['tertiary']."</td><td> $_count</td></tr>";
-                 }else{
-                     $_count = ' ';
-                 }
-                
-             };
-             
-             
-             
-             $result_row->Custom_Keywords_Long_Description =  $Custom_Keywords_Long_Description."</table>";
-                
-             $Custom_Keywords_Short_Description = "<table class='table_keywords_short'>";
-             
-             if($custom_seo['primary']){
-                 if($row->short_description){
+
+            $custom_seo = $this->keywords_model->get_by_imp_id($row->imported_data_id);
+            $Custom_Keywords_Long_Description = "<table class='table_keywords_long'>";
+            if ($custom_seo['primary']) {
+                if ($row->long_description) {
+                    $_count = $this->keywords_appearence($row->long_description, $custom_seo['primary']);
+                    $cnt = count(explode(' ', $custom_seo['primary']));
+                    $_count = round(($_count * $cnt / $row->long_description_wc) * 100, 2) . "%";
+                    $Custom_Keywords_Long_Description .= "<tr><td>" . $custom_seo['primary'] . "</td><td>$_count</td></tr>";
+                } else {
+                    $_count = ' ';
+                }
+            };
+            if ($custom_seo['secondary']) {
+                if ($row->long_description) {
+                    $_count = $this->keywords_appearence($row->long_description, $custom_seo['secondary']);
+                    $cnt = count(explode(' ', $custom_seo['secondary']));
+                    $_count = round(($_count * $cnt / $row->long_description_wc) * 100, 2) . "%";
+                    $Custom_Keywords_Long_Description .= "<tr><td>" . $custom_seo['secondary'] . "</td><td>$_count</td></tr>";
+                } else {
+                    $_count = ' ';
+                }
+            };
+            if ($custom_seo['tertiary']) {
+                if ($row->long_description) {
+                    $_count = $this->keywords_appearence($row->long_description, $custom_seo['tertiary']);
+                    $cnt = count(explode(' ', $custom_seo['tertiary']));
+                    $_count = round(($_count * $cnt / $row->long_description_wc) * 100, 2) . "%";
+                    $Custom_Keywords_Long_Description .= "<tr><td>" . $custom_seo['tertiary'] . "</td><td> $_count</td></tr>";
+                } else {
+                    $_count = ' ';
+                }
+            };
+
+
+
+            $result_row->Custom_Keywords_Long_Description = $Custom_Keywords_Long_Description . "</table>";
+
+            $Custom_Keywords_Short_Description = "<table class='table_keywords_short'>";
+
+            if ($custom_seo['primary']) {
+                if ($row->short_description) {
                     $_count = $this->keywords_appearence($row->short_description, $custom_seo['primary']);
-                    $cnt = count(explode(' ',$custom_seo['primary'] ));
-                    $_count = round(($_count*$cnt/$row->short_description_wc)*100, 2)."%";
-                    $Custom_Keywords_Short_Description .= "<tr><td>".$custom_seo['primary']."</td><td>$_count</td></tr>";
-                 }else{
-                     $_count = ' ';
-                 }
-                 
-             };
-             if($custom_seo['secondary']){
-                 if($row->short_description){
-                     $_count = $this->keywords_appearence($row->short_description, $custom_seo['secondary']);
-                     $cnt = count(explode(' ',$custom_seo['secondary'] ));
-                     $_count = round(($_count*$cnt/$row->short_description_wc)*100, 2)."%";
-                     $Custom_Keywords_Short_Description .= "<tr><td>".$custom_seo['secondary']."</td><td>$_count</td></tr>";
-                 }else{
-                     $_count = ' ';
-                 }
-                 
-             };
-             if($custom_seo['tertiary']){
-                 if($row->short_description){
-                     $_count = $this->keywords_appearence($row->short_description, $custom_seo['tertiary']);
-                     $cnt = count(explode(' ',$custom_seo['tertiary'] ));
-                     $_count = round(($_count*$cnt/$row->short_description_wc)*100, 2)."%";
-                     $Custom_Keywords_Short_Description .= "<tr><td>".$custom_seo['tertiary']."</td><td>$_count</td></tr>";
-                 }else{
-                     $_count = ' ';
-                 }
-                
-             };
-                $result_row->Custom_Keywords_Short_Description =  $Custom_Keywords_Short_Description."</table>";
-             
-            
-            
+                    $cnt = count(explode(' ', $custom_seo['primary']));
+                    $_count = round(($_count * $cnt / $row->short_description_wc) * 100, 2) . "%";
+                    $Custom_Keywords_Short_Description .= "<tr><td>" . $custom_seo['primary'] . "</td><td>$_count</td></tr>";
+                } else {
+                    $_count = ' ';
+                }
+            };
+            if ($custom_seo['secondary']) {
+                if ($row->short_description) {
+                    $_count = $this->keywords_appearence($row->short_description, $custom_seo['secondary']);
+                    $cnt = count(explode(' ', $custom_seo['secondary']));
+                    $_count = round(($_count * $cnt / $row->short_description_wc) * 100, 2) . "%";
+                    $Custom_Keywords_Short_Description .= "<tr><td>" . $custom_seo['secondary'] . "</td><td>$_count</td></tr>";
+                } else {
+                    $_count = ' ';
+                }
+            };
+            if ($custom_seo['tertiary']) {
+                if ($row->short_description) {
+                    $_count = $this->keywords_appearence($row->short_description, $custom_seo['tertiary']);
+                    $cnt = count(explode(' ', $custom_seo['tertiary']));
+                    $_count = round(($_count * $cnt / $row->short_description_wc) * 100, 2) . "%";
+                    $Custom_Keywords_Short_Description .= "<tr><td>" . $custom_seo['tertiary'] . "</td><td>$_count</td></tr>";
+                } else {
+                    $_count = ' ';
+                }
+            };
+            $result_row->Custom_Keywords_Short_Description = $Custom_Keywords_Short_Description . "</table>";
+
+
+
             if ($row->snap != null && $row->snap != '') {
                 $result_row->snap = $row->snap;
             }
@@ -1771,17 +1711,17 @@ class Assess extends MY_Controller {
                 if ($short_seo) {
                     $str_short_seo = '<table class="table_keywords_short">';
                     foreach ($short_seo as $val) {
-                        $str_short_seo .= '<tr><td>'.$val['ph'] . '</td><td>' . $val['prc'] . '%</td></tr>';
+                        $str_short_seo .= '<tr><td>' . $val['ph'] . '</td><td>' . $val['prc'] . '%</td></tr>';
                     }
-                    $result_row->short_seo_phrases = $str_short_seo.'</table>';
+                    $result_row->short_seo_phrases = $str_short_seo . '</table>';
                 }
                 $long_seo = unserialize($row->long_seo_phrases);
                 if ($long_seo) {
                     $str_long_seo = '<table class="table_keywords_long">';
                     foreach ($long_seo as $val) {
-                        $str_long_seo .= '<tr><td>'.$val['ph'] . '</td><td>' . $val['prc'] . '%</td></tr>';
+                        $str_long_seo .= '<tr><td>' . $val['ph'] . '</td><td>' . $val['prc'] . '%</td></tr>';
                     }
-                    $result_row->long_seo_phrases = $str_long_seo.'</table>';
+                    $result_row->long_seo_phrases = $str_long_seo . '</table>';
                 }
             } else {
                 $result_row->short_seo_phrases = $row->short_seo_phrases;
@@ -1975,7 +1915,6 @@ class Assess extends MY_Controller {
 //            $report['summary']['own_batch_total_items'] = $own_batch_total_items;
 //            $report['summary']['compare_batch_total_items'] = $compare_batch_total_items;
 //        }
-
 //        $report['recommendations']['absent_items'] = $absent_items;
 //        $report['summary']['absent_items_count'] = count($absent_items);
 //        $report['summary']['own_batch_name'] = $own_batch[0]->title;
@@ -2048,14 +1987,14 @@ class Assess extends MY_Controller {
             "iDisplayLength" => $display_length,
             "aaData" => array()
         );
-       
+
         if (!empty($result_table)) {
             $c = 0;
-                       
+
             foreach ($result_table as $data_row) {
-                              
-                if ($c >=$display_start) {
-                                       
+
+                if ($c >= $display_start) {
+
                     if (isset($data_row->recommendations)) {
                         // this is for absent product in selected batch only
                         $recommendations_html = '<ul class="assess_recommendations"><li>' . $data_row->recommendations . '</li></ul>';
@@ -2161,7 +2100,7 @@ class Assess extends MY_Controller {
                     $row_created = '<nobr>' . $row_created_array[0] . '</nobr><br/>';
                     $row_created = $row_created . '<nobr>' . $row_created_array[1] . '</nobr>';
                     $snap = '';
-                    
+
                     $row_url = '<a class="active_link" href="' . $data_row->url . '" target="_blank">' . $data_row->url . '</a>';
                     if ($data_row->snap != '') {
                         $file = realpath(BASEPATH . "../webroot/webshoots") . '/' . $data_row->snap;
@@ -2171,12 +2110,12 @@ class Assess extends MY_Controller {
                             }
                         }
                     }
-                   
+
 
                     $output_row = array(
-                        '<span style="cursor:pointer;">'.$snap.'</span>',
+                        '<span style="cursor:pointer;">' . $snap . '</span>',
                         $row_created,
-                        '<span class= "'. $tb_product_name.'">'.$data_row->product_name."</span>",
+                        '<span class= "' . $tb_product_name . '">' . $data_row->product_name . "</span>",
                         $data_row->item_id,
                         $data_row->model,
                         $row_url,
@@ -2202,19 +2141,19 @@ class Assess extends MY_Controller {
                     );
 
                     if ($build_assess_params->max_similar_item_count > 0) {
-                    $data_row = (array)$data_row;
-                    for ($i = 1; $i <= $build_assess_params->max_similar_item_count; $i++) {
-                            $output_row[] = $data_row['snap' . $i]!=null?$data_row['snap' . $i]:'-';
-                            $output_row[] = $data_row['product_name' . $i]!=null?$data_row['product_name' . $i]:'-';
-                            $output_row[] = $data_row['item_id' . $i]!=null?$data_row['item_id' . $i]:'';
-                            $output_row[] = $data_row['model' . $i]!=null?$data_row['model' . $i]:'';
-                            $output_row[] = $data_row['url' . $i]!=null?$data_row['url' . $i]:'-';
-                            $output_row[] = $data_row['short_description_wc' . $i]!=null?$data_row['short_description_wc' . $i]:'-';
-                            $output_row[] = $data_row['long_description_wc' . $i]!=null?$data_row['long_description_wc' . $i]:'-';
-                            $output_row[] = $data_row['Meta_Description' . $i]!=null?$data_row['Meta_Description' . $i]:'';
-                            $output_row[] = $data_row['Meta_Description_Count' . $i]!=null?$data_row['Meta_Description_Count' . $i]:'';
+                        $data_row = (array) $data_row;
+                        for ($i = 1; $i <= $build_assess_params->max_similar_item_count; $i++) {
+                            $output_row[] = $data_row['snap' . $i] != null ? $data_row['snap' . $i] : '-';
+                            $output_row[] = $data_row['product_name' . $i] != null ? $data_row['product_name' . $i] : '-';
+                            $output_row[] = $data_row['item_id' . $i] != null ? $data_row['item_id' . $i] : '';
+                            $output_row[] = $data_row['model' . $i] != null ? $data_row['model' . $i] : '';
+                            $output_row[] = $data_row['url' . $i] != null ? $data_row['url' . $i] : '-';
+                            $output_row[] = $data_row['short_description_wc' . $i] != null ? $data_row['short_description_wc' . $i] : '-';
+                            $output_row[] = $data_row['long_description_wc' . $i] != null ? $data_row['long_description_wc' . $i] : '-';
+                            $output_row[] = $data_row['Meta_Description' . $i] != null ? $data_row['Meta_Description' . $i] : '';
+                            $output_row[] = $data_row['Meta_Description_Count' . $i] != null ? $data_row['Meta_Description_Count' . $i] : '';
                         }
-                        $data_row = (object)$data_row;
+                        $data_row = (object) $data_row;
                     } else {
 
                         $output_row[] = $data_row->snap1;
@@ -2226,67 +2165,66 @@ class Assess extends MY_Controller {
                         $output_row[] = $data_row->long_description_wc1;
                         $output_row[] = $data_row->Meta_Description1;
                         $output_row[] = $data_row->Meta_Description_Count1;
-                       
                     }
                     $output['aaData'][] = $output_row;
                 }
-                  
-                 
+
+
                 if ($display_length > 0) {
                     if ($c >= ($display_start + $display_length - 1)) {
                         break;
                     }
                 }
-              $c++;
+                $c++;
             }
         }
-        
+
 //       echo  "<pre>";
 //       print_r($columns);
 //       print_r($output['aaData']);exit;
-        $output['columns']= $columns;
+        $output['columns'] = $columns;
         $output['ExtraData']['report'] = $report;
-            
+
         return $output;
     }
 
-    public function get_board_view_snap(){
-        if(isset($_POST['batch_id']) && $_POST['batch_id'] != 0){
+    public function get_board_view_snap() {
+        if (isset($_POST['batch_id']) && $_POST['batch_id'] != 0) {
             $batch_id = $_POST['batch_id'];
             $params = new stdClass();
             $params->batch_id = $batch_id;
             $params->txt_filter = '';
             $params->date_from = '';
             $params->date_to = '';
-            if(isset($_POST['next_id']))
+            if (isset($_POST['next_id']))
                 $params->id = $_POST['next_id'];
             else
                 $params->snap_count = 12;
             $results = $this->get_data_for_assess($params);
-            /****Foreach Begin****/
+            /*             * **Foreach Begin*** */
             $snap_data = array();
-            foreach($results as $data_row){
+            foreach ($results as $data_row) {
                 if ($data_row->snap != '') {
                     $file = realpath(BASEPATH . "../webroot/webshoots") . '/' . $data_row->snap;
                     if (file_exists($file)) {
                         if (filesize($file) > 1024) {
                             $snap = "<img src='" . base_url() . "webshoots/" . $data_row->snap . "' rel='" . $data_row->id . "' />";
-                        $output = array(
-                            $snap,
-                            $data_row->product_name,
-                            json_encode($data_row),
-                        );
-                        $snap_data[] = $output;
-}
+                            $output = array(
+                                $snap,
+                                $data_row->product_name,
+                                json_encode($data_row),
+                            );
+                            $snap_data[] = $output;
+                        }
                     }
                 }
             }
-            /****Foreach End****/
+            /*             * **Foreach End*** */
             $this->output->set_content_type('application/json')->set_output(json_encode($snap_data));
         }
     }
 
-    public function save_statistic_data(){
+    public function save_statistic_data() {
         $this->load->model('settings_model');
         $this->load->model('statistics_model');
         $this->load->model('statistics_new_model');
@@ -2298,23 +2236,23 @@ class Assess extends MY_Controller {
         return $results;
     }
 
-    public function get_graph_batch_data(){
-        
-        if(isset($_POST['batch_id']) && isset($_POST['batch_compare_id'])){
-            
-            if(trim($_POST['batch_id']) == '')
+    public function get_graph_batch_data() {
+
+        if (isset($_POST['batch_id']) && isset($_POST['batch_compare_id'])) {
+
+            if (trim($_POST['batch_id']) == '')
                 $batch_id = -1;
             else
                 $batch_id = $_POST['batch_id'];
-            
-            if(trim($_POST['batch_compare_id']) == '' || $_POST['batch_compare_id'] == 'All' )
+
+            if (trim($_POST['batch_compare_id']) == '' || $_POST['batch_compare_id'] == 'All')
                 $batch_compare_id = -1;
             else
                 $batch_compare_id = $_POST['batch_compare_id'];
-            
+
             $batch_arr = array($batch_id, $batch_compare_id);
             $snap_data = array();
-            foreach($batch_arr as $key => $batchID){
+            foreach ($batch_arr as $key => $batchID) {
                 $params = new stdClass();
                 $params->batch_id = $batchID;
                 $params->txt_filter = '';
@@ -2322,32 +2260,32 @@ class Assess extends MY_Controller {
                 $params->date_to = '';
                 $results = $this->get_data_for_assess($params);
 
-                foreach($results as $data_row){
-                    $snap_data[$key]['product_name'][] = (string)$data_row->product_name;
-                    $snap_data[$key]['url'][] = (string)$data_row->url;
-                    $snap_data[$key]['short_description_wc'][] = (int)$data_row->short_description_wc;
-                    $snap_data[$key]['long_description_wc'][] = (int)$data_row->long_description_wc;
-                    $snap_data[$key]['revision'][] = (int)$data_row->revision;
-                    $snap_data[$key]['own_price'][] = (float)$data_row->own_price;
+                foreach ($results as $data_row) {
+                    $snap_data[$key]['product_name'][] = (string) $data_row->product_name;
+                    $snap_data[$key]['url'][] = (string) $data_row->url;
+                    $snap_data[$key]['short_description_wc'][] = (int) $data_row->short_description_wc;
+                    $snap_data[$key]['long_description_wc'][] = (int) $data_row->long_description_wc;
+                    $snap_data[$key]['revision'][] = (int) $data_row->revision;
+                    $snap_data[$key]['own_price'][] = (float) $data_row->own_price;
                     $htags = unserialize($data_row->htags);
-                    if($htags){
+                    if ($htags) {
                         $snap_data[$key]['h1_word_counts'][] = count($htags['h1']);
                         $snap_data[$key]['h2_word_counts'][] = count($htags['h2']);
                     } else {
                         $snap_data[$key]['h1_word_counts'][] = 0;
                         $snap_data[$key]['h2_word_counts'][] = 0;
+                    }
                 }
-                }
-                
             }
-            
+
             $this->output->set_content_type('application/json')->set_output(json_encode($snap_data));
         }
     }
-     private function keywords_appearence($desc, $phrase) {
-        
-        $desc= strip_tags($desc);
+
+    private function keywords_appearence($desc, $phrase) {
+
+        $desc = strip_tags($desc);
         return substr_count($desc, $phrase);
     }
-    
+
 }
