@@ -796,7 +796,7 @@ class ProcessText():
 	MODEL_MATCH_WEIGHT = 10
 	ALT_MODEL_MATCH_WEIGHT = 9
 	BRAND_MATCH_WEIGHT = 6
-	INCHES_MATCH_WEIGHT = 3
+	MEASURE_MATCH_WEIGHT = 3
 	NONWORD_MATCH_WEIGHT = 2
 	DICTIONARY_WORD_MATCH_WEIGHT = 1
 
@@ -1150,12 +1150,12 @@ class ProcessText():
 			# model number matching is handled separately
 			return 0
 
-		# represents number of inches
-		if word.endswith("\""):
-			return ProcessText.INCHES_MATCH_WEIGHT
+		# represents number of inches, or a decimal point number
+		if word.endswith("\"") or re.match("[0-9]+\.[0-9]+", word):
+			return ProcessText.MEASURE_MATCH_WEIGHT
 
 		# non dictionary word
-		if not wordnet.synsets(word):
+		if not wordnet.synsets(word) and not re.match("[0-9]+", word):
 			return ProcessText.NONWORD_MATCH_WEIGHT
 
 		# dictionary word
