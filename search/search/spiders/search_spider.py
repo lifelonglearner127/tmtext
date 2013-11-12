@@ -822,6 +822,9 @@ class ProcessText():
 		# normalize megapixels
 		text = re.sub("[- ]*[Mm]egapixels?", "MP", text)
 
+		# normalize Watts
+		text = re.sub("[- ]*[Ww]atts?", "W", text)
+
 		#! including ' as an exception keeps things like women's a single word. also doesn't find it as a word in wordnet -> too high a priority
 		# excluding it leads to women's->women (s is a stopword)
 
