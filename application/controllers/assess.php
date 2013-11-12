@@ -1342,7 +1342,7 @@ class Assess extends MY_Controller {
               $columns[] = array("sTitle" => "Words <span class='subtitle_word_short' >Short</span>", "sName" => 'short_description_wc' . $i);
               $columns[] = array("sTitle" => "Words <span class='subtitle_word_long' >Long</span>", "sName" => 'long_description_wc' . $i);
               $columns[] = array("sTitle" => "Meta Description","sClass" => "Meta_Description".$i, "sName" => 'Meta_Description' . $i);
-              $columns[] = array("sTitle" => "Prod Desc <span class='subtitle_word_long' ># Words</span>","sClass" => "Meta_Description_Count".$i, "sName" => 'Meta_Description_Count' . $i);
+              $columns[] = array("sTitle" => "Meta Desc <span class='subtitle_word_long' ># Words</span>","sClass" => "Meta_Description_Count".$i, "sName" => 'Meta_Description_Count' . $i);
             }
 
         }
