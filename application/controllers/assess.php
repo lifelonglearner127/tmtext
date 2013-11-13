@@ -707,15 +707,23 @@ class Assess extends MY_Controller {
             $this->load->helper('csv');
             array_to_csv(array(), date("Y-m-d H:i") . '.csv');
         }
-        if (($cmp_selected == 'all') || ($cmp_selected > 0)) {
-
-            $query = $this->db->query('select `s`.*,
+        if (empty($batch_id) || $batch_id == 0) {
+                $batch_id = '';
+                $qnd = '';
+            } else {
+                $qnd = " WHERE `s`.`batch_id` = $batch_id";
+            }
+        $query = $this->db->query('select `s`.*,
             (select `value` from imported_data_parsed where `key`="Product Name" and `imported_data_id` = `s`.`imported_data_id` limit 1) as `product_name`,
             (select `value` from imported_data_parsed where `key`="Description" and `imported_data_id` = `s`.`imported_data_id` limit 1) as `short_description`,
             (select `value` from imported_data_parsed where `key`="Long_Description" and `imported_data_id` = `s`.`imported_data_id` limit 1) as `long_description`,
             (select `value` from imported_data_parsed where `key`="Url" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `url`
-            from `statistics_new` as `s`  where `s`.`batch_id`=' . $batch_id);
+            from `statistics_new` as `s` '.$qnd);
             $results = $query->result();
+        
+        if (true) {
+
+            
             $this->load->model('batches_model');
 
             if ($cmp_selected != 'all' && $cmp_selected != null && $cmp_selected != 0) {
@@ -1005,122 +1013,123 @@ class Assess extends MY_Controller {
                     $line[] = 'Word Count (L) (' . $i . ")";
                 }
             }
+            
         } else {
-
-            $this->load->model('batches_model');
-            //$batch_id = $this->input->get('batch');
-            $customer_name = $this->batches_model->getCustomerById($batch_id);
-            if (empty($batch_id) || $batch_id == 0) {
-                $batch_id = '';
-                $qnd = '';
-            } else {
-                $qnd = " WHERE `s`.`batch_id` = $batch_id";
-            }
-            $from_s_count = 0;
-            $query_part = '';
-            if (in_array('created', $selected_columns)) {
-                $query_part[] = '`s`.`created` AS `Date` ';
-            }
-            if (in_array('product_name', $selected_columns)) {
-                $query_part[] = '(SELECT `value` FROM imported_data_parsed WHERE `key`= "Product Name" AND `imported_data_id` = `s`.`imported_data_id` LIMIT 1) AS `Product Name`';
-            }
-            if (in_array('url', $selected_columns)) {
-                $query_part[] = '(SELECT `value` FROM imported_data_parsed WHERE `key`="Url" AND `imported_data_id` = `s`.`imported_data_id` LIMIT 1) AS `URL` ';
-            }
-            if (in_array('short_description_wc', $selected_columns)) {
-                $query_part[] = '`s`.`short_description_wc` AS `Word Count (S)`';
-            }
-            if (in_array('short_seo_phrases', $selected_columns)) {
-                $query_part[] = '`s`.`short_seo_phrases` AS `SEO Phrases (S)` ';
-                $from_s_count++;
-            }
-
-            if (in_array('long_description_wc', $selected_columns)) {
-                $query_part[] = "`s`.`long_description_wc` AS `Word Count (L)` ";
-            }
-
-            if (in_array('long_seo_phrases', $selected_columns)) {
-                $query_part[] = "`s`.`long_seo_phrases` AS `SEO Phrases (L)` ";
-            }
-
-            if (in_array('price_diff', $selected_columns)) {
-                $query_part[] = "`s`.`price_diff` AS `Price` ";
-            }
-//            if(in_array('duplicate_content', $selected_columns)){
-//                $query_part[]= '"-" as `Duplicate Content`';
-//               
+//
+//            $this->load->model('batches_model');
+//            //$batch_id = $this->input->get('batch');
+//            $customer_name = $this->batches_model->getCustomerById($batch_id);
+//            if (empty($batch_id) || $batch_id == 0) {
+//                $batch_id = '';
+//                $qnd = '';
+//            } else {
+//                $qnd = " WHERE `s`.`batch_id` = $batch_id";
 //            }
-            $query_part = implode(',', $query_part);
-            $this->load->database();
-            $query = $this->db->query('
-            SELECT 
-
-            ' . $query_part . ' 
-            FROM 
-                (`statistics_new` AS s) 
-            LEFT JOIN 
-                `crawler_list` AS cl ON `cl`.`imported_data_id` = `s`.`imported_data_id`
-            ' . $qnd
-            );
-
-            //                `s`.`created` AS `Date`, 
-//                (SELECT `value` FROM imported_data_parsed WHERE `key`="Product Name" AND `imported_data_id` = `s`.`imported_data_id` LIMIT 1) AS `Product Name`, 
-//                (SELECT `value` FROM imported_data_parsed WHERE `key`="Url" AND `imported_data_id` = `s`.`imported_data_id` LIMIT 1) AS `URL`, 
-//                `s`.`short_description_wc` AS `Word Count (S)`, 
-//                `s`.`short_seo_phrases` AS `SEO Phrases (S)`, 
-//                `s`.`long_description_wc` AS `Word Count (L)`, 
-//                `s`.`long_seo_phrases` AS `SEO Phrases (L)`, 
-//                "-" as `Duplicate Content`,
-//                `s`.`price_diff` AS `Price`
-//            //$line = array();
-//            foreach ($query->list_fields() as $name) {
-//                $line[] = $name;
+//            $from_s_count = 0;
+//            $query_part = '';
+//            if (in_array('created', $selected_columns)) {
+//                $query_part[] = '`s`.`created` AS `Date` ';
 //            }
-            $result = $query->result_array();
-            foreach ($result as $key => $row) {
-                if (trim($row['SEO Phrases (S)']) != 'None') {
-                    $shortArr = unserialize($row['SEO Phrases (S)']);
-                    if ($shortArr) {
-                        $shortString = '';
-                        foreach ($shortArr as $value) {
-                            $shortString .= $value['ph'] . "\r\n";
-                        }
-                        $result[$key]['SEO Phrases (S)'] = trim($shortString);
-                    }
-                }
-                if (trim($row['SEO Phrases (L)']) != 'None') {
-                    $longArr = unserialize($row['SEO Phrases (L)']);
-                    if ($longArr) {
-                        $longString = '';
-                        foreach ($longArr as $value) {
-                            $longString .= $value['ph'] . "\r\n";
-                        }
-                        $result[$key]['SEO Phrases (L)'] = trim($longString);
-                    }
-                }
-                $price_diff = unserialize($row['Price']);
-                if ($price_diff) {
-                    $own_price = floatval($price_diff['own_price']);
-                    $own_site = str_replace('www.', '', $price_diff['own_site']);
-                    $own_site = str_replace('www1.', '', $own_site);
-                    $price_diff_res = $own_site . " - $" . $price_diff['own_price'];
-                    $flag_competitor = false;
-                    for ($i = 0; $i < count($price_diff['competitor_customer']); $i++) {
-                        if ($customer_url["host"] != $price_diff['competitor_customer'][$i]) {
-                            if ($own_price > floatval($price_diff['competitor_price'][$i])) {
-                                $competitor_site = str_replace('www.', '', $price_diff['competitor_customer'][$i]);
-                                $competitor_site = str_replace('www.', '', $competitor_site);
-                                $price_diff_res .= "\r\n" . $competitor_site . " - $" . $price_diff['competitor_price'][$i];
-                            }
-                        }
-                    }
-                    $result[$key]['Price'] = $price_diff_res;
-                } else {
-                    $result[$key]['Price'] = '';
-                }
-            }
-
-            $res_array = $result;
+//            if (in_array('product_name', $selected_columns)) {
+//                $query_part[] = '(SELECT `value` FROM imported_data_parsed WHERE `key`= "Product Name" AND `imported_data_id` = `s`.`imported_data_id` LIMIT 1) AS `Product Name`';
+//            }
+//            if (in_array('url', $selected_columns)) {
+//                $query_part[] = '(SELECT `value` FROM imported_data_parsed WHERE `key`="Url" AND `imported_data_id` = `s`.`imported_data_id` LIMIT 1) AS `URL` ';
+//            }
+//            if (in_array('short_description_wc', $selected_columns)) {
+//                $query_part[] = '`s`.`short_description_wc` AS `Word Count (S)`';
+//            }
+//            if (in_array('short_seo_phrases', $selected_columns)) {
+//                $query_part[] = '`s`.`short_seo_phrases` AS `SEO Phrases (S)` ';
+//                $from_s_count++;
+//            }
+//
+//            if (in_array('long_description_wc', $selected_columns)) {
+//                $query_part[] = "`s`.`long_description_wc` AS `Word Count (L)` ";
+//            }
+//
+//            if (in_array('long_seo_phrases', $selected_columns)) {
+//                $query_part[] = "`s`.`long_seo_phrases` AS `SEO Phrases (L)` ";
+//            }
+//
+//            if (in_array('price_diff', $selected_columns)) {
+//                $query_part[] = "`s`.`price_diff` AS `Price` ";
+//            }
+////            if(in_array('duplicate_content', $selected_columns)){
+////                $query_part[]= '"-" as `Duplicate Content`';
+////               
+////            }
+//            $query_part = implode(',', $query_part);
+//            $this->load->database();
+//            $query = $this->db->query('
+//            SELECT 
+//
+//            ' . $query_part . ' 
+//            FROM 
+//                (`statistics_new` AS s) 
+//            LEFT JOIN 
+//                `crawler_list` AS cl ON `cl`.`imported_data_id` = `s`.`imported_data_id`
+//            ' . $qnd
+//            );
+//
+//            //                `s`.`created` AS `Date`, 
+////                (SELECT `value` FROM imported_data_parsed WHERE `key`="Product Name" AND `imported_data_id` = `s`.`imported_data_id` LIMIT 1) AS `Product Name`, 
+////                (SELECT `value` FROM imported_data_parsed WHERE `key`="Url" AND `imported_data_id` = `s`.`imported_data_id` LIMIT 1) AS `URL`, 
+////                `s`.`short_description_wc` AS `Word Count (S)`, 
+////                `s`.`short_seo_phrases` AS `SEO Phrases (S)`, 
+////                `s`.`long_description_wc` AS `Word Count (L)`, 
+////                `s`.`long_seo_phrases` AS `SEO Phrases (L)`, 
+////                "-" as `Duplicate Content`,
+////                `s`.`price_diff` AS `Price`
+////            //$line = array();
+////            foreach ($query->list_fields() as $name) {
+////                $line[] = $name;
+////            }
+//            $result = $query->result_array();
+//            foreach ($result as $key => $row) {
+//                if (trim($row['SEO Phrases (S)']) != 'None') {
+//                    $shortArr = unserialize($row['SEO Phrases (S)']);
+//                    if ($shortArr) {
+//                        $shortString = '';
+//                        foreach ($shortArr as $value) {
+//                            $shortString .= $value['ph'] . "\r\n";
+//                        }
+//                        $result[$key]['SEO Phrases (S)'] = trim($shortString);
+//                    }
+//                }
+//                if (trim($row['SEO Phrases (L)']) != 'None') {
+//                    $longArr = unserialize($row['SEO Phrases (L)']);
+//                    if ($longArr) {
+//                        $longString = '';
+//                        foreach ($longArr as $value) {
+//                            $longString .= $value['ph'] . "\r\n";
+//                        }
+//                        $result[$key]['SEO Phrases (L)'] = trim($longString);
+//                    }
+//                }
+//                $price_diff = unserialize($row['Price']);
+//                if ($price_diff) {
+//                    $own_price = floatval($price_diff['own_price']);
+//                    $own_site = str_replace('www.', '', $price_diff['own_site']);
+//                    $own_site = str_replace('www1.', '', $own_site);
+//                    $price_diff_res = $own_site . " - $" . $price_diff['own_price'];
+//                    $flag_competitor = false;
+//                    for ($i = 0; $i < count($price_diff['competitor_customer']); $i++) {
+//                        if ($customer_url["host"] != $price_diff['competitor_customer'][$i]) {
+//                            if ($own_price > floatval($price_diff['competitor_price'][$i])) {
+//                                $competitor_site = str_replace('www.', '', $price_diff['competitor_customer'][$i]);
+//                                $competitor_site = str_replace('www.', '', $competitor_site);
+//                                $price_diff_res .= "\r\n" . $competitor_site . " - $" . $price_diff['competitor_price'][$i];
+//                            }
+//                        }
+//                    }
+//                    $result[$key]['Price'] = $price_diff_res;
+//                } else {
+//                    $result[$key]['Price'] = '';
+//                }
+//            }
+//
+//            $res_array = $result;
         }
         array_unshift($res_array, $line);
         $this->load->helper('csv');
