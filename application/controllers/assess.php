@@ -11,7 +11,7 @@ class Assess extends MY_Controller {
         $this->load->library('form_validation');
         $this->load->library('helpers');
         $this->data['title'] = 'Assess';
-
+        $this->load->model('imported_data_parsed_model');
         if (!$this->ion_auth->logged_in()) {
             //redirect them to the login page
             redirect('auth/login', 'refresh');
@@ -685,15 +685,18 @@ class Assess extends MY_Controller {
 
     public function export_assess() {
 
-        $this->load->model('statistics_new_model');
+         $this->load->model('statistics_new_model');
         $batch_id = (int) trim($_GET['batch_id']);
         $cmp_selected = trim(strtolower($_GET['cmp_selected']));
         $selected_columns = $_GET['checked_columns'];
         $selected_columns = explode(',', trim($selected_columns));
-//        echo "<pre>";
-//        print_r($selected_columns);
-//        
-        $line = array('created' => 'Date', 'product_name' => 'Product Name', 'url' => 'Url', 'short_description_wc' => 'Word Count (S)', 'long_description_wc' => 'Word Count (L)', 'short_seo_phrases' => 'SEO Phrases (S)', 'long_seo_phrases' => 'SEO Phrases (L)', 'price_diff' => 'Price');
+
+//        echo  '<pre>';
+//        print_r($selected_columns);exit;
+        if (($key = array_search('snap', $selected_columns)) !== false) {
+            unset($selected_columns[$key]);
+        }
+        $line = array('created' => 'Date', 'product_name' => 'Product Name', 'url' => 'Url', 'short_description_wc' => 'Word Count (S)', 'long_description_wc' => 'Word Count (L)', 'short_seo_phrases' => 'SEO Phrases (S)', 'long_seo_phrases' => 'SEO Phrases (L)', 'price_diff' => 'Price', 'column_features' => 'Features', 'column_reviews' => 'Reviews');
 
         foreach ($line as $key => $val) {
             if (!in_array($key, $selected_columns)) {
@@ -731,7 +734,6 @@ class Assess extends MY_Controller {
                         if (count($similar_items) > 1) {
                             foreach ($similar_items as $key => $item) {
                                 if (substr_count(strtolower($customer_name), strtolower($item['customer'])) > 0) {
-
 
                                     $cmpare = $this->statistics_new_model->get_compare_item($item['imported_data_id']);
                                     $val->snap1 = $cmpare->snap;
@@ -783,14 +785,121 @@ class Assess extends MY_Controller {
 
 
             $res_array = array();
+            $H1_tag_count = 0;
+            $H2_tag_count = 0;
+            if (in_array('H2_Tags', $selected_columns)) {
+                foreach ($results as $key => $row) {
 
+                    $pars_atr = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
+
+
+                    if (in_array('H1_Tags', $selected_columns) && $pars_atr['HTags']['h1'] && $pars_atr['HTags']['h1'] != '') {
+                        $H1 = $pars_atr['HTags']['h1'];
+                        if (is_array($H1)) {
+
+                            if (count($H1) > $H1_tag_count) {
+                                $H1_tag_count = count($H1);
+                            }
+                        } else {
+
+                            if ($H1_tag_count == 0) {
+                                $H1_tag_count = 1;
+                            }
+                        }
+                    }
+
+                    if (in_array('H2_Tags', $selected_columns) && $pars_atr['HTags']['h2'] && $pars_atr['HTags']['h2'] != '') {
+                        $H2 = $pars_atr['HTags']['h2'];
+                        if (is_array($H2)) {
+
+                            if (count($H2) > $H2_tag_count) {
+                                $H2_tag_count = count($H2);
+                            }
+                        } else {
+
+                            if ($H2_tag_count == 0) {
+                                $H2_tag_count = 1;
+                            }
+                        }
+                    }
+                }
+            }
             foreach ($results as $key => $row) {
+
                 $row = (array) $row;
                 foreach ($line as $k => $v) {
                     $res_array[$key][$k] = $row[$k];
                 }
-
                 $row = (object) $row;
+//                echo  "<pre>";
+//                print_r($row);exit;
+                $pars_atr = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
+
+                if (in_array('column_features', $selected_columns)) {
+                    $res_array[$key]['column_features'] = $pars_atr['parsed_attributes']['feature_count'] !== false ? $pars_atr['parsed_attributes']['feature_count'] : '';
+                }
+                if (in_array('column_reviews', $selected_columns)) {
+                    $res_array[$key]['column_reviews'] = $row->revision !== false ? $row->revision : '';
+                }
+                if (in_array('H1_Tags', $selected_columns) && $pars_atr['HTags']['h1'] && $pars_atr['HTags']['h1'] != '') {
+                    $H1 = $pars_atr['HTags']['h1'];
+                    if (is_array($H1)) {
+
+
+                        foreach ($H1 as $k => $h1) {
+                            $res_array[$key]['H1_Tags' . $k] = $h1;
+                            $res_array[$key]['H1_Tags_Count' . $k] = strlen($h1);
+                        }
+                    } else {
+                        $res_array[$key]['H1_Tags0'] = $H1;
+                        $res_array[$key]['H1_Tags_Count0'] = strlen($H1);
+                    }
+
+                    if ($H1_tag_count > 0) {
+
+                        for ($k = 0; $k < $H1_tag_count; $k++) {
+                            if (!$res_array[$key]['H1_Tags' . $k]) {
+                                $res_array[$key]['H1_Tags' . $k] = '';
+                                $res_array[$key]['H1_Tags_Count' . $k] = ' ';
+                            }
+                        }
+                    }
+                }
+
+
+
+                if (in_array('H2_Tags', $selected_columns) && $pars_atr['HTags']['h2'] && $pars_atr['HTags']['h2'] != '') {
+                    $H2 = $pars_atr['HTags']['h2'];
+                    if (is_array($H2)) {
+
+                        if (count($H2) > $H2_tag_count) {
+                            $H2_tag_count = count($H2);
+                        }
+                        foreach ($H2 as $k => $h2) {
+                            $res_array[$key]['H2_Tags' . $k] = $h2;
+                            $res_array[$key]['H2_Tags_Count' . $k] = strlen($h2);
+                        }
+                    } else {
+                        $res_array[$key]['H2_Tags0'] = $H2;
+                        $res_array[$key]['H2_Tags_Count0'] = strlen($H2);
+                        if ($H2_tag_count == 0) {
+                            $H2_tag_count = 1;
+                        }
+                    }
+
+
+                    if ($H2_tag_count > 0) {
+
+                        for ($k = 0; $k < $H2_tag_count; $k++) {
+                            if (!$res_array[$key]['H2_Tags' . $k]) {
+                                $res_array[$key]['H2_Tags' . $k] = '';
+                                $res_array[$key]['H2_Tags_Count' . $k] = ' ';
+                            }
+                        }
+                    }
+                }
+
+
 //                $res_array[$key]['Date'] = $row->created;
 //                $res_array[$key]['Product Name'] = $row->product_name;
 //                $res_array[$key]['Url'] = $row->url;
@@ -801,32 +910,32 @@ class Assess extends MY_Controller {
 //                $res_array[$key]['SEO Phrases (L)'] = $row->long_seo_phrases;
 //                $res_array[$key]['Price'] = $row->price_diff;
 
-                if (trim($res_array[$key]['SEO Phrases (S)']) != 'None') {
-                    $shortArr = unserialize($res_array[$key]['SEO Phrases (S)']);
+                if (trim($res_array[$key]['short_seo_phrases']) != 'None') {
+                    $shortArr = unserialize($res_array[$key]['short_seo_phrases']);
 
                     if ($shortArr) {
                         $shortString = '';
                         foreach ($shortArr as $value) {
                             $shortString .= $value['ph'] . "\r\n";
                         }
-                        $res_array[$key]['SEO Phrases (S)'] = trim($shortString);
+                        $res_array[$key]['short_seo_phrases'] = trim($shortString);
                     }
                 }
-                if (trim($res_array[$key]['SEO Phrases (L)']) != 'None') {
+                if (trim($res_array[$key]['long_seo_phrases']) != 'None') {
 
-                    $longArr = unserialize($res_array[$key]['SEO Phrases (L)']);
+                    $longArr = unserialize($res_array[$key]['long_seo_phrases']);
 
                     if ($longArr) {
                         $longString = '';
                         foreach ($longArr as $value) {
                             $longString .= $value['ph'] . "\r\n";
                         }
-                        $res_array[$key]['SEO Phrases (L)'] = trim($longString);
+                        $res_array[$key]['long_seo_phrases'] = trim($longString);
                     }
                 }
 
 
-                $price_diff = unserialize($res_array[$key]['Price']);
+                $price_diff = unserialize($res_array[$key]['price_diff']);
                 if ($price_diff) {
                     $own_price = floatval($price_diff['own_price']);
                     $own_site = str_replace('www.', '', $price_diff['own_site']);
@@ -842,9 +951,9 @@ class Assess extends MY_Controller {
                             }
                         }
                     }
-                    $res_array[$key]['Price'] = $price_diff_res;
+                    $res_array[$key]['price_diff'] = $price_diff_res;
                 } else {
-                    $res_array[$key]['Price'] = '';
+                    $res_array[$key]['price_diff'] = '';
                 }
 
 
@@ -864,6 +973,21 @@ class Assess extends MY_Controller {
                         if (in_array('long_description_wc', $selected_columns)) {
                             $res_array[$key]['Word Count (L) (' . $i . ")"] = $sim_items[$i - 1]->long_description_wc ? $sim_items[$i - 1]->long_description_wc : '';
                         }
+                    }
+                }
+            }
+
+            if (in_array('H2_Tags', $selected_columns)) {
+                if ($H1_tag_count > 0) {
+                    for ($k = 1; $k <= $H1_tag_count; $k++) {
+                        $line[] = "H1_tag ($k) ";
+                        $line[] = "Words ($k)";
+                    }
+                }
+                if ($H2_tag_count > 0) {
+                    for ($k = 1; $k <= $H2_tag_count; $k++) {
+                        $line[] = "H2_tag ($k) ";
+                        $line[] = "Words ($k)";
                     }
                 }
             }
@@ -907,7 +1031,7 @@ class Assess extends MY_Controller {
                 $query_part[] = '`s`.`short_description_wc` AS `Word Count (S)`';
             }
             if (in_array('short_seo_phrases', $selected_columns)) {
-                $query_part[] = '(`s`.`short_seo_phrases` AS `SEO Phrases (S)` ';
+                $query_part[] = '`s`.`short_seo_phrases` AS `SEO Phrases (S)` ';
                 $from_s_count++;
             }
 
@@ -915,9 +1039,10 @@ class Assess extends MY_Controller {
                 $query_part[] = "`s`.`long_description_wc` AS `Word Count (L)` ";
             }
 
-            if (in_array('long_description_wc', $selected_columns)) {
+            if (in_array('long_seo_phrases', $selected_columns)) {
                 $query_part[] = "`s`.`long_seo_phrases` AS `SEO Phrases (L)` ";
             }
+
             if (in_array('price_diff', $selected_columns)) {
                 $query_part[] = "`s`.`price_diff` AS `Price` ";
             }
@@ -1367,7 +1492,6 @@ class Assess extends MY_Controller {
         $columns = $this->columns();
         $duplicate_content_range = 25;
         $this->load->model('batches_model');
-        $this->load->model('imported_data_parsed_model');
         $this->load->model('keywords_model');
         $this->load->model('statistics_model');
         $this->load->model('statistics_duplicate_content_model');
