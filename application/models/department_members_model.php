@@ -248,7 +248,9 @@ class Department_members_model extends CI_Model {
         $sql = "SELECT `d`.`id`, `d`.`text`, `d`.`description_text`, `d`.`description_words`, `d`.`title_keyword_description_density`,
         `d`.`url`, `s`.`snap_path` FROM `department_members` as `d`
         left join `site_departments_snaps` as `s` on `d`.`id` = `s`.`dep_id`
-            WHERE `d`.`site_id` = '".$customerID."' and `s`.`snap_path` != '' and `d`.`flag`='ready' and `s`.`dep_id` is not null ORDER BY `d`.`text`";
+            WHERE `d`.`site_id` = '".$customerID."' and `s`.`snap_path` != '' and `d`.`flag`='ready' and `s`.`dep_id` is not null 
+                GROUP BY `d`.`id`
+                ORDER BY `d`.`text`";
         $query = $this->db->query($sql);
 
         return $query->result();
@@ -298,7 +300,11 @@ class Department_members_model extends CI_Model {
             'description_text' => $description_text,
             'title_keyword_description_count' => $keyword_count,
             'title_keyword_description_density' => $keyword_density,
-            'description_title' => $description_title
+            'description_title' => $description_title,
+            'customer_id'=>0,
+            'title_seo_keywords'=>'',
+            'user_seo_keywords'=>'',
+            'description_title' =>''// $description_title
         );
         
         $this->db->insert($this->tables['department_members'], $data);

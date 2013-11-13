@@ -18,7 +18,11 @@ class Crons extends MY_Controller {
             'do_stats_forupdated' => true,
             'do_duplicate_content' => true,
             'ranking_api_exp' => true,
-        	'archive_imported_data_parsed' =>true
+        	'archive_imported_data_parsed' =>true,
+            'get_all_rows'=>TRUE,
+            'get_update_status'=>true,
+            'save_departments_categories'=>TRUE,
+            'match_urls'=>TRUE
         ));
         $this->load->library('helpers');
         $this->load->helper('algoritm');
@@ -695,6 +699,22 @@ class Crons extends MY_Controller {
             $query_batch_id = $query[0]->batch_id;
         }
     }
+    public function get_all_rows(){
+        //echo 'works';
+        $this->load->model('imported_data_parsed_model');
+        //$status = $this->imported_data_parsed_model->getUpdateStatus();
+        echo $this->imported_data_parsed_model->getUpdateQuantity();
+    }
+    public function get_update_status(){
+        $this->load->model('imported_data_parsed_model');
+        $status = $this->imported_data_parsed_model->getUpdateStatus();
+        $lu = $this->imported_data_parsed_model->getLastUpdate();
+        echo $status===FALSE?
+                ($lu===FALSE?
+                'Update not started.':
+                "Last update completed at ".$lu['created'].'. '.$lu['description'].' URLs updated.'):
+            'URLs to update: '.$status['description'].'  Updating started at:'.$status['created'];
+    }
 
     public function do_stats_forupdated() {
         echo "Script start working";
@@ -731,6 +751,7 @@ class Crons extends MY_Controller {
             }
             else{
             }
+            $this->imported_data_parsed_model->setUpdateStatus();
             $data_arr = $this->imported_data_parsed_model->do_stats_newupdated($trnc);
             $timeend= time(true);
             $time=  $timesart - $timeend;
@@ -1093,29 +1114,34 @@ class Crons extends MY_Controller {
         $q = $this->db->select('key,description')->from('settings')->where('key', 'cron_job_offset');
         $res = $q->get()->row_array();
         $start = $res['description'];
-        if (count($data_arr) > 1) {
+        if (count($data_arr) > 0) {
             $utd = $this->imported_data_parsed_model->getLUTimeDiff();
             
             echo $utd->td;
-            shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/do_stats_forupdated/$trnc > /dev/null 2>/dev/null &");
+            shell_exec("wget -S -O- ".base_url()."crons/do_stats_forupdated > /dev/null 2>/dev/null &");
+//            shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/do_stats_forupdated/$trnc > /dev/null 2>/dev/null &");
         } else {
             $mtd = $this->imported_data_parsed_model->getTimeDif();
             echo $mtd->td;
+            $this->imported_data_parsed_model->updateLastUpdated();
+            $this->imported_data_parsed_model->delUpdateStatus();
             $this->imported_data_parsed_model->delDoStatsStatus();
             $data = array(
                 'description' => 0
             );
+            $qty = $this->imported_data_parsed_model->getLastUpdate();
 
             $this->db->where('key', 'cron_job_offset');
             $this->db->update('settings', $data);
 
+            /*
             $this->load->library('email');
             $this->email->from('info@dev.contentsolutionsinc.com', '!!!!');
             $this->email->to('bayclimber@gmail.com');
             $this->email->cc('max.kavelin@gmail.com');
             $this->email->subject('Cron job report');
-            $this->email->message('Cron job for do_statistics_new is done.<br> Timeing = '.$mtd->td);
-            $this->email->send();
+            $this->email->message('Cron job for do_statistics_new is done.<br> Timing = '.$mtd->td.'<br> Total items updated: '.$qty['description']);
+            //$this->email->send();//*/
         }
         unlink($tmp_dir . ".locked");
     }
@@ -2372,4 +2398,486 @@ class Crons extends MY_Controller {
 		}
 		echo "Reviewed/archived ".$processed." items.\n";
     }
+    //*
+    public function save_departments_categories() {
+        $this->load->helper('file');
+        $this->load->model('department_model');
+        $this->load->model('department_members_model');
+        $this->load->model('site_categories_model');
+        session_start();
+        $filespath = realpath(base_url()) . "jl_import_dir";
+        if (!file_exists($filespath)) {
+            mkdir($filespath);
+        }
+        if ($this->uri->segment(3)&&$this->uri->segment(4)&&$this->uri->segment(5)) {//
+            $_POST['site_id']=$this->uri->segment(3);
+            $_POST['site_name']=$this->uri->segment(4).'.'.$this->uri->segment(5);
+        }
+        else{
+            $file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
+            $fcont = file($file);
+            $i = 1;
+            $fnum = 0;
+            $fobj='';
+            foreach($fcont as $line){
+                if(!file_exists($filespath.'/temp_imp_jl_'.$fnum.'.jl')){
+                    file_put_contents($filespath.'/temp_imp_jl_'.$fnum.'.jl', $line);
+                    $fobj = fopen($filespath.'/temp_imp_jl_'.$fnum.'.jl', 'a');
+                }
+                else fwrite($fobj, $line);
+                if($i==500){
+                    ++$fnum;
+                    $i=0;
+                    fclose($fobj);
+                }
+                ++$i;
+            }
+        }
+        $site_id = $this->input->post('site_id');
+        $site_name = explode(".", strtolower($this->input->post('site_name')));
+        //$file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
+        $flist = get_filenames($filespath);
+        if(empty($flist)){
+            //unset($_SESSION['mpost']);
+            return;
+        }
+        //exit;
+        $file = $filespath.'/'.$flist[0];
+        $_rows = array();
+//        $handle = fopen($file, "rb");
+//        $contents = fread($handle, filesize($file));
+//        fclose($handle);
+
+        $cfile = file($file);
+        //$data = '['.trim($contents,'"').']';
+        //$json_obj = json_decode($data);
+
+        $debug_stack = array(
+        	'department_members' => array(),
+        	'site_categories' => array()
+        );
+
+                                    // new change 1 line
+                                    set_time_limit(1000);
+				foreach($cfile as $line) {
+                                    $line = rtrim(trim($line),',');
+                                    $row = json_decode($line);
+					// === DB table decision (start)
+					$level = '';
+					$work_table = "";
+          if(isset($row->level) && $row->level!==NULL && $row->level !== ''){
+	          $level = $row->level;
+	          if($level >= 1) {
+	          	$work_table = 'department_members';
+	          } else {
+	          	$work_table = 'site_categories';
+	          }
+          }
+					// === DB table decision (end)
+
+					// === all possible values and default values (start)
+					$special = 0;
+          $department_text = "";
+      		$url = "";
+      		$text = "";
+      		$department_url = "";
+      		$description_title = "";
+      		$keyword_count = "";
+      		$description_wc  = 0;
+      		$description_text = "";
+      		$keyword_density = "";
+      		$nr_products = 0;
+      		$parent_url = "";
+      		$parent_text = "";
+
+      		if(isset($row->special) && $row->special != '' && !is_null($row->special)) {
+            $special = $row->special;
+          }
+          if(isset($row->department_text) && is_array($row->department_text)) {
+            $department_text = $row->department_text[0];
+          } else if(isset($row->department_text) && !is_array($row->department_text) && !is_null($row->department_text) && $row->department_text != '') {
+            $department_text = $row->department_text;
+          }
+          if(isset($row->url) && is_array($row->url)) {
+            $url = addslashes($row->url[0]);
+          } else if(isset($row->url) && !is_array($row->url) && !is_null($row->url)) {
+            $url = addslashes($row->url);
+          }
+          if(isset($row->text) && is_array($row->text)) {
+            $text = $row->text[0];
+          } else if(isset($row->text) && !is_array($row->text) && !is_null($row->text)) {
+            $text = $row->text;
+          }
+          if(isset($row->department_url) && !is_null($row->department_url) && $row->department_url != '') {
+            $department_url = addslashes($row->department_url);
+          }
+          if(isset($row->description_title) && is_array($row->description_title)) {
+						$description_title = $row->description_title[0];
+          } else if(isset($row->description_title) && !is_array($row->description_title) && !is_null($row->description_title) && $row->description_title != '') {
+            $description_title = $row->description_title;
+          }
+          if(isset($row->keyword_count) && is_array($row->keyword_count)){
+            $keyword_count = $row->keyword_count[0];
+          } else if(isset($row->keyword_count) && !is_array($row->keyword_count) && !is_null($row->keyword_count) && $row->keyword_count != '') {
+            $keyword_count = json_encode($row->keyword_count);
+          }
+          if(isset($row->description_wc) && is_array($row->description_wc)) {
+            $description_wc = $row->description_wc[0];
+          } else if(isset($row->description_wc) && !is_array($row->description_wc) && !is_null($row->description_wc) && $row->description_wc != '') {
+            $description_wc = $row->description_wc;
+          }
+          if(isset($row->description_text) && is_array($row->description_text)) {
+            $description_text = $row->description_text[0];
+          } else if(isset($row->description_text) && !is_array($row->description_text) && !is_null($row->description_text) && $row->description_text != '') {
+            $description_text = $row->description_text;
+          }
+          if(isset($row->keyword_density) && is_array($row->keyword_density)) {
+            $keyword_density = $row->keyword_density[0];
+          } else if(isset($row->keyword_density) && !is_array($row->keyword_density) && !is_null($row->keyword_density) && $row->keyword_density != '') {
+            $keyword_density = json_encode($row->keyword_density);
+          }
+          if(isset($row->nr_products) && is_array($row->nr_products)) {
+            $nr_products = $row->nr_products[0];
+          } else if(isset($row->nr_products) && !is_array($row->nr_products) && !is_null($row->nr_products) && $row->nr_products != '') {
+            $nr_products = $row->nr_products;
+          }
+          if(isset($row->parent_url) && is_array($row->parent_url)) {
+            $parent_url = addslashes($row->parent_url[0]);
+          } else if(isset($row->parent_url) && !is_array($row->parent_url) && !is_null($row->parent_url) && $row->parent_url != '') {
+            $parent_url = addslashes($row->parent_url);
+          }
+          if(isset($row->parent_text) && is_array($row->parent_text)) {
+            $parent_text = $row->parent_text[0];
+          } else if(isset($row->parent_text) && !is_array($row->parent_text) && !is_null($row->parent_text) && $row->parent_text!='') {
+            $parent_text = $row->parent_text;
+          }
+					// === all possible values and default values (end)
+
+          if($work_table != "") { // === work table define, ok, otherwise !!! DO NOTHING !!!
+          	// ==== 'department_members' DB table actions stuffs (start)
+          	if($work_table == 'department_members') {
+          		// === debuging stack (start)
+              $debug_stack_mid = array(
+              	'status' => 'department_members',
+          			'department_text' => $department_text,
+          			'url' => $url,
+          			'text' => $text,
+          			'department_url' => $department_url,
+          			'description_title' => $description_title,
+          			'keyword_count' => $keyword_count,
+          			'description_wc' => $description_wc,
+          			'description_text' => $description_text,
+          			'keyword_density' => $keyword_density,
+          			'department_id' => null,
+          			'check_id' => null,
+          			'department_members_model_insert_id' => null,
+          			'department_members_model_up_flag' => null,
+          			'department_members_model_update' => null
+          		);
+              // === debuging stack (end)
+
+          		// === insert / update decisions stuffs (start)
+              try {
+              	$check_department_id = $this->department_model->checkExist($department_text);
+              } catch(Exception $e) {
+              	echo 'Error: ', $e->getMessage(), "\n";
+              	$this->statistics_model->db->close();
+                $this->statistics_model->db->initialize();
+                $check_department_id = $this->department_model->checkExist($department_text);
+              }
+              if($check_department_id == false) {
+              	try {
+              		$department_id = $this->department_model->insert($department_text, $department_text);
+              	} catch(Exception $e) {
+              		$this->department_model->db->close();
+                	$this->department_model->db->initialize();
+                	$department_id = $this->department_model->insert($department_text, $department_text);
+              	}
+              } else {
+                $department_id = $check_department_id;
+              }
+              $debug_stack_mid['department_id'] = $department_id; 
+              $parent_id = 0;
+              try {
+              	$check_id = $this->department_members_model->checkExist($site_id, $department_text, $url);
+              } catch(Exception $e) {
+              	$this->department_members_model->db->close();
+                $this->department_members_model->db->initialize();
+              	$check_id = $this->department_members_model->checkExist($site_id, $department_text, $url);
+              }
+              $debug_stack_mid['check_id'] = $check_id; 
+              if($check_id == false) {
+              	try {
+              		$department_members_model_insert_id = $this->department_members_model->insert($parent_id, $site_id, $department_id, $department_text, $url, $description_wc, $description_text, $keyword_count, $keyword_density, $description_title, $level);
+              	} catch(Exception $e) {
+              		$this->department_members_model->db->close();
+                	$this->department_members_model->db->initialize();
+              		$department_members_model_insert_id = $this->department_members_model->insert($parent_id, $site_id, $department_id, $department_text, $url, $description_wc, $description_text, $keyword_count, $keyword_density, $description_title, $level);
+              	}
+              	$debug_stack_mid['department_members_model_insert_id'] = $department_members_model_insert_id;
+              } else {
+              	try {
+              		$department_members_model_up_flag = $this->department_members_model->updateFlag($site_id, $department_text);
+              	} catch(Exception $e) {
+              		$this->department_members_model->db->close();
+                	$this->department_members_model->db->initialize();
+              		$department_members_model_up_flag = $this->department_members_model->updateFlag($site_id, $department_text);
+              	}
+                $debug_stack_mid['department_members_model_up_flag'] = $department_members_model_up_flag;
+                try {
+                	$department_members_model_update = $this->department_members_model->update($check_id, $department_id, $description_wc, $description_text, $keyword_count, $keyword_density, $description_title, $level);
+                } catch(Exception $e) {
+                	$this->department_members_model->db->close();
+                	$this->department_members_model->db->initialize();
+                	$department_members_model_update = $this->department_members_model->update($check_id, $department_id, $description_wc, $description_text, $keyword_count, $keyword_density, $description_title, $level);
+                }
+                $debug_stack_mid['department_members_model_update'] = $department_members_model_update;
+              }
+          		// === insert / update decisions stuffs (end)
+          		$debug_stack['department_members'][] = $debug_stack_mid;
+          	}
+          	// ==== 'department_members' DB table actions stuffs (end)
+
+          	// ==== 'site_categories' DB table actions stuffs (start)
+          	if($work_table == 'site_categories') {
+              $department_members_id = 0;
+              if($department_text != '') {
+              		try {
+              			$check_id = $this->department_members_model->checkExist($site_id, $department_text);
+              		} catch(Exception $e) {
+              			$this->department_members_model->db->close();
+                		$this->department_members_model->db->initialize();
+              			$check_id = $this->department_members_model->checkExist($site_id, $department_text);
+              		}
+                  if($check_id) {
+                      $department_members_id = $check_id;
+                  }
+                  else {
+                      $department_id = 0;
+                            try {
+                                $check_department_id = $this->department_model->checkExist($department_text);
+                            } catch (Exception $e) {
+                                echo 'Error: ', $e->getMessage(), "\n";
+                                $this->statistics_model->db->close();
+                                $this->statistics_model->db->initialize();
+                                $check_department_id = $this->department_model->checkExist($department_text);
+                            }
+                            if ($check_department_id == false) {
+                                try {
+                                    $department_id = $this->department_model->insert($department_text, $department_text);
+                                } catch (Exception $e) {
+                                    $this->department_model->db->close();
+                                    $this->department_model->db->initialize();
+                                    $department_id = $this->department_model->insert($department_text, $department_text);
+                                }
+                            } else {
+                                $department_id = $check_department_id;
+                            }
+                            try {
+                                $department_members_id = $this->department_members_model->insert_for_sc($site_id, $department_id, $department_text);
+                            } catch (Exception $e) {
+                                $this->department_members_model->db->close();
+                                $this->department_members_model->db->initialize();
+                                $department_members_id = $this->department_members_model->insert_for_sc($site_id, $department_id, $department_text);
+                            }
+                        }
+                    }
+                    // === debuging stack (start)
+              $debug_stack_mid = array(
+              	'status' => 'site_categories',
+          			'nr_products' => $nr_products,
+          			'url' => $url,
+          			'text' => $text,
+          			'department_url' => $department_url,
+          			'description_wc' => $description_wc,
+          			'parent_url' => $parent_url,
+          			'parent_text' => $parent_text,
+          			'department_text' => $department_text,
+          			'parent_id' => 0,
+          			'site_categories_model_update_flag_one' => null,
+          			'department_members_id' => $department_members_id,
+          			'check_site' => null,
+          			'site_categories_model_insert' => null,
+          			'site_categories_model_update_flag_two' => null,
+          			'description_text' => $description_text,
+          			'keyword_count' => $keyword_count,
+          			'keyword_density' => $keyword_density,
+          			'description_title' => $description_title
+          		);
+              // === debuging stack (end)
+
+              // === insert / update decisions stuffs (start) 
+              $parent_id = 0;
+                    if ($parent_text != '') {
+                        try {
+                            $parent_id = $this->site_categories_model->checkExist($site_id, $parent_text);
+                        } catch (Exception $e) {
+                            $this->site_categories_model->db->close();
+                            $this->site_categories_model->db->initialize();
+                            $parent_id = $this->site_categories_model->checkExist($site_id, $parent_text);
+                        }
+                        if ($parent_id == false) {
+                            try {
+                                $parent_id = $this->site_categories_model->insert(0, $site_id, $text, $url, $special, $parent_text, $department_members_id, $nr_products, $description_wc, $keyword_count, $keyword_density, $description_title, $description_text, $level);
+                            } catch (Exception $e) {
+                                $this->site_categories_model->db->close();
+                                $this->site_categories_model->db->initialize();
+                                $parent_id = $this->site_categories_model->insert(0, $site_id, $text, $url, $special, $parent_text, $department_members_id, $nr_products, $description_wc, $keyword_count, $keyword_density, $description_title, $description_text, $level);
+                            }
+                            $debug_stack_mid['parent_id'] = $parent_id;
+                        } else {
+                            try {
+                                $site_categories_model_update_flag_one = $this->site_categories_model->updateFlag($site_id, $parent_text, $department_members_id);
+                            } catch (Exception $e) {
+                                $this->site_categories_model->db->close();
+                                $this->site_categories_model->db->initialize();
+                                $site_categories_model_update_flag_one = $this->site_categories_model->updateFlag($site_id, $parent_text, $department_members_id);
+                            }
+                            $debug_stack_mid['site_categories_model_update_flag_one'] = $site_categories_model_update_flag_one;
+                        }
+                    }
+
+                    if ($parent_id != 0 && $department_members_id == 0) {
+                        $res = $this->site_categories_model->checkDepartmentId($parent_id);
+                        $department_members_id = $res->department_members_id;
+                        $debug_stack_mid['department_members_id'] = $department_members_id;
+                    }
+
+                    if ($text != '') {
+                        try {
+                            $check_site = $this->site_categories_model->checkExist($site_id, $text, $department_members_id);
+                        } catch (Exception $e) {
+                            $this->site_categories_model->db->close();
+                            $this->site_categories_model->db->initialize();
+                            $check_site = $this->site_categories_model->checkExist($site_id, $text, $department_members_id);
+                        }
+                        $debug_stack_mid['check_site'] = $check_site;
+                        if ($check_site == false) {
+                            try {
+                                $site_categories_model_insert = $this->site_categories_model->insert($parent_id, $site_id, $text, $url, $special, $parent_text, $department_members_id, $nr_products, $description_wc, $keyword_count, $keyword_density, $description_title, $description_text, $level);
+                            } catch (Exception $e) {
+                                $this->site_categories_model->db->close();
+                                $this->site_categories_model->db->initialize();
+                                $site_categories_model_insert = $this->site_categories_model->insert($parent_id, $site_id, $text, $url, $special, $parent_text, $department_members_id, $nr_products, $description_wc, $keyword_count, $keyword_density, $description_title, $description_text, $level);
+                            }
+                            $debug_stack_mid['site_categories_model_insert'] = $site_categories_model_insert;
+                        } else {
+                            try {
+                                $site_categories_model_update_flag_two = $this->site_categories_model->updateFlag($site_id, $text, $department_members_id);
+                            } catch (Exception $e) {
+                                $this->site_categories_model->db->close();
+                                $this->site_categories_model->db->initialize();
+                                $site_categories_model_update_flag_two = $this->site_categories_model->updateFlag($site_id, $text, $department_members_id);
+                            }
+                            $debug_stack_mid['site_categories_model_update_flag_two'] = $site_categories_model_update_flag_two;
+                        }
+                    }
+                    // === insert / update decisions stuffs (end)
+                    $debug_stack['site_categories'][] = $debug_stack_mid;
+                }
+                // ==== 'site_categories' DB table actions stuffs (end)	
+            }
+        }
+        unlink($file);
+        if (count($flist) > 0) {
+            $sited = implode('/', $site_name);
+              $call_link = base_url()."crons/save_departments_categories/$site_id/$sited";// > /dev/null 2>/dev/null &";
+              //echo $call_link;
+              echo $call_link;
+              $this->site_categories_model->curl_async($call_link);
+          //$srec = shell_exec("wget -S -O- ".$call_link);
+          //echo $srec;
+//          shell_exec("wget -S -O- ".  base_url()."system/save_department_categories > /dev/null 2>/dev/null &");
+          }
+  //        else{
+              //unset($_SESSION['mpost']);
+        $this->output->set_content_type('application/json')->set_output(json_encode($debug_stack));
+//          }
+    }//*/
+    public function match_urls(){
+        $this->load->model('temp_data_model');
+        $this->load->model('site_categories_model');
+        $this->load->model('settings_model');
+        $this->load->model('imported_data_parsed_model');
+        $process = $this->uri->segment(3);
+        $linesScaned = $this->uri->segment(4);
+        $notFoundUrls = $this->uri->segment(6);
+        $itemsUpdated = $this->uri->segment(5);
+        $start = microtime(true);
+        $timing = 0;
+        while ($timing < 200 && $urls = $this->temp_data_model->getLineFromTable('urlstomatch')) {
+            $nfurls = 0;
+            ++$linesScaned;
+            //$ms = microtime(TRUE);
+            $url1 = $this->imported_data_parsed_model->getModelByUrl($urls['url1']);
+            $url2 = $this->imported_data_parsed_model->getModelByUrl($urls['url2']);
+            //$dur = microtime(true)-$ms;
+            //exit("select data from db ".$dur);
+            $model1 = '';
+            $model2 = '';
+            if ($url1 === FALSE) {
+                ++$nfurls;
+                $this->temp_data_model->addUrlToNonFound($urls['url1'], $process);
+                //$notFoundUrlsArr[]=$urls[0];
+            } else {
+                $tm = false;
+                if ($url1['ph_attr']) {
+                    $tm = unserialize($url1['ph_attr']);
+                }
+                $model1 = $tm['model'] ? $tm['model'] : FALSE;
+            }
+            if ($url2 === FALSE) {
+                ++$nfurls;
+                $this->temp_data_model->addUrlToNonFound($urls['url2'], $process);
+                //$notFoundUrlsArr[]=$urls[1];
+            } else {
+                $tm = false;
+                if ($url2['ph_attr']) {
+                    $tm = unserialize($url2['ph_attr']);
+                }
+                $model2 = $tm['model'] ? $tm['model'] : false;
+            }
+            if ($nfurls > 0) {
+                $notFoundUrls+=$nfurls;
+            } elseif ($model1) {
+                if ($model2 && $model1 != $model2) {
+                    if (!$url2['model'] || ($url2['model'] != $model1)) {
+                        $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model1);
+                        ++$itemsUpdated;
+                    }
+                } elseif (!$model2 && (!$url2['model'] || $model1 != $url2['model'])) {
+                    $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model1);
+                    ++$itemsUpdated;
+                }
+            } elseif ($model2) {
+                if (!$url1['model'] || $model2 != $url1['model']) {
+                    $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $model2);
+                    ++$itemsUpdated;
+                }
+            } elseif ($url1['model']) {
+                if (!$url2['model'] || ($url1['model'] != $url2['model'])) {
+                    $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $url1['model']);
+                    ++$itemsUpdated;
+                }
+            } elseif ($url2['model']) {
+                $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $url2['model']);
+                ++$itemsUpdated;
+            } else {
+                $model = time();
+                $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $model);
+                $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model);
+                $itemsUpdated+=2;
+            }
+            $timing = microtime(true) - $start;
+        }
+        if ($timing < 200) {
+            $val = "$process|$linesScaned|$notFoundUrls|$itemsUpdated";
+            $this->settings_model->updateMatchingUrls($process, $val);
+        } else {
+            $call_link = base_url() . "crons/match_urls/$process/$linesScaned/$itemsUpdated/$notFoundUrls";
+            //exit($call_link);
+            $this->site_categories_model->curl_async($call_link);
+        }
+    }
+
 }

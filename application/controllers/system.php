@@ -623,19 +623,93 @@ class System extends MY_Controller {
     }
 
     public function save_departments_categories() {
+        $this->load->helper('file');
         $this->load->model('department_model');
         $this->load->model('department_members_model');
         $this->load->model('site_categories_model');
+        session_start();
+        $filespath = realpath(base_url()) . "jl_import_dir";
+        if (!file_exists($filespath)) {
+            mkdir($filespath);
+        }
+        if (isset($_SESSION['mpost'])) {//$this->uri->segment(n)
+            $_POST['site_id']=$_SESSION['mpost']['site_id'];
+            $_POST['site_name']=$_SESSION['mpost']['site_name'];
+        }
+        else{
+            $file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
+            $fcont = file($file);
+            $i = 1;
+            $fnum = 0;
+            $fobj='';
+            foreach($fcont as $line){
+                if(!file_exists($filespath.'/temp_imp_jl_'.$fnum.'.jl')){
+                    file_put_contents($filespath.'/temp_imp_jl_'.$fnum.'.jl', $line);
+                    $fobj = fopen($filespath.'/temp_imp_jl_'.$fnum.'.jl', 'a');
+                }
+                else fwrite($fobj, $line);
+                if($i==500){
+                    ++$fnum;
+                    $i=0;
+                    fclose($fobj);
+                }
+                ++$i;
+            }
+            /*
+            $handle = fopen($file, "rb");
+            $content = fread($handle, filesize($file));
+            $mj_obj = json_decode('['.trim($content,'"').']');
+            if(!empty($mj_obj)){
+                $num = 1;
+                $file_num=0;
+                $tarray = array();
+                foreach ($mj_obj as $oj){
+                    $tarray[]=$oj;
+                    if($num==500){
+                        $nstr = str_replace('\\/','/',json_encode($tarray));
+                        $sl = strlen($nstr);
+                        $nc = substr($nstr, 1,$sl-2);
+                        //$nc = trim(trim(,'['),']');
+                        file_put_contents($filespath.'/temp_imp_jl_'.$file_num.'.jl', $nc);
+                        ++$file_num;
+                        $tarray = array();
+                        $num = 0;
+                    }
+                    ++$num;
+                }
+                if(!empty($tarray)){
+                        $nstr = str_replace('\\/','/',json_encode($tarray));
+                        $sl = strlen($nstr);
+                        $nc = substr($nstr, 1,$sl-2);
+                     file_put_contents($filespath.'/temp_imp_jl_'.$file_num.'.jl', $nc);
+                }
+            }
+            //*/
+        }
         $site_id = $this->input->post('site_id');
         $site_name = explode(".", strtolower($this->input->post('site_name')));
-        $file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
+        $sited = implode('/', $site_name);
+              $call_link = base_url()."crons/save_departments_categories/$site_id/$sited";// > /dev/null 2>/dev/null &";
+              //echo $call_link;
+              $this->site_categories_model->curl_async($call_link);
+         // $string = shell_exec("wget -S -O- ".$call_link);
+        exit($call_link.' '.$string);
+        //$file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
+        $flist = get_filenames($filespath);
+        if(empty($flist)){
+            unset($_SESSION['mpost']);
+            return;
+        }
+        //exit;
+        $file = $filespath.'/'.$flist[0];
         $_rows = array();
-        $handle = fopen($file, "rb");
-        $contents = fread($handle, filesize($file));
-        fclose($handle);
+//        $handle = fopen($file, "rb");
+//        $contents = fread($handle, filesize($file));
+//        fclose($handle);
 
-        $data = '['.trim($contents,'"').']';
-        $json_obj = json_decode($data);
+        $cfile = file($file);
+        //$data = '['.trim($contents,'"').']';
+        //$json_obj = json_decode($data);
 
         $debug_stack = array(
         	'department_members' => array(),
@@ -644,11 +718,13 @@ class System extends MY_Controller {
 
                                     // new change 1 line
                                     set_time_limit(1000);
-				foreach($json_obj as $row) {
+				foreach($cfile as $line) {
+                                    $line = rtrim(trim($line),',');
+                                    $row = json_decode($line);
 					// === DB table decision (start)
 					$level = '';
 					$work_table = "";
-          if(isset($row->level) && !is_null($row->level) && $row->level != ''){
+          if(isset($row->level) && $row->level!==NULL && $row->level !== ''){
 	          $level = $row->level;
 	          if($level >= 1) {
 	          	$work_table = 'department_members';
@@ -826,11 +902,11 @@ class System extends MY_Controller {
               $department_members_id = 0;
               if($department_text != '') {
               		try {
-              			$check_id = $this->department_members_model->checkExist($site_id, $department_text, $url);
+              			$check_id = $this->department_members_model->checkExist($site_id, $department_text);
               		} catch(Exception $e) {
               			$this->department_members_model->db->close();
                 		$this->department_members_model->db->initialize();
-              			$check_id = $this->department_members_model->checkExist($site_id, $department_text, $url);
+              			$check_id = $this->department_members_model->checkExist($site_id, $department_text);
               		}
                   if($check_id) {
                       $department_members_id = $check_id;
@@ -934,7 +1010,15 @@ class System extends MY_Controller {
           }
 
 				}	        
-
+                                unlink($file);
+          if(count($flist)>1){
+              $call_link = base_url()."crons/save_departments_categories/$site_id/$site_name > /dev/null 2>/dev/null &";
+              //echo $call_link;
+          shell_exec("wget -S -O- ".$call_link);
+//          shell_exec("wget -S -O- ".  base_url()."system/save_department_categories > /dev/null 2>/dev/null &");
+          }
+  //        else{
+              //unset($_SESSION['mpost']);
         $this->output->set_content_type('application/json')->set_output(json_encode($debug_stack));
     }
 
@@ -2180,5 +2264,276 @@ class System extends MY_Controller {
         $this->data['rows'] = $result;
         $this->render();
     }
-    
+    public function system_uploadmatchurls(){
+        $this->render();
+    }
+    public function upload_match_urls()
+    {
+        ini_set('post_max_size', '100M');
+        $this->load->library('UploadHandler');
+        $this->output->set_content_type('application/json');
+        $this->uploadhandler->upload(array(
+            'script_url' => site_url('system/upload_match_urls'),
+            'upload_dir' => $this->config->item('csv_upload_dir'),
+            'param_name' => 'files',
+            'delete_type' => 'POST',
+            'accept_file_types' => '/.+\.(txt|jl)$/i',
+        ));
+    }
+    public function check_urls(){
+        $this->load->model('site_categories_model');
+        $this->load->model('settings_model');
+        //var_dump($_POST);
+        $this->load->model('imported_data_parsed_model');
+        $this->load->model('temp_data_model');
+        $file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
+        //echo file_exists($file)?"exists":"not exists!"."<br>";
+        $this->temp_data_model->emptyTable('notfoundurls');
+        $this->temp_data_model->emptyTable('urlstomatch');
+        $this->settings_model->deledtMatching();
+        $fcont = file($file);
+        $linesTotal = 0;
+        $itemsUpdated = 0;
+        $linesAdded = 0;
+        $linesScaned = 0;
+        $notFoundUrls = 0;
+        $notFoundUrlsArr = array();
+        $process = time();
+        foreach ($fcont as $line){
+            ++$linesTotal;
+            //*for big files
+            $this->temp_data_model->createMatchUrlsTable();
+            $res = '';
+            $urls = explode(',', trim(trim($line),','));
+            if(count($urls)==2){
+                ++$linesAdded;
+                $this->temp_data_model->addUrlToMatch($urls[0],$urls[1]);
+            }//*/
+        }
+        $this->temp_data_model->createNonFoundTable();
+        $this->settings_model->addMatchingUrls($process);
+        $start = microtime(true);
+        $timing = 0;
+        while ($timing < 20 && $urls = $this->temp_data_model->getLineFromTable('urlstomatch')) {
+            $nfurls = 0;
+            ++$linesScaned;
+            //$ms = microtime(TRUE);
+            $url1 = $this->imported_data_parsed_model->getModelByUrl($urls['url1']);
+            $url2 = $this->imported_data_parsed_model->getModelByUrl($urls['url2']);
+            //$dur = microtime(true)-$ms;
+            //exit("select data from db ".$dur);
+            $model1 = '';
+            $model2 = '';
+            if ($url1 === FALSE) {
+                ++$nfurls;
+                $this->temp_data_model->addUrlToNonFound($urls['url1'], $process);
+                //$notFoundUrlsArr[]=$urls[0];
+            } else {
+                $tm = false;
+                if ($url1['ph_attr']) {
+                    $tm = unserialize($url1['ph_attr']);
+                }
+                $model1 = $tm['model'] ? $tm['model'] : FALSE;
+            }
+            if ($url2 === FALSE) {
+                ++$nfurls;
+                $this->temp_data_model->addUrlToNonFound($urls['url2'], $process);
+                //$notFoundUrlsArr[]=$urls[1];
+            } else {
+                $tm = false;
+                if ($url2['ph_attr']) {
+                    $tm = unserialize($url2['ph_attr']);
+                }
+                $model2 = $tm['model'] ? $tm['model'] : false;
+            }
+            if ($nfurls > 0) {
+                $notFoundUrls+=$nfurls;
+            } elseif ($model1) {
+                if ($model2 && $model1 != $model2) {
+                    if (!$url2['model'] || ($url2['model'] != $model1)) {
+                        $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model1);
+                        ++$itemsUpdated;
+                    }
+                } elseif (!$model2 && (!$url2['model'] || $model1 != $url2['model'])) {
+                    $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model1);
+                    ++$itemsUpdated;
+                }
+            } elseif ($model2) {
+                if (!$url1['model'] || $model2 != $url1['model']) {
+                    $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $model2);
+                    ++$itemsUpdated;
+                }
+            } elseif ($url1['model']) {
+                if (!$url2['model'] || ($url1['model'] != $url2['model'])) {
+                    $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $url1['model']);
+                    ++$itemsUpdated;
+                }
+            } elseif ($url2['model']) {
+                $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $url2['model']);
+                ++$itemsUpdated;
+            } else {
+                $model = time();
+                $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $model);
+                $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model);
+                $itemsUpdated+=2;
+            }
+            $timing = microtime(true) - $start;
+        }//*/
+        if ($timing < 20) {
+            $val = "$process|$linesScaned|$notFoundUrls|$itemsUpdated";
+            $this->settings_model->updateMatchingUrls($process, $val);
+        } else {
+            $call_link = base_url() . "crons/match_urls/$process/$linesScaned/$itemsUpdated/$notFoundUrls";
+            //exit($call_link);
+            $this->site_categories_model->curl_async($call_link);
+        }
+        /*for small files
+            if (count($urls) == 2) {
+                $nfurls = 0;
+                //$ms = microtime(TRUE);
+                $url1 = $this->imported_data_parsed_model->getModelByUrl($urls[0]);
+                $url2 = $this->imported_data_parsed_model->getModelByUrl($urls[1]);
+                //$dur = microtime(true)-$ms;
+                //exit("select data from db ".$dur);
+                $model1 = '';
+                $model2 = '';
+                if ($url1 === FALSE) {
+                    ++$nfurls;
+                    //$this->temp_data_model->addUrlToNonFound($urls[0], $process);
+                    $notFoundUrlsArr[]=$urls[0];
+                } else {
+                    $tm = false;
+                    if ($url1['ph_attr']) {
+                        $tm = unserialize($url1['ph_attr']);
+                    }
+                    $model1 = $tm['model'] ? $tm['model'] : FALSE;
+                }
+                if ($url2 === FALSE) {
+                    ++$nfurls;
+                    //$this->temp_data_model->addUrlToNonFound($urls[1], $process);
+                    $notFoundUrlsArr[]=$urls[1];
+                } else {
+                    $tm = false;
+                    if ($url2['ph_attr']) {
+                        $tm = unserialize($url2['ph_attr']);
+                    }
+                    $model2 = $tm['model'] ? $tm['model'] : false;
+                }
+                if ($nfurls > 0) {
+                    $notFoundUrls+=$nfurls;
+                } elseif ($model1) {
+                    if ($model2 && $model1 != $model2 ) {
+                        if(!$url2['model']||($url2['model']!=$model1)){
+                        $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model1);
+                        ++$itemsUpdated;
+                        }
+                    }
+                    elseif(!$model2 && (!$url2['model']||$model1!=$url2['model'])){
+                        $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model1);
+                        ++$itemsUpdated;
+                    }
+                } elseif ($model2) {
+                    if (!$url1['model'] || $model2 != $url1['model']) {
+                        $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $model2);
+                        ++$itemsUpdated;
+                    }
+                } elseif ($url1['model']) {
+                    if (!$url2['model']||($url1['model'] != $url2['model'])) {
+                        $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $url1['model']);
+                        ++$itemsUpdated;
+                    }
+                } elseif ($url2['model']) {
+                    $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $url2['model']);
+                    ++$itemsUpdated;
+                } else {
+                    $model = time();
+                    $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $model);
+                    $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model);
+                    $itemsUpdated+=2;
+                }
+            }//*/
+            //$notFoundUrls+=$nfurls;
+            //echo $res.$line."<br/>";
+        //}
+            /*
+        $url_table = "<table>";
+        foreach($notFoundUrlsArr as $row){
+            $url_table .= "<tr><td>".$row."</td></tr>";
+        }
+        $url_table .= "</table>";
+        $response = "<div>Total matching URLs imported: ".$linesTotal."<br>";
+        $response .= "URLs not found in imported_data_parsed: ".$notFoundUrls."<br>";
+        $response .= "Items updated: ".$itemsUpdated."<br>";
+        $response .= "Duration: ".  (microtime(true)-$start)."<br></div>";
+        $response .= $url_table;
+        echo $response;//*/
+        //*
+        //$process = time();
+        //$this->settings_model->addMatchingUrls($process);
+        //$call_link = base_url()."crons/match_urls/$process/$linesScaned/$itemsUpdated/$notFoundUrls";
+        //$this->site_categories_model->curl_async($call_link);
+        echo "Total lines: ".$linesTotal."<br/>";
+        echo "Added lines: ".$linesAdded."<br/>";
+        echo "Non existing urls found: ".$notFoundUrls."<br>";
+        echo "Items updated: ".$itemsUpdated."<br>";
+    }
+    function get_matching_urls(){
+        $this->load->model('settings_model');
+        $this->load->model('temp_data_model');
+        $lines = $this->settings_model->getMatching();
+        $response = "";
+        if($lines==FALSE){
+            $response = "There is no process.";
+        }
+        else{
+            
+            $response .="<div>";
+            foreach($lines->result() as $row){
+                header("Last-Change: ".strtotime($row->modified));
+                $line = "<p>";
+                if($_SERVER['REQUEST_METHOD']=='HEAD')exit;
+                if(strtotime($row->created)==strtotime($row->modified)){
+                    $line .= "Matching started at: ".date('Y-m-d H:i:s',$row->description)." currently in process.";
+                }
+                else{
+                    $data = explode('|',$row->description);
+                    $line .= 'Total matching URLs imported: '.$data[1].'</p><p>'
+                            .'URLs not found in imported_data_parsed: '.$data[2].'  '
+                            .(intval($data[2])>0?'<a id="download_not_founds" 
+                                href="'.base_url().'index.php/system/get_url_list">Download</a>':'')
+                        ;
+                    $urls = $this->temp_data_model->getNotFount();
+                    $table = '';
+                    if($urls){
+                        $table = '<table><thead><tr><th>URLs</th></tr></thead><tbody>';
+                        foreach($urls->result() as $url){
+                            $table .='<tr><td><a href="'.$url->url.'">'.$url->url.'</a></td></tr>';
+                        }
+                        $table .= '</tbody></table>';
+                    }
+                }
+                $line .="</p>";
+            }
+            $response .= $line.$table."</div>";
+        }
+        echo $response;
+    }
+    public function get_url_list(){
+        $this->load->model('temp_data_model');
+        $res = $this->temp_data_model->getNotFount();
+        $array = array();
+        $this->temp_data_model->download_send_headers("url_list.txt");
+        $strTxt = '';
+        if($res){
+            foreach($res->result() as $row){
+                //$array[]=$row->url;
+                $strTxt .= $row->url."\r\n";
+            }
+        }
+        else{
+            $array[]='';
+        }
+        echo $strTxt;
+        //echo $this->temp_data_model->array2file($array);
+    }
 }

@@ -3004,6 +3004,23 @@ class Imported_data_parsed_model extends CI_Model {
  		$res = $this->db->query($query);
  		return $res->result_array();
     }
+    function getModelByUrl($url){
+        $this->db->select("purl.imported_data_id as data_id, purl.`model` as model,pid.`value` as ph_attr");
+        $this->db->from("imported_data_parsed as purl");
+        $this->db->join("(select `value`, imported_data_id from imported_data_parsed 
+            where `key`='parsed_attributes') as pid",
+                'purl.imported_data_id = pid.imported_data_id',"LEFT");
+        $this->db->where('purl.key','url');
+        $this->db->where('purl.value',$url);
+        //$this->db->where("pid.key",'parsed_attributes');
+        $query = $this->db->get();
+        if($query->num_rows ===0)return FALSE;
+        return $query->first_row('array');
+    }
+    function updateModelOfItem($dataid,$model){
+        $data=array('model'=>$model);
+        $this->db->where('imported_data_id',$dataid);
+        $this->db->update('imported_data_parsed',$data);
+    }
 
 }
-

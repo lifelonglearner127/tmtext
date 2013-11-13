@@ -6,7 +6,7 @@
         <li class=""><a data-toggle="tab" href="<?php echo site_url('brand/import');?>">Brands</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('system/batch_review');?>">Batch Review</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_compare');?>">Product Compare</a></li>
-        <li class="active"><a data-toggle="tab" href="<?php echo site_url('system/system_productsmatch');?>">Product Match</a></li>
+        <li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_productsmatch');?>">Product Match</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_reports');?>">Reports</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_logins');?>">Logins</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('system/keywords');?>">Keywords</a></li>
@@ -14,45 +14,39 @@
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_pricing');?>">Pricing </a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/product_models');?>">Product models </a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('system/snapshot_queue');?>">Snapshot Queue</a></li>
-        <li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_uploadmatchurls');?>">Upload Match URLs</a></li>
+        <li class="active"><a data-toggle="tab" href="<?php echo site_url('system/system_uploadmatchurls');?>">Upload Match URLs</a></li>
     </ul>
   <div class="tab-content">
-    <div id="tab8" class="tab-pane active">
-    	<table id='pm_data_table' class='pm_data_table'>
-    		<tbody>
-    			<tr>
-    				<td><input class='pm_data_table_tinput pmtt_url' type='text' placeholder='Type URL'></td>
-    				<td><input class='pm_data_table_tinput pmtt_sku' type='text' placeholder='Type SKU'></td>
-				</tr>
-				<tr>
-    				<td><input class='pm_data_table_tinput pmtt_url' type='text' placeholder='Type URL'></td>
-    				<td><input class='pm_data_table_tinput pmtt_sku' type='text' placeholder='Type SKU'></td>
-				</tr>
-				<tr>
-    				<td><input class='pm_data_table_tinput pmtt_url' type='text' placeholder='Type URL'></td>
-    				<td><input class='pm_data_table_tinput pmtt_sku' type='text' placeholder='Type SKU'></td>
-				</tr>
-				<tr>
-    				<td><input class='pm_data_table_tinput pmtt_url' type='text' placeholder='Type URL'></td>
-    				<td><input class='pm_data_table_tinput pmtt_sku' type='text' placeholder='Type SKU'></td>
-				</tr>
-				<tr>
-    				<td><input class='pm_data_table_tinput pmtt_url' type='text' placeholder='Type URL'></td>
-    				<td><input class='pm_data_table_tinput pmtt_sku' type='text' placeholder='Type SKU'></td>
-				</tr>
-			</tbody>
-		</table>
-		<table class='pm_data_table'>
-			<tbody>
-				<tr>
-					<td>
-						<button type='button' id="pm_tab_newrow_btn" class='btn btn-primary'>Add New Row</button>
-    					<button type='button' id="pm_tab_save_btn" class='btn disabled' disabled='true'>Save</button>
-					</td>
-				</tr>
-			</tbody>
-		</table>
-    </div>
+      <div id="mathchurls" class="tab-pane active">
+          <div id="matching"></div>
+          <span class="btn btn-success fileinput-button pull-left" style="">
+              Upload
+              <i class="icon-plus icon-white"></i>
+              <input type="file" multiple="" name="files[]" id="upload_urls">
+          </span>
+          <input type="hidden" name="choosen_file" />
+          <script>
+              $(function () {
+                  var url = '<?php echo site_url('system/upload_match_urls'); ?>';
+                  $('#upload_urls').fileupload({
+                      url: url,
+                      dataType: 'json',
+                      done: function (e, data) {
+                          //alert(data.result.files[0].name);
+                          $('input[name="choosen_file"]').val(data.result.files[0].name);
+
+                          var url = base_url+'index.php/system/check_urls';
+                          $.post(url, { 'choosen_file': $('input[name="choosen_file"]').val()//,
+                              //'site_id':  $("#sites .btn_caret_sign").attr('id'),
+                              //'site_name':  $("#sites .btn_caret_sign").text()
+                          }, function(data) {
+                              //alert(data);
+                                  }, 'json');
+                              }
+                          });
+                      });
+          </script>
+      </div>
   </div>
 </div>
 
@@ -96,8 +90,38 @@
 	function validate_url_ext(value) {
 		return /^(https?|ftp):\/\/(((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:)*@)?(((\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5]))|((([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.)+(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.?)(:\d*)?)(\/((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)+(\/(([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)*)*)?)?(\?((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)|[\uE000-\uF8FF]|\/|\?)*)?(\#((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)|\/|\?)*)?$/i.test(value);
 	}
+        var old_data=false;
+        function check_matching_status(){
+            if($("#matching").length==0)return false;
+            var url = base_url+'index.php/system/get_matching_urls';
+            $.ajax({
+                type:'HEAD',
+                url:url,
+                success:function(data, status, xhr){
+                    if(old_data!=xhr.getResponseHeader('Last-Change')){
+                        old_data=xhr.getResponseHeader('Last-Change');
+                        $.ajax({
+                            url:url,
+                            success:function(data){
+                                $("#matching").html(data);
+                            }
+                        });
+                    }
+                }
+            });
+        }
 
 	$(document).ready(function() {
+            var matching_checking_int = setInterval(check_matching_status,5000);
+            $("#download_not_founds").click(function(){
+                alert('works.');
+                $.ajax({
+                    url:base_url+"index.php/system/get_url_list",
+                    success:function(data){
+                        alert(data);
+                    }
+                });
+            });
 
 		// ---- UI tooltips (start)
 		$("#pm_tab_newrow_btn").tooltip({
