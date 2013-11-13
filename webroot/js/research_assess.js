@@ -39,9 +39,12 @@ $(function() {
             "item_id",
             "model",
             "url",
+            "Page_Load_Time",
+            "Short_Description",
             "short_description_wc",
             "Meta_Keywords",
             "short_seo_phrases",
+            "Long_Description",
             "long_description_wc",
             "long_seo_phrases",
             "duplicate_content",
@@ -60,14 +63,17 @@ $(function() {
             "product_selection"
 
         ],
-        details_compare: [
+         details_compare: [
             "snap",
             "product_name",
             "item_id",
             "model",
             "url",
+            "Page_Load_Time",
+            "Short_Description",
             "short_description_wc",
             "Meta_Keywords",
+            "Long_Description",
             "long_description_wc",
             "Meta_Description",
             "Meta_Description_Count",
@@ -76,16 +82,14 @@ $(function() {
             "item_id1",
             "model1",
             "url1",
+            "Page_Load_Time1",
+            "Short_Description1",
             "short_description_wc1",
             "Meta_Keywords1",
+            "Long_Description1",
             "long_description_wc1",
             "Meta_Description1",
             "Meta_Description_Count1"
-//            "snap2",
-//            "product_name2",
-//            "url2",
-//            "short_description_wc2",
-//            "long_description_wc2"
         ],
         recommendations: [
             "product_name",
@@ -210,8 +214,7 @@ $(function() {
              }
             },
             "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-                console.log(aData[24]);
-                $(nRow).attr("add_data", aData[24]);
+                $(nRow).attr("add_data", aData[28]);
                 return nRow;
             },
             "fnDrawCallback": function(oSettings) {
@@ -304,7 +307,7 @@ $(function() {
                         "sLengthMenu": "_MENU_ rows"
                     },
                     "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-                        $(nRow).attr("add_data", aData[24]);
+                        $(nRow).attr("add_data", aData[28]);
                         return nRow;
                     },
                     "fnDrawCallback": function(oSettings) {
@@ -468,6 +471,18 @@ $(function() {
             "sClass": "url_text"
         },
         {
+            "sTitle": "Page Load Time",
+            "sName": "Page_Load_Time",
+            "sWidth": "15%",
+            "sClass": "Page_Load_Time"
+        },
+        {
+            "sTitle": "<span class='subtitle_desc_short' >Short</span> Description",
+            "sName": "Short_Description",
+            "sWidth": "25%",
+            "sClass": "Short_Description"
+        },
+        {
             "sTitle": "Short Desc <span class='subtitle_word_short' ># Words</span>",
             "sName": "short_description_wc",
             "sWidth": "1%",
@@ -484,6 +499,12 @@ $(function() {
             "sName": "short_seo_phrases",
             "sWidth": "2%",
             "sClass": "keyword_short"
+        },
+        {
+            "sTitle": "<span class='subtitle_desc_long' >Long </span>Description",
+            "sName": "Long_Description",
+            "sWidth": "2%",
+            "sClass": "Long_Description"
         },
         {
             "sTitle": "Long Desc <span class='subtitle_word_long' ># Words</span>",
@@ -615,6 +636,18 @@ $(function() {
             "sWidth": "15%"
         },
         {
+            "sTitle": "Page Load Time",
+            "sName": "Page_Load_Time1",
+            "sWidth": "15%",
+            "sClass": "Page_Load_Time1"
+        },
+        {
+            "sTitle": "<span class='subtitle_desc_short1' >Short </span> Description",
+            "sName": "Short_Description1",
+            "sWidth": "15%",
+            "sClass": "Short_Description1"
+        },
+        {
             "sTitle": "Short Desc <span class='subtitle_word_short' ># Words</span>",
             "sName": "short_description_wc1",
             "sWidth": "1%",
@@ -625,6 +658,12 @@ $(function() {
             "sName": "Meta_Keywords1",
             "sWidth": "1%",
             "sClass": "Meta_Keywords1"
+        },
+        {
+            "sTitle": "<span class='subtitle_desc_long1' >Long </span>Description",
+            "sName": "Long_Description1",
+            "sWidth": "2%",
+            "sClass": "Long_Description1"
         },
         {
             "sTitle": "Long Desc <span class='subtitle_word_long' ># Words</span>",
@@ -730,7 +769,7 @@ $(function() {
             });
         },
         "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-            $(nRow).attr("add_data", aData[24]);
+            $(nRow).attr("add_data", aData[28]);
             return nRow;
         },
         "fnDrawCallback": function(oSettings) {
@@ -1771,7 +1810,7 @@ var scrollYesOrNot = true;
         //----------------------
     }
 
-    function check_word_columns() {
+   function check_word_columns() {
         var word_short_num = 0;
         var word_short_num1 = 0;
         var word_short_num2 = 0;
@@ -1799,6 +1838,21 @@ var scrollYesOrNot = true;
         var Meta_Keywords2 = 0;
         var Meta_Keywords3 = 0;
         var Meta_Keywords4 = 0;
+        var Page_Load_Time = 0;
+        var Page_Load_Time1 = 0;
+        var Page_Load_Time2 = 0;
+        var Page_Load_Time3 = 0;
+        var Page_Load_Time4 = 0;
+        var Short_Description = 0;
+        var Short_Description1 = 0;
+        var Short_Description2 = 0;
+        var Short_Description3 = 0;
+        var Short_Description4 = 0;
+        var Long_Description = 0;
+        var Long_Description1 = 0;
+        var Long_Description2 = 0;
+        var Long_Description3 = 0;
+        var Long_Description4 = 0;
         var model = 0;
         var Custom_Keywords_Short_Description = 0;
         var Custom_Keywords_Long_Description = 0;
@@ -1980,6 +2034,81 @@ var scrollYesOrNot = true;
                 Meta_Keywords4 += 1;
             }
         });
+        $('td.Page_Load_Time').each(function() {
+            if ($(this).text()!='') {
+                Page_Load_Time += 1;
+            }
+        });
+        $('td.Page_Load_Time1').each(function() {
+            if ($(this).text()!='') {
+                Page_Load_Time1 += 1;
+            }
+        });
+        $('td.Page_Load_Time2').each(function() {
+            if ($(this).text()!='') {
+                Page_Load_Time2 += 1;
+            }
+        });
+        $('td.Page_Load_Time3').each(function() {
+            if ($(this).text()!='') {
+                Page_Load_Time3 += 1;
+            }
+        });
+        $('td.Page_Load_Time4').each(function() {
+            if ($(this).text()!='') {
+                Page_Load_Time4 += 1;
+            }
+        });
+        $('td.Short_Description').each(function() {
+            if ($(this).text()!='') {
+                Short_Description += 1;
+            }
+        });
+        $('td.Short_Description1').each(function() {
+            if ($(this).text()!='') {
+                Short_Description1 += 1;
+            }
+        });
+        $('td.Short_Description2').each(function() {
+            if ($(this).text()!='') {
+                Short_Description2 += 1;
+            }
+        });
+        $('td.Short_Description3').each(function() {
+            if ($(this).text()!='') {
+                Short_Description3 += 1;
+            }
+        });
+        $('td.Short_Description4').each(function() {
+            if ($(this).text()!='') {
+                Short_Description4 += 1;
+            }
+        });
+        $('td.Long_Description').each(function() {
+            if ($(this).text()!='') {
+                Long_Description += 1;
+            }
+        });
+        $('td.Long_Description1').each(function() {
+            if ($(this).text()!='') {
+                Long_Description1 += 1;
+            }
+        });
+        $('td.Long_Description2').each(function() {
+            if ($(this).text()!='') {
+                Long_Description2 += 1;
+            }
+        });
+        $('td.Long_Description3').each(function() {
+            if ($(this).text()!='') {
+                Long_Description3 += 1;
+            }
+        });
+        $('td.Long_Description4').each(function() {
+            if ($(this).text()!='') {
+                Long_Description4 += 1;
+            }
+        });
      
         $.each(tblAllColumns, function(index, value) {
             if ((value == 'short_description_wc' && word_short_num == 0) || (value == 'long_description_wc' && word_long_num == 0)) {
@@ -2068,11 +2197,114 @@ var scrollYesOrNot = true;
                 tblAssess.fnSetColumnVis(index, false, false);
                 tblAssess.fnSetColumnVis(index+1, false, false);
             }
+            if((value == 'Page_Load_Time' && Page_Load_Time == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+               
+            }
+            if((value == 'Page_Load_Time1' && Page_Load_Time1 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+               
+            }
+            if((value == 'Page_Load_Time2' && Page_Load_Time2 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+               
+            }
+            if((value == 'Page_Load_Time3' && Page_Load_Time3 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+               
+            }
+            if((value == 'Page_Load_Time4' && Page_Load_Time4 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+               
+            }
+            if((value == 'Short_Description' && Short_Description == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+                
+            }
+            if((value == 'Short_Description1' && Short_Description1 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+               
+            }
+            if((value == 'Short_Description2' && Short_Description2 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+                
+            }
+            if((value == 'Short_Description3' && Short_Description3 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+               
+            }
+            if((value == 'Short_Description4' && Short_Description4 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+                
+            }
+            if((value == 'Long_Description' && Long_Description == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+                
+            }
+            if((value == 'Long_Description1' && Long_Description1 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+                
+            }
+            if((value == 'Long_Description2' && Long_Description2 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+                
+            }
+            if((value == 'Long_Description3' && Long_Description3 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+                
+            }
+            if((value == 'Long_Description4' && Long_Description4 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+                
+            }
         });
         $('.subtitle_word_long').show();
         $('.subtitle_word_short').show();
         $('.subtitle_keyword_short').show();
         $('.subtitle_keyword_long').show();
+        
+        if(Long_Description == 0 && Short_Description !=0){
+            $('.subtitle_desc_short').text('Product ')
+        }else if(Short_Description == 0 && Long_Description != 0){
+            $('.subtitle_desc_long').text('Product ')
+        }else{
+            $('.subtitle_desc_long').text('Long ')
+            $('.subtitle_desc_short').text('Short ')
+        }
+        if(Long_Description1 == 0 && Short_Description1 !=0){
+            $('.subtitle_desc_short1').text('Product ')
+        }else if(Short_Description1 == 0 && Long_Description1 != 0){
+            $('.subtitle_desc_long1').text('Product ')
+        }else{
+            $('.subtitle_desc_long1').text('Long ')
+            $('.subtitle_desc_short1').text('Short ')
+        }
+        if(Long_Description2 == 0 && Short_Description2 !=0){
+            $('.subtitle_desc_short2').text('Product ')
+        }else if(Short_Description2 == 0 && Long_Description2 != 0){
+            $('.subtitle_desc_long2').text('Product ')
+        }else{
+            $('.subtitle_desc_long2').text('Long ')
+            $('.subtitle_desc_short2').text('Short ')
+        }
+        if(Long_Description3 == 0 && Short_Description3 !=0){
+            $('.subtitle_desc_short3').text('Product ')
+        }else if(Short_Description3 == 0 && Long_Description3 != 0){
+            $('.subtitle_desc_long3').text('Product ')
+        }else{
+            $('.subtitle_desc_long3').text('Long ')
+            $('.subtitle_desc_short3').text('Short ')
+        }
+        if(Long_Description4 == 0 && Short_Description4 !=0){
+            $('.subtitle_desc_short4').text('Product ')
+        }else if(Short_Description4 == 0 && Long_Description4 != 0){
+            $('.subtitle_desc_long4').text('Product ')
+        }else{
+            $('.subtitle_desc_long4').text('Long ')
+            $('.subtitle_desc_short4').text('Short ')
+        }
+        
+        
         if (word_short_num == 0 && word_long_num != 0) {
             $('.subtitle_word_long').hide();
             $('.subtitle_keyword_long').hide();
@@ -2080,8 +2312,7 @@ var scrollYesOrNot = true;
             $('.subtitle_word_short').hide();
             $('.subtitle_keyword_short').hide();
         }
-        //console.log();
-        //console.log(tblAssess.fnGetSColumnIndexByName('long_description_wc'));
+        
     }
 
     $('#assess_report_download_panel > a').click(function() {
@@ -2117,16 +2348,19 @@ var scrollYesOrNot = true;
         buttons: {
             'Save': function() {
                 // get columns params
-                var columns = {
+               var columns = {
                     snap: $("#column_snap").attr('checked') == 'checked',
                     created: $("#column_created").attr('checked') == 'checked',
                     product_name: $("#column_product_name").attr('checked') == 'checked',
                     item_id: $("#item_id").attr('checked') == 'checked',
                     model: $("#model").attr('checked') == 'checked',
                     url: $("#column_url").attr('checked') == 'checked',
+                    Page_Load_Time: $("#Page_Load_Time").attr('checked') == 'checked',
+                    Short_Description: $("#Short_Description").attr('checked') == 'checked',
                     short_description_wc: $("#column_short_description_wc").attr('checked') == 'checked',
                     Meta_Keywords: $("#Meta_Keywords").attr('checked') == 'checked',
                     short_seo_phrases: $("#column_short_seo_phrases").attr('checked') == 'checked',
+                    Long_Description: $("#Long_Description").attr('checked') == 'checked',
                     long_description_wc: $("#column_long_description_wc").attr('checked') == 'checked',
                     long_seo_phrases: $("#column_long_seo_phrases").attr('checked') == 'checked',
                     Custom_Keywords_Short_Description : $("#Custom_Keywords_Short_Description").attr('checked') == 'checked',

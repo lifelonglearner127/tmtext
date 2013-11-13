@@ -167,6 +167,14 @@
                 <label for="column_url">Url</label>
             </p>
             <p>
+                <input type="checkbox" id="Page_Load_Time" data-col_name="Page_Load_Time" name="Page_Load_Time" <?php echo($columns['Page_Load_Time'] == 'true' ? 'checked="checked"' : ''); ?> />
+                <label for="Page_Load_Time">Page Load Time</label>
+            </p>
+            <p>
+                <input type="checkbox" id="Short_Description" data-col_name="Short_Description" name="Short_Description" <?php echo($columns['Short_Description'] == 'true' ? 'checked="checked"' : ''); ?> />
+                <label for="Short_Description">Short Description</label>
+            </p>
+            <p>
                 <input type="checkbox" id="column_short_description_wc" data-col_name="short_description_wc" name="column_short_description_wc_name" <?php echo($columns['short_description_wc'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="column_short_description_wc">Words Short</label>
             </p>
@@ -177,6 +185,10 @@
             <p>
                 <input type="checkbox" id="column_short_seo_phrases" data-col_name="short_seo_phrases" name="column_short_seo_phrases_name" <?php echo($columns['short_seo_phrases'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="column_short_seo_phrases">Found Keywords - Short Description</label>
+            </p>
+            <p>
+                <input type="checkbox" id="Long_Description" data-col_name="Long_Description" name="Long_Description" <?php echo($columns['Long_Description'] == 'true' ? 'checked="checked"' : ''); ?> />
+                <label for="Long_Description">Long Description</label>
             </p>
             <p>
                 <input type="checkbox" id="column_long_description_wc" data-col_name="long_description_wc" name="column_long_description_wc_name" <?php echo($columns['long_description_wc'] == 'true' ? 'checked="checked"' : ''); ?> />
