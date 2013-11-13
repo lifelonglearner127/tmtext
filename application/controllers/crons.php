@@ -751,7 +751,7 @@ class Crons extends MY_Controller {
             }
             else{
             }
-            $this->imported_data_parsed_model->setUpdateStatus();
+//            $this->imported_data_parsed_model->setUpdateStatus();
             $data_arr = $this->imported_data_parsed_model->do_stats_newupdated($trnc);
             $timeend= time(true);
             $time=  $timesart - $timeend;
@@ -1118,13 +1118,13 @@ class Crons extends MY_Controller {
             $utd = $this->imported_data_parsed_model->getLUTimeDiff();
             
             echo $utd->td;
-            shell_exec("wget -S -O- ".base_url()."crons/do_stats_forupdated > /dev/null 2>/dev/null &");
-//            shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/do_stats_forupdated/$trnc > /dev/null 2>/dev/null &");
+//            shell_exec("wget -S -O- ".base_url()."crons/do_stats_forupdated > /dev/null 2>/dev/null &");
+            shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/do_stats_forupdated/$trnc > /dev/null 2>/dev/null &");
         } else {
             $mtd = $this->imported_data_parsed_model->getTimeDif();
             echo $mtd->td;
-            $this->imported_data_parsed_model->updateLastUpdated();
-            $this->imported_data_parsed_model->delUpdateStatus();
+//            $this->imported_data_parsed_model->updateLastUpdated();
+//            $this->imported_data_parsed_model->delUpdateStatus();
             $this->imported_data_parsed_model->delDoStatsStatus();
             $data = array(
                 'description' => 0
@@ -1134,14 +1134,14 @@ class Crons extends MY_Controller {
             $this->db->where('key', 'cron_job_offset');
             $this->db->update('settings', $data);
 
-            /*
+            //*
             $this->load->library('email');
             $this->email->from('info@dev.contentsolutionsinc.com', '!!!!');
             $this->email->to('bayclimber@gmail.com');
             $this->email->cc('max.kavelin@gmail.com');
             $this->email->subject('Cron job report');
-            $this->email->message('Cron job for do_statistics_new is done.<br> Timing = '.$mtd->td.'<br> Total items updated: '.$qty['description']);
-            //$this->email->send();//*/
+            $this->email->message('Cron job for do_statistics_new is done.<br> Timing = '.$mtd->td);//.'<br> Total items updated: '.$qty['description']
+            $this->email->send();//*/
         }
         unlink($tmp_dir . ".locked");
     }
