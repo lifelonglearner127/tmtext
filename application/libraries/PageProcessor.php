@@ -880,6 +880,12 @@ class PageProcessor {
 		}
 
 		if (empty($title)) {
+			foreach($this->nokogiri->get('h1#title') as $item) {
+				$title = $item['#text'][0];
+			}
+		}
+
+		if (empty($title)) {
 			foreach($this->nokogiri->get('h1 span') as $item) {
 				$title = $item['#text'][0];
 			}
@@ -947,6 +953,31 @@ class PageProcessor {
 			}
 		}
 
+		if (!isset($features)) {
+			foreach($this->nokogiri->get('#feature-bullets-btf .content ul li') as $item) {
+				$line = trim($item['#text'][0]);
+				if (!empty($line)) {
+					$features[] = $line;
+				}
+			}
+		}
+
+		foreach($this->nokogiri->get('#feature-bullets-atf .bucket .content ul li span') as $item) {
+			$line = trim($item['#text'][0]);
+			if (!empty($line)) {
+				$features[] = $line;
+			}
+		}
+
+		if (!isset($features)) {
+			foreach($this->nokogiri->get('.feature #feature-bullets ul li span') as $item) {
+				$line = trim($item['#text'][0]);
+				if (!empty($line)) {
+					$features[] = $line;
+				}
+			}
+		}
+
 		$features = implode(' ',$features);
 
 		if (empty($description) && empty($descriptionLong) && !empty($features)) {
@@ -955,6 +986,13 @@ class PageProcessor {
 		}
 
 		foreach($this->nokogiri->get('#actualPriceRow #actualPriceValue .priceLarge') as $item) {
+			$p = str_replace(',','',$item['#text'][0]);
+			if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $p, $match)) {
+				$price = $match[1];
+			}
+		}
+
+		foreach($this->nokogiri->get('#price_feature_div table tr td.a-span12 span#priceblock_ourprice') as $item) {
 			$p = str_replace(',','',$item['#text'][0]);
 			if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $p, $match)) {
 				$price = $match[1];
@@ -977,6 +1015,16 @@ class PageProcessor {
 			}
 		}
 
+		if (!isset($price_old)) {
+			foreach($this->nokogiri->get('#price_feature_div table tr td.a-text-strike') as $item) {
+				$p = str_replace(',','',$item['#text'][0]);
+				if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $p, $match)) {
+					$price_old = $match[1];
+				}
+			}
+		}
+
+
 		$result = array(
 			'Product Name' => $title,
 			'Description' => $description,
@@ -985,7 +1033,6 @@ class PageProcessor {
 			'Price' => $price,
 			'PriceOld' => $price_old
 		);
-
 
 		foreach ($result as $key => $value) {
 			if (empty($result[$key])) {
@@ -1041,10 +1088,53 @@ class PageProcessor {
 			}
 		}
 
+		foreach($this->nokogiri->get('#averageCustomerReviews a') as $item) {
+			$p = $item['#text'][0];
+			if (strpos($p, 'reviews')) {
+				if (preg_match('/([0-9]+)/', $p, $match)) {
+					$result['review_count'] =  trim($match[1]);
+				}
+			}
+		}
+
+		if (!isset($result['review_count'])){
+			foreach($this->nokogiri->get('.reviews #revMHLContainer .acrCount a') as $item) {
+				$p = $item['#text'][0];
+				if (preg_match('/([0-9]+)/', $p, $match)) {
+					$result['review_count'] =  trim($match[1]);
+				}
+			}
+		}
+
 		foreach($this->nokogiri->get('#feature-bullets-btf .bucket .content ul li') as $item) {
 			$line = trim($item['#text'][0]);
 			if (!empty($line)) {
 				$features[] = $line;
+			}
+		}
+
+		if (!isset($features)) {
+			foreach($this->nokogiri->get('#feature-bullets-btf .content ul li') as $item) {
+				$line = trim($item['#text'][0]);
+				if (!empty($line)) {
+					$features[] = $line;
+				}
+			}
+		}
+
+		foreach($this->nokogiri->get('#feature-bullets-atf .bucket .content ul li span') as $item) {
+			$line = trim($item['#text'][0]);
+			if (!empty($line)) {
+				$features[] = $line;
+			}
+		}
+
+		if (!isset($features)) {
+			foreach($this->nokogiri->get('.feature #feature-bullets ul li span') as $item) {
+				$line = trim($item['#text'][0]);
+				if (!empty($line)) {
+					$features[] = $line;
+				}
 			}
 		}
 		$result['feature_count'] = count($features);
