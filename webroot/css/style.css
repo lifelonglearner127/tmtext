@@ -2570,3 +2570,14 @@ input[name="search_crawl_data"] {
 li.selected-url{
     background:#ccc;
 }
+.ui-dialog .ui-dialog-content{
+    position: static!important;
+}
+#vertical,#horizontal{
+    top: 16px;
+    right: 29px;
+    cursor:pointer;
+}
+#columns_checking p{
+    margin-right:15px;
+}

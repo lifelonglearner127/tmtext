@@ -2340,27 +2340,44 @@ var scrollYesOrNot = true;
         }
         window.open(url);
     }
-
-    $('#research_assess_choiceColumnDialog').dialog({
-        autoOpen: false,
-        resizable: false,
-        modal: true,
-        buttons: {
-            'Save': function() {
-                // get columns params
-               var columns = {
+    $(".horizontal_vertical_icon").click(function(){
+        if($("#horizontal").css('visibility') === 'visible'){
+            $("#vertical").css('visibility', 'visible') ;
+            $("#horizontal").css('visibility', 'hidden') ;
+            $("#columns_checking p").css('display','block');
+            $("#columns_checking p").css('float','left');
+            $('#research_assess_choiceColumnDialog').css({
+                'width':'1200'
+                
+            });  
+            $('#research_assess_choiceColumnDialog').parent().css({
+            'left':'50%',
+             'margin-left':'-600px'                
+             });  
+        }
+        else{
+            $("#vertical").css('visibility', 'hidden') ;
+            $("#horizontal").css('visibility', 'visible') ;
+            $("#columns_checking p").css('display','block');
+            $("#columns_checking p").css('float','');
+            $('#research_assess_choiceColumnDialog').css('width','250px');
+            $('#research_assess_choiceColumnDialog').parent().css({
+             'margin-left':'-137px'                
+             }); 
+        }
+    });
+    $(".research_assess_choiceColumnDialog_checkbox").change(function(){
+         // get columns params
+                var columns = {
                     snap: $("#column_snap").attr('checked') == 'checked',
                     created: $("#column_created").attr('checked') == 'checked',
                     product_name: $("#column_product_name").attr('checked') == 'checked',
                     item_id: $("#item_id").attr('checked') == 'checked',
                     model: $("#model").attr('checked') == 'checked',
                     url: $("#column_url").attr('checked') == 'checked',
-                    Page_Load_Time: $("#Page_Load_Time").attr('checked') == 'checked',
-                    Short_Description: $("#Short_Description").attr('checked') == 'checked',
                     short_description_wc: $("#column_short_description_wc").attr('checked') == 'checked',
                     Meta_Keywords: $("#Meta_Keywords").attr('checked') == 'checked',
                     short_seo_phrases: $("#column_short_seo_phrases").attr('checked') == 'checked',
-                    Long_Description: $("#Long_Description").attr('checked') == 'checked',
                     long_description_wc: $("#column_long_description_wc").attr('checked') == 'checked',
                     long_seo_phrases: $("#column_long_seo_phrases").attr('checked') == 'checked',
                     Custom_Keywords_Short_Description : $("#Custom_Keywords_Short_Description").attr('checked') == 'checked',
@@ -2395,14 +2412,66 @@ var scrollYesOrNot = true;
                     }
                 });
 
-                $(this).dialog('close');
-            },
-            'Cancel': function() {
-                $(this).dialog('close');
-            }
-        },
-        width: '250px'
     });
+    $('#research_assess_choiceColumnDialog').dialog({
+        autoOpen: false,
+        resizable: false,
+        modal: true,
+//        buttons: {
+//            'Save': function() {
+//                // get columns params
+//                var columns = {
+//                    snap: $("#column_snap").attr('checked') == 'checked',
+//                    created: $("#column_created").attr('checked') == 'checked',
+//                    product_name: $("#column_product_name").attr('checked') == 'checked',
+//                    item_id: $("#item_id").attr('checked') == 'checked',
+//                    model: $("#model").attr('checked') == 'checked',
+//                    url: $("#column_url").attr('checked') == 'checked',
+//                    short_description_wc: $("#column_short_description_wc").attr('checked') == 'checked',
+//                    Meta_Keywords: $("#Meta_Keywords").attr('checked') == 'checked',
+//                    short_seo_phrases: $("#column_short_seo_phrases").attr('checked') == 'checked',
+//                    long_description_wc: $("#column_long_description_wc").attr('checked') == 'checked',
+//                    long_seo_phrases: $("#column_long_seo_phrases").attr('checked') == 'checked',
+//                    Custom_Keywords_Short_Description : $("#Custom_Keywords_Short_Description").attr('checked') == 'checked',
+//                    Custom_Keywords_Long_Description : $("#Custom_Keywords_Long_Description").attr('checked') == 'checked',
+//                    Meta_Description : $("#Meta_Description").attr('checked') == 'checked',
+//                    Meta_Description_Count : $("#Meta_Description_Count").attr('checked') == 'checked',
+//                    H1_Tags : $("#H1_Tags").attr('checked') == 'checked',
+//                    H1_Tags_Count : $("#H1_Tags_Count").attr('checked') == 'checked',
+//                    H2_Tags : $("#H2_Tags").attr('checked') == 'checked',
+//                    H2_Tags_Count : $("#H2_Tags_Count").attr('checked') == 'checked',
+//                    duplicate_content: $("#column_duplicate_content").attr('checked') == 'checked',
+//                    column_external_content: $("#column_external_content").attr('checked') == 'checked',
+//                    column_reviews: $("#column_reviews").attr('checked') == 'checked',
+//                    column_features: $("#column_features").attr('checked') == 'checked',
+//                    price_diff: $("#column_price_diff").attr('checked') == 'checked'
+//                };
+//
+//                // save params to DB
+//                $.ajax({
+//                    url: base_url + 'index.php/assess/assess_save_columns_state',
+//                    dataType: 'json',
+//                    type: 'post',
+//                    data: {
+//                        value: columns
+//                    },
+//                    success: function(data) {
+//                        if (data == true) {
+//                            hideColumns();
+//                            addColumn_url_class();
+//                            check_word_columns();
+//                        }
+//                    }
+//                });
+//
+//                $(this).dialog('close');
+//            },
+//            'Cancel': function() {
+//                $(this).dialog('close');
+//            }
+//        },
+        width: 'auto'
+                });
 
     $('#assess_report_options_dialog_button').on('click', function() {
         var selected_batch_id = $('select[name="research_assess_batches"] option:selected').val();
