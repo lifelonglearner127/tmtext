@@ -1179,6 +1179,8 @@ class ProcessText():
 	@staticmethod
 	def is_model_number(word):
 
+		#TODO: also a model number if it's made of many capital letters and not in the dictionary
+
 		word = word.lower()
 
 		# if there are more than 2 numbers and 2 letters and no non-word characters, 
