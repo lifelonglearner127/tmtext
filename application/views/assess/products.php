@@ -171,6 +171,10 @@
                 <label for="column_short_description_wc">Words Short</label>
             </p>
             <p>
+                <input type="checkbox" id="Meta_Keywords" data-col_name="Meta_Keywords" name="Meta_Keywords" <?php echo($columns['Meta_Keywords'] == 'true' ? 'checked="checked"' : ''); ?> />
+                <label for="Meta_Keywords">Meta Keywords</label>
+            </p>
+            <p>
                 <input type="checkbox" id="column_short_seo_phrases" data-col_name="short_seo_phrases" name="column_short_seo_phrases_name" <?php echo($columns['short_seo_phrases'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="column_short_seo_phrases">Found Keywords - Short Description</label>
             </p>

@@ -40,6 +40,7 @@ $(function() {
             "model",
             "url",
             "short_description_wc",
+            "Meta_Keywords",
             "short_seo_phrases",
             "long_description_wc",
             "long_seo_phrases",
@@ -66,6 +67,7 @@ $(function() {
             "model",
             "url",
             "short_description_wc",
+            "Meta_Keywords",
             "long_description_wc",
             "Meta_Description",
             "Meta_Description_Count",
@@ -75,6 +77,7 @@ $(function() {
             "model1",
             "url1",
             "short_description_wc1",
+            "Meta_Keywords1",
             "long_description_wc1",
             "Meta_Description1",
             "Meta_Description_Count1"
@@ -471,6 +474,12 @@ $(function() {
             "sClass": "word_short"
         },
         {
+            "sTitle": "Meta Keywords",
+            "sName": "Meta_Keywords",
+            "sWidth": "1%",
+            "sClass": "Meta_Keywords"
+        },
+        {
             "sTitle": "Keywords <span class='subtitle_keyword_short'>Short</span>",
             "sName": "short_seo_phrases",
             "sWidth": "2%",
@@ -610,6 +619,12 @@ $(function() {
             "sName": "short_description_wc1",
             "sWidth": "1%",
             "sClass": "word_short1"
+        },
+        {
+            "sTitle": "Meta Keywords",
+            "sName": "Meta_Keywords1",
+            "sWidth": "1%",
+            "sClass": "Meta_Keywords1"
         },
         {
             "sTitle": "Long Desc <span class='subtitle_word_long' ># Words</span>",
@@ -1769,6 +1784,11 @@ var scrollYesOrNot = true;
         var item_id2 = 0;
         var item_id3 = 0;
         var item_id4 = 0;
+        var Meta_Keywords = 0;
+        var Meta_Keywords1 = 0;
+        var Meta_Keywords2 = 0;
+        var Meta_Keywords3 = 0;
+        var Meta_Keywords4 = 0;
         var model = 0;
         var Custom_Keywords_Short_Description = 0;
         var Custom_Keywords_Long_Description = 0;
@@ -1925,6 +1945,31 @@ var scrollYesOrNot = true;
                 model += 1;
             }
         });
+        $('td.Meta_Keywords').each(function() {
+            if ($(this).text()!='') {
+                Meta_Keywords += 1;
+            }
+        });
+        $('td.Meta_Keywords1').each(function() {
+            if ($(this).text()!='') {
+                Meta_Keywords1 += 1;
+            }
+        });
+        $('td.Meta_Keywords2').each(function() {
+            if ($(this).text()!='') {
+                Meta_Keywords2 += 1;
+            }
+        });
+        $('td.Meta_Keywords3').each(function() {
+            if ($(this).text()!='') {
+                Meta_Keywords3 += 1;
+            }
+        });
+        $('td.Meta_Keywords4').each(function() {
+            if ($(this).text()!='') {
+                Meta_Keywords4 += 1;
+            }
+        });
      
         $.each(tblAllColumns, function(index, value) {
             if ((value == 'short_description_wc' && word_short_num == 0) || (value == 'long_description_wc' && word_long_num == 0)) {
@@ -1964,6 +2009,21 @@ var scrollYesOrNot = true;
                 tblAssess.fnSetColumnVis(index, false, false);
             }
             if((value == 'item_id4' && item_id4 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+            }
+            if((value == 'Meta_Keywords' && Meta_Keywords == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+            }
+            if((value == 'Meta_Keywords1' && Meta_Keywords1 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+            }
+            if((value == 'Meta_Keywords2' && Meta_Keywords2 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+            }
+            if((value == 'Meta_Keywords3' && Meta_Keywords3 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+            }
+            if((value == 'Meta_Keywords4' && Meta_Keywords4 == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
             }
             if((value == 'model' && model == 0)){
@@ -2055,6 +2115,7 @@ var scrollYesOrNot = true;
                     model: $("#model").attr('checked') == 'checked',
                     url: $("#column_url").attr('checked') == 'checked',
                     short_description_wc: $("#column_short_description_wc").attr('checked') == 'checked',
+                    Meta_Keywords: $("#Meta_Keywords").attr('checked') == 'checked',
                     short_seo_phrases: $("#column_short_seo_phrases").attr('checked') == 'checked',
                     long_description_wc: $("#column_long_description_wc").attr('checked') == 'checked',
                     long_seo_phrases: $("#column_long_seo_phrases").attr('checked') == 'checked',

@@ -158,6 +158,7 @@ class Assess extends MY_Controller {
                                     $parsed_meta_unserialize_val = '';
                                     $parsed_meta_unserialize_val_c = '';
                                     $parsed_model_unserialize_val = '';
+                                    $parsed_meta_keywords_unserialize_val = '';
                                     $cmpare = $this->statistics_new_model->get_compare_item($item['imported_data_id']);
 
                                     $parsed_attributes_unserialize = unserialize($cmpare->parsed_attributes);
@@ -166,7 +167,10 @@ class Assess extends MY_Controller {
                                     if ($parsed_attributes_unserialize['model'])
                                         $parsed_model_unserialize_val = $parsed_attributes_unserialize['model'];
 
-                                    $parsed_meta_unserialize = unserialize($cmpare->parsed_meta);
+                                    $parsed_meta__unserialize = unserialize($cmpare->parsed_meta);
+                                    if ($parsed_meta_unserialize['keywords']) {
+                                        $parsed_meta_keywords_unserialize_val = $parsed_meta_unserialize['keywords'];
+                                    }
                                     if ($parsed_meta_unserialize['description']) {
                                         $parsed_meta_unserialize_val = $parsed_meta_unserialize['description'];
                                         $parsed_meta_unserialize_val_c = count(explode(" ", $parsed_meta_unserialize_val));
@@ -185,6 +189,7 @@ class Assess extends MY_Controller {
                                     $val->model1 = $parsed_model_unserialize_val;
                                     $val->url1 = $cmpare->url;
                                     $val->short_description_wc1 = $cmpare->short_description_wc;
+                                    $val->Meta_Keywords1 = $parsed_meta_keywords_unserialize_val;
                                     $val->long_description_wc1 = $cmpare->long_description_wc;
                                     $val->Meta_Description1 = $parsed_meta_unserialize_val;
                                     $val->Meta_Description_Count1 = $parsed_meta_unserialize_val_count;
@@ -1011,6 +1016,7 @@ class Assess extends MY_Controller {
                 'model' => 'true',
                 'url' => 'true',
                 'short_description_wc' => 'true',
+                'Meta_Keywords' => 'true',
                 'short_seo_phrases' => 'true',
                 'long_description_wc' => 'true',
                 'long_seo_phrases' => 'true',
@@ -1201,6 +1207,11 @@ class Assess extends MY_Controller {
                 "sClass" => "item_id"
             ),
             array(
+                "sTitle" => "Meta Keywords",
+                "sName" => "Meta_Keywords",
+                "sClass" => "Meta_Keywords"
+            ),
+            array(
                 "sTitle" => "Model",
                 "sName" => "model",
                 "sClass" => "model"
@@ -1360,6 +1371,7 @@ class Assess extends MY_Controller {
                 $columns[] = array("sTitle" => "Model", "sClass" => "model" . $i, "sName" => 'model' . $i);
                 $columns[] = array("sTitle" => "URL", "sName" => 'url' . $i);
                 $columns[] = array("sTitle" => "Words <span class='subtitle_word_short' >Short</span>", "sName" => 'short_description_wc' . $i);
+                $columns[] = array("sTitle" => "Meta Keywords", "sClass" => "Meta_Keywords" . $i, "sName" => 'Meta_Keywords' . $i);
                 $columns[] = array("sTitle" => "Words <span class='subtitle_word_long' >Long</span>", "sName" => 'long_description_wc' . $i);
                 $columns[] = array("sTitle" => "Meta Description", "sClass" => "Meta_Description" . $i, "sName" => 'Meta_Description' . $i);
                 $columns[] = array("sTitle" => "Meta Desc <span class='subtitle_word_long' ># Words</span>", "sClass" => "Meta_Description_Count" . $i, "sName" => 'Meta_Description_Count' . $i);
@@ -1409,6 +1421,7 @@ class Assess extends MY_Controller {
             $result_row->Meta_Description = "";
             $result_row->Meta_Description_Count = "";
             $result_row->item_id = "";
+            $result_row->Meta_Keywords = "";
             $result_row->model = "#";
             $result_row->H1_Tags = "";
             $result_row->H1_Tags_Count = "";
@@ -1439,6 +1452,7 @@ class Assess extends MY_Controller {
                     $parsed_meta_unserialize_val = '';
                     $parsed_meta_unserialize_val_c = '';
                     $parsed_meta_unserialize_val_count = '';
+                    $parsed_meta_keywords_unserialize_val = '';
 
                     $parsed_attributes_unserialize = unserialize($sim_items[$i - 1]->parsed_attributes);
                     if ($parsed_attributes_unserialize['item_id'])
@@ -1447,6 +1461,10 @@ class Assess extends MY_Controller {
                         $parsed_attributes_unserialize_val = $parsed_attributes_unserialize['model'];
 
                     $parsed_meta_unserialize = unserialize($sim_items[$i - 1]->parsed_meta);
+                    if ($parsed_meta_unserialize['keywords']) {
+                        $parsed_meta_keywords_unserialize_val = $parsed_meta_unserialize['keywords'];
+                        
+                    }
                     if ($parsed_meta_unserialize['description']) {
                         $parsed_meta_unserialize_val = $parsed_meta_unserialize['description'];
                         $parsed_meta_unserialize_val_c = count(explode(" ", $parsed_meta_unserialize_val));
@@ -1473,6 +1491,7 @@ class Assess extends MY_Controller {
                     $result_row['item_id' . $i] = $parsed_attributes_unserialize_val;
                     $result_row['model' . $i] = '#';
                     $result_row['short_description_wc' . $i] = $sim_items[$i - 1]->short_description_wc !== false ? $sim_items[$i - 1]->short_description_wc : '-';
+                    $result_row['Meta_Keywords' . $i] = $parsed_meta_keywords_unserialize_val;
                     $result_row['long_description_wc' . $i] = $sim_items[$i - 1]->long_description_wc !== false ? $sim_items[$i - 1]->long_description_wc : '-';
                     $result_row['Meta_Description' . $i] = $parsed_meta_unserialize_val;
                     $result_row['Meta_Description_Count' . $i] = $parsed_meta_unserialize_val_count;
@@ -1494,6 +1513,9 @@ class Assess extends MY_Controller {
             }
             if ($row->item_id1) {
                 $result_row->item_id1 = $row->item_id1;
+            }
+            if ($row->Meta_Keywords1) {
+                $result_row->Meta_Keywords1 = $row->Meta_Keywords1;
             }
             if ($row->model1) {
                 $result_row->model1 = $row->model1;
@@ -1541,6 +1563,9 @@ class Assess extends MY_Controller {
             }
             if ($pars_atr['parsed_attributes']['item_id'] && $pars_atr['parsed_attributes']['item_id'] != '') {
                 $result_row->item_id = $pars_atr['parsed_attributes']['item_id'];
+            }
+            if ($pars_atr['parsed_meta']['keywords'] && $pars_atr['parsed_meta']['keywords'] != '') {
+                $result_row->Meta_Keywords = $pars_atr['parsed_meta']['keywords'];
             }
             if ($pars_atr['parsed_attributes']['model'] && $pars_atr['parsed_attributes']['model'] != '') {
                 $result_row->model = $pars_atr['parsed_attributes']['model'];
@@ -2120,6 +2145,7 @@ class Assess extends MY_Controller {
                         $data_row->model,
                         $row_url,
                         $data_row->short_description_wc,
+                        $data_row->Meta_Keywords,
                         $data_row->short_seo_phrases,
                         $data_row->long_description_wc,
                         $data_row->long_seo_phrases,
@@ -2149,6 +2175,7 @@ class Assess extends MY_Controller {
                             $output_row[] = $data_row['model' . $i] != null ? $data_row['model' . $i] : '';
                             $output_row[] = $data_row['url' . $i] != null ? $data_row['url' . $i] : '-';
                             $output_row[] = $data_row['short_description_wc' . $i] != null ? $data_row['short_description_wc' . $i] : '-';
+                            $output_row[] = $data_row['Meta_Keywords' . $i] != null ? $data_row['Meta_Keywords' . $i] : '';
                             $output_row[] = $data_row['long_description_wc' . $i] != null ? $data_row['long_description_wc' . $i] : '-';
                             $output_row[] = $data_row['Meta_Description' . $i] != null ? $data_row['Meta_Description' . $i] : '';
                             $output_row[] = $data_row['Meta_Description_Count' . $i] != null ? $data_row['Meta_Description_Count' . $i] : '';
@@ -2162,6 +2189,7 @@ class Assess extends MY_Controller {
                         $output_row[] = $data_row->model1;
                         $output_row[] = $data_row->url1;
                         $output_row[] = $data_row->short_description_wc1;
+                        $output_row[] = $data_row->Meta_Keywords1;
                         $output_row[] = $data_row->long_description_wc1;
                         $output_row[] = $data_row->Meta_Description1;
                         $output_row[] = $data_row->Meta_Description_Count1;
