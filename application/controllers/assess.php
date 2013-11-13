@@ -1619,6 +1619,9 @@ class Assess extends MY_Controller {
                 $result_row->model = $pars_atr['parsed_attributes']['model'];
             }
 
+            if ($pars_atr['parsed_attributes']['loaded_in_seconds'] && $pars_atr['parsed_attributes']['loaded_in_seconds'] != '') {
+                $result_row->Page_Load_Time = $pars_atr['parsed_attributes']['loaded_in_seconds'];
+            }
             if ($row->short_description) {
                  $result_row->Short_Description = $row->short_description;
              }else{
