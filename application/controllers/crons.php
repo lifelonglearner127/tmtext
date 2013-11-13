@@ -1129,7 +1129,7 @@ class Crons extends MY_Controller {
             $data = array(
                 'description' => 0
             );
-            $qty = $this->imported_data_parsed_model->getLastUpdate();
+//            $qty = $this->imported_data_parsed_model->getLastUpdate();
 
             $this->db->where('key', 'cron_job_offset');
             $this->db->update('settings', $data);
@@ -2842,28 +2842,35 @@ class Crons extends MY_Controller {
             } elseif ($model1) {
                 if ($model2 && $model1 != $model2) {
                     if (!$url2['model'] || ($url2['model'] != $model1)) {
+                        $this->temp_data_model->addUpdData($url2['data_id'],$url2['model'], $model1);
                         $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model1);
                         ++$itemsUpdated;
                     }
                 } elseif (!$model2 && (!$url2['model'] || $model1 != $url2['model'])) {
+                    $this->temp_data_model->addUpdData($url2['data_id'],$url2['model'], $model1);
                     $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model1);
                     ++$itemsUpdated;
                 }
             } elseif ($model2) {
                 if (!$url1['model'] || $model2 != $url1['model']) {
+                    $this->temp_data_model->addUpdData($url1['data_id'],$url1['model'], $model2);
                     $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $model2);
                     ++$itemsUpdated;
                 }
             } elseif ($url1['model']) {
                 if (!$url2['model'] || ($url1['model'] != $url2['model'])) {
+                    $this->temp_data_model->addUpdData($url2['data_id'],$url2['model'], $url1['model']);
                     $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $url1['model']);
                     ++$itemsUpdated;
                 }
             } elseif ($url2['model']) {
+                $this->temp_data_model->addUpdData($url1['data_id'],$url1['model'], $url2['model']);
                 $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $url2['model']);
                 ++$itemsUpdated;
             } else {
                 $model = time();
+                $this->temp_data_model->addUpdData($url1['data_id'],$url1['model'], $model);
+                $this->temp_data_model->addUpdData($url2['data_id'],$url2['model'], $model);
                 $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $model);
                 $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model);
                 $itemsUpdated+=2;
@@ -2874,9 +2881,10 @@ class Crons extends MY_Controller {
             $val = "$process|$linesScaned|$notFoundUrls|$itemsUpdated";
             $this->settings_model->updateMatchingUrls($process, $val);
         } else {
-            $call_link = base_url() . "crons/match_urls/$process/$linesScaned/$itemsUpdated/$notFoundUrls";
+            shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/match_urls/$process/$linesScaned/$itemsUpdated/$notFoundUrls > /dev/null 2>/dev/null &");
+            //$call_link = base_url() . "crons/match_urls/$process/$linesScaned/$itemsUpdated/$notFoundUrls";
             //exit($call_link);
-            $this->site_categories_model->curl_async($call_link);
+            //$this->site_categories_model->curl_async($call_link);
         }
     }
 

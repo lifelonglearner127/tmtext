@@ -91,6 +91,23 @@ class Temp_data_model extends CI_Model {
         fclose($df);
         return ob_get_clean();
     }
-    //public 
+    public function cUpdDataTable(){
+        $sql = "CREATE TABLE IF NOT EXISTS `updated_items`(
+            id INT NOT NULL AUTO_INCREMENT
+            ,itemid INT NOT NULL
+            ,old_model VARCHAR(100)
+            ,new_model VARCHAR(100)
+            ,PRIMARY KEY (id)
+            )";
+        $this->db->query($sql);
+    }
+    public function addUpdData($item, $old, $new){
+        $data = array(
+            'itemid'=>$item,
+            'old_model'=>$old,
+            'new_model'=>$new
+        );
+        $this->db->insert('updated_items',$data);
+    }
 
 }
