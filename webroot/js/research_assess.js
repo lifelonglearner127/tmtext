@@ -841,6 +841,16 @@ function highChart(graphBuild){
                     }
                     graphName1 = 'Price:';
                     graphName2 = '';
+                } break;
+                case 'Features':{
+                    if(data[0] && data[0].Features.length > 0){
+                        value1 = data[0].Features;
+                    }
+                    if(data[1] && data[1].Features.length > 0){
+                        value2 = data[1].Features;
+                    }
+                    graphName1 = 'Features:';
+                    graphName2 = '';
                 }
                   break;
                 case 'h1_word_counts':{
@@ -2377,7 +2387,7 @@ var scrollYesOrNot = true;
                 dropDownString += '<option value="h1_word_counts" >H1 Word Counts</option>';
                 dropDownString += '<option value="h2_word_counts" >H2 Word Counts</option>';
                 dropDownString += '<option value="revision" >Reviews</option>';
-                dropDownString += '<option value="" >Features</option>';
+                dropDownString += '<option value="Features" >Features</option>';
                 dropDownString += '<option value="own_price" >Prices</option>';
             dropDownString += '</select>';
             $('#tblAssess_info').after(dropDownString);

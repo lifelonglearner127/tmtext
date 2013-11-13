@@ -2295,6 +2295,12 @@ class Assess extends MY_Controller {
                     $snap_data[$key]['long_description_wc'][] = (int) $data_row->long_description_wc;
                     $snap_data[$key]['revision'][] = (int) $data_row->revision;
                     $snap_data[$key]['own_price'][] = (float) $data_row->own_price;
+                    $parsed_attributes_feature = unserialize($data_row->parsed_attributes);
+                    if($parsed_attributes_feature['feature_count']){
+                        $snap_data[$key]['Features'][] = (int) $parsed_attributes_feature['feature_count'];
+                    }else{
+                        $snap_data[$key]['Features'][] = 0;
+                    }
                     $htags = unserialize($data_row->htags);
                     if ($htags) {
                         $snap_data[$key]['h1_word_counts'][] = count($htags['h1']);
