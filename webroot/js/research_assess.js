@@ -2884,10 +2884,11 @@ var scrollYesOrNot = true;
         });
         $(this).attr('disabled', true);
         var batch_id= $('select[name="research_assess_batches"]').find('option:selected').val();
+        var batch_name= $('select[name="research_assess_batches"]').find('option:selected').text();
         var cmp_selected = $('#research_assess_compare_batches_batch').val();
         $(this).text('Exporting...');
         var main_path=  $(this).prop('href');
-        $(this).attr('href', $(this).prop('href')+'?batch_id='+batch_id+'&cmp_selected='+cmp_selected+'&checked_columns='+columns_checked);
+        $(this).attr('href', $(this).prop('href')+'?batch_id='+batch_id+'&cmp_selected='+cmp_selected+'&checked_columns='+columns_checked+'&batch_name='+batch_name);
         $.fileDownload($(this).prop('href'))
                 .done(function() {
             $('#research_assess_export').removeAttr('disabled');

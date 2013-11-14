@@ -711,7 +711,7 @@ class Assess extends MY_Controller {
         $cmp_selected = trim(strtolower($_GET['cmp_selected']));
         $selected_columns = $_GET['checked_columns'];
         $selected_columns = explode(',', trim($selected_columns));
-
+        $batch_name = $_GET['batch_name'];
 //        echo  '<pre>';
 //        print_r($selected_columns);exit;
         if (($key = array_search('snap', $selected_columns)) !== false) {
@@ -725,7 +725,6 @@ class Assess extends MY_Controller {
                 unset($line[$key]);
             }
         }
-        
         
         if (count($line) == 0) {
             $this->load->helper('csv');
@@ -1121,7 +1120,7 @@ class Assess extends MY_Controller {
         }
         array_unshift($res_array, $line);
         $this->load->helper('csv');
-        array_to_csv($res_array, date("Y-m-d H:i") . '.csv');
+        array_to_csv($res_array, $batch_name."(".date("Y-m-d H:i") . ').csv');
     }
 
     public function products() {
