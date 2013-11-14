@@ -171,9 +171,7 @@ class Assess extends MY_Controller {
                                         $parsed_loaded_in_seconds_unserialize_val = $parsed_attributes_unserialize['loaded_in_seconds'];
 
                                     $parsed_meta__unserialize = unserialize($cmpare->parsed_meta);
-                                    if ($parsed_meta_unserialize['keywords']) {
-                                        $parsed_meta_keywords_unserialize_val = $parsed_meta_unserialize['keywords'];
-                                    }
+                               
                                     if ($parsed_meta_unserialize['description']) {
                                         $parsed_meta_unserialize_val = $parsed_meta_unserialize['description'];
                                         $parsed_meta_unserialize_val_c = count(explode(" ", $parsed_meta_unserialize_val));
@@ -186,6 +184,24 @@ class Assess extends MY_Controller {
                                         if ($parsed_meta_unserialize_val_c != 1)
                                             $parsed_meta_unserialize_val_count = $parsed_meta_unserialize_val_c;
                                     }
+                                    
+                                    
+                                    if ($parsed_meta_unserialize['keywords']) {
+
+                                       $Meta_Keywords_un = "<table class='table_keywords_long'>";
+                                       $cnt_meta_un = explode(',', $parsed_meta_unserialize['keywords']);
+                                       $cnt_meta_count_un = count($cnt_meta_un);
+                                       foreach($cnt_meta_un as $cnt_m_un){
+                                           $cnt_m_un = trim($cnt_m_un);
+                                           $_count_meta_un = $this->keywords_appearence($parsed_meta_unserialize_val, $cnt_m_un);
+                                           $_count_meta_num_un = round(($_count_meta_un * $cnt_meta_count_un / $parsed_meta_unserialize_val_count) * 100, 2) . "%";
+                                           $Meta_Keywords_un .= "<tr><td>" . $cnt_m_un . "</td><td>".$_count_meta_num_un."</td></tr>";
+                                       } 
+                                       $Meta_Keywords_un .= "</table>";
+                                       $parsed_meta_keywords_unserialize_val = $Meta_Keywords_un;
+
+                                   }
+                                    
                                     $val->snap1 = $cmpare->snap;
                                     $val->product_name1 = $cmpare->product_name;
                                     $val->item_id1 = $parsed_attributes_unserialize_val;
@@ -1629,10 +1645,7 @@ class Assess extends MY_Controller {
                     if ($parsed_attributes_unserialize['loaded_in_seconds'])
                         $parsed_loaded_in_seconds_unserialize_val = $parsed_attributes_unserialize['loaded_in_seconds'];
                     $parsed_meta_unserialize = unserialize($sim_items[$i - 1]->parsed_meta);
-                    if ($parsed_meta_unserialize['keywords']) {
-                        $parsed_meta_keywords_unserialize_val = $parsed_meta_unserialize['keywords'];
-                        
-                    }
+                    
                     if ($parsed_meta_unserialize['description']) {
                         $parsed_meta_unserialize_val = $parsed_meta_unserialize['description'];
                         $parsed_meta_unserialize_val_c = count(explode(" ", $parsed_meta_unserialize_val));
@@ -1651,6 +1664,23 @@ class Assess extends MY_Controller {
                     }
 
 
+                     if ($parsed_meta_unserialize['keywords']) {
+                       
+                    $Meta_Keywords_un = "<table class='table_keywords_long'>";
+                    $cnt_meta_un = explode(',', $parsed_meta_unserialize['keywords']);
+                    $cnt_meta_count_un = count($cnt_meta_un);
+                    foreach($cnt_meta_un as $cnt_m_un){
+                        $cnt_m_un = trim($cnt_m_un);
+                        $_count_meta_un = $this->keywords_appearence($parsed_meta_unserialize_val, $cnt_m_un);
+                        $_count_meta_num_un = round(($_count_meta_un * $cnt_meta_count_un / $parsed_meta_unserialize_val_count) * 100, 2) . "%";
+                        $Meta_Keywords_un .= "<tr><td>" . $cnt_m_un . "</td><td>".$_count_meta_num_un."</td></tr>";
+                    } 
+                    $Meta_Keywords_un .= "</table>";
+                    $parsed_meta_keywords_unserialize_val = $Meta_Keywords_un;
+                        
+                    }
+                    
+                    
 
                     $result_row = (array) $result_row;
                     $result_row["snap$i"] = $sim_items[$i - 1]->snap !== false ? $sim_items["$i-1"]->snap : '-';
@@ -1742,12 +1772,27 @@ class Assess extends MY_Controller {
                 $words_des = count(explode(" ", $pars_atr_array));
                 $result_row->Meta_Description_Count = $words_des;
             }
+            
+            if ($pars_atr['parsed_meta']['keywords'] && $pars_atr['parsed_meta']['keywords'] != '') {
+                $Meta_Keywords = "<table class='table_keywords_long'>";
+                    $cnt_meta = explode(',', $pars_atr['parsed_meta']['keywords']);
+                    $cnt_meta_count = count($cnt_meta);
+                    foreach($cnt_meta as $cnt_m){
+                        $cnt_m = trim($cnt_m);
+                        $_count_meta = $this->keywords_appearence($result_row->Meta_Description, $cnt_m);
+                        $_count_meta_num = round(($_count_meta * $cnt_meta_count / $result_row->Meta_Description_Count) * 100, 2) . "%";
+                        $Meta_Keywords .= "<tr><td>" . $cnt_m . "</td><td>".$_count_meta_num."</td></tr>";
+                    } 
+                $Meta_Keywords .= "</table>";
+                $result_row->Meta_Keywords = $Meta_Keywords;
+            }
+            
+            
+            
             if ($pars_atr['parsed_attributes']['item_id'] && $pars_atr['parsed_attributes']['item_id'] != '') {
                 $result_row->item_id = $pars_atr['parsed_attributes']['item_id'];
             }
-            if ($pars_atr['parsed_meta']['keywords'] && $pars_atr['parsed_meta']['keywords'] != '') {
-                $result_row->Meta_Keywords = $pars_atr['parsed_meta']['keywords'];
-            }
+         
             if ($pars_atr['parsed_attributes']['model'] && $pars_atr['parsed_attributes']['model'] != '') {
                 $result_row->model = $pars_atr['parsed_attributes']['model'];
             }
