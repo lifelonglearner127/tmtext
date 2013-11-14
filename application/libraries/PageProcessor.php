@@ -1152,6 +1152,16 @@ class PageProcessor {
 
 		$result['pdf_count'] = count($result['pdf']);
 
+		foreach($this->nokogiri->get('#detail-bullets .content ul li#SalesRank') as $item) {
+			foreach($item['#text'] as $i) {
+				$line = trim(str_ireplace(array('(',')'),'',$i));
+				if (!empty($line) && preg_match('/#([0-9]+).*\s*in\s*(.*)/', $line, $match)) {
+					$result['rank'] = $match[1];
+					$result['category'] = $match[2];
+				}
+			}
+		}
+
 		return $result;
 	}
 
