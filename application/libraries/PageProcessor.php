@@ -1162,6 +1162,20 @@ class PageProcessor {
 			}
 		}
 
+		foreach($this->nokogiri->get('.reviews #summaryContainer .swSprite') as $item) {
+			if (isset($item['title']) && preg_match('/([0-9]+[\.]*[0-9]*).*([0-9]+).*/', $item['title'], $match)) {
+				$result['average_review'] = $match[1];
+				$result['max_review'] = $match[2];
+			}
+		}
+
+		foreach($this->nokogiri->get('#averageCustomerReviews .reviewCountTextLinkedHistogram') as $item) {
+			if (isset($item['title']) && preg_match('/([0-9]+[\.]*[0-9]*).*([0-9]+).*/', $item['title'], $match)) {
+				$result['average_review'] = $match[1];
+				$result['max_review'] = $match[2];
+			}
+		}
+
 		return $result;
 	}
 
