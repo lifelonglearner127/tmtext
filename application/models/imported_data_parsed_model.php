@@ -2397,7 +2397,7 @@ class Imported_data_parsed_model extends CI_Model {
             $this->db->like('p.value', $manufacturer);
         }
         $query = $this->db->get();
-        var_dump($query);
+        //var_dump($query);
         //echo "<br>";
         $selected_url = '';
 
@@ -2405,14 +2405,14 @@ class Imported_data_parsed_model extends CI_Model {
         $data = array();
         $for_groups = array($im_data_id);
         $model = Null;
-        $i = 0;
+        //$i = 0;
         foreach ($query->result() as $result) {
-            ++$i;
-            if($i===82115){
-                echo $i.'<br>';
-                var_dump($result);echo '<br>';
-                //$i=0;
-            }
+//            ++$i;
+//            if($i===82115){
+//                echo $i.'<br>';
+//                var_dump($result);echo '<br>';
+//                //$i=0;
+//            }
             //var_dump($result);exit;
             if ($result->key === 'URL') {
                 if ($result->imported_data_id == $im_data_id) {
@@ -2432,7 +2432,7 @@ class Imported_data_parsed_model extends CI_Model {
                 $data[$result->imported_data_id]['parsed_attributes'] = unserialize($result->value);
             }
         }
-        echo '$data count: '.count($data).'<br>';
+        //echo '$data count: '.count($data).'<br>';
 
         $urls = array($this->get_base_url($selected_url));
         $all_items = array();
@@ -2444,7 +2444,7 @@ class Imported_data_parsed_model extends CI_Model {
                 break;
             }
         }
-        echo '$selected_product: '.$selected_product.'<br>';
+        //echo '$selected_product: '.$selected_product.'<br>';
 
         foreach ($data as $key => $val1) {
             if (!isset($val1['product_name'])) {
@@ -2540,7 +2540,7 @@ class Imported_data_parsed_model extends CI_Model {
         }
         $all_items[] = $im_data_id;
         $all_items = array_unique($all_items);
-        echo '$all_items '.count($all_items).'<br>';
+//        echo '$all_items '.count($all_items).'<br>';
         $data1 = array();
         foreach ($all_items as $result) {
             $query = $this->db->where('imported_data_id', $result)
@@ -2589,7 +2589,7 @@ class Imported_data_parsed_model extends CI_Model {
                 'description' => $description, 'long_description' => $long_description, 'url' => $url, 'product_name' => $product_name, 'parsed_attributes' => $parsed_attributes, 'features' => $features));
             // }
         }
-        echo "All items scaned.<br>";
+//        echo "All items scaned.<br>";
 
         if ($data1) {
             $rows = $data1;
@@ -2623,8 +2623,8 @@ class Imported_data_parsed_model extends CI_Model {
         foreach ($for_groups as $id) {
             $this->insert_custom_model($id, $model);
         }
-        echo "rows are ready.<br>";
-        exit;
+//        echo "rows are ready.<br>";
+//        exit;
 
         return $rows;
     }
