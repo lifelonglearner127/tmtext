@@ -236,6 +236,10 @@
                 <label for="column_reviews">Reviews</label>
             </p>
             <p>
+                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="average_review" data-col_name="average_review" name="average_review" <?php echo($columns['average_review'] == 'true' ? 'checked="checked"' : ''); ?> />
+                <label for="average_review">Avg Review</label>
+            </p>
+            <p>
                 <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_features" data-col_name="column_features" name="column_features" <?php echo($columns['column_features'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="column_features">Features</label>
             </p>

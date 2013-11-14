@@ -58,6 +58,7 @@ $(function() {
             "H2_Tags_Count",
             "column_external_content",
             "column_reviews",
+            "average_review",
             "column_features",
             "price_diff",
             "product_selection"
@@ -77,6 +78,7 @@ $(function() {
             "long_description_wc",
             "Meta_Description",
             "Meta_Description_Count",
+            "average_review",
             "snap1",
             "product_name1",
             "item_id1",
@@ -89,7 +91,8 @@ $(function() {
             "Long_Description1",
             "long_description_wc1",
             "Meta_Description1",
-            "Meta_Description_Count1"
+            "Meta_Description_Count1",
+            "average_review1"
         ],
         recommendations: [
             "product_name",
@@ -587,6 +590,12 @@ $(function() {
             "sWidth": "3%"
         },
         {
+            "sTitle": "Avg Review",
+            "sName": "average_review",
+            "sWidth": "3%",
+            "sClass" :  "average_review"
+        },
+        {
             "sTitle": "Features",
             "sName": "column_features",
             "sWidth": "4%"
@@ -684,7 +693,13 @@ $(function() {
             "sWidth" : "4%",
             "sClass" : "Meta_Description_Count1"
             
-        }
+        },
+        {
+            "sTitle": "Avg Review",
+            "sName": "average_review1",
+            "sWidth": "3%",
+            "sClass" :  "average_review1"
+        },
         
 
     ];
@@ -1853,6 +1868,11 @@ var scrollYesOrNot = true;
         var Long_Description2 = 0;
         var Long_Description3 = 0;
         var Long_Description4 = 0;
+        var average_review = 0;
+        var average_review1 = 0;
+        var average_review2 = 0;
+        var average_review3 = 0;
+        var average_review4 = 0;
         var model = 0;
         var Custom_Keywords_Short_Description = 0;
         var Custom_Keywords_Long_Description = 0;
@@ -2059,6 +2079,31 @@ var scrollYesOrNot = true;
                 Page_Load_Time4 += 1;
             }
         });
+        $('td.average_review').each(function() {
+            if ($(this).text()!='') {
+                average_review += 1;
+            }
+        });
+        $('td.average_review1').each(function() {
+            if ($(this).text()!='') {
+                average_review1 += 1;
+            }
+        });
+        $('td.average_review2').each(function() {
+            if ($(this).text()!='') {
+                average_review2 += 1;
+            }
+        });
+        $('td.average_review3').each(function() {
+            if ($(this).text()!='') {
+                average_review3 += 1;
+            }
+        });
+        $('td.average_review4').each(function() {
+            if ($(this).text()!='') {
+                average_review4 += 1;
+            }
+        });
         $('td.Short_Description').each(function() {
             if ($(this).text()!='') {
                 Short_Description += 1;
@@ -2214,6 +2259,26 @@ var scrollYesOrNot = true;
                
             }
             if((value == 'Page_Load_Time4' && Page_Load_Time4 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+               
+            }
+            if((value == 'average_review' && average_review == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+               
+            }
+            if((value == 'average_review1' && average_review1 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+               
+            }
+            if((value == 'average_review2' && average_review2 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+               
+            }
+            if((value == 'average_review3' && average_review3 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+               
+            }
+            if((value == 'average_review4' && average_review4 == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
                
             }

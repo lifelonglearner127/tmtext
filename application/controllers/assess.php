@@ -160,6 +160,7 @@ class Assess extends MY_Controller {
                                     $parsed_model_unserialize_val = '';
                                     $parsed_meta_keywords_unserialize_val = '';
                                     $parsed_loaded_in_seconds_unserialize_val = '';
+                                    $parsed_average_review_unserialize_val_count = '';
                                     $cmpare = $this->statistics_new_model->get_compare_item($item['imported_data_id']);
 
                                     $parsed_attributes_unserialize = unserialize($cmpare->parsed_attributes);
@@ -169,6 +170,8 @@ class Assess extends MY_Controller {
                                         $parsed_model_unserialize_val = $parsed_attributes_unserialize['model'];
                                     if ($parsed_attributes_unserialize['loaded_in_seconds'])
                                         $parsed_loaded_in_seconds_unserialize_val = $parsed_attributes_unserialize['loaded_in_seconds'];
+                                    if ($parsed_attributes_unserialize['average_review'])
+                                        $parsed_average_review_unserialize_val_count = $parsed_attributes_unserialize['average_review'];
 
                                     $parsed_meta_unserialize = unserialize($cmpare->parsed_meta);
                                
@@ -215,6 +218,7 @@ class Assess extends MY_Controller {
                                     $val->long_description_wc1 = $cmpare->long_description_wc;
                                     $val->Meta_Description1 = $parsed_meta_unserialize_val;
                                     $val->Meta_Description_Count1 = $parsed_meta_unserialize_val_count;
+                                    $val->average_review1 = $parsed_average_review_unserialize_val_count;
                                     $similar_items_data[] = $cmpare;
                                     $val->similar_items = $similar_items_data;
                                 }
@@ -1190,6 +1194,7 @@ class Assess extends MY_Controller {
                 'H2_Tags_Count' => 'true',
                 'column_external_content' => 'true',
                 'column_reviews' => 'true',
+                'average_review' => 'true',
                 'column_features' => 'true',
                 'price_diff' => 'true',
             );
@@ -1487,6 +1492,12 @@ class Assess extends MY_Controller {
             //"sWidth" =>"3%"
             ),
             array(
+                "sTitle" => "Avg Review",
+                "sName" => "average_review",
+            //"sWidth" =>"3%"
+                "sClass" => "average_review"
+            ),
+            array(
                 "sTitle" => "Features",
                 "sName" => "column_features",
             //"sWidth" => "4%"
@@ -1554,6 +1565,7 @@ class Assess extends MY_Controller {
                 $columns[] = array("sTitle" => "Words <span class='subtitle_word_long' >Long</span>", "sName" => 'long_description_wc' . $i);
                 $columns[] = array("sTitle" => "Meta Description", "sClass" => "Meta_Description" . $i, "sName" => 'Meta_Description' . $i);
                 $columns[] = array("sTitle" => "Meta Desc <span class='subtitle_word_long' ># Words</span>", "sClass" => "Meta_Description_Count" . $i, "sName" => 'Meta_Description_Count' . $i);
+                $columns[] = array("sTitle" => "Avg Review", "sClass" => "average_review" . $i, "sName" => 'average_review' . $i);
             }
         }
         $display_length = intval($this->input->get('iDisplayLength', TRUE));
@@ -1610,6 +1622,7 @@ class Assess extends MY_Controller {
             $result_row->H2_Tags = "";
             $result_row->H2_Tags_Count = "";
             $result_row->column_reviews = " ";
+            $result_row->average_review = "";
             $result_row->column_features = " ";
             $result_row->duplicate_content = "-";
             $result_row->own_price = floatval($row->own_price);
@@ -1636,6 +1649,7 @@ class Assess extends MY_Controller {
                     $parsed_meta_unserialize_val_count = '';
                     $parsed_meta_keywords_unserialize_val = '';
                     $parsed_loaded_in_seconds_unserialize_val ='';
+                    $parsed_average_review_unserialize_val ='';
 
                     $parsed_attributes_unserialize = unserialize($sim_items[$i - 1]->parsed_attributes);
                     if ($parsed_attributes_unserialize['item_id'])
@@ -1644,6 +1658,8 @@ class Assess extends MY_Controller {
                         $parsed_attributes_unserialize_val = $parsed_attributes_unserialize['model'];
                     if ($parsed_attributes_unserialize['loaded_in_seconds'])
                         $parsed_loaded_in_seconds_unserialize_val = $parsed_attributes_unserialize['loaded_in_seconds'];
+                    if ($parsed_attributes_unserialize['average_review'])
+                        $parsed_average_review_unserialize_val = $parsed_attributes_unserialize['average_review'];
                     $parsed_meta_unserialize = unserialize($sim_items[$i - 1]->parsed_meta);
                     
                     if ($parsed_meta_unserialize['description']) {
@@ -1696,6 +1712,7 @@ class Assess extends MY_Controller {
                     $result_row['long_description_wc' . $i] = $sim_items[$i - 1]->long_description_wc !== false ? $sim_items[$i - 1]->long_description_wc : '-';
                     $result_row['Meta_Description' . $i] = $parsed_meta_unserialize_val;
                     $result_row['Meta_Description_Count' . $i] = $parsed_meta_unserialize_val_count;
+                    $result_row['average_review' . $i] = $parsed_average_review_unserialize_val;
                 }
                 $result_row = (object) $result_row;
             } else {
@@ -1717,6 +1734,9 @@ class Assess extends MY_Controller {
             }
             if ($row->Page_Load_Time1) {
                 $result_row->Page_Load_Time1 = $row->Page_Load_Time1;
+            }
+            if ($row->average_review1) {
+                $result_row->average_review1 = $row->average_review1;
             }
             if ($row->Short_Description1) {
                 $result_row->Short_Description1 = $row->Short_Description1;
@@ -1799,6 +1819,9 @@ class Assess extends MY_Controller {
 
             if ($pars_atr['parsed_attributes']['loaded_in_seconds'] && $pars_atr['parsed_attributes']['loaded_in_seconds'] != '') {
                 $result_row->Page_Load_Time = $pars_atr['parsed_attributes']['loaded_in_seconds'];
+            }
+            if ($pars_atr['parsed_attributes']['average_review'] && $pars_atr['parsed_attributes']['average_review'] != '') {
+                $result_row->average_review = $pars_atr['parsed_attributes']['average_review'];
             }
             if ($row->short_description) {
                  $result_row->Short_Description = $row->short_description;
@@ -2404,6 +2427,7 @@ class Assess extends MY_Controller {
                         $data_row->duplicate_content,
                         $data_row->column_external_content,
                         $data_row->column_reviews,
+                        $data_row->average_review,
                         $data_row->column_features,
                         $data_row->price_diff,
                         $recommendations_html,
@@ -2426,6 +2450,7 @@ class Assess extends MY_Controller {
                             $output_row[] = $data_row['long_description_wc' . $i] != null ? $data_row['long_description_wc' . $i] : '-';
                             $output_row[] = $data_row['Meta_Description' . $i] != null ? $data_row['Meta_Description' . $i] : '';
                             $output_row[] = $data_row['Meta_Description_Count' . $i] != null ? $data_row['Meta_Description_Count' . $i] : '';
+                            $output_row[] = $data_row['average_review' . $i] != null ? $data_row['average_review' . $i] : '';
                         }
                         $data_row = (object) $data_row;
                     } else {
@@ -2443,6 +2468,7 @@ class Assess extends MY_Controller {
                         $output_row[] = $data_row->long_description_wc1;
                         $output_row[] = $data_row->Meta_Description1;
                         $output_row[] = $data_row->Meta_Description_Count1;
+                        $output_row[] = $data_row->average_review1;
                     }
                     $output['aaData'][] = $output_row;
                 }
