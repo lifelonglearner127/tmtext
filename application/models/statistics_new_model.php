@@ -107,7 +107,17 @@ class Statistics_new_model extends CI_Model {
         $idata['competitors_prices'] = (string)$competitors_prices;
         $idata['items_priced_higher_than_competitors'] = $items_priced_higher_than_competitors;
         $idata['similar_products_competitors'] = $similar_products_competitors;
-        $idata['research_data_id'] = $research_data_id;
+        if($research_data_id){
+            $idata['research_data_id'] = $research_data_id;
+        }
+//        if($research_data_id){
+//            $idata['research_data_id'] = "'".$research_data_id."',";
+//            $q_research_data_id = '`research_data_id`,';
+//        }
+//        else{
+//            $idata['research_data_id'] = '';
+//            $q_research_data_id = '';
+//        }
         $idata['batch_id'] = $batch_id;
         
         $this->db->where('imported_data_id', $imported_data_id);
@@ -122,19 +132,20 @@ class Statistics_new_model extends CI_Model {
         $idata['imported_data_id'] = $imported_data_id;
         
 
-        //$this->db->insert('statistics_new', $idata);
-        $sql = "INSERT INTO `statistics_new` 
-(`revision`, `short_description_wc`, `long_description_wc`, `short_seo_phrases`, 
-`long_seo_phrases`, `created`, `own_price`, `price_diff`, `competitors_prices`, 
-`items_priced_higher_than_competitors`, `similar_products_competitors`, 
-`research_data_id`, `batch_id`, `imported_data_id`) 
-VALUES 
-('".$idata['revision']."','".$idata['short_description_wc']."','".$idata['long_description_wc']."'
-    ,'".$idata['short_seo_phrases']."','".$idata['long_seo_phrases']."','".$idata['created']."'
-        ,'".$idata['own_price']."','".$idata['price_diff']."','".$idata['competitors_prices']."'
-            ,'".$idata['items_priced_higher_than_competitors']."','".$idata['similar_products_competitors']."'
-                ,'".$idata['research_data_id']."','".$idata['batch_id']."','".$idata['imported_data_id']."')";
-        $this->db->query($sql);
+        $this->db->insert('statistics_new', $idata);
+        
+//        $sql = "INSERT INTO `statistics_new` 
+//(`revision`, `short_description_wc`, `long_description_wc`, `short_seo_phrases`, 
+//`long_seo_phrases`, `created`, `own_price`, `price_diff`, `competitors_prices`, 
+//`items_priced_higher_than_competitors`, `similar_products_competitors`,". 
+//$q_research_data_id." `batch_id`, `imported_data_id`) 
+//VALUES 
+//('".$idata['revision']."','".$idata['short_description_wc']."','".$idata['long_description_wc']."'
+//    ,'".$idata['short_seo_phrases']."','".$idata['long_seo_phrases']."','".$idata['created']."'
+//        ,'".$idata['own_price']."','".$idata['price_diff']."','".$idata['competitors_prices']."'
+//            ,'".$idata['items_priced_higher_than_competitors']."','".$idata['similar_products_competitors']."'
+//                ,".$idata['research_data_id']."'".$idata['batch_id']."','".$idata['imported_data_id']."')";
+//        $this->db->query($sql);
         return $this->db->insert_id();
         }
 
