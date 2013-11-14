@@ -2380,7 +2380,7 @@ class Imported_data_parsed_model extends CI_Model {
 
     public function getByProductNameNew($im_data_id, $selected_product_name = '', $manufacturer = '', $strict = false) {
 
-        echo "params ".($im_data_id."==".$selected_product_name."==".$manufacturer."==".$strict)."<br>";
+        //echo "params ".($im_data_id."==".$selected_product_name."==".$manufacturer."==".$strict)."<br>";
         $special_list = array('mixer', 'oven', 'masher', 'extractor', 'maker', 'cooker', 'tv', 'laptop', 'belt', 'blender', 'tablet', 'toaster', 'kettle', 'watch', 'sneakers', 'griddle', 'grinder', 'camera');
         $this->db->select('p.imported_data_id, p.key, p.value, p.model')
                 ->from($this->tables['imported_data_parsed'] . ' as p')
@@ -2398,17 +2398,17 @@ class Imported_data_parsed_model extends CI_Model {
         }
         $query = $this->db->get();
         var_dump($query);
-        echo "<br>";
+        //echo "<br>";
         $selected_url = '';
 
-        $results = $query->result();
+        //$results = $query->result();
         $data = array();
         $for_groups = array($im_data_id);
         $model = Null;
         $i = 0;
-        foreach ($results as $result) {
+        foreach ($query->result() as $result) {
             ++$i;
-            if($i>82110){
+            if($i===82115){
                 echo $i.'<br>';
                 var_dump($result);echo '<br>';
                 //$i=0;
@@ -2432,7 +2432,7 @@ class Imported_data_parsed_model extends CI_Model {
                 $data[$result->imported_data_id]['parsed_attributes'] = unserialize($result->value);
             }
         }
-        echo '$data count: <>';
+        echo '$data count: '.count($data).'<br>';
 
         $urls = array($this->get_base_url($selected_url));
         $all_items = array();
