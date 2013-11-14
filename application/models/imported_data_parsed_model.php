@@ -2409,8 +2409,8 @@ class Imported_data_parsed_model extends CI_Model {
         foreach ($results as $result) {
             ++$i;
             if($i>=88668){
-                var_dump($result);
-                $i=0;
+                var_dump($result);echo '<br>';
+                //$i=0;
             }
             //var_dump($result);exit;
             if ($result->key === 'URL') {
