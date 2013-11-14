@@ -2408,7 +2408,7 @@ class Imported_data_parsed_model extends CI_Model {
         $i = 0;
         foreach ($results as $result) {
             ++$i;
-            if($i>=88670){
+            if($i>=88668){
                 var_dump($result);
                 $i=0;
             }
