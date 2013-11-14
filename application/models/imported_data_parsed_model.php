@@ -1117,7 +1117,7 @@ class Imported_data_parsed_model extends CI_Model {
         $data = array();
         foreach ($ids as $id) {
 
-            $this->db->select('p.imported_data_id, p.key, p.value, p.revision')
+            $this->db->select('p.imported_data_id, p.key, p.value, p.revision, p.model')
                     ->from($this->tables['imported_data_parsed'] . ' as p')
                     ->where('p.imported_data_id', $id)
 //                    ->where("p.revision = (SELECT  MAX(revision) as revision
@@ -1132,8 +1132,10 @@ class Imported_data_parsed_model extends CI_Model {
             $url = '';
             $revision = 1;
             $features = '';
+            $model = '';
             foreach ($res as $val) {
                 $revision = $val->revision;
+                $model = $val->model;
                 //*
                 switch ($val->key){
                     case 'URL': $url = $val->value; break;
@@ -1170,7 +1172,8 @@ class Imported_data_parsed_model extends CI_Model {
                 'url' => $url, 'product_name' => $product_name, 
                 'features' => $features, 
                 'parsed_attributes' => $parsed_attributes, 
-                'revision' => $revision));
+                'revision' => $revision,
+                'model'=>$model));
 
 //            $res = $query->result();
 //            $arrayMap =array(     
@@ -2377,6 +2380,7 @@ class Imported_data_parsed_model extends CI_Model {
 
     public function getByProductNameNew($im_data_id, $selected_product_name = '', $manufacturer = '', $strict = false) {
 
+        echo "params ".($im_data_id."==".$selected_product_name."==".$manufacturer."==".$strict)."<br>";
         $special_list = array('mixer', 'oven', 'masher', 'extractor', 'maker', 'cooker', 'tv', 'laptop', 'belt', 'blender', 'tablet', 'toaster', 'kettle', 'watch', 'sneakers', 'griddle', 'grinder', 'camera');
         $this->db->select('p.imported_data_id, p.key, p.value, p.model')
                 ->from($this->tables['imported_data_parsed'] . ' as p')
@@ -2393,6 +2397,8 @@ class Imported_data_parsed_model extends CI_Model {
             $this->db->like('p.value', $manufacturer);
         }
         $query = $this->db->get();
+        var_dump($query);
+        echo "<br>";
         $selected_url = '';
 
         $results = $query->result();
@@ -2415,6 +2421,7 @@ class Imported_data_parsed_model extends CI_Model {
                 $data[$result->imported_data_id]['parsed_attributes'] = unserialize($result->value);
             }
         }
+        echo '$data count: '.count($data).'<>';
 
         $urls = array($this->get_base_url($selected_url));
         $all_items = array();
@@ -2426,6 +2433,7 @@ class Imported_data_parsed_model extends CI_Model {
                 break;
             }
         }
+        echo '$selected_product: '.$selected_product.'<br>';
 
         foreach ($data as $key => $val1) {
             if (!isset($val1['product_name'])) {
@@ -2521,6 +2529,7 @@ class Imported_data_parsed_model extends CI_Model {
         }
         $all_items[] = $im_data_id;
         $all_items = array_unique($all_items);
+        echo '$all_items '.count($all_items).'<br>';
         $data1 = array();
         foreach ($all_items as $result) {
             $query = $this->db->where('imported_data_id', $result)
@@ -2569,6 +2578,7 @@ class Imported_data_parsed_model extends CI_Model {
                 'description' => $description, 'long_description' => $long_description, 'url' => $url, 'product_name' => $product_name, 'parsed_attributes' => $parsed_attributes, 'features' => $features));
             // }
         }
+        echo "All items scaned.<br>";
 
         if ($data1) {
             $rows = $data1;
@@ -2602,6 +2612,8 @@ class Imported_data_parsed_model extends CI_Model {
         foreach ($for_groups as $id) {
             $this->insert_custom_model($id, $model);
         }
+        echo "rows are ready.<br>";
+        exit;
 
         return $rows;
     }
@@ -3005,7 +3017,8 @@ class Imported_data_parsed_model extends CI_Model {
  		return $res->result_array();
     }
     function getModelByUrl($url){
-        $this->db->select("purl.imported_data_id as data_id, purl.`model` as model,pid.`value` as ph_attr");
+        $this->db->select("purl.imported_data_id as data_id, purl.`model` as model, 
+            purl.revision as rev, pid.`value` as ph_attr");
         $this->db->from("imported_data_parsed as purl");
         $this->db->join("(select `value`, imported_data_id from imported_data_parsed 
             where `key`='parsed_attributes') as pid",
@@ -3017,8 +3030,11 @@ class Imported_data_parsed_model extends CI_Model {
         if($query->num_rows ===0)return FALSE;
         return $query->first_row('array');
     }
-    function updateModelOfItem($dataid,$model){
-        $data=array('model'=>$model);
+    function updateModelOfItem($dataid,$model, $rev){
+        $data=array(
+            'model'=>$model,
+            'revision'=>$rev
+            );
         $this->db->where('imported_data_id',$dataid);
         $this->db->update('imported_data_parsed',$data);
     }
