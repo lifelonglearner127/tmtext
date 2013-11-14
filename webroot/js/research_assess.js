@@ -1464,7 +1464,7 @@ var scrollYesOrNot = true;
                          batch_id: $('select[name="research_assess_batches"]').find('option:selected').val(),
                          url: $('input#assessDetails_url').val()
                      }, function(data) {
-
+                        alert('Re-crawl proccess was successful');
                      });
                 }
             },
