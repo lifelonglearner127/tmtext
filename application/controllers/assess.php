@@ -703,9 +703,9 @@ class Assess extends MY_Controller {
                 ->set_output(json_encode($comparison));
     }
 
-    public function export_assess() {
+     public function export_assess() {
 
-         $this->load->model('statistics_new_model');
+        $this->load->model('statistics_new_model');
         $batch_id = (int) trim($_GET['batch_id']);
         $cmp_selected = trim(strtolower($_GET['cmp_selected']));
         $selected_columns = $_GET['checked_columns'];
@@ -716,34 +716,37 @@ class Assess extends MY_Controller {
         if (($key = array_search('snap', $selected_columns)) !== false) {
             unset($selected_columns[$key]);
         }
-        $line = array('created' => 'Date', 'product_name' => 'Product Name', 'url' => 'Url', 'short_description_wc' => 'Word Count (S)', 'long_description_wc' => 'Word Count (L)', 'short_seo_phrases' => 'SEO Phrases (S)', 'long_seo_phrases' => 'SEO Phrases (L)', 'price_diff' => 'Price', 'column_features' => 'Features', 'column_reviews' => 'Reviews');
-
+        $line = array('created' => 'Date', 'product_name' => 'Product Name', 'url' => 'Url','Short_Description' =>'Short Description', 'short_description_wc' => 'Word Count (S)','Long_Description' =>'Long Description', 'long_description_wc' => 'Word Count (L)', 'short_seo_phrases' => 'SEO Phrases (S)', 'long_seo_phrases' => 'SEO Phrases (L)', 'price_diff' => 'Price', 'column_features' => 'Features', 'column_reviews' => 'Reviews');
+        
+        
         foreach ($line as $key => $val) {
             if (!in_array($key, $selected_columns)) {
                 unset($line[$key]);
             }
         }
+        
+        
         if (count($line) == 0) {
             $this->load->helper('csv');
             array_to_csv(array(), date("Y-m-d H:i") . '.csv');
         }
         if (empty($batch_id) || $batch_id == 0) {
-                $batch_id = '';
-                $qnd = '';
-            } else {
-                $qnd = " WHERE `s`.`batch_id` = $batch_id";
-            }
+            $batch_id = '';
+            $qnd = '';
+        } else {
+            $qnd = " WHERE `s`.`batch_id` = $batch_id";
+        }
         $query = $this->db->query('select `s`.*,
             (select `value` from imported_data_parsed where `key`="Product Name" and `imported_data_id` = `s`.`imported_data_id` limit 1) as `product_name`,
-            (select `value` from imported_data_parsed where `key`="Description" and `imported_data_id` = `s`.`imported_data_id` limit 1) as `short_description`,
-            (select `value` from imported_data_parsed where `key`="Long_Description" and `imported_data_id` = `s`.`imported_data_id` limit 1) as `long_description`,
+            (select `value` from imported_data_parsed where `key`="Description" and `imported_data_id` = `s`.`imported_data_id` limit 1) as `Short_Description`,
+            (select `value` from imported_data_parsed where `key`="Long_Description" and `imported_data_id` = `s`.`imported_data_id` limit 1) as `Long_Description`,
             (select `value` from imported_data_parsed where `key`="Url" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `url`
-            from `statistics_new` as `s` '.$qnd);
-            $results = $query->result();
-        
+            from `statistics_new` as `s` ' . $qnd);
+        $results = $query->result();
+
         if (true) {
 
-            
+
             $this->load->model('batches_model');
 
             if ($cmp_selected != 'all' && $cmp_selected != null && $cmp_selected != 0) {
@@ -853,7 +856,14 @@ class Assess extends MY_Controller {
                 }
             }
             foreach ($results as $key => $row) {
-
+                //item_id 
+                if(in_array('item_id', $selected_columns)){
+                    $res_array[$key]['item_id'] = $pars_atr['parsed_attributes']['item_id']?$pars_atr['parsed_attributes']['item_id']:'';
+                }
+                //model  
+                if(in_array('model', $selected_columns)){
+                    $res_array[$key]['model'] = $pars_atr['parsed_attributes']['model']?$pars_atr['parsed_attributes']['model']:'';
+                }
                 $row = (array) $row;
                 foreach ($line as $k => $v) {
                     $res_array[$key][$k] = $row[$k];
@@ -861,8 +871,38 @@ class Assess extends MY_Controller {
                 $row = (object) $row;
 //                echo  "<pre>";
 //                print_r($row);exit;
+                
                 $pars_atr = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
-
+                                
+                //meta keywords
+                if(in_array('Meta_Keywords', $selected_columns)){
+                    $res_array[$key]['meta_keywords'] = $pars_atr['parsed_meta']['keywords']?$pars_atr['parsed_meta']['keywords']:'';
+                }
+                
+                //meta description
+                if(in_array('Meta_Description', $selected_columns)){
+                    if ($pars_atr['parsed_meta']['description'] && $pars_atr['parsed_meta']['description'] != '') {
+                        $res_array[$key]['meta_description']=$pars_atr['parsed_meta']['description'];
+                        $words_des = count(explode(" ", $pars_atr['parsed_meta']['description']));
+                        $res_array[$key]['Meta_Description_Count'] = $words_des;
+                    } else if ($pars_atr['parsed_meta']['Description'] && $pars_atr['parsed_meta']['Description'] != '') {
+                        $res_array[$key]['meta_description']=$pars_atr['parsed_meta']['Description'];
+                        $words_des = count(explode(" ", $pars_atr['parsed_meta']['Description']));
+                        $res_array[$key]['Meta_Description_Count'] = $words_des;
+                    }
+                }
+                
+                //custom keywords
+                //custom_keywords($imported_data_id, $long_description, $long_description_wc, $short_description, $short_description_wc)
+                
+                
+                //loaded_in_seconds
+                if(in_array('Page_Load_Time', $selected_columns)){
+                    $res_array[$key]['Page_Load_Time'] = $pars_atr['parsed_attributes']['loaded_in_seconds']!==false?$pars_atr['parsed_attributes']['loaded_in_seconds']:'';
+                }
+                if(in_array('column_external_content', $selected_columns)){
+                   $res_array[$key]['column_external_content']= $this->column_external_content($pars_atr['parsed_attributes']['cnetcontent'],$pars_atr['parsed_attributes']['webcollage']);
+                }
                 if (in_array('column_features', $selected_columns)) {
                     $res_array[$key]['column_features'] = $pars_atr['parsed_attributes']['feature_count'] !== false ? $pars_atr['parsed_attributes']['feature_count'] : '';
                 }
@@ -1004,18 +1044,48 @@ class Assess extends MY_Controller {
                     }
                 }
             }
+            
+                    
+            if(in_array('model', $selected_columns)){
+            array_unshift( $line, 'Model');
+            }
+            if(in_array('item_id', $selected_columns)){
+                 array_unshift( $line, 'item ID');
+            }
+            if(in_array('Meta_Keywords', $selected_columns)){
+                 $line[]=  'Meta Keywords';
+            }
 
+            //meta description
+            if(in_array('Meta_Description', $selected_columns)){
+                $line[]=  'Meta Description';
+                $line[]=  'Meta Desc Words';
+            }
+            
+            if(in_array('Page_Load_Time', $selected_columns)){
+                $line[]=  'Page Load Time';
+            }
+            if(in_array('column_external_content', $selected_columns)){
+               $line[]= 'External Content';
+            }
+            if (in_array('column_features', $selected_columns)) {
+                $res_array[$key]['column_features'] = $pars_atr['parsed_attributes']['feature_count'] !== false ? $pars_atr['parsed_attributes']['feature_count'] : '';
+            }
+            if (in_array('column_reviews', $selected_columns)) {
+                $res_array[$key]['column_reviews'] = $row->revision !== false ? $row->revision : '';
+           }
+            
             if (in_array('H2_Tags', $selected_columns)) {
                 if ($H1_tag_count > 0) {
                     for ($k = 1; $k <= $H1_tag_count; $k++) {
                         $line[] = "H1_tag ($k) ";
-                        $line[] = "Words ($k)";
+                        $line[] = "Chars ($k)";
                     }
                 }
                 if ($H2_tag_count > 0) {
                     for ($k = 1; $k <= $H2_tag_count; $k++) {
                         $line[] = "H2_tag ($k) ";
-                        $line[] = "Words ($k)";
+                        $line[] = "Chars ($k)";
                     }
                 }
             }
@@ -1033,123 +1103,8 @@ class Assess extends MY_Controller {
                     $line[] = 'Word Count (L) (' . $i . ")";
                 }
             }
-            
         } else {
-//
-//            $this->load->model('batches_model');
-//            //$batch_id = $this->input->get('batch');
-//            $customer_name = $this->batches_model->getCustomerById($batch_id);
-//            if (empty($batch_id) || $batch_id == 0) {
-//                $batch_id = '';
-//                $qnd = '';
-//            } else {
-//                $qnd = " WHERE `s`.`batch_id` = $batch_id";
-//            }
-//            $from_s_count = 0;
-//            $query_part = '';
-//            if (in_array('created', $selected_columns)) {
-//                $query_part[] = '`s`.`created` AS `Date` ';
-//            }
-//            if (in_array('product_name', $selected_columns)) {
-//                $query_part[] = '(SELECT `value` FROM imported_data_parsed WHERE `key`= "Product Name" AND `imported_data_id` = `s`.`imported_data_id` LIMIT 1) AS `Product Name`';
-//            }
-//            if (in_array('url', $selected_columns)) {
-//                $query_part[] = '(SELECT `value` FROM imported_data_parsed WHERE `key`="Url" AND `imported_data_id` = `s`.`imported_data_id` LIMIT 1) AS `URL` ';
-//            }
-//            if (in_array('short_description_wc', $selected_columns)) {
-//                $query_part[] = '`s`.`short_description_wc` AS `Word Count (S)`';
-//            }
-//            if (in_array('short_seo_phrases', $selected_columns)) {
-//                $query_part[] = '`s`.`short_seo_phrases` AS `SEO Phrases (S)` ';
-//                $from_s_count++;
-//            }
-//
-//            if (in_array('long_description_wc', $selected_columns)) {
-//                $query_part[] = "`s`.`long_description_wc` AS `Word Count (L)` ";
-//            }
-//
-//            if (in_array('long_seo_phrases', $selected_columns)) {
-//                $query_part[] = "`s`.`long_seo_phrases` AS `SEO Phrases (L)` ";
-//            }
-//
-//            if (in_array('price_diff', $selected_columns)) {
-//                $query_part[] = "`s`.`price_diff` AS `Price` ";
-//            }
-////            if(in_array('duplicate_content', $selected_columns)){
-////                $query_part[]= '"-" as `Duplicate Content`';
-////               
-////            }
-//            $query_part = implode(',', $query_part);
-//            $this->load->database();
-//            $query = $this->db->query('
-//            SELECT 
-//
-//            ' . $query_part . ' 
-//            FROM 
-//                (`statistics_new` AS s) 
-//            LEFT JOIN 
-//                `crawler_list` AS cl ON `cl`.`imported_data_id` = `s`.`imported_data_id`
-//            ' . $qnd
-//            );
-//
-//            //                `s`.`created` AS `Date`, 
-////                (SELECT `value` FROM imported_data_parsed WHERE `key`="Product Name" AND `imported_data_id` = `s`.`imported_data_id` LIMIT 1) AS `Product Name`, 
-////                (SELECT `value` FROM imported_data_parsed WHERE `key`="Url" AND `imported_data_id` = `s`.`imported_data_id` LIMIT 1) AS `URL`, 
-////                `s`.`short_description_wc` AS `Word Count (S)`, 
-////                `s`.`short_seo_phrases` AS `SEO Phrases (S)`, 
-////                `s`.`long_description_wc` AS `Word Count (L)`, 
-////                `s`.`long_seo_phrases` AS `SEO Phrases (L)`, 
-////                "-" as `Duplicate Content`,
-////                `s`.`price_diff` AS `Price`
-////            //$line = array();
-////            foreach ($query->list_fields() as $name) {
-////                $line[] = $name;
-////            }
-//            $result = $query->result_array();
-//            foreach ($result as $key => $row) {
-//                if (trim($row['SEO Phrases (S)']) != 'None') {
-//                    $shortArr = unserialize($row['SEO Phrases (S)']);
-//                    if ($shortArr) {
-//                        $shortString = '';
-//                        foreach ($shortArr as $value) {
-//                            $shortString .= $value['ph'] . "\r\n";
-//                        }
-//                        $result[$key]['SEO Phrases (S)'] = trim($shortString);
-//                    }
-//                }
-//                if (trim($row['SEO Phrases (L)']) != 'None') {
-//                    $longArr = unserialize($row['SEO Phrases (L)']);
-//                    if ($longArr) {
-//                        $longString = '';
-//                        foreach ($longArr as $value) {
-//                            $longString .= $value['ph'] . "\r\n";
-//                        }
-//                        $result[$key]['SEO Phrases (L)'] = trim($longString);
-//                    }
-//                }
-//                $price_diff = unserialize($row['Price']);
-//                if ($price_diff) {
-//                    $own_price = floatval($price_diff['own_price']);
-//                    $own_site = str_replace('www.', '', $price_diff['own_site']);
-//                    $own_site = str_replace('www1.', '', $own_site);
-//                    $price_diff_res = $own_site . " - $" . $price_diff['own_price'];
-//                    $flag_competitor = false;
-//                    for ($i = 0; $i < count($price_diff['competitor_customer']); $i++) {
-//                        if ($customer_url["host"] != $price_diff['competitor_customer'][$i]) {
-//                            if ($own_price > floatval($price_diff['competitor_price'][$i])) {
-//                                $competitor_site = str_replace('www.', '', $price_diff['competitor_customer'][$i]);
-//                                $competitor_site = str_replace('www.', '', $competitor_site);
-//                                $price_diff_res .= "\r\n" . $competitor_site . " - $" . $price_diff['competitor_price'][$i];
-//                            }
-//                        }
-//                    }
-//                    $result[$key]['Price'] = $price_diff_res;
-//                } else {
-//                    $result[$key]['Price'] = '';
-//                }
-//            }
-//
-//            $res_array = $result;
+
         }
         array_unshift($res_array, $line);
         $this->load->helper('csv');
@@ -2596,6 +2551,89 @@ class Assess extends MY_Controller {
 
         $desc = strip_tags($desc);
         return substr_count($desc, $phrase);
+    }
+    
+    private function column_external_content($cnetcontent = false, $webcollage = false) {
+        $column_external_content = ' ';
+        if ($cnetcontent == 1 && $webcollage == 1)
+            $column_external_content = 'CNET, WC';
+        elseif ($cnetcontent == 1 && $webcollage != 1)
+            $column_external_content = 'CNET';
+        elseif ($cnetcontent != 1 && $webcollage == 1)
+            $column_external_content = 'WC';
+        return $column_external_content;
+    }
+    
+    private function custom_keywords($imported_data_id, $long_description, $long_description_wc, $short_description, $short_description_wc){
+        
+            $custom_seo = $this->keywords_model->get_by_imp_id($imported_data_id);
+            $Custom_Keywords_Long_Description = '';
+            if ($custom_seo['primary']) {
+                if ($long_description) {
+                    $_count = $this->keywords_appearence($long_description, $custom_seo['primary']);
+                    $cnt = count(explode(' ', $custom_seo['primary']));
+                    $_count = round(($_count * $cnt / $long_description_wc) * 100, 2) . "%";
+                    $Custom_Keywords_Long_Description .=  $custom_seo['primary'] . "</td><td>$_count  \r\n";
+                } else {
+                    $_count = ' ';
+                }
+            };
+            if ($custom_seo['secondary']) {
+                if ($long_description) {
+                    $_count = $this->keywords_appearence($long_description, $custom_seo['secondary']);
+                    $cnt = count(explode(' ', $custom_seo['secondary']));
+                    $_count = round(($_count * $cnt / $long_description_wc) * 100, 2) . "%";
+                    $Custom_Keywords_Long_Description .=  $custom_seo['secondary'] . " - $_count  \r\n";
+                } else {
+                    $_count = ' ';
+                }
+            };
+            if ($custom_seo['tertiary']) {
+                if ($long_description) {
+                    $_count = $this->keywords_appearence($long_description, $custom_seo['tertiary']);
+                    $cnt = count(explode(' ', $custom_seo['tertiary']));
+                    $_count = round(($_count * $cnt / $long_description_wc) * 100, 2) . "%";
+                    $Custom_Keywords_Long_Description .=  $custom_seo['tertiary'] . " - $_count  \r\n";
+                } else {
+                    $_count = ' ';
+                }
+            };
+
+
+            $Custom_Keywords_Short_Description = "";
+
+            if ($custom_seo['primary']) {
+                if ($short_description) {
+                    $_count = $this->keywords_appearence($short_description, $custom_seo['primary']);
+                    $cnt = count(explode(' ', $custom_seo['primary']));
+                    $_count = round(($_count * $cnt / $short_description_wc) * 100, 2) . "%";
+                    $Custom_Keywords_Short_Description .= $custom_seo['primary'] . " - $_count  \r\n";
+                } else {
+                    $_count = ' ';
+                }
+            };
+            if ($custom_seo['secondary']) {
+                if ($short_description) {
+                    $_count = $this->keywords_appearence($short_description, $custom_seo['secondary']);
+                    $cnt = count(explode(' ', $custom_seo['secondary']));
+                    $_count = round(($_count * $cnt / $short_description_wc) * 100, 2) . "%";
+                    $Custom_Keywords_Short_Description .= $custom_seo['secondary'] . " - $_count  \r\n";
+                } else {
+                    $_count = ' ';
+                }
+            };
+            if ($custom_seo['tertiary']) {
+                if ($short_description) {
+                    $_count = $this->keywords_appearence($short_description, $custom_seo['tertiary']);
+                    $cnt = count(explode(' ', $custom_seo['tertiary']));
+                    $_count = round(($_count * $cnt / $short_description_wc) * 100, 2) . "%";
+                    $Custom_Keywords_Short_Description .= "<tr><td>" . $custom_seo['tertiary'] . " - $_count  \r\n";
+                } else {
+                    $_count = ' ';
+                }
+            };
+            
+            return array("Custom_Keywords_Long" =>$Custom_Keywords_Long_Description, "Custom_Keywords_Short" =>$Custom_Keywords_Short_Description);
     }
 
 }
