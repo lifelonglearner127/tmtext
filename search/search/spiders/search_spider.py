@@ -340,8 +340,6 @@ class SearchSpider(BaseSpider):
 		# handle parsing separately for each site
 
 		# amazon
-		#TODO: to make this faster, maybe gather all product urls from all queries results into a set, then parse them
-		#there are probably many duplicates
 		if (site == 'amazon'):
 
 			# amazon returns partial results as well so we can just search for the entire product name and select from there
@@ -365,34 +363,6 @@ class SearchSpider(BaseSpider):
 			else:
 				del response.meta['parsed']
 
-			#product = hxs.select("//div[@id='result_0']/h3/a/span/text()").extract()[0]
-			#TODO: refine this. get divs with id of the form result_<number>. not all of them have h3's (but this will exclude partial results?)
-			# results = hxs.select("//h3[@class='newaps']/a")
-			# for result in results:
-			# 	item = SearchItem()
-			# 	item['site'] = site
-
-			# 	#TODO: some of these product names are truncated ("..."); even though less relevant ones (special offers or so)
-			# this problem is solved by the direct extraction from the product page
-			# 	item['product_name'] = result.select("span/text()").extract()[0]
-			# 	product_url = result.select("@href").extract()[0]
-				
-			# 	# remove the part after "/ref" containing details about the search query
-			# 	m = re.match("(.*)/ref=(.*)", product_url)
-			# 	if m:
-			# 		product_url = m.group(1)
-
-			# 	item['product_url'] = Utils.add_domain(product_url, "http://www.amazon.com")
-
-			# 	# extract product model
-			# 	product_model = self.extract_model_amazon(str(item['product_url']))
-			# 	if product_model:
-			# 		item['product_model'] = product_model
-
-			# 	if 'origin_url' in response.meta:
-			# 		item['origin_url'] = response.meta['origin_url']
-
-			# 	items.add(item)
 
 		# walmart
 		if (site == 'walmart'):
