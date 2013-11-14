@@ -2472,7 +2472,6 @@ class Assess extends MY_Controller {
     public function get_graph_batch_data() {
 
         if (isset($_POST['batch_id']) && isset($_POST['batch_compare_id'])) {
-
             if (trim($_POST['batch_id']) == '')
                 $batch_id = -1;
             else
@@ -2492,6 +2491,7 @@ class Assess extends MY_Controller {
                 $params->date_from = '';
                 $params->date_to = '';
                 $results = $this->get_data_for_assess($params);
+
 
                 foreach ($results as $data_row) {
                     $snap_data[$key]['product_name'][] = (string) $data_row->product_name;
