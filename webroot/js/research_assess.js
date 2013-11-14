@@ -554,7 +554,7 @@ $(function() {
             "sClass" :  "HTags_1"
         },
         {
-            "sTitle" : "Words", 
+            "sTitle" : "Chars", 
             "sName":"H1_Tags_Count", 
             "sWidth": "1%",
             "sClass" :  "HTags"
@@ -566,7 +566,7 @@ $(function() {
             "sClass" :  "HTags_2"
         },
         {
-            "sTitle" : "Words", 
+            "sTitle" : "Chars", 
             "sName":"H2_Tags_Count", 
             "sWidth": "1%",
             "sClass" :  "HTags"

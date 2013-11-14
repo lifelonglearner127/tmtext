@@ -170,7 +170,7 @@ class Assess extends MY_Controller {
                                     if ($parsed_attributes_unserialize['loaded_in_seconds'])
                                         $parsed_loaded_in_seconds_unserialize_val = $parsed_attributes_unserialize['loaded_in_seconds'];
 
-                                    $parsed_meta__unserialize = unserialize($cmpare->parsed_meta);
+                                    $parsed_meta_unserialize = unserialize($cmpare->parsed_meta);
                                
                                     if ($parsed_meta_unserialize['description']) {
                                         $parsed_meta_unserialize_val = $parsed_meta_unserialize['description'];
@@ -1454,7 +1454,7 @@ class Assess extends MY_Controller {
                 "sClass" => "HTags_1"
             ),
             array(
-                "sTitle" => "Words",
+                "sTitle" => "Chars",
                 "sName" => "H1_Tags_Count",
                 "sWidth" => "1%",
                 "sClass" => "HTags"
@@ -1466,7 +1466,7 @@ class Assess extends MY_Controller {
                 "sClass" => "HTags_2"
             ),
             array(
-                "sTitle" => "Words",
+                "sTitle" => "Chars",
                 "sName" => "H2_Tags_Count",
                 "sWidth" => "1%",
                 "sClass" => "HTags"
