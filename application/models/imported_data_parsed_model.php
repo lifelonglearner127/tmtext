@@ -2408,7 +2408,7 @@ class Imported_data_parsed_model extends CI_Model {
         $i = 0;
         foreach ($results as $result) {
             ++$i;
-            if($i==20000){
+            if($i>=88670){
                 var_dump($result);
                 $i=0;
             }
@@ -2431,7 +2431,7 @@ class Imported_data_parsed_model extends CI_Model {
                 $data[$result->imported_data_id]['parsed_attributes'] = unserialize($result->value);
             }
         }
-        echo '$data count: '.count($data).'<>';
+        echo '$data count: <>';
 
         $urls = array($this->get_base_url($selected_url));
         $all_items = array();
