@@ -763,7 +763,7 @@ $(function() {
                     $('#assess_view').html(str);
                     $('#assess_view .board_item img').on('click', function(){
                         var info = $(this).parent().find('div.prod_description').html();
-                        showSnap('<img src="'+$(this).attr('src')+'" style="float:left; max-width: 600px; margin-right: 10px">'+info);
+                        showSnap('<img src="'+$(this).attr('src')+'" style="float:left; max-width: 495px; margin-right: 10px"><div style="float:right;">'+info+'</div>');
                     });
                  }
             });
