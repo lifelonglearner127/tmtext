@@ -12,6 +12,7 @@ class Assess extends MY_Controller {
         $this->load->library('helpers');
         $this->data['title'] = 'Assess';
         $this->load->model('imported_data_parsed_model');
+        $this->load->model('keywords_model');
         if (!$this->ion_auth->logged_in()) {
             //redirect them to the login page
             redirect('auth/login', 'refresh');
@@ -891,11 +892,18 @@ class Assess extends MY_Controller {
                         $res_array[$key]['Meta_Description_Count'] = $words_des;
                     }
                 }
-                
+             
                 //custom keywords
-                //custom_keywords($imported_data_id, $long_description, $long_description_wc, $short_description, $short_description_wc)
                 
-                
+                if(in_array('Custom_Keywords_Short_Description',$selected_columns) || in_array('Custom_Keywords_Long_Description',$selected_columns)){
+                    $custom_keywords= $this->custom_keywords($row->imported_data_id, $row->Long_Description,$row->long_description_wc, $row->Short_Description,$row->short_description_wc);
+                     if(in_array('Custom_Keywords_Short_Description',$selected_columns)){
+                         $res_array[$key]['Custom_Keywords_Short_Description']= $custom_keywords['Custom_Keywords_Short'];
+                     }
+                     if(in_array('Custom_Keywords_Long_Description',$selected_columns)){
+                         $res_array[$key]['Custom_Keywords_Long_Description']= $custom_keywords['Custom_Keywords_Long'];
+                     }
+                }
                 //loaded_in_seconds
                 if(in_array('Page_Load_Time', $selected_columns)){
                     $res_array[$key]['Page_Load_Time'] = $pars_atr['parsed_attributes']['loaded_in_seconds']!==false?$pars_atr['parsed_attributes']['loaded_in_seconds']:'';
@@ -1061,7 +1069,12 @@ class Assess extends MY_Controller {
                 $line[]=  'Meta Description';
                 $line[]=  'Meta Desc Words';
             }
-            
+            if(in_array('Custom_Keywords_Short_Description',$selected_columns)){
+                $line[]= 'Custom Keywords - Short Description';
+            }
+            if(in_array('Custom_Keywords_Long_Description',$selected_columns)){
+                $line[]= 'Custom Keywords - Long Description';
+            }
             if(in_array('Page_Load_Time', $selected_columns)){
                 $line[]=  'Page Load Time';
             }
@@ -1483,7 +1496,7 @@ class Assess extends MY_Controller {
         $columns = $this->columns();
         $duplicate_content_range = 25;
         $this->load->model('batches_model');
-        $this->load->model('keywords_model');
+        
         $this->load->model('statistics_model');
         $this->load->model('statistics_duplicate_content_model');
 
@@ -2565,7 +2578,7 @@ class Assess extends MY_Controller {
     }
     
     private function custom_keywords($imported_data_id, $long_description, $long_description_wc, $short_description, $short_description_wc){
-        
+            
             $custom_seo = $this->keywords_model->get_by_imp_id($imported_data_id);
             $Custom_Keywords_Long_Description = '';
             if ($custom_seo['primary']) {
