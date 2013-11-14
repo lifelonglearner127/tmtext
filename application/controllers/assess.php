@@ -920,10 +920,13 @@ class Assess extends MY_Controller {
                     $H1 = $pars_atr['HTags']['h1'];
                     if (is_array($H1)) {
 
-
+                        $i=0;
                         foreach ($H1 as $k => $h1) {
-                            $res_array[$key]['H1_Tags' . $k] = $h1;
-                            $res_array[$key]['H1_Tags_Count' . $k] = strlen($h1);
+                            if($i<2){
+                                $res_array[$key]['H1_Tags' . $k] = $h1;
+                                $res_array[$key]['H1_Tags_Count' . $k] = strlen($h1);
+                                $i++;
+                            }
                         }
                     } else {
                         $res_array[$key]['H1_Tags0'] = $H1;
@@ -931,7 +934,10 @@ class Assess extends MY_Controller {
                     }
 
                     if ($H1_tag_count > 0) {
-
+                        if ($H1_tag_count > 2){
+                           $H1_tag_count = 2;
+                        }
+                        
                         for ($k = 0; $k < $H1_tag_count; $k++) {
                             if (!$res_array[$key]['H1_Tags' . $k]) {
                                 $res_array[$key]['H1_Tags' . $k] = '';
@@ -950,9 +956,13 @@ class Assess extends MY_Controller {
                         if (count($H2) > $H2_tag_count) {
                             $H2_tag_count = count($H2);
                         }
+                        $i=0;
                         foreach ($H2 as $k => $h2) {
-                            $res_array[$key]['H2_Tags' . $k] = $h2;
-                            $res_array[$key]['H2_Tags_Count' . $k] = strlen($h2);
+                            if($i<2){
+                                $res_array[$key]['H2_Tags' . $k] = $h2;
+                                $res_array[$key]['H2_Tags_Count' . $k] = strlen($h2);
+                                $i++;
+                            }
                         }
                     } else {
                         $res_array[$key]['H2_Tags0'] = $H2;
@@ -964,7 +974,9 @@ class Assess extends MY_Controller {
 
 
                     if ($H2_tag_count > 0) {
-
+                         if ($H2_tag_count > 2) {
+                             $H2_tag_count = 2;
+                         }
                         for ($k = 0; $k < $H2_tag_count; $k++) {
                             if (!$res_array[$key]['H2_Tags' . $k]) {
                                 $res_array[$key]['H2_Tags' . $k] = '';
