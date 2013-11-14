@@ -2405,12 +2405,18 @@ class Imported_data_parsed_model extends CI_Model {
         $data = array();
         $for_groups = array($im_data_id);
         $model = Null;
+        $i = 0;
         foreach ($results as $result) {
+            ++$i;
+            if($i==20000){
+                var_dump($result);
+                $i=0;
+            }
             //var_dump($result);exit;
             if ($result->key === 'URL') {
                 if ($result->imported_data_id == $im_data_id) {
                     $selected_url = $result->value;
-                    echo $selected_url.'<br>';exit;
+                    //echo $selected_url.'<br>';exit;
                 }
                 $data[$result->imported_data_id]['url'] = $result->value;
             }
