@@ -825,6 +825,10 @@ class ProcessText():
 		# normalize Watts
 		text = re.sub("[- ]*[Ww]atts?", "W", text)
 
+		#TODO also do something to match 30x30 with 30"x30"?
+		# replace x between numbers (or ") with space (usualy a dimension e.g. 11"x30")
+		text = re.sub("(?<=[0-9\"])x(?=[0-9])", " ", text)
+
 		#! including ' as an exception keeps things like women's a single word. also doesn't find it as a word in wordnet -> too high a priority
 		# excluding it leads to women's->women (s is a stopword)
 
