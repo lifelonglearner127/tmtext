@@ -2400,8 +2400,7 @@ class Imported_data_parsed_model extends CI_Model {
         $data = array();
         $for_groups = array($im_data_id);
         $model = Null;
-        $resuls = $query->result(); 
-        foreach ($resuls as $result) {
+        foreach ($query->result() as $result) {
             if ($result->key === 'URL') {
                 if ($result->imported_data_id == $im_data_id) {
                     $selected_url = $result->value;
