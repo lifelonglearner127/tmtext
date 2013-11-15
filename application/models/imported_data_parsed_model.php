@@ -2380,18 +2380,17 @@ class Imported_data_parsed_model extends CI_Model {
     }
 
     public function getByProductNameNew($im_data_id, $selected_product_name = '', $manufacturer = '', $strict = false) {
-        error_reporting(E_ALL);
+        phpinfo();die;
+        print_r((int) ceil(memory_get_usage()/1000000).'MB used<br>');     exit;
+// error_reporting(E_ALL);
         //echo "params ".($im_data_id."==".$selected_product_name."==".$manufacturer."==".$strict)."<br>";
         $special_list = array('mixer', 'oven', 'masher', 'extractor', 'maker', 'cooker', 'tv', 'laptop', 'belt', 'blender', 'tablet', 'toaster', 'kettle', 'watch', 'sneakers', 'griddle', 'grinder', 'camera');
         $this->db->select('p.imported_data_id, p.key, p.value, p.model')
                 ->from($this->tables['imported_data_parsed'] . ' as p')
                 ->where('p.key', 'parsed_attributes')
                 ->or_where('p.key', 'URL')
-                ->or_where('p.key', 'Product Name')
-//                ->where('p.revision = (SELECT  MAX(revision) as revision
-//                      FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
-//                      GROUP BY imported_data_id)', NULL, FALSE)
-                ;
+                ->or_where('p.key', 'Product Name');
+
         if ($strict) {
             $this->db->like('p.value', '"' . $manufacturer . '"');
         } else {
@@ -2401,14 +2400,13 @@ class Imported_data_parsed_model extends CI_Model {
         //var_dump($query);
         //echo "<br>";
         $selected_url = '';
-
+        
         //$results = $query->result();
         $data = array();
         $for_groups = array($im_data_id);
         $model = Null;
-        $i = 0;
-        foreach ($query->result() as $result) {
-        $i++; 
+        $resuls = $query->result(); 
+        foreach ($resuls as $result) {
 //            if($i===82115){
 //                echo $i.'<br>';
 //                var_dump($result);echo '<br>';
@@ -2438,7 +2436,9 @@ class Imported_data_parsed_model extends CI_Model {
                 echo $e->getMessage();
             } 
         }
-       
+       print_r('before unset'.(int) ceil(memory_get_usage()/1000000).'MB used<br>');
+       unset($resuls);
+       print_r('after unset'.(int) ceil(memory_get_usage()/1000000).'MB used<br>');
         //echo '$data count: '.count($data).'<br>';
        
         $urls = array($this->get_base_url($selected_url));
@@ -2512,11 +2512,7 @@ class Imported_data_parsed_model extends CI_Model {
                                             $all_items[] = $key;
                                         }
 
-//                                    if (isset($val1['parsed_attributes']['model'])) {
-//                                        $model = $val1['parsed_attributes']['model'];
-//                                    } else {
-//                                        $for_groups[] = $key;
-//                                    }
+
                                     }
                                 }
                             }
@@ -2532,11 +2528,7 @@ class Imported_data_parsed_model extends CI_Model {
                                         $for_groups[] = $key;
                                         $all_items[] = $key;
                                     }
-//                                if (isset($val1['parsed_attributes']['model'])) {
-//                                    $model = $val1['parsed_attributes']['model'];
-//                                } else {
-//                                    $for_groups[] = $key;
-//                                }
+
                                 }
                             }
                         }
@@ -2545,8 +2537,8 @@ class Imported_data_parsed_model extends CI_Model {
                 }
             }
         }
-         echo  "<br>aaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbb";
-         exit;
+//         echo  "<br>aaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbb";
+//         exit;
         $all_items[] = $im_data_id;
         $all_items = array_unique($all_items);
 //        echo '$all_items '.count($all_items).'<br>';
