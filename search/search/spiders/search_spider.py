@@ -1166,7 +1166,7 @@ class ProcessText():
 		# some models on bestbuy have . or /
 		nonwords = len(re.findall("[^\w\-/\.]", word))
 		
-		if ((letters > 1 and numbers > 1) or numbers > 4) and nonwords==0 \
+		if ((letters > 1 and numbers > 0) or numbers > 4) and nonwords==0 \
 		and not word.endswith("in") and not word.endswith("inch") and not word.endswith("hz") and \
 		not re.match("[0-9]{3,}[kmgt]b", word) and not re.match("[0-9]{3,}p", word) and not re.match("[0-9]{2,}hz", word):
 		# word is not a memory size, frequency(Hz) or pixels description
