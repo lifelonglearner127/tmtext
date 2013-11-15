@@ -1,4 +1,5 @@
 <?php 
+ini_set('memory_limit','500');
 /*
  *---------------------------------------------------------------
  * APPLICATION ENVIRONMENT
