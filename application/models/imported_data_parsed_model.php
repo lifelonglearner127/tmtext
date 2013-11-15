@@ -2380,10 +2380,7 @@ class Imported_data_parsed_model extends CI_Model {
     }
 
     public function getByProductNameNew($im_data_id, $selected_product_name = '', $manufacturer = '', $strict = false) {
-        phpinfo();die;
-        print_r((int) ceil(memory_get_usage()/1000000).'MB used<br>');     exit;
-// error_reporting(E_ALL);
-        //echo "params ".($im_data_id."==".$selected_product_name."==".$manufacturer."==".$strict)."<br>";
+        //print_r((int) ceil(memory_get_usage()/1000000).'MB used<br>');     exit;
         $special_list = array('mixer', 'oven', 'masher', 'extractor', 'maker', 'cooker', 'tv', 'laptop', 'belt', 'blender', 'tablet', 'toaster', 'kettle', 'watch', 'sneakers', 'griddle', 'grinder', 'camera');
         $this->db->select('p.imported_data_id, p.key, p.value, p.model')
                 ->from($this->tables['imported_data_parsed'] . ' as p')
@@ -2397,8 +2394,6 @@ class Imported_data_parsed_model extends CI_Model {
             $this->db->like('p.value', $manufacturer);
         }
         $query = $this->db->get();
-        //var_dump($query);
-        //echo "<br>";
         $selected_url = '';
         
         //$results = $query->result();
@@ -2407,12 +2402,6 @@ class Imported_data_parsed_model extends CI_Model {
         $model = Null;
         $resuls = $query->result(); 
         foreach ($resuls as $result) {
-//            if($i===82115){
-//                echo $i.'<br>';
-//                var_dump($result);echo '<br>';
-//                //$i=0;
-//            }
-            //var_dump($result);exit;
             if ($result->key === 'URL') {
                 if ($result->imported_data_id == $im_data_id) {
                     $selected_url = $result->value;
@@ -2436,10 +2425,6 @@ class Imported_data_parsed_model extends CI_Model {
                 echo $e->getMessage();
             } 
         }
-       print_r('before unset'.(int) ceil(memory_get_usage()/1000000).'MB used<br>');
-       unset($resuls);
-       print_r('after unset'.(int) ceil(memory_get_usage()/1000000).'MB used<br>');
-        //echo '$data count: '.count($data).'<br>';
        
         $urls = array($this->get_base_url($selected_url));
         $all_items = array();
@@ -2451,8 +2436,6 @@ class Imported_data_parsed_model extends CI_Model {
                 break;
             }
         }
-        //echo '$selected_product: '.$selected_product.'<br>';
-        
         foreach ($data as $key => $val1) {
             if (!isset($val1['product_name'])) {
                 continue;
@@ -2537,8 +2520,6 @@ class Imported_data_parsed_model extends CI_Model {
                 }
             }
         }
-//         echo  "<br>aaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbb";
-//         exit;
         $all_items[] = $im_data_id;
         $all_items = array_unique($all_items);
 //        echo '$all_items '.count($all_items).'<br>';
