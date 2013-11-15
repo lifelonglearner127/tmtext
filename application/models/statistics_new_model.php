@@ -7,6 +7,8 @@ class Statistics_new_model extends CI_Model {
         'statistics_new' => 'statistics_new',
         'research_data' => 'research_data',
         'crawler_list' => 'crawler_list',
+        'imported_data_parsed' => 'imported_data_parsed',
+        
     );
 
     function __construct()
@@ -23,7 +25,21 @@ class Statistics_new_model extends CI_Model {
         return $query->result();
     }
 
-
+     function delete_rows_db () {
+        $query = "SELECT * FROM (SELECT id,url,MAX(imported_data_id) as max_imported_data_id, count(id) as c FROM crawler_list GROUP by url) as t WHERE c>1";
+ 		$res = $this->db->query($query);
+                $value = $res->result_array();
+               
+                foreach($value as $val){
+                    $v = (int)$val['max_imported_data_id'];
+                    $query_del_i = "delete from imported_data_parsed where `value` LIKE '".$val['url']."' or `imported_data_id` = null and `imported_data_id` < ".$v."";
+                    $query_del_c = "delete from crawler_list where `url` LIKE '".$val['url']."' or `imported_data_id` = null and `imported_data_id` < ".$v."";                   
+                    $res_imp_i = $this->db->query($query_del_i);
+                    $res_imp_c = $this->db->query($query_del_c);
+                    }
+     
+                }
+            
     function truncate()
     {
         $sql_cmd = "TRUNCATE TABLE `statistics_new`";

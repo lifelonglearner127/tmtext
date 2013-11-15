@@ -18,7 +18,13 @@ class Assess extends MY_Controller {
             redirect('auth/login', 'refresh');
         }
     }
-
+   
+    public function delete_rows_db() {
+        $this->load->model('statistics_new_model');
+        
+        $this->statistics_new_model->delete_rows_db();
+    }
+ 
     public function index() {
 
         $this->load->model('webshoots_model');
