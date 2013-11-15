@@ -937,9 +937,17 @@ class PageProcessor {
 
 		if (empty($descriptionLong)) {
 			foreach($this->nokogiri->get('.content .productDescriptionWrapper p') as $item) {
-				$line = trim($item['#text'][0]);
-				if (!empty($line)) {
-					$descriptionLong[] = $line;
+				foreach ($item['#text'] as $k=>$i) {
+					$line = trim($i);
+
+					if (isset($item['b']) && isset($item['b'][$k]) && isset($item['b'][$k])
+						&& isset($item['b'][$k]["#text"]) && isset($item['b'][$k]["#text"][0])) {
+						$line .= ' '.trim($item['b'][$k]["#text"][0]);
+					}
+
+					if (!empty($line)) {
+						$descriptionLong[] = $line;
+					}
 				}
 			}
 		}
