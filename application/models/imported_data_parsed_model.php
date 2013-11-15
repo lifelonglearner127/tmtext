@@ -2406,9 +2406,9 @@ class Imported_data_parsed_model extends CI_Model {
         $data = array();
         $for_groups = array($im_data_id);
         $model = Null;
-        //$i = 0;
+        $i = 0;
         foreach ($query->result() as $result) {
-//            ++$i;
+        $i++; 
 //            if($i===82115){
 //                echo $i.'<br>';
 //                var_dump($result);echo '<br>';
@@ -2427,14 +2427,20 @@ class Imported_data_parsed_model extends CI_Model {
                 $data[$result->imported_data_id]['product_name'] = $result->value;
                 $data[$result->imported_data_id]['model'] = $result->model;
             }
-
-            if ($result->key === 'parsed_attributes') {
+            
+            
+            try {
+                if ($result->key === 'parsed_attributes') {
                 //echo 'parsed_attributes<br>';
                 $data[$result->imported_data_id]['parsed_attributes'] = unserialize($result->value);
             }
+            } catch (Exception $e) {
+                echo $e->getMessage();
+            } 
         }
+       
         //echo '$data count: '.count($data).'<br>';
-
+       
         $urls = array($this->get_base_url($selected_url));
         $all_items = array();
 
@@ -2446,7 +2452,7 @@ class Imported_data_parsed_model extends CI_Model {
             }
         }
         //echo '$selected_product: '.$selected_product.'<br>';
-
+        
         foreach ($data as $key => $val1) {
             if (!isset($val1['product_name'])) {
                 continue;
@@ -2539,6 +2545,8 @@ class Imported_data_parsed_model extends CI_Model {
                 }
             }
         }
+         echo  "<br>aaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbb";
+         exit;
         $all_items[] = $im_data_id;
         $all_items = array_unique($all_items);
 //        echo '$all_items '.count($all_items).'<br>';
