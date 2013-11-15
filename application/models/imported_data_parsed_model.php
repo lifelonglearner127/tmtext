@@ -2380,7 +2380,7 @@ class Imported_data_parsed_model extends CI_Model {
     }
 
     public function getByProductNameNew($im_data_id, $selected_product_name = '', $manufacturer = '', $strict = false) {
-
+        error_reporting(E_ALL);
         //echo "params ".($im_data_id."==".$selected_product_name."==".$manufacturer."==".$strict)."<br>";
         $special_list = array('mixer', 'oven', 'masher', 'extractor', 'maker', 'cooker', 'tv', 'laptop', 'belt', 'blender', 'tablet', 'toaster', 'kettle', 'watch', 'sneakers', 'griddle', 'grinder', 'camera');
         $this->db->select('p.imported_data_id, p.key, p.value, p.model')
