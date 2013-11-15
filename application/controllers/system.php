@@ -2354,36 +2354,36 @@ class System extends MY_Controller {
                 if ($model2 && $model1 != $model2) {
                     if (!$url2['model'] || ($url2['model'] != $model1)) {
                         $this->temp_data_model->addUpdData($url2['data_id'],$url2['model'], $model1);
-                        $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model1);
+                        $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model1, $url2['rev']+1);
                         ++$itemsUpdated;
                     }
                 } elseif (!$model2 && (!$url2['model'] || $model1 != $url2['model'])) {
                     $this->temp_data_model->addUpdData($url2['data_id'],$url2['model'], $model1);
-                    $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model1);
+                    $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model1, $url2['rev']+1);
                     ++$itemsUpdated;
                 }
             } elseif ($model2) {
                 if (!$url1['model'] || $model2 != $url1['model']) {
                     $this->temp_data_model->addUpdData($url1['data_id'],$url1['model'], $model2);
-                    $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $model2);
+                    $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $model2, $url1['rev']+1);
                     ++$itemsUpdated;
                 }
             } elseif ($url1['model']) {
                 if (!$url2['model'] || ($url1['model'] != $url2['model'])) {
                     $this->temp_data_model->addUpdData($url2['data_id'],$url2['model'], $url1['model']);
-                    $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $url1['model']);
+                    $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $url1['model'], $url2['rev']+1);
                     ++$itemsUpdated;
                 }
             } elseif ($url2['model']) {
                 $this->temp_data_model->addUpdData($url1['data_id'],$url1['model'], $url2['model']);
-                $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $url2['model']);
+                $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $url2['model'], $url1['rev']+1);
                 ++$itemsUpdated;
             } else {
                 $model = time();
                 $this->temp_data_model->addUpdData($url1['data_id'],$url1['model'], $model);
                 $this->temp_data_model->addUpdData($url2['data_id'],$url2['model'], $model);
-                $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $model);
-                $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model);
+                $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $model, $url1['rev']+1);
+                $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model, $url2['rev']+1);
                 $itemsUpdated+=2;
             }
             $timing = microtime(true) - $start;
