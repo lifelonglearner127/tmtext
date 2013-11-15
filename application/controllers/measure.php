@@ -2024,22 +2024,23 @@ class Measure extends MY_Controller {
 
     public function similar_groups() {
 
-        $this->load->model('imported_data_parsed_model');
-        
-        $result = $this->imported_data_parsed_model->similiarity_cron_new();
-        if($result){
-            echo 'call by wget';
-            shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/measure/similar_groups > /dev/null 2>/dev/null &");
-            echo 'call by wget AFTER';
-            
-        }else{
-             $data = array(
-                'description' => 0
-            );
-
-            $this->db->where('key', 'custom_model_offset');
-            $this->db->update('settings', $data);
-        }
+        $this->delete_items();
+//        $this->load->model('imported_data_parsed_model');
+//        
+//        $result = $this->imported_data_parsed_model->similiarity_cron_new();
+//        if($result){
+//            echo 'call by wget';
+//            shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/measure/similar_groups > /dev/null 2>/dev/null &");
+//            echo 'call by wget AFTER';
+//            
+//        }else{
+//             $data = array(
+//                'description' => 0
+//            );
+//
+//            $this->db->where('key', 'custom_model_offset');
+//            $this->db->update('settings', $data);
+//        }
         
     }
 
@@ -3357,5 +3358,18 @@ class Measure extends MY_Controller {
     public function product_models(){
         $this->render();
     }
-    
+    function delete_items(){
+        
+        $query = "SELECT  `imported_data_id` as id 
+            FROM  `imported_data_parsed` 
+            WHERE  `key` = 'URL'
+            AND  `value` LIKE  '%staples.com%'
+            GROUP BY  `imported_data_id` ";
+        $res = $this->db->query($query)->result();
+        echo count($res).'<br>';
+        foreach ($res as $val){
+            $query = "delete from `imported_data_parsed` where `imported_data_id` = ".$val->id;
+            $this->db->query($query);
+        }
+    }
 }

@@ -2380,51 +2380,72 @@ class Imported_data_parsed_model extends CI_Model {
     }
 
     public function getByProductNameNew($im_data_id, $selected_product_name = '', $manufacturer = '', $strict = false) {
-        //print_r((int) ceil(memory_get_usage()/1000000).'MB used<br>');     exit;
-        $special_list = array('mixer', 'oven', 'masher', 'extractor', 'maker', 'cooker', 'tv', 'laptop', 'belt', 'blender', 'tablet', 'toaster', 'kettle', 'watch', 'sneakers', 'griddle', 'grinder', 'camera');
-        $this->db->select('p.imported_data_id, p.key, p.value, p.model')
-                ->from($this->tables['imported_data_parsed'] . ' as p')
-                ->where('p.key', 'parsed_attributes')
-                ->or_where('p.key', 'URL')
-                ->or_where('p.key', 'Product Name');
-
-        if ($strict) {
-            $this->db->like('p.value', '"' . $manufacturer . '"');
-        } else {
-            $this->db->like('p.value', $manufacturer);
-        }
-        $query = $this->db->get();
-        $selected_url = '';
+     print_r((int) ceil(memory_get_usage()/1000000).'MB used<br>');
+//        $special_list = array('mixer', 'oven', 'masher', 'extractor', 'maker', 'cooker', 'tv', 'laptop', 'belt', 'blender', 'tablet', 'toaster', 'kettle', 'watch', 'sneakers', 'griddle', 'grinder', 'camera');
+//        $this->db->select('p.imported_data_id, p.key, p.value, p.model')
+//                ->from($this->tables['imported_data_parsed'] . ' as p')
+//                ->where('p.key', 'parsed_attributes')
+//                ->or_where('p.key', 'URL')
+//                ->or_where('p.key', 'Product Name');
+//
+//        if ($strict) {
+//            $this->db->like('p.value', '"' . $manufacturer . '"');
+//        } else {
+//            $this->db->like('p.value', $manufacturer);
+//        }
         
-        //$results = $query->result();
+        $sql= "select idp_u.imported_data_id as imported_data_id
+        ,idp_u.`value` as `url`,idp_u.`model` 
+        ,(select `value` from imported_data_parsed 
+        where `key`='Product Name' and `imported_data_id` = idp_u.`imported_data_id` limit 1) as `product_name`
+        ,(select `value` from imported_data_parsed 
+        where `key`='parsed_attributes' and `imported_data_id` = idp_u.`imported_data_id` limit 1) as `parsed_attributes`
+        from imported_data_parsed as idp_u
+        where idp_u.`key` = 'url' and (idp_u.`value` LIKE '%amazon%' or idp_u.`value` like '%walmart%')";
+
+        
+        $res_new = $this->db->query($sql)->result_array();
+        $selected_url = '';
         $data = array();
         $for_groups = array($im_data_id);
         $model = Null;
-        foreach ($query->result() as $result) {
-            if ($result->key === 'URL') {
-                if ($result->imported_data_id == $im_data_id) {
-                    $selected_url = $result->value;
+        foreach ( $res_new as $result){
+            $data[$result['imported_data_id']] =$result;
+            if ($result['imported_data_id'] == $im_data_id) {
+                    $selected_url = $result['url'];
                     //echo $selected_url.'<br>';exit;
-                }
-                $data[$result->imported_data_id]['url'] = $result->value;
             }
-            if ($result->key === 'Product Name') {
-                //echo 'Product name<br>';
-                $data[$result->imported_data_id]['product_name'] = $result->value;
-                $data[$result->imported_data_id]['model'] = $result->model;
+            if ($result['parsed_attributes'] != '' && !is_null($result['parsed_attributes'])) {
+                    $data[$result['imported_data_id']]['parsed_attributes']=  unserialize($result['parsed_attributes']);
             }
-            
-            
-            try {
-                if ($result->key === 'parsed_attributes') {
-                //echo 'parsed_attributes<br>';
-                $data[$result->imported_data_id]['parsed_attributes'] = unserialize($result->value);
-            }
-            } catch (Exception $e) {
-                echo $e->getMessage();
-            } 
         }
-       
+        
+//        
+//        foreach ($query->result() as $result) {
+//            if ($result->key === 'URL') {
+//                if ($result->imported_data_id == $im_data_id) {
+//                    $selected_url = $result->value;
+//                    //echo $selected_url.'<br>';exit;
+//                }
+//                $data[$result->imported_data_id]['url'] = $result->value;
+//            }
+//            if ($result->key === 'Product Name') {
+//                //echo 'Product name<br>';
+//                $data[$result->imported_data_id]['product_name'] = $result->value;
+//                $data[$result->imported_data_id]['model'] = $result->model;
+//            }
+//            
+//            
+//            try {
+//                if ($result->key === 'parsed_attributes') {
+//                //echo 'parsed_attributes<br>';
+//                $data[$result->imported_data_id]['parsed_attributes'] = unserialize($result->value);
+//            }
+//            } catch (Exception $e) {
+//                echo $e->getMessage();
+//            } 
+//        }
+        
         $urls = array($this->get_base_url($selected_url));
         $all_items = array();
 
@@ -2519,6 +2540,7 @@ class Imported_data_parsed_model extends CI_Model {
                 }
             }
         }
+     
         $all_items[] = $im_data_id;
         $all_items = array_unique($all_items);
 //        echo '$all_items '.count($all_items).'<br>';
@@ -2536,6 +2558,7 @@ class Imported_data_parsed_model extends CI_Model {
             $product_name = '';
             $parsed_attributes = array();
             $model = '';
+           
             foreach ($res as $val) {
                 if ($val['key'] == 'Product Name') {
                     $product_name = $val['value'];
