@@ -19,11 +19,11 @@ class Assess extends MY_Controller {
         }
     }
    
-    public function delete_rows_db() {
-        $this->load->model('statistics_new_model');
-        
-        $this->statistics_new_model->delete_rows_db();
-    }
+//    public function delete_rows_db() {
+//        $this->load->model('statistics_new_model');
+//        
+//        $this->statistics_new_model->delete_rows_db();
+//    }
  
     public function index() {
 
