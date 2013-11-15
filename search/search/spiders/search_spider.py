@@ -1116,7 +1116,7 @@ class ProcessText():
 
 		#TODO: make the grwoth smaller with n, using log(len+len)*10
 		#threshold = param*(len(weights1) + len(weights2))/2
-		threshold = param*(math.log((len(weights1) + len(weights2))/2, 10))*10
+		threshold = param*(math.log(float(len(weights1) + len(weights2))/2, 10))*10
 		score = sum(weights_common)
 
 		log.msg( "W1: " + str(words1), level=log.INFO)
