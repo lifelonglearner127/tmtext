@@ -769,6 +769,7 @@ class Crons extends MY_Controller {
                 }
 
                 foreach ($data_arr as $obj) {
+                    
                     $foreach_start = time();
                     $own_price = 0;
                     $competitors_prices = array();
