@@ -1031,6 +1031,9 @@ class Crons extends MY_Controller {
                             $same_pr = $this->imported_data_parsed_model->get_by_custom_model($model, $im_data_id);
                         } else {
                             echo "geting custom model";
+                            if(!$data_import['product_name']){
+                                continue;
+                            }
                             $same_pr = $this->imported_data_parsed_model->getByProductNameNew($im_data_id, $data_import['product_name'], '', 0);
                             echo "custom model is ready";
                         }
