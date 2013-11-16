@@ -32,13 +32,29 @@ class Statistics_new_model extends CI_Model {
 //               
 //                foreach($value as $val){
 //                    $v = (int)$val['max_imported_data_id'];
-//                    $query_del_i = "delete from imported_data_parsed where `value` LIKE '".$val['url']."' or `imported_data_id` = null and `imported_data_id` < ".$v."";
 //                    $query_del_c = "delete from crawler_list where `url` LIKE '".$val['url']."' or `imported_data_id` = null and `imported_data_id` < ".$v."";                   
-//                    $res_imp_i = $this->db->query($query_del_i);
+//                    
 //                    $res_imp_c = $this->db->query($query_del_c);
 //                    }
 //     
 //                }
+  function delete_rows_db_imp () {
+        $query = "SELECT  `value` , MAX( imported_data_id )as max_imported_data_id , COUNT(  `id` ) AS c FROM  `imported_data_parsed` WHERE  `key` =  'URL' GROUP BY  `value` HAVING c >1";
+ 		$res = $this->db->query($query);
+                $value = $res->result_array();
+//                echo "<pre>";
+//                var_dump($value);exit();
+                foreach($value as $val){
+                  // $time_start = microtime(true);
+                    $v = (int)$val['max_imported_data_id'];
+                    $query_del_i = "delete from imported_data_parsed where `value` LIKE '".$val['value']."' or `imported_data_id` = null and `imported_data_id` < ".$v."";
+                    $res_imp_i = $this->db->query($query_del_i);
+//                    $time_end = microtime(true);
+//                    $time = $time_end - $time_start;
+//                    echo "SEO Short phrases - $time seconds\n<br>";
+                    }
+     
+                }   
             
     function truncate()
     {

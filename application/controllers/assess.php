@@ -24,6 +24,11 @@ class Assess extends MY_Controller {
 //        
 //        $this->statistics_new_model->delete_rows_db();
 //    }
+    public function delete_rows_db_imp() {
+        $this->load->model('statistics_new_model');
+        
+        $this->statistics_new_model->delete_rows_db_imp();
+    }
  
     public function index() {
 
@@ -219,16 +224,21 @@ class Assess extends MY_Controller {
                                             $_count_meta = 0;
                                             foreach($cnt_meta as $cnt_m){
                                                 $cnt_m = trim($cnt_m);
-                                                if($cmpare->Long_Description){
-                                                    $_count_meta = $this->keywords_appearence($cmpare->Long_Description, $cnt_m);
-                                                    $_count_meta_num = round(($_count_meta * $cnt_meta_count / $cmpare->long_description_wc) * 100, 2) . "%";
+                                                if($cmpare->Short_Description || $cmpare->Long_Description){
+                                                    $_count_meta = $this->keywords_appearence($cmpare->Long_Description.$cmpare->Short_Description, $cnt_m);
+                                                    $_count_meta_num = round(($_count_meta * $cnt_meta_count / ($cmpare->long_description_wc + $cmpare->short_description_wc)) * 100, 2) . "%";
                                                     $Meta_Keywords_un .= "<tr><td>" . $cnt_m . "</td><td>".$_count_meta_num."</td></tr>";
-                                                }else if($cmpare->Short_Description){
-                                                    $_count_meta = $this->keywords_appearence($cmpare->Short_Description, $cnt_m);
-                                                    $_count_meta_num = round(($_count_meta * $cnt_meta_count / $cmpare->short_description_wc) * 100, 2) . "%";
-                                                    $Meta_Keywords_un .= "<tr><td>" . $cnt_m . "</td><td>".$_count_meta_num."</td></tr>";
-
-                                                    }
+                                                }
+//                                                else if($cmpare->Short_Description){
+//                                                    $_count_meta = $this->keywords_appearence($cmpare->Short_Description, $cnt_m);
+//                                                    $_count_meta_num = round(($_count_meta * $cnt_meta_count / $cmpare->short_description_wc) * 100, 2) . "%";
+//                                                    $Meta_Keywords_un .= "<tr><td>" . $cnt_m . "</td><td>".$_count_meta_num."</td></tr>";
+//                                                }
+//                                                else if($cmpare->Long_Description){
+//                                                        $_count_meta = $this->keywords_appearence($cmpare->Short_Description, $cnt_m);
+//                                                        $_count_meta_num = round(($_count_meta * $cnt_meta_count / $cmpare->short_description_wc) * 100, 2) . "%";
+//                                                        $Meta_Keywords_un .= "<tr><td>" . $cnt_m . "</td><td>".$_count_meta_num."</td></tr>";
+//                                                    }
                                                 } 
                                             $Meta_Keywords_un .= "</table>";
                                             $parsed_meta_keywords_unserialize_val = $Meta_Keywords_un;
@@ -1713,15 +1723,15 @@ class Assess extends MY_Controller {
                     foreach($cnt_meta_un as $cnt_m_un){
                         $_count_meta_un = 0;
                         $cnt_m_un = trim($cnt_m_un);
-                        if($sim_items[$i - 1]->Long_Description){
-                            $_count_meta_un = $this->keywords_appearence($sim_items[$i - 1]->Long_Description, $cnt_m_un);
-                            $_count_meta_num_un = round(($_count_meta_un * $cnt_meta_count_un / $sim_items[$i - 1]->long_description_wc) * 100, 2) . "%";
+                        if($sim_items[$i - 1]->Long_Description || $sim_items[$i - 1]->Short_Description){
+                            $_count_meta_un = $this->keywords_appearence($sim_items[$i - 1]->Long_Description.$sim_items[$i - 1]->Short_Description, $cnt_m_un);
+                            $_count_meta_num_un = round(($_count_meta_un * $cnt_meta_count_un / ($sim_items[$i - 1]->long_description_wc + $sim_items[$i - 1]->short_description_wc)) * 100, 2) . "%";
                             $Meta_Keywords_un .= "<tr><td>" . $cnt_m_un . "</td><td>".$_count_meta_num_un."</td></tr>";
-                        }else if($sim_items[$i - 1]->Short_Description){
-                            $_count_meta_un = $this->keywords_appearence($sim_items[$i - 1]->Short_Description, $cnt_m_un);
-                            $_count_meta_num_un = round(($_count_meta_un * $cnt_meta_count_un / $sim_items[$i - 1]->short_description_wc) * 100, 2) . "%";
-                            $Meta_Keywords_un .= "<tr><td>" . $cnt_m_un . "</td><td>".$_count_meta_num_un."</td></tr>";
-                            
+//                        }else if($sim_items[$i - 1]->Short_Description){
+//                            $_count_meta_un = $this->keywords_appearence($sim_items[$i - 1]->Short_Description, $cnt_m_un);
+//                            $_count_meta_num_un = round(($_count_meta_un * $cnt_meta_count_un / $sim_items[$i - 1]->short_description_wc) * 100, 2) . "%";
+//                            $Meta_Keywords_un .= "<tr><td>" . $cnt_m_un . "</td><td>".$_count_meta_num_un."</td></tr>";
+//                            
                         }
                     } 
                     $Meta_Keywords_un .= "</table>";
@@ -1844,15 +1854,15 @@ class Assess extends MY_Controller {
                     $_count_meta = 0;
                     foreach($cnt_meta as $cnt_m){
                         $cnt_m = trim($cnt_m);
-                        if($result_row->Long_Description){
-                            $_count_meta = $this->keywords_appearence($result_row->Long_Description, $cnt_m);
-                            $_count_meta_num = round(($_count_meta * $cnt_meta_count / $result_row->long_description_wc) * 100, 2) . "%";
+                        if($result_row->Long_Description || $result_row->Short_Description){
+                            $_count_meta = $this->keywords_appearence($result_row->Long_Description.$result_row->Short_Description, $cnt_m);
+                            $_count_meta_num = round(($_count_meta * $cnt_meta_count / ($result_row->long_description_wc + $result_row->short_description_wc)) * 100, 2) . "%";
                             $Meta_Keywords .= "<tr><td>" . $cnt_m . "</td><td>".$_count_meta_num."</td></tr>";
-                        }else if($result_row->Short_Description){
-                            $_count_meta = $this->keywords_appearence($result_row->Short_Description, $cnt_m);
-                            $_count_meta_num = round(($_count_meta * $cnt_meta_count / $result_row->short_description_wc) * 100, 2) . "%";
-                            $Meta_Keywords .= "<tr><td>" . $cnt_m . "</td><td>".$_count_meta_num."</td></tr>";
-                            
+//                        }else if($result_row->Short_Description){
+//                            $_count_meta = $this->keywords_appearence($result_row->Short_Description, $cnt_m);
+//                            $_count_meta_num = round(($_count_meta * $cnt_meta_count / $result_row->short_description_wc) * 100, 2) . "%";
+//                            $Meta_Keywords .= "<tr><td>" . $cnt_m . "</td><td>".$_count_meta_num."</td></tr>";
+//                            
                         }
                     } 
                 $Meta_Keywords .= "</table>";
