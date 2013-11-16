@@ -1452,7 +1452,8 @@ class Imported_data_parsed_model extends CI_Model {
             $ids[] =  $result->imported_data_id;
          }
          $ids = array_unique($ids);
-       
+        print_r((int) ceil(memory_get_usage()/1000000).'MB used<br>');
+        
         foreach ($ids as $id) {
 
             $query = $this->db->where('imported_data_id', $id)
@@ -1485,12 +1486,14 @@ class Imported_data_parsed_model extends CI_Model {
                     $product_name = $val['value'];
                     $model = $val['model'];
                 }
+               
                 if ($val['key'] == 'parsed_attributes') {
                     $parsed_attributes = unserialize($val['value']);
                 }
                 if ($val['key'] == 'Features') {
                     $features = $val['value'];
                 }
+                
             }
             array_push($data, array('imported_data_id' => $id, 'product_name' => $product_name,
                 'description' => $description, 'long_description' => $long_description, 'url' => $url, 'parsed_attributes' => $parsed_attributes, 'product_name' => $product_name, "model" => $model, 'features' => $features));
@@ -2380,7 +2383,8 @@ class Imported_data_parsed_model extends CI_Model {
     }
 
     public function getByProductNameNew($im_data_id, $selected_product_name = '', $manufacturer = '', $strict = false) {
-     print_r((int) ceil(memory_get_usage()/1000000).'MB used<br>');
+        
+        print_r((int) ceil(memory_get_usage()/1000000).'MB used<br>');
 //        $special_list = array('mixer', 'oven', 'masher', 'extractor', 'maker', 'cooker', 'tv', 'laptop', 'belt', 'blender', 'tablet', 'toaster', 'kettle', 'watch', 'sneakers', 'griddle', 'grinder', 'camera');
 //        $this->db->select('p.imported_data_id, p.key, p.value, p.model')
 //                ->from($this->tables['imported_data_parsed'] . ' as p')

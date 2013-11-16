@@ -871,8 +871,10 @@ class Crons extends MY_Controller {
                     $time_start = microtime(true);
 
 
-                    if (isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
+                    if (isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model']) && $data_import['parsed_attributes']['model']!== '') {
                         echo "</br>isset model</br>";
+                        echo " model = ".$data_import['parsed_attributes']['model']."<br>";
+                        echo " im_id  = ".$data_import['imported_data_id']."<br>";
                         //$this->imported_data_parsed_model->model_info($data_import['imported_data_id'],$data_import['parsed_attributes']['model'],$data_import['revision']);
                         try {
                             $own_prices = $this->imported_data_parsed_model->getLastPrices($obj->imported_data_id);
