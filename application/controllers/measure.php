@@ -3363,7 +3363,7 @@ class Measure extends MY_Controller {
         $query = "SELECT  `imported_data_id` as id 
             FROM  `imported_data_parsed` 
             WHERE  `key` = 'URL'
-            AND  `value` LIKE  '%staples.com%'
+            AND  `value` NOT LIKE  '%walmart%' AND  `value` NOT LIKE  '%amazon%'
             GROUP BY  `imported_data_id` ";
         $res = $this->db->query($query)->result();
         echo count($res).'<br>';
