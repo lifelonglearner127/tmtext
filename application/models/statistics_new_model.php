@@ -47,7 +47,7 @@ class Statistics_new_model extends CI_Model {
                 foreach($value as $val){
                   // $time_start = microtime(true);
                     $v = (int)$val['max_imported_data_id'];
-                    $query_del_i = "delete from imported_data_parsed where `value` LIKE '".$val['value']."' or `imported_data_id` = null and `imported_data_id` < ".$v."";
+                    $query_del_i = "delete from imported_data_parsed where `value` LIKE '".$val['value']."' and `imported_data_id` < ".$v." or `imported_data_id` = null ";
                     $res_imp_i = $this->db->query($query_del_i);
 //                    $time_end = microtime(true);
 //                    $time = $time_end - $time_start;
