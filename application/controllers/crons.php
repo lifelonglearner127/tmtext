@@ -1124,6 +1124,7 @@ class Crons extends MY_Controller {
             
             echo $utd->td;
 //            shell_exec("wget -S -O- ".base_url()."crons/do_stats_forupdated > /dev/null 2>/dev/null &");
+            exit;
             shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/do_stats_forupdated/$trnc > /dev/null 2>/dev/null &");
         } else {
             $mtd = $this->imported_data_parsed_model->getTimeDif();
