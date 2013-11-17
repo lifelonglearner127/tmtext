@@ -1774,7 +1774,7 @@ class Assess extends MY_Controller {
                     $result_row['Meta_Description_Count' . $i] = $parsed_meta_unserialize_val_count;
                     $result_row['average_review' . $i] = $parsed_average_review_unserialize_val;
                 }
-               
+               $result_row = (object) $result_row;
 
            if ($row->snap1 && $row->snap1 != '') {
                 $result_row->snap1 = "<img src='" . base_url() . "webshoots/" . $row->snap1 . "' />";
@@ -2550,7 +2550,7 @@ class Assess extends MY_Controller {
                             
                         }
                    
-                        $output_row[] = $data_row['gap'];
+                       $output_row[] = $data_row['gap'];
                       
                         $data_row = (object) $data_row;
                     } else {
