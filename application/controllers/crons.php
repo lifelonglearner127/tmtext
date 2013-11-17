@@ -1144,7 +1144,7 @@ class Crons extends MY_Controller {
             $this->load->library('email');
             $this->email->from('info@dev.contentsolutionsinc.com', '!!!!');
             $this->email->to('bayclimber@gmail.com');
-            $this->email->cc('max.kavelin@gmail.com');
+            $this->email->cc('max.kavelin@gmail.com,ruslan.samulyak@gmail.com');
             $this->email->subject('Cron job report');
             $this->email->message('Cron job for do_statistics_new is done.<br> Timing = '.$mtd->td);//.'<br> Total items updated: '.$qty['description']
             $this->email->send();//*/
