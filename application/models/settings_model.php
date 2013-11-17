@@ -65,7 +65,7 @@ class Settings_model extends CI_Model {
 		$query = $this->db->query($sql, array($user_id));
 		foreach ($query->result() as $row)
 		{
-			if($value = @unserialize($row->value))
+			if( strpos($row->value, 'a:')!==false && ($value = @unserialize($row->value)))
 				$results[$row->key] = $value;
 			else
 				$results[$row->key] = $row->value;
