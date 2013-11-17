@@ -92,7 +92,9 @@ $(function() {
             "long_description_wc1",
             "Meta_Description1",
             "Meta_Description_Count1",
-            "average_review1"
+            "average_review1",
+            "gap"
+            
         ],
         recommendations: [
             "product_name",
@@ -700,7 +702,12 @@ $(function() {
             "sWidth": "3%",
             "sClass" :  "average_review1"
         },
-        
+        {
+            "sTitle": "Gap Analysis",
+            "sName": "gap",
+            "sWidth": "3%",
+            "sClass" :  ""
+        },
 
     ];
 
@@ -2676,6 +2683,8 @@ var scrollYesOrNot = true;
               
                 if ($.inArray(value, tableCase.details_compare) > -1 && $.inArray(value, columns_checkboxes_checked) > -1) {
                     tblAssess.fnSetColumnVis(index, true, false);
+              
+                
                 }
                 else if(value ==='Meta_Description_Count'){
                     if ($.inArray("Meta_Description", columns_checkboxes_checked) > -1) {

@@ -247,6 +247,10 @@
                 <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_price_diff" data-col_name="price_diff" name="column_price_diff" <?php echo($columns['price_diff'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="column_actions">Price difference</label>
             </p>
+            <p>
+                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="gap" data-col_name="gap" name="gap" <?php echo($columns['gap'] == 'true' ? 'checked="checked"' : ''); ?> />
+                <label for="column_actions">Gap analysis</label>
+            </p>
             </div>
 <!--            <p>
                 <input type="checkbox" id="column_snap1" data-col_name="snap" name="column_snap_name1" <?php echo($columns['snap1'] == 'true' ? 'checked="checked"' : ''); ?> />

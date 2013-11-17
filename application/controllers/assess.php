@@ -163,7 +163,7 @@ class Assess extends MY_Controller {
 
                         $similar_items = unserialize($val->similar_products_competitors);
 
-                        if (count($similar_items) > 1) {
+                        if (count($similar_items) >0) {
                             foreach ($similar_items as $key => $item) {
                                 if (substr_count(strtolower($customer_name), strtolower($item['customer'])) > 0) {
                                     $parsed_attributes_unserialize_val = '';
@@ -176,6 +176,7 @@ class Assess extends MY_Controller {
                                     $cmpare = $this->statistics_new_model->get_compare_item($item['imported_data_id']);
 
                                     $parsed_attributes_unserialize = unserialize($cmpare->parsed_attributes);
+                                   
                                     if ($parsed_attributes_unserialize['item_id'])
                                         $parsed_attributes_unserialize_val = $parsed_attributes_unserialize['item_id'];
                                     if ($parsed_attributes_unserialize['model'])
@@ -261,6 +262,8 @@ class Assess extends MY_Controller {
                                     $val->Meta_Description1 = $parsed_meta_unserialize_val;
                                     $val->Meta_Description_Count1 = $parsed_meta_unserialize_val_count;
                                     $val->average_review1 = $parsed_average_review_unserialize_val_count;
+                                    $cmpare->imported_data_id = $item['imported_data_id'];
+                                  
                                     $similar_items_data[] = $cmpare;
                                     $val->similar_items = $similar_items_data;
                                 }
@@ -1217,6 +1220,7 @@ class Assess extends MY_Controller {
                 'average_review' => 'true',
                 'column_features' => 'true',
                 'price_diff' => 'true',
+                'gap' => 'true'
             );
         }
         $this->data['columns'] = $columns;
@@ -1586,7 +1590,10 @@ class Assess extends MY_Controller {
                 $columns[] = array("sTitle" => "Meta Description", "sClass" => "Meta_Description" . $i, "sName" => 'Meta_Description' . $i);
                 $columns[] = array("sTitle" => "Meta Desc <span class='subtitle_word_long' ># Words</span>", "sClass" => "Meta_Description_Count" . $i, "sName" => 'Meta_Description_Count' . $i);
                 $columns[] = array("sTitle" => "Avg Review", "sClass" => "average_review" . $i, "sName" => 'average_review' . $i);
-            }
+                 if($i == 1){
+                                $columns[] = array("sTitle" => "Gap Analysis", "sClass" => "gap" . $i, "sName" => 'gap');
+                            }
+                }
         }
         $display_length = intval($this->input->get('iDisplayLength', TRUE));
 
@@ -1602,7 +1609,8 @@ class Assess extends MY_Controller {
         foreach ($results as $row) {
 //            $long_description_wc = $row->long_description_wc;
 //            $short_description_wc = $row->short_description_wc;
-
+            $result_row->gap = '';
+            $f_count1 = 0;
             $result_row = new stdClass();
             $result_row->id = $row->id;
             $result_row->imported_data_id = $row->imported_data_id;
@@ -1659,7 +1667,7 @@ class Assess extends MY_Controller {
                 $max_similar_item_count = (int) $build_assess_params->max_similar_item_count;
                 $tb_product_name = 'tb_product_name';
 
-
+               
                for ($i = 1; $i <= $max_similar_item_count; $i++) {
 
 
@@ -1672,6 +1680,15 @@ class Assess extends MY_Controller {
                     $parsed_average_review_unserialize_val ='';
 
                     $parsed_attributes_unserialize = unserialize($sim_items[$i - 1]->parsed_attributes);
+                    if($i == 1){
+                        $f_count1 =  $parsed_attributes_unserialize['feature_count'];
+                      
+                        if($sim_items[$i-1]->imported_data_id && !$this->costom_keywords_den($sim_items[$i-1]->imported_data_id, $sim_items[$i - 1]->Long_Description , $sim_items[$i - 1]->long_description_wc) && !$this->costom_keywords_den($sim_items[$i-1]->imported_data_id, $sim_items[$i - 1]->Short_Description , $sim_items[$i - 1]->short_description_wc)){
+                             $result_row->gap.="Competitor is not keyword optimized<br>";
+                        }
+                     
+                    }
+                    
                     if ($parsed_attributes_unserialize['item_id'])
                         $parsed_attributes_unserialize_val = $parsed_attributes_unserialize['item_id'];
                     if ($parsed_attributes_unserialize['model'])
@@ -1757,16 +1774,9 @@ class Assess extends MY_Controller {
                     $result_row['Meta_Description_Count' . $i] = $parsed_meta_unserialize_val_count;
                     $result_row['average_review' . $i] = $parsed_average_review_unserialize_val;
                 }
-                $result_row = (object) $result_row;
-            } else {
-//                $result_row->snap1 = '';
-//                $result_row->product_name1 = '';
-//                $result_row->url1 = '';
-//                $result_row->short_description_wc1 = '-';
-//                $result_row->long_description_wc1 = '-';
-            }
+               
 
-             if ($row->snap1 && $row->snap1 != '') {
+           if ($row->snap1 && $row->snap1 != '') {
                 $result_row->snap1 = "<img src='" . base_url() . "webshoots/" . $row->snap1 . "' />";
             }
             if ($row->product_name1) {
@@ -2023,8 +2033,24 @@ class Assess extends MY_Controller {
             };
             $result_row->Custom_Keywords_Short_Description = $Custom_Keywords_Short_Description . "</table>";
 
-
-
+//gap analises
+            
+                if($result_row->short_description_wc && $sim_items[1]->short_description_wc && $result_row->short_description_wc <$sim_items[1]->short_description_wc){
+                        $result_row->gap.="Lower words count in short description<br>";
+                }
+                if($result_row->long_description_wc && $sim_items[1]->long_description_wc && $result_row->long_description_wc <$sim_items[1]->long_description_wc){
+                    $result_row->gap.="Lower words count in long description<br>";
+                }
+                    
+                if($result_row->column_features && $f_count1 && $result_row->column_features < $f_count1){
+                    $result_row->gap.="Fewer features listed<br>";
+                }
+                
+          }
+            
+           
+                      
+            
             if ($row->snap != null && $row->snap != '') {
                 $result_row->snap = $row->snap;
             }
@@ -2520,10 +2546,15 @@ class Assess extends MY_Controller {
                             $output_row[] = $data_row['Meta_Description' . $i] != null ? $data_row['Meta_Description' . $i] : '';
                             $output_row[] = $data_row['Meta_Description_Count' . $i] != null ? $data_row['Meta_Description_Count' . $i] : '';
                             $output_row[] = $data_row['average_review' . $i] != null ? $data_row['average_review' . $i] : '';
+                            
+                            
                         }
+                   
+                         $output_row[] = $data_row['gap'];
+                      
                         $data_row = (object) $data_row;
                     } else {
-
+                        $output_row[] = $data_row->gap;
                         $output_row[] = $data_row->snap1;
                         $output_row[] = $data_row->product_name1;
                         $output_row[] = $data_row->item_id1;
@@ -2676,6 +2707,36 @@ class Assess extends MY_Controller {
         elseif ($cnetcontent != 1 && $webcollage == 1)
             $column_external_content = 'WC';
         return $column_external_content;
+    }
+    
+    private function costom_keywords_den($imported_data_id, $description, $description_wc){
+        $custom_seo = $this->keywords_model->get_by_imp_id($imported_data_id);
+            $key_den=0;
+            if ($custom_seo['primary']) {
+                if ($description) {
+                    $_count = $this->keywords_appearence($description, $custom_seo['primary']);
+                    $cnt = count(explode(' ', $custom_seo['primary']));
+                   $key_den = round(($_count * $cnt / $description_wc) * 100, 2) . "%";
+                    
+                } 
+            };
+            if ($custom_seo['secondary']) {
+                if ($description) {
+                    $_count = $this->keywords_appearence($description, $custom_seo['secondary']);
+                    $cnt = count(explode(' ', $custom_seo['secondary']));
+                     $key_den  = round(($_count * $cnt / $description_wc) * 100, 2) . "%";
+                    
+                }
+            };
+            if ($custom_seo['tertiary']) {
+                if ($description) {
+                    $_count = $this->keywords_appearence($description, $custom_seo['tertiary']);
+                    $cnt = count(explode(' ', $custom_seo['tertiary']));
+                    $key_den = round(($_count * $cnt / $description_wc) * 100, 2) . "%";
+                    
+                } 
+            };
+            return $key_den;
     }
     
     private function custom_keywords($imported_data_id, $long_description, $long_description_wc, $short_description, $short_description_wc){
