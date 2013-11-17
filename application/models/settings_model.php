@@ -186,19 +186,27 @@ class Settings_model extends CI_Model {
         }
         return false;
     }
-    function addMatchingUrls($pr){
+    function addMatchingUrls($pr,$lines){
         $data = array(
             'key'=>'matching_urls',
-            'description'=>$pr,
+            'description'=>$pr.'|'.$lines.'|'.'0',
             'created'=>date('Y-m-d H:i:s',time()),
             'modified'=>date('Y-m-d H:i:s',time())
         );
         $this->db->insert('settings',$data);
     }
+    function procUpdMatchingUrls($pr,$lines,$umi){
+        $this->db->where('key','matching_urls');
+        $data = array(
+            'description'=>$pr.'|'.$lines.'|'.$umi,
+            'modified'=>date('Y-m-d H:i:s',time())
+        );
+        $this->db->update('settings',$data);
+    }
     function updateMatchingUrls($pr,$str){
         $data = array('description'=>$str,'modified'=>date('Y-m-d H:i:s',time()));
         $this->db->where('key','matching_urls');
-        $this->db->where('description',$pr);
+//        $this->db->where('description',$pr);
         $this->db->update('settings',$data);
     }
     function getMatching(){

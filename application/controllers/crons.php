@@ -2809,9 +2809,11 @@ class Crons extends MY_Controller {
         $linesScaned = $this->uri->segment(4);
         $notFoundUrls = $this->uri->segment(6);
         $itemsUpdated = $this->uri->segment(5);
+        $itemsUnchanged = $this->uri->segment(7);
         $start = microtime(true);
         $timing = 0;
         while ($timing < 200 && $urls = $this->temp_data_model->getLineFromTable('urlstomatch')) {
+            $atuc = 2;
             $nfurls = 0;
             ++$linesScaned;
             //$ms = microtime(TRUE);
@@ -2824,6 +2826,7 @@ class Crons extends MY_Controller {
             if ($url1 === FALSE) {
                 ++$nfurls;
                 $this->temp_data_model->addUrlToNonFound($urls['url1'], $process);
+                $atuc -=1;
                 //$notFoundUrlsArr[]=$urls[0];
             } else {
                 $tm = false;
@@ -2835,6 +2838,7 @@ class Crons extends MY_Controller {
             if ($url2 === FALSE) {
                 ++$nfurls;
                 $this->temp_data_model->addUrlToNonFound($urls['url2'], $process);
+                $atuc -=1;
                 //$notFoundUrlsArr[]=$urls[1];
             } else {
                 $tm = false;
@@ -2851,28 +2855,33 @@ class Crons extends MY_Controller {
                         $this->temp_data_model->addUpdData($url2['data_id'],$url2['model'], $model1);
                         $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model1, $url2['rev']+1);
                         ++$itemsUpdated;
+                        $atuc -=1;
                     }
                 } elseif (!$model2 && (!$url2['model'] || $model1 != $url2['model'])) {
                     $this->temp_data_model->addUpdData($url2['data_id'],$url2['model'], $model1);
                     $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model1, $url2['rev']+1);
                     ++$itemsUpdated;
+                    $atuc -=1;
                 }
             } elseif ($model2) {
                 if (!$url1['model'] || $model2 != $url1['model']) {
                     $this->temp_data_model->addUpdData($url1['data_id'],$url1['model'], $model2);
                     $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $model2, $url1['rev']+1);
                     ++$itemsUpdated;
+                    $atuc -=1;
                 }
             } elseif ($url1['model']) {
                 if (!$url2['model'] || ($url1['model'] != $url2['model'])) {
                     $this->temp_data_model->addUpdData($url2['data_id'],$url2['model'], $url1['model']);
                     $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $url1['model'], $url2['rev']+1);
                     ++$itemsUpdated;
+                    $atuc -=1;
                 }
             } elseif ($url2['model']) {
                 $this->temp_data_model->addUpdData($url1['data_id'],$url1['model'], $url2['model']);
                 $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $url2['model'], $url1['rev']+1);
                 ++$itemsUpdated;
+                $atuc -=1;
             } else {
                 $model = time();
                 $this->temp_data_model->addUpdData($url1['data_id'],$url1['model'], $model);
@@ -2880,17 +2889,26 @@ class Crons extends MY_Controller {
                 $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $model, $url1['rev']+1);
                 $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model, $url2['rev']+1);
                 $itemsUpdated+=2;
+                $atuc -=1;
             }
+            if($atuc<0){exit('incrorrect ATUC');}
+            $itemsUnchanged +=$atuc;
             $timing = microtime(true) - $start;
-        }
+        }//*/
         if ($timing < 200) {
-            $val = "$process|$linesScaned|$notFoundUrls|$itemsUpdated";
+            $val = "$process|$linesScaned|$notFoundUrls|$itemsUpdated|$itemsUnchanged";
             $this->settings_model->updateMatchingUrls($process, $val);
         } else {
-            shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/match_urls/$process/$linesScaned/$itemsUpdated/$notFoundUrls > /dev/null 2>/dev/null &");
-            //$call_link = base_url() . "crons/match_urls/$process/$linesScaned/$itemsUpdated/$notFoundUrls";
-            //exit($call_link);
-            //$this->site_categories_model->curl_async($call_link);
+            $lts = $this->temp_data_model->getTableSize('urlstomatch');
+            $this->settings_model->procUpdMatchingUrls($process,$lts,$itemsUnchanged);
+            if(strtoupper(substr(PHP_OS, 0, 3))==='WIN'){
+            $call_link = base_url() . "crons/match_urls/$process/$linesScaned/$itemsUpdated/$notFoundUrls/$itemsUnchanged";
+//            exit($call_link);
+            $this->site_categories_model->curl_async($call_link);
+            }
+            else{
+                shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/match_urls/$process/$linesScaned/$itemsUpdated/$notFoundUrls/$itemsUnchanged > /dev/null 2>/dev/null &");
+            }
         }
     }
 

@@ -28,6 +28,14 @@ class Temp_data_model extends CI_Model {
         );
         $this->db->insert('urlstomatch',$data);
     }
+    public function getTableSize($table){
+        $sql='select count(*) as cnt
+            from `'.$table.'`';
+        $query = $this->db->query($sql);
+        if($query->num_rows===0)return FALSE;
+        $row = $query->first_row();
+        return $row->cnt;
+    }
     public function getLineFromTable($table){
         $this->db->select('url1, url2, id');
         $this->db->from($table);
@@ -108,6 +116,13 @@ class Temp_data_model extends CI_Model {
             'new_model'=>$new
         );
         $this->db->insert('updated_items',$data);
+    }
+    public function getUpdatedItemss(){
+        $this->db->selcet('*');
+        $this->db->from('updated_items');
+        $query = $this->db->get();
+        if($query->num_rows===0)return false;
+        return $query;
     }
 
 }
