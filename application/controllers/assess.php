@@ -1613,6 +1613,7 @@ class Assess extends MY_Controller {
             $f_count1 = 0;
             $result_row = new stdClass();
             $result_row->gap = '';
+            $meta_key_gap = 0;
             $result_row->id = $row->id;
             $result_row->imported_data_id = $row->imported_data_id;
             $result_row->research_data_id = $row->research_data_id;
@@ -1681,17 +1682,7 @@ class Assess extends MY_Controller {
                     $parsed_average_review_unserialize_val ='';
 
                     $parsed_attributes_unserialize = unserialize($sim_items[$i - 1]->parsed_attributes);
-                    if($i == 1){
-                        $f_count1 =  $parsed_attributes_unserialize['feature_count'];
-                        
-                        if(($sim_items[$i-1]->imported_data_id && !$this->costom_keywords_den($sim_items[$i-1]->imported_data_id, $sim_items[$i - 1]->Long_Description , $sim_items[$i - 1]->long_description_wc) && !$this->costom_keywords_den($sim_items[$i-1]->imported_data_id, $sim_items[$i - 1]->Short_Description , $sim_items[$i - 1]->short_description_wc))){
-                            
-                            $result_row->gap .= "Competitor is not keyword optimized<br>";
-                            
-                             
-                        }
-                     
-                    }
+                   
                     
                     if ($parsed_attributes_unserialize['item_id'])
                         $parsed_attributes_unserialize_val = $parsed_attributes_unserialize['item_id'];
@@ -1752,8 +1743,12 @@ class Assess extends MY_Controller {
 //                            $_count_meta_un = $this->keywords_appearence($sim_items[$i - 1]->Short_Description, $cnt_m_un);
 //                            $_count_meta_num_un = round(($_count_meta_un * $cnt_meta_count_un / $sim_items[$i - 1]->short_description_wc) * 100, 2) . "%";
 //                            $Meta_Keywords_un .= "<tr><td>" . $cnt_m_un . "</td><td>".$_count_meta_num_un."</td></tr>";
-//                            
+                          if($i==1 && !$meta_key_gap ){
+                            $meta_key_gap=round(($_count_meta_un * $cnt_meta_count_un / ($sim_items[$i - 1]->long_description_wc + $sim_items[$i - 1]->short_description_wc)) * 100, 2);
+                        }  
                         }
+                        
+                        
                     } 
                     $Meta_Keywords_un .= "</table>";
                     $parsed_meta_keywords_unserialize_val = $Meta_Keywords_un;
@@ -1761,7 +1756,17 @@ class Assess extends MY_Controller {
                     }
                     
                     
-
+                     if($i == 1){
+                        $f_count1 =  $parsed_attributes_unserialize['feature_count'];
+                        
+                        if(!$meta_key_gap){
+                            
+                            $result_row->gap .= "Competitor is not keyword optimized<br>";
+                            
+                             
+                        }
+                     
+                    }
                     $result_row = (array) $result_row;
                     $result_row["snap$i"] = $sim_items[$i - 1]->snap !== false ? $sim_items["$i-1"]->snap : '-';
                     $result_row['url' . $i] = $sim_items[$i - 1]->url !== false ? "<span class='res_url'><a target='_blank' href='" . $sim_items[$i - 1]->url . "'>" . $sim_items[$i - 1]->url . "</a></span>" : "-";
