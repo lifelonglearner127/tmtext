@@ -2580,7 +2580,7 @@ class Assess extends MY_Controller {
                     }
                 }
                 $c++;
-            }exit;
+            }
         }
 
 //       echo  "<pre>";
