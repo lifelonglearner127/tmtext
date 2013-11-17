@@ -49,9 +49,11 @@ class Services extends REST_Controller {
 		$rows = $this->crawler_list_model->getAllNew($limit, false);
 
 		if ($block) {
+			$this->crawler_list_model->db->trans_start();
 			foreach( $rows as $data) {
 				$this->crawler_list_model->updateStatus($data->id, 'lock');
 			}
+			$this->crawler_list_model->db->trans_complete();
 		}
 
 		$this->response($rows);
@@ -66,9 +68,11 @@ class Services extends REST_Controller {
 		$rows = $this->crawler_list_model->getAllQueued($limit, false);
 
 		if ($block) {
+			$this->crawler_list_model->db->trans_start();
 			foreach( $rows as $data) {
 				$this->crawler_list_model->updateStatus($data->id, 'lock');
 			}
+			$this->crawler_list_model->db->trans_complete();
 		}
 
 		$this->response($rows);
