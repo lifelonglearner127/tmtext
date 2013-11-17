@@ -163,7 +163,7 @@ class Assess extends MY_Controller {
 
                         $similar_items = unserialize($val->similar_products_competitors);
 
-                        if (count($similar_items) >0) {
+                        if (count($similar_items) >1) {
                             foreach ($similar_items as $key => $item) {
                                 if (substr_count(strtolower($customer_name), strtolower($item['customer'])) > 0) {
                                     $parsed_attributes_unserialize_val = '';
@@ -2376,7 +2376,7 @@ class Assess extends MY_Controller {
             $c = 0;
 
             foreach ($result_table as $data_row) {
-
+            
                 if ($c >= $display_start) {
 
                     if (isset($data_row->recommendations)) {
@@ -2550,7 +2550,7 @@ class Assess extends MY_Controller {
                             
                         }
                    
-                         $output_row[] = $data_row['gap'];
+                        $output_row[] = $data_row['gap'];
                       
                         $data_row = (object) $data_row;
                     } else {
@@ -2580,7 +2580,7 @@ class Assess extends MY_Controller {
                     }
                 }
                 $c++;
-            }
+            }exit;
         }
 
 //       echo  "<pre>";
