@@ -1609,9 +1609,10 @@ class Assess extends MY_Controller {
         foreach ($results as $row) {
 //            $long_description_wc = $row->long_description_wc;
 //            $short_description_wc = $row->short_description_wc;
-            $result_row->gap = '';
+            
             $f_count1 = 0;
             $result_row = new stdClass();
+            $result_row->gap = '';
             $result_row->id = $row->id;
             $result_row->imported_data_id = $row->imported_data_id;
             $result_row->research_data_id = $row->research_data_id;
@@ -1682,9 +1683,12 @@ class Assess extends MY_Controller {
                     $parsed_attributes_unserialize = unserialize($sim_items[$i - 1]->parsed_attributes);
                     if($i == 1){
                         $f_count1 =  $parsed_attributes_unserialize['feature_count'];
-                      
-                        if($sim_items[$i-1]->imported_data_id && !$this->costom_keywords_den($sim_items[$i-1]->imported_data_id, $sim_items[$i - 1]->Long_Description , $sim_items[$i - 1]->long_description_wc) && !$this->costom_keywords_den($sim_items[$i-1]->imported_data_id, $sim_items[$i - 1]->Short_Description , $sim_items[$i - 1]->short_description_wc)){
-                             $result_row->gap.="Competitor is not keyword optimized<br>";
+                        
+                        if(($sim_items[$i-1]->imported_data_id && !$this->costom_keywords_den($sim_items[$i-1]->imported_data_id, $sim_items[$i - 1]->Long_Description , $sim_items[$i - 1]->long_description_wc) && !$this->costom_keywords_den($sim_items[$i-1]->imported_data_id, $sim_items[$i - 1]->Short_Description , $sim_items[$i - 1]->short_description_wc))){
+                            
+                            $result_row->gap .= "Competitor is not keyword optimized<br>";
+                            
+                             
                         }
                      
                     }
@@ -1773,9 +1777,14 @@ class Assess extends MY_Controller {
                     $result_row['Meta_Description' . $i] = $parsed_meta_unserialize_val;
                     $result_row['Meta_Description_Count' . $i] = $parsed_meta_unserialize_val_count;
                     $result_row['average_review' . $i] = $parsed_average_review_unserialize_val;
+                    
+                    
                 }
-               $result_row = (object) $result_row;
+                
+                 $result_row = (object) $result_row;
 
+            }     
+              
            if ($row->snap1 && $row->snap1 != '') {
                 $result_row->snap1 = "<img src='" . base_url() . "webshoots/" . $row->snap1 . "' />";
             }
@@ -2034,7 +2043,9 @@ class Assess extends MY_Controller {
             $result_row->Custom_Keywords_Short_Description = $Custom_Keywords_Short_Description . "</table>";
 
 //gap analises
-            
+          if ($build_assess_params->max_similar_item_count > 0) {
+                //$class_for_all_case = "class_for_all_case";
+                $sim_items = $row->similar_items;  
                 if($result_row->short_description_wc && $sim_items[1]->short_description_wc && $result_row->short_description_wc <$sim_items[1]->short_description_wc){
                         $result_row->gap.="Lower words count in short description<br>";
                 }
@@ -2045,8 +2056,8 @@ class Assess extends MY_Controller {
                 if($result_row->column_features && $f_count1 && $result_row->column_features < $f_count1){
                     $result_row->gap.="Fewer features listed<br>";
                 }
-                
-          }
+          }            
+          
             
            
                       
@@ -2711,12 +2722,12 @@ class Assess extends MY_Controller {
     
     private function costom_keywords_den($imported_data_id, $description, $description_wc){
         $custom_seo = $this->keywords_model->get_by_imp_id($imported_data_id);
-            $key_den=0;
+            $key_den= 0;
             if ($custom_seo['primary']) {
                 if ($description) {
                     $_count = $this->keywords_appearence($description, $custom_seo['primary']);
                     $cnt = count(explode(' ', $custom_seo['primary']));
-                   $key_den = round(($_count * $cnt / $description_wc) * 100, 2) . "%";
+                   $key_den = round(($_count * $cnt / $description_wc) * 100, 2);
                     
                 } 
             };
@@ -2724,7 +2735,7 @@ class Assess extends MY_Controller {
                 if ($description) {
                     $_count = $this->keywords_appearence($description, $custom_seo['secondary']);
                     $cnt = count(explode(' ', $custom_seo['secondary']));
-                     $key_den  = round(($_count * $cnt / $description_wc) * 100, 2) . "%";
+                     $key_den  = round(($_count * $cnt / $description_wc) * 100, 2);
                     
                 }
             };
@@ -2732,10 +2743,11 @@ class Assess extends MY_Controller {
                 if ($description) {
                     $_count = $this->keywords_appearence($description, $custom_seo['tertiary']);
                     $cnt = count(explode(' ', $custom_seo['tertiary']));
-                    $key_den = round(($_count * $cnt / $description_wc) * 100, 2) . "%";
+                    $key_den = round(($_count * $cnt / $description_wc) * 100, 2);
                     
                 } 
             };
+           
             return $key_den;
     }
     
