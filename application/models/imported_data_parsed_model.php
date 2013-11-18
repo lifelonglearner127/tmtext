@@ -1121,7 +1121,7 @@ class Imported_data_parsed_model extends CI_Model {
             $ids[] = $row['imported_data_id'];
        }
         $ids = array_unique($ids);
-         $ids[] = 1084;
+       
         $data = array();
         foreach ($ids as $id) {
 
