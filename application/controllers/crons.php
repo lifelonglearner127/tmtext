@@ -2834,7 +2834,7 @@ class Crons extends MY_Controller {
                 if ($url1['ph_attr']) {
                     $tm = unserialize($url1['ph_attr']);
                 }
-                $model1 = $tm['model'] ? $tm['model'] : FALSE;
+                $model1 = $tm['model']&& strlen($tm['model'])>3 ? $tm['model'] : FALSE;
             }
             if ($url2 === FALSE) {
                 ++$nfurls;
@@ -2846,39 +2846,40 @@ class Crons extends MY_Controller {
                 if ($url2['ph_attr']) {
                     $tm = unserialize($url2['ph_attr']);
                 }
-                $model2 = $tm['model'] ? $tm['model'] : false;
+                $model2 = $tm['model']&& strlen($tm['model'])>3 ? $tm['model'] : false;
             }
             if ($nfurls > 0) {
                 $notFoundUrls+=$nfurls;
             } elseif ($model1) {
                 if ($model2 && $model1 != $model2) {
-                    if (!$url2['model'] || ($url2['model'] != $model1)) {
+                    if (!($url2['model']&&strlen($url2['model'])>3)|| ($url2['model'] != $model1)) {
                         $this->temp_data_model->addUpdData($url2['data_id'],$url2['model'], $model1);
                         $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model1, $url2['rev']+1);
                         ++$itemsUpdated;
                         $atuc -=1;
                     }
-                } elseif (!$model2 && (!$url2['model'] || $model1 != $url2['model'])) {
+                } elseif (!$model2 && (!($url2['model']&&strlen($url2['model'])>3) 
+                        || $model1 != $url2['model'])) {
                     $this->temp_data_model->addUpdData($url2['data_id'],$url2['model'], $model1);
                     $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model1, $url2['rev']+1);
                     ++$itemsUpdated;
                     $atuc -=1;
                 }
             } elseif ($model2) {
-                if (!$url1['model'] || $model2 != $url1['model']) {
+                if (!($url1['model']&&strlen($url1['model'])>3) || $model2 != $url1['model']) {
                     $this->temp_data_model->addUpdData($url1['data_id'],$url1['model'], $model2);
                     $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $model2, $url1['rev']+1);
                     ++$itemsUpdated;
                     $atuc -=1;
                 }
-            } elseif ($url1['model']) {
-                if (!$url2['model'] || ($url1['model'] != $url2['model'])) {
+            } elseif (($url1['model']&&strlen($url1['model'])>3)) {
+                if (!($url2['model']&&strlen($url2['model'])>3) || ($url1['model'] != $url2['model'])) {
                     $this->temp_data_model->addUpdData($url2['data_id'],$url2['model'], $url1['model']);
                     $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $url1['model'], $url2['rev']+1);
                     ++$itemsUpdated;
                     $atuc -=1;
                 }
-            } elseif ($url2['model']) {
+            } elseif (($url2['model']&&strlen($url2['model'])>3)) {
                 $this->temp_data_model->addUpdData($url1['data_id'],$url1['model'], $url2['model']);
                 $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $url2['model'], $url1['rev']+1);
                 ++$itemsUpdated;
