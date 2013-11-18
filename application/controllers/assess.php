@@ -762,7 +762,7 @@ class Assess extends MY_Controller {
         if (($key = array_search('snap', $selected_columns)) !== false) {
             unset($selected_columns[$key]);
         }
-        $line = array('created' => 'Date', 'product_name' => 'Product Name', 'url' => 'Url','Short_Description' =>'Short Description', 'short_description_wc' => 'Word Count (S)','Long_Description' =>'Long Description', 'long_description_wc' => 'Word Count (L)', 'short_seo_phrases' => 'SEO Phrases (S)', 'long_seo_phrases' => 'SEO Phrases (L)', 'price_diff' => 'Price', 'column_features' => 'Features', 'column_reviews' => 'Reviews');
+        $line = array('created' => 'Date', 'product_name' => 'Product Name', 'url' => 'Url','Short_Description' =>'Short Description', 'short_description_wc' => 'Short Desc # Words','Long_Description' =>'Long Description', 'long_description_wc' => 'Long Desc # Words', 'short_seo_phrases' => ' Short Desc - Found SEO Keywords', 'long_seo_phrases' => ' Short Desc - Found SEO Keywords', 'price_diff' => 'Price', 'column_features' => 'Features', 'column_reviews' => 'Reviews');
 
 
         foreach ($line as $key => $val) {
@@ -804,10 +804,86 @@ class Assess extends MY_Controller {
                         if (count($similar_items) > 1) {
                             foreach ($similar_items as $key => $item) {
                                 if (substr_count(strtolower($customer_name), strtolower($item['customer'])) > 0) {
-                                $similar_items_data[] = $item['imported_data_id'];
+                                    
+                                     $parsed_attributes_unserialize_val = '';
+                                    $parsed_meta_unserialize_val = '';
+                                    $parsed_meta_unserialize_val_c = '';
+                                    $parsed_model_unserialize_val = '';
+                                    $parsed_meta_keywords_unserialize_val = '';
+                                    $parsed_loaded_in_seconds_unserialize_val = '';
+                                    $parsed_average_review_unserialize_val_count = '';
+                                    $cmpare = $this->statistics_new_model->get_compare_item($item['imported_data_id']);
+
+                                    $parsed_attributes_unserialize = unserialize($cmpare->parsed_attributes);
+
+                                    if (isset($parsed_attributes_unserialize['item_id']))
+                                        $parsed_attributes_unserialize_val = $parsed_attributes_unserialize['item_id'];
+                                    if (isset($parsed_attributes_unserialize['model']))
+                                        $parsed_model_unserialize_val = $parsed_attributes_unserialize['model'];
+                                    if (isset($parsed_attributes_unserialize['loaded_in_seconds']))
+                                        $parsed_loaded_in_seconds_unserialize_val = $parsed_attributes_unserialize['loaded_in_seconds'];
+                                    if (isset($parsed_attributes_unserialize['average_review']))
+                                        $parsed_average_review_unserialize_val_count = $parsed_attributes_unserialize['average_review'];
+
+                                    $parsed_meta_unserialize = unserialize($cmpare->parsed_meta);
+
+                                    if (isset($parsed_meta_unserialize['description'])) {
+                                        $parsed_meta_unserialize_val = $parsed_meta_unserialize['description'];
+                                        $parsed_meta_unserialize_val_c = count(explode(" ", $parsed_meta_unserialize_val));
+                                        if ($parsed_meta_unserialize_val_c != 1)
+                                            $parsed_meta_unserialize_val_count = $parsed_meta_unserialize_val_c;
+                                    }
+                                    else if (isset($parsed_meta_unserialize['Description'])) {
+                                        $parsed_meta_unserialize_val = $parsed_meta_unserialize['Description'];
+                                        $parsed_meta_unserialize_val_c = count(explode(" ", $parsed_meta_unserialize_val));
+                                        if ($parsed_meta_unserialize_val_c != 1)
+                                            $parsed_meta_unserialize_val_count = $parsed_meta_unserialize_val_c;
+                                    }
+
+
+
+                                    if (isset($parsed_meta_unserialize['keywords'])) {
+                                        $Meta_Keywords_un = "<table class='table_keywords_long'>";
+                                            $cnt_meta = explode(',', $parsed_meta_unserialize['keywords']);
+                                            $cnt_meta_count = count($cnt_meta);
+                                            $_count_meta = 0;
+                                            foreach($cnt_meta as $cnt_m){
+                                                $cnt_m = trim($cnt_m);
+                                                if($cmpare->Short_Description || $cmpare->Long_Description){
+                                                    $_count_meta = $this->keywords_appearence($cmpare->Long_Description.$cmpare->Short_Description, $cnt_m);
+                                                    $_count_meta_num = round(($_count_meta * $cnt_meta_count / ($cmpare->long_description_wc + $cmpare->short_description_wc)) * 100, 2) . "%";
+                                                    $Meta_Keywords_un .= "<tr><td>" . $cnt_m . "</td><td>".$_count_meta_num."</td></tr>";
+                                                }
+//                                             
+                                                }
+                                            $Meta_Keywords_un .= "</table>";
+                                            $parsed_meta_keywords_unserialize_val = $Meta_Keywords_un;
+                                        }
+
+
+
+
+                                    $val->snap1 = $cmpare->snap;
+                                    $val->product_name1 = $cmpare->product_name;
+                                    $val->item_id1 = $parsed_attributes_unserialize_val;
+                                    $val->model1 = $parsed_model_unserialize_val;
+                                    $val->url1 = $cmpare->url;
+                                    $val->Page_Load_Time1 = $parsed_loaded_in_seconds_unserialize_val;
+                                    $val->Short_Description1 = $cmpare->Short_Description;
+                                    $val->short_description_wc1 = $cmpare->short_description_wc;
+                                    $val->Meta_Keywords1 = $parsed_meta_keywords_unserialize_val;
+                                    $val->Long_Description1 = $cmpare->Long_Description;
+                                    $val->long_description_wc1 = $cmpare->long_description_wc;
+                                    $val->Meta_Description1 = $parsed_meta_unserialize_val;
+                                    $val->Meta_Description_Count1 = $parsed_meta_unserialize_val_count;
+                                    $val->average_review1 = $parsed_average_review_unserialize_val_count;
+                                
+                                    $similar_items_data[] = $cmpare;
+                                    $val->similar_items = $similar_items_data;  
+                                //$similar_items_data[] = $item['imported_data_id'];
                                 }
                             }
-                     $val->similar_items = $similar_items_data;
+                     //$val->similar_items = $similar_items_data;
                             $cmp[] = $val;
                         }
                     }
@@ -831,7 +907,11 @@ class Assess extends MY_Controller {
 //                                echo '<pre>';
 //                                print_r($data); exit();
 //                                $similar_items_data[] = $cmpare;
-                              $similar_items_data[] = $similar_items[$key]['imported_data_id'];
+//                              $similar_items_data[] = $similar_items[$key]['imported_data_id'];
+//                            
+                                $cmpare = $this->statistics_new_model->get_compare_item($similar_items[$key]['imported_data_id']);
+
+                                $similar_items_data[] = $cmpare;
                             }
                         }
                         $sim_item_count = count($similar_items_data);
@@ -978,14 +1058,10 @@ class Assess extends MY_Controller {
                         }
                     }
                 }
-
-                if (in_array('H2_Tags', $selected_columns) && $pars_atr['HTags']['h2'] && $pars_atr['HTags']['h2'] != '') {
+ if (in_array('H2_Tags', $selected_columns) && $pars_atr['HTags']['h2'] && $pars_atr['HTags']['h2'] != '') {
                     $H2 = $pars_atr['HTags']['h2'];
                     if (is_array($H2)) {
 
-                        if (count($H2) > $H2_tag_count) {
-                            $H2_tag_count = count($H2);
-                        }
                         $i=0;
                         foreach ($H2 as $k => $h2) {
                             if($i<2){
@@ -997,16 +1073,13 @@ class Assess extends MY_Controller {
                     } else {
                         $res_array[$key]['H2_Tags0'] = $H2;
                         $res_array[$key]['H2_Tags_Count0'] = strlen($H2);
-                        if ($H2_tag_count == 0) {
-                            $H2_tag_count = 1;
-                        }
                     }
 
-
                     if ($H2_tag_count > 0) {
-                         if ($H2_tag_count > 2) {
-                             $H2_tag_count = 2;
-                         }
+                        if ($H2_tag_count > 2){
+                           $H2_tag_count = 2;
+                        }
+
                         for ($k = 0; $k < $H2_tag_count; $k++) {
                             if (!$res_array[$key]['H2_Tags' . $k]) {
                                 $res_array[$key]['H2_Tags' . $k] = '';
@@ -1015,6 +1088,54 @@ class Assess extends MY_Controller {
                         }
                     }
                 }
+                else{
+                     if ($H2_tag_count > 2){
+                           $H2_tag_count = 2;
+                        }
+
+                    for ($k = 0; $k < $H2_tag_count; $k++) {
+                            if (!$res_array[$key]['H2_Tags' . $k]) {
+                                $res_array[$key]['H2_Tags' . $k] = '';
+                                $res_array[$key]['H2_Tags_Count' . $k] = ' ';
+                            }
+                        }
+                }
+//                if (in_array('H2_Tags', $selected_columns) && $pars_atr['HTags']['h2'] && $pars_atr['HTags']['h2'] != '') {
+//                    $H2 = $pars_atr['HTags']['h2'];
+//                    if (is_array($H2)) {
+//
+//                        if (count($H2) > $H2_tag_count) {
+//                            $H2_tag_count = count($H2);
+//                        }
+//                        $i=0;
+//                        foreach ($H2 as $k => $h2) {
+//                            if($i<2){
+//                                $res_array[$key]['H2_Tags' . $k] = $h2;
+//                                $res_array[$key]['H2_Tags_Count' . $k] = strlen($h2);
+//                                $i++;
+//                            }
+//                        }
+//                    } else {
+//                        $res_array[$key]['H2_Tags0'] = $H2;
+//                        $res_array[$key]['H2_Tags_Count0'] = strlen($H2);
+//                        if ($H2_tag_count == 0) {
+//                            $H2_tag_count = 1;
+//                        }
+//                    }
+//
+//
+//                    if ($H2_tag_count > 0) {
+//                         if ($H2_tag_count > 2) {
+//                             $H2_tag_count = 2;
+//                         }
+//                        for ($k = 0; $k < $H2_tag_count; $k++) {
+//                            if (!$res_array[$key]['H2_Tags' . $k]) {
+//                                $res_array[$key]['H2_Tags' . $k] = '';
+//                                $res_array[$key]['H2_Tags_Count' . $k] = ' ';
+//                            }
+//                        }
+//                    }
+//                }
 
 //                $res_array[$key]['Date'] = $row->created;
 //                $res_array[$key]['Product Name'] = $row->product_name;
@@ -1070,14 +1191,59 @@ class Assess extends MY_Controller {
                 } else {
                     $res_array[$key]['price_diff'] = '';
                 }
+                
+                 $sim_items = $row->similar_items;
 
-                if ($max_similar_item_count > 0) {
-                    foreach( $val->similar_items as $k_of_cmp =>$v){
-                        $cmp_item = $this->export_assess_data_for_sim($v, $selected_columns,$k_of_cmp);
-                        $res_array[$key] = $res_array[$key]+$cmp_item[1];
+                    for ($i = 1; $i <= $max_similar_item_count; $i++) {
+                        if (in_array('product_name', $selected_columns)) {
+                        $res_array[$key]['Product Name (' . $i . ")"] = $sim_items[$i - 1]->product_name ? $sim_items[$i - 1]->product_name : '';
+                        
+                        }   
+                        if (in_array('url', $selected_columns)) {
+                            $res_array[$key]['Url (' . $i . ")"] = $sim_items[$i - 1]->url ? $sim_items[$i - 1]->url : '';
+                        }                                             
+                        if (in_array('item_id', $selected_columns)) {
+                            $res_array[$key]['Item Id (' . $i . ")"] = $sim_items[$i - 1]->item_id ? $sim_items[$i - 1]->item_id : '';
+                         }
+                        if (in_array('model', $selected_columns)) {
+                            $res_array[$key]['Model (' . $i . ")"] = $sim_items[$i - 1]->model ? $sim_items[$i - 1]->model : '';
+                         }
+                        
+                        
+                        if (in_array('Page_Load_Time', $selected_columns)) {
+                            $res_array[$key]['Page Load Time (' . $i . ")"] =$sim_items[$i - 1]->Page_Load_Time ? $sim_items[$i - 1]->Page_Load_Time : '';
+                         }
+                        
+                        if (in_array('Short_Description', $selected_columns)) {
+                            $res_array[$key]['Short Description (' . $i . ")"] = $sim_items[$i - 1]->Short_Description ? $sim_items[$i - 1]->Short_Description : '';
+                         }
+                        if (in_array('short_description_wc', $selected_columns)) {
+                            $res_array[$key]['Short Desc # Words (' . $i . ")"] = $sim_items[$i - 1]->short_description_wc ? $sim_items[$i - 1]->short_description_wc : '';
+                         }
+                        if(in_array('Meta_Keywords', $selected_columns)){
+                        $res_array[$key]['Meta_Keywords'] = $sim_items[$i - 1]->Meta_Keywords ? $sim_items[$i - 1]->Meta_Keywords : '';
                         }
+                        if (in_array('Long_Description', $selected_columns)) {
+                            $res_array[$key]['Long_Description (' . $i . ")"] = $sim_items[$i - 1]->Long_Description ? $sim_items[$i - 1]->Long_Description : '';
                         }
+                        if (in_array('long_description_wc', $selected_columns)) {
+                            $res_array[$key]['Long Desc # Words (' . $i . ")"] = $sim_items[$i - 1]->long_description_wc ? $sim_items[$i - 1]->long_description_wc : '';
                         }
+                        if (in_array('Meta_Description', $selected_columns)) {
+                            $res_array[$key]['Meta_Description (' . $i . ")"] = $sim_items[$i - 1]->Meta_Description ? $sim_items[$i - 1]->Meta_Description : '';
+                        }
+                        if (in_array('Meta_Description_Count', $selected_columns)) {
+                            $res_array[$key]['Meta Desc Words (' . $i . ")"] = $sim_items[$i - 1]->Meta_Description_Count ? $sim_items[$i - 1]->Meta_Description_Count : '';
+                        }
+                    }                    
+
+//                if ($max_similar_item_count > 0) {
+//                    foreach( $val->similar_items as $k_of_cmp =>$v){
+//                        $cmp_item = $this->export_assess_data_for_sim($v, $selected_columns,$k_of_cmp);
+//                        $res_array[$key] = $res_array[$key]+$cmp_item[1];
+//                    }
+//                }
+             }
 
 
             if(in_array('model', $selected_columns)){
@@ -1114,13 +1280,15 @@ class Assess extends MY_Controller {
                 $res_array[$key]['column_reviews'] = $row->revision !== false ? $row->revision : '';
            }
 
-            if (in_array('H2_Tags', $selected_columns)) {
+            if (in_array('H1_Tags', $selected_columns)) {
                 if ($H1_tag_count > 0) {
                     for ($k = 1; $k <= $H1_tag_count; $k++) {
                         $line[] = "H1_tag ($k) ";
                         $line[] = "Chars ($k)";
                     }
+                } 
                 }
+            if (in_array('H2_Tags', $selected_columns)) {
                 if ($H2_tag_count > 0) {
                     for ($k = 1; $k <= $H2_tag_count; $k++) {
                         $line[] = "H2_tag ($k) ";
@@ -1129,30 +1297,59 @@ class Assess extends MY_Controller {
                 }
             }
 
-            if ($max_similar_item_count > 0) {
+//            if ($max_similar_item_count > 0) {
+//
+//                foreach( $val->similar_items as $k_of_cmp =>$v){
+//                    foreach ($cmp_item[0] as $keyhead => $valuehead) {
+//                        $line[$keyhead.''.$k_of_cmp] = $valuehead.' (cmp('.($k_of_cmp + 1).'))' ;
+//                }
+//                }
+//                }
 
-                foreach( $val->similar_items as $k_of_cmp =>$v){
-                    foreach ($cmp_item[0] as $keyhead => $valuehead) {
-                        $line[$keyhead.''.$k_of_cmp] = $valuehead.' (cmp('.($k_of_cmp + 1).'))' ;
-                }
-                }
-                }
 
-
-//            for ($i = 1; $i <= $max_similar_item_count; $i++) {
-//                if (in_array('product_name', $selected_columns)) {
-//                    $line[] = 'Product Name (' . $i . ")";
-//                }
-//                if (in_array('url', $selected_columns)) {
-//                    $line[] = 'Url (' . $i . ")";
-//                }
-//                if (in_array('short_description_wc', $selected_columns)) {
-//                    $line[] = 'Word Count (S) (' . $i . ")";
-//                }
-//                if (in_array('long_description_wc', $selected_columns)) {
-//                    $line[] = 'Word Count (L) (' . $i . ")";
-//                }
-//            }
+            for ($i = 1; $i <= $max_similar_item_count; $i++) {
+                if (in_array('product_name', $selected_columns)) {
+                    $line[] = 'Product Name (' . $i . ")";
+                }
+                 if (in_array('url', $selected_columns)) {
+                    $line[] = 'Url (' . $i . ")";
+                }
+                if (in_array('item_id', $selected_columns)) {
+                    $line[] = 'Item Id (' . $i . ")";
+                }
+                if (in_array('model', $selected_columns)) {
+                    $line[] = 'Model (' . $i . ")";
+                }
+               
+                if (in_array('Page_Load_Time', $selected_columns)) {
+                    $line[] = 'Page Load Time(' . $i . ")";
+                }
+                if (in_array('Short_Description', $selected_columns)) {
+                    $line[] = 'Short Description(' . $i . ")";
+                }
+                if (in_array('short_description_wc', $selected_columns)) {
+                    $line[] = 'Word Count (S) (' . $i . ")";
+                }
+                if (in_array('Meta_Keywords', $selected_columns)) {
+                    $line[] = 'Meta Keywords (' . $i . ")";
+                }
+                if (in_array('Long_Description', $selected_columns)) {
+                    $line[] = 'Long Description (' . $i . ")";
+                }
+                if (in_array('long_description_wc', $selected_columns)) {
+                    $line[] = ' Long Desc # Words (' . $i . ")";
+                }
+                if (in_array('Meta_Description', $selected_columns)) {
+                    $line[] = 'Meta Description (' . $i . ")";
+                }
+                if (in_array('Meta_Description_Count', $selected_columns)) {
+                    $line[] = ' Meta Desc Words (' . $i . ")";
+                }
+                
+                
+          
+              
+            }
 
         array_unshift($res_array, $line);
         $this->load->helper('csv');
@@ -2866,46 +3063,46 @@ private function export_assess_data_for_sim($imported_data_id, $selected_columns
             (select `value` from imported_data_parsed where `key`="Long_Description" and `imported_data_id` = `s`.`imported_data_id` limit 1) as `Long_Description`,
             (select `value` from imported_data_parsed where `key`="Url" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `url`
             from `statistics_new` as `s` ' . $qnid);
-        $results = $query->result();
-
+       $results = $query->result();
+       
         $this->load->model('batches_model');
         $res_array = array();
         $H1_tag_count = 0;
         $H2_tag_count = 0;
-        if (in_array('H2_Tags', $selected_columns)) {
-            foreach ($results as $key => $row) {
-
-                $pars_atr = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
-                if (in_array('H1_Tags', $selected_columns) && $pars_atr['HTags']['h1'] && $pars_atr['HTags']['h1'] != '') {
-                    $H1 = $pars_atr['HTags']['h1'];
-                    if (is_array($H1)) {
-                        if (count($H1) > $H1_tag_count) {
-                            $H1_tag_count = count($H1);
-                        }
-                    } else {
-
-                        if ($H1_tag_count == 0) {
-                            $H1_tag_count = 1;
-                        }
-                    }
-                }
-
-                if (in_array('H2_Tags', $selected_columns) && $pars_atr['HTags']['h2'] && $pars_atr['HTags']['h2'] != '') {
-                    $H2 = $pars_atr['HTags']['h2'];
-                    if (is_array($H2)) {
-
-                        if (count($H2) > $H2_tag_count) {
-                            $H2_tag_count = count($H2);
-                        }
-                    } else {
-
-                        if ($H2_tag_count == 0) {
-                            $H2_tag_count = 1;
-                        }
-                    }
-                }
-            }
-        }
+      //  if (in_array('H2_Tags', $selected_columns)) {
+//            foreach ($results as $key => $row) {
+//
+//                $pars_atr = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
+//                if (in_array('H1_Tags', $selected_columns) && $pars_atr['HTags']['h1'] && $pars_atr['HTags']['h1'] != '') {
+//                    $H1 = $pars_atr['HTags']['h1'];
+//                    if (is_array($H1)) {
+//                        if (count($H1) > $H1_tag_count) {
+//                            $H1_tag_count = count($H1);
+//                        }
+//                    } else {
+//
+//                        if ($H1_tag_count == 0) {
+//                            $H1_tag_count = 1;
+//                        }
+//                    }
+//                }
+//
+//                if (in_array('H2_Tags', $selected_columns) && $pars_atr['HTags']['h2'] && $pars_atr['HTags']['h2'] != '') {
+//                    $H2 = $pars_atr['HTags']['h2'];
+//                    if (is_array($H2)) {
+//
+//                        if (count($H2) > $H2_tag_count) {
+//                            $H2_tag_count = count($H2);
+//                        }
+//                    } else {
+//
+//                        if ($H2_tag_count == 0) {
+//                            $H2_tag_count = 1;
+//                        }
+//                    }
+//                }
+//            }
+     //   }
         foreach ($results as $key => $row) {
             //item_id
             if(in_array('item_id', $selected_columns)){
@@ -2922,7 +3119,35 @@ private function export_assess_data_for_sim($imported_data_id, $selected_columns
             $row = (object) $row;
 
             $pars_atr = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
+            
+            if (in_array('H1_Tags', $selected_columns) && $pars_atr['HTags']['h1'] && $pars_atr['HTags']['h1'] != '') {
+                    $H1 = $pars_atr['HTags']['h1'];
+                    if (is_array($H1)) {
+                        if (count($H1) > $H1_tag_count) {
+                            $H1_tag_count = count($H1);
+                        }
+                    } else {
 
+                        if ($H1_tag_count == 0) {
+                            $H1_tag_count = 1;
+                        }
+                    }
+                }
+                
+             if (in_array('H2_Tags', $selected_columns) && $pars_atr['HTags']['h2'] && $pars_atr['HTags']['h2'] != '') {
+                    $H2 = $pars_atr['HTags']['h2'];
+                    if (is_array($H2)) {
+
+                        if (count($H2) > $H2_tag_count) {
+                            $H2_tag_count = count($H2);
+                        }
+                    } else {
+
+                        if ($H2_tag_count == 0) {
+                            $H2_tag_count = 1;
+                        }
+                    }
+                }
             //meta keywords
             if(in_array('Meta_Keywords', $selected_columns)){
                 $res_array[$key]['meta_keywords'] = $pars_atr['parsed_meta']['keywords']?$pars_atr['parsed_meta']['keywords']:'';
