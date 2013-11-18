@@ -2072,23 +2072,25 @@ class Imported_data_parsed_model extends CI_Model {
          
          echo count( $ids);
          echo  "<pre>";
-        
+        $j=0;
         foreach($ids as $val){
             $this->db->select('p.imported_data_id, p.key, p.value, p.model')
             ->from($this->tables['imported_data_parsed'] . ' as p')
             ->where('p.imported_data_id', $val->imported_data_id)
             ->where('p.key', 'parsed_attributes')
-            ->like('p.value', 'model');
+            ->like('p.value', '%model%');
             $query = $this->db->get();
             $results = $query->result();
-            if(count($results)==0){
-                echo $val;
+           if ($query->num_rows == 0){
+               $j++;
+                //echo "id = ".$val->imported_data_id."<br>";
+                
             //$this->db->update($this->tables['imported_data_parsed'], array('model' => NULL), array('imported_data_id' => $val->imported_data_id));
         }
 
-
+        
         }
-
+echo "j  = ".$j;
 
 //        $this->db->select('p.imported_data_id, p.key, p.value, p.model')
 //                ->from($this->tables['imported_data_parsed'] . ' as p')
