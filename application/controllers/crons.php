@@ -1119,7 +1119,7 @@ class Crons extends MY_Controller {
         $q = $this->db->select('key,description')->from('settings')->where('key', 'cron_job_offset');
         $res = $q->get()->row_array();
         $start = $res['description'];
-        if (count($data_arr) > 0) {
+        if (0){//(count($data_arr) > 0) {
             $utd = $this->imported_data_parsed_model->getLUTimeDiff();
             
             echo $utd->td;
@@ -2910,6 +2910,11 @@ class Crons extends MY_Controller {
                 shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/match_urls/$process/$linesScaned/$itemsUpdated/$notFoundUrls/$itemsUnchanged > /dev/null 2>/dev/null &");
             }
         }
+    }
+    function fixawm_am($wmb,$amb){
+        $this->load->model('statistics_new_model');
+        $this->statistics_new_model->emptyItemByBatchId($wmb);
+        $this->statistics_new_model->addAmToWal($amb);
     }
 
 }
