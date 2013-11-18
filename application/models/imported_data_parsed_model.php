@@ -2082,7 +2082,11 @@ class Imported_data_parsed_model extends CI_Model {
             ->not_like('p.value', '"model";s:0'); 
             $query = $this->db->get();
             $results = $query->result();
-           if (count($results) == 0){
+            
+            
+            $parsed = unserialize($results[0]->value);
+            if(strlen($parsed['model'])<4){
+          
                $j++;
                 //echo "id = ".$val->imported_data_id."<br>";
                 
