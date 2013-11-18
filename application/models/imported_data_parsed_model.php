@@ -2078,7 +2078,8 @@ class Imported_data_parsed_model extends CI_Model {
             ->from($this->tables['imported_data_parsed'] . ' as p')
             ->where('p.imported_data_id', $val->imported_data_id)
             ->where('p.key', 'parsed_attributes')
-            ->like('p.value', 'model');
+            ->like('p.value', 'model')
+            ->or_like('p.value', '"model";s:0'); 
             $query = $this->db->get();
             $results = $query->result();
            if ($query->num_rows == 0){
