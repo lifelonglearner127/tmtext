@@ -2064,29 +2064,32 @@ class Imported_data_parsed_model extends CI_Model {
     }
 
     function delete_custom_models() {
-         $this->db->select('imported_data_id')
-                ->from("statistics_new")
-                ->where('batch_id', 133);
-         $query = $this->db->get();
-         $ids = $query->result();
+//         $this->db->select('imported_data_id')
+//                ->from("statistics_new")
+//                ->where('batch_id', 133);
+//         $query = $this->db->get();
+//         $ids = $query->result();
+         $q="Select `model`, `imported_data_id` from `imported_data_parsed` WHERE CHAR_LENGTH(model)<4 Group by `model`, `imported_data_id";
+         $res = $this->db->query($q)->result();
          
-         echo count( $ids);
+ 		
+//         echo count( $ids);
          echo  "<pre>";
         $j=0;
-        foreach($ids as $val){
-            $this->db->select('p.imported_data_id, p.key, p.value, p.model')
-            ->from($this->tables['imported_data_parsed'] . ' as p')
-            ->where('p.imported_data_id', $val->imported_data_id)
-            ->where('p.key', 'parsed_attributes')
-            ->like('p.value', 'model')
-            ->not_like('p.value', '"model";s:0'); 
-            $query = $this->db->get();
-            $results = $query->result();
-            
-            
-            $parsed = unserialize($results[0]->value);
-            if(strlen($parsed['model'])<4){
-           print_r($parsed);
+        foreach($res as $val){
+//            $this->db->select('p.imported_data_id, p.key, p.value, p.model')
+//            ->from($this->tables['imported_data_parsed'] . ' as p')
+//            ->where('p.imported_data_id', $val->imported_data_id)
+//            ->where('p.key', 'parsed_attributes')
+//            ->like('p.value', 'model')
+//            ->not_like('p.value', '"model";s:0'); 
+//            $query = $this->db->get();
+//            $results = $query->result();
+//            
+//            
+//            $parsed = unserialize($results[0]->value);
+//            if(strlen($parsed['model'])<4){
+//           print_r($parsed);
                $j++;
                
             $t=time();    
@@ -2095,7 +2098,7 @@ class Imported_data_parsed_model extends CI_Model {
         }
 
         
-        }
+        
 echo "j  = ".$j;
 
 //        $this->db->select('p.imported_data_id, p.key, p.value, p.model')
