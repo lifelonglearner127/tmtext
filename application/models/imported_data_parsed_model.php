@@ -2088,9 +2088,10 @@ class Imported_data_parsed_model extends CI_Model {
             if(strlen($parsed['model'])<4){
           
                $j++;
-                //echo "id = ".$val->imported_data_id."<br>";
-                
-            //$this->db->update($this->tables['imported_data_parsed'], array('model' => NULL), array('imported_data_id' => $val->imported_data_id));
+               
+            $t=time();    
+            $this->db->update($this->tables['imported_data_parsed'], array('model' =>  $t.$j), array('imported_data_id' => $val->imported_data_id));
+             $this->db->delete('statistics_new', array('imported_data_id' => $val->imported_data_id));
         }
 
         
