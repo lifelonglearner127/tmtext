@@ -2452,7 +2452,7 @@ class System extends MY_Controller {
 //                            .'; Count of ar-'.count($ar);
                     $line .= 'Total matching URLs imported: '.$ar[1].'</p><p>'
                             .'URLs not found in imported_data_parsed: '.$ar[2].'  '
-                            .(intval($data[2])>0?'<a id="download_not_founds" 
+                            .(intval($ar[2])>0?'<a id="download_not_founds" 
                                 href="'.base_url().'index.php/system/get_url_list">Download</a>':'')
                         ;
                     $line .= '<br># Matches Updated: '.$updated;
