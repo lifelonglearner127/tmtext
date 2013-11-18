@@ -1121,6 +1121,7 @@ class Imported_data_parsed_model extends CI_Model {
             $ids[] = $row['imported_data_id'];
        }
         $ids = array_unique($ids);
+         $ids[] = 1084;
         $data = array();
         foreach ($ids as $id) {
 
@@ -2065,7 +2066,7 @@ class Imported_data_parsed_model extends CI_Model {
     function delete_custom_models() {
          $this->db->select('imported_data_id')
                 ->from("statistics_new")
-                ->where('batch_id', 58);
+                ->where('batch_id', 133);
          $query = $this->db->get();
          $ids = $query->result();
          echo count( $ids);
@@ -2271,8 +2272,9 @@ class Imported_data_parsed_model extends CI_Model {
         $query = $this->db->get();
         if ($query->num_rows() > 0) {
             $res = $query->row_array();
-
-            return $res['model'];
+               if(strlen($res['model'])>3)  {   
+                    return $res['model'];
+               }
         }
 
         return false;
@@ -2280,30 +2282,31 @@ class Imported_data_parsed_model extends CI_Model {
 
     function get_by_custom_model($model, $imp_id) {
 
-        $this->db->select('p.imported_data_id, p.key, p.value, p.revision')
-                ->from($this->tables['imported_data_parsed'] . ' as p')
-                ->where('`p`.key', 'Product Name');
-        $value1 = $this->db->escape($model . '%');
-        $value2 = $this->db->escape($model);
-        $this->db->where("`p`.`model` like " . $value1 . " OR INSTR(" . $value2 . ", `p`.`model`)=1", NULL, FALSE)
-//                ->where('p.revision = (SELECT  MAX(revision) as revision
-//                      FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
-//                      GROUP BY imported_data_id)', NULL, FALSE)
-                ;
-
-        $query = $this->db->get();
-
-        $results = $query->result();
-
-        $data = array();
-        $im_ids = array();
-        foreach ($results as $result) {
-            $im_ids[] = $result->imported_data_id;
-        }
-
-        $im_ids = array_unique($im_ids);
-
+//        $this->db->select('p.imported_data_id, p.key, p.value, p.revision')
+//                ->from($this->tables['imported_data_parsed'] . ' as p')
+//                ->where('`p`.key', 'Product Name');
+//        $value1 = $this->db->escape($model . '%');
+//        $value2 = $this->db->escape($model);
+//        $this->db->where("`p`.`model` like " . $value1 . " OR INSTR(" . $value2 . ", `p`.`model`)=1", NULL, FALSE)
+////                ->where('p.revision = (SELECT  MAX(revision) as revision
+////                      FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
+////                      GROUP BY imported_data_id)', NULL, FALSE)
+//                ;
+//
+//        $query = $this->db->get();
+//
+//        $results = $query->result();
+//
+//        $data = array();
+//        $im_ids = array();
+//        foreach ($results as $result) {
+//            $im_ids[] = $result->imported_data_id;
+//        }
+//
+//        $im_ids = array_unique($im_ids);
+        $im_ids[] =  $imp_id;
         $leseced_site = '';
+        $data = array();
         foreach ($im_ids as $imported_data_id) {
 
             $query = $this->db->where('imported_data_id', $imported_data_id)
@@ -2387,174 +2390,13 @@ class Imported_data_parsed_model extends CI_Model {
 
         return $rows;
     }
-
+    
     public function getByProductNameNew($im_data_id, $selected_product_name = '', $manufacturer = '', $strict = false) {
-
-        print_r((int) ceil(memory_get_usage()/1000000).'MB used<br>');
-//        $special_list = array('mixer', 'oven', 'masher', 'extractor', 'maker', 'cooker', 'tv', 'laptop', 'belt', 'blender', 'tablet', 'toaster', 'kettle', 'watch', 'sneakers', 'griddle', 'grinder', 'camera');
-//        $this->db->select('p.imported_data_id, p.key, p.value, p.model')
-//                ->from($this->tables['imported_data_parsed'] . ' as p')
-//                ->where('p.key', 'parsed_attributes')
-//                ->or_where('p.key', 'URL')
-//                ->or_where('p.key', 'Product Name');
-//
-//        if ($strict) {
-//            $this->db->like('p.value', '"' . $manufacturer . '"');
-//        } else {
-//            $this->db->like('p.value', $manufacturer);
-//        }
-
-        $sql= "select idp_u.imported_data_id as imported_data_id
-        ,idp_u.`value` as `url`,idp_u.`model`
-        ,(select `value` from imported_data_parsed
-        where `key`='Product Name' and `imported_data_id` = idp_u.`imported_data_id` limit 1) as `product_name`
-        ,(select `value` from imported_data_parsed
-        where `key`='parsed_attributes' and `imported_data_id` = idp_u.`imported_data_id` limit 1) as `parsed_attributes`
-        from imported_data_parsed as idp_u
-        where idp_u.`key` = 'url' and (idp_u.`value` LIKE '%amazon%' or idp_u.`value` like '%walmart%')";
-
-
-        $res_new = $this->db->query($sql)->result_array();
-        $selected_url = '';
-        $data = array();
-        $for_groups = array($im_data_id);
-        $model = Null;
-        foreach ( $res_new as $result){
-            $data[$result['imported_data_id']] =$result;
-            if ($result['imported_data_id'] == $im_data_id) {
-                    $selected_url = $result['url'];
-                    //echo $selected_url.'<br>';exit;
-            }
-            if ($result['parsed_attributes'] != '' && !is_null($result['parsed_attributes'])) {
-                    $data[$result['imported_data_id']]['parsed_attributes']=  unserialize($result['parsed_attributes']);
-            }
-        }
-
-//
-//        foreach ($query->result() as $result) {
-//            if ($result->key === 'URL') {
-//                if ($result->imported_data_id == $im_data_id) {
-//                    $selected_url = $result->value;
-//                    //echo $selected_url.'<br>';exit;
-//                }
-//                $data[$result->imported_data_id]['url'] = $result->value;
-//            }
-//            if ($result->key === 'Product Name') {
-//                //echo 'Product name<br>';
-//                $data[$result->imported_data_id]['product_name'] = $result->value;
-//                $data[$result->imported_data_id]['model'] = $result->model;
-//            }
-//
-//
-//            try {
-//                if ($result->key === 'parsed_attributes') {
-//                //echo 'parsed_attributes<br>';
-//                $data[$result->imported_data_id]['parsed_attributes'] = unserialize($result->value);
-//            }
-//            } catch (Exception $e) {
-//                echo $e->getMessage();
-//            }
-//        }
-
-        $urls = array($this->get_base_url($selected_url));
-        $all_items = array();
-
-        $selected_product = '';
-        foreach ($special_list as $product) {
-            if (substr_count(strtolower($selected_product_name), $product) > 0) {
-                $selected_product = $product;
-                break;
-            }
-        }
-        foreach ($data as $key => $val1) {
-            if (!isset($val1['product_name'])) {
-                continue;
-            }
-
-            if ($selected_product != '' && substr_count(strtolower($val1['product_name']), $selected_product) <= 0) {
-                continue;
-            }
-
-            if ($selected_product == '') {
-                $other_product = false;
-                foreach ($special_list as $product) {
-                    if (substr_count(strtolower($val1['product_name']), $product) > 0) {
-                        $other_product = true;
-                        break;
-                    }
-                }
-
-                if ($other_product) {
-                    continue;
-                }
-            }
-
-
-
-            if (isset($val1['product_name']) && isset($val1['url'])) {
-
-                if ($key == $im_data_id) {
-                    //$for_groups[] = $key;
-                } else {
-                    if (!in_array($this->get_base_url($val1['url']), $urls)) {
-
-                        if(isset($val1['parsed_attributes']['model']) && !empty($val1['parsed_attributes']['model']) ){
-                            $model1 = str_replace('-', '', $val1['parsed_attributes']['model']);
-                            if (preg_match('/' . strtolower($val1['parsed_attributes']['model']) . '/', strtolower($selected_url)) or  preg_match('/' . strtolower($model1). '/', strtolower($selected_url))) {
-                                $urls[] = $this->get_base_url($val1['url']);
-                                if (!is_null($val1['model'])) {
-                                    $model = $val1['model'];
-                                    $all_items[] = $key;
-                                } else {
-                                    $for_groups[] = $key;
-                                    $all_items[] = $key;
-                                }
-                            }
-                        }else{
-
-                        if (isset($val1['parsed_attributes']['manufacturer'])) {
-                            if (preg_match('/' . $val1['parsed_attributes']['manufacturer'] . '/', $selected_product_name)) {
-                                if ($this->min_two_words($val1['product_name'], $selected_product_name)) {
-                                    if (leven_algoritm(strtolower($val1['product_name']), strtolower($selected_product_name)) > 37) {
-                                        $urls[] = $this->get_base_url($val1['url']);
-                                        if (!is_null($val1['model'])) {
-                                            $model = $val1['model'];
-                                            $all_items[] = $key;
-                                        } else {
-                                            $for_groups[] = $key;
-                                            $all_items[] = $key;
-                                        }
-
-
-                                    }
-                                }
-                            }
-                        }
-                       else {
-                            if ($this->min_two_words($val1['product_name'], $selected_product_name)) {
-                                if (leven_algoritm(strtolower($val1['product_name']), strtolower($selected_product_name)) > 37) {
-                                    $urls[] = $this->get_base_url($val1['url']);
-                                    if (!is_null($val1['model'])) {
-                                        $model = $val1['model'];
-                                        $all_items[] = $key;
-                                    } else {
-                                        $for_groups[] = $key;
-                                        $all_items[] = $key;
-                                    }
-
-                                }
-                            }
-                        }
-                        }
-                    }
-                }
-            }
-        }
-
-        $all_items[] = $im_data_id;
-        $all_items = array_unique($all_items);
-//        echo '$all_items '.count($all_items).'<br>';
+         $model = time();
+         $this->insert_custom_model($im_data_id, $model);
+        
         $data1 = array();
+        $all_items[]= $im_data_id;
         foreach ($all_items as $result) {
             $query = $this->db->where('imported_data_id', $result)
 //                    ->where("revision = (SELECT  MAX(revision) as revision
@@ -2630,17 +2472,7 @@ class Imported_data_parsed_model extends CI_Model {
                     $rows[$key]['customer'] = $cus_val;
             }
         }
-
-        if ($model == Null) {
-            $model = time();
-        }
-        foreach ($for_groups as $id) {
-            $this->insert_custom_model($id, $model);
-        }
-//        echo "rows are ready.<br>";
-//        exit;
-
-        return $rows;
+       return $rows;
     }
 
     public function getByProductName($im_data_id, $selected_product_name = '', $manufacturer = '', $strict = false) {

@@ -871,7 +871,7 @@ class Crons extends MY_Controller {
                     $time_start = microtime(true);
 
 
-                    if (isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model']) && $data_import['parsed_attributes']['model']!== '') {
+                    if (isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model']) && strlen($data_import['parsed_attributes']['model'])>3) {
                         echo "</br>isset model</br>";
                         echo " model = ".$data_import['parsed_attributes']['model']."<br>";
                         echo " im_id  = ".$data_import['imported_data_id']."<br>";
@@ -1030,7 +1030,8 @@ class Crons extends MY_Controller {
                         $time_start= microtime(true);
                         if ($model = $this->imported_data_parsed_model->check_if_exists_custom_model($im_data_id)) {
                             echo "exists custom model";
-                            $same_pr = $this->imported_data_parsed_model->get_by_custom_model($model, $im_data_id);
+                            //$same_pr = $this->imported_data_parsed_model->get_by_custom_model($model, $im_data_id);
+                             $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($model, 0,$im_data_id );
                         } else {
                             echo "geting custom model";
                             $same_pr= array();
