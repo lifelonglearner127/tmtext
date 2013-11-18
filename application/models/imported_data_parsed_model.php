@@ -2069,7 +2069,10 @@ class Imported_data_parsed_model extends CI_Model {
                 ->where('batch_id', 133);
          $query = $this->db->get();
          $ids = $query->result();
+         
          echo count( $ids);
+         echo  "<pre>";
+        
         foreach($ids as $val){
             $this->db->select('p.imported_data_id, p.key, p.value, p.model')
             ->from($this->tables['imported_data_parsed'] . ' as p')
@@ -2079,8 +2082,8 @@ class Imported_data_parsed_model extends CI_Model {
             $query = $this->db->get();
             $results = $query->result();
             if(count($results)==0){
-
-            $this->db->update($this->tables['imported_data_parsed'], array('model' => NULL), array('imported_data_id' => $val->imported_data_id));
+                echo $val;
+            //$this->db->update($this->tables['imported_data_parsed'], array('model' => NULL), array('imported_data_id' => $val->imported_data_id));
         }
 
 
