@@ -10,6 +10,7 @@ class PageProcessor {
 					'name' => array('description', 'keywords')
 				);
 	private $load_time = 0;
+	private $processed_data = array();
 
 	public function __construct() {
 		$this->load->library('nokogiri', null, 'noko');
@@ -108,6 +109,8 @@ class PageProcessor {
 
 			$result['Date'] = date("Y-m-d H:i:s");
 			$result['HTags'] = $this->process_htags();
+
+			$this->processed_data = $result;
 
         	return $result;
         }
@@ -1103,7 +1106,17 @@ class PageProcessor {
 			if (isset($parts[1])) {
 				$parts2 = explode('-',$parts[1]);
 				if (isset($parts2[1])) {
-					$result['model'] = $parts2[1];
+					$data = $this->processed_data;
+					if(isset($data['Product Name'])) {
+						$words = explode(' ', $data['Product Name']);
+						foreach($words as $word) {
+							if (strpos($word, $parts2[1])!==false) {
+								$result['model'] = $word;
+							}
+						}
+					} else {
+						$result['model'] = $parts2[1];
+					}
 				}
 			}
 		}

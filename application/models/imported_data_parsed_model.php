@@ -1083,6 +1083,8 @@ class Imported_data_parsed_model extends CI_Model {
     }
 
     function do_stats_newupdated($truncate=0) {
+      $min_model_lenght = $this->config->item('min_model_lenght');
+
       $q = $this->db->select('key,description')->from('settings')->where('key', 'cron_job_offset');
         $res = $q->get()->row_array();
         if (count($res) > 0) {
@@ -1106,7 +1108,10 @@ class Imported_data_parsed_model extends CI_Model {
        LEFT JOIN `statistics_new` AS sn ON `p`.`imported_data_id` = sn.`imported_data_id`
        WHERE ((`p`.`key`= 'Product Name'  AND `p`.`value` != '')
        OR (`p`.`key`= 'parsed_attributes' AND `p`.`value` LIKE '%model%' OR `p`.`model` IS NOT NULL)) AND
-       (`p`.`revision` > sn.`revision` OR `sn`.`revision` IS NULL)  LIMIT 50");
+       (`p`.`revision` > sn.`revision` OR `sn`.`revision` IS NULL)
+	   AND CHAR_LENGTH(p.model)>".$min_model_lenght."
+	   GROUP BY imported_data_id
+       LIMIT 50");
 //       `p`.`revision` = (SELECT  MAX(idp.revision) AS revision FROM imported_data_parsed AS idp WHERE `p`.`imported_data_id`= idp.`imported_data_id`) AND
 //       (`p`.`revision` != sn.`revision` OR `sn`.`revision` IS NULL)  LIMIT 50");
         $rows = $query->result_array();

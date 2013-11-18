@@ -449,6 +449,9 @@ $config['aws_region'] = '';
 $config['aws_instance_type'] = '';
 
 
+$config['min_model_lenght'] = 4;
+
+
 // allow the local environment to override the settings
 if (file_exists(APPPATH.'config/config.local.php')) {
 	@require_once APPPATH.'config/config.local.php';
