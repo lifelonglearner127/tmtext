@@ -1119,7 +1119,7 @@ class Crons extends MY_Controller {
         $q = $this->db->select('key,description')->from('settings')->where('key', 'cron_job_offset');
         $res = $q->get()->row_array();
         $start = $res['description'];
-        if (0){//(count($data_arr) > 0) {
+        if (count($data_arr) > 0) {//(0){//
             $utd = $this->imported_data_parsed_model->getLUTimeDiff();
             
             echo $utd->td;
