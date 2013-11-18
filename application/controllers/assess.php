@@ -843,7 +843,7 @@ class Assess extends MY_Controller {
 
 
                                     if (isset($parsed_meta_unserialize['keywords'])) {
-                                        $Meta_Keywords_un = "<table class='table_keywords_long'>";
+                                       $Meta_Keywords_un = "";
                                             $cnt_meta = explode(',', $parsed_meta_unserialize['keywords']);
                                             $cnt_meta_count = count($cnt_meta);
                                             $_count_meta = 0;
@@ -852,31 +852,27 @@ class Assess extends MY_Controller {
                                                 if($cmpare->Short_Description || $cmpare->Long_Description){
                                                     $_count_meta = $this->keywords_appearence($cmpare->Long_Description.$cmpare->Short_Description, $cnt_m);
                                                     $_count_meta_num = round(($_count_meta * $cnt_meta_count / ($cmpare->long_description_wc + $cmpare->short_description_wc)) * 100, 2) . "%";
-                                                    $Meta_Keywords_un .= "<tr><td>" . $cnt_m . "</td><td>".$_count_meta_num."</td></tr>";
+                                                    $Meta_Keywords_un .=  $cnt_m . " -- ".$_count_meta_num.", ";
                                                 }
-//                                             
+                                            
                                                 }
-                                            $Meta_Keywords_un .= "</table>";
+                                            
                                             $parsed_meta_keywords_unserialize_val = $Meta_Keywords_un;
                                         }
 
 
 
 
-                                    $val->snap1 = $cmpare->snap;
-                                    $val->product_name1 = $cmpare->product_name;
-                                    $val->item_id1 = $parsed_attributes_unserialize_val;
-                                    $val->model1 = $parsed_model_unserialize_val;
-                                    $val->url1 = $cmpare->url;
-                                    $val->Page_Load_Time1 = $parsed_loaded_in_seconds_unserialize_val;
-                                    $val->Short_Description1 = $cmpare->Short_Description;
-                                    $val->short_description_wc1 = $cmpare->short_description_wc;
-                                    $val->Meta_Keywords1 = $parsed_meta_keywords_unserialize_val;
-                                    $val->Long_Description1 = $cmpare->Long_Description;
-                                    $val->long_description_wc1 = $cmpare->long_description_wc;
-                                    $val->Meta_Description1 = $parsed_meta_unserialize_val;
-                                    $val->Meta_Description_Count1 = $parsed_meta_unserialize_val_count;
-                                    $val->average_review1 = $parsed_average_review_unserialize_val_count;
+                                    $cmpare->item_id = $parsed_attributes_unserialize_val;
+                                    $cmpare->model = $parsed_model_unserialize_val;
+
+                                    $cmpare->Page_Load_Time = $parsed_loaded_in_seconds_unserialize_val;
+
+                                    $cmpare->Meta_Keywords = $parsed_meta_keywords_unserialize_val;
+                                
+                                    $cmpare->Meta_Description = $parsed_meta_unserialize_val;
+                                    $cmpare->Meta_Description_Count = $parsed_meta_unserialize_val_count;
+                                    $cmpare->average_review = $parsed_average_review_unserialize_val_count;
                                 
                                     $similar_items_data[] = $cmpare;
                                     $val->similar_items = $similar_items_data;  
@@ -968,6 +964,7 @@ class Assess extends MY_Controller {
                     }
                 }
             }
+          
             foreach ($results as $key => $row) {
 
                 //item_id
@@ -988,7 +985,27 @@ class Assess extends MY_Controller {
 
                 //meta keywords
                 if(in_array('Meta_Keywords', $selected_columns)){
-                    $res_array[$key]['meta_keywords'] = $pars_atr['parsed_meta']['keywords']?$pars_atr['parsed_meta']['keywords']:'';
+                     $parsed_meta_keywords_unserialize_val = "";
+                     if ($res_array[$key]['meta_keywords']) {
+                                       $Meta_Keywords_un = "";
+                                       $cnt_meta = "";
+                                            $cnt_meta = explode(',', $res_array[$key]['meta_keywords']);
+                                            $cnt_meta_count = count($cnt_meta);
+                                            $_count_meta = 0;
+                                            foreach($cnt_meta as $cnt_m){
+                                                $cnt_m = trim($cnt_m);
+                                                if($row->Short_Description || $row->Long_Description){
+                                                    $_count_meta = $this->keywords_appearence($row->Long_Description.$row->Short_Description, $cnt_m);
+                                                    $_count_meta_num = round(($_count_meta * $cnt_meta_count / ($row->long_description_wc + $row->short_description_wc)) * 100, 2) . "%";
+                                                    $Meta_Keywords_un .=  $cnt_m . " -- ".$_count_meta_num.", ";
+                                                }
+                                            
+                                                }
+                                            
+                                            $parsed_meta_keywords_unserialize_val = $Meta_Keywords_un;
+                                        }
+                    $res_array[$key]['meta_keywords'] = $parsed_meta_keywords_unserialize_val?$parsed_meta_keywords_unserialize_val:'';
+                    
                 }
 
                 //meta description
@@ -1231,10 +1248,9 @@ class Assess extends MY_Controller {
                         }
                         if (in_array('Meta_Description', $selected_columns)) {
                             $res_array[$key]['Meta_Description (' . $i . ")"] = $sim_items[$i - 1]->Meta_Description ? $sim_items[$i - 1]->Meta_Description : '';
-                        }
-                        if (in_array('Meta_Description_Count', $selected_columns)) {
                             $res_array[$key]['Meta Desc Words (' . $i . ")"] = $sim_items[$i - 1]->Meta_Description_Count ? $sim_items[$i - 1]->Meta_Description_Count : '';
                         }
+                       
                     }                    
 
 //                if ($max_similar_item_count > 0) {
@@ -1341,10 +1357,9 @@ class Assess extends MY_Controller {
                 }
                 if (in_array('Meta_Description', $selected_columns)) {
                     $line[] = 'Meta Description (' . $i . ")";
-                }
-                if (in_array('Meta_Description_Count', $selected_columns)) {
                     $line[] = ' Meta Desc Words (' . $i . ")";
                 }
+               
                 
                 
           
@@ -3149,8 +3164,32 @@ private function export_assess_data_for_sim($imported_data_id, $selected_columns
                     }
                 }
             //meta keywords
+                
             if(in_array('Meta_Keywords', $selected_columns)){
-                $res_array[$key]['meta_keywords'] = $pars_atr['parsed_meta']['keywords']?$pars_atr['parsed_meta']['keywords']:'';
+                if ($pars_atr['parsed_meta']['keywords']) {
+
+                    $cnt_meta_un = explode(',', $pars_atr['parsed_meta']['keywords']);
+                    $cnt_meta_count_un = count($cnt_meta_un);
+                    foreach($cnt_meta_un as $cnt_m_un){
+                        $_count_meta_un = 0;
+                        $cnt_m_un = trim($cnt_m_un);
+                        if($row->Long_Description || $row->Short_Description){
+                            $_count_meta_un = $this->keywords_appearence($row->Long_Description.$row->Short_Description, $cnt_m_un);
+                            $_count_meta_num_un = round(($_count_meta_un * $cnt_meta_count_un / ($sim_items[$i - 1]->long_description_wc + $sim_items[$i - 1]->short_description_wc)) * 100, 2) . "%";
+                            $Meta_Keywords_un .=  $cnt_m_un.  " ".$_count_meta_num_un.", ";
+                        if($i==1 && !$meta_key_gap ){
+                            $meta_key_gap=round(($_count_meta_un * $cnt_meta_count_un / ($row->long_description_wc + $row->short_description_wc)) * 100, 2);
+                        }
+                        }
+
+
+                    } 
+                    $parsed_meta_keywords_unserialize_val = $Meta_Keywords_un;
+
+                    }
+                
+                
+                $res_array[$key]['meta_keywords'] = $parsed_meta_keywords_unserialize_val ? $parsed_meta_keywords_unserialize_val:'';
             }
 
             //meta description
