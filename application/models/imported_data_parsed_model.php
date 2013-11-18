@@ -2066,7 +2066,7 @@ class Imported_data_parsed_model extends CI_Model {
     function delete_custom_models() {
          $this->db->select('imported_data_id')
                 ->from("statistics_new")
-                ->where('batch_id', 134);
+                ->where('batch_id', 133);
          $query = $this->db->get();
          $ids = $query->result();
          
