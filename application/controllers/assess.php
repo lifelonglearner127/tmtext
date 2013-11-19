@@ -789,7 +789,7 @@ class Assess extends MY_Controller {
             (select `value` from imported_data_parsed where `key`="Url" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `url`
             from `statistics_new` as `s` ' . $qnd);
         $results = $query->result();
-
+        
             $this->load->model('batches_model');
 
             if ($cmp_selected != 'all' && $cmp_selected != null && $cmp_selected != 0) {
@@ -975,6 +975,28 @@ class Assess extends MY_Controller {
                 if(in_array('model', $selected_columns)){
                     $res_array[$key]['model'] = $pars_atr['parsed_attributes']['model']?$pars_atr['parsed_attributes']['model']:'';
                 }
+                if (in_array('price_diff', $selected_columns)) {
+                 $price_diff = unserialize($res_array[$key]['price_diff']);
+                if ($price_diff) {
+                    $own_price = floatval($price_diff['own_price']);
+                    $own_site = str_replace('www.', '', $price_diff['own_site']);
+                    $own_site = str_replace('www1.', '', $own_site);
+                    $price_diff_res = $own_site . " - $" . $price_diff['own_price'];
+                    $flag_competitor = false;
+                    for ($i = 0; $i < count($price_diff['competitor_customer']); $i++) {
+                        if ($customer_url["host"] != $price_diff['competitor_customer'][$i]) {
+                            if ($own_price > floatval($price_diff['competitor_price'][$i])) {
+                                $competitor_site = str_replace('www.', '', $price_diff['competitor_customer'][$i]);
+                                $competitor_site = str_replace('www.', '', $competitor_site);
+                                $price_diff_res .= "\r\n" . $competitor_site . " - $" . $price_diff['competitor_price'][$i];
+                            }
+                        }
+                    }
+                    $res_array[$key]['price_diff'] = $price_diff_res;
+                } else {
+                    $res_array[$key]['price_diff'] = '';
+                }
+                }
                 $row = (array) $row;
                 foreach ($line as $k => $v) {
                     $res_array[$key][$k] = $row[$k];
@@ -986,10 +1008,10 @@ class Assess extends MY_Controller {
                 //meta keywords
                 if(in_array('Meta_Keywords', $selected_columns)){
                      $parsed_meta_keywords_unserialize_val = "";
-                     if ($res_array[$key]['meta_keywords']) {
+                     if ($pars_atr['parsed_meta']['keywords']) {
                                        $Meta_Keywords_un = "";
                                        $cnt_meta = "";
-                                            $cnt_meta = explode(',', $res_array[$key]['meta_keywords']);
+                                            $cnt_meta = explode(',', $pars_atr['parsed_meta']['keywords']);
                                             $cnt_meta_count = count($cnt_meta);
                                             $_count_meta = 0;
                                             foreach($cnt_meta as $cnt_m){
@@ -1188,26 +1210,7 @@ class Assess extends MY_Controller {
                     }
                 }
 
-                $price_diff = unserialize($res_array[$key]['price_diff']);
-                if ($price_diff) {
-                    $own_price = floatval($price_diff['own_price']);
-                    $own_site = str_replace('www.', '', $price_diff['own_site']);
-                    $own_site = str_replace('www1.', '', $own_site);
-                    $price_diff_res = $own_site . " - $" . $price_diff['own_price'];
-                    $flag_competitor = false;
-                    for ($i = 0; $i < count($price_diff['competitor_customer']); $i++) {
-                        if ($customer_url["host"] != $price_diff['competitor_customer'][$i]) {
-                            if ($own_price > floatval($price_diff['competitor_price'][$i])) {
-                                $competitor_site = str_replace('www.', '', $price_diff['competitor_customer'][$i]);
-                                $competitor_site = str_replace('www.', '', $competitor_site);
-                                $price_diff_res .= "\r\n" . $competitor_site . " - $" . $price_diff['competitor_price'][$i];
-                            }
-                        }
-                    }
-                    $res_array[$key]['price_diff'] = $price_diff_res;
-                } else {
-                    $res_array[$key]['price_diff'] = '';
-                }
+               
                 
                  $sim_items = $row->similar_items;
 
@@ -3064,13 +3067,7 @@ private function export_assess_data_for_sim($imported_data_id, $selected_columns
         if (($key = array_search('snap', $selected_columns)) !== false) {
             unset($selected_columns[$key]);
         }
-        $line = array('created' => 'Date', 'product_name' => 'Product Name', 'url' => 'Url','Short_Description' =>'Short Description', 'short_description_wc' => 'Word Count (S)','Long_Description' =>'Long Description', 'long_description_wc' => 'Word Count (L)', 'short_seo_phrases' => 'SEO Phrases (S)', 'long_seo_phrases' => 'SEO Phrases (L)', 'price_diff' => 'Price', 'column_features' => 'Features', 'column_reviews' => 'Reviews');
-
-        foreach ($line as $key => $val) {
-            if (!in_array($key, $selected_columns)) {
-                unset($line[$key]);
-            }
-        }
+       
         $qnid = " WHERE `s`.`imported_data_id` = ".$imported_data_id;
         $query = $this->db->query('select `s`.*,
             (select `value` from imported_data_parsed where `key`="Product Name" and `imported_data_id` = `s`.`imported_data_id` limit 1) as `product_name`,
@@ -3084,40 +3081,7 @@ private function export_assess_data_for_sim($imported_data_id, $selected_columns
         $res_array = array();
         $H1_tag_count = 0;
         $H2_tag_count = 0;
-      //  if (in_array('H2_Tags', $selected_columns)) {
-//            foreach ($results as $key => $row) {
-//
-//                $pars_atr = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
-//                if (in_array('H1_Tags', $selected_columns) && $pars_atr['HTags']['h1'] && $pars_atr['HTags']['h1'] != '') {
-//                    $H1 = $pars_atr['HTags']['h1'];
-//                    if (is_array($H1)) {
-//                        if (count($H1) > $H1_tag_count) {
-//                            $H1_tag_count = count($H1);
-//                        }
-//                    } else {
-//
-//                        if ($H1_tag_count == 0) {
-//                            $H1_tag_count = 1;
-//                        }
-//                    }
-//                }
-//
-//                if (in_array('H2_Tags', $selected_columns) && $pars_atr['HTags']['h2'] && $pars_atr['HTags']['h2'] != '') {
-//                    $H2 = $pars_atr['HTags']['h2'];
-//                    if (is_array($H2)) {
-//
-//                        if (count($H2) > $H2_tag_count) {
-//                            $H2_tag_count = count($H2);
-//                        }
-//                    } else {
-//
-//                        if ($H2_tag_count == 0) {
-//                            $H2_tag_count = 1;
-//                        }
-//                    }
-//                }
-//            }
-     //   }
+ 
         foreach ($results as $key => $row) {
             //item_id
             if(in_array('item_id', $selected_columns)){
