@@ -18,8 +18,6 @@ class ProcessText():
 	NONWORD_MATCH_WEIGHT = 2
 	DICTIONARY_WORD_MATCH_WEIGHT = 1
 
-	#TODO: different weight if alt models match, not literal models?
-
 	# exception brands - are brands names but are also found in the dictionary
 	brand_exceptions = ['philips', 'sharp', 'sceptre', 'westinghouse', 'element', 'curtis', 'emerson', 'xerox', 'kellogg']
 
@@ -220,21 +218,26 @@ class ProcessText():
 			words2_copy.append("__brand2_dummy__")
 
 		
-
-		# assign weigths - 1 to normal words, 2 to nondictionary words
 		brand_matched = False
 
 		# check if brands match - create lists with possible brand names for each of the 2 products, remove matches from word lists
 		# (so as not to count twice)
 
 		# add first word, second word, and their concatenation
-		#TODO: ignore second word if it's a number? like xbox 360
-		brands1 = set([words1_copy[0], words1_copy[1], words1_copy[0] + words1_copy[1]])
-		brands2 = set([words2_copy[0], words2_copy[1], words2_copy[0] + words2_copy[1]])
+		brands1 = set([words1_copy[0]])
+		# ignore second word if it's a number
+		if not ProcessText.is_number(words1_copy[1]):
+			brands1.add(words1_copy[1])
+			brands1.add(words1_copy[0] + words1_copy[1])
+		brands2 = set([words2_copy[0]])
+		# ignore second word if it's a number
+		if not ProcessText.is_number(words2_copy[1]):
+			brands2.add(words2_copy[1])
+			brands2.add(words2_copy[0] + words2_copy[1])
 		if product2_brand:
 			product2_brand_tokens = product2_brand.split()
 			brands2.add(product2_brand_tokens[0])
-			if len(product2_brand_tokens) > 1:
+			if len(product2_brand_tokens) > 1 and not ProcessText.is_number(product2_brand_tokens[1]):
 				brands2.add(product2_brand_tokens[1])
 				brands2.add(product2_brand_tokens[0] + product2_brand_tokens[1])
 		# add versions of the brands stemmed of plural marks
@@ -262,6 +265,7 @@ class ProcessText():
 			for word in intersection_brands:
 				if len(word) > len(matched_brand):
 					matched_brand = word
+			print "MATCHED BRAND: ", matched_brand
 
 			# replace matched brand in products names with dummy word (to avoid counting twice)
 			if matched_brand in words1_copy:
@@ -275,8 +279,13 @@ class ProcessText():
 				# so try to remove all words from brands1 (could be 2 words)
 				else:
 					for word in brands1:
-						if word in words1_copy:
-							words1_copy[words1_copy.index(word)] = "__brand1__"
+						if word in words1_copy and word in matched_brand:
+							# if this is the second word, just remove the word - consider brand as a single word
+							if "__brand1__" not in words1_copy:
+								print "ALREADY HERE: ", words1_copy
+								words1_copy[words1_copy.index(word)] = "__brand1__"
+							else:
+								words1_copy.remove(word)
 
 			if matched_brand in words2_copy:
 				words2_copy[words2_copy.index(matched_brand)] = "__brand2__"
@@ -289,8 +298,12 @@ class ProcessText():
 				# so try to remove all words from brands2 (could be 2 words)
 				else:
 					for word in brands2:
-						if word in words2_copy:
-							words2_copy[words2_copy.index(word)] = "__brand2__"
+						if word in words2_copy and word in matched_brand:
+							# if this is the second word, just remove the word - consider brand as a single word
+							if "__brand2__" not in words2_copy:
+								words2_copy[words2_copy.index(word)] = "__brand2__"
+							else:
+								words2_copy.remove(word)
 
 		return (brand_matched, words1_copy, words2_copy)
 	
@@ -468,6 +481,13 @@ class ProcessText():
 	@staticmethod
 	def is_dictionary_word(word):
 		if wordnet.synsets(word):
+			return True
+		return False
+
+	# check if a word is a number (including nr of inches, model nrs (slashes, dashes) etc)
+	@staticmethod
+	def is_number(word):
+		if re.match("[0-9\-\.\"\'\/]+", word):
 			return True
 		return False
 
