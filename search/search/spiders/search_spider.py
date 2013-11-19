@@ -1056,6 +1056,44 @@ class ProcessText():
 		brand_matched = False
 		weights_common = []
 
+		# check if brands match - create lists with possible brand names for each of the 2 products, remove matches from word lists
+		# (so as not to count twice)
+		brands1 = set([words1[0], words1[1], words1[0] + words2[0]])
+		brands2 = set([words2[0], words2[1], words2[0] + words2[1]])
+		product2_brand_tokens = product2_brand.split()
+		brands2.append(product2_brand_tokens[0])
+		if len(product2_brand_tokens) > 1:
+			brands2.add(product2_brand_tokens[1])
+			brands2.add(product2_brand_tokens[0] + product2_brand_tokens[1])
+		# add versions of the brands stemmed of plural marks
+		for word in brands1:
+			brands1.add(re.sub("s$","",word))
+		for word in brands2:
+			brands2.add(re.sub("s$","",word))
+		# compute intersection of these possible brand names - if not empty then brands match
+		intersection_brands = brands1.intersection(brands2)
+		if intersection_brands:
+			brand_matched = True
+			# consider first item in the intersection as the matched brand
+			matched_brand = intersection_brands.pop()
+			# replace matched brand in products names with dummy word (to avoid counting twice)
+			if matched_brand in words1:
+				words1[words1.index(matched_brand)] = "__brand1__"
+			else:
+				# also remove plural versions (only try this if we didn't remove brand name already)
+				if matched_brand + "s" in words1:
+					words1[words1.index(matched_brand + "s")] = "__brand1__"
+			if matched_brand in words2:
+				words2[words2.index(matched_brand)] = "__brand2__"
+			else:
+				# also remove plural versions
+				if matched_brand + "s" in words1:
+					words1[words1.index(matched_brand + "s")] = "__brand2__"
+
+		if brand_matched:
+			weights_common.append(ProcessText.BRAND_MATCH_WEIGHT)
+
+
 		# this creates imbalances with products where there is no product2_brand (but there is a brand in the name and they match)
 		# # first check if product2 brand matches first words in product1 (assumed to be brand), remove them from the words list if so
 		# if product2_brand and product2_brand in " ".join(words1):
@@ -1074,35 +1112,38 @@ class ProcessText():
 			# this also eliminates high scores for matches like "Vizion TV"-"Cable for Vizio TV"
 			#TODO: maybe also accept it if it's on first position in a name and second in another (ex: 50" Vizio)
 			# brand may have been already matched from if block below
-			if word == words1[0] and word == words2[0]:# and ((not wordnet.synsets(word)) or word in ProcessText.brand_exceptions):
-				if not brand_matched:
-					weights_common.append(ProcessText.BRAND_MATCH_WEIGHT)
-					brand_matched = True
-				# don't add it if it was already matched
-			else:
-				weights_common.append(ProcessText.weight(word))
+
+			# commented - we-re doing this above
+			# if word == words1[0] and word == words2[0]:# and ((not wordnet.synsets(word)) or word in ProcessText.brand_exceptions):
+			# 	if not brand_matched:
+			# 		weights_common.append(ProcessText.BRAND_MATCH_WEIGHT)
+			# 		brand_matched = True
+			# 	# don't add it if it was already matched
+			# else:
+			weights_common.append(ProcessText.weight(word))
 
 			# if brand in product name doesn't match but it matches the one extracted from the page
 			# also check if product2_brand matches first 2 words of product1 name (for brands made of 2 words)
 			#TODO: what if brand is like "Element Electronics" and the other is "Element"?
 
-			if (not brand_matched) and (words1[0]==product2_brand):# and ((not wordnet.synsets(word)) or word in ProcessText.brand_exceptions):
-				weights_common.append(ProcessText.BRAND_MATCH_WEIGHT)
-				brand_matched = True
+			# commented - we are doing this above
+			# if (not brand_matched) and (words1[0]==product2_brand):# and ((not wordnet.synsets(word)) or word in ProcessText.brand_exceptions):
+			# 	weights_common.append(ProcessText.BRAND_MATCH_WEIGHT)
+			# 	brand_matched = True
 
-			# get first word from brand, remove plural marks
-			if product2_brand:
-				brand1 = words1[0]
-				if " " not in product2_brand:
-					brand2 = product2_brand
-				else:
-					brand2 = product2_brand.split(" ")[0]
-				brand1 = re.sub("s$","",brand1)
-				brand2 = re.sub("s$","",brand2)
+			# # get first word from brand, remove plural marks
+			# if product2_brand:
+			# 	brand1 = words1[0]
+			# 	if " " not in product2_brand:
+			# 		brand2 = product2_brand
+			# 	else:
+			# 		brand2 = product2_brand.split(" ")[0]
+			# 	brand1 = re.sub("s$","",brand1)
+			# 	brand2 = re.sub("s$","",brand2)
 
-				if (not brand_matched) and (brand1 == brand2):
-					weights_common.append(ProcessText.BRAND_MATCH_WEIGHT)
-					brand_matched = True
+			# 	if (not brand_matched) and (brand1 == brand2):
+			# 		weights_common.append(ProcessText.BRAND_MATCH_WEIGHT)
+			# 		brand_matched = True
 
 			#sys.err.write("PRODUCT BRAND: " + str(product_brand) + "; " + str(words1) + "; " + str(words2) + "\n")
 
