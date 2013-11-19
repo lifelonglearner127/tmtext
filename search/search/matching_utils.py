@@ -224,27 +224,26 @@ class ProcessText():
 		# (so as not to count twice)
 
 		# add first word, second word, and their concatenation
-		brands1 = set([words1_copy[0]])
+		# also add versions of the brands stemmed of plural marks
+		brands1 = set([words1_copy[0], ProcessText.stem(words1_copy[0])])
 		# ignore second word if it's a number
 		if not ProcessText.is_number(words1_copy[1]):
-			brands1.add(words1_copy[1])
-			brands1.add(words1_copy[0] + words1_copy[1])
-		brands2 = set([words2_copy[0]])
+			brands1.update([words1_copy[1], ProcessText.stem(words1_copy[1]), \
+				words1_copy[0] + words1_copy[1], ProcessText.stem(words1_copy[0]) + words1_copy[1], \
+				ProcessText.stem(words1_copy[0]) + ProcessText.stem(words1_copy[1]), ProcessText.stem(words1_copy[0] + words1_copy[1])])
+		brands2 = set([words2_copy[0], ProcessText.stem(words2_copy[0])])
 		# ignore second word if it's a number
 		if not ProcessText.is_number(words2_copy[1]):
-			brands2.add(words2_copy[1])
-			brands2.add(words2_copy[0] + words2_copy[1])
+			brands2.update([words2_copy[1], ProcessText.stem(words2_copy[1]), \
+				words2_copy[0] + words2_copy[1], ProcessText.stem(words2_copy[0]) + words2_copy[1], \
+				ProcessText.stem(words2_copy[0]) + ProcessText.stem(words2_copy[1]), ProcessText.stem(words2_copy[0] + words2_copy[1])])
 		if product2_brand:
 			product2_brand_tokens = product2_brand.split()
-			brands2.add(product2_brand_tokens[0])
+			brands2.update([product2_brand_tokens[0], ProcessText.stem(product2_brand_tokens[0])])
 			if len(product2_brand_tokens) > 1 and not ProcessText.is_number(product2_brand_tokens[1]):
-				brands2.add(product2_brand_tokens[1])
-				brands2.add(product2_brand_tokens[0] + product2_brand_tokens[1])
-		# add versions of the brands stemmed of plural marks
-		for word in list(brands1):
-			brands1.add(re.sub("s$","",word))
-		for word in list(brands2):
-			brands2.add(re.sub("s$","",word))
+				brands2.update([product2_brand_tokens[1], ProcessText.stem(product2_brand_tokens[1]), \
+					product2_brand_tokens[0] + product2_brand_tokens[1], ProcessText.stem(product2_brand_tokens[0]) + product2_brand_tokens[1], \
+					ProcessText.stem(product2_brand_tokens[0]) + ProcessText.stem(product2_brand_tokens[1]), ProcessText.stem(product2_brand_tokens[0] + product2_brand_tokens[1])])
 
 		# compute intersection of these possible brand names - if not empty then brands match
 		intersection_brands = brands1.intersection(brands2)
@@ -490,6 +489,11 @@ class ProcessText():
 		if re.match("[0-9\-\.\"\'\/]+", word):
 			return True
 		return False
+
+	# return word stemmed of plural mark (if present, else return original word)
+	@staticmethod
+	def stem(word):
+		return re.sub("s$", "", word)
 
 
 	# create combinations of comb_length words from original text (after normalization and tokenization and filtering out dictionary words)
