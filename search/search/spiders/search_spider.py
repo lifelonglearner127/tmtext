@@ -797,26 +797,26 @@ class ProcessText():
 
 		#TODO also do something to match 30x30 with 30"x30"?
 		# replace x between numbers (or ") with space (usualy a dimension e.g. 11"x30")
+		#TODO: what if it's part of a model number? (maybe not because model numbers are all in caps?)
 		text = re.sub("(?<=[0-9\"])x(?=[0-9])", " ", text)
 
 		#! including ' as an exception keeps things like women's a single word. also doesn't find it as a word in wordnet -> too high a priority
 		# excluding it leads to women's->women (s is a stopword)
 
-		#TODO: what happens to non word characters like )? eg (Black)
 		# replace 1/2 by .5 -> suitable for all sites?
 		text = re.sub("(?<=[^0-9])[- ]1/2", " 0.5", text)
 		text = re.sub("(?<=[0-9])[- ]1/2", ".5", text)
 		# also split by "/" after replacing "1/2"
 
-		#TODO: test the dash rule
 		text = re.sub("u'", " ", text)
 		# replace all non-words except for " - . / '
 		text = re.sub("[^\w\"\'\-\./]", " ", text)
 
-		# replace - . / if not part of a number - either a number is not before it or is not after it
+		# replace - . / if not part of a number - either a number is not before it or is not after it (special case for '-')
 		# replace ' if there's not a number before it
 		text = re.sub("[\./](?![0-9])", " ", text)
 		# replace - with space only if not part of a model number - that is not followed by a number followed by letters or space or the end of the name
+		# fixes cases like "1-1.2" (will be split into "1 1.2"
 		text = re.sub("[\-](?![0-9]+( |$|[a-zA-Z]))", " ", text)
 		text = re.sub("(?<![0-9])[\.\-/\']", " ", text)
 		stopset = set(stopwords.words('english'))#["and", "the", "&", "for", "of", "on", "as", "to", "in"]
@@ -845,8 +845,6 @@ class ProcessText():
 	# (there is are cases like this, for example un32eh5300f)
 
 	# or split by dashes
-
-	#TODO: add maybe multiple alternate model nrs - split by dash
 	@staticmethod
 	def alt_modelnrs(word):
 		alt_models = []
@@ -1144,31 +1142,44 @@ class ProcessText():
 			return ProcessText.MEASURE_MATCH_WEIGHT
 
 		# non dictionary word
-		if not wordnet.synsets(word) and not re.match("[0-9]+", word):
+		if not ProcessText.is_dictionary_word(word) and not re.match("[0-9]+", word):
 			return ProcessText.NONWORD_MATCH_WEIGHT
 
 		# dictionary word
 		return ProcessText.DICTIONARY_WORD_MATCH_WEIGHT
+
+
+	# check if a word is a dictionary word or not
+	@staticmethod
+	def is_dictionary_word(word):
+		if wordnet.synsets(word):
+			return True
+		return False
 
 	# check if word is a likely candidate to represent a model number
 	#Obs: currently finding years as model numbers (1951 will return True)
 	@staticmethod
 	def is_model_number(word):
 
-		#TODO: also a model number if it's made of many capital letters and not in the dictionary
+		# eliminate words smaller than 4 letters (ok?)
+		if len(word) <= 4:
+			return False
 
 		word = word.lower()
 
 		# if there are more than 2 numbers and 2 letters and no non-word characters, 
 		# assume this is the model number and assign it a higher weight
 		letters = len(re.findall("[a-zA-Z]", word))
+		vowels = len(re.findall("[aeiou]", word))
 		numbers = len(re.findall("[0-9]", word))
 
 		# some models on bestbuy have a - . but check (was not tested)
 		# some models on bestbuy have . or /
 		nonwords = len(re.findall("[^\w\-/\.]", word))
 		
-		if ((letters > 1 and numbers > 0) or numbers > 4) and nonwords==0 \
+		if ((letters > 1 and numbers > 0) or numbers > 4 or \
+		(letters > 3 and vowels < 2 and not ProcessText.is_dictionary_word(word))) \
+		and nonwords==0 \
 		and not word.endswith("in") and not word.endswith("inch") and not word.endswith("hz") and \
 		not re.match("[0-9]{3,}[kmgt]b", word) and not re.match("[0-9]{3,}p", word) and not re.match("[0-9]{2,}hz", word):
 		# word is not a memory size, frequency(Hz) or pixels description
