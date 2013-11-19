@@ -1045,6 +1045,10 @@ class ProcessText():
 	# return score, threshold (dependent on names' length) and a boolean indicating if brands matched
 	@staticmethod
 	def similar_names(words1, words2, product2_brand, param):
+
+		# build copies of the original names to use in matching
+		words1_copy = list(words1)
+		words2_copy = list(words2)
 		
 
 		# assign weigths - 1 to normal words, 2 to nondictionary words
@@ -1058,8 +1062,8 @@ class ProcessText():
 
 		# check if brands match - create lists with possible brand names for each of the 2 products, remove matches from word lists
 		# (so as not to count twice)
-		brands1 = set([words1[0], words1[1], words1[0] + words2[0]])
-		brands2 = set([words2[0], words2[1], words2[0] + words2[1]])
+		brands1 = set([words1_copy[0], words1_copy[1], words1_copy[0] + words1_copy[1]])
+		brands2 = set([words2_copy[0], words2_copy[1], words2_copy[0] + words2_copy[1]])
 		if product2_brand:
 			product2_brand_tokens = product2_brand.split()
 			brands2.add(product2_brand_tokens[0])
@@ -1078,18 +1082,18 @@ class ProcessText():
 			# consider first item in the intersection as the matched brand
 			matched_brand = intersection_brands.pop()
 			# replace matched brand in products names with dummy word (to avoid counting twice)
-			if matched_brand in words1:
-				words1[words1.index(matched_brand)] = "__brand1__"
+			if matched_brand in words1_copy:
+				words1_copy[words1_copy.index(matched_brand)] = "__brand1__"
 			else:
 				# also remove plural versions (only try this if we didn't remove brand name already)
-				if matched_brand + "s" in words1:
-					words1[words1.index(matched_brand + "s")] = "__brand1__"
-			if matched_brand in words2:
-				words2[words2.index(matched_brand)] = "__brand2__"
+				if matched_brand + "s" in words1_copy:
+					words1_copy[words1_copy.index(matched_brand + "s")] = "__brand1__"
+			if matched_brand in words2_copy:
+				words2_copy[words2_copy.index(matched_brand)] = "__brand2__"
 			else:
 				# also remove plural versions
-				if matched_brand + "s" in words1:
-					words1[words1.index(matched_brand + "s")] = "__brand2__"
+				if matched_brand + "s" in words1_copy:
+					words1_copy[words1_copy.index(matched_brand + "s")] = "__brand2__"
 
 		if brand_matched:
 			weights_common.append(ProcessText.BRAND_MATCH_WEIGHT)
@@ -1097,15 +1101,15 @@ class ProcessText():
 
 		# this creates imbalances with products where there is no product2_brand (but there is a brand in the name and they match)
 		# # first check if product2 brand matches first words in product1 (assumed to be brand), remove them from the words list if so
-		# if product2_brand and product2_brand in " ".join(words1):
+		# if product2_brand and product2_brand in " ".join(words1_copy):
 		# 	for word in product2_brand.split(" "):
-		# 		words1.remove(word)
+		# 		words1_copy.remove(word)
 		# 		# add a dummy word to compensate for the lost length of the weight vector
-		# 		words1.append("")
+		# 		words1_copy.append("")
 		# 	weights_common.append(ProcessText.BRAND_MATCH_WEIGHT)
 		# 	brand_matched = True
 
-		common_words = set(words1).intersection(set(words2))
+		common_words = set(words1_copy).intersection(set(words2_copy))
 
 		for word in list(common_words):
 
@@ -1115,7 +1119,7 @@ class ProcessText():
 			# brand may have been already matched from if block below
 
 			# commented - we-re doing this above
-			# if word == words1[0] and word == words2[0]:# and ((not wordnet.synsets(word)) or word in ProcessText.brand_exceptions):
+			# if word == words1_copy[0] and word == words2_copy[0]:# and ((not wordnet.synsets(word)) or word in ProcessText.brand_exceptions):
 			# 	if not brand_matched:
 			# 		weights_common.append(ProcessText.BRAND_MATCH_WEIGHT)
 			# 		brand_matched = True
@@ -1128,13 +1132,13 @@ class ProcessText():
 			#TODO: what if brand is like "Element Electronics" and the other is "Element"?
 
 			# commented - we are doing this 
-			# if (not brand_matched) and (words1[0]==product2_brand):# and ((not wordnet.synsets(word)) or word in ProcessText.brand_exceptions):
+			# if (not brand_matched) and (words1_copy[0]==product2_brand):# and ((not wordnet.synsets(word)) or word in ProcessText.brand_exceptions):
 			# 	weights_common.append(ProcessText.BRAND_MATCH_WEIGHT)
 			# 	brand_matched = True
 
 			# # get first word from brand, remove plural marks
 			# if product2_brand:
-			# 	brand1 = words1[0]
+			# 	brand1 = words1_copy[0]
 			# 	if " " not in product2_brand:
 			# 		brand2 = product2_brand
 			# 	else:
@@ -1146,14 +1150,14 @@ class ProcessText():
 			# 		weights_common.append(ProcessText.BRAND_MATCH_WEIGHT)
 			# 		brand_matched = True
 
-			#sys.err.write("PRODUCT BRAND: " + str(product_brand) + "; " + str(words1) + "; " + str(words2) + "\n")
+			#sys.err.write("PRODUCT BRAND: " + str(product_brand) + "; " + str(words1_copy) + "; " + str(words2_copy) + "\n")
 
 		weights1 = []
-		for word in list(set(words1)):
+		for word in list(set(words1_copy)):
 			weights1.append(ProcessText.weight(word))
 
 		weights2 = []
-		for word in list(set(words2)):
+		for word in list(set(words2_copy)):
 			weights2.append(ProcessText.weight(word))
 
 		#TODO: make the grwoth smaller with n, using log(len+len)*10
@@ -1161,8 +1165,9 @@ class ProcessText():
 		threshold = param*(math.log(float(len(weights1) + len(weights2))/2, 10))*10
 		score = sum(weights_common)
 
-		log.msg( "W1: " + str(words1), level=log.INFO)
-		log.msg( "W2: " + str(words2), level=log.INFO)
+
+		log.msg( "W1: " + str(words1_copy), level=log.INFO)
+		log.msg( "W2: " + str(words2_copy), level=log.INFO)
 		log.msg( "COMMON: " + str(common_words), level=log.INFO)
 		log.msg( "WEIGHTS: " + str(weights1) + str(weights2) + str(weights_common), level=log.INFO)
 
