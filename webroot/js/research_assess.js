@@ -2467,7 +2467,8 @@ var scrollYesOrNot = true;
                     column_external_content: $("#column_external_content").attr('checked') == 'checked',
                     column_reviews: $("#column_reviews").attr('checked') == 'checked',
                     column_features: $("#column_features").attr('checked') == 'checked',
-                    price_diff: $("#column_price_diff").attr('checked') == 'checked'
+                    price_diff: $("#column_price_diff").attr('checked') == 'checked',
+                    gap: $("#gap").attr('checked') == 'checked'
                 };
 
                 // save params to DB

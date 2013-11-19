@@ -1242,7 +1242,7 @@ class Assess extends MY_Controller {
                             $res_array[$key]['Short Desc # Words (' . $i . ")"] = $sim_items[$i - 1]->short_description_wc ? $sim_items[$i - 1]->short_description_wc : '';
                          }
                         if(in_array('Meta_Keywords', $selected_columns)){
-                        $res_array[$key]['Meta_Keywords'] = $sim_items[$i - 1]->Meta_Keywords ? $sim_items[$i - 1]->Meta_Keywords : '';
+                        $res_array[$key]['Meta_Keywords(' . $i . ")"] = $sim_items[$i - 1]->Meta_Keywords ? $sim_items[$i - 1]->Meta_Keywords : '';
                         }
                         if (in_array('Long_Description', $selected_columns)) {
                             $res_array[$key]['Long_Description (' . $i . ")"] = $sim_items[$i - 1]->Long_Description ? $sim_items[$i - 1]->Long_Description : '';
@@ -1257,12 +1257,7 @@ class Assess extends MY_Controller {
                        
                     }                    
 
-//                if ($max_similar_item_count > 0) {
-//                    foreach( $val->similar_items as $k_of_cmp =>$v){
-//                        $cmp_item = $this->export_assess_data_for_sim($v, $selected_columns,$k_of_cmp);
-//                        $res_array[$key] = $res_array[$key]+$cmp_item[1];
-//                    }
-//                }
+
              }
 
 
@@ -1317,54 +1312,47 @@ class Assess extends MY_Controller {
                 }
             }
 
-//            if ($max_similar_item_count > 0) {
-//
-//                foreach( $val->similar_items as $k_of_cmp =>$v){
-//                    foreach ($cmp_item[0] as $keyhead => $valuehead) {
-//                        $line[$keyhead.''.$k_of_cmp] = $valuehead.' (cmp('.($k_of_cmp + 1).'))' ;
-//                }
-//                }
-//                }
+
 
 
             for ($i = 1; $i <= $max_similar_item_count; $i++) {
                 if (in_array('gap', $selected_columns)) {
-                    $line[] = 'Gap analysis (' . $i . ")";
+                    $line[] = 'Gap analysis ';
                 }
                 if (in_array('product_name', $selected_columns)) {
-                    $line[] = 'Product Name (' . $i . ")";
+                    $line[] = "Product Name (" . ($i+1) . ")";
                 }
                  if (in_array('url', $selected_columns)) {
-                    $line[] = 'Url (' . $i . ")";
+                    $line[] = "Url (" . ($i+1) . ")";
                 }
                 if (in_array('item_id', $selected_columns)) {
-                    $line[] = 'Item Id (' . $i . ")";
+                    $line[] = "Item Id (" . ($i+1) . ")";
                 }
                 if (in_array('model', $selected_columns)) {
-                    $line[] = 'Model (' . $i . ")";
+                    $line[] = "Model (" . ($i+1) . ")";
                 }
                
                 if (in_array('Page_Load_Time', $selected_columns)) {
-                    $line[] = 'Page Load Time(' . $i . ")";
+                    $line[] = "Page Load Time(" . ($i+1) . ")";
                 }
                 if (in_array('Short_Description', $selected_columns)) {
-                    $line[] = 'Short Description(' . $i . ")";
+                    $line[] = "Short Description(" . ($i+1) . ")";
                 }
                 if (in_array('short_description_wc', $selected_columns)) {
-                    $line[] = 'Short Desc # Words (' . $i . ")";
+                    $line[] = "Short Desc # Words (" . ($i+1) . ")";
                 }
                 if (in_array('Meta_Keywords', $selected_columns)) {
-                    $line[] = 'Meta Keywords (' . $i . ")";
+                    $line[] = "Meta Keywords (" . ($i+1) . ")";
                 }
                 if (in_array('Long_Description', $selected_columns)) {
-                    $line[] = 'Long Description (' . $i . ")";
+                    $line[] = "Long Description (" . ($i+1) . ")";
                 }
                 if (in_array('long_description_wc', $selected_columns)) {
-                    $line[] = ' Long Desc # Words (' . $i . ")";
+                    $line[] = " Long Desc # Words (" . ($i+1) . ")";
                 }
                 if (in_array('Meta_Description', $selected_columns)) {
-                    $line[] = 'Meta Description (' . $i . ")";
-                    $line[] = ' Meta Desc Words (' . $i . ")";
+                    $line[] = "Meta Description (" . ($i+1) . ")";
+                    $line[] = " Meta Desc Words (" . ($i+1) . ")";
                 }
                
                 
