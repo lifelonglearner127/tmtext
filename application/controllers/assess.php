@@ -975,28 +975,7 @@ class Assess extends MY_Controller {
                 if(in_array('model', $selected_columns)){
                     $res_array[$key]['model'] = $pars_atr['parsed_attributes']['model']?$pars_atr['parsed_attributes']['model']:'';
                 }
-                if (in_array('price_diff', $selected_columns)) {
-                 $price_diff = unserialize($res_array[$key]['price_diff']);
-                if ($price_diff) {
-                    $own_price = floatval($price_diff['own_price']);
-                    $own_site = str_replace('www.', '', $price_diff['own_site']);
-                    $own_site = str_replace('www1.', '', $own_site);
-                    $price_diff_res = $own_site . " - $" . $price_diff['own_price'];
-                    $flag_competitor = false;
-                    for ($i = 0; $i < count($price_diff['competitor_customer']); $i++) {
-                        if ($customer_url["host"] != $price_diff['competitor_customer'][$i]) {
-                            if ($own_price > floatval($price_diff['competitor_price'][$i])) {
-                                $competitor_site = str_replace('www.', '', $price_diff['competitor_customer'][$i]);
-                                $competitor_site = str_replace('www.', '', $competitor_site);
-                                $price_diff_res .= "\r\n" . $competitor_site . " - $" . $price_diff['competitor_price'][$i];
-                            }
-                        }
-                    }
-                    $res_array[$key]['price_diff'] = $price_diff_res;
-                } else {
-                    $res_array[$key]['price_diff'] = '';
-                }
-                }
+                
                 $row = (array) $row;
                 foreach ($line as $k => $v) {
                     $res_array[$key][$k] = $row[$k];
@@ -1209,7 +1188,28 @@ class Assess extends MY_Controller {
                         $res_array[$key]['long_seo_phrases'] = trim($longString);
                     }
                 }
-
+            if (in_array('price_diff', $selected_columns)) {
+                 $price_diff = unserialize($res_array[$key]['price_diff']);
+                if ($price_diff) {
+                    $own_price = floatval($price_diff['own_price']);
+                    $own_site = str_replace('www.', '', $price_diff['own_site']);
+                    $own_site = str_replace('www1.', '', $own_site);
+                    $price_diff_res = $own_site . " - $" . $price_diff['own_price'];
+                    $flag_competitor = false;
+                    for ($i = 0; $i < count($price_diff['competitor_customer']); $i++) {
+                        if ($customer_url["host"] != $price_diff['competitor_customer'][$i]) {
+                            if ($own_price > floatval($price_diff['competitor_price'][$i])) {
+                                $competitor_site = str_replace('www.', '', $price_diff['competitor_customer'][$i]);
+                                $competitor_site = str_replace('www.', '', $competitor_site);
+                                $price_diff_res .= "\r\n" . $competitor_site . " - $" . $price_diff['competitor_price'][$i];
+                            }
+                        }
+                    }
+                    $res_array[$key]['price_diff'] = $price_diff_res;
+                } else {
+                    $res_array[$key]['price_diff'] = '';
+                }
+                }
                
                 
                  $sim_items = $row->similar_items;
