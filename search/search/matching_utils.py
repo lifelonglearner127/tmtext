@@ -228,6 +228,7 @@ class ProcessText():
 		# (so as not to count twice)
 
 		# add first word, second word, and their concatenation
+		#TODO: ignore second word if it's a number? like xbox 360
 		brands1 = set([words1_copy[0], words1_copy[1], words1_copy[0] + words1_copy[1]])
 		brands2 = set([words2_copy[0], words2_copy[1], words2_copy[0] + words2_copy[1]])
 		if product2_brand:
@@ -261,7 +262,7 @@ class ProcessText():
 			for word in intersection_brands:
 				if len(word) > len(matched_brand):
 					matched_brand = word
-					
+
 			# replace matched brand in products names with dummy word (to avoid counting twice)
 			if matched_brand in words1_copy:
 				words1_copy[words1_copy.index(matched_brand)] = "__brand1__"
