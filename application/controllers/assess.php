@@ -979,7 +979,7 @@ class Assess extends MY_Controller {
 
                 //item_id
                 if(in_array('item_id', $selected_columns)){
-                    $res_array[$key]['item_id'] = $pars_atr['parsed_attributes']['item_id']?$pars_atr['parsed_attributes']['item_id']:'';
+                    $res_array[$key]['item_id'] = $pars_atr['parsed_attributes']['item_id']?$pars_atr['parsed_attributes']['item_id']:' ';
                 }
                 //model
                 if(in_array('model', $selected_columns)){
@@ -1216,24 +1216,20 @@ class Assess extends MY_Controller {
                         }  
                         
                         
+                        if (in_array('item_id', $selected_columns)) {
+                            $res_array[$key]['Item Id (' . $i . ")"] = $sim_items[$i - 1]->item_id ? $sim_items[$i - 1]->item_id : ' - ';
+                         }
+                        if (in_array('model', $selected_columns)) {
+                            $res_array[$key]['Model (' . $i . ")"] = $sim_items[$i - 1]->model ? $sim_items[$i - 1]->model : '';
+                         }
                         if (in_array('product_name', $selected_columns)) {
-                        $res_array[$key]['Product Name (' . $i . ")"] = $sim_items[$i - 1]->product_name ? $sim_items[$i - 1]->product_name : '';
+                        $res_array[$key]['Product Name (' . $i . ")"] = $sim_items[$i - 1]->product_name ? $sim_items[$i - 1]->product_name : ' - ';
                         
                         }   
                         if (in_array('url', $selected_columns)) {
                             $res_array[$key]['Url (' . $i . ")"] = $sim_items[$i - 1]->url ? $sim_items[$i - 1]->url : '';
                         }                                             
-                        if (in_array('item_id', $selected_columns)) {
-                            $res_array[$key]['Item Id (' . $i . ")"] = $sim_items[$i - 1]->item_id ? $sim_items[$i - 1]->item_id : '';
-                         }
-                        if (in_array('model', $selected_columns)) {
-                            $res_array[$key]['Model (' . $i . ")"] = $sim_items[$i - 1]->model ? $sim_items[$i - 1]->model : '';
-                         }
                         
-                        
-                        if (in_array('Page_Load_Time', $selected_columns)) {
-                            $res_array[$key]['Page Load Time (' . $i . ")"] =$sim_items[$i - 1]->Page_Load_Time ? $sim_items[$i - 1]->Page_Load_Time : '';
-                         }
                         
                         if (in_array('Short_Description', $selected_columns)) {
                             $res_array[$key]['Short Description (' . $i . ")"] = $sim_items[$i - 1]->Short_Description ? $sim_items[$i - 1]->Short_Description : '';
@@ -1241,19 +1237,23 @@ class Assess extends MY_Controller {
                         if (in_array('short_description_wc', $selected_columns)) {
                             $res_array[$key]['Short Desc # Words (' . $i . ")"] = $sim_items[$i - 1]->short_description_wc ? $sim_items[$i - 1]->short_description_wc : '';
                          }
-                        if(in_array('Meta_Keywords', $selected_columns)){
-                        $res_array[$key]['Meta_Keywords(' . $i . ")"] = $sim_items[$i - 1]->Meta_Keywords ? $sim_items[$i - 1]->Meta_Keywords : '';
-                        }
                         if (in_array('Long_Description', $selected_columns)) {
                             $res_array[$key]['Long_Description (' . $i . ")"] = $sim_items[$i - 1]->Long_Description ? $sim_items[$i - 1]->Long_Description : '';
                         }
                         if (in_array('long_description_wc', $selected_columns)) {
                             $res_array[$key]['Long Desc # Words (' . $i . ")"] = $sim_items[$i - 1]->long_description_wc ? $sim_items[$i - 1]->long_description_wc : '';
                         }
+                        
+                        if(in_array('Meta_Keywords', $selected_columns)){
+                        $res_array[$key]['Meta_Keywords(' . $i . ")"] = $sim_items[$i - 1]->Meta_Keywords ? $sim_items[$i - 1]->Meta_Keywords : '';
+                        }
                         if (in_array('Meta_Description', $selected_columns)) {
                             $res_array[$key]['Meta_Description (' . $i . ")"] = $sim_items[$i - 1]->Meta_Description ? $sim_items[$i - 1]->Meta_Description : '';
                             $res_array[$key]['Meta Desc Words (' . $i . ")"] = $sim_items[$i - 1]->Meta_Description_Count ? $sim_items[$i - 1]->Meta_Description_Count : '';
                         }
+                        if (in_array('Page_Load_Time', $selected_columns)) {
+                            $res_array[$key]['Page Load Time (' . $i . ")"] =$sim_items[$i - 1]->Page_Load_Time ? $sim_items[$i - 1]->Page_Load_Time : ' - ';
+                         }
                        
                     }                    
 
@@ -1317,42 +1317,42 @@ class Assess extends MY_Controller {
 
             for ($i = 1; $i <= $max_similar_item_count; $i++) {
                 if (in_array('gap', $selected_columns)) {
-                    $line[] = 'Gap analysis ';
-                }
-                if (in_array('product_name', $selected_columns)) {
-                    $line[] = "Product Name (" . ($i+1) . ")";
-                }
-                 if (in_array('url', $selected_columns)) {
-                    $line[] = "Url (" . ($i+1) . ")";
+                    $line[] = 'Gap analysis';
                 }
                 if (in_array('item_id', $selected_columns)) {
-                    $line[] = "Item Id (" . ($i+1) . ")";
+                    $line[] = "Item Id(" . ($i+1) . ")";
                 }
                 if (in_array('model', $selected_columns)) {
-                    $line[] = "Model (" . ($i+1) . ")";
+                    $line[] = "Model(" . ($i+1) . ")";
                 }
                
-                if (in_array('Page_Load_Time', $selected_columns)) {
-                    $line[] = "Page Load Time(" . ($i+1) . ")";
+                if (in_array('product_name', $selected_columns)) {
+                    $line[] = "Product Name(" . ($i+1) . ")";
+                }
+                 if (in_array('url', $selected_columns)) {
+                    $line[] = "Url(" . ($i+1) . ")";
                 }
                 if (in_array('Short_Description', $selected_columns)) {
                     $line[] = "Short Description(" . ($i+1) . ")";
                 }
                 if (in_array('short_description_wc', $selected_columns)) {
-                    $line[] = "Short Desc # Words (" . ($i+1) . ")";
+                    $line[] = "Short Desc # Words(" . ($i+1) . ")";
+                }
+                if (in_array('Long_Description', $selected_columns)) {
+                    $line[] = "Long Description(" . ($i+1) . ")";
+                }
+                if (in_array('long_description_wc', $selected_columns)) {
+                    $line[] = " Long Desc # Words(" . ($i+1) . ")";
                 }
                 if (in_array('Meta_Keywords', $selected_columns)) {
                     $line[] = "Meta Keywords (" . ($i+1) . ")";
                 }
-                if (in_array('Long_Description', $selected_columns)) {
-                    $line[] = "Long Description (" . ($i+1) . ")";
-                }
-                if (in_array('long_description_wc', $selected_columns)) {
-                    $line[] = " Long Desc # Words (" . ($i+1) . ")";
-                }
                 if (in_array('Meta_Description', $selected_columns)) {
-                    $line[] = "Meta Description (" . ($i+1) . ")";
-                    $line[] = " Meta Desc Words (" . ($i+1) . ")";
+                    $line[] = "Meta Description(" . ($i+1) . ")";
+                    $line[] = " Meta Desc Words(" . ($i+1) . ")";
+                }
+                if (in_array('Page_Load_Time', $selected_columns)) {
+                    $line[] = "Page Load Time(" . ($i+1) . ")";
                 }
                
                 
