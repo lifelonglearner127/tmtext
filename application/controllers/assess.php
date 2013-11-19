@@ -562,7 +562,7 @@ class Assess extends MY_Controller {
         $header = $header . '<hr color="#C31233" height="10">';
         $pdf->SetHTMLHeader($header);
 
-        $pdf->SetHTMLFooter('<span style="font-size: 8px;">Copyright © 2013 Content Solutions, Inc.</span>');
+        $pdf->SetHTMLFooter('<span style="font-size: 8px;">Copyright В© 2013 Content Solutions, Inc.</span>');
 
         $html = '';
 
@@ -1197,15 +1197,14 @@ class Assess extends MY_Controller {
                        
                         if (in_array('gap', $selected_columns)) {
                         $res_array[$key]['Gap analysis'] = '';
-                            if($row->short_description_wc && isset($sim_items[$i -1]) && $sim_items[$i -1]->short_description_wc && $row->short_description_wc <$sim_items[$i -1]->short_description_wc){
-                                     $res_array[$key]['Gap analysis'].="Lower words count in short description,  ";
-                            }
-                            if($row->long_description_wc && isset($sim_items[$i -1]) && $sim_items[$i -1]->long_description_wc && $row->long_description_wc <$sim_items[$i -1]->long_description_wc){
-                                 $res_array[$key]['Gap analysis'].="Lower words count in long description,  ";
+                            
+                            if(isset($sim_items[$i -1]) && $sim_items[$i -1]->long_description_wc &&  $sim_items[$i -1]->short_description_wc && ($sim_items[$i -1]->short_description_wc+$sim_items[$i -1]->long_description_wc)<100){
+                                $totoal = $sim_items[$i -1]->short_description_wc+$sim_items[$i -1]->long_description_wc;
+                                $res_array[$key]['Gap analysis'].="Competitor total product description length only $totoal words, ";
                             }
 
                             if($res_array[$key]['column_features'] && $f_count1 && $f_count1 < $res_array[$key]['column_features']){
-                                 $res_array[$key]['Gap analysis'].="Competitor has fewer features listed,   ";
+                                 $res_array[$key]['Gap analysis'].="Competitor has fewer features listed, ";
                             }
                             if(!$sim_items[$i -1]->den_for_gap){
 
@@ -2247,13 +2246,19 @@ class Assess extends MY_Controller {
           if ($build_assess_params->max_similar_item_count > 0) {
                 //$class_for_all_case = "class_for_all_case";
                 $sim_items = $row->similar_items;
-                if($result_row->short_description_wc && isset($sim_items[1]) && $sim_items[1]->short_description_wc && $result_row->short_description_wc <$sim_items[1]->short_description_wc){
-                        $result_row->gap.="Lower words count in short description<br>";
-                }
-                if($result_row->long_description_wc && isset($sim_items[1]) && $sim_items[1]->long_description_wc && $result_row->long_description_wc <$sim_items[1]->long_description_wc){
-                    $result_row->gap.="Lower words count in long description<br>";
-                }
+//                if($result_row->short_description_wc && isset($sim_items[1]) && $sim_items[1]->short_description_wc && $result_row->short_description_wc <$sim_items[1]->short_description_wc){
+//                        $result_row->gap.="Lower words count in short description<br>";
+//                }
+//                if($result_row->long_description_wc && isset($sim_items[1]) && $sim_items[1]->long_description_wc && $result_row->long_description_wc <$sim_items[1]->long_description_wc){
+//                    $result_row->gap.="Lower words count in long description<br>";
+//                }
 
+                if(isset($sim_items[$i -1]) && $sim_items[$i -1]->long_description_wc &&  $sim_items[$i -1]->short_description_wc && ($sim_items[$i -1]->short_description_wc+$sim_items[$i -1]->long_description_wc)<100){
+                                $totoal = $sim_items[$i -1]->short_description_wc+$sim_items[$i -1]->long_description_wc;
+                                $result_row->gap.="Competitor total product description length only $totoal words<br>";
+                }
+                
+                
                 if($result_row->column_features && $f_count1 && $f_count1 < $result_row->column_features){
                     $result_row->gap.="Competitor has fewer features listed<br>";
                 }
