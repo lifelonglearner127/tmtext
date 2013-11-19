@@ -818,8 +818,8 @@ class Assess extends MY_Controller {
 
                                     $parsed_attributes_unserialize = unserialize($cmpare->parsed_attributes);
 
-                                    if (isset($parsed_attributes_unserialize['column_features']))
-                                        $parsed_attributes_column_features_unserialize_val = $parsed_attributes_unserialize['column_features'];
+                                    if (isset($parsed_attributes_unserialize['feature_count']))
+                                        $parsed_attributes_column_features_unserialize_val = $parsed_attributes_unserialize['feature_count'];
                                     if (isset($parsed_attributes_unserialize['item_id']))
                                         $parsed_attributes_unserialize_val = $parsed_attributes_unserialize['item_id'];
                                     if (isset($parsed_attributes_unserialize['model']))
