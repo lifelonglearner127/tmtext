@@ -1198,18 +1198,18 @@ class Assess extends MY_Controller {
                         if (in_array('gap', $selected_columns)) {
                         $res_array[$key]['Gap analysis'] = '';
                             if($row->short_description_wc && isset($sim_items[$i -1]) && $sim_items[$i -1]->short_description_wc && $row->short_description_wc <$sim_items[$i -1]->short_description_wc){
-                                     $res_array[$key]['Gap analysis'].="Lower words count in short description \n";
+                                     $res_array[$key]['Gap analysis'].="Lower words count in short description,  ";
                             }
                             if($row->long_description_wc && isset($sim_items[$i -1]) && $sim_items[$i -1]->long_description_wc && $row->long_description_wc <$sim_items[$i -1]->long_description_wc){
-                                 $res_array[$key]['Gap analysis'].="Lower words count in long description \n";
+                                 $res_array[$key]['Gap analysis'].="Lower words count in long description,  ";
                             }
 
                             if($res_array[$key]['column_features'] && $f_count1 && $f_count1 < $res_array[$key]['column_features']){
-                                 $res_array[$key]['Gap analysis'].="Competitor has fewer features listed \n";
+                                 $res_array[$key]['Gap analysis'].="Competitor has fewer features listed,   ";
                             }
                             if(!$sim_items[$i -1]->den_for_gap){
 
-                            $res_array[$key]['Gap analysis'] .= "Competitor is not keyword optimized \n";
+                            $res_array[$key]['Gap analysis'] .= "Competitor is not keyword optimized,  ";
 
 
                         }
