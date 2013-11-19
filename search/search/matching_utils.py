@@ -206,6 +206,19 @@ class ProcessText():
 		# build copies of the original names to use in matching
 		words1_copy = list(words1)
 		words2_copy = list(words2)
+
+		# treat case with less than 2 words separately
+
+		# if one product has no words, brand matched is False
+		if len(words1_copy) < 1 or len(words2_copy) < 1:
+			return (False, words1_copy, words2_copy)
+
+		# if they each have at least 1 word but not 2, append dummy word
+		if len(words1_copy) < 2:
+			words1_copy.append("__brand1_dummy__")
+		if len(words2_copy) < 2:
+			words2_copy.append("__brand2_dummy__")
+
 		
 
 		# assign weigths - 1 to normal words, 2 to nondictionary words
@@ -226,8 +239,17 @@ class ProcessText():
 			brands1.add(re.sub("s$","",word))
 		for word in list(brands2):
 			brands2.add(re.sub("s$","",word))
+
 		# compute intersection of these possible brand names - if not empty then brands match
 		intersection_brands = brands1.intersection(brands2)
+
+		# remove matches that were between the second word of each name
+		for matched_brand in list(intersection_brands):
+			if (matched_brand == words1_copy[1] or matched_brand == words1_copy[1] + "s") \
+			and (matched_brand == words2_copy[1] or matched_brand == words2_copy[1] + "s"):
+				intersection_brands.remove(matched_brand)			
+
+		# if we found a match
 		if intersection_brands:
 			brand_matched = True
 			# consider first item in the intersection as the matched brand
@@ -239,12 +261,27 @@ class ProcessText():
 				# also remove plural versions (only try this if we didn't remove brand name already)
 				if matched_brand + "s" in words1_copy:
 					words1_copy[words1_copy.index(matched_brand + "s")] = "__brand1__"
+
+				# this means a concatenation was probably matched (so not present in product name),
+				# so try to remove all words from brands1 (could be 2 words)
+				else:
+					for word in brands1:
+						if word in words1_copy:
+							words1_copy[words1_copy.index(word)] = "__brand1__"
+
 			if matched_brand in words2_copy:
 				words2_copy[words2_copy.index(matched_brand)] = "__brand2__"
 			else:
 				# also remove plural versions
 				if matched_brand + "s" in words1_copy:
 					words1_copy[words1_copy.index(matched_brand + "s")] = "__brand2__"
+
+				# this means a concatenation was probably matched (so not present in product name),
+				# so try to remove all words from brands2 (could be 2 words)
+				else:
+					for word in brands2:
+						if word in words2_copy:
+							words2_copy[words2_copy.index(word)] = "__brand2__"
 
 		return (brand_matched, words1_copy, words2_copy)
 	
