@@ -1198,7 +1198,7 @@ class Assess extends MY_Controller {
                         if (in_array('gap', $selected_columns)) {
                         $res_array[$key]['Gap analysis'] = '';
                             
-                            if(isset($sim_items[$i -1]) && $sim_items[$i -1]->long_description_wc &&  $sim_items[$i -1]->short_description_wc && ($sim_items[$i -1]->short_description_wc+$sim_items[$i -1]->long_description_wc)<100){
+                            if(isset($sim_items[$i -1]) && ($sim_items[$i -1]->long_description_wc ||  $sim_items[$i -1]->short_description_wc) && ($sim_items[$i -1]->short_description_wc+$sim_items[$i -1]->long_description_wc)<100){
                                 $totoal = $sim_items[$i -1]->short_description_wc+$sim_items[$i -1]->long_description_wc;
                                 $res_array[$key]['Gap analysis'].="Competitor total product description length only $totoal words, ";
                             }
@@ -2253,7 +2253,7 @@ class Assess extends MY_Controller {
 //                    $result_row->gap.="Lower words count in long description<br>";
 //                }
 
-                if(isset($sim_items[$i -1]) && $sim_items[$i -1]->long_description_wc &&  $sim_items[$i -1]->short_description_wc && ($sim_items[$i -1]->short_description_wc+$sim_items[$i -1]->long_description_wc)<100){
+                if(isset($sim_items[$i -1]) && ($sim_items[$i -1]->long_description_wc ||  $sim_items[$i -1]->short_description_wc) && ($sim_items[$i -1]->short_description_wc+$sim_items[$i -1]->long_description_wc)<100){
                                 $totoal = $sim_items[$i -1]->short_description_wc+$sim_items[$i -1]->long_description_wc;
                                 $result_row->gap.="Competitor total product description length only $totoal words<br>";
                 }
