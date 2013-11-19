@@ -1060,15 +1060,16 @@ class ProcessText():
 		# (so as not to count twice)
 		brands1 = set([words1[0], words1[1], words1[0] + words2[0]])
 		brands2 = set([words2[0], words2[1], words2[0] + words2[1]])
-		product2_brand_tokens = product2_brand.split()
-		brands2.append(product2_brand_tokens[0])
-		if len(product2_brand_tokens) > 1:
-			brands2.add(product2_brand_tokens[1])
-			brands2.add(product2_brand_tokens[0] + product2_brand_tokens[1])
+		if product2_brand:
+			product2_brand_tokens = product2_brand.split()
+			brands2.add(product2_brand_tokens[0])
+			if len(product2_brand_tokens) > 1:
+				brands2.add(product2_brand_tokens[1])
+				brands2.add(product2_brand_tokens[0] + product2_brand_tokens[1])
 		# add versions of the brands stemmed of plural marks
-		for word in brands1:
+		for word in list(brands1):
 			brands1.add(re.sub("s$","",word))
-		for word in brands2:
+		for word in list(brands2):
 			brands2.add(re.sub("s$","",word))
 		# compute intersection of these possible brand names - if not empty then brands match
 		intersection_brands = brands1.intersection(brands2)
@@ -1126,7 +1127,7 @@ class ProcessText():
 			# also check if product2_brand matches first 2 words of product1 name (for brands made of 2 words)
 			#TODO: what if brand is like "Element Electronics" and the other is "Element"?
 
-			# commented - we are doing this above
+			# commented - we are doing this 
 			# if (not brand_matched) and (words1[0]==product2_brand):# and ((not wordnet.synsets(word)) or word in ProcessText.brand_exceptions):
 			# 	weights_common.append(ProcessText.BRAND_MATCH_WEIGHT)
 			# 	brand_matched = True
