@@ -226,6 +226,8 @@ class ProcessText():
 
 		# check if brands match - create lists with possible brand names for each of the 2 products, remove matches from word lists
 		# (so as not to count twice)
+
+		# add first word, second word, and their concatenation
 		brands1 = set([words1_copy[0], words1_copy[1], words1_copy[0] + words1_copy[1]])
 		brands2 = set([words2_copy[0], words2_copy[1], words2_copy[0] + words2_copy[1]])
 		if product2_brand:
@@ -252,8 +254,14 @@ class ProcessText():
 		# if we found a match
 		if intersection_brands:
 			brand_matched = True
-			# consider first item in the intersection as the matched brand
+			# consider longest item in the intersection as the matched brand
+			# so if a concatenation was matched, use that instead of single words,
+			# if a plural was matched, use that instead of singular form
 			matched_brand = intersection_brands.pop()
+			for word in intersection_brands:
+				if len(word) > len(matched_brand):
+					matched_brand = word
+					
 			# replace matched brand in products names with dummy word (to avoid counting twice)
 			if matched_brand in words1_copy:
 				words1_copy[words1_copy.index(matched_brand)] = "__brand1__"
