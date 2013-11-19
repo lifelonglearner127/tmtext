@@ -1932,8 +1932,11 @@ class Assess extends MY_Controller {
 //                            $_count_meta_un = $this->keywords_appearence($sim_items[$i - 1]->Short_Description, $cnt_m_un);
 //                            $_count_meta_num_un = round(($_count_meta_un * $cnt_meta_count_un / $sim_items[$i - 1]->short_description_wc) * 100, 2) . "%";
 //                            $Meta_Keywords_un .= "<tr><td>" . $cnt_m_un . "</td><td>".$_count_meta_num_un."</td></tr>";
-                          if($i==1 && !$meta_key_gap ){
-                            $meta_key_gap=round(($_count_meta_un * $cnt_meta_count_un / ($sim_items[$i - 1]->long_description_wc + $sim_items[$i - 1]->short_description_wc)) * 100, 2);
+                         if($i==1 && !$meta_key_gap ){
+                            $metta_prc= round(($_count_meta_un * $cnt_meta_count_un / ($row->long_description_wc + $row->short_description_wc)) * 100, 2);
+                            if($metta_prc >= 2){
+                                $meta_key_gap=$metta_prc;
+                            }
                         }
                         }
 
@@ -3134,7 +3137,9 @@ private function export_assess_data_for_sim($imported_data_id, $selected_columns
                             $_count_meta_num_un = round(($_count_meta_un * $cnt_meta_count_un / ($sim_items[$i - 1]->long_description_wc + $sim_items[$i - 1]->short_description_wc)) * 100, 2) . "%";
                             $Meta_Keywords_un .=  $cnt_m_un.  " ".$_count_meta_num_un.", ";
                         if($i==1 && !$meta_key_gap ){
-                            $meta_key_gap=round(($_count_meta_un * $cnt_meta_count_un / ($row->long_description_wc + $row->short_description_wc)) * 100, 2);
+                            $metta_prc= round(($_count_meta_un * $cnt_meta_count_un / ($row->long_description_wc + $row->short_description_wc)) * 100, 2);
+                            if($metta_prc >= 2)
+                            $meta_key_gap=$metta_prc;
                         }
                         }
 
