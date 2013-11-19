@@ -803,11 +803,13 @@ class Assess extends MY_Controller {
                         $similar_items = unserialize($val->similar_products_competitors);
                         if (count($similar_items) > 1) {
                             foreach ($similar_items as $key => $item) {
+                                
                                 if (substr_count(strtolower($customer_name), strtolower($item['customer'])) > 0) {
-                                    
+                                    $den_for_gap = 0;
                                      $parsed_attributes_unserialize_val = '';
                                     $parsed_meta_unserialize_val = '';
                                     $parsed_meta_unserialize_val_c = '';
+                                    $parsed_attributes_column_features_unserialize_val = '';
                                     $parsed_model_unserialize_val = '';
                                     $parsed_meta_keywords_unserialize_val = '';
                                     $parsed_loaded_in_seconds_unserialize_val = '';
@@ -816,6 +818,8 @@ class Assess extends MY_Controller {
 
                                     $parsed_attributes_unserialize = unserialize($cmpare->parsed_attributes);
 
+                                    if (isset($parsed_attributes_unserialize['column_features']))
+                                        $parsed_attributes_column_features_unserialize_val = $parsed_attributes_unserialize['column_features'];
                                     if (isset($parsed_attributes_unserialize['item_id']))
                                         $parsed_attributes_unserialize_val = $parsed_attributes_unserialize['item_id'];
                                     if (isset($parsed_attributes_unserialize['model']))
@@ -851,8 +855,13 @@ class Assess extends MY_Controller {
                                                 $cnt_m = trim($cnt_m);
                                                 if($cmpare->Short_Description || $cmpare->Long_Description){
                                                     $_count_meta = $this->keywords_appearence($cmpare->Long_Description.$cmpare->Short_Description, $cnt_m);
-                                                    $_count_meta_num = round(($_count_meta * $cnt_meta_count / ($cmpare->long_description_wc + $cmpare->short_description_wc)) * 100, 2) . "%";
-                                                    $Meta_Keywords_un .=  $cnt_m . " -- ".$_count_meta_num.", ";
+                                                    $_count_meta_num = round(($_count_meta * $cnt_meta_count / ($cmpare->long_description_wc + $cmpare->short_description_wc)) * 100, 2);
+                                                   
+                                                    if($_count_meta_num >= 2){
+                                                         $den_for_gap = $_count_meta_num;
+                                                    }
+                                                    
+                                                    $Meta_Keywords_un .=  $cnt_m . "  - ".$_count_meta_num."%, ";
                                                 }
                                             
                                                 }
@@ -865,10 +874,11 @@ class Assess extends MY_Controller {
 
                                     $cmpare->item_id = $parsed_attributes_unserialize_val;
                                     $cmpare->model = $parsed_model_unserialize_val;
-
+                                    $cmpare->den_for_gap = $den_for_gap;
                                     $cmpare->Page_Load_Time = $parsed_loaded_in_seconds_unserialize_val;
 
                                     $cmpare->Meta_Keywords = $parsed_meta_keywords_unserialize_val;
+                                    $cmpare->column_features = $parsed_attributes_column_features_unserialize_val;
                                 
                                     $cmpare->Meta_Description = $parsed_meta_unserialize_val;
                                     $cmpare->Meta_Description_Count = $parsed_meta_unserialize_val_count;
@@ -998,7 +1008,7 @@ class Assess extends MY_Controller {
                                                 if($row->Short_Description || $row->Long_Description){
                                                     $_count_meta = $this->keywords_appearence($row->Long_Description.$row->Short_Description, $cnt_m);
                                                     $_count_meta_num = round(($_count_meta * $cnt_meta_count / ($row->long_description_wc + $row->short_description_wc)) * 100, 2) . "%";
-                                                    $Meta_Keywords_un .=  $cnt_m . " -- ".$_count_meta_num.", ";
+                                                    $Meta_Keywords_un .=  $cnt_m . "  - ".$_count_meta_num.", ";
                                                 }
                                             
                                                 }
@@ -1118,52 +1128,7 @@ class Assess extends MY_Controller {
                             }
                         }
                 }
-//                if (in_array('H2_Tags', $selected_columns) && $pars_atr['HTags']['h2'] && $pars_atr['HTags']['h2'] != '') {
-//                    $H2 = $pars_atr['HTags']['h2'];
-//                    if (is_array($H2)) {
-//
-//                        if (count($H2) > $H2_tag_count) {
-//                            $H2_tag_count = count($H2);
-//                        }
-//                        $i=0;
-//                        foreach ($H2 as $k => $h2) {
-//                            if($i<2){
-//                                $res_array[$key]['H2_Tags' . $k] = $h2;
-//                                $res_array[$key]['H2_Tags_Count' . $k] = strlen($h2);
-//                                $i++;
-//                            }
-//                        }
-//                    } else {
-//                        $res_array[$key]['H2_Tags0'] = $H2;
-//                        $res_array[$key]['H2_Tags_Count0'] = strlen($H2);
-//                        if ($H2_tag_count == 0) {
-//                            $H2_tag_count = 1;
-//                        }
-//                    }
-//
-//
-//                    if ($H2_tag_count > 0) {
-//                         if ($H2_tag_count > 2) {
-//                             $H2_tag_count = 2;
-//                         }
-//                        for ($k = 0; $k < $H2_tag_count; $k++) {
-//                            if (!$res_array[$key]['H2_Tags' . $k]) {
-//                                $res_array[$key]['H2_Tags' . $k] = '';
-//                                $res_array[$key]['H2_Tags_Count' . $k] = ' ';
-//                            }
-//                        }
-//                    }
-//                }
 
-//                $res_array[$key]['Date'] = $row->created;
-//                $res_array[$key]['Product Name'] = $row->product_name;
-//                $res_array[$key]['Url'] = $row->url;
-//                $res_array[$key]['Word Count (S)'] = $row->short_description_wc;
-//                $res_array[$key]['Word Count (L)'] = $row->long_description_wc;
-//                //$res_array[$key]['duplicate_content'] = $row->duplicate_content;
-//                $res_array[$key]['SEO Phrases (S)'] = $row->short_seo_phrases;
-//                $res_array[$key]['SEO Phrases (L)'] = $row->long_seo_phrases;
-//                $res_array[$key]['Price'] = $row->price_diff;
 
                 if (trim($res_array[$key]['short_seo_phrases']) != 'None') {
                     $shortArr = unserialize($res_array[$key]['short_seo_phrases']);
@@ -1213,8 +1178,44 @@ class Assess extends MY_Controller {
                
                 
                  $sim_items = $row->similar_items;
-
+                 $f_count1 = 0;
                     for ($i = 1; $i <= $max_similar_item_count; $i++) {
+                        
+//                        if($i==1 && !$meta_key_gap ){
+//                            $meta_key_gap=round(($_count_meta_un * $cnt_meta_count_un / ($row->long_description_wc + $row->short_description_wc)) * 100, 2);
+//                        }
+                        if($i == 1){
+                     	if (isset($sim_items[$i -1]->column_features)) {
+                        	$f_count1 =  $sim_items[$i -1]->column_features;
+                     	} else {
+                     		$f_count1 = 0;
+                     	}
+                        
+                       
+
+                    }
+                       
+                        if (in_array('gap', $selected_columns)) {
+                        $res_array[$key]['Gap analysis'] = '';
+                            if($row->short_description_wc && isset($sim_items[$i -1]) && $sim_items[$i -1]->short_description_wc && $row->short_description_wc <$sim_items[$i -1]->short_description_wc){
+                                     $res_array[$key]['Gap analysis'].="Lower words count in short description \n";
+                            }
+                            if($row->long_description_wc && isset($sim_items[$i -1]) && $sim_items[$i -1]->long_description_wc && $row->long_description_wc <$sim_items[$i -1]->long_description_wc){
+                                 $res_array[$key]['Gap analysis'].="Lower words count in long description \n";
+                            }
+
+                            if($res_array[$key]['column_features'] && $f_count1 && $f_count1 < $res_array[$key]['column_features']){
+                                 $res_array[$key]['Gap analysis'].="Competitor has fewer features listed \n";
+                            }
+                            if(!$sim_items[$i -1]->den_for_gap){
+
+                            $res_array[$key]['Gap analysis'] .= "Competitor is not keyword optimized \n";
+
+
+                        }
+                        }  
+                        
+                        
                         if (in_array('product_name', $selected_columns)) {
                         $res_array[$key]['Product Name (' . $i . ")"] = $sim_items[$i - 1]->product_name ? $sim_items[$i - 1]->product_name : '';
                         
@@ -1327,6 +1328,9 @@ class Assess extends MY_Controller {
 
 
             for ($i = 1; $i <= $max_similar_item_count; $i++) {
+                if (in_array('gap', $selected_columns)) {
+                    $line[] = 'Gap analysis (' . $i . ")";
+                }
                 if (in_array('product_name', $selected_columns)) {
                     $line[] = 'Product Name (' . $i . ")";
                 }
@@ -1347,7 +1351,7 @@ class Assess extends MY_Controller {
                     $line[] = 'Short Description(' . $i . ")";
                 }
                 if (in_array('short_description_wc', $selected_columns)) {
-                    $line[] = 'Word Count (S) (' . $i . ")";
+                    $line[] = 'Short Desc # Words (' . $i . ")";
                 }
                 if (in_array('Meta_Keywords', $selected_columns)) {
                     $line[] = 'Meta Keywords (' . $i . ")";
@@ -2259,8 +2263,8 @@ class Assess extends MY_Controller {
                     $result_row->gap.="Lower words count in long description<br>";
                 }
 
-                if($result_row->column_features && $f_count1 && $result_row->column_features < $f_count1){
-                    $result_row->gap.="Fewer features listed<br>";
+                if($result_row->column_features && $f_count1 && $f_count1 < $result_row->column_features){
+                    $result_row->gap.="Competitor has fewer features listed<br>";
                 }
           }
 
