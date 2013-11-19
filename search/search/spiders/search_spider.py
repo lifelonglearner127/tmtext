@@ -763,8 +763,8 @@ class SearchSpider(BaseSpider):
 # process text in product names, compute similarity between products
 class ProcessText():
 	# weight values
-	MODEL_MATCH_WEIGHT = 10
-	ALT_MODEL_MATCH_WEIGHT = 9
+	MODEL_MATCH_WEIGHT = 9
+	ALT_MODEL_MATCH_WEIGHT = 7
 	BRAND_MATCH_WEIGHT = 5
 	MEASURE_MATCH_WEIGHT = 3
 	NONWORD_MATCH_WEIGHT = 2
