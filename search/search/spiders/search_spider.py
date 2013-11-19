@@ -815,7 +815,9 @@ class ProcessText():
 
 		# replace - . / if not part of a number - either a number is not before it or is not after it
 		# replace ' if there's not a number before it
-		text = re.sub("[\.\-/](?![0-9])", " ", text)
+		text = re.sub("[\./](?![0-9])", " ", text)
+		# replace - with space only if not part of a model number - that is not followed by a number followed by letters or space or the end of the name
+		text = re.sub("[\-](?![0-9]+( |$|[a-zA-Z]))", " ", text)
 		text = re.sub("(?<![0-9])[\.\-/\']", " ", text)
 		stopset = set(stopwords.words('english'))#["and", "the", "&", "for", "of", "on", "as", "to", "in"]
 		
