@@ -883,11 +883,16 @@ class ProcessText():
 
 	# check if model numbers of 2 products match
 	# return 1 if they match, 2 if they match including alternative model numbers, and 0 if they don't
+	# also return copies of the products' names with matched model nrs replaced with placeholders
 	@staticmethod
 	def models_match(name1, name2, model1, model2):
 		# add to the score if their model numbers match
 		# check if the product models are the same, or if they are included in the other product's name
 		# for the original product models, as well as for the alternative ones, and alternative product names
+
+		# build copies of product names, where matched model will be replaced with a placeholder
+		name1_copy = list(name1)
+		name2_copy = list(name2)
 
 		alt_product_models = ProcessText.alt_modelnrs(model1)
 		alt_product2_models = ProcessText.alt_modelnrs(model2)
@@ -926,20 +931,36 @@ class ProcessText():
 		alt_models2 = map(lambda x: ProcessText.normalize_modelnr(x), alt_models2)
 
 		# if models match
-		if set(alt_models1).intersection(set(alt_models2)):
+		alt_model_intersection = set(alt_models1).intersection(set(alt_models2))
+		model_intersection = set(models1).intersection(set(models2))
+
+		if alt_model_intersection:
+
+			# replace matched model with placeholder
+			# (there will only be one modelnr to replace, but try them all cause intersection of alt_models may not be in original names)
+			for modelnr in models1:
+				if modelnr in name1_copy:
+					name1_copy[name1_copy.index(modelnr)] = "__model1__"
+					break
+			for modelnr in models2:
+				if modelnr in name2_copy:
+					name2_copy[name2_copy.index(modelnr)] = "__model2__"
+
 			# if actual models match (excluding alternate models)
-			if set(models1).intersection(set(models2)):
+			if model_intersection:
+				
 				model_matched = 1
 				log.msg("MATCHED: " + str(models1) + str(models2) + "\n", level=log.INFO)
 			# if alternate models match
 			else:
+
 				model_matched = 2
 				log.msg("ALT MATCHED: " + str(alt_models1) + str(alt_models2) + "\n", level=log.INFO)
 		# if models not matched
 		else:
 			log.msg("NOT MATCHED: " + str(alt_models1) + str(alt_models2) + "\n", level=log.INFO)
 		
-		return model_matched
+		return (model_matched, name1_copy, name2_copy)
 
 
 	# create combinations of comb_length words from original text (after normalization and tokenization and filtering out dictionary words)
@@ -995,16 +1016,20 @@ class ProcessText():
 
 			#TODO: currently only considering brand for target products
 			# and only available for Amazon
+			# normalize brand name
 			if 'product_brand' in product2:
 				product2_brand = " ".join(ProcessText.normalize(product2['product_brand']))
 			else:
 				product2_brand = None
 
-			# check if product names match (a similarity score)
-			(score, threshold, brand_matched) = ProcessText.similar_names(words1, words2, product2_brand, param)
-			
 			# check if product models match (either from a "Model" field or extracted from their name)
-			model_matched = ProcessText.models_match(words1, words2, product_model, product2_model)
+			(model_matched, words1_copy, words2_copy) = ProcessText.models_match(words1, words2, product_model, product2_model)
+
+			# check if product names match (a similarity score)
+			# use copies of brands names with model number replaced with a placeholder
+			(score, threshold, brand_matched) = ProcessText.similar_names(words1_copy, words2_copy, product2_brand, param)
+			
+			# add model matching score
 			if model_matched:
 				# only add to score if they have more than a word in common - otherwise assume it's a conincidence model match
 				if score > 1:
@@ -1180,9 +1205,9 @@ class ProcessText():
 	@staticmethod
 	def weight(word):
 
-		if ProcessText.is_model_number(word):
-			# model number matching is handled separately
-			return 0
+		# if ProcessText.is_model_number(word):
+		# 	# model number matching is handled separately
+		# 	return 0
 
 		# represents number of inches, or a decimal point number
 		if word.endswith("\"") or re.match("[0-9]+\.[0-9]+", word):
