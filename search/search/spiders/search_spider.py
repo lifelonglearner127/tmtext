@@ -852,10 +852,11 @@ class ProcessText():
 			return []
 
 		# remove last part of word
-		m = re.match("(.*[0-9]+)([a-zA-Z\- ]+)", word)
+		m = re.match("(.*[0-9]+)([a-zA-Z\- ]+)$", word)
 		if m and float(len(m.group(1)))/len(m.group(2))>1:
 			new_word = m.group(1)
-			if len(new_word) > 2:
+			# accept it if it's a model number with at least 4 letters
+			if ProcessText.is_model_number(new_word, 4):
 				alt_models.append(new_word)
 
 		# split word by - or /
@@ -1231,10 +1232,10 @@ class ProcessText():
 	# check if word is a likely candidate to represent a model number
 	#Obs: currently finding years as model numbers (1951 will return True)
 	@staticmethod
-	def is_model_number(word):
+	def is_model_number(word, min_length = 5):
 
-		# eliminate words smaller than 4 letters (ok?)
-		if len(word) <= 4:
+		# eliminate words smaller than 4 letters (inclusively)
+		if len(word) < min_length:
 			return False
 
 		word = word.lower()
