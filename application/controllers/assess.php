@@ -1785,10 +1785,10 @@ class Assess extends MY_Controller {
                 $columns[] = array("sTitle" => "URL", "sName" => 'url' . $i);
                 $columns[] = array("sTitle" => "Page Load Time", "sClass" => "Page_Load_Time" . $i, "sName" => 'Page_Load_Time' . $i);
                 $columns[] = array("sTitle" => "<span class='subtitle_desc_short{$i}' >Short</span> Description", "sClass" => "Short_Description" . $i, "sName" => 'Short_Description' . $i);
-                $columns[] = array("sTitle" => "Words <span class='subtitle_word_short' >Short</span>", "sName" => 'short_description_wc' . $i);
+                $columns[] = array("sTitle" => "Short Desc <span class='subtitle_word_short' ># Words</span>","sClass" => "word_short" . $i, "sName" => 'short_description_wc' . $i);
                 $columns[] = array("sTitle" => "Meta Keywords", "sClass" => "Meta_Keywords" . $i, "sName" => 'Meta_Keywords' . $i);
                 $columns[] = array("sTitle" => "<span class='subtitle_desc_long{$i}' >Long </span>Description", "sClass" => "Long_Description" . $i, "sName" => 'Long_Description' . $i);
-                $columns[] = array("sTitle" => "Words <span class='subtitle_word_long' >Long</span>", "sName" => 'long_description_wc' . $i);
+                $columns[] = array("sTitle" => "Long Desc <span class='subtitle_word_long' ># Words</span>","sClass" => "word_long" . $i, "sName" => 'long_description_wc' . $i);
                 $columns[] = array("sTitle" => "Meta Description", "sClass" => "Meta_Description" . $i, "sName" => 'Meta_Description' . $i);
                 $columns[] = array("sTitle" => "Meta Desc <span class='subtitle_word_long' ># Words</span>", "sClass" => "Meta_Description_Count" . $i, "sName" => 'Meta_Description_Count' . $i);
                 $columns[] = array("sTitle" => "Avg Review", "sClass" => "average_review" . $i, "sName" => 'average_review' . $i);
@@ -1831,8 +1831,8 @@ class Assess extends MY_Controller {
                 $result_row->url = $row->url;
             }
 
-            $result_row->short_description = $row->short_description;
-            $result_row->long_description = $row->long_description;
+//            $result_row->short_description = $row->short_description;
+//            $result_row->long_description = $row->long_description;
             $result_row->short_description_wc = intval($row->short_description_wc);
             $result_row->long_description_wc = intval($row->long_description_wc);
             $result_row->short_seo_phrases = "None";
@@ -1846,9 +1846,9 @@ class Assess extends MY_Controller {
             $result_row->item_id = "";
             $result_row->Meta_Keywords = "";
             $result_row->Page_Load_Time = "";
-            $result_row->Short_Description = "";
-            $result_row->Long_Description = "";
-            $result_row->model = "#";
+//            $result_row->Short_Description = "";
+//            $result_row->Long_Description = "";
+            $result_row->model = "";
             $result_row->H1_Tags = "";
             $result_row->H1_Tags_Count = "";
             $result_row->H2_Tags = "";
@@ -1882,6 +1882,7 @@ class Assess extends MY_Controller {
                     $parsed_meta_keywords_unserialize_val = '';
                     $parsed_loaded_in_seconds_unserialize_val ='';
                     $parsed_average_review_unserialize_val ='';
+                    $parsed_attributes_model_unserialize_val ='';
 
                     $parsed_attributes_unserialize = unserialize($sim_items[$i - 1]->parsed_attributes);
 
@@ -1889,7 +1890,7 @@ class Assess extends MY_Controller {
                     if (isset($parsed_attributes_unserialize['item_id']))
                         $parsed_attributes_unserialize_val = $parsed_attributes_unserialize['item_id'];
                     if (isset($parsed_attributes_unserialize['model']))
-                        $parsed_attributes_unserialize_val = $parsed_attributes_unserialize['model'];
+                        $parsed_attributes_model_unserialize_val = $parsed_attributes_unserialize['model'];
                     if (isset($parsed_attributes_unserialize['loaded_in_seconds']))
                         $parsed_loaded_in_seconds_unserialize_val = $parsed_attributes_unserialize['loaded_in_seconds'];
                     if (isset($parsed_attributes_unserialize['average_review']))
@@ -1982,12 +1983,12 @@ class Assess extends MY_Controller {
                     $result_row['Page_Load_Time' . $i] = $parsed_loaded_in_seconds_unserialize_val;
                     $result_row['product_name' . $i] = $sim_items[$i - 1]->product_name !== false ? "<span class='tb_product_name'>" . $sim_items[$i - 1]->product_name . "</span>" : "-";
                     $result_row['item_id' . $i] = $parsed_attributes_unserialize_val;
-                    $result_row['model' . $i] = '#';
-                    $result_row['short_description_wc' . $i] = $sim_items[$i - 1]->short_description_wc !== false ? $sim_items[$i - 1]->short_description_wc : '-';
+                    $result_row['model' . $i] = $parsed_attributes_model_unserialize_val;
+                    $result_row['short_description_wc' . $i] = $sim_items[$i - 1]->short_description_wc !== false ? $sim_items[$i - 1]->short_description_wc : '';
                     $result_row['Short_Description' . $i] = $sim_items[$i - 1]->Short_Description !== false ? $sim_items[$i - 1]->Short_Description : '';
                     $result_row['Long_Description' . $i] = $sim_items[$i - 1]->Long_Description !== false ? $sim_items[$i - 1]->Long_Description : '';
                     $result_row['Meta_Keywords' . $i] = $parsed_meta_keywords_unserialize_val;
-                    $result_row['long_description_wc' . $i] = $sim_items[$i - 1]->long_description_wc !== false ? $sim_items[$i - 1]->long_description_wc : '-';
+                    $result_row['long_description_wc' . $i] = $sim_items[$i - 1]->long_description_wc !== false ? $sim_items[$i - 1]->long_description_wc : '';
                     $result_row['Meta_Description' . $i] = $parsed_meta_unserialize_val;
                     $result_row['Meta_Description_Count' . $i] = $parsed_meta_unserialize_val_count;
                     $result_row['average_review' . $i] = $parsed_average_review_unserialize_val;
@@ -2070,14 +2071,14 @@ class Assess extends MY_Controller {
             }
 
             if ($row->short_description) {
-                 $result_row->Short_Description = $row->short_description;
+                 $result_row->short_description = $row->short_description;
              }else{
-                 $result_row->Long_Description = '';
+                 $result_row->short_description = '';
              }
              if ($row->long_description) {
-                 $result_row->Long_Description = $row->long_description;
+                 $result_row->long_description = $row->long_description;
              }else{
-                 $result_row->Long_Description = '';
+                 $result_row->long_description = '';
              }
 
             if ($pars_atr['parsed_meta']['keywords'] && $pars_atr['parsed_meta']['keywords'] != '') {
@@ -2087,8 +2088,8 @@ class Assess extends MY_Controller {
                     $_count_meta = 0;
                     foreach($cnt_meta as $cnt_m){
                         $cnt_m = trim($cnt_m);
-                        if($result_row->Long_Description || $result_row->Short_Description){
-                            $_count_meta = $this->keywords_appearence($result_row->Long_Description.$result_row->Short_Description, $cnt_m);
+                        if($result_row->long_description || $result_row->short_description){
+                            $_count_meta = $this->keywords_appearence($result_row->long_description.$result_row->short_description, $cnt_m);
                             $_count_meta_num = round(($_count_meta * $cnt_meta_count / ($result_row->long_description_wc + $result_row->short_description_wc)) * 100, 2) . "%";
                             $Meta_Keywords .= "<tr><td>" . $cnt_m . "</td><td>".$_count_meta_num."</td></tr>";
 //                        }else if($result_row->Short_Description){
@@ -2747,11 +2748,11 @@ class Assess extends MY_Controller {
                         $data_row->model,
                         $row_url,
                         $data_row->Page_Load_Time,
-                        $data_row->Short_Description,
+                        $data_row->short_description,
                         $data_row->short_description_wc,
                         $data_row->Meta_Keywords,
                         $data_row->short_seo_phrases,
-                        $data_row->Long_Description,
+                        $data_row->long_description,
                         $data_row->long_description_wc,
                         $data_row->long_seo_phrases,
                         $data_row->Custom_Keywords_Short_Description,
@@ -2782,10 +2783,10 @@ class Assess extends MY_Controller {
                             $output_row[] = $data_row['url' . $i] != null ? $data_row['url' . $i] : '-';
                             $output_row[] = $data_row['Page_Load_Time' . $i] != null ? $data_row['Page_Load_Time' . $i] : '';
                             $output_row[] = $data_row['Short_Description' . $i] != null ? $data_row['Short_Description' . $i] : '';
-                            $output_row[] = $data_row['short_description_wc' . $i] != null ? $data_row['short_description_wc' . $i] : '-';
+                            $output_row[] = $data_row['short_description_wc' . $i] != null ? $data_row['short_description_wc' . $i] : '';
                             $output_row[] = $data_row['Meta_Keywords' . $i] != null ? $data_row['Meta_Keywords' . $i] : '';
                             $output_row[] = $data_row['Long_Description' . $i] != null ? $data_row['Long_Description' . $i] : '';
-                            $output_row[] = $data_row['long_description_wc' . $i] != null ? $data_row['long_description_wc' . $i] : '-';
+                            $output_row[] = $data_row['long_description_wc' . $i] != null ? $data_row['long_description_wc' . $i] : '';
                             $output_row[] = $data_row['Meta_Description' . $i] != null ? $data_row['Meta_Description' . $i] : '';
                             $output_row[] = $data_row['Meta_Description_Count' . $i] != null ? $data_row['Meta_Description_Count' . $i] : '';
                             $output_row[] = $data_row['average_review' . $i] != null ? $data_row['average_review' . $i] : '';

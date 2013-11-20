@@ -241,8 +241,8 @@ input[type=text] {
     width: 100%;
 }
 .ui-widget-overlay{
-    min-height: 1600px;
-    background-color: transparent;
+    background-color: ffffff !important;
+    background: #ffffff !important;
     
 }
 .ui-dialog .ui-dialog-buttonpane button.popupGreen {

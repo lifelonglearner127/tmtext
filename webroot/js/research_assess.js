@@ -1881,6 +1881,10 @@ var scrollYesOrNot = true;
         var average_review3 = 0;
         var average_review4 = 0;
         var model = 0;
+        var model1 = 0;
+        var model2 = 0;
+        var model3 = 0;
+        var model4 = 0;
         var Custom_Keywords_Short_Description = 0;
         var Custom_Keywords_Long_Description = 0;
         $('td.word_short').each(function() {
@@ -2034,6 +2038,26 @@ var scrollYesOrNot = true;
         $('td.model').each(function() {
             if ($(this).text()!='') {
                 model += 1;
+            }
+        });
+        $('td.model1').each(function() {
+            if ($(this).text()!='') {
+                model1 += 1;
+            }
+        });
+        $('td.model2').each(function() {
+            if ($(this).text()!='') {
+                model2 += 1;
+            }
+        });
+        $('td.model3').each(function() {
+            if ($(this).text()!='') {
+                model3 += 1;
+            }
+        });
+        $('td.model4').each(function() {
+            if ($(this).text()!='') {
+                model4 += 1;
             }
         });
         $('td.Meta_Keywords').each(function() {
@@ -2220,6 +2244,18 @@ var scrollYesOrNot = true;
             if((value == 'model' && model == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
             }
+            if((value == 'model1' && model1 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+            }
+            if((value == 'model2' && model2 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+            }
+            if((value == 'model3' && model3 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+            }
+            if((value == 'model4' && model4 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+            }
             if((value == 'Meta_Description' && Meta_Description == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
                 tblAssess.fnSetColumnVis(index+1, false, false);
@@ -2330,10 +2366,10 @@ var scrollYesOrNot = true;
                 
             }
         });
-        $('.subtitle_word_long').show();
-        $('.subtitle_word_short').show();
-        $('.subtitle_keyword_short').show();
-        $('.subtitle_keyword_long').show();
+//        $('.subtitle_word_long').show();
+//        $('.subtitle_word_short').show();
+//        $('.subtitle_keyword_short').show();
+//        $('.subtitle_keyword_long').show();
         
         if(Long_Description == 0 && Short_Description !=0){
             $('.subtitle_desc_short').text('Product ')
@@ -2377,13 +2413,13 @@ var scrollYesOrNot = true;
         }
         
         
-        if (word_short_num == 0 && word_long_num != 0) {
-            $('.subtitle_word_long').hide();
-            $('.subtitle_keyword_long').hide();
-        } else if (word_short_num != 0 && word_long_num == 0) {
-            $('.subtitle_word_short').hide();
-            $('.subtitle_keyword_short').hide();
-        }
+//        if (word_short_num == 0 && word_long_num != 0) {
+//            $('.subtitle_word_long').hide();
+//            $('.subtitle_keyword_long').hide();
+//        } else if (word_short_num != 0 && word_long_num == 0) {
+//            $('.subtitle_word_short').hide();
+//            $('.subtitle_keyword_short').hide();
+//        }
         
     }
 
