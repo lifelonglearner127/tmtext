@@ -338,9 +338,19 @@ class PageProcessor {
 		}
 		$result['feature_count'] = count($features);
 
-		foreach($this->nokogiri->get('#BVRRSourceID span') as $item) {
-			if (isset($item['itemprop']) && $item['itemprop']=='reviewCount' ) {
-				$result['review_count'] = $item['#text'][0];
+
+		$BVRRSourceID = $this->nokogiri->get('#BVRRSourceID')->toArray();
+		if (isset($BVRRSourceID[0]['div'][0]['div'][0]['span'][0]['span'])) {
+			foreach($BVRRSourceID[0]['div'][0]['div'][0]['span'][0]['span'] as $item) {
+				if (isset($item['itemprop']) && $item['itemprop']=='reviewCount' ) {
+					$result['review_count'] = $item['#text'][0];
+				}
+				if (isset($item['itemprop']) && $item['itemprop']=='ratingValue' ) {
+					$result['average_review'] = $item['#text'][0];
+				}
+				if (isset($item['itemprop']) && $item['itemprop']=='bestRating' ) {
+					$result['max_review'] = $item['#text'][0];
+				}
 			}
 		}
 
