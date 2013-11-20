@@ -229,7 +229,7 @@ class PageProcessor {
 			}
 		}
 
-		foreach($this->nokogiri->get('div.BodyXL div') as $item) {
+		foreach($this->nokogiri->get('#prodInfoSpaceBottom div.BodyXL div') as $item) {
 			foreach ($item['#text'] as $k=>$i) {
 				$line = trim($i);
 				if (isset($item['b']) && isset($item['b'][$k]) && isset($item['b'][$k])
@@ -241,7 +241,7 @@ class PageProcessor {
 			}
 		}
 
-		foreach($this->nokogiri->get('div.BodyXL div ul li') as $item) {
+		foreach($this->nokogiri->get('#prodInfoSpaceBottom div.BodyXL div ul li') as $item) {
 			foreach ($item['#text'] as $i) {
 				$description[] = '<li>'.trim($i).'</li>';
 			}
