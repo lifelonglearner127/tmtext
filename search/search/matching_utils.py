@@ -70,7 +70,7 @@ class ProcessText():
 		tokens = text.split()
 
 		#TODO: remove the len constraint? eg: kellogs k protein
-		clean = [token.lower() for token in tokens if token.lower() not in stopset and len(token) > 0]
+		clean = [ProcessText.stem(token.lower()) for token in tokens if token.lower() not in stopset and len(token) > 0]
 
 		# TODO:
 		# # add versions of the queries with different spelling
@@ -282,7 +282,6 @@ class ProcessText():
 			for word in intersection_brands:
 				if len(word) > len(matched_brand):
 					matched_brand = word
-			print "MATCHED BRAND: ", matched_brand
 
 			# replace matched brand in products names with dummy word (to avoid counting twice)
 			if matched_brand in words1_copy:
@@ -294,7 +293,6 @@ class ProcessText():
 					if word in words1_copy and word in matched_brand:
 						# if this is the second word, just remove the word - consider brand as a single word
 						if "__brand1__" not in words1_copy:
-							print "ALREADY HERE: ", words1_copy
 							words1_copy[words1_copy.index(word)] = "__brand1__"
 						else:
 							words1_copy.remove(word)
