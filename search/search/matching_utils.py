@@ -233,7 +233,7 @@ class ProcessText():
 
 			for word in words2:
 				if word in product2_brand:
-					if "__brand2__" not in words2:
+					if "__brand2__" not in words2_copy:
 						words2_copy[words2.index(word)] = "__brand2__"
 					else:
 						words2_copy.remove(word)
