@@ -347,6 +347,11 @@ class PageProcessor {
 		$parts = split('/',$this->url);
 		$result['item_id'] = end($parts);
 
+
+		if ( strpos($this->html, 'manufacturer-content')!==false && strpos($this->html, 'content.webcollage.net')!==false ) {
+			$result['webcollage']=true;
+		}
+
 		return $result;
 	}
 
