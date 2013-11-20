@@ -217,6 +217,29 @@ class ProcessText():
 		if len(words2_copy) < 2:
 			words2_copy.append("__brand2_dummy__")
 
+
+		# deal separately with the case where product2_brand (we're sure this is the brand) is found as is in fist product name
+		# check if it's in the concatenation of all words in words1 - this way we capture concatenated pairs of words too.
+		# then remove from name only words which were part of product2_brand
+		#TODO: does this lead to any errors?
+		if product2_brand and "".join(product2_brand.split()) in "".join(words1_copy):
+			# remove/replace words in brand name
+			for word in words1:
+				if word in product2_brand:
+					if "__brand1__" not in words1_copy:
+						words1_copy[words1.index(word)] = "__brand1__"
+					else:
+						words1_copy.remove(word)
+
+			for word in words2:
+				if word in product2_brand:
+					if "__brand2__" not in words2:
+						words2_copy[words2.index(word)] = "__brand2__"
+					else:
+						words2_copy.remove(word)
+
+			return (True, words1_copy, words2_copy)
+
 		
 		brand_matched = False
 
@@ -224,34 +247,27 @@ class ProcessText():
 		# (so as not to count twice)
 
 		# add first word, second word, and their concatenation
-		# also add versions of the brands stemmed of plural marks
-		brands1 = set([words1_copy[0], ProcessText.stem(words1_copy[0])])
+		brands1 = set([words1_copy[0]])
 		# ignore second word if it's a number
 		if not ProcessText.is_number(words1_copy[1]):
-			brands1.update([words1_copy[1], ProcessText.stem(words1_copy[1]), \
-				words1_copy[0] + words1_copy[1], ProcessText.stem(words1_copy[0]) + words1_copy[1], \
-				ProcessText.stem(words1_copy[0]) + ProcessText.stem(words1_copy[1]), ProcessText.stem(words1_copy[0] + words1_copy[1])])
-		brands2 = set([words2_copy[0], ProcessText.stem(words2_copy[0])])
+			brands1.update([words1_copy[1], words1_copy[0] + words1_copy[1]])
+		brands2 = set([words2_copy[0]])
 		# ignore second word if it's a number
 		if not ProcessText.is_number(words2_copy[1]):
-			brands2.update([words2_copy[1], ProcessText.stem(words2_copy[1]), \
-				words2_copy[0] + words2_copy[1], ProcessText.stem(words2_copy[0]) + words2_copy[1], \
-				ProcessText.stem(words2_copy[0]) + ProcessText.stem(words2_copy[1]), ProcessText.stem(words2_copy[0] + words2_copy[1])])
+			brands2.update([words2_copy[1], words2_copy[0] + words2_copy[1]])
 		if product2_brand:
 			product2_brand_tokens = product2_brand.split()
-			brands2.update([product2_brand_tokens[0], ProcessText.stem(product2_brand_tokens[0])])
+			brands2.add(product2_brand_tokens[0])
 			if len(product2_brand_tokens) > 1 and not ProcessText.is_number(product2_brand_tokens[1]):
-				brands2.update([product2_brand_tokens[1], ProcessText.stem(product2_brand_tokens[1]), \
-					product2_brand_tokens[0] + product2_brand_tokens[1], ProcessText.stem(product2_brand_tokens[0]) + product2_brand_tokens[1], \
-					ProcessText.stem(product2_brand_tokens[0]) + ProcessText.stem(product2_brand_tokens[1]), ProcessText.stem(product2_brand_tokens[0] + product2_brand_tokens[1])])
+				brands2.update([product2_brand_tokens[1], product2_brand_tokens[0] + product2_brand_tokens[1]])
 
 		# compute intersection of these possible brand names - if not empty then brands match
 		intersection_brands = brands1.intersection(brands2)
 
 		# remove matches that were between the second word of each name
 		for matched_brand in list(intersection_brands):
-			if (matched_brand == words1_copy[1] or matched_brand == words1_copy[1] + "s") \
-			and (matched_brand == words2_copy[1] or matched_brand == words2_copy[1] + "s"):
+			if (matched_brand == words1_copy[1]) \
+			and (matched_brand == words2_copy[1]):
 				intersection_brands.remove(matched_brand)			
 
 		# if we found a match
@@ -261,6 +277,8 @@ class ProcessText():
 			# so if a concatenation was matched, use that instead of single words,
 			# if a plural was matched, use that instead of singular form
 			matched_brand = intersection_brands.pop()
+
+			## use first match for now - seems to work better. eg: when brand made of 2 words but in second name they are on pos 2 and 3
 			for word in intersection_brands:
 				if len(word) > len(matched_brand):
 					matched_brand = word
@@ -270,39 +288,29 @@ class ProcessText():
 			if matched_brand in words1_copy:
 				words1_copy[words1_copy.index(matched_brand)] = "__brand1__"
 			else:
-				# also remove plural versions (only try this if we didn't remove brand name already)
-				if matched_brand + "s" in words1_copy:
-					words1_copy[words1_copy.index(matched_brand + "s")] = "__brand1__"
-
 				# this means a concatenation was probably matched (so not present in product name),
 				# so try to remove all words from brands1 (could be 2 words)
-				else:
-					for word in brands1:
-						if word in words1_copy and word in matched_brand:
-							# if this is the second word, just remove the word - consider brand as a single word
-							if "__brand1__" not in words1_copy:
-								print "ALREADY HERE: ", words1_copy
-								words1_copy[words1_copy.index(word)] = "__brand1__"
-							else:
-								words1_copy.remove(word)
+				for word in brands1:
+					if word in words1_copy and word in matched_brand:
+						# if this is the second word, just remove the word - consider brand as a single word
+						if "__brand1__" not in words1_copy:
+							print "ALREADY HERE: ", words1_copy
+							words1_copy[words1_copy.index(word)] = "__brand1__"
+						else:
+							words1_copy.remove(word)
 
 			if matched_brand in words2_copy:
 				words2_copy[words2_copy.index(matched_brand)] = "__brand2__"
 			else:
-				# also remove plural versions
-				if matched_brand + "s" in words1_copy:
-					words1_copy[words1_copy.index(matched_brand + "s")] = "__brand2__"
-
 				# this means a concatenation was probably matched (so not present in product name),
 				# so try to remove all words from brands2 (could be 2 words)
-				else:
-					for word in brands2:
-						if word in words2_copy and word in matched_brand:
-							# if this is the second word, just remove the word - consider brand as a single word
-							if "__brand2__" not in words2_copy:
-								words2_copy[words2_copy.index(word)] = "__brand2__"
-							else:
-								words2_copy.remove(word)
+				for word in brands2:
+					if word in words2_copy and word in matched_brand:
+						# if this is the second word, just remove the word - consider brand as a single word
+						if "__brand2__" not in words2_copy:
+							words2_copy[words2_copy.index(word)] = "__brand2__"
+						else:
+							words2_copy.remove(word)
 
 		return (brand_matched, words1_copy, words2_copy)
 	
