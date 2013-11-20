@@ -789,6 +789,8 @@ class Assess extends MY_Controller {
             (select `value` from imported_data_parsed where `key`="Url" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `url`
             from `statistics_new` as `s` ' . $qnd);
         $results = $query->result();
+//        echo '<pre>';
+//        print_r($results) ;exit();
         
             $this->load->model('batches_model');
 
@@ -826,8 +828,8 @@ class Assess extends MY_Controller {
                                         $parsed_model_unserialize_val = $parsed_attributes_unserialize['model'];
                                     if (isset($parsed_attributes_unserialize['loaded_in_seconds']))
                                         $parsed_loaded_in_seconds_unserialize_val = $parsed_attributes_unserialize['loaded_in_seconds'];
-                                    if (isset($parsed_attributes_unserialize['average_review']))
-                                        $parsed_average_review_unserialize_val_count = $parsed_attributes_unserialize['average_review'];
+                                    if (isset($parsed_attributes_unserialize['review_count']))
+                                        $parsed_average_review_unserialize_val_count = $parsed_attributes_unserialize['review_count'];
 
                                     $parsed_meta_unserialize = unserialize($cmpare->parsed_meta);
 
@@ -895,6 +897,8 @@ class Assess extends MY_Controller {
                     }
                 }
                 $results = $cmp;
+//                echo '<pre>';
+//                print_r($results);exit();
             }
 
             if ($cmp_selected == 'all') {
@@ -1054,7 +1058,7 @@ class Assess extends MY_Controller {
                     $res_array[$key]['column_features'] = $pars_atr['parsed_attributes']['feature_count'] !== false ? $pars_atr['parsed_attributes']['feature_count'] : '';
                 }
                 if (in_array('column_reviews', $selected_columns)) {
-                    $res_array[$key]['column_reviews'] = $row->revision !== false ? $row->revision : '';
+                    $res_array[$key]['column_reviews'] = $pars_atr['parsed_attributes']['review_count'] !== false ? $pars_atr['parsed_attributes']['review_count'] : '-';
                 }
                 if (in_array('H1_Tags', $selected_columns) && $pars_atr['HTags']['h1'] && $pars_atr['HTags']['h1'] != '') {
                     $H1 = $pars_atr['HTags']['h1'];
@@ -1159,14 +1163,14 @@ class Assess extends MY_Controller {
                     $own_price = floatval($price_diff['own_price']);
                     $own_site = str_replace('www.', '', $price_diff['own_site']);
                     $own_site = str_replace('www1.', '', $own_site);
-                    $price_diff_res = $own_site . " - $" . $price_diff['own_price'];
+                    $price_diff_res = $own_site . " - $" . number_format($price_diff['own_price'],2);
                     $flag_competitor = false;
                     for ($i = 0; $i < count($price_diff['competitor_customer']); $i++) {
                         if ($customer_url["host"] != $price_diff['competitor_customer'][$i]) {
                             if ($own_price > floatval($price_diff['competitor_price'][$i])) {
                                 $competitor_site = str_replace('www.', '', $price_diff['competitor_customer'][$i]);
                                 $competitor_site = str_replace('www.', '', $competitor_site);
-                                $price_diff_res .= "\r\n" . $competitor_site . " - $" . $price_diff['competitor_price'][$i];
+                                $price_diff_res .= "\r\n" . $competitor_site . " - $" . number_format($price_diff['competitor_price'][$i],2);
                             }
                         }
                     }
@@ -1208,10 +1212,9 @@ class Assess extends MY_Controller {
                             }
                             if(!$sim_items[$i -1]->den_for_gap){
 
-                            $res_array[$key]['Gap analysis'] .= "Competitor is not keyword optimized,  ";
-
-
+                                $res_array[$key]['Gap analysis'] .= "Competitor is not keyword optimized, ";
                         }
+                            $res_array[$key]['Gap analysis'] = rtrim($res_array[$key]['Gap analysis'] , ", ");
                         }  
                         
                         
@@ -1271,10 +1274,10 @@ class Assess extends MY_Controller {
             array_unshift( $line, 'Model');
             }
             if(in_array('item_id', $selected_columns)){
-                 array_unshift( $line, 'item ID');
+                 array_unshift( $line, 'Item ID');
             }
             if(in_array('Meta_Keywords', $selected_columns)){
-                 $line[]=  'Meta Keywords';
+                 $line[]=  'Meta Keywords - Keyword Density';
             }
 
             //meta description
@@ -1294,12 +1297,12 @@ class Assess extends MY_Controller {
             if(in_array('column_external_content', $selected_columns)){
                $line[]= 'External Content';
             }
-            if (in_array('column_features', $selected_columns)) {
-                $res_array[$key]['column_features'] = $pars_atr['parsed_attributes']['feature_count'] !== false ? $pars_atr['parsed_attributes']['feature_count'] : '';
-            }
-            if (in_array('column_reviews', $selected_columns)) {
-                $res_array[$key]['column_reviews'] = $row->revision !== false ? $row->revision : '';
-           }
+//            if (in_array('column_features', $selected_columns)) {
+//                $res_array[$key]['column_features'] = $pars_atr['parsed_attributes']['feature_count'] !== false ? $pars_atr['parsed_attributes']['feature_count'] : '';
+//            }
+//            if (in_array('column_reviews', $selected_columns)) {
+//             $res_array[$key]['column_reviews'] = $pars_atr['parsed_attributes']['review_count'] !== false ? $pars_atr['parsed_attributes']['review_count'] : '';
+//               }
 
             if (in_array('H1_Tags', $selected_columns)) {
                 if ($H1_tag_count > 0) {
@@ -1323,7 +1326,7 @@ class Assess extends MY_Controller {
 
             for ($i = 1; $i <= $max_similar_item_count; $i++) {
                 if (in_array('gap', $selected_columns)) {
-                    $line[] = 'Gap analysis';
+                    $line[] = 'Gap Analysis';
                 }
                 if (in_array('item_id', $selected_columns)) {
                     $line[] = "Item Id(" . ($i+1) . ")";
@@ -1351,7 +1354,7 @@ class Assess extends MY_Controller {
                     $line[] = " Long Desc # Words(" . ($i+1) . ")";
                 }
                 if (in_array('Meta_Keywords', $selected_columns)) {
-                    $line[] = "Meta Keywords (" . ($i+1) . ")";
+                    $line[] = "Meta Keywords (" . ($i+1) . ") - Keyword Density";
                 }
                 if (in_array('Meta_Description', $selected_columns)) {
                     $line[] = "Meta Description(" . ($i+1) . ")";
@@ -1373,8 +1376,32 @@ class Assess extends MY_Controller {
           
               
             }
+            array_unshift($res_array, $line);
+            $long_description_wc_count0 = 0;
+            $short_description_wc_count0 = 0;
+            foreach($res_array as $key => $value) {
+                if($key != 0){
+                    if($res_array[$key][long_description_wc] == 0)
+                        $long_description_wc_count0++;
+                    if($res_array[$key][short_description_wc] == 0)
+                        $short_description_wc_count0++;
+                    }
+                }
+            if($long_description_wc_count0 == count($res_array)-1){
+                foreach($res_array as $key => $res){
+                    unset($res_array[$key][long_description_wc]) ;
+                    unset($res_array[$key][Long_Description]) ;
+                }
+                $res_array[0][Short_Description] = 'Product Description' ;
+            }
+            if($short_description_wc_count0 == count($res_array)-1){
+                foreach($res_array as $key => $res){
+                    unset($res_array[$key][short_description_wc]) ;
+                    unset($res_array[$key][Short_Description]) ;
+                }
+                $res_array[0][Long_Description] = 'Product Description' ;
+            }
 
-        array_unshift($res_array, $line);
         $this->load->helper('csv');
 //        echo  '<pre>';
 //        print_r($res_array);exit;
