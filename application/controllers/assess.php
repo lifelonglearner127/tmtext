@@ -1402,6 +1402,7 @@ class Assess extends MY_Controller {
                 $res_array[0][Long_Description] = 'Product Description' ;
             }
 
+            
         $this->load->helper('csv');
 //        echo  '<pre>';
 //        print_r($res_array);exit;
