@@ -65,7 +65,10 @@ class ProcessText():
 		# fixes cases like "1-1.2" (will be split into "1 1.2"
 		text = re.sub("[\-](?![0-9]+( |$|[a-zA-Z]))", " ", text)
 		text = re.sub("(?<![0-9])[\.\-/\']", " ", text)
-		stopset = set(stopwords.words('english'))#["and", "the", "&", "for", "of", "on", "as", "to", "in"]
+
+		# don't exclude these
+		exceptions = ["t"]
+		stopset = set(stopwords.words('english')).difference(set(exceptions))#["and", "the", "&", "for", "of", "on", "as", "to", "in"]
 		
 		tokens = text.split()
 
