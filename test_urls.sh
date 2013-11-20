@@ -19,7 +19,7 @@ do
 		third=`echo "$line" | cut -d',' -f3`
 		if [ -n "$third" ]
 		then
-			google-chrome $third
+			echo "$third" | xargs google-chrome
 		fi
 	# if there's only one result
 	else
