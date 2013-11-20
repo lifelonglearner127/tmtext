@@ -2949,4 +2949,18 @@ var scrollYesOrNot = true;
         
     });
 
+   $('#generate_url').toggle(function() {
+       var first = $("select[name='research_assess_batches']").find('option:selected').val();
+       var second = $("select[id='research_assess_compare_batches_batch']").find('option:selected').val()
+       if(second == undefined){
+           second = 0;
+       }
+       $('#generate_url_link').val(base_url+ "index.php/assess/compare_results?batch_id ="+first +"&cmp_selected="+second+"");
+       $('#generate_url').text('Delete URL');
+   },(function(){
+       $('#generate_url_link').val('');
+       $('#generate_url').text('Generate URL');
+       
+   })
+   );
 });
