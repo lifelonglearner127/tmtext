@@ -93,7 +93,8 @@ $(function() {
             "Meta_Description1",
             "Meta_Description_Count1",
             "average_review1",
-            "gap"
+            "gap",
+            "Duplicate_Content"
             
         ],
         recommendations: [
@@ -705,6 +706,12 @@ $(function() {
         {
             "sTitle": "Gap Analysis",
             "sName": "gap",
+            "sWidth": "3%",
+            "sClass" :  ""
+        },
+        {
+            "sTitle": "Duplicate Content",
+            "sName": "Duplicate_Content",
             "sWidth": "3%",
             "sClass" :  ""
         },
@@ -2504,7 +2511,8 @@ var scrollYesOrNot = true;
                     column_reviews: $("#column_reviews").attr('checked') == 'checked',
                     column_features: $("#column_features").attr('checked') == 'checked',
                     price_diff: $("#column_price_diff").attr('checked') == 'checked',
-                    gap: $("#gap").attr('checked') == 'checked'
+                    gap: $("#gap").attr('checked') == 'checked',
+                    Duplicate_Content: $("#Duplicate_Content").attr('checked') == 'checked'
                 };
 
                 // save params to DB

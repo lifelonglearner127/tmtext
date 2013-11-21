@@ -1423,14 +1423,14 @@ class Assess extends MY_Controller {
                     unset($res_array[$key][long_description_wc]) ;
                     unset($res_array[$key][Long_Description]) ;
                 }
-                $res_array[0][Short_Description] = 'Product Description' ;
+//                $res_array[0][Short_Description] = 'Product Description' ;
             }
             if($short_description_wc_count0 == count($res_array)-1){
                 foreach($res_array as $key => $res){
                     unset($res_array[$key][short_description_wc]) ;
                     unset($res_array[$key][Short_Description]) ;
                 }
-                $res_array[0][Long_Description] = 'Product Description' ;
+//                $res_array[0][Long_Description] = 'Product Description' ;
             }
 
             
@@ -1481,7 +1481,8 @@ class Assess extends MY_Controller {
                 'average_review' => 'true',
                 'column_features' => 'true',
                 'price_diff' => 'true',
-                'gap' => 'true'
+                'gap' => 'true',
+                'Duplicate_Content' => 'true'
             );
         }
         $this->data['columns'] = $columns;
@@ -1856,6 +1857,7 @@ class Assess extends MY_Controller {
                 $columns[] = array("sTitle" => "Avg Review", "sClass" => "average_review" . $i, "sName" => 'average_review' . $i);
                  if($i == 1){
                                 $columns[] = array("sTitle" => "Gap Analysis", "sClass" => "gap" . $i, "sName" => 'gap');
+                                $colomns[] = array("sTitle" => "Duplicate Content", "sClass" => "Duplicate Content" . $i, "sName" => 'Duplicate Content');
                             }
                 }
         }
@@ -1876,12 +1878,14 @@ class Assess extends MY_Controller {
         
         $qty = 1;
         foreach ($results as $row) {
+//            var_dump($row); die();
 //            $long_description_wc = $row->long_description_wc;
 //            $short_description_wc = $row->short_description_wc;
 
             $f_count1 = 0;
             $result_row = new stdClass();
             $result_row->gap = '';
+            $result_row->Duplicate_Content = '';
             $meta_key_gap = 0;
             $result_row->id = $row->id;
             $result_row->imported_data_id = $row->imported_data_id;
@@ -2330,10 +2334,15 @@ class Assess extends MY_Controller {
             };
             $result_row->Custom_Keywords_Short_Description = $Custom_Keywords_Short_Description . "</table>";
 
+            
 //gap analises
           if ($build_assess_params->max_similar_item_count > 0) {
+//              var_dump($row->short_description);
+//              var_dump($row->long_description);
+//              var_dump($row->similar_items); die();
                 //$class_for_all_case = "class_for_all_case";
                 $sim_items = $row->similar_items;
+                
 //                if($result_row->short_description_wc && isset($sim_items[1]) && $sim_items[1]->short_description_wc && $result_row->short_description_wc <$sim_items[1]->short_description_wc){
 //                        $result_row->gap.="Lower words count in short description<br>";
 //                }
@@ -2893,10 +2902,12 @@ class Assess extends MY_Controller {
                         }
 
                        $output_row[] = $data_row['gap'];
+                       $output_row[] = $data_row['Duplicate_Content'];
 
                         $data_row = (object) $data_row;
                     } else {
                         $output_row[] = $data_row->gap;
+                        $output_row[] = $data_row->Duplicate_Content;
                         $output_row[] = $data_row->snap1;
                         $output_row[] = $data_row->product_name1;
                         $output_row[] = $data_row->item_id1;
