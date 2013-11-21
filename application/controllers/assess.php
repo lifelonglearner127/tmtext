@@ -167,10 +167,10 @@ class Assess extends MY_Controller {
 
             $results = $this->get_data_for_assess($params);
             $cmp = array();
-            //Debugging
-            $dur = microtime(true)-$st_time;
-            header('Mem-and-Time1: '.memory_get_usage().'-'.$dur);
-            $st_time=  microtime(true);
+//            //Debugging
+//            $dur = microtime(true)-$st_time;
+//            header('Mem-and-Time1: '.memory_get_usage().'-'.$dur);
+//            $st_time=  microtime(true);
 
             if ($batch2 != '' && $batch2 != 0 && $batch2 != 'all') {
                 $this->load->model('batches_model');
@@ -301,10 +301,10 @@ class Assess extends MY_Controller {
                 }
                 $results = $cmp;
             }
-            //Debugging
-            $dur = microtime(true)-$st_time;
-            header('Mem-and-Time2: '.memory_get_usage().'-'.$dur);
-            $st_time=  microtime(true);
+//            //Debugging
+//            $dur = microtime(true)-$st_time;
+//            header('Mem-and-Time2: '.memory_get_usage().'-'.$dur);
+//            $st_time=  microtime(true);
 
             if ($batch2 == 'all') {
                 $max_similar_item_count = 1;
@@ -1869,10 +1869,10 @@ class Assess extends MY_Controller {
         if (empty($display_length)) {
             $display_length = $total_rows - $display_start;
         }
-            //Debugging
-            $dur = microtime(true)-$st_time;
-            header('Mem-and-Time1-BAT: '.memory_get_usage().'-'.$dur);
-            $st_time=  microtime(true);
+//            //Debugging
+//            $dur = microtime(true)-$st_time;
+//            header('Mem-and-Time1-BAT: '.memory_get_usage().'-'.$dur);
+//            $st_time=  microtime(true);
         
         $qty = 1;
         foreach ($results as $row) {
@@ -2577,10 +2577,10 @@ class Assess extends MY_Controller {
 //            ++$qty;
 //            if($qty>$display_length+$display_start)break;
         }
-            //Debugging
-            $dur = microtime(true)-$st_time;
-            header('Mem-and-Time2-BAT01: '.memory_get_usage().'-'.$dur);
-            $st_time=  microtime(true);        
+//            //Debugging
+//            $dur = microtime(true)-$st_time;
+//            header('Mem-and-Time2-BAT01: '.memory_get_usage().'-'.$dur);
+//            $st_time=  microtime(true);        
 //Debugging problem part
         if ($this->settings['statistics_table'] == "statistics_new") {
             $own_batch_total_items = $this->statistics_new_model->total_items_in_batch($batch_id);
