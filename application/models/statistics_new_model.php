@@ -333,8 +333,13 @@ class Statistics_new_model extends CI_Model {
             //Debugging
             $dur = microtime(true)-$st_time;
             header('Mem-and-Time4-BAT02: '.memory_get_usage().'-'.$dur.'-'.time().'-'.$sql.'-'.$query->num_rows);
-            $st_time=  microtime(true);        
+            $st_time=  microtime(true); 
+            try{
         $result =  $query->result();
+            }
+            catch(Exception $e){
+                header('Exeption-message: '.time().'-'.$e->$e->getMessage());
+            }
             //Debugging
             $dur = microtime(true)-$st_time;
             header('Mem-and-Time4-BAT03: '.memory_get_usage().'-'.$dur.'-'.time().'-'.count($result));
