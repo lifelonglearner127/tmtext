@@ -45,6 +45,21 @@ class Assess extends MY_Controller {
         // $this->data['rec'] = $this->webshoots_model->get_recipients_list();
         $this->render();
     }
+    public function compare_results () {
+
+        $this->load->model('webshoots_model');
+        $this->data['customers_list'] = $this->customers_list_new();
+        $this->data['user_id'] = $this->ion_auth->get_user_id();
+        $c_week = date("W", time());
+        $c_year = date("Y", time());
+        $this->data['ct_final'] = date("m.d.Y", time());
+        $this->data['c_week'] = $c_week;
+        $this->data['c_year'] = $c_year;
+        $this->data['img_av'] = $this->webshoots_model->getWeekAvailableScreens($c_week, $c_year);
+        $this->data['webshoots_model'] = $this->webshoots_model;
+        // $this->data['rec'] = $this->webshoots_model->get_recipients_list();
+        $this->render();
+    }
 
     private function customers_list_new() {
         $this->load->model('customers_model');

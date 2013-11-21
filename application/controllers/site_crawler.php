@@ -403,7 +403,7 @@ class Site_Crawler extends MY_Controller {
 				$this->crawler_list_model->updateStatus($data->id, 'queued');
 			}
 		}
-        
+
 
 	}
 
@@ -518,5 +518,12 @@ class Site_Crawler extends MY_Controller {
 				}
 			}
 		}
+	}
+
+
+	public function queue_locked(){
+		$this->load->model('crawler_list_model');
+
+		$this->crawler_list_model->queue_locked();
 	}
 }

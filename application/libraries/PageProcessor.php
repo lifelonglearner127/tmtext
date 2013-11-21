@@ -205,28 +205,8 @@ class PageProcessor {
 	}
 
 	public function process_walmart() {
-		foreach($this->nokogiri->get('.ql-details-short-desc') as $item) {
-			$description[] = $item['#text'][0];
-		}
-
 		foreach($this->nokogiri->get('.ql-details-short-desc p') as $item) {
 			$description[] = $item['#text'][0];
-		}
-
-		foreach($this->nokogiri->get('#prodInfoSpaceBottom div') as $item) {
-			if ($item['itemprop'] == 'description') {
-				foreach($item['div'] as $i) {
-					if (isset($i['p']) && isset($i['p'][0]) && isset($i['p'][0]['#text'])) {
-						foreach ($i['p'][0]['#text'] as $j) {
-							$description[] = $j;
-						}
-					} elseif (isset($i['#text'])) {
-						foreach ($i['#text'] as $j) {
-							$description[] = $j;
-						}
-					}
-				}
-			}
 		}
 
 		foreach($this->nokogiri->get('#prodInfoSpaceBottom div.BodyXL div') as $item) {
@@ -241,9 +221,46 @@ class PageProcessor {
 			}
 		}
 
-		foreach($this->nokogiri->get('#prodInfoSpaceBottom div.BodyXL div ul li') as $item) {
+		foreach($this->nokogiri->get('#prodInfoSpaceBottom div.BodyXL div li') as $item) {
 			foreach ($item['#text'] as $i) {
-				$description[] = '<li>'.trim($i).'</li>';
+				$itm = trim($i);
+				if (!empty($itm)) {
+					$description[] = '<li>'.$itm.'</li>';
+				}
+			}
+		}
+
+		if (empty($description)) {
+			foreach($this->nokogiri->get('#prodInfoSpaceBottom div') as $item) {
+				if ($item['itemprop'] == 'description') {
+					foreach($item['div'] as $i) {
+						if (isset($i['p']) && isset($i['p'][0]) && isset($i['p'][0]['#text'])) {
+							foreach ($i['p'][0]['#text'] as $j) {
+								$description[] = $j;
+							}
+						} elseif (isset($i['#text'])) {
+							foreach ($i['#text'] as $j) {
+								$description[] = $j;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		if (empty($description)) {
+			foreach($this->nokogiri->get('.ql-details-short-desc') as $item) {
+				$description[] = $item['#text'][0];
+			}
+		}
+
+
+		foreach($this->nokogiri->get('#prodInfoSpaceBottom div.BodyXL table tr td') as $item) {
+			foreach ($item['#text'] as $i) {
+				$itm = trim($i);
+				if (!empty($itm)) {
+					$description[] = $itm;
+				}
 			}
 		}
 

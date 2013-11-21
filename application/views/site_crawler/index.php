@@ -36,7 +36,7 @@
 		<div class="site_crawler_content">
 			<h3>Add to list:</h3>
 			<div class="row-fluid">
-				<div class="search_area uneditable-input span10" onClick="this.contentEditable='false';" style="cursor: text; width: 765px; height: 250px; overflow : auto;" id="Add_List">
+				<div class="search_area uneditable-input span10" onClick="this.contentEditable='false';" style="cursor: text; width: 765px; height: 200px; overflow : auto;" id="Add_List">
 				</div>
 				<span id="system_sitecrawler_btnFileUpload" class="btn btn-success fileinput-button ml_15">
 					Upload
@@ -114,10 +114,11 @@
                             <input type="text" class="span2 pull-left ml_10" name="search_crawl_data" >
                             <button id="apply_search_data" class="btn new_btn btn-success ml_10"><i class="icon-white icon-ok"></i>&nbsp;Apply</button>
                             <button id="clear_search_data" class="btn new_btn btn-success  ml_10"><i class="icon-white icon-ok"></i>&nbsp;Clear</button>
+                            <button id="queue_locked" class="btn new_btn btn-success  ml_50"><i class="icon-white icon-ok"></i>&nbsp;Queue Locks</button>
                         </div>
 
 			<div class="row-fluid mt_5">
-				<div class="search_area uneditable-input span10" style="cursor: text; width: 765px; height: 320px; overflow : auto;" id="Current_List">
+				<div class="search_area uneditable-input span10" style="cursor: text; width: 765px; height: 340px; overflow : auto;" id="Current_List">
 				<!-- <div id='current_list_tbl_holder'>&nbsp;</div> -->
 				<ul>
 					<lh><span><input type="checkbox" style='margin-top: -6px;' value="" id="checkAll"/></span><span style='width: 40px;'>&nbsp;</span><span style='width: 60px;'>ID</span><span>Status</span><span>Last Crawled</span><span>Category</span><span>URL</span></lh>
@@ -474,6 +475,12 @@ $.fn.setCursorToTextEnd = function() {
 
 	$(document).on("click", "button#re_crawl_batch", function(){
 		$.post('<?php echo site_url('site_crawler/crawl_all');?>', {recrawl: 1, batch_id: $('#batches option:selected').val(), crawl: $('#cb_crawl_now').is(':checked') }, function(data) {
+			loadCurrentList();
+		});
+	});
+
+	$(document).on("click", "button#queue_locked", function(){
+		$.post('<?php echo site_url('site_crawler/queue_locked');?>', function(data) {
 			loadCurrentList();
 		});
 	});
