@@ -247,6 +247,9 @@ class Assess extends MY_Controller {
                                             $_count_meta = 0;
                                             foreach($cnt_meta as $cnt_m){
                                                 $cnt_m = trim($cnt_m);
+                                                if(!$cnt_m){
+                                                    continue;
+                                                }
                                                 if($cmpare->Short_Description || $cmpare->Long_Description){
                                                     $_count_meta = $this->keywords_appearence($cmpare->Long_Description.$cmpare->Short_Description, $cnt_m);
                                                     $_count_meta_num = round(($_count_meta * $cnt_meta_count / ($cmpare->long_description_wc + $cmpare->short_description_wc)) * 100, 2) . "%";
@@ -2002,6 +2005,9 @@ class Assess extends MY_Controller {
                     foreach($cnt_meta_un as $cnt_m_un){
                         $_count_meta_un = 0;
                         $cnt_m_un = trim($cnt_m_un);
+                        if(!$cnt_m_un){
+                            continue;
+                        }
                         if($sim_items[$i - 1]->Long_Description || $sim_items[$i - 1]->Short_Description){
                             $_count_meta_un = $this->keywords_appearence($sim_items[$i - 1]->Long_Description.$sim_items[$i - 1]->Short_Description, $cnt_m_un);
                             $_count_meta_num_un = round(($_count_meta_un * $cnt_meta_count_un / ($sim_items[$i - 1]->long_description_wc + $sim_items[$i - 1]->short_description_wc)) * 100, 2) . "%";
@@ -2152,6 +2158,9 @@ class Assess extends MY_Controller {
                     $_count_meta = 0;
                     foreach($cnt_meta as $cnt_m){
                         $cnt_m = trim($cnt_m);
+                        if(!$cnt_m){
+                            continue;
+                        }
                         if($result_row->long_description || $result_row->short_description){
                             $_count_meta = $this->keywords_appearence($result_row->long_description.$result_row->short_description, $cnt_m);
                             $_count_meta_num = round(($_count_meta * $cnt_meta_count / ($result_row->long_description_wc + $result_row->short_description_wc)) * 100, 2) . "%";
@@ -2252,7 +2261,7 @@ class Assess extends MY_Controller {
 
             $custom_seo = $this->keywords_model->get_by_imp_id($row->imported_data_id);
             $Custom_Keywords_Long_Description = "<table class='table_keywords_long'>";
-            if (isset($custom_seo['primary'])) {
+            if (isset($custom_seo['primary'])&&$custom_seo['primary']) {
                 if ($row->long_description) {
                     $_count = $this->keywords_appearence($row->long_description, $custom_seo['primary']);
                     $cnt = count(explode(' ', $custom_seo['primary']));
@@ -2262,7 +2271,7 @@ class Assess extends MY_Controller {
                     $_count = ' ';
                 }
             };
-            if (isset($custom_seo['secondary'])) {
+            if (isset($custom_seo['secondary'])&&$custom_seo['secondary']) {
                 if ($row->long_description) {
                     $_count = $this->keywords_appearence($row->long_description, $custom_seo['secondary']);
                     $cnt = count(explode(' ', $custom_seo['secondary']));
@@ -2272,7 +2281,7 @@ class Assess extends MY_Controller {
                     $_count = ' ';
                 }
             };
-            if (isset($custom_seo['tertiary'])) {
+            if (isset($custom_seo['tertiary'])&&$custom_seo['tertiary']) {
                 if ($row->long_description) {
                     $_count = $this->keywords_appearence($row->long_description, $custom_seo['tertiary']);
                     $cnt = count(explode(' ', $custom_seo['tertiary']));
