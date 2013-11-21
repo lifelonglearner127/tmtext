@@ -451,20 +451,20 @@
                             <div style="clear: both;"></div>
                             <div class="boxes_content" style="padding:0px;">
                                 <div class="mt_10 ml_15">
-                                    <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_number.png"><span id="assess_report_total_items" class="mr_10"></span>total items</div>
+                                    <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_number.png">Total SKUs analyzed: <span id="assess_report_total_items" class="mr_10"></span></div>
                                 </div>
                                 <div class="mt_10 ml_15">
-                                    <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_dollar.png"><span id="assess_report_items_priced_higher_than_competitors" class="mr_10"></span>items priced higher than competitors</div>
+                                    <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_dollar.png">SKUs priced higher than competitors: <span id="assess_report_items_priced_higher_than_competitors" class="mr_10"></span></div>
                                 </div>
                                 <div class="mt_10 ml_15 items_have_more_than_20_percent_duplicate_content">
                                     <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_D.png"><span id="assess_report_items_have_more_than_20_percent_duplicate_content" class="mr_10"></span>items have more than 20% duplicate content</div>
                                 </div>
                                 <div class="mt_10 ml_15">
-                                    <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_seo.png"><span id="assess_report_items_unoptimized_product_content" class="mr_10"></span>items have non-keyword optimized product content</div>
+                                    <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_seo.png">SKUs that have non-keyword optimized product content: <span id="assess_report_items_unoptimized_product_content" class="mr_10"></span></div>
                                 </div>
                                 <div id="assess_report_items_1_descriptions_pnl">
-                                    <div class="mt_10 mb_10 ml_15">
-                                        <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_arrow_down.png"><span id="assess_report_items_have_product_descriptions_that_are_too_short" class="mr_10"></span>items have descriptions that are less than <span id="assess_report_items_have_product_descriptions_that_are_less_than_value"></span> words</div>
+                                    <div class="mt_10 mb_10 ml_15"> 
+                                        <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_arrow_down.png">SKUs that have descriptions that are shorter than <span id="assess_report_items_have_product_descriptions_that_are_less_than_value"></span> words: <span id="assess_report_items_have_product_descriptions_that_are_too_short" class="mr_10"></span></div>
                                     </div>
                                 </div>
                                 <div id="assess_report_items_2_descriptions_pnl" style="display: none;">
