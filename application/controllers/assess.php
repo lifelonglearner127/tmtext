@@ -1385,8 +1385,10 @@ class Assess extends MY_Controller {
                     $line[] = "Reviews(" . ($i+1) . ")";
                     
                 }
-               
               
+                
+                
+                
             }
             array_unshift($res_array, $line);
             $long_description_wc_count0 = 0;
