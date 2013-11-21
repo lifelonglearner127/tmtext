@@ -257,7 +257,7 @@ class Crawler_List_model extends CI_Model {
                 $this->db->where('cl.snap IS NULL');
         }
         $query = $this->db->get();
-        
+
         return $query->result();
     }
 
@@ -316,5 +316,9 @@ class Crawler_List_model extends CI_Model {
         $query = $this->db->get();
 
         return $query->result();
+    }
+
+    function queue_locked() {
+		return $this->db->update($this->tables['crawler_list'], array('status' => 'queued'), array('status' => 'lock'));
     }
 }

@@ -12,8 +12,8 @@
     margin-left: 43px;
 }
 .bitem_desc_text_head {
-    font-weight: bold; 
-    font-size: 12px; 
+    font-weight: bold;
+    font-size: 12px;
     cursor: pointer;
 }
 .bitem_desc_text_head:hover {
@@ -26,7 +26,7 @@
     max-height: 500px !important;
 }
 .preview_board_item_modal .snap_area, #preview_crawl_snap_modal .snap_area{
-    float: left; 
+    float: left;
     max-width: 550px; /* 500 */
     padding-top: 10px;
     /*padding-bottom: 10px;*/
@@ -37,7 +37,7 @@
 min-width: 150px;
 }
 .preview_board_item_modal .info_area, #preview_crawl_snap_modal .info_area {
-    float: left; 
+    float: left;
     margin-left: 15px;
     max-width: 220px; /* 200 */
     height: 396px;
@@ -1771,7 +1771,7 @@ label.dd-selected-text, label.dd-option-text{
 }
 
 .ddcommon .ddTitle .ddTitleText img {
-    
+
     max-width: 100px;
     max-height: 25px;
 }
@@ -1780,7 +1780,7 @@ label.dd-selected-text, label.dd-option-text{
     width:290px!important;
     height: 35px;
    }
-  
+
 .has_stiky{
     /*overflow: hidden;*/
     margin-bottom: 50px;
@@ -1805,7 +1805,7 @@ label.dd-selected-text, label.dd-option-text{
     cursor:pointer;
 }
 .has_stiky_image :hover{
-   background: rgb(117, 114, 114); 
+   background: rgb(117, 114, 114);
 }
 #customer_dr{
     display: inline;
@@ -1990,7 +1990,7 @@ select#sites option{
     opacity:0.5;
     margin-right: 0px;
     left:0px;
-    
+
 }
 .mismatch_image:hover{
     cursor:pointer;
@@ -2019,7 +2019,7 @@ select#sites option{
 #table_view td{
          width: 360px ;
          text-align: center;
-       
+
      }
       #table_view .table_titles{
          text-align: left;
@@ -2027,7 +2027,7 @@ select#sites option{
          font-size: 14px;
          width: 20%;
      }
-    
+
      .table_subtitles{
          padding: 7px 10px;
          font-size: 12px;
@@ -2035,7 +2035,7 @@ select#sites option{
      }
       #table_view .h{
          margin-bottom: 2px;
-       
+
      }
      #table_view{
          border: 1px solid black;
@@ -2058,7 +2058,7 @@ select#sites option{
         font-size: 13px;
         color: #807F7F;
 }
-     
+
 
 span.highlight { background-color:yellow;}
 .cmp-btn{padding-right:5px;cursor:pointer;}
@@ -2167,7 +2167,7 @@ span.highlight { background-color:yellow;}
     border: none;
     width: 19px !important;
     height: 19px;
-   
+
 }
 .missmatch_popup{
     border: 1px solid #606C5E;
@@ -2189,17 +2189,17 @@ span.highlight { background-color:yellow;}
     background: url("../img/magnifying_glass.png") 147px 9px no-repeat;
     display: block;
     padding:7px 9px 7px 6px;
-   
+
 }
 .second_line2{
-    
+
    padding:7px 9px 7px 6px;
    display: block;
-    
+
 }
 .first_line:hover,.second_line:hover,.second_line2:hover  {
     background-color: #6DAB5A;
-  
+
     border-radius: 15px;
     cursor:pointer;
 }
@@ -2249,7 +2249,7 @@ span.highlight { background-color:yellow;}
     float:left;
 }
 .keyword_input + span{
-   margin-left: 8px; 
+   margin-left: 8px;
 }
 .seo_prc{
     float:left;
@@ -2374,7 +2374,7 @@ span.dep_left_part{
 }
 .desc_show_hide:hover,.desc_show_hide_short:hover,.desc_show_hide_short_w:hover,.desc_show_hide_w:hover,.desc_show_hide_feature:hover{
     cursor: pointer;
-    
+
 }
 .control-group.error input{
     border-color: #b94a48;
@@ -2397,7 +2397,7 @@ body.login_block{
     right:3px;
     border: 1px solid #606C5E;
     border-radius: 10px;
-  
+
 }
 .close_btn_15{
     margin-left: 3px;
@@ -2410,7 +2410,7 @@ body.login_block{
     float: left;
 }
 .green_cycle{
-    
+
 }
 .board_view{
     display: none;
@@ -2439,12 +2439,12 @@ body.login_block{
     max-width: 180px; /* 127 */
 }
 .board_item_dicon {
-    position: absolute; 
-    bottom: 5px; 
+    position: absolute;
+    bottom: 5px;
     right: 5px;
 }
 .board_item_dicon > img {
-    width: 48px !important; 
+    width: 48px !important;
     height: 27px !important;
 }
 .board_item .st.full {
@@ -2529,7 +2529,7 @@ body.login_block{
 }
 input[name="search_crawl_data"] {
     clear: left;
-    margin-left: 466px  !important;
+    margin-left: 296px  !important;
 }
 #search_crawl_div {
     margin-top: -15px;
@@ -2553,7 +2553,7 @@ input[name="search_crawl_data"] {
     display: block;
     overflow: hidden;
     width: 200px !important;
-   
+
 }
 
 #assess_tbl_show_case a {
