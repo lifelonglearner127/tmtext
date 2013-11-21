@@ -10,6 +10,7 @@ class Statistics_new_model extends CI_Model {
         'imported_data_parsed' => 'imported_data_parsed',
         
     );
+    protected $res_array;
 
     function __construct()
     {
@@ -67,7 +68,9 @@ class Statistics_new_model extends CI_Model {
             header('Mem-and-Time3-BAT01: '.memory_get_usage().'-'.$dur.'-'.time());
             $st_time=  microtime(true);        
         
-        $res = $this->getStatsData($params);
+        //$res = $this->getStatsData($params);
+        $this->getStatsData($params);
+        $res = $this->res_array;
         //var_dump($res);exit;
             //Debugging
             $dur = microtime(true)-$st_time;
@@ -330,13 +333,15 @@ class Statistics_new_model extends CI_Model {
             $dur = microtime(true)-$st_time;
             header('Mem-and-Time4-BAT02: '.memory_get_usage().'-'.$dur.'-'.time());
             $st_time=  microtime(true);        
-        //$result =  $query->result();
+        $result =  $query->result();
             //Debugging
             $dur = microtime(true)-$st_time;
-            header('Mem-and-Time4-BAT03: '.memory_get_usage().'-'.$dur.'-'.time());
+            header('Mem-and-Time4-BAT03: '.memory_get_usage().'-'.$dur.'-'.time().'-'.count($result));
             $st_time=  microtime(true);  
-        //return $result;
-        return $query->result();
+            $this->res_array = $result;
+            
+        return $result;
+        //return $query->result();
     }
 
     function delete_by_research_data_id($batch_id, $research_data_id){
