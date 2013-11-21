@@ -69,7 +69,7 @@ class Statistics_new_model extends CI_Model {
 //            $st_time=  microtime(true);        
         
         $res = $this->getStatsData($params);
-        var_dump($res);exit;
+        //var_dump($res);exit;
             //Debugging
             $dur = microtime(true)-$st_time;
             header('Mem-and-Time3-BAT02: '.memory_get_usage().'-'.$dur);
@@ -328,7 +328,8 @@ class Statistics_new_model extends CI_Model {
             
             from '.$this->tables['statistics_new'].' as `s` left join '.$this->tables['crawler_list'].' as `cl` on `cl`.`imported_data_id` = `s`.`imported_data_id` where `s`.`batch_id`='.$batch_id.$txt_filter_part2);
 //            //Debugging
-            echo $this->db->last_query();
+//            echo $this->db->last_query().'<br>';
+//            echo $query->num_rows.'<br>';
 //            $dur = microtime(true)-$st_time;
 //            header('Mem-and-Time4-BAT02: '.memory_get_usage().'-'.$dur);
 //            $st_time=  microtime(true);        
