@@ -1810,7 +1810,7 @@ class Assess extends MY_Controller {
     }
 
     private function build_asses_table($results, $build_assess_params, $batch_id = '') {
-        error_reporting(E_ALL);
+//        error_reporting(E_ALL);
         //Debugging
         $st_time = microtime(true);
 

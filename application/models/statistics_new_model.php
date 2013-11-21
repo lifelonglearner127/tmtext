@@ -57,7 +57,6 @@ class Statistics_new_model extends CI_Model {
     }
 
     public function total_items_in_batch($batch_id){
-        error_reporting(E_ALL);
         $st_time = microtime(TRUE);
         $this->load->model('research_data_model');
         $params = new stdClass();
