@@ -338,7 +338,7 @@ class Statistics_new_model extends CI_Model {
         $result =  $query->result();
             }
             catch(Exception $e){
-                header('Exeption-message: '.time().'-'.$e->$e->getMessage());
+                header('Exeption-message: '.time().'-'.$e->getMessage());
             }
             //Debugging
             $dur = microtime(true)-$st_time;
