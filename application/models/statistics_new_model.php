@@ -238,6 +238,7 @@ class Statistics_new_model extends CI_Model {
     
     function getStatsData($params)
     {
+        $st_time = microtime(TRUE);
         if(empty($params->batch_id)){
             $batch_id = '';
         } else {
@@ -257,6 +258,11 @@ class Statistics_new_model extends CI_Model {
         } else if(isset($params->snap_count)) {
             $txt_filter_part2 = ' AND `cl`.`snap` != "" LIMIT 0,'.$params->snap_count.' ';
         }
+            //Debugging
+            $dur = microtime(true)-$st_time;
+            header('Mem-and-Time4-BAT01: '.memory_get_usage().'-'.$dur);
+            $st_time=  microtime(true);        
+        
 ////////////////////////////////////////////////
 //        $bapslc = $build_assess_params->short_less_check?
 //                " and short_description_wc<=$build_assess_params->short_less_check":"";
@@ -319,7 +325,15 @@ class Statistics_new_model extends CI_Model {
             (select `value` from imported_data_parsed where `key`="parsed_attributes" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `parsed_attributes`
             
             from '.$this->tables['statistics_new'].' as `s` left join '.$this->tables['crawler_list'].' as `cl` on `cl`.`imported_data_id` = `s`.`imported_data_id` where `s`.`batch_id`='.$batch_id.$txt_filter_part2);
+            //Debugging
+            $dur = microtime(true)-$st_time;
+            header('Mem-and-Time4-BAT02: '.memory_get_usage().'-'.$dur);
+            $st_time=  microtime(true);        
         $result =  $query->result();
+            //Debugging
+            $dur = microtime(true)-$st_time;
+            header('Mem-and-Time4-BAT03: '.memory_get_usage().'-'.$dur);
+            $st_time=  microtime(true);        
         return $result;
     }
 
