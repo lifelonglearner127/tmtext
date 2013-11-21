@@ -84,6 +84,7 @@ class Assess extends MY_Controller {
     }
 
     public function get_assess_info() {
+        $st_time = microtime(TRUE);
         $txt_filter = '';
         if ($this->input->get('search_text') != '') {
             $txt_filter = $this->input->get('search_text');
@@ -165,6 +166,9 @@ class Assess extends MY_Controller {
 
             $results = $this->get_data_for_assess($params);
             $cmp = array();
+            $dur = microtime(true)-$st_time;
+            header('Mem-and-Time1: '.memory_get_usage().'-'.$dur);
+            $st_time=  microtime(true);
 
             if ($batch2 != '' && $batch2 != 0 && $batch2 != 'all') {
                 $this->load->model('batches_model');
@@ -292,6 +296,9 @@ class Assess extends MY_Controller {
                 }
                 $results = $cmp;
             }
+            $dur = microtime(true)-$st_time;
+            header('Mem-and-Time2: '.memory_get_usage().'-'.$dur);
+            $st_time=  microtime(true);
 
             if ($batch2 == 'all') {
                 $max_similar_item_count = 1;
@@ -323,6 +330,9 @@ class Assess extends MY_Controller {
             }
 
             $output = $this->build_asses_table($results, $build_assess_params, $batch_id);
+            $dur = microtime(true)-$st_time;
+            header('Mem-and-Time3: '.memory_get_usage().'-'.$dur);
+            $st_time=  microtime(true);
 
             $this->output->set_content_type('application/json')
                     ->set_output(json_encode($output));
