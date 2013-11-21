@@ -84,6 +84,7 @@ class Assess extends MY_Controller {
     }
 
     public function get_assess_info() {
+        //Debugging
         $st_time = microtime(TRUE);
         $txt_filter = '';
         if ($this->input->get('search_text') != '') {
@@ -166,6 +167,7 @@ class Assess extends MY_Controller {
 
             $results = $this->get_data_for_assess($params);
             $cmp = array();
+            //Debugging
             $dur = microtime(true)-$st_time;
             header('Mem-and-Time1: '.memory_get_usage().'-'.$dur);
             $st_time=  microtime(true);
@@ -296,6 +298,7 @@ class Assess extends MY_Controller {
                 }
                 $results = $cmp;
             }
+            //Debugging
             $dur = microtime(true)-$st_time;
             header('Mem-and-Time2: '.memory_get_usage().'-'.$dur);
             $st_time=  microtime(true);
@@ -330,8 +333,9 @@ class Assess extends MY_Controller {
             }
 
             $output = $this->build_asses_table($results, $build_assess_params, $batch_id);
+            //Debugging
             $dur = microtime(true)-$st_time;
-            header('Mem-and-Time3: '.memory_get_usage().'-'.$dur);
+            header('Mem-and-Time4: '.memory_get_usage().'-'.$dur);
             $st_time=  microtime(true);
 
             $this->output->set_content_type('application/json')
@@ -1802,6 +1806,9 @@ class Assess extends MY_Controller {
     }
 
     private function build_asses_table($results, $build_assess_params, $batch_id = '') {
+        
+        //Debugging
+        $st_time = microtime(true);
 
         $columns = $this->columns();
         $duplicate_content_range = 25;
@@ -1859,6 +1866,11 @@ class Assess extends MY_Controller {
         if (empty($display_length)) {
             $display_length = $total_rows - $display_start;
         }
+            //Debugging
+            $dur = microtime(true)-$st_time;
+            header('Mem-and-Time1-BAT: '.memory_get_usage().'-'.$dur);
+            $st_time=  microtime(true);
+        
         $qty = 1;
         foreach ($results as $row) {
 //            $long_description_wc = $row->long_description_wc;
@@ -2556,6 +2568,10 @@ class Assess extends MY_Controller {
 //            ++$qty;
 //            if($qty>$display_length+$display_start)break;
         }
+            //Debugging
+            $dur = microtime(true)-$st_time;
+            header('Mem-and-Time2-BAT: '.memory_get_usage().'-'.$dur);
+            $st_time=  microtime(true);
 
         if ($this->settings['statistics_table'] == "statistics_new") {
             $own_batch_total_items = $this->statistics_new_model->total_items_in_batch($batch_id);
@@ -2878,6 +2894,11 @@ class Assess extends MY_Controller {
                 $c++;
             }
         }
+            //Debugging
+            $dur = microtime(true)-$st_time;
+            header('Mem-and-Time3-BAT: '.memory_get_usage().'-'.$dur);
+            $st_time=  microtime(true);
+        
 
 //       echo  "<pre>";
 //       print_r($columns);
