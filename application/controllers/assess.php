@@ -1408,30 +1408,30 @@ class Assess extends MY_Controller {
                 
             }
             array_unshift($res_array, $line);
-            $long_description_wc_count0 = 0;
-            $short_description_wc_count0 = 0;
-            foreach($res_array as $key => $value) {
-                if($key != 0){
-                    if($res_array[$key][long_description_wc] == 0)
-                        $long_description_wc_count0++;
-                    if($res_array[$key][short_description_wc] == 0)
-                        $short_description_wc_count0++;
-                    }
-                }
-            if($long_description_wc_count0 == count($res_array)-1){
-                foreach($res_array as $key => $res){
-                    unset($res_array[$key][long_description_wc]) ;
-                    unset($res_array[$key][Long_Description]) ;
-                }
-//                $res_array[0][Short_Description] = 'Product Description' ;
-            }
-            if($short_description_wc_count0 == count($res_array)-1){
-                foreach($res_array as $key => $res){
-                    unset($res_array[$key][short_description_wc]) ;
-                    unset($res_array[$key][Short_Description]) ;
-                }
-//                $res_array[0][Long_Description] = 'Product Description' ;
-            }
+//            $long_description_wc_count0 = 0;
+//            $short_description_wc_count0 = 0;
+//            foreach($res_array as $key => $value) {
+//                if($key != 0){
+//                    if($res_array[$key][long_description_wc] == 0)
+//                        $long_description_wc_count0++;
+//                    if($res_array[$key][short_description_wc] == 0)
+//                        $short_description_wc_count0++;
+//                    }
+//                }
+//            if($long_description_wc_count0 == count($res_array)-1){
+//                foreach($res_array as $key => $res){
+//                    unset($res_array[$key][long_description_wc]) ;
+//                    unset($res_array[$key][Long_Description]) ;
+//                }
+////                $res_array[0][Short_Description] = 'Product Description' ;
+//            }
+//            if($short_description_wc_count0 == count($res_array)-1){
+//                foreach($res_array as $key => $res){
+//                    unset($res_array[$key][short_description_wc]) ;
+//                    unset($res_array[$key][Short_Description]) ;
+//                }
+////                $res_array[0][Long_Description] = 'Product Description' ;
+//            }
 
             
         $this->load->helper('csv');
