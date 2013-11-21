@@ -1806,7 +1806,7 @@ class Assess extends MY_Controller {
     }
 
     private function build_asses_table($results, $build_assess_params, $batch_id = '') {
-        
+        error_reporting(E_ALL);
         //Debugging
         $st_time = microtime(true);
 
@@ -2568,7 +2568,7 @@ class Assess extends MY_Controller {
 //            ++$qty;
 //            if($qty>$display_length+$display_start)break;
         }
-
+//Debugging problem part
         if ($this->settings['statistics_table'] == "statistics_new") {
             $own_batch_total_items = $this->statistics_new_model->total_items_in_batch($batch_id);
         } else {
@@ -2679,6 +2679,7 @@ class Assess extends MY_Controller {
             "iDisplayLength" => $display_length,
             "aaData" => array()
         );
+        //Debugging End of problem part
             //Debugging
             $dur = microtime(true)-$st_time;
             header('Mem-and-Time2-BAT: '.memory_get_usage().'-'.$dur);
