@@ -332,7 +332,7 @@ class Statistics_new_model extends CI_Model {
         $query = $this->db->query($sql);
             //Debugging
             $dur = microtime(true)-$st_time;
-            header('Mem-and-Time4-BAT02: '.memory_get_usage().'-'.$dur.'-'.time().'-'.$sql);
+            header('Mem-and-Time4-BAT02: '.memory_get_usage().'-'.$dur.'-'.time().'-'.$sql.'-'.$query->num_rows);
             $st_time=  microtime(true);        
         $result =  $query->result();
             //Debugging
