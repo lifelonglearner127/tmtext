@@ -2568,10 +2568,6 @@ class Assess extends MY_Controller {
 //            ++$qty;
 //            if($qty>$display_length+$display_start)break;
         }
-            //Debugging
-            $dur = microtime(true)-$st_time;
-            header('Mem-and-Time2-BAT: '.memory_get_usage().'-'.$dur);
-            $st_time=  microtime(true);
 
         if ($this->settings['statistics_table'] == "statistics_new") {
             $own_batch_total_items = $this->statistics_new_model->total_items_in_batch($batch_id);
@@ -2683,6 +2679,10 @@ class Assess extends MY_Controller {
             "iDisplayLength" => $display_length,
             "aaData" => array()
         );
+            //Debugging
+            $dur = microtime(true)-$st_time;
+            header('Mem-and-Time2-BAT: '.memory_get_usage().'-'.$dur);
+            $st_time=  microtime(true);
 
         if (!empty($result_table)) {
             $c = 0;
@@ -2892,6 +2892,10 @@ class Assess extends MY_Controller {
                     }
                 }
                 $c++;
+            //Debugging
+            $dur = microtime(true)-$st_time;
+            header('Mem-and-Time3-1-BAT: '.memory_get_usage().'-'.$dur.'-'.$c);
+            $st_time=  microtime(true);
             }
         }
             //Debugging
