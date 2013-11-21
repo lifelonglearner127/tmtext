@@ -57,15 +57,31 @@ class Statistics_new_model extends CI_Model {
     }
 
     public function total_items_in_batch($batch_id){
+        $st_time = microtime(TRUE);
         $this->load->model('research_data_model');
         $params = new stdClass();
         $params->batch_id = $batch_id;
         $params->txt_filter = '';
+            //Debugging
+            $dur = microtime(true)-$st_time;
+            header('Mem-and-Time3-BAT01: '.memory_get_usage().'-'.$dur);
+            $st_time=  microtime(true);        
+        
         $res = $this->getStatsData($params);
+            //Debugging
+            $dur = microtime(true)-$st_time;
+            header('Mem-and-Time3-BAT02: '.memory_get_usage().'-'.$dur);
+            $st_time=  microtime(true);        
+        
         $num_rows = count($res);
         if($num_rows == 0){
             $num_rows = $this->research_data_model->countAll($batch_id);
         }
+            //Debugging
+            $dur = microtime(true)-$st_time;
+            header('Mem-and-Time3-BAT03: '.memory_get_usage().'-'.$dur);
+            $st_time=  microtime(true);        
+        
         return $num_rows;
     }
     
@@ -335,4 +351,4 @@ class Statistics_new_model extends CI_Model {
             ");
         return $result;
     }
-}
+        }
