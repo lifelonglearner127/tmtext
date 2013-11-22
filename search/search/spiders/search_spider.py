@@ -90,7 +90,7 @@ class SearchSpider(BaseSpider):
 
 	def build_search_query(self, product_name):
 		# put + instead of spaces, lowercase all words
-		search_query = "+".join(ProcessText.normalize(product_name, stem=False, stopwords=True))
+		search_query = "+".join(ProcessText.normalize(product_name, stem=False, exclude_stopwords=True))
 		return search_query
 
 
@@ -304,6 +304,11 @@ class SearchSpider(BaseSpider):
 			request.meta['origin_id'] = self.extract_walmart_id(response.url)
 
 		yield request
+
+
+class AmazonSpider(SearchSpider):
+
+	name = "amazon"
 
 
 	# parse results page, handle each site separately
