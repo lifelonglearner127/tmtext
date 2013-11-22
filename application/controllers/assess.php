@@ -336,10 +336,10 @@ class Assess extends MY_Controller {
             }
 
             $output = $this->build_asses_table($results, $build_assess_params, $batch_id);
-            //Debugging
-            $dur = microtime(true)-$st_time;
-            header('Mem-and-Time4: '.memory_get_usage().'-'.$dur);
-            $st_time=  microtime(true);
+//            //Debugging
+//            $dur = microtime(true)-$st_time;
+//            header('Mem-and-Time4: '.memory_get_usage().'-'.$dur);
+//            $st_time=  microtime(true);
 
             $this->output->set_content_type('application/json')
                     ->set_output(json_encode($output));
@@ -2596,10 +2596,10 @@ class Assess extends MY_Controller {
         } else {
             $own_batch_total_items = $this->statistics_model->total_items_in_batch($batch_id);
         }
-            //Debugging
-            $dur = microtime(true)-$st_time;
-            header('Mem-and-Time2-BAT02: '.memory_get_usage().'-'.$dur);
-            $st_time=  microtime(true);
+//            //Debugging
+//            $dur = microtime(true)-$st_time;
+//            header('Mem-and-Time2-BAT02: '.memory_get_usage().'-'.$dur);
+//            $st_time=  microtime(true);
 
         $report['summary']['total_items'] = $own_batch_total_items;
         $report['summary']['items_priced_higher_than_competitors'] = $items_priced_higher_than_competitors;
@@ -2668,10 +2668,10 @@ class Assess extends MY_Controller {
         $config['uri_segment'] = 3;
         $this->pagination->initialize($config);
         $report['comparison_pagination'] = $this->pagination->create_links();
-            //Debugging
-            $dur = microtime(true)-$st_time;
-            header('Mem-and-Time2-BAT04: '.memory_get_usage().'-'.$dur);
-            $st_time=  microtime(true);
+//            //Debugging
+//            $dur = microtime(true)-$st_time;
+//            header('Mem-and-Time2-BAT04: '.memory_get_usage().'-'.$dur);
+//            $st_time=  microtime(true);
 
         if ($build_assess_params->all_columns) {
             $s_columns = explode(',', $build_assess_params->all_columns);
@@ -2701,10 +2701,10 @@ class Assess extends MY_Controller {
                 usort($result_table, array("Assess", "assess_sort"));
             }
         }
-            //Debugging
-            $dur = microtime(true)-$st_time;
-            header('Mem-and-Time2-BAT05: '.memory_get_usage().'-'.$dur);
-            $st_time=  microtime(true);
+//            //Debugging
+//            $dur = microtime(true)-$st_time;
+//            header('Mem-and-Time2-BAT05: '.memory_get_usage().'-'.$dur);
+//            $st_time=  microtime(true);
 
         $total_rows = count($results);
 
@@ -2718,10 +2718,10 @@ class Assess extends MY_Controller {
             "aaData" => array()
         );
         //Debugging End of problem part
-            //Debugging
-            $dur = microtime(true)-$st_time;
-            header('Mem-and-Time2-BAT: '.memory_get_usage().'-'.$dur);
-            $st_time=  microtime(true);
+//            //Debugging
+//            $dur = microtime(true)-$st_time;
+//            header('Mem-and-Time2-BAT: '.memory_get_usage().'-'.$dur);
+//            $st_time=  microtime(true);
 
         if (!empty($result_table)) {
             $c = 0;
@@ -2933,16 +2933,16 @@ class Assess extends MY_Controller {
                     }
                 }
                 $c++;
-            //Debugging
-            $dur = microtime(true)-$st_time;
-            header('Mem-and-Time3-1-BAT: '.memory_get_usage().'-'.$dur.'-'.$c);
-            $st_time=  microtime(true);
+//            //Debugging
+//            $dur = microtime(true)-$st_time;
+//            header('Mem-and-Time3-1-BAT: '.memory_get_usage().'-'.$dur.'-'.$c);
+//            $st_time=  microtime(true);
             }
         }
-            //Debugging
-            $dur = microtime(true)-$st_time;
-            header('Mem-and-Time3-BAT: '.memory_get_usage().'-'.$dur);
-            $st_time=  microtime(true);
+//            //Debugging
+//            $dur = microtime(true)-$st_time;
+//            header('Mem-and-Time3-BAT: '.memory_get_usage().'-'.$dur);
+//            $st_time=  microtime(true);
         
 
 //       echo  "<pre>";
