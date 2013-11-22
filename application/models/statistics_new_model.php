@@ -242,7 +242,7 @@ class Statistics_new_model extends CI_Model {
             $txt_filter_part2 = '';
         } else {
             $txt_filter_part1 = 'select * from (';
-            $txt_filter_part2 = ')  as `data` where `data`.`product_name` like "%'.$params->txt_filter.'%"';
+            $txt_filter_part2 = ')  as `data` where `data`.`product_name` like \'%'.trim($this->db->escape($params->txt_filter),"'").'%\'';
 
         }
         $limit=isset($params->iDisplayLength)&&$params->iDisplayLength!=0?"LIMIT $params->iDisplayStart, $params->iDisplayLength":"";
