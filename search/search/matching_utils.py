@@ -24,7 +24,7 @@ class ProcessText():
 	# normalize text to list of lowercase words (no punctuation except for inches sign (") or /)
 	@staticmethod
 
-	def normalize(orig_text, stem=True):
+	def normalize(orig_text, stem=True, stopwords=False):
 		text = orig_text
 		# other preprocessing: -Inch = " - fitting for staples->amazon search
 		#						Feet = '
@@ -65,15 +65,17 @@ class ProcessText():
 		# fixes cases like "1-1.2" (will be split into "1 1.2"
 		text = re.sub("[\-](?![0-9]+( |$|[a-zA-Z]))", " ", text)
 		text = re.sub("(?<![0-9])[\.\-/\']", " ", text)
-
-		# don't exclude these
-		exceptions = ["t"]
-		stopset = set(stopwords.words('english')).difference(set(exceptions))#["and", "the", "&", "for", "of", "on", "as", "to", "in"]
 		
 		tokens = text.split()
 
 		#TODO: remove the len constraint? eg: kellogs k protein
-		clean = [token.lower() for token in tokens if token.lower() not in stopset and len(token) > 0]
+		clean = [token.lower() for token in tokens]
+
+		if not stopwords:
+			# don't exclude these
+			exceptions = ["t"]
+			stopset = set(stopwords.words('english')).difference(set(exceptions))#["and", "the", "&", "for", "of", "on", "as", "to", "in"]
+			clean = [token for token in tokens if token.lower() not in stopset and len(token) > 0]
 
 		# if stemming flag on, also stem words
 		#TODO: only if result of stemming is in the dictionary?
