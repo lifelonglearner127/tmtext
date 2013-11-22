@@ -90,7 +90,7 @@ class SearchSpider(BaseSpider):
 
 	def build_search_query(self, product_name):
 		# put + instead of spaces, lowercase all words
-		search_query = "+".join(ProcessText.normalize(product_name))
+		search_query = "+".join(ProcessText.normalize(product_name, stem=False))
 		return search_query
 
 

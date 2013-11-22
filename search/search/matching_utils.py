@@ -24,7 +24,7 @@ class ProcessText():
 	# normalize text to list of lowercase words (no punctuation except for inches sign (") or /)
 	@staticmethod
 
-	def normalize(orig_text):
+	def normalize(orig_text, stem=True):
 		text = orig_text
 		# other preprocessing: -Inch = " - fitting for staples->amazon search
 		#						Feet = '
@@ -73,7 +73,12 @@ class ProcessText():
 		tokens = text.split()
 
 		#TODO: remove the len constraint? eg: kellogs k protein
-		clean = [ProcessText.stem(token.lower()) for token in tokens if token.lower() not in stopset and len(token) > 0]
+		clean = [token.lower() for token in tokens if token.lower() not in stopset and len(token) > 0]
+
+		# if stemming flag on, also stem words
+		#TODO: only if result of stemming is in the dictionary?
+		if stem:
+			clean = [ProcessText.stem(token) for token in clean]
 
 		# TODO:
 		# # add versions of the queries with different spelling
@@ -282,6 +287,7 @@ class ProcessText():
 			matched_brand = intersection_brands.pop()
 
 			## use first match for now - seems to work better. eg: when brand made of 2 words but in second name they are on pos 2 and 3
+			# use longest match as matched brand
 			for word in intersection_brands:
 				if len(word) > len(matched_brand):
 					matched_brand = word
@@ -509,7 +515,7 @@ class ProcessText():
 	# return a list of all combinations
 	@staticmethod
 	def words_combinations(orig_text, comb_length = 2, fast = False):
-		norm_text = ProcessText.normalize(orig_text)
+		norm_text = ProcessText.normalize(orig_text, stem=False)
 
 		# exceptions to include even if they appear in wordnet
 		exceptions = ['nt']
