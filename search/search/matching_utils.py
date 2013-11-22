@@ -24,7 +24,7 @@ class ProcessText():
 	# normalize text to list of lowercase words (no punctuation except for inches sign (") or /)
 	@staticmethod
 
-	def normalize(orig_text, stem=True, stopwords=False):
+	def normalize(orig_text, stem=True, exclude_stopwords=True):
 		text = orig_text
 		# other preprocessing: -Inch = " - fitting for staples->amazon search
 		#						Feet = '
@@ -71,7 +71,7 @@ class ProcessText():
 		#TODO: remove the len constraint? eg: kellogs k protein
 		clean = [token.lower() for token in tokens]
 
-		if not stopwords:
+		if exclude_stopwords:
 			# don't exclude these
 			exceptions = ["t"]
 			stopset = set(stopwords.words('english')).difference(set(exceptions))#["and", "the", "&", "for", "of", "on", "as", "to", "in"]
