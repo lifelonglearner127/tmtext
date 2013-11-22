@@ -61,6 +61,14 @@ class Statistics_new_model extends CI_Model {
         $st_time = microtime(TRUE);
         $this->load->model('research_data_model');
         $params = new stdClass();
+        $this->db->select('count(*) as cnt ');
+        $this->db->from('statistics_new');
+        $this->db->where('batch_id',$batch_id);
+        $query = $this->db->get();
+        $res = $query->first_row('array');
+        exit($res['cnt']);
+        $num_rows = $res['cnt'];
+        /*
         $params->batch_id = $batch_id;
         $params->txt_filter = '';
             //Debugging
@@ -68,16 +76,14 @@ class Statistics_new_model extends CI_Model {
             header('Mem-and-Time3-BAT01: '.memory_get_usage().'-'.$dur.'-'.time());
             $st_time=  microtime(true);        
         
-        //$res = $this->getStatsData($params);
-        $this->getStatsData($params);
-        $res = $this->res_array;
+        $res = $this->getStatsData($params);
         //var_dump($res);exit;
             //Debugging
             $dur = microtime(true)-$st_time;
             header('Mem-and-Time3-BAT02: '.memory_get_usage().'-'.$dur);
             $st_time=  microtime(true);        
         
-        $num_rows = count($res);
+        $num_rows = count($res);//*/
         if($num_rows == 0){
             $num_rows = $this->research_data_model->countAll($batch_id);
         }
