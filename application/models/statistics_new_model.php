@@ -66,7 +66,6 @@ class Statistics_new_model extends CI_Model {
         $this->db->where('batch_id',$batch_id);
         $query = $this->db->get();
         $res = $query->first_row('array');
-        exit($res['cnt']);
         $num_rows = $res['cnt'];
         /*
         $params->batch_id = $batch_id;
