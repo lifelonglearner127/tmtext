@@ -1,5 +1,5 @@
 <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/smoothness/jquery-ui-1.8.2.custom.css" />
-<link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/styles.css" />
+
     <ul class="nav nav-tabs jq-measure-tabs">
         <li class="active"><a data-toggle="tab" href="<?php echo site_url('assess/products');?>">Products</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_departments');?>">Categories</a></li>
@@ -408,12 +408,17 @@
         <a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
     </div>
 </div>
-
-<div class="row-fluid">
-    <div id="read" class="ui-tabs-panel ui-widget-content ui-corner-bottom">
-        <div id="records_wrapper" class="dataTables_wrapper block_data_table">
+<?php 
+	$this->load->view('assess/_summary', array(
+		'display' => 'none',
+		'wrapper_class' => 'assess_report_compare',
+	)) 
+?>
+<div class="row-fluid">	
+    <div id="read" class="ui-tabs-panel ui-widget-content ui-corner-bottom">		
+        <div id="records_wrapper" class="dataTables_wrapper block_data_table">			
             <div class="span12" id="dt_tbl">
-<!--                <div id ="tableScrollWrapper">-->
+<!--                <div id ="tableScrollWrapper">-->					
                     <table id="tblAssess" class="tblDataTable" >
                         <thead>
                         </thead>
@@ -430,84 +435,12 @@
                     <a id="assess_tbl_show_case_view" data-case="view" title="Board View" href="#board_view">Board View</a>
                 </div>
                 <a id="research_batches_columns" class="ml_5 float_r" title="Customize..."><img  style="width:32px; heihgt: 32px;"src ="<?php echo base_url() ?>/img/settings@2x.png"></a>
-                <div id="assess_report">
-                    <ul class="ui-sortable">
-                        <li class="boxes">
-                            <h3>
-                                <span>
-                                    Summary
-                                    <!--<span id="summary_message"></span>-->
-                                </span>
-                                <a class="ml_10 research_arrow hideShow" onclick="return false;" href="#">
-                                    <img src="<?php echo base_url();?>img/arrow.png">
-                                </a>
-                                <span id="assess_report_download_panel" style="float: right;width: 500px;">
-                                    Download
-                                    <a id="assess_report_download_pdf" target="_blank" data-type="pdf">PDF</a> |
-                                    <a id="assess_report_download_doc" target="_blank" data-type="doc">DOC</a>
-                                    <button id="assess_report_options_dialog_button" class="btn" style="float: right;margin-top: 7px;" title="Report Options"><img class="other-icon" src="<?php echo base_url();?>img/ico-gear.png" /></button>
-                                </span>
-                            </h3>
-                            <div style="clear: both;"></div>
-                            <div class="boxes_content" style="padding:0px;">
-                                <div class="mt_10 ml_15">
-                                    <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_number.png">Total SKUs analyzed: <span id="assess_report_total_items" class="mr_10"></span></div>
-                                </div>
-                                <div class="mt_10 ml_15">
-                                    <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_dollar.png">SKUs priced higher than competitors: <span id="assess_report_items_priced_higher_than_competitors" class="mr_10"></span></div>
-                                </div>
-                                <div class="mt_10 ml_15 items_have_more_than_20_percent_duplicate_content">
-                                    <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_D.png"><span id="assess_report_items_have_more_than_20_percent_duplicate_content" class="mr_10"></span>items have more than 20% duplicate content</div>
-                                </div>
-                                <div class="mt_10 ml_15">
-                                    <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_seo.png">SKUs that have non-keyword optimized product content: <span id="assess_report_items_unoptimized_product_content" class="mr_10"></span></div>
-                                </div>
-                                <div id="assess_report_items_1_descriptions_pnl">
-                                    <div class="mt_10 mb_10 ml_15"> 
-                                        <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_arrow_down.png">SKUs that have descriptions that are shorter than <span id="assess_report_items_have_product_descriptions_that_are_less_than_value"></span> words: <span id="assess_report_items_have_product_descriptions_that_are_too_short" class="mr_10"></span></div>
-                                    </div>
-                                </div>
-                                <div id="assess_report_items_2_descriptions_pnl" style="display: none;">
-                                    <div id="assess_report_items_2_descriptions_pnl_s" class="mt_10 mb_10 ml_15">
-                                        <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_arrow_down.png"><span id="assess_report_items_have_product_short_descriptions_that_are_too_short" class="mr_10"></span>items have short descriptions that are less than <span id="assess_report_items_have_product_short_descriptions_that_are_less_than_value"></span> words</div>
-                                    </div>
-                                    <div id="assess_report_items_2_descriptions_pnl_l" class="mt_10 mb_10 ml_15">
-                                        <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_arrow_down.png"><span id="assess_report_items_have_product_long_descriptions_that_are_too_short" class="mr_10"></span>items have long descriptions that are less than <span id="assess_report_items_have_product_long_descriptions_that_are_less_than_value"></span> words</div>
-                                    </div>
-                                </div>
-                                <div id="assess_report_compare_panel" class="mt_10 mb_10 ml_15">
-                                    <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_comparison.png">
-                                        <span id="assess_report_absent_items_count" class="mr_10"></span>
-                                        items in
-                                        <span id="assess_report_compare_customer_name"></span>
-                                        -
-                                        <span id="assess_report_compare_batch_name"></span>
-                                        are absent from
-                                        <span id="assess_report_own_batch_name"></span>
-                                    </div>
-                                </div>
-                                <div id="assess_report_numeric_difference" class="mt_10 mb_10 ml_15">
-                                    <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_cart.png"><span id="assess_report_numeric_difference_caption" class="mr_10"></span></div>
-                                </div>
-                            </div>
-                        </li>
-                        <!--li class="boxes ui-resizable">
-                            <h3>
-                                <span>
-                                    <a class="hideShow" onclick="return false;" href="#">
-                                        <img src="<?php echo base_url();?>img/arrow-down.png" style="width:12px;margin-right: 10px">
-                                    </a>
-                                    Product Comparisons
-                                </span>
-                            </h3>
-                            <div style="clear: both;"></div>
-                            <div class="boxes_content" style="padding:0px;">
-                                <div id="comparison_detail"></div>
-                                <div id="comparison_pagination"></div>
-                            </div>
-                        </li-->
-                    </ul>
-                </div>
+                <?php 
+					$this->load->view('assess/_summary', array(
+						'display' => 'block',
+						'wrapper_class' => 'assess_report',
+					))
+				?>
 
                 <div id="assess_view">
                     <p>No images available for this batch</p>

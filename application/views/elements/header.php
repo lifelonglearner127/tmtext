@@ -22,6 +22,7 @@
     <link href="<?php echo base_url();?>css/bootstrap-lightbox.min.css" rel="stylesheet">
     <link href="<?php echo base_url();?>css/anythingslider.css" rel="stylesheet">
     <link href='//fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+	<link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/styles.css" />
 
 	<!--[if lt IE 9]>
 		<script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>

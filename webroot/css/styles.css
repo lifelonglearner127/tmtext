@@ -441,24 +441,24 @@ ul.ui-sortable {
     margin: 0;
     padding-left: 10px;
 }
-#assess_report div.boxes_content {
+.assess_report .boxes_content, .assess_report_compare .boxes_content {
     font-size: 14px;
 }
-#assess_report div.boxes_content img {
+.assess_report .boxes_content img, .assess_report_compare .boxes_content img {
     width:35px;
     height:35px;
     margin-right: 10px;
 }
-#assess_report div.boxes_content span {
+.assess_report .boxes_content span, .assess_report_compare .boxes_content span {
     width:50px;
 }
 .mb_10{
     margin-bottom:10px !important;
 }
-#assess_report_download_panel {
+.assess_report_download_panel {
     font-size: 14px;
 }
-#assess_report_download_panel a {
+.assess_report_download_panel a {
     font-weight: normal;
     font-size: 16px;
     color:#0088CC;
@@ -504,7 +504,7 @@ ul.ui-sortable {
     color: #0000FF;
     font-size: 12px;
 }
-#assess_report div.boxes_content table.assess_comparisons img{
+.assess_report div.boxes_content table.assess_comparisons img, .assess_report_compare div.boxes_content table.assess_comparisons img{
     width:auto;
     max-width: 200px;
     height: auto;
