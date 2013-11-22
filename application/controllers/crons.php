@@ -808,7 +808,6 @@ class Crons extends MY_Controller {
 
                         $data_import['long_description'] = preg_replace('#<[^>]+>#', ' ', $data_import['long_description']);
                         $data_import['long_description'] = preg_replace('/\s+/', ' ', $data_import['long_description']);
-                        //$data_import['long_description'] = preg_replace('/[a-zA-Z]-/', ' ', $data_import['long_description']);
                         $long_description_wc = count(explode(" ", $data_import['long_description']));
                     } else {
                         $long_description_wc = 0;
