@@ -1250,6 +1250,45 @@ class Assess extends MY_Controller {
                         }  
                         
                         
+//                        echo '<pre>';
+//                        print_r($row->similar_items);
+//                        echo '<br />';
+//                        print_r($results[$key]); exit();
+                        if(in_array('Duplicate_Content', $selected_columns)){
+                            
+                            
+                            if ($results[$key]->Short_Description) {
+                                $short_desc_1 = $results[$key]->Short_Description;
+                            }else{
+                                $short_desc_1 = '';
+                            }
+                            if ($results[$key]->Long_Description) {
+                                $long_desc_1 = $results[$key]->Long_Description;
+                            }else{
+                                $long_desc_1 = '';
+                            }
+                            $desc_1 = $short_desc_1.' '.$long_desc_1 ;
+
+                            if ($results[$key]->similar_items[0]->Short_Description) {
+                                $short_desc_2 = $results[$key]->similar_items[0]->Short_Description;
+                            }else{
+                                $short_desc_2 = '';
+                            }
+                            if ($results[$key]->similar_items[0]->Long_Description) {
+                                $long_desc_2 = $results[$key]->similar_items[0]->Long_Description;
+                            }else{
+                                $long_desc_2 = '';
+                            }
+                            $desc_2 = $short_desc_2.' '.$long_desc_2 ;
+
+                            similar_text($desc_1, $desc_2, $percent) ;
+                            $percent = number_format($percent, 2);
+                            $res_array[$key]['Duplicate_Content'] = $percent .' %';
+                           
+                        }
+                                               
+                        
+                        
                         if (in_array('item_id', $selected_columns)) {
                             $res_array[$key]['Item Id (' . $i . ")"] = $sim_items[$i - 1]->item_id ? $sim_items[$i - 1]->item_id : ' - ';
                          }
@@ -1360,6 +1399,9 @@ class Assess extends MY_Controller {
                 if (in_array('gap', $selected_columns)) {
                     $line[] = 'Gap Analysis';
                 }
+                if (in_array('Duplicate_Content', $selected_columns)) {
+                    $line[] = 'Duplicate Content';
+                }
                 if (in_array('item_id', $selected_columns)) {
                     $line[] = "Item Id(" . ($i+1) . ")";
                 }
@@ -1407,33 +1449,143 @@ class Assess extends MY_Controller {
                 
                 
             }
-            array_unshift($res_array, $line);
-//            $long_description_wc_count0 = 0;
-//            $short_description_wc_count0 = 0;
-//            foreach($res_array as $key => $value) {
-//                if($key != 0){
-//                    if($res_array[$key][long_description_wc] == 0)
-//                        $long_description_wc_count0++;
-//                    if($res_array[$key][short_description_wc] == 0)
-//                        $short_description_wc_count0++;
-//                    }
-//                }
-//            if($long_description_wc_count0 == count($res_array)-1){
-//                foreach($res_array as $key => $res){
-//                    unset($res_array[$key][long_description_wc]) ;
-//                    unset($res_array[$key][Long_Description]) ;
-//                }
-////                $res_array[0][Short_Description] = 'Product Description' ;
-//            }
-//            if($short_description_wc_count0 == count($res_array)-1){
-//                foreach($res_array as $key => $res){
-//                    unset($res_array[$key][short_description_wc]) ;
-//                    unset($res_array[$key][Short_Description]) ;
-//                }
-////                $res_array[0][Long_Description] = 'Product Description' ;
-//            }
+//            echo '<pre>';
+//            print_r($line);
+//            echo '<pre>';
+//            print_r($res_array);exit();
 
+            //deleting empty Short_Description, Long_Description, short_descripition_wc, long_description_wc colomns
             
+            //var_dump($max_similar_item_count); exit();
+            if (in_array('Short_Description', $selected_columns)){
+                $short_description_count = 0;
+                if(isset($max_similar_item_count)){
+                        $short_description_count_1 = 0;
+                }
+            }
+            if(in_array('Long_Description', $selected_columns)){
+                $long_description_count = 0;
+                if(isset($max_similar_item_count)){
+                        $long_description_count_1 = 0;
+                }
+            }
+            if(in_array('short_description_wc', $selected_columns)){
+                $short_description_wc_count = 0;
+                if(isset($max_similar_item_count)){
+                        $short_description_wc_count_1 = 0;
+                }
+            }
+            if(in_array('long_description_wc', $selected_columns)){
+                $long_description_wc_count = 0;
+                if(isset($max_similar_item_count)){
+                        $long_description_wc_count_1 = 0;
+                }
+            }
+            
+            foreach($res_array as $key => $value) {
+                
+                if (in_array('Short_Description', $selected_columns)){
+                    if(!$res_array[$key]['Short_Description'])
+                    $short_description_count++;
+                    if(isset($max_similar_item_count)){
+                            if(!$res_array[$key]['Short Description (1)'])
+                            $short_description_count_1 ++;
+                    }
+                }
+                if (in_array('Long_Description', $selected_columns)){
+                    if(!$res_array[$key]['Long_Description'])
+                    $long_description_count++;
+                    if(isset($max_similar_item_count)){
+                            if(!$res_array[$key]['Long_Description (1)'])
+                            $long_description_count_1 ++;
+                    }
+                }
+                if (in_array('short_description_wc', $selected_columns)){
+                    if($res_array[$key]['short_description_wc'] == 0)
+                    $short_description_wc_count++;
+                    if(isset($max_similar_item_count)){
+                            if($res_array[$key]['Short Desc # Words (1)'] == 0)
+                            $short_description_wc_count_1 ++;
+                    }
+                }
+                if (in_array('long_description_wc', $selected_columns)){
+                    if($res_array[$key]['long_description_wc'] == 0)
+                    $long_description_wc_count++;
+                    if(isset($max_similar_item_count)){
+                            if($res_array[$key]['Long Desc # Words (1)'] == 0)
+                            $long_description_wc_count_1 ++;
+                    }
+                }            
+            }
+            
+            if (in_array('Short_Description', $selected_columns)){
+                if($short_description_count == count($res_array)){
+                    foreach($res_array as $key => $res){
+                        unset($res_array[$key]['Short_Description']) ;
+                    }
+                    unset($line['Short_Description']);
+                }
+                if(isset($max_similar_item_count)){
+                    if($short_description_count_1 == count($res_array)){
+                        foreach($res_array as $key => $res){
+                            unset($res_array[$key]['Short Description (1)']) ;
+                        }
+                        unset($line['18']);
+                    }
+                }
+            }
+            if (in_array('Long_Description', $selected_columns)){
+                if($long_description_count == count($res_array)){
+                    foreach($res_array as $key => $res){
+                        unset($res_array[$key]['Long_Description']) ;
+                    }
+                    unset($line['Long_Description']);
+                }
+                if(isset($max_similar_item_count)){
+                    if($long_description_count_1 == count($res_array)){
+                        foreach($res_array as $key => $res){
+                            unset($res_array[$key]['Long_Description (1)']) ;
+                        }
+                        unset($line['20']);
+                    }
+                }
+            }
+            
+            if (in_array('short_description_wc', $selected_columns)){
+                if($short_description_wc_count == count($res_array)){
+                    foreach($res_array as $key => $res){
+                        unset($res_array[$key]['short_description_wc']) ;
+                    }
+                    unset($line['short_description_wc']);
+                }
+                if(isset($max_similar_item_count)){
+                    if($short_description_wc_count_1 == count($res_array)){
+                        foreach($res_array as $key => $res){
+                            unset($res_array[$key]['Short Desc # Words (1)']) ;
+                        }
+                        unset($line['19']);
+                    }
+                }
+            }
+            if (in_array('long_description_wc', $selected_columns)){
+                if($long_description_wc_count == count($res_array)){
+                    foreach($res_array as $key => $res){
+                        unset($res_array[$key]['long_description_wc']) ;
+                    }
+                    unset($line['long_description_wc']);
+                }
+                if(isset($max_similar_item_count)){
+                    if($long_description_wc_count_1 == count($res_array)){
+                        foreach($res_array as $key => $res){
+                            unset($res_array[$key]['Long Desc # Words(1)']) ;
+                        }
+                        unset($line['21']);
+                    }
+                }
+            }
+            
+            
+        array_unshift($res_array, $line);
         $this->load->helper('csv');
 //        echo  '<pre>';
 //        print_r($res_array);exit;
@@ -1878,14 +2030,13 @@ class Assess extends MY_Controller {
         
         $qty = 1;
         foreach ($results as $row) {
-//            var_dump($row); die();
 //            $long_description_wc = $row->long_description_wc;
 //            $short_description_wc = $row->short_description_wc;
 
             $f_count1 = 0;
             $result_row = new stdClass();
             $result_row->gap = '';
-            $result_row->Duplicate_Content = '';
+//            $result_row->Duplicate_Content = '';
             $meta_key_gap = 0;
             $result_row->id = $row->id;
             $result_row->imported_data_id = $row->imported_data_id;
@@ -1934,6 +2085,60 @@ class Assess extends MY_Controller {
             $result_row->snap = '';
             //$class_for_all_case = '';
             $tb_product_name = '';
+
+
+
+            
+            if ($row->short_description) {
+                 $result_row->short_description = $row->short_description;
+             }else{
+                 $result_row->short_description = '';
+             }
+             if ($row->long_description) {
+                 $result_row->long_description = $row->long_description;
+             }else{
+                 $result_row->long_description = '';
+             }
+             
+             
+//Dublicate Content      
+             if( !$row->Short_Description2 || !$row->Long_Description2){
+
+                if ($row->short_description) {
+                    $short_desc_1 = $row->short_description;
+                }else{
+                    $short_desc_1 = '';
+                }
+                if ($row->long_description) {
+                    $long_desc_1 = $row->long_description;
+                }else{
+                    $long_desc_1 = '';
+                }
+                $desc_1 = $short_desc_1.' '.$long_desc_1 ;
+               
+                if ($row->Short_Description1) {
+                    $short_desc_2 = $row->Short_Description1;
+                }else{
+                    $short_desc_2 = '';
+                }
+                if ($row->Long_Description1) {
+                    $long_desc_2 = $row->Long_Description1;
+                }else{
+                    $long_desc_2 = '';
+                }
+                $desc_2 = $short_desc_2.' '.$long_desc_2 ;
+                
+                
+                similar_text($desc_1, $desc_2, $percent) ;
+                $percent = number_format($percent, 2);
+                $result_row->Duplicate_Content.= $percent .' %';
+                //var_dump($result_row->Duplicate_Content); die();
+
+            }else{
+                $result_row->Duplicate_Content.='';
+            }
+            
+            
 
 
             if ($build_assess_params->max_similar_item_count > 0) {
@@ -2144,16 +2349,7 @@ class Assess extends MY_Controller {
                 $result_row->Meta_Description_Count = $words_des;
             }
 
-            if ($row->short_description) {
-                 $result_row->short_description = $row->short_description;
-             }else{
-                 $result_row->short_description = '';
-             }
-             if ($row->long_description) {
-                 $result_row->long_description = $row->long_description;
-             }else{
-                 $result_row->long_description = '';
-             }
+
 
             if ($pars_atr['parsed_meta']['keywords'] && $pars_atr['parsed_meta']['keywords'] != '') {
                 $Meta_Keywords = "<table class='table_keywords_long'>";
