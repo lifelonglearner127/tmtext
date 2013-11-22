@@ -798,19 +798,19 @@ class Crons extends MY_Controller {
                     echo "<br>"."im+daat+id= ".$im_data_id."</br>";
                     if (($data_import['description'] !== null||$data_import['description'] !== 'null') && trim($data_import['description']) !== "") {
 
-                        $data_import['description'] = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $data_import['description']);
+                        $data_import['description'] = preg_replace('#<[^>]+>#', ' ', $data_import['description']);
                         $data_import['description'] = preg_replace('/\s+/', ' ', $data_import['description']);
                         //$data_import['description'] = preg_replace('/[a-zA-Z]-/', ' ', $data_import['description']);
-                        $short_description_wc = count(explode(" ", strip_tags($data_import['description'])));
+                        $short_description_wc = count(explode(" ", $data_import['description']));
                     } else {
                         $short_description_wc = 0;
                     }
                     if (($data_import['long_description'] !== null||$data_import['long_description'] !== 'null') && trim($data_import['long_description']) !== "") {
 
-                        $data_import['long_description'] = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $data_import['long_description']);
+                        $data_import['long_description'] = preg_replace('#<[^>]+>#', ' ', $data_import['long_description']);
                         $data_import['long_description'] = preg_replace('/\s+/', ' ', $data_import['long_description']);
                         //$data_import['long_description'] = preg_replace('/[a-zA-Z]-/', ' ', $data_import['long_description']);
-                        $long_description_wc = count(explode(" ", strip_tags($data_import['long_description'])));
+                        $long_description_wc = count(explode(" ", $data_import['long_description']));
                     } else {
                         $long_description_wc = 0;
                     }
