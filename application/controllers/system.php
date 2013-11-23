@@ -2267,6 +2267,9 @@ class System extends MY_Controller {
     public function system_uploadmatchurls(){
         $this->render();
     }
+//    public function system_dostatsmonitor(){
+//        $this->render();
+//    }
     public function upload_match_urls()
     {
         ini_set('post_max_size', '100M');
@@ -2277,7 +2280,7 @@ class System extends MY_Controller {
             'upload_dir' => $this->config->item('csv_upload_dir'),
             'param_name' => 'files',
             'delete_type' => 'POST',
-            'accept_file_types' => '/.+\.(txt|jl)$/i',
+            'accept_file_types' => '/.+\.(txt|jl|csv)$/i',
         ));
     }
     public function check_urls(){
