@@ -275,6 +275,13 @@ class PageProcessor {
 
 		$description = implode(' ', $description);
 
+		// #1012 issue with not full text
+		$description_backup = $this->nokogiri->get('#prodInfoSpaceBottom div.BodyXL')->getText();
+
+		if ( strlen(preg_replace('!\s+!', ' ',$description_backup)) > strlen(preg_replace('!\s+!', ' ',strip_tags($description))) ) {
+			$description = $description_backup;
+		}
+
 		foreach($this->nokogiri->get('h1.productTitle') as $item) {
 			$title = $item;
 		}
