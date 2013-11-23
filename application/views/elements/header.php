@@ -58,7 +58,15 @@
     <script type="text/javascript" src="<?php echo base_url();?>js/jquery-templ.js"></script>
     <script type="text/javascript" src="<?php echo base_url();?>js/jquery.validate.min.js"></script>
     <script type="text/javascript" src="<?php echo base_url();?>js/jquery.dataTables.min.js"></script>
-
+<?php  if($_SERVER["REQUEST_URI"]){
+        $ser =  $_SERVER["REQUEST_URI"];
+        $a = strstr($ser,"checked_columns_results");
+        if($a !=''){
+   ?>
+            <script type="text/javascript" src="<?php echo base_url();?>js/research_assess.js"></script>
+   <?php 
+        }
+    };?>
 
 	<!-- script src="<?php echo base_url();?>js/main.js"></script-->
 <?php if (isset($js)){ ?>

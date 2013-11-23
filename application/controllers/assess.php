@@ -13,10 +13,9 @@ class Assess extends MY_Controller {
         $this->data['title'] = 'Assess';
         $this->load->model('imported_data_parsed_model');
         $this->load->model('keywords_model');
-        if (!$this->ion_auth->logged_in()) {
-            //redirect them to the login page
-            redirect('auth/login', 'refresh');
-        }
+        $this->ion_auth->add_auth_rules(array(
+                'compare_results' => true
+        ));
     }
 
 //    public function delete_rows_db() {
@@ -47,17 +46,12 @@ class Assess extends MY_Controller {
     }
     public function compare_results () {
 
-        $this->load->model('webshoots_model');
-        $this->data['customers_list'] = $this->customers_list_new();
-        $this->data['user_id'] = $this->ion_auth->get_user_id();
-        $c_week = date("W", time());
-        $c_year = date("Y", time());
-        $this->data['ct_final'] = date("m.d.Y", time());
-        $this->data['c_week'] = $c_week;
-        $this->data['c_year'] = $c_year;
-        $this->data['img_av'] = $this->webshoots_model->getWeekAvailableScreens($c_week, $c_year);
-        $this->data['webshoots_model'] = $this->webshoots_model;
-        // $this->data['rec'] = $this->webshoots_model->get_recipients_list();
+         $this->data['customer_list'] = $this->getCustomersByUserId();
+        $this->data['category_list'] = $this->category_list();
+        if (!empty($this->data['customer_list'])) {
+            $this->data['batches_list'] = $this->batches_list();
+        }
+
         $this->render();
     }
 
@@ -594,7 +588,7 @@ class Assess extends MY_Controller {
         $header = $header . '<hr color="#C31233" height="10">';
         $pdf->SetHTMLHeader($header);
 
-        $pdf->SetHTMLFooter('<span style="font-size: 8px;">Copyright В© 2013 Content Solutions, Inc.</span>');
+        $pdf->SetHTMLFooter('<span style="font-size: 8px;">Copyright Р’В© 2013 Content Solutions, Inc.</span>');
 
         $html = '';
 

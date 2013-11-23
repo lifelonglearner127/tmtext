@@ -1,5 +1,6 @@
 <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/smoothness/jquery-ui-1.8.2.custom.css" />
 <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/styles.css" />
+          
 <!--    <ul class="nav nav-tabs jq-measure-tabs">
         <li class="active"><a data-toggle="tab" href="<?php echo site_url('assess/products');?>">Products</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_departments');?>">Categories</a></li>
@@ -7,7 +8,8 @@
         <li class='pull_right_navlink'><a href="javascript:void(0);" onclick="viewCustomBatches()">Custom Batch</a></li>
     </ul>-->
 
-<!--<ul class="research_table_filter">
+   <a href="<?php echo base_url();?>index.php/assess/export_assess" class="fileDownloadPromise btn" style="float:right;" id="research_assess_export" >Export</a>      
+<ul class="research_table_filter">
     <li class="boxes hideBox">
         <h3>
             <span class=''>
@@ -119,27 +121,33 @@
                     </div>
                 </div>
             </div>
-            <div style="float: left;">
-                Compare with:
-                <select id="research_assess_compare_batches_customer"></select>
-                <select id="research_assess_compare_batches_batch"></select>
-            </div>
-            <div style="float: left;" class="ml_5">
-                <button id="research_assess_compare_batches_reset" class="btn">Reset</button>
-            </div>
-            <div style="float: right;">
-                <button id="research_assess_update" class="btn btn-success">Update</button>
+           
+                <div style="float: left;">
+                    Compare with:
+                    <select id="research_assess_compare_batches_customer"></select>
+                    <select id="research_assess_compare_batches_batch"></select>
+                </div>
+                <div style="float: left;" class="ml_5">
+                    <button id="research_assess_compare_batches_reset" class="btn">Reset</button>
+                </div>
+                <div style="float: right;">
+                    <button id="research_assess_update" class="btn btn-success">Update</button>
+                    <a href="<?php echo base_url();?>index.php/assess/export_assess" class="fileDownloadPromise btn" id="research_assess_export" >Export</a>
+                </div>
+            <div style="clear:both;"></div>
+            <div style="float: left;margin-top: 10px;" class="generate_url">
+                <button id="generate_url">Generate URL</button>
+                <input id="generate_url_link" style="margin-bottom:0;" type="text" >
             </div>
         </div>
     </li>
-</ul>-->
-                <a href="<?php echo base_url();?>index.php/assess/export_assess" class="fileDownloadPromise btn" id="research_assess_export" >Export</a>
+</ul>
 
         <div class="modal hide fade ci_hp_modals crawl_launch_panel" id='recipients_control_panel_modal'></div>
         <div class="modal hide fade ci_hp_modals" style='top: 20%' id='dep_rep_preview_list_modal'></div>
 
 <!-- choise column dialog box -->
-<!--<div id="research_assess_choiceColumnDialog" title="Select Table Columns">
+<div id="research_assess_choiceColumnDialog" title="Select Table Columns">
     <div>
         <form action="" method="post">
             <div id="horizontal" class="horizontal_vertical_icon" style="position: absolute; margin-top: -10px; margin-left: 55px; max-width: 25px;"><img src ="<?php echo base_url() ?>/img/horizontal.png" /></div>
@@ -252,7 +260,7 @@
                 <label for="column_actions">Gap analysis</label>
             </p>
             </div>
-            <p>
+<!--            <p>
                 <input type="checkbox" id="column_snap1" data-col_name="snap" name="column_snap_name1" <?php echo($columns['snap1'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="column_snap1">Snapshot</label>
             </p>
@@ -275,13 +283,13 @@
             <p>
                 <input type="checkbox" id="column_long_description_wc1" data-col_name="long_description_wc1" name="column_long_description_wc_name1" <?php echo($columns['long_description_wc1'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="column_long_description_wc1">Words Long</label>
-            </p>
+            </p>-->
             
             
             
         </form>
     </div>
-</div>-->
+</div>
 
 <div id="assessDetailsDialog" title="Details">
     <form name="access_details">
@@ -403,30 +411,30 @@
     <div id="read" class="ui-tabs-panel ui-widget-content ui-corner-bottom">
         <div id="records_wrapper" class="dataTables_wrapper block_data_table">
             <div class="span12" id="dt_tbl">
-                <div id ="tableScrollWrapper">
+<!--                <div id ="tableScrollWrapper">-->
                     <table id="tblAssess" class="tblDataTable" >
                         <thead>
                         </thead>
                         <tbody></tbody>
                     </table>
-                </div>
+<!--                </div>-->
                 <div id="comare_table"></div>
-<!--                <div id="assess_tbl_show_case" class="assess_tbl_show_case">
+                <div id="assess_tbl_show_case" class="assess_tbl_show_case">
                     <a id="assess_tbl_show_case_recommendations" data-case="recommendations" title="Recommendations" href="#recommendations"  class="active_link">Recommendations</a> |
                     <a id="assess_tbl_show_case_report" data-case="report" title="Report" href="#summary">Summary</a> |
                     <a id="assess_tbl_show_case_details" data-case="details" title="Details" href="#details">Details</a> |
                     <a id="assess_tbl_show_case_details_compare" data-case="details_compare" title="Details_compare" href="#compare">Compare</a> |
                     <a id="assess_tbl_show_case_graph" data-case="graph" title="Graph" href="#graph">Graph</a> |
                     <a id="assess_tbl_show_case_view" data-case="view" title="Board View" href="#board_view">Board View</a>
-                </div>-->
-                <!--<a id="research_batches_columns" class="ml_5 float_r" title="Customize..."><img  style="width:32px; heihgt: 32px;"src ="<?php echo base_url() ?>/img/settings@2x.png"></a>-->
-<!--                <div id="assess_report">
+                </div>
+                <a id="research_batches_columns" class="ml_5 float_r" title="Customize..."><img  style="width:32px; heihgt: 32px;"src ="<?php echo base_url() ?>/img/settings@2x.png"></a>
+                <div id="assess_report">
                     <ul class="ui-sortable">
                         <li class="boxes">
                             <h3>
                                 <span>
                                     Summary
-                                    <span id="summary_message"></span>
+                                    <!--<span id="summary_message"></span>-->
                                 </span>
                                 <a class="ml_10 research_arrow hideShow" onclick="return false;" href="#">
                                     <img src="<?php echo base_url();?>img/arrow.png">
@@ -481,7 +489,7 @@
                                 </div>
                             </div>
                         </li>
-                        li class="boxes ui-resizable">
+                        <!--li class="boxes ui-resizable">
                             <h3>
                                 <span>
                                     <a class="hideShow" onclick="return false;" href="#">
@@ -495,23 +503,23 @@
                                 <div id="comparison_detail"></div>
                                 <div id="comparison_pagination"></div>
                             </div>
-                        </li
+                        </li-->
                     </ul>
-                </div>-->
+                </div>
 
-<!--                <div id="assess_view">
+                <div id="assess_view">
                     <p>No images available for this batch</p>
-                </div>-->
-                <!--<img id="imgLoader" style="display: none;margin-top: -16px;margin-left: 81px;" src="<?php echo base_url();?>img/img-loader.gif" />-->
-<!--                <div id="assess_graph">
+                </div>
+                <img id="imgLoader" style="display: none;margin-top: -16px;margin-left: 81px;" src="<?php echo base_url();?>img/img-loader.gif" />
+                <div id="assess_graph">
                     <div id="highChartContainer" style="min-width: 878px; height: 300px; margin: 0 auto"></div>
-                </div>-->
+                </div>
+ 
                 <script src="http://code.highcharts.com/highcharts.js"></script>
                 <script src="http://code.highcharts.com/modules/exporting.js"></script>
                 <script type="text/javascript" src="<?php echo base_url();?>js/jquery.dataTables.min.js"></script>
                 <script type="text/javascript" src="<?php echo base_url();?>js/jquery.json-2.4.min.js"></script>
                 <script type="text/javascript" src="<?php echo base_url();?>js/jquery.fileDownload.js"></script>
-                <script type="text/javascript" src="<?php echo base_url();?>js/research_assess.js"></script>
                 <script type="text/javascript" src="<?php echo base_url(); ?>js/measure_department.js"></script>
                 <script type='text/javascript' src="<?php echo base_url();?>js/ci_home_pages.js"></script>
             </div>
@@ -529,6 +537,7 @@
         <a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
     </div>
 </div>
+  
 <style>
     .span_img{
         overflow:hidden;
@@ -560,9 +569,49 @@
 
  border: 0px solid #fff !important;
 }
+.comp_res{
+    visibility: hidden;
+}
+.comp_res_none{
+    display: none;
+}
 </style>
 <script>
             $(function() {
-                $('head').find('title').text('Reports');
+//  
+                $('#assess_tbl_show_case').addClass('comp_res');
+                $('.jq-measure-tabs').addClass('comp_res');
+                $('.pull-left').addClass('comp_res');
+                $('.pull-right').addClass('comp_res');
+                $('.research_table_filter').addClass('comp_res');
+                $('.research_assess_choiceColumnDialog').addClass('comp_res');
+                $('#assess_report').addClass('comp_res_none');
+
+                $('head').find('title').text('Result');
+                function GetURLParameter(sParam) {
+                    var sPageURL = window.location.search.substring(1);
+                    var sURLVariables = sPageURL.split('&');
+                    for (var i = 0; i < sURLVariables.length; i++) 
+                    {
+                        var sParameterName = sURLVariables[i].split('=');
+                        if (sParameterName[0] == sParam) 
+                        {
+                            return sParameterName[1];
+                        }
+                    }
+                }   
+                
+                 var batch_id_result = GetURLParameter('batch_id_result');
+                 var cmp_selected = GetURLParameter('cmp_selected');
+                $('select[name="research_assess_batches"]').val(batch_id_result).change()
+//                $('select[name="research_assess_batches"]').val(batch_id_result).attr('selected', 'selected');
+                setTimeout(function(){
+                    
+                $('select[id="research_assess_compare_batches_batch"]').val(cmp_selected).change()
+                 $('#research_assess_update').click();
+                },2000)
+                
+            
             });
  </script>
+
