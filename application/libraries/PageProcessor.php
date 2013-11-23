@@ -221,10 +221,29 @@ class PageProcessor {
 			}
 		}
 
+		foreach($this->nokogiri->get('#prodInfoSpaceBottom div.BodyXL table tr td') as $item) {
+			if (isset($item['#text'])) {
+				foreach ($item['#text'] as $i) {
+					$itm = trim($i);
+					if (!empty($itm)) {
+						$description[] = $itm;
+					}
+				}
+			}
+			if (isset($item['li'])) {
+				foreach ($item['li'] as $i) {
+					$itm = trim($i["#text"][0]);
+					if (!empty($itm)) {
+						$description[] = '<li>'.$itm.'</li>';
+					}
+				}
+			}
+		}
+
 		foreach($this->nokogiri->get('#prodInfoSpaceBottom div.BodyXL div li') as $item) {
 			foreach ($item['#text'] as $i) {
 				$itm = trim($i);
-				if (!empty($itm)) {
+				if (!empty($itm) && !in_array('<li>'.$itm.'</li>', $description)) {
 					$description[] = '<li>'.$itm.'</li>';
 				}
 			}
@@ -251,16 +270,6 @@ class PageProcessor {
 		if (empty($description)) {
 			foreach($this->nokogiri->get('.ql-details-short-desc') as $item) {
 				$description[] = $item['#text'][0];
-			}
-		}
-
-
-		foreach($this->nokogiri->get('#prodInfoSpaceBottom div.BodyXL table tr td') as $item) {
-			foreach ($item['#text'] as $i) {
-				$itm = trim($i);
-				if (!empty($itm)) {
-					$description[] = $itm;
-				}
 			}
 		}
 
