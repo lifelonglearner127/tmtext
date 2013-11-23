@@ -276,9 +276,10 @@ class PageProcessor {
 		$description = implode(' ', $description);
 
 		// #1012 issue with not full text
-		$description_backup = $this->nokogiri->get('#prodInfoSpaceBottom div.BodyXL')->getText();
+		// #1022 missing text
+		$description_backup = str_replace('<br>',' ', str_replace('<li>',' <li>', $this->nokogiri->get('#prodInfoSpaceBottom div.BodyXL')->getText('<li><br>')));
 
-		if ( strlen(preg_replace('!\s+!', ' ',$description_backup)) > strlen(preg_replace('!\s+!', ' ',strip_tags($description))) ) {
+		if ( strlen(preg_replace('/[^a-z\d ]/i', '',$description_backup)) > strlen(preg_replace('/[^a-z\d ]/i', '',strip_tags($description))) ) {
 			$description = $description_backup;
 		}
 

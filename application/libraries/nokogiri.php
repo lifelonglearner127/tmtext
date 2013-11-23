@@ -208,8 +208,8 @@ class nokogiri implements IteratorAggregate{
 		return $this->getDom()->saveHTML();
 	}
 
-	public function getText(){
-		return htmlspecialchars_decode(strip_tags($this->getDom()->saveHTML()));
+	public function getText($allowable_tags = ''){
+		return htmlspecialchars_decode(strip_tags($this->getDom()->saveHTML(), $allowable_tags));
 	}
 
 	public function toArray($xnode = null){
