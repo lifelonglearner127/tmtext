@@ -315,17 +315,210 @@ class SearchSpider(BaseSpider):
 
 	# accumulate results for each (sending the pending requests and the partial results as metadata),
 	# and lastly select the best result by selecting the best match between the original product's name and the result products' names
-	def reduceResults(self, response):
+	def parseResults(self, response):
 
-		items = response.meta['items']
+		hxs = HtmlXPathSelector(response)
 
-		if 'parsed' not in response.meta:
+		site = response.meta['site']
+		origin_name = response.meta['origin_name']
+		origin_model = response.meta['origin_model']
 
-			# pass to specific prase results function (in derived class)
-			return self.parseResults(response)
+		# if this comes from a previous request, get last request's items and add to them the results
 
+		if 'items' in response.meta:
+			items = response.meta['items']
 		else:
-			del response.meta['parsed']
+			items = set()
+
+		
+		# handle parsing separately for each site
+
+		# amazon
+		if (site == 'amazon'):
+
+			# amazon returns partial results as well so we can just search for the entire product name and select from there
+
+			# for Amazon, extract product info from product page, that's the only place you can find the model
+			# so send a request to the method that does this, with the same meta info as the request to this method,
+			# then send it back here
+
+			# check if we already did this, by checking if we have a key in meta indicating it
+			# only proceed if we haven't
+			if 'parsed' not in response.meta:
+				request = Request(url = response.url, callback = self.parse_results_amazon, meta = response.meta)
+
+				# add to meta url of current page being parsed
+				request.meta['redirected_from'] = response.url
+
+				request.meta['items'] = items
+
+				return request
+
+			else:
+				del response.meta['parsed']
+
+
+		# walmart
+		if (site == 'walmart'):
+			items = []
+
+			results = hxs.select("//div[@class='prodInfo']/div[@class='prodInfoBox']/a[@class='prodLink ListItemLink']")
+			for result in results:
+				item = SearchItem()
+				item['site'] = site
+				product_name = result.select(".//text()").extract()[0]
+				# append text that is in <span> if any
+				span_text = result.select("./span/text()")
+
+				#TODO: use span text differently, as it is more important/relevant (bold) ?
+				for text in span_text:
+					product_name += " " + text.extract()
+				item['product_name'] = product_name
+				rel_url = result.select("@href").extract()[0]
+				
+				root_url = "http://www.walmart.com"
+				item['product_url'] = Utils.add_domain(rel_url, root_url)
+
+				if 'origin_url' in response.meta:
+					item['origin_url'] = response.meta['origin_url']
+
+				if 'origin_id' in response.meta:
+					request.meta['origin_id'] = response.meta['origin_id']
+					assert self.by_id
+				else:
+					assert not self.by_id
+
+
+				items.add(item)
+
+		# bloomingdales
+
+		#TODO: !! bloomingdales works sporadically
+		if (site == 'bloomingdales'):
+
+			results = hxs.select("//div[@class='shortDescription']/a")
+			for result in results:
+				item = SearchItem()
+				item['site'] = site
+				item['product_name'] = result.select("text()").extract()[0]
+				item['product_url'] = result.select("@href").extract()[0]
+
+				if 'origin_url' in response.meta:
+					item['origin_url'] = response.meta['origin_url']
+
+				if 'origin_id' in response.meta:
+					request.meta['origin_id'] = response.meta['origin_id']
+					assert self.by_id
+				else:
+					assert not self.by_id
+
+
+				items.add(item)
+
+		# overstock
+		if (site == 'overstock'):
+
+			results = hxs.select("//li[@class='product']/div[@class='product-content']/a[@class='pro-thumb']")
+			for result in results:
+				item = SearchItem()
+				item['site'] = site
+				item['product_name'] = result.select("span[@class='pro-name']/text()").extract()[0]
+				item['product_url'] = result.select("@href").extract()[0]
+
+				if 'origin_url' in response.meta:
+					item['origin_url'] = response.meta['origin_url']
+
+				if 'origin_id' in response.meta:
+					request.meta['origin_id'] = response.meta['origin_id']
+					assert self.by_id
+				else:
+					assert not self.by_id
+
+
+				items.add(item)
+		# wayfair
+		if (site == 'wayfair'):
+
+			results = hxs.select("//li[@class='productbox']")
+
+			for result in results:
+				product_link = result.select(".//a[@class='toplink']")
+				item = SearchItem()
+				item['site'] = site
+				item['product_url'] = product_link.select("@href").extract()[0]
+				item['product_name'] = product_link.select("div[@class='prodname']/text()").extract()[0]
+				#TODO: add brand?
+				#item['brand'] = result.select("div[@class='prodname']/div[@class='prodbrandname emphasis]/text()").extract()[0]
+
+				if 'origin_url' in response.meta:
+					item['origin_url'] = response.meta['origin_url']
+
+				if 'origin_id' in response.meta:
+					request.meta['origin_id'] = response.meta['origin_id']
+					assert self.by_id
+				else:
+					assert not self.by_id
+
+
+				items.add(item)
+		#TODO: currently only extracting first page - should I extract all pages?
+		# bestbuy
+		if (site == 'bestbuy'):
+			results = hxs.select("//div[@class='hproduct']/div[@class='info-main']/h3/a")
+
+			for result in results:
+				item = SearchItem()
+				item['site'] = site
+				item['product_name'] = result.select("text()").extract()[0].strip()
+				item['product_url'] = Utils.clean_url(Utils.add_domain(result.select("@href").extract()[0], "http://www.bestbuy.com"))
+
+				if 'origin_url' in response.meta:
+					item['origin_url'] = response.meta['origin_url']
+
+				if 'origin_id' in response.meta:
+					request.meta['origin_id'] = response.meta['origin_id']
+					assert self.by_id
+				else:
+					assert not self.by_id
+
+
+				model_holder = result.select("parent::node()/parent::node()//strong[@itemprop='model']/text()").extract()
+				if model_holder:
+					item['product_model'] = model_holder[0]
+
+				items.add(item)
+
+		# toysrus
+		if (site == 'toysrus'):
+			results = hxs.select("//a[@class='prodtitle']")
+
+			for result in results:
+				item = SearchItem()
+				item['site'] = site
+				item['product_name'] = result.select("text()").extract()[0]
+				root_url = "http://www.toysrus.com"
+				item['product_url'] = root_url + result.select("@href").extract()[0]
+
+				if 'origin_url' in response.meta:
+					item['origin_url'] = response.meta['origin_url']
+
+				if 'origin_id' in response.meta:
+					request.meta['origin_id'] = response.meta['origin_id']
+					assert self.by_id
+				else:
+					assert not self.by_id
+
+
+				items.add(item)
+		# # bjs
+		# if (site == 'bjs'):
+		# 	results = hxs.select()
+
+		# sears
+
+		# # staples
+		# if (site == 'staples')
+
 
 
 		#print stuff
@@ -377,7 +570,7 @@ class SearchSpider(BaseSpider):
 
 				if items:
 					# from all results, select the product whose name is most similar with the original product's name
-					best_match = ProcessText.similar(response.meta['origin_name'], response.meta['origin_model'], items, self.threshold)
+					best_match = ProcessText.similar(origin_name, origin_model, items, self.threshold)
 
 					# #self.log( "ALL MATCHES: ", level=log.WARNING)					
 					# for item in items:
@@ -421,6 +614,139 @@ class SearchSpider(BaseSpider):
 				assert not self.by_id
 
 				return [item]
+
+
+	# parse results page for amazon, extract info for all products returned by search (keep them in "meta")
+	def parse_results_amazon(self, response):
+		hxs = HtmlXPathSelector(response)
+
+		items = response.meta['items']
+
+		# add product URLs to be parsed to this list
+		if 'search_results' not in response.meta:
+			product_urls = set()
+		else:
+			product_urls = response.meta['search_results']
+
+		results = hxs.select("//h3[@class='newaps']/a")
+		for result in results:
+			product_url = result.select("@href").extract()[0]
+				
+			# remove the part after "/ref" containing details about the search query
+			m = re.match("(.*)/ref=(.*)", product_url)
+			if m:
+				product_url = m.group(1)
+
+			product_url = Utils.add_domain(product_url, "http://www.amazon.com")
+
+			product_urls.add(product_url)
+
+		# extract product info from product pages (send request to parse first URL in list)
+		# add as meta all that was received as meta, will pass it on to parseResults function in the end
+		# also send as meta the entire results list (the product pages URLs), will receive callback when they have all been parsed
+
+		# send the request further to parse product pages only if we gathered all the product URLs from all the queries 
+		# (there are no more pending requests)
+		# otherwise send them back to parseResults and wait for the next query, save all product URLs in search_results
+		# this way we avoid duplicates
+		if product_urls and ('pending_requests' not in response.meta or not response.meta['pending_requests']):
+			request = Request(product_urls.pop(), callback = self.parse_product_amazon, meta = response.meta)
+			request.meta['items'] = items
+
+			# this will be the new product_urls list with the first item popped
+			request.meta['search_results'] = product_urls
+
+			return request
+
+		# if there were no results, the request will never get back to parseResults
+		# so send it from here so it can parse the next queries
+		else:
+			request = Request(response.meta['redirected_from'], callback = self.parseResults, meta = response.meta)
+			# remove unnecessary keys
+			del request.meta['redirected_from']
+
+			# add variable indicating results have been parsed
+			request.meta['parsed'] = True
+
+			# keep the search results in this variable until no more queries are added and we are ready to pass it to parse_product_amazon
+			request.meta['search_results'] = product_urls
+
+			return request
+
+	# extract product info from a product page for amazon
+	# keep product pages left to parse in 'search_results' meta key, send back to parse_results_amazon when done with all
+	def parse_product_amazon(self, response):
+
+		hxs = HtmlXPathSelector(response)
+		items = response.meta['items']
+
+		site = response.meta['site']
+		origin_url = response.meta['origin_url']
+
+		item = SearchItem()
+		item['product_url'] = response.url
+		item['site'] = site
+		item['origin_url'] = origin_url
+
+		if 'origin_id' in response.meta:
+			item['origin_id'] = response.meta['origin_id']
+			assert self.by_id
+		else:
+			assert not self.by_id
+
+
+		# extract product name
+		#TODO: id='title' doesn't work for all, should I use a 'contains' or something?
+		# extract titles that are not empty (ignoring whitespace)
+		# eliminate "Amazon Prime Free Trial"
+
+		#TODO: to test this
+		#product_name = filter(lambda x: not x.startswith("Amazon Prime"), hxs.select("//div[@id='title_feature_div']//h1//text()[normalize-space()!='']").extract())
+		product_name = filter(lambda x: not x.startswith("Amazon Prime"), hxs.select("//h1//text()[normalize-space()!='']").extract())
+		if not product_name:
+			self.log("Error: No product name: " + str(response.url), level=log.INFO)
+
+		else:
+			item['product_name'] = product_name[0].strip()
+
+			# extract product model number
+			model_number_holder = hxs.select("//tr[@class='item-model-number']/td[@class='value']/text()").extract()
+			if model_number_holder:
+				item['product_model'] = model_number_holder[0]
+
+			brand_holder = hxs.select("//div[@id='brandByline_feature_div']//a/text() | //a[@id='brand']/text()").extract()
+			if brand_holder:
+				item['product_brand'] = brand_holder[0]
+			else:
+				pass
+				#sys.stderr.write("Didn't find product brand: " + response.url + "\n")
+
+			# add result to items
+			items.add(item)
+
+		# if there are any more results to be parsed, send a request back to this method with the next product to be parsed
+		product_urls = response.meta['search_results']
+
+		if product_urls:
+			request = Request(product_urls.pop(), callback = self.parse_product_amazon, meta = response.meta)
+			request.meta['items'] = items
+			# eliminate next product from pending list (this will be the new list with the first item popped)
+			request.meta['search_results'] = product_urls
+
+			return request
+		else:
+			# otherwise, we are done, send a request back to parseResults
+			# add as meta all that was received as meta, add newly added items
+			request = Request(response.meta['redirected_from'], callback = self.parseResults, meta = response.meta)
+			# remove unnecessary keys
+			del request.meta['redirected_from']
+			del request.meta['search_results']
+			request.meta['items'] = items
+
+			# add variable indicating results have been parsed
+			request.meta['parsed'] = True
+
+			return request
 
 	def extract_walmart_id(self, url):
 		m = re.match(".*/ip/([0-9]+)", url)
