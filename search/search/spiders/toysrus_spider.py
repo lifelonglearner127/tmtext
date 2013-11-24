@@ -18,6 +18,11 @@ class ToysrusSpider(SearchSpider):
 
 	name = "toysrus"
 
+	# initialize fields specific to this derived spider
+	def init_sub(self):
+		self.target_site = "toysrus"
+		self.start_urls = [ "http://www.toysrus.com" ]
+
 	def parseResults(self, response):
 
 		hxs = HtmlXPathSelector(response)

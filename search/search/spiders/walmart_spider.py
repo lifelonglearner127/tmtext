@@ -18,6 +18,11 @@ class WalmartSpider(SearchSpider):
 
 	name = "walmart"
 
+	# initialize fields specific to this derived spider
+	def init_sub(self):
+		self.target_site = "walmart"
+		self.start_urls = [ "http://www.walmart.com" ]
+
 	def parseResults(self, response):
 
 

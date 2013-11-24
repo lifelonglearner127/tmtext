@@ -19,6 +19,11 @@ class BloomingdalesSpider(SearchSpider):
 	name = "bloomingdales"
 		#TODO: !! bloomingdales works sporadically
 
+	# initialize fields specific to this derived spider
+	def init_sub(self):
+		self.target_site = "bloomingdales"
+		self.start_urls = [ "http://www1.bloomingdales.com" ]
+
 	def parseResults(self, response):
 
 		hxs = HtmlXPathSelector(response)

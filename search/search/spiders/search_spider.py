@@ -49,11 +49,10 @@ class SearchSpider(BaseSpider):
 	#				target_site - the site to search on
 	#				output - integer(1/2) option indicating output type (either result URL (1), or result URL and source product URL (2))
 	#				threshold - parameter (0-1) for selecting results (the lower the value the more permissive the selection)
-	def __init__(self, product_name = None, product_url = None, product_urls_file = None, walmart_ids_file = None, target_site = None, \
+	def __init__(self, product_name = None, product_url = None, product_urls_file = None, walmart_ids_file = None, \
 		output = 1, threshold = 1.0, outfile = "search_results.txt", outfile2 = "not_matched.txt", fast = 0, use_proxy = False, by_id = False):
 		self.product_url = product_url
 		self.product_name = product_name
-		self.target_site = target_site
 		self.output = int(output)
 		self.product_urls_file = product_urls_file
 		self.walmart_ids_file = walmart_ids_file
@@ -64,9 +63,8 @@ class SearchSpider(BaseSpider):
 		self.use_proxy = use_proxy
 		self.by_id = by_id
 
-		# (bloomingales scraper only works with this in the start_urls list)
-		#self.start_urls = ["http://www1.bloomingdales.com"]
-		self.start_urls = [ "http://www.walmart.com" ]
+		# call specific init for each derived class
+		self.init_sub()
 
 	def build_search_pages(self, search_query):
 		# build list of urls = search pages for each site

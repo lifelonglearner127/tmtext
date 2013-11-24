@@ -18,6 +18,11 @@ class OverstockSpider(SearchSpider):
 
 	 name = "overstock"
 
+	# initialize fields specific to this derived spider
+	def init_sub(self):
+		self.target_site = "overstock"
+		self.start_urls = [ "http://www.overstock.com" ]
+
 	 def parseResults(self, response):
 
 	 	hxs = HtmlXPathSelector(response)

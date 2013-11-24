@@ -18,6 +18,11 @@ class BestbuySpider(SearchSpider):
 
 	name = "bestbuy"
 
+	# initialize fields specific to this derived spider
+	def init_sub(self):
+		self.target_site = "bestbuy"
+		self.start_urls = [ "http://www.bestbuy.com" ]
+
 	def parseResults(self, response):
 
 		hxs = HtmlXPathSelector(response)

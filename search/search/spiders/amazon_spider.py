@@ -19,6 +19,11 @@ class AmazonSpider(SearchSpider):
 
 	name = "amazon"
 
+	# initialize fields specific to this derived spider
+	def init_sub(self):
+		self.target_site = "amazon"
+		self.start_urls = [ "http://www.amazon.com" ]
+
 	# parse results page for amazon, extract info for all products returned by search (keep them in "meta")
 	def parseResults(self, response):
 		hxs = HtmlXPathSelector(response)
