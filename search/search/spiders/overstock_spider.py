@@ -16,16 +16,16 @@ import sys
 
 class OverstockSpider(SearchSpider):
 
-	 name = "overstock"
+	name = "overstock"
 
 	# initialize fields specific to this derived spider
 	def init_sub(self):
 		self.target_site = "overstock"
 		self.start_urls = [ "http://www.overstock.com" ]
 
-	 def parseResults(self, response):
+	def parseResults(self, response):
 
-	 	hxs = HtmlXPathSelector(response)
+		hxs = HtmlXPathSelector(response)
 
 		site = response.meta['site']
 		origin_name = response.meta['origin_name']
