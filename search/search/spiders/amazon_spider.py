@@ -23,8 +23,6 @@ class AmazonSpider(SearchSpider):
 	def parseResults(self, response):
 		hxs = HtmlXPathSelector(response)
 
-		print "IN PARSE RESULTS AMAZON"
-
 		if 'items' in response.meta:
 			items = response.meta['items']
 		else:
@@ -83,7 +81,6 @@ class AmazonSpider(SearchSpider):
 
 		hxs = HtmlXPathSelector(response)
 
-		print "IN PARSE PRODUCT AMAZON"
 		items = response.meta['items']
 
 		site = response.meta['site']

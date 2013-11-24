@@ -319,9 +319,6 @@ class SearchSpider(BaseSpider):
 
 		items = response.meta['items']
 
-		print "IN REDUCE RESULTS"
-		return self.parseResults(response)
-
 		if 'parsed' not in response.meta:
 
 			# pass to specific prase results function (in derived class)
