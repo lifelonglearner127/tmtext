@@ -39,7 +39,7 @@ class SearchSpider(BaseSpider):
 
 	name = "search"
 	allowed_domains = ["amazon.com", "walmart.com", "bloomingdales.com", "overstock.com", "wayfair.com", "bestbuy.com", "toysrus.com",\
-					   "bjs.com", "sears.com", "staples.com", "newegg.com"]
+					   "bjs.com", "sears.com", "staples.com", "newegg.com", "ebay.com"]
 
 	# pass product as argument to constructor - either product name or product URL
 	# arguments:
@@ -82,6 +82,7 @@ class SearchSpider(BaseSpider):
 						# #TODO: check this url
 						# "sears" : "http://www.sears.com/search=%s" % search_query}
 						# #TODO: staples?
+						"ebay": "http://www.ebay.com/sch/i.html?_trksid=p2050601.m570.l1313&_nkw=sulley+disney+pillowbuddy"
 						}
 
 		return search_pages
