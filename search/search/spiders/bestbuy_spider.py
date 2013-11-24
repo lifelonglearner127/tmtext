@@ -57,3 +57,7 @@ class BestbuySpider(SearchSpider):
 				item['product_model'] = model_holder[0]
 
 			items.add(item)
+
+		response.meta['items'] = items
+		response.meta['parsed'] = items
+		return self.reduceResults(response)

@@ -54,3 +54,7 @@ class BloomingdalesSpider(SearchSpider):
 
 
 			items.add(item)
+
+		response.meta['items'] = items
+		response.meta['parsed'] = items
+		return self.reduceResults(response)

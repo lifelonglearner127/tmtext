@@ -318,6 +318,7 @@ class SearchSpider(BaseSpider):
 	def reduceResults(self, response):
 
 		items = response.meta['items']
+		site = response.meta['site']
 
 		if 'parsed' not in response.meta:
 
