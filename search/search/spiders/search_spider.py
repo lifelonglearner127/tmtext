@@ -317,7 +317,10 @@ class SearchSpider(BaseSpider):
 	# and lastly select the best result by selecting the best match between the original product's name and the result products' names
 	def reduceResults(self, response):
 
+		items = response.meta['items']
+
 		print "IN REDUCE RESULTS"
+		return self.parseResults(response)
 
 		if 'parsed' not in response.meta:
 
@@ -377,7 +380,7 @@ class SearchSpider(BaseSpider):
 
 				if items:
 					# from all results, select the product whose name is most similar with the original product's name
-					best_match = ProcessText.similar(origin_name, origin_model, items, self.threshold)
+					best_match = ProcessText.similar(response.meta['origin_name'], response.meta['origin_model'], items, self.threshold)
 
 					# #self.log( "ALL MATCHES: ", level=log.WARNING)					
 					# for item in items:
