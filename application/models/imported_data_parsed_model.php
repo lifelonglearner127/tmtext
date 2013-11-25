@@ -1109,8 +1109,7 @@ class Imported_data_parsed_model extends CI_Model {
        WHERE (`p`.`key`= 'URL')
         AND
        (`p`.`revision` != sn.`revision` OR `sn`.`revision` IS NULL)
-	   AND CHAR_LENGTH(p.model)>".$min_model_lenght."
-	   GROUP BY imported_data_id
+	GROUP BY imported_data_id
        LIMIT 50");
 //       `p`.`revision` = (SELECT  MAX(idp.revision) AS revision FROM imported_data_parsed AS idp WHERE `p`.`imported_data_id`= idp.`imported_data_id`) AND
 //       (`p`.`revision` != sn.`revision` OR `sn`.`revision` IS NULL)  LIMIT 50");
