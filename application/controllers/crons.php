@@ -725,7 +725,7 @@ class Crons extends MY_Controller {
                     having count(revision)>1";
       $results  = $this->db->query($sql_cmd)->result_array;
       foreach( $results as $res){
-          $this->db->update(['imported_data_parsed'], array('revision' => $res['max_revision']), array('imported_data_id' => $res['imported_data_id']));
+          $this->db->update('imported_data_parsed', array('revision' => $res['max_revision']), array('imported_data_id' => $res['imported_data_id']));
       }
       
     }
