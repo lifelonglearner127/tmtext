@@ -600,7 +600,7 @@ $(function() {
             "sWidth": "1%"
         },
         {
-            "sTitle": "Content",
+            "sTitle": "Third Party Content",
             "sName": "column_external_content",
             "sWidth": "2%"
         },

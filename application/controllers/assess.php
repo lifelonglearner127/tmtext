@@ -1914,7 +1914,7 @@ class Assess extends MY_Controller {
             //"sWidth" =>"1%"
             ),
             array(
-                "sTitle" => "Content",
+                "sTitle" => "Third Party Content",
                 "sName" => "column_external_content",
             //"sWidth" =>"2%"
             ),
@@ -2003,7 +2003,7 @@ class Assess extends MY_Controller {
                 $columns[] = array("sTitle" => "Avg Review", "sClass" => "average_review" . $i, "sName" => 'average_review' . $i);
                  if($i == 1){
                                 $columns[] = array("sTitle" => "Gap Analysis", "sClass" => "gap" . $i, "sName" => 'gap');
-                                $colomns[] = array("sTitle" => "Duplicate Content", "sClass" => "Duplicate Content" . $i, "sName" => 'Duplicate Content');
+                                $colomns[] = array("sTitle" => "Duplicate Content", "sClass" => "Duplicate_Content" . $i, "sName" => 'Duplicate_Content');
                             }
                 }
         }
@@ -3097,7 +3097,6 @@ class Assess extends MY_Controller {
                         $data_row = (object) $data_row;
                     } else {
                         $output_row[] = $data_row->gap;
-                        $output_row[] = $data_row->Duplicate_Content;
                         $output_row[] = $data_row->snap1;
                         $output_row[] = $data_row->product_name1;
                         $output_row[] = $data_row->item_id1;
@@ -3112,6 +3111,7 @@ class Assess extends MY_Controller {
                         $output_row[] = $data_row->Meta_Description1;
                         $output_row[] = $data_row->Meta_Description_Count1;
                         $output_row[] = $data_row->average_review1;
+                        $output_row[] = $data_row->Duplicate_Content;
                     }
                     $output['aaData'][] = $output_row;
                 }
