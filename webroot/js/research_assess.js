@@ -761,7 +761,7 @@ $(function() {
 					console.log('dataTable callback: fnServerData');
                     buildReport(json);
                 }
-
+				
                 fnCallback(json);
                 setTimeout(function() {
                     tblAssess.fnProcessingIndicator(false);
@@ -863,10 +863,7 @@ function highChart(graphBuild){
             batch_id: batch1Value,
             batch_compare_id: batch2Value
         }
-    }).done(function(data){
-			
-		fillReportSummary(data, 1);
-		
+    }).done(function(data){					
         var value1 = [];
         var value2 = [];
         var valueName = [];
@@ -1250,9 +1247,9 @@ var scrollYesOrNot = true;
 			if (summary[summaryFieldNames[it]])
 			{
 				if (summary[summaryFieldNames[it]] instanceof Array)
-					$('.' + summaryFieldNames[it]).html(summary[summaryFieldNames[it]][batch_number]);
+					$('.' + summaryFieldNames[it]).html(numberWithCommas(summary[summaryFieldNames[it]][batch_number]));
 				else
-					$('.' + summaryFieldNames[it]).html(summary[summaryFieldNames[it]]);
+					$('.' + summaryFieldNames[it]).html(numberWithCommas(summary[summaryFieldNames[it]]));
 			}
 	}
 	
@@ -1261,10 +1258,13 @@ var scrollYesOrNot = true;
             reportPanel(false);
             return;
         }
-
+		console.log(data);
         var report = data.ExtraData.report;
 		
-		fillReportSummary(report.summary);
+		var summary_data = {
+			'assess_report_competitor_matches_number' : data.iTotalRecords
+		};
+		fillReportSummary($.extend(report.summary, summary_data));
 		
         $('#summary_message').html("");
         $('.assess_report_total_items').html(numberWithCommas(report.summary.total_items));
