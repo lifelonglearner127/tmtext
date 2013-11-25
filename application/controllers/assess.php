@@ -3200,7 +3200,7 @@ class Assess extends MY_Controller {
             else
                 $batch_id = $_POST['batch_id'];
 
-            if (trim($_POST['batch_compare_id']) == '' || $_POST['batch_compare_id'] == 'All')
+            if (trim($_POST['batch_compare_id']) == '' || $_POST['batch_compare_id'] == 'all')
                 $batch_compare_id = -1;
             else
                 $batch_compare_id = $_POST['batch_compare_id'];

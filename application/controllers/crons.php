@@ -715,7 +715,19 @@ class Crons extends MY_Controller {
                 "Last update completed at ".$lu['created'].'. '.$lu['description'].' URLs updated.'):
             'URLs to update: '.$status['description'].'  Updating started at:'.$status['created'];
     }
-
+    function diff_revissions(){
+        $sql_cmd = "select imported_data_id, max(revision) as max_revision
+                    from (
+                    select imported_data_id, revision from imported_data_parsed
+                    group by imported_data_id, revision) as res
+                    group by imported_data_id
+                    having count(revision)>1";
+      $results  = $this->db->query($sql_cmd)->result_array;
+      foreach( $results as $res){
+          $this->db->update(['imported_data_parsed'], array('revision' => $res['max_revision']), array('imported_data_id' => $res['imported_data_id']));
+      }
+      
+    }
     public function do_stats_forupdated() {
         echo "Script start working";
         $tmp_dir = sys_get_temp_dir() . '/';
@@ -743,7 +755,7 @@ class Crons extends MY_Controller {
             $trnc = $trnc===FALSE?0:1;
             //var_dump($trnc);
             //if ($trnc !== false) {$trnc = 1;}
-            
+            $this->diff_revissions();
             $timesart = time();
             $dss = $this->imported_data_parsed_model->getDoStatsStatus();
             if(!$dss){
