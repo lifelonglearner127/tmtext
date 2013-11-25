@@ -102,11 +102,17 @@
         function getMetaKeysBatchData(bid) {
             console.log(bid);
             $.post(base_url + 'index.php/system/system_get_assess_info', {'bid': bid}, function(data) {
-                console.log(data);
+                console.log(data.length, data);
+                var c = "<ul>";
+                for(var i = 0; i < data.length; i++) {
+                    c += "<li>" + data[i].product_name + " | <b>" + i +  "</b></li>";
+                }
+                c += "</ul>";
+                $("#sk_batches_list_data").html(c);
                 $("#loading_kw_meta_selection").modal('hide');
             });
             $.post(base_url + 'index.php/system/get_meta_keys_batch_data', {'bid': bid}, function(data) {
-                console.log(data);
+                // console.log(data);
                 // $("#sk_batches_list_data").html(data);
             });
         }

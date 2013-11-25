@@ -1628,7 +1628,9 @@ class Assess extends MY_Controller {
                 'column_features' => 'true',
                 'price_diff' => 'true',
                 'gap' => 'true',
-                'Duplicate_Content' => 'true'
+                'Duplicate_Content' => 'true',
+//                'images_cmp' => 'true',
+//                'videos_cmp' => 'true',
             );
         }
         $this->data['columns'] = $columns;
@@ -3096,7 +3098,6 @@ class Assess extends MY_Controller {
 
                         $data_row = (object) $data_row;
                     } else {
-                        $output_row[] = $data_row->gap;
                         $output_row[] = $data_row->snap1;
                         $output_row[] = $data_row->product_name1;
                         $output_row[] = $data_row->item_id1;
@@ -3111,6 +3112,7 @@ class Assess extends MY_Controller {
                         $output_row[] = $data_row->Meta_Description1;
                         $output_row[] = $data_row->Meta_Description_Count1;
                         $output_row[] = $data_row->average_review1;
+                        $output_row[] = $data_row->gap;
                         $output_row[] = $data_row->Duplicate_Content;
                     }
                     $output['aaData'][] = $output_row;

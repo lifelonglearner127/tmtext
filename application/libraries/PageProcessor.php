@@ -273,6 +273,17 @@ class PageProcessor {
 			}
 		}
 
+		if (empty($description)) {
+			foreach($this->nokogiri->get('div.QLBookStyle') as $item) {
+				foreach ($item['#text'] as $i) {
+					$itm = trim($i);
+					if (!empty($itm) && !in_array($itm, $description)) {
+						$description[] = $itm;
+					}
+				}
+			}
+		}
+
 		$description = implode(' ', $description);
 
 		// #1012 issue with not full text

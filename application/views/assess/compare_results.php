@@ -7,7 +7,7 @@
         <li class=""><a data-toggle="tab" href="<?php echo site_url('assess');?>">Home Pages</a></li>
         <li class='pull_right_navlink'><a href="javascript:void(0);" onclick="viewCustomBatches()">Custom Batch</a></li>
     </ul>-->
-<div class="title_result">
+<div class="title_result" style="padding-bottom: 10px;">
     
 </div>
   
@@ -521,12 +521,13 @@
 }
 .h3_title{
     float: left;
-    margin-left: 330px;
+    margin-left: 70px;
     margin-top: 0;
 }
 .research_batches_columns_res{
     display: block !important;
 }
+
 </style>
 <script>
             $(function() {
@@ -534,6 +535,7 @@
                 $('#assess_tbl_show_case').addClass('comp_res');
                 $('.jq-measure-tabs').addClass('comp_res');
                 $('.pull-right').addClass('comp_res');
+                $('.pull-left').addClass('comp_res');
                 $('.research_table_filter').addClass('comp_res');
                 
                 $('#assess_report').addClass('comp_res_none');
@@ -593,7 +595,7 @@
                     
                  }
                   batch_name = batch_name.replace(/%20/g,' ')
-                  $('.title_result').html("<h3 class='h3_title'>"+batch_name+" Batch</h3> <a href='<?php echo base_url();?>index.php/assess/export_assess' class='fileDownloadPromise btn' style='float:right;' id='research_assess_export' >Export</a>");
+                  $('.title_result').html("<div class='logo'><img  style='width:220px; height: 50px;float:left;'src ='<?php echo base_url() ?>/img/content-analytics_page.png'></div><h3 class='h3_title'>"+batch_name+" Batch</h3><a href='<?php echo base_url();?>index.php/assess/export_assess' class='fileDownloadPromise btn' style='float:right;' id='research_assess_export' >Export</a>");
                  var cmp_selected = GetURLParameter('cmp_selected');
                 $('select[name="research_assess_batches"]').val(batch_id_result).change()
                 setTimeout(function(){
