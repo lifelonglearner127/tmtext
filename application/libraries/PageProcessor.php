@@ -221,10 +221,29 @@ class PageProcessor {
 			}
 		}
 
+		foreach($this->nokogiri->get('#prodInfoSpaceBottom div.BodyXL table tr td') as $item) {
+			if (isset($item['#text'])) {
+				foreach ($item['#text'] as $i) {
+					$itm = trim($i);
+					if (!empty($itm)) {
+						$description[] = $itm;
+					}
+				}
+			}
+			if (isset($item['li'])) {
+				foreach ($item['li'] as $i) {
+					$itm = trim($i["#text"][0]);
+					if (!empty($itm)) {
+						$description[] = '<li>'.$itm.'</li>';
+					}
+				}
+			}
+		}
+
 		foreach($this->nokogiri->get('#prodInfoSpaceBottom div.BodyXL div li') as $item) {
 			foreach ($item['#text'] as $i) {
 				$itm = trim($i);
-				if (!empty($itm)) {
+				if (!empty($itm) && !in_array('<li>'.$itm.'</li>', $description)) {
 					$description[] = '<li>'.$itm.'</li>';
 				}
 			}
@@ -254,17 +273,26 @@ class PageProcessor {
 			}
 		}
 
-
-		foreach($this->nokogiri->get('#prodInfoSpaceBottom div.BodyXL table tr td') as $item) {
-			foreach ($item['#text'] as $i) {
-				$itm = trim($i);
-				if (!empty($itm)) {
-					$description[] = $itm;
+		if (empty($description)) {
+			foreach($this->nokogiri->get('div.QLBookStyle') as $item) {
+				foreach ($item['#text'] as $i) {
+					$itm = trim($i);
+					if (!empty($itm) && !in_array($itm, $description)) {
+						$description[] = $itm;
+					}
 				}
 			}
 		}
 
 		$description = implode(' ', $description);
+
+		// #1012 issue with not full text
+		// #1022 missing text
+		$description_backup = str_replace('<br>',' ', str_replace('<li>',' <li>', $this->nokogiri->get('#prodInfoSpaceBottom div.BodyXL')->getText('<li><br>')));
+
+		if ( strlen(preg_replace('/[^a-z\d ]/i', '',$description_backup)) > strlen(preg_replace('/[^a-z\d ]/i', '',strip_tags($description))) ) {
+			$description = $description_backup;
+		}
 
 		foreach($this->nokogiri->get('h1.productTitle') as $item) {
 			$title = $item;

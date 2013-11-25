@@ -1106,11 +1106,10 @@ class Imported_data_parsed_model extends CI_Model {
        FROM `imported_data_parsed` AS `p`
 
        LEFT JOIN `statistics_new` AS sn ON `p`.`imported_data_id` = sn.`imported_data_id`
-       WHERE ((`p`.`key`= 'Product Name'  AND `p`.`value` != '')
-       OR (`p`.`key`= 'parsed_attributes' AND `p`.`value` LIKE '%model%' OR `p`.`model` IS NOT NULL)) AND
-       (`p`.`revision` > sn.`revision` OR `sn`.`revision` IS NULL)
-	   AND CHAR_LENGTH(p.model)>".$min_model_lenght."
-	   GROUP BY imported_data_id
+       WHERE (`p`.`key`= 'URL')
+        AND
+       (`p`.`revision` != sn.`revision` OR `sn`.`revision` IS NULL)
+	GROUP BY imported_data_id
        LIMIT 50");
 //       `p`.`revision` = (SELECT  MAX(idp.revision) AS revision FROM imported_data_parsed AS idp WHERE `p`.`imported_data_id`= idp.`imported_data_id`) AND
 //       (`p`.`revision` != sn.`revision` OR `sn`.`revision` IS NULL)  LIMIT 50");

@@ -19,6 +19,12 @@ class Batches_model extends CI_Model {
         parent::__construct();
     }
 
+    function getFullBatchReviewByBatchId($bid) {
+        $this->db->order_by("created", "asc");
+        $query = $this->db->where('batch_id', $bid)->get($this->tables['research_data']);
+        return $query->result();
+    }
+
     function get($id)
     {
         $query = $this->db->where('id', $id)

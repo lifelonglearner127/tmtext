@@ -19,6 +19,16 @@
         
     <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/styles.css" />
      <div class="info-message text-success"></div>
+
+    <!--- META KEYWORDS RANKING STUFFS (START) -->
+    <div class='row-fluid'>
+        <div class='alert' style='margin-bottom: 0px;'>Meta Keywords Ranking Section</div>
+        <?php echo form_dropdown('batches_list', $batches_list, array(),' class="sk_batches_list" id="sk_batches_list" style="width: 207px;float:left;margin-right: 20px;margin-top: 10px;"'); ?>  
+    </div>
+    <div class='row-fluid' id='sk_batches_list_data'>&nbsp;</div>
+    <div class='row-fluid'><hr/></div>
+    <!--- META KEYWORDS RANKING STUFFS (END) -->
+
     <div class="row-fluid">
         <div style="float: left;width: 25%;">
         <p>New keyword</p>
@@ -79,9 +89,41 @@
       </div>
 </div>
 
+<div class="modal hide fade ci_hp_modals" id='loading_kw_meta_selection'>
+    <div class="modal-body">
+        <p><img src="<?php echo base_url();?>img/loader_scr.gif">&nbsp;&nbsp;&nbsp;Please wait...</p>
+    </div>
+</div>
+
 <script type="text/javascript">
 	$(function() {
-            var tr_class = 'even';
+
+        // === META KEYWORDS RANKING STUFFS (START) 
+        function getMetaKeysBatchData(bid) {
+            console.log(bid);
+            $.post(base_url + 'index.php/system/system_get_assess_info', {'bid': bid}, function(data) {
+                console.log(data.length, data);
+                var c = "<ul>";
+                for(var i = 0; i < data.length; i++) {
+                    c += "<li>" + data[i].product_name + " | <b>" + i +  "</b></li>";
+                }
+                c += "</ul>";
+                $("#sk_batches_list_data").html(c);
+                $("#loading_kw_meta_selection").modal('hide');
+            });
+            $.post(base_url + 'index.php/system/get_meta_keys_batch_data', {'bid': bid}, function(data) {
+                // console.log(data);
+                // $("#sk_batches_list_data").html(data);
+            });
+        }
+        $("#sk_batches_list").change(function(e) {
+            var bid = $(e.target).val();
+            $("#loading_kw_meta_selection").modal('show');
+            getMetaKeysBatchData(bid);
+        });
+        // === META KEYWORDS RANKING STUFFS (END)
+
+        var tr_class = 'even';
         
 		function system_keywords() {
 			$.get(base_url + 'index.php/system/system_keywords', {}, function(data){

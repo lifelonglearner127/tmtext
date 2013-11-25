@@ -136,6 +136,8 @@
             <div style="float: left;margin-top: 10px;" class="generate_url">
                 <button id="generate_url">Generate URL</button>
                 <input id="generate_url_link" style="margin-bottom:0;" type="text" >
+                <input type="checkbox" style="margin: 10px;" id="generate_url_check">Generate Link
+                <input type="checkbox" style="margin: 10px;" id="generate_url_Summary">Summary
             </div>
         </div>
     </li>
@@ -261,6 +263,14 @@
                 <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="Duplicate_Content" data-col_name="Duplicate_Content" name="Duplicate_Content" <?php echo($columns['Duplicate_Content'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="column_actions">Duplicate Content</label>
             </p>
+<!--            <p>
+                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="images_cmp" data-col_name="images_cmp" name="images_cmp" <?php echo($columns['images_cmp'] == 'true' ? 'checked="checked"' : ''); ?> />
+                <label for="column_actions">Images</label>
+            </p>
+            <p>
+                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="videos_cmp" data-col_name="videos_cmp" name="videos_cmp" <?php echo($columns['videos_cmp'] == 'true' ? 'checked="checked"' : ''); ?> />
+                <label for="column_actions">Videos</label>
+            </p>-->
             </div>
 <!--            <p>
                 <input type="checkbox" id="column_snap1" data-col_name="snap" name="column_snap_name1" <?php echo($columns['snap1'] == 'true' ? 'checked="checked"' : ''); ?> />

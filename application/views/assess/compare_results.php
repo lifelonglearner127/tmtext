@@ -1,13 +1,17 @@
 <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/smoothness/jquery-ui-1.8.2.custom.css" />
 <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/styles.css" />
+          
 <!--    <ul class="nav nav-tabs jq-measure-tabs">
         <li class="active"><a data-toggle="tab" href="<?php echo site_url('assess/products');?>">Products</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_departments');?>">Categories</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('assess');?>">Home Pages</a></li>
         <li class='pull_right_navlink'><a href="javascript:void(0);" onclick="viewCustomBatches()">Custom Batch</a></li>
     </ul>-->
-
-<!--<ul class="research_table_filter">
+<div class="title_result" style="padding-bottom: 10px;">
+    
+</div>
+  
+<ul class="research_table_filter">
     <li class="boxes hideBox">
         <h3>
             <span class=''>
@@ -119,27 +123,34 @@
                     </div>
                 </div>
             </div>
-            <div style="float: left;">
-                Compare with:
-                <select id="research_assess_compare_batches_customer"></select>
-                <select id="research_assess_compare_batches_batch"></select>
-            </div>
-            <div style="float: left;" class="ml_5">
-                <button id="research_assess_compare_batches_reset" class="btn">Reset</button>
-            </div>
-            <div style="float: right;">
-                <button id="research_assess_update" class="btn btn-success">Update</button>
+           
+                <div style="float: left;">
+                    Compare with:
+                    <select id="research_assess_compare_batches_customer"></select>
+                    <select id="research_assess_compare_batches_batch"></select>
+                </div>
+                <div style="float: left;" class="ml_5">
+                    <button id="research_assess_compare_batches_reset" class="btn">Reset</button>
+                </div>
+                <div style="float: right;">
+                    <button id="research_assess_update" class="btn btn-success">Update</button>
+                    <a href="<?php echo base_url();?>index.php/assess/export_assess" class="fileDownloadPromise btn" id="research_assess_export" >Export</a>
+                </div>
+            <div style="clear:both;"></div>
+            <div style="float: left;margin-top: 10px;" class="generate_url">
+                <button id="generate_url">Generate URL</button>
+                <input id="generate_url_link" style="margin-bottom:0;" type="text" >
+                 <input type="checkbox" id="generate_url_check">
             </div>
         </div>
     </li>
-</ul>-->
-                <a href="<?php echo base_url();?>index.php/assess/export_assess" class="fileDownloadPromise btn" id="research_assess_export" >Export</a>
+</ul>
 
         <div class="modal hide fade ci_hp_modals crawl_launch_panel" id='recipients_control_panel_modal'></div>
         <div class="modal hide fade ci_hp_modals" style='top: 20%' id='dep_rep_preview_list_modal'></div>
 
 <!-- choise column dialog box -->
-<!--<div id="research_assess_choiceColumnDialog" title="Select Table Columns">
+<div id="research_assess_choiceColumnDialog" title="Select Table Columns">
     <div>
         <form action="" method="post">
             <div id="horizontal" class="horizontal_vertical_icon" style="position: absolute; margin-top: -10px; margin-left: 55px; max-width: 25px;"><img src ="<?php echo base_url() ?>/img/horizontal.png" /></div>
@@ -251,8 +262,12 @@
                 <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="gap" data-col_name="gap" name="gap" <?php echo($columns['gap'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="column_actions">Gap analysis</label>
             </p>
+             <p>
+                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="Duplicate_Content" data-col_name="Duplicate_Content" name="Duplicate_Content" <?php echo($columns['Duplicate_Content'] == 'true' ? 'checked="checked"' : ''); ?> />
+                <label for="column_actions">Duplicate Content</label>
+            </p>
             </div>
-            <p>
+<!--            <p>
                 <input type="checkbox" id="column_snap1" data-col_name="snap" name="column_snap_name1" <?php echo($columns['snap1'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="column_snap1">Snapshot</label>
             </p>
@@ -275,13 +290,13 @@
             <p>
                 <input type="checkbox" id="column_long_description_wc1" data-col_name="long_description_wc1" name="column_long_description_wc_name1" <?php echo($columns['long_description_wc1'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="column_long_description_wc1">Words Long</label>
-            </p>
+            </p>-->
             
             
             
         </form>
     </div>
-</div>-->
+</div>
 
 <div id="assessDetailsDialog" title="Details">
     <form name="access_details">
@@ -398,120 +413,54 @@
         <a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
     </div>
 </div>
+<?php 
+	$this->load->view('assess/_summary', array(
+		'display' => 'none',
+		'wrapper_class' => 'assess_report_compare',
+	)) 
+?>
 
-<div class="row-fluid">
-    <div id="read" class="ui-tabs-panel ui-widget-content ui-corner-bottom">
-        <div id="records_wrapper" class="dataTables_wrapper block_data_table">
+<div class="row-fluid">	
+    <div id="read" class="ui-tabs-panel ui-widget-content ui-corner-bottom">		
+        <div id="records_wrapper" class="dataTables_wrapper block_data_table">			
             <div class="span12" id="dt_tbl">
-                <div id ="tableScrollWrapper">
+<!--                <div id ="tableScrollWrapper">-->					
                     <table id="tblAssess" class="tblDataTable" >
                         <thead>
                         </thead>
                         <tbody></tbody>
                     </table>
-                </div>
+<!--                </div>-->
                 <div id="comare_table"></div>
-<!--                <div id="assess_tbl_show_case" class="assess_tbl_show_case">
+                <div id="assess_tbl_show_case" class="assess_tbl_show_case">
                     <a id="assess_tbl_show_case_recommendations" data-case="recommendations" title="Recommendations" href="#recommendations"  class="active_link">Recommendations</a> |
                     <a id="assess_tbl_show_case_report" data-case="report" title="Report" href="#summary">Summary</a> |
                     <a id="assess_tbl_show_case_details" data-case="details" title="Details" href="#details">Details</a> |
                     <a id="assess_tbl_show_case_details_compare" data-case="details_compare" title="Details_compare" href="#compare">Compare</a> |
                     <a id="assess_tbl_show_case_graph" data-case="graph" title="Graph" href="#graph">Graph</a> |
                     <a id="assess_tbl_show_case_view" data-case="view" title="Board View" href="#board_view">Board View</a>
-                </div>-->
-                <!--<a id="research_batches_columns" class="ml_5 float_r" title="Customize..."><img  style="width:32px; heihgt: 32px;"src ="<?php echo base_url() ?>/img/settings@2x.png"></a>-->
-<!--                <div id="assess_report">
-                    <ul class="ui-sortable">
-                        <li class="boxes">
-                            <h3>
-                                <span>
-                                    Summary
-                                    <span id="summary_message"></span>
-                                </span>
-                                <a class="ml_10 research_arrow hideShow" onclick="return false;" href="#">
-                                    <img src="<?php echo base_url();?>img/arrow.png">
-                                </a>
-                                <span id="assess_report_download_panel" style="float: right;width: 500px;">
-                                    Download
-                                    <a id="assess_report_download_pdf" target="_blank" data-type="pdf">PDF</a> |
-                                    <a id="assess_report_download_doc" target="_blank" data-type="doc">DOC</a>
-                                    <button id="assess_report_options_dialog_button" class="btn" style="float: right;margin-top: 7px;" title="Report Options"><img class="other-icon" src="<?php echo base_url();?>img/ico-gear.png" /></button>
-                                </span>
-                            </h3>
-                            <div style="clear: both;"></div>
-                            <div class="boxes_content" style="padding:0px;">
-                                <div class="mt_10 ml_15">
-                                    <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_number.png"><span id="assess_report_total_items" class="mr_10"></span>total items</div>
-                                </div>
-                                <div class="mt_10 ml_15">
-                                    <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_dollar.png"><span id="assess_report_items_priced_higher_than_competitors" class="mr_10"></span>items priced higher than competitors</div>
-                                </div>
-                                <div class="mt_10 ml_15 items_have_more_than_20_percent_duplicate_content">
-                                    <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_D.png"><span id="assess_report_items_have_more_than_20_percent_duplicate_content" class="mr_10"></span>items have more than 20% duplicate content</div>
-                                </div>
-                                <div class="mt_10 ml_15">
-                                    <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_seo.png"><span id="assess_report_items_unoptimized_product_content" class="mr_10"></span>items have non-keyword optimized product content</div>
-                                </div>
-                                <div id="assess_report_items_1_descriptions_pnl">
-                                    <div class="mt_10 mb_10 ml_15">
-                                        <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_arrow_down.png"><span id="assess_report_items_have_product_descriptions_that_are_too_short" class="mr_10"></span>items have descriptions that are less than <span id="assess_report_items_have_product_descriptions_that_are_less_than_value"></span> words</div>
-                                    </div>
-                                </div>
-                                <div id="assess_report_items_2_descriptions_pnl" style="display: none;">
-                                    <div id="assess_report_items_2_descriptions_pnl_s" class="mt_10 mb_10 ml_15">
-                                        <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_arrow_down.png"><span id="assess_report_items_have_product_short_descriptions_that_are_too_short" class="mr_10"></span>items have short descriptions that are less than <span id="assess_report_items_have_product_short_descriptions_that_are_less_than_value"></span> words</div>
-                                    </div>
-                                    <div id="assess_report_items_2_descriptions_pnl_l" class="mt_10 mb_10 ml_15">
-                                        <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_arrow_down.png"><span id="assess_report_items_have_product_long_descriptions_that_are_too_short" class="mr_10"></span>items have long descriptions that are less than <span id="assess_report_items_have_product_long_descriptions_that_are_less_than_value"></span> words</div>
-                                    </div>
-                                </div>
-                                <div id="assess_report_compare_panel" class="mt_10 mb_10 ml_15">
-                                    <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_comparison.png">
-                                        <span id="assess_report_absent_items_count" class="mr_10"></span>
-                                        items in
-                                        <span id="assess_report_compare_customer_name"></span>
-                                        -
-                                        <span id="assess_report_compare_batch_name"></span>
-                                        are absent from
-                                        <span id="assess_report_own_batch_name"></span>
-                                    </div>
-                                </div>
-                                <div id="assess_report_numeric_difference" class="mt_10 mb_10 ml_15">
-                                    <div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_cart.png"><span id="assess_report_numeric_difference_caption" class="mr_10"></span></div>
-                                </div>
-                            </div>
-                        </li>
-                        li class="boxes ui-resizable">
-                            <h3>
-                                <span>
-                                    <a class="hideShow" onclick="return false;" href="#">
-                                        <img src="<?php echo base_url();?>img/arrow-down.png" style="width:12px;margin-right: 10px">
-                                    </a>
-                                    Product Comparisons
-                                </span>
-                            </h3>
-                            <div style="clear: both;"></div>
-                            <div class="boxes_content" style="padding:0px;">
-                                <div id="comparison_detail"></div>
-                                <div id="comparison_pagination"></div>
-                            </div>
-                        </li
-                    </ul>
-                </div>-->
+                </div>
+                <a id="research_batches_columns" class="ml_5 float_r" title="Customize..."><img  style="width:32px; heihgt: 32px;"src ="<?php echo base_url() ?>/img/settings@2x.png"></a>
+                <?php 
+					$this->load->view('assess/_summary', array(
+						'display' => 'block',
+						'wrapper_class' => 'assess_report',
+					))
+				?>
 
-<!--                <div id="assess_view">
+                <div id="assess_view">
                     <p>No images available for this batch</p>
-                </div>-->
-                <!--<img id="imgLoader" style="display: none;margin-top: -16px;margin-left: 81px;" src="<?php echo base_url();?>img/img-loader.gif" />-->
-<!--                <div id="assess_graph">
+                </div>
+                <img id="imgLoader" style="display: none;margin-top: -16px;margin-left: 81px;" src="<?php echo base_url();?>img/img-loader.gif" />
+                <div id="assess_graph">
                     <div id="highChartContainer" style="min-width: 878px; height: 300px; margin: 0 auto"></div>
-                </div>-->
+                </div>
                 <script src="http://code.highcharts.com/highcharts.js"></script>
                 <script src="http://code.highcharts.com/modules/exporting.js"></script>
                 <script type="text/javascript" src="<?php echo base_url();?>js/jquery.dataTables.min.js"></script>
                 <script type="text/javascript" src="<?php echo base_url();?>js/jquery.json-2.4.min.js"></script>
                 <script type="text/javascript" src="<?php echo base_url();?>js/jquery.fileDownload.js"></script>
-                <script type="text/javascript" src="<?php echo base_url();?>js/research_assess.js"></script>
+               
                 <script type="text/javascript" src="<?php echo base_url(); ?>js/measure_department.js"></script>
                 <script type='text/javascript' src="<?php echo base_url();?>js/ci_home_pages.js"></script>
             </div>
@@ -529,6 +478,7 @@
         <a href="javascript:void(0)" class="btn" data-dismiss="modal">Close</a>
     </div>
 </div>
+  
 <style>
     .span_img{
         overflow:hidden;
@@ -560,9 +510,101 @@
 
  border: 0px solid #fff !important;
 }
+.comp_res{
+    visibility: hidden;
+}
+.comp_res_none{
+    display: none;
+}
+.solution-logo-page{
+    margin-left: 0 !important;
+}
+.h3_title{
+    float: left;
+    margin-left: 70px;
+    margin-top: 0;
+}
+.research_batches_columns_res{
+    display: block !important;
+}
+
 </style>
 <script>
             $(function() {
-                $('head').find('title').text('Reports');
+//  
+                $('#assess_tbl_show_case').addClass('comp_res');
+                $('.jq-measure-tabs').addClass('comp_res');
+                $('.pull-right').addClass('comp_res');
+                $('.pull-left').addClass('comp_res');
+                $('.research_table_filter').addClass('comp_res');
+                
+                $('#assess_report').addClass('comp_res_none');
+
+
+                $('head').find('title').text('Content Analytics Report');
+                function GetURLParameter(sParam) {
+                    var sPageURL = window.location.search.substring(1);
+                    var sURLVariables = sPageURL.split('&');
+                    for (var i = 0; i < sURLVariables.length; i++) 
+                    {
+                        var sParameterName = sURLVariables[i].split('=');
+                        if (sParameterName[0] == sParam) 
+                        {
+                            return sParameterName[1];
+                        }
+                    }
+                }   
+                
+                 var batch_id_result = GetURLParameter('batch_id_result');
+                 var batch_name = GetURLParameter('batch_name');
+                 var generate_url_check = GetURLParameter('generate_url_check');
+                 var generate_url_Summary = GetURLParameter('generate_url_Summary');
+                if(generate_url_Summary == "1"){
+                    
+                 $('#tblAssess_wrapper').addClass('comp_res_none');
+
+                }
+//                else{
+//                    $('.assess_report_compare').hide();
+//                }
+                 if(generate_url_check == "1"){
+                    $('#research_batches_columns').addClass('research_batches_columns_res');
+                      
+                    var columns_checked_arr = GetURLParameter('checked_columns_results');
+                    if(columns_checked_arr){
+                         var checked_columns_results_split = columns_checked_arr.split(',')
+                    }
+                    var columns_checked = checked_columns_results_split;
+                     
+                    var a = $('#research_assess_choiceColumnDialog').find('input[type=checkbox]');
+
+                       $.each(columns_checked, function(index, value) {
+                           
+                           var col_name = $(value).selector;
+                         
+                            $.each(a, function(index, value) {
+                            if($(value).data('col_name') == col_name)
+                            {
+
+                                $(value).attr("checked","checked")
+                            }
+                            });
+                       });
+                    
+
+                    
+                 }
+                  batch_name = batch_name.replace(/%20/g,' ')
+                  $('.title_result').html("<div class='logo'><img  style='width:220px; height: 50px;float:left;'src ='<?php echo base_url() ?>/img/content-analytics_page.png'></div><h3 class='h3_title'>"+batch_name+" Batch</h3><a href='<?php echo base_url();?>index.php/assess/export_assess' class='fileDownloadPromise btn' style='float:right;' id='research_assess_export' >Export</a>");
+                 var cmp_selected = GetURLParameter('cmp_selected');
+                $('select[name="research_assess_batches"]').val(batch_id_result).change()
+                setTimeout(function(){
+                    
+                $('select[id="research_assess_compare_batches_batch"]').val(cmp_selected).change()
+                 $('#research_assess_update').click();
+                },2000)
+                
+            
             });
  </script>
+

@@ -203,6 +203,15 @@ class nokogiri implements IteratorAggregate{
 	public function toXml(){
 		return $this->getDom()->saveXML();
 	}
+
+	public function toHtml(){
+		return $this->getDom()->saveHTML();
+	}
+
+	public function getText($allowable_tags = ''){
+		return htmlspecialchars_decode(strip_tags($this->getDom()->saveHTML(), $allowable_tags));
+	}
+
 	public function toArray($xnode = null){
 		$array = array();
 		if ($xnode === null){
