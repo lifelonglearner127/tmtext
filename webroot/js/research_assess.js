@@ -44,7 +44,8 @@ $(function() {
 	
 	// Use this variable to define "togglers" for each tab
 	var tabsRelatedBlocks = {
-		details_compare : toggleDetailsCompareBlocks
+		details_compare : toggleDetailsCompareBlocks,
+		details_compare_result : toggleDetailsCompareBlocks
 	};
 	
     var tableCase = {
@@ -2801,15 +2802,12 @@ var scrollYesOrNot = true;
             check_word_columns();
         
         }else if (table_case == 'details_compare_result') {
+            toggleRelatedBlocks('details_compare_result', true);
             $('#graphDropDown').remove();
             $('#assess_graph').hide();
             $('#tblAssess_info').show();
             $('#tblAssess_paginate').show();
             reportPanel(false);
-            if(checked_columns_results){
-                var checked_columns_results_split = checked_columns_results.split(',')
-                columns_checkboxes_checked =  checked_columns_results_split
-            }
 
             $.each(tblAllColumns, function(index, value) {
            
@@ -3123,33 +3121,24 @@ var search_text = GetURLParameter('search_text');
    $('#research_assess_export').live('click',function() {
      
        if(!GetURLParameter('checked_columns_results')){
-    
-            var columns_check = $('#research_assess_choiceColumnDialog').find('input[type=checkbox]:checked');
-            var columns_checked = [];
-            $.each(columns_check, function(index, value) {
-                columns_checked.push($(value).data('col_name'));
-            });
+
             $(this).attr('disabled', true);
             var batch_id= $('select[name="research_assess_batches"]').find('option:selected').val();
             var batch_name= $('select[name="research_assess_batches"]').find('option:selected').text();
             var cmp_selected = $('#research_assess_compare_batches_batch').val();
        }else{
-              
-            var columns_checked_arr = GetURLParameter('checked_columns_results');
-             if(columns_checked_arr){
-                  var checked_columns_results_split = columns_checked_arr.split(',')
-             }
-            var columns_checked = checked_columns_results_split;
-            
             
             $(this).attr('disabled', true);
             var batch_id= GetURLParameter('batch_id_result');
             var  batch_name=GetURLParameter('batch_name');
             var cmp_selected = GetURLParameter('cmp_selected');
-           
-           
-           
+         
        }  
+        var columns_check = $('#research_assess_choiceColumnDialog').find('input[type=checkbox]:checked');
+            var columns_checked = [];
+            $.each(columns_check, function(index, value) {
+                columns_checked.push($(value).data('col_name'));
+            });
         $(this).text('Exporting...');
         var main_path=  $(this).prop('href');
         $(this).attr('href', $(this).prop('href')+'?batch_id='+batch_id+'&cmp_selected='+cmp_selected+'&checked_columns='+columns_checked+'&batch_name='+batch_name);
@@ -3169,7 +3158,9 @@ var search_text = GetURLParameter('search_text');
        var first = $("select[name='research_assess_batches']").find('option:selected').val();
        var second = $("select[id='research_assess_compare_batches_batch']").find('option:selected').val()
        var search_text = $('#assess_filter_text').val()
-        var batch_name= $('select[name="research_assess_batches"]').find('option:selected').text();
+       var batch_name= $('select[name="research_assess_batches"]').find('option:selected').text();
+       var generate_url_check= $('#generate_url_check').is(':checked')?1:0;
+       var generate_url_Summary= $('#generate_url_Summary').is(':checked')?1:0;
        if(second == undefined){
            second = 0;
        }
@@ -3181,7 +3172,7 @@ var search_text = GetURLParameter('search_text');
             columns_checked.push($(value).data('col_name'));
         });
 
-       $('#generate_url_link').val(base_url+ "index.php/assess/compare_results?batch_id_result="+first +"&cmp_selected="+second+"&checked_columns_results="+columns_checked+"&search_text="+search_text+"&batch_name="+batch_name);
+       $('#generate_url_link').val(base_url+ "index.php/assess/compare_results?batch_id_result="+first +"&cmp_selected="+second+"&checked_columns_results="+columns_checked+"&search_text="+search_text+"&batch_name="+batch_name+"&generate_url_check="+generate_url_check+"&generate_url_Summary="+generate_url_Summary);
        $('#generate_url').text('Delete URL');
    },(function(){
        $('#generate_url_link').val('');

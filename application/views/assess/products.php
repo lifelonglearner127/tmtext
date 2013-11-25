@@ -136,6 +136,8 @@
             <div style="float: left;margin-top: 10px;" class="generate_url">
                 <button id="generate_url">Generate URL</button>
                 <input id="generate_url_link" style="margin-bottom:0;" type="text" >
+                <input type="checkbox" style="margin: 10px;" id="generate_url_check">Generate Link
+                <input type="checkbox" style="margin: 10px;" id="generate_url_Summary">Summary
             </div>
         </div>
     </li>
