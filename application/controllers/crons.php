@@ -715,7 +715,7 @@ class Crons extends MY_Controller {
                 "Last update completed at ".$lu['created'].'. '.$lu['description'].' URLs updated.'):
             'URLs to update: '.$status['description'].'  Updating started at:'.$status['created'];
     }
-    function diff_revissions(){
+    function different_revissions(){
         $sql_cmd = "select imported_data_id, max(revision) as max_revision
                     from (
                     select imported_data_id, revision from imported_data_parsed
@@ -755,7 +755,7 @@ class Crons extends MY_Controller {
             $trnc = $trnc===FALSE?0:1;
             //var_dump($trnc);
             //if ($trnc !== false) {$trnc = 1;}
-            $this->diff_revissions();
+            $this->different_revissions();
             $timesart = time();
             $dss = $this->imported_data_parsed_model->getDoStatsStatus();
             if(!$dss){
