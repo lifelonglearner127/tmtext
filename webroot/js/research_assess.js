@@ -747,6 +747,7 @@ $(function() {
 
             aoData = buildTableParams(aoData);
             first_aaData = aoData;
+			console.log(sSource);
             $.getJSON(sSource, aoData, function(json) {
                 if (json.ExtraData != undefined) {
                     buildReport(json);
@@ -1203,16 +1204,22 @@ var scrollYesOrNot = true;
             }
         });
     }
+	
+	function numberWithCommas(x) {
+		var parts = x.toString().split(".");
+		parts[0] = parts[0].replace(/(?=(\d{3})+(?!\d))/g, ",");
+		return parts.join(".");
+	}
 
     function buildReport(data) {
         if (data.ExtraData == undefined) {
             reportPanel(false);
             return;
         }
-
+		console.log(data);
         var report = data.ExtraData.report;
         $('#summary_message').html("");
-        $('.assess_report_total_items').html(report.summary.total_items);
+        $('.assess_report_total_items').html(numberWithCommas(report.summary.total_items));
         $('.assess_report_items_priced_higher_than_competitors').html(report.summary.items_priced_higher_than_competitors);
         if (report.summary.items_have_more_than_20_percent_duplicate_content == 0) {
             $(".items_have_more_than_20_percent_duplicate_content").hide();
