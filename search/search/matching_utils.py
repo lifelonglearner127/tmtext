@@ -20,6 +20,10 @@ class ProcessText():
 
 	# exception brands - are brands names but are also found in the dictionary
 	brand_exceptions = ['philips', 'sharp', 'sceptre', 'westinghouse', 'element', 'curtis', 'emerson', 'xerox', 'kellogg']
+	# custom stopwords list
+	stopwords = ['a', 'an', 'the', 'and', 'or', 'as', 'of', 'at', 'by', \
+	'for', 'with', 'about', 'against', 'between', 'into', 'through', 'during', 'before', 'after', 'above', 'below', 'to', 'from', \
+	'up', 'down', 'in', 'on', 'off', 'over', 'under', 'then', 'very']
 
 	# normalize text to list of lowercase words (no punctuation except for inches sign (") or /)
 	@staticmethod
@@ -73,8 +77,9 @@ class ProcessText():
 
 		if exclude_stopwords:
 			# don't exclude these
-			exceptions = ["t"]
-			stopset = set(stopwords.words('english')).difference(set(exceptions))#["and", "the", "&", "for", "of", "on", "as", "to", "in"]
+			#exceptions = ["t"]
+			#stopset = set(stopwords.words('english')).difference(set(exceptions))#["and", "the", "&", "for", "of", "on", "as", "to", "in"]
+			stopset = self.stopwords
 			clean = [token for token in tokens if token.lower() not in stopset and len(token) > 0]
 
 		# if stemming flag on, also stem words
