@@ -3214,8 +3214,9 @@ class Assess extends MY_Controller {
                 $params->date_from = '';
                 $params->date_to = '';
                 $results = $this->get_data_for_assess($params);
-
-
+								
+				$snap_data['assess_report_competitor_matches_number'][$key] = count($results);
+				
                 foreach ($results as $data_row) {
                     $snap_data[$key]['product_name'][] = (string) $data_row->product_name;
                     $snap_data[$key]['url'][] = (string) $data_row->url;

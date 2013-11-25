@@ -48,6 +48,10 @@ $(function() {
 		details_compare_result : toggleDetailsCompareBlocks
 	};
 	
+	var summaryFieldNames = [
+		'assess_report_competitor_matches_number'
+	];
+	
     var tableCase = {
         details: [
             "snap",
@@ -147,6 +151,7 @@ $(function() {
                 $.getJSON(sSource, aoData, function(json) {
 
                     if (json.ExtraData != undefined) {
+						console.log('createTableByServerSide function, dataTable object, fnServerData callback');
                         buildReport(json);
                     }
 
@@ -347,8 +352,9 @@ $(function() {
 
                 $('#tblAssess').after('<div id="tableScrollWrapper" style="overflow-x:scroll"></div>');
                 $('#tblAssess').appendTo('#tableScrollWrapper');
-
+				
                 if (json.ExtraData != undefined) {
+					console.log('create table function');
                     buildReport(json);
                 }
                 tblAssess.fnDraw();
@@ -751,6 +757,7 @@ $(function() {
             $.getJSON(sSource, aoData, function(json) {
                 if(json){
                 if (json.ExtraData != undefined) {
+					console.log('dataTable callback: fnServerData');
                     buildReport(json);
                 }
 
@@ -856,7 +863,9 @@ function highChart(graphBuild){
             batch_compare_id: batch2Value
         }
     }).done(function(data){
-//        console.log(data);
+			
+		fillReportSummary(data, 1);
+		
         var value1 = [];
         var value2 = [];
         var valueName = [];
@@ -1218,14 +1227,37 @@ var scrollYesOrNot = true;
             }
         });
     }
-
+	
+	/*
+	** Fill all values in summary section		
+	** summary - summary data
+	** batch_number - number of batch by default		
+	** @author Oleg Meleshko <qu1ze34@gmail.com>
+	*/
+	function fillReportSummary(summary, batch_number)
+	{			
+		var batch_number = batch_number || 0;
+		for (var it = 0; it < summaryFieldNames.length; it++)
+			if (summary[summaryFieldNames[it]])
+			{
+				if (summary[summaryFieldNames[it]] instanceof Array)
+					$('.' + summaryFieldNames[it]).html(summary[summaryFieldNames[it]][batch_number]);
+				else
+					$('.' + summaryFieldNames[it]).html(summary[summaryFieldNames[it]]);
+			}
+	}
+	
     function buildReport(data) {
         if (data.ExtraData == undefined) {
             reportPanel(false);
             return;
         }
-
+		
+		
         var report = data.ExtraData.report;
+		
+		fillReportSummary(report.summary);
+		
         $('#summary_message').html("");
         $('.assess_report_total_items').html(report.summary.total_items);
         $('.assess_report_items_priced_higher_than_competitors').html(report.summary.items_priced_higher_than_competitors);
@@ -1734,6 +1766,7 @@ var scrollYesOrNot = true;
                     }
                 }
             }
+			console.log('research_assess_batches on change event');
             buildReport(data);
         }
         $.post(base_url + 'index.php/assess/filterCustomerByBatch', {
