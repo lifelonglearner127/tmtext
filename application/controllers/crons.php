@@ -18,11 +18,12 @@ class Crons extends MY_Controller {
             'do_stats_forupdated' => true,
             'do_duplicate_content' => true,
             'ranking_api_exp' => true,
-        	'archive_imported_data_parsed' =>true,
+            'archive_imported_data_parsed' =>true,
             'get_all_rows'=>TRUE,
             'get_update_status'=>true,
             'save_departments_categories'=>TRUE,
-            'match_urls'=>TRUE
+            'match_urls'=>TRUE,
+          
         ));
         $this->load->library('helpers');
         $this->load->helper('algoritm');
@@ -715,7 +716,7 @@ class Crons extends MY_Controller {
                 "Last update completed at ".$lu['created'].'. '.$lu['description'].' URLs updated.'):
             'URLs to update: '.$status['description'].'  Updating started at:'.$status['created'];
     }
-    function different_revissions(){
+    private function different_revissions(){
         $sql_cmd = "select imported_data_id, max(revision) as max_revision
                     from (
                     select imported_data_id, revision from imported_data_parsed
@@ -724,7 +725,7 @@ class Crons extends MY_Controller {
                     having count(revision)>1";
       $results  = $this->db->query($sql_cmd)->result_array;
       foreach( $results as $res){
-          $this->db->update(['imported_data_parsed'], array('revision' => $res['max_revision']), array('imported_data_id' => $res['imported_data_id']));
+          $this->db->update('imported_data_parsed', array('revision' => $res['max_revision']), array('imported_data_id' => $res['imported_data_id']));
       }
       
     }
