@@ -1628,7 +1628,9 @@ class Assess extends MY_Controller {
                 'column_features' => 'true',
                 'price_diff' => 'true',
                 'gap' => 'true',
-                'Duplicate_Content' => 'true'
+                'Duplicate_Content' => 'true',
+//                'images_cmp' => 'true',
+//                'videos_cmp' => 'true',
             );
         }
         $this->data['columns'] = $columns;

@@ -2547,7 +2547,9 @@ var scrollYesOrNot = true;
                     column_features: $("#column_features").attr('checked') == 'checked',
                     price_diff: $("#column_price_diff").attr('checked') == 'checked',
                     gap: $("#gap").attr('checked') == 'checked',
-                    Duplicate_Content: $("#Duplicate_Content").attr('checked') == 'checked'
+                    Duplicate_Content: $("#Duplicate_Content").attr('checked') == 'checked',
+//                    images_cmp: $("#images_cmp").attr('checked') == 'checked',
+//                    videos_cmp: $("#videos_cmp").attr('checked') == 'checked'
                 };
 
                 // save params to DB
