@@ -1,7 +1,7 @@
 <div class="mt_10 ml_15">
 	<div class="mr_10">
 		SEO SKUs that have shorter product content than competitor: 
-		<span class="assess_report_items_shorter_than_competitor_product_content mr_10" ></span>
+		<span class="skus_shorter_than_competitor_product_content mr_10" ></span>
 	</div>
 </div>
 
@@ -51,13 +51,6 @@
 	<div class="mr_10">
 		SEO SKUs that have product content with three optimized keywords:
 		<span class="skus_three_optimized_keywords mr_10" ></span>
-	</div>
-</div>
-
-<div class="mt_10 ml_15">
-	<div class="mr_10">
-		SKUs that have descriptions that are shorter than competitor:
-		<span class="skus_descriptions_shorter_than_competitor mr_10" ></span>
 	</div>
 </div>
 

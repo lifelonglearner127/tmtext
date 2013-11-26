@@ -1981,7 +1981,11 @@ class Assess extends MY_Controller {
         $long_wc_total_not_0 = 0;
         $items_short_products_content_short = 0;
         $items_long_products_content_short = 0;
+        $skus_shorter_than_competitor_product_content = 0;
+        $skus_longer_than_competitor_product_content = 0;
+		$skus_same_competitor_product_content = 0;
         $detail_comparisons_total = 0;
+        $skus_fewer_features_than_competitor = 0;
         if ($build_assess_params->max_similar_item_count > 0) {
 
 
@@ -2207,7 +2211,7 @@ class Assess extends MY_Controller {
                     $Meta_Keywords_un = "<table class='table_keywords_long'>";
                     $cnt_meta_un = explode(',', $parsed_meta_unserialize['keywords']);
                     $cnt_meta_count_un = count($cnt_meta_un);
-                    foreach($cnt_meta_un as $cnt_m_un){
+                    foreach($cnt_meta_un as $key => $cnt_m_un){
                         $_count_meta_un = 0;
                         $cnt_m_un = trim($cnt_m_un);
                         if(!$cnt_m_un){
@@ -2215,8 +2219,12 @@ class Assess extends MY_Controller {
                         }
                         if($sim_items[$i - 1]->Long_Description || $sim_items[$i - 1]->Short_Description){
                             $_count_meta_un = $this->keywords_appearence($sim_items[$i - 1]->Long_Description.$sim_items[$i - 1]->Short_Description, $cnt_m_un);
-                            $_count_meta_num_un = round(($_count_meta_un * $cnt_meta_count_un / ($sim_items[$i - 1]->long_description_wc + $sim_items[$i - 1]->short_description_wc)) * 100, 2) . "%";
-                            $Meta_Keywords_un .= "<tr><td>" . $cnt_m_un . "</td><td>".$_count_meta_num_un."</td></tr>";
+                            $_count_meta_num_un = round(($_count_meta_un * $cnt_meta_count_un / ($sim_items[$i - 1]->long_description_wc + $sim_items[$i - 1]->short_description_wc)) * 100, 2);
+							
+							$_count_meta_num_un[$i][$key] = $_count_meta_num_un;
+							
+                            $_count_meta_num_un_proc = $_count_meta_num_un . "%";
+                            $Meta_Keywords_un .= "<tr><td>" . $cnt_m_un . "</td><td>".$_count_meta_num_un_proc."</td></tr>";
 //                        }else if($sim_items[$i - 1]->Short_Description){
 //                            $_count_meta_un = $this->keywords_appearence($sim_items[$i - 1]->Short_Description, $cnt_m_un);
 //                            $_count_meta_num_un = round(($_count_meta_un * $cnt_meta_count_un / $sim_items[$i - 1]->short_description_wc) * 100, 2) . "%";
@@ -2551,6 +2559,10 @@ class Assess extends MY_Controller {
                 if($result_row->column_features && $f_count1 && $f_count1 < $result_row->column_features){
                     $result_row->gap.="Competitor has fewer features listed<br>";
                 }
+				
+				if ($result_row->column_features && $f_count1 && $result_row->column_features < $f_count1)
+					$skus_fewer_features_than_competitor++;
+				
           }
 
 
@@ -2712,6 +2724,18 @@ class Assess extends MY_Controller {
             if ($result_row->long_description_wc <= $build_assess_params->long_less) {
                 $items_long_products_content_short++;
             }
+			
+			if ($result_row->short_description_wc + $result_row->long_description_wc < $result_row->short_description_wc1 + $result_row->long_description_wc1) {
+                $skus_shorter_than_competitor_product_content++;
+            }
+			
+			if ($result_row->short_description_wc + $result_row->long_description_wc > $result_row->short_description_wc1 + $result_row->long_description_wc1) {
+                $skus_longer_than_competitor_product_content++;
+            }
+			
+			if ($result_row->short_description_wc + $result_row->long_description_wc == $result_row->short_description_wc1 + $result_row->long_description_wc1) {
+                $skus_same_competitor_product_content++;
+            }
 
 
             if ($build_assess_params->short_less_check && $build_assess_params->short_more_check) {
@@ -2803,6 +2827,10 @@ class Assess extends MY_Controller {
         $report['summary']['long_wc_total_not_0'] = $long_wc_total_not_0;
         $report['summary']['short_description_wc_lower_range'] = $build_assess_params->short_less;
         $report['summary']['long_description_wc_lower_range'] = $build_assess_params->long_less;
+        $report['summary']['skus_shorter_than_competitor_product_content'] = $skus_shorter_than_competitor_product_content;
+        $report['summary']['skus_longer_than_competitor_product_content'] = $skus_longer_than_competitor_product_content;
+        $report['summary']['skus_same_competitor_product_content'] = $skus_same_competitor_product_content;
+        $report['summary']['skus_fewer_features_than_competitor'] = $skus_fewer_features_than_competitor;
 
 
         // only if second batch select - get absent products, merge it with result_table

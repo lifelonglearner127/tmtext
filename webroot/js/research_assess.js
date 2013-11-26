@@ -49,7 +49,11 @@ $(function() {
 	};
 	
 	var summaryFieldNames = [
-		'assess_report_competitor_matches_number'
+		'assess_report_competitor_matches_number',
+		'skus_shorter_than_competitor_product_content',
+		'skus_longer_than_competitor_product_content',
+		'skus_same_competitor_product_content',
+		'skus_fewer_features_than_competitor'
 	];
 	
     var tableCase = {
@@ -1227,7 +1231,10 @@ var scrollYesOrNot = true;
     }
 	
 
-	function numberWithCommas(x) {
+	function numberWithCommas(x) {			
+		if ((x + '').length <= 3)
+			return x;
+			
 		var parts = x.toString().split(".");
 		parts[0] = parts[0].replace(/(?=(\d{3})+(?!\d))/g, ",");
 		return parts.join(".");

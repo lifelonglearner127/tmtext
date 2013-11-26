@@ -18,7 +18,7 @@
 				</span>
 			</h3>
 			<div style="clear: both;"></div>												
-			<div class="boxes_content" style="padding:0px;">
+			<div class="boxes_content" style="padding:0px; height: 200px; overflow-y: scroll">
 				<div class="mt_10 ml_15">
 					<div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_number.png">Total SKUs analyzed: <span class="assess_report_total_items mr_10" ></span></div>
 				</div>
