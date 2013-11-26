@@ -2206,7 +2206,6 @@ class System extends MY_Controller {
       // ===== meta keywords ranking stuffs (start)
       $this->load->model('batches_model');
       $this->data['batches_list'] = $this->system_batches_list();
-      // $this->data['test_st'] = $this->batches_model->getFullBatchReviewByBatchId('1');
       // ===== meta keywords ranking stuffs (end)
       $this->render();
 	}         
