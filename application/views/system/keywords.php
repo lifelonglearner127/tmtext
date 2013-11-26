@@ -27,6 +27,7 @@
         <?php echo form_dropdown('batches_list', $batches_list, array(),' class="sk_batches_list" id="sk_batches_list" style="width: 207px;float:left;margin-right: 20px;margin-top: 10px;"'); ?>  
     </div>
     <div class='row-fluid' id='sk_batches_list_data'>&nbsp;</div>
+    <div class='row-fluid'></div>
     <div class='row-fluid'><hr/></div>
     <!--- META KEYWORDS RANKING STUFFS (END) -->
 
@@ -103,10 +104,12 @@
         function getMetaKeysBatchData(bid) {
             $.post(base_url + 'index.php/system/system_get_mkw_info', {'bid': bid}, function(d) {
                 $("#loading_kw_meta_selection").modal('hide');
+                console.log(d);
                 if(d.status) {
                     console.log(d);
                     console.log(d.data.length, d.data);
-                    var c_content = "<table class='table'>";
+                    var c_content = "<p><span style='font-size: 14px; padding: 9px 12px;' class='label label-info'>Overall: <strong>" + d.init_count + "</strong></span>&nbsp;&nbsp;&nbsp;<span style='font-size: 14px; padding: 9px 12px;' class='label label-success'>After Filtering: <strong>" + d.after_filter_count + "</strong></span></p>"
+                    c_content += "<table class='table'>";
                     c_content += "<thead>";
                     c_content += "<tr>";
                     c_content += "<th>ID</th>"
@@ -129,8 +132,8 @@
                                 long_keys_c += "<table><tbody>";
                                 for(var j = 0; j < long_keys.length; j++) {
                                     long_keys_c += "<tr>";
-                                    long_keys_c += "<td style='border-top: none'>" + long_keys[j].ph + " (" + long_keys[j].count + ") - " + long_keys[j].prc + "%" + "</td>";
-                                    long_keys_c += "<td style='border-top: none'><button type='button' class='btn btn-primary'>Action</button></td>";
+                                    long_keys_c += "<td style='border-top: none; padding-left: 0px;'>" + long_keys[j].ph + " (" + long_keys[j].count + ") - " + long_keys[j].prc + "%" + "</td>";
+                                    long_keys_c += "<td style='border-top: none;'><button type='button' class='btn btn-primary'>Action</button></td>";
                                     long_keys_c += "</tr>";
                                 }
                                 long_keys_c += "</tbody></table>";
@@ -145,7 +148,7 @@
                                 short_keys_c += "<table><tbody>";
                                 for(var j = 0; j < short_keys.length; j++) {
                                     short_keys_c += "<tr>";
-                                    short_keys_c += "<td style='border-top: none'>" + short_keys[j].ph + " (" + short_keys[j].count + ") - " + short_keys[j].prc + "%" + "</td>";
+                                    short_keys_c += "<td style='border-top: none; padding-left: 0px;'>" + short_keys[j].ph + " (" + short_keys[j].count + ") - " + short_keys[j].prc + "%" + "</td>";
                                     short_keys_c += "<td style='border-top: none'><button type='button' class='btn btn-primary'>Action</button></td>";
                                     short_keys_c += "</tr>";
                                 }

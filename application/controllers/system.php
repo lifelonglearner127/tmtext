@@ -2130,7 +2130,6 @@ class System extends MY_Controller {
   }
 
   public function system_get_mkw_info() {
-      $txt_filter = '';
       $bid = $this->input->post('bid');
       $results_stack = array(
       	'status' => false,
