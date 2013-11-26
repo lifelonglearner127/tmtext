@@ -134,6 +134,9 @@ class WalmartFullURLsSpider(BaseSpider):
 		result = hxs.select("//div[@class='prodInfo']/div[@class='prodInfoBox']/a[@class='prodLink ListItemLink'][position()<2]/@href").extract()
 		if result:
 			item['walmart_full_url'] = Utils.add_domain(result[0], "http://www.walmart.com")
+
+			# id should be somewhere in the full URL as well
+			assert item['walmart_id'] in item['walmart_full_url']
 			return item
 		else:
 			self.log("No results for id " + item['walmart_id'] + "\n", level=log.ERROR)
