@@ -123,6 +123,9 @@ class EbaySpider(SearchSpider):
 			# add result to items
 			items.add(item)
 
+		# if there are any more results to be parsed, send a request back to this method with the next product to be parsed
+		product_urls = response.meta['search_results']
+
 		if product_urls:
 			request = Request(product_urls.pop(), callback = self.parse_product_ebay, meta = response.meta)
 			request.meta['items'] = items
