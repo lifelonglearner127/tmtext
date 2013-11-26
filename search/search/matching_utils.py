@@ -85,7 +85,7 @@ class ProcessText():
 			# don't exclude these
 			#exceptions = ["t"]
 			#stopset = set(stopwords.words('english')).difference(set(exceptions))#["and", "the", "&", "for", "of", "on", "as", "to", "in"]
-			stopset = self.stopwords
+			stopset = ProcessText.stopwords
 			clean = [token for token in tokens if token.lower() not in stopset and len(token) > 0]
 
 		# if stemming flag on, also stem words
