@@ -14,7 +14,8 @@ class Assess extends MY_Controller {
         $this->load->model('imported_data_parsed_model');
         $this->load->model('keywords_model');
         $this->ion_auth->add_auth_rules(array(
-                'compare_results' => true
+                'compare_results' => true,
+				'research_url' => true
         ));
     }
 
