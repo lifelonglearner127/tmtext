@@ -1986,6 +1986,7 @@ class Assess extends MY_Controller {
 		$skus_same_competitor_product_content = 0;
         $detail_comparisons_total = 0;
         $skus_fewer_features_than_competitor = 0;
+        $skus_fewer_reviews_than_competitor = 0;
         if ($build_assess_params->max_similar_item_count > 0) {
 
 
@@ -2034,6 +2035,7 @@ class Assess extends MY_Controller {
 //            $short_description_wc = $row->short_description_wc;
 
             $f_count1 = 0;
+            $r_count1 = 0;
             $result_row = new stdClass();
             $result_row->gap = '';
 //            $result_row->Duplicate_Content = '';
@@ -2250,6 +2252,11 @@ class Assess extends MY_Controller {
                         	$f_count1 =  $parsed_attributes_unserialize['feature_count'];
                      	} else {
                      		$f_count1 = 0;
+                     	}
+						if (isset($parsed_attributes_unserialize['review_count'])) {
+                        	$r_count1 =  $parsed_attributes_unserialize['review_count'];
+                     	} else {
+                     		$r_count1 = 0;
                      	}
 
                         if(!$meta_key_gap){
@@ -2563,6 +2570,8 @@ class Assess extends MY_Controller {
 				if ($result_row->column_features && $f_count1 && $result_row->column_features < $f_count1)
 					$skus_fewer_features_than_competitor++;
 				
+				if ($result_row->column_reviews && $r_count1 && $result_row->column_reviews < $r_count1)
+					$skus_fewer_reviews_than_competitor++;
           }
 
 
@@ -2831,6 +2840,7 @@ class Assess extends MY_Controller {
         $report['summary']['skus_longer_than_competitor_product_content'] = $skus_longer_than_competitor_product_content;
         $report['summary']['skus_same_competitor_product_content'] = $skus_same_competitor_product_content;
         $report['summary']['skus_fewer_features_than_competitor'] = $skus_fewer_features_than_competitor;
+        $report['summary']['skus_fewer_reviews_than_competitor'] = $skus_fewer_reviews_than_competitor;
 
 
         // only if second batch select - get absent products, merge it with result_table
@@ -3099,7 +3109,7 @@ class Assess extends MY_Controller {
                         $recommendations_html,
                         json_encode($data_row)
                     );
-
+					
                     if ($build_assess_params->max_similar_item_count > 0) {
                         $data_row = (array) $data_row;
                         for ($i = 1; $i <= $build_assess_params->max_similar_item_count; $i++) {

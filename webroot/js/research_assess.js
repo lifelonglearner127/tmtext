@@ -53,7 +53,8 @@ $(function() {
 		'skus_shorter_than_competitor_product_content',
 		'skus_longer_than_competitor_product_content',
 		'skus_same_competitor_product_content',
-		'skus_fewer_features_than_competitor'
+		'skus_fewer_features_than_competitor',
+		'skus_fewer_reviews_than_competitor'
 	];
 	
     var tableCase = {
