@@ -120,10 +120,13 @@ class Imported_data_parsed_model extends CI_Model {
         );
         $this->db->insert($this->tables['settings'],$data);
     }
-    public function updDoStatsStatus(){
+    public function updDoStatsStatus($us = 0){
         $data = array(
             'modified'=>date("Y-m-d H:i:s",time())
         );
+        if($us){
+            $data['description']='started';
+        }
         $this->db->where('key','do_stats_status');
         $this->db->update($this->tables['settings'],$data);
     }

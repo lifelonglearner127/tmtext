@@ -274,5 +274,61 @@ function RandomString()
         $this->db->where('key','matching_urls');
         $this->db->delete('settings');
     }
+    function getLastUpdate(){
+        $this->db->select('*');
+        $this->db->from('settings');
+        $this->db->where('key','lat_update_info');
+        $query = $this->db->get();
+        if($query->num_rows===0)return false;
+        $row = $query->first_row('array');
+        return $row;
+    }
+    function getDoStatsStatus(){
+        $this->db->select('*');
+        $this->db->from('settings');
+        $this->db->where('key','do_stats_status');
+        $query = $this->db->get();
+        if($query->num_rows===0)return FALSE;
+        $row = $query->first_row();
+        return $row;
+    }
+    function setLastUpdate($reset = 0){
+        $stats_status = $this->getDoStatsStatus();
+        if($stats_status===FALSE||$stats_status->description==='stopped')return FALSE;
+        $data = array(
+            'modified'=>date('Y-m-d H:i:s',time())
+        );
+        if($this->getLastUpdate()===FALSE){
+            $data['description']=$this->countItemsForReset();
+            $data['key']='lat_update_info';
+            $data['created']=date('Y-m-d H:i:s',time());
+            $this->db->insert('settings',$data);
+        }
+        else{
+            if($reset){
+                $data['description'] = $this->countItemsForReset();
+                $data['created'] = date('Y-m-d H:i:s',time());
+            }
+            $this->db->where('key','lat_update_info');
+            $this->db->update('settings',$data);
+        }
+    }
+    function stopDoStats(){
+        $this->db->where('key','do_stats_status');
+        $data = array('description'=>'stopped');
+        $this->db->update('settings',$data);
+    }
+    function countItemsForReset(){
+        $sql = "select count(*) as cnt from (
+            SELECT p.imported_data_id, p.revision
+            FROM `imported_data_parsed` AS `p`
+            LEFT JOIN `statistics_new` AS sn ON `p`.`imported_data_id` = sn.`imported_data_id`
+            WHERE (`p`.`key`= 'URL') AND 
+            (`p`.`revision` != sn.`revision` OR `sn`.`revision` IS NULL)
+            GROUP BY imported_data_id) as res";
+        $query = $this->db->query($sql);
+        $row = $query->first_row();
+        return $row->cnt;
+    }
 
 }

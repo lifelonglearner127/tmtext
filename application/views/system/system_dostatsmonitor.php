@@ -6,7 +6,7 @@
         <li class=""><a data-toggle="tab" href="<?php echo site_url('brand/import');?>">Brands</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('system/batch_review');?>">Batch Review</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_compare');?>">Product Compare</a></li>
-        <li class="active"><a data-toggle="tab" href="<?php echo site_url('system/system_productsmatch');?>">Product Match</a></li>
+        <li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_productsmatch');?>">Product Match</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_reports');?>">Reports</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_logins');?>">Logins</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('system/keywords');?>">Keywords</a></li>
@@ -15,45 +15,32 @@
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/product_models');?>">Product models </a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('system/snapshot_queue');?>">Snapshot Queue</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_uploadmatchurls');?>">Upload Match URLs</a></li>
-        <li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_dostatsmonitor');?>">Do_stats Monitor</a></li>
+        <li class="active"><a data-toggle="tab" href="<?php echo site_url('system/system_dostatsmonitor');?>">Do_stats Monitor</a></li>
     </ul>
   <div class="tab-content">
-    <div id="tab8" class="tab-pane active">
-    	<table id='pm_data_table' class='pm_data_table'>
-    		<tbody>
-    			<tr>
-    				<td><input class='pm_data_table_tinput pmtt_url' type='text' placeholder='Type URL'></td>
-    				<td><input class='pm_data_table_tinput pmtt_sku' type='text' placeholder='Type SKU'></td>
-				</tr>
-				<tr>
-    				<td><input class='pm_data_table_tinput pmtt_url' type='text' placeholder='Type URL'></td>
-    				<td><input class='pm_data_table_tinput pmtt_sku' type='text' placeholder='Type SKU'></td>
-				</tr>
-				<tr>
-    				<td><input class='pm_data_table_tinput pmtt_url' type='text' placeholder='Type URL'></td>
-    				<td><input class='pm_data_table_tinput pmtt_sku' type='text' placeholder='Type SKU'></td>
-				</tr>
-				<tr>
-    				<td><input class='pm_data_table_tinput pmtt_url' type='text' placeholder='Type URL'></td>
-    				<td><input class='pm_data_table_tinput pmtt_sku' type='text' placeholder='Type SKU'></td>
-				</tr>
-				<tr>
-    				<td><input class='pm_data_table_tinput pmtt_url' type='text' placeholder='Type URL'></td>
-    				<td><input class='pm_data_table_tinput pmtt_sku' type='text' placeholder='Type SKU'></td>
-				</tr>
-			</tbody>
-		</table>
-		<table class='pm_data_table'>
-			<tbody>
-				<tr>
-					<td>
-						<button type='button' id="pm_tab_newrow_btn" class='btn btn-primary'>Add New Row</button>
-    					<button type='button' id="pm_tab_save_btn" class='btn disabled' disabled='true'>Save</button>
-					</td>
-				</tr>
-			</tbody>
-		</table>
-    </div>
+      <div id="do_stats_status_moitor" class="tab-pane active">
+          <div id="do_stats_status">
+              <p>Items to update: <span id="items_to_update"></span>
+                  <span id="refresh_items" class="btn btn-success fileinput-button" style="">
+                      Refresh
+                  </span>
+              </p>
+              <div>
+                 <div id="current_status"></div>
+              </div>
+              <p>
+                  
+              </p>
+          </div>
+          <span id="start_do_stats" class="btn btn-success fileinput-button" style="">
+              Start Do Stats 
+          </span>
+          <?php //*?>
+          <span id="stop_do_stats" class="btn btn-success fileinput-button" style="">
+              Stop Do Stats 
+          </span>
+          <?php //*/?>
+      </div>
   </div>
 </div>
 
@@ -97,9 +84,113 @@
 	function validate_url_ext(value) {
 		return /^(https?|ftp):\/\/(((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:)*@)?(((\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5]))|((([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.)+(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.?)(:\d*)?)(\/((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)+(\/(([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)*)*)?)?(\?((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)|[\uE000-\uF8FF]|\/|\?)*)?(\#((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)|\/|\?)*)?$/i.test(value);
 	}
+        /*
+        var old_data=false;
+        function check_matching_status(){
+            if($("#matching").length==0)return false;
+            var url = base_url+'index.php/system/get_matching_urls';
+            $.ajax({
+                type:'HEAD',
+                url:url,
+                success:function(data, status, xhr){
+                    if(old_data!=xhr.getResponseHeader('Last-Change')){
+                        old_data=xhr.getResponseHeader('Last-Change');
+                        $.ajax({
+                            url:url,
+                            success:function(data){
+                                $("#matching").html(data);
+                            }
+                        });
+                    }
+                }
+            });
+        }//*/
+        function itemsToUpdate(){
+            var url = '<?php echo site_url('crons/get_all_rows'); ?>';
+            $.ajax({
+                url:url,
+                success:function(data){
+                    $('#items_to_update').text(data);
+                }
+            });
+        }
+        function getStatus(){
+            var url = '<?php echo site_url('crons/get_stats_status'); ?>';
+            var status = '';
+            $.ajax({
+                url:url,
+                async:false,
+                success:function(data){
+                    //alert('['+data+']');
+                    status = data;
+                }
+            });
+            return status!=='started';
+        }
+        function stopDoStats(){
+            var url = '<?php echo site_url('crons/stop_do_stats'); ?>';
+            var status = getStatus();
+            if(status){
+                alert('Process does not started.');
+                return;
+            }
+                $.ajax({
+                    url:url
+                });
+        }
+        function startDoStats(){
+                var url = '<?php echo site_url('crons/do_stats_forupdated'); ?>';
+                var status = getStatus();
+                //alert('in do stats'+status);return false;
+                if(!status){
+                    alert('Process already started!');
+                    return false;
+                }
+                $.ajax({
+                   url:url 
+                });
+        }
+        function statusInfo(){
+            if($('#current_status').html()===null){return;}
+            var url = '<?php echo site_url('crons/get_update_status'); ?>';
+            $.ajax({
+                url:url,
+                success:function(data){
+                    //alert(data);
+                    //var obj = JSON.parse(data);
+                    if(data==='[]'){
+                        $('#current_status').html('Not scanned yet.');
+                    }
+                    else{
+                        var obj = JSON.parse(data);
+                        if(obj.status){
+                            $('#current_status').html('<p>Process is '+obj.status+'</p>'
+                                    +'<p>Total items was '+obj.total+'</p>'
+                                    +'<p>Remain items '+obj.remain+'</p>');
+                        }
+                        else{
+                            $('#current_status').html('<p>Last scan completed at '+obj.updated+'</p>'
+                                    +'<p>Items scanned '+obj.total+'</p>');
+                        }
+                    }
+                }
+            });
+        }
 
 	$(document).ready(function() {
-
+            itemsToUpdate();
+            //statusInfo();
+            setInterval(statusInfo,20000);
+            var status = '';
+            $('#refresh_items').click(function(){
+                itemsToUpdate();
+            });
+            $('#start_do_stats').click(function(){
+                startDoStats();
+            });
+            $('#stop_do_stats').click(function(){
+                stopDoStats();
+            });
 		// ---- UI tooltips (start)
 		$("#pm_tab_newrow_btn").tooltip({
 			placement: 'bottom',

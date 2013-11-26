@@ -2348,9 +2348,9 @@ class System extends MY_Controller {
     public function system_uploadmatchurls(){
         $this->render();
     }
-//    public function system_dostatsmonitor(){
-//        $this->render();
-//    }
+    public function system_dostatsmonitor(){
+        $this->render();
+    }
     public function upload_match_urls()
     {
         ini_set('post_max_size', '100M');

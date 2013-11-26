@@ -23,7 +23,9 @@ class Crons extends MY_Controller {
             'get_update_status'=>true,
             'save_departments_categories'=>TRUE,
             'match_urls'=>TRUE,
-          
+            'stop_do_stats'=>true,
+            'get_stats_status'=>true,
+            'stop_do_stats'=>true
         ));
         $this->load->library('helpers');
         $this->load->helper('algoritm');
@@ -701,22 +703,37 @@ class Crons extends MY_Controller {
         }
     }
     public function get_all_rows(){
-        //echo 'works';
+        $this->load->model('settings_model');
+        echo $this->settings_model->countItemsForReset();
+    }
+    public function stop_do_stats(){
+        $this->load->model('settings_model');
+        $this->settings_model->stopDoStats();
+    }
+    public function get_stats_status(){
         $this->load->model('imported_data_parsed_model');
-        //$status = $this->imported_data_parsed_model->getUpdateStatus();
-        echo $this->imported_data_parsed_model->getUpdateQuantity();
+        $status = $this->imported_data_parsed_model->getDoStatsStatus();
+        echo $status?$status->description:'';
     }
     public function get_update_status(){
+        $this->load->model('settings_model');
         $this->load->model('imported_data_parsed_model');
-        $status = $this->imported_data_parsed_model->getUpdateStatus();
-        $lu = $this->imported_data_parsed_model->getLastUpdate();
-        echo $status===FALSE?
-                ($lu===FALSE?
-                'Update not started.':
-                "Last update completed at ".$lu['created'].'. '.$lu['description'].' URLs updated.'):
-            'URLs to update: '.$status['description'].'  Updating started at:'.$status['created'];
+        $lud = $this->settings_model->getLastUpdate();
+        $dss = $this->settings_model->getDoStatsStatus();
+        $res_arr = array();
+        if($dss){
+            $res_arr['status']=$dss->description;
+            $res_arr['started']=$dss->created;
+            $res_arr['remain'] = $this->settings_model->countItemsForReset();
+        }
+        if($lud){
+            $res_arr['total'] = $lud['description'];
+            $res_arr['updated'] = $lud['modified'];
+        }
+        $res = json_encode($res_arr);
+        echo $res;
     }
-    private function different_revissions(){
+    function different_revissions(){
         $sql_cmd = "select imported_data_id, max(revision) as max_revision
                     from (
                     select imported_data_id, revision from imported_data_parsed
@@ -738,7 +755,8 @@ class Crons extends MY_Controller {
         }
         $first_sart= time();
         touch($tmp_dir . ".locked");
-        try {
+         $cjo = 0;
+       try {
             $this->load->model('imported_data_parsed_model');
             $this->load->model('research_data_model');
             $this->load->model('statistics_model');
@@ -747,6 +765,7 @@ class Crons extends MY_Controller {
             $this->load->model('similar_imported_data_model');
             $this->load->model('similar_product_groups_model');
             $this->load->model('similar_data_model');
+            $this->load->model('site_categories_model');
             $this->load->library('helpers');
             $this->load->helper('algoritm');
             $this->load->model('sites_model');
@@ -761,8 +780,13 @@ class Crons extends MY_Controller {
             $dss = $this->imported_data_parsed_model->getDoStatsStatus();
             if(!$dss){
                 $this->imported_data_parsed_model->setDoStatsStatus();
+                $this->settings_model->setLastUpdate(1);
             }
             else{
+                if($dss->description==='stopped'){
+                    $this->imported_data_parsed_model->updDoStatsStatus(1);
+                }
+                $this->settings_model->setLastUpdate();
             }
 //            $this->imported_data_parsed_model->setUpdateStatus();
             $data_arr = $this->imported_data_parsed_model->do_stats_newupdated($trnc);
@@ -1122,6 +1146,7 @@ class Crons extends MY_Controller {
                 $data = array(
                     'description' => $start
                 );
+                $cjo = $start;
 
                 $this->db->where('key', 'cron_job_offset');
                 $this->db->update('settings', $data);
@@ -1138,19 +1163,25 @@ class Crons extends MY_Controller {
         $q = $this->db->select('key,description')->from('settings')->where('key', 'cron_job_offset');
         $res = $q->get()->row_array();
         $start = $res['description'];
-        if (count($data_arr) > 0) {//(0){//
+        $stats_status = $this->settings_model->getDoStatsStatus();
+        $total_items = $this->settings_model->getLastUpdate();
+        if (count($data_arr) > 0 && $stats_status->description==='started' 
+                && ($cjo-1)*50<$total_items['description']) {//(0){//
             $utd = $this->imported_data_parsed_model->getLUTimeDiff();
             
             echo $utd->td;
 //            shell_exec("wget -S -O- ".base_url()."crons/do_stats_forupdated > /dev/null 2>/dev/null &");
             
-            shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/do_stats_forupdated/$trnc > /dev/null 2>/dev/null &");
+                shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/do_stats_forupdated/$trnc > /dev/null 2>/dev/null &");
         } else {
+            $this->settings_model->setLastUpdate();
             $mtd = $this->imported_data_parsed_model->getTimeDif();
             echo $mtd->td;
 //            $this->imported_data_parsed_model->updateLastUpdated();
 //            $this->imported_data_parsed_model->delUpdateStatus();
-            $this->imported_data_parsed_model->delDoStatsStatus();
+            if($stats_status->description==='started'){
+                $this->imported_data_parsed_model->delDoStatsStatus();
+            }
             $data = array(
                 'description' => 0
             );
