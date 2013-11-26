@@ -2546,7 +2546,7 @@ input[name="search_crawl_data"] {
     display: none;
     border: 1px solid #ccc;
     padding: 10px;
-    overflow: hidden;
+    overflow-x: scroll !important;
 }
 /*.url_table{
     width: 150px !important;

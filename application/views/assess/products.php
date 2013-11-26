@@ -457,7 +457,7 @@
                 </div>
                 <img id="imgLoader" style="display: none;margin-top: -16px;margin-left: 81px;" src="<?php echo base_url();?>img/img-loader.gif" />
                 <div id="assess_graph">
-                    <div id="highChartContainer" style="min-width: 878px; height: 300px; margin: 0 auto"></div>
+                    <div id="highChartContainer" style="width: 880px; height: 300px; margin: 0 auto"></div>
                 </div>
                 <script src="http://code.highcharts.com/highcharts.js"></script>
                 <script src="http://code.highcharts.com/modules/exporting.js"></script>

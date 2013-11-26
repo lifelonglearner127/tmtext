@@ -882,6 +882,10 @@ function highChart(graphBuild){
         var valueUrl = [];
         valueUrl[0] = [];
         valueUrl[1] = [];
+        var graphName1 = '';
+        var graphName2 = '';
+        console.log(data);
+        if(data) {
             /***First Batch - Begin***/
             if(data[0] && data[0].product_name.length > 0){
                 valueName[0] = data[0].product_name;
@@ -983,7 +987,7 @@ function highChart(graphBuild){
                 }
             }
             /***Switch - End***/
-            
+        }
         var seriesObj;
         if(batch1Value != -1 && batch2Value != -1){
             seriesObj = [
@@ -1008,6 +1012,37 @@ function highChart(graphBuild){
                         ];
         }
         $('#highChartContainer').empty();
+
+        var bigdatalength = Math.max(value1.length , value2.length) ;
+        console.log(bigdatalength);
+        
+        if(bigdatalength < 500){
+            $('#highChartContainer').css("width","880px");
+        }
+        if(bigdatalength > 500 && bigdatalength < 1000){
+            $('#highChartContainer').css("width","2000px");
+        }
+        if(bigdatalength >= 1000 && bigdatalength < 1500){
+            $('#highChartContainer').css("width","3000px");
+        }
+        if(bigdatalength >= 1500 && bigdatalength < 2000){
+            $('#highChartContainer').css("width","4000px");
+        }
+        if(bigdatalength >= 2000 && bigdatalength < 3000){
+            $('#highChartContainer').css("width","6000px");
+        }
+        if(bigdatalength >= 3000 && bigdatalength < 4000){
+            $('#highChartContainer').css("width","7500px");
+        }
+        if(bigdatalength >= 4000 && bigdatalength < 5000){
+            $('#highChartContainer').css("width","9000px");
+        }
+        if(bigdatalength >= 5000 && bigdatalength < 6000){
+            $('#highChartContainer').css("width","12000px");
+        }
+        if(bigdatalength >= 6000){
+            $('#highChartContainer').css("width","18000px");
+        }
         var chart1 = new Highcharts.Chart({
             title: {
                 text: ''
