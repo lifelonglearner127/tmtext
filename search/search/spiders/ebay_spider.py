@@ -119,6 +119,12 @@ class EbaySpider(SearchSpider):
 			# extract product model
 			product_model_holder = hxs.select("//td[@class='attrLabels'][contains(normalize-space(),'Model')]" + \
 				"/following-sibling::node()[normalize-space()!=''][1]//text()[normalize-space()!='']").extract()
+			if not product_model_holder:
+				product_model_holder = hxs.select("//td[@class='attrLabels'][contains(normalize-space(),'MPN')]" + \
+				"/following-sibling::node()[normalize-space()!=''][1]//text()[normalize-space()!='']").extract()
+
+			if product_model_holder:
+				item['product_model'] = product_model_holder[0]
 
 			# add result to items
 			items.add(item)
