@@ -2135,6 +2135,8 @@ class System extends MY_Controller {
       $results_stack = array(
       	'status' => false,
       	'msg' => '',
+      	'init_count' => 0,
+      	'after_filter_count' => 0,
       	'data' => array()
     	);
       if ($bid == 0) {
@@ -2144,35 +2146,39 @@ class System extends MY_Controller {
       		if(count($results) > 0) {
       			$results_stack['status'] = true;
       			$results_stack['msg'] = 'OK';
+      			$results_stack['init_count'] = count($results);
       			foreach ($results as $val) {
-      				$mid = array(
-      					'batch_id' => $val->batch_id,
-      					'competitors_prices' => unserialize($val->competitors_prices),
-      					'created' => $val->created,
-      					'htags' => unserialize($val->htags),
-      					'id' => $val->id,
-      					'imported_data_id' => $val->imported_data_id,
-      					'items_priced_higher_than_competitors' => $val->items_priced_higher_than_competitors,
-      					'long_description' => $val->long_description,
-      					'long_description_wc' => $val->long_description_wc,
-      					'long_seo_phrases' => unserialize($val->long_seo_phrases),
-      					'own_price' => $val->own_price,
-      					'parsed_attributes' => unserialize($val->parsed_attributes),
-      					'price_diff' => unserialize($val->price_diff),
-      					'product_name' => $val->product_name,
-      					'research_data_id' => $val->research_data_id,
-      					'revision' => $val->revision,
-      					'short_description' => $val->short_description,
-      					'short_description_wc' => $val->short_description_wc,
-      					'short_seo_phrases' => unserialize($val->short_seo_phrases),
-      					'similar_products_competitors' => unserialize($val->similar_products_competitors),
-      					'snap' => $val->snap,
-      					'snap_date' => $val->snap_date,
-      					'snap_state' => $val->snap_state,
-      					'url' => $val->url
-    					);
-							$results_stack['data'][] = $mid;
+      				if( ($val->url !== null && trim($val->url) !== "") && ($val->product_name !== null && trim($val->product_name) !== "") && (unserialize($val->long_seo_phrases) !== false || unserialize($val->short_seo_phrases) !== false) ) {
+	      				$mid = array(
+	      					'batch_id' => $val->batch_id,
+	      					'competitors_prices' => unserialize($val->competitors_prices),
+	      					'created' => $val->created,
+	      					'htags' => unserialize($val->htags),
+	      					'id' => $val->id,
+	      					'imported_data_id' => $val->imported_data_id,
+	      					'items_priced_higher_than_competitors' => $val->items_priced_higher_than_competitors,
+	      					'long_description' => $val->long_description,
+	      					'long_description_wc' => $val->long_description_wc,
+	      					'long_seo_phrases' => unserialize($val->long_seo_phrases),
+	      					'own_price' => $val->own_price,
+	      					'parsed_attributes' => unserialize($val->parsed_attributes),
+	      					'price_diff' => unserialize($val->price_diff),
+	      					'product_name' => $val->product_name,
+	      					'research_data_id' => $val->research_data_id,
+	      					'revision' => $val->revision,
+	      					'short_description' => $val->short_description,
+	      					'short_description_wc' => $val->short_description_wc,
+	      					'short_seo_phrases' => unserialize($val->short_seo_phrases),
+	      					'similar_products_competitors' => unserialize($val->similar_products_competitors),
+	      					'snap' => $val->snap,
+	      					'snap_date' => $val->snap_date,
+	      					'snap_state' => $val->snap_state,
+	      					'url' => $val->url
+	    					);
+								$results_stack['data'][] = $mid;
+							}
       			}
+      			$results_stack['after_filter_count'] = count($results_stack['data']);
       		} else {
       			$results_stack['msg'] = 'No any data finded';
       		}
