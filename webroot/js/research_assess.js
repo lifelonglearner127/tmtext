@@ -3213,9 +3213,9 @@ var search_text = GetURLParameter('search_text');
   $('#generate_url').toggle(function() {
        var first = $("select[name='research_assess_batches']").find('option:selected').val();
        var second = $("select[id='research_assess_compare_batches_batch']").find('option:selected').val()
-       var search_text = $('#assess_filter_text').val()
+//       var search_text = $('#assess_filter_text').val()
        var batch_name= $('select[name="research_assess_batches"]').find('option:selected').text();
-       var generate_url_check= $('#generate_url_check').is(':checked')?1:0;
+//       var generate_url_check= $('#generate_url_check').is(':checked')?1:0;
        var generate_url_Summary= $('#generate_url_Summary').is(':checked')?1:0;
        if(second == undefined){
            second = 0;
@@ -3228,7 +3228,7 @@ var search_text = GetURLParameter('search_text');
             columns_checked.push($(value).data('col_name'));
         });
 
-       $('#generate_url_link').val(base_url+ "index.php/assess/compare_results?batch_id_result="+first +"&cmp_selected="+second+"&checked_columns_results="+columns_checked+"&search_text="+search_text+"&batch_name="+batch_name+"&generate_url_check="+generate_url_check+"&generate_url_Summary="+generate_url_Summary);
+       $('#generate_url_link').val(base_url+ "index.php/assess/compare_results?batch_id_result="+first +"&cmp_selected="+second+"&checked_columns_results="+columns_checked+"&batch_name="+batch_name+"&generate_url_Summary="+generate_url_Summary);
        $('#generate_url').text('Delete URL');
    },(function(){
        $('#generate_url_link').val('');
