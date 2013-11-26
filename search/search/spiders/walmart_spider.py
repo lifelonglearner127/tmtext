@@ -115,6 +115,10 @@ class WalmartFullURLsSpider(BaseSpider):
 		searchpage_URL = "http://www.walmart.com/search/search-ng.do?ic=16_0&Find=Find&search_query=%s&Find=Find&search_constraint=0" % query
 		return searchpage_URL
 
+	# check if URL contains the product's id (therefore is valid)
+	def valid_result(self, url, prod_id):
+		return prod_id in url
+
 	def parse(self, response):
 		# take every id and pass it to the method that retrieves its URL, build an item for each of it
 		for walmart_id in self.walmart_ids:
@@ -124,10 +128,10 @@ class WalmartFullURLsSpider(BaseSpider):
 
 			# search for this id on Walmart, get the results page
 			search_page = self.build_search_page(walmart_id)
-			request = Request(search_page, callback = self.parse_resultsPage, meta = {"item":item})
+			request = Request(search_page, callback = self.parse_resultsPage, meta = {"item": item})
 			yield request
 
-	# get URL of first result from search page
+	# get URL of first result from search page (search by product id)
 	def parse_resultsPage(self, response):
 		hxs = HtmlXPathSelector(response)
 		item = response.meta['item']
@@ -136,10 +140,46 @@ class WalmartFullURLsSpider(BaseSpider):
 			item['walmart_full_url'] = Utils.add_domain(result[0], "http://www.walmart.com")
 
 			# id should be somewhere in the full URL as well
-			assert item['walmart_id'] in item['walmart_full_url']
+			assert self.valid_result(item['walmart_full_url'], item['walmart_id'])
 			return item
 		else:
-			self.log("No results for id " + item['walmart_id'] + "\n", level=log.ERROR)
+			# try to find result by using the product name instead
+
+			# get product name from product page, then search by it
+			return Request(item['walmart_short_url'], callback = self.getProductName, meta = {"item":item})
+			#self.log("No results for short_url " + item['walmart_short_url'] + "\n", level=log.ERROR)
+
+	def getProductName(self, response):
+		hxs = HtmlXPathSelector(response)
+		title_holder = hxs.select("//h1[@class='productTitle']/text()").extract()
+		if title_holder:
+			product_name = title_holder[0]
+
+			# search by product name
+			search_query = "+".join(product_name.split())
+			search_page = self.build_search_page(search_query)
+			return Request(search_page, callback = self.parse_resultsPage2, meta = {"item" : response.meta['item']})
+
+		else:
+			self.log("No results for short_url (didn't find product name) " + item['walmart_short_url'] + "\n", level=log.ERROR)
+
+	# parse results page from search by product name - find URL that contains item id, if any
+	def parse_resultsPage2(self, response):
+		hxs = HtmlXPathSelector(response)
+
+		item = response.meta['item']
+		results = hxs.select("//div[@class='prodInfo']/div[@class='prodInfoBox']/a[@class='prodLink ListItemLink']/@href").extract()
+		for result in results:
+			# if the result URL contains the id, this is the correct result
+			if self.valid_result(item['walmart_id'], result):
+				product_url = Utils.add_domain(result, "http://www.walmart.com")
+				item['walmart_full_url'] = product_url
+				return item
+
+
+		# no results matching the condition were found
+		self.log("No results for short_url (didn't find any URLs containing id) " + item['walmart_short_url'] + "\n", level=log.ERROR)
+
 
 
 
