@@ -285,11 +285,12 @@ class Assess extends MY_Controller {
 
                                     $similar_items_data[] = $cmpare;
                                     $val->similar_items = $similar_items_data;
+                                    $cmp[] = $val;
                                 }
                             }
 
 
-                            $cmp[] = $val;
+                            //$cmp[] = $val;
                         }
                     }
                 }
