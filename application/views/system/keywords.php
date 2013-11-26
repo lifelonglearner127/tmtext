@@ -100,20 +100,60 @@
 
         // === META KEYWORDS RANKING STUFFS (START) 
         function getMetaKeysBatchData(bid) {
-            console.log(bid);
-            $.post(base_url + 'index.php/system/system_get_assess_info', {'bid': bid}, function(data) {
-                console.log(data.length, data);
-                var c = "<ul>";
-                for(var i = 0; i < data.length; i++) {
-                    c += "<li>" + data[i].product_name + " | <b>" + i +  "</b></li>";
-                }
-                c += "</ul>";
-                $("#sk_batches_list_data").html(c);
+            $.post(base_url + 'index.php/system/system_get_mkw_info', {'bid': bid}, function(d) {
                 $("#loading_kw_meta_selection").modal('hide');
-            });
-            $.post(base_url + 'index.php/system/get_meta_keys_batch_data', {'bid': bid}, function(data) {
-                // console.log(data);
-                // $("#sk_batches_list_data").html(data);
+                if(d.status) {
+                    console.log(d.data.length, d.data);
+                    var c_content = "<table class='table'>";
+                    c_content += "<thead>";
+                    c_content += "<tr>";
+                    c_content += "<th>ID</th>"
+                    c_content += "<th>Product name</th>";
+                    c_content += "<th>Keywords</th>"
+                    c_content += "</tr>";
+                    c_content += "</thead>";
+                    c_content += "<tbody>";
+                    for(var i = 0; i < d.data.length; i++) {
+                        c_content += "<tr>";
+                        c_content += "<td>" + d.data[i].id + "</td>";
+                        c_content += "<td><p class='ellipsis_p'>" + d.data[i].product_name + "</p></td>";
+                        c_content += "<td>";
+                        // ==== render keywords stuffs (start)
+                        if(d.data[i].long_seo_phrases && d.data[i].long_seo_phrases.length > 0) { // long keywords
+                            var long_keys = d.data[i].long_seo_phrases;
+                            var long_keys_c = "<p style='font-size: 12px; font-weight: bold; margin-bottom: 0px;'>Long Keywords</p>";
+                            long_keys_c += "<table><tbody>";
+                            for(var j = 0; j < long_keys.length; j++) {
+                                long_keys_c += "<tr>";
+                                long_keys_c += "<td style='border-top: none'>" + long_keys[j].ph + " (" + long_keys[j].count + ") - " + long_keys[j].prc + "%" + "</td>";
+                                long_keys_c += "<td style='border-top: none'><button type='button' class='btn btn-primary'>Action</button></td>";
+                                long_keys_c += "</tr>";
+                            }
+                            long_keys_c += "</tbody></table>";
+                            c_content += long_keys_c;
+                        }
+                        if(d.data[i].short_seo_phrases && d.data[i].short_seo_phrases.length > 0) { // short keywords
+                            var short_keys = d.data[i].short_seo_phrases;
+                            var short_keys_c = "<p style='font-size: 12px; font-weight: bold; margin-bottom: 0px;'>Short Keywords</p>";
+                            short_keys_c += "<table><tbody>";
+                            for(var j = 0; j < short_keys.length; j++) {
+                                short_keys_c += "<tr>";
+                                short_keys_c += "<td style='border-top: none'>" + short_keys[j].ph + " (" + short_keys[j].count + ") - " + short_keys[j].prc + "%" + "</td>";
+                                short_keys_c += "<td style='border-top: none'><button type='button' class='btn btn-primary'>Action</button></td>";
+                                short_keys_c += "</tr>";
+                            }
+                            short_keys_c += "</tbody></table>";
+                            c_content += short_keys_c;
+                        }
+                        // ==== render keywords stuffs (end)
+                        c_content += "</td>";
+                        c_content += "</tr>";
+                    }
+                    c_content += "</tbody></table>";
+                    $("#sk_batches_list_data").html(c_content);
+                } else {
+                    alert(data.msg);
+                }
             });
         }
         $("#sk_batches_list").change(function(e) {

@@ -1,4 +1,11 @@
 /* BOARD ITEM MODAL PREVIEW (START) */
+.ellipsis_p {
+    max-width: 500px;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 .board_view_filter_cnt {
     display: none;
     float: left;
