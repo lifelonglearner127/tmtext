@@ -3228,8 +3228,15 @@ var search_text = GetURLParameter('search_text');
             columns_checked.push($(value).data('col_name'));
         });
 
-       $('#generate_url_link').val(base_url+ "index.php/assess/compare_results?batch_id_result="+first +"&cmp_selected="+second+"&checked_columns_results="+columns_checked+"&generate_url_check="+generate_url_check+"&batch_name="+batch_name+"&generate_url_Summary="+generate_url_Summary);
-       $('#generate_url').text('Delete URL');
+       var base = base_url+ "index.php/assess/research_url?";
+       var url = "batch_id_result="+first +"&cmp_selected="+second+"&checked_columns_results="+columns_checked+"&generate_url_check="+generate_url_check+"&batch_name="+batch_name+"&generate_url_Summary="+generate_url_Summary;
+
+        $.post(base_url + 'index.php/assess/assess_save_urls', {'url': url}, function(data) {
+            $('#generate_url_link').val(base+data);
+            $('#generate_url').text('Delete URL');
+
+        });
+
    },(function(){
        $('#generate_url_link').val('');
        $('#generate_url').text('Generate URL');

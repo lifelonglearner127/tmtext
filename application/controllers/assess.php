@@ -751,6 +751,22 @@ class Assess extends MY_Controller {
         echo json_encode($res);
     }
 
+    public function assess_save_urls() {
+        $this->load->model('settings_model');
+        $url = $this->input->post('url');
+        $res = $this->settings_model->actual_url($url);
+        echo $res;
+    }
+    public function research_url() {
+        $serv =  $_SERVER["REQUEST_URI"];
+        $n = strpos( $serv, "research_url?");
+        $url = substr( $serv, $n+13);
+        $this->load->model('settings_model');
+        $res = $this->settings_model->friendly_url($url);
+       
+        redirect('assess/compare_results?'.$res, 'refresh');
+    }
+    
     public function comparison_detail() {
         $this->load->model('statistics_model');
         $batch_id = $this->input->post('batch_id');

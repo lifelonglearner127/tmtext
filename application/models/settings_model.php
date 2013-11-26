@@ -4,7 +4,8 @@ class Settings_model extends CI_Model {
 
     var $tables = array(
     	'settings' => 'settings',
-    	'setting_values' => 'setting_values'
+    	'setting_values' => 'setting_values',
+    	'urls' => 'urls'
     );
 
     var $system_user = -1;
@@ -51,7 +52,7 @@ class Settings_model extends CI_Model {
 		}
 		return false;
     }
-
+    
 	function get_system_settings(){
 		return $this->get_settings($this->system_user);
 	}
@@ -186,6 +187,57 @@ class Settings_model extends CI_Model {
         }
         return false;
     }
+
+function RandomString()
+{
+    $characters = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    $randstring = '';
+    for ($i = 0; $i < 10; $i++) {
+        $randstring = $characters[rand(1, strlen($characters))];
+    }
+    return $randstring;
+}
+
+    function actual_url($actual_url) {
+        if(empty($actual_url)) {
+            return false;
+        }
+        $sql = "SELECT friendly_url FROM `{$this->tables['urls']}`  WHERE actual_url=? LIMIT 1";
+        $query = $this->db->query($sql, array($actual_url));
+        if ($query->num_rows() === 1)
+        {
+            $row = $query->row();
+            $friendly_url = $row->friendly_url;
+        } else {
+            $friendly_url = $this->RandomString();
+            $this->db->insert($this->tables['urls'], array(
+                'friendly_url' => $friendly_url,
+                'actual_url' => $actual_url
+            ));
+            
+        }
+        return $friendly_url;
+        
+    }
+    function friendly_url($friendly_url) {
+        if(empty($friendly_url)) {
+            return false;
+        }
+        $sql = "SELECT actual_url FROM `{$this->tables['urls']}`  WHERE friendly_url=? LIMIT 1";
+        $query = $this->db->query($sql, array($friendly_url));
+        if ($query->num_rows() === 1)
+        {
+            $row = $query->row();
+            $actual_url = $row->actual_url;
+        } else {
+           return false;
+            
+        }
+        return $actual_url;
+        
+    }
+    
+    
     function addMatchingUrls($pr,$lines){
         $data = array(
             'key'=>'matching_urls',
