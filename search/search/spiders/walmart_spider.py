@@ -100,7 +100,6 @@ class WalmartFullURLsSpider(BaseSpider):
 		with open(self.ids_file, "r") as infile:
 			for line in infile:
 				m = re.match("http://www.walmart.com/ip/([0-9]+)", line.strip())
-				print line.strip()
 				if m:
 					walmart_id = m.group(1)
 					self.walmart_ids.append(walmart_id)
@@ -135,7 +134,6 @@ class WalmartFullURLsSpider(BaseSpider):
 		result = hxs.select("//div[@class='prodInfo']/div[@class='prodInfoBox']/a[@class='prodLink ListItemLink'][position()<2]/@href").extract()
 		if result:
 			item['walmart_full_url'] = Utils.add_domain(result[0], "http://www.walmart.com")
-			print result[0]
 			return item
 		else:
 			self.log("No results for id " + item['walmart_id'] + "\n", level=log.ERROR)
