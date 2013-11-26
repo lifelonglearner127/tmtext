@@ -181,7 +181,7 @@ class Assess extends MY_Controller {
                         if (count($similar_items) >1) {
                             foreach ($similar_items as $key => $item) {
 
-                                if ( !empty($customer_name) && !empty($item['customer']) && substr_count(strtolower($customer_name), strtolower($item['customer'])) > 0) {
+                                if ( !empty($customer_name) && !empty($item['customer'])  &&  $this->statistics_new_model->if_url_in_batch($item['imported_data_id'],$batch2)) {
                                     $parsed_attributes_unserialize_val = '';
                                     $parsed_meta_unserialize_val = '';
                                     $parsed_meta_unserialize_val_c = '';

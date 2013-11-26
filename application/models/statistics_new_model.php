@@ -339,6 +339,17 @@ class Statistics_new_model extends CI_Model {
         );
     }
 
+    
+function if_url_in_batch($imported_data_id, $batch_id){
+       
+        $this->db->where('imported_data_id', $imported_data_id)->where('batch_id', $batch_id);
+        $query= $this->db->get("statistics_new");    
+        if($query->num_rows()>0){
+         return true;
+        }
+        return false;
+    }
+
     public function updateStatsData($arr){
         $str = "";
         foreach($arr as $key => $val){
