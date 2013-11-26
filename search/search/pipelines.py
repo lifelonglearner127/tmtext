@@ -16,12 +16,23 @@ class SearchPipeline(object):
 
 class URLsPipeline(object):
 	def open_spider(self, spider):
-		self.file = open(spider.outfile, 'wb')
-		if int(spider.output)==1:
-			self.file2 = open(spider.outfile2, 'wb')
+		if spider.name == "walmart_fullurls":
+			if spider.outfile:
+				self.file = open(spider.outfile, 'wb')
+			else:
+				self.file = None
+		else:
+			self.file = open(spider.outfile, 'wb')
+			if int(spider.output)==1:
+				self.file2 = open(spider.outfile2, 'wb')
 
 
 	def process_item(self, item, spider):
+
+		# different actions for walmart_fullurls spider
+		if spider.name == "walmart_fullurls":
+			return self.process_item_fullurl(item, spider)
+
 		option = int(spider.output)
 		# for option 1, output just found products URLs in one file, and not matched URLs (or ids) in the second file
 		if option == 1:
@@ -49,5 +60,13 @@ class URLsPipeline(object):
 			self.file.write(line)
 		return item
 
+	def process_item_fullurl(self, item, spider):
+		line = ",".join([item['walmart_short_url'], item['walmart_full_url']])
+		if self.file:
+			self.file.write(line + "\n")
+		else:
+			print line
+
 	def close_spider(self, spider):
-		self.file.close()
+		if self.file:
+			self.outfile.close()

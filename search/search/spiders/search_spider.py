@@ -19,17 +19,19 @@ import sys
 ################################
 # Run with 
 #
-# scrapy crawl search -a product_name="<name>" -a target_site="<site>" [-a output="<option(1/2)>"] [-a threshold=<value>] [a outfile="<filename>"] [-a fast=0]
+#   scrapy crawl <site> -a product_name="<name>" [-a output="<option(1/2)>"] [-a threshold=<value>] [a outfile="<filename>"] [-a fast=0]
 #      -- or --
-# scrapy crawl search -a product_url="<url>" -a target_site="<site>" [-a output="<option(1/2)>"] [-a threshold=<value>] [a outfile="<filename>""] [-a fast=0]
+#   scrapy crawl <site> -a product_url="<url>" [-a output="<option(1/2)>"] [-a threshold=<value>] [a outfile="<filename>""] [-a fast=0]
 #      -- or --
-# scrapy crawl search -a product_urls_file="<filename>" -a target_site="<site>" [-a output="<option(1/2)>"] [-a threshold=value] [a outfile="<filename>"] [-a fast=0]
+#   scrapy crawl <site> -a product_urls_file="<filename>" [-a output="<option(1/2)>"] [-a threshold=value] [a outfile="<filename>"] [-a fast=0]
 #      -- or --
-# scrapy crawl search -a walmart_ids_file="<filename>" -a target_site="<site>" [-a output="<option(1/2)>"] [-a threshold=value] [a outfile="<filename>"] [-a fast=0]
+#   scrapy crawl <site> -a walmart_ids_file="<filename>" [-a output="<option(1/2)>"] [-a threshold=value] [a outfile="<filename>"] [-a fast=0]
+# 
+# where <site> is the derived spider corresponding to the site to search on 
 #
 # Usage example:
 #
-# scrapy crawl search -a product_urls_file="../sample_output/walmart_televisions_urls.txt" -a target_site="bestbuy" -a output=2 -a outfile="search_results_1.4.txt" -a threshold=1.4 -s LOG_ENABLED=1 2>search_log_1.4.out
+# scrapy crawl amazon -a product_urls_file="../sample_output/walmart_televisions_urls.txt" -a output=2 -a outfile="search_results_1.4.txt" -a threshold=1.4 -s LOG_ENABLED=1 2>search_log_1.4.out
 #
 ################################
 
@@ -46,9 +48,8 @@ class SearchSpider(BaseSpider):
 	#				product_name - the product's name, for searching by product name
 	#				product_url - the product's page url in the source site, for searching by product URL
 	#				product_urls_file - file containing a list of product pages URLs
-	#				target_site - the site to search on
 	#				output - integer(1/2) option indicating output type (either result URL (1), or result URL and source product URL (2))
-	#				threshold - parameter (0-1) for selecting results (the lower the value the more permissive the selection)
+	#				threshold - parameter for selecting results (the lower the value the more permissive the selection)
 	def __init__(self, product_name = None, product_url = None, product_urls_file = None, walmart_ids_file = None, \
 		output = 1, threshold = 1.0, outfile = "search_results.txt", outfile2 = "not_matched.txt", fast = 0, use_proxy = False, by_id = False):
 		self.product_url = product_url
