@@ -111,26 +111,8 @@ class Statistics_new_model extends CI_Model {
                          $short_description_wc, $long_description_wc,
                          $short_seo_phrases, $long_seo_phrases,
                          $own_price, $price_diff, $competitors_prices, $items_priced_higher_than_competitors, $similar_products_competitors,
-                         $research_data_id, $batch_id){
-/* old script        
-        $this->revision = $revision;
-        $this->short_description_wc = (string)$short_description_wc;
-        $this->long_description_wc = (string)$long_description_wc;
-        $this->short_seo_phrases = (string)$short_seo_phrases;
-        $this->long_seo_phrases = (string)$long_seo_phrases;
-        $this->created = date('Y-m-d h:i:s');
-        $this->own_price = (string)$own_price;
-        $this->price_diff = (string)$price_diff;
-        $this->competitors_prices = (string)$competitors_prices;
-        $this->items_priced_higher_than_competitors = $items_priced_higher_than_competitors;
-        $this->similar_products_competitors = $similar_products_competitors;
-        $this->research_data_id = $research_data_id;
-        $this->batch_id = $batch_id;
-        
-        $this->db->where('imported_data_id', $imported_data_id);
-        $query= $this->db->get("statistics_new");
- //*/
-        //new script
+                         $research_and_batch_ids){
+
         $idata['revision'] = $revision;
         $idata['short_description_wc'] = (string)$short_description_wc;
         $idata['long_description_wc'] = (string)$long_description_wc;
@@ -142,47 +124,47 @@ class Statistics_new_model extends CI_Model {
         $idata['competitors_prices'] = (string)$competitors_prices;
         $idata['items_priced_higher_than_competitors'] = $items_priced_higher_than_competitors;
         $idata['similar_products_competitors'] = $similar_products_competitors;
-        if($research_data_id){
-            $idata['research_data_id'] = $research_data_id;
-        }
-//        if($research_data_id){
-//            $idata['research_data_id'] = "'".$research_data_id."',";
-//            $q_research_data_id = '`research_data_id`,';
-//        }
-//        else{
-//            $idata['research_data_id'] = '';
-//            $q_research_data_id = '';
-//        }
-        $idata['batch_id'] = $batch_id;
-        
-        $this->db->where('imported_data_id', $imported_data_id);
-        $query= $this->db->get("statistics_new");
-        
+       
+        foreach($research_and_batch_ids as $research_and_batch_id){
+        $idata['batch_id'] = $research_and_batch_id['batch_id'];
+        $idata['research_data_id'] = $research_and_batch_id['research_data_id']; 
+        $this->db->where('imported_data_id', $imported_data_id)->where('batch_id', $research_and_batch_id['batch_id']);
+        $query= $this->db->get("statistics_new");    
         if($query->num_rows()>0){
-         $row = $query->first_row();
+        
+        $row = $query->first_row();
            $this->db->where('id', $row->id);
            $this->db->update('statistics_new', $idata);
         }else{
         
         $idata['imported_data_id'] = $imported_data_id;
-        
-
         $this->db->insert('statistics_new', $idata);
-        
-//        $sql = "INSERT INTO `statistics_new` 
-//(`revision`, `short_description_wc`, `long_description_wc`, `short_seo_phrases`, 
-//`long_seo_phrases`, `created`, `own_price`, `price_diff`, `competitors_prices`, 
-//`items_priced_higher_than_competitors`, `similar_products_competitors`,". 
-//$q_research_data_id." `batch_id`, `imported_data_id`) 
-//VALUES 
-//('".$idata['revision']."','".$idata['short_description_wc']."','".$idata['long_description_wc']."'
-//    ,'".$idata['short_seo_phrases']."','".$idata['long_seo_phrases']."','".$idata['created']."'
-//        ,'".$idata['own_price']."','".$idata['price_diff']."','".$idata['competitors_prices']."'
-//            ,'".$idata['items_priced_higher_than_competitors']."','".$idata['similar_products_competitors']."'
-//                ,".$idata['research_data_id']."'".$idata['batch_id']."','".$idata['imported_data_id']."')";
-//        $this->db->query($sql);
-        return $this->db->insert_id();
+       
         }
+            
+        }
+        
+        
+        
+//        if($research_and_batch_ids){
+//            $idata['research_data_id'] = $research_data_id;
+//        }
+//
+//        $idata['batch_id'] = $batch_id;
+//        
+//        $this->db->where('imported_data_id', $imported_data_id);
+//        $query= $this->db->get("statistics_new");
+//        
+//        if($query->num_rows()>0){
+//         $row = $query->first_row();
+//           $this->db->where('id', $row->id);
+//           $this->db->update('statistics_new', $idata);
+//        }else{
+//        
+//        $idata['imported_data_id'] = $imported_data_id;
+//        $this->db->insert('statistics_new', $idata);
+//        return $this->db->insert_id();
+//        }
 
     }
 
@@ -192,18 +174,18 @@ class Statistics_new_model extends CI_Model {
 		//	JOIN `research_data` as rd ON (rdc.research_data_id = rd.id)
 		//	JOIN `batches` as b ON (b.id = rd.batch_id)
 		//	WHERE cl.imported_data_id = 20
-
-		$query = $this->db
+               
+            $query = $this->db
             ->select('research_data_id, batch_id')
             ->from('crawler_list as cl')
             ->join('research_data_to_crawler_list as rdc', 'cl.id = rdc.crawler_list_id')
             ->join('research_data as rd', 'rdc.research_data_id = rd.id')
             ->join('batches as b', 'b.id = rd.batch_id')
             ->where('cl.imported_data_id', $imported_data_id)
-            ->limit(1)
+           // ->limit(1)
             ->get();
 
-        $result =  $query->result();
+        $result =  $query->result_array();
         return $result;
 
     }
