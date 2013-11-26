@@ -2161,6 +2161,16 @@ class Assess extends MY_Controller {
                 
                 similar_text($desc_1, $desc_2, $percent) ;
                 $percent = number_format($percent, 2);
+				
+				if ($percent >= 25) 
+					$skus_25_duplicate_content++;
+				
+				if ($percent >= 50) 
+					$skus_50_duplicate_content++;
+				
+				if ($percent >= 75) 
+					$skus_75_duplicate_content++;
+											
                 $result_row->Duplicate_Content.= $percent .' %';
                 //var_dump($result_row->Duplicate_Content); die();
 
@@ -2730,16 +2740,18 @@ class Assess extends MY_Controller {
                     }
                     if ($duplicate_short_percent_total >= 20 || $duplicate_long_percent_total >= 20) {
                         $items_have_more_than_20_percent_duplicate_content += 1;
-                    }
+                    }					
+					
 					if ($duplicate_short_percent_total >= 25 || $duplicate_long_percent_total >= 25) {
-                        $skus_25_duplicate_content++;
-                    }
+						$skus_25_duplicate_content++;
+					}
 					if ($duplicate_short_percent_total >= 50 || $duplicate_long_percent_total >= 50) {
-                        $skus_50_duplicate_content++;
-                    }
+						$skus_50_duplicate_content++;
+					}
 					if ($duplicate_short_percent_total >= 75 || $duplicate_long_percent_total >= 75) {
-                        $skus_75_duplicate_content++;
-                    }
+						$skus_75_duplicate_content++;
+					}
+				
                     if ($duplicate_customers_short != '') {
                         $duplicate_customers = 'Duplicate short<br />' . $duplicate_customers_short;
                     }
