@@ -45,6 +45,12 @@ class ProcessText():
 		# normalize Watts
 		text = re.sub("[- ]*[Ww]atts?", "W", text)
 
+		# convert yards
+		text = re.sub("[- ][yY]ards", "yd", text)
+
+		# replace w/ with 'with'. note: only lowercase w followd by / and space
+		text = re.sub("w/(?= )", "with", text)
+
 		#TODO also do something to match 30x30 with 30"x30"?
 		# replace x between numbers (or ") with space (usualy a dimension e.g. 11"x30")
 		#TODO: what if it's part of a model number? (maybe not because model numbers are all in caps?)
