@@ -1972,6 +1972,8 @@ class Assess extends MY_Controller {
         $customer_name = $this->batches_model->getCustomerById($batch_id);
         $customer_url = parse_url($customer_name[0]->url);
         $result_table = array();
+        $batch1_meta_percents = array();
+        $batch2_meta_percents = array();
         $report = array();
         $pricing_details = array();
         $items_priced_higher_than_competitors = 0;
@@ -1987,6 +1989,12 @@ class Assess extends MY_Controller {
         $detail_comparisons_total = 0;
         $skus_fewer_features_than_competitor = 0;
         $skus_fewer_reviews_than_competitor = 0;
+        $skus_fewer_competitor_optimized_keywords = 0;
+        $skus_zero_optimized_keywords = 0;
+        $skus_one_optimized_keywords = 0;
+        $skus_two_optimized_keywords = 0;
+        $skus_three_optimized_keywords = 0;
+		
         if ($build_assess_params->max_similar_item_count > 0) {
 
 
@@ -2030,7 +2038,7 @@ class Assess extends MY_Controller {
 //            $st_time=  microtime(true);
         
         $qty = 1;
-        foreach ($results as $row) {
+        foreach ($results as $row_key => $row) {
 //            $long_description_wc = $row->long_description_wc;
 //            $short_description_wc = $row->short_description_wc;
 
@@ -2223,7 +2231,7 @@ class Assess extends MY_Controller {
                             $_count_meta_un = $this->keywords_appearence($sim_items[$i - 1]->Long_Description.$sim_items[$i - 1]->Short_Description, $cnt_m_un);
                             $_count_meta_num_un = round(($_count_meta_un * $cnt_meta_count_un / ($sim_items[$i - 1]->long_description_wc + $sim_items[$i - 1]->short_description_wc)) * 100, 2);
 							
-							$_count_meta_num_un[$i][$key] = $_count_meta_num_un;
+							$batch2_meta_percents[$row_key][$key] = $_count_meta_num_un;
 							
                             $_count_meta_num_un_proc = $_count_meta_num_un . "%";
                             $Meta_Keywords_un .= "<tr><td>" . $cnt_m_un . "</td><td>".$_count_meta_num_un_proc."</td></tr>";
@@ -2367,14 +2375,18 @@ class Assess extends MY_Controller {
                     $cnt_meta = explode(',', $pars_atr['parsed_meta']['keywords']);
                     $cnt_meta_count = count($cnt_meta);
                     $_count_meta = 0;
-                    foreach($cnt_meta as $cnt_m){
+                    foreach($cnt_meta as $key => $cnt_m){
                         $cnt_m = trim($cnt_m);
                         if(!$cnt_m){
                             continue;
                         }
                         if($result_row->long_description || $result_row->short_description){
                             $_count_meta = $this->keywords_appearence($result_row->long_description.$result_row->short_description, $cnt_m);
-                            $_count_meta_num = round(($_count_meta * $cnt_meta_count / ($result_row->long_description_wc + $result_row->short_description_wc)) * 100, 2) . "%";
+                            $_count_meta_num = round(($_count_meta * $cnt_meta_count / ($result_row->long_description_wc + $result_row->short_description_wc)) * 100, 2);
+							
+							$batch1_meta_percents[$row_key][$key] = $_count_meta_num;
+							
+                            $_count_meta_num_proc = $_count_meta_num . "%";
                             $Meta_Keywords .= "<tr><td>" . $cnt_m . "</td><td>".$_count_meta_num."</td></tr>";
 //                        }else if($result_row->Short_Description){
 //                            $_count_meta = $this->keywords_appearence($result_row->Short_Description, $cnt_m);
@@ -2386,8 +2398,24 @@ class Assess extends MY_Controller {
                 $Meta_Keywords .= "</table>";
                 $result_row->Meta_Keywords = $Meta_Keywords;
             }
-
-
+			
+			$batch1_filtered_meta_percents = array_filter($batch1_meta_percents[$row_key]);
+			$batch2_filtered_meta_percents = array_filter($batch2_meta_percents[$row_key]);
+			
+			if (count($batch1_filtered_meta_percents) < count($batch2_filtered_meta_percents))
+				$skus_fewer_competitor_optimized_keywords++;
+			
+			if (!$batch1_filtered_meta_percents)
+				$skus_zero_optimized_keywords++;
+			
+			if (count($batch1_filtered_meta_percents) == 1)
+				$skus_one_optimized_keywords++;
+				
+			if (count($batch1_filtered_meta_percents) == 2)
+				$skus_two_optimized_keywords++;
+				
+			if (count($batch1_filtered_meta_percents) == 3)
+				$skus_three_optimized_keywords++;			
 
 
 //            if ($pars_atr['parsed_meta']['keywords'] && $pars_atr['parsed_meta']['keywords'] != '') {
@@ -2841,7 +2869,11 @@ class Assess extends MY_Controller {
         $report['summary']['skus_same_competitor_product_content'] = $skus_same_competitor_product_content;
         $report['summary']['skus_fewer_features_than_competitor'] = $skus_fewer_features_than_competitor;
         $report['summary']['skus_fewer_reviews_than_competitor'] = $skus_fewer_reviews_than_competitor;
-
+        $report['summary']['skus_fewer_competitor_optimized_keywords'] = $skus_fewer_competitor_optimized_keywords;
+        $report['summary']['skus_zero_optimized_keywords'] = $skus_zero_optimized_keywords;
+        $report['summary']['skus_one_optimized_keywords'] = $skus_one_optimized_keywords;
+        $report['summary']['skus_two_optimized_keywords'] = $skus_two_optimized_keywords;
+        $report['summary']['skus_three_optimized_keywords'] = $skus_three_optimized_keywords;				      
 
         // only if second batch select - get absent products, merge it with result_table
 //        if (isset($build_assess_params->compare_batch_id) && $build_assess_params->compare_batch_id > 0) {
