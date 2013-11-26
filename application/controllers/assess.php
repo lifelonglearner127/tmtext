@@ -247,7 +247,7 @@ class Assess extends MY_Controller {
                                                 if($cmpare->Short_Description || $cmpare->Long_Description){
                                                     $_count_meta = $this->keywords_appearence($cmpare->Long_Description.$cmpare->Short_Description, $cnt_m);
                                                     $_count_meta_num = round(($_count_meta * $cnt_meta_count / ($cmpare->long_description_wc + $cmpare->short_description_wc)) * 100, 2) . "%";
-                                                    $Meta_Keywords_un .= "<tr><td>" . $cnt_m . "</td><td>".$_count_meta_num."</td></tr>";
+                                                    $Meta_Keywords_un .= "<tr><td>" . $cnt_m . "</td><td style='width: 25px;padding-right: 0px;>".$_count_meta_num."</td></tr>";
                                                 }
 //                                                else if($cmpare->Short_Description){
 //                                                    $_count_meta = $this->keywords_appearence($cmpare->Short_Description, $cnt_m);
@@ -2404,7 +2404,7 @@ class Assess extends MY_Controller {
 							$batch1_meta_percents[$row_key][$key] = $_count_meta_num;
 							
                             $_count_meta_num_proc = $_count_meta_num . "%";
-                            $Meta_Keywords .= "<tr><td>" . $cnt_m . "</td><td>".$_count_meta_num."</td></tr>";
+                            $Meta_Keywords .= "<tr><td>" . $cnt_m . "</td><td style='width: 25px;padding-right: 0px;>".$_count_meta_num."%</td></tr>";
 //                        }else if($result_row->Short_Description){
 //                            $_count_meta = $this->keywords_appearence($result_row->Short_Description, $cnt_m);
 //                            $_count_meta_num = round(($_count_meta * $cnt_meta_count / $result_row->short_description_wc) * 100, 2) . "%";
