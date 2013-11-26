@@ -557,17 +557,17 @@
                 
                  var batch_id_result = GetURLParameter('batch_id_result');
                  var batch_name = GetURLParameter('batch_name');
-//                 var generate_url_check = GetURLParameter('generate_url_check');
+                 var generate_url_check = GetURLParameter('generate_url_check');
                  var generate_url_Summary = GetURLParameter('generate_url_Summary');
                 if(generate_url_Summary == "1"){
                     
                  $('#tblAssess_wrapper').addClass('comp_res_none');
 
                 }
-//                else{
-//                    $('.assess_report_compare').hide();
-//                }
-//                 if(generate_url_check == "1"){
+
+                 if(generate_url_check == "0"){
+                     $('.assess_report_options_dialog_button').hide();
+                 }
                     $('#research_batches_columns').addClass('research_batches_columns_res');
                       
                     var columns_checked_arr = GetURLParameter('checked_columns_results');
@@ -593,7 +593,6 @@
                     
 
                     
-//                 }
                   batch_name = batch_name.replace(/%20/g,' ')
                   $('.title_result').html("<div class='logo'><img  style='width:220px; height: 50px;float:left;'src ='<?php echo base_url() ?>/img/content-analytics_page.png'></div><h3 class='h3_title'>"+batch_name+" Batch</h3><a href='<?php echo base_url();?>index.php/assess/export_assess' class='fileDownloadPromise btn' style='float:right;' id='research_assess_export' >Export</a>");
                  var cmp_selected = GetURLParameter('cmp_selected');
