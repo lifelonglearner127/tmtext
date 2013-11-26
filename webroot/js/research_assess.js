@@ -60,6 +60,9 @@ $(function() {
 		'skus_one_optimized_keywords',
 		'skus_two_optimized_keywords',
 		'skus_three_optimized_keywords',
+		'skus_75_duplicate_content',
+		'skus_25_duplicate_content',
+		'skus_50_duplicate_content',
 	];
 	
     var tableCase = {

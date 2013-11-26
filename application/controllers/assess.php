@@ -1995,6 +1995,9 @@ class Assess extends MY_Controller {
         $pricing_details = array();
         $items_priced_higher_than_competitors = 0;
         $items_have_more_than_20_percent_duplicate_content = 0;
+        $skus_25_duplicate_content = 0;
+        $skus_50_duplicate_content = 0;
+        $skus_75_duplicate_content = 0;
         $items_unoptimized_product_content = 0;
         $short_wc_total_not_0 = 0;
         $long_wc_total_not_0 = 0;
@@ -2728,6 +2731,15 @@ class Assess extends MY_Controller {
                     if ($duplicate_short_percent_total >= 20 || $duplicate_long_percent_total >= 20) {
                         $items_have_more_than_20_percent_duplicate_content += 1;
                     }
+					if ($duplicate_short_percent_total >= 25 || $duplicate_long_percent_total >= 25) {
+                        $skus_25_duplicate_content++;
+                    }
+					if ($duplicate_short_percent_total >= 50 || $duplicate_long_percent_total >= 50) {
+                        $skus_50_duplicate_content++;
+                    }
+					if ($duplicate_short_percent_total >= 75 || $duplicate_long_percent_total >= 75) {
+                        $skus_75_duplicate_content++;
+                    }
                     if ($duplicate_customers_short != '') {
                         $duplicate_customers = 'Duplicate short<br />' . $duplicate_customers_short;
                     }
@@ -2874,6 +2886,9 @@ class Assess extends MY_Controller {
         $report['summary']['total_items'] = $own_batch_total_items;
         $report['summary']['items_priced_higher_than_competitors'] = $items_priced_higher_than_competitors;
         $report['summary']['items_have_more_than_20_percent_duplicate_content'] = $items_have_more_than_20_percent_duplicate_content;
+        $report['summary']['skus_25_duplicate_content'] = $skus_25_duplicate_content;
+        $report['summary']['skus_50_duplicate_content'] = $skus_50_duplicate_content;
+        $report['summary']['skus_75_duplicate_content'] = $skus_75_duplicate_content;
         $report['summary']['items_unoptimized_product_content'] = $items_unoptimized_product_content;
         $report['summary']['items_short_products_content_short'] = $items_short_products_content_short;
         $report['summary']['items_long_products_content_short'] = $items_long_products_content_short;
