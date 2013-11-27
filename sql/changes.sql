@@ -1,9 +1,10 @@
 #27/11 Ilya
 CREATE  TABLE IF NOT EXISTS `meta_kw_rank_source` (
   `id` INT NOT NULL AUTO_INCREMENT ,
+  `batch_id` INT NULL DEFAULT NULL ,
   `statistics_new_id` INT NULL DEFAULT NULL ,
   `kw` VARCHAR(256) NULL DEFAULT NULL ,
-  `kw_ph` VARCHAR(45) NULL DEFAULT NULL ,
+  `kw_prc` VARCHAR(45) NULL DEFAULT NULL ,
   `kw_count` INT NULL DEFAULT NULL ,
   `rank_json_encode` TEXT NULL DEFAULT NULL ,
   `status` INT NULL DEFAULT NULL ,

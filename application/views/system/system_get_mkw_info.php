@@ -22,6 +22,7 @@
 			</thead>
 			<tbody>
 				<?php foreach($results_stack['data_pager'] as $k => $v) { ?>
+					<?php $id = $v['id']; $batch_id = $v['batch_id']; ?>
 					<tr>
 						<td><p class='ellipsis_p'><?php echo $v['product_name']; ?></p></td>
 						<td>
@@ -29,9 +30,10 @@
 								<table>
 										<tbody>
 										<?php foreach($v['long_seo_phrases'] as $key => $val) { ?>
+											<?php $kw = $val['ph']; $kw_prc = $val['prc']; $kw_count = $val['count']; ?>
 											<tr>
 												<td style='border-top: none; padding-left: 0px;'><?php echo $val['ph']." (".$val['count'].") - ".$val['prc']."%" ?></td>
-												<td style='border-top: none;'><button type='button' class='btn btn-primary'>Action</button></td>
+												<td style='border-top: none;'><button type='button' onclick="addKeywordToKwSource('')" class='btn btn-primary'>Add</button></td>
 											</tr>
 										<?php } ?>
 										</tbody>
@@ -43,7 +45,7 @@
 										<?php foreach($v['short_seo_phrases'] as $key => $val) { ?>
 											<tr>
 												<td style='border-top: none; padding-left: 0px;'><?php echo $val['ph']." (".$val['count'].") - ".$val['prc']."%" ?></td>
-												<td style='border-top: none;'><button type='button' class='btn btn-primary'>Action</button></td>
+												<td style='border-top: none;'><button type='button' class='btn btn-primary'>Add</button></td>
 											</tr>
 										<?php } ?>
 										</tbody>
