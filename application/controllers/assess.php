@@ -1693,11 +1693,13 @@ class Assess extends MY_Controller {
         $this->load->model('batches_model');
         $this->load->model('customers_model');
         $this->load->model('users_to_customers_model');
-
-        $customers = $this->users_to_customers_model->getByUserId($this->ion_auth->get_user_id());
-        if (!$this->ion_auth->is_admin($this->ion_auth->get_user_id())) {
+        
+		$customers = $this->customers_model->getAll();
+        if ($this->ion_auth->logged_in() && !$this->ion_auth->is_admin($this->ion_auth->get_user_id()))
+		{		
+			$customers = $this->users_to_customers_model->getByUserId($this->ion_auth->get_user_id());
             if (count($customers) == 0) {
-                $customer_list = array('Amazon.com', 'Walmart.com');
+                $customer_list = array();
             } else {
                 $customer_list = array('0' => 'Select customer');
             }
