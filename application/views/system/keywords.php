@@ -128,8 +128,8 @@
                             var long_keys = data_content[i].long_seo_phrases;
                             long_keys = _.toArray(long_keys);
                             if(long_keys.length > 0) {
-                                var long_keys_c = "<p style='font-size: 12px; font-weight: bold; margin-bottom: 0px;'>Long Keywords</p>";
-                                long_keys_c += "<table><tbody>";
+                                // var long_keys_c = "<p style='font-size: 12px; font-weight: bold; margin-bottom: 0px;'>Long Keywords</p>";
+                                var long_keys_c = "<table><tbody>";
                                 for(var j = 0; j < long_keys.length; j++) {
                                     long_keys_c += "<tr>";
                                     long_keys_c += "<td style='border-top: none; padding-left: 0px;'>" + long_keys[j].ph + " (" + long_keys[j].count + ") - " + long_keys[j].prc + "%" + "</td>";
@@ -144,8 +144,8 @@
                             var short_keys = data_content[i].short_seo_phrases;
                             short_keys = _.toArray(short_keys);
                             if(short_keys.length > 0) {
-                                var short_keys_c = "<p style='font-size: 12px; font-weight: bold; margin-bottom: 0px;'>Short Keywords</p>";
-                                short_keys_c += "<table><tbody>";
+                                // var short_keys_c = "<p style='font-size: 12px; font-weight: bold; margin-bottom: 0px;'>Short Keywords</p>";
+                                var short_keys_c = "<table><tbody>";
                                 for(var j = 0; j < short_keys.length; j++) {
                                     short_keys_c += "<tr>";
                                     short_keys_c += "<td style='border-top: none; padding-left: 0px;'>" + short_keys[j].ph + " (" + short_keys[j].count + ") - " + short_keys[j].prc + "%" + "</td>";
