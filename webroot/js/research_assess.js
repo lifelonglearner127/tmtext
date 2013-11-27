@@ -2612,14 +2612,14 @@ var scrollYesOrNot = true;
                 tblAssess.fnSetColumnVis(index, false, false);
                 
             }
-//            if((value == 'column_external_content' && column_external_content == 0)){
-//                tblAssess.fnSetColumnVis(index, false, false);
-//                
-//            }
-//            if((value == 'column_external_content1' && column_external_content1 == 0)){
-//                tblAssess.fnSetColumnVis(index, false, false);
-//                
-//            }
+            if((value == 'column_external_content' && column_external_content == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+                
+            }
+            if((value == 'column_external_content1' && column_external_content1 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+                
+            }
             if((value == 'column_external_content2' && column_external_content2 == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
                 
