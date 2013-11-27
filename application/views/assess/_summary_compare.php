@@ -1,6 +1,6 @@
 <div class="mt_10 ml_15">
 	<div class="mr_10">
-		<img src="<?php echo base_url(); ?>img/assess_report_seo.png" />
+		<img src="<?php echo base_url(); ?>img/assess_report_seo_red.png" />
 		SKUs that have shorter product content than competitor: 
 		<span class="skus_shorter_than_competitor_product_content mr_10" ></span>
 	</div>
@@ -24,7 +24,7 @@
 
 <div class="mt_10 ml_15">
 	<div class="mr_10">
-		<img src="<?php echo base_url(); ?>img/assess_report_seo.png" />
+		<img src="<?php echo base_url(); ?>img/assess_report_seo_red.png" />
 		SKUs that have product content with fewer keywords optimized than competitor:
 		<span class="skus_fewer_competitor_optimized_keywords" ></span>
 	</div>
