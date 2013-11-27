@@ -129,16 +129,16 @@ class Statistics_new_model extends CI_Model {
         $idata['batch_id'] = $research_and_batch_id['batch_id'];
         $idata['research_data_id'] = $research_and_batch_id['research_data_id']; 
         $this->db->where('imported_data_id', $imported_data_id)->where('batch_id', $research_and_batch_id['batch_id']);
-        $query= $this->db->get("recipes_new");    
+        $query= $this->db->get("statistics_new");    
         if($query->num_rows()>0){
         
         $row = $query->first_row();
            $this->db->where('id', $row->id);
-           $this->db->update('recipes_new', $idata);
+           $this->db->update('statistics_new', $idata);
         }else{
         
         $idata['imported_data_id'] = $imported_data_id;
-        $this->db->insert('recipes_new', $idata);
+        $this->db->insert('statistics_new', $idata);
        
         }
             
