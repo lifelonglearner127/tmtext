@@ -1144,8 +1144,10 @@ class Imported_data_parsed_model extends CI_Model {
             $features = '';
             $model = '';
             foreach ($res as $val) {
-                $revision = $val->revision;
-                $model = $val->model;
+                if($val->key == 'URL'){
+                    $revision = $val->revision;
+                    $model = $val->model;
+                }
                 //*
                 switch ($val->key){
                     case 'URL': $url = $val->value; break;

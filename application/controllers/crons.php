@@ -904,13 +904,13 @@ class Crons extends MY_Controller {
                     echo "SEO Long phrases - $time seconds\n";
 
                     $time_start = microtime(true);
-
-
                     if (isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model']) && strlen($data_import['parsed_attributes']['model'])>3) {
-                        echo "</br>isset model</br>";
-                        echo " model = ".$data_import['parsed_attributes']['model']."<br>";
-                        echo " im_id  = ".$data_import['imported_data_id']."<br>";
-                        //$this->imported_data_parsed_model->model_info($data_import['imported_data_id'],$data_import['parsed_attributes']['model'],$data_import['revision']);
+                        $m= '';
+                        if($data_import['model'] && strlen($data_import['model'])>3){
+                            $m = $data_import['model'];
+                        }else{
+                             $m = $data_import['parsed_attributes']['model'];
+                        }
                         try {
                             $own_prices = $this->imported_data_parsed_model->getLastPrices($obj->imported_data_id);
                         } catch (Exception $e) {
@@ -927,11 +927,11 @@ class Crons extends MY_Controller {
                             $price_diff_exists['own_price'] = floatval($own_price);
 
                             try {
-                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], 0,$data_import['imported_data_id'] );
+                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m, 0,$data_import['imported_data_id'] );
                             } catch (Exception $e) {
                                 echo 'Error', $e->getMessage(), "\n";
 
-                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], 0,$data_import['imported_data_id'] );
+                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m, 0,$data_import['imported_data_id'] );
                             }
 
                             if (!empty($similar_items)) {
