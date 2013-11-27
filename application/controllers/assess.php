@@ -2017,7 +2017,7 @@ class Assess extends MY_Controller {
 //        error_reporting(E_ALL);
         //Debugging
         $st_time = microtime(true);
-
+		$success_filter_entries = array();
         $columns = $this->columns();
         $duplicate_content_range = 25;
         $this->load->model('batches_model');
@@ -2102,7 +2102,7 @@ class Assess extends MY_Controller {
         foreach ($results as $row_key => $row) {
 //            $long_description_wc = $row->long_description_wc;
 //            $short_description_wc = $row->short_description_wc;
-
+			$success_filter_entries = array();
             $f_count1 = 0;
             $r_count1 = 0;
             $result_row = new stdClass();
@@ -2203,14 +2203,23 @@ class Assess extends MY_Controller {
                 similar_text($desc_1, $desc_2, $percent) ;
                 $percent = number_format($percent, 2);
 				
-				if ($percent >= 25) 
+				if ($percent >= 25)
+				{
 					$skus_25_duplicate_content++;
+					$this->filterBySummaryCriteria('skus_25_duplicate_content', $build_assess_params->summaryFilterData, $success_filter_entries);
+				}
 				
-				if ($percent >= 50) 
+				if ($percent >= 50)
+				{
 					$skus_50_duplicate_content++;
+					$this->filterBySummaryCriteria('skus_50_duplicate_content', $build_assess_params->summaryFilterData, $success_filter_entries);
+				}
 				
-				if ($percent >= 75) 
+				if ($percent >= 75)
+				{
 					$skus_75_duplicate_content++;
+					$this->filterBySummaryCriteria('skus_75_duplicate_content', $build_assess_params->summaryFilterData, $success_filter_entries);
+				}
 											
                 $result_row->Duplicate_Content.= $percent .' %';
                 //var_dump($result_row->Duplicate_Content); die();
@@ -2482,19 +2491,34 @@ class Assess extends MY_Controller {
 			$batch2_filtered_meta_percents = array_filter($batch2_meta_percents[$row_key]);
 			
 			if (count($batch1_filtered_meta_percents) < count($batch2_filtered_meta_percents))
+			{
 				$skus_fewer_competitor_optimized_keywords++;
+				$this->filterBySummaryCriteria('skus_fewer_competitor_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries);					
+			}
 			
 			if (!$batch1_filtered_meta_percents)
+			{
 				$skus_zero_optimized_keywords++;
+				$this->filterBySummaryCriteria('skus_zero_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries);
+			}
 			
 			if (count($batch1_filtered_meta_percents) == 1)
+			{
 				$skus_one_optimized_keywords++;
+				$this->filterBySummaryCriteria('skus_one_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries);		
+			}
 				
 			if (count($batch1_filtered_meta_percents) == 2)
+			{
 				$skus_two_optimized_keywords++;
+				$this->filterBySummaryCriteria('skus_two_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries);			
+			}
 				
 			if (count($batch1_filtered_meta_percents) == 3)
+			{
 				$skus_three_optimized_keywords++;			
+				$this->filterBySummaryCriteria('skus_three_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries);
+			}
 
 
 //            if ($pars_atr['parsed_meta']['keywords'] && $pars_atr['parsed_meta']['keywords'] != '') {
@@ -2675,10 +2699,16 @@ class Assess extends MY_Controller {
                 }
 				
 				if ($result_row->column_features && $f_count1 && $result_row->column_features < $f_count1)
+				{
 					$skus_fewer_features_than_competitor++;
+					$this->filterBySummaryCriteria('skus_fewer_features_than_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);						
+				}
 				
 				if ($result_row->column_reviews && $r_count1 && $result_row->column_reviews < $r_count1)
+				{
 					$skus_fewer_reviews_than_competitor++;
+					$this->filterBySummaryCriteria('skus_fewer_reviews_than_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);	
+				}
           }
 
 
@@ -2711,10 +2741,8 @@ class Assess extends MY_Controller {
                             $price_diff_res .= "<input type='hidden'><nobr>" . $competitor_site . " - $" . $price_diff['competitor_price'][$i] . "</nobr><br />";
                         }
                     }
-                }
-                if ($result_row->lower_price_exist == true) {
-                    $items_priced_higher_than_competitors += $row->items_priced_higher_than_competitors;
-                }
+                }                
+				
                 $result_row->price_diff = $price_diff_res;
             }
 
@@ -2854,14 +2882,17 @@ class Assess extends MY_Controller {
 			
 			if ($result_row->short_description_wc + $result_row->long_description_wc < $result_row->short_description_wc1 + $result_row->long_description_wc1) {
                 $skus_shorter_than_competitor_product_content++;
+				$this->filterBySummaryCriteria('skus_shorter_than_competitor_product_content', $build_assess_params->summaryFilterData, $success_filter_entries);
             }
 			
 			if ($result_row->short_description_wc + $result_row->long_description_wc > $result_row->short_description_wc1 + $result_row->long_description_wc1) {
                 $skus_longer_than_competitor_product_content++;
+				$this->filterBySummaryCriteria('skus_longer_than_competitor_product_content', $build_assess_params->summaryFilterData, $success_filter_entries);
             }
 			
 			if ($result_row->short_description_wc + $result_row->long_description_wc == $result_row->short_description_wc1 + $result_row->long_description_wc1) {
                 $skus_same_competitor_product_content++;
+				$this->filterBySummaryCriteria('skus_same_competitor_product_content', $build_assess_params->summaryFilterData, $success_filter_entries);
             }
 
 
@@ -2924,8 +2955,22 @@ class Assess extends MY_Controller {
             if ($build_assess_params->price_diff == true && $result_row->lower_price_exist == false) {
                 continue;
             }
-
-            $result_table[] = $result_row;
+			
+			if ($result_row->lower_price_exist == true) {												
+				$items_priced_higher_than_competitors += $row->items_priced_higher_than_competitors;
+				
+				$this->filterBySummaryCriteria('assess_report_items_priced_higher_than_competitors', $build_assess_params->summaryFilterData, $success_filter_entries);	
+			}
+			
+			//this verification is necessary for summary filter
+			// echo "<br />";
+			// echo "<br />";
+			// var_dump($success_filter_entries);
+			// echo "<br />";
+			// echo "<br />";
+			if ($this->checkSuccessFilterEntries($success_filter_entries, $build_assess_params->summaryFilterData))						
+				$result_table[] = $result_row;
+			
 //            ++$qty;
 //            if($qty>$display_length+$display_start)break;
         }
@@ -2967,7 +3012,8 @@ class Assess extends MY_Controller {
         $report['summary']['skus_one_optimized_keywords'] = $skus_one_optimized_keywords;
         $report['summary']['skus_two_optimized_keywords'] = $skus_two_optimized_keywords;
         $report['summary']['skus_three_optimized_keywords'] = $skus_three_optimized_keywords;				      
-
+        $report['summary']['total_items_selected_by_filter'] = count($result_table);				      
+		
         // only if second batch select - get absent products, merge it with result_table
 //        if (isset($build_assess_params->compare_batch_id) && $build_assess_params->compare_batch_id > 0) {
 //            $absent_items = $this->statistics_model->batches_compare($batch_id, $build_assess_params->compare_batch_id);
@@ -3054,14 +3100,14 @@ class Assess extends MY_Controller {
                 usort($result_table, array("Assess", "assess_sort_ignore"));
             } else {
                 usort($result_table, array("Assess", "assess_sort"));
-            }
+            }					
         }
 //            //Debugging
 //            $dur = microtime(true)-$st_time;
 //            header('Mem-and-Time2-BAT05: '.memory_get_usage().'-'.$dur);
 //            $st_time=  microtime(true);
 
-        $total_rows = count($results);
+        $total_rows = count($result_table);
 
         $echo = intval($this->input->get('sEcho'));
 
@@ -3314,9 +3360,17 @@ class Assess extends MY_Controller {
         return $output;
     }
 	
-	private function filterBySummaryCriteria($filterCriterias)
-	{
+	private function filterBySummaryCriteria($current_criteria, $filterCriterias, &$success_filter_entries)
+	{		
+		$success_filter_entries[] = in_array($current_criteria, $filterCriterias);		
+	}
 	
+	private function checkSuccessFilterEntries($success_filter_entries, $filterCriterias)
+	{
+		if (!$filterCriterias)
+			return true;
+			
+		return array_filter($success_filter_entries);			
 	}
 
     public function get_board_view_snap() {

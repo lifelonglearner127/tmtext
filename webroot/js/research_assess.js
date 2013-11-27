@@ -64,6 +64,7 @@ $(function() {
 		'skus_75_duplicate_content',
 		'skus_25_duplicate_content',
 		'skus_50_duplicate_content',
+		'total_items_selected_by_filter'
 	];
 	
     var tableCase = {
@@ -799,11 +800,17 @@ $(function() {
         "sAjaxSource": readAssessUrl,
         "fnServerData": function(sSource, aoData, fnCallback) {
 			
+			//Toggling total items selected count by filter
+			var total_items_selected_by_filter_wrapper = $('.total_items_selected_by_filter_wrapper');			
+			total_items_selected_by_filter_wrapper.hide();
+			if (summaryInfoSelectedElements.length)
+				total_items_selected_by_filter_wrapper.show();
+				
 			aoData.push({
                 'name': 'summaryFilterData',
                 'value': summaryInfoSelectedElements.join(',')
             });
-			
+										
             aoData = buildTableParams1(aoData);						
 			
             first_aaData = aoData;

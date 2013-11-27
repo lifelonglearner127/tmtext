@@ -22,13 +22,19 @@
 				</span>
 			</h3>
 			<div style="clear: both;"></div>												
-			<div class="boxes_content <?php echo $is_extended_partial ? 'selectable_summary_info' : '' ?>" style="padding:0px; height: 200px; overflow-y: scroll">
-				<div class="mt_10 ml_15 <?php echo $is_extended_partial ? 'ui-widget-content' : '' ?>" data-filterid="assess_report_total_items">
+			<div class="boxes_content <?php echo $is_extended_partial ? 'selectable_summary_info' : '' ?>" style="padding:0px; height: 200px; overflow-y: scroll">				
+				<?php if ($is_extended_partial): ?>	
+					<div class="total_items_selected_by_filter_wrapper mt_10 ml_15" data-filterid="total_items_selected_by_filter" style="display: none">
+						<div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_number.png">Total items selected: <span class="total_items_selected_by_filter mr_10" ></span></div>
+					</div>
+				<?php endif ?>
+				
+				<div class="mt_10 ml_15" data-filterid="assess_report_total_items">
 					<div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_number.png">Total SKUs analyzed: <span class="assess_report_total_items mr_10" ></span></div>
 				</div>
 				
 				<?php if ($is_extended_partial): ?>				
-					<div class="mt_10 ml_15 ui-widget-content" data-filterid="assess_report_competitor_matches_number">
+					<div class="mt_10 ml_15" data-filterid="assess_report_competitor_matches_number">
 						<div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_number.png">Total number of competitor matches: <span class="assess_report_competitor_matches_number mr_10" ></span></div>
 					</div>				
 				<?php endif ?>
