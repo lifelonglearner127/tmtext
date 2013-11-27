@@ -8,7 +8,7 @@ class Statistics_new_model extends CI_Model {
         'research_data' => 'research_data',
         'crawler_list' => 'crawler_list',
         'imported_data_parsed' => 'imported_data_parsed',
-        
+        'meta_kw_rank_source' => 'meta_kw_rank_source'
     );
     protected $res_array;
 
@@ -16,6 +16,12 @@ class Statistics_new_model extends CI_Model {
     {
         parent::__construct();
     }
+
+    // === META KEYWORDS RANKING STUFFS (START)
+    function check_keyword_kw_source($id, $batch_id, $kw) {
+        
+    }
+    // === META KEYWORDS RANKING STUFFS (END)
 
     function get($id)
     {
