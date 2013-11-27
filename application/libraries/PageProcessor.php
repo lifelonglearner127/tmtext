@@ -403,7 +403,7 @@ class PageProcessor {
 		$result['item_id'] = end($parts);
 
 
-		if ( strpos($this->html, 'manufacturer-content')!==false && strpos($this->html, 'content.webcollage.net')!==false ) {
+		if ( (strpos($this->html, 'manufacturer-content')!==false || strpos($this->html, 'providerURLs')!==false) && strpos($this->html, 'content.webcollage.net')!==false ) {
 			$result['webcollage']=true;
 		}
 
