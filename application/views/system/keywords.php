@@ -26,8 +26,8 @@
         <div class='alert' style='margin-bottom: 0px;'>Meta Keywords Ranking Section</div>
         <?php echo form_dropdown('batches_list', $batches_list, array(),' class="sk_batches_list" id="sk_batches_list" style="width: 207px;float:left;margin-right: 20px;margin-top: 10px;"'); ?>  
     </div>
+    <div id='meta_kw_pager_holder' class='row-fluid pagination'></div>
     <div class='row-fluid' id='sk_batches_list_data'>&nbsp;</div>
-    <div class='row-fluid'></div>
     <div class='row-fluid'><hr/></div>
     <!--- META KEYWORDS RANKING STUFFS (END) -->
 
@@ -101,31 +101,31 @@
 	$(function() {
 
         // === META KEYWORDS RANKING STUFFS (START) 
-        function getMetaKeysBatchData(bid) {
-            $.post(base_url + 'index.php/system/system_get_mkw_info', {'bid': bid}, function(d) {
+        function getMetaKeysBatchData(bid, cpage) {
+            cpage = parseInt(cpage);
+            $.post(base_url + 'index.php/system/system_get_mkw_info', {'bid': bid, 'cpage': cpage}, function(d) {
                 $("#loading_kw_meta_selection").modal('hide');
                 console.log(d);
                 if(d.status) {
-                    console.log(d);
-                    console.log(d.data.length, d.data);
-                    var c_content = "<p><span style='font-size: 14px; padding: 9px 12px;' class='label label-info'>Overall: <strong>" + d.init_count + "</strong></span>&nbsp;&nbsp;&nbsp;<span style='font-size: 14px; padding: 9px 12px;' class='label label-success'>After Filtering: <strong>" + d.after_filter_count + "</strong></span></p>"
-                    c_content += "<table class='table'>";
+                    // var c_content = "<p><span style='font-size: 14px; padding: 9px 12px;' class='label label-info'>Overall on current page: <strong>" + d.overall_count + "</strong></span>&nbsp;&nbsp;&nbsp;<span style='font-size: 14px; padding: 9px 12px;' class='label label-success'>After Filtering: <strong>" + d.after_filter_count + "</strong></span></p>"
+                    var c_content = "<table class='table'>";
                     c_content += "<thead>";
                     c_content += "<tr>";
-                    c_content += "<th>ID</th>"
+                    // c_content += "<th>ID</th>";
                     c_content += "<th>Product name</th>";
-                    c_content += "<th>Keywords</th>"
+                    c_content += "<th>Keywords</th>";
                     c_content += "</tr>";
                     c_content += "</thead>";
                     c_content += "<tbody>";
-                    for(var i = 0; i < d.data.length; i++) {
+                    var data_content = d.data_pager;
+                    for(var i = 0; i < data_content.length; i++) {
                         c_content += "<tr>";
-                        c_content += "<td>" + d.data[i].id + "</td>";
-                        c_content += "<td><p class='ellipsis_p'>" + d.data[i].product_name + "</p></td>";
+                        // c_content += "<td>" + d.data[i].id + "</td>";
+                        c_content += "<td><p class='ellipsis_p'>" + data_content[i].product_name + "</p></td>";
                         c_content += "<td>";
                         // ==== render keywords stuffs (start)
-                        if(d.data[i].long_seo_phrases) { // long keywords
-                            var long_keys = d.data[i].long_seo_phrases;
+                        if(data_content[i].long_seo_phrases) { // long keywords
+                            var long_keys = data_content[i].long_seo_phrases;
                             long_keys = _.toArray(long_keys);
                             if(long_keys.length > 0) {
                                 var long_keys_c = "<p style='font-size: 12px; font-weight: bold; margin-bottom: 0px;'>Long Keywords</p>";
@@ -140,8 +140,8 @@
                                 c_content += long_keys_c;
                             }
                         }
-                        if(d.data[i].short_seo_phrases) { // short keywords
-                            var short_keys = d.data[i].short_seo_phrases;
+                        if(data_content[i].short_seo_phrases) { // short keywords
+                            var short_keys = data_content[i].short_seo_phrases;
                             short_keys = _.toArray(short_keys);
                             if(short_keys.length > 0) {
                                 var short_keys_c = "<p style='font-size: 12px; font-weight: bold; margin-bottom: 0px;'>Short Keywords</p>";
@@ -162,6 +162,23 @@
                     }
                     c_content += "</tbody></table>";
                     $("#sk_batches_list_data").html(c_content);
+                    // ==== render pager (start)
+                    var pager = "<ul id='meta_kw_pager'>";
+                    for(var p = 1; p < d.pages; p++) {
+                        if(p == cpage) {
+                            pager += "<li class='active'><a style='border: none;' href='javascript:void(0)' data-page='" + p + "'>" + p + "</a></li>";
+                        } else {
+                            pager += "<li><a style='border: none;' href='javascript:void(0)' data-page='" + p + "'>" + p + "</a></li>";
+                        }
+                    }
+                    pager += "</ul>";
+                    $("#meta_kw_pager_holder").html(pager);
+                    $("#meta_kw_pager > li > a:not('active')").click(function(e) {
+                        var pi = $(e.target).data('page');
+                        console.log("PAGE : ", pi);
+                        getMetaKeysBatchData(bid, pi);
+                    });
+                    // ==== render pager (end)
                 } else {
                     alert(data.msg);
                 }
@@ -170,7 +187,7 @@
         $("#sk_batches_list").change(function(e) {
             var bid = $(e.target).val();
             $("#loading_kw_meta_selection").modal('show');
-            getMetaKeysBatchData(bid);
+            getMetaKeysBatchData(bid, 1);
         });
         // === META KEYWORDS RANKING STUFFS (END)
 

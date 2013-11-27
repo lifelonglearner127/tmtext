@@ -2124,28 +2124,30 @@ class System extends MY_Controller {
       return $batches_list;
   }
 
-  private function system_get_data_for_mkw($bid) {
-      $this->load->model('statistics_new_model');
-      return $this->statistics_new_model->getStatsDataPure($bid);
-  }
 
   public function system_get_mkw_info() {
+  		$this->load->model('statistics_new_model');
       $bid = $this->input->post('bid');
+      $cpage = $this->input->post('cpage');
       $results_stack = array(
       	'status' => false,
       	'msg' => '',
-      	'init_count' => 0,
+      	'overall_count' => 0,
       	'after_filter_count' => 0,
-      	'data' => array()
+      	'data' => array(),
+      	'data_pager' => array(),
+      	'pages' => 1,
+      	'cpage' => $cpage
     	);
       if ($bid == 0) {
           $results_stack['msg'] = 'Batch id not specified';
       } else {
-      		$results = $this->system_get_data_for_mkw($bid);
+      		// $results = $this->statistics_new_model->getStatsDataPure($bid, $limit, $skip);
+      		$results = $this->statistics_new_model->getStatsDataPure($bid);
       		if(count($results) > 0) {
       			$results_stack['status'] = true;
       			$results_stack['msg'] = 'OK';
-      			$results_stack['init_count'] = count($results);
+      			$results_stack['overall_count'] = count($results);
       			foreach ($results as $val) {
       				if( ($val->url !== null && trim($val->url) !== "") && ($val->product_name !== null && trim($val->product_name) !== "") && (unserialize($val->long_seo_phrases) !== false || unserialize($val->short_seo_phrases) !== false) ) {
 	      				$mid = array(
@@ -2178,6 +2180,13 @@ class System extends MY_Controller {
 							}
       			}
       			$results_stack['after_filter_count'] = count($results_stack['data']);
+      			// ==== pagination stuffs fitering (start)
+			      $items_per_page = 20;
+			      $skip = ($cpage - 1)*$items_per_page;
+			      $limit = $items_per_page;
+			      $results_stack['data_pager'] = array_slice($results_stack['data'], $skip, $limit);
+			      $results_stack['pages'] = ceil($results_stack['after_filter_count']/$items_per_page);
+      			// ==== pagination stuffs fitering (end)
       		} else {
       			$results_stack['msg'] = 'No any data finded';
       		}
