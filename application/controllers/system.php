@@ -2191,6 +2191,9 @@ class System extends MY_Controller {
       			$results_stack['msg'] = 'No any data finded';
       		}
       }
+
+      // $data['results_stack'] = $results_stack;;
+      // $this->load->view('system/system_get_mkw_info', $data);
       $this->output->set_content_type('application/json')->set_output(json_encode($results_stack));
   }
 
