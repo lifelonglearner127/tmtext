@@ -1360,11 +1360,8 @@ var scrollYesOrNot = true;
         }
 		console.log(data);
         var report = data.ExtraData.report;
-		
-		var summary_data = {
-			'assess_report_competitor_matches_number' : data.iTotalRecords
-		};
-		fillReportSummary($.extend(report.summary, summary_data));
+				
+		fillReportSummary(report.summary);
 		
         $('#summary_message').html("");
         $('.assess_report_total_items').html(numberWithCommas(report.summary.total_items));
@@ -1505,6 +1502,10 @@ var generate_url_check = GetURLParameter('generate_url_check');
         event.preventDefault();
         comparison_details_load($(this).attr('href'));
     });
+	
+	$(document).on('click', '.update_filter_btn', function(e) {
+		$('#research_assess_update').click();
+	});
 
     $(document).on('change', '#assessDetailsDialog_chkIncludeInReport', function() {
         var research_data_id = $('#assessDetailsDialog_chkIncludeInReport').attr('research_data_id');

@@ -417,6 +417,7 @@
 	$this->load->view('assess/_summary', array(
 		'display' => 'none',
 		'wrapper_class' => 'assess_report_compare',
+		'direct_access' => true
 	)) 
 ?>
 
@@ -445,6 +446,7 @@
 					$this->load->view('assess/_summary', array(
 						'display' => 'block',
 						'wrapper_class' => 'assess_report',
+						'direct_access' => true
 					))
 				?>
 

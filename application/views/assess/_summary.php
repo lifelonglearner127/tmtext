@@ -17,8 +17,11 @@
 						<a class="assess_report_download_pdf" target="_blank" data-type="pdf">PDF</a> |
 						<a class="assess_report_download_doc" target="_blank" data-type="doc">DOC</a>
 					</div>
-
-					<button class="assess_report_options_dialog_button btn" style="float: right;margin-top: 7px;" title="Report Options"><img class="other-icon" src="<?php echo base_url();?>img/ico-gear.png" /></button>
+					<?php if (isset($direct_access) && $direct_access): ?>
+						<button class="update_filter_btn btn" style="float: right;margin-top: 7px;" title="Filter" >Update</button>
+					<?php else: ?>
+						<button class="assess_report_options_dialog_button btn" style="float: right;margin-top: 7px;" title="Report Options"><img class="other-icon" src="<?php echo base_url();?>img/ico-gear.png" /></button>
+					<?php endif ?>
 				</span>
 			</h3>
 			<div style="clear: both;"></div>												
@@ -35,7 +38,7 @@
 				
 				<?php if ($is_extended_partial): ?>				
 					<div class="mt_10 ml_15" data-filterid="assess_report_competitor_matches_number">
-						<div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_number.png">Total number of competitor matches: <span class="assess_report_competitor_matches_number mr_10" ></span></div>
+						<div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_number.png">Total number of corresponding SKUs found on competitor site: <span class="assess_report_competitor_matches_number mr_10" ></span></div>
 					</div>				
 				<?php endif ?>
 				

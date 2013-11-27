@@ -90,6 +90,7 @@ class Assess extends MY_Controller {
     public function get_assess_info() {
         //Debugging
         $st_time = microtime(TRUE);
+		$batch2_items_count = 0;
         $txt_filter = '';
         if ($this->input->get('search_text') != '') {
             $txt_filter = $this->input->get('search_text');
@@ -306,9 +307,11 @@ class Assess extends MY_Controller {
                                     $val->average_review1 = $parsed_average_review_unserialize_val_count;
                                     $val->column_reviews1 = $parsed_column_reviews_unserialize_val_count;
                                     $cmpare->imported_data_id = $item['imported_data_id'];
-
+									$batch2_items_count++;
+									
                                     $similar_items_data[] = $cmpare;
                                     $val->similar_items = $similar_items_data;
+									
                                     $cmp[] = $val;
                                 }
                             }
@@ -353,7 +356,7 @@ class Assess extends MY_Controller {
                 }
                 $build_assess_params->max_similar_item_count = $max_similar_item_count;
             }
-
+			$build_assess_params->batch2_items_count = $batch2_items_count;
             $output = $this->build_asses_table($results, $build_assess_params, $batch_id);
 //            //Debugging
 //            $dur = microtime(true)-$st_time;
@@ -3012,7 +3015,9 @@ class Assess extends MY_Controller {
         $report['summary']['skus_one_optimized_keywords'] = $skus_one_optimized_keywords;
         $report['summary']['skus_two_optimized_keywords'] = $skus_two_optimized_keywords;
         $report['summary']['skus_three_optimized_keywords'] = $skus_three_optimized_keywords;				      
-        $report['summary']['total_items_selected_by_filter'] = count($result_table);				      
+        $report['summary']['total_items_selected_by_filter'] = count($result_table);		
+        $report['summary']['assess_report_competitor_matches_number'] = $build_assess_params->batch2_items_count;		
+		
 		
         // only if second batch select - get absent products, merge it with result_table
 //        if (isset($build_assess_params->compare_batch_id) && $build_assess_params->compare_batch_id > 0) {
