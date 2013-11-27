@@ -5,6 +5,7 @@ var readAssessUrlCompare = base_url + 'index.php/assess/compare';
 var serevr_side = true;
 var serverside_table;
 var tblAllColumns = [];
+var summaryInfoSelectedElements = [];
 var tblAssess;
 $(function() {
     $.fn.serializeObject = function() {
@@ -771,7 +772,22 @@ $(function() {
         },
 
     ];
-
+		
+	$('.selectable_summary_info').selectable({		
+		selected : function(event, uri) {
+			summaryInfoSelectedElements = [];
+			$('.selectable_summary_info .ui-selected').each(function(index, element) {				
+				summaryInfoSelectedElements.push($(element).data('filterid'));
+			});			
+		},
+		unselected : function(event,uri) {
+			summaryInfoSelectedElements = [];
+			$('.selectable_summary_info .ui-selected').each(function(index, element) {				
+				summaryInfoSelectedElements.push($(element).data('filterid'));
+			});			
+		}
+	});
+	
     tblAssess = $('#tblAssess').dataTable({
         "bJQueryUI": true,
         "bDestroy": true,
@@ -782,8 +798,14 @@ $(function() {
         "bServerSide": true,
         "sAjaxSource": readAssessUrl,
         "fnServerData": function(sSource, aoData, fnCallback) {
-
-            aoData = buildTableParams1(aoData);
+			
+			aoData.push({
+                'name': 'summaryFilterData',
+                'value': summaryInfoSelectedElements.join(',')
+            });
+			
+            aoData = buildTableParams1(aoData);						
+			
             first_aaData = aoData;
 			console.log(sSource);
             $.getJSON(sSource, aoData, function(json) {
@@ -3160,8 +3182,8 @@ var scrollYesOrNot = true;
             $('.assess_report').hide();
             $('#assess_view').hide();
         }
-    }
-
+    }	
+	
     function buildTableParams(existingParams) {
 
         var assessRequestParams = collectionParams();

@@ -441,6 +441,13 @@ ul.ui-sortable {
     margin: 0;
     padding-left: 10px;
 }
+.selectable_summary_info .ui-selected { 
+	background: #F39814; color: white; 
+}
+.assess_report_compare .boxes
+{
+	border-radius: 5px 5px 5px 5px;
+}
 .assess_report .boxes_content, .assess_report_compare .boxes_content {
     font-size: 14px;
 }

@@ -11,26 +11,28 @@
 					<img src="<?php echo base_url();?>img/arrow.png">
 				</a>
 				<span class="assess_report_download_panel" style="float: right;width: 500px;">
-					Download
-					<a class="assess_report_download_pdf" target="_blank" data-type="pdf">PDF</a> |
-					<a class="assess_report_download_doc" target="_blank" data-type="doc">DOC</a>
+					<div style="display: none">
+						Download
+						<a class="assess_report_download_pdf" target="_blank" data-type="pdf">PDF</a> |
+						<a class="assess_report_download_doc" target="_blank" data-type="doc">DOC</a>
+					</div>
 					<button class="assess_report_options_dialog_button btn" style="float: right;margin-top: 7px;" title="Report Options"><img class="other-icon" src="<?php echo base_url();?>img/ico-gear.png" /></button>
 				</span>
 			</h3>
 			<div style="clear: both;"></div>												
-			<div class="boxes_content" style="padding:0px; height: 200px; overflow-y: scroll">
-				<div class="mt_10 ml_15">
+			<div class="boxes_content <?php echo $is_extended_partial ? 'selectable_summary_info' : '' ?>" style="padding:0px; height: 200px; overflow-y: scroll">
+				<div class="mt_10 ml_15 <?php echo $is_extended_partial ? 'ui-widget-content' : '' ?>" data-filterid="assess_report_total_items">
 					<div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_number.png">Total SKUs analyzed: <span class="assess_report_total_items mr_10" ></span></div>
 				</div>
 				
 				<?php if ($is_extended_partial): ?>				
-					<div class="mt_10 ml_15">
+					<div class="mt_10 ml_15 ui-widget-content" data-filterid="assess_report_competitor_matches_number">
 						<div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_number.png">Total number of competitor matches: <span class="assess_report_competitor_matches_number mr_10" ></span></div>
 					</div>				
 				<?php endif ?>
 				
 				
-				<div class="mt_10 ml_15">
+				<div class="mt_10 ml_15 <?php echo $is_extended_partial ? 'ui-widget-content' : '' ?>" data-filterid="assess_report_items_priced_higher_than_competitors">
 					<div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_dollar.png">SKUs priced higher than competitors: <span class="assess_report_items_priced_higher_than_competitors mr_10" ></span></div>
 				</div>
 				

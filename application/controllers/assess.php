@@ -154,6 +154,10 @@ class Assess extends MY_Controller {
             $build_assess_params->sort_columns = $this->input->get('iSortCol_0');
             $build_assess_params->sort_dir = $this->input->get('sSortDir_0');
             $build_assess_params->flagged = $this->input->get('flagged') == 'true' ? true : $this->input->get('flagged');
+            
+			$summaryFilterData = $this->input->get('summaryFilterData');			
+			$build_assess_params->summaryFilterData = $summaryFilterData ? explode(',', $summaryFilterData) : array();
+			
             if (intval($compare_batch_id) > 0) {
                 $build_assess_params->compare_batch_id = intval($compare_batch_id);
             }
@@ -3278,7 +3282,8 @@ class Assess extends MY_Controller {
                         $output_row[] = $data_row->gap;
                         $output_row[] = $data_row->Duplicate_Content;
                     }
-                    $output['aaData'][] = $output_row;
+										
+					$output['aaData'][] = $output_row;
                 }
 
 
@@ -3308,6 +3313,11 @@ class Assess extends MY_Controller {
 
         return $output;
     }
+	
+	private function filterBySummaryCriteria($filterCriterias)
+	{
+	
+	}
 
     public function get_board_view_snap() {
         if (isset($_POST['batch_id']) && $_POST['batch_id'] != 0) {
