@@ -188,15 +188,20 @@ class Settings_model extends CI_Model {
         return false;
     }
 
-function RandomString()
-{
-    $characters = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    $randstring = '';
-    for ($i = 0; $i < 10; $i++) {
-        $randstring = $characters[rand(1, strlen($characters))];
-    }
-    return $randstring;
-}
+function GeraHash($qtd){ 
+
+$Caracteres = 'ABCDEFGHIJKLMOPQRSTUVXWYZ0123456789'; 
+$QuantidadeCaracteres = strlen($Caracteres); 
+$QuantidadeCaracteres--; 
+
+$Hash=NULL; 
+    for($x=1;$x<=$qtd;$x++){ 
+        $Posicao = rand(0,$QuantidadeCaracteres); 
+        $Hash .= substr($Caracteres,$Posicao,1); 
+    } 
+
+return $Hash; 
+} 
 
     function actual_url($actual_url) {
         if(empty($actual_url)) {
@@ -209,7 +214,7 @@ function RandomString()
             $row = $query->row();
             $friendly_url = $row->friendly_url;
         } else {
-            $friendly_url = $this->RandomString();
+            $friendly_url = $this->GeraHash(10);
             $this->db->insert($this->tables['urls'], array(
                 'friendly_url' => $friendly_url,
                 'actual_url' => $actual_url

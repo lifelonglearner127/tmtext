@@ -784,3 +784,10 @@ VARCHAR( 4000 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL
 # 11/8
 
 CREATE Index crawler_list_imp_data_id ON crawler_list (imported_data_id);
+<!--Evgeni -->
+CREATE TABLE IF NOT EXISTS `urls` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `actual_url` varchar(1500) NOT NULL,
+  `friendly_url` int(1000) NOT NULL
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1
