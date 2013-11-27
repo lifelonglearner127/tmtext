@@ -243,25 +243,39 @@ return $Hash;
     }
     
     
-    function addMatchingUrls($pr,$lines){
+    function addMatchingUrls($file,$pr,$lines){
         $data = array(
             'key'=>'matching_urls',
-            'description'=>$pr.'|'.$lines.'|'.'0',
+            'description'=>$file.'|'.$pr.'|'.$lines.'|'.'0',
             'created'=>date('Y-m-d H:i:s',time()),
             'modified'=>date('Y-m-d H:i:s',time())
         );
         $this->db->insert('settings',$data);
     }
     function procUpdMatchingUrls($pr,$lines,$umi){
+        $query = $this->getMatching();
+        $value = '';
+        if($query){
+            $matching = $query->first_row();
+            $row = explode('|',$matching->description);
+            $value = $row[0].'|';
+        }
         $this->db->where('key','matching_urls');
         $data = array(
-            'description'=>$pr.'|'.$lines.'|'.$umi,
+            'description'=>$value.$pr.'|'.$lines.'|'.$umi,
             'modified'=>date('Y-m-d H:i:s',time())
         );
         $this->db->update('settings',$data);
     }
     function updateMatchingUrls($pr,$str){
-        $data = array('description'=>$str,'modified'=>date('Y-m-d H:i:s',time()));
+        $query = $this->getMatching();
+        $value = '';
+        if($query){
+            $matching = $query->first_row();
+            $row = explode('|',$matching->description);
+            $value = $row[0].'|';
+        }
+        $data = array('description'=>$value.$str,'modified'=>date('Y-m-d H:i:s',time()));
         $this->db->where('key','matching_urls');
 //        $this->db->where('description',$pr);
         $this->db->update('settings',$data);

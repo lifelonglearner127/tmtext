@@ -11,11 +11,13 @@
 					<img src="<?php echo base_url();?>img/arrow.png">
 				</a>
 				<span class="assess_report_download_panel" style="float: right;width: 500px;">
+
 					<div style="display: none">
-						Download
+						<span>Download</span>
 						<a class="assess_report_download_pdf" target="_blank" data-type="pdf">PDF</a> |
 						<a class="assess_report_download_doc" target="_blank" data-type="doc">DOC</a>
 					</div>
+
 					<button class="assess_report_options_dialog_button btn" style="float: right;margin-top: 7px;" title="Report Options"><img class="other-icon" src="<?php echo base_url();?>img/ico-gear.png" /></button>
 				</span>
 			</h3>

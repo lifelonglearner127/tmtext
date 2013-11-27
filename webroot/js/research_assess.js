@@ -1456,8 +1456,20 @@ var scrollYesOrNot = true;
             $('#comparison_detail').html('');
             $('#comparison_pagination').html('');
         }
-
-        $('.assess_report_download_panel').show();
+var generate_url_check = GetURLParameter('generate_url_check');
+        if(!generate_url_check){
+            $('.assess_report_download_panel').show();
+        }else{
+            $('.assess_report_download_panel').show();
+            $('.assess_report_download_panel>a').hide();
+            $('.assess_report_download_panel>span').hide();
+            if(generate_url_check == "0")
+               $('.assess_report_download_panel>button').hide();
+           else
+               $('.assess_report_download_panel>button').show();
+               
+            
+        }
     }
 
     function comparison_details_load(url) {
@@ -2005,8 +2017,55 @@ var scrollYesOrNot = true;
         }
         //----------------------
     }
-
+//function columns_name(name,cnt,exception){
+//     var num=0;
+//     $("td."+name).each(function() {
+//        if ($(this).text()!='') {
+//            num += 1;
+//        }
+//     }); 
+//     $.each(tblAllColumns, function(index, value) {
+////          if(name == exception){
+//          if((value === name && num == 0)){
+//                tblAssess.fnSetColumnVis(index, false, false);
+////                tblAssess.fnSetColumnVis(index+1, false, false);
+//            }
+////          }
+//      })
+//      
+//     var num1=0;
+//     $("td."+name.concat("1")+"").each(function() {
+//        if ($(this).text()!='') {
+//            num1 += 1;
+//        }
+//     }); 
+//     var name1 = name.concat("1");
+//     $.each(tblAllColumns, function(index, value) {
+//          if(name1 == exception){
+//          if((value == name1 && num1 == 0)){
+//                tblAssess.fnSetColumnVis(index, false, false);
+//                tblAssess.fnSetColumnVis(index+1, false, false);
+//            }
+//          }
+//      })  
+//}
    function check_word_columns() {
+//       columns_name('short_description_wc',4)
+//       columns_name('long_description_wc',4)
+//       columns_name('item_id',4)
+//       columns_name('Meta_Keywords',4)
+//       columns_name('Page_Load_Time',4)
+//       columns_name('Short_Description',4)
+//       columns_name('Long_Description',4)
+//       columns_name('average_review',4)
+//       columns_name('column_reviews',4)
+//       columns_name('model',4)
+//       columns_name('column_external_content',4)
+//       columns_name('Custom_Keywords_Short_Description',4)
+//       columns_name('Custom_Keywords_Long_Description',4)
+//       columns_name('Meta_Description',4,'Meta_Description')
+//       columns_name('HTags_1',4,'HTags_1')
+//       columns_name('HTags_2',4,'HTags_2')
         var word_short_num = 0;
         var word_short_num1 = 0;
         var word_short_num2 = 0;
