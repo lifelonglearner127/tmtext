@@ -113,6 +113,7 @@ $(function() {
             "Meta_Description",
             "Meta_Description_Count",
             "average_review",
+            "column_reviews",
             "snap1",
             "product_name1",
             "item_id1",
@@ -127,6 +128,7 @@ $(function() {
             "Meta_Description1",
             "Meta_Description_Count1",
             "average_review1",
+            "column_reviews1",
             "gap",
             "Duplicate_Content"
             
@@ -626,7 +628,8 @@ $(function() {
         {
             "sTitle": "Reviews",
             "sName": "column_reviews",
-            "sWidth": "3%"
+            "sWidth": "3%",
+            "sClass" :  "column_reviews"
         },
         {
             "sTitle": "Avg Review",
@@ -738,6 +741,12 @@ $(function() {
             "sName": "average_review1",
             "sWidth": "3%",
             "sClass" :  "average_review1"
+        },
+        {
+            "sTitle": "Reviews",
+            "sName": "column_reviews1",
+            "sWidth": "3%",
+            "sClass" :  "column_reviews1"
         },
         {
             "sTitle": "Gap Analysis",
@@ -2014,6 +2023,11 @@ var scrollYesOrNot = true;
         var average_review2 = 0;
         var average_review3 = 0;
         var average_review4 = 0;
+        var column_reviews = 0;
+        var column_reviews1 = 0;
+        var column_reviews2 = 0;
+        var column_reviews3 = 0;
+        var column_reviews4 = 0;
         var model = 0;
         var model1 = 0;
         var model2 = 0;
@@ -2220,53 +2234,93 @@ var scrollYesOrNot = true;
             }
         });
         $('td.Page_Load_Time').each(function() {
-            if ($(this).text()!='') {
+             var txt = parseInt($(this).text());
+            if (txt > 0) {
                 Page_Load_Time += 1;
             }
         });
         $('td.Page_Load_Time1').each(function() {
-            if ($(this).text()!='') {
+            var txt = parseInt($(this).text());
+            if (txt > 0) {
                 Page_Load_Time1 += 1;
             }
         });
         $('td.Page_Load_Time2').each(function() {
-            if ($(this).text()!='') {
+             var txt = parseInt($(this).text());
+            if (txt > 0) {
                 Page_Load_Time2 += 1;
             }
         });
         $('td.Page_Load_Time3').each(function() {
-            if ($(this).text()!='') {
+             var txt = parseInt($(this).text());
+            if (txt > 0) {
                 Page_Load_Time3 += 1;
             }
         });
         $('td.Page_Load_Time4').each(function() {
-            if ($(this).text()!='') {
+            var txt = parseInt($(this).text());
+            if (txt > 0) {
                 Page_Load_Time4 += 1;
             }
         });
         $('td.average_review').each(function() {
-            if ($(this).text()!='') {
+            var txt = parseInt($(this).text());
+            if (txt > 0) {
                 average_review += 1;
             }
         });
         $('td.average_review1').each(function() {
-            if ($(this).text()!='') {
+           var txt = parseInt($(this).text());
+            if (txt > 0) {
                 average_review1 += 1;
             }
         });
         $('td.average_review2').each(function() {
-            if ($(this).text()!='') {
-                average_review2 += 1;
+            var txt = parseInt($(this).text());
+            if (txt > 0) {
+                average_review3 += 1;
             }
         });
         $('td.average_review3').each(function() {
-            if ($(this).text()!='') {
+           var txt = parseInt($(this).text());
+            if (txt > 0) {
                 average_review3 += 1;
             }
         });
         $('td.average_review4').each(function() {
-            if ($(this).text()!='') {
+           var txt = parseInt($(this).text());
+            if (txt > 0) {
                 average_review4 += 1;
+            }
+        });
+        $('td.column_reviews').each(function() {             
+            var txt = parseInt($(this).text());
+            if (txt > 0) {
+                column_reviews += 1;
+            }
+        });
+        $('td.column_reviews1').each(function() {
+            var txt = parseInt($(this).text());
+            if (txt > 0) {
+                column_reviews1 += 1;
+            }
+        });
+        $('td.column_reviews2').each(function() {
+            var txt = parseInt($(this).text());
+            if (txt > 0) {
+                column_reviews2 += 1;
+            }
+        });
+        $('td.column_reviews3').each(function() {
+            var txt = parseInt($(this).text());
+            if (txt > 0) {
+                column_reviews3 += 1;
+            }
+        });
+        $('td.column_reviews4').each(function() {
+           var txt = parseInt($(this).text());
+            if (txt > 0) {
+                column_reviews4 += 1;
             }
         });
         $('td.Short_Description').each(function() {
@@ -2456,6 +2510,26 @@ var scrollYesOrNot = true;
                
             }
             if((value == 'average_review4' && average_review4 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+               
+            }
+            if((value == 'column_reviews' && column_reviews == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+               
+            }
+            if((value == 'column_reviews1' && column_reviews1 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+               
+            }
+            if((value == 'column_reviews2' && column_reviews2 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+               
+            }
+            if((value == 'column_reviews3' && column_reviews3 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+               
+            }
+            if((value == 'column_reviews4' && column_reviews4 == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
                
             }

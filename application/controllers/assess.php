@@ -197,6 +197,7 @@ class Assess extends MY_Controller {
                                     $parsed_meta_unserialize_val_c = '';
                                     $parsed_model_unserialize_val = '';
                                     $parsed_meta_keywords_unserialize_val = '';
+                                    $parsed_review_count_unserialize_val_count = '';
                                     $parsed_loaded_in_seconds_unserialize_val = '';
                                     $parsed_average_review_unserialize_val_count = '';
                                     $cmpare = $this->statistics_new_model->get_compare_item($item['imported_data_id']);
@@ -211,6 +212,8 @@ class Assess extends MY_Controller {
                                         $parsed_loaded_in_seconds_unserialize_val = $parsed_attributes_unserialize['loaded_in_seconds'];
                                     if (isset($parsed_attributes_unserialize['average_review']))
                                         $parsed_average_review_unserialize_val_count = $parsed_attributes_unserialize['average_review'];
+                                    if (isset($parsed_attributes_unserialize['review_count']))
+                                        $parsed_review_count_unserialize_val_count = $parsed_attributes_unserialize['review_count'];
 
                                     $parsed_meta_unserialize = unserialize($cmpare->parsed_meta);
 
@@ -291,6 +294,7 @@ class Assess extends MY_Controller {
                                     $val->Meta_Description1 = $parsed_meta_unserialize_val;
                                     $val->Meta_Description_Count1 = $parsed_meta_unserialize_val_count;
                                     $val->average_review1 = $parsed_average_review_unserialize_val_count;
+                                    $val->column_reviews1 = $parsed_column_reviews_unserialize_val_count;
                                     $cmpare->imported_data_id = $item['imported_data_id'];
 
                                     $similar_items_data[] = $cmpare;
@@ -1952,6 +1956,7 @@ class Assess extends MY_Controller {
             array(
                 "sTitle" => "Reviews",
                 "sName" => "column_reviews",
+                "sClass" => "column_reviews"
             //"sWidth" =>"3%"
             ),
             array(
@@ -2048,6 +2053,7 @@ class Assess extends MY_Controller {
                 $columns[] = array("sTitle" => "Meta Description", "sClass" => "Meta_Description" . $i, "sName" => 'Meta_Description' . $i);
                 $columns[] = array("sTitle" => "Meta Desc <span class='subtitle_word_long' ># Words</span>", "sClass" => "Meta_Description_Count" . $i, "sName" => 'Meta_Description_Count' . $i);
                 $columns[] = array("sTitle" => "Avg Review", "sClass" => "average_review" . $i, "sName" => 'average_review' . $i);
+                $columns[] = array("sTitle" => "Reviews", "sClass" => "column_reviews" . $i, "sName" => 'column_reviews' . $i);
                  if($i == 1){
                                 $columns[] = array("sTitle" => "Gap Analysis", "sClass" => "gap" . $i, "sName" => 'gap');
                                 $colomns[] = array("sTitle" => "Duplicate Content", "sClass" => "Duplicate_Content" . $i, "sName" => 'Duplicate_Content');
@@ -2211,6 +2217,7 @@ class Assess extends MY_Controller {
                     $parsed_loaded_in_seconds_unserialize_val ='';
                     $parsed_average_review_unserialize_val ='';
                     $parsed_attributes_model_unserialize_val ='';
+                    $parsed_column_reviews_unserialize_val = '';
 
                     $parsed_attributes_unserialize = unserialize($sim_items[$i - 1]->parsed_attributes);
 
@@ -2223,6 +2230,8 @@ class Assess extends MY_Controller {
                         $parsed_loaded_in_seconds_unserialize_val = $parsed_attributes_unserialize['loaded_in_seconds'];
                     if (isset($parsed_attributes_unserialize['average_review']))
                         $parsed_average_review_unserialize_val = $parsed_attributes_unserialize['average_review'];
+                    if (isset($parsed_attributes_unserialize['review_count']))
+                        $parsed_column_reviews_unserialize_val = $parsed_attributes_unserialize['review_count'];
                     $parsed_meta_unserialize = unserialize($sim_items[$i - 1]->parsed_meta);
 
                     if ($parsed_meta_unserialize['description']) {
@@ -2332,6 +2341,7 @@ class Assess extends MY_Controller {
                     $result_row['Meta_Description' . $i] = $parsed_meta_unserialize_val;
                     $result_row['Meta_Description_Count' . $i] = $parsed_meta_unserialize_val_count;
                     $result_row['average_review' . $i] = $parsed_average_review_unserialize_val;
+                    $result_row['column_reviews' . $i] = $parsed_column_reviews_unserialize_val;
 
 
                 }
@@ -2354,6 +2364,9 @@ class Assess extends MY_Controller {
             }
             if ($row->average_review1) {
                 $result_row->average_review1 = $row->average_review1;
+            }
+            if ($row->column_reviews1) {
+                $result_row->column_reviews1 = $row->column_reviews1;
             }
             if ($row->Short_Description1) {
                 $result_row->Short_Description1 = $row->Short_Description1;
@@ -3215,6 +3228,7 @@ class Assess extends MY_Controller {
                             $output_row[] = $data_row['Meta_Description' . $i] != null ? $data_row['Meta_Description' . $i] : '';
                             $output_row[] = $data_row['Meta_Description_Count' . $i] != null ? $data_row['Meta_Description_Count' . $i] : '';
                             $output_row[] = $data_row['average_review' . $i] != null ? $data_row['average_review' . $i] : '';
+                            $output_row[] = $data_row['column_reviews' . $i] != null ? $data_row['column_reviews' . $i] : '';
 
 
                         }
@@ -3238,6 +3252,7 @@ class Assess extends MY_Controller {
                         $output_row[] = $data_row->Meta_Description1;
                         $output_row[] = $data_row->Meta_Description_Count1;
                         $output_row[] = $data_row->average_review1;
+                        $output_row[] = $data_row->column_reviews1;
                         $output_row[] = $data_row->gap;
                         $output_row[] = $data_row->Duplicate_Content;
                     }
