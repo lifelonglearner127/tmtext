@@ -164,7 +164,8 @@
                     else{
                         var obj = JSON.parse(data);
                         if(obj.status){
-                            $('#current_status').html('<p>Process is '+obj.status+'</p>'
+                            $('#current_status').html('<p>Process started at: '+obj.started
+                                    +' Status is '+obj.status+'</p>'
                                     +'<p>Total items was '+obj.total+'</p>'
                                     +'<p>Remain items '+obj.remain+'</p>');
                         }

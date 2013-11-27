@@ -322,7 +322,7 @@ function RandomString()
         $sql = "select count(*) as cnt from (
             SELECT p.imported_data_id, p.revision
             FROM `imported_data_parsed` AS `p`
-            LEFT JOIN `statistics_new` AS sn ON `p`.`imported_data_id` = sn.`imported_data_id`
+            LEFT JOIN `recipes_new` AS sn ON `p`.`imported_data_id` = sn.`imported_data_id`
             WHERE (`p`.`key`= 'URL') AND 
             (`p`.`revision` != sn.`revision` OR `sn`.`revision` IS NULL)
             GROUP BY imported_data_id) as res";

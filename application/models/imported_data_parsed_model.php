@@ -1108,7 +1108,7 @@ class Imported_data_parsed_model extends CI_Model {
         $query = $this->db->query("SELECT p.imported_data_id, p.revision
        FROM `imported_data_parsed` AS `p`
 
-       LEFT JOIN `statistics_new` AS sn ON `p`.`imported_data_id` = sn.`imported_data_id`
+       LEFT JOIN `recipes_new` AS sn ON `p`.`imported_data_id` = sn.`imported_data_id`
        WHERE (`p`.`key`= 'URL')
         AND
        (`p`.`revision` != sn.`revision` OR `sn`.`revision` IS NULL)
