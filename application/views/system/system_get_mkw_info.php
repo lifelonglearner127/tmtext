@@ -28,7 +28,7 @@
 							<?php if($v['long_seo_phrases']) { ?>
 								<table>
 										<tbody>
-										<?php foreach($v['long_seo_phrases'] as $key = > $val) { ?>
+										<?php foreach($v['long_seo_phrases'] as $key => $val) { ?>
 											<tr>
 												<td style='border-top: none; padding-left: 0px;'><?php echo $val['ph']." (".$val['count']." - ".$val['prc']."%" ?></td>
 												<td style='border-top: none;'><button type='button' class='btn btn-primary'>Action</button></td>
@@ -40,7 +40,7 @@
 							<?php if($v['short_seo_phrases']) { ?>
 								<table>
 										<tbody>
-										<?php foreach($v['short_seo_phrases'] as $key = > $val) { ?>
+										<?php foreach($v['short_seo_phrases'] as $key => $val) { ?>
 											<tr>
 												<td style='border-top: none; padding-left: 0px;'><?php echo $val['ph']." (".$val['count']." - ".$val['prc']."%" ?></td>
 												<td style='border-top: none;'><button type='button' class='btn btn-primary'>Action</button></td>
@@ -55,6 +55,21 @@
 			</tbody>
 		</table>
 	</div>
+
+<script type='text/javascript'>
+	function getMetaKeysBatchData(bid, cpage) {
+      cpage = parseInt(cpage);
+      $.post(base_url + 'index.php/system/system_get_mkw_info', {'bid': bid, 'cpage': cpage}, function(d) {
+          $("#loading_kw_meta_selection").modal('hide');
+          $("#overall_meta_kw_pager_holder").html(d);
+      });
+  }
+	$("#meta_kw_pager > li > a:not('active')").click(function(e) {
+      var pi = $(e.target).data('page');
+      var bid = $("#sk_batches_list > option:selected").val();
+      getMetaKeysBatchData(bid, pi);
+  });
+</script>
 
 <?php } else { ?>
 	

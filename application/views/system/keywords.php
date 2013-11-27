@@ -102,90 +102,14 @@
 <script type="text/javascript">
 	$(function() {
 
-        // === META KEYWORDS RANKING STUFFS (START) 
+        // === META KEYWORDS RANKING STUFFS (START)
         function getMetaKeysBatchData(bid, cpage) {
             cpage = parseInt(cpage);
             $.post(base_url + 'index.php/system/system_get_mkw_info', {'bid': bid, 'cpage': cpage}, function(d) {
                 $("#loading_kw_meta_selection").modal('hide');
-                console.log(d);
-                if(d.status) {
-                    var c_content = "<table class='table'>";
-                    c_content += "<thead>";
-                    c_content += "<tr>";
-                    c_content += "<th>Product name</th>";
-                    c_content += "<th>Keywords</th>";
-                    c_content += "</tr>";
-                    c_content += "</thead>";
-                    c_content += "<tbody>";
-                    var data_content = d.data_pager;
-                    for(var i = 0; i < data_content.length; i++) {
-                        c_content += "<tr>";
-                        c_content += "<td><p class='ellipsis_p'>" + data_content[i].product_name + "</p></td>";
-                        c_content += "<td>";
-                        if(data_content[i].long_seo_phrases) {
-                            var long_keys = data_content[i].long_seo_phrases;
-                            long_keys = _.toArray(long_keys);
-                            if(long_keys.length > 0) {
-                                var long_keys_c = "<table><tbody>";
-                                for(var j = 0; j < long_keys.length; j++) {
-                                    long_keys_c += "<tr>";
-                                    long_keys_c += "<td style='border-top: none; padding-left: 0px;'>" + long_keys[j].ph + " (" + long_keys[j].count + ") - " + long_keys[j].prc + "%" + "</td>";
-                                    long_keys_c += "<td style='border-top: none;'><button type='button' class='btn btn-primary'>Action</button></td>";
-                                    long_keys_c += "</tr>";
-                                }
-                                long_keys_c += "</tbody></table>";
-                                c_content += long_keys_c;
-                            }
-                        }
-                        if(data_content[i].short_seo_phrases) {
-                            var short_keys = data_content[i].short_seo_phrases;
-                            short_keys = _.toArray(short_keys);
-                            if(short_keys.length > 0) {
-                                var short_keys_c = "<table><tbody>";
-                                for(var j = 0; j < short_keys.length; j++) {
-                                    short_keys_c += "<tr>";
-                                    short_keys_c += "<td style='border-top: none; padding-left: 0px;'>" + short_keys[j].ph + " (" + short_keys[j].count + ") - " + short_keys[j].prc + "%" + "</td>";
-                                    short_keys_c += "<td style='border-top: none'><button type='button' class='btn btn-primary'>Action</button></td>";
-                                    short_keys_c += "</tr>";
-                                }
-                                short_keys_c += "</tbody></table>";
-                                c_content += short_keys_c;
-                            }
-                        }
-                        c_content += "</td>";
-                        c_content += "</tr>";
-                    }
-                    c_content += "</tbody></table>";
-                    $("#sk_batches_list_data").html(c_content);
-                    var pager = "<ul id='meta_kw_pager'>";
-                    for(var p = 1; p < d.pages; p++) {
-                        if(p == cpage) {
-                            pager += "<li class='active'><a style='border: none;' href='javascript:void(0)' data-page='" + p + "'>" + p + "</a></li>";
-                        } else {
-                            pager += "<li><a style='border: none;' href='javascript:void(0)' data-page='" + p + "'>" + p + "</a></li>";
-                        }
-                    }
-                    pager += "</ul>";
-                    $("#meta_kw_pager_holder").html(pager);
-                    $("#meta_kw_pager > li > a:not('active')").click(function(e) {
-                        var pi = $(e.target).data('page');
-                        console.log("PAGE : ", pi);
-                        getMetaKeysBatchData(bid, pi);
-                    });
-                } else {
-                    alert(data.msg);
-                }
+                $("#overall_meta_kw_pager_holder").html(d);
             });
         }
-
-        // function getMetaKeysBatchData(bid, cpage) {
-        //     cpage = parseInt(cpage);
-        //     $.post(base_url + 'index.php/system/system_get_mkw_info', {'bid': bid, 'cpage': cpage}, function(d) {
-        //         $("#loading_kw_meta_selection").modal('hide');
-        //         $("#overall_meta_kw_pager_holder").html(d);
-        //     });
-        // }
-
         $("#sk_batches_list").change(function(e) {
             var bid = $(e.target).val();
             $("#loading_kw_meta_selection").modal('show');
