@@ -2382,6 +2382,8 @@ class System extends MY_Controller {
         $this->load->model('imported_data_parsed_model');
         $this->load->model('temp_data_model');
         $file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
+        $f_name = end(explode('/', $file));
+        //exit($f_name);
         //echo file_exists($file)?"exists":"not exists!"."<br>";
         $this->temp_data_model->emptyTable('notfoundurls');
         $this->temp_data_model->emptyTable('urlstomatch');
@@ -2409,7 +2411,7 @@ class System extends MY_Controller {
         }
         $this->temp_data_model->createNonFoundTable();
         $this->temp_data_model->cUpdDataTable();
-        $this->settings_model->addMatchingUrls($process,$linesAdded);
+        $this->settings_model->addMatchingUrls($f_name,$process,$linesAdded);
         $start = microtime(true);
         $timing = 0;
         while ($timing < 20 && $urls = $this->temp_data_model->getLineFromTable('urlstomatch')) {
@@ -2533,25 +2535,27 @@ class System extends MY_Controller {
                 if($_SERVER['REQUEST_METHOD']=='HEAD')exit;
                 $ar = explode('|', $row->description);
                 $updated = $this->temp_data_model->getTableSize('updated_items');
-                if(strtotime($row->created)==strtotime($row->modified)||count($ar)==3){
+                if(strtotime($row->created)==strtotime($row->modified)||count($ar)==4){
                     //$ar = explode('|', $row->modified);
 //                    $line .= 'Created-'.strtotime($row->created).'; Modified-'.strtotime($row->modified)
 //                            .'; Count of ar-'.count($ar);
-                    $line .= "Matching started at: ".date('Y-m-d H:i:s',$ar[0])." currently in process.";
+                    $line .= "Matching started at: ".date('Y-m-d H:i:s',$ar[1])." currently in process.";
+                    $line .= '<br>Uploaded filename: '.$ar[0];
                     $line .= '<br># Matches Updated: '.$updated;
-                    $line .= '<br># Matches Unchanged: '.$ar[2];
+                    $line .= '<br># Matches Unchanged: '.$ar[3];
                 }
                 else{
                     $ar = explode('|',$row->description);
 //                    $line .= 'Created-'.strtotime($row->created).'; Modified-'.strtotime($row->modified)
 //                            .'; Count of ar-'.count($ar);
-                    $line .= 'Total matching URLs imported: '.$ar[1].'</p><p>'
-                            .'URLs not found in imported_data_parsed: '.$ar[2].'  '
-                            .(intval($ar[2])>0?'<a id="download_not_founds" 
+                    $line .= 'Total matching URLs imported: '.$ar[2].'</p><p>'
+                            .'Uploaded filename: '.$ar[0]
+                            .'<br>URLs not found in imported_data_parsed: '.$ar[3].'  '
+                            .(intval($ar[3])>0?'<a id="download_not_founds" 
                                 href="'.base_url().'index.php/system/get_url_list">Download</a>':'')
                         ;
                     $line .= '<br># Matches Updated: '.$updated;
-                    $line .= '<br># Matches Unchanged: '.$ar[4];
+                    $line .= '<br># Matches Unchanged: '.$ar[5];
                     $urls = $this->temp_data_model->getNotFount();
                     $table = '';
                     if($urls){
