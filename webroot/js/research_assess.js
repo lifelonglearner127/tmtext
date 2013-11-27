@@ -801,11 +801,9 @@ $(function() {
         "fnServerData": function(sSource, aoData, fnCallback) {
 			
 			//Toggling total items selected count by filter
-			var total_items_selected_by_filter_wrapper = $('.total_items_selected_by_filter_wrapper');			
+			var total_items_selected_by_filter_wrapper = $('.total_items_selected_by_filter_wrapper');						
 			total_items_selected_by_filter_wrapper.hide();
-			if (summaryInfoSelectedElements.length)
-				total_items_selected_by_filter_wrapper.show();
-				
+			
 			aoData.push({
                 'name': 'summaryFilterData',
                 'value': summaryInfoSelectedElements.join(',')
@@ -821,6 +819,10 @@ $(function() {
 					console.log('dataTable callback: fnServerData');
                     buildReport(json);
                 }
+				
+				
+				if (summaryInfoSelectedElements.length)
+					total_items_selected_by_filter_wrapper.show();
 				
                 fnCallback(json);
                 setTimeout(function() {
