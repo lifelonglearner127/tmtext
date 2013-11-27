@@ -1,3 +1,16 @@
+#27/11 Ilya
+CREATE  TABLE IF NOT EXISTS `meta_kw_rank_source` (
+  `id` INT NOT NULL AUTO_INCREMENT ,
+  `statistics_new_id` INT NULL DEFAULT NULL ,
+  `kw` VARCHAR(256) NULL DEFAULT NULL ,
+  `kw_ph` VARCHAR(45) NULL DEFAULT NULL ,
+  `kw_count` INT NULL DEFAULT NULL ,
+  `rank_json_encode` TEXT NULL DEFAULT NULL ,
+  `status` INT NULL DEFAULT NULL ,
+  `stamp` DATETIME NULL DEFAULT NULL ,
+  PRIMARY KEY (`id`) 
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1;
+
 #21/10 Viktor
 ALTER TABLE `snapshot_queue_list` ADD COLUMN `name` VARCHAR(255) NULL AFTER `snapshot_id`; 
 

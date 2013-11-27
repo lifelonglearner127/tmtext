@@ -2192,7 +2192,8 @@ class System extends MY_Controller {
       		}
       }
 
-      $data['results_stack'] = $results_stack;;
+      $data['results_stack'] = $results_stack;
+      $data['statistics_new_model'] = $this->statistics_new_model;
       $this->load->view('system/system_get_mkw_info', $data);
       // $this->output->set_content_type('application/json')->set_output(json_encode($results_stack));
   }
