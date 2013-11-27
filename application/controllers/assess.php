@@ -24,6 +24,7 @@ class Assess extends MY_Controller {
 			'filterCustomerByBatch' => true,
 			'batches_get_all' => true,
 			'customers_get_all' => true,
+			'assess_save_columns_state' => true,
         ));
     }
 
@@ -1696,7 +1697,7 @@ class Assess extends MY_Controller {
         $customers = $this->users_to_customers_model->getByUserId($this->ion_auth->get_user_id());
         if (!$this->ion_auth->is_admin($this->ion_auth->get_user_id())) {
             if (count($customers) == 0) {
-                $customer_list = array();
+                $customer_list = array('Amazon.com', 'Walmart.com');
             } else {
                 $customer_list = array('0' => 'Select customer');
             }
