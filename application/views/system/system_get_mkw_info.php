@@ -30,7 +30,7 @@
 										<tbody>
 										<?php foreach($v['long_seo_phrases'] as $key => $val) { ?>
 											<tr>
-												<td style='border-top: none; padding-left: 0px;'><?php echo $val['ph']." (".$val['count']." - ".$val['prc']."%" ?></td>
+												<td style='border-top: none; padding-left: 0px;'><?php echo $val['ph']." (".$val['count'].") - ".$val['prc']."%" ?></td>
 												<td style='border-top: none;'><button type='button' class='btn btn-primary'>Action</button></td>
 											</tr>
 										<?php } ?>
@@ -42,7 +42,7 @@
 										<tbody>
 										<?php foreach($v['short_seo_phrases'] as $key => $val) { ?>
 											<tr>
-												<td style='border-top: none; padding-left: 0px;'><?php echo $val['ph']." (".$val['count']." - ".$val['prc']."%" ?></td>
+												<td style='border-top: none; padding-left: 0px;'><?php echo $val['ph']." (".$val['count'].") - ".$val['prc']."%" ?></td>
 												<td style='border-top: none;'><button type='button' class='btn btn-primary'>Action</button></td>
 											</tr>
 										<?php } ?>
