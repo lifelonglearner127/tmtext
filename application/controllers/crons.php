@@ -1007,11 +1007,11 @@ class Crons extends MY_Controller {
                             }
                         } else {
                             try {
-                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'],  0,$data_import['imported_data_id'] );
+                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m,  0,$data_import['imported_data_id'] );
                             } catch (Exception $e) {
                                 echo 'Error', $e->getMessage(), "\n";
 
-                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], 0,$data_import['imported_data_id'] );
+                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m, 0,$data_import['imported_data_id'] );
                             }
 
                             if (!empty($similar_items)) {
@@ -1098,7 +1098,7 @@ class Crons extends MY_Controller {
                         $time_end = microtime(true);
                         $time = $time_end - $time_start;
                         echo $time."__important";
-
+                        
                         foreach ($same_pr as $key => $val) {
                             $customer = "";
                             foreach ($sites_list as $ki => $vi) {
