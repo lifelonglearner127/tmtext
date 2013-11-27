@@ -1,6 +1,9 @@
 <?php if($results_stack['status']) { ?>
 
 	<div id='meta_kw_pager_holder' class='row-fluid pagination'>
+		<div style='margin-bottom: 10px;'>
+			<button type='button' class='btn btn-success'>Sync all</button>&nbsp;&nbsp;&nbsp;<button type='button' class='btn btn-success'>Sync current page</button>
+		</div>
 		<ul id='meta_kw_pager'>
 			<?php for($p = 1; $p < $results_stack['pages']; $p++) { ?>
 				<?php if($p == $results_stack['cpage']) { ?>
