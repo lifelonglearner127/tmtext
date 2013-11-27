@@ -69,4 +69,4 @@ class URLsPipeline(object):
 
 	def close_spider(self, spider):
 		if self.file:
-			self.outfile.close()
+			self.file.close()
