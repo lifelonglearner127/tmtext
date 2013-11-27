@@ -8,6 +8,7 @@ import sys
 import re
 
 newlines = []
+changedlines = []
 
 # store all lines in second file in a list
 lines2 = []
@@ -22,9 +23,10 @@ with open(sys.argv[1], "r") as infile:
 			if value1 in lineout:
 				newline = lineout.replace(value1, value2)
 				newlines.append(newline)
+				changedlines.append(lineout)
 
 # append the ones that were not found a match
-newlines = set(newlines).union(set(lines2))
+newlines = set(newlines).union(set(lines2).difference(set(changedlines)))
 
 for line in newlines:
 	print line
