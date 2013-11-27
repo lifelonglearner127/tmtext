@@ -237,7 +237,7 @@
             </p>
             <p>
                 <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_external_content" data-col_name="column_external_content" name="column_external_content" <?php echo($columns['column_external_content'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="column_external_content">External Content</label>
+                <label for="column_external_content">Third party content</label>
             </p>
             <p>
                 <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_reviews" data-col_name="column_reviews" name="column_reviews" <?php echo($columns['column_reviews'] == 'true' ? 'checked="checked"' : ''); ?> />
