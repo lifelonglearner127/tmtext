@@ -9,14 +9,22 @@ import re
 
 newlines = []
 
+# store all lines in second file in a list
+lines2 = []
+with open(sys.argv[2], "r") as outfile:
+	for lineout in outfile:
+		lines2.append(lineout.strip())
+
 with open(sys.argv[1], "r") as infile:
-	with open(sys.argv[2], "rw") as outfile:
+	for line in infile:
+		(value1, value2) = line.strip().split(",")
+		for lineout in lines2:
+			if value1 in lineout:
+				newline = lineout.replace(value1, value2)
+				newlines.append(newline)
 
-		for line in infile:
-			(value1, value2) = line.strip().split(",")
-			for lineout in outfile:
-				if value1 in line:
-					newline = lineout.strip().replace(value1, value2)
-					#print newline
-					print lineout, newline
+# append the ones that were not found a match
+newlines = set(newlines).union(set(lines2))
 
+for line in newlines:
+	print line
