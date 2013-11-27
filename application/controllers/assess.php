@@ -200,6 +200,7 @@ class Assess extends MY_Controller {
                                     $parsed_review_count_unserialize_val_count = '';
                                     $parsed_loaded_in_seconds_unserialize_val = '';
                                     $parsed_average_review_unserialize_val_count = '';
+                                    $column_external_content = '';
                                     $cmpare = $this->statistics_new_model->get_compare_item($item['imported_data_id']);
 
                                     $parsed_attributes_unserialize = unserialize($cmpare->parsed_attributes);
@@ -214,7 +215,11 @@ class Assess extends MY_Controller {
                                         $parsed_average_review_unserialize_val_count = $parsed_attributes_unserialize['average_review'];
                                     if (isset($parsed_attributes_unserialize['review_count']))
                                         $parsed_review_count_unserialize_val_count = $parsed_attributes_unserialize['review_count'];
-
+                                    if (isset($parsed_attributes_unserialize['cnetcontent']) || isset($parsed_attributes_unserialize['webcollage']))
+                                        $column_external_content = $this->column_external_content($parsed_attributes_unserialize['cnetcontent'],$parsed_attributes_unserialize['webcollage']);
+ 
+                  
+               
                                     $parsed_meta_unserialize = unserialize($cmpare->parsed_meta);
 
                                     if (isset($parsed_meta_unserialize['description'])) {
@@ -293,6 +298,7 @@ class Assess extends MY_Controller {
                                     $val->long_description_wc1 = $cmpare->long_description_wc;
                                     $val->Meta_Description1 = $parsed_meta_unserialize_val;
                                     $val->Meta_Description_Count1 = $parsed_meta_unserialize_val_count;
+                                    $val->column_external_content1 = $column_external_content;
                                     $val->average_review1 = $parsed_average_review_unserialize_val_count;
                                     $val->column_reviews1 = $parsed_column_reviews_unserialize_val_count;
                                     $cmpare->imported_data_id = $item['imported_data_id'];
@@ -873,10 +879,13 @@ class Assess extends MY_Controller {
                                     $parsed_meta_keywords_unserialize_val = '';
                                     $parsed_loaded_in_seconds_unserialize_val = '';
                                     $parsed_average_review_unserialize_val_count = '';
+                                    $column_external_content = '';
                                     $cmpare = $this->statistics_new_model->get_compare_item($item['imported_data_id']);
 
                                     $parsed_attributes_unserialize = unserialize($cmpare->parsed_attributes);
-
+                                   if (isset($parsed_attributes_unserialize['cnetcontent']) || isset($parsed_attributes_unserialize['webcollage']))
+                                         $column_external_content = $this->column_external_content($parsed_attributes_unserialize['cnetcontent'],$parsed_attributes_unserialize['webcollage']);
+ 
                                     if (isset($parsed_attributes_unserialize['feature_count']))
                                         $parsed_attributes_column_features_unserialize_val = $parsed_attributes_unserialize['feature_count'];
                                     if (isset($parsed_attributes_unserialize['item_id']))
@@ -938,6 +947,7 @@ class Assess extends MY_Controller {
 
                                     $cmpare->Meta_Keywords = $parsed_meta_keywords_unserialize_val;
                                     $cmpare->column_features = $parsed_attributes_column_features_unserialize_val;
+                                    $cmpare->column_external_content = $column_external_content;
                                 
                                     $cmpare->Meta_Description = $parsed_meta_unserialize_val;
                                     $cmpare->Meta_Description_Count = $parsed_meta_unserialize_val_count;
@@ -1356,6 +1366,9 @@ class Assess extends MY_Controller {
                         if (in_array('column_features', $selected_columns)) {
                             $res_array[$key]['column_features(' . $i . ")"] = $sim_items[$i - 1]->column_features ? $sim_items[$i - 1]->column_features : ' - ';
                         }
+                        if (in_array('column_external_content', $selected_columns)) {
+                            $res_array[$key]['column_external_content(' . $i . ")"] = $sim_items[$i - 1]->column_external_content ? $sim_items[$i - 1]->column_external_content : '';
+                        }
                         if (in_array('column_reviews', $selected_columns)) {
                             $res_array[$key]['column_reviews(' . $i . ")"] = $sim_items[$i - 1]->average_review  ? $sim_items[$i - 1]->average_review  : ' - ';
                         }
@@ -1391,7 +1404,7 @@ class Assess extends MY_Controller {
                 $line[]=  'Page Load Time';
             }
             if(in_array('column_external_content', $selected_columns)){
-               $line[]= 'External Content';
+               $line[]= 'Third Party Content';
             }
 //            if (in_array('column_features', $selected_columns)) {
 //                $res_array[$key]['column_features'] = $pars_atr['parsed_attributes']['feature_count'] !== false ? $pars_atr['parsed_attributes']['feature_count'] : '';
@@ -1464,6 +1477,9 @@ class Assess extends MY_Controller {
                 }
                 if (in_array('column_features', $selected_columns)) {
                     $line[] = "Features(" . ($i+1) . ")";
+                }
+                if (in_array('column_external_content', $selected_columns)) {
+                    $line[] = "Third Party Content(" . ($i+1) . ")";
                 }
                 if (in_array('column_reviews', $selected_columns)) {
                     $line[] = "Reviews(" . ($i+1) . ")";
@@ -1951,6 +1967,8 @@ class Assess extends MY_Controller {
             array(
                 "sTitle" => "Third Party Content",
                 "sName" => "column_external_content",
+                
+                "sClass" => "column_external_content"
             //"sWidth" =>"2%"
             ),
             array(
@@ -2052,6 +2070,7 @@ class Assess extends MY_Controller {
                 $columns[] = array("sTitle" => "Long Desc <span class='subtitle_word_long' ># Words</span>","sClass" => "word_long" . $i, "sName" => 'long_description_wc' . $i);
                 $columns[] = array("sTitle" => "Meta Description", "sClass" => "Meta_Description" . $i, "sName" => 'Meta_Description' . $i);
                 $columns[] = array("sTitle" => "Meta Desc <span class='subtitle_word_long' ># Words</span>", "sClass" => "Meta_Description_Count" . $i, "sName" => 'Meta_Description_Count' . $i);
+                $columns[] = array("sTitle" => "Third Party Content", "sClass" => "column_external_content" . $i, "sName" => 'column_external_content' . $i);
                 $columns[] = array("sTitle" => "Avg Review", "sClass" => "average_review" . $i, "sName" => 'average_review' . $i);
                 $columns[] = array("sTitle" => "Reviews", "sClass" => "column_reviews" . $i, "sName" => 'column_reviews' . $i);
                  if($i == 1){
@@ -2108,7 +2127,7 @@ class Assess extends MY_Controller {
             $result_row->short_seo_phrases = "None";
             $result_row->long_seo_phrases = "None";
             $result_row->price_diff = "-";
-            $result_row->column_external_content = " ";
+            $result_row->column_external_content = "";
             $result_row->Custom_Keywords_Short_Description = "";
             $result_row->Custom_Keywords_Long_Description = "";
             $result_row->Meta_Description = "";
@@ -2218,10 +2237,13 @@ class Assess extends MY_Controller {
                     $parsed_average_review_unserialize_val ='';
                     $parsed_attributes_model_unserialize_val ='';
                     $parsed_column_reviews_unserialize_val = '';
+                    $column_external_content = '';
 
                     $parsed_attributes_unserialize = unserialize($sim_items[$i - 1]->parsed_attributes);
 
-
+                    if (isset($parsed_attributes_unserialize['cnetcontent']) || isset($parsed_attributes_unserialize['webcollage']))
+                        $column_external_content = $this->column_external_content($parsed_attributes_unserialize['cnetcontent'],$parsed_attributes_unserialize['webcollage']);
+ 
                     if (isset($parsed_attributes_unserialize['item_id']))
                         $parsed_attributes_unserialize_val = $parsed_attributes_unserialize['item_id'];
                     if (isset($parsed_attributes_unserialize['model']))
@@ -2340,6 +2362,7 @@ class Assess extends MY_Controller {
                     $result_row['long_description_wc' . $i] = $sim_items[$i - 1]->long_description_wc !== false ? $sim_items[$i - 1]->long_description_wc : '';
                     $result_row['Meta_Description' . $i] = $parsed_meta_unserialize_val;
                     $result_row['Meta_Description_Count' . $i] = $parsed_meta_unserialize_val_count;
+                    $result_row['column_external_content' . $i] = $column_external_content;
                     $result_row['average_review' . $i] = $parsed_average_review_unserialize_val;
                     $result_row['column_reviews' . $i] = $parsed_column_reviews_unserialize_val;
 
@@ -2374,6 +2397,9 @@ class Assess extends MY_Controller {
             if ($row->Long_Description1) {
                 $result_row->Long_Description1 = $row->Long_Description1;
             }
+            if ($row->column_external_content1) {
+                $result_row->column_external_content1 = $row->column_external_content1;
+            }
             if ($row->Meta_Keywords1) {
                 $result_row->Meta_Keywords1 = $row->Meta_Keywords1;
             }
@@ -2399,15 +2425,9 @@ class Assess extends MY_Controller {
 
 
             $pars_atr = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
-
-            if (isset($pars_atr['parsed_attributes']['cnetcontent']) && (isset($pars_atr['parsed_attributes']['webcollage'])) && $pars_atr['parsed_attributes']['cnetcontent'] == 1 && $pars_atr['parsed_attributes']['webcollage'] == 1)
-                $result_row->column_external_content = 'CNET, WC';
-            elseif (isset($pars_atr['parsed_attributes']['cnetcontent']) && (isset($pars_atr['parsed_attributes']['webcollage'])) && $pars_atr['parsed_attributes']['cnetcontent'] == 1 && $pars_atr['parsed_attributes']['webcollage'] != 1)
-                $result_row->column_external_content = 'CNET';
-            elseif (isset($pars_atr['parsed_attributes']['cnetcontent']) && (isset($pars_atr['parsed_attributes']['webcollage'])) && $pars_atr['parsed_attributes']['cnetcontent'] != 1 && $pars_atr['parsed_attributes']['webcollage'] == 1)
-                $result_row->column_external_content = 'WC';
-            else
-                $result_row->column_external_content = ' ';
+            if ($pars_atr['parsed_attributes']['cnetcontent'] || $pars_atr['parsed_attributes']['webcollage']) {
+                $result_row->column_external_content= $this->column_external_content($pars_atr['parsed_attributes']['cnetcontent'],$pars_atr['parsed_attributes']['webcollage']);
+            }
             $result_row->column_reviews = $pars_atr['parsed_attributes']['review_count'];
             $result_row->column_features = $pars_atr['parsed_attributes']['feature_count'];
 
@@ -3227,6 +3247,7 @@ class Assess extends MY_Controller {
                             $output_row[] = $data_row['long_description_wc' . $i] != null ? $data_row['long_description_wc' . $i] : '';
                             $output_row[] = $data_row['Meta_Description' . $i] != null ? $data_row['Meta_Description' . $i] : '';
                             $output_row[] = $data_row['Meta_Description_Count' . $i] != null ? $data_row['Meta_Description_Count' . $i] : '';
+                            $output_row[] = $data_row['column_external_content' . $i] != null ? $data_row['column_external_content' . $i] : '';
                             $output_row[] = $data_row['average_review' . $i] != null ? $data_row['average_review' . $i] : '';
                             $output_row[] = $data_row['column_reviews' . $i] != null ? $data_row['column_reviews' . $i] : '';
 
@@ -3251,6 +3272,7 @@ class Assess extends MY_Controller {
                         $output_row[] = $data_row->long_description_wc1;
                         $output_row[] = $data_row->Meta_Description1;
                         $output_row[] = $data_row->Meta_Description_Count1;
+                        $output_row[] = $data_row->column_external_content1;
                         $output_row[] = $data_row->average_review1;
                         $output_row[] = $data_row->column_reviews1;
                         $output_row[] = $data_row->gap;

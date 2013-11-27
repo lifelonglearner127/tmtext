@@ -112,6 +112,7 @@ $(function() {
             "long_description_wc",
             "Meta_Description",
             "Meta_Description_Count",
+            "column_external_content",
             "average_review",
             "column_reviews",
             "snap1",
@@ -127,6 +128,7 @@ $(function() {
             "long_description_wc1",
             "Meta_Description1",
             "Meta_Description_Count1",
+            "column_external_content1",
             "average_review1",
             "column_reviews1",
             "gap",
@@ -623,7 +625,8 @@ $(function() {
         {
             "sTitle": "Third Party Content",
             "sName": "column_external_content",
-            "sWidth": "2%"
+            "sWidth": "2%",
+            "sClass" :  "column_external_content"
         },
         {
             "sTitle": "Reviews",
@@ -735,6 +738,12 @@ $(function() {
             "sWidth" : "4%",
             "sClass" : "Meta_Description_Count1"
             
+        },
+         {
+            "sTitle": "Third Party Content",
+            "sName": "column_external_content1",
+            "sWidth": "2%",
+            "sClass" :  "column_external_content1"
         },
         {
             "sTitle": "Avg Review",
@@ -2033,6 +2042,11 @@ var scrollYesOrNot = true;
         var model2 = 0;
         var model3 = 0;
         var model4 = 0;
+        var column_external_content = 0;
+        var column_external_content1 = 0;
+        var column_external_content2 = 0;
+        var column_external_content3 = 0;
+        var column_external_content4 = 0;
         var Custom_Keywords_Short_Description = 0;
         var Custom_Keywords_Long_Description = 0;
         $('td.word_short').each(function() {
@@ -2373,6 +2387,31 @@ var scrollYesOrNot = true;
                 Long_Description4 += 1;
             }
         });
+        $('td.column_external_content').each(function() {
+            if ($(this).text()!='') {
+                column_external_content += 1;
+            }
+        });
+        $('td.column_external_content1').each(function() {
+            if ($(this).text()!='') {
+                column_external_content1 += 1;
+            }
+        });
+        $('td.column_external_content2').each(function() {
+            if ($(this).text()!='') {
+                column_external_content2 += 1;
+            }
+        });
+        $('td.column_external_content3').each(function() {
+            if ($(this).text()!='') {
+                column_external_content3 += 1;
+            }
+        });
+        $('td.column_external_content4').each(function() {
+            if ($(this).text()!='') {
+                column_external_content4 += 1;
+            }
+        });
      
         $.each(tblAllColumns, function(index, value) {
             if ((value == 'short_description_wc' && word_short_num == 0) || (value == 'long_description_wc' && word_long_num == 0)) {
@@ -2573,6 +2612,27 @@ var scrollYesOrNot = true;
                 tblAssess.fnSetColumnVis(index, false, false);
                 
             }
+//            if((value == 'column_external_content' && column_external_content == 0)){
+//                tblAssess.fnSetColumnVis(index, false, false);
+//                
+//            }
+//            if((value == 'column_external_content1' && column_external_content1 == 0)){
+//                tblAssess.fnSetColumnVis(index, false, false);
+//                
+//            }
+            if((value == 'column_external_content2' && column_external_content2 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+                
+            }
+            if((value == 'column_external_content3' && column_external_content3 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+                
+            }
+            if((value == 'column_external_content4' && column_external_content4 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+                
+            }
+           
         });
 //        $('.subtitle_word_long').show();
 //        $('.subtitle_word_short').show();
@@ -2710,6 +2770,7 @@ var scrollYesOrNot = true;
                     duplicate_content: $("#column_duplicate_content").attr('checked') == 'checked',
                     column_external_content: $("#column_external_content").attr('checked') == 'checked',
                     column_reviews: $("#column_reviews").attr('checked') == 'checked',
+                    average_review: $("#average_review").attr('checked') == 'checked',
                     column_features: $("#column_features").attr('checked') == 'checked',
                     price_diff: $("#column_price_diff").attr('checked') == 'checked',
                     gap: $("#gap").attr('checked') == 'checked',
