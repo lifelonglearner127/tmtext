@@ -25,7 +25,8 @@ class Crons extends MY_Controller {
             'match_urls'=>TRUE,
             'stop_do_stats'=>true,
             'get_stats_status'=>true,
-            'stop_do_stats'=>true
+            'stop_do_stats'=>true,
+            'delete_batch_items_from_statistics_new' => true
         ));
         $this->load->library('helpers');
         $this->load->helper('algoritm');
@@ -745,6 +746,26 @@ class Crons extends MY_Controller {
           $this->db->update('imported_data_parsed', array('revision' => $res['max_revision']), array('imported_data_id' => $res['imported_data_id']));
       }
       
+    }
+    
+    public function delete_batch_items_from_statistics_new(){
+       $batch_id = intval($this->uri->segment(3));
+       $sql_cmd = "select rdc.research_data_id, rd.batch_id 
+        , idp.imported_data_id
+        from crawler_list as cl
+        join research_data_to_crawler_list as rdc on cl.id = rdc.crawler_list_id
+        join research_data as rd on rdc.research_data_id = rd.id
+        join batches as b on b.id = rd.batch_id
+        join imported_data_parsed as idp on cl.imported_data_id=idp.imported_data_id
+        where rd.batch_id = $batch_id 
+        and idp.`key`='url' 
+        group by idp.imported_data_id";
+        $q = $this->db->query($sql_cmd);
+      $results =$q->result();
+      foreach( $results as $res){
+          $this->db->delete('statistics_new', array('imported_data_id' => $res->imported_data_id));
+      }
+      echo "batch_id = $batch_id <br> end";
     }
     public function do_stats_forupdated() {
         echo "Script start working";
