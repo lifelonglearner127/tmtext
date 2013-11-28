@@ -64,7 +64,8 @@ $(function() {
 		'skus_75_duplicate_content',
 		'skus_25_duplicate_content',
 		'skus_50_duplicate_content',
-		'total_items_selected_by_filter'
+		'total_items_selected_by_filter',
+		'skus_third_party_content'
 	];
 	
     var tableCase = {
@@ -774,7 +775,8 @@ $(function() {
 
     ];
 		
-	$('.selectable_summary_info').selectable({		
+	$('.selectable_summary_info').selectable({
+		cancel : '.non-selectable',
 		selected : function(event, uri) {
 			summaryInfoSelectedElements = [];
 			$('.selectable_summary_info .ui-selected').each(function(index, element) {				

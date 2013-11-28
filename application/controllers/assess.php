@@ -25,6 +25,7 @@ class Assess extends MY_Controller {
 			'batches_get_all' => true,
 			'customers_get_all' => true,
 			'assess_save_columns_state' => true,
+			'export_assess' => true
         ));
     }
 
@@ -2035,6 +2036,7 @@ class Assess extends MY_Controller {
         $batch2_meta_percents = array();
         $report = array();
         $pricing_details = array();
+        $skus_third_party_content = 0;
         $items_priced_higher_than_competitors = 0;
         $items_have_more_than_20_percent_duplicate_content = 0;
         $skus_25_duplicate_content = 0;
@@ -2866,7 +2868,12 @@ class Assess extends MY_Controller {
 //                ($result_row->long_description_wc <= 100 && $build_assess_params->short_less == -1)){
 //                $items_short_products_content++;
 //            }
-
+			if ($result_row->column_external_content || $result_row->column_external_content1)
+			{
+				$skus_third_party_content++;
+				$this->filterBySummaryCriteria('skus_third_party_content', $build_assess_params->summaryFilterData, $success_filter_entries);
+			}
+			
             if ($result_row->short_description_wc > 0) {
                 $short_wc_total_not_0++;
             }
@@ -3017,6 +3024,7 @@ class Assess extends MY_Controller {
         $report['summary']['skus_three_optimized_keywords'] = $skus_three_optimized_keywords;				      
         $report['summary']['total_items_selected_by_filter'] = count($result_table);		
         $report['summary']['assess_report_competitor_matches_number'] = $build_assess_params->batch2_items_count;		
+        $report['summary']['skus_third_party_content'] = $skus_third_party_content;		
 		
 		
         // only if second batch select - get absent products, merge it with result_table

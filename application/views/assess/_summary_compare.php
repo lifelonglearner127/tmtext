@@ -101,3 +101,11 @@
 		<span class="skus_25_duplicate_content mr_10" ></span>
 	</div>
 </div>
+
+<div class="mt_10 ml_15 ui-widget-content" data-filterid="skus_third_party_content">
+	<div class="mr_10">
+		<img src="<?php echo base_url(); ?>img/assess_report_seo.png" />
+		SKUs that have third party content:
+		<span class="skus_third_party_content mr_10" ></span>
+	</div>
+</div>
