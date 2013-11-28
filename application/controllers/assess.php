@@ -2868,7 +2868,7 @@ class Assess extends MY_Controller {
 //                ($result_row->long_description_wc <= 100 && $build_assess_params->short_less == -1)){
 //                $items_short_products_content++;
 //            }
-			if ($result_row->column_external_content || $result_row->column_external_content1)
+			if ($result_row->column_external_content)
 			{
 				$skus_third_party_content++;
 				$this->filterBySummaryCriteria('skus_third_party_content', $build_assess_params->summaryFilterData, $success_filter_entries);
