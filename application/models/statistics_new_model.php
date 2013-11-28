@@ -57,6 +57,7 @@ class Statistics_new_model extends CI_Model {
             $res['msg'] = 'OK';
             $res['status'] = true;
         }
+        return $res;
     }
     // === META KEYWORDS RANKING STUFFS (END)
 

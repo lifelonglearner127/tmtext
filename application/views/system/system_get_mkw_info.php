@@ -40,9 +40,9 @@
 												<td style='border-top: none; padding-left: 0px;'><span style='font-size: 12px; font-weight: bold'><?php echo $val['ph']." (".$val['count'].") - ".$val['prc']."%" ?></span></td>
 												<td style='border-top: none;'>
 												<?php if($check_meta_status) { ?>
-												<button type='button' disabled class='btn btn-success disabled'>Inside</button>
+												<div class='action_btn_holder'><button type='button' disabled class='btn btn-success disabled'>Inside</button></div>
 												<?php } else { ?>
-												<button type='button' onclick="addKeywordToKwSource('<?php echo $id; ?>', '<?php echo $batch_id; ?>', '<?php echo $kw; ?>', '<?php echo $kw_prc; ?>', '<?php echo $kw_count; ?>')" class='btn btn-primary'>Add</button>
+												<div class='action_btn_holder'><button type='button' onclick="addKeywordToKwSource(this, '<?php echo $id; ?>', '<?php echo $batch_id; ?>', '<?php echo $kw; ?>', '<?php echo $kw_prc; ?>', '<?php echo $kw_count; ?>')" class='btn btn-primary'>Add</button></div>
 												<?php } ?>
 												</td>
 											</tr>
@@ -61,9 +61,9 @@
 												<td style='border-top: none; padding-left: 0px;'><span style='font-size: 12px; font-weight: bold'><?php echo $val['ph']." (".$val['count'].") - ".$val['prc']."%" ?></span></td>
 												<td style='border-top: none;'>
 													<?php if($check_meta_status) { ?>
-													<button type='button' disabled class='btn btn-success disabled'>Inside</button>
+													<div class='action_btn_holder'><button type='button' disabled class='btn btn-success disabled'>Inside</button></div>
 													<?php } else { ?>
-													<button type='button' onclick="addKeywordToKwSource('<?php echo $id; ?>', '<?php echo $batch_id; ?>', '<?php echo $kw; ?>', '<?php echo $kw_prc; ?>', '<?php echo $kw_count; ?>')" class='btn btn-primary'>Add</button>
+													<div class='action_btn_holder'><button type='button' onclick="addKeywordToKwSource(this, '<?php echo $id; ?>', '<?php echo $batch_id; ?>', '<?php echo $kw; ?>', '<?php echo $kw_prc; ?>', '<?php echo $kw_count; ?>')" class='btn btn-primary'>Add</button></div>
 													<?php } ?>
 												</td>
 											</tr>
@@ -91,7 +91,8 @@
       var bid = $("#sk_batches_list > option:selected").val();
       getMetaKeysBatchData(bid, pi);
   });
-	function addKeywordToKwSource(id, batch_id, kw, kw_prc, kw_count) {
+	function addKeywordToKwSource(e, id, batch_id, kw, kw_prc, kw_count) {
+		var btn_holder = $(e).parent();
 		var send_object = {
 			'id': id,
 			'batch_id': batch_id,
@@ -101,6 +102,12 @@
 		};
 		$.post(base_url + 'index.php/system/add_keyword_to_kw_source', send_object, function(data) {
         console.log(data);
+        if(data.status) {
+        	console.log("replace");
+        	btn_holder.html("<button type='button' disabled class='btn btn-success disabled'>Inside</button>");
+        } else {
+        	alert(data.msg);
+        }
     });
 	}
 
