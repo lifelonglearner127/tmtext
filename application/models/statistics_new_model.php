@@ -19,7 +19,44 @@ class Statistics_new_model extends CI_Model {
 
     // === META KEYWORDS RANKING STUFFS (START)
     function check_keyword_kw_source($id, $batch_id, $kw) {
-        
+        $status = false;
+        $check_obj = array(
+            'statistics_new_id' => $id,
+            'batch_id' => $batch_id,
+            'kw' => $kw
+        );
+        $query = $this->db->where($check_obj)->limit(1)->get($this->tables['meta_kw_rank_source']);
+        $query_res = $query->result();
+        if(count($query_res) > 0) $status = true;
+        return $status;
+    }
+    function add_keyword_kw_source($statistics_new_id, $batch_id, $kw, $kw_prc, $kw_count) {
+        $res = array(
+            'status' => false,
+            'msg' => ''
+        );
+        $check_obj = array(
+            'statistics_new_id' => $statistics_new_id,
+            'batch_id' => $batch_id,
+            'kw' => $kw
+        );
+        $query = $this->db->where($check_obj)->limit(1)->get($this->tables['meta_kw_rank_source']);
+        $query_res = $query->result();
+        if(count($query_res) > 0) {
+            $res['msg'] = 'Already exists';
+        } else {
+            $insert_object = array(
+                'batch_id' => $batch_id,
+                'statistics_new_id' => $statistics_new_id,
+                'kw' => $kw,
+                'kw_prc' => $kw_prc,
+                'kw_count' => $kw_count,
+                'stamp' => date("Y-m-d H:i:s")
+            );
+            $this->db->insert($this->tables['meta_kw_rank_source'], $insert_object);
+            $res['msg'] = 'OK';
+            $res['status'] = true;
+        }
     }
     // === META KEYWORDS RANKING STUFFS (END)
 

@@ -35,9 +35,16 @@
 										<?php foreach($v['long_seo_phrases'] as $key => $val) { ?>
 											<?php $kw = $val['ph']; $kw_prc = $val['prc']; $kw_count = $val['count']; ?>
 											<?php $check_meta_status = $statistics_new_model->check_keyword_kw_source($id, $batch_id, $kw); ?>
+											<input type='hidden' value="<?php echo $check_meta_status; ?>">
 											<tr>
 												<td style='border-top: none; padding-left: 0px;'><span style='font-size: 12px; font-weight: bold'><?php echo $val['ph']." (".$val['count'].") - ".$val['prc']."%" ?></span></td>
-												<td style='border-top: none;'><button type='button' onclick="addKeywordToKwSource('<?php echo $id; ?>', '<?php echo $batch_id; ?>', '<?php echo $kw; ?>', '<?php echo $kw_prc; ?>', '<?php echo $kw_count; ?>')" class='btn btn-primary'>Add</button></td>
+												<td style='border-top: none;'>
+												<?php if($check_meta_status) { ?>
+												<button type='button' disabled class='btn btn-success disabled'>Inside</button>
+												<?php } else { ?>
+												<button type='button' onclick="addKeywordToKwSource('<?php echo $id; ?>', '<?php echo $batch_id; ?>', '<?php echo $kw; ?>', '<?php echo $kw_prc; ?>', '<?php echo $kw_count; ?>')" class='btn btn-primary'>Add</button>
+												<?php } ?>
+												</td>
 											</tr>
 										<?php } ?>
 										</tbody>
@@ -49,9 +56,16 @@
 										<?php foreach($v['short_seo_phrases'] as $key => $val) { ?>
 											<?php $kw = $val['ph']; $kw_prc = $val['prc']; $kw_count = $val['count']; ?>
 											<?php $check_meta_status = $statistics_new_model->check_keyword_kw_source($id, $batch_id, $kw); ?>
+											<input type='hidden' value="<?php echo $check_meta_status; ?>">
 											<tr>
 												<td style='border-top: none; padding-left: 0px;'><span style='font-size: 12px; font-weight: bold'><?php echo $val['ph']." (".$val['count'].") - ".$val['prc']."%" ?></span></td>
-												<td style='border-top: none;'><button type='button' onclick="addKeywordToKwSource('<?php echo $id; ?>', '<?php echo $batch_id; ?>', '<?php echo $kw; ?>', '<?php echo $kw_prc; ?>', '<?php echo $kw_count; ?>')" class='btn btn-primary'>Add</button></td>
+												<td style='border-top: none;'>
+													<?php if($check_meta_status) { ?>
+													<button type='button' disabled class='btn btn-success disabled'>Inside</button>
+													<?php } else { ?>
+													<button type='button' onclick="addKeywordToKwSource('<?php echo $id; ?>', '<?php echo $batch_id; ?>', '<?php echo $kw; ?>', '<?php echo $kw_prc; ?>', '<?php echo $kw_count; ?>')" class='btn btn-primary'>Add</button>
+													<?php } ?>
+												</td>
 											</tr>
 										<?php } ?>
 										</tbody>

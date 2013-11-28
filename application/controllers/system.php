@@ -2124,6 +2124,16 @@ class System extends MY_Controller {
       return $batches_list;
   }
 
+  public function add_keyword_to_kw_source() {
+  		$this->load->model('statistics_new_model');
+  		$statistics_new_id = $this->input->post('id');
+  		$batch_id = $this->input->post('batch_id');
+  		$kw = $this->input->post('kw');
+  		$kw_prc = $this->input->post('kw_prc');
+  		$kw_count = $this->input->post('kw_count');
+  		$res = $this->statistics_new_model->add_keyword_kw_source($statistics_new_id, $batch_id, $kw, $kw_prc, $kw_count);
+  		$this->output->set_content_type('application/json')->set_output(json_encode($res));
+  }
 
   public function system_get_mkw_info() {
   		$this->load->model('statistics_new_model');
