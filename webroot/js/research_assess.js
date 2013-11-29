@@ -46,7 +46,8 @@ $(function() {
 	// Use this variable to define "togglers" for each tab
 	var tabsRelatedBlocks = {
 		details_compare : toggleDetailsCompareBlocks,
-		details_compare_result : toggleDetailsCompareBlocks
+		details_compare_result : toggleDetailsCompareBlocks,
+		graph : toggleDetailsCompareBlocks
 	};
 	
 	var summaryFieldNames = [
@@ -3284,6 +3285,7 @@ var generate_url_check = GetURLParameter('generate_url_check');
                 }
             });
         } else if (table_case == 'graph') {
+			toggleRelatedBlocks('graph', true);
             $('#graphDropDown').remove();
             $('#tblAssess_info').hide();
             var dropDownString;
