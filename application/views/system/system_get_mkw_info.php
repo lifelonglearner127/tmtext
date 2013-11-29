@@ -39,15 +39,16 @@
 											<tr>
 												<?php 
 													$pkey_class = 'ellipsis_pkey';
-													if($check_meta_status) $pkey_class = 'ellipsis_pkey';
+													if($check_meta_status['status']) $pkey_class = 'ellipsis_pkey';
 												?>
 												<td style='border-top: none; padding-left: 0px;'><p class="<?php echo $pkey_class; ?>"><span style='font-size: 12px; font-weight: bold'><?php echo $val['ph']." (".$val['count'].") - ".$val['prc']."%" ?></span></p></td>
 												<td style='border-top: none;'>
 												<div class='overall_controls_holder'>
-													<?php if($check_meta_status) { ?>
+													<?php if($check_meta_status['status']) { ?>
+													<?php $last_id = $check_meta_status['last_id']; ?>
 													<div style='display: inline-block;' class='action_btn_holder'><button type='button' disabled class='btn btn-success disabled'>Inside</button></div>
-													<div style='display: inline-block;'><button type='button' class='btn btn-success'>Sync</button></div>
-													<div style='display: inline-block;'><button type='button' class='btn btn-success'>Explore</button></div>
+													<div style='display: inline-block;'><button type='button' onclick="kwSyncMetaPersonal('<?php echo $last_id; ?>')" class='btn btn-success'>Sync</button></div>
+													<div style='display: inline-block;'><button type='button' onclick="kwExploreMetaPersonal('<?php echo $last_id; ?>')" class='btn btn-success'>Explore</button></div>
 													<?php } else { ?>
 													<div class='action_btn_holder'><button type='button' onclick="addKeywordToKwSource(this, '<?php echo $id; ?>', '<?php echo $batch_id; ?>', '<?php echo $kw; ?>', '<?php echo $kw_prc; ?>', '<?php echo $kw_count; ?>')" class='btn btn-primary'>Add</button></div>
 													<?php } ?>
@@ -68,15 +69,16 @@
 											<tr>
 												<?php 
 													$pkey_class = 'ellipsis_pkey';
-													if($check_meta_status) $pkey_class = 'ellipsis_pkey';
+													if($check_meta_status['status']) $pkey_class = 'ellipsis_pkey';
 												?>
 												<td style='border-top: none; padding-left: 0px;'><p class="<?php echo $pkey_class; ?>"><span style='font-size: 12px; font-weight: bold'><?php echo $val['ph']." (".$val['count'].") - ".$val['prc']."%" ?></span></p></td>
 												<td style='border-top: none;'>
 													<div class='overall_controls_holder'>
-														<?php if($check_meta_status) { ?>
+														<?php if($check_meta_status['status']) { ?>
+														<?php $last_id = $check_meta_status['last_id']; ?>
 														<div style='display: inline-block;' class='action_btn_holder'><button type='button' disabled class='btn btn-success disabled'>Inside</button></div>
-														<div style='display: inline-block;'><button type='button' class='btn btn-success'>Sync</button></div>
-														<div style='display: inline-block;'><button type='button' class='btn btn-success'>Explore</button></div>
+														<div style='display: inline-block;'><button type='button' onclick="kwSyncMetaPersonal('<?php echo $last_id; ?>')" class='btn btn-success'>Sync</button></div>
+														<div style='display: inline-block;'><button type='button' onclick="kwExploreMetaPersonal('<?php echo $last_id; ?>')" class='btn btn-success'>Explore</button></div>
 														<?php } else { ?>
 														<div class='action_btn_holder'><button type='button' onclick="addKeywordToKwSource(this, '<?php echo $id; ?>', '<?php echo $batch_id; ?>', '<?php echo $kw; ?>', '<?php echo $kw_prc; ?>', '<?php echo $kw_count; ?>')" class='btn btn-primary'>Add</button></div>
 														<?php } ?>
@@ -120,8 +122,7 @@
 		$.post(base_url + 'index.php/system/add_keyword_to_kw_source', send_object, function(data) {
         console.log(data);
         if(data.status) {
-        	console.log("replace");
-        	btn_holder.html("<div style='display: inline-block;' class='action_btn_holder'><button type='button' disabled class='btn btn-success disabled'>Inside</button></div>&nbsp;<div style='display: inline-block;'><button type='button' class='btn btn-success'>Sync</button></div>&nbsp;<div style='display: inline-block;'><button type='button' class='btn btn-success'>Explore</button></div>");
+        	btn_holder.html('<div style="display: inline-block;" class="action_btn_holder"><button type="button" disabled class="btn btn-success disabled">Inside</button></div>&nbsp;<div style="display: inline-block;"><button type="button" onclick="kwSyncMetaPersonal(\''+data.last_id+'\')" class="btn btn-success">Sync</button></div>&nbsp;<div style="display: inline-block;"><button type="button" onclick="kwExploreMetaPersonal(\''+data.last_id+'\')" class="btn btn-success">Explore</button></div>');
         	// btn_holder.html("<button type='button' disabled class='btn btn-success disabled'>Inside</button>");
         } else {
         	alert(data.msg);

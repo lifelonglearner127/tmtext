@@ -19,7 +19,10 @@ class Statistics_new_model extends CI_Model {
 
     // === META KEYWORDS RANKING STUFFS (START)
     function check_keyword_kw_source($id, $batch_id, $kw) {
-        $status = false;
+        $res_object = array(
+            'status' => false,
+            'last_id' => 0
+        );
         $check_obj = array(
             'statistics_new_id' => $id,
             'batch_id' => $batch_id,
@@ -27,13 +30,17 @@ class Statistics_new_model extends CI_Model {
         );
         $query = $this->db->where($check_obj)->limit(1)->get($this->tables['meta_kw_rank_source']);
         $query_res = $query->result();
-        if(count($query_res) > 0) $status = true;
-        return $status;
+        if(count($query_res) > 0) {
+            $res_object['status'] = true;
+            $res_object['last_id'] = $query_res[0]->id;
+        }
+        return $res_object;
     }
     function add_keyword_kw_source($statistics_new_id, $batch_id, $kw, $kw_prc, $kw_count) {
         $res = array(
             'status' => false,
-            'msg' => ''
+            'msg' => '',
+            'last_id' => 0
         );
         $check_obj = array(
             'statistics_new_id' => $statistics_new_id,
@@ -56,6 +63,7 @@ class Statistics_new_model extends CI_Model {
             $this->db->insert($this->tables['meta_kw_rank_source'], $insert_object);
             $res['msg'] = 'OK';
             $res['status'] = true;
+            $res['last_id'] = $this->db->insert_id();
         }
         return $res;
     }
