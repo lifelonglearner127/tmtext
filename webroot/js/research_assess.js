@@ -116,8 +116,13 @@ $(function() {
             "Meta_Description",
             "Meta_Description_Count",
             "column_external_content",
-            "average_review",
+            "H1_Tags",
+            "H1_Tags_Count",
+            "H2_Tags",
+            "H2_Tags_Count",
             "column_reviews",
+            "average_review",
+            "column_features",
             "snap1",
             "product_name1",
             "item_id1",
@@ -132,8 +137,13 @@ $(function() {
             "Meta_Description1",
             "Meta_Description_Count1",
             "column_external_content1",
-            "average_review1",
+            "H1_Tags1",
+            "H1_Tags_Count1",
+            "H2_Tags1",
+            "H2_Tags_Count1",
             "column_reviews1",
+            "average_review1",
+            "column_features1",
             "gap",
             "Duplicate_Content"
             
@@ -749,16 +759,46 @@ $(function() {
             "sClass" :  "column_external_content1"
         },
         {
+            "sTitle" : "H1 Tags", 
+            "sName":"H1_Tags1", 
+            "sWidth": "1%",
+            "sClass" :  "HTags_11"
+        },
+        {
+            "sTitle" : "Chars", 
+            "sName":"H1_Tags_Count1", 
+            "sWidth": "1%",
+            "sClass" :  "HTags1"
+        },
+        {
+            "sTitle" : "H2 Tags", 
+            "sName":"H2_Tags1", 
+            "sWidth": "1%",
+            "sClass" :  "HTags_21"
+        },
+        {
+            "sTitle" : "Chars", 
+            "sName":"H2_Tags_Count1", 
+            "sWidth": "1%",
+            "sClass" :  "HTags1"
+        },
+        {
+            "sTitle": "Reviews",
+            "sName": "column_reviews1",
+            "sWidth": "3%",
+            "sClass": "column_reviews1"
+        },
+        {
             "sTitle": "Avg Review",
             "sName": "average_review1",
             "sWidth": "3%",
             "sClass" :  "average_review1"
         },
         {
-            "sTitle": "Reviews",
-            "sName": "column_reviews1",
-            "sWidth": "3%",
-            "sClass" :  "column_reviews1"
+            "sTitle": "Features",
+            "sName": "column_features1",
+            "sWidth": "4%",
+            "sClass" :  "column_features1"
         },
         {
             "sTitle": "Gap Analysis",
@@ -2094,7 +2134,9 @@ var generate_url_check = GetURLParameter('generate_url_check');
         var Meta_Description3 =0;
         var Meta_Description4 =0;
         var HTags_1 = 0;
+        var HTags_11 = 0;
         var HTags_2 = 0;
+        var HTags_21 = 0;
         var item_id = 0;
         var item_id1 = 0;
         var item_id2 = 0;
@@ -2125,11 +2167,11 @@ var generate_url_check = GetURLParameter('generate_url_check');
         var average_review2 = 0;
         var average_review3 = 0;
         var average_review4 = 0;
-        var column_reviews = 0;
-        var column_reviews1 = 0;
-        var column_reviews2 = 0;
-        var column_reviews3 = 0;
-        var column_reviews4 = 0;
+//        var column_reviews = 0;
+//        var column_reviews1 = 0;
+//        var column_reviews2 = 0;
+//        var column_reviews3 = 0;
+//        var column_reviews4 = 0;
         var model = 0;
         var model1 = 0;
         var model2 = 0;
@@ -2223,6 +2265,18 @@ var generate_url_check = GetURLParameter('generate_url_check');
             
             if ($(this).text()!='') {
                 HTags_2 += 1;
+            }
+        });
+        $('td.HTags_11').each(function() {
+            
+            if ($(this).text()!='') {
+                HTags_11 += 1;
+            }
+        });
+        $('td.HTags_21').each(function() {
+            
+            if ($(this).text()!='') {
+                HTags_21 += 1;
             }
         });
         $('td.Meta_Description').each(function() {
@@ -2400,36 +2454,36 @@ var generate_url_check = GetURLParameter('generate_url_check');
                 average_review4 += 1;
             }
         });
-        $('td.column_reviews').each(function() {             
-            var txt = parseInt($(this).text());
-            if (txt > 0) {
-                column_reviews += 1;
-            }
-        });
-        $('td.column_reviews1').each(function() {
-            var txt = parseInt($(this).text());
-            if (txt > 0) {
-                column_reviews1 += 1;
-            }
-        });
-        $('td.column_reviews2').each(function() {
-            var txt = parseInt($(this).text());
-            if (txt > 0) {
-                column_reviews2 += 1;
-            }
-        });
-        $('td.column_reviews3').each(function() {
-            var txt = parseInt($(this).text());
-            if (txt > 0) {
-                column_reviews3 += 1;
-            }
-        });
-        $('td.column_reviews4').each(function() {
-           var txt = parseInt($(this).text());
-            if (txt > 0) {
-                column_reviews4 += 1;
-            }
-        });
+//        $('td.column_reviews').each(function() {             
+//            var txt = parseInt($(this).text());
+//            if (txt > 0) {
+//                column_reviews += 1;
+//            }
+//        });
+//        $('td.column_reviews1').each(function() {
+//            var txt = parseInt($(this).text());
+//            if (txt > 0) {
+//                column_reviews1 += 1;
+//            }
+//        });
+//        $('td.column_reviews2').each(function() {
+//            var txt = parseInt($(this).text());
+//            if (txt > 0) {
+//                column_reviews2 += 1;
+//            }
+//        });
+//        $('td.column_reviews3').each(function() {
+//            var txt = parseInt($(this).text());
+//            if (txt > 0) {
+//                column_reviews3 += 1;
+//            }
+//        });
+//        $('td.column_reviews4').each(function() {
+//           var txt = parseInt($(this).text());
+//            if (txt > 0) {
+//                column_reviews4 += 1;
+//            }
+//        });
         $('td.Short_Description').each(function() {
             if ($(this).text()!='') {
                 Short_Description += 1;
@@ -2605,6 +2659,15 @@ var generate_url_check = GetURLParameter('generate_url_check');
                 tblAssess.fnSetColumnVis(index, false, false);
                 tblAssess.fnSetColumnVis(index+1, false, false);
             }
+             if((value == 'H1_Tags1' && HTags_11 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+                tblAssess.fnSetColumnVis(index+1, false, false);
+            }
+
+            if((value == 'H2_Tags1' && HTags_21 == 0)){
+                tblAssess.fnSetColumnVis(index, false, false);
+                tblAssess.fnSetColumnVis(index+1, false, false);
+            }
             if((value == 'Page_Load_Time' && Page_Load_Time == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
                
@@ -2645,26 +2708,26 @@ var generate_url_check = GetURLParameter('generate_url_check');
                 tblAssess.fnSetColumnVis(index, false, false);
                
             }
-            if((value == 'column_reviews' && column_reviews == 0)){
-                tblAssess.fnSetColumnVis(index, false, false);
-               
-            }
-            if((value == 'column_reviews1' && column_reviews1 == 0)){
-                tblAssess.fnSetColumnVis(index, false, false);
-               
-            }
-            if((value == 'column_reviews2' && column_reviews2 == 0)){
-                tblAssess.fnSetColumnVis(index, false, false);
-               
-            }
-            if((value == 'column_reviews3' && column_reviews3 == 0)){
-                tblAssess.fnSetColumnVis(index, false, false);
-               
-            }
-            if((value == 'column_reviews4' && column_reviews4 == 0)){
-                tblAssess.fnSetColumnVis(index, false, false);
-               
-            }
+//            if((value == 'column_reviews' && column_reviews == 0)){
+//                tblAssess.fnSetColumnVis(index, false, false);
+//               
+//            }
+//            if((value == 'column_reviews1' && column_reviews1 == 0)){
+//                tblAssess.fnSetColumnVis(index, false, false);
+//               
+//            }
+//            if((value == 'column_reviews2' && column_reviews2 == 0)){
+//                tblAssess.fnSetColumnVis(index, false, false);
+//               
+//            }
+//            if((value == 'column_reviews3' && column_reviews3 == 0)){
+//                tblAssess.fnSetColumnVis(index, false, false);
+//               
+//            }
+//            if((value == 'column_reviews4' && column_reviews4 == 0)){
+//                tblAssess.fnSetColumnVis(index, false, false);
+//               
+//            }
             if((value == 'Short_Description' && Short_Description == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
                 
@@ -3108,9 +3171,15 @@ var generate_url_check = GetURLParameter('generate_url_check');
               
                 
                 }
-                else if(value ==='Meta_Description_Count'){
+                else if(value==='H1_Tags_Count' || value==='H2_Tags_Count' || value ==='Meta_Description_Count' ){
                     if ($.inArray("Meta_Description", columns_checkboxes_checked) > -1) {
                     tblAssess.fnSetColumnVis(index, true, false);
+                    }
+                    else if($.inArray("H1_Tags", columns_checkboxes_checked) > -1){
+                        tblAssess.fnSetColumnVis(index, true, false);
+                    }
+                    else if($.inArray("H2_Tags", columns_checkboxes_checked) > -1){
+                        tblAssess.fnSetColumnVis(index, true, false);
                     }
                     else{
                         tblAssess.fnSetColumnVis(index, false, false);
@@ -3139,9 +3208,15 @@ var generate_url_check = GetURLParameter('generate_url_check');
               
                 
                 }
-                else if(value ==='Meta_Description_Count'){
+                else if(value==='H1_Tags_Count' || value==='H2_Tags_Count' || value ==='Meta_Description_Count' ){
                     if ($.inArray("Meta_Description", columns_checkboxes_checked) > -1) {
                     tblAssess.fnSetColumnVis(index, true, false);
+                    }
+                    else if($.inArray("H1_Tags", columns_checkboxes_checked) > -1){
+                        tblAssess.fnSetColumnVis(index, true, false);
+                    }
+                    else if($.inArray("H2_Tags", columns_checkboxes_checked) > -1){
+                        tblAssess.fnSetColumnVis(index, true, false);
                     }
                     else{
                         tblAssess.fnSetColumnVis(index, false, false);

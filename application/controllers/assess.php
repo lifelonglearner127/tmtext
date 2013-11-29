@@ -205,27 +205,82 @@ class Assess extends MY_Controller {
                                     $parsed_meta_keywords_unserialize_val = '';
                                     $parsed_review_count_unserialize_val_count = '';
                                     $parsed_loaded_in_seconds_unserialize_val = '';
+                                    $parsed_H1_Tags_unserialize_val = '';
+                                    $parsed_H1_Tags_unserialize_val_count = '';
+                                    $parsed_H2_Tags_unserialize_val = '';
+                                    $parsed_column_reviews_unserialize_val = '';
+                                    $parsed_H2_Tags_unserialize_val_count = '';
                                     $parsed_average_review_unserialize_val_count = '';
+                                     $parsed_column_features_unserialize_val_count = '';
                                     $column_external_content = '';
                                     $cmpare = $this->statistics_new_model->get_compare_item($item['imported_data_id']);
 
                                     $parsed_attributes_unserialize = unserialize($cmpare->parsed_attributes);
+                                    $HTags=unserialize($cmpare->HTags);
 
+                                if (isset($HTags['h1']) && $HTags['h1'] && $HTags['h1'] != '') {
+                                    $H1 = $HTags['h1'];
+                                    if (is_array($H1)) {
+                                        $str_1 = "<table  class='table_keywords_long'>";
+                                        $str_1_Count = "<table  class='table_keywords_long'>";
+                                        foreach ($H1 as $h1) {
+                                            $str_1.= "<tr><td>" . $h1 . "</td></tr>";
+                                            $str_1_Count.="<tr><td>" . strlen($h1) . "</td></tr>";
+                                        }
+                                        $str_1 .="</table>";
+                                        $str_1_Count .="</table>";
+                                        $parsed_H1_Tags_unserialize_val = $str_1;
+                                        $parsed_H1_Tags_unserialize_val_count = $str_1_Count;
+                                    } else {
+                                        $H1_Count = strlen($HTags['h1']);
+                                        $parsed_H1_Tags_unserialize_val = "<table  class='table_keywords_long'><tr><td>" . $H1 . "</td></tr></table>";
+                                        ;
+                                        $parsed_H1_Tags_unserialize_val_count = "<table  class='table_keywords_long'><tr><td>" . $H1_Count . "</td></tr></table>";
+                                        ;
+                                    }
+                                }
+                                if (isset($HTags['h2']) && $HTags['h2'] && $HTags['h2'] != '') {
+                                    $H2 = $HTags['h2'];
+                                    if (is_array($H2)) {
+                                        $str_2 = "<table  class='table_keywords_long'>";
+                                        $str_2_Count = "<table  class='table_keywords_long'>";
+                                        foreach ($H2 as $h2) {
+                                            $str_2.= "<tr><td>" . $h2 . "</td></tr>";
+                                            $str_2_Count.="<tr><td>" . strlen($h2) . "</td></tr>";
+                                        }
+                                        $str_2 .="</table>";
+                                        $str_2_Count .="</table>";
+                                        $parsed_H2_Tags_unserialize_val = $str_2;
+                                        $parsed_H2_Tags_unserialize_val_count = $str_2_Count;
+                                    } else {
+                                        $H1_Count = strlen($HTags['h2']);
+                                        $parsed_H2_Tags_unserialize_val = "<table  class='table_keywords_long'><tr><td>" . $H2 . "</td></tr></table>";
+                                        ;
+                                        $parsed_H2_Tags_unserialize_val_count = "<table  class='table_keywords_long'><tr><td>" . $H2_Count . "</td></tr></table>";
+                                        ;
+                                    }
+                                }
                                     if (isset($parsed_attributes_unserialize['item_id']))
                                         $parsed_attributes_unserialize_val = $parsed_attributes_unserialize['item_id'];
+                                    
                                     if (isset($parsed_attributes_unserialize['model']))
                                         $parsed_model_unserialize_val = $parsed_attributes_unserialize['model'];
+                                    
                                     if (isset($parsed_attributes_unserialize['loaded_in_seconds']))
                                         $parsed_loaded_in_seconds_unserialize_val = $parsed_attributes_unserialize['loaded_in_seconds'];
+//                       
+                                    if (isset($parsed_attributes_unserialize['review_count']))
+                                        $parsed_column_reviews_unserialize_val = $parsed_attributes_unserialize['review_count'];
+                                    
                                     if (isset($parsed_attributes_unserialize['average_review']))
                                         $parsed_average_review_unserialize_val_count = $parsed_attributes_unserialize['average_review'];
-                                    if (isset($parsed_attributes_unserialize['review_count']))
-                                        $parsed_review_count_unserialize_val_count = $parsed_attributes_unserialize['review_count'];
+                                   
+                                    if (isset($parsed_attributes_unserialize['feature_count']))
+                                        $parsed_column_features_unserialize_val_count = $parsed_attributes_unserialize['feature_count'];
+                                    
                                     if (isset($parsed_attributes_unserialize['cnetcontent']) || isset($parsed_attributes_unserialize['webcollage']))
                                         $column_external_content = $this->column_external_content($parsed_attributes_unserialize['cnetcontent'],$parsed_attributes_unserialize['webcollage']);
- 
-                  
-               
+            
                                     $parsed_meta_unserialize = unserialize($cmpare->parsed_meta);
 
                                     if (isset($parsed_meta_unserialize['description'])) {
@@ -305,8 +360,13 @@ class Assess extends MY_Controller {
                                     $val->Meta_Description1 = $parsed_meta_unserialize_val;
                                     $val->Meta_Description_Count1 = $parsed_meta_unserialize_val_count;
                                     $val->column_external_content1 = $column_external_content;
+                                    $val->H1_Tags1 = $parsed_H1_Tags_unserialize_val;
+                                    $val->H1_Tags_Count1 = $parsed_H1_Tags_unserialize_val_count;
+                                    $val->H2_Tags1 = $parsed_H2_Tags_unserialize_val;
+                                    $val->H2_Tags_Count1 = $parsed_H2_Tags_unserialize_val_count;
+                                    $val->column_reviews1 = $parsed_column_reviews_unserialize_val;
                                     $val->average_review1 = $parsed_average_review_unserialize_val_count;
-                                    $val->column_reviews1 = $parsed_column_reviews_unserialize_val_count;
+                                    $val->column_features1 = $parsed_column_features_unserialize_val_count;
                                     $cmpare->imported_data_id = $item['imported_data_id'];
 									$batch2_items_count++;
 									
@@ -887,7 +947,6 @@ class Assess extends MY_Controller {
                                     $parsed_meta_keywords_unserialize_val = '';
                                     $parsed_loaded_in_seconds_unserialize_val = '';
                                     $parsed_average_review_unserialize_val_count = '';
-                                    $parsed_review_count_unserialize_val_count = '';
                                     $column_external_content = '';
                                     $cmpare = $this->statistics_new_model->get_compare_item($item['imported_data_id']);
 
@@ -963,7 +1022,6 @@ class Assess extends MY_Controller {
                                     $cmpare->Meta_Description = $parsed_meta_unserialize_val;
                                     $cmpare->Meta_Description_Count = $parsed_meta_unserialize_val_count;
                                     $cmpare->average_review = $parsed_average_review_unserialize_val_count;
-                                    $cmpare->column_reviews = $parsed_review_count_unserialize_val_count;
                                 
                                     $similar_items_data[] = $cmpare;
                                     $val->similar_items = $similar_items_data;  
@@ -1385,7 +1443,7 @@ class Assess extends MY_Controller {
                             $res_array[$key]['column_external_content(' . $i . ")"] = $sim_items[$i - 1]->column_external_content ? $sim_items[$i - 1]->column_external_content : '';
                         }
                         if (in_array('column_reviews', $selected_columns)) {
-                            $res_array[$key]['column_reviews(' . $i . ")"] = $sim_items[$i - 1]->column_reviews  ? $sim_items[$i - 1]->column_reviews  : ' - ';
+                            $res_array[$key]['column_reviews(' . $i . ")"] = $sim_items[$i - 1]->average_review  ? $sim_items[$i - 1]->average_review  : ' - ';
                         }
                         if (in_array('average_review', $selected_columns)) {
                             $res_array[$key]['average_review(' . $i . ")"] = $sim_items[$i - 1]->average_review  ? $sim_items[$i - 1]->average_review  : ' - ';
@@ -1508,7 +1566,6 @@ class Assess extends MY_Controller {
                     
                 }
               
-                
                 
                 
             }
@@ -1996,8 +2053,8 @@ class Assess extends MY_Controller {
             array(
                 "sTitle" => "Reviews",
                 "sName" => "column_reviews",
+                //"sWidth" =>"3%"
                 "sClass" => "column_reviews"
-            //"sWidth" =>"3%"
             ),
             array(
                 "sTitle" => "Avg Review",
@@ -2009,6 +2066,7 @@ class Assess extends MY_Controller {
                 "sTitle" => "Features",
                 "sName" => "column_features",
             //"sWidth" => "4%"
+                "sClass" => "column_features"
             ),
             array(
                 "sTitle" => "Price",
@@ -2094,8 +2152,13 @@ class Assess extends MY_Controller {
                 $columns[] = array("sTitle" => "Meta Description", "sClass" => "Meta_Description" . $i, "sName" => 'Meta_Description' . $i);
                 $columns[] = array("sTitle" => "Meta Desc <span class='subtitle_word_long' ># Words</span>", "sClass" => "Meta_Description_Count" . $i, "sName" => 'Meta_Description_Count' . $i);
                 $columns[] = array("sTitle" => "Third Party Content", "sClass" => "column_external_content" . $i, "sName" => 'column_external_content' . $i);
+                $columns[] = array("sTitle" => "HTags_1", "sClass" => "HTags_1" . $i, "sName" => "H1_Tags" . $i);
+                $columns[] = array("sTitle" => "Chars", "sClass" => "H1_Tags_Count" . $i, "sName" => "H1_Tags_Count" . $i);
+                $columns[] = array("sTitle" => "HTags_2", "sClass" => "HTags_2" . $i, "sName" => "H2_Tags" . $i);
+                $columns[] = array("sTitle" => "Chars", "sClass" => "H2_Tags_Count" . $i, "sName" => "H2_Tags_Count" . $i);
                 $columns[] = array("sTitle" => "Avg Review", "sClass" => "average_review" . $i, "sName" => 'average_review' . $i);
-                $columns[] = array("sTitle" => "Reviews", "sClass" => "column_reviews" . $i, "sName" => 'column_reviews' . $i);
+                $columns[] = array("sTitle" => "Reviews", "sClass" => "column_reviews" . $i, "sName" => "column_reviews" . $i);
+                $columns[] = array("sTitle" => "Features", "sClass" => "column_features" . $i, "sName" => "column_features" . $i);
                  if($i == 1){
                                 $columns[] = array("sTitle" => "Gap Analysis", "sClass" => "gap" . $i, "sName" => 'gap');
                                 $colomns[] = array("sTitle" => "Duplicate Content", "sClass" => "Duplicate_Content" . $i, "sName" => 'Duplicate_Content');
@@ -2259,16 +2322,20 @@ class Assess extends MY_Controller {
 
                for ($i = 1; $i <= $max_similar_item_count; $i++) {
 
-
                     $parsed_attributes_unserialize_val = '';
                     $parsed_meta_unserialize_val = '';
                     $parsed_meta_unserialize_val_c = '';
                     $parsed_meta_unserialize_val_count = '';
                     $parsed_meta_keywords_unserialize_val = '';
                     $parsed_loaded_in_seconds_unserialize_val ='';
+                    $parsed_H1_Tags_unserialize_val ='';
+                    $parsed_H1_Tags_unserialize_val_count ='';
+                    $parsed_H2_Tags_unserialize_val ='';
+                    $parsed_H2_Tags_unserialize_val_count ='';
+                    $parsed_column_reviews_unserialize_val ='';
                     $parsed_average_review_unserialize_val ='';
+                    $parsed_column_features_unserialize_val ='';
                     $parsed_attributes_model_unserialize_val ='';
-                    $parsed_column_reviews_unserialize_val = '';
                     $column_external_content = '';
 
                     $parsed_attributes_unserialize = unserialize($sim_items[$i - 1]->parsed_attributes);
@@ -2276,16 +2343,63 @@ class Assess extends MY_Controller {
                     if (isset($parsed_attributes_unserialize['cnetcontent']) || isset($parsed_attributes_unserialize['webcollage']))
                         $column_external_content = $this->column_external_content($parsed_attributes_unserialize['cnetcontent'],$parsed_attributes_unserialize['webcollage']);
  
+                    $HTags=unserialize($sim_items[$i - 1]->HTags);
+                                              
+                    if (isset($HTags['h1']) && $HTags['h1'] && $HTags['h1'] != '') {
+                        $H1 = $HTags['h1'];
+                        if (is_array($H1)) {
+                            $str_1 = "<table  class='table_keywords_long'>";
+                            $str_1_Count = "<table  class='table_keywords_long'>";
+                            foreach ($H1 as $h1) {
+                                $str_1.= "<tr><td>" . $h1 . "</td></tr>";
+                                $str_1_Count.="<tr><td>" . strlen($h1) . "</td></tr>";
+                            }
+                            $str_1 .="</table>";
+                            $str_1_Count .="</table>";
+                            $parsed_H1_Tags_unserialize_val = $str_1;
+                            $parsed_H1_Tags_unserialize_val_count = $str_1_Count;
+                        } else {
+                            $H1_Count = strlen($HTags['h1']);
+                            $parsed_H1_Tags_unserialize_val = "<table  class='table_keywords_long'><tr><td>" . $H1 . "</td></tr></table>";
+                            ;
+                            $parsed_H1_Tags_unserialize_val_count = "<table  class='table_keywords_long'><tr><td>" . $H1_Count . "</td></tr></table>";
+                            ;
+                        }
+                    }
+                    if (isset($HTags['h2']) && $HTags['h2'] && $HTags['h2'] != '') {
+                        $H2 = $HTags['h2'];
+                        if (is_array($H2)) {
+                            $str_2 = "<table  class='table_keywords_long'>";
+                            $str_2_Count = "<table  class='table_keywords_long'>";
+                            foreach ($H2 as $h2) {
+                                $str_2.= "<tr><td>" . $h2 . "</td></tr>";
+                                $str_2_Count.="<tr><td>" . strlen($h2) . "</td></tr>";
+                            }
+                            $str_2 .="</table>";
+                            $str_2_Count .="</table>";
+                            $parsed_H2_Tags_unserialize_val = $str_2;
+                            $parsed_H2_Tags_unserialize_val_count = $str_2_Count;
+                        } else {
+                            $H1_Count = strlen($HTags['h2']);
+                            $parsed_H2_Tags_unserialize_val = "<table  class='table_keywords_long'><tr><td>" . $H2 . "</td></tr></table>";
+                            ;
+                            $parsed_H2_Tags_unserialize_val_count = "<table  class='table_keywords_long'><tr><td>" . $H2_Count . "</td></tr></table>";
+                            ;
+                        }
+                    }
+
                     if (isset($parsed_attributes_unserialize['item_id']))
                         $parsed_attributes_unserialize_val = $parsed_attributes_unserialize['item_id'];
                     if (isset($parsed_attributes_unserialize['model']))
                         $parsed_attributes_model_unserialize_val = $parsed_attributes_unserialize['model'];
                     if (isset($parsed_attributes_unserialize['loaded_in_seconds']))
                         $parsed_loaded_in_seconds_unserialize_val = $parsed_attributes_unserialize['loaded_in_seconds'];
-                    if (isset($parsed_attributes_unserialize['average_review']))
-                        $parsed_average_review_unserialize_val = $parsed_attributes_unserialize['average_review'];
                     if (isset($parsed_attributes_unserialize['review_count']))
                         $parsed_column_reviews_unserialize_val = $parsed_attributes_unserialize['review_count'];
+                    if (isset($parsed_attributes_unserialize['average_review']))
+                        $parsed_average_review_unserialize_val = $parsed_attributes_unserialize['average_review'];
+                    if (isset($parsed_attributes_unserialize['feature_count']))
+                        $parsed_column_features_unserialize_val = $parsed_attributes_unserialize['feature_count'];
                     $parsed_meta_unserialize = unserialize($sim_items[$i - 1]->parsed_meta);
 
                     if ($parsed_meta_unserialize['description']) {
@@ -2395,8 +2509,13 @@ class Assess extends MY_Controller {
                     $result_row['Meta_Description' . $i] = $parsed_meta_unserialize_val;
                     $result_row['Meta_Description_Count' . $i] = $parsed_meta_unserialize_val_count;
                     $result_row['column_external_content' . $i] = $column_external_content;
-                    $result_row['average_review' . $i] = $parsed_average_review_unserialize_val;
+                    $result_row['H1_Tags' . $i] = $parsed_H1_Tags_unserialize_val;
+                    $result_row['H1_Tags_Count' . $i] = $parsed_H1_Tags_unserialize_val_count;
+                    $result_row['H2_Tags' . $i] = $parsed_H2_Tags_unserialize_val;
+                    $result_row['H2_Tags_Count' . $i] = $parsed_H2_Tags_unserialize_val_count;
                     $result_row['column_reviews' . $i] = $parsed_column_reviews_unserialize_val;
+                    $result_row['average_review' . $i] = $parsed_average_review_unserialize_val;
+                    $result_row['column_features' . $i] = $parsed_column_features_unserialize_val;
 
 
                 }
@@ -2417,11 +2536,26 @@ class Assess extends MY_Controller {
             if ($row->Page_Load_Time1) {
                 $result_row->Page_Load_Time1 = $row->Page_Load_Time1;
             }
-            if ($row->average_review1) {
-                $result_row->average_review1 = $row->average_review1;
+            if ($row->H1_Tags1) {
+                $result_row->H1_Tags1 = $row->H1_Tags1;
+            }
+            if ($row->H1_Tags_Count1) {
+                $result_row->H1_Tags_Count1 = $row->H1_Tags_Count1;
+            }
+            if ($row->H2_Tags1) {
+                $result_row->H2_Tags1 = $row->H2_Tags1;
+            }
+            if ($row->H2_Tags_Count1) {
+                $result_row->H2_Tags_Count1 = $row->H2_Tags_Count1;
             }
             if ($row->column_reviews1) {
                 $result_row->column_reviews1 = $row->column_reviews1;
+            }
+            if ($row->average_review1) {
+                $result_row->average_review1 = $row->average_review1;
+            }
+            if ($row->column_features1) {
+                $result_row->column_features1 = $row->column_features1;
             }
             if ($row->Short_Description1) {
                 $result_row->Short_Description1 = $row->Short_Description1;
@@ -2743,6 +2877,7 @@ class Assess extends MY_Controller {
                 $own_site = str_replace('www.', '', $own_site);
                 $own_site = str_replace('www1.', '', $own_site);
                 $result_row->price_diff = "<nobr>" . $own_site . " - $" . $row->own_price . "</nobr><br />";
+//                var_dump($row->own_price);
             }
 
             if (count($price_diff) > 1) {
@@ -2758,13 +2893,14 @@ class Assess extends MY_Controller {
                             $competitor_site = str_replace('www.', '', $price_diff['competitor_customer'][$i]);
                             $competitor_site = str_replace('www.', '', $competitor_site);
                             $price_diff_res .= "<input type='hidden'><nobr>" . $competitor_site . " - $" . $price_diff['competitor_price'][$i] . "</nobr><br />";
+//                            var_dump($price_diff['competitor_price'][$i]);
                         }
                     }
                 }                
 				
                 $result_row->price_diff = $price_diff_res;
             }
-
+//            var_dump($result_row->price_diff); 
             $result_row->competitors_prices = @unserialize($row->competitors_prices);
 
             if (property_exists($row, 'include_in_assess_report') && intval($row->include_in_assess_report) > 0) {
@@ -2994,7 +3130,6 @@ class Assess extends MY_Controller {
 			// echo "<br />";
 			if ($this->checkSuccessFilterEntries($success_filter_entries, $build_assess_params->summaryFilterData))						
 				$result_table[] = $result_row;
-			
 //            ++$qty;
 //            if($qty>$display_length+$display_start)break;
         }
@@ -3039,7 +3174,6 @@ class Assess extends MY_Controller {
         $report['summary']['total_items_selected_by_filter'] = count($result_table);		
         $report['summary']['assess_report_competitor_matches_number'] = $build_assess_params->batch2_items_count;		
         $report['summary']['skus_third_party_content'] = $skus_third_party_content;		
-		
 		
         // only if second batch select - get absent products, merge it with result_table
 //        if (isset($build_assess_params->compare_batch_id) && $build_assess_params->compare_batch_id > 0) {
@@ -3325,8 +3459,13 @@ class Assess extends MY_Controller {
                             $output_row[] = $data_row['Meta_Description' . $i] != null ? $data_row['Meta_Description' . $i] : '';
                             $output_row[] = $data_row['Meta_Description_Count' . $i] != null ? $data_row['Meta_Description_Count' . $i] : '';
                             $output_row[] = $data_row['column_external_content' . $i] != null ? $data_row['column_external_content' . $i] : '';
-                            $output_row[] = $data_row['average_review' . $i] != null ? $data_row['average_review' . $i] : '';
+                            $output_row[] = $data_row['H1_Tags' . $i] != null ? $data_row['H1_Tags' . $i] : '';
+                            $output_row[] = $data_row['H1_Tags_Count' . $i] != null ? $data_row['H1_Tags_Count' . $i] : '';
+                            $output_row[] = $data_row['H2_Tags' . $i] != null ? $data_row['H2_Tags' . $i] : '';
+                            $output_row[] = $data_row['H2_Tags_Count' . $i] != null ? $data_row['H2_Tags_Count' . $i] : '';
                             $output_row[] = $data_row['column_reviews' . $i] != null ? $data_row['column_reviews' . $i] : '';
+                            $output_row[] = $data_row['average_review' . $i] != null ? $data_row['average_review' . $i] : '';
+                            $output_row[] = $data_row['column_features' . $i] != null ? $data_row['column_features' . $i] : '';
 
 
                         }
@@ -3350,12 +3489,16 @@ class Assess extends MY_Controller {
                         $output_row[] = $data_row->Meta_Description1;
                         $output_row[] = $data_row->Meta_Description_Count1;
                         $output_row[] = $data_row->column_external_content1;
-                        $output_row[] = $data_row->average_review1;
+                        $output_row[] = $data_row->H1_Tags1;
+                        $output_row[] = $data_row->H1_Tags_Count1;
+                        $output_row[] = $data_row->H2_Tags1;
+                        $output_row[] = $data_row->H2_Tags_Count1;
                         $output_row[] = $data_row->column_reviews1;
+                        $output_row[] = $data_row->average_review1;
+                        $output_row[] = $data_row->column_features1;
                         $output_row[] = $data_row->gap;
                         $output_row[] = $data_row->Duplicate_Content;
                     }
-										
 					$output['aaData'][] = $output_row;
                 }
 
