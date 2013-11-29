@@ -300,6 +300,7 @@
 
 <div id="assessDetailsDialog" title="Details">
     <form name="access_details">
+    <div style="float:left;"  class="details_left">
     <p>
         <label for="assessDetails_ProductName">Product Name:</label>
         <input type="text" id="assessDetails_ProductName" />
@@ -366,7 +367,76 @@
             <input type="text" id="assessDetails_SEO" />
         </p>
     </div>
-    </form>
+    
+    </div>  
+    <div style="float:right;" class="details_right">
+    
+    <p>
+        <label for="assessDetails_ProductName1">Product Name:</label>
+        <input type="text" id="assessDetails_ProductName1" />
+    </p>
+    <p>
+        <label for="assessDetails_Model1">Model:</label>
+        <input type="text" id="assessDetails_Model1" />
+    </p>
+    <p>
+        <label for="assessDetails_url1">URL:</label>
+        <input type="text" id="assessDetails_url1" />
+        <a id="assess_open_url_btn1" class="icon-hand-right" target="_blank"></a>
+    </p>
+
+    <p>
+        <label for="assessDetails_Price1">Price:</label>
+        <input type="text" id="assessDetails_Price1" />
+    </p>
+
+    <div id="assessDetails_short_and_long_description_panel1">
+        <div class="parag">
+            <span class="labeler">
+                <label for="assessDetails_ShortDescription1">Short Description:</label>
+            </span>
+            <textarea id="assessDetails_ShortDescription1" ></textarea>
+            <div class="bottom-labeler">
+                <label><span id="assessDetails_ShortDescriptionWC1">0</span> words</label>
+            </div>
+        </div>
+
+        <p>
+            <label for="assessDetails_ShortSEO1">Short SEO:</label>
+            <input type="text" id="assessDetails_ShortSEO1"/>
+        </p>
+
+        <div class="parag">
+            <span class="labeler">
+                <label for="assessDetails_LongDescription1">Long Description:</label>
+            </span>
+            <textarea id="assessDetails_LongDescription1"></textarea>
+            <div class="bottom-labeler">
+                <label><span id="assessDetails_LongDescriptionWC1">0</span> words</label>
+            </div>
+        </div>
+
+        <p>
+            <label for="assessDetails_LongSEO1">Long SEO:</label>
+            <input type="text" id="assessDetails_LongSEO1"/>
+        </p>
+    </div>
+    <div id="assessDetails_description_panel1">
+        <div class="parag">
+            <span class="labeler">
+                <label for="assessDetails_Description1">Description:</label>
+            </span>
+            <textarea id="assessDetails_Description1"></textarea>
+            <div class="bottom-labeler">
+                <label><span id="assessDetails_DescriptionWC1">0</span> words</label>
+            </div>
+        </div>
+
+        <p>
+            <label for="assessDetails_SEO1">SEO:</label>
+            <input type="text" id="assessDetails_SEO1" />
+        </p>
+    </div>
     <?php if ($this->ion_auth->is_admin($this->ion_auth->get_user_id())) { ?>
         <style type="text/css">
             #assessDetailsDialog_btnReCrawl{
@@ -374,6 +444,8 @@
             }
         </style>
     <?php } ?>
+</div>
+    </form>
 </div>
 
 <div id="assess_report_options_dialog" title="Report Options" >
@@ -460,6 +532,7 @@
                              
                 <script type="text/javascript" src="<?php echo base_url();?>js/jquery.json-2.4.min.js"></script>
                 <script type="text/javascript" src="<?php echo base_url();?>js/jquery.fileDownload.js"></script>               
+               
                 <script type="text/javascript" src="<?php echo base_url(); ?>js/measure_department.js"></script>
                 <script type='text/javascript' src="<?php echo base_url();?>js/ci_home_pages.js"></script>
             </div>

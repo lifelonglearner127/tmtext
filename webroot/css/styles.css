@@ -318,8 +318,12 @@ label.checkbox {
     margin:0px;
 }
 #assessDetailsDialog input, #assessDetailsDialog textarea, #assessDetailsDialog .uneditable-input {
-    width: 650px;
+/*    width: 650px;*/
     cursor: text;
+} 
+
+.details_width input,.details_width textarea,.details_width .uneditable-input {
+width: 650px;    
 }
 #assessDetailsDialog textarea {
     height: 80px;

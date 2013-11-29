@@ -29,6 +29,8 @@ $(function() {
 
     var short_wc_total_not_0 = 0;
     var long_wc_total_not_0 = 0;
+    var short_wc_total_not_01 = 0;
+    var long_wc_total_not_01 = 0;
     var items_short_products_content_short = 0;
     var items_long_products_content_short = 0;
 	
@@ -1578,9 +1580,19 @@ var generate_url_check = GetURLParameter('generate_url_check');
         showSnap('<div class="snap_area"><a target="_blank" href=""><img src="' + base_url + snap + '"></a></div>' + txt);
     });
     
+    var curentSibil = 0
     
 
     $('#tblAssess tbody').live('click',function(event) {
+     var table_case = $('#assess_tbl_show_case a[class=active_link]').data('case');
+      var checked_columns_results = GetURLParameter('checked_columns_results');
+    
+     if((table_case != "details_compare") && (checked_columns_results == undefined)){
+         console.log(checked_columns_results)
+         console.log(table_case)
+        $('.details_left').addClass('details_width');  
+        $('.details_right').hide();  
+         
         if ($(event.target).is('a')) {
             return;
         }
@@ -1611,8 +1623,21 @@ var generate_url_check = GetURLParameter('generate_url_check');
         if (target.parents('table').attr('class') == 'url_table')
             target = target.parents('table');
        
+       
         var add_data = JSON.parse(target.parents('tr').attr('add_data'));
+        curentSibil=target.parents('tr');
         
+        if(curentSibil.prev().length == 0){
+            $('.btn_prev_dialog').attr('disabled','disabled');
+        }else{
+            $('.btn_prev_dialog').removeAttr('disabled');
+        }
+
+        if(curentSibil.next().length == 0){
+            $('.btn_next_dialog').attr('disabled','disabled');
+        }else{
+            $('.btn_next_dialog').removeAttr('disabled');
+        }
         // if this product is absent product from second batch
         if (add_data.id == undefined) {
             return;
@@ -1678,6 +1703,133 @@ var generate_url_check = GetURLParameter('generate_url_check');
         );
 
         $('#ajaxLoadAni').fadeOut('slow');
+    }else{
+        $('.details_left').removeClass('details_width');  
+        $('.details_right').show();
+         if ($(event.target).is('a')) {
+            return;
+        }
+        if ($(event.target).is('i.snap_ico')) {
+            return;
+        }
+        if ($(event.target).is('td.sorting_1') || $(event.target).is('img')) {
+            var str = '';
+            var row, ob;
+            if ($(event.target).attr('src') != undefined) {
+                str = $(event.target).attr('src');
+                ob = JSON.parse($(event.target).parents('tr').attr('add_data'));
+            } else if ($(event.target).children().attr('src') != undefined) {
+                str = $(event.target).children().attr('src');
+                ob = JSON.parse($(event.target).children().parents('tr').attr('add_data'));
+            }
+
+            var txt = '<div class="info_area" style="max-width: 240px;"><div id="bi_info_bar" style="float: left; width: 200px; padding-top: 20px; display: block;">' +
+                    '<p style="font-size: 16px;margin-bottom: 20px;">'+ob.product_name+'</p><p><b>URL:</b><br/><span class="url">' + ob.url + '</span></p>' +
+                    '<p><b>Product name:</b><br/><span class="product_name">' + ob.product_name + '</span></p>' +
+                    '<p><b>Price:</b><br/><span class="price">' + ob.price_diff + '</span></p></div><div style="float: right; width: 40px;">' +
+                    '<button id="bi_expand_bar_cnt" type="button" class="btn btn-success"><i class="icon-white icon-arrow-left"></i></button></div></div>';
+            showSnap('<div class="snap_area"><a target="_blank" href=""><img src="' + str + '"></a></div>' + txt);
+            return;
+        }
+
+        var target = $(event.target);
+        if (target.parents('table').attr('class') == 'url_table')
+            target = target.parents('table');
+       
+        var add_data = JSON.parse(target.parents('tr').attr('add_data'));
+         curentSibil=target.parents('tr');
+         
+        if(curentSibil.prev().length == 0){
+         $('.btn_prev_dialog').attr('disabled','disabled');
+        }else{
+         $('.btn_prev_dialog').removeAttr('disabled');
+        }
+
+        if(curentSibil.next().length == 0){
+         $('.btn_next_dialog').attr('disabled','disabled');
+        }else{
+         $('.btn_next_dialog').removeAttr('disabled');
+        }
+         
+        // if this product is absent product from second batch
+        if (add_data.id == undefined) {
+            return;
+        }
+        var url_compare =$(add_data.url1).find('a').attr('href');
+       
+        $('#ajaxLoadAni').fadeIn('slow');
+        $('#assessDetails_ProductName').val(add_data.product_name);
+        $('#assessDetails_Model').val(add_data.model);
+        $('#assessDetails_url').val(add_data.url);
+        $('#assess_open_url_btn').attr('href', add_data.url);
+        $('#assessDetails_Price').val(add_data.own_price);
+       
+        $('#assessDetails_ProductName1').val(add_data.product_name1);
+        $('#assessDetails_Model1').val(add_data.model1);
+        $('#assessDetails_url1').val(url_compare);
+        $('#assess_open_url_btn1').attr('href', url_compare);
+        $('#assessDetails_Price1').val(add_data.own_price1);
+        
+        if (short_wc_total_not_01 == 0 || long_wc_total_not_01 == 0) {
+            $('#assessDetails_short_and_long_description_panel1').hide();
+            $('#assessDetails_description_panel1').show();
+
+            if (short_wc_total_not_01 == 0) {
+                var description1 = add_data.long_description1;
+                var description_wc1 = add_data.long_description_wc1;
+                var seo_phrases1 = add_data.long_seo_phrases1;
+            } else {
+                var description1 = add_data.short_description1;
+                var description_wc1 = add_data.short_description_wc1;
+                var seo_phrases1= add_data.short_seo_phrases1;
+            }
+            $('#assessDetails_Description1').val(description1);
+            $('#assessDetails_DescriptionWC1').html(description_wc1);
+            $('#assessDetails_SEO1').val(seo_phrases1);
+        } else {
+            $('#assessDetails_short_and_long_description_panel1').show();
+            $('#assessDetails_description_panel1').hide();
+
+            $('#assessDetails_ShortDescription1').val(add_data.short_description1);
+            $('#assessDetails_ShortDescriptionWC1').html(add_data.short_description_wc1);
+            $('#assessDetails_ShortSEO1').val(add_data.short_seo_phrases1);
+            $('#assessDetails_LongDescription1').val(add_data.long_description1);
+            $('#assessDetails_LongDescriptionWC1').html(add_data.long_description_wc1);
+            $('#assessDetails_LongSEO1').val(add_data.long_seo_phrases1);
+        }
+
+        var chk_include_in_report = '<div id="assess_details_dialog_options" style="float: left; margin-left:30px;"><label><input id="assessDetailsDialog_chkIncludeInReport" type="checkbox">&nbspInclude in report</label></div>';
+        var btn_delete_from_batch = '<button id="assess_details_delete_from_batch" class="btn btn-danger" style="float:left;">Delete</button>';
+        var assessDetailsDialog_replace_element = $('#assessDetailsDialog').parent().find('.ui-dialog-buttonpane button[id="assessDetailsDialog_btnIncludeInReport"]');
+        if (assessDetailsDialog_replace_element.length > 0) {
+            assessDetailsDialog_replace_element.replaceWith(btn_delete_from_batch + chk_include_in_report);
+        }
+
+        var data = {
+            research_data_id: add_data.research_data_id
+        };
+        var checked = false;
+                    
+        $.get(
+                base_url + 'index.php/assess/include_in_assess_report_check',
+                data,
+                function(data) {
+                    checked = data.checked;
+                    var assessDetailsDialog_chkIncludeInReport = $('#assessDetailsDialog_chkIncludeInReport');
+                    assessDetailsDialog_chkIncludeInReport.removeAttr('checked');
+                    if (checked == true) {
+                        assessDetailsDialog_chkIncludeInReport.attr('checked', 'checked');
+                    }
+                    assessDetailsDialog_chkIncludeInReport.attr('research_data_id', add_data.research_data_id);
+                   $('#assessDetailsDialog').dialog('open');
+                }
+        );
+
+        $('#ajaxLoadAni').fadeOut('slow');
+        
+        
+        
+    }
     });
 
 ////tblAssess tbody  click end
@@ -1702,14 +1854,33 @@ var generate_url_check = GetURLParameter('generate_url_check');
                     //saveData();
                 }
             },
+            'next': {
+                text: 'Next>',
+                id: 'assessDetailsDialog_btnNext',
+                style: 'margin-right:35px',
+                class: 'btn_next_dialog',
+                click: function() {
+                  nextSibilfunc(curentSibil);
+                }
+            },
+            'prev': {
+                text: '<Prev',
+                id: 'assessDetailsDialog_btnPrev',
+                style: 'margin-right:10px',
+                class: 'btn_prev_dialog',
+                click: function() {
+                    prevSibilfunc(curentSibil)
+                }
+            },
             'Copy': {
                 text: 'Copy',
                 id: 'assessDetailsDialog_btnCopy',
-                style: 'margin-right:275px',
+                style: 'margin-right:125px',
                 click: function() {
                     copyToClipboard(textToCopy);
                 }
             },
+            
             'Re-Crawl"': {
                 text: 'Re-Crawl',
                 id: 'assessDetailsDialog_btnReCrawl',
@@ -1730,7 +1901,14 @@ var generate_url_check = GetURLParameter('generate_url_check');
         },
         width: '850px'
     });
+function nextSibilfunc(curentSibil){ 
+ curentSibil.next().children().first().trigger('click')
 
+}
+function prevSibilfunc(curentSibil){ 
+ curentSibil.prev().children().first().trigger('click')
+   
+}
     $('#assessDetailsDialog input[type="text"], textarea').bind({
         focus: function() {
             this.select();
