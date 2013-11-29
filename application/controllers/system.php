@@ -2124,6 +2124,13 @@ class System extends MY_Controller {
       return $batches_list;
   }
 
+  public function delete_keyword_from_kw_source() {
+	  	$this->load->model('statistics_new_model');
+  		$id = $this->input->post('id');
+  		$res = $this->statistics_new_model->delete_keyword_kw_source($id);
+  		$this->output->set_content_type('application/json')->set_output(json_encode($res));
+  }
+
   public function add_keyword_to_kw_source() {
   		$this->load->model('statistics_new_model');
   		$statistics_new_id = $this->input->post('id');

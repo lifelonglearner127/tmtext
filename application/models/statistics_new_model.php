@@ -18,6 +18,14 @@ class Statistics_new_model extends CI_Model {
     }
 
     // === META KEYWORDS RANKING STUFFS (START)
+    function delete_keyword_kw_source($id) {
+        return $this->db->delete(
+            $this->tables['meta_kw_rank_source'],
+            array(
+                'id' => $id
+            )
+        );
+    }
     function check_keyword_kw_source($id, $batch_id, $kw) {
         $res_object = array(
             'status' => false,
