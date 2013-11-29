@@ -19,48 +19,122 @@ class Rankapi_model extends CI_Model {
             'status' => false,
             'msg' => '',
             'debug_rank' => null,
-            'mode' => ''
+            'mode' => 'get',
+            'find_track' => array()
         );
         $sql_source = $this->db->where('id', $id)->get($this->tables['meta_kw_rank_source']);
         $sql_source_res = $sql_source->result();
         if(count($sql_source_res) > 0) {
-            $res_source = $sql_source_res[0];
+            $res_source = $sql_source_res[0];  
             $key_word = $res_source->kw;
             $url = $res_source->url;
-            if($res_source->rank_json_encode !== null) { // ==== get rank data and sync
-                $data = array("data" => json_encode(array("action" => "getAccountRankings", "id" => "$api_username", "apikey" => "$api_key")));
-                $ch = curl_init('https://www.serpranktracker.com/tracker/webservice');
-                curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-                curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                $track_data = curl_exec($ch);
-                $data = json_decode($track_data);
-                $res_object['debug_rank'] = $data;
-                $res_object['mode'] = 'get';
-            } else { // ==== insert rank data and sync
+
+            $data = array("data" => json_encode(array("action" => "getAccountRankings", "id" => "$api_username", "apikey" => "$api_key")));
+            $ch = curl_init('https://www.serpranktracker.com/tracker/webservice');
+            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $track_data = curl_exec($ch);
+            $rank_data = json_decode($track_data);
+            // === find needed data and procced syns process (start)
+            $find_object = array(
+                'status' => false,
+                'site' => '',
+                'keyword' => '',
+                'location' => '',
+                'engine' => '',
+                'rank_json_encode' => '',
+                'rank' => 0,
+                'highest_rank' => array(),
+                'add_api_curl' => null
+            );
+            if($rank_data->status == 'success') {
+                if(count($rank_data->data) > 0) {
+                    foreach($rank_data->data as $key => $value) {
+                        if($value->site == $url) {
+                            if(count($value->keywords) > 0) {
+                                foreach ($value->keywords as $k => $v) {
+                                    if($v->keyword == $key_word) { // !!! finded !!!
+                                        // ===== sort out ranking stack (start)
+                                        $r_object = null;
+                                        $rank_int = null;
+                                        $ranking_stack = array();
+                                        foreach ($v->rankings as $ks => $vs) {
+                                            $mid = array(
+                                                'ranking' => $vs->ranking,
+                                                'rankedurl' => $vs->rankedurl,
+                                                'datetime' => $vs->datetime
+                                            );
+                                            array_push($ranking_stack, $mid);
+                                        }
+                                        $sort = array();
+                                        foreach ($ranking_stack as $k => $vd) {
+                                            $sort['datetime'][$k] = $vd['datetime'];
+                                        }
+                                        array_multisort($sort['datetime'], SORT_DESC, $ranking_stack);
+                                        if (count($ranking_stack) > 0) {
+                                            $r_object = $ranking_stack[0];
+                                        }
+                                        if ($r_object !== null) $rank_int = $r_object['ranking'];
+                                        // ===== sort out ranking stack (end)
+                                        // ===== figure out highest rank (start)
+                                        $ranking_stack_mh = $ranking_stack;
+                                        $sort_h = array();
+                                        foreach ($ranking_stack_mh as $k => $vr) {
+                                            if($vr['ranking'] !== null) $sort_h['ranking'][$k] = $vr['ranking'];
+                                        }
+                                        array_multisort($sort_h['ranking'], SORT_ASC, $ranking_stack_mh);
+                                        if (count($ranking_stack_mh) > 0) {
+                                            $h_object = $ranking_stack_mh[0];
+                                        }
+                                        // ===== figure out highest rank (end)
+                                        $find_object['status'] = true;
+                                        $find_object['site'] = $value->site;
+                                        $find_object['keyword'] = $v->keyword;
+                                        $find_object['location'] = $v->location;
+                                        $find_object['engine'] = $v->searchengine;
+                                        $find_object['rank_json_encode'] = json_encode($ranking_stack);
+                                        $find_object['rank'] = $rank_int;
+                                        $find_object['highest_rank'] = json_encode($h_object);
+                                        // ===== finish sync (update db record) (start)
+                                        $update_object = array(
+                                            'rank_json_encode' => $find_object['rank_json_encode'],
+                                            'highest_rank' => $find_object['highest_rank'],
+                                            'rank' => $find_object['rank']
+                                        );
+                                        $this->db->update($this->tables['meta_kw_rank_source'], $update_object, array('id' => $id));
+                                        // ===== finish sync (update db record) (end)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // === find needed data and procced syns process (end)
+
+            // === check if need to insert new keyword to api (start)
+            if($find_object['status'] !== true) { // ===== so insert to api
                 $res_object['mode'] = 'insert';
-                // ==== insert
                 $key_url = array(
                     "site" => "$url",
                     "keyword" => "$key_word",
                     "location" => "US",
                     "searchengine" => "G"
                 );
-                $data = array("data" => json_encode(array("action" => "addAccountKeywords", "id" => "$api_username", "apikey" => "$api_key", "keywords" => array($key_url))));
+                $data_ins = array("data" => json_encode(array("action" => "addAccountKeywords", "id" => "$api_username", "apikey" => "$api_key", "keywords" => array($key_url))));
                 $ch = curl_init('https://www.serpranktracker.com/tracker/webservice');
                 curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-                curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, $data_ins);
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                $res_object['debug_rank'] = curl_exec($ch);
-                
-                // ==== sync
-
-                // ==== update
-                $update_object = array(
-                    'rank_json_encode' => 'up'
-                );
-                $this->db->update($this->tables['meta_kw_rank_source'], $update_object, array('id' => $id));
+                $res_object['add_api_curl'] = curl_exec($ch);
             }
+            // === check if need to insert new keyword to api (end)
+
+            $res_object['status'] = true;
+            $res_object['msg'] = 'OK';
+            $res_object['debug_rank'] = $rank_data;
+            $res_object['find_track'] = $find_object;
 
         } else {
             $res_object['msg'] = 'Source object not finded';

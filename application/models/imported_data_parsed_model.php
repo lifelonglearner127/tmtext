@@ -2700,7 +2700,8 @@ echo "j  = ".$j;
             $urls= array();
             $res= array();
             foreach ($rows as $key => $row) {
-            if(!in_array($this->get_base_url($row['url']), $urls)){
+            //if(!in_array($this->get_base_url($row['url']), $urls))
+                {
                 $urls[]=$this->get_base_url($row['url']);
 
                 $cus_val = "";

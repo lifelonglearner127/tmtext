@@ -260,6 +260,7 @@ class Statistics_new_model extends CI_Model {
             (select `value` from imported_data_parsed where `key`="parsed_meta" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `parsed_meta`,
             (select `value` from imported_data_parsed where `key`="Description" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `Short_Description`,
             (select `value` from imported_data_parsed where `key`="Long_Description" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `Long_Description`,
+            (select `value` from imported_data_parsed where `key`="HTags" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `HTags`,
             
             (select `value` from imported_data_parsed where `key`="Url" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `url`
             ')
@@ -405,7 +406,15 @@ class Statistics_new_model extends CI_Model {
         return $result;
         //return $query->result();
     }
-
+//    function get_price_from_crawler_list($crawler_list_id){
+//        $result = $this->db->query('select price from crawler_list_prices as clp
+//            inner join 
+//            (select crawler_list_id as cli, max(revision) as mr 
+//            from crawler_list_prices group by crawler_list_id) as clp_mr
+//            on clp.crawler_list_id = clp_mr.cli and clp.revision = clp_mr.mr 
+//            where clp.crawler_list_id = '.$crawler_list_id);
+//        
+//    }
     function delete_by_research_data_id($batch_id, $research_data_id){
         return $this->db->delete(
             $this->tables['statistics_new'],
