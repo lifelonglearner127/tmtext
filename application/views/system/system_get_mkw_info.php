@@ -38,18 +38,20 @@
 											<input type='hidden' value="<?php echo $check_meta_status; ?>">
 											<tr>
 												<?php 
-													$pkey_class = '';
+													$pkey_class = 'ellipsis_pkey';
 													if($check_meta_status) $pkey_class = 'ellipsis_pkey';
 												?>
 												<td style='border-top: none; padding-left: 0px;'><p class="<?php echo $pkey_class; ?>"><span style='font-size: 12px; font-weight: bold'><?php echo $val['ph']." (".$val['count'].") - ".$val['prc']."%" ?></span></p></td>
 												<td style='border-top: none;'>
-												<?php if($check_meta_status) { ?>
-												<div style='display: inline-block; margin-bottom: 5px;' class='action_btn_holder'><button type='button' disabled class='btn btn-success disabled'>Inside</button></div>
-												<div style='display: inline-block; margin-bottom: 5px;'><button type='button' class='btn btn-success'>Sync</button></div>
-												<div style='display: inline-block; margin-bottom: 5px;'><button type='button' class='btn btn-success'>Explore</button></div>
-												<?php } else { ?>
-												<div class='action_btn_holder'><button type='button' onclick="addKeywordToKwSource(this, '<?php echo $id; ?>', '<?php echo $batch_id; ?>', '<?php echo $kw; ?>', '<?php echo $kw_prc; ?>', '<?php echo $kw_count; ?>')" class='btn btn-primary'>Add</button></div>
-												<?php } ?>
+												<div class='overall_controls_holder'>
+													<?php if($check_meta_status) { ?>
+													<div style='display: inline-block;' class='action_btn_holder'><button type='button' disabled class='btn btn-success disabled'>Inside</button></div>
+													<div style='display: inline-block;'><button type='button' class='btn btn-success'>Sync</button></div>
+													<div style='display: inline-block;'><button type='button' class='btn btn-success'>Explore</button></div>
+													<?php } else { ?>
+													<div class='action_btn_holder'><button type='button' onclick="addKeywordToKwSource(this, '<?php echo $id; ?>', '<?php echo $batch_id; ?>', '<?php echo $kw; ?>', '<?php echo $kw_prc; ?>', '<?php echo $kw_count; ?>')" class='btn btn-primary'>Add</button></div>
+													<?php } ?>
+												</div>
 												</td>
 											</tr>
 										<?php } ?>
@@ -65,18 +67,20 @@
 											<input type='hidden' value="<?php echo $check_meta_status; ?>">
 											<tr>
 												<?php 
-													$pkey_class = '';
+													$pkey_class = 'ellipsis_pkey';
 													if($check_meta_status) $pkey_class = 'ellipsis_pkey';
 												?>
 												<td style='border-top: none; padding-left: 0px;'><p class="<?php echo $pkey_class; ?>"><span style='font-size: 12px; font-weight: bold'><?php echo $val['ph']." (".$val['count'].") - ".$val['prc']."%" ?></span></p></td>
 												<td style='border-top: none;'>
-													<?php if($check_meta_status) { ?>
-													<div style='display: inline-block; margin-bottom: 5px;' class='action_btn_holder'><button type='button' disabled class='btn btn-success disabled'>Inside</button></div>
-													<div style='display: inline-block; margin-bottom: 5px;'><button type='button' class='btn btn-success'>Sync</button></div>
-													<div style='display: inline-block; margin-bottom: 5px;'><button type='button' class='btn btn-success'>Explore</button></div>
-													<?php } else { ?>
-													<div class='action_btn_holder'><button type='button' onclick="addKeywordToKwSource(this, '<?php echo $id; ?>', '<?php echo $batch_id; ?>', '<?php echo $kw; ?>', '<?php echo $kw_prc; ?>', '<?php echo $kw_count; ?>')" class='btn btn-primary'>Add</button></div>
-													<?php } ?>
+													<div class='overall_controls_holder'>
+														<?php if($check_meta_status) { ?>
+														<div style='display: inline-block;' class='action_btn_holder'><button type='button' disabled class='btn btn-success disabled'>Inside</button></div>
+														<div style='display: inline-block;'><button type='button' class='btn btn-success'>Sync</button></div>
+														<div style='display: inline-block;'><button type='button' class='btn btn-success'>Explore</button></div>
+														<?php } else { ?>
+														<div class='action_btn_holder'><button type='button' onclick="addKeywordToKwSource(this, '<?php echo $id; ?>', '<?php echo $batch_id; ?>', '<?php echo $kw; ?>', '<?php echo $kw_prc; ?>', '<?php echo $kw_count; ?>')" class='btn btn-primary'>Add</button></div>
+														<?php } ?>
+													</div>
 												</td>
 											</tr>
 										<?php } ?>
@@ -104,7 +108,8 @@
       getMetaKeysBatchData(bid, pi);
   });
 	function addKeywordToKwSource(e, id, batch_id, kw, kw_prc, kw_count) {
-		var btn_holder = $(e).parent();
+		// var btn_holder = $(e).parent();
+		var btn_holder = $(e).parent().parent();
 		var send_object = {
 			'id': id,
 			'batch_id': batch_id,
@@ -116,7 +121,8 @@
         console.log(data);
         if(data.status) {
         	console.log("replace");
-        	btn_holder.html("<button type='button' disabled class='btn btn-success disabled'>Inside</button>");
+        	btn_holder.html("<div style='display: inline-block;' class='action_btn_holder'><button type='button' disabled class='btn btn-success disabled'>Inside</button></div>&nbsp;<div style='display: inline-block;'><button type='button' class='btn btn-success'>Sync</button></div>&nbsp;<div style='display: inline-block;'><button type='button' class='btn btn-success'>Explore</button></div>");
+        	// btn_holder.html("<button type='button' disabled class='btn btn-success disabled'>Inside</button>");
         } else {
         	alert(data.msg);
         }

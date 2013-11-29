@@ -1,7 +1,7 @@
 /* BOARD ITEM MODAL PREVIEW (START) */
 .ellipsis_pkey {
-    width: 130px;
-    max-width: 130px;
+    width: 135px;
+    max-width: 135px;
     display: block;
     overflow: hidden;
     text-overflow: ellipsis;
