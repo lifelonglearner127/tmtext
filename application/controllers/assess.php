@@ -833,7 +833,7 @@ class Assess extends MY_Controller {
         if (($key = array_search('snap', $selected_columns)) !== false) {
             unset($selected_columns[$key]);
         }
-        $line = array('created' => 'Date', 'product_name' => 'Product Name', 'url' => 'Url','Short_Description' =>'Short Description', 'short_description_wc' => 'Short Desc # Words','Long_Description' =>'Long Description', 'long_description_wc' => 'Long Desc # Words', 'short_seo_phrases' => ' Short Desc - Found SEO Keywords', 'long_seo_phrases' => ' Short Desc - Found SEO Keywords', 'price_diff' => 'Price', 'column_features' => 'Features', 'column_reviews' => 'Reviews');
+        $line = array('created' => 'Date', 'product_name' => 'Product Name', 'url' => 'Url','Short_Description' =>'Short Description', 'short_description_wc' => 'Short Desc # Words','Long_Description' =>'Long Description', 'long_description_wc' => 'Long Desc # Words', 'short_seo_phrases' => ' Short Desc - Found SEO Keywords', 'long_seo_phrases' => ' Short Desc - Found SEO Keywords', 'price_diff' => 'Price', 'column_features' => 'Features', 'column_reviews' => 'Reviews','average_review'=>'Avg Review');
 
 
         foreach ($line as $key => $val) {
@@ -887,6 +887,7 @@ class Assess extends MY_Controller {
                                     $parsed_meta_keywords_unserialize_val = '';
                                     $parsed_loaded_in_seconds_unserialize_val = '';
                                     $parsed_average_review_unserialize_val_count = '';
+                                    $parsed_review_count_unserialize_val_count = '';
                                     $column_external_content = '';
                                     $cmpare = $this->statistics_new_model->get_compare_item($item['imported_data_id']);
 
@@ -902,8 +903,10 @@ class Assess extends MY_Controller {
                                         $parsed_model_unserialize_val = $parsed_attributes_unserialize['model'];
                                     if (isset($parsed_attributes_unserialize['loaded_in_seconds']))
                                         $parsed_loaded_in_seconds_unserialize_val = $parsed_attributes_unserialize['loaded_in_seconds'];
+                                    if (isset($parsed_attributes_unserialize['average_review']))
+                                        $parsed_average_review_unserialize_val_count = $parsed_attributes_unserialize['average_review'];
                                     if (isset($parsed_attributes_unserialize['review_count']))
-                                        $parsed_average_review_unserialize_val_count = $parsed_attributes_unserialize['review_count'];
+                                        $parsed_review_count_unserialize_val_count = $parsed_attributes_unserialize['review_count'];
 
                                     $parsed_meta_unserialize = unserialize($cmpare->parsed_meta);
 
@@ -960,6 +963,7 @@ class Assess extends MY_Controller {
                                     $cmpare->Meta_Description = $parsed_meta_unserialize_val;
                                     $cmpare->Meta_Description_Count = $parsed_meta_unserialize_val_count;
                                     $cmpare->average_review = $parsed_average_review_unserialize_val_count;
+                                    $cmpare->column_reviews = $parsed_review_count_unserialize_val_count;
                                 
                                     $similar_items_data[] = $cmpare;
                                     $val->similar_items = $similar_items_data;  
@@ -1134,6 +1138,9 @@ class Assess extends MY_Controller {
                 }
                 if (in_array('column_reviews', $selected_columns)) {
                     $res_array[$key]['column_reviews'] = $pars_atr['parsed_attributes']['review_count'] !== false ? $pars_atr['parsed_attributes']['review_count'] : '-';
+                }
+                if (in_array('average_review', $selected_columns)) {
+                    $res_array[$key]['average_review'] = $pars_atr['parsed_attributes']['average_review'] !== false ? $pars_atr['parsed_attributes']['average_review'] : '-';
                 }
                 if (in_array('H1_Tags', $selected_columns) && $pars_atr['HTags']['h1'] && $pars_atr['HTags']['h1'] != '') {
                     $H1 = $pars_atr['HTags']['h1'];
@@ -1378,7 +1385,10 @@ class Assess extends MY_Controller {
                             $res_array[$key]['column_external_content(' . $i . ")"] = $sim_items[$i - 1]->column_external_content ? $sim_items[$i - 1]->column_external_content : '';
                         }
                         if (in_array('column_reviews', $selected_columns)) {
-                            $res_array[$key]['column_reviews(' . $i . ")"] = $sim_items[$i - 1]->average_review  ? $sim_items[$i - 1]->average_review  : ' - ';
+                            $res_array[$key]['column_reviews(' . $i . ")"] = $sim_items[$i - 1]->column_reviews  ? $sim_items[$i - 1]->column_reviews  : ' - ';
+                        }
+                        if (in_array('average_review', $selected_columns)) {
+                            $res_array[$key]['average_review(' . $i . ")"] = $sim_items[$i - 1]->average_review  ? $sim_items[$i - 1]->average_review  : ' - ';
                         }
                        
                     }                    
@@ -1491,6 +1501,10 @@ class Assess extends MY_Controller {
                 }
                 if (in_array('column_reviews', $selected_columns)) {
                     $line[] = "Reviews(" . ($i+1) . ")";
+                    
+                }
+                if (in_array('average_review', $selected_columns)) {
+                    $line[] = "Avg Review(" . ($i+1) . ")";
                     
                 }
               
