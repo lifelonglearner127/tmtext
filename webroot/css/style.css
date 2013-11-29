@@ -1,4 +1,13 @@
 /* BOARD ITEM MODAL PREVIEW (START) */
+.ellipsis_pkey {
+    width: 130px;
+    max-width: 130px;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .ellipsis_p {
     max-width: 500px;
     display: block;
