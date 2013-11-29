@@ -8,6 +8,8 @@ CREATE  TABLE IF NOT EXISTS `meta_kw_rank_source` (
   `kw_prc` VARCHAR(45) NULL DEFAULT NULL ,
   `kw_count` INT NULL DEFAULT NULL ,
   `rank_json_encode` TEXT NULL DEFAULT NULL ,
+  `highest_rank` TEXT NULL DEFAULT NULL ,
+  `rank` INT NULL DEFAULT NULL ,
   `status` INT NULL DEFAULT NULL ,
   `stamp` DATETIME NULL DEFAULT NULL ,
   PRIMARY KEY (`id`) 
