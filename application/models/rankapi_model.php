@@ -3,11 +3,69 @@
 class Rankapi_model extends CI_Model {
 
     var $tables = array(
-    	'ranking_api_data' => 'ranking_api_data'
+    	'ranking_api_data' => 'ranking_api_data',
+        'meta_kw_rank_source' => 'meta_kw_rank_source'
     );
 
     function __construct() {
         parent::__construct();
+    }
+
+    function sync_meta_personal_keyword($id) {
+        $api_username = $this->config->item('ranking_api_username');
+        $api_key = $this->config->item('ranking_api_key');
+        $res_source = null;
+        $res_object = array(
+            'status' => false,
+            'msg' => '',
+            'debug_rank' => null,
+            'mode' => ''
+        );
+        $sql_source = $this->db->where('id', $id)->get($this->tables['meta_kw_rank_source']);
+        $sql_source_res = $sql_source->result();
+        if(count($sql_source_res) > 0) {
+            $res_source = $sql_source_res[0];
+            $key_word = $res_source->kw;
+            $url = $res_source->url;
+            if($res_source->rank_json_encode !== null) { // ==== get rank data and sync
+                $data = array("data" => json_encode(array("action" => "getAccountRankings", "id" => "$api_username", "apikey" => "$api_key")));
+                $ch = curl_init('https://www.serpranktracker.com/tracker/webservice');
+                curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+                curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                $track_data = curl_exec($ch);
+                $data = json_decode($track_data);
+                $res_object['debug_rank'] = $data;
+                $res_object['mode'] = 'get';
+            } else { // ==== insert rank data and sync
+                $res_object['mode'] = 'insert';
+                // ==== insert
+                $key_url = array(
+                    "site" => "$url",
+                    "keyword" => "$key_word",
+                    "location" => "US",
+                    "searchengine" => "G"
+                );
+                $data = array("data" => json_encode(array("action" => "addAccountKeywords", "id" => "$api_username", "apikey" => "$api_key", "keywords" => array($key_url))));
+                $ch = curl_init('https://www.serpranktracker.com/tracker/webservice');
+                curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+                curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                $res_object['debug_rank'] = curl_exec($ch);
+                
+                // ==== sync
+
+                // ==== update
+                $update_object = array(
+                    'rank_json_encode' => 'up'
+                );
+                $this->db->update($this->tables['meta_kw_rank_source'], $update_object, array('id' => $id));
+            }
+
+        } else {
+            $res_object['msg'] = 'Source object not finded';
+        }
+        return $res_object;
     }
 
     public function addGridItemRankingApi($url, $key_word) {
