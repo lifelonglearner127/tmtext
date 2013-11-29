@@ -833,7 +833,9 @@ body{
 }
 
 /* Main Container Style */
-
+.container {
+	width: 1200px;
+}
 .main_container{
     width:100%;
     float:left;
