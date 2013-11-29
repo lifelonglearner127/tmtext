@@ -36,7 +36,7 @@ class Statistics_new_model extends CI_Model {
         }
         return $res_object;
     }
-    function add_keyword_kw_source($statistics_new_id, $batch_id, $kw, $kw_prc, $kw_count) {
+    function add_keyword_kw_source($statistics_new_id, $batch_id, $kw, $kw_prc, $kw_count, $url) {
         $res = array(
             'status' => false,
             'msg' => '',
@@ -53,6 +53,7 @@ class Statistics_new_model extends CI_Model {
             $res['msg'] = 'Already exists';
         } else {
             $insert_object = array(
+                'url' => $url,
                 'batch_id' => $batch_id,
                 'statistics_new_id' => $statistics_new_id,
                 'kw' => $kw,

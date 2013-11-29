@@ -27,7 +27,11 @@
 				<?php foreach($results_stack['data_pager'] as $k => $v) { ?>
 					<?php $id = $v['id']; $batch_id = $v['batch_id']; ?>
 					<tr>
-						<td><p class='ellipsis_p' style='font-size: 12px; font-weight: bold'><?php echo $v['product_name']; ?></p></td>
+						<td>
+							<?php $url = $v['url']; ?>
+							<p class='ellipsis_p' style='font-size: 12px; font-weight: bold'><?php echo $v['product_name']; ?></p>
+							<p class='ellipsis_p' style='font-size: 12px; font-weight: bold'><?php echo $url; ?></p>
+						</td>
 						<td>
 							<?php if($v['long_seo_phrases']) { ?>
 								<table>
@@ -46,11 +50,12 @@
 												<div class='overall_controls_holder'>
 													<?php if($check_meta_status['status']) { ?>
 													<?php $last_id = $check_meta_status['last_id']; ?>
-													<div style='display: inline-block;' class='action_btn_holder'><button type='button' disabled class='btn btn-success disabled'>Inside</button></div>
-													<div style='display: inline-block;'><button type='button' onclick="kwSyncMetaPersonal('<?php echo $last_id; ?>')" class='btn btn-success'>Sync</button></div>
-													<div style='display: inline-block;'><button type='button' onclick="kwExploreMetaPersonal('<?php echo $last_id; ?>')" class='btn btn-success'>Explore</button></div>
+													<div style='display: inline-block; margin-bottom: 5px;' class='action_btn_holder'><button type='button' disabled class='btn btn-success disabled'>Inside</button></div>
+													<div style='display: inline-block; margin-bottom: 5px;'><button type='button' onclick="kwSyncMetaPersonal('<?php echo $last_id; ?>')" class='btn btn-success'>Sync</button></div>
+													<div style='display: inline-block; margin-bottom: 5px;'><button type='button' onclick="kwExploreMetaPersonal('<?php echo $last_id; ?>')" class='btn btn-success'>Explore</button></div>
+													<div style='display: inline-block;'><button type='button' onclick="kwDeleteMetaPersonal('<?php echo $last_id; ?>')" class='btn btn-danger'>Delete</button></div>
 													<?php } else { ?>
-													<div class='action_btn_holder'><button type='button' onclick="addKeywordToKwSource(this, '<?php echo $id; ?>', '<?php echo $batch_id; ?>', '<?php echo $kw; ?>', '<?php echo $kw_prc; ?>', '<?php echo $kw_count; ?>')" class='btn btn-primary'>Add</button></div>
+													<div class='action_btn_holder'><button type='button' onclick="addKeywordToKwSource(this, '<?php echo $id; ?>', '<?php echo $batch_id; ?>', '<?php echo $kw; ?>', '<?php echo $kw_prc; ?>', '<?php echo $kw_count; ?>', '<?php echo $url; ?>')" class='btn btn-primary'>Add</button></div>
 													<?php } ?>
 												</div>
 												</td>
@@ -76,11 +81,12 @@
 													<div class='overall_controls_holder'>
 														<?php if($check_meta_status['status']) { ?>
 														<?php $last_id = $check_meta_status['last_id']; ?>
-														<div style='display: inline-block;' class='action_btn_holder'><button type='button' disabled class='btn btn-success disabled'>Inside</button></div>
-														<div style='display: inline-block;'><button type='button' onclick="kwSyncMetaPersonal('<?php echo $last_id; ?>')" class='btn btn-success'>Sync</button></div>
-														<div style='display: inline-block;'><button type='button' onclick="kwExploreMetaPersonal('<?php echo $last_id; ?>')" class='btn btn-success'>Explore</button></div>
+														<div style='display: inline-block; margin-bottom: 5px;' class='action_btn_holder'><button type='button' disabled class='btn btn-success disabled'>Inside</button></div>
+														<div style='display: inline-block; margin-bottom: 5px;'><button type='button' onclick="kwSyncMetaPersonal('<?php echo $last_id; ?>')" class='btn btn-success'>Sync</button></div>
+														<div style='display: inline-block; margin-bottom: 5px;'><button type='button' onclick="kwExploreMetaPersonal('<?php echo $last_id; ?>')" class='btn btn-success'>Explore</button></div>
+														<div style='display: inline-block;'><button type='button' onclick="kwDeleteMetaPersonal('<?php echo $last_id; ?>')" class='btn btn-danger'>Delete</button></div>
 														<?php } else { ?>
-														<div class='action_btn_holder'><button type='button' onclick="addKeywordToKwSource(this, '<?php echo $id; ?>', '<?php echo $batch_id; ?>', '<?php echo $kw; ?>', '<?php echo $kw_prc; ?>', '<?php echo $kw_count; ?>')" class='btn btn-primary'>Add</button></div>
+														<div class='action_btn_holder'><button type='button' onclick="addKeywordToKwSource(this, '<?php echo $id; ?>', '<?php echo $batch_id; ?>', '<?php echo $kw; ?>', '<?php echo $kw_prc; ?>', '<?php echo $kw_count; ?>', '<?php echo $url; ?>')" class='btn btn-primary'>Add</button></div>
 														<?php } ?>
 													</div>
 												</td>
@@ -97,6 +103,7 @@
 	</div>
 
 <script type='text/javascript'>
+
 	function getMetaKeysBatchData(bid, cpage) {
       cpage = parseInt(cpage);
       $.post(base_url + 'index.php/system/system_get_mkw_info', {'bid': bid, 'cpage': cpage}, function(d) {
@@ -109,21 +116,20 @@
       var bid = $("#sk_batches_list > option:selected").val();
       getMetaKeysBatchData(bid, pi);
   });
-	function addKeywordToKwSource(e, id, batch_id, kw, kw_prc, kw_count) {
-		// var btn_holder = $(e).parent();
+	function addKeywordToKwSource(e, id, batch_id, kw, kw_prc, kw_count, url) {
 		var btn_holder = $(e).parent().parent();
 		var send_object = {
 			'id': id,
 			'batch_id': batch_id,
 			'kw': kw,
 			'kw_prc': kw_prc,
-			'kw_count': kw_count
+			'kw_count': kw_count,
+			'url': url
 		};
 		$.post(base_url + 'index.php/system/add_keyword_to_kw_source', send_object, function(data) {
         console.log(data);
         if(data.status) {
-        	btn_holder.html('<div style="display: inline-block;" class="action_btn_holder"><button type="button" disabled class="btn btn-success disabled">Inside</button></div>&nbsp;<div style="display: inline-block;"><button type="button" onclick="kwSyncMetaPersonal(\''+data.last_id+'\')" class="btn btn-success">Sync</button></div>&nbsp;<div style="display: inline-block;"><button type="button" onclick="kwExploreMetaPersonal(\''+data.last_id+'\')" class="btn btn-success">Explore</button></div>');
-        	// btn_holder.html("<button type='button' disabled class='btn btn-success disabled'>Inside</button>");
+        	btn_holder.html('<div style="display: inline-block; margin-bottom: 5px;" class="action_btn_holder"><button type="button" disabled class="btn btn-success disabled">Inside</button></div>&nbsp;<div style="display: inline-block; margin-bottom: 5px;"><button type="button" onclick="kwSyncMetaPersonal(\''+data.last_id+'\')" class="btn btn-success">Sync</button></div>&nbsp;<div style="display: inline-block; margin-bottom: 5px;"><button type="button" onclick="kwExploreMetaPersonal(\''+data.last_id+'\')" class="btn btn-success">Explore</button></div>&nbsp;<div style="display: inline-block;"><button type="button" style="margin-left: -5px;" onclick="kwDeleteMetaPersonal(\''+data.last_id+'\')" class="btn btn-danger">Delete</button></div>');
         } else {
         	alert(data.msg);
         }

@@ -1,6 +1,7 @@
 #27/11 Ilya
 CREATE  TABLE IF NOT EXISTS `meta_kw_rank_source` (
   `id` INT NOT NULL AUTO_INCREMENT ,
+  `url` VARCHAR(512) NULL DEFAULT NULL , 
   `batch_id` INT NULL DEFAULT NULL ,
   `statistics_new_id` INT NULL DEFAULT NULL ,
   `kw` VARCHAR(256) NULL DEFAULT NULL ,
