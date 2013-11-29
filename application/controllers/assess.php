@@ -374,6 +374,7 @@ class Assess extends MY_Controller {
                                     $val->similar_items = $similar_items_data;
 									
                                     $cmp[] = $val;
+                                    break;
                                 }
                             }
 
