@@ -952,6 +952,7 @@ class Assess extends MY_Controller {
                                     $cmpare = $this->statistics_new_model->get_compare_item($item['imported_data_id']);
 
                                     $parsed_attributes_unserialize = unserialize($cmpare->parsed_attributes);
+//                                    var_dump($parsed_attributes_unserialize);   exit();
                                    if (isset($parsed_attributes_unserialize['cnetcontent']) || isset($parsed_attributes_unserialize['webcollage']))
                                          $column_external_content = $this->column_external_content($parsed_attributes_unserialize['cnetcontent'],$parsed_attributes_unserialize['webcollage']);
  
@@ -1023,6 +1024,7 @@ class Assess extends MY_Controller {
                                     $cmpare->Meta_Description = $parsed_meta_unserialize_val;
                                     $cmpare->Meta_Description_Count = $parsed_meta_unserialize_val_count;
                                     $cmpare->average_review = $parsed_average_review_unserialize_val_count;
+                                    $cmpare->review_count = $parsed_review_count_unserialize_val_count; 
                                 
                                     $similar_items_data[] = $cmpare;
                                     $val->similar_items = $similar_items_data;  
@@ -1079,7 +1081,9 @@ class Assess extends MY_Controller {
             $res_array = array();
             $H1_tag_count = 0;
             $H2_tag_count = 0;
-            if (in_array('H2_Tags', $selected_columns)) {
+            $H1_tag_count_for_sim = 0;
+            $H2_tag_count_for_sim = 0;
+//            if (in_array('H2_Tags', $selected_columns)) {
                 foreach ($results as $key => $row) {
 
                     $pars_atr = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
@@ -1114,9 +1118,45 @@ class Assess extends MY_Controller {
                             }
                         }
                     }
+                    
+//Htag_count for similar 
+                    $sim_item_row = $row->similar_items ;
+                    $imp_data_id_for_sim = $sim_item_row[0]->imported_data_id ;
+                    $pars_atr_for_sim = $this->imported_data_parsed_model->getByImId($imp_data_id_for_sim);
+                    
+                    if (in_array('H1_Tags', $selected_columns) && $pars_atr_for_sim['HTags']['h1'] && $pars_atr_for_sim['HTags']['h1'] != '') {
+                        $H1 = $pars_atr_for_sim['HTags']['h1'];
+                        if (is_array($H1)) {
+
+                            if (count($H1) > $H1_tag_count_for_sim) {
+                                $H1_tag_count_for_sim = count($H1);
+                            }
+                        } else {
+
+                            if ($H1_tag_count_for_sim == 0) {
+                                $H1_tag_count_for_sim = 1;
+                            }
+                        }
+                    }
+
+                    if (in_array('H2_Tags', $selected_columns) && $pars_atr_for_sim['HTags']['h2'] && $pars_atr_for_sim['HTags']['h2'] != '') {
+                        $H2 = $pars_atr_for_sim['HTags']['h2'];
+                        if (is_array($H2)) {
+
+                            if (count($H2) > $H2_tag_count_for_sim) {
+                                $H2_tag_count_for_sim = count($H2);
+                            }
+                        } else {
+
+                            if ($H2_tag_count_for_sim == 0) {
+                                $H2_tag_count_for_sim = 1;
+                            }
+                        }
+                    }
+        
                 }
-            }
-          
+//            }
+                        
             foreach ($results as $key => $row) {
 
                 //item_id
@@ -1135,7 +1175,7 @@ class Assess extends MY_Controller {
                 $row = (object) $row;
 
                 $pars_atr = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
-
+                
                 //meta keywords
                 if(in_array('Meta_Keywords', $selected_columns)){
                      $parsed_meta_keywords_unserialize_val = "";
@@ -1231,7 +1271,7 @@ class Assess extends MY_Controller {
                         }
                     }
                 }
- if (in_array('H2_Tags', $selected_columns) && $pars_atr['HTags']['h2'] && $pars_atr['HTags']['h2'] != '') {
+                if (in_array('H2_Tags', $selected_columns) && $pars_atr['HTags']['h2'] && $pars_atr['HTags']['h2'] != '') {
                     $H2 = $pars_atr['HTags']['h2'];
                     if (is_array($H2)) {
 
@@ -1444,17 +1484,93 @@ class Assess extends MY_Controller {
                             $res_array[$key]['column_external_content(' . $i . ")"] = $sim_items[$i - 1]->column_external_content ? $sim_items[$i - 1]->column_external_content : '';
                         }
                         if (in_array('column_reviews', $selected_columns)) {
-                            $res_array[$key]['column_reviews(' . $i . ")"] = $sim_items[$i - 1]->average_review  ? $sim_items[$i - 1]->average_review  : ' - ';
+                            $res_array[$key]['column_reviews(' . $i . ")"] = $sim_items[$i - 1]->review_count  ? $sim_items[$i - 1]->review_count  : ' - ';
                         }
                         if (in_array('average_review', $selected_columns)) {
                             $res_array[$key]['average_review(' . $i . ")"] = $sim_items[$i - 1]->average_review  ? $sim_items[$i - 1]->average_review  : ' - ';
                         }
+                        
+// HTags for similar
+                        $HTags_for_similar = unserialize($sim_items[$i - 1]->HTags);
+//                        echo '<pre>';
+//                        print_r($HTags_for_similar); exit();
+                        
+                        
+                        if (in_array('H1_Tags', $selected_columns) && $HTags_for_similar['h1'] && $HTags_for_similar['h1'] != '') {
+                            $H1 = $HTags_for_similar['h1'];
+                            if (is_array($H1)) {
+
+                                $j=0;
+                                foreach ($H1 as $k => $h1) {
+                                    if($j<2){
+                                        $res_array[$key]['H1_Tags' . $k .'(' . $i . ')'] = $h1;
+                                        $res_array[$key]['H1_Tags_Count' . $k .'(' . $i . ')'] = strlen($h1);
+                                        $j++;
+                                    }
+                                }
+                            } else {
+                                $res_array[$key]['H1_Tags0 (' . $i . ')'] = $H1;
+                                $res_array[$key]['H1_Tags_Count0 (' . $i . ')'] = strlen($H1);
+                            }
+
+                            if ($H1_tag_count_for_sim > 0) {
+                                if ($H1_tag_count_for_sim > 2){
+                                   $H1_tag_count_for_sim = 2;
+                                }
+
+                                for ($k = 0; $k < $H1_tag_count_for_sim; $k++) {
+                                    if (!$res_array[$key]['H1_Tags' . $k .'(' . $i . ')']) {
+                                        $res_array[$key]['H1_Tags' . $k .'(' . $i . ')'] = '';
+                                        $res_array[$key]['H1_Tags_Count' . $k .'(' . $i . ')'] = ' ';
+                                    }
+                                }
+                            }
+                        }
+                        if (in_array('H2_Tags', $selected_columns) && $HTags_for_similar['h2'] && $HTags_for_similar['h2'] != '') {
+                            $H2 = $HTags_for_similar['h2'];
+                            if (is_array($H2)) {
+
+                                $j=0;
+                                foreach ($H2 as $k => $h2) {
+                                    if($j<2){
+                                        $res_array[$key]['H2_Tags' . $k .'(' . $i . ')'] = $h2;
+                                        $res_array[$key]['H2_Tags_Count' . $k .'(' . $i . ')'] = strlen($h2);
+                                        $j++;
+                                    }
+                                }
+                            } else {
+                                $res_array[$key]['H2_Tags0 (' . $i . ')'] = $H2;
+                                $res_array[$key]['H2_Tags_Count0 (' . $i . ')'] = strlen($H2);
+                            }
+
+                            if ($H2_tag_count_for_sim > 0) {
+                                if ($H2_tag_count_for_sim > 2){
+                                   $H2_tag_count_for_sim = 2;
+                                }
+
+                                for ($k = 0; $k < $H2_tag_count_for_sim; $k++) {
+                                    if (!$res_array[$key]['H2_Tags' . $k .'(' . $i . ')']) {
+                                        $res_array[$key]['H2_Tags' . $k .'(' . $i . ')'] = '';
+                                        $res_array[$key]['H2_Tags_Count' . $k .'(' . $i . ')'] = ' ';
+                                    }
+                                }
+                            }
+                        }
+                        else{
+                             if ($H2_tag_count_for_sim > 2){
+                                   $H2_tag_count_for_sim = 2;
+                                }
+
+                            for ($k = 0; $k < $H2_tag_count_for_sim; $k++) {
+                                    if (!$res_array[$key]['H2_Tags' . $k .'(' . $i . ')']) {
+                                        $res_array[$key]['H2_Tags' . $k .'(' . $i . ')'] = '';
+                                        $res_array[$key]['H2_Tags_Count' . $k .'(' . $i . ')'] = ' ';
+                                    }
+                                }
+                        }     
                        
                     }                    
-
-
              }
-
 
             if(in_array('model', $selected_columns)){
             array_unshift( $line, 'Model');
@@ -1565,6 +1681,22 @@ class Assess extends MY_Controller {
                 if (in_array('average_review', $selected_columns)) {
                     $line[] = "Avg Review(" . ($i+1) . ")";
                     
+                }
+                if (in_array('H1_Tags', $selected_columns)) {
+                    if ($H1_tag_count_for_sim > 0) {
+                        for ($k = 1; $k <= $H1_tag_count_for_sim; $k++) {
+                            $line[] = "H1_tag ($k)    (" . ($i+1) . ")";
+                            $line[] = "Chars ($k)    (" . ($i+1) . ")";
+                        }
+                    } 
+                    }
+                if (in_array('H2_Tags', $selected_columns)) {
+                    if ($H2_tag_count_for_sim > 0) {
+                        for ($k = 1; $k <= $H2_tag_count_for_sim; $k++) {
+                            $line[] = "H2_tag ($k)    (" . ($i+1) . ")";
+                            $line[] = "Chars ($k)    (" . ($i+1) . ")";
+                        }
+                    }
                 }
               
                 
