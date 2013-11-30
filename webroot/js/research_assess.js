@@ -29,8 +29,7 @@ $(function() {
 
     var short_wc_total_not_0 = 0;
     var long_wc_total_not_0 = 0;
-    var short_wc_total_not_01 = 0;
-    var long_wc_total_not_01 = 0;
+   
     var items_short_products_content_short = 0;
     var items_long_products_content_short = 0;
 	
@@ -1738,7 +1737,7 @@ var generate_url_check = GetURLParameter('generate_url_check');
        
         var add_data = JSON.parse(target.parents('tr').attr('add_data'));
          curentSibil=target.parents('tr');
-         
+      
         if(curentSibil.prev().length == 0){
          $('.btn_prev_dialog').attr('disabled','disabled');
         }else{
@@ -1769,18 +1768,22 @@ var generate_url_check = GetURLParameter('generate_url_check');
         $('#assessDetails_url1').val(url_compare);
         $('#assess_open_url_btn1').attr('href', url_compare);
         $('#assessDetails_Price1').val(add_data.own_price1);
-        
+        var short_total_not_01 = add_data.Short_Description1;
+        var long_total_not_01 = add_data.Long_Description1;
+        var long_wc_total_not_01 = parseInt(add_data.long_description_wc1);
+        var short_wc_total_not_01 = parseInt(add_data.short_description_wc1);
+       
         if (short_wc_total_not_01 == 0 || long_wc_total_not_01 == 0) {
             $('#assessDetails_short_and_long_description_panel1').hide();
             $('#assessDetails_description_panel1').show();
 
             if (short_wc_total_not_01 == 0) {
-                var description1 = add_data.long_description1;
-                var description_wc1 = add_data.long_description_wc1;
+                var description1 = long_total_not_01;
+                var description_wc1 = long_wc_total_not_01;
                 var seo_phrases1 = add_data.long_seo_phrases1;
             } else {
-                var description1 = add_data.short_description1;
-                var description_wc1 = add_data.short_description_wc1;
+                var description1 = short_total_not_01;
+                var description_wc1 = short_wc_total_not_01;
                 var seo_phrases1= add_data.short_seo_phrases1;
             }
             $('#assessDetails_Description1').val(description1);
@@ -1790,11 +1793,11 @@ var generate_url_check = GetURLParameter('generate_url_check');
             $('#assessDetails_short_and_long_description_panel1').show();
             $('#assessDetails_description_panel1').hide();
 
-            $('#assessDetails_ShortDescription1').val(add_data.short_description1);
-            $('#assessDetails_ShortDescriptionWC1').html(add_data.short_description_wc1);
+            $('#assessDetails_ShortDescription1').val(short_total_not_01);
+            $('#assessDetails_ShortDescriptionWC1').html(short_wc_total_not_01);
             $('#assessDetails_ShortSEO1').val(add_data.short_seo_phrases1);
-            $('#assessDetails_LongDescription1').val(add_data.long_description1);
-            $('#assessDetails_LongDescriptionWC1').html(add_data.long_description_wc1);
+            $('#assessDetails_LongDescription1').val(long_total_not_01);
+            $('#assessDetails_LongDescriptionWC1').html(long_wc_total_not_01);
             $('#assessDetails_LongSEO1').val(add_data.long_seo_phrases1);
         }
 
