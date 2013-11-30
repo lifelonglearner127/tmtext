@@ -2658,7 +2658,7 @@ class Assess extends MY_Controller {
             }
 
            if ($row->snap1 && $row->snap1 != '') {
-                $result_row->snap1 = "<img src='" . base_url() . "webshoots/" . $row->snap1 . "' />";
+                $result_row->snap1 = "<span style='cursor:pointer;'><img src='" . base_url() . "webshoots/" . $row->snap1 . "' /></snap>";
             }
             if ($row->product_name1) {
                 $result_row->product_name1 = $row->product_name1;
