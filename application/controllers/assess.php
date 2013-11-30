@@ -2414,8 +2414,11 @@ class Assess extends MY_Controller {
                 }
                 $desc_2 = $short_desc_2.' '.$long_desc_2 ;
                 
-                
-                similar_text($desc_1, $desc_2, $percent) ;
+                if (strcasecmp($desc_1, $desc_2) <= 0)
+					similar_text($desc_1, $desc_2, $percent);
+				else
+					similar_text($desc_2, $desc_1, $percent);
+					
                 $percent = number_format($percent, 2);
 				
 				if ($percent >= 25)
