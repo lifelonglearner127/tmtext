@@ -231,10 +231,10 @@
                 <label for="H2_Tags">H2_Tags</label>
             </p>
 
-            <p>
+            <?php /*<p>
                 <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_duplicate_content" data-col_name="duplicate_content" name="column_duplicate_content_name" <?php echo($columns['duplicate_content'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="column_batch_name">Duplicate content</label>
-            </p>
+            </p>*/?>
             <p>
                 <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_external_content" data-col_name="column_external_content" name="column_external_content" <?php echo($columns['column_external_content'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="column_external_content">Third party content</label>
