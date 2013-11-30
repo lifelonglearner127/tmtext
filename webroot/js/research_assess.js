@@ -500,7 +500,8 @@ $(function() {
         {
             "sTitle": "Snapshot",
             "sName": "snap",
-            "sWidth": "10%"
+            "sWidth": "10%",
+            "sClass": "Snapshot"
         },
         {
             "sTitle": "Date",
@@ -680,7 +681,8 @@ $(function() {
         {
             "sTitle": "Snapshot",
             "sName": "snap1",
-            "sWidth": "10%"
+            "sWidth": "10%",
+            "sClass": "Snapshot1"
         },
         {
             "sTitle": "Product Name",
@@ -1587,8 +1589,7 @@ var generate_url_check = GetURLParameter('generate_url_check');
       var checked_columns_results = GetURLParameter('checked_columns_results');
     
      if((table_case != "details_compare") && (checked_columns_results == undefined)){
-         console.log(checked_columns_results)
-         console.log(table_case)
+
         $('.details_left').addClass('details_width');  
         $('.details_right').hide();  
          
@@ -1721,13 +1722,22 @@ var generate_url_check = GetURLParameter('generate_url_check');
                 str = $(event.target).children().attr('src');
                 ob = JSON.parse($(event.target).children().parents('tr').attr('add_data'));
             }
+            if($(event.target).parents('td').hasClass('Snapshot')){
+                var txt = '<div class="info_area" style="max-width: 240px;"><div id="bi_info_bar" style="float: left; width: 200px; padding-top: 20px; display: block;">' +
+                        '<p style="font-size: 16px;margin-bottom: 20px;">'+ob.product_name+'</p><p><b>URL:</b><br/><span class="url">' + ob.url + '</span></p>' +
+                        '<p><b>Product name:</b><br/><span class="product_name">' + ob.product_name + '</span></p>' +
+                        '<p><b>Price:</b><br/><span class="price">' + ob.price_diff + '</span></p></div><div style="float: right; width: 40px;">' +
+                        '<button id="bi_expand_bar_cnt" type="button" class="btn btn-success"><i class="icon-white icon-arrow-left"></i></button></div></div>';
+                showSnap('<div class="snap_area"><a target="_blank" href=""><img src="' + str + '"></a></div>' + txt);
+            }else{
+                var txt = '<div class="info_area" style="max-width: 240px;"><div id="bi_info_bar" style="float: left; width: 200px; padding-top: 20px; display: block;">' +
+                        '<p style="font-size: 16px;margin-bottom: 20px;">'+ob.product_name1+'</p><p><b>URL:</b><br/><span class="url">' + $(ob.url1).find('a').attr('href') + '</span></p>' +
+                        '<p><b>Product name:</b><br/><span class="product_name">' + ob.product_name1 + '</span></p>' +
+                        '<p><b>Price:</b><br/><span class="price">' + ob.price_diff + '</span></p></div><div style="float: right; width: 40px;">' +
+                        '<button id="bi_expand_bar_cnt" type="button" class="btn btn-success"><i class="icon-white icon-arrow-left"></i></button></div></div>';
+                showSnap('<div class="snap_area"><a target="_blank" href=""><img src="' + str + '"></a></div>' + txt);
 
-            var txt = '<div class="info_area" style="max-width: 240px;"><div id="bi_info_bar" style="float: left; width: 200px; padding-top: 20px; display: block;">' +
-                    '<p style="font-size: 16px;margin-bottom: 20px;">'+ob.product_name+'</p><p><b>URL:</b><br/><span class="url">' + ob.url + '</span></p>' +
-                    '<p><b>Product name:</b><br/><span class="product_name">' + ob.product_name + '</span></p>' +
-                    '<p><b>Price:</b><br/><span class="price">' + ob.price_diff + '</span></p></div><div style="float: right; width: 40px;">' +
-                    '<button id="bi_expand_bar_cnt" type="button" class="btn btn-success"><i class="icon-white icon-arrow-left"></i></button></div></div>';
-            showSnap('<div class="snap_area"><a target="_blank" href=""><img src="' + str + '"></a></div>' + txt);
+            }
             return;
         }
 

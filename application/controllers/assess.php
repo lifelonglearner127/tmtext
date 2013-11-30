@@ -2047,7 +2047,7 @@ class Assess extends MY_Controller {
             array(
                 "sTitle" => "Snapshot",
                 "sName" => "snap",
-            //"sWidth" =>  "10%"
+                "sClass"=> "Snapshot"
             ),
             array(
                 "sTitle" => "Date",
@@ -2271,7 +2271,7 @@ class Assess extends MY_Controller {
 
             for ($i = 1; $i <= $max_similar_item_count; $i++) {
 
-                $columns[] = array("sTitle" => "Snapshot", "sName" => 'snap' . $i);
+                $columns[] = array("sTitle" => "Snapshot","sClass"=> "Snapshot".$i, "sName" => 'snap' . $i);
                 $columns[] = array("sTitle" => "Product Name", "sName" => 'product_name' . $i);
                 $columns[] = array("sTitle" => "item ID", "sClass" => "item_id" . $i, "sName" => 'item_id' . $i);
                 $columns[] = array("sTitle" => "Model", "sClass" => "model" . $i, "sName" => 'model' . $i);
