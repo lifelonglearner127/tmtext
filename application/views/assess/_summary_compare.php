@@ -25,7 +25,7 @@
 <div class="mt_10 ml_15 ui-widget-content" data-filterid="skus_fewer_50_product_content">
 	<div class="mr_10">
 		<img src="<?php echo base_url(); ?>img/assess_report_seo_red.png" />
-		SKUs with product content < 50:
+		SKUs with product content < 50 words:
 		<span class="skus_fewer_50_product_content" ></span>
 	</div>
 </div>
@@ -33,7 +33,7 @@
 <div class="mt_10 ml_15 ui-widget-content" data-filterid="skus_fewer_100_product_content">
 	<div class="mr_10">
 		<img src="<?php echo base_url(); ?>img/assess_report_seo_red.png" />
-		SKUs with product content < 100:
+		SKUs with product content < 100 words:
 		<span class="skus_fewer_100_product_content" ></span>
 	</div>
 </div>
@@ -41,7 +41,7 @@
 <div class="mt_10 ml_15 ui-widget-content" data-filterid="skus_fewer_150_product_content">
 	<div class="mr_10">
 		<img src="<?php echo base_url(); ?>img/assess_report_seo_red.png" />
-		SKUs with product content < 150:
+		SKUs with product content < 150 words:
 		<span class="skus_fewer_150_product_content" ></span>
 	</div>
 </div>

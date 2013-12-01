@@ -54,7 +54,8 @@ input[type=text] {
 
 .tblDataTable {
     font-size: 1em;
-    width: 900px !important;
+    /* width: 900px !important; */
+	width: 100%;
 }
 
 .tblDataTable .even {
