@@ -22,6 +22,30 @@
 	</div>
 </div>
 
+<div class="mt_10 ml_15 ui-widget-content" data-filterid="skus_fewer_50_product_content">
+	<div class="mr_10">
+		<img src="<?php echo base_url(); ?>img/assess_report_seo_red.png" />
+		SKUs with product content < 50:
+		<span class="skus_fewer_50_product_content" ></span>
+	</div>
+</div>
+
+<div class="mt_10 ml_15 ui-widget-content" data-filterid="skus_fewer_100_product_content">
+	<div class="mr_10">
+		<img src="<?php echo base_url(); ?>img/assess_report_seo_red.png" />
+		SKUs with product content < 100:
+		<span class="skus_fewer_100_product_content" ></span>
+	</div>
+</div>
+
+<div class="mt_10 ml_15 ui-widget-content" data-filterid="skus_fewer_150_product_content">
+	<div class="mr_10">
+		<img src="<?php echo base_url(); ?>img/assess_report_seo_red.png" />
+		SKUs with product content < 150:
+		<span class="skus_fewer_150_product_content" ></span>
+	</div>
+</div>
+
 <div class="mt_10 ml_15 ui-widget-content" data-filterid="skus_fewer_competitor_optimized_keywords">
 	<div class="mr_10">
 		<img src="<?php echo base_url(); ?>img/assess_report_seo_red.png" />
@@ -33,7 +57,7 @@
 <div class="mt_10 ml_15 ui-widget-content" data-filterid="skus_zero_optimized_keywords">
 	<div class="mr_10">
 		<img src="<?php echo base_url(); ?>img/assess_report_seo_red.png" />
-		SKUs that have product content with zero optimized keywords:
+		SKUs that have product content with zero optimized meta keywords:
 		<span class="skus_zero_optimized_keywords mr_10" ></span>
 	</div>
 </div>
@@ -41,7 +65,7 @@
 <div class="mt_10 ml_15 ui-widget-content" data-filterid="skus_one_optimized_keywords">
 	<div class="mr_10">
 		<img src="<?php echo base_url(); ?>img/assess_report_seo_red.png" />
-		SKUs that have product content with one optimized keyword:
+		SKUs that have product content with one optimized meta keyword:
 		<span class="skus_one_optimized_keywords mr_10" ></span>
 	</div>
 </div>
@@ -49,7 +73,7 @@
 <div class="mt_10 ml_15 ui-widget-content" data-filterid="skus_two_optimized_keywords">
 	<div class="mr_10">
 		<img src="<?php echo base_url(); ?>img/assess_report_seo_yellow.png" />
-		SKUs that have product content with two optimized keywords:
+		SKUs that have product content with two optimized meta keywords:
 		<span class="skus_two_optimized_keywords mr_10" ></span>
 	</div>
 </div>
@@ -57,7 +81,7 @@
 <div class="mt_10 ml_15 ui-widget-content" data-filterid="skus_three_optimized_keywords">
 	<div class="mr_10">
 		<img src="<?php echo base_url(); ?>img/assess_report_seo.png" />
-		SKUs that have product content with three optimized keywords:
+		SKUs that have product content with three optimized meta keywords:
 		<span class="skus_three_optimized_keywords mr_10" ></span>
 	</div>
 </div>

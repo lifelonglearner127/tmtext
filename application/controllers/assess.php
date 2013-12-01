@@ -2247,6 +2247,9 @@ class Assess extends MY_Controller {
         $skus_25_duplicate_content = 0;
         $skus_50_duplicate_content = 0;
         $skus_75_duplicate_content = 0;
+        $skus_fewer_50_product_content = 0;
+        $skus_fewer_100_product_content = 0;
+        $skus_fewer_150_product_content = 0;
         $items_unoptimized_product_content = 0;
         $short_wc_total_not_0 = 0;
         $long_wc_total_not_0 = 0;
@@ -3190,6 +3193,21 @@ class Assess extends MY_Controller {
                 $skus_same_competitor_product_content++;
 				$this->filterBySummaryCriteria('skus_same_competitor_product_content', $build_assess_params->summaryFilterData, $success_filter_entries);
             }
+			
+			if ($result_row->short_description_wc + $result_row->long_description_wc < 50) {
+				$skus_fewer_50_product_content++;
+				$this->filterBySummaryCriteria('skus_fewer_50_product_content', $build_assess_params->summaryFilterData, $success_filter_entries);
+			}
+			
+			if ($result_row->short_description_wc + $result_row->long_description_wc < 100) {
+				$skus_fewer_100_product_content++;
+				$this->filterBySummaryCriteria('skus_fewer_100_product_content', $build_assess_params->summaryFilterData, $success_filter_entries);
+			}
+			
+			if ($result_row->short_description_wc + $result_row->long_description_wc < 150) {
+				$skus_fewer_150_product_content++;
+				$this->filterBySummaryCriteria('skus_fewer_150_product_content', $build_assess_params->summaryFilterData, $success_filter_entries);
+			}
 
 
             if ($build_assess_params->short_less_check && $build_assess_params->short_more_check) {
@@ -3310,6 +3328,9 @@ class Assess extends MY_Controller {
         $report['summary']['total_items_selected_by_filter'] = count($result_table);		
         $report['summary']['assess_report_competitor_matches_number'] = $build_assess_params->batch2_items_count;		
         $report['summary']['skus_third_party_content'] = $skus_third_party_content;		
+        $report['summary']['skus_fewer_50_product_content'] = $skus_fewer_50_product_content;		
+        $report['summary']['skus_fewer_100_product_content'] = $skus_fewer_100_product_content;		
+        $report['summary']['skus_fewer_150_product_content'] = $skus_fewer_150_product_content;		
 		
         // only if second batch select - get absent products, merge it with result_table
 //        if (isset($build_assess_params->compare_batch_id) && $build_assess_params->compare_batch_id > 0) {

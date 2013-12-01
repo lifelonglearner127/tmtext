@@ -2599,3 +2599,6 @@ li.selected-url{
 #columns_checking p{
     margin-right:15px;
 }
+.ui-widget-content {
+	cursor: pointer;
+}

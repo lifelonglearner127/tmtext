@@ -67,7 +67,10 @@ $(function() {
 		'skus_25_duplicate_content',
 		'skus_50_duplicate_content',
 		'total_items_selected_by_filter',
-		'skus_third_party_content'
+		'skus_third_party_content',
+		'skus_fewer_50_product_content',
+		'skus_fewer_100_product_content',
+		'skus_fewer_150_product_content'
 	];
 	
     var tableCase = {
@@ -819,19 +822,44 @@ $(function() {
 
     ];
 		
-	$('.selectable_summary_info').selectable({
+	$('.selectable_summary_info').on('mousedown', function(e) {
+		e.metaKey = true;
+	}).selectable({
 		cancel : '.non-selectable',
-		selected : function(event, uri) {
+		tolerance : 'touch',
+		selected : function(event, ui) {
+			console.log('Selected...');
 			summaryInfoSelectedElements = [];
 			$('.selectable_summary_info .ui-selected').each(function(index, element) {				
 				summaryInfoSelectedElements.push($(element).data('filterid'));
 			});			
 		},
-		unselected : function(event,uri) {
+		unselected : function(event,ui) {
+			console.log('Unselected...');
 			summaryInfoSelectedElements = [];
 			$('.selectable_summary_info .ui-selected').each(function(index, element) {				
 				summaryInfoSelectedElements.push($(element).data('filterid'));
 			});			
+		},
+		selecting : function( event, ui ) {
+			console.log('Selecting...');
+			console.log(event);
+			console.log(ui);
+		},
+		unselecting : function( event, ui ) {
+			console.log('UNSelecting...');
+			console.log(event);
+			console.log(ui);
+		},
+		start : function( event, ui ) {
+			console.log('Starting...');
+			console.log(event);
+			console.log(ui);
+		},
+		stop : function( event, ui ) {
+			console.log('Stopping...');
+			console.log(event);
+			console.log(ui);
 		}
 	});
 	
