@@ -79,6 +79,10 @@
                                 SEO Phrases
                             </label>
                             <label class="checkbox">
+                                <input id="research_assess_title_seo_phrases" type="checkbox" checked>
+                                Title Keywords
+                            </label>
+                            <label class="checkbox">
                                 <input id="research_assess_short_duplicate_content" type="checkbox" checked>
                                 Duplicate content
                             </label>
@@ -193,9 +197,13 @@
                 <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="Meta_Keywords" data-col_name="Meta_Keywords" name="Meta_Keywords" <?php echo($columns['Meta_Keywords'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="Meta_Keywords">Meta Keywords</label>
             </p>
-            <p>
+            <?php /*<p>
                 <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_short_seo_phrases" data-col_name="short_seo_phrases" name="column_short_seo_phrases_name" <?php echo($columns['short_seo_phrases'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="column_short_seo_phrases">Found Keywords - Short Description</label>
+            </p>*/?>
+            <p>
+                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_title_seo_phrases" data-col_name="title_seo_phrases" name="column_title_seo_phrases_name" <?php echo($columns['title_seo_phrases'] == 'true' ? 'checked="checked"' : ''); ?> />
+                <label for="column_title_seo_phrases">Title Keywords</label>
             </p>
             <p>
                 <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="Long_Description" data-col_name="Long_Description" name="Long_Description" <?php echo($columns['Long_Description'] == 'true' ? 'checked="checked"' : ''); ?> />
@@ -205,10 +213,10 @@
                 <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_long_description_wc" data-col_name="long_description_wc" name="column_long_description_wc_name" <?php echo($columns['long_description_wc'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="column_long_description_wc">Words Long</label>
             </p>
-            <p>
+            <?php /*<p>
                 <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_long_seo_phrases" data-col_name="long_seo_phrases" name="column_long_seo_phrases_name" <?php echo($columns['long_seo_phrases'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="column_long_seo_phrases">Found Keywords - Long Description</label>
-            </p>
+            </p>*/ ?>
             <p>
                 <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="Custom_Keywords_Short_Description" data-col_name="Custom_Keywords_Short_Description" name="Custom_Keywords_Short_Description" <?php echo($columns['Custom_Keywords_Short_Description'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="Custom_Keywords_Short_Description">Custom Keywords - Short Description</label>

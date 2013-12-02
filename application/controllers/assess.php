@@ -196,6 +196,7 @@ class Assess extends MY_Controller {
 
                         if (count($similar_items) >1) {
                             foreach ($similar_items as $key => $item) {
+                                $tsp = '';
 
                                 if ( !empty($customer_name) && !empty($item['customer'])  &&  $this->statistics_new_model->if_url_in_batch($item['imported_data_id'],$batch2)) {
                                     $parsed_attributes_unserialize_val = '';
@@ -211,11 +212,37 @@ class Assess extends MY_Controller {
                                     $parsed_column_reviews_unserialize_val = '';
                                     $parsed_H2_Tags_unserialize_val_count = '';
                                     $parsed_average_review_unserialize_val_count = '';
+                                    $title_seo_prases = array();
                                      $parsed_column_features_unserialize_val_count = '';
                                     $column_external_content = '';
                                     $cmpare = $this->statistics_new_model->get_compare_item($item['imported_data_id']);
 
                                     $parsed_attributes_unserialize = unserialize($cmpare->parsed_attributes);
+                                    $short_sp = $cmpare->short_seo_phrases!='None'?$cmpare->short_seo_phrases:false;
+                                    $long_sp = $cmpare->long_seo_phrases!='None'?$cmpare->long_seo_phrases:false;
+                                    if($short_sp){
+                                        $short_sp = unserialize($short_sp);
+                                        foreach ($short_sp as $pr){
+                                            if($pr['prc']>1){
+                                                $title_seo_prases[]=$pr;
+                                            }
+                                        }
+                                    }
+                                    if($long_sp){
+                                        $long_sp = unserialize($long_sp);
+                                        foreach ($long_sp as $pr){
+                                            if($pr['prc']>1){
+                                                $title_seo_prases[]=$pr;
+                                            }
+                                        }
+                                    }
+                                    if (!empty($title_seo_prases)) {
+                                        $str_title_long_seo = '<table class="table_keywords_long">';
+                                        foreach ($title_seo_prases as $pras) {
+                                            $str_title_long_seo .= '<tr><td>' . $pras['ph'] . '</td><td>' . $pras['prc'] . '%</td></tr>';
+                                        }
+                                        $tsp = $str_title_long_seo . '</table>';
+                                    }
                                     $HTags=unserialize($cmpare->HTags);
 
                                 if (isset($HTags['h1']) && $HTags['h1'] && $HTags['h1'] != '') {
@@ -372,6 +399,7 @@ class Assess extends MY_Controller {
 									
                                     $similar_items_data[] = $cmpare;
                                     $val->similar_items = $similar_items_data;
+                                    $val->title_seo_phrases1 = $tsp!==''?$tsp:'None';
 									
                                     $cmp[] = $val;
                                     break;
@@ -1869,6 +1897,7 @@ class Assess extends MY_Controller {
                 'short_description_wc' => 'true',
                 'Meta_Keywords' => 'true',
                 'short_seo_phrases' => 'true',
+                'title_seo_phrases' => 'true',
                 'Long_Description' => 'true',
                 'long_description_wc' => 'true',
                 'long_seo_phrases' => 'true',
@@ -2106,6 +2135,12 @@ class Assess extends MY_Controller {
                 "sClass" => "keyword_short"
             ),
             array(
+                "sTitle" => "Title Keywords",//<span class='subtitle_keyword_short'>Short</span>",
+                "sName" => "title_seo_phrases",
+                //"sWidth" => "2%",
+                "sClass" => "title_seo_phrases"
+            ),
+            array(
                 "sTitle" => "<span class='subtitle_desc_long' >Long </span>Description",
                 "sName" => "Long_Description",
                 //"sWidth" => "2%",
@@ -2295,6 +2330,7 @@ class Assess extends MY_Controller {
                 $columns[] = array("sTitle" => "Avg Review", "sClass" => "average_review" . $i, "sName" => 'average_review' . $i);
                 $columns[] = array("sTitle" => "Reviews", "sClass" => "column_reviews" . $i, "sName" => "column_reviews" . $i);
                 $columns[] = array("sTitle" => "Features", "sClass" => "column_features" . $i, "sName" => "column_features" . $i);
+                $columns[] = array("sTitle" => "Title Keywords", "sClass" => "title_seo_phrases" . $i, "sName" => "title_seo_phrases" . $i);
                  if($i == 1){
                                 $columns[] = array("sTitle" => "Gap Analysis", "sClass" => "gap" . $i, "sName" => 'gap');
                                 $colomns[] = array("sTitle" => "Duplicate Content", "sClass" => "Duplicate_Content" . $i, "sName" => 'Duplicate_Content');
@@ -2318,6 +2354,9 @@ class Assess extends MY_Controller {
         
         $qty = 1;
         foreach ($results as $row_key => $row) {
+            if($row->title_seo_pharses1){
+                exit($row->title_seo_pharses1);
+            }
 //            $long_description_wc = $row->long_description_wc;
 //            $short_description_wc = $row->short_description_wc;
 			$success_filter_entries = array();
@@ -2347,6 +2386,7 @@ class Assess extends MY_Controller {
             $result_row->short_description_wc = intval($row->short_description_wc);
             $result_row->long_description_wc = intval($row->long_description_wc);
             $result_row->short_seo_phrases = "None";
+            $result_row->title_seo_phrases = "None";
             $result_row->long_seo_phrases = "None";
             $result_row->price_diff = "-";
             $result_row->column_external_content = "";
@@ -2655,6 +2695,7 @@ class Assess extends MY_Controller {
                     $result_row['column_reviews' . $i] = $parsed_column_reviews_unserialize_val;
                     $result_row['average_review' . $i] = $parsed_average_review_unserialize_val;
                     $result_row['column_features' . $i] = $parsed_column_features_unserialize_val;
+                    $result_row['title_seo_phrases' . $i] = $row->title_seo_pharses1?$row->title_seo_pharses1:'None';
 
 
                 }
@@ -2665,6 +2706,9 @@ class Assess extends MY_Controller {
 
            if ($row->snap1 && $row->snap1 != '') {
                 $result_row->snap1 = "<span style='cursor:pointer;'><img src='" . base_url() . "webshoots/" . $row->snap1 . "' /></snap>";
+            }
+            if($row->title_seo_phrases1){
+                $result_row->title_seo_phrases1 = $row->title_seo_phrases1;
             }
             if ($row->product_name1) {
                 $result_row->product_name1 = $row->product_name1;
@@ -3048,7 +3092,7 @@ class Assess extends MY_Controller {
 
             if ($this->settings['statistics_table'] == "statistics_new") {
 
-            	if (strpos($row->short_seo_phrases, 'a:')) {
+            	if (strpos($row->short_seo_phrases, 'a:')!==false) {
                 	$short_seo = @unserialize($row->short_seo_phrases);
                 } else {
                 	$short_seo = false;
@@ -3062,7 +3106,7 @@ class Assess extends MY_Controller {
                     $result_row->short_seo_phrases = $str_short_seo . '</table>';
                 }
 
-                if (strpos($row->long_seo_phrases, 'a:')) {
+                if (strpos($row->long_seo_phrases, 'a:')!==FALSE) {
                 	$long_seo = @unserialize($row->long_seo_phrases);
                 } else {
                 	$long_seo = false;
@@ -3075,9 +3119,32 @@ class Assess extends MY_Controller {
                     }
                     $result_row->long_seo_phrases = $str_long_seo . '</table>';
                 }
+                $title_seo_pr=array();
+                if($long_seo){
+                    foreach($long_seo as $ls_phr){
+                            if($ls_phr['prc']>1){
+                                $title_seo_pr[]=$ls_phr;
+                            }
+                    }
+                }
+                if($short_seo){
+                    foreach($short_seo as $ss_phr){
+                            if($ss_phr['prc']>1){
+                                $title_seo_pr[]=$ss_phr;
+                            }
+                    }
+                }
+                if (!empty($title_seo_pr)) {
+                    $str_title_long_seo = '<table class="table_keywords_long">';
+                    foreach ($title_seo_pr as $val) {
+                        $str_title_long_seo .= '<tr><td>' . $val['ph'] . '</td><td>' . $val['prc'] . '%</td></tr>';
+                    }
+                    $result_row->title_seo_phrases = $str_title_long_seo . '</table>';
+                }
             } else {
                 $result_row->short_seo_phrases = $row->short_seo_phrases;
                 $result_row->long_seo_phrases = $row->long_seo_phrases;
+                $result_row->title_seo_phrases = '';
             }
 
             if ($build_assess_params->short_duplicate_content || $build_assess_params->long_duplicate_content) {
@@ -3578,6 +3645,7 @@ class Assess extends MY_Controller {
                         $data_row->short_description_wc,
                         $data_row->Meta_Keywords,
                         $data_row->short_seo_phrases,
+                        $data_row->title_seo_phrases,
                         $data_row->long_description,
                         $data_row->long_description_wc,
                         $data_row->long_seo_phrases,
@@ -3623,6 +3691,7 @@ class Assess extends MY_Controller {
                             $output_row[] = $data_row['column_reviews' . $i] != null ? $data_row['column_reviews' . $i] : '';
                             $output_row[] = $data_row['average_review' . $i] != null ? $data_row['average_review' . $i] : '';
                             $output_row[] = $data_row['column_features' . $i] != null ? $data_row['column_features' . $i] : '';
+                            $output_row[] = $data_row['title_seo_phrases' . $i] != null ? $data_row['title_seo_phrases' . $i] : '';
 
 
                         }
@@ -3653,6 +3722,7 @@ class Assess extends MY_Controller {
                         $output_row[] = $data_row->column_reviews1;
                         $output_row[] = $data_row->average_review1;
                         $output_row[] = $data_row->column_features1;
+                        $output_row[] = $data_row->title_seo_phrases1;
                         $output_row[] = $data_row->gap;
                         $output_row[] = $data_row->Duplicate_Content;
                     }

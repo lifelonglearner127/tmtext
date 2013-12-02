@@ -86,6 +86,7 @@ $(function() {
             "short_description_wc",
             "Meta_Keywords",
             "short_seo_phrases",
+            "title_seo_phrases",
             "Long_Description",
             "long_description_wc",
             "long_seo_phrases",
@@ -116,6 +117,7 @@ $(function() {
             "Short_Description",
             "short_description_wc",
             "Meta_Keywords",
+            "title_seo_phrases",
             "Long_Description",
             "long_description_wc",
             "Meta_Description",
@@ -149,6 +151,7 @@ $(function() {
             "column_reviews1",
             "average_review1",
             "column_features1",
+            "title_seo_phrases1",
             "gap",
             "Duplicate_Content"
             
@@ -277,7 +280,7 @@ $(function() {
              }
             },
             "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-                $(nRow).attr("add_data", aData[29]);
+                $(nRow).attr("add_data", aData[30]);
                 return nRow;
             },
             "fnDrawCallback": function(oSettings) {
@@ -370,7 +373,7 @@ $(function() {
                         "sLengthMenu": "_MENU_ rows"
                     },
                     "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-                        $(nRow).attr("add_data", aData[29]);
+                        $(nRow).attr("add_data", aData[30]);
                         return nRow;
                     },
                     "fnDrawCallback": function(oSettings) {
@@ -564,6 +567,12 @@ $(function() {
             "sName": "short_seo_phrases",
             "sWidth": "2%",
             "sClass": "keyword_short"
+        },
+        {
+            "sTitle": "Title Keywords",
+            "sName": "title_seo_phrases",
+            "sWidth": "2%",
+            "sClass": "title_seo_phrases"
         },
         {
             "sTitle": "<span class='subtitle_desc_long' >Long </span>Description",
@@ -808,6 +817,12 @@ $(function() {
             "sClass" :  "column_features1"
         },
         {
+            "sTitle": "Title Keywords",
+            "sName": "title_seo_phrases1",
+            "sWidth": "1%",
+            "sClass": "title_seo_phrases1"
+        },
+        {
             "sTitle": "Gap Analysis",
             "sName": "gap",
             "sWidth": "3%",
@@ -960,7 +975,7 @@ $(function() {
             });
         },
         "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-            $(nRow).attr("add_data", aData[29]);
+            $(nRow).attr("add_data", aData[30]);
             return nRow;
         },
         "fnDrawCallback": function(oSettings) {
@@ -1010,7 +1025,7 @@ function highChart(graphBuild){
         valueUrl[1] = [];
         var graphName1 = '';
         var graphName2 = '';
-        console.log(data);
+       // console.log(data);
         if(data) {
             /***First Batch - Begin***/
             if(data[0] && data[0].product_name.length > 0){
@@ -1140,7 +1155,7 @@ function highChart(graphBuild){
         $('#highChartContainer').empty();
 
         var bigdatalength = Math.max(value1.length , value2.length) ;
-        console.log(bigdatalength);
+       // console.log(bigdatalength);
         
         if(bigdatalength < 500){
             $('#highChartContainer').css("width","880px");
@@ -1432,7 +1447,7 @@ var scrollYesOrNot = true;
             reportPanel(false);
             return;
         }
-		console.log(data);
+		//console.log(data);
         var report = data.ExtraData.report;
 				
 		fillReportSummary(report.summary);
@@ -2456,6 +2471,8 @@ function prevSibilfunc(curentSibil){
         var column_external_content4 = 0;
         var Custom_Keywords_Short_Description = 0;
         var Custom_Keywords_Long_Description = 0;
+        var title_seo_phrases = 0;
+        var title_seo_phrases1 = 0;
         $('td.word_short').each(function() {
             var txt = parseInt($(this).text());
             if (txt > 0) {
@@ -2831,6 +2848,16 @@ function prevSibilfunc(curentSibil){
                 column_external_content4 += 1;
             }
         });
+        $('td.title_seo_phrases').each(function() {
+            if ($(this).text()!='') {
+                title_seo_phrases += 1;
+            }
+        });
+        $('td.title_seo_phrases1').each(function() {
+            if ($(this).text()!='') {
+                title_seo_phrases1 += 1;
+            }
+        });
      
         $.each(tblAllColumns, function(index, value) {
             if ((value == 'short_description_wc' && word_short_num == 0) || (value == 'long_description_wc' && word_long_num == 0)) {
@@ -2849,6 +2876,12 @@ function prevSibilfunc(curentSibil){
                 tblAssess.fnSetColumnVis(index, false, false);
             }
             if ((value == 'short_seo_phrases' && word_short_num == 0) || (value == 'long_seo_phrases' && word_long_num == 0)) {
+                tblAssess.fnSetColumnVis(index, false, false);
+            }
+            if (value == 'title_seo_phrases' && title_seo_phrases == 0) {
+                tblAssess.fnSetColumnVis(index, false, false);
+            }
+            if (value == 'title_seo_phrases1' && title_seo_phrases1 == 0) {
                 tblAssess.fnSetColumnVis(index, false, false);
             }
             if((value == 'Custom_Keywords_Short_Description' && Custom_Keywords_Short_Description == 0)){
@@ -3184,6 +3217,7 @@ function prevSibilfunc(curentSibil){
                     short_description_wc: $("#column_short_description_wc").attr('checked') == 'checked',
                     Meta_Keywords: $("#Meta_Keywords").attr('checked') == 'checked',
                     short_seo_phrases: $("#column_short_seo_phrases").attr('checked') == 'checked',
+                    title_seo_phrases: $("#column_title_seo_phrases").attr('checked') == 'checked',
                     Long_Description: $("#Long_Description").attr('checked') == 'checked',
                     long_description_wc: $("#column_long_description_wc").attr('checked') == 'checked',
                     long_seo_phrases: $("#column_long_seo_phrases").attr('checked') == 'checked',
@@ -3740,6 +3774,9 @@ var search_text = GetURLParameter('search_text');
 
             if ($('#research_assess_short_seo_phrases').is(':checked')) {
                 assessRequestParams.short_seo_phrases = true;
+            }
+            if ($('#research_assess_title_seo_phrases').is(':checked')) {
+                assessRequestParams.title_seo_phrases = true;
             }
             if ($('#research_assess_short_duplicate_content').is(':checked')) {
                 assessRequestParams.short_duplicate_content = true;

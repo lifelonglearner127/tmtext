@@ -271,7 +271,7 @@ class Statistics_new_model extends CI_Model {
     
     function get_compare_item($imported_data_id){
         $query = $this->db
-            ->select('s.imported_data_id,s.long_description_wc,s.short_description_wc, cl.snap, cl.snap_date, cl.snap_state,
+            ->select('s.imported_data_id,s.long_description_wc,s.short_description_wc, cl.snap, cl.snap_date, cl.snap_state, s.short_seo_phrases, s.long_seo_phrases,
             (select `value` from imported_data_parsed where `key`="Product Name" and `imported_data_id` = `s`.`imported_data_id` limit 1) as `product_name`,
             (select `value` from imported_data_parsed where `key`="parsed_attributes" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `parsed_attributes`,
             (select `value` from imported_data_parsed where `key`="parsed_meta" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `parsed_meta`,
