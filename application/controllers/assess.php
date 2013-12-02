@@ -2589,7 +2589,7 @@ class Assess extends MY_Controller {
                             $_count_meta_un = $this->keywords_appearence($sim_items[$i - 1]->Long_Description.$sim_items[$i - 1]->Short_Description, $cnt_m_un);
                             $_count_meta_num_un = round(($_count_meta_un * $cnt_meta_count_un / ($sim_items[$i - 1]->long_description_wc + $sim_items[$i - 1]->short_description_wc)) * 100, 2);
 							
-							$batch2_meta_percents[$row_key][$key] = $_count_meta_num_un;
+							$batch2_meta_percents[$row_key][$key] = (float)$_count_meta_num_un;
 							
                             $_count_meta_num_un_proc = $_count_meta_num_un . "%";
                             $Meta_Keywords_un .= "<tr><td>" . $cnt_m_un . "</td><td>".$_count_meta_num_un_proc."</td></tr>";
@@ -2764,7 +2764,7 @@ class Assess extends MY_Controller {
                             $_count_meta = $this->keywords_appearence($result_row->long_description.$result_row->short_description, $cnt_m);
                             $_count_meta_num = round(($_count_meta * $cnt_meta_count / ($result_row->long_description_wc + $result_row->short_description_wc)) * 100, 2);
 							
-							$batch1_meta_percents[$row_key][$key] = $_count_meta_num;
+							$batch1_meta_percents[$row_key][$key] = (float)$_count_meta_num;
 							
                             $_count_meta_num_proc = $_count_meta_num . "%";
                             $Meta_Keywords .= "<tr><td>" . $cnt_m . "</td><td style='width: 25px;padding-right: 0px;>".$_count_meta_num."%</td></tr>";
@@ -2794,19 +2794,19 @@ class Assess extends MY_Controller {
 				$this->filterBySummaryCriteria('skus_zero_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries);
 			}
 			
-			if (count($batch1_filtered_meta_percents) == 1)
+			if (count($batch1_filtered_meta_percents) >= 1)
 			{
 				$skus_one_optimized_keywords++;
 				$this->filterBySummaryCriteria('skus_one_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries);		
 			}
 				
-			if (count($batch1_filtered_meta_percents) == 2)
+			if (count($batch1_filtered_meta_percents) >= 2)
 			{
 				$skus_two_optimized_keywords++;
 				$this->filterBySummaryCriteria('skus_two_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries);			
 			}
 				
-			if (count($batch1_filtered_meta_percents) == 3)
+			if (count($batch1_filtered_meta_percents) >= 3)
 			{
 				$skus_three_optimized_keywords++;			
 				$this->filterBySummaryCriteria('skus_three_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries);
