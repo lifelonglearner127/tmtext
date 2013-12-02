@@ -18,6 +18,22 @@ class Statistics_new_model extends CI_Model {
     }
 
     // === META KEYWORDS RANKING STUFFS (START)
+    function get_keyword_source_by_id($id) {
+        $res_object = array(
+            'status' => false,
+            'res' => array()
+        );
+        $check_obj = array(
+            'id' => $id
+        );
+        $query = $this->db->where($check_obj)->limit(1)->get($this->tables['meta_kw_rank_source']);
+        $query_res = $query->result();
+        if(count($query_res) > 0) {
+            $res_object['status'] = true;
+            $res_object['res'] = $query_res[0];
+        }
+        return $res_object;
+    }
     function delete_keyword_kw_source($id) {
         return $this->db->delete(
             $this->tables['meta_kw_rank_source'],

@@ -2223,6 +2223,13 @@ class System extends MY_Controller {
       // $this->output->set_content_type('application/json')->set_output(json_encode($results_stack));
   }
 
+  public function explore_meta_personal() {
+	  	$this->load->model('statistics_new_model');
+      $id = $this->input->post('id');
+      $response = $this->statistics_new_model->get_keyword_source_by_id($id);
+      $this->output->set_content_type('application/json')->set_output(json_encode($response));
+  }
+
  	public function keywords() {
       $this->load->model('keyword_model_system'); 
       $regions =  $this->keyword_model_system->get_regions();
