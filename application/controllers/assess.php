@@ -2627,9 +2627,9 @@ class Assess extends MY_Controller {
                         }
                         if($sim_items[$i - 1]->Long_Description || $sim_items[$i - 1]->Short_Description){
                             $_count_meta_un = $this->keywords_appearence($sim_items[$i - 1]->Long_Description.$sim_items[$i - 1]->Short_Description, $cnt_m_un);
-                            $_count_meta_num_un = round(($_count_meta_un * $cnt_meta_count_un / ($sim_items[$i - 1]->long_description_wc + $sim_items[$i - 1]->short_description_wc)) * 100, 2);
+                            $_count_meta_num_un = (float)round(($_count_meta_un * $cnt_meta_count_un / ($sim_items[$i - 1]->long_description_wc + $sim_items[$i - 1]->short_description_wc)) * 100, 2);
 							
-							$batch2_meta_percents[$row_key][$key] = (float)$_count_meta_num_un;
+							$batch2_meta_percents[$row_key][$key] = $_count_meta_num_un;
 							
                             $_count_meta_num_un_proc = $_count_meta_num_un . "%";
                             $Meta_Keywords_un .= "<tr><td>" . $cnt_m_un . "</td><td>".$_count_meta_num_un_proc."</td></tr>";
@@ -2806,12 +2806,12 @@ class Assess extends MY_Controller {
                         }
                         if($result_row->long_description || $result_row->short_description){
                             $_count_meta = $this->keywords_appearence($result_row->long_description.$result_row->short_description, $cnt_m);
-                            $_count_meta_num = round(($_count_meta * $cnt_meta_count / ($result_row->long_description_wc + $result_row->short_description_wc)) * 100, 2);
+                            $_count_meta_num = (float)round(($_count_meta * $cnt_meta_count / ($result_row->long_description_wc + $result_row->short_description_wc)) * 100, 2);
 							
-							$batch1_meta_percents[$row_key][$key] = (float)$_count_meta_num;
+							$batch1_meta_percents[$row_key][$key] = $_count_meta_num;
 							
                             $_count_meta_num_proc = $_count_meta_num . "%";
-                            $Meta_Keywords .= "<tr><td>" . $cnt_m . "</td><td style='width: 25px;padding-right: 0px;>".$_count_meta_num."%</td></tr>";
+                            $Meta_Keywords .= "<tr><td>" . $cnt_m . "</td><td style='width: 25px;padding-right: 0px;'>".$_count_meta_num."%</td></tr>";
 //                        }else if($result_row->Short_Description){
 //                            $_count_meta = $this->keywords_appearence($result_row->Short_Description, $cnt_m);
 //                            $_count_meta_num = round(($_count_meta * $cnt_meta_count / $result_row->short_description_wc) * 100, 2) . "%";
