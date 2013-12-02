@@ -60,7 +60,7 @@ class Statistics_new_model extends CI_Model {
         }
         return $res_object;
     }
-    function add_keyword_kw_source($statistics_new_id, $batch_id, $kw, $kw_prc, $kw_count, $url) {
+    function add_keyword_kw_source($statistics_new_id, $batch_id, $kw, $kw_prc, $kw_count, $url, $imported_data_id) {
         $res = array(
             'status' => false,
             'msg' => '',
@@ -83,7 +83,8 @@ class Statistics_new_model extends CI_Model {
                 'kw' => $kw,
                 'kw_prc' => $kw_prc,
                 'kw_count' => $kw_count,
-                'stamp' => date("Y-m-d H:i:s")
+                'stamp' => date("Y-m-d H:i:s"),
+                'imported_data_id' => $imported_data_id
             );
             $this->db->insert($this->tables['meta_kw_rank_source'], $insert_object);
             $res['msg'] = 'OK';

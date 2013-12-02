@@ -28,7 +28,7 @@
 				<?php $id = $v['id']; $batch_id = $v['batch_id']; ?>
 				<tr>
 					<td>
-						<?php $url = $v['url']; ?>
+						<?php $url = $v['url']; $imported_data_id = $v['imported_data_id']; ?>
 						<p class='ellipsis_p' style='font-size: 12px; font-weight: bold'><?php echo $v['product_name']; ?></p>
 						<p class='ellipsis_p' style='font-size: 12px; font-weight: bold'><a target="_blank" href="<?php echo $url ?>"><?php echo $url; ?></a></p>
 					</td>
@@ -55,7 +55,7 @@
 												<div style='display: inline-block; margin-bottom: 5px;'><button type='button' onclick="kwExploreMetaPersonal('<?php echo $last_id; ?>')" class='btn btn-success'>Explore</button></div>
 												<div style='display: inline-block;'><button type='button' onclick="kwDeleteMetaPersonal('<?php echo $last_id; ?>', this)" class='btn btn-danger'>Delete</button></div>
 												<?php } else { ?>
-												<div class='action_btn_holder'><button type='button' onclick="addKeywordToKwSource(this, '<?php echo $id; ?>', '<?php echo $batch_id; ?>', '<?php echo $kw; ?>', '<?php echo $kw_prc; ?>', '<?php echo $kw_count; ?>', '<?php echo $url; ?>')" class='btn btn-primary'>Add</button></div>
+												<div class='action_btn_holder'><button type='button' onclick="addKeywordToKwSource(this, '<?php echo $id; ?>', '<?php echo $batch_id; ?>', '<?php echo $kw; ?>', '<?php echo $kw_prc; ?>', '<?php echo $kw_count; ?>', '<?php echo $url; ?>', '<?php echo $imported_data_id; ?>')" class='btn btn-primary'>Add</button></div>
 												<?php } ?>
 											</div>
 											</td>
@@ -86,7 +86,7 @@
 													<div style='display: inline-block; margin-bottom: 5px;'><button type='button' onclick="kwExploreMetaPersonal('<?php echo $last_id; ?>', this)" class='btn btn-success'>Explore</button></div>
 													<div style='display: inline-block;'><button type='button' onclick="kwDeleteMetaPersonal('<?php echo $last_id; ?>', this)" class='btn btn-danger'>Delete</button></div>
 													<?php } else { ?>
-													<div class='action_btn_holder'><button type='button' onclick="addKeywordToKwSource(this, '<?php echo $id; ?>', '<?php echo $batch_id; ?>', '<?php echo $kw; ?>', '<?php echo $kw_prc; ?>', '<?php echo $kw_count; ?>', '<?php echo $url; ?>')" class='btn btn-primary'>Add</button></div>
+													<div class='action_btn_holder'><button type='button' onclick="addKeywordToKwSource(this, '<?php echo $id; ?>', '<?php echo $batch_id; ?>', '<?php echo $kw; ?>', '<?php echo $kw_prc; ?>', '<?php echo $kw_count; ?>', '<?php echo $url; ?>', '<?php echo $imported_data_id; ?>')" class='btn btn-primary'>Add</button></div>
 													<?php } ?>
 												</div>
 											</td>
@@ -224,7 +224,7 @@
       var bid = $("#sk_batches_list > option:selected").val();
       getMetaKeysBatchData(bid, pi);
   });
-	function addKeywordToKwSource(e, id, batch_id, kw, kw_prc, kw_count, url) {
+	function addKeywordToKwSource(e, id, batch_id, kw, kw_prc, kw_count, url, imported_data_id) {
 		var btn_holder = $(e).parent().parent();
 		var send_object = {
 			'id': id,
@@ -232,7 +232,8 @@
 			'kw': kw,
 			'kw_prc': kw_prc,
 			'kw_count': kw_count,
-			'url': url
+			'url': url,
+			'imported_data_id': imported_data_id
 		};
 		$.post(base_url + 'index.php/system/add_keyword_to_kw_source', send_object, function(data) {
         console.log(data);

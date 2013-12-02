@@ -2146,7 +2146,8 @@ class System extends MY_Controller {
   		$kw_prc = $this->input->post('kw_prc');
   		$kw_count = $this->input->post('kw_count');
   		$url = $this->input->post('url');
-  		$res = $this->statistics_new_model->add_keyword_kw_source($statistics_new_id, $batch_id, $kw, $kw_prc, $kw_count, $url);
+  		$imported_data_id = $this->input->post('imported_data_id');
+  		$res = $this->statistics_new_model->add_keyword_kw_source($statistics_new_id, $batch_id, $kw, $kw_prc, $kw_count, $url, $imported_data_id);
   		$this->output->set_content_type('application/json')->set_output(json_encode($res));
   }
 
