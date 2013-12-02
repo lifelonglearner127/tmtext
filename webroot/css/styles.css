@@ -298,19 +298,19 @@ label.checkbox {
 #assessDetailsDialog label{
     display: inline-block;
     text-align: right;
-    width: 150px;
+    width: 105px;
 }
 #assessDetailsDialog .parag {
     position:relative;
 }
 #assessDetailsDialog .parag span.labeler {
     position: relative;
-    top: -31px;
+    top: -10px;
 }
 #assessDetailsDialog .parag div.bottom-labeler {
     left: 0;
     position: absolute;
-    top: 20px
+    top: 40px
 }
 #assessDetailsDialog .parag div.bottom-labeler label {
     font-size: 12px;
@@ -319,12 +319,12 @@ label.checkbox {
     margin:0px;
 }
 #assessDetailsDialog input, #assessDetailsDialog textarea, #assessDetailsDialog .uneditable-input {
-/*    width: 650px;*/
+    width: 280px;
     cursor: text;
 } 
 
 .details_width input,.details_width textarea,.details_width .uneditable-input {
-width: 650px;    
+width: 650px !important;    
 }
 #assessDetailsDialog textarea {
     height: 80px;

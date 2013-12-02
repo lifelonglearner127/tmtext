@@ -1676,6 +1676,14 @@ var generate_url_check = GetURLParameter('generate_url_check');
         $('#assessDetails_url').val(add_data.url);
         $('#assess_open_url_btn').attr('href', add_data.url);
         $('#assessDetails_Price').val(add_data.own_price);
+        var short_total_not_0 = '';
+        var long_total_not_0 = '';
+        var long_wc_total_not_0 = 0;
+        var short_wc_total_not_0 = 0;
+         short_total_not_0 = add_data.short_description;
+         long_total_not_0 = add_data.long_description;
+         long_wc_total_not_0 = parseInt(add_data.long_description_wc);
+         short_wc_total_not_0 = parseInt(add_data.short_description_wc);
         if (short_wc_total_not_0 == 0 || long_wc_total_not_0 == 0) {
             $('#assessDetails_short_and_long_description_panel').hide();
             $('#assessDetails_description_panel').show();
@@ -1775,7 +1783,7 @@ var generate_url_check = GetURLParameter('generate_url_check');
        
         var add_data = JSON.parse(target.parents('tr').attr('add_data'));
          curentSibil=target.parents('tr');
-      
+     
         if(curentSibil.prev().length == 0){
          $('.btn_prev_dialog').attr('disabled','disabled');
         }else{
@@ -1806,11 +1814,28 @@ var generate_url_check = GetURLParameter('generate_url_check');
         $('#assessDetails_url1').val(url_compare);
         $('#assess_open_url_btn1').attr('href', url_compare);
         $('#assessDetails_Price1').val(add_data.own_price1);
-        var short_total_not_01 = add_data.Short_Description1;
-        var long_total_not_01 = add_data.Long_Description1;
-        var long_wc_total_not_01 = parseInt(add_data.long_description_wc1);
-        var short_wc_total_not_01 = parseInt(add_data.short_description_wc1);
-       
+        var short_total_not_01 = '';
+        var long_total_not_01 = '';
+        var long_wc_total_not_01 = 0;
+        var short_wc_total_not_01 = 0;
+        var short_total_not_0 = '';
+        var long_total_not_0 = '';
+        var long_wc_total_not_0 = 0;
+        var short_wc_total_not_0 = 0;
+        
+         short_total_not_01 = add_data.Short_Description1;
+         long_total_not_01 = add_data.Long_Description1;
+         long_wc_total_not_01 = parseInt(add_data.long_description_wc1);
+         short_wc_total_not_01 = parseInt(add_data.short_description_wc1);
+         
+         short_total_not_0 = add_data.short_description;
+         long_total_not_0 = add_data.long_description;
+         long_wc_total_not_0 = add_data.long_description_wc;
+         short_wc_total_not_0 = add_data.short_description_wc;
+         
+         short_wc_total_not_01 = short_wc_total_not_01 ? short_wc_total_not_01 : 0;
+         long_wc_total_not_01 = long_wc_total_not_01 ? long_wc_total_not_01 : 0;
+
         if (short_wc_total_not_01 == 0 || long_wc_total_not_01 == 0) {
             $('#assessDetails_short_and_long_description_panel1').hide();
             $('#assessDetails_description_panel1').show();
@@ -1837,6 +1862,33 @@ var generate_url_check = GetURLParameter('generate_url_check');
             $('#assessDetails_LongDescription1').val(long_total_not_01);
             $('#assessDetails_LongDescriptionWC1').html(long_wc_total_not_01);
             $('#assessDetails_LongSEO1').val(add_data.long_seo_phrases1);
+        }
+        if (short_wc_total_not_0 == 0 || long_wc_total_not_0 == 0) {
+            $('#assessDetails_short_and_long_description_panel').hide();
+            $('#assessDetails_description_panel').show();
+
+            if (short_wc_total_not_0 == 0) {
+                var description0 = long_total_not_0;
+                var description_wc0 = long_wc_total_not_0;
+                var seo_phrases0 = add_data.long_seo_phrases;
+            } else {
+                var description0 = short_total_not_0;
+                var description_wc0 = short_wc_total_not_0;
+                var seo_phrases0= add_data.short_seo_phrases;
+            }
+            $('#assessDetails_Description').val(description0);
+            $('#assessDetails_DescriptionWC').html(description_wc0);
+            $('#assessDetails_SEO').val(seo_phrases0);
+        } else {
+            $('#assessDetails_short_and_long_description_panel').show();
+            $('#assessDetails_description_panel').hide();
+
+            $('#assessDetails_ShortDescription').val(short_total_not_0);
+            $('#assessDetails_ShortDescriptionWC').html(short_wc_total_not_0);
+            $('#assessDetails_ShortSEO').val(add_data.short_seo_phrases);
+            $('#assessDetails_LongDescription').val(long_total_not_0);
+            $('#assessDetails_LongDescriptionWC').html(long_wc_total_not_0);
+            $('#assessDetails_LongSEO').val(add_data.long_seo_phrases);
         }
 
         var chk_include_in_report = '<div id="assess_details_dialog_options" style="float: left; margin-left:30px;"><label><input id="assessDetailsDialog_chkIncludeInReport" type="checkbox">&nbspInclude in report</label></div>';
