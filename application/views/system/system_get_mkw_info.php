@@ -143,7 +143,7 @@
 	        	highest_rank_content += "<tbody>";
 	        	highest_rank_content += "<tr>";
 	        	var hrc_ranking = highest_rank.ranking;
-	        	if(hrc_ranking == null) hrc_ranking = "not index (null)";
+	        	if(hrc_ranking == null) hrc_ranking = "not indexed (null)";
 	        	var hrc_rankedurl = highest_rank.rankedurl;
 	        	if(hrc_rankedurl == null) hrc_rankedurl = "not data (null)";
 	        	highest_rank_content += "<td>" + hrc_ranking + "</td>";
@@ -173,7 +173,7 @@
 	        	for(var i = 0; i < rank_json_encode.length; i++) {
 	        		regular_rank_content += "<tr>";
 	        		var rrc_ranking = rank_json_encode[i].ranking;
-	        		if(rrc_ranking == null) rrc_ranking = "not index (null)";
+	        		if(rrc_ranking == null) rrc_ranking = "not indexed (null)";
 	        		regular_rank_content += "<td>" + rrc_ranking + "</td>";
 	        		var rrc_rankedurl = rank_json_encode[i].rankedurl;
 		        	if(rrc_rankedurl == null) rrc_rankedurl = "not data (null)";
