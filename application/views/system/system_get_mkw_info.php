@@ -130,7 +130,7 @@
         	var highest_rank = $.parseJSON(data.res.highest_rank);
         	// ===== RENDER HIGHEST RANKING DATA (START)
         	var highest_rank_content = "";
-        	if(typeof(highest_rank) !== 'undefined' && _.isObject(highest_rank)) {
+        	if(typeof(highest_rank) !== 'undefined' && highest_rank !== null && _.isObject(highest_rank)) {
         		highest_rank_content += "<p class='font-size: 14px; font-weight: bold'>Highest ranking:</p>";
         		highest_rank_content += "<table class='table'>";
 	        	highest_rank_content += "<thead>";
@@ -159,7 +159,7 @@
         	// ===== RENDER HIGHEST RANKING DATA (END)
         	// ===== RENDER OVERALL RANKING DATA (START)
         	var regular_rank_content = "";
-        	if(typeof(rank_json_encode) !== 'undefined' && (rank_json_encode.length > 0 || _.isObject(rank_json_encode))) {
+        	if(typeof(rank_json_encode) !== 'undefined' && rank_json_encode !== null && (rank_json_encode.length > 0 || _.isObject(rank_json_encode))) {
         		regular_rank_content += "<p class='font-size: 14px; font-weight: bold'>Overall rankings:</p>";
         		regular_rank_content += "<table class='table'>";
 	        	regular_rank_content += "<thead>";
