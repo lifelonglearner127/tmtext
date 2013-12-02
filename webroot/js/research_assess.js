@@ -1202,6 +1202,9 @@ function highChart(graphBuild){
             tooltip: {
                 shared: true,
                 useHTML: true,
+                positioner: function (boxWidth, boxHeight, point) {
+                    return { x: point.plotX, y: 20 };
+                },
                 formatter: function() {
                     var result = '<small>'+this.x+'</small><br />';
                     var j;

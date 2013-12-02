@@ -3828,53 +3828,133 @@ class Assess extends MY_Controller {
 
             if (trim($_POST['batch_compare_id']) == '' || $_POST['batch_compare_id'] == 'all')
                 $batch_compare_id = -1;
-            else
+            else{
                 $batch_compare_id = $_POST['batch_compare_id'];
+                $this->load->model('batches_model');
+                $customer_name = $this->batches_model->getCustomerUrlByBatch($batch_compare_id);
+            }
 
             $batch_arr = array($batch_id, $batch_compare_id);
             $snap_data = array();
-            foreach ($batch_arr as $key => $batchID) {
-                $params = new stdClass();
-                $params->batch_id = $batchID;
-                $params->txt_filter = '';
-                $params->date_from = '';
-                $params->date_to = '';
-                $results = $this->get_data_for_assess($params);
-								
-				$snap_data['assess_report_competitor_matches_number'][$key] = count($results);
-				
-                foreach ($results as $data_row) {
-                    $snap_data[$key]['product_name'][] = (string) $data_row->product_name;
-                    $snap_data[$key]['url'][] = (string) $data_row->url;
-                    $snap_data[$key]['short_description_wc'][] = (int) $data_row->short_description_wc;
-                    $snap_data[$key]['long_description_wc'][] = (int) $data_row->long_description_wc;
-                    $snap_data[$key]['revision'][] = (int) $data_row->revision;
-                    $snap_data[$key]['own_price'][] = (float) $data_row->own_price;
-                    $parsed_attributes_feature = unserialize($data_row->parsed_attributes);
-                    if($parsed_attributes_feature['feature_count']){
-                        $snap_data[$key]['Features'][] = (int) $parsed_attributes_feature['feature_count'];
-                    }else{
-                        $snap_data[$key]['Features'][] = 0;
-                    }
-                    $htags = unserialize($data_row->htags);
-                    if ($htags) {
-                    	if (isset($htags['h1'])) {
-                        	$snap_data[$key]['h1_word_counts'][] = count($htags['h1']);
-                    	} else {
-                    		$snap_data[$key]['h1_word_counts'][] = 0;
-                    	}
-                    	if (isset($htags['h2'])) {
-                        	$snap_data[$key]['h2_word_counts'][] = count($htags['h2']);
-                    	} else {
-                    		$snap_data[$key]['h2_word_counts'][] = 0;
-                    	}
-                    } else {
-                        $snap_data[$key]['h1_word_counts'][] = 0;
-                        $snap_data[$key]['h2_word_counts'][] = 0;
+            
+            $params = new stdClass();
+            $params->batch_id = $batch_id;
+            $params->txt_filter = '';
+            $params->date_from = '';
+            $params->date_to = '';
+            $results = $this->get_data_for_assess($params);
+
+
+            if ($batch_compare_id != -1) {
+                foreach ($results as $val) {
+                    $similar_items_data = array();
+                    if (substr_count(strtolower($val->similar_products_competitors), strtolower($customer_name)) > 0) {
+                        $similar_items = unserialize($val->similar_products_competitors);
+                        if (count($similar_items) > 1) {
+                            foreach ($similar_items as $key => $item) {
+
+                                if (substr_count(strtolower($customer_name), strtolower($item['customer'])) > 0) {
+
+                                    $parsed_attributes_column_features_unserialize_val = '';
+                                    $parsed_model_unserialize_val = '';
+                                    $parsed_review_count_unserialize_val_count = '';
+                                    $cmpare = $this->statistics_new_model->get_compare_item($item['imported_data_id']);
+
+                                    $parsed_attributes_unserialize = unserialize($cmpare->parsed_attributes);
+
+                                    if (isset($parsed_attributes_unserialize['feature_count']))
+                                        $parsed_attributes_column_features_unserialize_val = $parsed_attributes_unserialize['feature_count'];
+                                    if (isset($parsed_attributes_unserialize['model']))
+                                        $parsed_model_unserialize_val = $parsed_attributes_unserialize['model'];
+                                    if (isset($parsed_attributes_unserialize['review_count']))
+                                        $parsed_review_count_unserialize_val_count = $parsed_attributes_unserialize['review_count'];
+
+                                    $parsed_meta_unserialize = unserialize($cmpare->parsed_meta);
+
+                                    $cmpare->model = $parsed_model_unserialize_val;
+                                    $cmpare->column_features = $parsed_attributes_column_features_unserialize_val;
+                                    $cmpare->review_count = $parsed_review_count_unserialize_val_count; 
+
+                                    $similar_items_data[] = $cmpare;
+                                    $val->similar_items = $similar_items_data;  
+
+                                }
+
+                            }
+                            $cmp[] = $val;
+                        }
                     }
                 }
+                $results = $cmp;
             }
 
+            foreach ($results as $data_row) {
+                $snap_data[0]['product_name'][] = (string) $data_row->product_name;
+                $snap_data[0]['url'][] = (string) $data_row->url;
+                $snap_data[0]['short_description_wc'][] = (int) $data_row->short_description_wc;
+                $snap_data[0]['long_description_wc'][] = (int) $data_row->long_description_wc;
+                $snap_data[0]['revision'][] = (int) $data_row->review_count;
+                $snap_data[0]['own_price'][] = (float) $data_row->own_price;
+                $parsed_attributes_feature = unserialize($data_row->parsed_attributes);
+                if($parsed_attributes_feature['feature_count']){
+                    $snap_data[0]['Features'][] = (int) $parsed_attributes_feature['feature_count'];
+                }else{
+                    $snap_data[0]['Features'][] = 0;
+                }
+                $htags = unserialize($data_row->htags);
+                if ($htags) {
+                    if (isset($htags['h1'])) {
+                            $snap_data[0]['h1_word_counts'][] = count($htags['h1']);
+                    } else {
+                            $snap_data[0]['h1_word_counts'][] = 0;
+                    }
+                    if (isset($htags['h2'])) {
+                            $snap_data[0]['h2_word_counts'][] = count($htags['h2']);
+                    } else {
+                            $snap_data[0]['h2_word_counts'][] = 0;
+                    }
+                } else {
+                    $snap_data[0]['h1_word_counts'][] = 0;
+                    $snap_data[0]['h2_word_counts'][] = 0;
+                }
+
+                if(isset($data_row->similar_items)){
+
+                    $data_row_sim = $data_row->similar_items;
+
+                    $snap_data[1]['product_name'][] = (string) $data_row_sim[0]->product_name;
+                    $snap_data[1]['url'][] = (string) $data_row_sim[0]->url;
+                    $snap_data[1]['short_description_wc'][] = (int) $data_row_sim[0]->short_description_wc;
+                    $snap_data[1]['long_description_wc'][] = (int) $data_row_sim[0]->long_description_wc;
+                    $snap_data[1]['revision'][] = (int) $data_row_sim[0]->review_count;
+                    $snap_data[1]['own_price'][] = (float) $data_row_sim[0]->own_price;
+                    $parsed_attributes_feature = unserialize($data_row_sim[0]->parsed_attributes);
+                    if($parsed_attributes_feature['feature_count']){
+                        $snap_data[1]['Features'][] = (int) $parsed_attributes_feature['feature_count'];
+                    }else{
+                        $snap_data[1]['Features'][] = 0;
+                    }
+                    $htags = unserialize($data_row_sim[0]->HTags);
+                    if ($htags) {
+                        if (isset($htags['h1'])) {
+                                $snap_data[1]['h1_word_counts'][] = count($htags['h1']);
+                        } else {
+                                $snap_data[1]['h1_word_counts'][] = 0;
+                        }
+                        if (isset($htags['h2'])) {
+                                $snap_data[1]['h2_word_counts'][] = count($htags['h2']);
+                        } else {
+                                $snap_data[1]['h2_word_counts'][] = 0;
+                        }
+                    } else {
+                        $snap_data[1]['h1_word_counts'][] = 0;
+                        $snap_data[1]['h2_word_counts'][] = 0;
+                    }
+
+                }
+            }
+//            echo '<pre>';
+//            print_r($snap_data); die();
             $this->output->set_content_type('application/json')->set_output(json_encode($snap_data));
         }
     }
