@@ -1824,6 +1824,69 @@ class PageProcessor {
 
 		return $result;
 	}
+
+	public function process_ebay(){
+		foreach($this->nokogiri->get('h1#itemTitle') as $item) {
+			$title = $item['#text'][0];
+		}
+
+		foreach($this->nokogiri->get('div.actPanel div div span') as $item) {
+			if (($item['itemprop']=='price') && preg_match('/\$([0-9]+[\.]*[0-9]*)/', $item['#text'][0], $match)) {
+				$price = $match[1];
+			}
+		}
+
+		if(empty($descriptionLong)) {
+			$descriptionLong = trim($this->nokogiri->get('#desc_div table table table tr center')->getText());
+		}
+
+		if(empty($descriptionLong) || (!empty($descriptionLong) && strlen($descriptionLong)<strlen($this->nokogiri->get('#desc_div table table table table table table tr')->getText())) ) {
+			$descriptionLong = trim($this->nokogiri->get('#desc_div table table table table table table tr')->getText());
+		}
+
+		if(empty($descriptionLong)) {
+			$descriptionLong = trim($this->nokogiri->get('#desc_div table table table:first-child tr div')->getText());
+		}
+
+		if(empty($descriptionLong)) {
+			$descriptionLong = trim($this->nokogiri->get('#desc_div table table:first-child tr')->getText());
+		}
+
+		if(empty($descriptionLong)) {
+			$descriptionLong = trim($this->nokogiri->get('#desc_div table tr td div p font')->getText());
+		}
+
+		if(empty($descriptionLong)) {
+			$descriptionLong = trim($this->nokogiri->get('#desc_div table tr td div div font')->getText());
+		}
+
+		if(stripos($descriptionLong, 'itemNumber') !== false) {
+			unset($descriptionLong);
+		}
+
+		return array(
+			'Product Name' => $title,
+			'Description' => $description,
+			'Long_Description' => str_ireplace('&nbsp;',' ', $descriptionLong),
+			'Features' => $features,
+			'Price' => $price
+		);
+
+	}
+
+	public function attributes_ebay() {
+		$result = array();
+
+		foreach($this->nokogiri->get('.productinfo #prodSku') as $item) {
+			$line = trim($item["#text"][0]);
+
+			if (!empty($line)) {
+				$result['model'] = $line;
+			}
+		}
+
+		return $result;
+	}
 }
 
 ?>
