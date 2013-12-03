@@ -7,7 +7,7 @@ class System extends MY_Controller {
 	function __construct()
  	{
   		parent::__construct();
-                
+    $this->load->library('helpers');            
 		$this->load->library('ion_auth');
 		$this->data['title'] = 'System Settings';
 		$this->data['checked_controllers'] = array( 'batches','measure', 'assess', 'research','brand', 'customer');
@@ -2151,8 +2151,13 @@ class System extends MY_Controller {
   		$this->output->set_content_type('application/json')->set_output(json_encode($res));
   }
 
+  private function keywords_appearence_count($desc, $phrase) {
+      return substr_count($desc, ' '.$phrase.' ');
+  }
+
   public function system_get_mkw_info() {
   		$this->load->model('statistics_new_model');
+  		$this->load->model('keywords_model');
       $bid = $this->input->post('bid');
       $cpage = $this->input->post('cpage');
       $results_stack = array(
@@ -2200,8 +2205,51 @@ class System extends MY_Controller {
 	      					'snap' => $val->snap,
 	      					'snap_date' => $val->snap_date,
 	      					'snap_state' => $val->snap_state,
-	      					'url' => $val->url
+	      					'url' => $val->url,
+	      					'meta' => array('short_meta' => array(), 'long_meta' => array())
+	      					// 'fixed_seo_short' => $this->helpers->measure_analyzer_start_v2_product_name($val->product_name, preg_replace('/\s+/', ' ', $val->short_description)),
+	      					// 'fixed_seo_long' => $this->helpers->measure_analyzer_start_v2_product_name($val->product_name, preg_replace('/\s+/', ' ', $val->long_description))
 	    					);
+								// ==== prepare meta keywords data (start) $val->parsed_meta
+								$meta_object = unserialize($val->parsed_meta);
+								$meta = array();
+                if ((isset($meta_object['Keywords']) && $meta_object['Keywords'] != '')) {
+                    $meta = explode(',', $meta_object['Keywords']);
+                }
+                if ((isset($meta_object['keywords']) && $meta_object['keywords'] != '')) {
+                    $meta = explode(',', $meta_object['keywords']);
+                }
+                if (count($meta) > 0 && isset($val->short_description) && $val->short_description != '') {
+                    foreach ($meta as $key => $val) {
+                        $volume = '';
+                        $from_keyword_data = $this->keywords_model->get_by_keyword($val['ph']);
+                        if (count($from_keyword_data) > 0) {
+                            $volume = $from_keyword_data['volume'];
+                        }
+                        $words = count(explode(' ', trim($val)));
+                        $count = $this->keywords_appearence_count(strtolower($val->short_description), strtolower($val));
+                        $desc_words_count = count(explode(' ', $val->short_description));
+
+                        $prc = round($count * $words / $desc_words_count * 100, 2);
+                        $mid['meta']['short_meta'][] = array('ph' => $val, 'count' => $count, 'prc' => $prc, 'volume' => $volume);
+                    }
+                }
+                if (count($meta) > 0 && isset($val->long_description) && $val->long_description != '') {
+                    foreach ($meta as $key => $val) {
+                        $volume = '';
+                        $from_keyword_data = $this->keywords_model->get_by_keyword($val);
+                        if (count($from_keyword_data) > 0) {
+                            $volume = $from_keyword_data['volume'];
+                        }
+                        $words = count(explode(' ', trim($val)));
+                        $count = $this->keywords_appearence_count(strtolower($val->long_description), strtolower($val));
+                        $desc_words_count = count(explode(' ', $val->long_description));
+
+                        $prc = round($count * $words / $desc_words_count * 100, 2);
+                        $mid['meta']['long_meta'][] = array('ph' => $val, 'count' => $count, 'prc' => $prc, 'volume' => $volume);
+                    }
+                }
+								// ==== prepare meta keywords data (end)
 								$results_stack['data'][] = $mid;
 							}
       			}
