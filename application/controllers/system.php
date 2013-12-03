@@ -2231,6 +2231,7 @@ class System extends MY_Controller {
                         $desc_words_count = count(explode(' ', $val->short_description));
 
                         $prc = round($count * $words / $desc_words_count * 100, 2);
+                        $val = preg_replace("/'/", '', $val);
                         $mid['meta']['short_meta'][] = array('ph' => $val, 'count' => $count, 'prc' => $prc, 'volume' => $volume);
                     }
                 }
@@ -2246,6 +2247,7 @@ class System extends MY_Controller {
                         $desc_words_count = count(explode(' ', $val->long_description));
 
                         $prc = round($count * $words / $desc_words_count * 100, 2);
+                        $val = preg_replace("/'/", '', $val);
                         $mid['meta']['long_meta'][] = array('ph' => $val, 'count' => $count, 'prc' => $prc, 'volume' => $volume);
                     }
                 }
