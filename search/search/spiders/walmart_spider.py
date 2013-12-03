@@ -140,8 +140,12 @@ class WalmartFullURLsSpider(BaseSpider):
 			item['walmart_full_url'] = Utils.add_domain(result[0], "http://www.walmart.com")
 
 			# id should be somewhere in the full URL as well
-			assert self.valid_result(item['walmart_full_url'], item['walmart_id'])
-			return item
+			if self.valid_result(item['walmart_full_url'], item['walmart_id']):
+				return item
+			else:
+				# search again, but select result that contains id
+				#OBS: non optimal, should do selecting here
+				return Request(response.url, callback = self.parse_resultsPage2, meta = {"item":item})
 		else:
 			# try to find result by using the product name instead
 
@@ -161,7 +165,7 @@ class WalmartFullURLsSpider(BaseSpider):
 			return Request(search_page, callback = self.parse_resultsPage2, meta = {"item" : response.meta['item']})
 
 		else:
-			self.log("No results for short_url (didn't find product name) " + response.meta['item']['walmart_short_url'] + "\n", level=log.ERROR)
+			self.log("No results for short_url (didn't find product name) " + response.url + "\n", level=log.ERROR)
 
 	# parse results page from search by product name - find URL that contains item id, if any
 	def parse_resultsPage2(self, response):
