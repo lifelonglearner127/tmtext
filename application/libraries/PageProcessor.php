@@ -980,6 +980,24 @@ class PageProcessor {
 		}
 
 		if (empty($description)) {
+			foreach($this->nokogiri->get('#featurebullets_feature_div ul li span') as $item) {
+				$line = trim($item['#text'][0]);
+				if (!empty($line)) {
+					$description[] = '<li>'.$line.'</li>';
+				}
+			}
+
+			foreach($this->nokogiri->get('.content .productDescriptionWrapper') as $item) {
+				foreach ($item['#text'] as $k=>$i) {
+					$line = trim($i);
+					if (!empty($line)) {
+						$description[] = $line;
+					}
+				}
+			}
+		}
+
+		if (empty($description)) {
 			foreach($this->nokogiri->get('.content .productDescriptionWrapper span') as $item) {
 				foreach($item['#text'] as $t) {
 				$line = trim($t);
