@@ -117,7 +117,7 @@ class WalmartFullURLsSpider(BaseSpider):
 
 	# check if URL contains the product's id (therefore is valid)
 	def valid_result(self, url, prod_id):
-		return prod_id in url
+		return "/"+prod_id in url
 
 	def parse(self, response):
 		# take every id and pass it to the method that retrieves its URL, build an item for each of it
