@@ -31,7 +31,7 @@ input[type=text] {
 }
 
 .ui-widget-content {
-    font-size: .8em;
+    font-size: 1em;
 }
 
 #records,#recordSec,#tblReview {
