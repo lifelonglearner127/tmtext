@@ -223,7 +223,7 @@ class Assess extends MY_Controller {
                                     if($short_sp){
                                         $short_sp = unserialize($short_sp);
                                         foreach ($short_sp as $pr){
-                                            if($pr['prc']>1){
+                                            if($pr['prc']>2){
                                                 $title_seo_prases[]=$pr;
                                             }
                                         }
@@ -231,12 +231,19 @@ class Assess extends MY_Controller {
                                     if($long_sp){
                                         $long_sp = unserialize($long_sp);
                                         foreach ($long_sp as $pr){
-                                            if($pr['prc']>1){
+                                            if($pr['prc']>2){
                                                 $title_seo_prases[]=$pr;
                                             }
                                         }
                                     }
                                     if (!empty($title_seo_prases)) {
+                                        foreach($title_seo_prases as $ar_key => $seo_pr){
+                                            foreach($title_seo_prases as $ar_key1=>$seo_pr1){
+                                                if($ar_key!=$ar_key1 && $this->compare_str($seo_pr['ph'],$seo_pr1['ph'])){
+                                                    unset($title_seo_prases[$ar_key1]);
+                                                }
+                                            }
+                                        }
                                         $str_title_long_seo = '<table class="table_keywords_long">';
                                         foreach ($title_seo_prases as $pras) {
                                             $str_title_long_seo .= '<tr><td>' . $pras['ph'] . '</td><td>' . $pras['prc'] . '%</td></tr>';
@@ -2256,6 +2263,20 @@ class Assess extends MY_Controller {
         );
         return $columns;
     }
+    private function compare_str($str1, $str2){
+        $str1 = strtolower($str1);
+        $str2 = strtolower($str2);
+        $black_list = array('and','the','on','in','at','is');
+        foreach ($black_list as $word){
+            $str1=trim($str1);
+            $str1 = (substr($str1,0,strlen($word)) === $word)?substr($str1,strlen($word)):$str1;
+            $str1 = (substr($str1,(-1)*strlen($word))===$word)?substr($str1,0,strlen($str1)-strlen($word)):$str1;
+            $str2=trim($str2);
+            $str2 = (substr($str2,0,strlen($word)) === $word)?substr($str2,strlen($word)):$str2;
+            $str2=(substr($str2,(-1)*strlen($word))===$word)?substr($str2,0,strlen($str2)-strlen($word)):$str2;
+        }
+        return strpos($str1, $str2)!==FALSE;
+    }
 
     private function build_asses_table($results, $build_assess_params, $batch_id = '') {
 //        error_reporting(E_ALL);
@@ -3135,19 +3156,26 @@ class Assess extends MY_Controller {
                 $title_seo_pr=array();
                 if($long_seo){
                     foreach($long_seo as $ls_phr){
-                            if($ls_phr['prc']>1){
+                            if($ls_phr['prc']>2){
                                 $title_seo_pr[]=$ls_phr;
                             }
                     }
                 }
                 if($short_seo){
                     foreach($short_seo as $ss_phr){
-                            if($ss_phr['prc']>1){
+                            if($ss_phr['prc']>2){
                                 $title_seo_pr[]=$ss_phr;
                             }
                     }
                 }
                 if (!empty($title_seo_pr)) {
+                    foreach($title_seo_pr as $ar_key => $seo_pr){
+                        foreach($title_seo_pr as $ar_key1=>$seo_pr1){
+                            if($ar_key!=$ar_key1 && $this->compare_str($seo_pr['ph'], $seo_pr1['ph'])){
+                                unset($title_seo_pr[$ar_key1]);
+                            }
+                        }
+                    }
                     $str_title_long_seo = '<table class="table_keywords_long">';
                     foreach ($title_seo_pr as $val) {
                         $str_title_long_seo .= '<tr><td>' . $val['ph'] . '</td><td>' . $val['prc'] . '%</td></tr>';
