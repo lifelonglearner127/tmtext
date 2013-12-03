@@ -1681,21 +1681,7 @@ var generate_url_check = GetURLParameter('generate_url_check');
         var add_data = JSON.parse(target.parents('tr').attr('add_data'));
         curentSibil=target.parents('tr');
         
-        if(curentSibil.prev().length == 0){
-            $('.btn_prev_dialog').attr('disabled','disabled');
-        }else{
-            $('.btn_prev_dialog').removeAttr('disabled');
-        }
-
-        if(curentSibil.next().length == 0){
-            $('.btn_next_dialog').attr('disabled','disabled');
-        }else{
-            $('.btn_next_dialog').removeAttr('disabled');
-        }
-        // if this product is absent product from second batch
-        if (add_data.id == undefined) {
-            return;
-        }
+       
         $('#ajaxLoadAni').fadeIn('slow');
         $('#assessDetails_ProductName').val(add_data.product_name);
         $('#assessDetails_Model').val(add_data.model);
@@ -1810,17 +1796,7 @@ var generate_url_check = GetURLParameter('generate_url_check');
         var add_data = JSON.parse(target.parents('tr').attr('add_data'));
          curentSibil=target.parents('tr');
      
-        if(curentSibil.prev().length == 0){
-         $('.btn_prev_dialog').attr('disabled','disabled');
-        }else{
-         $('.btn_prev_dialog').removeAttr('disabled');
-        }
-
-        if(curentSibil.next().length == 0){
-         $('.btn_next_dialog').attr('disabled','disabled');
-        }else{
-         $('.btn_next_dialog').removeAttr('disabled');
-        }
+       
          
         // if this product is absent product from second batch
         if (add_data.id == undefined) {
@@ -1974,7 +1950,7 @@ var generate_url_check = GetURLParameter('generate_url_check');
                 }
             },
             'next': {
-                text: 'Next>',
+                text: 'Next >',
                 id: 'assessDetailsDialog_btnNext',
                 style: 'margin-right:35px',
                 class: 'btn_next_dialog',
@@ -1983,7 +1959,7 @@ var generate_url_check = GetURLParameter('generate_url_check');
                 }
             },
             'prev': {
-                text: '<Prev',
+                text: '< Prev',
                 id: 'assessDetailsDialog_btnPrev',
                 style: 'margin-right:10px',
                 class: 'btn_prev_dialog',
@@ -2021,12 +1997,53 @@ var generate_url_check = GetURLParameter('generate_url_check');
         width: '850px'
     });
 function nextSibilfunc(curentSibil){ 
- curentSibil.next().children().first().trigger('click')
-
+    $('.btn_prev_dialog').removeAttr('disabled');
+            if(curentSibil.next().length == 0){
+                if($('#tblAssess_next').hasClass('ui-state-disabled')){
+                $('.btn_next_dialog').attr('disabled','disabled');
+                }else{
+                $('.btn_next_dialog').removeAttr('disabled');
+                $('.btn_next_dialog').addClass('next_page');
+                }
+            }
+    curentSibil.next().children().first().trigger('click')
+           if($('#assessDetailsDialog_btnNext').hasClass('next_page')){
+               $('#tblAssess_next').click();
+               $('#assessDetailsDialog_btnNext').text('processing...')
+               setTimeout(function(){
+                   $('.ui-widget-overlay').css({"display":"none"})
+                   $('#tblAssess tbody tr:first td:first').click();
+                   $('#assessDetailsDialog_btnNext').text('Next >')
+                   $('#assessDetailsDialog_btnNext').removeClass('next_page')
+               },15000);
+           }
 }
 function prevSibilfunc(curentSibil){ 
- curentSibil.prev().children().first().trigger('click')
-   
+    $('.btn_next_dialog').removeAttr('disabled');
+        if(curentSibil.prev().length == 0){
+               if($('#tblAssess_previous').hasClass('ui-state-disabled')){
+               $('.btn_prev_dialog').attr('disabled','disabled');
+               }else{
+               $('.btn_prev_dialog').removeAttr('disabled');
+               $('.btn_prev_dialog').addClass('prev_page');
+               }
+           }
+    curentSibil.prev().children().first().trigger('click')
+
+       if($('#assessDetailsDialog_btnPrev').hasClass('prev_page')){
+           $('#tblAssess_previous').click();
+           $('#assessDetailsDialog_btnPrev').text('processing...')
+          setTimeout(function(){
+                   $('.ui-widget-overlay').css({"display":"none"});
+                   if($('select[name="tblAssess_length"]').find('option:selected').val() == 25){
+                       $('#tblAssess tbody tr.odd:last td:first').trigger('click');
+                   }else{
+                       $('#tblAssess tbody tr.even:last td:first').trigger('click');                     
+                   }
+                   $('#assessDetailsDialog_btnPrev').text('< Prev');
+                   $('#assessDetailsDialog_btnPrev').removeClass('prev_page');
+               },15000);
+       }  
 }
     $('#assessDetailsDialog input[type="text"], textarea').bind({
         focus: function() {

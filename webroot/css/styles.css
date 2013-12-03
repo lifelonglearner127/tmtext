@@ -168,6 +168,9 @@ input[type=text] {
 .fg-toolbar {
     padding: 6px;
 }
+.prev_page,.next_page{
+    cursor: wait !important;
+}
 .dataTables_length, .dataTables_info {
     float: left;
     margin: 3px 0 0;
