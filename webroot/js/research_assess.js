@@ -70,7 +70,15 @@ $(function() {
 		'skus_third_party_content',
 		'skus_fewer_50_product_content',
 		'skus_fewer_100_product_content',
-		'skus_fewer_150_product_content'
+		'skus_fewer_150_product_content',
+		'skus_fewer_50_product_content_competitor',
+		'skus_fewer_100_product_content_competitor',
+		'skus_fewer_150_product_content_competitor',
+		'skus_third_party_content_competitor',
+		'skus_features',
+		'skus_features_competitor',
+		'skus_reviews',
+		'skus_reviews_competitor'
 	];
 	
     var tableCase = {
@@ -1417,7 +1425,7 @@ var scrollYesOrNot = true;
 	
 
 	function numberWithCommas(x) {			
-		if ((x + '').length <= 3)
+		if (x == 0 || (x + '').length <= 3)
 			return x;
 			
 		var parts = x.toString().split(".");
@@ -1436,7 +1444,7 @@ var scrollYesOrNot = true;
 	{			
 		var batch_number = batch_number || 0;
 		for (var it = 0; it < summaryFieldNames.length; it++)
-			if (summary[summaryFieldNames[it]])
+			if (summary[summaryFieldNames[it]] !== undefined)
 			{
 				if (summary[summaryFieldNames[it]] instanceof Array)
 					$('.' + summaryFieldNames[it]).html(numberWithCommas(summary[summaryFieldNames[it]][batch_number]));
