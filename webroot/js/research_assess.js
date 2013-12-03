@@ -1033,6 +1033,9 @@ function highChart(graphBuild){
         valueUrl[1] = [];
         var graphName1 = '';
         var graphName2 = '';
+        var cloneToolTip = null;
+        var cloneToolTip2 = null;
+    
        // console.log(data);
         if(data) {
             /***First Batch - Begin***/
@@ -1077,6 +1080,18 @@ function highChart(graphBuild){
                     graphName2 = 'words';
                 }
                   break;
+                case 'total_description_wc':{
+                    if(data[0] && data[0].total_description_wc.length > 0){
+                        value1 = data[0].total_description_wc;
+                    }
+                    
+                    if(data[1] && data[1].total_description_wc.length > 0){
+                        value2 = data[1].total_description_wc;
+                    }
+                    graphName1 = 'Total Description Word Count:';
+                    graphName2 = 'words';
+                }
+                  break;
                 case 'revision':{
                     if(data[0] && data[0].revision.length > 0){
                         value1 = data[0].revision;
@@ -1088,16 +1103,16 @@ function highChart(graphBuild){
                     graphName2 = '';
                 }
                   break;
-                case 'own_price':{
-                    if(data[0] && data[0].own_price.length > 0){
-                        value1 = data[0].own_price;
-                    }
-                    if(data[1] && data[1].own_price.length > 0){
-                        value2 = data[1].own_price;
-                    }
-                    graphName1 = 'Price:';
-                    graphName2 = '';
-                } break;
+//                case 'own_price':{
+//                    if(data[0] && data[0].own_price.length > 0){
+//                        value1 = data[0].own_price;
+//                    }
+//                    if(data[1] && data[1].own_price.length > 0){
+//                        value2 = data[1].own_price;
+//                    }
+//                    graphName1 = 'Price:';
+//                    graphName2 = '';
+//                } break;
                 case 'Features':{
                     if(data[0] && data[0].Features.length > 0){
                         value1 = data[0].Features;
@@ -1116,7 +1131,7 @@ function highChart(graphBuild){
                     if(data[1] && data[1].h1_word_counts.length > 0){
                         value2 = data[1].h1_word_counts;
                     }
-                    graphName1 = 'H1 count:';
+                    graphName1 = 'H1 Characters:';
                     graphName2 = 'words';
                 }
                   break;
@@ -1127,7 +1142,7 @@ function highChart(graphBuild){
                     if(data[1] && data[1].h2_word_counts.length > 0){
                         value2 = data[1].h2_word_counts;
                     }
-                    graphName1 = 'H2 count:';
+                    graphName1 = 'H2 Characters:';
                     graphName2 = 'words';
                 }
                   break;
@@ -1211,14 +1226,17 @@ function highChart(graphBuild){
                 shared: true,
                 useHTML: true,
                 positioner: function (boxWidth, boxHeight, point) {
-                    return { x: point.plotX, y: 20 };
+                    return { x: point.plotX +100, y: 0 };
                 },
+//                style:{
+//                    'margin-top': '30px'
+//                },
                 formatter: function() {
                     var result = '<small>'+this.x+'</small><br />';
                     var j;
                     $.each(this.points, function(i, datum) {
                         if(i > 0)
-                            result += '<hr style="border-top: 1px solid #2f7ed8;" />';
+                            result += '<hr style="border-top: 1px solid #2f7ed8;margin:0;" />';
                         if(datum.series.color == '#2f7ed8')
                             j = 0;
                         else
@@ -1231,6 +1249,31 @@ function highChart(graphBuild){
                     return result;
                 }
             },
+
+            
+        plotOptions: {
+            series: {
+                cursor: 'pointer',
+                point: {
+                    events: {
+                        click: function() { 
+                            if (cloneToolTip)
+                            {                                chart1.container.firstChild.removeChild(cloneToolTip);
+                            }
+                            if (cloneToolTip2)
+                            {
+                                cloneToolTip2.remove();
+                            }
+                            cloneToolTip = this.series.chart.tooltip.label.element.cloneNode(true);
+                            chart1.container.firstChild.appendChild(cloneToolTip);
+                            
+                            cloneToolTip2 = $('.highcharts-tooltip').clone(); 
+                            $(chart1.container).append(cloneToolTip2);
+                        }
+                    }
+                }
+            }
+        },
 
             series: seriesObj
         });
@@ -3626,11 +3669,12 @@ function prevSibilfunc(curentSibil){
             dropDownString = '<select id="graphDropDown" style="width: 235px" >';
                 dropDownString += '<option value="short_description_wc" >Short Description Word Counts</option>';
                 dropDownString += '<option value="long_description_wc" >Long Description Word Counts</option>';
-                dropDownString += '<option value="h1_word_counts" >H1 Word Counts</option>';
-                dropDownString += '<option value="h2_word_counts" >H2 Word Counts</option>';
+                dropDownString += '<option value="total_description_wc" >Total Description Word Counts</option>';
+                dropDownString += '<option value="h1_word_counts" >H1 Character Counts</option>';
+                dropDownString += '<option value="h2_word_counts" >H2 Character Counts</option>';
                 dropDownString += '<option value="revision" >Reviews</option>';
                 dropDownString += '<option value="Features" >Features</option>';
-                dropDownString += '<option value="own_price" >Prices</option>';
+//                dropDownString += '<option value="own_price" >Prices</option>';
             dropDownString += '</select>';
             $('#tblAssess_info').after(dropDownString);
             $('#tblAssess_paginate').hide();

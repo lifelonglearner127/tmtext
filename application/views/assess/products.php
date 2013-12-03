@@ -537,7 +537,7 @@
                 </div>
                 <img id="imgLoader" style="display: none;margin-top: -16px;margin-left: 81px;" src="<?php echo base_url();?>img/img-loader.gif" />
                 <div id="assess_graph">
-                    <div id="highChartContainer" style="width: 880px; height: 300px; margin: 0 auto"></div>
+                    <div id="highChartContainer" style="width: 880px; height: 310px; margin: 0 auto"></div>
                 </div>
              
                 <script type="text/javascript" src="<?php echo base_url();?>js/jquery.json-2.4.min.js"></script>

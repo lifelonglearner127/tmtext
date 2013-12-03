@@ -3970,8 +3970,9 @@ class Assess extends MY_Controller {
                 $snap_data[0]['url'][] = (string) $data_row->url;
                 $snap_data[0]['short_description_wc'][] = (int) $data_row->short_description_wc;
                 $snap_data[0]['long_description_wc'][] = (int) $data_row->long_description_wc;
+                $snap_data[0]['total_description_wc'][] = (int) $data_row->short_description_wc + (int) $data_row->long_description_wc;
                 $snap_data[0]['revision'][] = (int) $data_row->review_count;
-                $snap_data[0]['own_price'][] = (float) $data_row->own_price;
+//                $snap_data[0]['own_price'][] = (float) $data_row->own_price;
                 $parsed_attributes_feature = unserialize($data_row->parsed_attributes);
                 if($parsed_attributes_feature['feature_count']){
                     $snap_data[0]['Features'][] = (int) $parsed_attributes_feature['feature_count'];
@@ -4003,8 +4004,9 @@ class Assess extends MY_Controller {
                     $snap_data[1]['url'][] = (string) $data_row_sim[0]->url;
                     $snap_data[1]['short_description_wc'][] = (int) $data_row_sim[0]->short_description_wc;
                     $snap_data[1]['long_description_wc'][] = (int) $data_row_sim[0]->long_description_wc;
+                    $snap_data[1]['total_description_wc'][] = (int) $data_row_sim[0]->short_description_wc + (int) $data_row_sim[0]->long_description_wc;
                     $snap_data[1]['revision'][] = (int) $data_row_sim[0]->review_count;
-                    $snap_data[1]['own_price'][] = (float) $data_row_sim[0]->own_price;
+//                    $snap_data[1]['own_price'][] = (float) $data_row_sim[0]->own_price;
                     $parsed_attributes_feature = unserialize($data_row_sim[0]->parsed_attributes);
                     if($parsed_attributes_feature['feature_count']){
                         $snap_data[1]['Features'][] = (int) $parsed_attributes_feature['feature_count'];
