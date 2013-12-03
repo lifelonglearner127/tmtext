@@ -2264,16 +2264,16 @@ class Assess extends MY_Controller {
         return $columns;
     }
     private function compare_str($str1, $str2){
-        $str1 = strtolower($str1);
-        $str2 = strtolower($str2);
+        $str1 = trim(strtolower($str1));
+        $str2 = trim(strtolower($str2));
         $black_list = array('and','the','on','in','at','is');
         foreach ($black_list as $word){
-            $str1=trim($str1);
             $str1 = (substr($str1,0,strlen($word)) === $word)?substr($str1,strlen($word)):$str1;
             $str1 = (substr($str1,(-1)*strlen($word))===$word)?substr($str1,0,strlen($str1)-strlen($word)):$str1;
-            $str2=trim($str2);
+            $str1=trim($str1);
             $str2 = (substr($str2,0,strlen($word)) === $word)?substr($str2,strlen($word)):$str2;
             $str2=(substr($str2,(-1)*strlen($word))===$word)?substr($str2,0,strlen($str2)-strlen($word)):$str2;
+            $str2=trim($str2);
         }
         return strpos($str1, $str2)!==FALSE;
     }
