@@ -3074,11 +3074,18 @@ class Assess extends MY_Controller {
 					$skus_fewer_reviews_than_competitor++;
 					$this->filterBySummaryCriteria('skus_fewer_reviews_than_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);	
 				}
-							
-				$skus_features += $result_row->column_features;
-				$skus_features_competitor += $result_row->column_features1;
-				$skus_reviews += $result_row->column_reviews;
-				$skus_reviews_competitor += $result_row->column_reviews1;
+				
+				if ($result_row->column_features)
+					$skus_features++;
+					
+				if ($result_row->column_features1)					
+					$skus_features_competitor++;
+				
+				if ($result_row->column_reviews)
+					$skus_reviews++;
+				
+				if ($result_row->column_reviews1)
+					$skus_reviews_competitor++;
           }
 
 

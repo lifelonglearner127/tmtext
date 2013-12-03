@@ -60,7 +60,7 @@
 <div class="mt_10 ml_15 ui-widget-content" data-filterid="skus_zero_optimized_keywords">
 	<div class="mr_10">
 		<img src="<?php echo base_url(); ?>img/assess_report_seo_red.png" />
-		SKUs that have product content with zero optimized meta keywords:
+		SKUs that have product content with zero optimized title keywords:
 		<span class="skus_zero_optimized_keywords mr_10" ></span>
 	</div>
 </div>
@@ -68,7 +68,7 @@
 <div class="mt_10 ml_15 ui-widget-content" data-filterid="skus_one_optimized_keywords">
 	<div class="mr_10">
 		<img src="<?php echo base_url(); ?>img/assess_report_seo_red.png" />
-		SKUs that have product content with one optimized meta keyword:
+		SKUs that have product content with one optimized title keyword:
 		<span class="skus_one_optimized_keywords mr_10" ></span>
 	</div>
 </div>
@@ -76,7 +76,7 @@
 <div class="mt_10 ml_15 ui-widget-content" data-filterid="skus_two_optimized_keywords">
 	<div class="mr_10">
 		<img src="<?php echo base_url(); ?>img/assess_report_seo_yellow.png" />
-		SKUs that have product content with two optimized meta keywords:
+		SKUs that have product content with two optimized title keywords:
 		<span class="skus_two_optimized_keywords mr_10" ></span>
 	</div>
 </div>
@@ -84,7 +84,7 @@
 <div class="mt_10 ml_15 ui-widget-content" data-filterid="skus_three_optimized_keywords">
 	<div class="mr_10">
 		<img src="<?php echo base_url(); ?>img/assess_report_seo.png" />
-		SKUs that have product content with three optimized meta keywords:
+		SKUs that have product content with three optimized title keywords:
 		<span class="skus_three_optimized_keywords mr_10" ></span>
 	</div>
 </div>
