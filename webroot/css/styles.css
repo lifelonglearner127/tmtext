@@ -31,7 +31,11 @@ input[type=text] {
 }
 
 .ui-widget-content {
-    font-size: 1em;
+    font-size: .8em;
+}
+
+.ui-widget-content.ui-selectee, .non-selectable..ui-selectee {
+	font-size: 1em;
 }
 
 #records,#recordSec,#tblReview {
