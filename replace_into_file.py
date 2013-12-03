@@ -20,7 +20,7 @@ with open(sys.argv[1], "r") as infile:
 	for line in infile:
 		(value1, value2) = line.strip().split(",")
 		for lineout in lines2:
-			if "/"+value1 in lineout:
+			if value1 in lineout:
 				newline = lineout.replace(value1, value2)
 				newlines.append(newline)
 				changedlines.append(lineout)
