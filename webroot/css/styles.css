@@ -175,6 +175,7 @@ input[type=text] {
 .dataTables_filter, .dataTables_paginate {
     float: right;
     width:325px;
+    
 }
 .dataTables_filter{
     width: 200px;
