@@ -161,7 +161,7 @@ class WalmartFullURLsSpider(BaseSpider):
 			return Request(search_page, callback = self.parse_resultsPage2, meta = {"item" : response.meta['item']})
 
 		else:
-			self.log("No results for short_url (didn't find product name) " + item['walmart_short_url'] + "\n", level=log.ERROR)
+			self.log("No results for short_url (didn't find product name) " + response.meta['item']['walmart_short_url'] + "\n", level=log.ERROR)
 
 	# parse results page from search by product name - find URL that contains item id, if any
 	def parse_resultsPage2(self, response):
