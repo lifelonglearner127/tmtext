@@ -1672,18 +1672,23 @@ class Research extends MY_Controller {
         $added = $this->insert_rows($batch_id, $_rows);
 
         $str = $added;
+        $duplicateItems = '';
+        if((count($_rows) - (int)$str) > 0)
+            $duplicateItems = ' and ' . (count($_rows) - (int)$str) . ' items are duplicated.';
         if($str==1 && count($_rows)>0){
             $str .= ' record';
         } else if($str > 1 && count($_rows)>0){
             $str .= ' records';
         } else if($str == 0 && count($_rows)>0){
             $str .= ' items uploaded -- all items already exist in database';
+            $duplicateItems = '';
         } else if($str == 0 && count($_rows)==0){
             $str .= ' items uploaded';
+            $duplicateItems = '';
         }
 
         $response['batch_id'] = $batch_id;
-        $response['message'] = $str .' added to batch';
+        $response['message'] = $str .' added to batch' . $duplicateItems;
          $this->output->set_content_type('application/json')
                 ->set_output(json_encode($response));
     }
