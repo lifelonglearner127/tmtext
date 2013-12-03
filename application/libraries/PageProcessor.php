@@ -159,14 +159,12 @@ class PageProcessor {
 				}
 			}
 
-			if (!empty($result)) {
-				$result['loaded_in_seconds'] = number_format($this->load_time,5);
+			$result['loaded_in_seconds'] = number_format($this->load_time,5);
 
-				if (!isset($result['review_count'])) {
-					$result['review_count'] = 0;
-				}
-        		return $result;
+			if (!isset($result['review_count'])) {
+				$result['review_count'] = 0;
 			}
+        	return $result;
         }
 
         return false;
@@ -1854,6 +1852,34 @@ class PageProcessor {
 			}
 		}
 
+		if(empty($description)) {
+			$description = trim($this->nokogiri->get('#desc_div table div table.upper td.tabdescription')->getText());
+		}
+
+		if(empty($descriptionLong)) {
+			$descriptionLong = trim($this->nokogiri->get('#desc_div table div#item_long')->getText());
+		}
+
+		if(empty($descriptionLong)) {
+			$descriptionLong = trim($this->nokogiri->get('#desc_div table.acttbl')->getText());
+		}
+
+		if(empty($descriptionLong)) {
+			$line = trim($this->nokogiri->get('#desc_div table div.content')->getText());
+			if (!empty($line)) {
+				foreach($this->nokogiri->get('#desc_div table div.content ul li') as $item) {
+					$features[] = trim($item['#text'][0]);
+				}
+
+				if (!empty($features)) {
+					$descriptionLong = trim($this->nokogiri->get('#desc_div table tr td div p')->getText());
+					$features = implode("\n",$features);
+				}
+			}
+		}
+
+		// general rul
+
 		if(empty($descriptionLong)) {
 			$descriptionLong = trim($this->nokogiri->get('#desc_div table table table tr center')->getText());
 		}
@@ -1895,8 +1921,12 @@ class PageProcessor {
 	public function attributes_ebay() {
 		$result = array();
 
-		foreach($this->nokogiri->get('.productinfo #prodSku') as $item) {
-			$line = trim($item["#text"][0]);
+			if(empty($descriptionLong)) {
+			$descriptionLong = trim($this->nokogiri->get('#desc_div table div#item_long')->getText());
+		}
+
+		foreach($this->nokogiri->get('#desc_div table div#item_pn') as $item) {
+			$line = trim(str_ireplace('P/N:','', $item["#text"][0]));
 
 			if (!empty($line)) {
 				$result['model'] = $line;
