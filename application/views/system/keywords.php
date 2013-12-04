@@ -24,7 +24,11 @@
     <!--- META KEYWORDS RANKING STUFFS (START) -->
     <div class='row-fluid'>
         <div class='alert' style='margin-bottom: 0px;'>Meta Keywords Ranking Section</div>
-        <?php echo form_dropdown('batches_list', $batches_list, array(),' class="sk_batches_list" id="sk_batches_list" style="width: 207px;float:left;margin-right: 20px;margin-top: 10px;"'); ?>  
+        <?php echo form_dropdown('batches_list', $batches_list, array(),' class="sk_batches_list" id="sk_batches_list" style="width: 207px;float:left;margin-right: 20px;margin-top: 10px;"'); ?>
+        <select name='kw_show_words_mode' id='kw_show_words_mode' style='display: none; margin-top: 10px;'>
+            <option value='title'>Title</option>
+            <option value='meta'>Meta</option>
+        </select>  
     </div>
     <div id="overall_meta_kw_pager_holder">
         <div id='meta_kw_pager_holder' class='row-fluid pagination'></div>
@@ -108,12 +112,21 @@
             $.post(base_url + 'index.php/system/system_get_mkw_info', {'bid': bid, 'cpage': cpage}, function(d) {
                 $("#loading_kw_meta_selection").modal('hide');
                 $("#overall_meta_kw_pager_holder").html(d);
+                $("#kw_show_words_mode").show();
             });
         }
         $("#sk_batches_list").change(function(e) {
             var bid = $(e.target).val();
             $("#loading_kw_meta_selection").modal('show');
             getMetaKeysBatchData(bid, 1);
+        });
+        $("#kw_show_words_mode").change(function(e) {
+            $(".title_keys_kw_section, .meta_keys_kw_section").hide();
+            if($(this).val() === 'meta') {
+                $(".meta_keys_kw_section").show();
+            } else if($(this).val() === 'title') {
+                $(".title_keys_kw_section").show();
+            }
         });
         // === META KEYWORDS RANKING STUFFS (END)
 
