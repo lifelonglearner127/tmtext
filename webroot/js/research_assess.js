@@ -1226,11 +1226,11 @@ function highChart(graphBuild){
                 shared: true,
                 useHTML: true,
                 positioner: function (boxWidth, boxHeight, point) {
-                    return { x: point.plotX +100, y: 0 };
+                    if(point.plotX < bigdatalength*2.3)
+                        return { x: point.plotX +50, y: 0 };
+                    else
+                        return { x: point.plotX -300, y: 0 };
                 },
-//                style:{
-//                    'margin-top': '30px'
-//                },
                 formatter: function() {
                     var result = '<small>'+this.x+'</small><br />';
                     var j;
@@ -1257,8 +1257,11 @@ function highChart(graphBuild){
                 point: {
                     events: {
                         click: function() { 
+                            $('.highcharts-tooltip').first().css('visibility','visible');
+                            $('div .highcharts-tooltip span').first().css('visibility','visible');
                             if (cloneToolTip)
-                            {                                chart1.container.firstChild.removeChild(cloneToolTip);
+                            {
+                                chart1.container.firstChild.removeChild(cloneToolTip);
                             }
                             if (cloneToolTip2)
                             {
@@ -1269,6 +1272,8 @@ function highChart(graphBuild){
                             
                             cloneToolTip2 = $('.highcharts-tooltip').clone(); 
                             $(chart1.container).append(cloneToolTip2);
+                            $('.highcharts-tooltip').first().css('visibility','hidden');
+                            $('div .highcharts-tooltip span').first().css('visibility','hidden');
                         }
                     }
                 }
@@ -3471,8 +3476,12 @@ function prevSibilfunc(curentSibil){
         var table_case = 'details_compare';
         var checked_columns_results = GetURLParameter('checked_columns_results');
     if(checked_columns_results){
+             if($('#assess_tbl_show_case a[class=active_link]').data('case') == 'details_compare_result'){
          table_case = 'details_compare_result';
     }else{
+                 table_case = 'graph';
+             }
+        }else{
         
         table_case = $('#assess_tbl_show_case a[class=active_link]').data('case');
     }
