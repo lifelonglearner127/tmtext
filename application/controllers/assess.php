@@ -4054,11 +4054,11 @@ class Assess extends MY_Controller {
     private function column_external_content($cnetcontent = false, $webcollage = false) {
         $column_external_content = ' ';
         if ($cnetcontent == 1 && $webcollage == 1)
-            $column_external_content = 'CNET, WC';
+            $column_external_content = 'CNET, Webcollage';
         elseif ($cnetcontent == 1 && $webcollage != 1)
             $column_external_content = 'CNET';
         elseif ($cnetcontent != 1 && $webcollage == 1)
-            $column_external_content = 'WC';
+            $column_external_content = 'Webcollage';
         return $column_external_content;
     }
 
