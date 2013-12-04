@@ -17,7 +17,8 @@ class Crawl extends MY_Controller {
         $this->load->library('form_validation');
 
         $this->ion_auth->add_auth_rules(array(
-            'urls_snapshot' => true
+            'urls_snapshot' => true,
+            'sync_meta_personal' => true,
         ));
     }
 
@@ -174,5 +175,20 @@ class Crawl extends MY_Controller {
         );
         return $res;
     }
+    
+    
+  public function sync_meta_personal() {
+        $this->load->model('rankapi_model');
+        $ids = array();
+        if(!empty($ids)){
+            foreach($ids as $id){
+                $res = $this->rankapi_model->sync_meta_personal_keyword($id);
+            }
+        }
+        for($i = 0;$i < 10;$i++){
+            sleep(1);
+            echo "dedwedwedwd\n";
+        }
+  }
 
 }

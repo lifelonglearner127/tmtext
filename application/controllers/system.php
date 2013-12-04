@@ -2678,4 +2678,13 @@ class System extends MY_Controller {
         echo $strTxt;
         //echo $this->temp_data_model->array2file($array);
     }
+    
+    public function set_kwsync_queue(){
+        $id = $_POST['id'];
+        $kw = $_POST['kw'];
+        $url = $_POST['url'];
+        $this->load->model('kwsync_queue_list_model');
+        $this->kwsync_queue_list_model->insert($id, $kw, $url);
+        echo $id . ' - ' . $kw . ' - ' . $url;
+    }
 }
