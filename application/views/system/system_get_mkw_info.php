@@ -33,8 +33,7 @@
 						<p class='ellipsis_p' style='font-size: 12px; font-weight: bold'><a target="_blank" href="<?php echo $url ?>"><?php echo $url; ?></a></p>
 					</td>
 					<td>
-
-						<div class='title_keys_kw_section'>
+						<div <?php if($v_mode_option === 'title') { ?> style='display: block;' <?php } ?> class='title_keys_kw_section n_visible'>
 						<p style='font-size: 14px; font-weight: bold;'>Title Keywords:</p>
 						<?php if($v['long_seo_phrases']) { ?>
 							<table>
@@ -100,7 +99,7 @@
 						<?php } ?>
 						</div>
 
-						<div class='meta_keys_kw_section' style='display: none;'>
+						<div <?php if($v_mode_option === 'meta') { ?> style='display: block;' <?php } ?> class='meta_keys_kw_section n_visible'>
 						<p style='font-size: 14px; font-weight: bold;'>Meta Keywords:</p>
 						<?php if($v['meta']['short_meta']) { ?>
 							<table>
@@ -285,7 +284,8 @@
 
 	function getMetaKeysBatchData(bid, cpage) {
       cpage = parseInt(cpage);
-      $.post(base_url + 'index.php/system/system_get_mkw_info', {'bid': bid, 'cpage': cpage}, function(d) {
+      var v_mode_option = $("#kw_show_words_mode > option:selected").val();
+      $.post(base_url + 'index.php/system/system_get_mkw_info', {'bid': bid, 'cpage': cpage, 'v_mode_option': v_mode_option}, function(d) {
           $("#loading_kw_meta_selection").modal('hide');
           $("#overall_meta_kw_pager_holder").html(d);
       });

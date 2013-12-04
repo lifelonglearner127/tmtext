@@ -1,4 +1,8 @@
 /* BOARD ITEM MODAL PREVIEW (START) */
+.n_visible {
+    display: none;
+}
+
 .ellipsis_pkey {
     width: 135px;
     max-width: 135px;

@@ -2160,6 +2160,7 @@ class System extends MY_Controller {
   		$this->load->model('keywords_model');
       $bid = $this->input->post('bid');
       $cpage = $this->input->post('cpage');
+      $v_mode_option = $this->input->post('v_mode_option');
       $results_stack = array(
       	'status' => false,
       	'msg' => '',
@@ -2270,6 +2271,7 @@ class System extends MY_Controller {
 
       $data['results_stack'] = $results_stack;
       $data['statistics_new_model'] = $this->statistics_new_model;
+      $data['v_mode_option'] = $v_mode_option;
       $this->load->view('system/system_get_mkw_info', $data);
       // $this->output->set_content_type('application/json')->set_output(json_encode($results_stack));
   }

@@ -109,7 +109,8 @@
         // === META KEYWORDS RANKING STUFFS (START)
         function getMetaKeysBatchData(bid, cpage) {
             cpage = parseInt(cpage);
-            $.post(base_url + 'index.php/system/system_get_mkw_info', {'bid': bid, 'cpage': cpage}, function(d) {
+            var v_mode_option = $("#kw_show_words_mode > option:selected").val();
+            $.post(base_url + 'index.php/system/system_get_mkw_info', {'bid': bid, 'cpage': cpage, 'v_mode_option': v_mode_option}, function(d) {
                 $("#loading_kw_meta_selection").modal('hide');
                 $("#overall_meta_kw_pager_holder").html(d);
                 $("#kw_show_words_mode").show();
