@@ -3058,16 +3058,28 @@ class Assess extends MY_Controller {
 				}
 				
 				if ($result_row->column_features)
+				{					
 					$skus_features++;
+					$this->filterBySummaryCriteria('skus_features', $build_assess_params->summaryFilterData, $success_filter_entries);	
+				}
 					
-				if ($result_row->column_features1)					
+				if ($result_row->column_features1)
+				{					
 					$skus_features_competitor++;
+					$this->filterBySummaryCriteria('skus_features_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);	
+				}
 				
 				if ($result_row->column_reviews)
+				{					
 					$skus_reviews++;
+					$this->filterBySummaryCriteria('skus_reviews', $build_assess_params->summaryFilterData, $success_filter_entries);	
+				}
 				
 				if ($result_row->column_reviews1)
+				{					
 					$skus_reviews_competitor++;
+					$this->filterBySummaryCriteria('skus_reviews_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);	
+				}
           }
 
 

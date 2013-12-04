@@ -22,30 +22,51 @@
 	</div>
 </div>
 
-<div class="mt_10 ml_15 ui-widget-content" data-filterid="skus_fewer_50_product_content">
+<div class="mt_10 ml_15 ui-widget-content batch1_filter_item" data-filterid="skus_fewer_50_product_content">
 	<div class="mr_10">
 		<img src="<?php echo base_url(); ?>img/assess_report_seo_red.png" />
 		SKUs with product content < 50 words:
-		You - <span class="skus_fewer_50_product_content" ></span>.
-		Competitor - <span class="skus_fewer_50_product_content_competitor" ></span>
+		<span class="skus_fewer_50_product_content" ></span>.		
 	</div>
 </div>
 
-<div class="mt_10 ml_15 ui-widget-content" data-filterid="skus_fewer_100_product_content">
+<div class="mt_10 ml_15 ui-widget-content batch2_filter_item" data-filterid="skus_fewer_50_product_content_competitor">
+	<div class="mr_10">
+		<img src="<?php echo base_url(); ?>img/assess_report_seo_red.png" />
+		Competitor SKUs with product content < 50 words:		
+		 <span class="skus_fewer_50_product_content_competitor" ></span>
+	</div>
+</div>
+
+<div class="mt_10 ml_15 ui-widget-content batch1_filter_item" data-filterid="skus_fewer_100_product_content">
 	<div class="mr_10">
 		<img src="<?php echo base_url(); ?>img/assess_report_seo_red.png" />
 		SKUs with product content < 100 words:		
-		You - <span class="skus_fewer_100_product_content" ></span>.
-		Competitor - <span class="skus_fewer_100_product_content_competitor" ></span>
+		<span class="skus_fewer_100_product_content" ></span>.		
 	</div>
 </div>
 
-<div class="mt_10 ml_15 ui-widget-content" data-filterid="skus_fewer_150_product_content">
+<div class="mt_10 ml_15 ui-widget-content batch2_filter_item" data-filterid="skus_fewer_100_product_content_competitor">
+	<div class="mr_10">
+		<img src="<?php echo base_url(); ?>img/assess_report_seo_red.png" />
+		Competitor SKUs with product content < 100 words:				
+		<span class="skus_fewer_100_product_content_competitor" ></span>
+	</div>
+</div>
+
+<div class="mt_10 ml_15 ui-widget-content batch1_filter_item" data-filterid="skus_fewer_150_product_content">
 	<div class="mr_10">
 		<img src="<?php echo base_url(); ?>img/assess_report_seo_red.png" />
 		SKUs with product content < 150 words:		
-		You - <span class="skus_fewer_150_product_content" ></span>.
-		Competitor - <span class="skus_fewer_150_product_content_competitor" ></span>
+		<span class="skus_fewer_150_product_content" ></span>.		
+	</div>
+</div>
+
+<div class="mt_10 ml_15 ui-widget-content batch2_filter_item" data-filterid="skus_fewer_150_product_content_competitor">
+	<div class="mr_10">
+		<img src="<?php echo base_url(); ?>img/assess_report_seo_red.png" />
+		Competitor SKUs with product content < 150 words:				
+		<span class="skus_fewer_150_product_content_competitor" ></span>
 	</div>
 </div>
 
@@ -97,12 +118,19 @@
 	</div>
 </div>
 
-<div class="mt_10 ml_15 ui-widget-content" data-filterid="skus_reviews">
+<div class="mt_10 ml_15 ui-widget-content batch1_filter_item" data-filterid="skus_reviews">
 	<div class="mr_10">
 		<img src="<?php echo base_url(); ?>img/assess_report_seo_red.png" />
 		SKUs that have reviews:		
-		You - <span class="skus_reviews" ></span>.
-		Competitor - <span class="skus_reviews_competitor" ></span>
+		<span class="skus_reviews" ></span>.		
+	</div>
+</div>
+
+<div class="mt_10 ml_15 ui-widget-content batch2_filter_item" data-filterid="skus_reviews_competitor">
+	<div class="mr_10">
+		<img src="<?php echo base_url(); ?>img/assess_report_seo_red.png" />
+		Competitor SKUs that have reviews:				
+		<span class="skus_reviews_competitor" ></span>
 	</div>
 </div>
 
@@ -114,15 +142,21 @@
 	</div>
 </div>
 
-<div class="mt_10 ml_15 ui-widget-content" data-filterid="skus_features">
+<div class="mt_10 ml_15 ui-widget-content batch1_filter_item" data-filterid="skus_features">
 	<div class="mr_10">
 		<img src="<?php echo base_url(); ?>img/assess_report_seo.png" />
 		SKUs that have features:		
-		You - <span class="skus_features" ></span>.
-		Competitor - <span class="skus_features_competitor" ></span>
+		<span class="skus_features" ></span>.		
 	</div>
 </div>
 
+<div class="mt_10 ml_15 ui-widget-content batch2_filter_item" data-filterid="skus_features_competitor">
+	<div class="mr_10">
+		<img src="<?php echo base_url(); ?>img/assess_report_seo.png" />
+		Competitor SKUs that have features:				
+		 <span class="skus_features_competitor" ></span>
+	</div>
+</div>
 
 <div class="mt_10 ml_15 ui-widget-content" data-filterid="skus_75_duplicate_content">
 	<div class="mr_10">
@@ -148,12 +182,19 @@
 	</div>
 </div>
 
-<div class="mt_10 ml_15 ui-widget-content" data-filterid="skus_third_party_content">
+<div class="mt_10 ml_15 ui-widget-content batch1_filter_item" data-filterid="skus_third_party_content">
 	<div class="mr_10">
 		<img src="<?php echo base_url(); ?>img/assess_report_seo.png" />
 		SKUs that have third party content:		
-		You - <span class="skus_third_party_content" ></span>.
-		Competitor - <span class="skus_third_party_content_competitor" ></span>
+		<span class="skus_third_party_content" ></span>.		
+	</div>
+</div>
+
+<div class="mt_10 ml_15 ui-widget-content batch2_filter_item" data-filterid="skus_third_party_content_competitor">
+	<div class="mr_10">
+		<img src="<?php echo base_url(); ?>img/assess_report_seo.png" />
+		Competitor SKUs that have third party content:				
+		<span class="skus_third_party_content_competitor" ></span>
 	</div>
 </div>
 
