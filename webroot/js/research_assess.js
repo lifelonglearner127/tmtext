@@ -3418,7 +3418,6 @@ function prevSibilfunc(curentSibil){
         );
         $('#assess_report_options_dialog').parent().find('.ui-dialog-buttonpane button[id="assess_report_options_dialog_save"]').addClass("btn btn-success");
         $('#assess_report_options_dialog').parent().find('.ui-dialog-buttonpane button[id="assess_report_options_dialog_cancel"]').addClass("btn");
-        $('.ui-dialog-titlebar-close').html('<span style="margin-top:-5px;">x</span>');
         $('#assess_report_options_dialog').dialog('open');
     });
 

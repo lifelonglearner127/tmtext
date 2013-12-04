@@ -594,6 +594,7 @@
 </style>
 <script>
             $(function() {
+                $('.ui-dialog-titlebar-close').html('<span style="margin-top:-5px;">x</span>');
                 $('head').find('title').text('Reports');
             });
  </script>

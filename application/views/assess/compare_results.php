@@ -619,6 +619,7 @@
 
                 $('head').find('title').text('Content Analytics Report');
                 function GetURLParameter(sParam) {
+                    $('.ui-dialog-titlebar-close').html('<span style="margin-top:-5px;">x</span>');
                     var sPageURL = window.location.search.substring(1);
                     var sURLVariables = sPageURL.split('&');
                     for (var i = 0; i < sURLVariables.length; i++) 
