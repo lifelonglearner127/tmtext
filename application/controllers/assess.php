@@ -2851,40 +2851,7 @@ class Assess extends MY_Controller {
                 $Meta_Keywords .= "</table>";
                 $result_row->Meta_Keywords = $Meta_Keywords;
             }
-			
-			$batch1_filtered_meta_percents = array_filter($batch1_meta_percents[$row_key]);
-			$batch2_filtered_meta_percents = array_filter($batch2_meta_percents[$row_key]);
-			
-			if (count($batch1_filtered_meta_percents) < count($batch2_filtered_meta_percents))
-			{
-				$skus_fewer_competitor_optimized_keywords++;
-				$this->filterBySummaryCriteria('skus_fewer_competitor_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries);					
-			}
-			
-			if (!$batch1_filtered_meta_percents)
-			{
-				$skus_zero_optimized_keywords++;
-				$this->filterBySummaryCriteria('skus_zero_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries);
-			}
-			
-			if (count($batch1_filtered_meta_percents) >= 1)
-			{
-				$skus_one_optimized_keywords++;
-				$this->filterBySummaryCriteria('skus_one_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries);		
-			}
-				
-			if (count($batch1_filtered_meta_percents) >= 2)
-			{
-				$skus_two_optimized_keywords++;
-				$this->filterBySummaryCriteria('skus_two_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries);			
-			}
-				
-			if (count($batch1_filtered_meta_percents) >= 3)
-			{
-				$skus_three_optimized_keywords++;			
-				$this->filterBySummaryCriteria('skus_three_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries);
-			}
-
+						
 
 //            if ($pars_atr['parsed_meta']['keywords'] && $pars_atr['parsed_meta']['keywords'] != '') {
 //                $Meta_Keywords = "<table class='table_keywords_long'>";
@@ -3183,7 +3150,7 @@ class Assess extends MY_Controller {
                             }
                         }
                     }
-                    $str_title_long_seo = '<table class="table_keywords_long">';
+                    $str_title_long_seo = '<table class="table_keywords_long 3186">';
                     foreach ($title_seo_pr as $val) {
                         $str_title_long_seo .= '<tr><td>' . $val['ph'] . '</td><td>' . $val['prc'] . '%</td></tr>';
                     }
@@ -3194,6 +3161,39 @@ class Assess extends MY_Controller {
                 $result_row->long_seo_phrases = $row->long_seo_phrases;
                 $result_row->title_seo_phrases = '';
             }
+			
+			$batch1_filtered_title_percents = substr_count($result_row->title_seo_phrases, '%');
+			$batch2_filtered_title_percents = substr_count($result_row->title_seo_phrases1, '%');
+			
+			if ($batch1_filtered_title_percents < $batch2_filtered_title_percents)
+			{
+				$skus_fewer_competitor_optimized_keywords++;
+				$this->filterBySummaryCriteria('skus_fewer_competitor_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries);					
+			}
+			
+			if (!$batch1_filtered_title_percents)
+			{
+				$skus_zero_optimized_keywords++;
+				$this->filterBySummaryCriteria('skus_zero_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries);
+			}
+			
+			if ($batch1_filtered_title_percents >= 1)
+			{
+				$skus_one_optimized_keywords++;
+				$this->filterBySummaryCriteria('skus_one_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries);		
+			}
+				
+			if ($batch1_filtered_title_percents >= 2)
+			{
+				$skus_two_optimized_keywords++;
+				$this->filterBySummaryCriteria('skus_two_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries);			
+			}
+				
+			if ($batch1_filtered_title_percents >= 3)
+			{
+				$skus_three_optimized_keywords++;			
+				$this->filterBySummaryCriteria('skus_three_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries);
+			}
 
             if ($build_assess_params->short_duplicate_content || $build_assess_params->long_duplicate_content) {
                 $dc = $this->statistics_duplicate_content_model->get($row->imported_data_id);
