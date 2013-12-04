@@ -38,6 +38,16 @@ input[type=text] {
 	font-size: 1em;
 }
 
+.batch1_filter_item {
+	width: 487px;
+	float: left;
+}
+
+.batch2_filter_item {
+	width: 488px;
+	float: right;
+}
+
 #records,#recordSec,#tblReview {
     font-size: 1em;
     width: 100%;

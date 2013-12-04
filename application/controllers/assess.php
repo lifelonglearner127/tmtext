@@ -453,6 +453,7 @@ class Assess extends MY_Controller {
                 }
                 $build_assess_params->max_similar_item_count = $max_similar_item_count;
             }
+			
 			$build_assess_params->batch2_items_count = $batch2_items_count;
             $output = $this->build_asses_table($results, $build_assess_params, $batch_id);
 //            //Debugging
@@ -2303,6 +2304,8 @@ class Assess extends MY_Controller {
         $skus_features_competitor = 0;
         $skus_reviews = 0;
         $skus_reviews_competitor = 0;
+        $skus_pdfs = 0;
+        $skus_pdfs_competitor = 0;        
         $items_priced_higher_than_competitors = 0;
         $items_have_more_than_20_percent_duplicate_content = 0;
         $skus_25_duplicate_content = 0;
@@ -2609,7 +2612,13 @@ class Assess extends MY_Controller {
                     if (isset($parsed_attributes_unserialize['feature_count']))
                         $parsed_column_features_unserialize_val = $parsed_attributes_unserialize['feature_count'];
                     $parsed_meta_unserialize = unserialize($sim_items[$i - 1]->parsed_meta);
-
+					
+					if (isset($parsed_attributes_unserialize['pdf_count']) && $parsed_attributes_unserialize['pdf_count'])
+					{				
+						$skus_pdfs_competitor++;
+						$this->filterBySummaryCriteria('skus_pdfs_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);	
+					}
+			
                     if ($parsed_meta_unserialize['description']) {
                         $parsed_meta_unserialize_val = $parsed_meta_unserialize['description'];
                         $parsed_meta_unserialize_val_c = count(explode(" ", $parsed_meta_unserialize_val));
@@ -2803,6 +2812,12 @@ class Assess extends MY_Controller {
 
 
             $pars_atr = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
+			if (isset($pars_atr['parsed_attributes']['pdf_count']) && $pars_atr['parsed_attributes']['pdf_count'])
+			{				
+				$skus_pdfs++;
+				$this->filterBySummaryCriteria('skus_pdfs', $build_assess_params->summaryFilterData, $success_filter_entries);	
+			}
+			
             if ($pars_atr['parsed_attributes']['cnetcontent'] || $pars_atr['parsed_attributes']['webcollage']) {
                 $result_row->column_external_content= $this->column_external_content($pars_atr['parsed_attributes']['cnetcontent'],$pars_atr['parsed_attributes']['webcollage']);
             }
@@ -3482,6 +3497,8 @@ class Assess extends MY_Controller {
         $report['summary']['skus_features_competitor'] = $skus_features_competitor;		
         $report['summary']['skus_reviews'] = $skus_reviews;		
         $report['summary']['skus_reviews_competitor'] = $skus_reviews_competitor;		
+        $report['summary']['skus_pdfs'] = $skus_pdfs;		
+        $report['summary']['skus_pdfs_competitor'] = $skus_pdfs_competitor;		        
 		
         // only if second batch select - get absent products, merge it with result_table
 //        if (isset($build_assess_params->compare_batch_id) && $build_assess_params->compare_batch_id > 0) {

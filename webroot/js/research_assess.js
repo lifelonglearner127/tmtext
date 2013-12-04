@@ -78,7 +78,9 @@ $(function() {
 		'skus_features',
 		'skus_features_competitor',
 		'skus_reviews',
-		'skus_reviews_competitor'
+		'skus_reviews_competitor',
+		'skus_pdfs',
+		'skus_pdfs_competitor',
 	];
 	
     var tableCase = {

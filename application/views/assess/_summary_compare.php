@@ -156,3 +156,18 @@
 		Competitor - <span class="skus_third_party_content_competitor" ></span>
 	</div>
 </div>
+
+<div class="mt_10 ml_15 ui-widget-content batch1_filter_item" data-filterid="skus_pdfs">
+	<div class="mr_10">
+		<img src="<?php echo base_url(); ?>img/assess_report_seo.png" />
+		SKUs that have PDFs:	
+		<span class="skus_pdfs" ></span>.		
+	</div>
+</div>
+<div class="mt_10 ml_15 ui-widget-content batch2_filter_item" data-filterid="skus_pdfs_competitor">
+	<div class="mr_10">
+		<img src="<?php echo base_url(); ?>img/assess_report_seo.png" />
+		Competitor SKUs that have PDFs:	
+		<span class="skus_pdfs_competitor" ></span>
+	</div>
+</div>
