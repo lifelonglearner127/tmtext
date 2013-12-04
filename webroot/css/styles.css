@@ -31,11 +31,15 @@ input[type=text] {
 }
 
 .ui-widget-content {
-    font-size: .8em;
+    font-size: .8em;	
 }
 
 .ui-widget-content.ui-selectee, .non-selectable, .ui-selectee {
-	font-size: 1em;
+	font-size: 1em;	
+}
+
+.non-selectable, .ui-selectee:not(.batch1_filter_item):not(.batch2_filter_item) {
+	clear: both;	
 }
 
 .batch1_filter_item {
@@ -46,6 +50,10 @@ input[type=text] {
 .batch2_filter_item {
 	width: 488px;
 	float: right;
+}
+
+.batch1_filter_item, .batch2_filter_item {
+	margin: 0 0 10px 15px;
 }
 
 #records,#recordSec,#tblReview {
