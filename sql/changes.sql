@@ -1,3 +1,14 @@
+#05/12 Ilya
+CREATE  TABLE IF NOT EXISTS `kwsync_queue_list` (
+  `id` INT NOT NULL AUTO_INCREMENT ,
+  `meta_kw_rank_source_id` INT NULL DEFAULT NULL , 
+  `url` VARCHAR(512) NULL DEFAULT NULL ,
+  `kw` VARCHAR(256) NULL DEFAULT NULL ,
+  `status` INT NULL DEFAULT NULL ,
+  `stamp` DATETIME NULL DEFAULT NULL ,
+  PRIMARY KEY (`id`) 
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1;
+
 #27/11 Ilya
 CREATE  TABLE IF NOT EXISTS `meta_kw_rank_source` (
   `id` INT NOT NULL AUTO_INCREMENT ,

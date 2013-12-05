@@ -2158,6 +2158,8 @@ class System extends MY_Controller {
   public function kw_sync_current_page() {
   	$this->load->model('statistics_new_model');
 		$this->load->model('keywords_model');
+		$this->load->model('kwsync_queue_list_model');
+		$this->load->model('rankapi_model');
     $bid = $this->input->post('bid');
     $cpage = $this->input->post('cpage');
     $results_stack = array(
@@ -2396,6 +2398,19 @@ class System extends MY_Controller {
     	}
     }
     // ===== prepare keywords data for syns processess (end)
+
+    // ===== starting syncing/adding processes (start)
+    if(count($kw_words_data) > 0) {
+    	foreach ($kw_words_data as $ka => $va) {
+    		if($va['status'] === 'sync') { // ===== just syncing (plus adding to TWCrawler queue)
+    			$this->rankapi_model->sync_meta_personal_keyword($va['kw_id']); // === sync
+	        $this->kwsync_queue_list_model->insert($va['kw_id'], $va['kw'], $va['url']); // === add to queue
+    		} else { // ===== add and sync (plus adding to TWCrawler queue)
+
+    		}
+    	}
+    }
+    // ===== starting syncing/adding processes (end)
 
 		$this->output->set_content_type('application/json')->set_output(json_encode($kw_words_data));
   }

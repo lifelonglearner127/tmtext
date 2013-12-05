@@ -55,7 +55,7 @@
 											<div style='display: inline-block; margin-bottom: 5px;' class='action_btn_holder'><button type='button' disabled class='btn btn-success disabled'>Inside</button></div>
 											<div style='display: inline-block; margin-bottom: 5px;'>
                                                                                             <button type='button' onclick="kwSyncMetaPersonal('<?php echo $last_id; ?>', this)" class='btn btn-success'>Sync</button>
-                                                                                            <button type="button" onclick="kwSyncMetaPersonalQueue('<?php echo $last_id; ?>','<?php echo $kw; ?>' ,'<?php echo $url; ?>' , this)" class="btn btn-success" style="height: 30px;" ><i class="icon-plus icon-white"></i></button>
+                                                                                            <button type="button" onclick="kwSyncMetaPersonalQueue('<?php echo $last_id; ?>','<?php echo $kw; ?>' ,'<?php echo $url; ?>', this)" class="btn btn-success" style="height: 30px;" ><i class="icon-plus icon-white"></i></button>
                                                                                         </div>
 											<div style='display: inline-block; margin-bottom: 5px;'><button type='button' onclick="kwExploreMetaPersonal('<?php echo $last_id; ?>')" class='btn btn-success'>Explore</button></div>
 											<div style='display: inline-block;'><button type='button' onclick="kwDeleteMetaPersonal('<?php echo $last_id; ?>', this)" class='btn btn-danger'>Delete</button></div>
@@ -89,7 +89,7 @@
 												<div style='display: inline-block; margin-bottom: 5px;' class='action_btn_holder'><button type='button' disabled class='btn btn-success disabled'>Inside</button></div>
 												<div style='display: inline-block; margin-bottom: 5px;'>
                                                                                                     <button type='button' onclick="kwSyncMetaPersonal('<?php echo $last_id; ?>', this)" class='btn btn-success'>Sync</button>
-                                                                                                    <button type="button" onclick="kwSyncMetaPersonalQueue('<?php echo $last_id; ?>', this)" class="btn btn-success" style="height: 30px;" ><i class="icon-plus icon-white"></i></button>
+                                                                                                    <button type="button" onclick="kwSyncMetaPersonalQueue('<?php echo $last_id; ?>', '<?php echo $kw; ?>', '<?php echo $url; ?>', this)" class="btn btn-success" style="height: 30px;" ><i class="icon-plus icon-white"></i></button>
                                                                                                 </div>
 												<div style='display: inline-block; margin-bottom: 5px;'><button type='button' onclick="kwExploreMetaPersonal('<?php echo $last_id; ?>', this)" class='btn btn-success'>Explore</button></div>
 												<div style='display: inline-block;'><button type='button' onclick="kwDeleteMetaPersonal('<?php echo $last_id; ?>', this)" class='btn btn-danger'>Delete</button></div>
@@ -127,7 +127,7 @@
 												<div style='display: inline-block; margin-bottom: 5px;' class='action_btn_holder'><button type='button' disabled class='btn btn-success disabled'>Inside</button></div>
 												<div style='display: inline-block; margin-bottom: 5px;'>
                                                                                                     <button type='button' onclick="kwSyncMetaPersonal('<?php echo $last_id; ?>', this)" class='btn btn-success'>Sync</button>
-                                                                                                    <button type="button" onclick="kwSyncMetaPersonalQueue('<?php echo $last_id; ?>', this)" class="btn btn-success" style="height: 30px;" ><i class="icon-plus icon-white"></i></button>
+                                                                                                    <button type="button" onclick="kwSyncMetaPersonalQueue('<?php echo $last_id; ?>', '<?php echo $kw; ?>', '<?php echo $url; ?>', this)" class="btn btn-success" style="height: 30px;" ><i class="icon-plus icon-white"></i></button>
                                                                                                 </div>
 												<div style='display: inline-block; margin-bottom: 5px;'><button type='button' onclick="kwExploreMetaPersonal('<?php echo $last_id; ?>', this)" class='btn btn-success'>Explore</button></div>
 												<div style='display: inline-block;'><button type='button' onclick="kwDeleteMetaPersonal('<?php echo $last_id; ?>', this)" class='btn btn-danger'>Delete</button></div>
@@ -161,7 +161,7 @@
 												<div style='display: inline-block; margin-bottom: 5px;' class='action_btn_holder'><button type='button' disabled class='btn btn-success disabled'>Inside</button></div>
 												<div style='display: inline-block; margin-bottom: 5px;'>
                                                                                                     <button type='button' onclick="kwSyncMetaPersonal('<?php echo $last_id; ?>', this)" class='btn btn-success'>Sync</button>
-                                                                                                    <button type="button" onclick="kwSyncMetaPersonalQueue('<?php echo $last_id; ?>', this)" class="btn btn-success" style="height: 30px;" ><i class="icon-plus icon-white"></i></button>
+                                                                                                    <button type="button" onclick="kwSyncMetaPersonalQueue('<?php echo $last_id; ?>', '<?php echo $kw; ?>', '<?php echo $url; ?>', this)" class="btn btn-success" style="height: 30px;" ><i class="icon-plus icon-white"></i></button>
                                                                                                 </div>
 												<div style='display: inline-block; margin-bottom: 5px;'><button type='button' onclick="kwExploreMetaPersonal('<?php echo $last_id; ?>', this)" class='btn btn-success'>Explore</button></div>
 												<div style='display: inline-block;'><button type='button' onclick="kwDeleteMetaPersonal('<?php echo $last_id; ?>', this)" class='btn btn-danger'>Delete</button></div>
@@ -338,7 +338,7 @@
 		$.post(base_url + 'index.php/system/add_keyword_to_kw_source', send_object, function(data) {
         console.log(data);
         if(data.status) {
-        	btn_holder.html('<div style="display: inline-block; margin-bottom: 5px;" class="action_btn_holder"><button type="button" disabled class="btn btn-success disabled">Inside</button></div>&nbsp;<div style="display: inline-block; margin-bottom: 5px;"><button type="button" onclick="kwSyncMetaPersonal(\''+data.last_id+'\', this)" class="btn btn-success">Sync</button><button type="button" onclick="kwSyncMetaPersonalQueue(\''+data.last_id+'\', this)" class="btn btn-success" style="height: 30px;" ><i class="icon-plus icon-white"></i></button></div>&nbsp;<div style="display: inline-block; margin-bottom: 5px;"><button type="button" onclick="kwExploreMetaPersonal(\''+data.last_id+'\', this)" class="btn btn-success">Explore</button></div>&nbsp;<div style="display: inline-block;"><button type="button" onclick="kwDeleteMetaPersonal(\''+data.last_id+'\', this)" class="btn btn-danger">Delete</button></div>');
+        	btn_holder.html('<div style="display: inline-block; margin-bottom: 5px;" class="action_btn_holder"><button type="button" disabled class="btn btn-success disabled">Inside</button></div>&nbsp;<div style="display: inline-block; margin-bottom: 5px;"><button type="button" onclick="kwSyncMetaPersonal(\''+data.last_id+'\', this)" class="btn btn-success">Sync</button><button type="button" onclick="kwSyncMetaPersonalQueue(\''+data.last_id+'\', \'' + kw + '\', \'' + url + '\', this)" class="btn btn-success" style="height: 30px;" ><i class="icon-plus icon-white"></i></button></div>&nbsp;<div style="display: inline-block; margin-bottom: 5px;"><button type="button" onclick="kwExploreMetaPersonal(\''+data.last_id+'\', this)" class="btn btn-success">Explore</button></div>&nbsp;<div style="display: inline-block;"><button type="button" onclick="kwDeleteMetaPersonal(\''+data.last_id+'\', this)" class="btn btn-danger">Delete</button></div>');
         } else {
         	alert(data.msg);
         }
