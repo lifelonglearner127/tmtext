@@ -2403,10 +2403,14 @@ class System extends MY_Controller {
     if(count($kw_words_data) > 0) {
     	foreach ($kw_words_data as $ka => $va) {
     		if($va['status'] === 'sync') { // ===== just syncing (plus adding to TWCrawler queue)
-    			$this->rankapi_model->sync_meta_personal_keyword($va['kw_id']); // === sync
+    			$this->rankapi_model->sync_meta_personal_keyword($va['kw_id']); // === sync (!!! PROBBALY NO NEED FOR THIS HERE, CAUSE OVERLOAD AND TAKES A LOT TIME TO PROCEED !!!)
 	        $this->kwsync_queue_list_model->insert($va['kw_id'], $va['kw'], $va['url']); // === add to queue
     		} else { // ===== add and sync (plus adding to TWCrawler queue)
-
+    			$add_res = $this->statistics_new_model->add_keyword_kw_source($va['statistics_new_id'], $va['batch_id'], $va['kw'], $va['kw_prc'], $va['kw_count'], $va['url'], $va['imported_data_id']); // === add
+    			if($add_res['status']) {
+    				$this->rankapi_model->sync_meta_personal_keyword($add_res['last_id']); // === sync (!!! PROBBALY NO NEED FOR THIS HERE, CAUSE OVERLOAD AND TAKES A LOT TIME TO PROCEED !!!)
+    				$this->kwsync_queue_list_model->insert($add_res['last_id'], $va['kw'], $va['url']); // === add to queue
+    			}
     		}
     	}
     }
