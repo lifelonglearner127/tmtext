@@ -2,7 +2,7 @@
 
 <div id='meta_kw_pager_holder' class='row-fluid pagination'>
 	<div style='margin-bottom: 10px;'>
-		<button type='button' class='btn btn-success'>Sync all</button>&nbsp;&nbsp;&nbsp;<button type='button' class='btn btn-success'>Sync current page</button>
+		<button type='button' onclick="kwSyncAll()" class='btn btn-success'>Sync all</button>&nbsp;&nbsp;&nbsp;<button type='button' onclick="kwSyncCurrentPage()" class='btn btn-success'>Sync current page</button>
 	</div>
 	<ul id='meta_kw_pager'>
 		<?php for($p = 1; $p < $results_stack['pages']; $p++) { ?>
@@ -203,6 +203,22 @@
 
 <script type='text/javascript'>
 	
+	function kwSyncAll() {
+		$("#explore_meta_personal_modal").modal('show');
+		$.post(base_url + 'index.php/system/kw_sync_all', function(data) {
+			$("#explore_meta_personal_modal").modal('hide');
+		});
+	}
+
+	function kwSyncCurrentPage() {
+		var cpage = $("#meta_kw_pager > li.active > a").attr('data-page');
+		$("#explore_meta_personal_modal").modal('show');
+		
+		$.post(base_url + 'index.php/system/kw_sync_current_page', {'cpage': cpage}, function(data) {
+			$("#explore_meta_personal_modal").modal('hide');
+		});
+	}
+
 	function kwExploreMetaPersonal(id, e) {
 		$.post(base_url + 'index.php/system/explore_meta_personal', {'id': id}, function(data) {
         if(data.status) {

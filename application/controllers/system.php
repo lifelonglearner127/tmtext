@@ -2155,6 +2155,15 @@ class System extends MY_Controller {
       return substr_count($desc, ' '.$phrase.' ');
   }
 
+  public function kw_sync_current_page() {
+  	
+		$this->output->set_content_type('application/json')->set_output(true);
+  }
+
+  public function kw_sync_all() {
+  	$this->output->set_content_type('application/json')->set_output(true);
+  }
+
   public function system_get_mkw_info() {
   		$this->load->model('statistics_new_model');
   		$this->load->model('keywords_model');
