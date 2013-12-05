@@ -408,6 +408,14 @@ class PageProcessor {
 			$result['webcollage']=true;
 		}
 
+		foreach($this->nokogiri->get('.AltPhotos li.altPhotosThumbImg img') as $item) {
+			$result['product_images'] += 1;
+		}
+
+		if ((!isset($result['product_images']) || $result['product_images']==0) && ($this->nokogiri->get('.columnOne img#mainImage'))) {
+			$result['product_images'] = 1;
+		}
+
 		return $result;
 	}
 
@@ -1304,6 +1312,10 @@ class PageProcessor {
 			}
 		}
 
+		foreach($this->nokogiri->get('#altImages li.item') as $item) {
+			$result['product_images'] += 1;
+		}
+
 		return $result;
 	}
 
@@ -1839,7 +1851,6 @@ class PageProcessor {
 		if ( strpos($this->html, 'webcollage_ppp')!==false && strpos($this->html, 'content.webcollage.net')!==false ) {
 			$result['webcollage']=true;
 		}
-
 
 		return $result;
 	}
