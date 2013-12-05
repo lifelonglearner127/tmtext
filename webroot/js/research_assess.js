@@ -1216,7 +1216,13 @@ function highChart(graphBuild){
             chart: {
                 renderTo: 'highChartContainer',
                 zoomType: 'x',
-                spacingRight: 20
+                spacingRight: 20,
+//                events: {
+//                    click: function() {
+//                        $('.highcharts-tooltip').css('visibility','hidden');
+//                        $('div .highcharts-tooltip span').css('visibility','hidden');
+//                    }
+//                }
             },
             xAxis: {
                 categories: [],
@@ -1234,7 +1240,7 @@ function highChart(graphBuild){
                         return { x: point.plotX -300, y: 0 };
                 },
                 formatter: function() {
-                    var result = '<small>'+this.x+'</small><br />';
+                    var result = '<small>'+this.x+'</small> <div class="highcharts-tooltip-close" onclick=\'$(".highcharts-tooltip").css("visibility","hidden"); $("div .highcharts-tooltip span").css("visibility","hidden");\' style="float:right;">X</div><br />';
                     var j;
                     $.each(this.points, function(i, datum) {
                         if(i > 0)
