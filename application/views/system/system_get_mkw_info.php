@@ -2,7 +2,7 @@
 
 <div id='meta_kw_pager_holder' class='row-fluid pagination'>
 	<div style='margin-bottom: 10px;'>
-		<button type='button' onclick="kwSyncAll('<?php echo $bid; ?>')" class='btn btn-success'>Sync all</button>&nbsp;&nbsp;&nbsp;<button type='button' onclick="kwSyncCurrentPage('<?php echo $bid; ?>')" class='btn btn-success'>Sync current page</button>
+		<button type='button' onclick="kwSyncAll('<?php echo $bid; ?>')" class='btn btn-success'>Sync all</button>&nbsp;&nbsp;&nbsp;<button type='button' onclick="kwSyncCurrentPage('<?php echo $bid; ?>')" class='btn btn-success'>Sync current page</button>&nbsp;&nbsp;&nbsp;<button type='button' class='btn btn-success'>Add to queue all</button>&nbsp;&nbsp;&nbsp;<button type='button' class='btn btn-success'>Add to queue current page</button>
 	</div>
 	<ul id='meta_kw_pager'>
 		<?php for($p = 1; $p < $results_stack['pages']; $p++) { ?>
