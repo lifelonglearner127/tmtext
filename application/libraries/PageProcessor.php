@@ -161,6 +161,9 @@ class PageProcessor {
 
 			$result['loaded_in_seconds'] = number_format($this->load_time,5);
 
+			$title = $this->nokogiri->get('title')->toArray();
+			$result['title'] = trim($title[0]['#text'][0]);
+
 			if (!isset($result['review_count'])) {
 				$result['review_count'] = 0;
 			}
