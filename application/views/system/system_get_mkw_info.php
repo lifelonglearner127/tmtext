@@ -2,7 +2,7 @@
 
 <div id='meta_kw_pager_holder' class='row-fluid pagination'>
 	<div style='margin-bottom: 10px;'>
-		<button type='button' onclick="kwSyncAll('<?php echo $bid; ?>')" class='btn btn-success'>Sync all</button>&nbsp;&nbsp;&nbsp;<button type='button' onclick="kwSyncCurrentPage('<?php echo $bid; ?>')" class='btn btn-success'>Sync current page</button>&nbsp;&nbsp;&nbsp;<button type='button' class='btn btn-success'>Add to queue all</button>&nbsp;&nbsp;&nbsp;<button type='button' class='btn btn-success'>Add to queue current page</button>
+		<button type='button' onclick="kwSyncLauncher('<?php echo $bid; ?>', 'all')" class='btn btn-success'>Sync all</button>&nbsp;&nbsp;&nbsp;<button type='button' onclick="kwSyncLauncher('<?php echo $bid; ?>', 'page')" class='btn btn-success'>Sync current page</button>&nbsp;&nbsp;&nbsp;<button type='button' class='btn btn-success'>Add to queue all</button>&nbsp;&nbsp;&nbsp;<button type='button' class='btn btn-success'>Add to queue current page</button>
 	</div>
 	<ul id='meta_kw_pager'>
 		<?php for($p = 1; $p < $results_stack['pages']; $p++) { ?>
@@ -203,21 +203,30 @@
 
 <script type='text/javascript'>
 	
-	function kwSyncAll(bid) {
-		$("#loading_kw_meta_selection").modal('show');
-		$.post(base_url + 'index.php/system/kw_sync_all', function(data) {
-			$("#loading_kw_meta_selection").modal('hide');
-		});
-	}
-
-	function kwSyncCurrentPage(bid) {
+	function kwSyncLauncher(bid, sync_mode) {
 		var cpage = $("#meta_kw_pager > li.active > a").attr('data-page');
 		$("#loading_kw_meta_selection").modal('show');
-		$.post(base_url + 'index.php/system/kw_sync_current_page', {'cpage': cpage, 'bid': bid}, function(data) {
+		$.post(base_url + 'index.php/system/kw_sync_current_page', {'cpage': cpage, 'bid': bid, 'sync_mode': sync_mode}, function(data) {
 			$("#loading_kw_meta_selection").modal('hide');
 			console.log(data, data.length);
-		});
+		});		
 	}
+
+	// function kwSyncAll(bid) {
+	// 	$("#loading_kw_meta_selection").modal('show');
+	// 	$.post(base_url + 'index.php/system/kw_sync_all', function(data) {
+	// 		$("#loading_kw_meta_selection").modal('hide');
+	// 	});
+	// }
+
+	// function kwSyncCurrentPage(bid) {
+	// 	var cpage = $("#meta_kw_pager > li.active > a").attr('data-page');
+	// 	$("#loading_kw_meta_selection").modal('show');
+	// 	$.post(base_url + 'index.php/system/kw_sync_current_page', {'cpage': cpage, 'bid': bid}, function(data) {
+	// 		$("#loading_kw_meta_selection").modal('hide');
+	// 		console.log(data, data.length);
+	// 	});
+	// }
 
 	function kwExploreMetaPersonal(id, e) {
 		$.post(base_url + 'index.php/system/explore_meta_personal', {'id': id}, function(data) {

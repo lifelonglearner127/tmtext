@@ -2162,6 +2162,7 @@ class System extends MY_Controller {
 		$this->load->model('rankapi_model');
     $bid = $this->input->post('bid');
     $cpage = $this->input->post('cpage');
+    $sync_mode = $this->input->post('sync_mode');
     $results_stack = array(
     	'status' => false,
     	'msg' => '',
@@ -2257,10 +2258,14 @@ class System extends MY_Controller {
     			}
     			$results_stack['after_filter_count'] = count($results_stack['data']);
     			// ==== pagination stuffs fitering (start)
-		      $items_per_page = 20;
-		      $skip = ($cpage - 1)*$items_per_page;
-		      $limit = $items_per_page;
-		      $kw_data = array_slice($results_stack['data'], $skip, $limit);
+    			if($sync_mode == 'page') {
+    				$items_per_page = 20;
+			      $skip = ($cpage - 1)*$items_per_page;
+			      $limit = $items_per_page;
+			      $kw_data = array_slice($results_stack['data'], $skip, $limit);
+    			} else {
+    				$kw_data = $results_stack['data'];
+    			}
     			// ==== pagination stuffs fitering (end)
     		} else {
     			$kw_data = array();
@@ -2417,10 +2422,6 @@ class System extends MY_Controller {
     // ===== starting syncing/adding processes (end)
 
 		$this->output->set_content_type('application/json')->set_output(json_encode($kw_words_data));
-  }
-
-  public function kw_sync_all() {
-  	$this->output->set_content_type('application/json')->set_output(true);
   }
 
   public function system_get_mkw_info() {
