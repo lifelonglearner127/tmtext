@@ -18,7 +18,7 @@ class Crawl extends MY_Controller {
 
         $this->ion_auth->add_auth_rules(array(
             'urls_snapshot' => true,
-            'sync_meta_personal' => true,
+            'crawl_sync_meta_personal' => true,
         ));
     }
 
@@ -177,17 +177,17 @@ class Crawl extends MY_Controller {
     }
     
     
-  public function sync_meta_personal() {
+  public function crawl_sync_meta_personal() {
         $this->load->model('rankapi_model');
-        $ids = array();
-        if(!empty($ids)){
-            foreach($ids as $id){
-                $res = $this->rankapi_model->sync_meta_personal_keyword($id);
+        $this->load->model('kwsync_queue_list_model');
+        
+        $rows = $this->kwsync_queue_list_model->getAll();
+        if(!empty($rows)){
+            foreach($rows as $value){
+                $res = $this->rankapi_model->sync_meta_personal_keyword($value['id']);
+                echo "\nKeywrod: " . $value['kw'] . "URL: " . $value['url'] . "\n";
             }
-        }
-        for($i = 0;$i < 10;$i++){
-            sleep(1);
-            echo "dedwedwedwd\n";
+            $this->kwsync_queue_list_model->deleteAll();
         }
   }
 

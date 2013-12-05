@@ -2954,7 +2954,7 @@ class System extends MY_Controller {
         $kw = $_POST['kw'];
         $url = $_POST['url'];
         $this->load->model('kwsync_queue_list_model');
-        $this->kwsync_queue_list_model->insert($id, $kw, $url);
         echo $id . ' - ' . $kw . ' - ' . $url;
+        $this->kwsync_queue_list_model->insert($id, $kw, $url);
     }
 }
