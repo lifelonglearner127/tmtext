@@ -2265,11 +2265,139 @@ class System extends MY_Controller {
     		}
     }
 
+    // ===== prepare keywords data for syns processess (start)
+    $kw_words_data = array();
     if(count($kw_data) > 0) {
-    	
+    	foreach ($kw_data as $kw => $vw) {
+    		if($vw['long_seo_phrases']) {
+    			foreach ($vw['long_seo_phrases'] as $ki => $vi) {
+    				$check = $this->statistics_new_model->check_keyword_kw_source($vw['id'], $vw['batch_id'], trim($vi['ph']));
+    				if($check['status']) {
+    					$mid_kw = array(
+    						'status' => 'sync',
+    						'kw_id' => $check['last_id'],
+    						'imported_data_id' => $vw['imported_data_id'],
+    						'url' => $vw['url'],
+    						'batch_id' => $vw['batch_id'],
+    						'statistics_new_id' => $vw['id'],
+    						'kw' => trim($vi['ph']),
+    						'kw_prc' => $vi['prc'],
+    						'kw_count' => $vi['count']
+  						);
+    				} else {
+    					$mid_kw = array(
+    						'status' => 'add_sync',
+    						'kw_id' => null,
+    						'imported_data_id' => $vw['imported_data_id'],
+    						'url' => $vw['url'],
+    						'batch_id' => $vw['batch_id'],
+    						'statistics_new_id' => $vw['id'],
+    						'kw' => trim($vi['ph']),
+    						'kw_prc' => $vi['prc'],
+    						'kw_count' => $vi['count']
+  						);
+    				}
+    				$kw_words_data[] = $mid_kw;
+    			}
+    		}
+				if($vw['short_seo_phrases']) {
+    			foreach ($vw['short_seo_phrases'] as $ki => $vi) {
+    				$check = $this->statistics_new_model->check_keyword_kw_source($vw['id'], $vw['batch_id'], trim($vi['ph']));
+    				if($check['status']) {
+    					$mid_kw = array(
+    						'status' => 'sync',
+    						'kw_id' => $check['last_id'],
+    						'imported_data_id' => $vw['imported_data_id'],
+    						'url' => $vw['url'],
+    						'batch_id' => $vw['batch_id'],
+    						'statistics_new_id' => $vw['id'],
+    						'kw' => trim($vi['ph']),
+    						'kw_prc' => $vi['prc'],
+    						'kw_count' => $vi['count']
+  						);
+    				} else {
+    					$mid_kw = array(
+    						'status' => 'add_sync',
+    						'kw_id' => null,
+    						'imported_data_id' => $vw['imported_data_id'],
+    						'url' => $vw['url'],
+    						'batch_id' => $vw['batch_id'],
+    						'statistics_new_id' => $vw['id'],
+    						'kw' => trim($vi['ph']),
+    						'kw_prc' => $vi['prc'],
+    						'kw_count' => $vi['count']
+  						);
+    				}
+    				$kw_words_data[] = $mid_kw;
+    			}
+    		}
+    		if($vw['meta']['short_meta']) {
+    			foreach ($vw['meta']['short_meta'] as $ki => $vi) {
+    				$check = $this->statistics_new_model->check_keyword_kw_source($vw['id'], $vw['batch_id'], trim($vi['ph']));
+    				if($check['status']) {
+    					$mid_kw = array(
+    						'status' => 'sync',
+    						'kw_id' => $check['last_id'],
+    						'imported_data_id' => $vw['imported_data_id'],
+    						'url' => $vw['url'],
+    						'batch_id' => $vw['batch_id'],
+    						'statistics_new_id' => $vw['id'],
+    						'kw' => trim($vi['ph']),
+    						'kw_prc' => $vi['prc'],
+    						'kw_count' => $vi['count']
+  						);
+    				} else {
+    					$mid_kw = array(
+    						'status' => 'add_sync',
+    						'kw_id' => null,
+    						'imported_data_id' => $vw['imported_data_id'],
+    						'url' => $vw['url'],
+    						'batch_id' => $vw['batch_id'],
+    						'statistics_new_id' => $vw['id'],
+    						'kw' => trim($vi['ph']),
+    						'kw_prc' => $vi['prc'],
+    						'kw_count' => $vi['count']
+  						);
+    				}
+    				$kw_words_data[] = $mid_kw;
+    			}
+    		}
+    		if($vw['meta']['long_meta']) {
+    			foreach ($vw['meta']['long_meta'] as $ki => $vi) {
+    				$check = $this->statistics_new_model->check_keyword_kw_source($vw['id'], $vw['batch_id'], trim($vi['ph']));
+    				if($check['status']) {
+    					$mid_kw = array(
+    						'status' => 'sync',
+    						'kw_id' => $check['last_id'],
+    						'imported_data_id' => $vw['imported_data_id'],
+    						'url' => $vw['url'],
+    						'batch_id' => $vw['batch_id'],
+    						'statistics_new_id' => $vw['id'],
+    						'kw' => trim($vi['ph']),
+    						'kw_prc' => $vi['prc'],
+    						'kw_count' => $vi['count']
+  						);
+    				} else {
+    					$mid_kw = array(
+    						'status' => 'add_sync',
+    						'kw_id' => null,
+    						'imported_data_id' => $vw['imported_data_id'],
+    						'url' => $vw['url'],
+    						'batch_id' => $vw['batch_id'],
+    						'statistics_new_id' => $vw['id'],
+    						'kw' => trim($vi['ph']),
+    						'kw_prc' => $vi['prc'],
+    						'kw_count' => $vi['count']
+  						);
+    				}
+    				$kw_words_data[] = $mid_kw;
+    			}
+    		}    		
+    	}
     }
+    // ===== prepare keywords data for syns processess (end)
 
-		$this->output->set_content_type('application/json')->set_output(json_encode($kw_data));
+		$this->output->set_content_type('application/json')->set_output(json_encode($kw_words_data));
   }
 
   public function kw_sync_all() {
