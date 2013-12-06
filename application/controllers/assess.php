@@ -925,11 +925,11 @@ class Assess extends MY_Controller {
         $selected_columns = $_GET['checked_columns'];
         $selected_columns = explode(',', trim($selected_columns));
         $batch_name = $_GET['batch_name'];
-        $success_filter = $this->input->get('success_filter');	
+       
         $summaryFilterData = $this->input->get('summaryFilterData');			
         $summaryFilterData = $summaryFilterData ? explode(',', $summaryFilterData) : array();
 			
-        
+         
         if (($key = array_search('snap', $selected_columns)) !== false) {
             unset($selected_columns[$key]);
         }
@@ -941,7 +941,7 @@ class Assess extends MY_Controller {
                 unset($line[$key]);
             }
         }
-
+  
         if (count($line) == 0) {
             $this->load->helper('csv');
             array_to_csv(array(), date("Y-m-d H:i") . '.csv');
@@ -955,7 +955,7 @@ class Assess extends MY_Controller {
 
         $params = new stdClass();
         $params->batch_id = $batch_id;
-        $results = $this->get_data_for_assess($params);  
+        $results = $this->get_data_for_assess($params); 
         $cmp = array();
         if ($cmp_selected != '' && $cmp_selected != 0 && $cmp_selected != 'all') {
      
@@ -964,6 +964,8 @@ class Assess extends MY_Controller {
                 $customer_name = $this->batches_model->getCustomerUrlByBatch($cmp_selected);
 
                 foreach ($results as $val) {
+                    $val->Long_Description = $val->long_description;
+                    $val->Short_Description = $val->short_description;
                     $similar_items_data = array();
                     if (substr_count(strtolower($val->similar_products_competitors), strtolower($customer_name)) > 0) {
                         $similar_items = unserialize($val->similar_products_competitors);
@@ -1187,7 +1189,8 @@ class Assess extends MY_Controller {
 //            }
                         
             foreach ($results as $key => $row) {
-
+                $row->Short_Description = $row->short_description; 
+                $row->Long_Description = $row->long_description;
                 //item_id
                 if(in_array('item_id', $selected_columns)){
                     $res_array[$key]['item_id'] = $pars_atr['parsed_attributes']['item_id']?$pars_atr['parsed_attributes']['item_id']:' ';
@@ -1788,7 +1791,7 @@ class Assess extends MY_Controller {
 
             //deleting empty Short_Description, Long_Description, short_descripition_wc, long_description_wc colomns
             
-            //var_dump($max_similar_item_count); exit();
+            //filterBySummaryCriteria
             if (in_array('Short_Description', $selected_columns)){
                 $short_description_count = 0;
                 if(isset($max_similar_item_count)){
@@ -1919,12 +1922,234 @@ class Assess extends MY_Controller {
             
         array_unshift($res_array, $line);
         $arr = [];
-//        echo "<pre>";var_dump($success_filter);var_dump($summaryFilterData);exit();
-        foreach($res_array as $key=>$value){
-            if ($this->checkSuccessFilterEntries($success_filter, $summaryFilterData)){
-                $arr[] = $value;
+
+        foreach($res_array as $key=>$row){
+            if($key == 0){
+                $arr[] = $row;
+                continue;
+            }else{
+            $success_filter_entries =array();
+           //Dublicate Content      
+//                             echo "<pre>";var_dump($row);exit();           
+                if ($row['Short_Description']) {
+                    $short_desc_1 = $row['Short_Description'];
+                }else{
+                    $short_desc_1 = '';
+                }
+                if ($row['Long_Description']) {
+                    $long_desc_1 = $row['Long_Description'];
+                }else{
+                    $long_desc_1 = '';
+                }
+                $desc_1 = $short_desc_1.' '.$long_desc_1 ;
+               
+                if ($row['Short Description (1)']) {
+                    $short_desc_2 = $row['Short Description (1)'];
+                }else{
+                    $short_desc_2 = '';
+                }
+                if ($row['Long_Description (1)']) {
+                    $long_desc_2 = $row['Long_Description (1)'];
+                }else{
+                    $long_desc_2 = '';
+                }
+                $desc_2 = $short_desc_2.' '.$long_desc_2 ;
+                
+                if (strcasecmp($desc_1, $desc_2) <= 0)
+					similar_text($desc_1, $desc_2, $percent);
+				else
+					similar_text($desc_2, $desc_1, $percent);
+					
+                $percent = number_format($percent, 2);
+				
+				if ($percent >= 25)
+				{
+					
+					$this->filterBySummaryCriteria('skus_25_duplicate_content', $summaryFilterData, $success_filter_entries);
+                                }
+				
+				if ($percent >= 50)
+				{
+					
+					$this->filterBySummaryCriteria('skus_50_duplicate_content', $summaryFilterData, $success_filter_entries);
+				}
+				
+				if ($percent >= 75)
+				{
+					
+					$this->filterBySummaryCriteria('skus_75_duplicate_content', $summaryFilterData, $success_filter_entries);
+				}
+            
+            
+            
+             
+//            if (isset($parsed_attributes_unserialize['pdf_count']) && $parsed_attributes_unserialize['pdf_count'])
+//					{				
+//						
+//						$this->filterBySummaryCriteria('skus_pdfs_competitor', $summaryFilterData, $success_filter_entries);	
+//					}
+//            
+//            
+//            if (isset($pars_atr['parsed_attributes']['pdf_count']) && $pars_atr['parsed_attributes']['pdf_count'])
+//			{				
+//				$skus_pdfs++;
+//				$this->filterBySummaryCriteria('skus_pdfs', $summaryFilterData, $success_filter_entries);	
+//			}
+            
+            
+                                if ($row['column_features'] < $row['column_features(1)'])
+				{
+					
+					$this->filterBySummaryCriteria('skus_fewer_features_than_competitor', $summaryFilterData, $success_filter_entries);						
+				}
+				
+				if ($row['column_reviews'] < $row['column_reviews(1)'])
+				{
+				
+					$this->filterBySummaryCriteria('skus_fewer_reviews_than_competitor', $summaryFilterData, $success_filter_entries);	
+				}
+				
+				if ($row['column_features'])
+				{					
+				
+					$this->filterBySummaryCriteria('skus_features', $summaryFilterData, $success_filter_entries);	
+				}
+					
+				if ($row['column_features(1)'])
+				{					
+				
+					$this->filterBySummaryCriteria('skus_features_competitor', $summaryFilterData, $success_filter_entries);	
+				}
+				
+				if ($row['column_reviews'])
+				{					
+					
+					$this->filterBySummaryCriteria('skus_reviews', $summaryFilterData, $success_filter_entries);	
+				}
+				
+				if ($row['column_reviews(1)'])
+				{					
+					
+					$this->filterBySummaryCriteria('skus_reviews_competitor', $summaryFilterData, $success_filter_entries);	
+				}
+            
+              
+                                
+                        $batch1_filtered_title_percents = substr_count($row['title_seo_phrases'], '%');
+			$batch2_filtered_title_percents = substr_count($row['title_seo_phrases(1)'], '%');
+			
+			if ($batch1_filtered_title_percents < $batch2_filtered_title_percents)
+			{
+			
+				$this->filterBySummaryCriteria('skus_fewer_competitor_optimized_keywords', $summaryFilterData, $success_filter_entries);					
+			}
+			
+			if (!$batch1_filtered_title_percents)
+			{
+			
+				$this->filterBySummaryCriteria('skus_zero_optimized_keywords', $summaryFilterData, $success_filter_entries);
+			}
+			
+			if ($batch1_filtered_title_percents >= 1)
+			{
+				
+				$this->filterBySummaryCriteria('skus_one_optimized_keywords', $summaryFilterData, $success_filter_entries);		
+			}
+				
+			if ($batch1_filtered_title_percents >= 2)
+			{
+			
+				$this->filterBySummaryCriteria('skus_two_optimized_keywords', $summaryFilterData, $success_filter_entries);			
+			}
+				
+			if ($batch1_filtered_title_percents >= 3)
+			{
+				
+				$this->filterBySummaryCriteria('skus_three_optimized_keywords', $summaryFilterData, $success_filter_entries);
+			}
+                                
+            
+                        
+                        if ($row['column_external_content'])
+			{
+			
+				$this->filterBySummaryCriteria('skus_third_party_content', $summaryFilterData, $success_filter_entries);
+			}
+			
+			if ($ro['column_external_content(1)'])
+			{
+			
+				$this->filterBySummaryCriteria('skus_third_party_content_competitor', $summaryFilterData, $success_filter_entries);
+			}	
+            
+            
+                        
+                       
+                        $first_general_description_size = $row['short_description_wc'] + $row['long_description_wc'];
+			$second_general_description_size = $row['Short Desc # Words (1)'] + $row['Long Desc # Words (1)'];
+			
+			if ($first_general_description_size < $second_general_description_size) {
+               
+				$this->filterBySummaryCriteria('skus_shorter_than_competitor_product_content', $summaryFilterData, $success_filter_entries);
             }
-        }
+			
+			if ($first_general_description_size > $second_general_description_size) {
+               
+				$this->filterBySummaryCriteria('skus_longer_than_competitor_product_content', $summaryFilterData, $success_filter_entries);
+            }
+			
+			if ($first_general_description_size == $second_general_description_size) {
+               
+				$this->filterBySummaryCriteria('skus_same_competitor_product_content', $summaryFilterData, $success_filter_entries);
+            }
+			
+			// For Batch 1
+			if ($first_general_description_size < 50) {
+				
+				$this->filterBySummaryCriteria('skus_fewer_50_product_content', $summaryFilterData, $success_filter_entries);
+			}
+			
+			if ($first_general_description_size < 100) {
+				
+				$this->filterBySummaryCriteria('skus_fewer_100_product_content', $summaryFilterData, $success_filter_entries);
+			}
+			
+			if ($first_general_description_size < 150) {
+				
+				$this->filterBySummaryCriteria('skus_fewer_150_product_content', $summaryFilterData, $success_filter_entries);
+			}
+			
+			// For Competitor (Batch 2)
+			if ($second_general_description_size < 50) {
+			
+				$this->filterBySummaryCriteria('skus_fewer_50_product_content_competitor', $summaryFilterData, $success_filter_entries);
+			}
+			
+			if ($second_general_description_size < 100) {
+				$this->filterBySummaryCriteria('skus_fewer_100_product_content_competitor', $summaryFilterData, $success_filter_entries);
+			}
+			
+			if ($second_general_description_size < 150) {
+				$this->filterBySummaryCriteria('skus_fewer_150_product_content_competitor', $summaryFilterData, $success_filter_entries);
+			}
+            
+            
+//                        if ($row->lower_price_exist == true) {									
+//				$this->filterBySummaryCriteria('assess_report_items_priced_higher_than_competitors', $build_assess_params->summaryFilterData, $success_filter_entries);	
+//			}
+			
+
+     
+         
+			if ($this->checkSuccessFilterEntries($success_filter_entries, $summaryFilterData)){
+				$arr[] = $row;
+                         }
+                        
+                        
+            
+            }       
+           
+        };
         $this->load->helper('csv');
 
         array_to_csv($arr, $batch_name."(".date("Y-m-d H:i") . ').csv');
@@ -2382,7 +2607,7 @@ class Assess extends MY_Controller {
         $skus_fewer_50_product_content_competitor = 0;
         $skus_fewer_100_product_content_competitor = 0;
         $skus_fewer_150_product_content_competitor = 0;
-		
+
         if ($build_assess_params->max_similar_item_count > 0) {
 
 
@@ -3915,7 +4140,6 @@ class Assess extends MY_Controller {
 //       print_r($columns);
 //       print_r($output['aaData']);exit;
         $output['columns'] = $columns;
-        $output['success_filter_entries'] = $success_filter_entries;
         $output['ExtraData']['report'] = $report;
 
         return $output;
