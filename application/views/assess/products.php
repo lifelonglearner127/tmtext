@@ -24,7 +24,7 @@
                 </select>
             </span>
 			<span class="batch_set_depend_options">
-				<input type="radio" name="result_batch_items[]" class="result_batch_items" /> - show following results
+				<input type="radio" name="result_batch_items[]" class="result_batch_items" value="me" /> - Show Results
 			</span>
             <label class="research_assess_flagged"><input type="checkbox" id="research_assess_flagged" > Only show flagged items</label>
             <div class="clear"></div>
@@ -33,106 +33,108 @@
             </a>
         </h3>
         <div class="boxes_content">
-            <div class="row-fluid">
-                <div class="span4">
-                    Text:
-                    <input id="assess_filter_text" type="text" id="assess_filter_text" class="mt_10 w_100"/>
-                </div>
-                <div class="span5">
-                    Date Range:
-                    <input id="assess_filter_datefrom" type="text" class="mt_10" value="" style="width: 85px;"/>
-                    &nbsp-&nbsp
-                    <input id="assess_filter_dateto" type="text" class="mt_10" value="" style="width: 85px;"/>
-                    <button id="assess_filter_clear_dates" class="btn">Clear</button>
-                </div>
-                <div class="assess_filter_options">
-                    <label class="checkbox">
-                        <input id="research_assess_select_all" type="checkbox">
-                        Select All
-                    </label>
-                    <label class="checkbox">
-                        <input id="research_assess_price_diff" type="checkbox" unchecked>
-                        Priced Higher
-                    </label>
-                </div>
-            </div>
-            <div class="row-fluid assess_filter_options">
-                <div id="research_assess_filter_short_descriptions_panel" class="span12">
-                    <div class="span3" style="height: 50px;">
-                        <label class="checkbox">
-                            <input id="research_assess_short_check" type="checkbox" checked>
-                            <span id="research_assess_filter_short_descriptions_label">Short Descriptions:</span>
-                        </label>
-                    </div>
-                    <div id="research_assess_short_params">
-                        <div class="span4">
-                            <input id="research_assess_short_less_check" type="checkbox">
-                            &#60;
-                            <input id="research_assess_short_less" type="text" value="20"/>
-                            words
-                            &nbsp &nbsp &nbsp
-                            <input id="research_assess_short_more_check" type="checkbox">
-                            &#62;
-                            <input id="research_assess_short_more" type="text" value="50"/>
-                            words
-                        </div>
-                        <div class="span5" style="height: 50px;">
-                            <label class="checkbox">
-                                <input id="research_assess_short_seo_phrases" type="checkbox" checked>
-                                SEO Phrases
-                            </label>
-                            <label class="checkbox">
-                                <input id="research_assess_title_seo_phrases" type="checkbox" checked>
-                                Title Keywords
-                            </label>
-                            <label class="checkbox">
-                                <input id="research_assess_short_duplicate_content" type="checkbox" checked>
-                                Duplicate content
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row-fluid assess_filter_options">
-                <div id="research_assess_filter_long_descriptions_panel" class="span12">
-                    <div class="span3" style="height: 50px;">
-                        <label class="checkbox">
-                            <input type="checkbox" id="research_assess_long_check" checked>
-                            <span id="research_assess_filter_long_descriptions_label">Long Descriptions:</span>
-                        </label>
-                    </div>
-                    <div id="research_assess_long_params">
-                        <div class="span4">
-                            <input id="research_assess_long_less_check" type="checkbox">
-                            &#60;
-                            <input id="research_assess_long_less" type="text" value="100"/>
-                            words
-                            &nbsp &nbsp &nbsp
-                            <input id="research_assess_long_more_check" type="checkbox">
-                            &#62;
-                            <input id="research_assess_long_more" type="text" value="200"/>
-                            words
-                        </div>
-                        <div class="span5">
-                            <label class="checkbox">
-                                <input id="research_assess_long_seo_phrases" type="checkbox" checked>
-                                SEO Phrases
-                            </label>
-                            <label class="checkbox">
-                                <input id="research_assess_long_duplicate_content" type="checkbox" checked>
-                                Duplicate content
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            </div>
+			<div style="display: none">
+				<div class="row-fluid">
+					<div class="span4">
+						Text:
+						<input id="assess_filter_text" type="text" id="assess_filter_text" class="mt_10 w_100"/>
+					</div>
+					<div class="span5">
+						Date Range:
+						<input id="assess_filter_datefrom" type="text" class="mt_10" value="" style="width: 85px;"/>
+						&nbsp-&nbsp
+						<input id="assess_filter_dateto" type="text" class="mt_10" value="" style="width: 85px;"/>
+						<button id="assess_filter_clear_dates" class="btn">Clear</button>
+					</div>
+					<div class="assess_filter_options">
+						<label class="checkbox">
+							<input id="research_assess_select_all" type="checkbox">
+							Select All
+						</label>
+						<label class="checkbox">
+							<input id="research_assess_price_diff" type="checkbox" unchecked>
+							Priced Higher
+						</label>
+					</div>
+				</div>
+				<div class="row-fluid assess_filter_options">
+					<div id="research_assess_filter_short_descriptions_panel" class="span12">
+						<div class="span3" style="height: 50px;">
+							<label class="checkbox">
+								<input id="research_assess_short_check" type="checkbox" checked>
+								<span id="research_assess_filter_short_descriptions_label">Short Descriptions:</span>
+							</label>
+						</div>
+						<div id="research_assess_short_params">
+							<div class="span4">
+								<input id="research_assess_short_less_check" type="checkbox">
+								&#60;
+								<input id="research_assess_short_less" type="text" value="20"/>
+								words
+								&nbsp &nbsp &nbsp
+								<input id="research_assess_short_more_check" type="checkbox">
+								&#62;
+								<input id="research_assess_short_more" type="text" value="50"/>
+								words
+							</div>
+							<div class="span5" style="height: 50px;">
+								<label class="checkbox">
+									<input id="research_assess_short_seo_phrases" type="checkbox" checked>
+									SEO Phrases
+								</label>
+								<label class="checkbox">
+									<input id="research_assess_title_seo_phrases" type="checkbox" checked>
+									Title Keywords
+								</label>
+								<label class="checkbox">
+									<input id="research_assess_short_duplicate_content" type="checkbox" checked>
+									Duplicate content
+								</label>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="row-fluid assess_filter_options">
+					<div id="research_assess_filter_long_descriptions_panel" class="span12">
+						<div class="span3" style="height: 50px;">
+							<label class="checkbox">
+								<input type="checkbox" id="research_assess_long_check" checked>
+								<span id="research_assess_filter_long_descriptions_label">Long Descriptions:</span>
+							</label>
+						</div>
+						<div id="research_assess_long_params">
+							<div class="span4">
+								<input id="research_assess_long_less_check" type="checkbox">
+								&#60;
+								<input id="research_assess_long_less" type="text" value="100"/>
+								words
+								&nbsp &nbsp &nbsp
+								<input id="research_assess_long_more_check" type="checkbox">
+								&#62;
+								<input id="research_assess_long_more" type="text" value="200"/>
+								words
+							</div>
+							<div class="span5">
+								<label class="checkbox">
+									<input id="research_assess_long_seo_phrases" type="checkbox" checked>
+									SEO Phrases
+								</label>
+								<label class="checkbox">
+									<input id="research_assess_long_duplicate_content" type="checkbox" checked>
+									Duplicate content
+								</label>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
            
                 <div style="float: left;">
                     Compare with:
                     <select id="research_assess_compare_batches_customer"></select>
                     <select id="research_assess_compare_batches_batch"></select>
 					<div>
-						<input type="checkbox" id="batch_set_toggle" name="batch_set_toggle" /> second batch set?
+						<input type="checkbox" id="batch_set_toggle" name="batch_set_toggle" /> Compare with second set of batches
 					</div>
                 </div>
                 <div style="float: left;" class="ml_5">
@@ -170,7 +172,7 @@
                 </select>
             </span>   
 			<span class="batch_set_depend_options">
-				<input type="radio" name="result_batch_items[]" class="result_batch_items" /> - show following results
+				<input type="radio" name="result_batch_items[]" class="result_batch_items" value="competitor" /> - Show Results
 			</span>
             <a href="#" onclick="return false;" class="hideShow float_r">
                 <img src="<?php echo base_url();?>img/arrow.png" />

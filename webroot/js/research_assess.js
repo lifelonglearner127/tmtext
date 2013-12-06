@@ -90,6 +90,17 @@ $(function() {
 		'skus_pdfs_competitor',
 	];
 	
+	var batch_sets = {
+		me : {
+			batch_batch : 'research_assess_batches',
+			batch_compare : '#research_assess_compare_batches_batch'
+		},
+		competitor : {
+			batch_batch : 'research_assess_batches_competitor',
+			batch_compare : '#research_assess_compare_batches_batch_competitor'
+		}
+	};
+	
     var tableCase = {
         details: [
             "snap",
@@ -181,7 +192,7 @@ $(function() {
     }
 
     function createTableByServerSide() {
-
+		var batch_set = $('.result_batch_items:checked').val() || 'me';		
         $('#tblAssess_wrapper').remove();
         var th = '';
         for(var i =0;i<Object.keys(columns);i++){
@@ -214,7 +225,7 @@ $(function() {
                     setTimeout(function() {
                         tblAssess.fnProcessingIndicator(false);
                     }, 100);
-                    if ($('select[name="research_assess_batches"]').find('option:selected').val() == "0") {
+                    if ($('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val() == "0") {
                         $('.assess_report_total_items').html("");
                         $('.assess_report_items_priced_higher_than_competitors').html("");
                         $('.assess_report_items_have_more_than_20_percent_duplicate_content').html("");
@@ -225,7 +236,7 @@ $(function() {
                     if (json.iTotalRecords == 0) {
                         $('.assess_report_compare_panel').hide();
                         $('.assess_report_numeric_difference').hide();
-                        if ($('select[name="research_assess_batches"]').find('option:selected').val() != "") {
+                        if ($('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val() != "") {
                             $('#summary_message').html(" - Processing data. Check back soon.");
                             //                                $('#research_assess_filter_short_descriptions_panel').show();
                             //                                $('#research_assess_filter_long_descriptions_panel').show();
@@ -263,7 +274,7 @@ $(function() {
                 $.ajax({
                     type: "POST",
                     url: readBoardSnapUrl,
-                    data: {batch_id: $('select[name="research_assess_batches"]').find('option:selected').val()}
+                    data: {batch_id: $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val()}
                 }).done(function(data){
                     if(data.length > 0){
                         var str = '';
@@ -350,7 +361,7 @@ $(function() {
         var oSettings = $("#tblAssess").dataTable().fnSettings();
         var aoDataa = buildTableParams(oSettings.aoData);
         var newObject = jQuery.extend(true, {}, aoDataa);
-        
+        var batch_set = $('.result_batch_items:checked').val() || 'me';		
 
         $.getJSON(readAssessUrl, aoDataa, function(json) {
             tblAllColumns = [];
@@ -362,6 +373,7 @@ $(function() {
        }
           $('#tblAssess_wrapper').remove();
           var th = '';
+		  console.log(json.columns);
             for(var i =0;i<Object.keys(json.columns).length;i++){
                 th += '<th with = "100px"></th>';
             }
@@ -417,7 +429,7 @@ $(function() {
                 setTimeout(function() {
                     tblAssess.fnProcessingIndicator(false);
                 }, 2000);
-                if ($('select[name="research_assess_batches"]').find('option:selected').val() == "0") {
+                if ($('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val() == "0") {
                     $('.assess_report_total_items').html("");
                     $('.assess_report_items_priced_higher_than_competitors').html("");
                     $('.assess_report_items_have_more_than_20_percent_duplicate_content').html("");
@@ -428,7 +440,7 @@ $(function() {
                 if (json.iTotalRecords == 0) {
                     $('.assess_report_compare_panel').hide();
                     $('.assess_report_numeric_difference').hide();
-                    if ($('select[name="research_assess_batches"]').find('option:selected').val() != "") {
+                    if ($('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val() != "") {
                         $('#summary_message').html(" - Processing data. Check back soon.");
                         //                                $('#research_assess_filter_short_descriptions_panel').show();
                         //                                $('#research_assess_filter_long_descriptions_panel').show();
@@ -467,7 +479,7 @@ $(function() {
         $.ajax({
             type: "POST",
             url: readBoardSnapUrl,
-            data: {batch_id: $('select[name="research_assess_batches"]').find('option:selected').val()}
+            data: {batch_id: $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val()}
         }).done(function(data){
             if(data.length > 0){
                 var str = '';
@@ -921,7 +933,8 @@ $(function() {
         "fnServerData": function(sSource, aoData, fnCallback) {
 			
 			//Toggling total items selected count by filter
-			var total_items_selected_by_filter_wrapper = $('.total_items_selected_by_filter_wrapper');						
+			var total_items_selected_by_filter_wrapper = $('.total_items_selected_by_filter_wrapper');
+			var batch_set = $('.result_batch_items:checked').val() || 'me';			
 			total_items_selected_by_filter_wrapper.hide();
 			
 			aoData.push({
@@ -950,7 +963,9 @@ $(function() {
                 setTimeout(function() {
                     tblAssess.fnProcessingIndicator(false);
                 }, 100);
-                if ($('select[name="research_assess_batches"]').find('option:selected').val() == "0") {
+					
+				
+                if ($('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val() == "0") {
                     $('.assess_report_total_items').html("");
                     $('.assess_report_items_priced_higher_than_competitors').html("");
                     $('.assess_report_items_have_more_than_20_percent_duplicate_content').html("");
@@ -961,7 +976,7 @@ $(function() {
                 if (json.iTotalRecords == 0) {
                     $('.assess_report_compare_panel').hide();
                     $('.assess_report_numeric_difference').hide();
-                    if ($('select[name="research_assess_batches"]').find('option:selected').val() != "") {
+                    if ($('select[name="' + batch_sets[batch_set]['batch_batch']  + '"]').find('option:selected').val() != "") {
                         $('#summary_message').html(" - Processing data. Check back soon.");
                         //                                $('#research_assess_filter_short_descriptions_panel').show();
                         //                                $('#research_assess_filter_long_descriptions_panel').show();
@@ -979,7 +994,7 @@ $(function() {
             $.ajax({
                 type: "POST",
                 url: readBoardSnapUrl,
-                data: {batch_id: $('select[name="research_assess_batches"]').find('option:selected').val()}
+                data: {batch_id: $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val()}
             }).done(function(data){
                 if(data.length > 0){
                     console.log(data);
@@ -1032,10 +1047,11 @@ $(function() {
           "aoColumns":columns
     });
 function highChart(graphBuild){
-    var batch1Value = $('select[name="research_assess_batches"]').find('option:selected').val();
-    var batch2Value = $('#research_assess_compare_batches_batch').find('option:selected').val();
-    var batch1Name = $('select[name="research_assess_batches"]').find('option:selected').text();
-    var batch2Name = $('#research_assess_compare_batches_batch').find('option:selected').text();
+	var batch_set = $('.result_batch_items:checked').val() || 'me';	
+    var batch1Value = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val();
+    var batch2Value = $(batch_sets[batch_set]['batch_compare']).find('option:selected').val();
+    var batch1Name = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').text();
+    var batch2Name = $(batch_sets[batch_set]['batch_compare']).find('option:selected').text();
     if(batch1Value == false || batch1Value == 0 || typeof batch1Value == 'undefined'){
         batch1Value = -1;
     }
@@ -1662,7 +1678,8 @@ var generate_url_check = GetURLParameter('generate_url_check');
     }
 
     function comparison_details_load(url) {
-        var batch_id = $("select[name='research_assess_batches']").find("option:selected").val();
+		var batch_set = $('.result_batch_items:checked').val() || 'me';		
+        var batch_id = $("select[name='" + batch_sets[batch_set]['batch_batch'] + "']").find("option:selected").val();
         var data = {
             batch_id: batch_id
         };
@@ -2202,7 +2219,27 @@ function prevSibilfunc(curentSibil){
             $('#research_assess_update').click();
         });
         var own_customer = $(this).val();
-        fill_lists_batches_compare(own_customer);
+        fill_lists_batches_compare(own_customer, 0);
+        check_word_columns();
+    });
+	
+	$('select[name="research_assess_customers_competitor"]').on("change", function(res) {
+        var research_assess_batches_competitor = $("select[name='research_assess_batches_competitor']");
+        $.post(base_url + 'index.php/assess/filterBatchByCustomerName', {
+            'customer_name': res.target.value
+        }, function(data) {
+            if (data.length > 0) {
+                research_assess_batches_competitor.empty();
+                for (var i = 0; i < data.length; i++) {
+                    research_assess_batches_competitor.append('<option value="' + data[i]['id'] + '">' + data[i]['title'] + '</option>');
+                }
+            } else if (data.length == 0 && res.target.value != "select customer") {
+                research_assess_batches_competitor.empty();
+            }
+            $('#research_assess_update').click();
+        });
+        var own_customer = $(this).val();
+        fill_lists_batches_compare(own_customer, 1);
         check_word_columns();
     });
 
@@ -2210,9 +2247,20 @@ function prevSibilfunc(curentSibil){
         $('#research_assess_update').click();
     });
 
-    function fill_lists_batches_compare(own_customer) {
-        var research_assess_compare_batches_customer = $('#research_assess_compare_batches_customer');
-        var research_assess_compare_batches_batch = $('#research_assess_compare_batches_batch');
+    function fill_lists_batches_compare(own_customer, set_number) {
+		var set_number = set_number || 0;
+		var sets = [{
+			batch_customer : '#research_assess_compare_batches_customer',
+			batch_batch : '#research_assess_compare_batches_batch',
+			batch_assess_batch : 'research_assess_batches'
+		}, {
+			batch_customer : '#research_assess_compare_batches_customer_competitor',
+			batch_batch : '#research_assess_compare_batches_batch_competitor',
+			batch_assess_batch : 'research_assess_batches_competitor'
+		}];
+		
+        var research_assess_compare_batches_customer = $(sets[set_number]['batch_customer']);
+        var research_assess_compare_batches_batch = $(sets[set_number]['batch_batch']);
         research_assess_compare_batches_customer.empty();
         research_assess_compare_batches_batch.empty();
         if (own_customer == 'Select customer') {
@@ -2258,7 +2306,7 @@ function prevSibilfunc(curentSibil){
                             }
 
                         });
-                        var own_batch_id = $("select[name='research_assess_batches']").find("option:selected").val();
+                        var own_batch_id = $("select[name='" + sets[set_number]['batch_assess_batch'] + "']").find("option:selected").val();
                         research_assess_compare_batches_batch.find('option[value="' + own_batch_id + '"]').remove();
                     }
                 }
@@ -2378,7 +2426,73 @@ function prevSibilfunc(curentSibil){
             if (selectedBatch.length == 0)
                 research_assess_customers.val('select customer').prop('selected', true);
             var own_customer = research_assess_customers.val();
-            fill_lists_batches_compare(own_customer);
+            fill_lists_batches_compare(own_customer, 0);
+            var batch_id_result = GetURLParameter('batch_id_result');
+            if(!batch_id_result)
+            {              
+                $('#research_assess_update').click();         
+            }
+        });
+        if (typeof data != 'undefined') {
+            if (data.length > 0) {
+                var str = '';
+                for (var i = 0; i < data.length; i++) {
+                    if (data[i][2] != null && data[i][2] != '' && data[i][0] != '') {
+                        str += '<div class="board_item"><span>' + data[i][2] + '</span><br />' + data[i][0] + '</div>';
+                    }
+                }
+                if (str == '') {
+                    str = '<p>No images available for this batch</p>';
+                }
+                $('#assess_view').html(str);
+                $('#assess_view .board_item img').on('click', function() {
+                    showSnap('<img src="' + $(this).attr('src') + '">');
+                });
+            }
+        }
+    });
+	
+	$('select[name="research_assess_batches_competitor"]').on("change", function() {
+        var selectedBatch = $(this).find("option:selected").text();
+        var selectedBatchId = $(this).find("option:selected").val();
+        $('.assess_report_download_panel').hide();
+        
+        $.ajax({
+            type: "POST",
+            url: rememberBatchValue,
+            data: {batch_id: selectedBatchId},           
+        });        
+        
+        if (selectedBatchId == '') {
+            var data = {
+                ExtraData: {
+                    report: {
+                        summary: {
+                            total_items: '',
+                            items_priced_higher_than_competitors: '',
+                            items_have_more_than_20_percent_duplicate_content: '',
+                            items_unoptimized_product_content: '',
+                            items_short_products_content: ''
+                        }
+                    }
+                }
+            }
+			console.log('research_assess_batches_competitor on change event');
+            buildReport(data);
+        }
+        $.post(base_url + 'index.php/assess/filterCustomerByBatch', {
+            'batch': selectedBatch
+        }, function(data) {
+            var research_assess_customers_competitor = $('select[name="research_assess_customers_competitor"]');
+            if (data != '') {
+                research_assess_customers_competitor.val(data.toLowerCase()).prop('selected', true);
+            } else {
+                research_assess_customers_competitor.val('select customer').prop('selected', true);
+            }
+            if (selectedBatch.length == 0)
+                research_assess_customers_competitor.val('select customer').prop('selected', true);
+            var own_customer = research_assess_customers_competitor.val();
+            fill_lists_batches_compare(own_customer, 1);
             var batch_id_result = GetURLParameter('batch_id_result');
             if(!batch_id_result)
             {              
@@ -2451,14 +2565,14 @@ function prevSibilfunc(curentSibil){
     $('#research_assess_update').on('click', function() {
 
 
-        if ($("#research_assess_compare_batches_batch").val() == 'all') {
-            
+        if ($("#research_assess_compare_batches_batch").val() == 'all' || $("#research_assess_compare_batches_batch_competitor").val() == 'all') {
+            console.log(1);
             createTable();
             serevr_side = false;
             return;
         } else {
             if (!serevr_side) {
-                
+				console.log(21);
                 //$("#tblAssess").dataTable().fnClearTable();
                 //$('#tblAssess_wrapper').remove();
                 createTableByServerSide();
@@ -2466,6 +2580,7 @@ function prevSibilfunc(curentSibil){
                 serevr_side = true;
 
             } else {
+				console.log(22);
                 serevr_side = true;
                 readAssessData();
 
@@ -3305,9 +3420,10 @@ function prevSibilfunc(curentSibil){
     });
 
     function assess_report_download(type_doc) {
-        var batch_name = $("select[name='research_assess_batches']").find("option:selected").text();
+		var batch_set = $('.result_batch_items:checked').val() || 'me';	
+        var batch_name = $("select[name='" + batch_sets[batch_set]['batch_batch'] + "']").find("option:selected").text();
         //var batch_id = $("select[name='research_assess_batches']").find("option:selected").val();
-        var compare_batch_id = $("#research_assess_compare_batches_batch").val();
+        var compare_batch_id = $(batch_sets[batch_set]['batch_compare']).val();
         var price_diff = false;
         if ($('#research_assess_price_diff').is(':checked')) {
             price_diff = true;
@@ -3815,11 +3931,12 @@ function prevSibilfunc(curentSibil){
         return existingParams;
     }
     function collectionParams1() {
-
+		var batch_set = $('.result_batch_items:checked').val() || 'me';	
+		
         var assessRequestParams = {};
 
         assessRequestParams.search_text = $('#assess_filter_text').val();
-        assessRequestParams.batch_id = $('select[name="research_assess_batches"]').find('option:selected').val();
+        assessRequestParams.batch_id = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val();
 
         var assess_filter_datefrom = $('#assess_filter_datefrom').val();
         var assess_filter_dateto = $('#assess_filter_dateto').val();
@@ -3828,8 +3945,8 @@ function prevSibilfunc(curentSibil){
                     assessRequestParams.date_to = assess_filter_dateto
         }
 
-        if ($("select[name='research_assess_batches'").val() != 0 && $("#research_assess_compare_batches_batch").val() != 0 && $("#research_assess_compare_batches_batch").val() != null) {
-            assessRequestParams.batch2 = $('#research_assess_compare_batches_batch').find('option:selected').val();
+        if ($("select[name='" + batch_sets[batch_set]['batch_batch'] + "'").val() != 0 && $(batch_sets[batch_set]['batch_compare']).val() != 0 && $(batch_sets[batch_set]['batch_compare']).val() != null) {
+            assessRequestParams.batch2 = $(batch_sets[batch_set]['batch_compare']).find('option:selected').val();
 
         }
 
@@ -3869,7 +3986,7 @@ function prevSibilfunc(curentSibil){
             }
         }
 
-        var research_assess_compare_batches_batch = $('#research_assess_compare_batches_batch').val();
+        var research_assess_compare_batches_batch = $(batch_sets[batch_set]['batch_compare']).val();
         if (research_assess_compare_batches_batch > 0) {
             assessRequestParams.compare_batch_id = research_assess_compare_batches_batch;
         }
@@ -3878,7 +3995,8 @@ function prevSibilfunc(curentSibil){
     }
     
     function collectionParams() {
-
+		var batch_set = $('.result_batch_items:checked').val() || 'me';		
+		
         var assessRequestParams = {};
        
 var batch_id_result = GetURLParameter('batch_id_result');
@@ -3894,7 +4012,7 @@ var search_text = GetURLParameter('search_text');
         if(batch_id_result){
             assessRequestParams.batch_id = batch_id_result;            
         }else{
-            assessRequestParams.batch_id = $('select[name="research_assess_batches"]').find('option:selected').val();            
+            assessRequestParams.batch_id = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val();            
         }
 
         var assess_filter_datefrom = $('#assess_filter_datefrom').val();
@@ -3906,8 +4024,8 @@ var search_text = GetURLParameter('search_text');
 
         if(cmp_selected){
                     assessRequestParams.batch2 = cmp_selected;   
-        }else if($("select[name='research_assess_batches'").val() != 0 && $("#research_assess_compare_batches_batch").val() != 0 && $("#research_assess_compare_batches_batch").val() != null) {
-            assessRequestParams.batch2 = $('#research_assess_compare_batches_batch').find('option:selected').val();
+        }else if($("select[name='" + batch_sets[batch_set]['batch_batch'] + "'").val() != 0 && $(batch_sets[batch_set]['batch_compare']).val() != 0 && $(batch_sets[batch_set]['batch_compare']).val() != null) {
+            assessRequestParams.batch2 = $(batch_sets[batch_set]['batch_compare']).find('option:selected').val();
 
         }
 
@@ -3950,7 +4068,7 @@ var search_text = GetURLParameter('search_text');
             }
         }
 
-        var research_assess_compare_batches_batch = $('#research_assess_compare_batches_batch').val();
+        var research_assess_compare_batches_batch = $(batch_sets[batch_set]['batch_compare']).val();
        
         if(cmp_selected){
             assessRequestParams.compare_batch_id = cmp_selected;
