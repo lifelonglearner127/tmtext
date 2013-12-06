@@ -245,6 +245,8 @@
             <p>
                 <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_title_seo_phrases" data-col_name="title_seo_phrases" name="column_title_seo_phrases_name" <?php echo($columns['title_seo_phrases'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="column_title_seo_phrases">Title Keywords</label>
+                <input id="tk-denisty" type="radio" name="title_keywords" value="density" checked /><label for="tk-denisty">Density</label>
+                <input id="tk-frequency" type="radio" name="title_keywords" value="Frequency"/><label for="tk-frequency">Frequency</label>
             </p>
             <p>
                 <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="Long_Description" data-col_name="Long_Description" name="Long_Description" <?php echo($columns['Long_Description'] == 'true' ? 'checked="checked"' : ''); ?> />
