@@ -2,11 +2,16 @@ var readAssessUrl = base_url + 'index.php/assess/get_assess_info';
 var readBoardSnapUrl = base_url + 'index.php/assess/get_board_view_snap';
 var readGraphDataUrl = base_url + 'index.php/assess/get_graph_batch_data';
 var readAssessUrlCompare = base_url + 'index.php/assess/compare';
+var rememberBatchValue = base_url + 'index.php/assess/remember_batches';
 var serevr_side = true;
 var serverside_table;
 var tblAllColumns = [];
 var summaryInfoSelectedElements = [];
 var tblAssess;
+
+//$('#report_product_menu li').first()
+
+
 
 $(function() {
     $.fn.serializeObject = function() {
@@ -48,6 +53,7 @@ $(function() {
 	// Use this variable to define "togglers" for each tab
 	var tabsRelatedBlocks = {
 		details_compare : toggleDetailsCompareBlocks,
+		view : toggleDetailsCompareBlocks,
 		details_compare_result : toggleDetailsCompareBlocks,
 		graph : toggleDetailsCompareBlocks
 	};
@@ -253,7 +259,7 @@ $(function() {
 //                    }
 
                 });
-                highChart('short_description_wc');
+                highChart('total_description_wc');
                 $.ajax({
                     type: "POST",
                     url: readBoardSnapUrl,
@@ -457,7 +463,7 @@ $(function() {
                hideColumns();
             }, 1000);
         });
-        highChart('short_description_wc');
+        highChart('total_description_wc');
         $.ajax({
             type: "POST",
             url: readBoardSnapUrl,
@@ -969,17 +975,19 @@ $(function() {
                 $('#tblAssess').after('<div id="tableScrollWrapper" style="overflow-x:scroll"></div>');
                 $('#tblAssess').appendTo('#tableScrollWrapper');
              }
-            highChart('short_description_wc');
+            highChart('total_description_wc');
             $.ajax({
                 type: "POST",
                 url: readBoardSnapUrl,
                 data: {batch_id: $('select[name="research_assess_batches"]').find('option:selected').val()}
             }).done(function(data){
                 if(data.length > 0){
+                    console.log(data);
                     var str = '';
                     for(var i=0; i<data.length; i++){
                         var obj = jQuery.parseJSON(data[i][2]);
                         if(data[i][1] != null && data[i][1] != '' && data[i][0]!=''){
+                            console.log(data[i][1]);
                             if(data[i][1].length > 93)
                               str += '<div class="board_item"><span class="span_img">'+data[i][1]+'</span><br />'+data[i][0]+
                                   '<div class="prod_description"><b>URL:</b><br/>'+obj.url+'<br /><br /><b>Product name:</b><br/>'+obj.product_name+
@@ -1252,7 +1260,7 @@ function highChart(graphBuild){
                 useHTML: true,
                 positioner: function (boxWidth, boxHeight, point) {
                     if(point.plotX < bigdatalength*2.3)
-                        return { x: point.plotX +50, y: 0 };
+                        return { x: point.plotX +100, y: 0 };
                     else
                         return { x: point.plotX -300, y: 0 };
                 },
@@ -1320,6 +1328,7 @@ $('#graphDropDown').live('change',function(){
 });
 var scrollYesOrNot = true;
     $(document).scroll(function() {
+        if(!$('#assess_view').children('p')) {
         var docHeight = parseInt($(document).height());
         var windHeight = parseInt($(window).height());
         var scrollTop = parseInt($(document).scrollTop());
@@ -1353,7 +1362,7 @@ var scrollYesOrNot = true;
                         if(str == ''){
                             str = '<p>No images available for this batch</p>';
                         }
-                        $('#assess_view').append(str);
+                            $('#assess_view').html(str);
                         $('#assess_view .board_item img').on('click', function(){
                             var info = $(this).parent().find('div.prod_description').html();
                             showSnap('<img src="'+$(this).attr('src')+'" style="float:left; max-width: 600px; margin-right: 10px">'+info);
@@ -1368,6 +1377,7 @@ var scrollYesOrNot = true;
 
             },500);
             
+        }
         }
     });
 
@@ -2276,6 +2286,15 @@ function prevSibilfunc(curentSibil){
     });
 
     $('#research_assess_compare_batches_batch').change(function() {
+        
+        $.ajax({
+            type: "POST",
+            url: rememberBatchValue,
+            data: {compare_batch_id: $('select[id="research_assess_compare_batches_batch"]').find('option:selected').val()}
+           
+        });
+        
+        
         var selectedBatch = $(this).find("option:selected").text();
         $.post(base_url + 'index.php/assess/filterCustomerByBatch', {
             'batch': selectedBatch
@@ -2320,6 +2339,16 @@ function prevSibilfunc(curentSibil){
         var selectedBatch = $(this).find("option:selected").text();
         var selectedBatchId = $(this).find("option:selected").val();
         $('.assess_report_download_panel').hide();
+//        alert('sdhfbh');
+        
+        $.ajax({
+            type: "POST",
+            url: rememberBatchValue,
+            data: {batch_id: $('select[name="research_assess_batches"]').find('option:selected').val()},
+           
+        });
+        
+        
         if (selectedBatchId == '') {
             var data = {
                 ExtraData: {
@@ -3666,6 +3695,7 @@ function prevSibilfunc(curentSibil){
             var batch_id = $('select[name="research_assess_batches"]').find('option:selected').val();
             //$('.assess_report_download_pdf').attr('href', base_url + 'index.php/research/assess_download_pdf?batch_name=' + batch_name);
         } else if (table_case == 'view') {
+            toggleRelatedBlocks('view', true);
             $('#graphDropDown').remove();
             $('#tblAssess_info').hide();
             $('#tblAssess_paginate').hide();
@@ -3717,9 +3747,9 @@ function prevSibilfunc(curentSibil){
             $('#tblAssess_info').hide();
             var dropDownString;
             dropDownString = '<select id="graphDropDown" style="width: 235px" >';
+            dropDownString += '<option value="total_description_wc" >Total Description Word Counts</option>';
                 dropDownString += '<option value="short_description_wc" >Short Description Word Counts</option>';
                 dropDownString += '<option value="long_description_wc" >Long Description Word Counts</option>';
-                dropDownString += '<option value="total_description_wc" >Total Description Word Counts</option>';
                 dropDownString += '<option value="h1_word_counts" >H1 Character Counts</option>';
                 dropDownString += '<option value="h2_word_counts" >H2 Character Counts</option>';
                 dropDownString += '<option value="revision" >Reviews</option>';
@@ -3962,7 +3992,7 @@ var search_text = GetURLParameter('search_text');
             $(this).attr('disabled', true);
             var batch_id= GetURLParameter('batch_id_result');
             var  batch_name=GetURLParameter('batch_name');
-           var cmp_selected = GetURLParameter('cmp_selected')
+            var cmp_selected = GetURLParameter('cmp_selected');
          
        }  
         var columns_check = $('#research_assess_choiceColumnDialog').find('input[type=checkbox]:checked');

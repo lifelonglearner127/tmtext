@@ -25,7 +25,8 @@ class Assess extends MY_Controller {
 			'batches_get_all' => true,
 			'customers_get_all' => true,
 			'assess_save_columns_state' => true,
-			'export_assess' => true
+			'export_assess' => true,
+                        'remember_batches' => true
         ));
     }
 
@@ -4469,6 +4470,14 @@ class Assess extends MY_Controller {
             return array("Custom_Keywords_Long" =>$Custom_Keywords_Long_Description, "Custom_Keywords_Short" =>$Custom_Keywords_Short_Description);
     }
 
+    public function remember_batches(){
+        if(isset($_POST['batch_id'])){
+           $_SESSION['batch_id'] = $_POST['batch_id'];
+        }
+        if(isset($_POST['compare_batch_id'])){
+           $_SESSION['compare_batch_id'] = $_POST['compare_batch_id'];
+        } 
+    }
 //}
 
 }
