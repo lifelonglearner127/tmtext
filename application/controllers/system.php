@@ -2155,13 +2155,11 @@ class System extends MY_Controller {
       return substr_count($desc, ' '.$phrase.' ');
   }
 
-  public function kw_common_add_to_queu() {
+  private function prepare_kw_proceed_data($bid, $mode, $cpage) {
   	$this->load->model('statistics_new_model');
 		$this->load->model('keywords_model');
 		$this->load->model('kwsync_queue_list_model');
-		$cpage = $this->input->post('cpage');
-    $q_mode = $this->input->post('q_mode');
-    $results_stack = array(
+  	$results_stack = array(
     	'status' => false,
     	'msg' => '',
     	'overall_count' => 0,
@@ -2256,7 +2254,7 @@ class System extends MY_Controller {
     			}
     			$results_stack['after_filter_count'] = count($results_stack['data']);
     			// ==== pagination stuffs fitering (start)
-    			if($q_mode == 'page') {
+    			if($mode == 'page') {
     				$items_per_page = 20;
 			      $skip = ($cpage - 1)*$items_per_page;
 			      $limit = $items_per_page;
@@ -2269,7 +2267,17 @@ class System extends MY_Controller {
     			$kw_data = array();
     		}
     }
+    return $kw_data;
+  }
 
+  public function kw_common_add_to_queu() {
+  	$this->load->model('statistics_new_model');
+		$this->load->model('keywords_model');
+		$this->load->model('kwsync_queue_list_model');
+		$bid = $this->input->post('bid');
+		$cpage = $this->input->post('cpage');
+    $q_mode = $this->input->post('q_mode');
+    $kw_data = $this->prepare_kw_proceed_data($bid, $q_mode, $cpage);
     // ===== prepare keywords data for syns processess (start)
     $kw_words_data = array();
     if(count($kw_data) > 0) {
@@ -2421,114 +2429,7 @@ class System extends MY_Controller {
     $bid = $this->input->post('bid');
     $cpage = $this->input->post('cpage');
     $sync_mode = $this->input->post('sync_mode');
-    $results_stack = array(
-    	'status' => false,
-    	'msg' => '',
-    	'overall_count' => 0,
-    	'after_filter_count' => 0,
-    	'data' => array(),
-    	'data_pager' => array(),
-    	'pages' => 1,
-    	'cpage' => $cpage
-  	);
-    if ($bid == 0) {
-        $results_stack['msg'] = 'Batch id not specified';
-    } else {
-    		$results = $this->statistics_new_model->getStatsDataPure($bid);
-    		if(count($results) > 0) {
-    			$results_stack['status'] = true;
-    			$results_stack['msg'] = 'OK';
-    			$results_stack['overall_count'] = count($results);
-    			foreach ($results as $val) {
-    				if( ($val->url !== null && trim($val->url) !== "") && ($val->product_name !== null && trim($val->product_name) !== "") && (unserialize($val->long_seo_phrases) !== false || unserialize($val->short_seo_phrases) !== false) ) {
-      				$mid = array(
-      					'batch_id' => $val->batch_id,
-      					'competitors_prices' => unserialize($val->competitors_prices),
-      					'created' => $val->created,
-      					'htags' => unserialize($val->htags),
-      					'id' => $val->id,
-      					'imported_data_id' => $val->imported_data_id,
-      					'items_priced_higher_than_competitors' => $val->items_priced_higher_than_competitors,
-      					'long_description' => $val->long_description,
-      					'long_description_wc' => $val->long_description_wc,
-      					'long_seo_phrases' => unserialize($val->long_seo_phrases),
-      					'own_price' => $val->own_price,
-      					'parsed_attributes' => unserialize($val->parsed_attributes),
-      					'price_diff' => unserialize($val->price_diff),
-      					'product_name' => $val->product_name,
-      					'research_data_id' => $val->research_data_id,
-      					'revision' => $val->revision,
-      					'short_description' => $val->short_description,
-      					'short_description_wc' => $val->short_description_wc,
-      					'short_seo_phrases' => unserialize($val->short_seo_phrases),
-      					'similar_products_competitors' => unserialize($val->similar_products_competitors),
-      					'snap' => $val->snap,
-      					'snap_date' => $val->snap_date,
-      					'snap_state' => $val->snap_state,
-      					'url' => $val->url,
-      					'meta' => array('short_meta' => array(), 'long_meta' => array()),
-      					'sync_status' => null
-    					);
-							// ==== prepare meta keywords data (start) $val->parsed_meta
-							$meta_object = unserialize($val->parsed_meta);
-							$meta = array();
-              if ((isset($meta_object['Keywords']) && $meta_object['Keywords'] != '')) {
-                  $meta = explode(',', $meta_object['Keywords']);
-              }
-              if ((isset($meta_object['keywords']) && $meta_object['keywords'] != '')) {
-                  $meta = explode(',', $meta_object['keywords']);
-              }
-              if (count($meta) > 0 && isset($val->short_description) && $val->short_description != '') {
-                  foreach ($meta as $key => $val) {
-                      $volume = '';
-                      $from_keyword_data = $this->keywords_model->get_by_keyword($val['ph']);
-                      if (count($from_keyword_data) > 0) {
-                          $volume = $from_keyword_data['volume'];
-                      }
-                      $words = count(explode(' ', trim($val)));
-                      $count = $this->keywords_appearence_count(strtolower($val->short_description), strtolower($val));
-                      $desc_words_count = count(explode(' ', $val->short_description));
-
-                      $prc = round($count * $words / $desc_words_count * 100, 2);
-                      $val = preg_replace("/'/", '', $val);
-                      $mid['meta']['short_meta'][] = array('ph' => $val, 'count' => $count, 'prc' => $prc, 'volume' => $volume);
-                  }
-              }
-              if (count($meta) > 0 && isset($val->long_description) && $val->long_description != '') {
-                  foreach ($meta as $key => $val) {
-                      $volume = '';
-                      $from_keyword_data = $this->keywords_model->get_by_keyword($val);
-                      if (count($from_keyword_data) > 0) {
-                          $volume = $from_keyword_data['volume'];
-                      }
-                      $words = count(explode(' ', trim($val)));
-                      $count = $this->keywords_appearence_count(strtolower($val->long_description), strtolower($val));
-                      $desc_words_count = count(explode(' ', $val->long_description));
-
-                      $prc = round($count * $words / $desc_words_count * 100, 2);
-                      $val = preg_replace("/'/", '', $val);
-                      $mid['meta']['long_meta'][] = array('ph' => $val, 'count' => $count, 'prc' => $prc, 'volume' => $volume);
-                  }
-              }
-							// ==== prepare meta keywords data (end)
-							$results_stack['data'][] = $mid;
-						}
-    			}
-    			$results_stack['after_filter_count'] = count($results_stack['data']);
-    			// ==== pagination stuffs fitering (start)
-    			if($sync_mode == 'page') {
-    				$items_per_page = 20;
-			      $skip = ($cpage - 1)*$items_per_page;
-			      $limit = $items_per_page;
-			      $kw_data = array_slice($results_stack['data'], $skip, $limit);
-    			} else {
-    				$kw_data = $results_stack['data'];
-    			}
-    			// ==== pagination stuffs fitering (end)
-    		} else {
-    			$kw_data = array();
-    		}
-    }
+    $kw_data = $this->prepare_kw_proceed_data($bid, $sync_mode, $cpage);
 
     // ===== prepare keywords data for syns processess (start)
     $kw_words_data = array();
@@ -2679,7 +2580,7 @@ class System extends MY_Controller {
     }
     // ===== starting syncing/adding processes (end)
 
-		$this->output->set_content_type('application/json')->set_output(json_encode($kw_words_data));
+		$this->output->set_content_type('application/json')->set_output(json_encode($kw_data));
   }
 
   public function system_get_mkw_info() {

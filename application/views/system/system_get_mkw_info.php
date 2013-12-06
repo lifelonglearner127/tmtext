@@ -204,12 +204,14 @@
 <script type='text/javascript'>
 	
 	function kwSyncLauncher(bid, sync_mode) {
-		var cpage = $("#meta_kw_pager > li.active > a").attr('data-page');
-		$("#loading_kw_meta_selection").modal('show');
-		$.post(base_url + 'index.php/system/kw_sync_current_page', {'cpage': cpage, 'bid': bid, 'sync_mode': sync_mode}, function(data) {
-			$("#loading_kw_meta_selection").modal('hide');
-			console.log(data, data.length);
-		});		
+		if(confirm('Are you sure?')) {
+			var cpage = $("#meta_kw_pager > li.active > a").attr('data-page');
+			$("#loading_kw_meta_selection").modal('show');
+			$.post(base_url + 'index.php/system/kw_sync_current_page', {'cpage': cpage, 'bid': bid, 'sync_mode': sync_mode}, function(data) {
+				$("#loading_kw_meta_selection").modal('hide');
+				console.log(data, data.length);
+			});
+		}		
 	}
 
 	function kwCommonAddToQueu(bid, q_mode) {
