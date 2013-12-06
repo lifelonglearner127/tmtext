@@ -3591,7 +3591,8 @@ function prevSibilfunc(curentSibil){
                 });
 
     $('.assess_report_options_dialog_button').on('click', function() {
-        var selected_batch_id = $('select[name="research_assess_batches"] option:selected').val();
+		var batch_set = $('.result_batch_items:checked').val() || 'me';		
+        var selected_batch_id = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"] option:selected').val();
         var data = {
             'batch_id': selected_batch_id
         };
@@ -3667,7 +3668,7 @@ function prevSibilfunc(curentSibil){
     tblAllColumns = tblAssess.fnGetAllSColumnNames();
 
     function hideColumns() {
-    
+		var batch_set = $('.result_batch_items:checked').val() || 'me';	
         var table_case = 'details_compare';
         var checked_columns_results = GetURLParameter('checked_columns_results');
     if(checked_columns_results){
@@ -3816,7 +3817,7 @@ function prevSibilfunc(curentSibil){
             $('#tblAssess_paginate').show();
             $('#assess_graph').hide();
             reportPanel(true);
-            var batch_id = $('select[name="research_assess_batches"]').find('option:selected').val();
+            var batch_id = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val();
             //$('.assess_report_download_pdf').attr('href', base_url + 'index.php/research/assess_download_pdf?batch_name=' + batch_name);
         } else if (table_case == 'view') {
             toggleRelatedBlocks('view', true);
@@ -3828,7 +3829,7 @@ function prevSibilfunc(curentSibil){
             $('#tblAssess').parent().find('div.ui-corner-bl').hide();
             $('#assess_view').show();
             $('.assess_report').hide();
-            var batch_id = $('select[name="research_assess_batches"]').find('option:selected').val();
+            var batch_id = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val();
             $("#board_view").click(function(e) {
                 e.stopPropagation();
                 if ($('.board_view').css('display') == 'none') {
@@ -4105,13 +4106,13 @@ var search_text = GetURLParameter('search_text');
         $(this).modal('hide');
     });
    $('#research_assess_export').live('click',function() {
-     
+		var batch_set = $('.result_batch_items:checked').val() || 'me';
        if(!GetURLParameter('checked_columns_results')){
 
             $(this).attr('disabled', true);
-            var batch_id= $('select[name="research_assess_batches"]').find('option:selected').val();
-            var batch_name= $('select[name="research_assess_batches"]').find('option:selected').text();
-            var cmp_selected = $('#research_assess_compare_batches_batch').val();
+            var batch_id= $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val();
+            var batch_name= $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').text();
+            var cmp_selected = $(batch_sets[batch_set]['batch_compare']).val();
             
        }else{
             
@@ -4146,10 +4147,11 @@ var search_text = GetURLParameter('search_text');
 
   
   $('#generate_url').toggle(function() {
-       var first = $("select[name='research_assess_batches']").find('option:selected').val();
-       var second = $("select[id='research_assess_compare_batches_batch']").find('option:selected').val()
+	   var batch_set = $('.result_batch_items:checked').val() || 'me';
+       var first = $("select[name='" + batch_sets[batch_set]['batch_batch'] + "']").find('option:selected').val();
+       var second = $("select[id='" + batch_sets[batch_set]['batch_compare'] + "']").find('option:selected').val()
 //       var search_text = $('#assess_filter_text').val()
-       var batch_name= $('select[name="research_assess_batches"]').find('option:selected').text();
+       var batch_name= $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').text();
        var generate_url_check= $('#generate_url_check').is(':checked')?1:0;
        var generate_url_Summary= $('#generate_url_Summary').is(':checked')?1:0;
        if(second == undefined){
