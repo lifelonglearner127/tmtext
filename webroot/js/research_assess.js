@@ -847,10 +847,19 @@ $(function() {
 
     ];
 	
-	$('.resizable').resizable({
-		maxWidth : 1022,
-		minHeight: 200
-	});
+	$('.resizable').wrap('<div/>')
+        .css({'overflow':'hidden'})
+          .parent()
+            .css({'display':'inline-block',
+                  'overflow':'hidden',
+                  'height':function(){return $('.resizable',this).height();},                                                                
+                }).resizable({
+					maxWidth : 1022,
+					minHeight: 200
+				}).find('.resizable')
+					.css({overflow:'auto',
+						width:'100%',
+                        height:'100%'});
 	
 	$('.selectable_summary_info').on('mousedown', function(e) {
 		e.metaKey = true;
