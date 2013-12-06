@@ -88,6 +88,40 @@ class Assess extends MY_Controller {
         }
         return $output;
     }
+    private function get_keywords($title, $string){
+        $black_list = array('and','the','in','on','at');
+        $title = trim(preg_replace(array('/\s+/','/\(.*\)/'),array(' ',''), $title));
+        $string = trim(preg_replace('/\s+/', ' ', $string));
+        $title_w = explode(' ', $title);
+        $title_wc = count($title_w);
+        $string_w = explode(' ', $string);
+        $string_wc = count($string_w);
+        $phrases = array();
+        $i = 0;
+        while($title_wc-$i>1){
+            for($j=0;$j<$i+1;++$j){
+                $needl = '';
+                for($k=$j;$k<$title_wc-$i+$j;++$k){
+                    $needl .=$title_w[$k].' ';
+                }
+                $needl = trim($needl);
+                $frc = substr_count($string, $needl);
+                $prc = ($frc*($title_wc-$i))/$string_wc*100;
+                if($frc>0&&$prc>2){//
+                    $phrases[]=array(
+                        'frq'=>$frc,
+                        'prc'=>round($prc,2),
+                        'ph'=>$needl
+                    );
+                }
+            }
+            if(!empty($phrases)){
+                break;
+            }
+            ++$i;
+        }
+        return serialize($phrases);
+    }
 
     public function get_assess_info() {
         //Debugging
@@ -219,12 +253,15 @@ class Assess extends MY_Controller {
                                     $cmpare = $this->statistics_new_model->get_compare_item($item['imported_data_id']);
 
                                     $parsed_attributes_unserialize = unserialize($cmpare->parsed_attributes);
-                                    $short_sp = $cmpare->short_seo_phrases!='None'?$cmpare->short_seo_phrases:false;
-                                    $long_sp = $cmpare->long_seo_phrases!='None'?$cmpare->long_seo_phrases:false;
+                                    //$short_sp = $cmpare->short_seo_phrases!='None'?$cmpare->short_seo_phrases:false;
+                                    //$long_sp = $cmpare->long_seo_phrases!='None'?$cmpare->long_seo_phrases:false;
+                                    $short_sp = $this->get_keywords($cmpare->product_name, $cmpare->Short_Description);
+                                    $long_sp = $this->get_keywords($cmpare->product_name, $cmpare->Long_Description);
                                     if($short_sp){
                                         $short_sp = unserialize($short_sp);
                                         foreach ($short_sp as $pr){
-                                            if($pr['prc']>2){
+                                            //if($pr['prc']>2)
+                                                {
                                                 $title_seo_prases[]=$pr;
                                             }
                                         }
@@ -232,7 +269,8 @@ class Assess extends MY_Controller {
                                     if($long_sp){
                                         $long_sp = unserialize($long_sp);
                                         foreach ($long_sp as $pr){
-                                            if($pr['prc']>2){
+                                            //if($pr['prc']>2)
+                                                {
                                                 $title_seo_prases[]=$pr;
                                             }
                                         }
@@ -247,7 +285,8 @@ class Assess extends MY_Controller {
                                         }
                                         $str_title_long_seo = '<table class="table_keywords_long">';
                                         foreach ($title_seo_prases as $pras) {
-                                            $str_title_long_seo .= '<tr><td>' . $pras['ph'] . '</td><td>' . $pras['prc'] . '%</td></tr>';
+                                            $str_title_long_seo .= '<tr><td>' . $pras['ph'] . '</td><td class = "phr-density">' . $pras['prc'] 
+                                                    . '%</td><td style="display:none;" class = "phr-frequency">'.$pras['frq'].'</td></tr>';
                                         }
                                         $tsp = $str_title_long_seo . '</table>';
                                     }
@@ -2542,7 +2581,7 @@ class Assess extends MY_Controller {
     private function compare_str($str1, $str2){
         $str1 = trim(strtolower($str1));
         $str2 = trim(strtolower($str2));
-        $black_list = array('and','the','on','in','at','is');
+        $black_list = array('and','the','on','in','at','is','for');
         foreach ($black_list as $word){
             $str1 = (substr($str1,0,strlen($word)) === $word)?substr($str1,strlen($word)):$str1;
             $str1 = (substr($str1,(-1)*strlen($word))===$word)?substr($str1,0,strlen($str1)-strlen($word)):$str1;
@@ -3430,16 +3469,22 @@ class Assess extends MY_Controller {
                     $result_row->long_seo_phrases = $str_long_seo . '</table>';
                 }
                 $title_seo_pr=array();
+                $l_s = $this->get_keywords($result_row->product_name, $result_row->long_description);
+                $s_s = $this->get_keywords($result_row->product_name, $result_row->short_description);
                 if($long_seo){
+                    $long_seo = unserialize($l_s);
                     foreach($long_seo as $ls_phr){
-                            if($ls_phr['prc']>2){
+                            //if($ls_phr['prc']>2)
+                                {
                                 $title_seo_pr[]=$ls_phr;
                             }
                     }
                 }
                 if($short_seo){
+                    $short_seo = unserialize($s_s);
                     foreach($short_seo as $ss_phr){
-                            if($ss_phr['prc']>2){
+                            //if($ss_phr['prc']>2)
+                                {
                                 $title_seo_pr[]=$ss_phr;
                             }
                     }
@@ -3454,7 +3499,8 @@ class Assess extends MY_Controller {
                     }
                     $str_title_long_seo = '<table class="table_keywords_long 3186">';
                     foreach ($title_seo_pr as $val) {
-                        $str_title_long_seo .= '<tr><td>' . $val['ph'] . '</td><td>' . $val['prc'] . '%</td></tr>';
+                        $str_title_long_seo .= '<tr><td>' . $val['ph'] . '</td><td class = "phr-density">' . $val['prc'] 
+                                . '%</td><td style="display:none;" class = "phr-frequency">'.$val['frq'].'</td></tr>';
                     }
                     $result_row->title_seo_phrases = $str_title_long_seo . '</table>';
                 }

@@ -1706,6 +1706,14 @@ var generate_url_check = GetURLParameter('generate_url_check');
 	$(document).on('click', '.update_filter_btn', function(e) {
 		$('#research_assess_update').click();
 	});
+        $(document).on('click','#tk-denisty',function(){
+            $('.phr-frequency').hide();
+            $('.phr-density').show();
+        });
+        $(document).on('click','#tk-frequency',function(){
+            $('.phr-density').hide();
+            $('.phr-frequency').show();
+        });
 
     $(document).on('change', '#assessDetailsDialog_chkIncludeInReport', function() {
         var research_data_id = $('#assessDetailsDialog_chkIncludeInReport').attr('research_data_id');
