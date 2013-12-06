@@ -1922,7 +1922,7 @@ class Assess extends MY_Controller {
             
             
         array_unshift($res_array, $line);
-        $arr = [];
+        $arr = array();
 
         foreach($res_array as $key=>$row){
             if($key == 0){
