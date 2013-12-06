@@ -25,7 +25,7 @@
 				</span>
 			</h3>
 			<div style="clear: both;"></div>												
-			<div class="boxes_content" style="padding:0px; height: 200px; overflow-y: scroll">				
+			<div class="boxes_content resizable" style="padding:0px; height: 200px; overflow-y: scroll">				
 				<div class="<?php echo $is_extended_partial ? 'selectable_summary_info' : '' ?>">
 					<?php if ($is_extended_partial): ?>	
 						<div class="total_items_selected_by_filter_wrapper non-selectable mt_10 ml_15" data-filterid="total_items_selected_by_filter" style="display: none">

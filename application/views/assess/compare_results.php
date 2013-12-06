@@ -620,7 +620,7 @@
                 $('.jq-measure-tabs').addClass('comp_res');
                 $('.pull-right').addClass('comp_res');
                 $('.pull-left').addClass('comp_res');
-                $('.research_table_filter').addClass('comp_res');
+                $('.research_table_filter, .research_table_filter_competitor').addClass('comp_res');
                 
                 $('#assess_report').addClass('comp_res_none');
 

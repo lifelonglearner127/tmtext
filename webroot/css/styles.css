@@ -391,6 +391,33 @@ ul.research_table_filter h3 {
     margin: 0;
     padding-left: 5px;
 }
+
+ul.research_table_filter_competitor {
+    margin: 0;
+    font-size: 12px;
+    padding-left: 0px;
+    padding-right: 0px;
+    border: 1px solid #CCCCCC;
+    border-radius: 5px 5px 5px 5px;
+}
+ul.research_table_filter_competitor .boxes {
+     margin: 0px;
+}
+ul.research_table_filter_competitor .hideBox {
+    height: 50px !important;
+    min-height: 50px !important;
+}
+ul.research_table_filter_competitor .hideShow {
+    position:relative;
+    top:15px;
+}
+ul.research_table_filter_competitor h3 {
+    font-size: 14px;
+    background: none repeat scroll 0 0 #CCCCCC;
+    margin: 0;
+    padding-left: 5px;
+}
+
 .assess_tbl_show_case {
     margin-top: 9px;
     float: left;
@@ -679,4 +706,7 @@ span.highlight{
 }
 .forgot_pass{
     float: left!important;
+}
+.batch_set_depend_options {
+	display: none;
 }

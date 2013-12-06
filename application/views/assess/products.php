@@ -23,6 +23,9 @@
                     <?php endforeach;?>
                 </select>
             </span>
+			<span class="batch_set_depend_options">
+				<input type="radio" name="result_batch_items[]" class="result_batch_items" /> - show following results
+			</span>
             <label class="research_assess_flagged"><input type="checkbox" id="research_assess_flagged" > Only show flagged items</label>
             <div class="clear"></div>
             <a href="#" onclick="return false;" class="hideShow float_r">
@@ -128,6 +131,9 @@
                     Compare with:
                     <select id="research_assess_compare_batches_customer"></select>
                     <select id="research_assess_compare_batches_batch"></select>
+					<div>
+						<input type="checkbox" id="batch_set_toggle" name="batch_set_toggle" /> second batch set?
+					</div>
                 </div>
                 <div style="float: left;" class="ml_5">
                     <button id="research_assess_compare_batches_reset" class="btn">Reset</button>
@@ -143,6 +149,41 @@
                 <input type="checkbox" style="margin: 10px;" id="generate_url_check">Gear option
                 <input type="checkbox" style="margin: 10px;" id="generate_url_Summary">Summary Only
             </div>
+        </div>
+    </li>
+</ul>
+
+<ul class="research_table_filter_competitor" style="display: none">
+    <li class="boxes hideBox">
+        <h3>			
+            <span class=''>
+                Batch:
+                <select name="research_assess_customers_competitor" class="mt_10">
+                    <?php foreach($customer_list as $customer):?>
+                        <option value="<?php echo strtolower($customer); ?>"><?php echo $customer; ?></option>
+                    <?php endforeach;?>
+                </select>
+                <select name="research_assess_batches_competitor" class="mt_10 mr_10 ml_20" style="width: 175px;">
+                    <?php foreach($batches_list as $ks => $vs):?>
+                        <option value="<?php echo $ks; ?>"><?php echo $vs; ?></option>
+                    <?php endforeach;?>
+                </select>
+            </span>   
+			<span class="batch_set_depend_options">
+				<input type="radio" name="result_batch_items[]" class="result_batch_items" /> - show following results
+			</span>
+            <a href="#" onclick="return false;" class="hideShow float_r">
+                <img src="<?php echo base_url();?>img/arrow.png" />
+            </a>
+        </h3>
+        <div class="boxes_content">                       
+                     
+			<div style="float: left;">
+				Compare with:
+				<select id="research_assess_compare_batches_customer_competitor"></select>
+				<select id="research_assess_compare_batches_batch_competitor"></select>
+			</div>
+					                   
         </div>
     </li>
 </ul>
