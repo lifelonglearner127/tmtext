@@ -7,6 +7,7 @@ var serverside_table;
 var tblAllColumns = [];
 var summaryInfoSelectedElements = [];
 var tblAssess;
+var success_filter_entries = [];
 $(function() {
     $.fn.serializeObject = function() {
         var o = {};
@@ -197,7 +198,9 @@ $(function() {
                 aoData = buildTableParams(aoData);
 
                 $.getJSON(sSource, aoData, function(json) {
-
+                if(json.success_filter_entries != undefined){
+                  success_filter_entries = json.success_filter_entries
+                }
                     if (json.ExtraData != undefined) {
 						console.log('createTableByServerSide function, dataTable object, fnServerData callback');
                         buildReport(json);
@@ -928,6 +931,10 @@ $(function() {
 			console.log(sSource);
             $.getJSON(sSource, aoData, function(json) {
                 if(json){
+
+                if(json.success_filter_entries != undefined){
+                  success_filter_entries = json.success_filter_entries
+                }
                 if (json.ExtraData != undefined) {
 					console.log('dataTable callback: fnServerData');
                     buildReport(json);
@@ -3952,23 +3959,28 @@ var search_text = GetURLParameter('search_text');
             $(this).attr('disabled', true);
             var batch_id= $('select[name="research_assess_batches"]').find('option:selected').val();
             var batch_name= $('select[name="research_assess_batches"]').find('option:selected').text();
-            var cmp_selected = $('#research_assess_compare_batches_batch').val();
+            
        }else{
             
             $(this).attr('disabled', true);
             var batch_id= GetURLParameter('batch_id_result');
             var  batch_name=GetURLParameter('batch_name');
-            var cmp_selected = GetURLParameter('cmp_selected');
+           
          
        }  
+            var cmp_selected = $('#research_assess_compare_batches_batch').val();
         var columns_check = $('#research_assess_choiceColumnDialog').find('input[type=checkbox]:checked');
             var columns_checked = [];
             $.each(columns_check, function(index, value) {
                 columns_checked.push($(value).data('col_name'));
             });
+            
+           var summaryFilterData = summaryInfoSelectedElements.join(',')
+           var success_filter = success_filter_entries;
+            
         $(this).text('Exporting...');
         var main_path=  $(this).prop('href');
-        $(this).attr('href', $(this).prop('href')+'?batch_id='+batch_id+'&cmp_selected='+cmp_selected+'&checked_columns='+columns_checked+'&batch_name='+batch_name);
+        $(this).attr('href', $(this).prop('href')+'?batch_id='+batch_id+'&cmp_selected='+cmp_selected+'&checked_columns='+columns_checked+'&batch_name='+batch_name+'&summaryFilterData='+summaryFilterData+'&success_filter='+success_filter);
         $.fileDownload($(this).prop('href'))
                 .done(function() {
             $('#research_assess_export').removeAttr('disabled');

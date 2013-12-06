@@ -925,12 +925,15 @@ class Assess extends MY_Controller {
         $selected_columns = $_GET['checked_columns'];
         $selected_columns = explode(',', trim($selected_columns));
         $batch_name = $_GET['batch_name'];
-//        echo  '<pre>';
-//        print_r($selected_columns);exit;
+        $success_filter = $this->input->get('success_filter');	
+        $summaryFilterData = $this->input->get('summaryFilterData');			
+        $summaryFilterData = $summaryFilterData ? explode(',', $summaryFilterData) : array();
+			
+        
         if (($key = array_search('snap', $selected_columns)) !== false) {
             unset($selected_columns[$key]);
         }
-        $line = array('created' => 'Date', 'product_name' => 'Product Name', 'url' => 'Url','Short_Description' =>'Short Description', 'short_description_wc' => 'Short Desc # Words','Long_Description' =>'Long Description', 'long_description_wc' => 'Long Desc # Words', 'short_seo_phrases' => ' Short Desc - Found SEO Keywords', 'long_seo_phrases' => ' Short Desc - Found SEO Keywords', 'price_diff' => 'Price', 'column_features' => 'Features', 'column_reviews' => 'Reviews','average_review'=>'Avg Review');
+        $line = array('created' => 'Date', 'product_name' => 'Product Name', 'url' => 'Url','Short_Description' =>'Short Description', 'short_description_wc' => 'Short Desc # Words','Long_Description' =>'Long Description', 'long_description_wc' => 'Long Desc # Words', 'short_seo_phrases' => ' Short Desc - Found SEO Keywords', 'long_seo_phrases' => ' Short Desc - Found SEO Keywords', 'price_diff' => 'Price', 'column_features' => 'Features', 'column_reviews' => 'Reviews','average_review'=>'Avg Review','title_seo_phrases'=>'Title Keywords');
 
 
         foreach ($line as $key => $val) {
@@ -950,20 +953,13 @@ class Assess extends MY_Controller {
             $qnd = " WHERE `s`.`batch_id` = $batch_id";
         }
 
-        $query = $this->db->query('select `s`.*,
-            (select `value` from imported_data_parsed where `key`="Product Name" and `imported_data_id` = `s`.`imported_data_id` limit 1) as `product_name`,
-            (select `value` from imported_data_parsed where `key`="Description" and `imported_data_id` = `s`.`imported_data_id` limit 1) as `Short_Description`,
-            (select `value` from imported_data_parsed where `key`="Long_Description" and `imported_data_id` = `s`.`imported_data_id` limit 1) as `Long_Description`,
-            (select `value` from imported_data_parsed where `key`="Url" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `url`
-            from `statistics_new` as `s` ' . $qnd);
-        $results = $query->result();
-//        echo '<pre>';
-//        print_r($results) ;exit();
-        
+        $params = new stdClass();
+        $params->batch_id = $batch_id;
+        $results = $this->get_data_for_assess($params);  
+        $cmp = array();
+        if ($cmp_selected != '' && $cmp_selected != 0 && $cmp_selected != 'all') {
+     
             $this->load->model('batches_model');
-
-            if ($cmp_selected != 'all' && $cmp_selected != null && $cmp_selected != 0) {
-
                 $max_similar_item_count = 1;
                 $customer_name = $this->batches_model->getCustomerUrlByBatch($cmp_selected);
 
@@ -973,10 +969,9 @@ class Assess extends MY_Controller {
                         $similar_items = unserialize($val->similar_products_competitors);
                         if (count($similar_items) > 1) {
                             foreach ($similar_items as $key => $item) {
-                                
-                                if (substr_count(strtolower($customer_name), strtolower($item['customer'])) > 0) {
+                                if ( !empty($customer_name) && !empty($item['customer'])  &&  $this->statistics_new_model->if_url_in_batch($item['imported_data_id'],$cmp_selected)) {
                                     $den_for_gap = 0;
-                                     $parsed_attributes_unserialize_val = '';
+                                    $parsed_attributes_unserialize_val = '';
                                     $parsed_meta_unserialize_val = '';
                                     $parsed_meta_unserialize_val_c = '';
                                     $parsed_attributes_column_features_unserialize_val = '';
@@ -988,7 +983,6 @@ class Assess extends MY_Controller {
                                     $cmpare = $this->statistics_new_model->get_compare_item($item['imported_data_id']);
 
                                     $parsed_attributes_unserialize = unserialize($cmpare->parsed_attributes);
-//                                    var_dump($parsed_attributes_unserialize);   exit();
                                    if (isset($parsed_attributes_unserialize['cnetcontent']) || isset($parsed_attributes_unserialize['webcollage']))
                                          $column_external_content = $this->column_external_content($parsed_attributes_unserialize['cnetcontent'],$parsed_attributes_unserialize['webcollage']);
  
@@ -1064,17 +1058,16 @@ class Assess extends MY_Controller {
                                 
                                     $similar_items_data[] = $cmpare;
                                     $val->similar_items = $similar_items_data;  
-                                //$similar_items_data[] = $item['imported_data_id'];
+
+                            $cmp[] = $val;
+                             break;
                                 }
                             }
-                     //$val->similar_items = $similar_items_data;
-                            $cmp[] = $val;
+
                         }
                     }
                 }
                 $results = $cmp;
-//                echo '<pre>';
-//                print_r($results);exit();
             }
 
             if ($cmp_selected == 'all') {
@@ -1276,6 +1269,49 @@ class Assess extends MY_Controller {
                 }
                 if (in_array('average_review', $selected_columns)) {
                     $res_array[$key]['average_review'] = $pars_atr['parsed_attributes']['average_review'] !== false ? $pars_atr['parsed_attributes']['average_review'] : '-';
+                }
+                
+//                
+//                 $short_sp = $cmpare->short_seo_phrases!='None'?$cmpare->short_seo_phrases:false;
+//                                    $long_sp = $cmpare->long_seo_phrases!='None'?$cmpare->long_seo_phrases:false;
+//                                    if($short_sp){
+//                                        $short_sp = unserialize($short_sp);
+//                                        foreach ($short_sp as $pr){
+//                                            if($pr['prc']>2){
+//                                                $title_seo_prases[]=$pr;
+//                                            }
+//                                        }
+//                                    }
+//                                    if($long_sp){
+//                                        $long_sp = unserialize($long_sp);
+//                                        foreach ($long_sp as $pr){
+//                                            if($pr['prc']>2){
+//                                                $title_seo_prases[]=$pr;
+//                                            }
+//                                        }
+//                                    }
+//                                    if (!empty($title_seo_prases)) {
+//                                        foreach($title_seo_prases as $ar_key => $seo_pr){
+//                                            foreach($title_seo_prases as $ar_key1=>$seo_pr1){
+//                                                if($ar_key!=$ar_key1 && $this->compare_str($seo_pr['ph'],$seo_pr1['ph'])){
+//                                                    unset($title_seo_prases[$ar_key1]);
+//                                                }
+//                                            }
+//                                        }
+//                                        $str_title_long_seo = '<table class="table_keywords_long">';
+//                                        foreach ($title_seo_prases as $pras) {
+//                                            $str_title_long_seo .= '<tr><td>' . $pras['ph'] . '</td><td>' . $pras['prc'] . '%</td></tr>';
+//                                        }
+//                                        $tsp = $str_title_long_seo . '</table>';
+//                                    }
+//                
+//                
+                
+                
+                
+                if (in_array('title_seo_phrases', $selected_columns)) {
+                    $res_array[$key]['title_seo_phrases'] = "sfer";
+//                    $res_array[$key]['title_seo_phrases'] = $pars_atr['parsed_attributes']['average_review'] !== false ? $pars_atr['parsed_attributes']['average_review'] : '-';
                 }
                 if (in_array('H1_Tags', $selected_columns) && $pars_atr['HTags']['h1'] && $pars_atr['HTags']['h1'] != '') {
                     $H1 = $pars_atr['HTags']['h1'];
@@ -1525,6 +1561,9 @@ class Assess extends MY_Controller {
                         if (in_array('average_review', $selected_columns)) {
                             $res_array[$key]['average_review(' . $i . ")"] = $sim_items[$i - 1]->average_review  ? $sim_items[$i - 1]->average_review  : ' - ';
                         }
+                        if (in_array('title_seo_phrases', $selected_columns)) {
+                            $res_array[$key]['title_seo_phrases(' . $i . ")"] = $sim_items[$i - 1]->title_seo_phrases  ? $sim_items[$i - 1]->title_seo_phrases  : ' - ';
+                        }
                         
 // HTags for similar
                         $HTags_for_similar = unserialize($sim_items[$i - 1]->HTags);
@@ -1718,6 +1757,10 @@ class Assess extends MY_Controller {
                     $line[] = "Avg Review(" . ($i+1) . ")";
                     
                 }
+                if (in_array('title_seo_phrases', $selected_columns)) {
+                    $line[] = "Title Keywords(" . ($i+1) . ")";
+                    
+                }
                 if (in_array('H1_Tags', $selected_columns)) {
                     if ($H1_tag_count_for_sim > 0) {
                         for ($k = 1; $k <= $H1_tag_count_for_sim; $k++) {
@@ -1875,10 +1918,16 @@ class Assess extends MY_Controller {
             
             
         array_unshift($res_array, $line);
+        $arr = [];
+//        echo "<pre>";var_dump($success_filter);var_dump($summaryFilterData);exit();
+        foreach($res_array as $key=>$value){
+            if ($this->checkSuccessFilterEntries($success_filter, $summaryFilterData)){
+                $arr[] = $value;
+            }
+        }
         $this->load->helper('csv');
-//        echo  '<pre>';
-//        print_r($res_array);exit;
-        array_to_csv($res_array, $batch_name."(".date("Y-m-d H:i") . ').csv');
+
+        array_to_csv($arr, $batch_name."(".date("Y-m-d H:i") . ').csv');
     }
 
     public function products() {
@@ -3448,11 +3497,12 @@ class Assess extends MY_Controller {
 			
 			//this verification is necessary for summary filter
 			// echo "<br />";
+//			 echo "<br />";
+//			 print_r($success_filter_entries);
 			// echo "<br />";
-			// var_dump($success_filter_entries);
 			// echo "<br />";
-			// echo "<br />";
-			if ($this->checkSuccessFilterEntries($success_filter_entries, $build_assess_params->summaryFilterData))						
+
+			if ($this->checkSuccessFilterEntries($success_filter_entries, $build_assess_params->summaryFilterData))
 				$result_table[] = $result_row;
 //            ++$qty;
 //            if($qty>$display_length+$display_start)break;
@@ -3865,6 +3915,7 @@ class Assess extends MY_Controller {
 //       print_r($columns);
 //       print_r($output['aaData']);exit;
         $output['columns'] = $columns;
+        $output['success_filter_entries'] = $success_filter_entries;
         $output['ExtraData']['report'] = $report;
 
         return $output;
