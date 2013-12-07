@@ -1094,7 +1094,8 @@ class Assess extends MY_Controller {
                                             
                                             $parsed_meta_keywords_unserialize_val = $Meta_Keywords_un;
                                         }
-                                        
+                                
+                                $title_seo_prases = array();
                 $short_sp = $this->get_keywords($cmpare->product_name, $cmpare->Short_Description);
                 $long_sp = $this->get_keywords($cmpare->product_name, $cmpare->Long_Description);
                                     if($short_sp){
@@ -1124,7 +1125,7 @@ class Assess extends MY_Controller {
                                         }
                                         $title_seo_phrases = '';
                                         foreach ($title_seo_prases as $pras) {
-                                            $title_seo_phrases .= $pras['ph'] . '-' . $pras['prc'] . '%,  ';
+                                            $title_seo_phrases .= $pras['ph'] . ' - ' . $pras['prc'] . '%,  ';
                                         }
                                     }    
                                         
@@ -1365,7 +1366,7 @@ class Assess extends MY_Controller {
                 if (in_array('average_review', $selected_columns)) {
                     $res_array[$key]['average_review'] = $pars_atr['parsed_attributes']['average_review'] !== false ? $pars_atr['parsed_attributes']['average_review'] : '-';
                 }
-                
+                $title_seo_prases = array();
                 $short_sp = $this->get_keywords($row->product_name, $row->short_description);
                 $long_sp = $this->get_keywords($row->product_name, $row->long_description);
                                     if($short_sp){
@@ -1395,7 +1396,7 @@ class Assess extends MY_Controller {
                                         }
                                         $str_title_long_seo = '';
                                         foreach ($title_seo_prases as $pras) {
-                                            $str_title_long_seo .= $pras['ph'] . '-' . $pras['prc'] . '%,  ';
+                                            $str_title_long_seo .= $pras['ph'] . ' - ' . $pras['prc'] . '%,  ';
                                         }
                                     }    
                 
