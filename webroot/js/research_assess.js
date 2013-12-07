@@ -117,6 +117,8 @@ $(function() {
             "Meta_Keywords",
             "short_seo_phrases",
             "title_seo_phrases",
+            "images_cmp",
+            "title_pa",
             "Long_Description",
             "long_description_wc",
             "long_seo_phrases",
@@ -148,6 +150,8 @@ $(function() {
             "short_description_wc",
             "Meta_Keywords",
             "title_seo_phrases",
+            "images_cmp",
+            "title_pa",
             "Long_Description",
             "long_description_wc",
             "Meta_Description",
@@ -182,6 +186,8 @@ $(function() {
             "average_review1",
             "column_features1",
             "title_seo_phrases1",
+            "images_cmp1",
+            "title_pa1",
             "gap",
             "Duplicate_Content"
             
@@ -606,6 +612,18 @@ $(function() {
             "sClass": "title_seo_phrases"
         },
         {
+            "sTitle": "Images",
+            "sName": "images_cmp",
+            "sWidth": "2%",
+            "sClass": "images_cmp"
+        },
+        {
+            "sTitle": "Title",
+            "sName": "title_pa",
+            "sWidth": "2%",
+            "sClass": "title_pa"
+        },
+        {
             "sTitle": "<span class='subtitle_desc_long' >Long </span>Description",
             "sName": "Long_Description",
             "sWidth": "2%",
@@ -852,6 +870,18 @@ $(function() {
             "sName": "title_seo_phrases1",
             "sWidth": "1%",
             "sClass": "title_seo_phrases1"
+        },
+        {
+            "sTitle": "Images",
+            "sName": "images_cmp1",
+            "sWidth": "1%",
+            "sClass": "images_cmp1"
+        },
+        {
+            "sTitle": "Title",
+            "sName": "title_pa1",
+            "sWidth": "1%",
+            "sClass": "title_pa1"
         },
         {
             "sTitle": "Gap Analysis",
@@ -2800,6 +2830,10 @@ function prevSibilfunc(curentSibil){
         var Custom_Keywords_Long_Description = 0;
         var title_seo_phrases = 0;
         var title_seo_phrases1 = 0;
+        var images_cmp = 0;
+        var images_cmp1 = 0;
+        var title_pa = 0;
+        var title_pa1 = 0;
         $('td.word_short').each(function() {
             var txt = parseInt($(this).text());
             if (txt > 0) {
@@ -3185,6 +3219,26 @@ function prevSibilfunc(curentSibil){
                 title_seo_phrases1 += 1;
             }
         });
+        $('td.images_cmp').each(function() {
+            if ($(this).text()!='') {
+                images_cmp += 1;
+            }
+        });
+        $('td.images_cmp1').each(function() {
+            if ($(this).text()!='') {
+                images_cmp1 += 1;
+            }
+        });
+        $('td.title_pa').each(function() {
+            if ($(this).text()!='') {
+                title_pa += 1;
+            }
+        });
+        $('td.title_pa1').each(function() {
+            if ($(this).text()!='') {
+                title_pa1 += 1;
+            }
+        });
      
         $.each(tblAllColumns, function(index, value) {
             if ((value == 'short_description_wc' && word_short_num == 0) || (value == 'long_description_wc' && word_long_num == 0)) {
@@ -3209,6 +3263,18 @@ function prevSibilfunc(curentSibil){
                 tblAssess.fnSetColumnVis(index, false, false);
             }
             if (value == 'title_seo_phrases1' && title_seo_phrases1 == 0) {
+                tblAssess.fnSetColumnVis(index, false, false);
+            }
+            if (value == 'images_cmp' && images_cmp == 0) {
+                tblAssess.fnSetColumnVis(index, false, false);
+            }
+            if (value == 'images_cmp1' && images_cmp1 == 0) {
+                tblAssess.fnSetColumnVis(index, false, false);
+            }
+            if (value == 'title_pa' && title_pa == 0) {
+                tblAssess.fnSetColumnVis(index, false, false);
+            }
+            if (value == 'title_pa1' && title_pa1 == 0) {
                 tblAssess.fnSetColumnVis(index, false, false);
             }
             if((value == 'Custom_Keywords_Short_Description' && Custom_Keywords_Short_Description == 0)){
@@ -3546,6 +3612,8 @@ function prevSibilfunc(curentSibil){
                     Meta_Keywords: $("#Meta_Keywords").attr('checked') == 'checked',
                     short_seo_phrases: $("#column_short_seo_phrases").attr('checked') == 'checked',
                     title_seo_phrases: $("#column_title_seo_phrases").attr('checked') == 'checked',
+                    images_cmp: $("#column_images_cmp").attr('checked') == 'checked',
+                    title_pa: $("#column_title_pa").attr('checked') == 'checked',
                     Long_Description: $("#Long_Description").attr('checked') == 'checked',
                     long_description_wc: $("#column_long_description_wc").attr('checked') == 'checked',
                     long_seo_phrases: $("#column_long_seo_phrases").attr('checked') == 'checked',
@@ -3566,6 +3634,7 @@ function prevSibilfunc(curentSibil){
                     gap: $("#gap").attr('checked') == 'checked',
                     Duplicate_Content: $("#Duplicate_Content").attr('checked') == 'checked',
                     images_cmp: $("#images_cmp").attr('checked') == 'checked',
+                    title_pa: $("#title_pa").attr('checked') == 'checked',
                     videos_cmp: $("#videos_cmp").attr('checked') == 'checked'
                 };
 
@@ -4114,6 +4183,12 @@ var search_text = GetURLParameter('search_text');
             }
             if ($('#research_assess_title_seo_phrases').is(':checked')) {
                 assessRequestParams.title_seo_phrases = true;
+            }
+            if ($('#research_assess_images_cmp').is(':checked')) {
+                assessRequestParams.images_cmp = true;
+            }
+            if ($('#research_assess_title_pa').is(':checked')) {
+                assessRequestParams.title_pa = true;
             }
             if ($('#research_assess_short_duplicate_content').is(':checked')) {
                 assessRequestParams.short_duplicate_content = true;

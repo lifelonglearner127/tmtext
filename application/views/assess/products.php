@@ -87,6 +87,14 @@
 									Title Keywords
 								</label>
 								<label class="checkbox">
+									<input id="research_assess_images_cmp" type="checkbox" checked>
+									Images
+								</label>
+								<label class="checkbox">
+									<input id="research_assess_title_pa" type="checkbox" checked>
+									Title
+								</label>
+								<label class="checkbox">
 									<input id="research_assess_short_duplicate_content" type="checkbox" checked>
 									Duplicate content
 								</label>
@@ -319,6 +327,10 @@
             <p>
                 <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="images_cmp" data-col_name="images_cmp" name="images_cmp" <?php echo($columns['images_cmp'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="column_actions">Images</label>
+            </p>
+            <p>
+                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="title_pa" data-col_name="title_pa" name="title_pa" <?php echo($columns['title_pa'] == 'true' ? 'checked="checked"' : ''); ?> />
+                <label for="column_actions">Title</label>
             </p>
             <p>
                 <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="videos_cmp" data-col_name="videos_cmp" name="videos_cmp" <?php echo($columns['videos_cmp'] == 'true' ? 'checked="checked"' : ''); ?> />

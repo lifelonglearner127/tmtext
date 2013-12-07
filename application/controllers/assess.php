@@ -89,7 +89,7 @@ class Assess extends MY_Controller {
         return $output;
     }
     private function get_keywords($title, $string){
-        $black_list = array('and','the','in','on','at');
+        $black_list = array('and','the','in','on','at','for');
         $title = trim(preg_replace(array('/\s+/','/\(.*\)/'),array(' ',''), $title));
         $string = trim(preg_replace('/\s+/', ' ', $string));
         $title_w = explode(' ', $title);
@@ -105,7 +105,7 @@ class Assess extends MY_Controller {
                     $needl .=$title_w[$k].' ';
                 }
                 $needl = trim($needl);
-                $frc = substr_count($string, $needl);
+                $frc = substr_count(strtolower($string), strtolower($needl));
                 $prc = ($frc*($title_wc-$i))/$string_wc*100;
                 if($frc>0&&$prc>2){//
                     $phrases[]=array(
@@ -115,11 +115,46 @@ class Assess extends MY_Controller {
                     );
                 }
             }
-            if(!empty($phrases)){
-                break;
-            }
+//            if(!empty($phrases)){
+//                break;
+//            }
             ++$i;
         }
+        //*
+        foreach($black_list as $w){
+            foreach ($phrases as $key=>$val){
+                $val['ph']=substr($val['ph'],0,strlen($w))===$w?substr($val['ph'],strlen($w)):$val['ph'];
+                $val['ph']=substr($val['ph'],(-1)*strlen($w))===$w?substr($val['ph'],0,strlen($val['ph'])-strlen($w)):$val['ph'];
+                $val['ph']=trim($val['ph']);
+                $pw = explode(' ', $val['ph']);
+                if(count($pw)<2){
+                    unset($phrases[$key]);
+                }
+            }
+        }
+        foreach($phrases as $ar_key => $seo_pr){
+            foreach($phrases as $ar_key1=>$seo_pr1){
+                if($ar_key!=$ar_key1 && $this->compare_str($seo_pr['ph'],$seo_pr1['ph'])
+                        &&$seo_pr['frq']>=$seo_pr1['frq']){
+                    unset($phrases[$ar_key1]);
+                }
+            }
+        }
+        foreach($phrases as $ar_key => $seo_pr){
+            foreach($phrases as $ar_key1=>$seo_pr1){
+                if($ar_key!=$ar_key1 && $this->compare_str($seo_pr['ph'],$seo_pr1['ph'])){
+                    if($seo_pr['frq']>=$seo_pr1['frq']){
+                        unset($phrases[$ar_key1]);
+                    }
+                    else{
+                        $phrases[$ar_key1]['frq']-=$seo_pr['frq'];
+                        $akw = explode(' ', $seo_pr1['ph']);
+                        $phrases[$ar_key1]['prc'] = round($phrases[$ar_key1]['frq']*count($akw)/$string_wc*100,2);
+                    }
+                }
+            }
+        }
+//*/
         return serialize($phrases);
     }
 
@@ -278,7 +313,8 @@ class Assess extends MY_Controller {
                                     if (!empty($title_seo_prases)) {
                                         foreach($title_seo_prases as $ar_key => $seo_pr){
                                             foreach($title_seo_prases as $ar_key1=>$seo_pr1){
-                                                if($ar_key!=$ar_key1 && $this->compare_str($seo_pr['ph'],$seo_pr1['ph'])){
+                                                if($ar_key!=$ar_key1 && $this->compare_str($seo_pr['ph'],$seo_pr1['ph']) 
+                                                        && $seo_pr['frq']===$seo_pr1['frq']){
                                                     unset($title_seo_prases[$ar_key1]);
                                                 }
                                             }
@@ -354,6 +390,10 @@ class Assess extends MY_Controller {
                                     
                                     if (isset($parsed_attributes_unserialize['cnetcontent']) || isset($parsed_attributes_unserialize['webcollage']))
                                         $column_external_content = $this->column_external_content($parsed_attributes_unserialize['cnetcontent'],$parsed_attributes_unserialize['webcollage']);
+                                    if (isset($parsed_attributes_unserialize['product_images']))
+                                        $images_cmp = $parsed_attributes_unserialize['product_images'];
+                                    if (isset($parsed_attributes_unserialize['title']))
+                                        $title_pa = $parsed_attributes_unserialize['title'];
             
                                     $parsed_meta_unserialize = unserialize($cmpare->parsed_meta);
 
@@ -447,6 +487,8 @@ class Assess extends MY_Controller {
                                     $similar_items_data[] = $cmpare;
                                     $val->similar_items = $similar_items_data;
                                     $val->title_seo_phrases1 = $tsp!==''?$tsp:'None';
+                                    $val->images_cmp1 = $images_cmp;
+                                    $val->title_pa1 = $title_pa;
 									
                                     $cmp[] = $val;
                                     break;
@@ -1080,6 +1122,44 @@ class Assess extends MY_Controller {
                                             
                                             $parsed_meta_keywords_unserialize_val = $Meta_Keywords_un;
                                         }
+                                
+                                $title_seo_prases = array();
+                $short_sp = $this->get_keywords($cmpare->product_name, $cmpare->Short_Description);
+                $long_sp = $this->get_keywords($cmpare->product_name, $cmpare->Long_Description);
+                                    if($short_sp){
+                                        $short_sp = unserialize($short_sp);
+                                        foreach ($short_sp as $pr){
+                                                {
+                                                $title_seo_prases[]=$pr;
+                                            }
+                                        }
+                                    }
+                                    if($long_sp){
+                                        $long_sp = unserialize($long_sp);
+                                        foreach ($long_sp as $pr){
+                                                {
+                                                $title_seo_prases[]=$pr;
+                                            }
+                                        }
+                                    }
+                                    if (!empty($title_seo_prases)) {
+                                        foreach($title_seo_prases as $ar_key => $seo_pr){
+                                            foreach($title_seo_prases as $ar_key1=>$seo_pr1){
+                                                if($ar_key!=$ar_key1 && $this->compare_str($seo_pr['ph'],$seo_pr1['ph']) 
+                                                        && $seo_pr['frq']===$seo_pr1['frq']){
+                                                    unset($title_seo_prases[$ar_key1]);
+                                                }
+                                            }
+                                        }
+                                        $title_seo_phrases = '';
+                                        foreach ($title_seo_prases as $pras) {
+                                            $title_seo_phrases .= $pras['ph'] . ' - ' . $pras['prc'] . '%,  ';
+                                        }
+                                    }    
+                                        
+                                        
+                                        
+                                        
 
 
 
@@ -1097,6 +1177,7 @@ class Assess extends MY_Controller {
                                     $cmpare->Meta_Description_Count = $parsed_meta_unserialize_val_count;
                                     $cmpare->average_review = $parsed_average_review_unserialize_val_count;
                                     $cmpare->review_count = $parsed_review_count_unserialize_val_count; 
+                                    $cmpare->title_seo_phrases = $title_seo_phrases; 
                                 
                                     $similar_items_data[] = $cmpare;
                                     $val->similar_items = $similar_items_data;  
@@ -1313,49 +1394,45 @@ class Assess extends MY_Controller {
                 if (in_array('average_review', $selected_columns)) {
                     $res_array[$key]['average_review'] = $pars_atr['parsed_attributes']['average_review'] !== false ? $pars_atr['parsed_attributes']['average_review'] : '-';
                 }
-                
-//                
-//                 $short_sp = $cmpare->short_seo_phrases!='None'?$cmpare->short_seo_phrases:false;
-//                                    $long_sp = $cmpare->long_seo_phrases!='None'?$cmpare->long_seo_phrases:false;
-//                                    if($short_sp){
-//                                        $short_sp = unserialize($short_sp);
-//                                        foreach ($short_sp as $pr){
-//                                            if($pr['prc']>2){
-//                                                $title_seo_prases[]=$pr;
-//                                            }
-//                                        }
-//                                    }
-//                                    if($long_sp){
-//                                        $long_sp = unserialize($long_sp);
-//                                        foreach ($long_sp as $pr){
-//                                            if($pr['prc']>2){
-//                                                $title_seo_prases[]=$pr;
-//                                            }
-//                                        }
-//                                    }
-//                                    if (!empty($title_seo_prases)) {
-//                                        foreach($title_seo_prases as $ar_key => $seo_pr){
-//                                            foreach($title_seo_prases as $ar_key1=>$seo_pr1){
-//                                                if($ar_key!=$ar_key1 && $this->compare_str($seo_pr['ph'],$seo_pr1['ph'])){
-//                                                    unset($title_seo_prases[$ar_key1]);
-//                                                }
-//                                            }
-//                                        }
-//                                        $str_title_long_seo = '<table class="table_keywords_long">';
-//                                        foreach ($title_seo_prases as $pras) {
-//                                            $str_title_long_seo .= '<tr><td>' . $pras['ph'] . '</td><td>' . $pras['prc'] . '%</td></tr>';
-//                                        }
-//                                        $tsp = $str_title_long_seo . '</table>';
-//                                    }
-//                
-//                
+                $title_seo_prases = array();
+                $short_sp = $this->get_keywords($row->product_name, $row->short_description);
+                $long_sp = $this->get_keywords($row->product_name, $row->long_description);
+                                    if($short_sp){
+                                        $short_sp = unserialize($short_sp);
+                                        foreach ($short_sp as $pr){
+                                                {
+                                                $title_seo_prases[]=$pr;
+                                            }
+                                        }
+                                    }
+                                    if($long_sp){
+                                        $long_sp = unserialize($long_sp);
+                                        foreach ($long_sp as $pr){
+                                                {
+                                                $title_seo_prases[]=$pr;
+                                            }
+                                        }
+                                    }
+                                    if (!empty($title_seo_prases)) {
+                                        foreach($title_seo_prases as $ar_key => $seo_pr){
+                                            foreach($title_seo_prases as $ar_key1=>$seo_pr1){
+                                                if($ar_key!=$ar_key1 && $this->compare_str($seo_pr['ph'],$seo_pr1['ph']) 
+                                                        && $seo_pr['frq']===$seo_pr1['frq']){
+                                                    unset($title_seo_prases[$ar_key1]);
+                                                }
+                                            }
+                                        }
+                                        $str_title_long_seo = '';
+                                        foreach ($title_seo_prases as $pras) {
+                                            $str_title_long_seo .= $pras['ph'] . ' - ' . $pras['prc'] . '%,  ';
+                                        }
+                                    }    
                 
                 
                 
                 if (in_array('title_seo_phrases', $selected_columns)) {
-                    $res_array[$key]['title_seo_phrases'] = "sfer";
-//                    $res_array[$key]['title_seo_phrases'] = $pars_atr['parsed_attributes']['average_review'] !== false ? $pars_atr['parsed_attributes']['average_review'] : '-';
-                }
+                    $res_array[$key]['title_seo_phrases'] = $str_title_long_seo;
+              }
                 if (in_array('H1_Tags', $selected_columns) && $pars_atr['HTags']['h1'] && $pars_atr['HTags']['h1'] != '') {
                     $H1 = $pars_atr['HTags']['h1'];
                     if (is_array($H1)) {
@@ -2240,6 +2317,7 @@ class Assess extends MY_Controller {
                 'gap' => 'true',
                 'Duplicate_Content' => 'true',
                 'images_cmp' => 'true',
+                'title_pa' => 'true',
                 'videos_cmp' => 'true',
             );
         }
@@ -2463,6 +2541,18 @@ class Assess extends MY_Controller {
                 "sClass" => "title_seo_phrases"
             ),
             array(
+                "sTitle" => "Images",//<span class='subtitle_keyword_short'>Short</span>",
+                "sName" => "images_cmp",
+                //"sWidth" => "2%",
+                "sClass" => "images_cmp"
+            ),
+            array(
+                "sTitle" => "Title",//<span class='subtitle_keyword_short'>Short</span>",
+                "sName" => "title_pa",
+                //"sWidth" => "2%",
+                "sClass" => "title_pa"
+            ),
+            array(
                 "sTitle" => "<span class='subtitle_desc_long' >Long </span>Description",
                 "sName" => "Long_Description",
                 //"sWidth" => "2%",
@@ -2677,6 +2767,8 @@ class Assess extends MY_Controller {
                 $columns[] = array("sTitle" => "Reviews", "sClass" => "column_reviews" . $i, "sName" => "column_reviews" . $i);
                 $columns[] = array("sTitle" => "Features", "sClass" => "column_features" . $i, "sName" => "column_features" . $i);
                 $columns[] = array("sTitle" => "Title Keywords", "sClass" => "title_seo_phrases" . $i, "sName" => "title_seo_phrases" . $i);
+                $columns[] = array("sTitle" => "Images", "sClass" => "images_cmp" . $i, "sName" => "images_cmp" . $i);
+                $columns[] = array("sTitle" => "Title", "sClass" => "title_pa" . $i, "sName" => "title_pa" . $i);
                  if($i == 1){
                                 $columns[] = array("sTitle" => "Gap Analysis", "sClass" => "gap" . $i, "sName" => 'gap');
                                 $colomns[] = array("sTitle" => "Duplicate Content", "sClass" => "Duplicate_Content" . $i, "sName" => 'Duplicate_Content');
@@ -2733,6 +2825,8 @@ class Assess extends MY_Controller {
             $result_row->long_description_wc = intval($row->long_description_wc);
             $result_row->short_seo_phrases = "None";
             $result_row->title_seo_phrases = "None";
+            $result_row->images_cmp = "None";
+            $result_row->title_pa = "None";
             $result_row->long_seo_phrases = "None";
             $result_row->price_diff = "-";
             $result_row->column_external_content = "";
@@ -3048,6 +3142,8 @@ class Assess extends MY_Controller {
                     $result_row['average_review' . $i] = $parsed_average_review_unserialize_val;
                     $result_row['column_features' . $i] = $parsed_column_features_unserialize_val;
                     $result_row['title_seo_phrases' . $i] = $row->title_seo_pharses1?$row->title_seo_pharses1:'None';
+                    $result_row['images_cmp' . $i] = $row->images_cmp1?$row->images_cmp1:'None';
+                    $result_row['title_pa' . $i] = $row->title_pa1?$row->title_pa1:'None';
 
 
                 }
@@ -3061,6 +3157,12 @@ class Assess extends MY_Controller {
             }
             if($row->title_seo_phrases1){
                 $result_row->title_seo_phrases1 = $row->title_seo_phrases1;
+            }
+            if($row->images_cmp1){
+                $result_row->images_cmp1 = $row->images_cmp1;
+            }
+            if($row->title_pa1){
+                $result_row->title_pa1 = $row->title_pa1;
             }
             if ($row->product_name1) {
                 $result_row->product_name1 = $row->product_name1;
@@ -3211,6 +3313,12 @@ class Assess extends MY_Controller {
             }
             if (isset($pars_atr['parsed_attributes']['average_review']) && $pars_atr['parsed_attributes']['average_review'] != '') {
                 $result_row->average_review = $pars_atr['parsed_attributes']['average_review'];
+            }
+            if (isset($pars_atr['parsed_attributes']['product_images'])) {
+                $result_row->images_cmp = $pars_atr['parsed_attributes']['product_images'];
+            }
+            if (isset($pars_atr['parsed_attributes']['title'])) {
+                $result_row->title_pa = $pars_atr['parsed_attributes']['title'];
             }
 
 
@@ -3492,7 +3600,8 @@ class Assess extends MY_Controller {
                 if (!empty($title_seo_pr)) {
                     foreach($title_seo_pr as $ar_key => $seo_pr){
                         foreach($title_seo_pr as $ar_key1=>$seo_pr1){
-                            if($ar_key!=$ar_key1 && $this->compare_str($seo_pr['ph'], $seo_pr1['ph'])){
+                            if($ar_key!=$ar_key1 && $this->compare_str($seo_pr['ph'], $seo_pr1['ph'])
+                                    && $seo_pr['frq']===$seo_pr1['frq']){
                                 unset($title_seo_pr[$ar_key1]);
                             }
                         }
@@ -4081,6 +4190,8 @@ class Assess extends MY_Controller {
                         $data_row->Meta_Keywords,
                         $data_row->short_seo_phrases,
                         $data_row->title_seo_phrases,
+                        $data_row->images_cmp,
+                        $data_row->title_pa,
                         $data_row->long_description,
                         $data_row->long_description_wc,
                         $data_row->long_seo_phrases,
@@ -4127,6 +4238,8 @@ class Assess extends MY_Controller {
                             $output_row[] = $data_row['average_review' . $i] != null ? $data_row['average_review' . $i] : '';
                             $output_row[] = $data_row['column_features' . $i] != null ? $data_row['column_features' . $i] : '';
                             $output_row[] = $data_row['title_seo_phrases' . $i] != null ? $data_row['title_seo_phrases' . $i] : '';
+                            $output_row[] = $data_row['images_cmp' . $i] != null ? $data_row['images_cmp' . $i] : '';
+                            $output_row[] = $data_row['title_pa' . $i] != null ? $data_row['title_pa' . $i] : '';
 
 
                         }
@@ -4158,6 +4271,8 @@ class Assess extends MY_Controller {
                         $output_row[] = $data_row->average_review1;
                         $output_row[] = $data_row->column_features1;
                         $output_row[] = $data_row->title_seo_phrases1;
+                        $output_row[] = $data_row->images_cmp1;
+                        $output_row[] = $data_row->title_pa1;
                         $output_row[] = $data_row->gap;
                         $output_row[] = $data_row->Duplicate_Content;
                     }
