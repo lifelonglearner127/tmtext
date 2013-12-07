@@ -89,7 +89,7 @@ class Assess extends MY_Controller {
         return $output;
     }
     private function get_keywords($title, $string){
-        $black_list = array('and','the','in','on','at');
+        $black_list = array('and','the','in','on','at','for');
         $title = trim(preg_replace(array('/\s+/','/\(.*\)/'),array(' ',''), $title));
         $string = trim(preg_replace('/\s+/', ' ', $string));
         $title_w = explode(' ', $title);
@@ -105,7 +105,7 @@ class Assess extends MY_Controller {
                     $needl .=$title_w[$k].' ';
                 }
                 $needl = trim($needl);
-                $frc = substr_count($string, $needl);
+                $frc = substr_count(strtolower($string), strtolower($needl));
                 $prc = ($frc*($title_wc-$i))/$string_wc*100;
                 if($frc>0&&$prc>2){//
                     $phrases[]=array(
@@ -115,11 +115,24 @@ class Assess extends MY_Controller {
                     );
                 }
             }
-            if(!empty($phrases)){
-                break;
-            }
+//            if(!empty($phrases)){
+//                break;
+//            }
             ++$i;
         }
+        //*
+        foreach($black_list as $w){
+            foreach ($phrases as $key=>$val){
+                $val['ph']=substr($val['ph'],0,strlen($w))===$w?substr($val['ph'],strlen($w)):$val['ph'];
+                $val['ph']=substr($val['ph'],(-1)*strlen($w))===$w?substr($val['ph'],0,strlen($val['ph'])-strlen($w)):$val['ph'];
+                $val['ph']=trim($val['ph']);
+                $pw = explode(' ', $val['ph']);
+                if(count($pw)<2){
+                    unset($phrases[$key]);
+                }
+            }
+        }
+        //*/
         return serialize($phrases);
     }
 
@@ -278,7 +291,8 @@ class Assess extends MY_Controller {
                                     if (!empty($title_seo_prases)) {
                                         foreach($title_seo_prases as $ar_key => $seo_pr){
                                             foreach($title_seo_prases as $ar_key1=>$seo_pr1){
-                                                if($ar_key!=$ar_key1 && $this->compare_str($seo_pr['ph'],$seo_pr1['ph'])){
+                                                if($ar_key!=$ar_key1 && $this->compare_str($seo_pr['ph'],$seo_pr1['ph']) 
+                                                        && $seo_pr['frq']===$seo_pr1['frq']){
                                                     unset($title_seo_prases[$ar_key1]);
                                                 }
                                             }
@@ -3492,7 +3506,8 @@ class Assess extends MY_Controller {
                 if (!empty($title_seo_pr)) {
                     foreach($title_seo_pr as $ar_key => $seo_pr){
                         foreach($title_seo_pr as $ar_key1=>$seo_pr1){
-                            if($ar_key!=$ar_key1 && $this->compare_str($seo_pr['ph'], $seo_pr1['ph'])){
+                            if($ar_key!=$ar_key1 && $this->compare_str($seo_pr['ph'], $seo_pr1['ph'])
+                                    && $seo_pr['frq']===$seo_pr1['frq']){
                                 unset($title_seo_pr[$ar_key1]);
                             }
                         }
