@@ -25,36 +25,22 @@
 				</span>
 			</h3>
 			<div style="clear: both;"></div>												
-			<div class="boxes_content resizable" style="padding:0px; height: 200px; overflow-y: scroll">				
-				<div class="<?php echo $is_extended_partial ? 'selectable_summary_info' : '' ?>">
-					<?php if ($is_extended_partial): ?>	
-						<div class="total_items_selected_by_filter_wrapper non-selectable mt_10 ml_15" data-filterid="total_items_selected_by_filter" style="display: none">
-							<div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_number.png">Total items selected: <span class="total_items_selected_by_filter mr_10" ></span></div>
-						</div>
-					<?php endif ?>
+			<div class="boxes_content resizable" style="padding:0px; height: 200px; overflow-y: scroll">	
 					
-					<div class="mt_10 ml_15 non-selectable" data-filterid="assess_report_total_items">
-						<div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_number.png">Total SKUs analyzed: <span class="assess_report_total_items mr_10" ></span></div>
-					</div>
+				<?php
+					$this->load->view('assess/_summary_data', array(
+						'is_extended_partial' => $is_extended_partial,
+						'batch_set' => 'batch_me_',
+						'wrapper_class' => 'common_batch1_filter_items',						
+					));
 					
-					<?php if ($is_extended_partial): ?>				
-						<div class="mt_10 ml_15 non-selectable" data-filterid="assess_report_competitor_matches_number">
-							<div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_number.png">Total number of corresponding SKUs found on competitor site: <span class="assess_report_competitor_matches_number mr_10" ></span></div>
-						</div>				
-					<?php endif ?>
-					
-					
-					<div class="mt_10 ml_15 <?php echo $is_extended_partial ? 'ui-widget-content' : '' ?>" data-filterid="assess_report_items_priced_higher_than_competitors">
-						<div class="mr_10"><img src="<?php echo base_url(); ?>img/assess_report_dollar.png">SKUs priced higher than competitors: <span class="assess_report_items_priced_higher_than_competitors mr_10" ></span></div>
-					</div>
-					
-					<?php 
-						if ($is_extended_partial)														
-							$this->load->view('assess/_summary_compare');					
-						else																		
-							$this->load->view('assess/_summary_summary');										
-					?>
-				</div>
+					$this->load->view('assess/_summary_data', array(
+						'is_extended_partial' => $is_extended_partial,
+						'batch_set' => 'batch_competitor_',
+						'wrapper_class' => 'hidden_batch2_filter_items',						
+					));
+				?>
+				
 			</div>
 		</li>
 		<!--li class="boxes ui-resizable">

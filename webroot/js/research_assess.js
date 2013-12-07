@@ -93,11 +93,13 @@ $(function() {
 	var batch_sets = {
 		me : {
 			batch_batch : 'research_assess_batches',
-			batch_compare : '#research_assess_compare_batches_batch'
+			batch_compare : '#research_assess_compare_batches_batch',
+			batch_items_prefix : 'batch_me_',
 		},
 		competitor : {
 			batch_batch : 'research_assess_batches_competitor',
-			batch_compare : '#research_assess_compare_batches_batch_competitor'
+			batch_compare : '#research_assess_compare_batches_batch_competitor',
+			batch_items_prefix : 'batch_competitor_'
 		}
 	};
 	
@@ -226,8 +228,8 @@ $(function() {
                         tblAssess.fnProcessingIndicator(false);
                     }, 100);
                     if ($('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val() == "0") {
-                        $('.assess_report_total_items').html("");
-                        $('.assess_report_items_priced_higher_than_competitors').html("");
+                        $('.' + batch_sets[batch_set]['batch_items_prefix'] + 'assess_report_total_items').html("");
+                        $('.' + batch_sets[batch_set]['batch_items_prefix'] + 'assess_report_items_priced_higher_than_competitors').html("");
                         $('.assess_report_items_have_more_than_20_percent_duplicate_content').html("");
                         $('.assess_report_items_unoptimized_product_content').html("");
                         $('.assess_report_items_have_product_short_descriptions_that_are_too_short').html("");
@@ -430,8 +432,8 @@ $(function() {
                     tblAssess.fnProcessingIndicator(false);
                 }, 2000);
                 if ($('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val() == "0") {
-                    $('.assess_report_total_items').html("");
-                    $('.assess_report_items_priced_higher_than_competitors').html("");
+                    $('.' + batch_sets[batch_set]['batch_items_prefix'] + 'assess_report_total_items').html("");
+                    $('.' + batch_sets[batch_set]['batch_items_prefix'] + 'assess_report_items_priced_higher_than_competitors').html("");
                     $('.assess_report_items_have_more_than_20_percent_duplicate_content').html("");
                     $('.assess_report_items_unoptimized_product_content').html("");
                     $('.assess_report_items_have_product_short_descriptions_that_are_too_short').html("");
@@ -869,8 +871,7 @@ $(function() {
 	$('.resizable').wrap('<div/>')
         .css({'overflow':'hidden'})
           .parent()
-            .css({'display':'inline-block',
-                  'overflow':'hidden',
+            .css({'overflow':'hidden',
                   'height':function(){return $('.resizable',this).height();},                                                                
                 }).resizable({
 					maxWidth : 1022,
@@ -966,8 +967,8 @@ $(function() {
 					
 				
                 if ($('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val() == "0") {
-                    $('.assess_report_total_items').html("");
-                    $('.assess_report_items_priced_higher_than_competitors').html("");
+                    $('.' + batch_sets[batch_set]['batch_items_prefix'] + 'assess_report_total_items').html("");
+                    $('.' + batch_sets[batch_set]['batch_items_prefix'] + 'assess_report_items_priced_higher_than_competitors').html("");
                     $('.assess_report_items_have_more_than_20_percent_duplicate_content').html("");
                     $('.assess_report_items_unoptimized_product_content').html("");
                     $('.assess_report_items_have_product_short_descriptions_that_are_too_short').html("");
@@ -1344,6 +1345,7 @@ $('#graphDropDown').live('change',function(){
 });
 var scrollYesOrNot = true;
     $(document).scroll(function() {
+		var batch_set = $('.result_batch_items:checked').val() || 'me';		
         if(!$('#assess_view').children('p')) {
         var docHeight = parseInt($(document).height());
         var windHeight = parseInt($(window).height());
@@ -1357,7 +1359,7 @@ var scrollYesOrNot = true;
                 $.ajax({
                     type: "POST",
                     url: readBoardSnapUrl,
-                    data: {batch_id: $('select[name="research_assess_batches"]').find('option:selected').val(),next_id: $('#assess_view .board_item:last-child').children('img').attr('rel')}
+                    data: {batch_id: $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val(),next_id: $('#assess_view .board_item:last-child').children('img').attr('rel')}
                 }).done(function(data){
                     $('#imgLoader').hide();
                     if(data.length > 0){
@@ -1532,23 +1534,68 @@ var scrollYesOrNot = true;
 		return parts.join(".");
 	}
 
-
+	function transformSummarySection()
+	{
+		var batch_set_toggle = $('#batch_set_toggle');
+		var common_batch1_filter_items = $('.common_batch1_filter_items');
+		var hidden_batch2_filter_items = $('.hidden_batch2_filter_items');
+		if (batch_set_toggle.is(':checked'))
+		{
+			if (!common_batch1_filter_items.hasClass('batch1_filter_items'))
+				common_batch1_filter_items.addClass('batch1_filter_items');
+				
+			hidden_batch2_filter_items.show();
+			if (!hidden_batch2_filter_items.hasClass('batch2_filter_items'))
+				hidden_batch2_filter_items.addClass('batch2_filter_items');
+				
+			$('.batch1_filter_item, .batch2_filter_item').each(function(index, element) {
+				var current_element = $(element);
+				if (current_element.hasClass('batch1_filter_item')) {
+					current_element.addClass('dual_batch1_filter_item');					
+					current_element.removeClass('batch1_filter_item');					
+				} else {
+					current_element.addClass('dual_batch2_filter_item');					
+					current_element.removeClass('batch2_filter_item');					
+				}
+			});
+		} else {
+		
+			if (common_batch1_filter_items.hasClass('batch1_filter_items'))
+				common_batch1_filter_items.removeClass('batch1_filter_items');
+			
+			if (hidden_batch2_filter_items.hasClass('batch2_filter_items'))
+				hidden_batch2_filter_items.removeClass('batch2_filter_items');
+				
+			hidden_batch2_filter_items.hide();
+			
+			$('.dual_batch1_filter_item, .dual_batch2_filter_item').each(function(index, element) {
+				var current_element = $(element);
+				if (current_element.hasClass('dual_batch1_filter_item')) {
+					current_element.addClass('batch1_filter_item');					
+					current_element.removeClass('dual_batch1_filter_item');					
+				} else {
+					current_element.addClass('batch2_filter_item');					
+					current_element.removeClass('dual_batch2_filter_item');					
+				}
+			});
+		}
+	}
+	
 	/*
 	** Fill all values in summary section		
 	** summary - summary data
-	** batch_number - number of batch by default		
+	** batch_set - batch prefix	
 	** @author Oleg Meleshko <qu1ze34@gmail.com>
 	*/
-	function fillReportSummary(summary, batch_number)
+	function fillReportSummary(summary, batch_prefix)
 	{			
-		var batch_number = batch_number || 0;
+		var batch_prefix = batch_prefix || 'batch_me_';
+		
+		transformSummarySection();
 		for (var it = 0; it < summaryFieldNames.length; it++)
 			if (summary[summaryFieldNames[it]] !== undefined)
-			{
-				if (summary[summaryFieldNames[it]] instanceof Array)
-					$('.' + summaryFieldNames[it]).html(numberWithCommas(summary[summaryFieldNames[it]][batch_number]));
-				else
-					$('.' + summaryFieldNames[it]).html(numberWithCommas(summary[summaryFieldNames[it]]));
+			{												
+				$('.' + batch_prefix + summaryFieldNames[it]).html(numberWithCommas(summary[summaryFieldNames[it]]));
 			}
 	}
 	
@@ -1557,14 +1604,14 @@ var scrollYesOrNot = true;
             reportPanel(false);
             return;
         }
-		//console.log(data);
+		
         var report = data.ExtraData.report;
-				
-		fillReportSummary(report.summary);
+		var batch_set = $('.result_batch_items:checked').val() || 'me';			
+		fillReportSummary(report.summary, batch_sets[batch_set]['batch_items_prefix']);
 		
         $('#summary_message').html("");
-        $('.assess_report_total_items').html(numberWithCommas(report.summary.total_items));
-        $('.assess_report_items_priced_higher_than_competitors').html(report.summary.items_priced_higher_than_competitors);
+        $('.' + batch_sets[batch_set]['batch_items_prefix'] + 'assess_report_total_items').html(numberWithCommas(report.summary.total_items));
+        $('.' + batch_sets[batch_set]['batch_items_prefix'] + 'assess_report_items_priced_higher_than_competitors').html(report.summary.items_priced_higher_than_competitors);
         if (report.summary.items_have_more_than_20_percent_duplicate_content == 0) {
             $(".items_have_more_than_20_percent_duplicate_content").hide();
         } else {

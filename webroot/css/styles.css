@@ -38,7 +38,7 @@ input[type=text] {
 	font-size: 1em;	
 }
 
-.non-selectable, .ui-selectee:not(.batch1_filter_item):not(.batch2_filter_item) {
+.non-selectable, .ui-selectee:not(.batch1_filter_item):not(.batch2_filter_item):not(.dual_batch1_filter_item):not(.dual_batch2_filter_item){
 	clear: both;	
 }
 
@@ -52,7 +52,7 @@ input[type=text] {
 	float: right;
 }
 
-.batch1_filter_item, .batch2_filter_item {
+.batch1_filter_item, .batch2_filter_item, .dual_batch1_filter_item, .dual_batch2_filter_item{
 	margin: 0 0 10px 15px;
 }
 
@@ -709,4 +709,23 @@ span.highlight{
 }
 .batch_set_depend_options {
 	display: none;
+}
+.common_batch1_filter_items {
+	
+}
+.hidden_batch2_filter_items {
+	display: none;
+}
+.batch1_filter_items, .batch2_filter_items {
+	float: left;
+	width: 505px;
+}
+.dual_batch1_filter_item {
+	float: left;	
+}
+.dual_batch2_filter_item {
+	float: right;
+}
+.dual_batch1_filter_item, .dual_batch2_filter_item {	
+	width: 230px;
 }
