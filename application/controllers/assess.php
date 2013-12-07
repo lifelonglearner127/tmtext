@@ -4194,7 +4194,7 @@ class Assess extends MY_Controller {
 	
 	private function filterBySummaryCriteria($current_criteria, $filterCriterias, &$success_filter_entries)
 	{		
-		$success_filter_entries[] = in_array($current_criteria, $filterCriterias);		
+		$success_filter_entries[] = in_array('batch_me_' . $current_criteria, $filterCriterias) || in_array('batch_competitor_' . $current_criteria, $filterCriterias);		
 	}
 	
 	private function checkSuccessFilterEntries($success_filter_entries, $filterCriterias)

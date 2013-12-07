@@ -887,38 +887,42 @@ $(function() {
 		cancel : '.non-selectable',
 		tolerance : 'touch',
 		selected : function(event, ui) {
-			console.log('Selected...');
+			// console.log('Selected...');
 			summaryInfoSelectedElements = [];
-			$('.selectable_summary_info .ui-selected').each(function(index, element) {				
-				summaryInfoSelectedElements.push($(element).data('filterid'));
+			$('.selectable_summary_info .ui-selected').each(function(index, element) {
+				var filterid = $(element).data('filterid');
+				if (filterid)
+					summaryInfoSelectedElements.push(filterid);
 			});			
 		},
 		unselected : function(event,ui) {
-			console.log('Unselected...');
+			// console.log('Unselected...');
 			summaryInfoSelectedElements = [];
-			$('.selectable_summary_info .ui-selected').each(function(index, element) {				
-				summaryInfoSelectedElements.push($(element).data('filterid'));
+			$('.selectable_summary_info .ui-selected').each(function(index, element) {		
+				var filterid = $(element).data('filterid');
+				if (filterid)
+					summaryInfoSelectedElements.push(filterid);
 			});			
 		},
 		selecting : function( event, ui ) {
-			console.log('Selecting...');
-			console.log(event);
-			console.log(ui);
+			// console.log('Selecting...');
+			// console.log(event);
+			// console.log(ui);
 		},
 		unselecting : function( event, ui ) {
-			console.log('UNSelecting...');
-			console.log(event);
-			console.log(ui);
+			// console.log('UNSelecting...');
+			// console.log(event);
+			// console.log(ui);
 		},
 		start : function( event, ui ) {
-			console.log('Starting...');
-			console.log(event);
-			console.log(ui);
+			// console.log('Starting...');
+			// console.log(event);
+			// console.log(ui);
 		},
 		stop : function( event, ui ) {
-			console.log('Stopping...');
-			console.log(event);
-			console.log(ui);
+			// console.log('Stopping...');
+			// console.log(event);
+			// console.log(ui);
 		}
 	});
 	
