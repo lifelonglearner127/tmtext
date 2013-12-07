@@ -2418,6 +2418,7 @@ function prevSibilfunc(curentSibil){
 		var batch_set_depend_options = $('.batch_set_depend_options');
 		if ($(this).is(':checked'))
 		{
+			$('.result_batch_items')[1].click(); //activating second batch set
 			second_batch_set.slideDown();
 			batch_set_depend_options.show();
 		}
