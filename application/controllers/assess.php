@@ -368,6 +368,8 @@ class Assess extends MY_Controller {
                                     
                                     if (isset($parsed_attributes_unserialize['cnetcontent']) || isset($parsed_attributes_unserialize['webcollage']))
                                         $column_external_content = $this->column_external_content($parsed_attributes_unserialize['cnetcontent'],$parsed_attributes_unserialize['webcollage']);
+                                    if (isset($parsed_attributes_unserialize['product_images']))
+                                        $images_cmp = $parsed_attributes_unserialize['product_images'];
             
                                     $parsed_meta_unserialize = unserialize($cmpare->parsed_meta);
 
@@ -461,6 +463,7 @@ class Assess extends MY_Controller {
                                     $similar_items_data[] = $cmpare;
                                     $val->similar_items = $similar_items_data;
                                     $val->title_seo_phrases1 = $tsp!==''?$tsp:'None';
+                                    $val->images_cmp1 = $images_cmp;
 									
                                     $cmp[] = $val;
                                     break;
@@ -2512,6 +2515,12 @@ class Assess extends MY_Controller {
                 "sClass" => "title_seo_phrases"
             ),
             array(
+                "sTitle" => "Images",//<span class='subtitle_keyword_short'>Short</span>",
+                "sName" => "images_cmp",
+                //"sWidth" => "2%",
+                "sClass" => "images_cmp"
+            ),
+            array(
                 "sTitle" => "<span class='subtitle_desc_long' >Long </span>Description",
                 "sName" => "Long_Description",
                 //"sWidth" => "2%",
@@ -2726,6 +2735,7 @@ class Assess extends MY_Controller {
                 $columns[] = array("sTitle" => "Reviews", "sClass" => "column_reviews" . $i, "sName" => "column_reviews" . $i);
                 $columns[] = array("sTitle" => "Features", "sClass" => "column_features" . $i, "sName" => "column_features" . $i);
                 $columns[] = array("sTitle" => "Title Keywords", "sClass" => "title_seo_phrases" . $i, "sName" => "title_seo_phrases" . $i);
+                $columns[] = array("sTitle" => "Images", "sClass" => "images_cmp" . $i, "sName" => "images_cmp" . $i);
                  if($i == 1){
                                 $columns[] = array("sTitle" => "Gap Analysis", "sClass" => "gap" . $i, "sName" => 'gap');
                                 $colomns[] = array("sTitle" => "Duplicate Content", "sClass" => "Duplicate_Content" . $i, "sName" => 'Duplicate_Content');
@@ -2782,6 +2792,7 @@ class Assess extends MY_Controller {
             $result_row->long_description_wc = intval($row->long_description_wc);
             $result_row->short_seo_phrases = "None";
             $result_row->title_seo_phrases = "None";
+            $result_row->images_cmp = "None";
             $result_row->long_seo_phrases = "None";
             $result_row->price_diff = "-";
             $result_row->column_external_content = "";
@@ -3097,6 +3108,7 @@ class Assess extends MY_Controller {
                     $result_row['average_review' . $i] = $parsed_average_review_unserialize_val;
                     $result_row['column_features' . $i] = $parsed_column_features_unserialize_val;
                     $result_row['title_seo_phrases' . $i] = $row->title_seo_pharses1?$row->title_seo_pharses1:'None';
+                    $result_row['images_cmp' . $i] = $row->images_cmp1?$row->images_cmp1:'None';
 
 
                 }
@@ -3110,6 +3122,9 @@ class Assess extends MY_Controller {
             }
             if($row->title_seo_phrases1){
                 $result_row->title_seo_phrases1 = $row->title_seo_phrases1;
+            }
+            if($row->images_cmp1){
+                $result_row->images_cmp1 = $row->images_cmp1;
             }
             if ($row->product_name1) {
                 $result_row->product_name1 = $row->product_name1;
@@ -3260,6 +3275,9 @@ class Assess extends MY_Controller {
             }
             if (isset($pars_atr['parsed_attributes']['average_review']) && $pars_atr['parsed_attributes']['average_review'] != '') {
                 $result_row->average_review = $pars_atr['parsed_attributes']['average_review'];
+            }
+            if (isset($pars_atr['parsed_attributes']['product_images'])) {
+                $result_row->images_cmp = $pars_atr['parsed_attributes']['product_images'];
             }
 
 
@@ -4131,6 +4149,7 @@ class Assess extends MY_Controller {
                         $data_row->Meta_Keywords,
                         $data_row->short_seo_phrases,
                         $data_row->title_seo_phrases,
+                        $data_row->images_cmp,
                         $data_row->long_description,
                         $data_row->long_description_wc,
                         $data_row->long_seo_phrases,
@@ -4177,6 +4196,7 @@ class Assess extends MY_Controller {
                             $output_row[] = $data_row['average_review' . $i] != null ? $data_row['average_review' . $i] : '';
                             $output_row[] = $data_row['column_features' . $i] != null ? $data_row['column_features' . $i] : '';
                             $output_row[] = $data_row['title_seo_phrases' . $i] != null ? $data_row['title_seo_phrases' . $i] : '';
+                            $output_row[] = $data_row['images_cmp' . $i] != null ? $data_row['images_cmp' . $i] : '';
 
 
                         }
@@ -4208,6 +4228,7 @@ class Assess extends MY_Controller {
                         $output_row[] = $data_row->average_review1;
                         $output_row[] = $data_row->column_features1;
                         $output_row[] = $data_row->title_seo_phrases1;
+                        $output_row[] = $data_row->images_cmp1;
                         $output_row[] = $data_row->gap;
                         $output_row[] = $data_row->Duplicate_Content;
                     }

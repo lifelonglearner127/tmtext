@@ -87,6 +87,10 @@
 									Title Keywords
 								</label>
 								<label class="checkbox">
+									<input id="research_assess_images_cmp" type="checkbox" checked>
+									Images
+								</label>
+								<label class="checkbox">
 									<input id="research_assess_short_duplicate_content" type="checkbox" checked>
 									Duplicate content
 								</label>
