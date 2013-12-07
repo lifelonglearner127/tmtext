@@ -1541,6 +1541,8 @@ var scrollYesOrNot = true;
 		var hidden_batch2_filter_items = $('.hidden_batch2_filter_items');
 		if (batch_set_toggle.is(':checked'))
 		{
+			$('.ui-selectee, .non-selectable').css({'font-size' : 'small'});
+			
 			if (!common_batch1_filter_items.hasClass('batch1_filter_items'))
 				common_batch1_filter_items.addClass('batch1_filter_items');
 				
@@ -1559,7 +1561,9 @@ var scrollYesOrNot = true;
 				}
 			});
 		} else {
-		
+			
+			$('.ui-selectee, .non-selectable').css({'font-size' : '1em'});
+			
 			if (common_batch1_filter_items.hasClass('batch1_filter_items'))
 				common_batch1_filter_items.removeClass('batch1_filter_items');
 			

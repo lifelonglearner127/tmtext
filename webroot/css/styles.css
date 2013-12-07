@@ -34,7 +34,7 @@ input[type=text] {
     font-size: .8em;	
 }
 
-.ui-widget-content.ui-selectee, .non-selectable, .ui-selectee {
+.ui-selectee, .non-selectable {
 	font-size: 1em;	
 }
 
