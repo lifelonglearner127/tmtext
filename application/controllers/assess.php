@@ -132,7 +132,29 @@ class Assess extends MY_Controller {
                 }
             }
         }
-        //*/
+        foreach($phrases as $ar_key => $seo_pr){
+            foreach($phrases as $ar_key1=>$seo_pr1){
+                if($ar_key!=$ar_key1 && $this->compare_str($seo_pr['ph'],$seo_pr1['ph'])
+                        &&$seo_pr['frq']===$seo_pr1['frq']){
+                    unset($phrases[$ar_key1]);
+                }
+            }
+        }
+        foreach($phrases as $ar_key => $seo_pr){
+            foreach($phrases as $ar_key1=>$seo_pr1){
+                if($ar_key!=$ar_key1 && $this->compare_str($seo_pr['ph'],$seo_pr1['ph'])){
+                    if($seo_pr['frq']===$seo_pr1['frq']){
+                        unset($phrases[$ar_key1]);
+                    }
+                    else{
+                        $phrases[$ar_key1]['frq']-=$seo_pr['frq'];
+                        $akw = explode(' ', $seo_pr1['ph']);
+                        $phrases[$ar_key1]['prc'] = round($phrases[$ar_key1]['frq']*count($akw)/$string_wc*100,2);
+                    }
+                }
+            }
+        }
+//*/
         return serialize($phrases);
     }
 
