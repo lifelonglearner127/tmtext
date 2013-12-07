@@ -1094,6 +1094,43 @@ class Assess extends MY_Controller {
                                             
                                             $parsed_meta_keywords_unserialize_val = $Meta_Keywords_un;
                                         }
+                                        
+                $short_sp = $this->get_keywords($cmpare->product_name, $cmpare->Short_Description);
+                $long_sp = $this->get_keywords($cmpare->product_name, $cmpare->Long_Description);
+                                    if($short_sp){
+                                        $short_sp = unserialize($short_sp);
+                                        foreach ($short_sp as $pr){
+                                                {
+                                                $title_seo_prases[]=$pr;
+                                            }
+                                        }
+                                    }
+                                    if($long_sp){
+                                        $long_sp = unserialize($long_sp);
+                                        foreach ($long_sp as $pr){
+                                                {
+                                                $title_seo_prases[]=$pr;
+                                            }
+                                        }
+                                    }
+                                    if (!empty($title_seo_prases)) {
+                                        foreach($title_seo_prases as $ar_key => $seo_pr){
+                                            foreach($title_seo_prases as $ar_key1=>$seo_pr1){
+                                                if($ar_key!=$ar_key1 && $this->compare_str($seo_pr['ph'],$seo_pr1['ph']) 
+                                                        && $seo_pr['frq']===$seo_pr1['frq']){
+                                                    unset($title_seo_prases[$ar_key1]);
+                                                }
+                                            }
+                                        }
+                                        $title_seo_phrases = '';
+                                        foreach ($title_seo_prases as $pras) {
+                                            $title_seo_phrases .= $pras['ph'] . '-' . $pras['prc'] . '%,  ';
+                                        }
+                                    }    
+                                        
+                                        
+                                        
+                                        
 
 
 
@@ -1111,6 +1148,7 @@ class Assess extends MY_Controller {
                                     $cmpare->Meta_Description_Count = $parsed_meta_unserialize_val_count;
                                     $cmpare->average_review = $parsed_average_review_unserialize_val_count;
                                     $cmpare->review_count = $parsed_review_count_unserialize_val_count; 
+                                    $cmpare->title_seo_phrases = $title_seo_phrases; 
                                 
                                     $similar_items_data[] = $cmpare;
                                     $val->similar_items = $similar_items_data;  
@@ -1328,48 +1366,44 @@ class Assess extends MY_Controller {
                     $res_array[$key]['average_review'] = $pars_atr['parsed_attributes']['average_review'] !== false ? $pars_atr['parsed_attributes']['average_review'] : '-';
                 }
                 
-//                
-//                 $short_sp = $cmpare->short_seo_phrases!='None'?$cmpare->short_seo_phrases:false;
-//                                    $long_sp = $cmpare->long_seo_phrases!='None'?$cmpare->long_seo_phrases:false;
-//                                    if($short_sp){
-//                                        $short_sp = unserialize($short_sp);
-//                                        foreach ($short_sp as $pr){
-//                                            if($pr['prc']>2){
-//                                                $title_seo_prases[]=$pr;
-//                                            }
-//                                        }
-//                                    }
-//                                    if($long_sp){
-//                                        $long_sp = unserialize($long_sp);
-//                                        foreach ($long_sp as $pr){
-//                                            if($pr['prc']>2){
-//                                                $title_seo_prases[]=$pr;
-//                                            }
-//                                        }
-//                                    }
-//                                    if (!empty($title_seo_prases)) {
-//                                        foreach($title_seo_prases as $ar_key => $seo_pr){
-//                                            foreach($title_seo_prases as $ar_key1=>$seo_pr1){
-//                                                if($ar_key!=$ar_key1 && $this->compare_str($seo_pr['ph'],$seo_pr1['ph'])){
-//                                                    unset($title_seo_prases[$ar_key1]);
-//                                                }
-//                                            }
-//                                        }
-//                                        $str_title_long_seo = '<table class="table_keywords_long">';
-//                                        foreach ($title_seo_prases as $pras) {
-//                                            $str_title_long_seo .= '<tr><td>' . $pras['ph'] . '</td><td>' . $pras['prc'] . '%</td></tr>';
-//                                        }
-//                                        $tsp = $str_title_long_seo . '</table>';
-//                                    }
-//                
-//                
+                $short_sp = $this->get_keywords($row->product_name, $row->short_description);
+                $long_sp = $this->get_keywords($row->product_name, $row->long_description);
+                                    if($short_sp){
+                                        $short_sp = unserialize($short_sp);
+                                        foreach ($short_sp as $pr){
+                                                {
+                                                $title_seo_prases[]=$pr;
+                                            }
+                                        }
+                                    }
+                                    if($long_sp){
+                                        $long_sp = unserialize($long_sp);
+                                        foreach ($long_sp as $pr){
+                                                {
+                                                $title_seo_prases[]=$pr;
+                                            }
+                                        }
+                                    }
+                                    if (!empty($title_seo_prases)) {
+                                        foreach($title_seo_prases as $ar_key => $seo_pr){
+                                            foreach($title_seo_prases as $ar_key1=>$seo_pr1){
+                                                if($ar_key!=$ar_key1 && $this->compare_str($seo_pr['ph'],$seo_pr1['ph']) 
+                                                        && $seo_pr['frq']===$seo_pr1['frq']){
+                                                    unset($title_seo_prases[$ar_key1]);
+                                                }
+                                            }
+                                        }
+                                        $str_title_long_seo = '';
+                                        foreach ($title_seo_prases as $pras) {
+                                            $str_title_long_seo .= $pras['ph'] . '-' . $pras['prc'] . '%,  ';
+                                        }
+                                    }    
                 
                 
                 
                 if (in_array('title_seo_phrases', $selected_columns)) {
-                    $res_array[$key]['title_seo_phrases'] = "sfer";
-//                    $res_array[$key]['title_seo_phrases'] = $pars_atr['parsed_attributes']['average_review'] !== false ? $pars_atr['parsed_attributes']['average_review'] : '-';
-                }
+                    $res_array[$key]['title_seo_phrases'] = $str_title_long_seo;
+              }
                 if (in_array('H1_Tags', $selected_columns) && $pars_atr['HTags']['h1'] && $pars_atr['HTags']['h1'] != '') {
                     $H1 = $pars_atr['HTags']['h1'];
                     if (is_array($H1)) {
