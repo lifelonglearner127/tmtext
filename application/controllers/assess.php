@@ -135,7 +135,7 @@ class Assess extends MY_Controller {
         foreach($phrases as $ar_key => $seo_pr){
             foreach($phrases as $ar_key1=>$seo_pr1){
                 if($ar_key!=$ar_key1 && $this->compare_str($seo_pr['ph'],$seo_pr1['ph'])
-                        &&$seo_pr['frq']===$seo_pr1['frq']){
+                        &&$seo_pr['frq']>=$seo_pr1['frq']){
                     unset($phrases[$ar_key1]);
                 }
             }
@@ -143,7 +143,7 @@ class Assess extends MY_Controller {
         foreach($phrases as $ar_key => $seo_pr){
             foreach($phrases as $ar_key1=>$seo_pr1){
                 if($ar_key!=$ar_key1 && $this->compare_str($seo_pr['ph'],$seo_pr1['ph'])){
-                    if($seo_pr['frq']===$seo_pr1['frq']){
+                    if($seo_pr['frq']>=$seo_pr1['frq']){
                         unset($phrases[$ar_key1]);
                     }
                     else{
