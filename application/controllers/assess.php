@@ -3729,13 +3729,13 @@ class Assess extends MY_Controller {
 //                ($result_row->long_description_wc <= 100 && $build_assess_params->short_less == -1)){
 //                $items_short_products_content++;
 //            }
-			if ($result_row->column_external_content)
+			if (trim($result_row->column_external_content))
 			{
 				$skus_third_party_content++;
 				$this->filterBySummaryCriteria('skus_third_party_content', $build_assess_params->summaryFilterData, $success_filter_entries);
 			}
 			
-			if ($result_row->column_external_content1)
+			if (trim($result_row->column_external_content1))
 			{
 				$skus_third_party_content_competitor++;
 				$this->filterBySummaryCriteria('skus_third_party_content_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
@@ -3792,17 +3792,17 @@ class Assess extends MY_Controller {
 			}
 			
 			// For Competitor (Batch 2)
-			if ($second_general_description_size < 50) {
+			if ($second_general_description_size < 50 && $build_assess_params->compare_batch_id) {
 				$skus_fewer_50_product_content_competitor++;
 				$this->filterBySummaryCriteria('skus_fewer_50_product_content_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
 			}
 			
-			if ($second_general_description_size < 100) {
+			if ($second_general_description_size < 100 && $build_assess_params->compare_batch_id) {
 				$skus_fewer_100_product_content_competitor++;
 				$this->filterBySummaryCriteria('skus_fewer_100_product_content_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
 			}
 			
-			if ($second_general_description_size < 150) {
+			if ($second_general_description_size < 150 && $build_assess_params->compare_batch_id) {
 				$skus_fewer_150_product_content_competitor++;
 				$this->filterBySummaryCriteria('skus_fewer_150_product_content_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
 			}
