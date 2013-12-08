@@ -1328,6 +1328,8 @@ class PageProcessor {
 			$result['cnetcontent']=true;
 		}
 
+		$result['video_count'] = substr_count($this->html,'"isVideo":1');
+
 		return $result;
 	}
 
