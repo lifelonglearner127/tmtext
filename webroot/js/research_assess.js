@@ -1562,10 +1562,18 @@ var scrollYesOrNot = true;
 	function numberWithCommas(x) {			
 		if (x == 0 || (x + '').length <= 3)
 			return x;
-			
-		var parts = x.toString().split(".");
-		parts[0] = parts[0].replace(/(?=(\d{3})+(?!\d))/g, ",");
-		return parts.join(".");
+		
+		var r = x.toString(),
+			general_parts = r.match(/([0-9.]+)/g);								
+		
+		for (var it = 0; it < general_parts.length; it++)
+		{
+			var parts = general_parts[it].split('.');
+			parts[0] = parts[0].replace(/(?=(\B\d{3})+(?!\d))/g, ',');
+			r = r.replace(general_parts[it], parts.join("."));			
+		}
+		
+		return r;
 	}
 
 	function transformSummarySection()
