@@ -876,7 +876,7 @@ class Crons extends MY_Controller {
 
                     // SEO Short phrases
                     $time_start = microtime(true);
-                    if ($short_description_wc != 0) {
+                    if ($short_description_wc != 0 && $short_description_wc < 5000) {
 
                         $short_seo_phrases = $this->helpers->measure_analyzer_start_v2_product_name($data_import['product_name'], preg_replace('/\s+/', ' ', $data_import['description']));
                         if (count($short_seo_phrases) > 0) {
@@ -902,7 +902,7 @@ class Crons extends MY_Controller {
                     echo "SEO Short phrases - $time seconds\n";
                     // SEO Long phrases
                     $time_start = microtime(true);
-                    if ($long_description_wc != 0) {
+                    if ($long_description_wc != 0 && $long_description_wc < 5000) {
 
                         $long_seo_phrases = $this->helpers->measure_analyzer_start_v2_product_name($data_import['product_name'], preg_replace('/\s+/', ' ', $data_import['long_description']));
                         if (count($long_seo_phrases) > 0) {
