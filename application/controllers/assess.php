@@ -392,6 +392,8 @@ class Assess extends MY_Controller {
                                         $column_external_content = $this->column_external_content($parsed_attributes_unserialize['cnetcontent'],$parsed_attributes_unserialize['webcollage']);
                                     if (isset($parsed_attributes_unserialize['product_images']))
                                         $images_cmp = $parsed_attributes_unserialize['product_images'];
+                                    if (isset($parsed_attributes_unserialize['video_count']))
+                                        $video_count = $parsed_attributes_unserialize['video_count'];
                                     if (isset($parsed_attributes_unserialize['title']))
                                         $title_pa = $parsed_attributes_unserialize['title'];
             
@@ -488,6 +490,7 @@ class Assess extends MY_Controller {
                                     $val->similar_items = $similar_items_data;
                                     $val->title_seo_phrases1 = $tsp!==''?$tsp:'None';
                                     $val->images_cmp1 = $images_cmp;
+                                    $val->video_count1 = $video_count;
                                     $val->title_pa1 = $title_pa;
 									
                                     $cmp[] = $val;
@@ -2313,6 +2316,7 @@ class Assess extends MY_Controller {
                 'gap' => 'true',
                 'Duplicate_Content' => 'true',
                 'images_cmp' => 'true',
+                'video_count' => 'true',
                 'title_pa' => 'true',
                 'videos_cmp' => 'true',
             );
@@ -2543,6 +2547,12 @@ class Assess extends MY_Controller {
                 "sClass" => "images_cmp"
             ),
             array(
+                "sTitle" => "Video",//<span class='subtitle_keyword_short'>Short</span>",
+                "sName" => "video_count",
+                //"sWidth" => "2%",
+                "sClass" => "video_count"
+            ),
+            array(
                 "sTitle" => "Title",//<span class='subtitle_keyword_short'>Short</span>",
                 "sName" => "title_pa",
                 //"sWidth" => "2%",
@@ -2764,6 +2774,7 @@ class Assess extends MY_Controller {
                 $columns[] = array("sTitle" => "Features", "sClass" => "column_features" . $i, "sName" => "column_features" . $i);
                 $columns[] = array("sTitle" => "Title Keywords", "sClass" => "title_seo_phrases" . $i, "sName" => "title_seo_phrases" . $i);
                 $columns[] = array("sTitle" => "Images", "sClass" => "images_cmp" . $i, "sName" => "images_cmp" . $i);
+                $columns[] = array("sTitle" => "Video", "sClass" => "video_count" . $i, "sName" => "video_count" . $i);
                 $columns[] = array("sTitle" => "Title", "sClass" => "title_pa" . $i, "sName" => "title_pa" . $i);
                  if($i == 1){
                                 $columns[] = array("sTitle" => "Gap Analysis", "sClass" => "gap" . $i, "sName" => 'gap');
@@ -2822,6 +2833,7 @@ class Assess extends MY_Controller {
             $result_row->short_seo_phrases = "None";
             $result_row->title_seo_phrases = "None";
             $result_row->images_cmp = "None";
+            $result_row->video_count = "None";
             $result_row->title_pa = "None";
             $result_row->long_seo_phrases = "None";
             $result_row->price_diff = "-";
@@ -3139,6 +3151,7 @@ class Assess extends MY_Controller {
                     $result_row['column_features' . $i] = $parsed_column_features_unserialize_val;
                     $result_row['title_seo_phrases' . $i] = $row->title_seo_pharses1?$row->title_seo_pharses1:'None';
                     $result_row['images_cmp' . $i] = $row->images_cmp1?$row->images_cmp1:'None';
+                    $result_row['video_count' . $i] = $row->video_count1?$row->video_count1:'None';
                     $result_row['title_pa' . $i] = $row->title_pa1?$row->title_pa1:'None';
 
 
@@ -3156,6 +3169,9 @@ class Assess extends MY_Controller {
             }
             if($row->images_cmp1){
                 $result_row->images_cmp1 = $row->images_cmp1;
+            }
+            if($row->video_count1){
+                $result_row->video_count1 = $row->video_count1;
             }
             if($row->title_pa1){
                 $result_row->title_pa1 = $row->title_pa1;
@@ -3312,6 +3328,9 @@ class Assess extends MY_Controller {
             }
             if (isset($pars_atr['parsed_attributes']['product_images'])) {
                 $result_row->images_cmp = $pars_atr['parsed_attributes']['product_images'];
+            }
+            if (isset($pars_atr['parsed_attributes']['video_count'])) {
+                $result_row->video_count = $pars_atr['parsed_attributes']['video_count'];
             }
             if (isset($pars_atr['parsed_attributes']['title'])) {
                 $result_row->title_pa = $pars_atr['parsed_attributes']['title'];
@@ -4188,6 +4207,7 @@ class Assess extends MY_Controller {
                         $data_row->short_seo_phrases,
                         $data_row->title_seo_phrases,
                         $data_row->images_cmp,
+                        $data_row->video_count,
                         $data_row->title_pa,
                         $data_row->long_description,
                         $data_row->long_description_wc,
@@ -4236,6 +4256,7 @@ class Assess extends MY_Controller {
                             $output_row[] = $data_row['column_features' . $i] != null ? $data_row['column_features' . $i] : '';
                             $output_row[] = $data_row['title_seo_phrases' . $i] != null ? $data_row['title_seo_phrases' . $i] : '';
                             $output_row[] = $data_row['images_cmp' . $i] != null ? $data_row['images_cmp' . $i] : '';
+                            $output_row[] = $data_row['video_count' . $i] != null ? $data_row['images_cmp' . $i] : '';
                             $output_row[] = $data_row['title_pa' . $i] != null ? $data_row['title_pa' . $i] : '';
 
 
@@ -4269,6 +4290,7 @@ class Assess extends MY_Controller {
                         $output_row[] = $data_row->column_features1;
                         $output_row[] = $data_row->title_seo_phrases1;
                         $output_row[] = $data_row->images_cmp1;
+                        $output_row[] = $data_row->video_count1;
                         $output_row[] = $data_row->title_pa1;
                         $output_row[] = $data_row->gap;
                         $output_row[] = $data_row->Duplicate_Content;

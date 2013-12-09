@@ -118,6 +118,7 @@ $(function() {
             "short_seo_phrases",
             "title_seo_phrases",
             "images_cmp",
+            "video_count",
             "title_pa",
             "Long_Description",
             "long_description_wc",
@@ -151,6 +152,7 @@ $(function() {
             "Meta_Keywords",
             "title_seo_phrases",
             "images_cmp",
+            "video_count",
             "title_pa",
             "Long_Description",
             "long_description_wc",
@@ -187,6 +189,7 @@ $(function() {
             "column_features1",
             "title_seo_phrases1",
             "images_cmp1",
+            "video_count1",
             "title_pa1",
             "gap",
             "Duplicate_Content"
@@ -618,6 +621,12 @@ $(function() {
             "sClass": "images_cmp"
         },
         {
+            "sTitle": "Video",
+            "sName": "video_count",
+            "sWidth": "2%",
+            "sClass": "video_count"
+        },/*max*/
+        {
             "sTitle": "Title",
             "sName": "title_pa",
             "sWidth": "2%",
@@ -876,6 +885,12 @@ $(function() {
             "sName": "images_cmp1",
             "sWidth": "1%",
             "sClass": "images_cmp1"
+        },
+        {
+            "sTitle": "Video",
+            "sName": "video_count1",
+            "sWidth": "1%",
+            "sClass": "video_count1"
         },
         {
             "sTitle": "Title",
@@ -2832,6 +2847,8 @@ function prevSibilfunc(curentSibil){
         var title_seo_phrases1 = 0;
         var images_cmp = 0;
         var images_cmp1 = 0;
+        var video_count = 0;
+        var video_count1 = 0;
         var title_pa = 0;
         var title_pa1 = 0;
         $('td.word_short').each(function() {
@@ -3229,6 +3246,16 @@ function prevSibilfunc(curentSibil){
                 images_cmp1 += 1;
             }
         });
+        $('td.video_count').each(function() {
+            if ($(this).text()!='') {
+                video_count += 1;
+            }
+        });
+        $('td.video_count1').each(function() {
+            if ($(this).text()!='') {
+                video_count1 += 1;
+            }
+        });
         $('td.title_pa').each(function() {
             if ($(this).text()!='') {
                 title_pa += 1;
@@ -3269,6 +3296,12 @@ function prevSibilfunc(curentSibil){
                 tblAssess.fnSetColumnVis(index, false, false);
             }
             if (value == 'images_cmp1' && images_cmp1 == 0) {
+                tblAssess.fnSetColumnVis(index, false, false);
+            }
+            if (value == 'video_count' && video_count == 0) {
+                tblAssess.fnSetColumnVis(index, false, false);
+            }
+            if (value == 'video_count1' && video_count1 == 0) {
                 tblAssess.fnSetColumnVis(index, false, false);
             }
             if (value == 'title_pa' && title_pa == 0) {
@@ -3612,6 +3645,9 @@ function prevSibilfunc(curentSibil){
                     Meta_Keywords: $("#Meta_Keywords").attr('checked') == 'checked',
                     short_seo_phrases: $("#column_short_seo_phrases").attr('checked') == 'checked',
                     title_seo_phrases: $("#column_title_seo_phrases").attr('checked') == 'checked',
+                    images_cmp: $("#column_images_cmp").attr('checked') == 'checked',
+                    video_count: $("#column_video_count").attr('checked') == 'checked',
+                    title_pa: $("#column_title_pa").attr('checked') == 'checked',
                     Long_Description: $("#Long_Description").attr('checked') == 'checked',
                     long_description_wc: $("#column_long_description_wc").attr('checked') == 'checked',
                     long_seo_phrases: $("#column_long_seo_phrases").attr('checked') == 'checked',
@@ -3633,7 +3669,7 @@ function prevSibilfunc(curentSibil){
                     Duplicate_Content: $("#Duplicate_Content").attr('checked') == 'checked',
                     images_cmp: $("#images_cmp").attr('checked') == 'checked',
                     title_pa: $("#title_pa").attr('checked') == 'checked',
-                    videos_cmp: $("#videos_cmp").attr('checked') == 'checked'
+                    video_count: $("#video_count").attr('checked') == 'checked'
                 };
 
                 // save params to DB
@@ -4184,6 +4220,9 @@ var search_text = GetURLParameter('search_text');
             }
             if ($('#research_assess_images_cmp').is(':checked')) {
                 assessRequestParams.images_cmp = true;
+            }
+            if ($('#research_assess_video_count').is(':checked')) {
+                assessRequestParams.video_count = true;
             }
             if ($('#research_assess_title_pa').is(':checked')) {
                 assessRequestParams.title_pa = true;

@@ -26,7 +26,7 @@
 			<span class="batch_set_depend_options">
 				<input type="radio" name="result_batch_items[]" class="result_batch_items" value="me" /> - Show Results
 			</span>
-            <label class="research_assess_flagged"><input type="checkbox" id="research_assess_flagged" > Only show flagged items</label>
+<!--            <label class="research_assess_flagged"><input type="checkbox" id="research_assess_flagged" > Only show flagged items</label>-->
             <div class="clear"></div>
             <a href="#" onclick="return false;" class="hideShow float_r">
                 <img src="<?php echo base_url();?>img/arrow.png" />
@@ -329,12 +329,12 @@
                 <label for="column_actions">Images</label>
             </p>
             <p>
-                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="title_pa" data-col_name="title_pa" name="title_pa" <?php echo($columns['title_pa'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="column_actions">Title</label>
+                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="video_count" data-col_name="video_count" name="video_count" <?php echo($columns['video_count'] == 'true' ? 'checked="checked"' : ''); ?> />
+                <label for="column_actions">Videos</label>
             </p>
             <p>
-                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="videos_cmp" data-col_name="videos_cmp" name="videos_cmp" <?php echo($columns['videos_cmp'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="column_actions">Videos</label>
+                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="title_pa" data-col_name="title_pa" name="title_pa" <?php echo($columns['title_pa'] == 'true' ? 'checked="checked"' : ''); ?> />
+                <label for="column_actions">Title</label>
             </p>
             </div>
 <!--            <p>
