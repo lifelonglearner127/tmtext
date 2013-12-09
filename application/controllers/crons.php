@@ -1193,7 +1193,7 @@ class Crons extends MY_Controller {
             echo $utd->td;
 //            shell_exec("wget -S -O- ".base_url()."crons/do_stats_forupdated > /dev/null 2>/dev/null &");
             
-                shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/do_stats_forupdated/$trnc > /dev/null 2>/dev/null &");
+              shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/do_stats_forupdated/$trnc > /dev/null 2>/dev/null &");
         } else {
             $this->settings_model->setLastUpdate();
             $mtd = $this->imported_data_parsed_model->getTimeDif();
@@ -2987,6 +2987,111 @@ class Crons extends MY_Controller {
         $this->load->model('statistics_new_model');
         $this->statistics_new_model->emptyItemByBatchId($wmb);
         $this->statistics_new_model->addAmToWal($amb);
+    }
+    
+    function title_keywords($product_name, $short_description, $long_description){
+        $short_sp = $this->get_keywords($product_name, $short_description);
+        $long_sp = $this->get_keywords($product_name, $long_description);
+        if($short_sp){
+            $short_sp = unserialize($short_sp);
+            foreach ($short_sp as $pr){
+                //if($pr['prc']>2)
+                    {
+                    $title_seo_prases[]=$pr;
+                }
+            }
+        }
+        if($long_sp){
+            $long_sp = unserialize($long_sp);
+            foreach ($long_sp as $pr){
+                //if($pr['prc']>2)
+                    {
+                    $title_seo_prases[]=$pr;
+                }
+            }
+        }
+        if (!empty($title_seo_prases)) {
+            foreach($title_seo_prases as $ar_key => $seo_pr){
+                foreach($title_seo_prases as $ar_key1=>$seo_pr1){
+                    if($ar_key!=$ar_key1 && $this->compare_str($seo_pr['ph'],$seo_pr1['ph']) 
+                            && $seo_pr['frq']===$seo_pr1['frq']){
+                        unset($title_seo_prases[$ar_key1]);
+                    }
+                }
+            }
+           return serialize($title_seo_prases);
+        }
+        return 'None';
+    }
+    private function get_keywords($title, $string){
+        
+        $black_list = array('and','the','in','on','at','for');
+        $title = trim(preg_replace(array('/\s+/','/\(.*\)/'),array(' ',''), $title));
+        $string = trim(preg_replace('/\s+/', ' ', $string));
+        $title_w = explode(' ', $title);
+        $title_wc = count($title_w);
+        $string_w = explode(' ', $string);
+        $string_wc = count($string_w);
+        $phrases = array();
+        $i = 0;
+        while($title_wc-$i>1){
+            for($j=0;$j<$i+1;++$j){
+                $needl = '';
+                for($k=$j;$k<$title_wc-$i+$j;++$k){
+                    $needl .=$title_w[$k].' ';
+                }
+                $needl = trim($needl);
+                $frc = substr_count(strtolower($string), strtolower($needl));
+                $prc = ($frc*($title_wc-$i))/$string_wc*100;
+                if($frc>0&&$prc>2){//
+                    $phrases[]=array(
+                        'frq'=>$frc,
+                        'prc'=>round($prc,2),
+                        'ph'=>$needl
+                    );
+                }
+            }
+//            if(!empty($phrases)){
+//                break;
+//            }
+            ++$i;
+        }
+        //*
+        foreach($black_list as $w){
+            foreach ($phrases as $key=>$val){
+                $val['ph']=substr($val['ph'],0,strlen($w))===$w?substr($val['ph'],strlen($w)):$val['ph'];
+                $val['ph']=substr($val['ph'],(-1)*strlen($w))===$w?substr($val['ph'],0,strlen($val['ph'])-strlen($w)):$val['ph'];
+                $val['ph']=trim($val['ph']);
+                $pw = explode(' ', $val['ph']);
+                if(count($pw)<2){
+                    unset($phrases[$key]);
+                }
+            }
+        }
+        foreach($phrases as $ar_key => $seo_pr){
+            foreach($phrases as $ar_key1=>$seo_pr1){
+                if($ar_key!=$ar_key1 && $this->compare_str($seo_pr['ph'],$seo_pr1['ph'])
+                        &&$seo_pr['frq']>=$seo_pr1['frq']){
+                    unset($phrases[$ar_key1]);
+                }
+            }
+        }
+        foreach($phrases as $ar_key => $seo_pr){
+            foreach($phrases as $ar_key1=>$seo_pr1){
+                if($ar_key!=$ar_key1 && $this->compare_str($seo_pr['ph'],$seo_pr1['ph'])){
+                    if($seo_pr['frq']>=$seo_pr1['frq']){
+                        unset($phrases[$ar_key1]);
+                    }
+                    else{
+                        $phrases[$ar_key1]['frq']-=$seo_pr['frq'];
+                        $akw = explode(' ', $seo_pr1['ph']);
+                        $phrases[$ar_key1]['prc'] = round($phrases[$ar_key1]['frq']*count($akw)/$string_wc*100,2);
+                    }
+                }
+            }
+        }
+//*/
+        return serialize($phrases);
     }
 
 }
