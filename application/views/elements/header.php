@@ -58,7 +58,8 @@
     <script type="text/javascript" src="<?php echo base_url();?>js/jquery-templ.js"></script>
     <script type="text/javascript" src="<?php echo base_url();?>js/jquery.validate.min.js"></script>
     <script type="text/javascript" src="<?php echo base_url();?>js/jquery.dataTables.min.js"></script>
-	<script src="http://code.highcharts.com/highcharts.js"></script>
+	
+<script type="text/javascript" src="http://code.highcharts.com/stock/highstock.js"></script>
 	<script src="http://code.highcharts.com/modules/exporting.js"></script>
     <!-- for compare_results page -->
     <?php  if($_SERVER["REQUEST_URI"]){

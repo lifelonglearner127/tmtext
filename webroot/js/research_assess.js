@@ -3,17 +3,40 @@ var readBoardSnapUrl = base_url + 'index.php/assess/get_board_view_snap';
 var readGraphDataUrl = base_url + 'index.php/assess/get_graph_batch_data';
 var readAssessUrlCompare = base_url + 'index.php/assess/compare';
 var rememberBatchValue = base_url + 'index.php/assess/remember_batches';
+var getbatchesvalue = base_url + 'index.php/assess/getbatchvalues';
 var serevr_side = true;
 var serverside_table;
 var tblAllColumns = [];
 var summaryInfoSelectedElements = [];
 var tblAssess;
-
-//$('#report_product_menu li').first()
-
+var last_batch_id;
+var last_compare_batch_id;
 
 
 $(function() {
+
+//    $.ajax({
+//            url: getbatchesvalue,
+//            dataType: 'json',
+//            type: 'POST'
+//        }).done(function(data){
+////           var batches = jQuery.parseJSON(data);
+//          // alert(data.batch_id);
+//           last_batch_id  = data.batch_id;
+//           last_compare_batch_id = data.compare_batch_id;
+//        });
+//        if(last_batch_id){
+//            $('select[name="research_assess_batches"] option').filter(function() {
+//                return this.value == last_batch_id; 
+//            }).attr('selected', true);
+//        }
+//        if(last_compare_batch_id){
+//            $('select[name="research_assess_batches"] option').filter(function() {
+//                return this.value == last_compare_batch_id; 
+//            }).prop('selected', true);
+//        }
+//    
+
     $.fn.serializeObject = function() {
         var o = {};
         var a = this.serializeArray();
@@ -1102,6 +1125,8 @@ function highChart(graphBuild){
     var batch2Value = $(batch_sets[batch_set]['batch_compare']).find('option:selected').val();
     var batch1Name = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').text();
     var batch2Name = $(batch_sets[batch_set]['batch_compare']).find('option:selected').text();
+    var batch1Customer = $('select[name="research_assess_customers"]').find('option:selected').text();
+    var batch2Customer = $('select[id="research_assess_compare_batches_customer"]').find('option:selected').text();   
     if(batch1Value == false || batch1Value == 0 || typeof batch1Value == 'undefined'){
         batch1Value = -1;
     }
@@ -1249,12 +1274,12 @@ function highChart(graphBuild){
         if(batch1Value != -1 && batch2Value != -1){
             seriesObj = [
                             {
-                                name: batch1Name,
+                                name: batch1Customer,
                                 data: value1,
                                 color: '#2f7ed8'
                             },
                             {
-                                name: batch2Name,
+                                name: batch2Customer,
                                 data: value2,
                                 color: '#71a75b'
                          }
@@ -1262,7 +1287,7 @@ function highChart(graphBuild){
         } else if(batch2Value == -1){
             seriesObj = [
                             {
-                                name: batch1Name,
+                                name: batch1Customer,
                                 data: value1,
                                 color: '#2f7ed8'
                             }
@@ -1273,33 +1298,33 @@ function highChart(graphBuild){
         var bigdatalength = Math.max(value1.length , value2.length) ;
        // console.log(bigdatalength);
         
-        if(bigdatalength < 500){
-            $('#highChartContainer').css("width","880px");
-        }
-        if(bigdatalength > 500 && bigdatalength < 1000){
-            $('#highChartContainer').css("width","2000px");
-        }
-        if(bigdatalength >= 1000 && bigdatalength < 1500){
-            $('#highChartContainer').css("width","3000px");
-        }
-        if(bigdatalength >= 1500 && bigdatalength < 2000){
-            $('#highChartContainer').css("width","4000px");
-        }
-        if(bigdatalength >= 2000 && bigdatalength < 3000){
-            $('#highChartContainer').css("width","6000px");
-        }
-        if(bigdatalength >= 3000 && bigdatalength < 4000){
-            $('#highChartContainer').css("width","7500px");
-        }
-        if(bigdatalength >= 4000 && bigdatalength < 5000){
-            $('#highChartContainer').css("width","9000px");
-        }
-        if(bigdatalength >= 5000 && bigdatalength < 6000){
-            $('#highChartContainer').css("width","12000px");
-        }
-        if(bigdatalength >= 6000){
-            $('#highChartContainer').css("width","18000px");
-        }
+//        if(bigdatalength < 500){
+//            $('#highChartContainer').css("width","880px");
+//        }
+//        if(bigdatalength > 500 && bigdatalength < 1000){
+//            $('#highChartContainer').css("width","2000px");
+//        }
+//        if(bigdatalength >= 1000 && bigdatalength < 1500){
+//            $('#highChartContainer').css("width","3000px");
+//        }
+//        if(bigdatalength >= 1500 && bigdatalength < 2000){
+//            $('#highChartContainer').css("width","4000px");
+//        }
+//        if(bigdatalength >= 2000 && bigdatalength < 3000){
+//            $('#highChartContainer').css("width","6000px");
+//        }
+//        if(bigdatalength >= 3000 && bigdatalength < 4000){
+//            $('#highChartContainer').css("width","7500px");
+//        }
+//        if(bigdatalength >= 4000 && bigdatalength < 5000){
+//            $('#highChartContainer').css("width","9000px");
+//        }
+//        if(bigdatalength >= 5000 && bigdatalength < 6000){
+//            $('#highChartContainer').css("width","12000px");
+//        }
+//        if(bigdatalength >= 6000){
+//            $('#highChartContainer').css("width","18000px");
+//        }
         var chart1 = new Highcharts.Chart({
             title: {
                 text: ''
@@ -1316,19 +1341,28 @@ function highChart(graphBuild){
 //                }
             },
             xAxis: {
+                min: 0,
+                max: 300,
                 categories: [],
                 labels: {
                   enabled: false
                 }
             },
+            yAxis: {
+                minPadding: 0.1,
+                maxPadding: 2
+            },
             tooltip: {
                 shared: true,
                 useHTML: true,
-                positioner: function (boxWidth, boxHeight, point) {
-                    if(point.plotX < bigdatalength*2.3)
-                        return { x: point.plotX +100, y: 0 };
-                    else
-                        return { x: point.plotX -300, y: 0 };
+//                positioner: function (boxWidth, boxHeight, point) {
+//                    if(point.plotX < bigdatalength*2.3)
+//                        return { x: point.plotX +100, y: 0 };
+//                    else
+//                        return { x: point.plotX -300, y: 0 };
+//                },
+                positioner: function () {
+                        return { x: 85, y: 0 };
                 },
                 formatter: function() {
                     var result = '<small>'+this.x+'</small> <div class="highcharts-tooltip-close" onclick=\'$(".highcharts-tooltip").css("visibility","hidden"); $("div .highcharts-tooltip span").css("visibility","hidden");\' style="float:right;">X</div><br />';
@@ -1378,6 +1412,22 @@ function highChart(graphBuild){
                 }
             }
         },
+
+        scrollbar: {
+            enabled:true,
+			barBackgroundColor: 'gray',
+			barBorderRadius: 7,
+			barBorderWidth: 0,
+			buttonBackgroundColor: 'gray',
+			buttonBorderWidth: 0,
+			buttonArrowColor: 'yellow',
+			buttonBorderRadius: 7,
+			rifleColor: 'yellow',
+			trackBackgroundColor: 'white',
+			trackBorderWidth: 1,
+			trackBorderColor: 'silver',
+			trackBorderRadius: 7
+	    },
 
             series: seriesObj
         });

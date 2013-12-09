@@ -1,7 +1,7 @@
 <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/smoothness/jquery-ui-1.8.2.custom.css" />
 
     <ul id="report_product_menu" class="nav nav-tabs jq-measure-tabs">
-        <li class="active"><a data-toggle="tab" href="<?php echo site_url('assess/products');?>">Products</a></li>
+        <li id="product_menu_part" class="active"><a data-toggle="tab" href="<?php echo site_url('assess/products');?>">Products</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_departments');?>">Categories</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('assess');?>">Home Pages</a></li>
         <li class='pull_right_navlink'><a href="javascript:void(0);" onclick="viewCustomBatches()">Custom Batch</a></li>
@@ -594,7 +594,7 @@
                 </div>
                 <img id="imgLoader" style="display: none;margin-top: -16px;margin-left: 81px;" src="<?php echo base_url();?>img/img-loader.gif" />
                 <div id="assess_graph">
-                    <div id="highChartContainer" style="width: 880px; height: 310px; margin: 0 auto"></div>
+                    <div id="highChartContainer" style="width: 980px; height: 370px; margin: 20 auto"></div>
                 </div>
              
                 <script type="text/javascript" src="<?php echo base_url();?>js/jquery.json-2.4.min.js"></script>

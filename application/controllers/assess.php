@@ -26,7 +26,8 @@ class Assess extends MY_Controller {
 			'customers_get_all' => true,
 			'assess_save_columns_state' => true,
 			'export_assess' => true,
-                        'remember_batches' => true
+                        'remember_batches' => true,
+                        'getbatchvalues' => true
         ));
     }
 
@@ -4463,7 +4464,7 @@ class Assess extends MY_Controller {
                 $snap_data[0]['short_description_wc'][] = (int) $data_row->short_description_wc;
                 $snap_data[0]['long_description_wc'][] = (int) $data_row->long_description_wc;
                 $snap_data[0]['total_description_wc'][] = (int) $data_row->short_description_wc + (int) $data_row->long_description_wc;
-                $snap_data[0]['revision'][] = (int) $data_row->review_count;
+                $snap_data[0]['revision'][] = (int) $data_row->revision;
 //                $snap_data[0]['own_price'][] = (float) $data_row->own_price;
                 $parsed_attributes_feature = unserialize($data_row->parsed_attributes);
                 if($parsed_attributes_feature['feature_count']){
@@ -4651,12 +4652,22 @@ class Assess extends MY_Controller {
     }
 
     public function remember_batches(){
+        session_start();
         if(isset($_POST['batch_id'])){
            $_SESSION['batch_id'] = $_POST['batch_id'];
         }
         if(isset($_POST['compare_batch_id'])){
            $_SESSION['compare_batch_id'] = $_POST['compare_batch_id'];
         } 
+    }
+    public function getbatchvalues(){
+        session_start();
+        $batches = array(
+            'batch_id' => $_SESSION['batch_id'],
+            'compare_batch_id' => $_SESSION['compare_batch_id']
+        );
+        
+        $this->output->set_content_type('application/json')->set_output(json_encode($batches));
     }
 //}
 
