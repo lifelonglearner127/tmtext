@@ -4281,8 +4281,7 @@ var search_text = GetURLParameter('search_text');
   $('#generate_url').toggle(function() {
 	   var batch_set = $('.result_batch_items:checked').val() || 'me';
        var first = $("select[name='" + batch_sets[batch_set]['batch_batch'] + "']").find('option:selected').val();
-       var second = $("select[id='" + batch_sets[batch_set]['batch_compare'] + "']").find('option:selected').val()
-//       var search_text = $('#assess_filter_text').val()
+      var second =  $(batch_sets[batch_set]['batch_compare']).val();
        var batch_name= $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').text();
        var generate_url_check= $('#generate_url_check').is(':checked')?1:0;
        var generate_url_Summary= $('#generate_url_Summary').is(':checked')?1:0;
