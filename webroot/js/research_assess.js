@@ -4275,7 +4275,13 @@ var search_text = GetURLParameter('search_text');
         
     });
 
-  
+	var $table = $('table.dataTable');
+	$table.floatThead({
+	    scrollContainer: function($table){
+			return $table.closest('.wrapper');
+		}
+	});
+
   $('#generate_url').toggle(function() {
 	   var batch_set = $('.result_batch_items:checked').val() || 'me';
        var first = $("select[name='" + batch_sets[batch_set]['batch_batch'] + "']").find('option:selected').val();

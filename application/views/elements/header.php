@@ -43,6 +43,7 @@
 	<script src="<?php echo base_url();?>js/jquery.anythingslider.min.js"></script>
     <script src="<?php echo base_url();?>js/jquery.scrollTo-1.4.3.1.js"></script>
     <script src="<?php echo base_url();?>js/jquery.fancybox.js"></script>
+    <script src="<?php echo base_url();?>js/jquery.floatThead.min.js"></script>
     <script src="<?php echo base_url();?>js/jquery.cookie.js"></script>
     <script src="<?php echo base_url();?>js/defaults.js"></script>
     <script src="<?php echo base_url();?>js/jquery.expander.js"></script>
