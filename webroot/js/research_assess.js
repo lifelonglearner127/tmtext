@@ -3612,8 +3612,6 @@ function prevSibilfunc(curentSibil){
                     Meta_Keywords: $("#Meta_Keywords").attr('checked') == 'checked',
                     short_seo_phrases: $("#column_short_seo_phrases").attr('checked') == 'checked',
                     title_seo_phrases: $("#column_title_seo_phrases").attr('checked') == 'checked',
-                    images_cmp: $("#column_images_cmp").attr('checked') == 'checked',
-                    title_pa: $("#column_title_pa").attr('checked') == 'checked',
                     Long_Description: $("#Long_Description").attr('checked') == 'checked',
                     long_description_wc: $("#column_long_description_wc").attr('checked') == 'checked',
                     long_seo_phrases: $("#column_long_seo_phrases").attr('checked') == 'checked',
