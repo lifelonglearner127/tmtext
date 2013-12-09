@@ -20,7 +20,7 @@
 					<?php if (isset($direct_access) && $direct_access): ?>
 						<button class="update_filter_btn btn" style="float: right;margin-top: 7px;" title="Filter" >Update</button>
 					<?php else: ?>
-						<button class="assess_report_options_dialog_button btn" style="float: right;margin-top: 7px;" title="Report Options"><img class="other-icon" src="<?php echo base_url();?>img/ico-gear.png" /></button>
+						<!--<button class="assess_report_options_dialog_button btn" style="float: right;margin-top: 7px;" title="Report Options"><img class="other-icon" src="<?php echo base_url();?>img/ico-gear.png" /></button>-->
 					<?php endif ?>
 				</span>
 			</h3>

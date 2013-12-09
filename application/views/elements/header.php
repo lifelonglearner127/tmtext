@@ -43,6 +43,7 @@
 	<script src="<?php echo base_url();?>js/jquery.anythingslider.min.js"></script>
     <script src="<?php echo base_url();?>js/jquery.scrollTo-1.4.3.1.js"></script>
     <script src="<?php echo base_url();?>js/jquery.fancybox.js"></script>
+    <script src="<?php echo base_url();?>js/jquery.floatThead.min.js"></script>
     <script src="<?php echo base_url();?>js/jquery.cookie.js"></script>
     <script src="<?php echo base_url();?>js/defaults.js"></script>
     <script src="<?php echo base_url();?>js/jquery.expander.js"></script>
@@ -58,7 +59,8 @@
     <script type="text/javascript" src="<?php echo base_url();?>js/jquery-templ.js"></script>
     <script type="text/javascript" src="<?php echo base_url();?>js/jquery.validate.min.js"></script>
     <script type="text/javascript" src="<?php echo base_url();?>js/jquery.dataTables.min.js"></script>
-	<script src="http://code.highcharts.com/highcharts.js"></script>
+	
+<script type="text/javascript" src="http://code.highcharts.com/stock/highstock.js"></script>
 	<script src="http://code.highcharts.com/modules/exporting.js"></script>
     <!-- for compare_results page -->
     <?php  if($_SERVER["REQUEST_URI"]){
