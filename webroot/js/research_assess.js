@@ -4372,12 +4372,14 @@ var search_text = GetURLParameter('search_text');
         
     });
 
-	var $table = $('table.dataTable');
+	var $table = $('table#tblAssess');
 	$table.floatThead({
+		//scrollingTop: pageTop,
 	    scrollContainer: function($table){
 			return $table.closest('.wrapper');
 		}
 	});
+
 
   $('#generate_url').toggle(function() {
 	   var batch_set = $('.result_batch_items:checked').val() || 'me';
