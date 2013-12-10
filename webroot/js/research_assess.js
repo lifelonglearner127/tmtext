@@ -328,7 +328,7 @@ $(function() {
                             var info = $(this).parent().find('div.prod_description').html();
                             showSnap('<img src="'+$(this).attr('src')+'" style="float:left; max-width: 600px; margin-right: 10px">'+info);
                         });
-                        $('table#tblAssess').floatThead('reflow');
+                       
                      }
                 });
                 
