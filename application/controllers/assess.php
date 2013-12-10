@@ -3592,36 +3592,45 @@ class Assess extends MY_Controller {
                     }
                     $result_row->long_seo_phrases = $str_long_seo . '</table>';
                 }
+                //getting title_keywords from statistics_new
                 $title_seo_pr=array();
-                $l_s = $this->get_keywords($result_row->product_name, $result_row->long_description);
-                $s_s = $this->get_keywords($result_row->product_name, $result_row->short_description);
-                if($long_seo){
-                    $long_seo = unserialize($l_s);
-                    foreach($long_seo as $ls_phr){
-                            //if($ls_phr['prc']>2)
-                                {
-                                $title_seo_pr[]=$ls_phr;
-                            }
-                    }
-                }
-                if($short_seo){
-                    $short_seo = unserialize($s_s);
-                    foreach($short_seo as $ss_phr){
-                            //if($ss_phr['prc']>2)
-                                {
-                                $title_seo_pr[]=$ss_phr;
-                            }
-                    }
-                }
-                if (!empty($title_seo_pr)) {
-                    foreach($title_seo_pr as $ar_key => $seo_pr){
-                        foreach($title_seo_pr as $ar_key1=>$seo_pr1){
-                            if($ar_key!=$ar_key1 && $this->compare_str($seo_pr['ph'], $seo_pr1['ph'])
-                                    && $seo_pr['frq']===$seo_pr1['frq']){
-                                unset($title_seo_pr[$ar_key1]);
-                            }
-                        }
-                    }
+//                $l_s = $this->get_keywords($result_row->product_name, $result_row->long_description);
+//                $s_s = $this->get_keywords($result_row->product_name, $result_row->short_description);
+//                if($long_seo){
+//                    $long_seo = unserialize($l_s);
+//                    foreach($long_seo as $ls_phr){
+//                            //if($ls_phr['prc']>2)
+//                                {
+//                                $title_seo_pr[]=$ls_phr;
+//                            }
+//                    }
+//                }
+//                if($short_seo){
+//                    $short_seo = unserialize($s_s);
+//                    foreach($short_seo as $ss_phr){
+//                            //if($ss_phr['prc']>2)
+//                                {
+//                                $title_seo_pr[]=$ss_phr;
+//                            }
+//                    }
+//                }
+                
+            if($row->title_keywords !='' && $row->title_keywords !='None' ){
+                $title_seo_pr = unserialize($row->title_keywords);
+            }
+                
+//            echo "<pre>";
+//            var_dump($row->title_keywords);
+//            print_r($title_seo_pr);exit;
+            if (!empty($title_seo_pr)) {
+//                    foreach($title_seo_pr as $ar_key => $seo_pr){
+//                        foreach($title_seo_pr as $ar_key1=>$seo_pr1){
+//                            if($ar_key!=$ar_key1 && $this->compare_str($seo_pr['ph'], $seo_pr1['ph'])
+//                                    && $seo_pr['frq']===$seo_pr1['frq']){
+//                                unset($title_seo_pr[$ar_key1]);
+//                            }
+//                        }
+//                    }
                     $str_title_long_seo = '<table class="table_keywords_long 3186">';
                     foreach ($title_seo_pr as $val) {
                         $str_title_long_seo .= '<tr><td>' . $val['ph'] . '</td><td class = "phr-density">' . $val['prc'] 

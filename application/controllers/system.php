@@ -2415,6 +2415,8 @@ class System extends MY_Controller {
     	foreach ($kw_words_data as $ka => $va) {
     		$this->kwsync_queue_list_model->insert($va['kw_id'], $va['kw'], $va['url']); // === add to queue
     	}
+        if(isset($_POST['shell_queue']))
+            shell_exec('php index.php crawl crawl_sync_meta_personal');
     }
     // ===== starting syncing/adding processes (end)
 
@@ -3115,5 +3117,21 @@ class System extends MY_Controller {
         $this->load->model('kwsync_queue_list_model');
         echo $id . ' - ' . $kw . ' - ' . $url;
         $this->kwsync_queue_list_model->insert($id, $kw, $url);
+    }
+    
+    public function sync_keyword_status(){
+        $this->data['batches_list'] = $this->system_batches_list();
+        $this->render();
+    }
+    
+    public function stopQueue(){
+        $file = realpath(BASEPATH . "../webroot/temp/sync_keyword_status.txt");
+        file_put_contents($file, 0);
+    }
+    
+    public function check_queue_count(){
+        $file = realpath(BASEPATH . "../webroot/temp/sync_keyword_status.txt");
+        $items = file_get_contents($file);
+        echo 'Remaining ' . $items . ' items.';
     }
 }

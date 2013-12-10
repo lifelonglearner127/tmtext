@@ -183,9 +183,17 @@ class Crawl extends MY_Controller {
         
         $rows = $this->kwsync_queue_list_model->getAll();
         if(!empty($rows)){
+            $file = realpath(BASEPATH . "../webroot/temp/sync_keyword_status.txt");
+            $count = count($rows);
+            file_put_contents($file, $count);
             foreach($rows as $value){
+                $current = file_get_contents($file);
+                if(!$current)
+                    break;
                 $res = $this->rankapi_model->sync_meta_personal_keyword($value['id']);
                 echo "\nKeywrod: " . $value['kw'] . "URL: " . $value['url'] . "\n";
+                $count--;
+                file_put_contents($file, $count);
             }
             $this->kwsync_queue_list_model->deleteAll();
         }

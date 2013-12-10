@@ -15,28 +15,21 @@ var last_compare_batch_id;
 
 $(function() {
 
-//    $.ajax({
-//            url: getbatchesvalue,
-//            dataType: 'json',
-//            type: 'POST'
-//        }).done(function(data){
-////           var batches = jQuery.parseJSON(data);
-//          // alert(data.batch_id);
-//           last_batch_id  = data.batch_id;
-//           last_compare_batch_id = data.compare_batch_id;
-//        });
-//        if(last_batch_id){
-//            $('select[name="research_assess_batches"] option').filter(function() {
-//                return this.value == last_batch_id; 
-//            }).attr('selected', true);
-//        }
-//        if(last_compare_batch_id){
-//            $('select[name="research_assess_batches"] option').filter(function() {
-//                return this.value == last_compare_batch_id; 
-//            }).prop('selected', true);
-//        }
-//    
+    $.ajax({
+            url: getbatchesvalue,
+            dataType: 'json',
+            type: 'POST'
+        }).done(function(data){
+           last_batch_id  = data.batch_id;
+           last_compare_batch_id = data.compare_batch_id;
+          $('select[name="research_assess_batches"]').val(last_batch_id).change()
+                setTimeout(function(){
 
+                $('select[id="research_assess_compare_batches_batch"]').val(last_compare_batch_id).change()
+                 $('#research_assess_update').click();
+                },1500)
+        });
+        
     $.fn.serializeObject = function() {
         var o = {};
         var a = this.serializeArray();
@@ -1872,7 +1865,7 @@ var generate_url_check = GetURLParameter('generate_url_check');
 	$(document).on('click', '.update_filter_btn', function(e) {
 		$('#research_assess_update').click();
 	});
-        $(document).on('click','#tk-denisty',function(){
+        $(document).on('click','.phr-frequency',function(){
             $('.phr-frequency').hide();
             $('.phr-density').show();
         });

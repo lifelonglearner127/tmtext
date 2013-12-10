@@ -26,7 +26,6 @@ class Kwsync_queue_list_model extends CI_Model {
         $data['stamp'] = date("Y-m-d H:i:s");
         
         $query = $this->db->get_where($this->tables['kwsync_queue_list'], array('meta_kw_rank_source_id' => $id));
-        var_dump($query);
         $result = $query->result_array();
         if(!$result)
             $this->db->insert($this->tables['kwsync_queue_list'], $data);
