@@ -233,8 +233,10 @@ $(function() {
             th += '<th with = "100px"></th>';
         }
         var newTable = '<table id="tblAssess" class="tblDataTable"><thead>'+th+'</thead><tbody></tbody></table>';
-        $('#dt_tbl').prepend(newTable);        
         
+        $('#dt_tbl').prepend(newTable); 
+              
+        			
         tblAssess = $('#tblAssess').dataTable({
             "bJQueryUI": true,
             "bDestroy": true,
@@ -333,6 +335,7 @@ $(function() {
                             var info = $(this).parent().find('div.prod_description').html();
                             showSnap('<img src="'+$(this).attr('src')+'" style="float:left; max-width: 600px; margin-right: 10px">'+info);
                         });
+                        $('table#tblAssess').floatThead('reflow');
                      }
                 });
                 
@@ -344,6 +347,7 @@ $(function() {
             "fnRowCallback": function(nRow, aData, iDisplayIndex) {
                 $(nRow).attr("add_data", aData[33]);
                 return nRow;
+                $('table#tblAssess').floatThead('reflow');
             },
             "fnDrawCallback": function(oSettings) {
                 tblAssess_postRenderProcessing();
@@ -353,6 +357,7 @@ $(function() {
                 }
                 hideColumns();
                 check_word_columns();
+				$('table#tblAssess').floatThead('reflow');
             },
             "oLanguage": {
                 "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
@@ -364,7 +369,9 @@ $(function() {
             "aoColumns": columns
 
         });
-
+		new FixedHeader( tblAssess, { "bottom": true } );
+		
+			
         $('#tblAssess_length').after('<div id="assess_tbl_show_case" class="assess_tbl_show_case">' +
                 '<a id="assess_tbl_show_case_recommendations" data-case="recommendations" class="active_link" title="Recommendations" href="#" >Recommendations</a> |' +
                 '<a id="assess_tbl_show_case_report" data-case="report" title="Report" href="#">Summary</a> |' +
@@ -388,7 +395,7 @@ $(function() {
             }
             assess_tbl_show_case(this);
         });
-
+		
     }
 
     function createTable() {
@@ -1109,6 +1116,7 @@ $(function() {
             }
             hideColumns();
             check_word_columns();
+            new FixedHeader( document.getElementById('tblAssess') );
         },
         "oLanguage": {
             "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
@@ -4371,16 +4379,18 @@ var search_text = GetURLParameter('search_text');
         });
         
     });
-
-	var $table = $('table#tblAssess');
-	$table.floatThead({
-		//scrollingTop: pageTop,
-	    scrollContainer: function($table){
-			return $table.closest('.wrapper');
-		}
-	});
-
-
+//scrollingTop: pageTop,
+	/*$('table#tblAssess').floatThead({
+					
+				    scrollContainer: function($table){
+						return $('table#tblAssess').closest('.wrapper');
+				}
+			});
+	
+	$( window ).scroll(function() {
+			$('table#tblAssess').floatThead('reflow');
+	);*/
+	
   $('#generate_url').toggle(function() {
 	   var batch_set = $('.result_batch_items:checked').val() || 'me';
        var first = $("select[name='" + batch_sets[batch_set]['batch_batch'] + "']").find('option:selected').val();
