@@ -342,7 +342,7 @@ $(function() {
              }
             },
             "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-                $(nRow).attr("add_data", aData[32]);
+                $(nRow).attr("add_data", aData[33]);
                 return nRow;
             },
             "fnDrawCallback": function(oSettings) {
@@ -436,7 +436,7 @@ $(function() {
                         "sLengthMenu": "_MENU_ rows"
                     },
                     "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-                        $(nRow).attr("add_data", aData[32]);
+                        $(nRow).attr("add_data", aData[33]);
                         return nRow;
                     },
                     "fnDrawCallback": function(oSettings) {
@@ -1098,7 +1098,7 @@ $(function() {
             });
         },
         "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-            $(nRow).attr("add_data", aData[32]);
+            $(nRow).attr("add_data", aData[33]);
             return nRow;
         },
         "fnDrawCallback": function(oSettings) {
