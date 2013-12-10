@@ -1864,7 +1864,7 @@ var generate_url_check = GetURLParameter('generate_url_check');
 	$(document).on('click', '.update_filter_btn', function(e) {
 		$('#research_assess_update').click();
 	});
-        $(document).on('click','#tk-denisty',function(){
+        $(document).on('click','.phr-frequency',function(){
             $('.phr-frequency').hide();
             $('.phr-density').show();
         });
