@@ -340,7 +340,6 @@ $(function() {
             "fnRowCallback": function(nRow, aData, iDisplayIndex) {
                 $(nRow).attr("add_data", aData[33]);
                 return nRow;
-                $('table#tblAssess').floatThead('reflow');
             },
             "fnDrawCallback": function(oSettings) {
                 tblAssess_postRenderProcessing();
@@ -350,7 +349,6 @@ $(function() {
                 }
                 hideColumns();
                 check_word_columns();
-				$('table#tblAssess').floatThead('reflow');
             },
             "oLanguage": {
                 "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
