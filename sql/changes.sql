@@ -820,3 +820,10 @@ CREATE TABLE IF NOT EXISTS `urls` (
   `friendly_url` int(1000) NOT NULL
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1
+
+# 12/10 Fjodor
+ALTER TABLE `statistics_new`
+  DROP `short_seo_phrases`,
+  DROP `long_seo_phrases`;
+
+ALTER TABLE  `statistics_new` ADD  `title_keywords` VARCHAR( 8000 ) NOT NULL AFTER  `long_description_wc`
