@@ -187,15 +187,14 @@ class Statistics_new_model extends CI_Model {
 
     function insert_updated( $imported_data_id, $revision,
                          $short_description_wc, $long_description_wc,
-                         $short_seo_phrases, $long_seo_phrases,
+                         $title_keywords,
                          $own_price, $price_diff, $competitors_prices, $items_priced_higher_than_competitors, $similar_products_competitors,
                          $research_and_batch_ids){
 
         $idata['revision'] = $revision;
         $idata['short_description_wc'] = (string)$short_description_wc;
         $idata['long_description_wc'] = (string)$long_description_wc;
-        $idata['short_seo_phrases'] = (string)$short_seo_phrases;
-        $idata['long_seo_phrases'] = (string)$long_seo_phrases;
+        $idata['title_keywords'] = (string)$title_keywords;
         $idata['created'] = date('Y-m-d h:i:s');
         $idata['own_price'] = (string)$own_price;
         $idata['price_diff'] = (string)$price_diff;
@@ -216,7 +215,7 @@ class Statistics_new_model extends CI_Model {
         }else{
         
         $idata['imported_data_id'] = $imported_data_id;
-        $this->db->insert('statistics_new', $idata);
+         $this->db->insert('statistics_new', $idata);
        
         }
             
