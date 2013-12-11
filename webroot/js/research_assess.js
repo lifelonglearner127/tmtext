@@ -4422,13 +4422,12 @@ var search_text = GetURLParameter('search_text');
 	
 	
 	$(function(){
-  	$(window).scroll(function(){
+  	$(window).scroll(setTimeot(function(){
 		    var aTop = $('#report_product_menu').height();
 		    if($(this).scrollTop()>=aTop){
-		        
-		        $('table#tblAssess').floatThead('reflow');
+		      $('table#tblAssess').floatThead('reflow');
 		    }
-  		});
+  		}, 500));
 	});	
 	//setInterval(reflow, 500);
 	
