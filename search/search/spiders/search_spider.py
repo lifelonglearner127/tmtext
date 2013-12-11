@@ -249,6 +249,10 @@ class SearchSpider(BaseSpider):
 
 		#TODO: search by model number extracted from product name? Don't I do that implicitly? no, but in combinations
 
+		# if there is no product model, try to extract it
+		if not product_model:
+			product_model = product_name[ProcessText.extract_model_nr_index(product_name)]
+
 		# 1) Search by model number
 		if product_model:
 			query1 = self.build_search_query(product_model)
