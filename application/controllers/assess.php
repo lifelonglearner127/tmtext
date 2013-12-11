@@ -4015,7 +4015,7 @@ class Assess extends MY_Controller {
 			'skus_shorter_than_competitor_product_content' => array( 'value' => $skus_shorter_than_competitor_product_content, 'percentage' => array('batch1')),
 			'skus_longer_than_competitor_product_content' => array( 'value' => $skus_longer_than_competitor_product_content, 'percentage' => array('batch1')),
 			'skus_same_competitor_product_content' => array( 'value' => $skus_same_competitor_product_content, 'percentage' => array('batch1')),
-			'skus_fewer_features_than_competitor' => array( 'value' => $skus_fewer_features_than_competitor, 'percentage' => array('batch1')),
+			'skus_fewer_features_than_competitor' => array( 'value' => $skus_fewer_features_than_competitor, 'percentage' => array('batch1'), 'icon' => $skus_fewer_features_than_competitor ? 'assess_report_seo_red.png' : 'assess_report_seo.png'),
 			'skus_fewer_reviews_than_competitor' => array( 'value' => $skus_fewer_reviews_than_competitor, 'percentage' => array('batch1')),
 			'skus_fewer_competitor_optimized_keywords' => array( 'value' => $skus_fewer_competitor_optimized_keywords, 'percentage' => array('batch1')),
 			'skus_zero_optimized_keywords' => array( 'value' => $skus_zero_optimized_keywords, 'percentage' => array('batch1')),
@@ -4052,6 +4052,8 @@ class Assess extends MY_Controller {
 		foreach ($summary_fields as $key => $summary_field)
 		{						
 			$report['summary'][$key] = trim($summary_field['value']) . $this->calculatePercentage(array('batch1' => $own_batch_total_items, 'batch2' => $build_assess_params->batch2_items_count), $summary_field);
+			if (isset($summary_field['icon']))
+				$report['summary'][$key . '_icon'] = $summary_field['icon'];
 		}		              
 		
         // only if second batch select - get absent products, merge it with result_table

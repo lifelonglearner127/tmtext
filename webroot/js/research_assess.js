@@ -1718,8 +1718,17 @@ var scrollYesOrNot = true;
 				
 		for (var it = 0; it < summaryFieldNames.length; it++)
 			if (summary[summaryFieldNames[it]] !== undefined)
-			{												
-				$('.' + batch_prefix + summaryFieldNames[it]).html(numberWithCommas(summary[summaryFieldNames[it]]));
+			{			
+				var filter_item_data_wrapper = $('.' + batch_prefix + summaryFieldNames[it]);
+				if (summary[summaryFieldNames[it] + '_icon'])
+				{
+					var current_icon = filter_item_data_wrapper.prev()
+						, icon_src = current_icon.attr('src');
+					
+					current_icon.attr('src', icon_src.substring(0, icon_src.lastIndexOf('/') + 1) + summary[summaryFieldNames[it] + '_icon']);				
+				}
+					
+				filter_item_data_wrapper.html(numberWithCommas(summary[summaryFieldNames[it]]));
 			}
 		
 		transformSummarySection();
