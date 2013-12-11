@@ -4419,10 +4419,18 @@ var search_text = GetURLParameter('search_text');
 			});
 			
 			
-	/*
-	$( window ).scroll(function() {
-			$('table#tblAssess').floatThead('reflow');
-	);*/
+	
+	
+	$(function(){
+  	$(window).scroll(function(){
+		    var aTop = $('#report_product_menu').height();
+		    if($(this).scrollTop()>=aTop){
+		        
+		        $('table#tblAssess').floatThead('reflow');
+		    }
+  		});
+	});	
+	//setInterval(reflow, 500);
 	
   $('#generate_url').toggle(function() {
 	   var batch_set = $('.result_batch_items:checked').val() || 'me';
