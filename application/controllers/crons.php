@@ -2636,7 +2636,7 @@ class Crons extends MY_Controller {
             foreach($title_seo_prases as $ar_key => $seo_pr){
                 foreach($title_seo_prases as $ar_key1=>$seo_pr1){
                     if($ar_key!=$ar_key1 && $this->compare_str($seo_pr['ph'],$seo_pr1['ph']) 
-                            && $seo_pr['frq']===$seo_pr1['frq']){
+                            && ($seo_pr['frq']==$seo_pr1['frq'] || substr_count($seo_pr['frq'], $seo_pr1['frq'])>0 || substr_count($seo_pr1['frq'], $seo_pr['frq'])>0 )){
                         unset($title_seo_prases[$ar_key1]);
                     }
                 }
