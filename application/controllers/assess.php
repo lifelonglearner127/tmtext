@@ -284,6 +284,9 @@ class Assess extends MY_Controller {
                                     $parsed_H2_Tags_unserialize_val_count = '';
                                     $parsed_average_review_unserialize_val_count = '';
                                     $title_seo_prases = array();
+                                    $images_cmp = 'none';
+                                    $video_count = 'none';
+                                    $title_pa = 'none';
                                     $parsed_column_features_unserialize_val_count = '';
                                     $column_external_content = '';
                                     $cmpare = $this->statistics_new_model->get_compare_item($item['imported_data_id']);
@@ -459,15 +462,15 @@ class Assess extends MY_Controller {
                                     $val->column_reviews1 = $parsed_column_reviews_unserialize_val;
                                     $val->average_review1 = $parsed_average_review_unserialize_val_count;
                                     $val->column_features1 = $parsed_column_features_unserialize_val_count;
+                                    $val->title_seo_phrases1 = $tsp !== '' ? $tsp : 'None';
+                                    $val->images_cmp1 = $images_cmp;
+                                    $val->video_count1 = $video_count;
+                                    $val->title_pa1 = $title_pa;
                                     $cmpare->imported_data_id = $item['imported_data_id'];
                                     $batch2_items_count++;
 
                                     $similar_items_data[] = $cmpare;
                                     $val->similar_items = $similar_items_data;
-                                    $val->title_seo_phrases1 = $tsp !== '' ? $tsp : 'None';
-                                    $val->images_cmp1 = $images_cmp;
-                                    $val->video_count1 = $video_count;
-                                    $val->title_pa1 = $title_pa;
 
                                     $cmp[] = $val;
                                     break;
@@ -2861,6 +2864,9 @@ class Assess extends MY_Controller {
                     $parsed_column_features_unserialize_val = '';
                     $parsed_attributes_model_unserialize_val = '';
                     $column_external_content = '';
+                    $images_cmp = '';
+                    $video_count = '';
+                    $title_pa = '';
 
                     $parsed_attributes_unserialize = unserialize($sim_items[$i - 1]->parsed_attributes);
 
@@ -2924,6 +2930,13 @@ class Assess extends MY_Controller {
                         $parsed_average_review_unserialize_val = $parsed_attributes_unserialize['average_review'];
                     if (isset($parsed_attributes_unserialize['feature_count']))
                         $parsed_column_features_unserialize_val = $parsed_attributes_unserialize['feature_count'];
+                    if (isset($parsed_attributes_unserialize['product_images']))
+                        $images_cmp = $parsed_attributes_unserialize['product_images'];
+                    if (isset($parsed_attributes_unserialize['video_count']))
+                        $video_count = $parsed_attributes_unserialize['video_count'];
+                    if (isset($parsed_attributes_unserialize['title']))
+                        $title_pa = $parsed_attributes_unserialize['title'];
+                   
                     $parsed_meta_unserialize = unserialize($sim_items[$i - 1]->parsed_meta);
 
                     if (isset($parsed_attributes_unserialize['pdf_count']) && $parsed_attributes_unserialize['pdf_count']) {
@@ -3040,9 +3053,9 @@ class Assess extends MY_Controller {
                     $result_row['average_review' . $i] = $parsed_average_review_unserialize_val;
                     $result_row['column_features' . $i] = $parsed_column_features_unserialize_val;
                     $result_row['title_seo_phrases' . $i] = $row->title_seo_pharses1 ? $row->title_seo_pharses1 : 'None';
-                    $result_row['images_cmp' . $i] = $row->images_cmp1 ? $row->images_cmp1 : 'None';
-                    $result_row['video_count' . $i] = $row->video_count1 ? $row->video_count1 : 'None';
-                    $result_row['title_pa' . $i] = $row->title_pa1 ? $row->title_pa1 : 'None';
+                    $result_row['images_cmp' . $i] = $images_cmp ? $images_cmp : 'None';
+                    $result_row['video_count' . $i] = $video_count ? $video_count : 'None';
+                    $result_row['title_pa' . $i] = $title_pa ? $title_pa : 'None';
                 }
 
                 $result_row = (object) $result_row;
@@ -4152,8 +4165,8 @@ class Assess extends MY_Controller {
                             $output_row[] = $data_row['average_review' . $i] != null ? $data_row['average_review' . $i] : '';
                             $output_row[] = $data_row['column_features' . $i] != null ? $data_row['column_features' . $i] : '';
                             $output_row[] = $data_row['title_seo_phrases' . $i] != null ? $data_row['title_seo_phrases' . $i] : '';
-                            $output_row[] = $data_row['images_cmp' . $i] != null ? $data_row['images_cmp' . $i] : '';
-                            $output_row[] = $data_row['video_count' . $i] != null ? $data_row['images_cmp' . $i] : '';
+                            $output_row[] = $data_row['images_cmp' . $i] != null ? $data_row['images_cmp' . $i] : 'none';
+                            $output_row[] = $data_row['video_count' . $i] != null ? $data_row['video_count' . $i] : 'none';
                             $output_row[] = $data_row['title_pa' . $i] != null ? $data_row['title_pa' . $i] : '';
                         }
 
