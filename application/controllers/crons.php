@@ -2632,11 +2632,12 @@ class Crons extends MY_Controller {
                 }
             }
         }
+        $title_prases = array();
         if (!empty($title_seo_prases)) {
             foreach($title_seo_prases as $ar_key => $seo_pr){
                 foreach($title_seo_prases as $ar_key1=>$seo_pr1){
                     if(($ar_key!=$ar_key1 && $this->compare_str($seo_pr['ph'],$seo_pr1['ph']) 
-                            && ($seo_pr['frq']==$seo_pr1['frq'])) || substr_count($seo_pr['ph'], $seo_pr1['ph'])>0 || substr_count($seo_pr1['ph'], $seo_pr['ph'])>0 ){
+                            && ($seo_pr['frq']==$seo_pr1['frq'])) || substr_count($seo_pr['ph'], $seo_pr1['ph'])>0 ){
                         unset($title_seo_prases[$ar_key1]);
                     }
                 }
