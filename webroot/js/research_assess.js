@@ -369,7 +369,7 @@ $(function() {
             "aoColumns": columns
 
         });
-		 new FixedHeader( tblAssess, { "bottom": true } );
+		 //new FixedHeader( tblAssess, { "bottom": true } );
 		
 			
         $('#tblAssess_length').after('<div id="assess_tbl_show_case" class="assess_tbl_show_case">' +
