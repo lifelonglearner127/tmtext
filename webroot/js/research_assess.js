@@ -235,7 +235,7 @@ $(function() {
             th += '<th with = "100px"></th>';
         }
         var newTable = '<table id="tblAssess" class="tblDataTable"><thead>'+th+'</thead><tbody></tbody></table>';
-        $('table#tblAssess').floatThead('reflow');
+        // $('table#tblAssess').floatThead('reflow');
         $('#dt_tbl').prepend(newTable); 
               
         			
@@ -280,11 +280,11 @@ $(function() {
                             //                                $('#research_assess_filter_long_descriptions_panel').show();
                             $('.assess_report_items_1_descriptions_pnl').hide();
                             $('.assess_report_items_2_descriptions_pnl').hide();
-                            $('table#tblAssess').floatThead('reflow');
+                            // $('table#tblAssess').floatThead('reflow');
                         }
                         
                         
-                        $('table#tblAssess').floatThead('reflow');
+                        // $('table#tblAssess').floatThead('reflow');
                     }
 //                    if (json.aaData.length > 0) {
 //                        var str = '';
@@ -313,7 +313,7 @@ $(function() {
 
                 });
                 highChart('total_description_wc');
-                $('table#tblAssess').floatThead('reflow');
+                // $('table#tblAssess').floatThead('reflow');
                 $.ajax({
                     type: "POST",
                     url: readBoardSnapUrl,
@@ -392,7 +392,7 @@ $(function() {
                     $('#research_assess_choiceColumnDialog').dialog('open');
                     $('#research_assess_choiceColumnDialog').parent().find('button:first-child').addClass("popupGreen");
                 });
-        $('table#tblAssess').floatThead('reflow');
+        // $('table#tblAssess').floatThead('reflow');
         $('#assess_tbl_show_case a').on('click', function(event) {
             event.preventDefault();
             if ($(this).text() == 'Details' || $(this).text() == 'Compare') {
@@ -410,7 +410,7 @@ $(function() {
         var aoDataa = buildTableParams(oSettings.aoData);
         var newObject = jQuery.extend(true, {}, aoDataa);
         var batch_set = $('.result_batch_items:checked').val() || 'me';		
-		$('table#tblAssess').floatThead('reflow');
+		// $('table#tblAssess').floatThead('reflow');
         $.getJSON(readAssessUrl, aoDataa, function(json) {
             tblAllColumns = [];
             for(p in json.columns){
@@ -512,7 +512,7 @@ $(function() {
                     $('#research_assess_choiceColumnDialog').dialog('open');
                     $('#research_assess_choiceColumnDialog').parent().find('button:first-child').addClass("popupGreen");
                 });
-                $('table#tblAssess').floatThead('reflow');
+                // $('table#tblAssess').floatThead('reflow');
                 $('#assess_tbl_show_case a').on('click', function(event) {
                     event.preventDefault();
                     if ($(this).text() == 'Details' || $(this).text() == 'Compare') {
@@ -557,7 +557,7 @@ $(function() {
                 $('table#tblAssess').floatThead('reflow');
              }
         });
-       $('table#tblAssess').floatThead('reflow');
+       // $('table#tblAssess').floatThead('reflow');
     }
     $.fn.dataTableExt.oApi.fnGetAllSColumnNames = function(oSettings) {
         allColumns = [];
@@ -1010,7 +1010,7 @@ $(function() {
 			// console.log(ui);
 		}
 	});
-	$('table#tblAssess').floatThead('reflow');
+	// $('table#tblAssess').floatThead('reflow');
     tblAssess = $('#tblAssess').dataTable({
         "bJQueryUI": true,
         "bDestroy": true,
