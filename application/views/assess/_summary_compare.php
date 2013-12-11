@@ -159,4 +159,7 @@
 			<span class="<?php echo $batch_set . $filter_item['data_filter_id'] ?> mr_10" ></span>
 		</div>
 	</div>
+	<?php if ($filter_item['class'] == 'batch2_filter_item'): ?>
+		<div style="clear: both"></div>
+	<?php endif ?>
 <?php endforeach ?>

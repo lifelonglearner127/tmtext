@@ -1649,6 +1649,9 @@ var scrollYesOrNot = true;
 		{
 			$('.ui-selectee, .non-selectable').css({'font-size' : 'small'});
 			
+			//display percentages
+			$('.filter_item_percentage').show();
+			
 			if (!common_batch1_filter_items.hasClass('batch1_filter_items'))
 				common_batch1_filter_items.addClass('batch1_filter_items');
 				
@@ -1669,6 +1672,9 @@ var scrollYesOrNot = true;
 		} else {
 			
 			$('.ui-selectee, .non-selectable').css({'font-size' : '1em'});
+			
+			//hide percentages
+			$('.filter_item_percentage').hide();
 			
 			if (common_batch1_filter_items.hasClass('batch1_filter_items'))
 				common_batch1_filter_items.removeClass('batch1_filter_items');
@@ -1700,13 +1706,14 @@ var scrollYesOrNot = true;
 	function fillReportSummary(summary, batch_prefix)
 	{			
 		var batch_prefix = batch_prefix || 'batch_me_';
-		
-		transformSummarySection();
+				
 		for (var it = 0; it < summaryFieldNames.length; it++)
 			if (summary[summaryFieldNames[it]] !== undefined)
 			{												
 				$('.' + batch_prefix + summaryFieldNames[it]).html(numberWithCommas(summary[summaryFieldNames[it]]));
 			}
+		
+		transformSummarySection();
 	}
 	
     function buildReport(data) {
@@ -1716,12 +1723,14 @@ var scrollYesOrNot = true;
         }
 		
         var report = data.ExtraData.report;
-		var batch_set = $('.result_batch_items:checked').val() || 'me';			
-		fillReportSummary(report.summary, batch_sets[batch_set]['batch_items_prefix']);
+		var batch_set = $('.result_batch_items:checked').val() || 'me';					
 		
-        $('#summary_message').html("");
         $('.' + batch_sets[batch_set]['batch_items_prefix'] + 'assess_report_total_items').html(numberWithCommas(report.summary.total_items));
         $('.' + batch_sets[batch_set]['batch_items_prefix'] + 'assess_report_items_priced_higher_than_competitors').html(report.summary.items_priced_higher_than_competitors);
+		
+		fillReportSummary(report.summary, batch_sets[batch_set]['batch_items_prefix']);
+				
+        $('#summary_message').html("");
         if (report.summary.items_have_more_than_20_percent_duplicate_content == 0) {
             $(".items_have_more_than_20_percent_duplicate_content").hide();
         } else {

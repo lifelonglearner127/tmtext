@@ -4384,6 +4384,8 @@ class Assess extends MY_Controller {
 	
 	private function calculatePercentage(array $summary_items_counts, $summary_field)
 	{
+		$wrapper_begin = '<span class="filter_item_percentage">';		
+		$wrapper_end = '</span>';		
 		$r = '';		
 		
 		if (isset($summary_field['generals']))
@@ -4393,12 +4395,12 @@ class Assess extends MY_Controller {
 		{
 			if (isset($summary_items_counts[$general]))
 			{
-				$percent = round($summary_field['value'] * 100 / $summary_items_counts[$general], 2) . '%';
+				$percent = round($summary_field['value'] * 100 / $summary_items_counts[$general]) . '%';
 				$r .= !$r ? ', ' . $percent : ', ' . $percent . ' ';
 			}
 		}
 				
-		return rtrim($r, ', ');
+		return $wrapper_begin . rtrim($r, ', ') . $wrapper_end;
 	}
 	
 	private function filterBySummaryCriteria($current_criteria, $filterCriterias, &$success_filter_entries)

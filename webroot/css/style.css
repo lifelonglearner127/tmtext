@@ -2606,3 +2606,6 @@ li.selected-url{
 .ui-widget-content {
 	cursor: pointer;
 }
+.filter_item_percentage {
+	display: none;
+}
