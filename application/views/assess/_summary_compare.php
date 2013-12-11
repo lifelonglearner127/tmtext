@@ -19,38 +19,20 @@
 			'data_filter_id' => 'skus_fewer_50_product_content',
 			'icon' => 'assess_report_seo_red.png',
 			'label' => 'SKUs with product content < 50 words:',
-			'class' => 'batch1_filter_item'
-		),
-		array(
-			'data_filter_id' => 'skus_fewer_50_product_content_competitor',
-			'icon' => 'assess_report_seo_red.png',
-			'label' => 'Competitor SKUs with product content < 50 words:',
-			'class' => 'batch2_filter_item'
-		),
+			'has_competitor' => true
+		),		
 		array(
 			'data_filter_id' => 'skus_fewer_100_product_content',
 			'icon' => 'assess_report_seo_red.png',
 			'label' => 'SKUs with product content < 100 words:',
-			'class' => 'batch1_filter_item'
-		),
-		array(
-			'data_filter_id' => 'skus_fewer_100_product_content_competitor',
-			'icon' => 'assess_report_seo_red.png',
-			'label' => 'Competitor SKUs with product content < 100 words:',
-			'class' => 'batch2_filter_item'
-		),
+			'has_competitor' => true
+		),		
 		array(
 			'data_filter_id' => 'skus_fewer_150_product_content',
 			'icon' => 'assess_report_seo_red.png',
 			'label' => 'SKUs with product content < 150 words:',
-			'class' => 'batch1_filter_item'
-		),
-		array(
-			'data_filter_id' => 'skus_fewer_150_product_content_competitor',
-			'icon' => 'assess_report_seo_red.png',
-			'label' => 'Competitor SKUs with product content < 150 words:',
-			'class' => 'batch2_filter_item'
-		),
+			'has_competitor' => true
+		),		
 		array(
 			'data_filter_id' => 'skus_fewer_competitor_optimized_keywords',
 			'icon' => 'assess_report_seo_red.png',
@@ -80,18 +62,30 @@
 			'data_filter_id' => 'skus_fewer_reviews_than_competitor',
 			'icon' => 'assess_report_seo_red.png',
 			'label' => 'SKUs that have fewer reviews than competitor:',			
+		),		
+		array(
+			'data_filter_id' => 'skus_zero_reviews',
+			'icon' => 'assess_report_seo_red.png',
+			'label' => 'SKUs that have 0 reviews:',	
+			'has_competitor' => true			
 		),
 		array(
-			'data_filter_id' => 'skus_reviews',
+			'data_filter_id' => 'skus_one_four_reviews',
 			'icon' => 'assess_report_seo_red.png',
-			'label' => 'SKUs that have reviews:',	
-			'class' => 'batch1_filter_item'			
+			'label' => 'SKUs that have 1 - 4 reviews:',	
+			'has_competitor' => true			
 		),
 		array(
-			'data_filter_id' => 'skus_reviews_competitor',
+			'data_filter_id' => 'skus_more_than_five_reviews',
 			'icon' => 'assess_report_seo_red.png',
-			'label' => 'Competitor SKUs that have reviews:',	
-			'class' => 'batch2_filter_item'			
+			'label' => 'SKUs that have 5 or more reviews:',	
+			'has_competitor' => true			
+		),
+		array(
+			'data_filter_id' => 'skus_more_than_hundred_reviews',
+			'icon' => 'assess_report_seo_red.png',
+			'label' => 'SKUs that have 100 or more reviews:',	
+			'has_competitor' => true			
 		),
 		array(
 			'data_filter_id' => 'skus_fewer_features_than_competitor',
@@ -102,14 +96,8 @@
 			'data_filter_id' => 'skus_features',
 			'icon' => 'assess_report_seo.png',
 			'label' => 'SKUs that have features:',
-			'class' => 'batch1_filter_item'				
-		),
-		array(
-			'data_filter_id' => 'skus_features_competitor',
-			'icon' => 'assess_report_seo.png',
-			'label' => 'Competitor SKUs that have features:',
-			'class' => 'batch2_filter_item'				
-		),
+			'has_competitor' => true				
+		),		
 		array(
 			'data_filter_id' => 'skus_75_duplicate_content',
 			'icon' => 'assess_report_seo_red.png',
@@ -129,37 +117,48 @@
 			'data_filter_id' => 'skus_third_party_content',
 			'icon' => 'assess_report_seo.png',
 			'label' => 'SKUs that have third party content:',
-			'class' => 'batch1_filter_item'	
-		),
-		array(
-			'data_filter_id' => 'skus_third_party_content_competitor',
-			'icon' => 'assess_report_seo.png',
-			'label' => 'Competitor SKUs that have third party content:',
-			'class' => 'batch2_filter_item'	
-		),
+			'has_competitor' => true	
+		),		
 		array(
 			'data_filter_id' => 'skus_pdfs',
 			'icon' => 'assess_report_seo.png',
 			'label' => 'SKUs that have PDFs:',
-			'class' => 'batch1_filter_item'	
-		),
-		array(
-			'data_filter_id' => 'skus_pdfs_competitor',
-			'icon' => 'assess_report_seo.png',
-			'label' => 'Competitor SKUs that have PDFs:',
-			'class' => 'batch2_filter_item'	
-		),
+			'has_competitor' => true	
+		)		
 	);
 ?>
 <?php foreach ($filter_items as $filter_item): ?>
-	<div class="mt_10 ml_15 ui-widget-content <?php echo isset($filter_item['class']) ? $filter_item['class'] : '' ?>" data-filterid="<?php echo $batch_set . $filter_item['data_filter_id'] ?>">
-		<div class="mr_10">
-			<img src="<?php echo base_url(); ?>img/<?php echo $filter_item['icon'] ?>" />
-			<?php echo $filter_item['label'] ?> 
-			<span class="<?php echo $batch_set . $filter_item['data_filter_id'] ?> mr_10" ></span>
+	
+	<?php if (isset($filter_item['has_competitor']) && $filter_item['has_competitor']): ?>
+	
+		<div class="mt_10 ml_15 ui-widget-content batch1_filter_item" data-filterid="<?php echo $batch_set . $filter_item['data_filter_id'] ?>">
+			<div class="mr_10">
+				<img src="<?php echo base_url(); ?>img/<?php echo $filter_item['icon'] ?>" />
+				<?php echo $filter_item['label'] ?> 
+				<span class="<?php echo $batch_set . $filter_item['data_filter_id'] ?> mr_10" ></span>
+			</div>
 		</div>
-	</div>
-	<?php if ($filter_item['class'] == 'batch2_filter_item'): ?>
+		
+		<div class="mt_10 ml_15 ui-widget-content batch2_filter_item" data-filterid="<?php echo $batch_set . $filter_item['data_filter_id'] ?>_competitor">
+			<div class="mr_10">
+				<img src="<?php echo base_url(); ?>img/<?php echo $filter_item['icon'] ?>" />
+				Competitor <?php echo $filter_item['label'] ?> 
+				<span class="<?php echo $batch_set . $filter_item['data_filter_id'] ?>_competitor mr_10" ></span>
+			</div>
+		</div>
+		
 		<div style="clear: both"></div>
-	<?php endif ?>
+		
+	<?php else: ?>
+	
+		<div class="mt_10 ml_15 ui-widget-content" data-filterid="<?php echo $batch_set . $filter_item['data_filter_id'] ?>">
+			<div class="mr_10">
+				<img src="<?php echo base_url(); ?>img/<?php echo $filter_item['icon'] ?>" />
+				<?php echo $filter_item['label'] ?> 
+				<span class="<?php echo $batch_set . $filter_item['data_filter_id'] ?> mr_10" ></span>
+			</div>
+		</div>
+	
+	<?php endif ?>	
+	
 <?php endforeach ?>

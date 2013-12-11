@@ -100,8 +100,17 @@ $(function() {
 		'skus_fewer_150_product_content_competitor',
 		'skus_features',
 		'skus_features_competitor',
-		'skus_reviews',
-		'skus_reviews_competitor',
+		
+		'skus_zero_reviews',
+		'skus_one_four_reviews',
+		'skus_more_than_five_reviews',
+		'skus_more_than_hundred_reviews',
+		
+		'skus_zero_reviews_competitor',
+        'skus_one_four_reviews_competitor',
+        'skus_more_than_five_reviews_competitor',
+        'skus_more_than_hundred_reviews_competitor',
+		
 		'skus_pdfs',
 		'skus_pdfs_competitor',
 	];
