@@ -2546,6 +2546,8 @@ function prevSibilfunc(curentSibil){
 			$('.result_batch_items')[0].click(); //activating first batch set by default
 			second_batch_set.slideUp();
 			batch_set_depend_options.hide();
+			
+			$('#research_assess_update').click(); // clicking on Update btn
 		}
 	});
 	
