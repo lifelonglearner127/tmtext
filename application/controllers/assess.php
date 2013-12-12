@@ -280,14 +280,14 @@ class Assess extends MY_Controller {
                                     $parsed_H1_Tags_unserialize_val = '';
                                     $parsed_H1_Tags_unserialize_val_count = '';
                                     $parsed_H2_Tags_unserialize_val = '';
-                                    $parsed_column_reviews_unserialize_val = '';
+                                    $parsed_column_reviews_unserialize_val = 0;
                                     $parsed_H2_Tags_unserialize_val_count = '';
                                     $parsed_average_review_unserialize_val_count = '';
                                     $title_seo_prases = array();
                                     $images_cmp = 'none';
                                     $video_count = 'none';
                                     $title_pa = 'none';
-                                    $parsed_column_features_unserialize_val_count = '';
+                                    $parsed_column_features_unserialize_val_count = 0;
                                     $column_external_content = '';
                                     $cmpare = $this->statistics_new_model->get_compare_item($item['imported_data_id']);
 
@@ -1042,12 +1042,13 @@ class Assess extends MY_Controller {
                                 $parsed_attributes_unserialize_val = '';
                                 $parsed_meta_unserialize_val = '';
                                 $parsed_meta_unserialize_val_c = '';
-                                $parsed_attributes_column_features_unserialize_val = '';
+                                $parsed_attributes_column_features_unserialize_val = 0;
                                 $parsed_model_unserialize_val = '';
                                 $parsed_meta_keywords_unserialize_val = '';
                                 $parsed_loaded_in_seconds_unserialize_val = '';
                                 $parsed_average_review_unserialize_val_count = '';
                                 $column_external_content = '';
+                                $parsed_review_count_unserialize_val_count = 0;
                                 $cmpare = $this->statistics_new_model->get_compare_item($item['imported_data_id']);
 
                                 $parsed_attributes_unserialize = unserialize($cmpare->parsed_attributes);
@@ -1846,10 +1847,10 @@ class Assess extends MY_Controller {
                 $res_array[$key]['column_external_content'] = $this->column_external_content($pars_atr['parsed_attributes']['cnetcontent'], $pars_atr['parsed_attributes']['webcollage']);
             }
             if (in_array('column_features', $selected_columns)) {
-                $res_array[$key]['column_features'] = $pars_atr['parsed_attributes']['feature_count'] !== false ? $pars_atr['parsed_attributes']['feature_count'] : '';
+                $res_array[$key]['column_features'] = $pars_atr['parsed_attributes']['feature_count'] !== false ? $pars_atr['parsed_attributes']['feature_count'] : 0;
             }
             if (in_array('column_reviews', $selected_columns)) {
-                $res_array[$key]['column_reviews'] = $pars_atr['parsed_attributes']['review_count'] !== false ? $pars_atr['parsed_attributes']['review_count'] : '-';
+                $res_array[$key]['column_reviews'] = $pars_atr['parsed_attributes']['review_count'] !== false ? $pars_atr['parsed_attributes']['review_count'] : 0;
             }
             if (in_array('average_review', $selected_columns)) {
                 $res_array[$key]['average_review'] = $pars_atr['parsed_attributes']['average_review'] !== false ? $pars_atr['parsed_attributes']['average_review'] : '-';
@@ -2011,8 +2012,10 @@ class Assess extends MY_Controller {
                         $res_array[$key]['Gap analysis'].="Competitor total product description length only $totoal words, ";
                     }
 
-                    if ($res_array[$key]['column_features'] && $f_count1 && $f_count1 < $res_array[$key]['column_features']) {
-                        $res_array[$key]['Gap analysis'].="Competitor has fewer features listed, ";
+                    if ($res_array[$key]['column_features'] && $f_count1 && $f_count1 > $res_array[$key]['column_features']) {
+                    $x = $f_count1 - $res_array[$key]['column_features'];
+                        
+                        $res_array[$key]['Gap analysis'].="Competitor has ".$x." features listed, ";
                     }
                     if (!$sim_items[$i - 1]->den_for_gap) {
 
@@ -2099,13 +2102,13 @@ class Assess extends MY_Controller {
                 }
 
                 if (in_array('column_features', $selected_columns)) {
-                    $res_array[$key]['column_features(' . $i . ")"] = $sim_items[$i - 1]->column_features ? $sim_items[$i - 1]->column_features : ' - ';
+                    $res_array[$key]['column_features(' . $i . ")"] = $sim_items[$i - 1]->column_features ? $sim_items[$i - 1]->column_features : 0;
                 }
                 if (in_array('column_external_content', $selected_columns)) {
                     $res_array[$key]['column_external_content(' . $i . ")"] = $sim_items[$i - 1]->column_external_content ? $sim_items[$i - 1]->column_external_content : '';
                 }
                 if (in_array('column_reviews', $selected_columns)) {
-                    $res_array[$key]['column_reviews(' . $i . ")"] = $sim_items[$i - 1]->review_count ? $sim_items[$i - 1]->review_count : ' - ';
+                    $res_array[$key]['column_reviews(' . $i . ")"] = $sim_items[$i - 1]->review_count ? $sim_items[$i - 1]->review_count : 0;
                 }
                 if (in_array('average_review', $selected_columns)) {
                     $res_array[$key]['average_review(' . $i . ")"] = $sim_items[$i - 1]->average_review ? $sim_items[$i - 1]->average_review : ' - ';
@@ -3071,9 +3074,9 @@ class Assess extends MY_Controller {
             $result_row->H1_Tags_Count = "";
             $result_row->H2_Tags = "";
             $result_row->H2_Tags_Count = "";
-            $result_row->column_reviews = " ";
+            $result_row->column_reviews = 0;
             $result_row->average_review = "";
-            $result_row->column_features = " ";
+            $result_row->column_features = 0;
             $result_row->duplicate_content = "-";
             $result_row->own_price = floatval($row->own_price);
             $price_diff = unserialize($row->price_diff);
@@ -3174,9 +3177,9 @@ class Assess extends MY_Controller {
                     $parsed_H1_Tags_unserialize_val_count = '';
                     $parsed_H2_Tags_unserialize_val = '';
                     $parsed_H2_Tags_unserialize_val_count = '';
-                    $parsed_column_reviews_unserialize_val = '';
+                    $parsed_column_reviews_unserialize_val = 0;
                     $parsed_average_review_unserialize_val = '';
-                    $parsed_column_features_unserialize_val = '';
+                    $parsed_column_features_unserialize_val = 0;
                     $parsed_attributes_model_unserialize_val = '';
                     $column_external_content = '';
                     $images_cmp = '';
@@ -3748,8 +3751,9 @@ class Assess extends MY_Controller {
                 }
 
 
-                if ($result_row->column_features1 < $result_row->column_features) {
-                    $result_row->gap.="Competitor has fewer features listed<br>";
+                if ($result_row->column_features1 > $result_row->column_features) {
+                    $x = $result_row->column_features1 - $result_row->column_features;
+                    $result_row->gap.="Competitor has ".$x." features listed<br>";
                 }
 
                 if ($result_row->column_features < $result_row->column_features1) {
@@ -4588,7 +4592,7 @@ class Assess extends MY_Controller {
                             $output_row[] = $data_row['H1_Tags_Count' . $i] != null ? $data_row['H1_Tags_Count' . $i] : '';
                             $output_row[] = $data_row['H2_Tags' . $i] != null ? $data_row['H2_Tags' . $i] : '';
                             $output_row[] = $data_row['H2_Tags_Count' . $i] != null ? $data_row['H2_Tags_Count' . $i] : '';
-                            $output_row[] = $data_row['column_reviews' . $i] != null ? $data_row['column_reviews' . $i] : '';
+                            $output_row[] = $data_row['column_reviews' . $i] != null ? $data_row['column_reviews' . $i] : 0;
                             $output_row[] = $data_row['average_review' . $i] != null ? $data_row['average_review' . $i] : '';
                             $output_row[] = $data_row['column_features' . $i] != null ? $data_row['column_features' . $i] : '';
                             $output_row[] = $data_row['title_seo_phrases' . $i] != null ? $data_row['title_seo_phrases' . $i] : '';
