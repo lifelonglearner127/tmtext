@@ -4481,7 +4481,7 @@ var search_text = GetURLParameter('search_text');
 	
 	
 	$(function(){
-  	$(window).scroll(setTimeot(function(){
+  	$(window).scroll(setTimeout(function(){
 			$('table#tblAssess').floatThead({			    
 				scrollContainer: function($table){
 				return $('table#tblAssess').closest('.wrapper');
@@ -4493,7 +4493,7 @@ var search_text = GetURLParameter('search_text');
 		    }
 			
   		}, 500));
-	});	
+	});
 	//setInterval(reflow, 500);
 	
   $('#generate_url').toggle(function() {
