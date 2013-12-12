@@ -4508,6 +4508,14 @@ var search_text = GetURLParameter('search_text');
 	});
 	$('table#tblAssess').floatThead('reflow');
 	});		
+	$('.ui-dialog-titlebar-close').click(function(){
+	$('table#tblAssess').floatThead({			    
+		scrollContainer: function($table){
+		return $('#tblAssess').closest('.wrapper');
+				}
+	});
+	$('table#tblAssess').floatThead('reflow');
+	});
 	
   $('#generate_url').toggle(function() {
 	   var batch_set = $('.result_batch_items:checked').val() || 'me';
