@@ -43,7 +43,7 @@
 	<script src="<?php echo base_url();?>js/jquery.anythingslider.min.js"></script>
     <script src="<?php echo base_url();?>js/jquery.scrollTo-1.4.3.1.js"></script>
     <script src="<?php echo base_url();?>js/jquery.fancybox.js"></script>
-    
+    <script src="<?php echo base_url();?>js/jquery.floatThead.min.js"></script>
     <script src="<?php echo base_url();?>js/FixedHeader.js"></script>
     <script src="<?php echo base_url();?>js/jquery.cookie.js"></script>
     <script src="<?php echo base_url();?>js/defaults.js"></script>
@@ -79,6 +79,9 @@
 <?php if (isset($js)){ ?>
 <script type='text/javascript'>
 	<?php echo $js;?>
+	jQuery('#tblAssess').click(function(){
+  				$('table#tblAssess').floatThead('reflow');
+			});
 </script>
 <?php } ?>
 <?php

@@ -242,7 +242,7 @@ $(function() {
             th += '<th with = "100px"></th>';
         }
         var newTable = '<table id="tblAssess" class="tblDataTable"><thead>'+th+'</thead><tbody></tbody></table>';
-        
+        // $('table#tblAssess').floatThead('reflow');
         $('#dt_tbl').prepend(newTable); 
               
         			
@@ -287,7 +287,11 @@ $(function() {
                             //                                $('#research_assess_filter_long_descriptions_panel').show();
                             $('.assess_report_items_1_descriptions_pnl').hide();
                             $('.assess_report_items_2_descriptions_pnl').hide();
+                            // $('table#tblAssess').floatThead('reflow');
                         }
+                        
+                        
+                        // $('table#tblAssess').floatThead('reflow');
                     }
 //                    if (json.aaData.length > 0) {
 //                        var str = '';
@@ -316,6 +320,7 @@ $(function() {
 
                 });
                 highChart('total_description_wc');
+                // $('table#tblAssess').floatThead('reflow');
                 $.ajax({
                     type: "POST",
                     url: readBoardSnapUrl,
@@ -356,6 +361,7 @@ $(function() {
             "fnRowCallback": function(nRow, aData, iDisplayIndex) {
                 $(nRow).attr("add_data", aData[33]);
                 return nRow;
+                $('table#tblAssess').floatThead('reflow');
             },
             "fnDrawCallback": function(oSettings) {
                 tblAssess_postRenderProcessing();
@@ -365,6 +371,7 @@ $(function() {
                 }
                 hideColumns();
                 check_word_columns();
+                $('table#tblAssess').floatThead('reflow');
             },
             "oLanguage": {
                 "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
@@ -376,7 +383,7 @@ $(function() {
             "aoColumns": columns
 
         });
-		 new FixedHeader( tblAssess, { "bottom": true } );
+		 //new FixedHeader( tblAssess, { "bottom": true } );
 		
 			
         $('#tblAssess_length').after('<div id="assess_tbl_show_case" class="assess_tbl_show_case">' +
@@ -392,7 +399,7 @@ $(function() {
                     $('#research_assess_choiceColumnDialog').dialog('open');
                     $('#research_assess_choiceColumnDialog').parent().find('button:first-child').addClass("popupGreen");
                 });
-        
+        // $('table#tblAssess').floatThead('reflow');
         $('#assess_tbl_show_case a').on('click', function(event) {
             event.preventDefault();
             if ($(this).text() == 'Details' || $(this).text() == 'Compare') {
@@ -410,7 +417,7 @@ $(function() {
         var aoDataa = buildTableParams(oSettings.aoData);
         var newObject = jQuery.extend(true, {}, aoDataa);
         var batch_set = $('.result_batch_items:checked').val() || 'me';		
-
+		// $('table#tblAssess').floatThead('reflow');
         $.getJSON(readAssessUrl, aoDataa, function(json) {
             tblAllColumns = [];
             for(p in json.columns){
@@ -452,6 +459,7 @@ $(function() {
                     "fnRowCallback": function(nRow, aData, iDisplayIndex) {
                         $(nRow).attr("add_data", aData[33]);
                         return nRow;
+                        $('table#tblAssess').floatThead('reflow');
                     },
                     "fnDrawCallback": function(oSettings) {
                         tblAssess_postRenderProcessing();
@@ -459,7 +467,7 @@ $(function() {
                             zeroTableDraw = false;
                             return;
                         }
-         
+         				$('table#tblAssess').floatThead('reflow');
                        // check_word_columns();
 
                     }
@@ -511,6 +519,7 @@ $(function() {
                     $('#research_assess_choiceColumnDialog').dialog('open');
                     $('#research_assess_choiceColumnDialog').parent().find('button:first-child').addClass("popupGreen");
                 });
+                // $('table#tblAssess').floatThead('reflow');
                 $('#assess_tbl_show_case a').on('click', function(event) {
                     event.preventDefault();
                     if ($(this).text() == 'Details' || $(this).text() == 'Compare') {
@@ -552,9 +561,10 @@ $(function() {
                     var info = $(this).parent().find('div.prod_description').html();
                     showSnap('<img src="'+$(this).attr('src')+'" style="float:left; max-width: 600px; margin-right: 10px">'+info);
                 });
+                $('table#tblAssess').floatThead('reflow');
              }
         });
-       
+       // $('table#tblAssess').floatThead('reflow');
     }
     $.fn.dataTableExt.oApi.fnGetAllSColumnNames = function(oSettings) {
         allColumns = [];
@@ -949,7 +959,7 @@ $(function() {
         },
 
     ];
-	
+	$('table#tblAssess').floatThead('reflow');
 	$('.resizable').wrap('<div/>')
         .css({'overflow':'hidden'})
           .parent()
@@ -1007,7 +1017,7 @@ $(function() {
 			// console.log(ui);
 		}
 	});
-	
+	// $('table#tblAssess').floatThead('reflow');
     tblAssess = $('#tblAssess').dataTable({
         "bJQueryUI": true,
         "bDestroy": true,
@@ -1114,6 +1124,7 @@ $(function() {
         "fnRowCallback": function(nRow, aData, iDisplayIndex) {
             $(nRow).attr("add_data", aData[33]);
             return nRow;
+            $('table#tblAssess').floatThead('reflow');
         },
         "fnDrawCallback": function(oSettings) {
             tblAssess_postRenderProcessing();
@@ -1123,7 +1134,8 @@ $(function() {
             }
             hideColumns();
             check_word_columns();
-            new FixedHeader( document.getElementById('tblAssess') );
+            $('table#tblAssess').floatThead('reflow');
+            //new FixedHeader( document.getElementById('tblAssess') );
         },
         "oLanguage": {
             "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
@@ -4407,16 +4419,24 @@ var search_text = GetURLParameter('search_text');
         
     });
 //scrollingTop: pageTop,
-	/*$('table#tblAssess').floatThead({
-					
-				    scrollContainer: function($table){
-						return $('table#tblAssess').closest('.wrapper');
+	$('table#tblAssess').floatThead({			    
+		scrollContainer: function($table){
+		return $('table#tblAssess').closest('.wrapper');
 				}
 			});
+			
+			
 	
-	$( window ).scroll(function() {
-			$('table#tblAssess').floatThead('reflow');
-	);*/
+	
+	$(function(){
+  	$(window).scroll(setTimeot(function(){
+		    var aTop = $('#report_product_menu').height();
+		    if($(this).scrollTop()>=aTop){
+		      $('table#tblAssess').floatThead('reflow');
+		    }
+  		}, 500));
+	});	
+	//setInterval(reflow, 500);
 	
   $('#generate_url').toggle(function() {
 	   var batch_set = $('.result_batch_items:checked').val() || 'me';

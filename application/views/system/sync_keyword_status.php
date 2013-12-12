@@ -27,6 +27,7 @@
 </div>
 <script type="text/javascript" >
     function kwCommonAddToQueue() {
+        $('#queueCount').html('');
         var bid = $("#sk_batches_list > option:selected").val();
         if(bid != '0'){
             $.post(base_url + 'index.php/system/kw_common_add_to_queu', {'cpage': 1, 'bid': bid, 'q_mode': 'all', shell_queue: 'true'}, function(data) {
