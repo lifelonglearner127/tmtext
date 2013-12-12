@@ -687,7 +687,7 @@
                 $('select[id="research_assess_compare_batches_batch"]').val(cmp_selected).change()
                  $('#research_assess_update').click();
                 },2000)
-				var scrollScore = 0; $(window).scroll(function(){ if(scrollScore < 16 && $('table[id^=tblAssess] tr td, th')){scrollScore++;} if(scrollScore == 15){$('table#tblAssess').floatThead('reflow');} console.log(scrollScore);});
+				var scrollScore = 0; $(window).scroll(function(){ if(scrollScore < 16 && $('table[id^=tblAssess] tr td, th')){scrollScore++;} if(scrollScore == 15){$('table#tblAssess').floatThead('reflow');} });
 				
             /*
 			
