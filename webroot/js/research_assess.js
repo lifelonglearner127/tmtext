@@ -4476,7 +4476,7 @@ var search_text = GetURLParameter('search_text');
 		return $('#tblAssess').closest('.wrapper');
 				}
 	});
-	var scrollScore = 0; $(window).scroll(function(){ if(scrollScore < 220 && $('table[id^=tblAssess] tr td, th')){scrollScore++;} if(scrollScore == 19){$('table#tblAssess').floatThead('reflow');}});
+	var scrollScore = 0; $(window).scroll(function(){ if(scrollScore < 220 && $('table[id^=tblAssess] tr td, th')){scrollScore++;} if(scrollScore == 19){$('table#tblAssess').floatThead('reflow');} });
 	$( "table[id^=tblAsses] tr, th" ).each(function() {$(this).find("td[class*=1]:not([class*=_1]):first, th[class*=1]:not([class*=_1]):first").css( "border-left", "2px solid #ccc" )} );
 	$('#assess_tbl_show_case_recommendations').click(function(){
 	$( "table[id^=tblAsses] tr" ).each(function() {$(this).find("td[class*=1]:first").css( "border-left", "3px solid rgba(173, 173, 173, 1)" )} );
