@@ -9,10 +9,3 @@
 			</p>
 		</div>
 	</div>
-<script type="text/javascript">
-	$(function(){
-  	$(window).scroll(setTimeout(function(){
-		      $('table#tblAssess').floatThead('reflow');	
-  		}, 500));
-	});
-</script>
