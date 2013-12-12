@@ -4518,7 +4518,7 @@ var search_text = GetURLParameter('search_text');
 	$('#research_assess_update').click(function(){
 	$( "table[id^=tblAsses] tr, th" ).each(function() {$(this).find("td[class*=1]:not([class*=_1]):first, th[class*=1]:not([class*=_1]):first").css( "border-left", "2px solid #ccc" )} );
 	});
-	
+	$("th[class=ui-state-default]")
 	$('.ui-dialog-titlebar-close').click(function(){
 	$('table#tblAssess').floatThead({			    
 		scrollContainer: function($table){
