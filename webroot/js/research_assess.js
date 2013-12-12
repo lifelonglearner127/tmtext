@@ -4482,15 +4482,9 @@ var search_text = GetURLParameter('search_text');
 	
 	$(function(){
   	$(window).scroll(setTimeout(function(){
-			$('table#tblAssess').floatThead({			    
-				scrollContainer: function($table){
-				return $('table#tblAssess').closest('.wrapper');
-				}
-			});
-		    var aTop = $('#report_product_menu').height();
-		    if($(this).scrollTop()>=aTop){
+		    
 		      $('table#tblAssess').floatThead('reflow');
-		    }
+
 			
   		}, 500));
 	});
