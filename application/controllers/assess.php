@@ -2954,6 +2954,14 @@ class Assess extends MY_Controller {
         $skus_fewer_50_product_content_competitor = 0;
         $skus_fewer_100_product_content_competitor = 0;
         $skus_fewer_150_product_content_competitor = 0;
+		
+		$skus_with_no_product_images = 0;
+		$skus_with_one_product_image = 0;
+		$skus_with_more_than_one_product_image = 0;
+		
+		$skus_with_no_product_images_competitor = 0;
+		$skus_with_one_product_image_competitor = 0;
+		$skus_with_more_than_one_product_image_competitor = 0;
 
         if ($build_assess_params->max_similar_item_count > 0) {
 
@@ -3251,6 +3259,24 @@ class Assess extends MY_Controller {
                         $this->filterBySummaryCriteria('skus_pdfs_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
                     }
 					
+					if (isset($parsed_attributes_unserialize['product_images']))
+					{
+						if (!$parsed_attributes_unserialize['product_images']) {
+							$skus_with_no_product_images_competitor++;
+							$this->filterBySummaryCriteria('skus_with_no_product_images_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
+						}
+						
+						if ($parsed_attributes_unserialize['product_images'] == 1) {
+							$skus_with_one_product_image_competitor++;
+							$this->filterBySummaryCriteria('skus_with_one_product_image_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
+						}
+						
+						if ($parsed_attributes_unserialize['product_images'] > 1) {
+							$skus_with_more_than_one_product_image_competitor++;
+							$this->filterBySummaryCriteria('skus_with_more_than_one_product_image_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
+						}
+					}
+					
 					if (isset($parsed_attributes_unserialize['title']) && $parsed_attributes_unserialize['title'] && strlen($parsed_attributes_unserialize['title']) < 70) {
                         $skus_title_less_than_70_chars_competitor++;
                         $this->filterBySummaryCriteria('skus_title_less_than_70_chars_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
@@ -3461,6 +3487,24 @@ class Assess extends MY_Controller {
                 $skus_pdfs++;
                 $this->filterBySummaryCriteria('skus_pdfs', $build_assess_params->summaryFilterData, $success_filter_entries);
             }
+			
+			if (isset($pars_atr['parsed_attributes']['product_images']))
+			{
+				if (!$pars_atr['parsed_attributes']['product_images']) {
+					$skus_with_no_product_images++;
+					$this->filterBySummaryCriteria('skus_with_no_product_images', $build_assess_params->summaryFilterData, $success_filter_entries);
+				}
+				
+				if ($pars_atr['parsed_attributes']['product_images'] == 1) {
+					$skus_with_one_product_image++;
+					$this->filterBySummaryCriteria('skus_with_one_product_image', $build_assess_params->summaryFilterData, $success_filter_entries);
+				}
+				
+				if ($pars_atr['parsed_attributes']['product_images'] > 1) {
+					$skus_with_more_than_one_product_image++;
+					$this->filterBySummaryCriteria('skus_with_more_than_one_product_image', $build_assess_params->summaryFilterData, $success_filter_entries);
+				}
+			}
 			
 			if (isset($pars_atr['parsed_attributes']['title']) && $pars_atr['parsed_attributes']['title'] && $pars_atr['parsed_attributes']['title'] < 70) {
                 $skus_title_less_than_70_chars++;
@@ -4235,6 +4279,14 @@ class Assess extends MY_Controller {
 			
 			'skus_pdfs' => array( 'value' => $skus_pdfs, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_pdfs_competitor)),
 			'skus_pdfs_competitor' => array( 'value' => $skus_pdfs_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_pdfs)),
+			
+			'skus_with_no_product_images' => array( 'value' => $skus_with_no_product_images, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_with_no_product_images_competitor)),
+			'skus_with_one_product_image' => array( 'value' => $skus_with_one_product_image, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_with_one_product_image_competitor)),
+			'skus_with_more_than_one_product_image' => array( 'value' => $skus_with_more_than_one_product_image, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_with_more_than_one_product_image_competitor)),
+			
+			'skus_with_no_product_images_competitor' => array( 'value' => $skus_with_no_product_images_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_no_product_images)),
+			'skus_with_one_product_image_competitor' => array( 'value' => $skus_with_one_product_image_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_one_product_image)),
+			'skus_with_more_than_one_product_image_competitor' => array( 'value' => $skus_with_more_than_one_product_image_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_more_than_one_product_image)),
 		);		
 				
 		foreach ($summary_fields as $key => $summary_field)

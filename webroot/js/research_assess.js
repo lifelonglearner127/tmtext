@@ -125,6 +125,13 @@ $(function() {
 		
 		'skus_pdfs',
 		'skus_pdfs_competitor',
+		
+		'skus_with_no_product_images',
+		'skus_with_one_product_image',
+		'skus_with_more_than_one_product_image',
+		'skus_with_no_product_images_competitor',
+		'skus_with_one_product_image_competitor',
+		'skus_with_more_than_one_product_image_competitor',
 	];
 	
 	var batch_sets = {

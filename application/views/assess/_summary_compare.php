@@ -75,6 +75,24 @@
 			'has_competitor' => true
 		),
 		array(
+			'data_filter_id' => 'skus_with_no_product_images',
+			'icon' => 'assess_report_seo.png',
+			'label' => 'SKUs with no product images:',
+			'has_competitor' => true
+		),
+		array(
+			'data_filter_id' => 'skus_with_one_product_image',
+			'icon' => 'assess_report_seo.png',
+			'label' => 'SKUs with one product image:',
+			'has_competitor' => true
+		),
+		array(
+			'data_filter_id' => 'skus_with_more_than_one_product_image',
+			'icon' => 'assess_report_seo.png',
+			'label' => 'SKUs with more than one product image:',
+			'has_competitor' => true
+		),
+		array(
 			'data_filter_id' => 'skus_fewer_reviews_than_competitor',
 			'icon' => 'assess_report_seo_red.png',
 			'label' => 'SKUs that have fewer reviews than competitor:',			
