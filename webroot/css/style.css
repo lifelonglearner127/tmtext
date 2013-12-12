@@ -2609,3 +2609,15 @@ li.selected-url{
 .filter_item_percentage {
 	display: none;
 }
+.filter_expand_btn_wrapper {
+	
+}
+.filter_expand_btn_wrapper img {
+	position: absolute;
+	margin: -55px 0 0px 7px;
+	width: 1003px;
+	height: 55px;
+}
+.selectable_summary_info {
+	width: 1004px;
+}

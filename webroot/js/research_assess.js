@@ -971,6 +971,41 @@ $(function() {
         },
 
     ];
+	
+	var filter_expand_btn_imgs = [
+		'filter_expand_btn.jpg',
+		'filter_unexpand_btn.jpg',
+	];
+	var filter_toggler_flag = 0
+		, current_filter_list_wrapper_height = 200;
+	
+	/*
+	 * Summary filter section expanding
+	 */
+	$('#filter_expand_btn').on('click', function(e) {
+		e.preventDefault();
+					
+		var elem = $(this)
+			, img = elem.find('img')
+			, img_src = img.attr('src')
+			, lines = $('.selectable_summary_info>div:not(:hidden):not(.batch1_filter_item):not(.batch2_filter_item)').length
+			, height = lines * 35 + lines * 22.5
+			, filter_list_wrapper = $('.boxes_content.resizable').parent();			
+				 
+		filter_toggler_flag = !filter_toggler_flag + 0;
+		
+		//31 line = ~1783px
+		
+		if (filter_toggler_flag)			
+			filter_list_wrapper.height(height); //expand list
+		else								
+			filter_list_wrapper.height(current_filter_list_wrapper_height); //unexpand list		
+				
+		img.attr('src', img_src.substring(0, img_src.lastIndexOf('/') + 1) + filter_expand_btn_imgs[filter_toggler_flag]);
+		
+		return false;
+	});
+	
 	$('table#tblAssess').floatThead('reflow');
 	$('.resizable').wrap('<div/>')
         .css({'overflow':'hidden'})
@@ -978,8 +1013,13 @@ $(function() {
             .css({'overflow':'hidden',
                   'height':function(){return $('.resizable',this).height();},                                                                
                 }).resizable({
-					maxWidth : 1022,
-					minHeight: 200
+					maxWidth : 1021,
+					minWidth : 1021,
+					minHeight: 200,
+					resize : function( event, ui ) {
+						// console.log(ui);
+						current_filter_list_wrapper_height = ui.size.height;
+					}
 				}).find('.resizable')
 					.css({overflow:'auto',
 						width:'100%',

@@ -1,4 +1,7 @@
-<?php $is_extended_partial = $wrapper_class == 'assess_report_compare' ?>
+<?php
+	$this->load->helper('html');
+	$is_extended_partial = $wrapper_class == 'assess_report_compare';	
+?>
 <div class="<?php echo $wrapper_class ?>" style="display: <?php echo $display ?>">
 	<ul class="ui-sortable">
 		<li class="boxes">
@@ -39,8 +42,12 @@
 						'batch_set' => 'batch_competitor_',
 						'wrapper_class' => 'hidden_batch2_filter_items',						
 					));
-				?>
-				
+				?>				
+			</div>
+			<div class="filter_expand_btn_wrapper" >	
+				<a href="#" id="filter_expand_btn">
+					<?php echo img('img/filter_expand_btn.jpg') ?>
+				</a>
 			</div>
 		</li>
 		<!--li class="boxes ui-resizable">
