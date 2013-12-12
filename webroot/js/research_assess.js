@@ -93,6 +93,11 @@ $(function() {
 		'skus_two_optimized_keywords_competitor',
 		'skus_three_optimized_keywords_competitor',
 		
+		'skus_title_less_than_70_chars',
+		'skus_title_more_than_70_chars',
+		'skus_title_less_than_70_chars_competitor',
+		'skus_title_more_than_70_chars_competitor',
+		
 		'skus_75_duplicate_content',
 		'skus_25_duplicate_content',
 		'skus_50_duplicate_content',

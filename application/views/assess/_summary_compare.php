@@ -63,6 +63,18 @@
 			'has_competitor' => true
 		),
 		array(
+			'data_filter_id' => 'skus_title_less_than_70_chars',
+			'icon' => 'assess_report_seo.png',
+			'label' => 'SKUs with title < 70 characters:',
+			'has_competitor' => true
+		),
+		array(
+			'data_filter_id' => 'skus_title_more_than_70_chars',
+			'icon' => 'assess_report_seo.png',
+			'label' => 'SKUs that have title of 70 characters or more:',
+			'has_competitor' => true
+		),
+		array(
 			'data_filter_id' => 'skus_fewer_reviews_than_competitor',
 			'icon' => 'assess_report_seo_red.png',
 			'label' => 'SKUs that have fewer reviews than competitor:',			
