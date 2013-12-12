@@ -412,8 +412,12 @@ class PageProcessor {
 			$result['cnetcontent']=true;
 		}
 
-		foreach($this->nokogiri->get('.AltPhotos li.altPhotosThumbImg img') as $item) {
-			$result['product_images'] += 1;
+//		foreach($this->nokogiri->get('.AltPhotos li.altPhotosThumbImg img') as $item) {
+//			$result['product_images'] += 1;
+//		}
+
+		if ($this->nokogiri->get('.AltPhotos li.altPhotosThumbImg img')) {
+			$result['product_images'] = substr_count($this->html, 'WALMART.alternatephotos.AltImage("http://i.walmartimages');
 		}
 
 		if ((!isset($result['product_images']) || $result['product_images']==0) && ($this->nokogiri->get('.columnOne img#mainImage'))) {
