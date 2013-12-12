@@ -1444,37 +1444,52 @@ class Assess extends MY_Controller {
 					$this->filterBySummaryCriteria('skus_more_than_hundred_reviews_competitor', $summaryFilterData, $success_filter_entries);	
 				}															                        
                                 
-                        $batch1_filtered_title_percents = substr_count($row->title_seo_phrases, '%');
+			$batch1_filtered_title_percents = substr_count($row->title_seo_phrases, '%');
 			$batch2_filtered_title_percents = substr_count($sim[0]->title_seo_phrases, '%');
 			
 			if ($batch1_filtered_title_percents < $batch2_filtered_title_percents)
-			{
-			
+			{				
 				$this->filterBySummaryCriteria('skus_fewer_competitor_optimized_keywords', $summaryFilterData, $success_filter_entries);					
 			}
 			
 			if (!$batch1_filtered_title_percents)
-			{
-			
+			{			
 				$this->filterBySummaryCriteria('skus_zero_optimized_keywords', $summaryFilterData, $success_filter_entries);
 			}
 			
 			if ($batch1_filtered_title_percents >= 1)
-			{
-				
+			{			
 				$this->filterBySummaryCriteria('skus_one_optimized_keywords', $summaryFilterData, $success_filter_entries);		
 			}
 				
 			if ($batch1_filtered_title_percents >= 2)
-			{
-			
+			{			
 				$this->filterBySummaryCriteria('skus_two_optimized_keywords', $summaryFilterData, $success_filter_entries);			
 			}
 				
 			if ($batch1_filtered_title_percents >= 3)
-			{
-				
+			{			
 				$this->filterBySummaryCriteria('skus_three_optimized_keywords', $summaryFilterData, $success_filter_entries);
+			}
+			
+			if (!$batch2_filtered_title_percents)
+			{			
+				$this->filterBySummaryCriteria('skus_zero_optimized_keywords_competitor', $summaryFilterData, $success_filter_entries);
+			}
+			
+			if ($batch2_filtered_title_percents >= 1)
+			{			
+				$this->filterBySummaryCriteria('skus_one_optimized_keywords_competitor', $summaryFilterData, $success_filter_entries);		
+			}
+				
+			if ($batch2_filtered_title_percents >= 2)
+			{			
+				$this->filterBySummaryCriteria('skus_two_optimized_keywords_competitor', $summaryFilterData, $success_filter_entries);			
+			}
+				
+			if ($batch2_filtered_title_percents >= 3)
+			{			
+				$this->filterBySummaryCriteria('skus_three_optimized_keywords_competitor', $summaryFilterData, $success_filter_entries);
 			}
                                 
             
@@ -2766,10 +2781,17 @@ class Assess extends MY_Controller {
         $skus_fewer_features_than_competitor = 0;
         $skus_fewer_reviews_than_competitor = 0;
         $skus_fewer_competitor_optimized_keywords = 0;
+		
         $skus_zero_optimized_keywords = 0;
         $skus_one_optimized_keywords = 0;
         $skus_two_optimized_keywords = 0;
         $skus_three_optimized_keywords = 0;
+		
+		$skus_zero_optimized_keywords_competitor = 0;
+        $skus_one_optimized_keywords_competitor = 0;
+        $skus_two_optimized_keywords_competitor = 0;
+        $skus_three_optimized_keywords_competitor = 0;
+		
         $skus_fewer_50_product_content_competitor = 0;
         $skus_fewer_100_product_content_competitor = 0;
         $skus_fewer_150_product_content_competitor = 0;
@@ -3746,6 +3768,31 @@ class Assess extends MY_Controller {
 				$skus_three_optimized_keywords++;			
 				$this->filterBySummaryCriteria('skus_three_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries);
 			}
+			
+			
+			if (!$batch2_filtered_title_percents)
+			{
+				$skus_zero_optimized_keywords_competitor++;
+				$this->filterBySummaryCriteria('skus_zero_optimized_keywords_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
+			}
+			
+			if ($batch2_filtered_title_percents >= 1)
+			{
+				$skus_one_optimized_keywords_competitor++;
+				$this->filterBySummaryCriteria('skus_one_optimized_keywords_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);		
+			}
+				
+			if ($batch2_filtered_title_percents >= 2)
+			{
+				$skus_two_optimized_keywords_competitor++;
+				$this->filterBySummaryCriteria('skus_two_optimized_keywords_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);			
+			}
+				
+			if ($batch2_filtered_title_percents >= 3)
+			{
+				$skus_three_optimized_keywords_competitor++;			
+				$this->filterBySummaryCriteria('skus_three_optimized_keywords_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
+			}
 
             if ($build_assess_params->short_duplicate_content || $build_assess_params->long_duplicate_content) {
                 $dc = $this->statistics_duplicate_content_model->get($row->imported_data_id);
@@ -4018,10 +4065,17 @@ class Assess extends MY_Controller {
 			'skus_fewer_features_than_competitor' => array( 'value' => $skus_fewer_features_than_competitor, 'percentage' => array('batch1'), 'icon' => $skus_fewer_features_than_competitor ? 'assess_report_seo_red.png' : 'assess_report_seo.png'),
 			'skus_fewer_reviews_than_competitor' => array( 'value' => $skus_fewer_reviews_than_competitor, 'percentage' => array('batch1')),
 			'skus_fewer_competitor_optimized_keywords' => array( 'value' => $skus_fewer_competitor_optimized_keywords, 'percentage' => array('batch1')),
-			'skus_zero_optimized_keywords' => array( 'value' => $skus_zero_optimized_keywords, 'percentage' => array('batch1')),
-			'skus_one_optimized_keywords' => array( 'value' => $skus_one_optimized_keywords, 'percentage' => array('batch1')),
-			'skus_two_optimized_keywords' => array( 'value' => $skus_two_optimized_keywords, 'percentage' => array('batch1')),
-			'skus_three_optimized_keywords' => array( 'value' => $skus_three_optimized_keywords, 'percentage' => array('batch1')),
+			
+			'skus_zero_optimized_keywords' => array( 'value' => $skus_zero_optimized_keywords, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_zero_optimized_keywords_competitor)),
+			'skus_one_optimized_keywords' => array( 'value' => $skus_one_optimized_keywords, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_one_optimized_keywords_competitor)),
+			'skus_two_optimized_keywords' => array( 'value' => $skus_two_optimized_keywords, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_two_optimized_keywords_competitor)),
+			'skus_three_optimized_keywords' => array( 'value' => $skus_three_optimized_keywords, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_three_optimized_keywords_competitor)),
+			
+			'skus_zero_optimized_keywords_competitor' => array( 'value' => $skus_zero_optimized_keywords_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_zero_optimized_keywords)),
+			'skus_one_optimized_keywords_competitor' => array( 'value' => $skus_one_optimized_keywords_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_one_optimized_keywords)),
+			'skus_two_optimized_keywords_competitor' => array( 'value' => $skus_two_optimized_keywords_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_two_optimized_keywords)),
+			'skus_three_optimized_keywords_competitor' => array( 'value' => $skus_three_optimized_keywords_competitor, 'percentage' => array('batch2, 'competitor''), 'generals' => array('competitor' => $skus_three_optimized_keywords)),
+			
 			'total_items_selected_by_filter' => array( 'value' => count($result_table), 'percentage' => array()),
 			'assess_report_competitor_matches_number' => array( 'value' => $build_assess_params->batch2_items_count, 'percentage' => array()),
 			'skus_third_party_content' => array( 'value' => $skus_third_party_content, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_third_party_content_competitor)),

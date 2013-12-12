@@ -41,22 +41,26 @@
 		array(
 			'data_filter_id' => 'skus_zero_optimized_keywords',
 			'icon' => 'assess_report_seo_red.png',
-			'label' => 'SKUs that have product content with zero optimized title keywords:',			
+			'label' => 'SKUs that have product content with zero optimized title keywords:',
+			'has_competitor' => true			
 		),
 		array(
 			'data_filter_id' => 'skus_one_optimized_keywords',
 			'icon' => 'assess_report_seo_red.png',
-			'label' => 'SKUs that have product content with one optimized title keyword:',			
+			'label' => 'SKUs that have product content with one optimized title keyword:',
+			'has_competitor' => true
 		),
 		array(
 			'data_filter_id' => 'skus_two_optimized_keywords',
 			'icon' => 'assess_report_seo_yellow.png',
-			'label' => 'SKUs that have product content with two optimized title keywords:',			
+			'label' => 'SKUs that have product content with two optimized title keywords:',
+			'has_competitor' => true
 		),
 		array(
 			'data_filter_id' => 'skus_three_optimized_keywords',
 			'icon' => 'assess_report_seo.png',
-			'label' => 'SKUs that have product content with three optimized title keywords:',			
+			'label' => 'SKUs that have product content with three optimized title keywords:',
+			'has_competitor' => true
 		),
 		array(
 			'data_filter_id' => 'skus_fewer_reviews_than_competitor',

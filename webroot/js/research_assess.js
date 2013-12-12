@@ -82,10 +82,17 @@ $(function() {
 		'skus_fewer_features_than_competitor',
 		'skus_fewer_reviews_than_competitor',
 		'skus_fewer_competitor_optimized_keywords',
+		
 		'skus_zero_optimized_keywords',
 		'skus_one_optimized_keywords',
 		'skus_two_optimized_keywords',
 		'skus_three_optimized_keywords',
+		
+		'skus_zero_optimized_keywords_competitor',
+		'skus_one_optimized_keywords_competitor',
+		'skus_two_optimized_keywords_competitor',
+		'skus_three_optimized_keywords_competitor',
+		
 		'skus_75_duplicate_content',
 		'skus_25_duplicate_content',
 		'skus_50_duplicate_content',
