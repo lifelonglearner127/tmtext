@@ -4481,12 +4481,12 @@ var search_text = GetURLParameter('search_text');
 	
 	
 	$(function(){
-  	$(window).scroll(setTimeout(function(){
+  	$(window).scroll(
 		    
 		      $('table#tblAssess').floatThead('reflow');
 
 			
-  		}, 500));
+  		);
 	});
 	//setInterval(reflow, 500);
 	
