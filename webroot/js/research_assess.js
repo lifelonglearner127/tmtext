@@ -4485,6 +4485,7 @@ var search_text = GetURLParameter('search_text');
 				}
 	});
 	$('table#tblAssess').floatThead('reflow');
+	
 	});	
 	$('#assess_tbl_show_case_details_compare').click(function(){
 	$( "table[id^=tblAsses] tr" ).each(function() {$(this).find("td[class*=1]:first, th[class*=1]:first").css( "border-left", "2px solid #ccc" )} );
@@ -4512,7 +4513,8 @@ var search_text = GetURLParameter('search_text');
 				}
 	});
 	$('table#tblAssess').floatThead('reflow');
-	});		
+	});
+	
 	$('.ui-dialog-titlebar-close').click(function(){
 	$( "table[id^=tblAsses] tr, th" ).each(function() {$(this).find("td[class*=1]:first, th[class*=1]:first").css( "border-left", "2px solid #ccc" )} );
 	$('table#tblAssess').floatThead({			    

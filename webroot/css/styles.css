@@ -729,3 +729,7 @@ span.highlight{
 .dual_batch1_filter_item, .dual_batch2_filter_item {	
 	width: 230px;
 }
+#tableScrollWrapper  div div table thead th div {
+	font-weight: bold;
+	font-size: 13px;
+}
