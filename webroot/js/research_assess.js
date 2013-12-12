@@ -4470,22 +4470,44 @@ var search_text = GetURLParameter('search_text');
         });
         
     });
-//scrollingTop: pageTop,
+	
 	$('table#tblAssess').floatThead({			    
 		scrollContainer: function($table){
-		return $('table#tblAssess').closest('.wrapper');
+		return $('#tblAssess').closest('.wrapper');
 				}
 	});
-			
-			
-	
-	
-	$(function(){
-  	$(window).scroll(setTimeout(function(){
-		      $('table#tblAssess').floatThead('reflow');	
-  		}, 500));
+	$('#assess_tbl_show_case_recommendations').click(function(){
+	$('table#tblAssess').floatThead({			    
+		scrollContainer: function($table){
+		return $('#tblAssess').closest('.wrapper');
+				}
 	});
-	//setInterval(reflow, 500);
+	$('table#tblAssess').floatThead('reflow');
+	});	
+	$('#assess_tbl_show_case_details_compare').click(function(){
+	$('table#tblAssess').floatThead({			    
+		scrollContainer: function($table){
+		return $('#tblAssess').closest('.wrapper');
+				}
+	});
+	$('table#tblAssess').floatThead('reflow');
+	});	
+	$('#assess_tbl_show_case_report').click(function(){
+	$('table#tblAssess').floatThead({			    
+		scrollContainer: function($table){
+		return $('#tblAssess').closest('.wrapper');
+				}
+	});
+	$('table#tblAssess').floatThead('reflow');
+	});	
+	$('#assess_tbl_show_case_details').click(function(){
+	$('table#tblAssess').floatThead({			    
+		scrollContainer: function($table){
+		return $('#tblAssess').closest('.wrapper');
+				}
+	});
+	$('table#tblAssess').floatThead('reflow');
+	});		
 	
   $('#generate_url').toggle(function() {
 	   var batch_set = $('.result_batch_items:checked').val() || 'me';

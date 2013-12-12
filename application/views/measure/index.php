@@ -1,14 +1,20 @@
 <script type='text/javascript'>
 jQuery(document).ready(function($) {
     $("#compare_text").focus();
-
-});
+	//new FixedHeader( document.getElementById('tblAssess') );
+	
+	});
     $('#grid_sw_grid').click(function(){
         //$('#shadow').css('display','block');
         //$('#drop_cat').css('display','block');
         //$('.drop_cat').css('display','block');
         switchToGridView();
     });
+	
+	
+			
+	
+	
 
     $(function() {
         if($('.jq-measure').parent().hasClass('active'))
