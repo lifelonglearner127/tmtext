@@ -4515,22 +4515,25 @@ var search_text = GetURLParameter('search_text');
 	$('table#tblAssess').floatThead('reflow');
 	$( "table[id^=tblAsses] tr, th" ).each(function() {$(this).find("td[class*=1]:not([class*=_1]):first, th[class*=1]:not([class*=_1]):first").css( "border-left", "2px solid #ccc" )} );
 	});
-	
-	
-	
 	$('#research_assess_update').click(function(){
 	$( "table[id^=tblAsses] tr, th" ).each(function() {$(this).find("td[class*=1]:not([class*=_1]):first, th[class*=1]:not([class*=_1]):first").css( "border-left", "2px solid #ccc" )} );
 	});
+	
 	$('.ui-dialog-titlebar-close').click(function(){
-	$( "table[id^=tblAsses] tr, th" ).each(function() {$(this).find("td[class*=1]:not([class*=_1]):first, th[class*=1]:not([class*=_1]):first").css( "border-left", "2px solid #ccc" )} );
 	$('table#tblAssess').floatThead({			    
 		scrollContainer: function($table){
 		return $('#tblAssess').closest('.wrapper');
 				}
 	});
 	$('table#tblAssess').floatThead('reflow');
+	$( "table[id^=tblAsses] tr, th" ).each(function() {$(this).find("td[class*=1]:not([class*=_1]):first, th[class*=1]:not([class*=_1]):first").css( "border-left", "2px solid #ccc" )} );
+	if($( "table[id^=tblAsses] th[class*=1]:not([class*=_1]):first" )){ $( "table[id^=tblAsses] tr, th" ).each(function() {$(this).find("td[class*=1]:not([class*=_1]):first, th[class*=1]:not([class*=_1]):first").css( "border-left", "2px solid #ccc" )} );}
 	});
 	if($( "table[id^=tblAsses] th[class*=1]:not([class*=_1]):first" )){ $( "table[id^=tblAsses] tr, th" ).each(function() {$(this).find("td[class*=1]:not([class*=_1]):first, th[class*=1]:not([class*=_1]):first").css( "border-left", "2px solid #ccc" )} );}
+	
+	
+	
+	
 	$('*[id*=mytext]:visible').each(function() {
     $(this).doStuff();
 	});
