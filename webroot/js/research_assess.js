@@ -4488,7 +4488,6 @@ var search_text = GetURLParameter('search_text');
 	
 	});	
 	$('#assess_tbl_show_case_details_compare').click(function(){
-	$( "table[id^=tblAsses] tr" ).each(function() {$(this).find("td[class*=1]:first, th[class*=1]:first").css( "border-left", "2px solid #ccc" )} );
 	$('table#tblAssess').floatThead({			    
 		scrollContainer: function($table){
 		return $('#tblAssess').closest('.wrapper');
@@ -4497,7 +4496,6 @@ var search_text = GetURLParameter('search_text');
 	$('table#tblAssess').floatThead('reflow');
 	});	
 	$('#assess_tbl_show_case_report').click(function(){
-	$( "table[id^=tblAsses] tr" ).each(function() {$(this).find("td[class*=1]:first, th[class*=1]:first").css( "border-left", "2px solid #ccc" )} );
 	$('table#tblAssess').floatThead({			    
 		scrollContainer: function($table){
 		return $('#tblAssess').closest('.wrapper');
@@ -4506,7 +4504,6 @@ var search_text = GetURLParameter('search_text');
 	$('table#tblAssess').floatThead('reflow');
 	});	
 	$('#assess_tbl_show_case_details').click(function(){
-	$( "table[id^=tblAsses] tr" ).each(function() {$(this).find("td[class*=1]:first, th[class*=1]:first").css( "border-left", "2px solid #ccc" )} );
 	$('table#tblAssess').floatThead({			    
 		scrollContainer: function($table){
 		return $('#tblAssess').closest('.wrapper');
@@ -4515,8 +4512,11 @@ var search_text = GetURLParameter('search_text');
 	$('table#tblAssess').floatThead('reflow');
 	});
 	
+	$('#research_assess_update').click(function(){
+	$( "table[id^=tblAsses] tr, th" ).each(function() {$(this).find("td[class*=1]:not([class*=_1]):first, th[class*=1]:not([class*=_1]):first").css( "border-left", "2px solid #ccc" )} );
+	});
 	$('.ui-dialog-titlebar-close').click(function(){
-	$( "table[id^=tblAsses] tr, th" ).each(function() {$(this).find("td[class*=1]:first, th[class*=1]:first").css( "border-left", "2px solid #ccc" )} );
+	$( "table[id^=tblAsses] tr, th" ).each(function() {$(this).find("td[class*=1]:not([class*=_1]):first, th[class*=1]:not([class*=_1]):first").css( "border-left", "2px solid #ccc" )} );
 	$('table#tblAssess').floatThead({			    
 		scrollContainer: function($table){
 		return $('#tblAssess').closest('.wrapper');
