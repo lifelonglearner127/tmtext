@@ -4475,17 +4475,23 @@ var search_text = GetURLParameter('search_text');
 		scrollContainer: function($table){
 		return $('table#tblAssess').closest('.wrapper');
 				}
-			});
+	});
 			
 			
 	
 	
 	$(function(){
   	$(window).scroll(setTimeot(function(){
+			$('table#tblAssess').floatThead({			    
+				scrollContainer: function($table){
+				return $('table#tblAssess').closest('.wrapper');
+				}
+			});
 		    var aTop = $('#report_product_menu').height();
 		    if($(this).scrollTop()>=aTop){
 		      $('table#tblAssess').floatThead('reflow');
 		    }
+			
   		}, 500));
 	});	
 	//setInterval(reflow, 500);
