@@ -4476,7 +4476,9 @@ var search_text = GetURLParameter('search_text');
 		return $('#tblAssess').closest('.wrapper');
 				}
 	});
+	$( "table[id^=tblAsses] tr" ).each(function() {$(this).find("td[class*=1]:first").css( "border-left", "2px solid red" )} );
 	$('#assess_tbl_show_case_recommendations').click(function(){
+	$( "table[id^=tblAsses] tr" ).each(function() {$(this).find("td[class*=1]:first").css( "border-left", "2px solid red" )} );
 	$('table#tblAssess').floatThead({			    
 		scrollContainer: function($table){
 		return $('#tblAssess').closest('.wrapper');
@@ -4485,6 +4487,7 @@ var search_text = GetURLParameter('search_text');
 	$('table#tblAssess').floatThead('reflow');
 	});	
 	$('#assess_tbl_show_case_details_compare').click(function(){
+	$( "table[id^=tblAsses] tr" ).each(function() {$(this).find("td[class*=1]:first").css( "border-left", "2px solid red" )} );
 	$('table#tblAssess').floatThead({			    
 		scrollContainer: function($table){
 		return $('#tblAssess').closest('.wrapper');
@@ -4493,6 +4496,7 @@ var search_text = GetURLParameter('search_text');
 	$('table#tblAssess').floatThead('reflow');
 	});	
 	$('#assess_tbl_show_case_report').click(function(){
+	$( "table[id^=tblAsses] tr" ).each(function() {$(this).find("td[class*=1]:first").css( "border-left", "2px solid red" )} );
 	$('table#tblAssess').floatThead({			    
 		scrollContainer: function($table){
 		return $('#tblAssess').closest('.wrapper');
@@ -4501,6 +4505,7 @@ var search_text = GetURLParameter('search_text');
 	$('table#tblAssess').floatThead('reflow');
 	});	
 	$('#assess_tbl_show_case_details').click(function(){
+	$( "table[id^=tblAsses] tr" ).each(function() {$(this).find("td[class*=1]:first").css( "border-left", "2px solid red" )} );
 	$('table#tblAssess').floatThead({			    
 		scrollContainer: function($table){
 		return $('#tblAssess').closest('.wrapper');
@@ -4509,6 +4514,7 @@ var search_text = GetURLParameter('search_text');
 	$('table#tblAssess').floatThead('reflow');
 	});		
 	$('.ui-dialog-titlebar-close').click(function(){
+	$( "table[id^=tblAsses] tr" ).each(function() {$(this).find("td[class*=1]:first").css( "border-left", "2px solid red" )} );
 	$('table#tblAssess').floatThead({			    
 		scrollContainer: function($table){
 		return $('#tblAssess').closest('.wrapper');
@@ -4517,6 +4523,9 @@ var search_text = GetURLParameter('search_text');
 	$('table#tblAssess').floatThead('reflow');
 	});
 	
+	$('*[id*=mytext]:visible').each(function() {
+    $(this).doStuff();
+	});
   $('#generate_url').toggle(function() {
 	   var batch_set = $('.result_batch_items:checked').val() || 'me';
        var first = $("select[name='" + batch_sets[batch_set]['batch_batch'] + "']").find('option:selected').val();
