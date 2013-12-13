@@ -11,7 +11,7 @@ var summaryInfoSelectedElements = [];
 var tblAssess;
 var last_batch_id;
 var last_compare_batch_id;
-
+var first_click = true ;
 
 $(function() {
 
@@ -22,12 +22,16 @@ $(function() {
         }).done(function(data){
            last_batch_id  = data.batch_id;
            last_compare_batch_id = data.compare_batch_id;
+           
+                first_click = false;
           $('select[name="research_assess_batches"]').val(last_batch_id).change()
                 setTimeout(function(){
+                first_click = true;
 
                 $('select[id="research_assess_compare_batches_batch"]').val(last_compare_batch_id).change()
                  $('#research_assess_update').click();
-                },1500)
+                },1500);
+               
         });
         
     $.fn.serializeObject = function() {
@@ -2833,8 +2837,8 @@ function prevSibilfunc(curentSibil){
     });
 
     $('#research_assess_update').on('click', function() {
-
-
+        if(first_click){
+        
         if ($("#research_assess_compare_batches_batch").val() == 'all' || $("#research_assess_compare_batches_batch_competitor").val() == 'all') {
             console.log(1);
             createTable();
@@ -2860,7 +2864,7 @@ function prevSibilfunc(curentSibil){
 
         addColumn_url_class();
         check_word_columns();
-
+        }
     });
 
     function addColumn_url_class() {
