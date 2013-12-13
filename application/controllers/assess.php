@@ -2918,6 +2918,8 @@ class Assess extends MY_Controller {
         $skus_more_than_hundred_reviews_competitor = 0;
 
         $skus_pdfs = 0;
+        $skus_videos = 0;
+        $skus_videos_competitor = 0;
         $skus_pdfs_competitor = 0;
         $items_priced_higher_than_competitors = 0;
         $items_have_more_than_20_percent_duplicate_content = 0;
@@ -3262,6 +3264,11 @@ class Assess extends MY_Controller {
                         $this->filterBySummaryCriteria('skus_pdfs_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
                     }
 					
+					if (isset($parsed_attributes_unserialize['video_count']) && $parsed_attributes_unserialize['video_count']) {
+                        $skus_videos_competitor++;
+                        $this->filterBySummaryCriteria('skus_videos_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
+                    }
+					
 					if (isset($parsed_attributes_unserialize['product_images']))
 					{
 						if (!$parsed_attributes_unserialize['product_images']) {
@@ -3489,6 +3496,11 @@ class Assess extends MY_Controller {
             if (isset($pars_atr['parsed_attributes']['pdf_count']) && $pars_atr['parsed_attributes']['pdf_count']) {
                 $skus_pdfs++;
                 $this->filterBySummaryCriteria('skus_pdfs', $build_assess_params->summaryFilterData, $success_filter_entries);
+            }
+
+			if (isset($pars_atr['parsed_attributes']['video_count']) && $pars_atr['parsed_attributes']['video_count']) {
+                $skus_videos++;
+                $this->filterBySummaryCriteria('skus_videos', $build_assess_params->summaryFilterData, $success_filter_entries);
             }
 			
 			if (isset($pars_atr['parsed_attributes']['product_images']))
@@ -4283,6 +4295,9 @@ class Assess extends MY_Controller {
 			
 			'skus_pdfs' => array( 'value' => $skus_pdfs, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_pdfs_competitor)),
 			'skus_pdfs_competitor' => array( 'value' => $skus_pdfs_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_pdfs)),
+			
+			'skus_videos' => array( 'value' => $skus_videos, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_videos_competitor)),
+			'skus_videos_competitor' => array( 'value' => $skus_videos_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_videos)),
 			
 			'skus_with_no_product_images' => array( 'value' => $skus_with_no_product_images, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_with_no_product_images_competitor)),
 			'skus_with_one_product_image' => array( 'value' => $skus_with_one_product_image, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_with_one_product_image_competitor)),

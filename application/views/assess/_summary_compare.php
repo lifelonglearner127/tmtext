@@ -158,6 +158,12 @@
 			'icon' => 'assess_report_seo.png',
 			'label' => 'SKUs that have PDFs:',
 			'has_competitor' => true	
+		),
+		array(
+			'data_filter_id' => 'skus_videos',
+			'icon' => 'assess_report_seo.png',
+			'label' => 'SKUs that have videos:',
+			'has_competitor' => true	
 		)		
 	);
 ?>

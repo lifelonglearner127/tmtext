@@ -124,6 +124,8 @@ $(function() {
         'skus_more_than_hundred_reviews_competitor',
 		
 		'skus_pdfs',
+		'skus_videos',
+		'skus_videos_competitor',
 		'skus_pdfs_competitor',
 		
 		'skus_with_no_product_images',
