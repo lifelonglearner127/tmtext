@@ -12,6 +12,7 @@ class SearchItem(Item):
     origin_id = Field() # original (source) product id (for walmart products)
     origin_model = Field() # original (source) product model
     origin_brand = Field() # original (source) product brand
+    origin_brand_extracted = Field() # source product brand - as extracted from product name: not guaranteed to be correct
 
 # items used in walmart_fullurls spider to match walmart ids to their product pages full URLs
 class WalmartItem(Item):

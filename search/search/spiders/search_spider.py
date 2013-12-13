@@ -179,6 +179,8 @@ class SearchSpider(BaseSpider):
 
 		product_model = ""
 
+		product_brand = ""
+
 		if site == 'staples':
 
 			product_name = hxs.select("//h1/text()").extract()[0]
@@ -253,6 +255,11 @@ class SearchSpider(BaseSpider):
 		if not product_model:
 			product_model = product_name[ProcessText.extract_model_nr_index(product_name)]
 
+		# if there is no product brand, get first word in name, assume it's the brand
+		product_brand_extracted = ""
+		if len(product_name) > 0 and re.match("[a-z]*", product_name[0]):
+			product_brand_extracted = product_name[0]
+
 		# 1) Search by model number
 		if product_model:
 			query1 = self.build_search_query(product_model)
@@ -303,6 +310,9 @@ class SearchSpider(BaseSpider):
 
 		request.meta['origin_name'] = product_name
 		request.meta['origin_model'] = product_model
+
+		# origin product brand as extracted from name (basically the first word in the name)
+		request.meta['origin_brand_extracted'] = product_brand_extracted
 
 		if self.by_id:
 			request.meta['origin_id'] = self.extract_walmart_id(response.url)
@@ -361,6 +371,7 @@ class SearchSpider(BaseSpider):
 				request.meta['origin_url'] = response.meta['origin_url']
 				request.meta['origin_name'] = response.meta['origin_name']
 				request.meta['origin_model'] = response.meta['origin_model']
+				request.meta['origin_brand_extracted'] = response.meta['origin_brand_extracted']
 
 				if 'origin_id' in response.meta:
 					request.meta['origin_id'] = response.meta['origin_id']
