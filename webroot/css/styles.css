@@ -733,3 +733,6 @@ span.highlight{
 	font-weight: bold;
 	font-size: 13px;
 }
+div.assess_report_compare li.boxes div.ui-resizable-e, div.ui-icon-gripsmall-diagonal-se {
+	display:none;
+}

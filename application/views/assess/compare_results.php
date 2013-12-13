@@ -687,8 +687,16 @@
                 $('select[id="research_assess_compare_batches_batch"]').val(cmp_selected).change()
                  $('#research_assess_update').click();
                 },2000)
-                
-            
+				var scrollScore = 0; $(window).scroll(function(){ if(scrollScore < 10 && $( "table[id^=tblAsses] th" ).length > 0){scrollScore++;} if(scrollScore == 9){$('table#tblAssess').floatThead('reflow');}});
+				
+            /*
+			
+			var reflow = $(function(){$(window).scroll(function(){
+				var aTop = $('#tblAssess_length').height();
+				if($(this).scrollTop()>=aTop){
+				   $('table#tblAssess').floatThead('reflow');
+				}}  );});
+			setTimeout(reflow, 5000);*/
             });
  </script>
 

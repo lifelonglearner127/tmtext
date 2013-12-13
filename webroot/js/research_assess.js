@@ -124,6 +124,7 @@ $(function() {
         'skus_more_than_hundred_reviews_competitor',
 		
 		'skus_pdfs',
+
 		'skus_videos',
 		'skus_videos_competitor',
 		'skus_pdfs_competitor',
@@ -133,6 +134,7 @@ $(function() {
 		'skus_with_more_than_one_product_image',
 		'skus_with_no_product_images_competitor',
 		'skus_with_one_product_image_competitor',
+
 		'skus_with_more_than_one_product_image_competitor',
 	];
 	
@@ -1963,10 +1965,10 @@ var generate_url_check = GetURLParameter('generate_url_check');
 	$(document).on('click', '.update_filter_btn', function(e) {
 		$('#research_assess_update').click();
 	});
-        $(document).on('click','.phr-frequency',function(){
-            $('.phr-frequency').hide();
-            $('.phr-density').show();
-        });
+        $(document).on('click','#tk-denisty',function(){
+             $('.phr-frequency').hide();
+             $('.phr-density').show();
+         });
         $(document).on('click','#tk-frequency',function(){
             $('.phr-density').hide();
             $('.phr-frequency').show();
@@ -4478,6 +4480,7 @@ var search_text = GetURLParameter('search_text');
 		return $('#tblAssess').closest('.wrapper');
 				}
 	});
+	var scrollScore = 0; $(window).scroll(function(){ if(scrollScore < 20 && $('table[id^=tblAssess] th')){scrollScore++;} if(scrollScore == 19){$('table#tblAssess').floatThead('reflow');} });
 	$( "table[id^=tblAsses] tr, th" ).each(function() {$(this).find("td[class*=1]:not([class*=_1]):first, th[class*=1]:not([class*=_1]):first").css( "border-left", "2px solid #ccc" )} );
 	$('#assess_tbl_show_case_recommendations').click(function(){
 	$( "table[id^=tblAsses] tr" ).each(function() {$(this).find("td[class*=1]:first").css( "border-left", "3px solid rgba(173, 173, 173, 1)" )} );
@@ -4487,6 +4490,7 @@ var search_text = GetURLParameter('search_text');
 				}
 	});
 	$('table#tblAssess').floatThead('reflow');
+	scrollScore = 0;
 	$( "table[id^=tblAsses] tr, th" ).each(function() {$(this).find("td[class*=1]:not([class*=_1]):first, th[class*=1]:not([class*=_1]):first").css( "border-left", "2px solid #ccc" )} );
 	});	
 	$('#assess_tbl_show_case_details_compare').click(function(){
@@ -4497,6 +4501,9 @@ var search_text = GetURLParameter('search_text');
 				}
 	});
 	$('table#tblAssess').floatThead('reflow');
+	scrollScore = 0;
+	$("li[class*=boxes] div[class*=ui-icon-gripsmall-diagonal-se]").css("display", "none");
+	$("li[class*=boxes] div[class*=ui-resizable-e]").css("display", "none");
 	$( "table[id^=tblAsses] tr, th" ).each(function() {$(this).find("td[class*=1]:not([class*=_1]):first, th[class*=1]:not([class*=_1]):first").css( "border-left", "2px solid #ccc" )} );
 	});	
 	$('#assess_tbl_show_case_report').click(function(){
@@ -4506,6 +4513,7 @@ var search_text = GetURLParameter('search_text');
 				}
 	});
 	$('table#tblAssess').floatThead('reflow');
+	scrollScore = 0;
 	$( "table[id^=tblAsses] tr, th" ).each(function() {$(this).find("td[class*=1]:not([class*=_1]):first, th[class*=1]:not([class*=_1]):first").css( "border-left", "2px solid #ccc" )} );
 	});	
 	$('#assess_tbl_show_case_details').click(function(){
@@ -4515,12 +4523,13 @@ var search_text = GetURLParameter('search_text');
 				}
 	});
 	$('table#tblAssess').floatThead('reflow');
+	scrollScore = 0;
 	$( "table[id^=tblAsses] tr, th" ).each(function() {$(this).find("td[class*=1]:not([class*=_1]):first, th[class*=1]:not([class*=_1]):first").css( "border-left", "2px solid #ccc" )} );
 	});
 	$('#research_assess_update').click(function(){
 	$( "table[id^=tblAsses] tr, th" ).each(function() {$(this).find("td[class*=1]:not([class*=_1]):first, th[class*=1]:not([class*=_1]):first").css( "border-left", "2px solid #ccc" )} );
 	});
-	
+	$("th[class=ui-state-default]")
 	$('.ui-dialog-titlebar-close').click(function(){
 	$('table#tblAssess').floatThead({			    
 		scrollContainer: function($table){
@@ -4528,6 +4537,7 @@ var search_text = GetURLParameter('search_text');
 				}
 	});
 	$('table#tblAssess').floatThead('reflow');
+	scrollScore = 0;
 	$( "table[id^=tblAsses] tr, th" ).each(function() {$(this).find("td[class*=1]:not([class*=_1]):first, th[class*=1]:not([class*=_1]):first").css( "border-left", "2px solid #ccc" )} );
 	if($( "table[id^=tblAsses] th[class*=1]:not([class*=_1]):first" )){ $( "table[id^=tblAsses] tr, th" ).each(function() {$(this).find("td[class*=1]:not([class*=_1]):first, th[class*=1]:not([class*=_1]):first").css( "border-left", "2px solid #ccc" )} );}
 	});
