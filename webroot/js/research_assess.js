@@ -124,7 +124,6 @@ $(function() {
         'skus_more_than_hundred_reviews_competitor',
 		
 		'skus_pdfs',
-
 		'skus_videos',
 		'skus_videos_competitor',
 		'skus_pdfs_competitor',
@@ -1794,10 +1793,10 @@ var scrollYesOrNot = true;
 		for (var it = 0; it < summaryFieldNames.length; it++)
 			if (summary[summaryFieldNames[it]] !== undefined)
 			{			
-				var filter_item_data_wrapper = $('.' + batch_prefix + summaryFieldNames[it]);
+				var filter_item_data_wrapper = $('.' + batch_prefix + summaryFieldNames[it]);				
 				if (summary[summaryFieldNames[it] + '_icon'])
-				{
-					var current_icon = filter_item_data_wrapper.prev()
+				{					
+					var current_icon = $('.' + batch_prefix + summaryFieldNames[it] + '_icon')		
 						, icon_src = current_icon.attr('src');
 					
 					current_icon.attr('src', icon_src.substring(0, icon_src.lastIndexOf('/') + 1) + summary[summaryFieldNames[it] + '_icon']);				

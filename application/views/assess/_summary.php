@@ -1,5 +1,6 @@
 <?php
 	$this->load->helper('html');
+	$this->load->helper('summary');
 	$is_extended_partial = $wrapper_class == 'assess_report_compare';	
 ?>
 <div class="<?php echo $wrapper_class ?>" style="display: <?php echo $display ?>">

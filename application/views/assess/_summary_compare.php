@@ -166,39 +166,21 @@
 			'has_competitor' => true	
 		)		
 	);
+		
 ?>
 <?php foreach ($filter_items as $filter_item): ?>
 	
 	<?php if (isset($filter_item['has_competitor']) && $filter_item['has_competitor']): ?>
 	
-		<div class="mt_10 ml_15 ui-widget-content batch1_filter_item" data-filterid="<?php echo $batch_set . $filter_item['data_filter_id'] ?>">
-			<div class="mr_10">
-				<img src="<?php echo base_url(); ?>img/<?php echo $filter_item['icon'] ?>" />
-				<?php echo $filter_item['label'] ?> 
-				<span class="<?php echo $batch_set . $filter_item['data_filter_id'] ?> mr_10" ></span>
-			</div>
-		</div>
-		
-		<div class="mt_10 ml_15 ui-widget-content batch2_filter_item" data-filterid="<?php echo $batch_set . $filter_item['data_filter_id'] ?>_competitor">
-			<div class="mr_10">
-				<img src="<?php echo base_url(); ?>img/<?php echo $filter_item['icon'] ?>" />
-				Competitor <?php echo $filter_item['label'] ?> 
-				<span class="<?php echo $batch_set . $filter_item['data_filter_id'] ?>_competitor mr_10" ></span>
-			</div>
-		</div>
+		<?php echo render_filter_item($batch_set . $filter_item['data_filter_id'], $filter_item['icon'], $filter_item['label'], 'batch1_filter_item') ?>				
+		<?php echo render_filter_item($batch_set . $filter_item['data_filter_id'] . '_competitor', $filter_item['icon'], 'Competitor ' . $filter_item['label'], 'batch2_filter_item') ?>			
 		
 		<div style="clear: both"></div>
 		
 	<?php else: ?>
-	
-		<div class="mt_10 ml_15 ui-widget-content" data-filterid="<?php echo $batch_set . $filter_item['data_filter_id'] ?>">
-			<div class="mr_10">
-				<img src="<?php echo base_url(); ?>img/<?php echo $filter_item['icon'] ?>" />
-				<?php echo $filter_item['label'] ?> 
-				<span class="<?php echo $batch_set . $filter_item['data_filter_id'] ?> mr_10" ></span>
-			</div>
-		</div>
-	
+		
+		<?php echo render_filter_item($batch_set . $filter_item['data_filter_id'], $filter_item['icon'], $filter_item['label']) ?>		
+		
 	<?php endif ?>	
 	
 <?php endforeach ?>
