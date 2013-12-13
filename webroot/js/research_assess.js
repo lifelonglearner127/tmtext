@@ -1961,10 +1961,10 @@ var generate_url_check = GetURLParameter('generate_url_check');
 	$(document).on('click', '.update_filter_btn', function(e) {
 		$('#research_assess_update').click();
 	});
-        $(document).on('click','.phr-frequency',function(){
-            $('.phr-frequency').hide();
-            $('.phr-density').show();
-        });
+        $(document).on('click','#tk-denisty',function(){
+             $('.phr-frequency').hide();
+             $('.phr-density').show();
+         });
         $(document).on('click','#tk-frequency',function(){
             $('.phr-density').hide();
             $('.phr-frequency').show();
