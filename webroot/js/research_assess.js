@@ -4498,6 +4498,8 @@ var search_text = GetURLParameter('search_text');
 	});
 	$('table#tblAssess').floatThead('reflow');
 	scrollScore = 0;
+	$("li[class*=boxes] div[class*=ui-icon-gripsmall-diagonal-se]").css("display", "none");
+	$("li[class*=boxes] div[class*=ui-resizable-e]").css("display", "none");
 	$( "table[id^=tblAsses] tr, th" ).each(function() {$(this).find("td[class*=1]:not([class*=_1]):first, th[class*=1]:not([class*=_1]):first").css( "border-left", "2px solid #ccc" )} );
 	});	
 	$('#assess_tbl_show_case_report').click(function(){
