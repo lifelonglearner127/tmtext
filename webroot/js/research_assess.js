@@ -101,6 +101,11 @@ $(function() {
 		'skus_75_duplicate_content',
 		'skus_25_duplicate_content',
 		'skus_50_duplicate_content',
+		
+		'skus_75_duplicate_content_competitor',
+		'skus_25_duplicate_content_competitor',
+		'skus_50_duplicate_content_competitor',
+		
 		'total_items_selected_by_filter',
 		'skus_third_party_content',
 		'skus_third_party_content_competitor',
@@ -1013,14 +1018,13 @@ $(function() {
 	$('.resizable').wrap('<div/>')
         .css({'overflow':'hidden'})
           .parent()
-            .css({'overflow':'hidden',
+            .css({'overflow':'visible',
                   'height':function(){return $('.resizable',this).height();},                                                                
                 }).resizable({
 					maxWidth : 1021,
 					minWidth : 1021,
 					minHeight: 200,
-					resize : function( event, ui ) {
-						// console.log(ui);
+					resize : function( event, ui ) {						
 						current_filter_list_wrapper_height = ui.size.height;
 					}
 				}).find('.resizable')
@@ -1028,10 +1032,12 @@ $(function() {
 						width:'100%',
                         height:'100%'});
 	
+	$('.question_mark').popover();
+	
 	$('.selectable_summary_info').on('mousedown', function(e) {
 		e.metaKey = true;
 	}).selectable({
-		cancel : '.non-selectable',
+		cancel : '.non-selectable, .question_mark',
 		tolerance : 'touch',
 		selected : function(event, ui) {
 			// console.log('Selected...');
