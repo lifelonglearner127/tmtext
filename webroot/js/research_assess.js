@@ -31,6 +31,7 @@ $(function() {
                 $('select[id="research_assess_compare_batches_batch"]').val(last_compare_batch_id).change()
                  $('#research_assess_update').click();
                 },1500);
+                
                
         });
         
