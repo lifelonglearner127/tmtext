@@ -339,25 +339,79 @@ $(function() {
 
                 });
                 highChart('total_description_wc');
-                // $('table#tblAssess').floatThead('reflow');
+                var compare_batch_id = $(batch_sets[batch_set]['batch_compare']).find('option:selected').val();
                 $.ajax({
                     type: "POST",
                     url: readBoardSnapUrl,
-                    data: {batch_id: $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val()}
+                    data: {
+                        batch_id: $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val(),
+                        compare_batch_id: $(batch_sets[batch_set]['batch_compare']).find('option:selected').val()
+                    }
                 }).done(function(data){
                     if(data.length > 0){
                         var str = '';
+                        var showcount = 12;
+                        if(compare_batch_id != '0' && compare_batch_id !='all'){
+                            showcount = 6 ;
+                        }
                         for(var i=0; i<data.length; i++){
-                            var obj = jQuery.parseJSON(data[i][2]);
-                            if(data[i][1] != null && data[i][1] != '' && data[i][0]!=''){
-                                if(data[i][1].length > 93)
-                                  str += '<div class="board_item"><span class="span_img">'+data[i][1]+'</span><br />'+data[i][0]+
-                                      '<div class="prod_description"><b>URL:</b><br/>'+obj.url+'<br /><br /><b>Product name:</b><br/>'+obj.product_name+
-                                      '<br /><br/><b>Price:</b><br/>'+obj.own_price+'</div></div>';
+//                            var obj = jQuery.parseJSON(data[i][2]);
+                            if(i < showcount){
+
+                                if(data[i]['product_name'] != null && data[i]['product_name'] != '' && data[i]['snap']!=''){
+                                    if(data[i]['product_name'].length > 93)
+                                      str += '<div id="snap'+i+'" class="board_item"><span class="span_img">'+data[i]['product_name']+'</span><br />'+data[i]['snap']+
+                                          '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name']+'</div></div>';
                                 else
-                                  str += '<div class="board_item"><span>'+data[i][1]+'</span><br />'+data[i][0]+
-                                      '<div class="prod_description"><b>URL:</b><br/>'+obj.url+'<br /><br /><b>Product name:</b><br/>'+obj.product_name
-                                      +'<br /><br/><b>Price:</b><br/>'+obj.own_price+'</div></div>';
+                                      str += '<div id="snap'+i+'" class="board_item"><span>'+data[i]['product_name']+'</span><br />'+data[i]['snap']+
+                                          '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name']+'</div></div>';
+                            }
+                                else{
+                                    str += '<div id="snap'+i+'" class="board_item"></div>'
+                        }                   
+                                if(compare_batch_id != '0' && compare_batch_id !='all'){
+                                    if(data[i]['product_name1'] != null && data[i]['product_name1'] != '' && data[i]['snap1']!=''){
+
+            //                            console.log(data.length);
+                                        if(data[i]['product_name1'].length > 93)
+                                          str += '<div id="compare_snap'+i+'" class="board_item"><span class="span_img">'+data[i]['product_name1']+'</span><br />'+data[i]['snap1']+
+                                              '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url1']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name1']+'</div></div>';
+                                        else
+                                          str += '<div id="compare_snap'+i+'" class="board_item"><span>'+data[i]['product_name1']+'</span><br />'+data[i]['snap1']+
+                                              '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url1']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name1']+'</div></div>';
+                                    }
+                                    else{
+                                        str += '<div id="compare_snap'+i+'" class="board_item"></div>'
+                                    }
+                                }
+                            }
+                            else{
+                                if(data[i]['product_name'] != null && data[i]['product_name'] != '' && data[i]['snap']!=''){
+                                    if(data[i]['product_name'].length > 93)
+                                      str += '<div id="snap'+i+'" class="board_item" style="display: none;"><span class="span_img">'+data[i]['product_name']+'</span><br />'+data[i]['snap']+
+                                          '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name']+'</div></div>';
+                                    else
+                                      str += '<div id="snap'+i+'" class="board_item" style="display: none;"><span>'+data[i]['product_name']+'</span><br />'+data[i]['snap']+
+                                          '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name']+'</div></div>';
+                                }
+                                else{
+                                    str += '<div id="snap'+i+'" class="board_item" style="display: none;"></div>'
+                                }
+                                if(compare_batch_id != '0' && compare_batch_id !='all'){
+                                    if(data[i]['product_name1'] != null && data[i]['product_name1'] != '' && data[i]['snap1']!=''){
+
+            //                            console.log(data.length);
+                                        if(data[i]['product_name1'].length > 93)
+                                          str += '<div id="compare_snap'+i+'" class="board_item" style="display: none;"><span class="span_img">'+data[i]['product_name1']+'</span><br />'+data[i]['snap1']+
+                                              '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url1']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name1']+'</div></div>';
+                                        else
+                                          str += '<div id="compare_snap'+i+'" class="board_item style="display: none;""><span>'+data[i]['product_name1']+'</span><br />'+data[i]['snap1']+
+                                              '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url1']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name1']+'</div></div>';
+                                    }
+                                    else{
+                                        str += '<div id="compare_snap'+i+'" class="board_item" style="display: none;"></div>'
+                                    }
+                                }
                             }
                         }                   
                         if(str == ''){
@@ -538,7 +592,6 @@ $(function() {
                     $('#research_assess_choiceColumnDialog').dialog('open');
                     $('#research_assess_choiceColumnDialog').parent().find('button:first-child').addClass("popupGreen");
                 });
-                // $('table#tblAssess').floatThead('reflow');
                 $('#assess_tbl_show_case a').on('click', function(event) {
                     event.preventDefault();
                     if ($(this).text() == 'Details' || $(this).text() == 'Compare') {
@@ -552,24 +605,79 @@ $(function() {
             }, 1000);
         });
         highChart('total_description_wc');
+        var compare_batch_id = $(batch_sets[batch_set]['batch_compare']).find('option:selected').val();
         $.ajax({
             type: "POST",
             url: readBoardSnapUrl,
-            data: {batch_id: $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val()}
+            data: {
+                        batch_id: $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val(),
+                        compare_batch_id: $(batch_sets[batch_set]['batch_compare']).find('option:selected').val()
+                    }
         }).done(function(data){
             if(data.length > 0){
                 var str = '';
+                var showcount = 12;
+                if(compare_batch_id != '0' && compare_batch_id !='all'){
+                    showcount = 6 ;
+                }
                 for(var i=0; i<data.length; i++){
-                    var obj = jQuery.parseJSON(data[i][2]);
-                    if(data[i][1] != null && data[i][1] != '' && data[i][0]!=''){
-                        if(data[i][1].length > 93)
-                          str += '<div class="board_item"><span class="span_img">'+data[i][1]+'</span><br />'+data[i][0]+
-                              '<div class="prod_description"><b>URL:</b><br/>'+obj.url+'<br /><br /><b>Product name:</b><br/>'+obj.product_name+
-                              '<br /><br/><b>Price:</b><br/>'+obj.own_price+'</div></div>';
+//                            var obj = jQuery.parseJSON(data[i][2]);
+                    if(i < showcount){
+
+                        if(data[i]['product_name'] != null && data[i]['product_name'] != '' && data[i]['snap']!=''){
+                            if(data[i]['product_name'].length > 93)
+                              str += '<div id="snap'+i+'" class="board_item"><span class="span_img">'+data[i]['product_name']+'</span><br />'+data[i]['snap']+
+                                  '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name']+'</div></div>';
                         else
-                          str += '<div class="board_item"><span>'+data[i][1]+'</span><br />'+data[i][0]+
-                              '<div class="prod_description"><b>URL:</b><br/>'+obj.url+'<br /><br /><b>Product name:</b><br/>'+obj.product_name
-                              +'<br /><br/><b>Price:</b><br/>'+obj.own_price+'</div></div>';
+                              str += '<div id="snap'+i+'" class="board_item"><span>'+data[i]['product_name']+'</span><br />'+data[i]['snap']+
+                                  '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name']+'</div></div>';
+                    }
+                        else{
+                            str += '<div id="snap'+i+'" class="board_item"></div>'
+                }                   
+                        if(compare_batch_id != '0' && compare_batch_id !='all'){
+                            if(data[i]['product_name1'] != null && data[i]['product_name1'] != '' && data[i]['snap1']!=''){
+
+    //                            console.log(data.length);
+                                if(data[i]['product_name1'].length > 93)
+                                  str += '<div id="compare_snap'+i+'" class="board_item"><span class="span_img">'+data[i]['product_name1']+'</span><br />'+data[i]['snap1']+
+                                      '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url1']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name1']+'</div></div>';
+                                else
+                                  str += '<div id="compare_snap'+i+'" class="board_item"><span>'+data[i]['product_name1']+'</span><br />'+data[i]['snap1']+
+                                      '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url1']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name1']+'</div></div>';
+                            }
+                            else{
+                                str += '<div id="compare_snap'+i+'" class="board_item"></div>'
+                            }
+                        }
+                    }
+                    else{
+                        if(data[i]['product_name'] != null && data[i]['product_name'] != '' && data[i]['snap']!=''){
+                            if(data[i]['product_name'].length > 93)
+                              str += '<div id="snap'+i+'" class="board_item" style="display: none;"><span class="span_img">'+data[i]['product_name']+'</span><br />'+data[i]['snap']+
+                                  '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name']+'</div></div>';
+                            else
+                              str += '<div id="snap'+i+'" class="board_item" style="display: none;"><span>'+data[i]['product_name']+'</span><br />'+data[i]['snap']+
+                                  '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name']+'</div></div>';
+                        }
+                        else{
+                            str += '<div id="snap'+i+'" class="board_item" style="display: none;"></div>'
+                        }
+                        if(compare_batch_id != '0' && compare_batch_id !='all'){
+                            if(data[i]['product_name1'] != null && data[i]['product_name1'] != '' && data[i]['snap1']!=''){
+
+    //                            console.log(data.length);
+                                if(data[i]['product_name1'].length > 93)
+                                  str += '<div id="compare_snap'+i+'" class="board_item" style="display: none;"><span class="span_img">'+data[i]['product_name1']+'</span><br />'+data[i]['snap1']+
+                                      '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url1']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name1']+'</div></div>';
+                                else
+                                  str += '<div id="compare_snap'+i+'" class="board_item" style="display: none;"><span>'+data[i]['product_name1']+'</span><br />'+data[i]['snap1']+
+                                      '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url1']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name1']+'</div></div>';
+                            }
+                            else{
+                                str += '<div id="compare_snap'+i+'" class="board_item" style="display: none;"></div>'
+                            }
+                        }
                     }
                 }                   
                 if(str == ''){
@@ -1148,28 +1256,83 @@ $(function() {
                 $('#tblAssess').appendTo('#tableScrollWrapper');
              }
             highChart('total_description_wc');
+            var compare_batch_id = $(batch_sets[batch_set]['batch_compare']).find('option:selected').val() ;
             $.ajax({
                 type: "POST",
                 url: readBoardSnapUrl,
-                data: {batch_id: $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val()}
+                data: {
+                        batch_id: $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val(),
+                        compare_batch_id: $(batch_sets[batch_set]['batch_compare']).find('option:selected').val()
+                    }
             }).done(function(data){
                 if(data.length > 0){
-                    console.log(data);
+                    console.log('1');
+                    
                     var str = '';
+                    var showcount = 12;
+                    if(compare_batch_id != '0' && compare_batch_id !='all'){
+                        showcount = 6 ;
+                    }
                     for(var i=0; i<data.length; i++){
-                        var obj = jQuery.parseJSON(data[i][2]);
-                        if(data[i][1] != null && data[i][1] != '' && data[i][0]!=''){
-                            console.log(data[i][1]);
-                            if(data[i][1].length > 93)
-                              str += '<div class="board_item"><span class="span_img">'+data[i][1]+'</span><br />'+data[i][0]+
-                                  '<div class="prod_description"><b>URL:</b><br/>'+obj.url+'<br /><br /><b>Product name:</b><br/>'+obj.product_name+
-                                  '<br /><br/><b>Price:</b><br/>'+obj.own_price+'</div></div>';
+//                            var obj = jQuery.parseJSON(data[i][2]);
+                        if(i < showcount){
+
+                            if(data[i]['product_name'] != null && data[i]['product_name'] != '' && data[i]['snap']!=''){
+                                if(data[i]['product_name'].length > 93)
+                                  str += '<div id="snap'+i+'" class="board_item"><span class="span_img">'+data[i]['product_name']+'</span><br />'+data[i]['snap']+
+                                      '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name']+'</div></div>';
                             else
-                              str += '<div class="board_item"><span>'+data[i][1]+'</span><br />'+data[i][0]+
-                                  '<div class="prod_description"><b>URL:</b><br/>'+obj.url+'<br /><br /><b>Product name:</b><br/>'+obj.product_name
-                                  +'<br /><br/><b>Price:</b><br/>'+obj.own_price+'</div></div>';
+                                  str += '<div id="snap'+i+'" class="board_item"><span>'+data[i]['product_name']+'</span><br />'+data[i]['snap']+
+                                      '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name']+'</div></div>';
                         }
+                            else{
+                                str += '<div id="snap'+i+'" class="board_item"></div>'
                     }                   
+                            if(compare_batch_id != '0' && compare_batch_id !='all'){
+                                if(data[i]['product_name1'] != null && data[i]['product_name1'] != '' && data[i]['snap1']!=''){
+
+        //                            console.log(data.length);
+                                    if(data[i]['product_name1'].length > 93)
+                                      str += '<div id="compare_snap'+i+'" class="board_item"><span class="span_img">'+data[i]['product_name1']+'</span><br />'+data[i]['snap1']+
+                                          '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url1']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name1']+'</div></div>';
+                                    else
+                                      str += '<div id="compare_snap'+i+'" class="board_item"><span>'+data[i]['product_name1']+'</span><br />'+data[i]['snap1']+
+                                          '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url1']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name1']+'</div></div>';
+                                }
+                                else{
+                                    str += '<div id="compare_snap'+i+'" class="board_item"></div>'
+                                }
+                            }
+                        }
+                        else{
+                            if(data[i]['product_name'] != null && data[i]['product_name'] != '' && data[i]['snap']!=''){
+                                if(data[i]['product_name'].length > 93)
+                                  str += '<div id="snap'+i+'" class="board_item" style="display: none;"><span class="span_img">'+data[i]['product_name']+'</span><br />'+data[i]['snap']+
+                                      '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name']+'</div></div>';
+                                else
+                                  str += '<div id="snap'+i+'" class="board_item" style="display: none;"><span>'+data[i]['product_name']+'</span><br />'+data[i]['snap']+
+                                      '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name']+'</div></div>';
+                            }
+                            else{
+                                str += '<div id="snap'+i+'" class="board_item" style="display: none;"></div>'
+                            }
+                            if(compare_batch_id != '0' && compare_batch_id !='all'){
+                                if(data[i]['product_name1'] != null && data[i]['product_name1'] != '' && data[i]['snap1']!=''){
+
+        //                            console.log(data.length);
+                                    if(data[i]['product_name1'].length > 93)
+                                      str += '<div id="compare_snap'+i+'" class="board_item" style="display: none;"><span class="span_img">'+data[i]['product_name1']+'</span><br />'+data[i]['snap1']+
+                                          '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url1']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name1']+'</div></div>';
+                                    else
+                                      str += '<div id="compare_snap'+i+'" class="board_item" style="display: none;"><span>'+data[i]['product_name1']+'</span><br />'+data[i]['snap1']+
+                                          '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url1']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name1']+'</div></div>';
+                                }
+                                else{
+                                    str += '<div id="compare_snap'+i+'" class="board_item" style="display: none;"></div>'
+                                }
+                            }
+                        }
+                    }
                     if(str == ''){
                         str = '<p>No images available for this batch</p>';
                     }
@@ -1382,36 +1545,6 @@ function highChart(graphBuild){
         }
         $('#highChartContainer').empty();
 
-        var bigdatalength = Math.max(value1.length , value2.length) ;
-       // console.log(bigdatalength);
-        
-//        if(bigdatalength < 500){
-//            $('#highChartContainer').css("width","880px");
-//        }
-//        if(bigdatalength > 500 && bigdatalength < 1000){
-//            $('#highChartContainer').css("width","2000px");
-//        }
-//        if(bigdatalength >= 1000 && bigdatalength < 1500){
-//            $('#highChartContainer').css("width","3000px");
-//        }
-//        if(bigdatalength >= 1500 && bigdatalength < 2000){
-//            $('#highChartContainer').css("width","4000px");
-//        }
-//        if(bigdatalength >= 2000 && bigdatalength < 3000){
-//            $('#highChartContainer').css("width","6000px");
-//        }
-//        if(bigdatalength >= 3000 && bigdatalength < 4000){
-//            $('#highChartContainer').css("width","7500px");
-//        }
-//        if(bigdatalength >= 4000 && bigdatalength < 5000){
-//            $('#highChartContainer').css("width","9000px");
-//        }
-//        if(bigdatalength >= 5000 && bigdatalength < 6000){
-//            $('#highChartContainer').css("width","12000px");
-//        }
-//        if(bigdatalength >= 6000){
-//            $('#highChartContainer').css("width","18000px");
-//        }
         var chart1 = new Highcharts.Chart({
             title: {
                 text: ''
@@ -1420,12 +1553,6 @@ function highChart(graphBuild){
                 renderTo: 'highChartContainer',
                 zoomType: 'x',
                 spacingRight: 20,
-//                events: {
-//                    click: function() {
-//                        $('.highcharts-tooltip').css('visibility','hidden');
-//                        $('div .highcharts-tooltip span').css('visibility','hidden');
-//                    }
-//                }
             },
             xAxis: {
                 min: 0,
@@ -1532,7 +1659,7 @@ $('#graphDropDown').live('change',function(){
 var scrollYesOrNot = true;
     $(document).scroll(function() {
 		var batch_set = $('.result_batch_items:checked').val() || 'me';		
-        if(!$('#assess_view').children('p')) {
+    if($('#assess_view').children('div')) {
         var docHeight = parseInt($(document).height());
         var windHeight = parseInt($(window).height());
         var scrollTop = parseInt($(document).scrollTop());
@@ -1541,32 +1668,20 @@ var scrollYesOrNot = true;
             if($('.board_item').length >= 12)
                 $('#imgLoader').show();
             setTimeout(function(){
-
-                $.ajax({
-                    type: "POST",
-                    url: readBoardSnapUrl,
-                    data: {batch_id: $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val(),next_id: $('#assess_view .board_item:last-child').children('img').attr('rel')}
-                }).done(function(data){
+                $('#assess_view .board_item').each(function(){
+                    if($(this).css('display') == 'none'){
+                        $(this).css('display', 'block');
+                        $(this).next().css('display', 'block');
+                        $(this).next().next().css('display', 'block');
+                        $(this).next().next().next().css('display', 'block');
+                        $(this).next().next().next().next().css('display', 'block');
+                        $(this).next().next().next().next().next().css('display', 'block');
+                        $(this).next().next().next().next().next().next().css('display', 'block');
+                        $(this).next().next().next().next().next().next().next().css('display', 'block');
+                        return false;
+                    }
+                });
                     $('#imgLoader').hide();
-                    if(data.length > 0){
-                        var str = '';
-                        for(var i=0; i<data.length; i++){
-                            var obj = jQuery.parseJSON(data[i][2]);
-                            if(data[i][1] != null && data[i][1] != '' && data[i][0]!=''){
-                                if(data[i][1].length > 93)
-                                  str += '<div class="board_item fadeout" style="display: none;" ><span class="span_img">'+data[i][1]+'</span><br />'+data[i][0]+
-                                      '<div class="prod_description"><b>URL:</b><br/>'+obj.url+'<br /><br /><b>Product name:</b><br/>'+obj.product_name+
-                                      '<br /><br/><b>Price:</b><br/>'+obj.own_price+'</div></div>';
-                                else
-                                  str += '<div class="board_item fadeout" style="display: none;"><span>'+data[i][1]+'</span><br />'+data[i][0]+
-                                      '<div class="prod_description"><b>URL:</b><br/>'+obj.url+'<br /><br /><b>Product name:</b><br/>'+obj.product_name
-                                      +'<br /><br/><b>Price:</b><br/>'+obj.own_price+'</div></div>';
-                            }
-                        }                   
-                        if(str == ''){
-                            str = '<p>No images available for this batch</p>';
-                        }
-                            $('#assess_view').html(str);
                         $('#assess_view .board_item img').on('click', function(){
                             var info = $(this).parent().find('div.prod_description').html();
                             showSnap('<img src="'+$(this).attr('src')+'" style="float:left; max-width: 600px; margin-right: 10px">'+info);
@@ -1576,12 +1691,8 @@ var scrollYesOrNot = true;
                             $(this).removeClass('fadeout');
                         })
                         scrollYesOrNot = true;
+            },1000);      
                      }
-                });
-
-            },500);
-            
-        }
         }
     });
 

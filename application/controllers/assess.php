@@ -4708,36 +4708,104 @@ class Assess extends MY_Controller {
     }
 
     public function get_board_view_snap() {
-        if (isset($_POST['batch_id']) && $_POST['batch_id'] != 0) {
-            $batch_id = $_POST['batch_id'];
+
+        if (isset($_POST['batch_id']) && isset($_POST['compare_batch_id'])) {
+            if (trim($_POST['batch_id']) == '')
+                $batch_id = -1;
+            else
+                $batch_id = $_POST['batch_id'];
+
+            if (trim($_POST['compare_batch_id']) == '' || $_POST['compare_batch_id'] == 'all' || $_POST['compare_batch_id'] == 0)
+                $batch_compare_id = -1;
+            else {
+                $batch_compare_id = $_POST['compare_batch_id'];
+                $this->load->model('batches_model');
+                $customer_name = $this->batches_model->getCustomerUrlByBatch($batch_compare_id);
+            }
+
+            $batch_arr = array($batch_id, $batch_compare_id);
+            $snap_data = array();
+
             $params = new stdClass();
             $params->batch_id = $batch_id;
             $params->txt_filter = '';
             $params->date_from = '';
             $params->date_to = '';
-            if (isset($_POST['next_id']))
-                $params->id = $_POST['next_id'];
-            else
-                $params->snap_count = 12;
             $results = $this->get_data_for_assess($params);
+            
+//            var_dump(count($results));
+            if ($batch_compare_id != -1) {
+                foreach ($results as $val) {
+                    $similar_items_data = array();
+                    if (substr_count(strtolower($val->similar_products_competitors), strtolower($customer_name)) > 0) {
+                        $similar_items = unserialize($val->similar_products_competitors);
+                        if (count($similar_items) > 1) {
+                            foreach ($similar_items as $key => $item) {
+
+                                if (substr_count(strtolower($customer_name), strtolower($item['customer'])) > 0) {
+
+                                    $parsed_attributes_column_features_unserialize_val = '';
+                                    $parsed_model_unserialize_val = '';
+                                    $parsed_review_count_unserialize_val_count = '';
+                                    $cmpare = $this->statistics_new_model->get_compare_item($item['imported_data_id']);
+
+                                    $parsed_attributes_unserialize = unserialize($cmpare->parsed_attributes);
+
+                                    if (isset($parsed_attributes_unserialize['feature_count']))
+                                        $parsed_attributes_column_features_unserialize_val = $parsed_attributes_unserialize['feature_count'];
+                                    if (isset($parsed_attributes_unserialize['model']))
+                                        $parsed_model_unserialize_val = $parsed_attributes_unserialize['model'];
+                                    if (isset($parsed_attributes_unserialize['review_count']))
+                                        $parsed_review_count_unserialize_val_count = $parsed_attributes_unserialize['review_count'];
+
+                                    $parsed_meta_unserialize = unserialize($cmpare->parsed_meta);
+
+                                    $cmpare->model = $parsed_model_unserialize_val;
+                                    $cmpare->column_features = $parsed_attributes_column_features_unserialize_val;
+                                    $cmpare->review_count = $parsed_review_count_unserialize_val_count;
+
+                                    $similar_items_data[] = $cmpare;
+                                    $val->similar_items = $similar_items_data;
+                                }
+                            }
+                            $cmp[] = $val;
+                        }
+                    }
+                }
+                $results = $cmp;
+            }
+            
             /*             * **Foreach Begin*** */
             $snap_data = array();
             foreach ($results as $data_row) {
+                $sim_item_data = $data_row->similar_items;
+                $output = array();
                 if ($data_row->snap != '') {
                     $file = realpath(BASEPATH . "../webroot/webshoots") . '/' . $data_row->snap;
                     if (file_exists($file)) {
                         if (filesize($file) > 1024) {
-                            $snap = "<img src='" . base_url() . "webshoots/" . $data_row->snap . "' rel='" . $data_row->id . "' />";
-                            $output = array(
-                                $snap,
-                                $data_row->product_name,
-                                json_encode($data_row),
-                            );
-                            $snap_data[] = $output;
+                            $snap = "<img src='" . base_url() . "webshoots/" . $data_row->snap . "' />";
+                            $output['snap'] = $snap;
+                            $output['product_name'] = $data_row->product_name;
+                            $output['url'] = $data_row->url;
                         }
                     }
                 }
+                if ($batch_compare_id != -1 && $sim_item_data[0]->snap != '') {
+                    $file1 = realpath(BASEPATH . "../webroot/webshoots") . '/' . $sim_item_data[0]->snap;
+                    if (file_exists($file1)) {
+                        if (filesize($file1) > 1024) {
+                            $snap1 = "<img src='" . base_url() . "webshoots/" . $sim_item_data[0]->snap . "' />";
+                            $output['snap1'] = $snap1;
+                            $output['product_name1'] = $sim_item_data[0]->product_name;
+                            $output['url1'] = $sim_item_data[0]->url;
+                        }
+                    }
+                }
+                if(!(empty($output)))
+                    $snap_data[] = $output;
             }
+//            var_dump($snap_data); exit();
             /*             * **Foreach End*** */
             $this->output->set_content_type('application/json')->set_output(json_encode($snap_data));
         }

@@ -590,7 +590,7 @@
 				?>
 
                 <div id="assess_view">
-                    <p>No images available for this batch</p>
+                    <!--<p>No images available for this batch</p>-->
                 </div>
                 <img id="imgLoader" style="display: none;margin-top: -16px;margin-left: 81px;" src="<?php echo base_url();?>img/img-loader.gif" />
                 <div id="assess_graph">
