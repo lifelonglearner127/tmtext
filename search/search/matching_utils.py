@@ -429,7 +429,7 @@ class ProcessText():
 		# if there are more than 2 numbers and 2 letters and no non-word characters, 
 		# assume this is the model number and assign it a higher weight
 		letters = len(re.findall("[a-zA-Z]", word))
-		vowels = len(re.findall("[aeiou]", word))
+		vowels = len(re.findall("[aeiouy]", word))
 		numbers = len(re.findall("[0-9]", word))
 
 		# some models on bestbuy have a - . but check (was not tested)
