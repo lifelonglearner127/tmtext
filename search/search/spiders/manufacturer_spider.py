@@ -25,7 +25,7 @@ class ManufacturerSpider(SearchSpider):
 
 
 	#TODO: incomplete
-	# parse results page extract info for all products returned by search (keep them in "meta")
+	# parse results page, extract info for all products returned by search (keep them in "meta")
 	def parseResults(self, response):
 		hxs = HtmlXPathSelector(response)
 

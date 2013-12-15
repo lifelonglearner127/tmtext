@@ -83,7 +83,8 @@ class SearchSpider(BaseSpider):
 						# #TODO: check this url
 						# "sears" : "http://www.sears.com/search=%s" % search_query}
 						# #TODO: staples?
-						"ebay": "http://www.ebay.com/sch/i.html?_trksid=p2050601.m570.l1313&_nkw=%s" % search_query
+						"ebay": "http://www.ebay.com/sch/i.html?_trksid=p2050601.m570.l1313&_nkw=%s" % search_query, \
+						"sony": "http://store.sony.com/search?SearchTerm=%s" % search_query
 						}
 
 		return search_pages
