@@ -4293,11 +4293,19 @@ class Assess extends MY_Controller {
 			'skus_more_than_five_reviews_competitor' => array( 'value' => $skus_more_than_five_reviews_competitor, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_more_than_five_reviews)),
 			'skus_more_than_hundred_reviews_competitor' => array( 'value' => $skus_more_than_hundred_reviews_competitor, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_more_than_hundred_reviews)),
 			
-			'skus_pdfs' => array( 'value' => $skus_pdfs, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_pdfs_competitor)),
-			'skus_pdfs_competitor' => array( 'value' => $skus_pdfs_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_pdfs)),
+			'skus_pdfs' => array( 'value' => $skus_pdfs, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_pdfs_competitor), 'icon_percentage' => function($percent) {
+				return $percent < 50 ? 'assess_report_seo_red.png' : 'assess_report_seo.png';
+			}),
+			'skus_pdfs_competitor' => array( 'value' => $skus_pdfs_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_pdfs), 'icon_percentage' => function($percent) {
+				return $percent < 50 ? 'assess_report_seo_red.png' : 'assess_report_seo.png';
+			}),
 			
-			'skus_videos' => array( 'value' => $skus_videos, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_videos_competitor)),
-			'skus_videos_competitor' => array( 'value' => $skus_videos_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_videos)),
+			'skus_videos' => array( 'value' => $skus_videos, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_videos_competitor), 'icon_percentage' => function($percent) {
+				return $percent < 50 ? 'assess_report_seo_red.png' : 'assess_report_seo.png';
+			}),
+			'skus_videos_competitor' => array( 'value' => $skus_videos_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_videos), 'icon_percentage' => function($percent) {
+				return $percent < 50 ? 'assess_report_seo_red.png' : 'assess_report_seo.png';
+			}),
 			
 			'skus_with_no_product_images' => array( 'value' => $skus_with_no_product_images, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_with_no_product_images_competitor)),
 			'skus_with_one_product_image' => array( 'value' => $skus_with_one_product_image, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_with_one_product_image_competitor)),
@@ -4310,9 +4318,16 @@ class Assess extends MY_Controller {
 				
 		foreach ($summary_fields as $key => $summary_field)
 		{						
-			$report['summary'][$key] = trim($summary_field['value']) . $this->calculatePercentage(array('batch1' => $own_batch_total_items, 'batch2' => $build_assess_params->batch2_items_count), $summary_field);
+			$my_percent = 0;
+			
+			$report['summary'][$key] = trim($summary_field['value']) . $this->calculatePercentage(array('batch1' => $own_batch_total_items, 'batch2' => $build_assess_params->batch2_items_count), $summary_field, &$my_percent);
 			if (isset($summary_field['icon']))
 				$report['summary'][$key . '_icon'] = $summary_field['icon'];
+			
+			if (isset($summary_field['icon_percentage']))
+			{
+				$report['summary'][$key . '_icon'] = $summary_field['icon_percentage']($my_percent);
+			}			
 		}		              
 		
         // only if second batch select - get absent products, merge it with result_table
@@ -4678,7 +4693,7 @@ class Assess extends MY_Controller {
         return $output;
     }
 
-    private function calculatePercentage(array $summary_items_counts, $summary_field) {
+    private function calculatePercentage(array $summary_items_counts, $summary_field, $my_percent) {
         $wrapper_begin = '<span class="filter_item_percentage">';
         $wrapper_end = '</span>';
         $r = '';
@@ -4693,7 +4708,9 @@ class Assess extends MY_Controller {
 				continue;
 				
             if (isset($summary_items_counts[$general])) {
-                $percent = round($summary_field['value'] * 100 / $summary_items_counts[$general]) . '%';
+                $percent_number = round($summary_field['value'] * 100 / $summary_items_counts[$general]);
+				$my_percent = $percent_number;
+                $percent = $percent_number . '%';
                 $r .=!$r ? ', ' . $percent : ', ' . $percent . ' ';
             }
         }

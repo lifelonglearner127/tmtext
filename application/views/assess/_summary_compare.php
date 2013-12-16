@@ -237,7 +237,7 @@
 		),
 		array(
 			'data_filter_id' => 'skus_more_than_five_reviews',
-			'icon' => 'assess_report_seo_red.png',
+			'icon' => 'assess_report_seo.png',
 			'label' => 'SKUs that have 5 or more reviews:',	
 			'has_competitor' => true,
 			'question' => array(				
@@ -251,7 +251,7 @@
 		),
 		array(
 			'data_filter_id' => 'skus_more_than_hundred_reviews',
-			'icon' => 'assess_report_seo_red.png',
+			'icon' => 'assess_report_seo.png',
 			'label' => 'SKUs that have 100 or more reviews:',	
 			'has_competitor' => true,
 			'question' => array(				
