@@ -4634,8 +4634,23 @@ function darkHeaders() {
 	if($("table[id^=tblAsses]")){
 		var count = $("table[id^=tblAsses] th:visible").length;
 		$('table#tblAssess').floatThead('reflow');
-		headers = (count / 2) - 1; // - 2;
-		$("table[id^=tblAsses] th:visible:gt(" + headers + ")").css({
+		headers = (count / 2);
+		if($("table[id^=tblAsses] th[aria-label*='Gap']")){
+		--headers;
+		$("table[id^=tblAsses] th[aria-label*='Gap']").css({
+			"background": "#e6e6e6 url('/css/smoothness/images/ui-bg_glass_75_e6e6e6_1x400.png') 50% 50%",
+			"background-repeat": "repeat-x"
+		});
+		}
+		if($("table[id^=tblAsses] th[aria-label*='Duplicate']")){
+		--headers;
+		$("table[id^=tblAsses] th[aria-label*='Duplicate']").css({
+			"background": "#e6e6e6 url('/css/smoothness/images/ui-bg_glass_75_e6e6e6_1x400.png') 50% 50%",
+			"background-repeat": "repeat-x"
+		});
+		}
+		// - 2;
+		$("table[id^=tblAsses] th:visible:gt(" + headers + "):not(th[aria-label*='Gap']):not(th[aria-label*='Duplicate'])").css({
 			"background": "url('/css/smoothness/images/ui-bg_glass_75_dadada_1x400.png') 50% 50%",
 			"background-repeat": "repeat-x"
 		});
