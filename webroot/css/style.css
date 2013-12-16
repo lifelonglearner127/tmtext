@@ -2621,3 +2621,6 @@ li.selected-url{
 .selectable_summary_info {
 	width: 1004px;
 }
+.popover_close_btn {
+	float: right;
+}

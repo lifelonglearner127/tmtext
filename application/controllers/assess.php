@@ -4687,6 +4687,11 @@ class Assess extends MY_Controller {
             $summary_items_counts = array_merge($summary_items_counts, $summary_field['generals']);
 
         foreach ($summary_field['percentage'] as $general) {
+			
+			// David asked to disable batch-to-batch percentages
+			if ($general == 'competitor')
+				continue;
+				
             if (isset($summary_items_counts[$general])) {
                 $percent = round($summary_field['value'] * 100 / $summary_items_counts[$general]) . '%';
                 $r .=!$r ? ', ' . $percent : ', ' . $percent . ' ';

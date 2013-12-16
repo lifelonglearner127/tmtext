@@ -13,6 +13,15 @@ var last_batch_id;
 var last_compare_batch_id;
 var first_click = true ;
 
+function close_popover(elem)
+{
+	var element = $(elem);
+		
+	element.closest('.popover').prev().popover('hide');
+	
+	return false;
+}
+	
 $(function() {
 
     $.ajax({
@@ -1102,17 +1111,30 @@ $(function() {
 					
 		var elem = $(this)
 			, img = elem.find('img')
-			, img_src = img.attr('src')
-			, lines = $('.selectable_summary_info>div:not(:hidden):not(.batch1_filter_item):not(.batch2_filter_item)').length
-			, height = lines * 35 + lines * 22.5
+			, img_src = img.attr('src')			
+			, lines = $('.item_line')
+			, lines_length = lines.length				
+			, height = 0			
 			, filter_list_wrapper = $('.boxes_content.resizable').parent();			
 				 
 		filter_toggler_flag = !filter_toggler_flag + 0;
+					
+		(function get_heights(lines) {
+			lines.each(function(index, element) {
+			
+				var elem = $(element)
+				  , local_height = $(element).height();
+				
+				height += local_height;		
+							
+				if (!local_height)
+					get_heights(elem.children('div'));
+			});
+		})(lines);		
 		
-		//31 line = ~1783px
 		
 		if (filter_toggler_flag)			
-			filter_list_wrapper.height(height); //expand list
+			filter_list_wrapper.height($('#batch_set_toggle').is(':checked') ? height / 2 : height); //expand list
 		else								
 			filter_list_wrapper.height(current_filter_list_wrapper_height); //unexpand list		
 				
@@ -1139,12 +1161,24 @@ $(function() {
 						width:'100%',
                         height:'100%'});
 	
-	$('.question_mark').popover();
+	$('.question_mark').popover({
+		html : true
+	});	
+	
+	$('.question_mark').on('show.bs.popover', function() {
+		
+		var elem = $(this)
+		  , uniqueid = elem.data('popover-uniqueid');
+			
+		$('.question_mark:not(.question_mark[data-popover-uniqueid="' + uniqueid + '"])').popover('hide');
+	});
+	
+	
 	
 	$('.selectable_summary_info').on('mousedown', function(e) {
 		e.metaKey = true;
 	}).selectable({
-		cancel : '.non-selectable, .question_mark',
+		cancel : '.non-selectable, .question_mark, .popover_close_btn',
 		tolerance : 'touch',
 		selected : function(event, ui) {
 			// console.log('Selected...');
