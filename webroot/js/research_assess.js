@@ -4632,10 +4632,9 @@ $('table#tblAssess').floatThead({
 
 function darkHeaders() {
 	if($("table[id^=tblAsses]")){
-	
 		var count = $("table[id^=tblAsses] th:visible").length;
 		$('table#tblAssess').floatThead('reflow');
-		var headers = (count / 2);
+		var headers = (count / 2) - 1;
 		if($("table[id^=tblAsses] th[aria-label*='Gap']")){
 		--headers;
 		$("table[id^=tblAsses] th[aria-label*='Gap']").css({
@@ -4652,7 +4651,7 @@ function darkHeaders() {
 		}
 		// - 2;
 		$("table[id^=tblAsses] th:visible:gt(" + headers + "):not(th[aria-label*='Gap']):not(th[aria-label*='Duplicate'])").css({
-			"background": "url('/producteditor/css/smoothness/images/ui-bg_glass_75_dadada_1x400.png') 50% 50%",
+			"background": "#dadada url('/producteditor/css/smoothness/images/ui-bg_glass_75_dadada_1x400.png') 50% 50%",
 			"background-repeat": "repeat-x"
 		});
 		$("table[id^=tblAsses] th:visible:gt(" + headers + "):first").css("border-left", "2px solid #ccc");
