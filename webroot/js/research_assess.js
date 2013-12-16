@@ -4633,7 +4633,7 @@ $('table#tblAssess').floatThead({
 function darkHeaders() {
 	if($("table[id^=tblAssess]")){
 		var count = $("table[id^=tblAsses] th:visible").length;
-		var headers = (count / 2) - 1;
+		var headers =  Math.round((count / 2) - 1);
 		/*
 		if($("table[id^=tblAsses] th[aria-label*='Gap']")){
 		--headers;
