@@ -4624,73 +4624,92 @@ var search_text = GetURLParameter('search_text');
         
     });
 	
-	$('table#tblAssess').floatThead({			    
-		scrollContainer: function($table){
+$('table#tblAssess').floatThead({
+	scrollContainer: function($table) {
 		return $('#tblAssess').closest('.wrapper');
-				}
+	}
+});
+
+function darkHeaders() {
+	if($("table[id^=tblAsses]")){
+		var count = $("table[id^=tblAsses] th:visible").length;
+		$('table#tblAssess').floatThead('reflow');
+		headers = (count / 2) - 1; // - 2;
+		$("table[id^=tblAsses] th:visible:gt(" + headers + ")").css({
+			"background": "url('/css/smoothness/images/ui-bg_glass_75_dadada_1x400.png') 50% 50%",
+			"background-repeat": "repeat-x"
+		});
+		$("table[id^=tblAsses] th:visible:gt(" + headers + "):first").css("border-left", "2px solid #ccc");
+		$("table[id^=tblAsses] tr").each(function()
+		{
+			$(this).find("td:gt(" + headers + "):first").css("border-left", "2px solid #ccc");
+		});
+	}
+}
+var scrollScore = 0;
+$(window).scroll(function() {
+	if (scrollScore < 20 && $('table[id^=tblAssess] th')) {
+		scrollScore++;
+	}
+	if (scrollScore == 19) {
+		$('table#tblAssess').floatThead('reflow');
+	}
+});
+darkHeaders();
+$('#assess_tbl_show_case_recommendations').click(function() {
+	$("table[id^=tblAsses] tr").each(function() {
+		$(this).find("td[class*=1]:first").css("border-left", "3px solid rgba(173, 173, 173, 1)")
 	});
-	var scrollScore = 0; $(window).scroll(function(){ if(scrollScore < 20 && $('table[id^=tblAssess] th')){scrollScore++;} if(scrollScore == 19){$('table#tblAssess').floatThead('reflow');} });
-	$( "table[id^=tblAsses] tr, th" ).each(function() {$(this).find("td[class*=1]:not([class*=_1]):first, th[class*=1]:not([class*=_1]):first").css( "border-left", "2px solid #ccc" )} );
-	$('#assess_tbl_show_case_recommendations').click(function(){
-	$( "table[id^=tblAsses] tr" ).each(function() {$(this).find("td[class*=1]:first").css( "border-left", "3px solid rgba(173, 173, 173, 1)" )} );
-	$('table#tblAssess').floatThead({			    
-		scrollContainer: function($table){
-		return $('#tblAssess').closest('.wrapper');
-				}
+	darkHeaders();
+	$('table#tblAssess').floatThead({
+		scrollContainer: function($table) {
+			return $('#tblAssess').closest('.wrapper');
+		}
 	});
-	$('table#tblAssess').floatThead('reflow');
 	scrollScore = 0;
-	$( "table[id^=tblAsses] tr, th" ).each(function() {$(this).find("td[class*=1]:not([class*=_1]):first, th[class*=1]:not([class*=_1]):first").css( "border-left", "2px solid #ccc" )} );
-	});	
-	$('#assess_tbl_show_case_details_compare').click(function(){
-	
-	$('table#tblAssess').floatThead({			    
-		scrollContainer: function($table){
-		return $('#tblAssess').closest('.wrapper');
-				}
+	darkHeaders();
+});
+$('#assess_tbl_show_case_details_compare').click(function() {
+	$('table#tblAssess').floatThead({
+		scrollContainer: function($table) {
+			return $('#tblAssess').closest('.wrapper');
+		}
 	});
-	$('table#tblAssess').floatThead('reflow');
 	scrollScore = 0;
 	$("li[class*=boxes] div[class*=ui-icon-gripsmall-diagonal-se]").css("display", "none");
 	$("li[class*=boxes] div[class*=ui-resizable-e]").css("display", "none");
-	$( "table[id^=tblAsses] tr, th" ).each(function() {$(this).find("td[class*=1]:not([class*=_1]):first, th[class*=1]:not([class*=_1]):first").css( "border-left", "2px solid #ccc" )} );
-	});	
-	$('#assess_tbl_show_case_report').click(function(){
-	$('table#tblAssess').floatThead({			    
-		scrollContainer: function($table){
-		return $('#tblAssess').closest('.wrapper');
-				}
+	darkHeaders();
+});
+$('#assess_tbl_show_case_report').click(function() {
+	$('table#tblAssess').floatThead({
+		scrollContainer: function($table) {
+			return $('#tblAssess').closest('.wrapper');
+		}
+	});
+	scrollScore = 0;
+	darkHeaders();
+});
+$('#assess_tbl_show_case_details').click(function() {
+	$('table#tblAssess').floatThead({
+		scrollContainer: function($table) {
+			return $('#tblAssess').closest('.wrapper');
+		}
 	});
 	$('table#tblAssess').floatThead('reflow');
 	scrollScore = 0;
-	$( "table[id^=tblAsses] tr, th" ).each(function() {$(this).find("td[class*=1]:not([class*=_1]):first, th[class*=1]:not([class*=_1]):first").css( "border-left", "2px solid #ccc" )} );
-	});	
-	$('#assess_tbl_show_case_details').click(function(){
-	$('table#tblAssess').floatThead({			    
-		scrollContainer: function($table){
-		return $('#tblAssess').closest('.wrapper');
-				}
-	});
-	$('table#tblAssess').floatThead('reflow');
+	darkHeaders();
+});
+$('#research_assess_update').click(function() {
+	darkHeaders();
+});
+$("th[class=ui-state-default]")
+$('.ui-dialog-titlebar-close').click(function() {
 	scrollScore = 0;
-	$( "table[id^=tblAsses] tr, th" ).each(function() {$(this).find("td[class*=1]:not([class*=_1]):first, th[class*=1]:not([class*=_1]):first").css( "border-left", "2px solid #ccc" )} );
-	});
-	$('#research_assess_update').click(function(){
-	$( "table[id^=tblAsses] tr, th" ).each(function() {$(this).find("td[class*=1]:not([class*=_1]):first, th[class*=1]:not([class*=_1]):first").css( "border-left", "2px solid #ccc" )} );
-	});
-	$("th[class=ui-state-default]")
-	$('.ui-dialog-titlebar-close').click(function(){
-	$('table#tblAssess').floatThead({			    
-		scrollContainer: function($table){
-		return $('#tblAssess').closest('.wrapper');
-				}
-	});
-	$('table#tblAssess').floatThead('reflow');
-	scrollScore = 0;
-	$( "table[id^=tblAsses] tr, th" ).each(function() {$(this).find("td[class*=1]:not([class*=_1]):first, th[class*=1]:not([class*=_1]):first").css( "border-left", "2px solid #ccc" )} );
-	if($( "table[id^=tblAsses] th[class*=1]:not([class*=_1]):first" )){ $( "table[id^=tblAsses] tr, th" ).each(function() {$(this).find("td[class*=1]:not([class*=_1]):first, th[class*=1]:not([class*=_1]):first").css( "border-left", "2px solid #ccc" )} );}
-	});
-	if($( "table[id^=tblAsses] th[class*=1]:not([class*=_1]):first" )){ $( "table[id^=tblAsses] tr, th" ).each(function() {$(this).find("td[class*=1]:not([class*=_1]):first, th[class*=1]:not([class*=_1]):first").css( "border-left", "2px solid #ccc" )} );}
+	darkHeaders();
+});
+if ($("table[id^=tblAsses] th[class*=1]:not([class*=_1]):first")) {
+	darkHeaders();
+}
 	
 	
 	
