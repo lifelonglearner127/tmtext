@@ -111,7 +111,7 @@ class SearchSpider(BaseSpider):
 			search_query = self.build_search_query(product_name)
 			search_pages = build_search_pages(search_query)
 
-			request = Request(search_pages[site], callback = self.parseResults)
+			request = Request(search_pages[self.target_site], callback = self.parseResults)
 			request.meta['site'] = self.target_site
 			request.meta['origin_name'] = self.product_name
 			
