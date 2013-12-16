@@ -4632,6 +4632,16 @@ $('table#tblAssess').floatThead({
 
 function darkHeaders() {
 	if($("table[id^=tblAssess]")){
+		if($("table[id^=tblAssess] th[style*='repeat']")) {
+			$("table[id^=tblAssess] th[style*='repeat']").css({
+			"background": "#e6e6e6 url('/producteditor/css/smoothness/images/ui-bg_glass_75_e6e6e6_1x400.png') 50% 50%",
+			"background-repeat": "repeat-x"
+		})
+		}
+		if($("table[id^=tblAssess] th[style*='border-left-width: 2px;'], td[style*='border-left-width: 2px;']")){
+			$("table[id^=tblAssess] th[style*='border-left-width: 2px;'], td[style*='border-left-width: 2px;']").css("border-left-width", "1px");
+		}
+		
 		var count = $("table[id^=tblAsses] th:visible").length;
 		var headers =  Math.round((count / 2) - 1);
 		/*
@@ -4669,10 +4679,10 @@ $(window).scroll(function() {
 	}
 	if (scrollScore == 19) {
 		$('table#tblAssess').floatThead('reflow');
-		darkHeaders();
+		//darkHeaders();
 	}
 });
-darkHeaders();
+//darkHeaders();
 $('#assess_tbl_show_case_recommendations').click(function() {
 	$("table[id^=tblAsses] tr").each(function() {
 		$(this).find("td[class*=1]:first").css("border-left", "3px solid rgba(173, 173, 173, 1)")
@@ -4684,7 +4694,7 @@ $('#assess_tbl_show_case_recommendations').click(function() {
 		}
 	});
 	scrollScore = 0;
-	darkHeaders();
+	//darkHeaders();
 });
 $('#assess_tbl_show_case_details_compare').click(function() {
 	$('table#tblAssess').floatThead({
@@ -4704,7 +4714,7 @@ $('#assess_tbl_show_case_report').click(function() {
 		}
 	});
 	scrollScore = 0;
-	darkHeaders();
+	//darkHeaders();
 });
 $('#assess_tbl_show_case_details').click(function() {
 	$('table#tblAssess').floatThead({
@@ -4714,20 +4724,20 @@ $('#assess_tbl_show_case_details').click(function() {
 	});
 	$('table#tblAssess').floatThead('reflow');
 	scrollScore = 0;
-	darkHeaders();
+	//darkHeaders();
 });
 $('#research_assess_update').click(function() {
-	darkHeaders();
+	//darkHeaders();
 });
 $('.ui-dialog-titlebar-close').click(function() {
 	scrollScore = 0;
 	darkHeaders();
 });
 if ($("table[id^=tblAsses] th[class*=1]:not([class*=_1]):first")) {
-	darkHeaders();
+	//darkHeaders();
 }
 	
-	darkHeaders();
+	//darkHeaders();
 	
 	
 	$('*[id*=mytext]:visible').each(function() {
