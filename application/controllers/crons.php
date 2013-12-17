@@ -2545,42 +2545,42 @@ class Crons extends MY_Controller {
                 if ($model2 && $model1 != $model2) {
                     if (!($url2['model']&&strlen($url2['model'])>3)|| ($url2['model'] != $model1)) {
                         $this->temp_data_model->addUpdData($url2['data_id'],$url2['model'], $model1);
-                        $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model1, $url2['rev']+1);
+                        $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model1, $url1['rev']+1, $url1['data_id']);
                         ++$itemsUpdated;
                         $atuc -=1;
                     }
                 } elseif (!$model2 && (!($url2['model']&&strlen($url2['model'])>3) 
                         || $model1 != $url2['model'])) {
                     $this->temp_data_model->addUpdData($url2['data_id'],$url2['model'], $model1);
-                    $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model1, $url2['rev']+1);
+                    $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model1, $url1['rev']+1, $url1['data_id']);
                     ++$itemsUpdated;
                     $atuc -=1;
                 }
             } elseif ($model2) {
                 if (!($url1['model']&&strlen($url1['model'])>3) || $model2 != $url1['model']) {
                     $this->temp_data_model->addUpdData($url1['data_id'],$url1['model'], $model2);
-                    $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $model2, $url1['rev']+1);
+                    $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $model2, $url2['rev']+1, $url2['data_id']);
                     ++$itemsUpdated;
                     $atuc -=1;
                 }
             } elseif (($url1['model']&&strlen($url1['model'])>3)) {
                 if (!($url2['model']&&strlen($url2['model'])>3) || ($url1['model'] != $url2['model'])) {
                     $this->temp_data_model->addUpdData($url2['data_id'],$url2['model'], $url1['model']);
-                    $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $url1['model'], $url2['rev']+1);
+                    $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $url1['model'], $url1['rev']+1, $url1['data_id']);
                     ++$itemsUpdated;
                     $atuc -=1;
                 }
             } elseif (($url2['model']&&strlen($url2['model'])>3)) {
                 $this->temp_data_model->addUpdData($url1['data_id'],$url1['model'], $url2['model']);
-                $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $url2['model'], $url1['rev']+1);
+                $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $url2['model'], $url2['rev']+1, $url2['data_id']);
                 ++$itemsUpdated;
                 $atuc -=1;
             } else {
                 $model = time();
                 $this->temp_data_model->addUpdData($url1['data_id'],$url1['model'], $model);
                 $this->temp_data_model->addUpdData($url2['data_id'],$url2['model'], $model);
-                $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $model, $url1['rev']+1);
-                $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model, $url2['rev']+1);
+                $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $model, $url2['rev']+1, $url2['data_id']);
+                $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model, $url1['rev']+1, $url1['data_id']);
                 $itemsUpdated+=2;
                 $atuc -=1;
             }
@@ -2660,8 +2660,13 @@ class Crons extends MY_Controller {
             return array();
         }
         $black_list = array('and','the','in','on','at','for');
-        $title = trim(preg_replace(array('/\s+/','/\(.*\)/'),array(' ',''), $title));
+        $title = trim(preg_replace('/\(.*\)/','', $title));
+        $title = trim(str_replace(',',' ', $title));
+        $title = trim(preg_replace('/\s+/', ' ', $title));
+        $string = trim(preg_replace('/\(.*\)/','', $string));
+        $string = trim(str_replace(',',' ', $string));
         $string = trim(preg_replace('/\s+/', ' ', $string));
+        $string = $this->str_cleaner($black_list, $string);
         $title_w = explode(' ', $title);
         $title_wc = count($title_w);
         $string_w = explode(' ', $string);
@@ -2675,7 +2680,7 @@ class Crons extends MY_Controller {
                     $needl .=$title_w[$k].' ';
                 }
                 $needl = trim($needl);
-                $frc = substr_count(strtolower($string), strtolower($needl));
+                $frc = substr_count(strtolower($string), strtolower($this->str_cleaner($black_list, $needl)));
                 $prc = ($frc*($title_wc-$i))/$string_wc*100;
                 if($frc>0&&$prc>2){//
                     $phrases[]=array(
@@ -2705,7 +2710,7 @@ class Crons extends MY_Controller {
         foreach($phrases as $ar_key => $seo_pr){
             foreach($phrases as $ar_key1=>$seo_pr1){
                 if($ar_key!=$ar_key1 && $this->compare_str($seo_pr['ph'],$seo_pr1['ph'])
-                        &&$seo_pr['frq']>=$seo_pr1['frq']){
+                        &&$seo_pr['frq']>= $seo_pr1['frq']){
                     unset($phrases[$ar_key1]);
                 }
             }
@@ -2740,6 +2745,17 @@ class Crons extends MY_Controller {
             $str2=trim($str2);
         }
         return strpos($str1, $str2)!==FALSE;
+    }
+    
+    private function str_cleaner($bl,$string){
+        $str_arr = explode(' ', $string);
+        foreach ($str_arr as $key=>$val){
+            if(in_array($val, $bl)){
+                unset($str_arr[$key]);
+            }
+        }
+        $string = trim(preg_replace('/\s+/',' ',implode(' ', $str_arr)));
+        return $string;
     }
 
 }

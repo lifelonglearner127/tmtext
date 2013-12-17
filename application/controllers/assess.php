@@ -4320,7 +4320,7 @@ class Assess extends MY_Controller {
 		{						
 			$my_percent = 0;
 			
-			$report['summary'][$key] = trim($summary_field['value']) . $this->calculatePercentage(array('batch1' => $own_batch_total_items, 'batch2' => $build_assess_params->batch2_items_count), $summary_field, &$my_percent);
+			$report['summary'][$key] = trim($summary_field['value']) . $this->calculatePercentage(array('batch1' => $own_batch_total_items, 'batch2' => $build_assess_params->batch2_items_count), $summary_field, $my_percent);
 			if (isset($summary_field['icon']))
 				$report['summary'][$key . '_icon'] = $summary_field['icon'];
 			
@@ -4693,7 +4693,7 @@ class Assess extends MY_Controller {
         return $output;
     }
 
-    private function calculatePercentage(array $summary_items_counts, $summary_field, $my_percent) {
+    private function calculatePercentage(array $summary_items_counts, $summary_field, &$my_percent) {
         $wrapper_begin = '<span class="filter_item_percentage">';
         $wrapper_end = '</span>';
         $r = '';
@@ -5121,6 +5121,10 @@ class Assess extends MY_Controller {
 
         $this->output->set_content_type('application/json')->set_output(json_encode($batches));
     }
-
+	
+	public function get_summary_filters()
+	{
+		
+	}
 //}
 }

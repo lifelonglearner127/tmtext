@@ -826,4 +826,16 @@ ALTER TABLE `statistics_new`
   DROP `short_seo_phrases`,
   DROP `long_seo_phrases`;
 
-ALTER TABLE  `statistics_new` ADD  `title_keywords` VARCHAR( 8000 ) NOT NULL AFTER  `long_description_wc`
+ALTER TABLE  `statistics_new` ADD  `title_keywords` VARCHAR( 8000 ) NOT NULL AFTER  `long_description_wc`;
+
+# 17/12 Oleg
+CREATE TABLE IF NOT EXISTS `user_summary_settings` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `setting_id` int(11) NOT NULL,
+  `setting_value` varchar(1024) NOT NULL,
+  `user_id` int(11),
+  `user_ip` varchar(16) NOT NULL,
+  `create_time` int(11) NOT NULL,
+  `update_time` int(11) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;

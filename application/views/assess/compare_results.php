@@ -615,16 +615,12 @@
 </style>
 <script>
             $(function() {
-//  
-//                $('#assess_tbl_show_case').addClass('comp_res');
+                $('#assess_tbl_show_case').addClass('comp_res');
                 $('.jq-measure-tabs').addClass('comp_res');
                 $('.pull-right').addClass('comp_res');
                 $('.pull-left').addClass('comp_res');
                 $('.research_table_filter, .research_table_filter_competitor').addClass('comp_res');
-                
                 $('#assess_report').addClass('comp_res_none');
-
-
                 $('head').find('title').text('Content Analytics Report');
                 function GetURLParameter(sParam) {
                     $('.ui-dialog-titlebar-close').html('<span style="margin-top:-5px;">x</span>');
@@ -680,14 +676,44 @@
                     
 
                     
-                 var cmp_selected = GetURLParameter('cmp_selected');
+                var cmp_selected = GetURLParameter('cmp_selected');
                 $('select[name="research_assess_batches"]').val(batch_id_result).change()
                 setTimeout(function(){
                     
                 $('select[id="research_assess_compare_batches_batch"]').val(cmp_selected).change()
                  $('#research_assess_update').click();
                 },2000)
-				var scrollScore = 0; $(window).scroll(function(){ if(scrollScore < 10 && $( "table[id^=tblAsses] th" ).length > 0){scrollScore++;} if(scrollScore == 9){$('table#tblAssess').floatThead('reflow');}});
+				
+				var scrollScore = 0; 
+				$(window).scroll(function(){ if(scrollScore < 10 && $( "table[id^=tblAsses] th" ).length > 0){
+				scrollScore++;
+				if($("table[id^=tblAssess]")){
+					if($("table[id^=tblAssess] th[style*='repeat']")) {
+						$("table[id^=tblAssess] th[style*='repeat']").css({
+						"background": "#e6e6e6 url('/producteditor/css/smoothness/images/ui-bg_glass_75_e6e6e6_1x400.png') 50% 50%",
+						"background-repeat": "repeat-x"
+					})
+					}
+					if($("table[id^=tblAssess] th[style*='border-left-width: 2px;'], td[style*='border-left-width: 2px;']")){
+						$("table[id^=tblAssess] th[style*='border-left-width: 2px;'], td[style*='border-left-width: 2px;']").css("border-left-width", "1px");
+					}
+					
+					var count = $("table[id^=tblAsses] th:visible").length;
+					var headers =  Math.round((count / 2) - 1);
+					$("table[id^=tblAsses] th:visible:gt(" + headers + "):not(th[aria-label*='Gap']):not(th[aria-label*='Duplicate'])").css({
+						"background": "url('/producteditor/css/smoothness/images/ui-bg_glass_75_dadada_1x400.png') 50% 50%",
+						"background-repeat": "repeat-x"
+					});
+					$("table[id^=tblAsses] th:visible:gt(" + headers + "):first").css("border-left", "2px solid #ccc");
+					$("table[id^=tblAsses] tr").each(function()
+					{
+						$(this).find("td:gt(" + headers + "):first").css("border-left", "2px solid #ccc");
+					});
+				}
+				} if(scrollScore == 9){
+				$('table#tblAssess').floatThead('reflow');
+				
+				}});
 				
             /*
 			
