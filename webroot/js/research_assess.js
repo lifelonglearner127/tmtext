@@ -151,6 +151,7 @@ $(function() {
 		'skus_with_one_product_image_competitor',
 
 		'skus_with_more_than_one_product_image_competitor',
+		'assess_report_items_priced_higher_than_competitors'
 	];
 	
 	var batch_sets = {

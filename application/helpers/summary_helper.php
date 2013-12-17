@@ -45,6 +45,14 @@ if ( ! function_exists('get_filters') )
 	{
 		return array(
 			array(
+				'data_filter_id' => 'assess_report_items_priced_higher_than_competitors',
+				'icon' => 'assess_report_dollar.png',
+				'label' => 'SKUs priced higher than competitor:',				
+				'question' => array(				
+					'explanation' => 'The number of your SKUs with matching competitor SKUs that are priced higher than your competitor.',
+				)
+			),
+			array(
 				'data_filter_id' => 'skus_shorter_than_competitor_product_content',
 				'icon' => 'assess_report_seo_red.png',
 				'label' => 'SKUs that have shorter product content than competitor:',
