@@ -1432,7 +1432,7 @@ class Imported_data_parsed_model extends CI_Model {
             $value = str_replace("-", "", $value);
             $value1 = $this->db->escape($value . '%');
             $value2 = $this->db->escape($value);
-            $this->db->where(" REPLACE(`p`.`model`,'-','')  like " . $value1 . " OR INSTR(" . $value2 . ", REPLACE(`p`.`model`,'-',''))=1", NULL, FALSE);
+            $this->db->where(" INSTR(REPLACE(`p`.`model`,'-',''), " . $value2 . ")=1 OR INSTR(" . $value2 . ", REPLACE(`p`.`model`,'-',''))=1", NULL, FALSE);
         } else {
             if ($strict) {
                 $this->db->like('p.value', '"' . $value . '"');
@@ -1463,7 +1463,7 @@ class Imported_data_parsed_model extends CI_Model {
             $ids[] =  $result->imported_data_id;
          }
          $ids = array_unique($ids);
-        print_r((int) ceil(memory_get_usage()/1000000).'MB used<br>');
+//        print_r((int) ceil(memory_get_usage()/1000000).'MB used<br>');
 
         foreach ($ids as $id) {
 
@@ -2906,13 +2906,33 @@ echo "j  = ".$j;
         if($query->num_rows ===0)return FALSE;
         return $query->first_row('array');
     }
-    function updateModelOfItem($dataid,$model, $rev){
+    function updateModelOfItem($dataid, $model, $rev, $ncid){
         $data=array(
-            'model'=>$model,
             'revision'=>$rev
             );
-        $this->db->where('imported_data_id',$dataid);
+        $this->db->where('imported_data_id',$ncid);
         $this->db->update('imported_data_parsed',$data);
+
+        $this->db->select('model');
+        $this->db->from('imported_data_parsed');
+        $this->db->where('imported_data_id',$dataid);
+        $query = $this->db->get();
+        $res = $query->first_row();
+        $old_model = $res->model;
+        
+        $this->db->select('imported_data_id as data_id, revision');
+        $this->db->from('imported_data_parsed');
+        $this->db->where('model',$old_model);
+        $this->db->where('key','url');
+        $query = $this->db->get();
+        foreach ($query->result() as $res){
+            $data=array(
+                'model'=>$model,
+                'revision'=>$res->revision+1
+                );
+            $this->db->where('imported_data_id',$res->data_id);
+            $this->db->update('imported_data_parsed',$data);
+        }
     }
 
 }
