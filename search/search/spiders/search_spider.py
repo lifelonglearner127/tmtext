@@ -121,9 +121,10 @@ class SearchSpider(BaseSpider):
 			request.meta['origin_name'] = self.product_name
 			request.meta['query'] = search_query
 
-			# just use empty product model and url, for compatibility
+			# just use empty product model and url, for compatibility, also pending_requests
 			request.meta['origin_model']  = ''
 			request.meta['origin_url'] = ''
+			request.meta['pending_requests'] = []
 
 			yield request
 		
@@ -420,6 +421,7 @@ class SearchSpider(BaseSpider):
 				best_match = None
 
 				if items:
+
 					# from all results, select the product whose name is most similar with the original product's name
 					best_match = ProcessText.similar(response.meta['origin_name'], response.meta['origin_model'], items, self.threshold)
 
@@ -431,6 +433,7 @@ class SearchSpider(BaseSpider):
 					self.log( "FINAL: " + str(best_match), level=log.WARNING)
 
 				self.log( "\n----------------------------------------------\n", level=log.WARNING)
+
 
 				if not best_match:
 					# if there are no results but the option was to include original product URL, create an item with just that

@@ -47,6 +47,8 @@ class WalmartSpider(SearchSpider):
 		for result in results:
 			item = SearchItem()
 			#item['origin_site'] = site
+
+			#TODO: usually the manufacturer is in bold, so maybe use that
 			product_name = " ".join(result.select(".//text()").extract())
 			# append text that is in <span> if any
 			span_text = result.select("./span/text()")
