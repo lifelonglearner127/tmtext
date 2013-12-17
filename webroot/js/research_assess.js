@@ -4753,16 +4753,16 @@ $(window).scroll(function() {
 	if (scrollScore % 10 == 0) {
 		
 		//darkHeaders();
-		
+		$(function(){
+		  $("table#tblAssess").colResizable({
+		    liveDrag:true
+		  });
+		});
 		$('table#tblAssess').floatThead('reflow');
 	}
 	//console.log(scrollScore);
 });
-$(function(){
-		  $("table#tblAssess").colResizable({
-		    liveDrag:true
-		  });
-});
+
 //darkHeaders();
 $('#assess_tbl_show_case_recommendations').click(function() {
 	$("table[id^=tblAsses] tr").each(function() {
