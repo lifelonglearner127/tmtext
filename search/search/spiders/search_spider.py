@@ -114,12 +114,17 @@ class SearchSpider(BaseSpider):
 				sys.stderr.write("You can't use the product_name option without setting the target site to search on\n")
 				raise CloseSpider("\nYou can't use the product_name option without setting the target site to search on\n")
 
-			search_query = self.build_search_query(product_name)
-			search_pages = build_search_pages(search_query)
+			search_query = self.build_search_query(self.product_name)
+			search_pages = self.build_search_pages(search_query)
 
 			request = Request(search_pages[self.target_site], callback = self.parseResults)
 			request.meta['origin_name'] = self.product_name
-			
+			request.meta['query'] = search_query
+
+			# just use empty product model and url, for compatibility
+			request.meta['origin_model']  = ''
+			request.meta['origin_url'] = ''
+
 			yield request
 		
 		# if we have product URLs, pass them to parseURL to extract product names (which will pass them to parseResults)
@@ -172,7 +177,7 @@ class SearchSpider(BaseSpider):
 				# create Walmart URLs based on these IDs
 				walmart_url = Utils.add_domain(walmart_id, "http://www.walmart.com/ip/")
 				request = Request(walmart_url, callback = self.parseURL)
-				request.meta['origin_site'] = 'walmart'
+				#request.meta['origin_site'] = 'walmart'
 				yield request
 		
 
@@ -259,7 +264,9 @@ class SearchSpider(BaseSpider):
 
 		# if there is no product model, try to extract it
 		if not product_model:
-			product_model = product_name[ProcessText.extract_model_nr_index(product_name)]
+			product_model_index = ProcessText.extract_model_nr_index(product_name)
+			if product_model_index >= 0:
+				product_model = product_name[product_model_index]
 
 		# if there is no product brand, get first word in name, assume it's the brand
 		product_brand_extracted = ""
