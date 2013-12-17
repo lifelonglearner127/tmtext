@@ -1,7 +1,6 @@
 <script type='text/javascript'>
 jQuery(document).ready(function($) {
     $("#compare_text").focus();
-	
 	});
     $('#grid_sw_grid').click(function(){
         //$('#shadow').css('display','block');
