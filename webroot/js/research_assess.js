@@ -4,6 +4,8 @@ var readGraphDataUrl = base_url + 'index.php/assess/get_graph_batch_data';
 var readAssessUrlCompare = base_url + 'index.php/assess/compare';
 var rememberBatchValue = base_url + 'index.php/assess/remember_batches';
 var getbatchesvalue = base_url + 'index.php/assess/getbatchvalues';
+var get_summary_filters = base_url + 'index.php/assess/get_summary_filters';
+var save_summary_filters = base_url + 'index.php/assess/save_summary_filters';
 var serevr_side = true;
 var serverside_table;
 var tblAllColumns = [];
@@ -4015,7 +4017,7 @@ function prevSibilfunc(curentSibil){
 	}
 	
 	$.ajax({
-		url : '/assess/get_summary_filters',
+		url : get_summary_filters,
 		type : 'GET',
 		dataType : 'json',
 		success : function(data) {
@@ -4058,7 +4060,7 @@ function prevSibilfunc(curentSibil){
 		});
 		
 		$.ajax({
-			url : '/assess/save_summary_filters',
+			url : save_summary_filters,
 			data : {
 				summary_active_items : summary_active_items
 			},
