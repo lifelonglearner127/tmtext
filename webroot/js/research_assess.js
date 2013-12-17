@@ -4754,7 +4754,7 @@ $(window).scroll(function() {
 		
 		$('table#tblAssess').floatThead('reflow');
 	}
-	console.log(scrollScore);
+	//console.log(scrollScore);
 });
 $(function(){
 		  $("table#tblAssess").colResizable({
