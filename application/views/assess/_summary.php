@@ -14,6 +14,9 @@
 				<a class="ml_10 research_arrow hideShow" onclick="return false;" href="#">
 					<img src="<?php echo base_url();?>img/arrow.png">
 				</a>
+				<a href="#" class="show_filters_configuration_popup">
+					Edit
+				</a>
 				<span class="assess_report_download_panel" style="float: right;width: 500px;">
 
 					<div style="display: none">
@@ -68,3 +71,7 @@
 		</li-->
 	</ul>
 </div>
+<?php 
+	if ($is_extended_partial)
+		$this->load->view('assess/_summary_filter_config');
+?>

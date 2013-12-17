@@ -12,6 +12,7 @@ var tblAssess;
 var last_batch_id;
 var last_compare_batch_id;
 var first_click = true ;
+var summary_active_items = [];
 
 function close_popover(elem)
 {
@@ -1112,7 +1113,7 @@ $(function() {
 		var elem = $(this)
 			, img = elem.find('img')
 			, img_src = img.attr('src')			
-			, lines = $('.item_line')
+			, lines = $('.item_line:visible')
 			, lines_length = lines.length				
 			, height = 0			
 			, filter_list_wrapper = $('.boxes_content.resizable').parent();			
@@ -3919,12 +3920,11 @@ function prevSibilfunc(curentSibil){
             $("#vertical").css('visibility', 'visible') ;
             $("#horizontal").css('visibility', 'hidden') ;
             $("#columns_checking p").css('display','block');
-            $("#columns_checking p").css('float','left');
-            $('#research_assess_choiceColumnDialog').css({
-                'width':'1200'
-                
+            $("#columns_checking p").css('float','left');            
+            $('#research_assess_choiceColumnDialog, #summary_filters_configuration_wrapper').css({
+                'width':'1200'                
             });  
-            $('#research_assess_choiceColumnDialog').parent().css({
+            $('#research_assess_choiceColumnDialog, #summary_filters_configuration_wrapper').parent().css({
             'left':'50%',
              'margin-left':'-600px'                
              });  
@@ -3934,8 +3934,8 @@ function prevSibilfunc(curentSibil){
             $("#horizontal").css('visibility', 'visible') ;
             $("#columns_checking p").css('display','block');
             $("#columns_checking p").css('float','');
-            $('#research_assess_choiceColumnDialog').css('width','250px');
-            $('#research_assess_choiceColumnDialog').parent().css({
+            $('#research_assess_choiceColumnDialog, #summary_filters_configuration_wrapper').css('width','250px');
+            $('#research_assess_choiceColumnDialog, #summary_filters_configuration_wrapper').parent().css({
              'margin-left':'-137px'                
              }); 
         }
@@ -4000,6 +4000,32 @@ function prevSibilfunc(curentSibil){
                 });
 
     });
+	$('#summary_filters_configuration_wrapper').dialog({
+		autoOpen : false,
+		resizable: false,
+		modal : true,
+		width : 'auto'
+	});
+	
+	$('.show_filters_configuration_popup').on('click', function() {
+		$('#summary_filters_configuration_wrapper').dialog('open');
+	});
+	
+	$('.summary_filter_config_item').on('click', function() {
+		var elem = $(this);
+		
+		summary_active_items = [];
+				
+		$('.summary_filter_config_item').each(function(index, element) {
+			var config_item = $(this);
+			if (config_item.is(':checked'))
+			{
+				summary_active_items.push(config_item.attr('name'));
+			}
+		});
+		
+	});
+	
     $('#research_assess_choiceColumnDialog').dialog({
         autoOpen: false,
         resizable: false,
