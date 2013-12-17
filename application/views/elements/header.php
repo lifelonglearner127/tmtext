@@ -45,6 +45,8 @@
     <script src="<?php echo base_url();?>js/jquery.fancybox.js"></script>
     <script src="<?php echo base_url();?>js/jquery.floatThead.min.js"></script>
     <script src="<?php echo base_url();?>js/FixedHeader.js"></script>
+    <!--<script src="<?php echo base_url();?>js/ColReorderWithResize.js"></script>-->
+    <script src="<?php echo base_url();?>js/colResizable-1.3.min.js"></script>
     <script src="<?php echo base_url();?>js/jquery.cookie.js"></script>
     <script src="<?php echo base_url();?>js/defaults.js"></script>
     <script src="<?php echo base_url();?>js/jquery.expander.js"></script>

@@ -276,6 +276,7 @@ $(function() {
               
         			
         tblAssess = $('#tblAssess').dataTable({
+        	"sDom": 'Rlfrtip',
             "bJQueryUI": true,
             "bDestroy": true,
 //            "sScrollX": "100%",
@@ -4743,13 +4744,21 @@ function darkHeaders() {
 }
 var scrollScore = 0;
 $(window).scroll(function() {
-	if (scrollScore < 20 && $('table[id^=tblAssess] th')) {
-		scrollScore++;
-	}
-	if (scrollScore == 19) {
+	scrollScore++;
+	if ($('table[id^=tblAssess] tr')) {
+		
+		$("table#tblAssess").colResizable();
 		$('table#tblAssess').floatThead('reflow');
-		//darkHeaders();
 	}
+	if (scrollScore % 20 == 0) {
+		
+		//darkHeaders();
+		$(function(){
+		  $("table#tblAssess").colResizable();
+		});
+		$('table#tblAssess').floatThead('reflow');
+	}
+	console.log(scrollScore);
 });
 //darkHeaders();
 $('#assess_tbl_show_case_recommendations').click(function() {
