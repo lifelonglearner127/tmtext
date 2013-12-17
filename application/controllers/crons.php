@@ -2659,9 +2659,15 @@ class Crons extends MY_Controller {
         if(trim($title)== '' ||  $title == NULL || $string == ''){
             return array();
         }
+  
         $black_list = array('and','the','in','on','at','for');
-        $title = trim(preg_replace(array('/\s+/','/\(.*\)/'),array(' ',''), $title));
+        $title = trim(preg_replace('/\(.*\)/','', $title));
+        $title = trim(str_replace(',',' ', $title));
+        $title = trim(preg_replace('/\s+/', ' ', $title));
+        $string = trim(preg_replace('/\(.*\)/','', $string));
+        $string = trim(str_replace(',',' ', $string));
         $string = trim(preg_replace('/\s+/', ' ', $string));
+        $string = $this->str_cleaner($black_list, $string);
         $title_w = explode(' ', $title);
         $title_wc = count($title_w);
         $string_w = explode(' ', $string);
@@ -2675,7 +2681,8 @@ class Crons extends MY_Controller {
                     $needl .=$title_w[$k].' ';
                 }
                 $needl = trim($needl);
-                $frc = substr_count(strtolower($string), strtolower($needl));
+                $frc = substr_count(strtolower($string), strtolower($this->str_cleaner($black_list, $needl)));
+                //echo $needl."<br>";
                 $prc = ($frc*($title_wc-$i))/$string_wc*100;
                 if($frc>0&&$prc>2){//
                     $phrases[]=array(
@@ -2685,11 +2692,14 @@ class Crons extends MY_Controller {
                     );
                 }
             }
+           
 //            if(!empty($phrases)){
 //                break;
 //            }
             ++$i;
         }
+        
+      
         //*
         foreach($black_list as $w){
             foreach ($phrases as $key=>$val){
@@ -2702,14 +2712,18 @@ class Crons extends MY_Controller {
                 }
             }
         }
+       
+       
         foreach($phrases as $ar_key => $seo_pr){
             foreach($phrases as $ar_key1=>$seo_pr1){
                 if($ar_key!=$ar_key1 && $this->compare_str($seo_pr['ph'],$seo_pr1['ph'])
-                        &&$seo_pr['frq']>=$seo_pr1['frq']){
+                        &&$seo_pr['frq']>= $seo_pr1['frq']){
                     unset($phrases[$ar_key1]);
+                    
                 }
             }
         }
+       
         foreach($phrases as $ar_key => $seo_pr){
             foreach($phrases as $ar_key1=>$seo_pr1){
                 if($ar_key!=$ar_key1 && $this->compare_str($seo_pr['ph'],$seo_pr1['ph'])){
@@ -2725,6 +2739,7 @@ class Crons extends MY_Controller {
             }
         }
 //*/
+       
         return $phrases;
     }
      private function compare_str($str1, $str2){
@@ -2740,6 +2755,17 @@ class Crons extends MY_Controller {
             $str2=trim($str2);
         }
         return strpos($str1, $str2)!==FALSE;
+    }
+    
+    private function str_cleaner($bl,$string){
+        $str_arr = explode(' ', $string);
+        foreach ($str_arr as $key=>$val){
+            if(in_array($val, $bl)){
+                unset($str_arr[$key]);
+            }
+        }
+        $string = trim(preg_replace('/\s+/',' ',implode(' ', $str_arr)));
+        return $string;
     }
 
 }
