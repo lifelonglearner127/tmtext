@@ -99,15 +99,21 @@ class SearchSpider(BaseSpider):
 	def parse(self, response):
 
 
-		if not self.target_site:
-			sys.stderr.write("You need to specify a target site.\nUsage:" + \
-			" scrapy crawl search -a product_urls_file='<filename>' -a target_site='<site>' [-a output='<option(1/2)>'] [-a threshold=value] [a outfile='<filename>'] [-a fast=1]")
-			raise CloseSpider("\n" + \
-			"You need to specify a target site.\nUsage:" + \
-			" scrapy crawl search -a product_urls_file='<filename>' -a target_site='<site>' [-a output='<option(1/2)>'] [-a threshold=value] [a outfile='<filename>'] [-a fast=1]")
+		# if not self.target_site:
+		# 	sys.stderr.write("You need to specify a target site.\nUsage:" + \
+		# 	" scrapy crawl search -a product_urls_file='<filename>' -a target_site='<site>' [-a output='<option(1/2)>'] [-a threshold=value] [a outfile='<filename>'] [-a fast=1]")
+		# 	raise CloseSpider("\n" + \
+		# 	"You need to specify a target site.\nUsage:" + \
+		# 	" scrapy crawl search -a product_urls_file='<filename>' -a target_site='<site>' [-a output='<option(1/2)>'] [-a threshold=value] [a outfile='<filename>'] [-a fast=1]")
 
 		# if we have product names, pass them to parseResults
 		if self.product_name:
+
+			# can inly use this option if self.target_site has been initialized (usually true for spiders for retailers sites, not true for manufacturer's sites)
+			if not self.target_site:
+				sys.stderr.write("You can't use the product_name option without setting the target site to search on\n")
+				raise CloseSpider("\nYou can't use the product_name option without setting the target site to search on\n")
+
 			search_query = self.build_search_query(product_name)
 			search_pages = build_search_pages(search_query)
 
