@@ -1,7 +1,7 @@
 <?php
 	$this->load->helper('html');
-	$this->load->helper('summary');
-	$is_extended_partial = $wrapper_class == 'assess_report_compare';	
+	$this->load->helper('summary');	
+	$is_extended_partial = $wrapper_class == 'assess_report_compare';		
 ?>
 <div class="<?php echo $wrapper_class ?>" style="display: <?php echo $display ?>">
 	<ul class="ui-sortable">
@@ -13,6 +13,9 @@
 				</span>
 				<a class="ml_10 research_arrow hideShow" onclick="return false;" href="#">
 					<img src="<?php echo base_url();?>img/arrow.png">
+				</a>
+				<a href="#" class="show_filters_configuration_popup">
+					Edit
 				</a>
 				<span class="assess_report_download_panel" style="float: right;width: 500px;">
 
@@ -35,12 +38,14 @@
 					$this->load->view('assess/_summary_data', array(
 						'is_extended_partial' => $is_extended_partial,
 						'batch_set' => 'batch_me_',
+						'user_filters' => $user_filters,
 						'wrapper_class' => 'common_batch1_filter_items',						
 					));
 					
 					$this->load->view('assess/_summary_data', array(
 						'is_extended_partial' => $is_extended_partial,
 						'batch_set' => 'batch_competitor_',
+						'user_filters' => $user_filters,
 						'wrapper_class' => 'hidden_batch2_filter_items',						
 					));
 				?>				
@@ -68,3 +73,7 @@
 		</li-->
 	</ul>
 </div>
+<?php 
+	if ($is_extended_partial)
+		$this->load->view('assess/_summary_filter_config');
+?>

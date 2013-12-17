@@ -27,7 +27,9 @@ class Assess extends MY_Controller {
             'assess_save_columns_state' => true,
             'export_assess' => true,
             'remember_batches' => true,
-            'getbatchvalues' => true
+            'getbatchvalues' => true,
+			'save_summary_filters' => true,
+			'get_summary_filters' => true,
         ));
     }
 
@@ -65,6 +67,13 @@ class Assess extends MY_Controller {
         if (!empty($this->data['customer_list'])) {
             $this->data['batches_list'] = $this->batches_list();
         }
+		
+		$this->load->model('user_summary_settings', 'uss');
+		if ($this->ion_auth->logged_in() && ($user_id = $this->ion_auth->get_user_id()))		
+			$user_setting = $this->uss->findByAttributes(array('user_id' => $user_id));			
+		else
+			$user_setting = $this->uss->findByAttributes(array('user_ip' => $_SERVER['REMOTE_ADDR']));		
+		$this->data['user_filters'] = $user_setting && $user_setting->setting_value ? json_decode($user_setting->setting_value) : array();
 
         $this->render();
     }
@@ -2476,6 +2485,14 @@ class Assess extends MY_Controller {
         $user_id = $this->ion_auth->get_user_id();
         $key = 'research_assess';
         $columns = $this->settings_model->get_value($user_id, $key);
+		
+		$this->load->model('user_summary_settings', 'uss');
+		if ($this->ion_auth->logged_in() && ($user_id = $this->ion_auth->get_user_id()))		
+			$user_setting = $this->uss->findByAttributes(array('user_id' => $user_id));			
+		else
+			$user_setting = $this->uss->findByAttributes(array('user_ip' => $_SERVER['REMOTE_ADDR']));	
+		
+		$this->data['user_filters'] = $user_setting && $user_setting->setting_value ? json_decode($user_setting->setting_value) : array();
 
         // if columns empty set default values for columns
         if (empty($columns)) {
@@ -5124,7 +5141,34 @@ class Assess extends MY_Controller {
 	
 	public function get_summary_filters()
 	{
+		$this->load->model('user_summary_settings', 'uss');
+		$user_setting = null;
 		
+		if ($this->ion_auth->logged_in() && ($user_id = $this->ion_auth->get_user_id()))		
+			$user_setting = $this->uss->findByAttributes(array('user_id' => $user_id));			
+		else
+			$user_setting = $this->uss->findByAttributes(array('user_ip' => $_SERVER['REMOTE_ADDR']));
+				
+		die(json_encode($user_setting));
+	}
+	
+	public function save_summary_filters()
+	{				
+		$this->load->model('user_summary_settings', 'uss');					
+		$this->uss->user_id = null;
+		
+		if ($this->ion_auth->logged_in() && ($this->uss->user_id = $this->ion_auth->get_user_id()))		
+			$user_setting = $this->uss->findByAttributes(array('user_id' => $this->uss->user_id));								
+		else
+			$user_setting = $this->uss->findByAttributes(array('user_ip' => $_SERVER['REMOTE_ADDR']));
+		
+		if ($user_setting)
+			$this->uss->setAttributes((array)$user_setting);
+		
+		$this->uss->setting_id = User_summary_settings::USER_SUMMARY_SETTING_FILTER;
+		$this->uss->setting_value = json_encode($this->input->post('summary_active_items'));
+		
+		die(json_encode($this->uss->save()));
 	}
 //}
 }
