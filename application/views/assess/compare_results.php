@@ -501,6 +501,7 @@
 	$this->load->view('assess/_summary', array(
 		'display' => 'none',
 		'wrapper_class' => 'assess_report_compare',
+		'user_filters' => $user_filters,
 		'direct_access' => true
 	)) 
 ?>

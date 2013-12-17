@@ -16,7 +16,8 @@
 	<?php 
 		if ($is_extended_partial)														
 			$this->load->view('assess/_summary_compare', array(
-				'batch_set' => $batch_set
+				'batch_set' => $batch_set,
+				'user_filters' => $user_filters,
 			));					
 		else																		
 			$this->load->view('assess/_summary_summary', array(

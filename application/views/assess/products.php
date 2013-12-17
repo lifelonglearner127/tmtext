@@ -558,6 +558,7 @@
 <?php 
 	$this->load->view('assess/_summary', array(
 		'display' => 'none',
+		'user_filters' => $user_filters,
 		'wrapper_class' => 'assess_report_compare',
 	)) 
 ?>
