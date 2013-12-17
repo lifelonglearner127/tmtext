@@ -27,7 +27,7 @@ class WayfairSpider(SearchSpider):
 
 		hxs = HtmlXPathSelector(response)
 
-		site = response.meta['site']
+		#site = response.meta['origin_site']
 		origin_name = response.meta['origin_name']
 		origin_model = response.meta['origin_model']
 
@@ -44,7 +44,8 @@ class WayfairSpider(SearchSpider):
 		for result in results:
 			product_link = result.select(".//a[@class='toplink']")
 			item = SearchItem()
-			item['site'] = site
+			#item['origin_site'] = site
+			#TODO: site changed structure?
 			item['product_url'] = product_link.select("@href").extract()[0]
 			item['product_name'] = product_link.select("div[@class='prodname']/text()").extract()[0]
 			#TODO: add brand?

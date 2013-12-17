@@ -88,12 +88,12 @@ class AmazonSpider(SearchSpider):
 
 		items = response.meta['items']
 
-		site = response.meta['site']
+		#site = response.meta['origin_site']
 		origin_url = response.meta['origin_url']
 
 		item = SearchItem()
 		item['product_url'] = response.url
-		item['site'] = site
+		#item['origin_site'] = site
 		item['origin_url'] = origin_url
 
 		if 'origin_id' in response.meta:

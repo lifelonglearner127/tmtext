@@ -27,7 +27,7 @@ class ToysrusSpider(SearchSpider):
 
 		hxs = HtmlXPathSelector(response)
 
-		site = response.meta['site']
+		#site = response.meta['origin_site']
 		origin_name = response.meta['origin_name']
 		origin_model = response.meta['origin_model']
 
@@ -44,7 +44,7 @@ class ToysrusSpider(SearchSpider):
 
 		for result in results:
 			item = SearchItem()
-			item['site'] = site
+			#item['origin_site'] = site
 			item['product_name'] = result.select("text()").extract()[0]
 			root_url = "http://www.toysrus.com"
 			item['product_url'] = root_url + result.select("@href").extract()[0]

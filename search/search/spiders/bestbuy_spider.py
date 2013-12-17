@@ -27,7 +27,7 @@ class BestbuySpider(SearchSpider):
 
 		hxs = HtmlXPathSelector(response)
 
-		site = response.meta['site']
+		#site = response.meta['origin_site']
 		origin_name = response.meta['origin_name']
 		origin_model = response.meta['origin_model']
 
@@ -43,7 +43,7 @@ class BestbuySpider(SearchSpider):
 
 		for result in results:
 			item = SearchItem()
-			item['site'] = site
+			#item['origin_site'] = site
 			item['product_name'] = result.select("text()").extract()[0].strip()
 			item['product_url'] = Utils.clean_url(Utils.add_domain(result.select("@href").extract()[0], "http://www.bestbuy.com"))
 

@@ -28,7 +28,7 @@ class BloomingdalesSpider(SearchSpider):
 
 		hxs = HtmlXPathSelector(response)
 
-		site = response.meta['site']
+		#site = response.meta['origin_site']
 		origin_name = response.meta['origin_name']
 		origin_model = response.meta['origin_model']
 
@@ -44,7 +44,7 @@ class BloomingdalesSpider(SearchSpider):
 		results = hxs.select("//div[@class='shortDescription']/a")
 		for result in results:
 			item = SearchItem()
-			item['site'] = site
+			#item['origin_site'] = site
 			item['product_name'] = result.select("text()").extract()[0]
 			item['product_url'] = result.select("@href").extract()[0]
 

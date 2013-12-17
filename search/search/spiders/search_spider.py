@@ -118,7 +118,6 @@ class SearchSpider(BaseSpider):
 			search_pages = build_search_pages(search_query)
 
 			request = Request(search_pages[self.target_site], callback = self.parseResults)
-			request.meta['site'] = self.target_site
 			request.meta['origin_name'] = self.product_name
 			
 			yield request
@@ -147,7 +146,7 @@ class SearchSpider(BaseSpider):
 				sys.stderr.write('Can\'t extract domain from URL.\n')
 			
 			request = Request(product_url, callback = self.parseURL)
-			request.meta['site'] = origin_site
+			request.meta['origin_site'] = origin_site
 			if origin_site == 'staples':
 				zipcode = "12345"
 				request.cookies = {"zipcode": zipcode}
@@ -173,7 +172,7 @@ class SearchSpider(BaseSpider):
 				# create Walmart URLs based on these IDs
 				walmart_url = Utils.add_domain(walmart_id, "http://www.walmart.com/ip/")
 				request = Request(walmart_url, callback = self.parseURL)
-				request.meta['site'] = 'walmart'
+				request.meta['origin_site'] = 'walmart'
 				yield request
 		
 
@@ -181,7 +180,7 @@ class SearchSpider(BaseSpider):
 	# create queries to search by (use model name, model number, and combinations of words from model name), then send them to parseResults
 	def parseURL(self, response):
 
-		site = response.meta['site']
+		site = response.meta['origin_site']
 		hxs = HtmlXPathSelector(response)
 
 		product_model = ""
@@ -211,7 +210,7 @@ class SearchSpider(BaseSpider):
 				sys.stderr.write("Broken product page link (can't find item title): " + response.url + "\n")
 				# return the item as a non-matched item
 				item = SearchItem()
-				item['site'] = site
+				#item['origin_site'] = site
 				item['origin_url'] = response.url
 				# remove unnecessary parameters
 				m = re.match("(.*)\?enlargedSearch.*", item['origin_url'])
@@ -233,7 +232,7 @@ class SearchSpider(BaseSpider):
 			else:
 				sys.stderr.write("Broken product page link (can't find item title): " + response.url + "\n")
 				item = SearchItem()
-				item['site'] = site
+				#item['origin_site'] = site
 				item['origin_url'] = response.url
 				yield item
 				return
@@ -310,7 +309,7 @@ class SearchSpider(BaseSpider):
 			pending_requests.append(request3)
 
 		request.meta['pending_requests'] = pending_requests
-		request.meta['site'] = self.target_site
+		#request.meta['origin_site'] = 
 		# product page from source site
 		#TODO: clean this URL? for walmart it added something with ?enlargedsearch=True
 		request.meta['origin_url'] = response.url
@@ -339,7 +338,7 @@ class SearchSpider(BaseSpider):
 	def reduceResults(self, response):
 
 		items = response.meta['items']
-		site = response.meta['site']
+		#site = response.meta['origin_site']
 
 		if 'parsed' not in response.meta:
 
@@ -373,7 +372,7 @@ class SearchSpider(BaseSpider):
 
 				request.meta['items'] = items
 
-				request.meta['site'] = response.meta['site']
+				#request.meta['origin_site'] = response.meta['origin_site']
 				# product page from source site
 				request.meta['origin_url'] = response.meta['origin_url']
 				request.meta['origin_name'] = response.meta['origin_name']
@@ -416,7 +415,7 @@ class SearchSpider(BaseSpider):
 					# output item if match not found for either output type
 					#if self.output == 2:
 					item = SearchItem()
-					item['site'] = site
+					#item['origin_site'] = site
 					
 					item['origin_url'] = response.meta['origin_url']
 
@@ -433,7 +432,7 @@ class SearchSpider(BaseSpider):
 			# output item if match not found for either output type
 			#if self.output == 2:
 			item = SearchItem()
-			item['site'] = site
+			#item['origin_site'] = site
 			
 			item['origin_url'] = response.meta['origin_url']
 
