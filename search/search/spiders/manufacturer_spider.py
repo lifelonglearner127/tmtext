@@ -19,6 +19,9 @@ class ManufacturerSpider(SearchSpider):
 
 	name = "manufacturer"
 
+	# arbitrary start url
+	start_urls = ['http://www.sony.com']
+
 	# initialize fields specific to this derived spider
 	def init_sub(self):
 		pass

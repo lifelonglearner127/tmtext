@@ -111,7 +111,7 @@ class SearchSpider(BaseSpider):
 
 			# can inly use this option if self.target_site has been initialized (usually true for spiders for retailers sites, not true for manufacturer's sites)
 			if not self.target_site:
-				sys.stderr.write("You can't use the product_name option without setting the target site to search on\n")
+				self.log("You can't use the product_name option without setting the target site to search on\n", level=log.ERROR)
 				raise CloseSpider("\nYou can't use the product_name option without setting the target site to search on\n")
 
 			search_query = self.build_search_query(self.product_name)
@@ -270,8 +270,23 @@ class SearchSpider(BaseSpider):
 
 		# if there is no product brand, get first word in name, assume it's the brand
 		product_brand_extracted = ""
-		if len(product_name) > 0 and re.match("[a-z]*", product_name[0]):
-			product_brand_extracted = product_name[0]
+		#product_name_tokenized = ProcessText.normalize(product_name)
+		product_name_tokenized = product_name.split(" ")
+		#TODO: maybe extract brand as word after 'by', if 'by' is somewhere in the product name
+		if len(product_name_tokenized) > 0 and re.match("[a-z]*", product_name_tokenized[0]):
+			product_brand_extracted = product_name_tokenized[0].lower()
+
+		# if we are in manufacturer spider, set target_site to manufacturer site
+		if self.name == 'manufacturer':
+			self.target_site = product_brand_extracted
+
+			# can only go on if site is supported
+			# (use dummy query)
+			if self.target_site not in self.build_search_pages("").keys():
+				self.log("Manufacturer site not supported (" + self.target_site + ") or not able to extract brand from product name (" + product_name + ")\n", level=log.ERROR)
+				#raise CloseSpider("Manufacturer site not supported (" + self.target_site + ") or not able to extract brand from product name (" + product_name + ")\n")
+				return
+
 
 		# 1) Search by model number
 		if product_model:
