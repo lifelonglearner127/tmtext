@@ -41,7 +41,7 @@ class SearchSpider(BaseSpider):
 
 	name = "search"
 	allowed_domains = ["amazon.com", "walmart.com", "bloomingdales.com", "overstock.com", "wayfair.com", "bestbuy.com", "toysrus.com",\
-					   "bjs.com", "sears.com", "staples.com", "newegg.com", "ebay.com"]
+					   "bjs.com", "sears.com", "staples.com", "newegg.com", "ebay.com", "sony.com"]
 
 	# pass product as argument to constructor - either product name or product URL
 	# arguments:
@@ -296,7 +296,6 @@ class SearchSpider(BaseSpider):
 			page1 = search_pages1[self.target_site]
 			request1 = Request(page1, callback = self.parseResults, cookies=cookies)
 
-
 			request1.meta['query'] = query1
 			
 			request = request1
@@ -408,7 +407,7 @@ class SearchSpider(BaseSpider):
 				else:
 					assert not self.by_id
 
-				# used for amazon product URLs
+				# used for result product URLs
 				if 'search_results' in response.meta:
 					request.meta['search_results'] = response.meta['search_results']
 
