@@ -2625,6 +2625,6 @@ li.selected-url{
 	float: right;
 }
 .show_filters_configuration_popup {
-	position: relative;
-	top: -2px;
+	float: right;
+	margin: 4px -9px 0 0;
 }
