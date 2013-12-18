@@ -15,7 +15,7 @@
 					<img src="<?php echo base_url();?>img/arrow.png">
 				</a>
 				<a href="#" class="show_filters_configuration_popup">
-					Edit
+					<img style="width:32px; heihgt: 32px;" src="<?php echo base_url();?>img/settings@2x.png">
 				</a>
 				<span class="assess_report_download_panel" style="float: right;width: 500px;">
 

@@ -4076,7 +4076,7 @@ function prevSibilfunc(curentSibil){
     $('#research_assess_choiceColumnDialog').dialog({
         autoOpen: false,
         resizable: false,
-        modal: true,
+        modal: true,		
 //        buttons: {
 //            'Save': function() {
 //                // get columns params

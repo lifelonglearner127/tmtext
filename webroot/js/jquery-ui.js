@@ -1414,8 +1414,10 @@ $.widget("ui.draggable", $.ui.mouse, {
 			pos = this.position;
 		}
 
-		var mod = d === "absolute" ? 1 : -1,
-			scroll = this.cssPosition === "absolute" && !( this.scrollParent[ 0 ] !== document && $.contains( this.scrollParent[ 0 ], this.offsetParent[ 0 ] ) ) ? this.offsetParent : this.scrollParent;
+		var mod = d === "absolute" ? 1 : -1,			
+		useOffsetParent = this.cssPosition === "absolute" && ( this.scrollParent[ 0 ] === document || !$.contains( this.scrollParent[ 0 ], this.offsetParent[ 0 ] ) ),
+		scroll = useOffsetParent ? this.offsetParent : this.scrollParent,
+		scrollIsRootNode = useOffsetParent && ( /(html|body)/i ).test( scroll[ 0 ].nodeName );
 
 		//Cache the scroll
 		if (!this.offset.scroll) {
@@ -1427,13 +1429,13 @@ $.widget("ui.draggable", $.ui.mouse, {
 				pos.top	+																// The absolute mouse position
 				this.offset.relative.top * mod +										// Only for relative positioned nodes: Relative offset from element to offset parent
 				this.offset.parent.top * mod -										// The offsetParent's offset without borders (offset + border)
-				( ( this.cssPosition === "fixed" ? -this.scrollParent.scrollTop() : this.offset.scroll.top ) * mod )
+				( ( this.cssPosition === "fixed" ? -this.scrollParent.scrollTop() : ( scrollIsRootNode ? 0 : this.offset.scroll.top ) ) * mod )
 			),
 			left: (
 				pos.left +																// The absolute mouse position
 				this.offset.relative.left * mod +										// Only for relative positioned nodes: Relative offset from element to offset parent
 				this.offset.parent.left * mod	-										// The offsetParent's offset without borders (offset + border)
-				( ( this.cssPosition === "fixed" ? -this.scrollParent.scrollLeft() : this.offset.scroll.left ) * mod )
+				( ( this.cssPosition === "fixed" ? -this.scrollParent.scrollLeft() : scrollIsRootNode ? 0 : this.offset.scroll.left ) * mod )
 			)
 		};
 
@@ -1443,7 +1445,9 @@ $.widget("ui.draggable", $.ui.mouse, {
 
 		var containment, co, top, left,
 			o = this.options,
-			scroll = this.cssPosition === "absolute" && !( this.scrollParent[ 0 ] !== document && $.contains( this.scrollParent[ 0 ], this.offsetParent[ 0 ] ) ) ? this.offsetParent : this.scrollParent,
+			useOffsetParent = this.cssPosition === "absolute" && ( this.scrollParent[ 0 ] === document || !$.contains( this.scrollParent[ 0 ], this.offsetParent[ 0 ] ) ),
+			scroll = useOffsetParent ? this.offsetParent : this.scrollParent,
+			scrollIsRootNode = useOffsetParent && ( /(html|body)/i ).test( scroll[ 0 ].nodeName ),
 			pageX = event.pageX,
 			pageY = event.pageY;
 
@@ -1504,14 +1508,14 @@ $.widget("ui.draggable", $.ui.mouse, {
 				this.offset.click.top	-												// Click offset (relative to the element)
 				this.offset.relative.top -												// Only for relative positioned nodes: Relative offset from element to offset parent
 				this.offset.parent.top +												// The offsetParent's offset without borders (offset + border)
-				( this.cssPosition === "fixed" ? -this.scrollParent.scrollTop() : this.offset.scroll.top )
+				( this.cssPosition === "fixed" ? -this.scrollParent.scrollTop() : ( scrollIsRootNode ? 0 : this.offset.scroll.top ) )
 			),
 			left: (
 				pageX -																	// The absolute mouse position
 				this.offset.click.left -												// Click offset (relative to the element)
 				this.offset.relative.left -												// Only for relative positioned nodes: Relative offset from element to offset parent
 				this.offset.parent.left +												// The offsetParent's offset without borders (offset + border)
-				( this.cssPosition === "fixed" ? -this.scrollParent.scrollLeft() : this.offset.scroll.left )
+				( this.cssPosition === "fixed" ? -this.scrollParent.scrollLeft() : ( scrollIsRootNode ? 0 : this.offset.scroll.left ) )
 			)
 		};
 
