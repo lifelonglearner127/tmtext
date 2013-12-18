@@ -4282,7 +4282,14 @@ class Assess extends MY_Controller {
 			'skus_three_optimized_keywords_competitor' => array( 'value' => $skus_three_optimized_keywords_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_three_optimized_keywords)),
 			
 			'skus_title_less_than_70_chars' => array( 'value' => $skus_title_less_than_70_chars, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_title_less_than_70_chars_competitor)),
-			'skus_title_more_than_70_chars' => array( 'value' => $skus_title_more_than_70_chars, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_title_more_than_70_chars_competitor)),
+			'skus_title_more_than_70_chars' => array( 'value' => $skus_title_more_than_70_chars, 'percentage' => array('batch1', 'competitor'), 'icon_percentage' => function($percent) {
+				if ($percent > 50)
+					return 'assess_report_seo_red.png';
+				else if ($percent >= 25 && $percent <= 50)
+					return 'assess_report_seo_yellow.png';
+				else
+					return 'assess_report_seo.png';
+			}, 'generals' => array('competitor' => $skus_title_more_than_70_chars_competitor)),
 			
 			'skus_title_less_than_70_chars_competitor' => array( 'value' => $skus_title_less_than_70_chars_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_title_less_than_70_chars)),
 			'skus_title_more_than_70_chars_competitor' => array( 'value' => $skus_title_more_than_70_chars_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_title_more_than_70_chars)),
