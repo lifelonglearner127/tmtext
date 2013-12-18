@@ -4754,11 +4754,12 @@ $(window).scroll(function() {
 	if (scrollScore % 10 == 0) {
 		
 		//darkHeaders();
+		/*
 		$(function(){
 		  $("table#tblAssess").colResizable({
 		    liveDrag:true
 		  });
-		});
+		});*/
 		$('table#tblAssess').floatThead('reflow');
 	}
 	//console.log(scrollScore);
