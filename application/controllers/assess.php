@@ -4292,7 +4292,14 @@ class Assess extends MY_Controller {
 			}, 'generals' => array('competitor' => $skus_title_more_than_70_chars_competitor)),
 			
 			'skus_title_less_than_70_chars_competitor' => array( 'value' => $skus_title_less_than_70_chars_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_title_less_than_70_chars)),
-			'skus_title_more_than_70_chars_competitor' => array( 'value' => $skus_title_more_than_70_chars_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_title_more_than_70_chars)),
+			'skus_title_more_than_70_chars_competitor' => array( 'value' => $skus_title_more_than_70_chars_competitor, 'percentage' => array('batch2', 'competitor'), 'icon_percentage' => function($percent) {
+				if ($percent > 50)
+					return 'assess_report_seo_red.png';
+				else if ($percent >= 25 && $percent <= 50)
+					return 'assess_report_seo_yellow.png';
+				else
+					return 'assess_report_seo.png';
+			}, 'generals' => array('competitor' => $skus_title_more_than_70_chars)),
 			
 			'total_items_selected_by_filter' => array( 'value' => count($result_table), 'percentage' => array()),
 			'assess_report_competitor_matches_number' => array( 'value' => $build_assess_params->batch2_items_count, 'percentage' => array()),
