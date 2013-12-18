@@ -4816,7 +4816,7 @@ $(window).scroll(function() {
 	if (scrollScore % 15 == 0) {
 		$('table#tblAssess').floatThead('reflow');
 	}
-	console.log(scrollScore);
+	//console.log(scrollScore);
 });
 $('#tableScrollWrapper').css("overflow-y", "hidden");
 $( "div[id^=tblAssess_length], div[id^=assess_tbl_show_case], div[class^=dataTables_filter], div[id^=tblAssess_processing]" ).wrapAll( "<div class='fg-toolbar ui-toolbar ui-widget-header ui-corner-tl ui-corner-tr ui-helper-clearfix'></div>" );
