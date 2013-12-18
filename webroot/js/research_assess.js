@@ -26,6 +26,11 @@ function close_popover(elem)
 }
 	
 $(function() {
+	
+	$.expr[':'].contains = function(a, i, m) {
+	  return $(a).text().toUpperCase()
+		  .indexOf(m[3].toUpperCase()) >= 0;
+	};
 
     $.ajax({
             url: getbatchesvalue,
