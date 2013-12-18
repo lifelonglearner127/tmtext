@@ -4719,22 +4719,6 @@ function darkHeaders() {
 		
 		var count = $("table[id^=tblAsses] th:visible").length;
 		var headers =  Math.round((count / 2) - 1);
-		/*
-		if($("table[id^=tblAsses] th[aria-label*='Gap']")){
-		--headers;
-		$("table[id^=tblAsses] th[aria-label*='Gap']").css({
-			"background": "#e6e6e6 url('/producteditor/css/smoothness/images/ui-bg_glass_75_e6e6e6_1x400.png') 50% 50%",
-			"background-repeat": "repeat-x"
-		});
-		}
-		if($("table[id^=tblAsses] th[aria-label*='Duplicate']")){
-		--headers;
-		$("table[id^=tblAsses] th[aria-label*='Duplicate']").css({
-			"background": "#e6e6e6 url('/producteditor/css/smoothness/images/ui-bg_glass_75_e6e6e6_1x400.png') 50% 50%",
-			"background-repeat": "repeat-x"
-		});
-		}*/
-		// - 2;
 		$("table[id^=tblAsses] th:visible:gt(" + headers + "):not(th[aria-label*='Gap']):not(th[aria-label*='Duplicate'])").css({
 			"background": "url('/producteditor/css/smoothness/images/ui-bg_glass_75_dadada_1x400.png') 50% 50%",
 			"background-repeat": "repeat-x"
@@ -4772,9 +4756,6 @@ $( "#tblAssess_info, #tblAssess_paginate" ).wrapAll( "<div class='fg-toolbar ui-
 
 //darkHeaders();
 $('#assess_tbl_show_case_recommendations').click(function() {
-	$("table[id^=tblAsses] tr").each(function() {
-		$(this).find("td[class*=1]:first").css("border-left", "3px solid rgba(173, 173, 173, 1)");
-	});
 	//darkHeaders();
 	$('table#tblAssess').floatThead({
 		scrollContainer: function($table) {
@@ -4786,7 +4767,6 @@ $('#assess_tbl_show_case_recommendations').click(function() {
 				liveDrag:true
 			}
 	);
-	scrollScore = 0;
 	//darkHeaders();
 });
 $('#assess_tbl_show_case_details_compare').click(function() {
@@ -4795,7 +4775,6 @@ $('#assess_tbl_show_case_details_compare').click(function() {
 			return $('#tblAssess').closest('.wrapper');
 		}
 	});
-	scrollScore = 0;
 	$("li[class*=boxes] div[class*=ui-icon-gripsmall-diagonal-se]").css("display", "none");
 	$("li[class*=boxes] div[class*=ui-resizable-e]").css("display", "none");
 	darkHeaders();
@@ -4806,7 +4785,6 @@ $('#assess_tbl_show_case_report').click(function() {
 			return $('#tblAssess').closest('.wrapper');
 		}
 	});
-	scrollScore = 0;
 	//darkHeaders();
 });
 $('#assess_tbl_show_case_details').click(function() {
@@ -4816,14 +4794,22 @@ $('#assess_tbl_show_case_details').click(function() {
 		}
 	});
 	$('table#tblAssess').floatThead('reflow');
-	scrollScore = 0;
+	if($("table[id^=tblAssess] th[style*='border-left-width: 2px;'], td[style*='border-left-width: 2px;']")){
+			$("table[id^=tblAssess] th[style*='border-left-width: 2px;'], td[style*='border-left-width: 2px;']").css("border-left-width", "1px");
+			
+		}
+	if($("table[id^=tblAssess] th[style*='repeat']")) {
+			$("table[id^=tblAssess] th[style*='repeat']").css({
+			"background": "#e6e6e6 url('/producteditor/css/smoothness/images/ui-bg_glass_75_e6e6e6_1x400.png') 50% 50%",
+			"background-repeat": "repeat-x"
+		});}
 	//darkHeaders();
 });
 $('#research_assess_update').click(function() {
 	//darkHeaders();
 });
 $('.ui-dialog-titlebar-close').click(function() {
-	scrollScore = 0;
+	if($("div[id=assess_tbl_show_case] a[class=active_link]")){darkHeaders();}
 	//darkHeaders();
 });
 if ($("table[id^=tblAsses] th[class*=1]:not([class*=_1]):first")) {
