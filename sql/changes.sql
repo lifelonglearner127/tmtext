@@ -839,3 +839,6 @@ CREATE TABLE IF NOT EXISTS `user_summary_settings` (
   `update_time` int(11) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+
+#18/12 Oleg
+ALTER TABLE  `setting_values` CHANGE  `value`  `value` VARCHAR( 3000 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL;
