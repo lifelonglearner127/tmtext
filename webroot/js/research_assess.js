@@ -2121,13 +2121,61 @@ var generate_url_check = GetURLParameter('generate_url_check');
 	$(document).on('click', '.update_filter_btn', function(e) {
 		$('#research_assess_update').click();
 	});
-        $(document).on('click','#tk-denisty',function(){
+        function onDenisty(){
+            var tkstatus = $.cookie('tkstatus');
+            if(typeof(tkstatus)!=='undefined'){
+                $.removeCookie('tkstatus');
+            }
+            $.cookie('tkstatus','denisty');
+            if($('#tk-denisty').prop('checked')!==true){
+                $('#tk-frequency').prop('checked',false);
+                $('#tk-denisty').prop('checked',true);
+            }
              $('.phr-frequency').hide();
              $('.phr-density').show();
+        }
+        $(document).on('click','#tk-denisty',function(){
+            onDenisty();
          });
-        $(document).on('click','#tk-frequency',function(){
+        function onFrequency(){
+            var tkstatus = $.cookie('tkstatus');
+            if(typeof(tkstatus)!=='undefined'){
+                $.removeCookie('tkstatus');
+            }
+            $.cookie('tkstatus','frequency');
+            if($('#tk-frequency').prop('checked')!==true){
+                $('#tk-denisty').prop('checked',false);
+                $('#tk-frequency').prop('checked',true);
+            }
             $('.phr-density').hide();
             $('.phr-frequency').show();
+        }
+        $(document).on('click','#tk-frequency',function(){
+            onFrequency();
+        });
+        function setStatusFromCookie(){
+            var tkstatus = $.cookie('tkstatus');
+            if(typeof(tkstatus)!=='undefined'){
+                if(tkstatus==='denisty'){
+                    onDenisty();
+                }
+                else{
+                    onFrequency();
+                }
+            }
+            else{
+                $.cookie('tkstatus','denisty');
+            }
+        }
+        function loadSetTK(){
+            if($('.phr-frequency').html()!==null){
+                setStatusFromCookie();
+                //clearInterval(table_loaded);
+            }
+        }
+        var table_loaded=false;
+        $(document).ready(function(){
+            table_loaded = setInterval(loadSetTK,2000);
         });
 
     $(document).on('change', '#assessDetailsDialog_chkIncludeInReport', function() {
