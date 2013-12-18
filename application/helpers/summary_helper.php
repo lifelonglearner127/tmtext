@@ -15,7 +15,7 @@ if ( ! function_exists('render_filter_item'))
 		</span>' : '';
 								
 		$r = '
-			<div class="mt_10 ml_15 item_line ' . ($is_extended_partial ? 'ui-widget-content' : 'non-selectable') . ' ' . ($batch_class_number) . '" data-filterid="' . $filter_id . '" style="display: ' . $display . '">
+			<div class="' . ($display == 'none' ? '' : 'selected_by_config') . ' mt_10 ml_15 item_line ' . ($is_extended_partial ? 'ui-widget-content' : 'non-selectable') . ' ' . ($batch_class_number) . '" data-filterid="' . $filter_id . '" style="display: ' . $display . '">
 				<div class="mr_10">
 					<table width="100%">
 						<tr>

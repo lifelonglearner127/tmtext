@@ -26,6 +26,11 @@ function close_popover(elem)
 }
 	
 $(function() {
+	
+	$.expr[':'].contains = function(a, i, m) {
+	  return $(a).text().toUpperCase()
+		  .indexOf(m[3].toUpperCase()) >= 0;
+	};
 
     $.ajax({
             url: getbatchesvalue,
@@ -1124,12 +1129,12 @@ $(function() {
 	$('.summary_search_field').on('keyup', function() {
 		var elem = $(this)
 		  , elem_value = elem.val()
-		  , filters = $('.item_line');
+		  , filters = $('.item_line.selected_by_config');
 		  
 		if (elem_value)
 		{
 			filters.hide();			
-			$('.item_line:contains("' + elem_value + '")').show();
+			$('.item_line.selected_by_config:contains("' + elem_value + '")').show();
 		} else {
 			filters.show();
 		}
@@ -4122,10 +4127,18 @@ function prevSibilfunc(curentSibil){
 		
 		summary_active_items = [];
 		
-		if (elem.is(':checked'))		
+		if (elem.is(':checked'))	
+		{
 			filter_elem.show();
-		else
+			
+			if (!filter_elem.hasClass('selected_by_config'))
+				filter_elem.addClass('selected_by_config');
+		} else {
 			filter_elem.hide();		
+			
+			if (filter_elem.hasClass('selected_by_config'))
+				filter_elem.removeClass('selected_by_config');
+		}
 		
 		$('.summary_filter_config_item').each(function(index, element) {
 			var config_item = $(this);
