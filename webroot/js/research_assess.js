@@ -739,10 +739,27 @@ $(function() {
             "sClass": "Snapshot"
         },
         {
+            "sTitle": "Date",
+            "sName": "created",
+            "sWidth": "3%"
+        },
+        {
             "sTitle": "Product Name",
             "sName": "product_name",
             "sWidth": "15%",
             "sClass": "product_name_text"
+        },
+        {
+            "sTitle": "item ID",
+            "sName": "item_id",
+            "sWidth": "15%",
+            "sClass": "item_id"
+        },
+        {
+            "sTitle": "Model",
+            "sName": "model",
+            "sWidth": "15%",
+            "sClass": "model"
         },
         {
             "sTitle": "URL",
