@@ -24,7 +24,8 @@ class ManufacturerSpider(SearchSpider):
 
 	# initialize fields specific to this derived spider
 	def init_sub(self):
-		pass
+		#TODO: find a better way for this
+		self.threshold = 0.5
 
 
 
