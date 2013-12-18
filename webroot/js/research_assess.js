@@ -524,6 +524,7 @@ $(function() {
 
             setTimeout(function() {
                 tblAssess = $('#tblAssess').dataTable({
+                	"sDom": 'Rlfrtip',
                     "bJQueryUI": true,
 //                    "bDestroy": true,
 //                    "sScrollX": "100%",
@@ -1226,6 +1227,7 @@ $(function() {
 	});
 	// $('table#tblAssess').floatThead('reflow');
     tblAssess = $('#tblAssess').dataTable({
+    	"sDom": 'Rlfrtip',
         "bJQueryUI": true,
         "bDestroy": true,
         "sPaginationType": "full_numbers",
@@ -4764,13 +4766,16 @@ $(window).scroll(function() {
 	}
 	//console.log(scrollScore);
 });
+$('#tableScrollWrapper').css("overflow-y", "hidden");
+$( "div[id^=tblAssess_length], div[id^=assess_tbl_show_case], div[class^=dataTables_filter], div[id^=tblAssess_processing]" ).wrapAll( "<div class='fg-toolbar ui-toolbar ui-widget-header ui-corner-tl ui-corner-tr ui-helper-clearfix'></div>" );
+$( "#tblAssess_info, #tblAssess_paginate" ).wrapAll( "<div class='fg-toolbar ui-toolbar ui-widget-header ui-corner-bl ui-corner-br ui-helper-clearfix'></div>" );
 
 //darkHeaders();
 $('#assess_tbl_show_case_recommendations').click(function() {
 	$("table[id^=tblAsses] tr").each(function() {
-		$(this).find("td[class*=1]:first").css("border-left", "3px solid rgba(173, 173, 173, 1)")
+		$(this).find("td[class*=1]:first").css("border-left", "3px solid rgba(173, 173, 173, 1)");
 	});
-	darkHeaders();
+	//darkHeaders();
 	$('table#tblAssess').floatThead({
 		scrollContainer: function($table) {
 			return $('#tblAssess').closest('.wrapper');
@@ -4819,7 +4824,7 @@ $('#research_assess_update').click(function() {
 });
 $('.ui-dialog-titlebar-close').click(function() {
 	scrollScore = 0;
-	darkHeaders();
+	//darkHeaders();
 });
 if ($("table[id^=tblAsses] th[class*=1]:not([class*=_1]):first")) {
 	//darkHeaders();
