@@ -4806,8 +4806,6 @@ function darkHeaders(id) {
 		
 	}
 	$('table#tblAssess').floatThead('reflow');
-	
-	//console.log(id);
 }
 
 var scrollScore = 0;
@@ -4827,11 +4825,7 @@ $('#assess_tbl_show_case_recommendations').click(function() {
 			return $('#tblAssess').closest('.wrapper');
 		}
 	});
-	$("table#tblAssess").colResizable(
-			{
-				liveDrag:true
-			}
-	);
+	$('table#tblAssess').floatThead('reflow');
 });
 $('#assess_tbl_show_case_details_compare').click(function() {
 	$('table#tblAssess').floatThead({
@@ -4849,7 +4843,7 @@ $('#assess_tbl_show_case_report').click(function() {
 			return $('#tblAssess').closest('.wrapper');
 		}
 	});
-	//darkHeaders();
+	$('table#tblAssess').floatThead('reflow');
 });
 $('#assess_tbl_show_case_details').click(function() {
 	$('table#tblAssess').floatThead({
@@ -4867,10 +4861,10 @@ $('#assess_tbl_show_case_details').click(function() {
 			"background": "#e6e6e6 url('/producteditor/css/smoothness/images/ui-bg_glass_75_e6e6e6_1x400.png') 50% 50%",
 			"background-repeat": "repeat-x"
 		});}
-	//darkHeaders();
+	$('table#tblAssess').floatThead('reflow');
 });
 $('#research_assess_update').click(function() {
-	//darkHeaders();
+	$('table#tblAssess').floatThead('reflow');
 });
 $('.ui-dialog-titlebar-close').click(function() {
 	if($("div[id=assess_tbl_show_case] a[class=active_link]")){darkHeaders($(this));}
