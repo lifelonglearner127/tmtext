@@ -739,27 +739,10 @@ $(function() {
             "sClass": "Snapshot"
         },
         {
-            "sTitle": "Date",
-            "sName": "created",
-            "sWidth": "3%"
-        },
-        {
             "sTitle": "Product Name",
             "sName": "product_name",
             "sWidth": "15%",
             "sClass": "product_name_text"
-        },
-        {
-            "sTitle": "item ID",
-            "sName": "item_id",
-            "sWidth": "15%",
-            "sClass": "item_id"
-        },
-        {
-            "sTitle": "Model",
-            "sName": "model",
-            "sWidth": "15%",
-            "sClass": "model"
         },
         {
             "sTitle": "URL",
@@ -946,7 +929,8 @@ $(function() {
         {
             "sTitle": "Product Name",
             "sName": "product_name1",
-            "sWidth": "15%"
+            "sWidth": "15%",
+			"sClass": "product_name1"
         },
         {
             "sTitle": "item ID",
@@ -963,7 +947,8 @@ $(function() {
         {
             "sTitle": "URL",
             "sName": "url1",
-            "sWidth": "15%"
+            "sWidth": "15%",
+            "sClass": "url1"
         },
         {
             "sTitle": "Page Load Time",
@@ -4777,12 +4762,17 @@ $('table#tblAssess').floatThead({
 });
 
 function darkHeaders() {
+
 	if($("table[id^=tblAssess]")){
-		if($("table[id^=tblAssess] th[style*='repeat']")) {
-			$("table[id^=tblAssess] th[style*='repeat']").css({
-			"background": "#e6e6e6 url('/producteditor/css/smoothness/images/ui-bg_glass_75_e6e6e6_1x400.png') 50% 50%",
+	
+		if($("#tblAssess .Snapshot1.ui-state-default")){$("#tblAssess .Snapshot1.ui-state-default").css({
+			"background": "url('/producteditor/css/smoothness/images/ui-bg_glass_75_dadada_1x400.png') 50% 50%",
 			"background-repeat": "repeat-x"
-		})
+		})}
+		
+		/*  
+		if($("table[id^=tblAssess] th[style*='repeat']")) {
+			$("table[id^=tblAssess] th[style*='repeat']").css({"background": "#e6e6e6 url('/producteditor/css/smoothness/images/ui-bg_glass_75_e6e6e6_1x400.png') 50% 50%",	"background-repeat": "repeat-x"	})
 		}
 		if($("table[id^=tblAssess] th[style*='border-left-width: 2px;'], td[style*='border-left-width: 2px;']")){
 			$("table[id^=tblAssess] th[style*='border-left-width: 2px;'], td[style*='border-left-width: 2px;']").css("border-left-width", "1px");
@@ -4798,36 +4788,21 @@ function darkHeaders() {
 		$("table[id^=tblAsses] tr").each(function()
 		{
 			$(this).find("td:gt(" + headers + "):first").css("border-left", "2px solid #ccc");
-		});
+		});*/
 	}
 	$('table#tblAssess').floatThead('reflow');
 }
 var scrollScore = 0;
 $(window).scroll(function() {
 	scrollScore++;
-	if ($('table[id^=tblAssess] tr')) {
-		$('table#tblAssess').floatThead('reflow');
-	}
 	if (scrollScore % 10 == 0) {
-		
-		//darkHeaders();
-		/*
-		$(function(){
-		  $("table#tblAssess").colResizable({
-		    liveDrag:true
-		  });
-		});*/
 		$('table#tblAssess').floatThead('reflow');
 	}
-	//console.log(scrollScore);
 });
 $('#tableScrollWrapper').css("overflow-y", "hidden");
 $( "div[id^=tblAssess_length], div[id^=assess_tbl_show_case], div[class^=dataTables_filter], div[id^=tblAssess_processing]" ).wrapAll( "<div class='fg-toolbar ui-toolbar ui-widget-header ui-corner-tl ui-corner-tr ui-helper-clearfix'></div>" );
 $( "#tblAssess_info, #tblAssess_paginate" ).wrapAll( "<div class='fg-toolbar ui-toolbar ui-widget-header ui-corner-bl ui-corner-br ui-helper-clearfix'></div>" );
-
-//darkHeaders();
 $('#assess_tbl_show_case_recommendations').click(function() {
-	//darkHeaders();
 	$('table#tblAssess').floatThead({
 		scrollContainer: function($table) {
 			return $('#tblAssess').closest('.wrapper');
@@ -4838,7 +4813,6 @@ $('#assess_tbl_show_case_recommendations').click(function() {
 				liveDrag:true
 			}
 	);
-	//darkHeaders();
 });
 $('#assess_tbl_show_case_details_compare').click(function() {
 	$('table#tblAssess').floatThead({

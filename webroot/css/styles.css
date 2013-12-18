@@ -736,3 +736,6 @@ span.highlight{
 div.assess_report_compare li.boxes div.ui-resizable-e, div.ui-icon-gripsmall-diagonal-se {
 	display:none !important;
 }
+th.product_name1, th.Snapshot1, th.url1, th.column_reviews1, th.column_features1    {
+	background: #dadada url('/producteditor/css/smoothness/images/ui-bg_glass_75_dadada_1x400.png') 50% 50% repeat-x !important;
+}
