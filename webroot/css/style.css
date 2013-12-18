@@ -2628,3 +2628,11 @@ li.selected-url{
 	float: right;
 	margin: 4px -9px 0 0;
 }
+.clean_summary_search_field {
+	top: 4px;
+	position: relative;
+}
+.summary_search_field {
+	top: -2px;
+	position: relative;
+}

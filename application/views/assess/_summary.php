@@ -11,6 +11,10 @@
 					Summary
 					<!--<span id="summary_message"></span>-->
 				</span>
+				<input class="summary_search_field" />
+				<a href="#" class="clean_summary_search_field" >
+					<i class="icon-large icon-remove"></i>
+				</a>
 				<a class="ml_10 research_arrow hideShow" onclick="return false;" href="#">
 					<img src="<?php echo base_url();?>img/arrow.png">
 				</a>
@@ -51,7 +55,7 @@
 				?>				
 			</div>
 			<div class="filter_expand_btn_wrapper" >	
-				<a href="#" id="filter_expand_btn">
+				<a href="#" class="filter_expand_btn">
 					<?php echo img('img/filter_expand_btn.jpg') ?>
 				</a>
 			</div>

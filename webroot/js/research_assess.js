@@ -1111,10 +1111,33 @@ $(function() {
 	var filter_toggler_flag = 0
 		, current_filter_list_wrapper_height = 200;
 	
+	$('.clean_summary_search_field').on('click', function(e) {
+		e.preventDefault();
+		var search_field = $('.summary_search_field');
+		
+		search_field.val('');
+		search_field.trigger('keyup');
+		
+		return false;
+	});
+	
+	$('.summary_search_field').on('keyup', function() {
+		var elem = $(this)
+		  , elem_value = elem.val()
+		  , filters = $('.item_line');
+		  
+		if (elem_value)
+		{
+			filters.hide();			
+			$('.item_line:contains("' + elem_value + '")').show();
+		} else {
+			filters.show();
+		}
+	});
 	/*
 	 * Summary filter section expanding
 	 */
-	$('#filter_expand_btn').on('click', function(e) {
+	$('.filter_expand_btn').on('click', function(e) {
 		e.preventDefault();
 					
 		var elem = $(this)
