@@ -53,7 +53,7 @@ class ManufacturerSpider(SearchSpider):
 
 		# if we were redirected to a product page, it means it's an exact match so stop search here
 		if results:
-			#response.meta['pending_requests'] = []
+			response.meta['pending_requests'] = []
 			for result in results:
 				# we are already on the product page
 				#product_urls.add(product_url)
