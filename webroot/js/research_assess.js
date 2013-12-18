@@ -4077,6 +4077,9 @@ function prevSibilfunc(curentSibil){
         autoOpen: false,
         resizable: false,
         modal: true,
+		drag : function(event, ui) {
+			console.log(ui);
+		}
 //        buttons: {
 //            'Save': function() {
 //                // get columns params
