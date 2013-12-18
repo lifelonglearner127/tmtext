@@ -1045,7 +1045,7 @@ $(function() {
             "sTitle" : "Chars", 
             "sName":"H2_Tags_Count1", 
             "sWidth": "1%",
-            "sClass" :  "HTags1"
+            "sClass" :  "HTags1 CharsHTags1"
         },
         {
             "sTitle": "Reviews",
@@ -4778,43 +4778,32 @@ $('table#tblAssess').floatThead({
 	}
 });
 
-function darkHeaders() {
-
+function darkHeaders(id) {
 	if($("table[id^=tblAssess]")){
-	
-		if($("#tblAssess .Snapshot1.ui-state-default")){$("#tblAssess .Snapshot1.ui-state-default").css({
-			"background": "url('/producteditor/css/smoothness/images/ui-bg_glass_75_dadada_1x400.png') 50% 50%",
-			"background-repeat": "repeat-x"
-		})}
-		
-		/*  
-		if($("table[id^=tblAssess] th[style*='repeat']")) {
-			$("table[id^=tblAssess] th[style*='repeat']").css({"background": "#e6e6e6 url('/producteditor/css/smoothness/images/ui-bg_glass_75_e6e6e6_1x400.png') 50% 50%",	"background-repeat": "repeat-x"	})
-		}
-		if($("table[id^=tblAssess] th[style*='border-left-width: 2px;'], td[style*='border-left-width: 2px;']")){
-			$("table[id^=tblAssess] th[style*='border-left-width: 2px;'], td[style*='border-left-width: 2px;']").css("border-left-width", "1px");
+		if($("a#assess_tbl_show_case_details_compare[class^=active_link]")){
+			if($("#tblAssess th[class*=1][style*='border-left-width: 2px']:not([class*=_1])")){$("#tblAssess th[class*=1][style*='border-left-width: 2px']:not([class*=_1])").css("border-left", "1px solid #ccc");}
+			$("#tblAssess th[class*=1]:not([class*=_1]):first").css("border-left", "2px solid #ccc");
+			$("#tblAssess tr").each(function(){
+				if($(this).find("td[class*=1][style*='border-left-width: 2px']:not([class*=_1])"))
+				{$(this).find("td[class*=1]:not([class*=_1])").css("border-left", "1px solid #ccc");}
+				$(this).find("td[class*=1]:not([class*=_1]):first").css("border-left", "2px solid #ccc");
+				
+			});
 		}
 		
-		var count = $("table[id^=tblAsses] th:visible").length;
-		var headers =  Math.round((count / 2) - 1);
-		$("table[id^=tblAsses] th:visible:gt(" + headers + "):not(th[aria-label*='Gap']):not(th[aria-label*='Duplicate'])").css({
-			"background": "url('/producteditor/css/smoothness/images/ui-bg_glass_75_dadada_1x400.png') 50% 50%",
-			"background-repeat": "repeat-x"
-		});
-		$("table[id^=tblAsses] th:visible:gt(" + headers + "):first").css("border-left", "2px solid #ccc");
-		$("table[id^=tblAsses] tr").each(function()
-		{
-			$(this).find("td:gt(" + headers + "):first").css("border-left", "2px solid #ccc");
-		});*/
 	}
 	$('table#tblAssess').floatThead('reflow');
+	
+	//console.log(id);
 }
+
 var scrollScore = 0;
 $(window).scroll(function() {
 	scrollScore++;
-	if (scrollScore % 10 == 0) {
+	if (scrollScore % 15 == 0) {
 		$('table#tblAssess').floatThead('reflow');
 	}
+	console.log(scrollScore);
 });
 $('#tableScrollWrapper').css("overflow-y", "hidden");
 $( "div[id^=tblAssess_length], div[id^=assess_tbl_show_case], div[class^=dataTables_filter], div[id^=tblAssess_processing]" ).wrapAll( "<div class='fg-toolbar ui-toolbar ui-widget-header ui-corner-tl ui-corner-tr ui-helper-clearfix'></div>" );
@@ -4839,7 +4828,7 @@ $('#assess_tbl_show_case_details_compare').click(function() {
 	});
 	$("li[class*=boxes] div[class*=ui-icon-gripsmall-diagonal-se]").css("display", "none");
 	$("li[class*=boxes] div[class*=ui-resizable-e]").css("display", "none");
-	darkHeaders();
+	darkHeaders($(this));
 });
 $('#assess_tbl_show_case_report').click(function() {
 	$('table#tblAssess').floatThead({
@@ -4871,8 +4860,7 @@ $('#research_assess_update').click(function() {
 	//darkHeaders();
 });
 $('.ui-dialog-titlebar-close').click(function() {
-	if($("div[id=assess_tbl_show_case] a[class=active_link]")){darkHeaders();}
-	//darkHeaders();
+	if($("div[id=assess_tbl_show_case] a[class=active_link]")){darkHeaders($(this));}
 });
 if ($("table[id^=tblAsses] th[class*=1]:not([class*=_1]):first")) {
 	//darkHeaders();
