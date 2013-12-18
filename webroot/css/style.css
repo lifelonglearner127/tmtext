@@ -2610,7 +2610,7 @@ li.selected-url{
 	display: none;
 }
 .filter_expand_btn_wrapper {
-	
+	margin: 60px 0 0 0;
 }
 .filter_expand_btn_wrapper img {
 	position: absolute;
@@ -2623,4 +2623,8 @@ li.selected-url{
 }
 .popover_close_btn {
 	float: right;
+}
+.show_filters_configuration_popup {
+	position: relative;
+	top: -2px;
 }

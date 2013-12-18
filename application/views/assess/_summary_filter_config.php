@@ -13,7 +13,7 @@
 					<div>
 						<input type="checkbox" class="<?php echo $filter_item['data_filter_id'] ?>_config_class summary_filter_config_item" name="<?php echo $filter_item['data_filter_id'] ?>_config_name" id="<?php echo $filter_item['data_filter_id'] ?>_config_id" value="1" <?php echo isset($filter_item['is_default']) && $filter_item['is_default'] ? 'checked' : '' ?> data-realfilterid="<?php echo $filter_item['data_filter_id'] ?>"/>
 						<label for="<?php echo $filter_item['data_filter_id'] ?>_config_id" style="display: inline">
-							<?php echo $filter_item['label'] ?>
+							<?php echo rtrim($filter_item['label'], ':') ?>
 						</label>
 					</div>
 				<?php endforeach ?>
