@@ -1977,7 +1977,10 @@ var scrollYesOrNot = true;
 	function fillReportSummary(summary, batch_prefix)
 	{			
 		var batch_prefix = batch_prefix || 'batch_me_';
-				
+		
+		$('.' + batch_prefix + 'batch1_name').html($('select[name="research_assess_batches"]:selected').text());
+		$('.' + batch_prefix + 'batch2_name').html($('#research_assess_compare_batches_batch:selected').text());
+		
 		for (var it = 0; it < summaryFieldNames.length; it++)
 			if (summary[summaryFieldNames[it]] !== undefined)
 			{			
