@@ -26,6 +26,7 @@ class ManufacturerSpider(SearchSpider):
 	def init_sub(self):
 		#TODO: find a better way for this
 		self.threshold = 0.5
+		self.fast = 0
 
 
 
