@@ -26,7 +26,8 @@ class Crons extends MY_Controller {
             'stop_do_stats'=>true,
             'get_stats_status'=>true,
             'stop_do_stats'=>true,
-            'delete_batch_items_from_statistics_new' => true
+            'delete_batch_items_from_statistics_new' => true,
+            'fix_imported_data_parsed_models'=>true
         ));
         $this->load->library('helpers');
         $this->load->helper('algoritm');
@@ -2755,6 +2756,42 @@ class Crons extends MY_Controller {
         }
         $string = trim(preg_replace('/\s+/',' ',implode(' ', $str_arr)));
         return $string;
+    }
+    function fix_imported_data_parsed_models(){
+        $this->load->model('site_categories_model');
+        $sql = "select imported_data_id as item, `value` as parsed_attributes 
+            from imported_data_parsed 
+            where `key`='parsed_attributes' and `value` like '%\"model\"%' and model is null";
+        $query = $this->db->query($sql);
+        if($query->num_rows===0){
+            exit;
+        }
+        $i = 0;
+        $start = microtime(true);
+        foreach($query->result() as $res){
+            $pa = unserialize($res->parsed_attributes);
+            if(isset($pa['model'])){
+                $data=array(
+                    'model'=>$pa['model'],
+                );
+                $this->db->where('imported_data_id',$res->item);
+                $this->db->update('imported_data_parsed',$data);
+                ++$i;
+            }
+            if(microtime(TRUE)-$start>200){
+                break;
+            }
+        }
+        if(microtime()-$start>200){
+            exit;
+        }
+        if(strtoupper(substr(PHP_OS, 0, 3))==='WIN'){
+            $call_link = base_url() . "fix_imported_data_parsed_models";
+            $this->site_categories_model->curl_async($call_link);
+        }
+        else{
+            shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/fix_imported_data_parsed_models > /dev/null 2>/dev/null &");
+        }
     }
 
 }
