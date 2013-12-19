@@ -27,7 +27,8 @@ class Crons extends MY_Controller {
             'get_stats_status'=>true,
             'stop_do_stats'=>true,
             'delete_batch_items_from_statistics_new' => true,
-            'fix_imported_data_parsed_models'=>true
+            'fix_imported_data_parsed_models'=>true,
+            'fixmodel_length'=>true
         ));
         $this->load->library('helpers');
         $this->load->helper('algoritm');
@@ -547,8 +548,8 @@ class Crons extends MY_Controller {
 
                     
                     $time_start = microtime(true);
+                    $m= '';
                     if (isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model']) && strlen($data_import['parsed_attributes']['model'])>3) {
-                        $m= '';
                         if($data_import['model'] && strlen($data_import['model'])>3){
                             $m = $data_import['model'];
                         }else{
@@ -2791,6 +2792,23 @@ class Crons extends MY_Controller {
         }
         else{
             shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/fix_imported_data_parsed_models > /dev/null 2>/dev/null &");
+        }
+    }
+    function fixmodel_length(){
+        $sql = "SELECT imported_data_id as dataid, model
+            FROM  `imported_data_parsed` 
+            WHERE CHAR_LENGTH(  `model` ) <4
+            AND  `key` =  'url'";
+        $query = $this->db->query($sql);
+        if($query->num_rows===0){
+            exit;
+        }
+        foreach($query->result() as $res){
+            $data=array(
+                'model'=>substr(0,8,uniqid($res->model))
+            );
+            $this->db->where('imported_data_id',$res->dataid);
+            $this->db->update('imported_data_parsed',$data);
         }
     }
 
