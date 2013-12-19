@@ -1338,7 +1338,7 @@ $(function() {
             }).done(function(data){
                 if(data.length > 0){
                     console.log('1');
-                    
+                    $('table#tblAssess').floatThead('reflow');
                     var str = '';
                     var showcount = 12;
                     if(compare_batch_id != '0' && compare_batch_id !='all'){
@@ -4807,7 +4807,7 @@ function darkHeaders(id) {
 	}
 	$('table#tblAssess').floatThead('reflow');
 }
-
+/*
 var scrollScore = 0;
 $(window).scroll(function() {
 	scrollScore++;
@@ -4815,7 +4815,7 @@ $(window).scroll(function() {
 		$('table#tblAssess').floatThead('reflow');
 	}
 	//console.log(scrollScore);
-});
+});*/
 $('#tableScrollWrapper').css("overflow-y", "hidden");
 $( "div[id^=tblAssess_length], div[id^=assess_tbl_show_case], div[class^=dataTables_filter], div[id^=tblAssess_processing]" ).wrapAll( "<div class='fg-toolbar ui-toolbar ui-widget-header ui-corner-tl ui-corner-tr ui-helper-clearfix'></div>" );
 $( "#tblAssess_info, #tblAssess_paginate" ).wrapAll( "<div class='fg-toolbar ui-toolbar ui-widget-header ui-corner-bl ui-corner-br ui-helper-clearfix'></div>" );
