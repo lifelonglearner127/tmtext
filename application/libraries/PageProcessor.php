@@ -92,13 +92,59 @@ class PageProcessor {
 		return preg_match_all("/".$regex."/i", $url, $matches);
 	}
 
+	public function array_find_keys_multi(array $array, $needle)
+	{
+	    $keys = array();
+
+	    foreach ($array as $key => $value) {
+	    	if ($key === $needle) {
+	    		if (is_array($value)) {
+	    			foreach ($value as $k => $v) {
+        				$keys[] = $v;
+	    			}
+	    		}
+	    	}
+	        if (is_array($array[$key])) {
+	        	foreach ($this->array_find_keys_multi($array[$key],$needle) as $k => $v) {
+        	 		$keys[] = $v;
+	        	}
+	        }
+	    }
+
+	    return $keys;
+	}
+
+	public function get_links($html) {
+		$description_anchors = array();
+		if ($q = count($this->array_find_keys_multi($html, 'a'))) {
+			$links = array();
+			foreach($this->array_find_keys_multi($html, 'a') as $v) {
+				$links[] = array(
+					'href' => $v['href'],
+					'text' => $v['#text'][0]
+				);
+			}
+
+			$description_anchors = array(
+				'quantity' => $q,
+				'links' => $links
+			);
+		}
+
+		return $description_anchors;
+	}
+
 	public function process() {
 		$methodName = 'process_'.$this->hostName;
 
 		if	( method_exists($this, $methodName) ) {
 			$result = $this->$methodName();
 			foreach ($result as &$value) {
-				$value = trim($value);
+				if(!is_array($value)) {
+					$value = trim($value);
+				} else {
+					$value = serialize($value);
+				}
 			}
 
 			foreach ($result as $k => $v) {
@@ -221,6 +267,9 @@ class PageProcessor {
 				$description[] = $line;
 			}
 		}
+		if (empty($description_anchors)) {
+			$description_anchors = $this->get_links($this->nokogiri->get('#prodInfoSpaceBottom div.BodyXL div')->toArray());
+		}
 
 		foreach($this->nokogiri->get('#prodInfoSpaceBottom div.BodyXL table tr td') as $item) {
 			if (isset($item['#text'])) {
@@ -239,6 +288,9 @@ class PageProcessor {
 					}
 				}
 			}
+		}
+		if (empty($description_anchors)) {
+			$description_anchors = $this->get_links($this->nokogiri->get('#prodInfoSpaceBottom div.BodyXL table')->toArray());
 		}
 
 		foreach($this->nokogiri->get('#prodInfoSpaceBottom div.BodyXL div li') as $item) {
@@ -267,6 +319,9 @@ class PageProcessor {
 				}
 			}
 		}
+		if (empty($description_anchors)) {
+			$description_anchors = $this->get_links($this->nokogiri->get('#prodInfoSpaceBottom div')->toArray());
+		}
 
 		if (empty($description)) {
 			foreach($this->nokogiri->get('.ql-details-short-desc') as $item) {
@@ -285,6 +340,11 @@ class PageProcessor {
 			}
 		}
 
+		if (empty($description_anchors)) {
+			$description_anchors = $this->get_links($this->nokogiri->get('div.QLBookStyle')->toArray());
+		}
+
+
 		$description = implode(' ', $description);
 
 		// #1012 issue with not full text
@@ -293,6 +353,7 @@ class PageProcessor {
 
 		if ( strlen(preg_replace('/[^a-z\d ]/i', '',$description_backup)) > strlen(preg_replace('/[^a-z\d ]/i', '',strip_tags($description))) ) {
 			$description = $description_backup;
+			$description_anchors = $this->get_links($this->nokogiri->get('#prodInfoSpaceBottom div.BodyXL')->toArray());
 		}
 
 		foreach($this->nokogiri->get('h1.productTitle') as $item) {
@@ -325,7 +386,8 @@ class PageProcessor {
 			'Product Name' => $title['#text'][0],
 			'Description' => $description,
 			'Price' => $price,
-			'Features' => $features
+			'Features' => $features,
+			'Anchors' => $description_anchors
 		);
 	}
 
