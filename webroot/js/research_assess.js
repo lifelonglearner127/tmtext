@@ -4501,6 +4501,8 @@ function prevSibilfunc(curentSibil){
         } else if (table_case == 'graph') {
 			toggleRelatedBlocks('graph', true);
             $('#graphDropDown').remove();
+            $('#show_over_time').remove();
+            $('#show_over_time_span').remove();
             $('#tblAssess_info').hide();
             var dropDownString;
             dropDownString = '<select id="graphDropDown" style="width: 235px" >';
@@ -4512,7 +4514,7 @@ function prevSibilfunc(curentSibil){
                 dropDownString += '<option value="revision" >Reviews</option>';
                 dropDownString += '<option value="Features" >Features</option>';
 //                dropDownString += '<option value="own_price" >Prices</option>';
-            dropDownString += '</select>';
+            dropDownString += '</select><input id="show_over_time" style="width: 30px;" type="checkbox"><span id="show_over_time_span">Show changes over time</span>';    
             $('#tblAssess_info').after(dropDownString);
             $('#tblAssess_paginate').hide();
             $('.board_view').hide();
