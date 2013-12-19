@@ -1008,7 +1008,7 @@ class PageProcessor {
 				foreach ($item['#text'] as $k=>$i) {
 					$line = trim($i);
 					if (!empty($line)) {
-						$description[] = $line;
+						$descriptionLong[] = $line;
 					}
 				}
 			}
@@ -1034,12 +1034,12 @@ class PageProcessor {
 			}
 		}
 
-		if (empty($description)) {
+		if (empty($descriptionLong)) {
 			foreach($this->nokogiri->get('.content .productDescriptionWrapper') as $item) {
 				foreach ($item['#text'] as $k=>$i) {
 					$line = trim($i);
 					if (!empty($line)) {
-						$description[] = $line;
+						$descriptionLong[] = $line;
 					}
 				}
 			}
