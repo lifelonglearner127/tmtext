@@ -36,6 +36,9 @@ class ProcessText():
 		text = re.sub("[- ]*[iI]nch", "\"", text)
 		text = re.sub("(?<=[0-9])[iI][nN](?!=c)","\"", text)
 
+		# normalize variant of " to " (inches symbol) - found on sony.com
+		text = re.sub(u'\u201d', "\"", text, re.UNICODE)
+
 		# normalize feet
 		text = re.sub("[- ]*[fF]eet", "\'", text)
 
