@@ -1635,7 +1635,8 @@ function highChart(graphBuild){
             },
             yAxis: {
                 minPadding: 0.1,
-                maxPadding: 2
+                maxPadding: 2,
+                min:0
             },
             tooltip: {
                 shared: true,
