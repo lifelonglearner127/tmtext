@@ -2417,7 +2417,7 @@ var generate_url_check = GetURLParameter('generate_url_check');
         $('#assessDetails_Model1').val(add_data.model1);
         $('#assessDetails_url1').val(url_compare);
         $('#assess_open_url_btn1').attr('href', url_compare);
-        $('#assessDetails_Price1').val(add_data.own_price1);
+        $('#assessDetails_Price1').val(add_data.competitors_prices[0]);
         var short_total_not_01 = '';
         var long_total_not_01 = '';
         var long_wc_total_not_01 = 0;
