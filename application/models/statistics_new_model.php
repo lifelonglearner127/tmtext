@@ -209,8 +209,7 @@ class Statistics_new_model extends CI_Model {
         $query= $this->db->get("statistics_new");    
         if($query->num_rows()>0){
         
-        $row = $query->first_row();
-           $this->db->where('id', $row->id);
+           $this->db->where('imported_data_id', $imported_data_id);
            $this->db->update('statistics_new', $idata);
         }else{
         
