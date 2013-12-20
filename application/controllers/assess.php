@@ -999,7 +999,7 @@ class Assess extends MY_Controller {
         $this->output->set_content_type('application/json')
                 ->set_output(json_encode($comparison));
     }
-	
+
     public function export_assess() {
 
         $this->load->model('statistics_new_model');
@@ -2477,7 +2477,7 @@ class Assess extends MY_Controller {
                 }
             }
         }
-		
+
 		if($res_array[0]){		
 			foreach ($res_array[0] as $value => $key) {
 				if($value == "created"){
@@ -2528,7 +2528,7 @@ class Assess extends MY_Controller {
 					$value = 'Item ID';
 					$res_array_keys[$key] = $value;
 				}
-				
+
 				if($value == "H1_Tags0"){
 					$value = 'H1 Tags';
 					$res_array_keys[$key] = $value;
@@ -2689,7 +2689,7 @@ class Assess extends MY_Controller {
 		}
 		array_unshift($res_array, $res_array_keys);
         $this->load->helper('csv');
-		array_to_csv($res_array, $batch_name . "(" . date("Y-m-d H:i") . ').csv');
+        array_to_csv($res_array, $batch_name . "(" . date("Y-m-d H:i") . ').csv');
     }
 
     public function products() {
@@ -3231,10 +3231,10 @@ class Assess extends MY_Controller {
 //            $st_time=  microtime(true);
 
         $qty = 1;
+        $c=0;
+        $total_rows = count($results);
         foreach ($results as $row_key => $row) {
-            if ($row->title_seo_pharses1) {
-                exit($row->title_seo_pharses1);
-            }
+             if ($c >= $display_start) {
 //            $long_description_wc = $row->long_description_wc;
 //            $short_description_wc = $row->short_description_wc;
             $success_filter_entries = array();
@@ -4424,6 +4424,13 @@ class Assess extends MY_Controller {
             if ($this->checkSuccessFilterEntries($success_filter_entries, $build_assess_params->summaryFilterData)) {
                 $result_table[] = $result_row;
             }
+            }
+             if ($display_length > 0) {
+                    if ($c >= ($display_start + $display_length - 1)) {
+                        break;
+                    }
+                }
+                $c++;
 //            ++$qty;
 //            if($qty>$display_length+$display_start)break;
         }
@@ -4646,7 +4653,7 @@ class Assess extends MY_Controller {
 //            header('Mem-and-Time2-BAT05: '.memory_get_usage().'-'.$dur);
 //            $st_time=  microtime(true);
 
-        $total_rows = count($result_table);
+       // $total_rows = count($result_table);
 
         $echo = intval($this->input->get('sEcho'));
 
@@ -4664,11 +4671,10 @@ class Assess extends MY_Controller {
 //            $st_time=  microtime(true);
 
         if (!empty($result_table)) {
-            $c = 0;
-
+          
             foreach ($result_table as $data_row) {
 
-                if ($c >= $display_start) {
+               
 
                     if (isset($data_row->recommendations)) {
                         // this is for absent product in selected batch only
@@ -4888,15 +4894,8 @@ class Assess extends MY_Controller {
                         $output_row[] = $data_row->Duplicate_Content;
                     }
                     $output['aaData'][] = $output_row;
-                }
+                
 
-
-                if ($display_length > 0) {
-                    if ($c >= ($display_start + $display_length - 1)) {
-                        break;
-                    }
-                }
-                $c++;
 //            //Debugging
 //            $dur = microtime(true)-$st_time;
 //            header('Mem-and-Time3-1-BAT: '.memory_get_usage().'-'.$dur.'-'.$c);
