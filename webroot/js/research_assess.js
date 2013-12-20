@@ -4929,13 +4929,13 @@ $('.ui-dialog-titlebar-close').click(function() {
 
         $.post(base_url + 'index.php/assess/assess_save_urls', {'url': url}, function(data) {
             $('#generate_url_link').val(base+data);
-            $('#generate_url').text('Delete URL');
+            $('#generate_url').text('Delete Link');
 
         });
 
    },(function(){
        $('#generate_url_link').val('');
-       $('#generate_url').text('Generate URL');
+       $('#generate_url').text('Share Link');
        
    })
     );    
