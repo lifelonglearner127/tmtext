@@ -990,14 +990,16 @@ class Assess extends MY_Controller {
         $this->output->set_content_type('application/json')
                 ->set_output(json_encode($comparison));
     }
-
+	
     public function export_assess() {
 
         $this->load->model('statistics_new_model');
+		//print_r($this->load->model('statistics_new_model'));
         $batch_id = (int) trim($_GET['batch_id']);
         $cmp_selected = trim(strtolower($_GET['cmp_selected']));
         $selected_columns = $_GET['checked_columns'];
         $selected_columns = explode(',', trim($selected_columns));
+		//print_r($selected_columns);
         $batch_name = $_GET['batch_name'];
 
         $summaryFilterData = $this->input->get('summaryFilterData');
@@ -2466,13 +2468,224 @@ class Assess extends MY_Controller {
                 }
             }
         }
-
-
-        array_unshift($res_array, $line);
-
-        $this->load->helper('csv');
-
-        array_to_csv($res_array, $batch_name . "(" . date("Y-m-d H:i") . ').csv');
+		
+		if($res_array[0]){		
+			$res_array_keys = array_flip($res_array[0]);
+			//print_r($res_array_keys);die;
+			foreach ($res_array_keys as $key => $value) {
+				if($value == "created"){
+					$value = 'Created';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "product_name"){
+					$value = 'Product name';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "url"){
+					$value = 'Url';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "Short_Description"){
+					$value = 'Product Description';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "short_description_wc"){
+					$value = 'Short Desc # Words';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "price_diff"){
+					$value = 'Price difference';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "column_features"){
+					$value = 'Features';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "average_review"){
+					$value = 'Avg Review';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "column_reviews"){
+					$value = 'Reviews';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "title_seo_phrases"){
+					$value = 'Title keywords';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "item_id"){
+					$value = 'Item ID';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "item_id"){
+					$value = 'Item ID';
+					$res_array_keys[$key] = $value;
+				}
+				
+				if($value == "H1_Tags0"){
+					$value = 'H1 Tags';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "model"){
+					$value = 'Model';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "Model (1)"){
+					$value = 'Model(2)';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "Product Name (1)"){
+					$value = 'Product Name (2)';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "meta_keywords"){
+					$value = 'Meta keywords(1)';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "meta_description"){
+					$value = 'Meta description';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "Meta_Description_Count"){
+					$value = 'Meta Desc # Words';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "Custom_Keywords_Short_Description"){
+					$value = 'Custom Keywords Short Description';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "Custom_Keywords_Long_Description"){
+					$value = 'Custom Keywords Long Description';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "column_external_content"){
+					$value = 'column_external_content';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "column_external_content(1)"){
+					$value = 'column_external_content(2)';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "Page_Load_Time"){
+					$value = 'Page Load Time';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "column_external_content"){
+					$value = 'Column external content';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "H1_Tags_Count0"){
+					$value = 'H1 chars count(1)';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "H1_Tags_Count0(1)"){
+					$value = 'H1 chars count(2)';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "H2_Tags0"){
+					$value = 'H2 Tags(1)';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "H2_Tags_Count0"){
+					$value = 'H2 chars count';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "H2_Tags1"){
+					$value = 'H2 Tags(2)';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "H2_Tags_Count1"){
+					$value = 'H2 chars count(1)';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "Gap analysis"){
+					$value = 'Gap analysis';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "Duplicate_Content"){
+					$value = 'Duplicate Content';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "Item Id (1)"){
+					$value = 'Item Id (2)';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "average_review(1)"){
+					$value = 'Average review(1)';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "Url (1)"){
+					$value = 'Url(2)';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "Short Description (1)"){
+					$value = 'Product Description (2)';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "Short Desc # Words (1)"){
+					$value = 'Short Desc # Words (2)';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "Long Desc # Words (1)"){
+					$value = 'Long Desc # Words (2)';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "Meta_Keywords(1)"){
+					$value = 'Meta Keywords(2)';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "Meta_Description (1)"){
+					$value = 'Meta Description (2)';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "Meta Desc Words (1)"){
+					$value = 'Meta Desc Words (2)';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "Page Load Time (1)"){
+					$value = 'Page Load Time (2)';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "column_features(1)"){
+					$value = 'Features(2)';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "column_reviews(1)"){
+					$value = 'Column reviews(2)';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "title_seo_phrases(1)"){
+					$value = 'Title keywords(2)';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "H2_Tags0(1)"){
+					$value = 'H2 Tags(1)(2)';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "H1_Tags0(1)"){
+					$value = 'H1 Tags';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "H2_Tags_Count0(1)"){
+					$value = 'H2 chars count(2)';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "H2_Tags1(1)"){
+					$value = 'H2 Tags(2)(2)';
+					$res_array_keys[$key] = $value;
+				}
+				if($value == "H2_Tags_Count1(1)"){
+					$value = 'H2 chars count(2)';
+					$res_array_keys[$key] = $value;
+				}
+			}
+		}
+		echo '<pre>';
+		print_r($res_array);
+		echo '</pre>';
+		// array_unshift($res_array, $res_array_keys);
+        // $this->load->helper('csv');
+		// array_to_csv($res_array, $batch_name . "(" . date("Y-m-d H:i") . ').csv');
     }
 
     public function products() {
