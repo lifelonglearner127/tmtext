@@ -4777,6 +4777,7 @@ var search_text = GetURLParameter('search_text');
         $(this).text('Exporting...');
         var main_path=  $(this).prop('href');
         $(this).attr('href', $(this).prop('href')+'?batch_id='+batch_id+'&cmp_selected='+cmp_selected+'&checked_columns='+columns_checked+'&batch_name='+batch_name+'&summaryFilterData='+summaryFilterData);
+		console.log();
         $.fileDownload($(this).prop('href'))
                 .done(function() {
             $('#research_assess_export').removeAttr('disabled');
@@ -4810,15 +4811,6 @@ function darkHeaders(id) {
 	}
 	$('table#tblAssess').floatThead('reflow');
 }
-/*
-var scrollScore = 0;
-$(window).scroll(function() {
-	scrollScore++;
-	if (scrollScore % 15 == 0) {
-		$('table#tblAssess').floatThead('reflow');
-	}
-	//console.log(scrollScore);
-});*/
 $('#tableScrollWrapper').css("overflow-y", "hidden");
 $( "div[id^=tblAssess_length], div[id^=assess_tbl_show_case], div[class^=dataTables_filter], div[id^=tblAssess_processing]" ).wrapAll( "<div class='fg-toolbar ui-toolbar ui-widget-header ui-corner-tl ui-corner-tr ui-helper-clearfix'></div>" );
 $( "#tblAssess_info, #tblAssess_paginate" ).wrapAll( "<div class='fg-toolbar ui-toolbar ui-widget-header ui-corner-bl ui-corner-br ui-helper-clearfix'></div>" );
@@ -4872,11 +4864,7 @@ $('#research_assess_update').click(function() {
 $('.ui-dialog-titlebar-close').click(function() {
 	if($("div[id=assess_tbl_show_case] a[class=active_link]")){darkHeaders($(this));}
 });
-if ($("table[id^=tblAsses] th[class*=1]:not([class*=_1]):first")) {
-	//darkHeaders();
-}
-	
-	//darkHeaders();
+
 	
 	
 	$('*[id*=mytext]:visible').each(function() {
