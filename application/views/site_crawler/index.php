@@ -39,7 +39,7 @@
 		<div class="site_crawler_content">
 			<h3>Add to list:</h3>
 			<div class="row-fluid">
-				<div class="search_area uneditable-input span10" onClick="this.contentEditable='false';" style="cursor: text; width: 765px; height: 200px; overflow : auto;" id="Add_List">
+				<div class="search_area uneditable-input span10" onClick="this.contentEditable='false';" style="cursor: text; width: 765px; height: 180px; overflow : auto;" id="Add_List">
 				</div>
 				<span id="system_sitecrawler_btnFileUpload" class="btn btn-success fileinput-button ml_15">
 					Upload
@@ -101,9 +101,10 @@
       </script>
 
 
-			<h3 class="span3 current_list_title">Crawl list: <br/><small nowrap></small></h3>
+			<h3 class="span3 current_list_title" style="margin-left:0;">Crawl list: <br/><small nowrap></small></h3>
 
-            <select name="batch" class="span4 pull-left mt_15" style="width: 125px;" id="batches">
+                   <div style="float:left;font-size: 18px;padding-top: 20px;">Batch: </div>
+                <select name="batch" class="span4 pull-left mt_15" style="width: 125px;" id="batches">
 				<?php foreach($batches_list as $ks => $vs):?>
 				<option value="<?php echo $ks; ?>"><?php echo $vs; ?></option>
 				<?php endforeach;?>
@@ -113,8 +114,9 @@
                         <input type="checkbox" id="unsnapshoted_items" value="on" />
 			<button id="crawl_batch" class="btn new_btn btn-success mt_15 ml_10">Crawl</button>
 			<button id="re_crawl_batch" class="btn new_btn btn-success mt_15 ml_10">Re-Crawl</button>
-                        <div id="search_crawl_div" >
-                            <input type="text" class="span2 pull-left ml_10" name="search_crawl_data" >
+                        <div id="search_crawl_div" style="width: 750px;padding-top: 15px;" >
+                            <div style="float:left;font-size: 18px;">URL:</div>
+                           <div style="float: left;"> <input type="text" class="span2 pull-left ml_10" style="width:250px;margin-left: 33px !important;" name="search_crawl_data" ></div>
                             <button id="apply_search_data" class="btn new_btn btn-success ml_10"><i class="icon-white icon-ok"></i>&nbsp;Apply</button>
                             <button id="clear_search_data" class="btn new_btn btn-success  ml_10"><i class="icon-white icon-ok"></i>&nbsp;Clear</button>
                             <button id="queue_locked" class="btn new_btn btn-success  ml_50"><i class="icon-white icon-ok"></i>&nbsp;Queue Locks</button>
