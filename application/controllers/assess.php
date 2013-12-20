@@ -2470,9 +2470,7 @@ class Assess extends MY_Controller {
         }
 		
 		if($res_array[0]){		
-			$res_array_keys = array_flip($res_array[0]);
-			//print_r($res_array_keys);die;
-			foreach ($res_array_keys as $key => $value) {
+			foreach ($res_array[0] as $value => $key) {
 				if($value == "created"){
 					$value = 'Created';
 					$res_array_keys[$key] = $value;
@@ -2661,11 +2659,11 @@ class Assess extends MY_Controller {
 				if($value == "H2_Tags0(1)"){
 					$value = 'H2 Tags(1)(2)';
 					$res_array_keys[$key] = $value;
-				}
-				if($value == "H1_Tags0(1)"){
-					$value = 'H1 Tags';
+				}/*
+				if($value === "H1_Tags0(1)"){
+					$value = 'H1 Tagss';
 					$res_array_keys[$key] = $value;
-				}
+				}*/
 				if($value == "H2_Tags_Count0(1)"){
 					$value = 'H2 chars count(2)';
 					$res_array_keys[$key] = $value;
@@ -2680,12 +2678,9 @@ class Assess extends MY_Controller {
 				}
 			}
 		}
-		echo '<pre>';
-		print_r($res_array);
-		echo '</pre>';
-		// array_unshift($res_array, $res_array_keys);
-        // $this->load->helper('csv');
-		// array_to_csv($res_array, $batch_name . "(" . date("Y-m-d H:i") . ').csv');
+		array_unshift($res_array, $res_array_keys);
+        $this->load->helper('csv');
+		array_to_csv($res_array, $batch_name . "(" . date("Y-m-d H:i") . ').csv');
     }
 
     public function products() {
