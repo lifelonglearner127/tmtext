@@ -2700,12 +2700,14 @@ echo "j  = ".$j;
         $this->db->where('key','url');
         $query = $this->db->get();
         foreach ($query->result() as $res){
-            $data=array(
-                'model'=>$model,
-                'revision'=>$res->revision+1
-                );
-            $this->db->where('imported_data_id',$res->data_id);
-            $this->db->update('imported_data_parsed',$data);
+            if($res->data_id===$dataid){
+                $data=array(
+                    'model'=>$model,
+                    'revision'=>$res->revision+1
+                    );
+                $this->db->where('imported_data_id',$res->data_id);
+                $this->db->update('imported_data_parsed',$data);
+            }
         }
     }
 
