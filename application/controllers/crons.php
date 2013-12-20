@@ -2771,7 +2771,7 @@ class Crons extends MY_Controller {
         $start = microtime(true);
         foreach($query->result() as $res){
             $pa = unserialize($res->parsed_attributes);
-            if(isset($pa['model'])){
+            if(isset($pa['model'])&& strlen($pa['model'])>3){
                 $data=array(
                     'model'=>$pa['model'],
                 );
@@ -2783,7 +2783,7 @@ class Crons extends MY_Controller {
                 break;
             }
         }
-        if(microtime()-$start>200){
+        if(microtime()-$start<200||$i==0){
             exit;
         }
         if(strtoupper(substr(PHP_OS, 0, 3))==='WIN'){
