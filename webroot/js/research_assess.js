@@ -1440,6 +1440,7 @@ $(function() {
         },
           "aoColumns":columns
     });
+
 function highChart(graphBuild){
 	var batch_set = $('.result_batch_items:checked').val() || 'me';	
     var batch1Value = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val();
@@ -1474,9 +1475,22 @@ function highChart(graphBuild){
         var graphName2 = '';
         var cloneToolTip = null;
         var cloneToolTip2 = null;
+        var valueupdated = [];
+        valueupdated[0] = '';
+        valueupdated[1] = '';
+        if(data.length) {
+            for(var j=0;j<data.length;j++){
+                if(data[j].updated[j]){
+                    $.each(data[j].updated[j],function(i,k){
+                        if(i ==0)
+                            valueupdated[j] += "newest crawl  "+$(this)[0].updated;
+                        else
+                            valueupdated[j] += "<br>newest_"+i+" crawl "+$(this)[0].updated;
     
-       // console.log(data);
-        if(data) {
+                    })
+
+                }
+            }
             /***First Batch - Begin***/
             if(data[0] && data[0].product_name.length > 0){
                 valueName[0] = data[0].product_name;
@@ -1653,6 +1667,12 @@ function highChart(graphBuild){
                 formatter: function() {
                     var result = '<small>'+this.x+'</small> <div class="highcharts-tooltip-close" onclick=\'$(".highcharts-tooltip").css("visibility","hidden"); $("div .highcharts-tooltip span").css("visibility","hidden");\' style="float:right;">X</div><br />';
                     var j;
+                     if($('#show_over_time').prop('checked')){
+                            var display_property = "block";
+                        }else{      
+                            var display_property = "none";
+
+                        }
                     $.each(this.points, function(i, datum) {
                         if(i > 0)
                             result += '<hr style="border-top: 1px solid #2f7ed8;margin:0;" />';
@@ -1664,6 +1684,7 @@ function highChart(graphBuild){
                         result += '<br /><span>' + valueName[j][datum.x] + '</span>';
                         result += '<br /><a href="'+valueUrl[j][datum.x]+'" target="_blank" style="color: blue;" >' + valueUrl[j][datum.x] + '</a>';
                         result += '<br /><span>'+graphName1+' ' + datum.y + ' '+graphName2+'</span>';
+                        result += '<span style="display:'+display_property+';" class="update_class">'+valueupdated[j]+'</span>';                       
                     });
                     return result;
                 }
@@ -4327,6 +4348,8 @@ function prevSibilfunc(curentSibil){
 
         if (table_case == 'recommendations') {
             $('#graphDropDown').remove();
+            $('#show_over_time').remove();
+            $('#show_over_time_span').remove();
             $('#assess_graph').hide();
             $('#tblAssess_info').show();
             $('#tblAssess_paginate').show();
@@ -4343,6 +4366,8 @@ function prevSibilfunc(curentSibil){
             check_word_columns();
         } else if (table_case == 'details') {
             $('#graphDropDown').remove();
+            $('#show_over_time').remove();
+            $('#show_over_time_span').remove();
             $('#assess_graph').hide();
             $('#tblAssess_info').show();
             $('#tblAssess_paginate').show();
@@ -4376,6 +4401,8 @@ function prevSibilfunc(curentSibil){
 			toggleRelatedBlocks('details_compare', true);
 			
             $('#graphDropDown').remove();
+            $('#show_over_time').remove();
+            $('#show_over_time_span').remove();
             $('#assess_graph').hide();
             $('#tblAssess_info').show();
             $('#tblAssess_paginate').show();
@@ -4412,6 +4439,8 @@ function prevSibilfunc(curentSibil){
         }else if (table_case == 'details_compare_result') {
             toggleRelatedBlocks('details_compare_result', true);
             $('#graphDropDown').remove();
+            $('#show_over_time').remove();
+            $('#show_over_time_span').remove();
             $('#assess_graph').hide();
             $('#tblAssess_info').show();
             $('#tblAssess_paginate').show();
@@ -4448,6 +4477,8 @@ function prevSibilfunc(curentSibil){
         } 
         else if (table_case == 'report') {
             $('#graphDropDown').remove();
+            $('#show_over_time').remove();
+            $('#show_over_time_span').remove();
             $('#tblAssess_info').show();
             $('#tblAssess_paginate').show();
             $('#assess_graph').hide();
@@ -4457,6 +4488,8 @@ function prevSibilfunc(curentSibil){
         } else if (table_case == 'view') {
             toggleRelatedBlocks('view', true);
             $('#graphDropDown').remove();
+            $('#show_over_time').remove();
+            $('#show_over_time_span').remove();
             $('#tblAssess_info').hide();
             $('#tblAssess_paginate').hide();
             $('#assess_graph').hide();

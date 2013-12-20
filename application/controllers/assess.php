@@ -569,6 +569,15 @@ class Assess extends MY_Controller {
                 ->set_output(json_encode(strtolower($customer_name)));
     }
 
+    private function get_min_max($batch_id) {
+        $this->load->model('settings_model');
+        $this->load->model('statistics_model');
+        $this->load->model('statistics_new_model');
+ 
+            $results = $this->statistics_new_model->getStatsData_min_max($batch_id);
+            
+            return $results;
+        }
     private function get_data_for_assess($params) {
         $this->load->model('settings_model');
         $this->load->model('statistics_model');
@@ -5077,6 +5086,7 @@ class Assess extends MY_Controller {
 
             $batch_arr = array($batch_id, $batch_compare_id);
             $snap_data = array();
+            $min_max = array();
 
             $params = new stdClass();
             $params->batch_id = $batch_id;
@@ -5127,6 +5137,9 @@ class Assess extends MY_Controller {
                 $results = $cmp;
             }
 
+     $min_max[0] = $this->get_min_max($batch_id);
+     $min_max[1] = $this->get_min_max($batch_compare_id);
+
             foreach ($results as $data_row) {
                 $snap_data[0]['product_name'][] = (string) $data_row->product_name;
                 $snap_data[0]['url'][] = (string) $data_row->url;
@@ -5134,6 +5147,7 @@ class Assess extends MY_Controller {
                 $snap_data[0]['long_description_wc'][] = (int) $data_row->long_description_wc;
                 $snap_data[0]['total_description_wc'][] = (int) $data_row->short_description_wc + (int) $data_row->long_description_wc;
                 $snap_data[0]['revision'][] = (int) $data_row->revision;
+                $snap_data[0]['updated'][] =  $min_max[0];
 //                $snap_data[0]['own_price'][] = (float) $data_row->own_price;
                 $parsed_attributes_feature = unserialize($data_row->parsed_attributes);
                 if ($parsed_attributes_feature['feature_count']) {
@@ -5168,6 +5182,7 @@ class Assess extends MY_Controller {
                     $snap_data[1]['long_description_wc'][] = (int) $data_row_sim[0]->long_description_wc;
                     $snap_data[1]['total_description_wc'][] = (int) $data_row_sim[0]->short_description_wc + (int) $data_row_sim[0]->long_description_wc;
                     $snap_data[1]['revision'][] = (int) $data_row_sim[0]->review_count;
+                    $snap_data[1]['updated'][] =  $min_max[1];
 //                    $snap_data[1]['own_price'][] = (float) $data_row_sim[0]->own_price;
                     $parsed_attributes_feature = unserialize($data_row_sim[0]->parsed_attributes);
                     if ($parsed_attributes_feature['feature_count']) {

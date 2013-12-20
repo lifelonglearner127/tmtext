@@ -317,6 +317,19 @@ class Statistics_new_model extends CI_Model {
     //     return $result;
     // }
     
+    function getStatsData_min_max($params)
+    {
+        $sql="SELECT cl.updated";
+        $sql.= " FROM crawler_list cl";
+        $sql.= " JOIN research_data_to_crawler_list rdcl ON ( cl.id = rdcl.crawler_list_id )";
+        $sql.= " JOIN research_data rd ON ( rd.id = rdcl.research_data_id )";
+        $sql.= " WHERE rd.batch_id =$params AND cl.status =  'finished' GROUP BY cl.updated ORDER BY cl.updated DESC LIMIT 6";  
+        $query = $this->db->query($sql);
+       
+        $result = $query->result();
+ 
+        return $result;
+    }
     function getStatsData($params)
     {
 //        $st_time = microtime(TRUE);
