@@ -1998,9 +1998,18 @@ var scrollYesOrNot = true;
 	function fillReportSummary(summary, batch_prefix)
 	{			
 		var batch_prefix = batch_prefix || 'batch_me_';
-		
-		$('.' + batch_prefix + 'batch1_name').html($('select[name="research_assess_batches"]:selected').text());
-		$('.' + batch_prefix + 'batch2_name').html($('#research_assess_compare_batches_batch:selected').text());
+		var select_boxes = {
+			'batch_me_' : {
+				'batch1' : 'research_assess_batches',
+				'batch2' : 'research_assess_compare_batches_batch'
+			},
+			'batch_competitor_' : {
+				'batch1' : 'research_assess_batches_competitor',
+				'batch2' : 'research_assess_compare_batches_batch_competitor'
+			}
+		};
+		$('.' + batch_prefix + 'batch1_name').html($('select[name="' + select_boxes[batch_prefix]['batch1'] + '"]>option:selected').text());
+		$('.' + batch_prefix + 'batch2_name').html($('#' + select_boxes[batch_prefix]['batch2'] + '>option:selected').text());
 		
 		for (var it = 0; it < summaryFieldNames.length; it++)
 			if (summary[summaryFieldNames[it]] !== undefined)
