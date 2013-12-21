@@ -28,7 +28,7 @@
 			</span>
             <div style="float: right; margin-top: 4px; margin-right: 30px;">
                 <button id="research_assess_update" class="btn btn-success">Update</button>
-                <a href="<?php echo base_url();?>index.php/assess/export_assess" class="fileDownloadPromise btn" id="research_assess_export" >Export</a>
+                <a href="<?php echo base_url();?>index.php/assess/export_assess" class="fileDownloadPromise btn" id="research_assess_export" >Export...</a>
             </div>
 <!--            <label class="research_assess_flagged"><input type="checkbox" id="research_assess_flagged" > Only show flagged items</label>-->
             <div class="clear"></div>
