@@ -1460,8 +1460,7 @@ function highChart(graphBuild){
     var batch2Value = $(batch_sets[batch_set]['batch_compare']).find('option:selected').val();
     var batch1Name = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').text();
     var batch2Name = $(batch_sets[batch_set]['batch_compare']).find('option:selected').text();
-    var batch1Customer = $('select[name="research_assess_customers"]').find('option:selected').text();
-    var batch2Customer = $('select[id="research_assess_compare_batches_customer"]').find('option:selected').text();   
+    
     if(batch1Value == false || batch1Value == 0 || typeof batch1Value == 'undefined'){
         batch1Value = -1;
     }
@@ -1622,12 +1621,12 @@ function highChart(graphBuild){
         if(batch1Value != -1 && batch2Value != -1){
             seriesObj = [
                             {
-                                name: batch1Customer,
+                                name: batch1Name,
                                 data: value1,
                                 color: '#2f7ed8'
                             },
                             {
-                                name: batch2Customer,
+                                name: batch2Name,
                                 data: value2,
                                 color: '#71a75b'
                          }
@@ -1635,7 +1634,7 @@ function highChart(graphBuild){
         } else if(batch2Value == -1){
             seriesObj = [
                             {
-                                name: batch1Customer,
+                                name: batch1Name,
                                 data: value1,
                                 color: '#2f7ed8'
                             }
