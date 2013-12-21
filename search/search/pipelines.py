@@ -27,7 +27,13 @@ class URLsPipeline(object):
 				self.file2 = open(spider.outfile2, 'wb')
 
 			# for manufacturer spider, also write headers row
-			self.file.write("Original_URL,Match,Product_images,Product_videos\n")
+			titles = []
+			if int(spider.output) == 2:
+				titles.append("Original_URL")
+			titles.append("Match_URL")
+			titles.append("Product_images")
+			titles.append("Product_videos")
+			self.file.write(",".join(titles) + "\n")
 
 
 	def process_item(self, item, spider):

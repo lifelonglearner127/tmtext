@@ -37,6 +37,7 @@ class ManufacturerSpider(SearchSpider):
 		else:
 			items = set()
 
+		#TODO: implement support for multiple results pages?
 		results = hxs.select("//h2[@class='ws-product-title fn']//text()")
 
 		# if we were redirected to a product page, it means it's an exact match so stop search here
