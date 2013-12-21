@@ -37,7 +37,117 @@
 
 		<div class="info-message"></div>
 		<div class="site_crawler_content">
-			<h3>Add to list:</h3>
+			<!-- <h3>Add to list:</h3>
+			<div class="row-fluid">
+				<div class="search_area uneditable-input span10" onClick="this.contentEditable='false';" style="cursor: text; width: 765px; height: 180px; overflow : auto;" id="Add_List">
+				</div>
+				<span id="system_sitecrawler_btnFileUpload" class="btn btn-success fileinput-button ml_15">
+					Upload
+					<i class="icon-plus icon-white"></i>
+				</span>
+                <input id="fileupload" type="file" name="files[]" style="display: none;">
+				<script>
+				$(function () {
+					var url = '<?php echo site_url('site_crawler/upload');?>';
+					$('#fileupload').fileupload({
+						url: url,
+						dataType: 'json',
+						done: function (e, data) {
+							$.each(data.result.urls, function (index, url) {
+								$('#Add_List').append("<div>"+url+"</div>");
+							});
+							checkAddList();
+						}
+					});
+                    $('#system_sitecrawler_btnFileUpload').click(function(){
+                        $('#fileupload').trigger('click');
+                    })
+				});
+				</script>
+
+				<?php echo form_dropdown('category', $category_list, array(), 'id="category" class="mt_30 ml_15" style="width:120px"'); ?>
+				<button id="add_url_list" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Add</button>
+				<button id="add_list_delete" class="btn new_btn btn-danger mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
+			</div> -->
+
+
+			<script>
+			$('button#crawl').attr("disabled","disabled");
+
+			$('select[name="batch"]').change(function(e){
+				$('button#crawl').removeAttr("disabled");
+				if($(e.target).val() == "") {
+					$('button#snap_selected_batch').attr("disabled", "disabled");
+				} else {
+					$('button#snap_selected_batch').removeAttr("disabled");
+				}
+			});
+
+			function submitBatchSnapProcess() {
+				var batch_id = $('select[name="batch"] > option:selected').val();
+                                var unsnapshoted_items = 0;
+
+                                if($('#unsnapshoted_items').is(':checked'))
+                                    unsnapshoted_items = 1;
+
+                                $.ajax({
+                                    type: "POST",
+                                    url: base_url + 'index.php/system/add_snapshot_queue',
+                                    data: { batch_id: batch_id,type: 'site_crawl_snapshoot', unsnapshoted_items: unsnapshoted_items }
+                                }).done(function( data ) {
+                                });
+
+			}
+      </script>
+
+
+			<h3 class="span3 current_list_title" style="margin-left:0;">Crawl List: <br/><small nowrap></small></h3>
+
+                   <div style="float:left;font-size: 18px;padding-top: 20px;">Batch: </div>
+                <select name="batch" class="span4 pull-left mt_15" style="width: 125px;" id="batches">
+				<?php foreach($batches_list as $ks => $vs):?>
+				<option value="<?php echo $ks; ?>"><?php echo $vs; ?></option>
+				<?php endforeach;?>
+			</select>
+			<button id='snap_selected_batch' onclick="submitBatchSnapProcess()" disabled class='btn btn-success new_btn mt_15 ml_10'>Snap</button>
+                        <span class="item_span">Unsnapshoted Items</span>
+                        <input type="checkbox" id="unsnapshoted_items" value="on" />
+			<button id="crawl_batch" class="btn new_btn btn-success mt_15 ml_10">Crawl</button>
+			<button id="re_crawl_batch" class="btn new_btn btn-success mt_15 ml_10">Re-Crawl</button>
+      <div id="search_crawl_div" style="width: 750px;padding-top: 15px;" >
+          <div style="float:left;font-size: 18px;">URL:</div>
+         <div style="float: left;"> <input type="text" class="span2 pull-left ml_10" style="width:250px;margin-left: 33px !important;" name="search_crawl_data" ></div>
+          <button id="apply_search_data" class="btn new_btn btn-success ml_10"><i class="icon-white icon-ok"></i>&nbsp;Apply</button>
+          <button id="clear_search_data" class="btn new_btn btn-success  ml_10"><i class="icon-white icon-ok"></i>&nbsp;Clear</button>
+          <button id="queue_locked" class="btn new_btn btn-success  ml_50"><i class="icon-white icon-ok"></i>&nbsp;Queue Locks</button>
+      </div>
+
+			<div class="row-fluid mt_5">
+				<div class="search_area uneditable-input span10" style="cursor: text; width: 765px; height: 340px; overflow : auto;" id="Current_List">
+				<!-- <div id='current_list_tbl_holder'>&nbsp;</div> -->
+				<ul>
+					<lh><span><input type="checkbox" style='margin-top: -6px;' value="" id="checkAll"/></span><span style='width: 40px;'>&nbsp;</span><span style='width: 60px;'>ID</span><span>Status</span><span>Last Crawled</span><span>Category</span><span>URL</span></lh>
+				</ul>
+				</div>
+				<button id="current_list_delete" class="btn new_btn btn-danger mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
+				<button id="list_failed" class="btn new_btn btn-danger mt_10 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Show Failed</button>
+				<button id="crawl_new" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Crawl New</button>
+				<button id="crawl_all" class="btn new_btn btn-success mt_10 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Crawl All</button>
+				<button id="current_crawl" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Crawl</button>
+				<button id="current_snapshot" onclick="currentSnapshot();" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Snapshot</button>
+				<button id="current_snapshot_cmd" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Snap (cmd)</button>
+				<div class="span2 mt_15" style="width: 11%;">
+					<input type="checkbox" name="cb_crawl_now" value="1" id="cb_crawl_now" style="width:20px;">
+					<label class="control-label" for="use_files" style="display: inline;">immediately</label>
+				</div>
+				<p class='help-block'>* use checkboxes in table list to activate snapshot button</p>
+			</div>
+			<div class="row-fluid">
+				<div id="Current_List_Pager"></div>
+			</div>
+
+
+			<h3>Add to List:</h3>
 			<div class="row-fluid">
 				<div class="search_area uneditable-input span10" onClick="this.contentEditable='false';" style="cursor: text; width: 765px; height: 180px; overflow : auto;" id="Add_List">
 				</div>
@@ -71,80 +181,6 @@
 			</div>
 
 
-			<script>
-			$('button#crawl').attr("disabled","disabled");
-
-			$('select[name="batch"]').change(function(e){
-				$('button#crawl').removeAttr("disabled");
-				if($(e.target).val() == "") {
-					$('button#snap_selected_batch').attr("disabled", "disabled");
-				} else {
-					$('button#snap_selected_batch').removeAttr("disabled");
-				}
-			});
-
-			function submitBatchSnapProcess() {
-				var batch_id = $('select[name="batch"] > option:selected').val();
-                                var unsnapshoted_items = 0;
-
-                                if($('#unsnapshoted_items').is(':checked'))
-                                    unsnapshoted_items = 1;
-
-                                $.ajax({
-                                    type: "POST",
-                                    url: base_url + 'index.php/system/add_snapshot_queue',
-                                    data: { batch_id: batch_id,type: 'site_crawl_snapshoot', unsnapshoted_items: unsnapshoted_items }
-                                }).done(function( data ) {
-                                });
-
-			}
-      </script>
-
-
-			<h3 class="span3 current_list_title" style="margin-left:0;">Crawl list: <br/><small nowrap></small></h3>
-
-                   <div style="float:left;font-size: 18px;padding-top: 20px;">Batch: </div>
-                <select name="batch" class="span4 pull-left mt_15" style="width: 125px;" id="batches">
-				<?php foreach($batches_list as $ks => $vs):?>
-				<option value="<?php echo $ks; ?>"><?php echo $vs; ?></option>
-				<?php endforeach;?>
-			</select>
-			<button id='snap_selected_batch' onclick="submitBatchSnapProcess()" disabled class='btn btn-success new_btn mt_15 ml_10'>Snap</button>
-                        <span class="item_span">Unsnapshoted Items</span>
-                        <input type="checkbox" id="unsnapshoted_items" value="on" />
-			<button id="crawl_batch" class="btn new_btn btn-success mt_15 ml_10">Crawl</button>
-			<button id="re_crawl_batch" class="btn new_btn btn-success mt_15 ml_10">Re-Crawl</button>
-                        <div id="search_crawl_div" style="width: 750px;padding-top: 15px;" >
-                            <div style="float:left;font-size: 18px;">URL:</div>
-                           <div style="float: left;"> <input type="text" class="span2 pull-left ml_10" style="width:250px;margin-left: 33px !important;" name="search_crawl_data" ></div>
-                            <button id="apply_search_data" class="btn new_btn btn-success ml_10"><i class="icon-white icon-ok"></i>&nbsp;Apply</button>
-                            <button id="clear_search_data" class="btn new_btn btn-success  ml_10"><i class="icon-white icon-ok"></i>&nbsp;Clear</button>
-                            <button id="queue_locked" class="btn new_btn btn-success  ml_50"><i class="icon-white icon-ok"></i>&nbsp;Queue Locks</button>
-                        </div>
-
-			<div class="row-fluid mt_5">
-				<div class="search_area uneditable-input span10" style="cursor: text; width: 765px; height: 340px; overflow : auto;" id="Current_List">
-				<!-- <div id='current_list_tbl_holder'>&nbsp;</div> -->
-				<ul>
-					<lh><span><input type="checkbox" style='margin-top: -6px;' value="" id="checkAll"/></span><span style='width: 40px;'>&nbsp;</span><span style='width: 60px;'>ID</span><span>Status</span><span>Last Crawled</span><span>Category</span><span>URL</span></lh>
-				</ul>
-				</div>
-				<button id="current_list_delete" class="btn new_btn btn-danger mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
-				<button id="list_failed" class="btn new_btn btn-danger mt_10 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Show Failed</button>
-				<button id="crawl_new" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Crawl New</button>
-				<button id="crawl_all" class="btn new_btn btn-success mt_10 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Crawl All</button>
-				<button id="current_crawl" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Crawl</button>
-				<button id="current_snapshot" onclick="currentSnapshot();" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Snapshot</button>
-				<button id="current_snapshot_cmd" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Snap (cmd)</button>
-				<div class="span2 mt_15" style="width: 11%;">
-					<input type="checkbox" name="cb_crawl_now" value="1" id="cb_crawl_now" style="width:20px;">
-					<label class="control-label" for="use_files" style="display: inline;">immediately</label>
-				</div>
-				<p class='help-block'>* use checkboxes in table list to activate snapshot button</p>
-			</div>
-			<div class="row-fluid">
-				<div id="Current_List_Pager"></div>
-			</div>
 		</div>
 	  </div>
 </div>
