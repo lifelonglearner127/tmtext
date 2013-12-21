@@ -1289,6 +1289,19 @@ $(function() {
                 if (json.ExtraData != undefined) {
 					console.log('dataTable callback: fnServerData');
                     buildReport(json);
+                    if($("table[id^=tblAssess]")){
+						if($("a#assess_tbl_show_case_details_compare[class^=active_link]")){
+							if($("#tblAssess th[class*=1][style*='border-left-width: 2px']:not([class*=_1])")){$("#tblAssess th[class*=1][style*='border-left-width: 2px']:not([class*=_1])").css("border-left", "1px solid #ccc");}
+							$("#tblAssess th[class*=1]:not([class*=_1]):first").css("border-left", "2px solid #ccc");
+							$("#tblAssess tr").each(function(){
+								if($(this).find("td[class*=1][style*='border-left-width: 2px']:not([class*=_1])"))
+								{$(this).find("td[class*=1]:not([class*=_1])").css("border-left", "1px solid #ccc");}
+								$(this).find("td[class*=1]:not([class*=_1]):first").css("border-left", "2px solid #ccc");
+								
+							});
+						}
+						
+					}
                 }
 				
 				
@@ -3106,6 +3119,19 @@ function prevSibilfunc(curentSibil){
         
         if ($("#research_assess_compare_batches_batch").val() == 'all' || $("#research_assess_compare_batches_batch_competitor").val() == 'all') {
             console.log(1);
+            if($("table[id^=tblAssess]")){
+				if($("a#assess_tbl_show_case_details_compare[class^=active_link]")){
+					if($("#tblAssess th[class*=1][style*='border-left-width: 2px']:not([class*=_1])")){$("#tblAssess th[class*=1][style*='border-left-width: 2px']:not([class*=_1])").css("border-left", "1px solid #ccc");}
+					$("#tblAssess th[class*=1]:not([class*=_1]):first").css("border-left", "2px solid #ccc");
+					$("#tblAssess tr").each(function(){
+						if($(this).find("td[class*=1][style*='border-left-width: 2px']:not([class*=_1])"))
+						{$(this).find("td[class*=1]:not([class*=_1])").css("border-left", "1px solid #ccc");}
+						$(this).find("td[class*=1]:not([class*=_1]):first").css("border-left", "2px solid #ccc");
+						
+					});
+				}
+				
+			}
             createTable();
             serevr_side = false;
             return;
@@ -4904,7 +4930,7 @@ $('#assess_tbl_show_case_details').click(function() {
 	$('table#tblAssess').floatThead('reflow');
 });
 $('#research_assess_update').click(function() {
-	$('table#tblAssess').floatThead('reflow');
+	darkHeaders($(this));
 });
 $('.ui-dialog-titlebar-close').click(function() {
 	if($("div[id=assess_tbl_show_case] a[class=active_link]")){darkHeaders($(this));}
