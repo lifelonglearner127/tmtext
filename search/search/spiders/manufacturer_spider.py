@@ -25,7 +25,7 @@ class ManufacturerSpider(SearchSpider):
 	# initialize fields specific to this derived spider
 	def init_sub(self):
 		#TODO: find a better way for this
-		self.threshold = 0.5
+		self.threshold = 0.8
 		self.fast = 0
 
 	# parse results page, extract info for all products returned by search (keep them in "meta")
@@ -42,6 +42,9 @@ class ManufacturerSpider(SearchSpider):
 
 		# if we were redirected to a product page, it means it's an exact match so stop search here
 		if results:
+			# temporarily set threshold to lower value
+			oldthreshold = self.threshold
+			self.threshold = 0.2
 			response.meta['pending_requests'] = []
 			for result in results:
 				# we are already on the product page
@@ -57,6 +60,8 @@ class ManufacturerSpider(SearchSpider):
 				item['product_videos'] = len(hxs.select("//li[@class='ws-video']//img").extract())
 
 				items.add(item)
+
+			self.threshold = oldthreshold
 
 		else:
 			# try to see if this is a results page then
