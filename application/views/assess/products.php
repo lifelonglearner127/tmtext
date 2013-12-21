@@ -26,7 +26,7 @@
 			<span class="batch_set_depend_options">
 				<input type="radio" name="result_batch_items[]" class="result_batch_items" value="me" /> - Show Results
 			</span>
-            <div style="float: right;">
+            <div style="float: right; margin-top: 4px; margin-right: 30px;">
                 <button id="research_assess_update" class="btn btn-success">Update</button>
                 <a href="<?php echo base_url();?>index.php/assess/export_assess" class="fileDownloadPromise btn" id="research_assess_export" >Export</a>
             </div>
@@ -145,20 +145,21 @@
                     Compare with:
                     <select id="research_assess_compare_batches_customer"></select>
                     <select id="research_assess_compare_batches_batch"></select>
-					<div>
-						<input type="checkbox" id="batch_set_toggle" name="batch_set_toggle" /> Compare with second set of batches
-					</div>
+
                 </div>
                 <div style="float: left;" class="ml_5">
                     <button id="research_assess_compare_batches_reset" class="btn">Reset</button>
+                </div>
+                <div style="float: left;">
+                    <input type="checkbox" id="batch_set_toggle" name="batch_set_toggle" /> Compare with second set of batches
                 </div>
 
             <div style="clear:both;"></div>
             <div style="float: left;margin-top: 10px;" class="generate_url">
                 <button id="generate_url">Share Link</button>
                 <input id="generate_url_link" style="margin-bottom:0;" type="text" >
-                <input type="checkbox" style="margin: 10px;" id="generate_url_check" checked="checked">Gear option
-                <input type="checkbox" style="margin: 10px;" id="generate_url_Summary">Summary Only
+                <input type="checkbox" style="margin: 10px;" id="generate_url_check" checked="checked">Make results columns configurable
+                <input type="checkbox" style="margin: 10px;" id="generate_url_Summary">Only share summary data
             </div>
         </div>
     </li>
