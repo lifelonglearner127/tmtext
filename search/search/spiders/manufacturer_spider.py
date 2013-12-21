@@ -36,7 +36,12 @@ class ManufacturerSpider(SearchSpider):
 		return self.sites_to_parse_methods[self.target_site](response)
 
 
-	# parse results page, extract info for all products returned by search (keep them in "meta")
+	# parse samsung results page
+	def parseResults_samsung(self, response):
+		hxs = HtmlXPathSelector(response)
+		
+
+	# parse sony results page, extract info for all products returned by search (keep them in "meta")
 	def parseResults_sony(self, response):
 		hxs = HtmlXPathSelector(response)
 
