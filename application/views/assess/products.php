@@ -151,7 +151,7 @@
                     <button id="research_assess_compare_batches_reset" class="btn">Reset</button>
                 </div>
                 <div style="float: left; padding-top: 5px; margin-left: 10px;">
-                    <input type="checkbox" id="batch_set_toggle" name="batch_set_toggle" /><span style="float: right;">Compare with second set of batches</span>
+                    <input type="checkbox" id="batch_set_toggle" name="batch_set_toggle" /><span style="float: right; padding-left: 10px;">Compare with second set of batches</span>
                 </div>
 
             <div style="clear:both;"></div>
