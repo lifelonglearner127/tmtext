@@ -396,13 +396,31 @@ function sendRecipientCategorySnapsReport(email) {
 	});
 }
 
+ // function viewCustomBatches() {
+ // //        $( ".left_nav_content li a, .right_nav_content li a" ).trigger( "click" );
+ //         getCustomerDropdown();
+ // 	if($("#dep_rep_preview_list_modal").is(":visible")) {
+ // 		$("#dep_rep_preview_list_modal").modal('hide');
+ // 	}
+ // 	$("#recipients_control_panel_modal").modal('show').css({
+ //                 width: $(window).width() * 70 / 100,
+ //                 height: '80%',
+ //                 left: '50%',
+ //                 'margin-left': function() {
+ //                     return -($(window).width() * 75 / 200);
+ //                 }});
+ // 	var rec = $.post(base_url + 'index.php/batches/index', {}, function(data) {
+ // 		$("#recipients_control_panel_modal").html(data);
+ // 	});
+ // }
+
  function viewCustomBatches() {
  //        $( ".left_nav_content li a, .right_nav_content li a" ).trigger( "click" );
          getCustomerDropdown();
  	if($("#dep_rep_preview_list_modal").is(":visible")) {
  		$("#dep_rep_preview_list_modal").modal('hide');
  	}
- 	$("#recipients_control_panel_modal").modal('show').css({
+ 	$("#custom_batch_create_modal").modal('show').css({
                  width: $(window).width() * 70 / 100,
                  height: '80%',
                  left: '50%',
@@ -410,7 +428,7 @@ function sendRecipientCategorySnapsReport(email) {
                      return -($(window).width() * 75 / 200);
                  }});
  	var rec = $.post(base_url + 'index.php/batches/index', {}, function(data) {
- 		$("#recipients_control_panel_modal").html(data);
+ 		$("#custom_batch_create_modal").html(data);
  	});
  }
 
@@ -781,3 +799,9 @@ function slideTimeline(state) { // state: 'next', 'prev'
         }
   	});
 }
+
+$(document).ready(function(e) {
+	$("#custom_batch_create_modal").on('hidden', function() {
+		$('head').find('title').text('Reports');
+	});
+});
