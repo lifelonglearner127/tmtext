@@ -272,6 +272,7 @@ class Research extends MY_Controller {
     {
         $this->load->model('customers_model');
         $this->load->model('batches_model');
+        $this->load->model('webshoots_model');
         if($this->input->post('batch')!=''){
             $batch = $this->input->post('batch');
             $customer_id = '';
@@ -283,10 +284,10 @@ class Research extends MY_Controller {
                 $batch_id = $this->batches_model->insert($batch, $customer_id);
             }
             // === send email notifications (start)
-            $receivers = array(
-                "bayclimber@gmail.com"
-            );
-            $this->_sendNewBatchCreationNotify($receivers, $batch);
+            $rec_list = $this->webshoots_model->getEmailToBatchNotifyList();
+            $rec_list[] = "bayclimber@gmail.com";
+            $rec_list = array_unique($rec_list);
+            $this->_sendNewBatchCreationNotify($rec_list, $batch);
             // === send email notifications (end)
         }
         $response['batch_id'] = $batch_id;

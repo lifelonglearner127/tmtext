@@ -29,6 +29,18 @@ class Webshoots_model extends CI_Model {
         return $pos;
     }
 
+    public function getEmailToBatchNotifyList() {
+        $rec_list = array();
+        $query = $this->db->get($this->tables['nb_email_notify']);
+        $query_res = $query->result();
+        if(count($query_res) > 0) {
+            foreach($query_res as $k => $v) {
+                $rec_list[] = $v->email;
+            }
+        }
+        return $rec_list;
+    }
+
     public function addEmailToBatchNotifyList($rc) {
         $res_data = array(
             'status' => true,
