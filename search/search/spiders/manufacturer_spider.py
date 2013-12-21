@@ -50,6 +50,11 @@ class ManufacturerSpider(SearchSpider):
 				# hard code brand as 'sony'
 				item['product_brand'] = 'sony'
 				item['origin_url'] = response.meta['origin_url']
+
+				item['product_images'] = len(hxs.select("//a[@class='ws-alternate-views-list-link']/img").extract())
+				#TODO: to check
+				item['product_videos'] = len(hxs.select("//li[@class='ws-video']//img").extract())
+
 				items.add(item)
 
 		else:

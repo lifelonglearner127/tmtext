@@ -26,12 +26,18 @@ class URLsPipeline(object):
 			if int(spider.output)==1:
 				self.file2 = open(spider.outfile2, 'wb')
 
+			# for manufacturer spider, also write headers row
+			self.file.write("Original_URL,Match,Product_images,Product_videos\n")
+
 
 	def process_item(self, item, spider):
 
 		# different actions for walmart_fullurls spider
 		if spider.name == "walmart_fullurls":
 			return self.process_item_fullurl(item, spider)
+
+		if spider.name == "manufacturer":
+			return self.process_item_manufacturer(item, spider)
 
 		option = int(spider.output)
 		# for option 1, output just found products URLs in one file, and not matched URLs (or ids) in the second file
@@ -66,6 +72,27 @@ class URLsPipeline(object):
 			self.file.write(line + "\n")
 		else:
 			print line
+
+	def process_item_manufacturer(self, item, spider):
+		fields = []
+		if int(spider.output) == 2:
+			fields.append(item['origin_url'])
+		if 'product_url' in item:
+			fields.append(item['product_url'])
+			# write unmatched products to second file
+		elif int(spider.output) == 1:
+			self.file2.write(item['origin_url'] + "\n")
+		if 'product_images' in item:
+			fields.append(str(item['product_images']))
+		if 'product_videos' in item:
+			fields.append(str(item['product_videos']))
+
+		line = ",".join(fields) + "\n"
+
+		self.file.write(line)
+
+		return item
+
 
 	def close_spider(self, spider):
 		if self.file:

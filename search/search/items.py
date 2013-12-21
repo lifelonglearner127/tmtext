@@ -14,6 +14,9 @@ class SearchItem(Item):
     origin_brand = Field() # original (source) product brand
     origin_brand_extracted = Field() # source product brand - as extracted from product name: not guaranteed to be correct
 
+    product_images = Field() # for manufacturer spider: nr of product images on target (manufacturer) site
+    product_videos = Field() # for manufacturer spider: nr of product videos on target (manufacturer) site
+
 # items used in walmart_fullurls spider to match walmart ids to their product pages full URLs
 class WalmartItem(Item):
 	walmart_id = Field()
