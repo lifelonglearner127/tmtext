@@ -421,6 +421,7 @@ function sendRecipientCategorySnapsReport(email) {
  		$("#dep_rep_preview_list_modal").modal('hide');
  	}
  	$("#custom_batch_create_modal").modal('show').css({
+ 								 top: '35%', 
                  width: $(window).width() * 70 / 100,
                  height: '80%',
                  left: '50%',
