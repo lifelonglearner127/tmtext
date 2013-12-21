@@ -744,3 +744,7 @@ th.product_name1, th.Snapshot1, th.url1, th.column_reviews1, th.column_features1
 	font-weight: bolder;
 	margin: 5px;
 }
+a.jq-assess {
+	position: relative;
+	top: 8px;
+}

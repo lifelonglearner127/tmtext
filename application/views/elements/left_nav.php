@@ -9,8 +9,8 @@
 
 $menu = array(
     //array('controller' => 'batches', 'name' => 'Batches'),
-    array('controller' => 'measure', 'name' => 'COMPETITIVE<br /><span>RESEARCH</span>'),
     array('controller' => 'assess', 'name' => '<span>REPORTS</span>'),
+    array('controller' => 'measure', 'name' => 'COMPETITIVE<br /><span>RESEARCH</span>'),
     array('controller' => 'research', 'name' => '<span>EDIT</span>'),
     array('controller' => 'brand', 'name' => '<span>SOCIAL</span>'),
     //array('controller' => 'editor', 'name' => 'Create'),
