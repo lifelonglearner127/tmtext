@@ -28,8 +28,15 @@ class ManufacturerSpider(SearchSpider):
 		self.threshold = 0.8
 		self.fast = 0
 
-	# parse results page, extract info for all products returned by search (keep them in "meta")
+		self.sites_to_parse_methods = {"sony" : self.parseResults_sony}
+
+	# pass to site-specific parseResults method
 	def parseResults(self, response):
+		return self.sites_to_parse_methods[self.target_site](response)
+
+
+	# parse results page, extract info for all products returned by search (keep them in "meta")
+	def parseResults_sony(self, response):
 		hxs = HtmlXPathSelector(response)
 
 		if 'items' in response.meta:
