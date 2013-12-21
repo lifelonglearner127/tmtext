@@ -148,7 +148,7 @@
         <div class="info-message text-success mt_10"></div>
         <script>
             $(function() {
-                $('head').find('title').text('Batches');
+                // $('head').find('title').text('Batches');
                 
                 $("button#rename_batch").click(function(){
                     var renameBatchValue;

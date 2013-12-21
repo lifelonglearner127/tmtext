@@ -801,8 +801,8 @@ function slideTimeline(state) { // state: 'next', 'prev'
   	});
 }
 
-$(document).ready(function(e) {
-	$("#custom_batch_create_modal").on('hidden', function() {
-		$('head').find('title').text('Reports');
-	});
-});
+// $(document).ready(function(e) {
+// 	$("#custom_batch_create_modal").on('hidden', function() {
+// 		$('head').find('title').text('Reports');
+// 	});
+// });
