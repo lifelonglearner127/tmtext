@@ -27,6 +27,10 @@
                     <?php endforeach;?>
                 </select>
             </span>
+            <div style="float: right;">
+                <button id="research_assess_update" class="btn btn-success">Update</button>
+                <a href="<?php echo base_url();?>index.php/assess/export_assess" class="fileDownloadPromise btn" id="research_assess_export" >Export...</a>
+            </div>
             <!--<label class="research_assess_flagged"><input type="checkbox" id="research_assess_flagged" > Only show flagged items</label>-->
             <div class="clear"></div>
             <a href="#" onclick="return false;" class="hideShow float_r">
@@ -132,10 +136,7 @@
                 <div style="float: left;" class="ml_5">
                     <button id="research_assess_compare_batches_reset" class="btn">Reset</button>
                 </div>
-                <div style="float: right;">
-                    <button id="research_assess_update" class="btn btn-success">Update</button>
-                    <a href="<?php echo base_url();?>index.php/assess/export_assess" class="fileDownloadPromise btn" id="research_assess_export" >Export</a>
-                </div>
+
             <div style="clear:both;"></div>
             <div style="float: left;margin-top: 10px;" class="generate_url">
                 <button id="generate_url">Generate URL</button>
