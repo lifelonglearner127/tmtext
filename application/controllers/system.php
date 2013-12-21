@@ -31,6 +31,13 @@ class System extends MY_Controller {
 		$this->render();
 	}
 
+	public function add_email_to_batch_notify_list() {
+		$this->load->model('webshoots_model');
+		$rc = $this->input->post('rc');
+		$res = $this->webshoots_model->addEmailToBatchNotifyList($rc);
+		$this->output->set_content_type('application/json')->set_output(json_encode($res));
+	}
+
 	public function update_home_pages_config() {
 		$this->load->model('webshoots_model');
 		$type = $this->input->post('type');

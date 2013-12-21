@@ -10,7 +10,8 @@ class Webshoots_model extends CI_Model {
         'crawler_list' => 'crawler_list',
         'home_pages_config' => 'home_pages_config',
         'site_departments_snaps' => 'site_departments_snaps',
-        'department_members' => 'department_members'
+        'department_members' => 'department_members',
+        'nb_email_notify' => 'nb_email_notify'
     );
 
     function __construct() {
@@ -26,6 +27,29 @@ class Webshoots_model extends CI_Model {
             $pos = $r->pos;
         }
         return $pos;
+    }
+
+    public function addEmailToBatchNotifyList($rc) {
+        $res_data = array(
+            'status' => true,
+            'msg' => 'OK'
+        );
+        $check_obj = array(
+            'email' => $rc
+        );
+        $query = $this->db->where($check_obj)->limit(1)->get($this->tables['nb_email_notify']);
+        $query_res = $query->result();
+        if(count($query_res) > 0) {
+            $res_data['status'] = false;
+            $res_data['msg'] = 'Such email already exists';
+        } else {
+            $insert_object = array(
+                'email' => $rc,
+                'stamp' => date("Y-m-d H:i:s")
+            );
+            $this->db->insert($this->tables['nb_email_notify'], $insert_object);
+        }
+        return $res_data;
     }
 
     public function changeHomePageRecipients($id, $week_day) {

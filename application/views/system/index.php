@@ -40,6 +40,30 @@
 		}
 		return false;
 	}
+
+	function addEmailToBatchNotifyList() {
+		var email_pattern = /^([a-z0-9_\-]+\.)*[a-z0-9_\-]+@([a-z0-9][a-z0-9\-]*[a-z0-9]\.)+[a-z]{2,4}$/i;
+		var rc = $.trim($("#batch_cr_notify_email").val());
+		if(!email_pattern.test(rc)) {
+			alert('Incorrect email format');
+		} else {
+			var send_data = {
+				rc: rc
+			};
+			$.post(base_url + 'index.php/system/add_email_to_batch_notify_list', send_data, function(data) {
+				console.log(data);
+				if(data.status !== true) {
+					alert(data.msg);
+				} else {
+					$("#batch_cr_notify_email").val("");
+					$("#batch_cr_notify_email").blur("");
+					alert("Recepient email is successfully added");
+				}
+			});
+		}
+		return false;
+	}
+
 </script>
 	<div class="tabbable">
 		<ul class="nav nav-tabs jq-system-tabs">
@@ -258,4 +282,25 @@
 		</div>
 	</div>
 
-				    <?php echo form_close();?>
+	<?php echo form_close();?>
+
+	<!-- ADD ADMIN NOTIFICATORS (START) -->
+	<h3>New Batch Creation Notifications List:</h3>
+	<form id='batch_cr_notify_form' method='post' action='' enctype="multipart/form-data">
+		<div class="row-fluid">
+			<div class="span6 admin_system_content">
+				<p>Email:</p>
+				<input type="text" name="batch_cr_notify_email" id="batch_cr_notify_email" placeholder="Email..."/>
+				<div class="clear-fix"></div>
+			</div>
+		</div>
+		<div class="row-fluid">
+		    <div class="control-group">
+			    <div class="controls">
+				    <button type="submit" onclick="return addEmailToBatchNotifyList()" class="btn btn-success"><i class="icon-white icon-ok"></i>&nbsp;Add</button>
+				    <button type="button" class="btn ml_20">Show Recepients</button>
+			    </div>
+		    </div>
+		</div>
+	</form>
+	<!-- ADD ADMIN NOTIFICATORS (END) -->
