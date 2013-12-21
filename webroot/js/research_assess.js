@@ -815,7 +815,7 @@ $(function() {
             "sClass": "images_cmp"
         },
         {
-            "sTitle": "Video",
+            "sTitle": "Videos",
             "sName": "video_count",
             "sWidth": "2%",
             "sClass": "video_count"
@@ -1083,7 +1083,7 @@ $(function() {
             "sClass": "images_cmp1"
         },
         {
-            "sTitle": "Video",
+            "sTitle": "Videos",
             "sName": "video_count1",
             "sWidth": "1%",
             "sClass": "video_count1"
