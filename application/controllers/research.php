@@ -239,6 +239,35 @@ class Research extends MY_Controller {
         $this->render();
     }
 
+    public function _sendNewBatchCreationNotify($receivers, $batch) {
+        if(count($receivers) > 0) {
+            $this->load->model('webshoots_model');
+            $email_logo = $this->webshoots_model->getEmailReportConfig('logo');
+            // --------------- email sender (start) ---------------
+            // -- email config (dev configurations) (start) --
+            $this->load->library('email');
+            // --- dev configs (start)
+            $config['protocol'] = 'sendmail';
+            $config['mailpath'] = '/usr/sbin/sendmail';
+            $config['charset'] = 'UTF-8';
+            $config['wordwrap'] = TRUE;
+            $config['mailtype'] = 'html';
+            // --- dev configs (end)
+            $this->email->initialize($config);
+            // -- email config (dev configurations) (end) --
+            foreach($receivers as $v) {
+                $this->email->from('bayclimber@gmail.com', "Content Analytics - New Batch");
+                $this->email->to("$v");
+                $this->email->subject('Content Analytics - New Batch');
+                $data_et['batch'] = $batch;
+                $data_et['email_logo'] = $email_logo;
+                $msg = $this->load->view('measure/new_batch_creation_notify', $data_et, true);
+                $this->email->message($msg);
+                $this->email->send();
+            }
+        }
+    }
+
     public function new_batch()
     {
         $this->load->model('customers_model');
@@ -253,6 +282,12 @@ class Research extends MY_Controller {
             if($batch_id == false) {
                 $batch_id = $this->batches_model->insert($batch, $customer_id);
             }
+            // === send email notifications (start)
+            $receivers = array(
+                "bayclimber@gmail.com"
+            );
+            $this->_sendNewBatchCreationNotify($receivers, $batch);
+            // === send email notifications (end)
         }
         $response['batch_id'] = $batch_id;
         $this->output->set_content_type('application/json')
