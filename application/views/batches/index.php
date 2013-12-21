@@ -9,57 +9,9 @@
     <div id="batchesDiv">
         <div class="span12 mb_10">
             <div class="span11" style="width:100%;">
-               <span style="float: left; margin-top: 5px;margin-right: 5px;">Batch:</span>
-                <div id="customer_dr" style="float: left;" class="customer_dropdown"></div>
-
-                <?php echo form_dropdown('batches', $batches_list, array(), ' style="width: 145px;margin-left:60px;float: left;"'); ?>
-
-                <script>
-                    
-                    function doconfirm()
-                    {
-                        var batch_name = $('select[name="batches"]').find('option:selected').text();
-                        job=confirm("You are about to delete batch "+batch_name+". Are you sure you want to delete this batch?");
-                        if(job!=true)
-                        {
-                            return false;
-                        } else {
-                            var oDropdown = $("#customer_dr").msDropdown().data("dd");
-                            $.post(base_url + 'index.php/research/delete_batch', {
-                                'batch_name': batch_name
-                            }, function(data) {
-                                oDropdown.setIndexByValue('All customers');
-                                $('select[name="batches"] option').each(function(){
-                                    if($(this).text() == batch_name){
-                                        $(this).remove();
-                                    }
-                                });
-                                $('.info').append('<p class="alert-success">The batch was successfully deleted</p>').fadeOut(10000);
-                            }, 'json');
-                        }
-                    }
-                    function doupload()
-                    {
-                        var batch_name = $('select[name="batches"]').find('option:selected').text();
-                        if(batch_name == ''){
-                            job=confirm("You are about to upload a batch but no batch is selected. The uploaded URLs will be crawled but not associated with any specific batch. Are you sure you want to proceed?");
-                            if(job!=true)
-                            {
-                                return false;
-                            }else{
-                                $('#fileupload').trigger('click');
-                            }
-                        }else{
-                            $('#fileupload').trigger('click');
-                        }
-                        return false;
-                    }
-                </script>
-                <button class="btn btn-danger" type="button" style="margin-left: 20px;float: left;" onclick="doconfirm()">Delete</button>
-                <span  style="float: left;margin-top: 5px;" class="ml_10">Add new:</span> 
+                <span  style="float: left;margin-top: 5px;">New batch:</span> 
                 <input type="text"  style="width:180px;float: left;margin-left: 10px;" name="new_batch">
                 <button id="new_batch" class="btn" type="button" style="margin-left:5px;float: left;">Create</button>
-
             </div>
         </div>
 
@@ -70,10 +22,10 @@
         </div>
 
         <div class="row-fluid mt_10">
-            <div class="admin_system_content">
+            <div class="admin_system_content" style='height: 40px;'>
                 <div class="controls span7">
                     <button class="btn btn-success" id="csv_import_create_batch" style="display:none"><i class="icon-white icon-ok"></i>&nbsp;Import</button>
-                    <span class="btn btn-success ml_10 pull-left" style="" onclick="doupload();">Upload<i class="icon-plus icon-white"></i></span>
+                    <span class="btn btn-success pull-left" style="" onclick="doupload();">Upload<i class="icon-plus icon-white"></i></span>
                     <span class="btn btn-success fileinput-button ml_10 pull-left" style="display: none">
                         Upload
                         <i class="icon-plus icon-white"></i>
@@ -124,17 +76,69 @@
                 </script>
             </div>
         </div>
-        <div class="row-fluid"> 
-            A CSV containing one URL or Manufacturer ID per line
+        <div style='margin-bottom: 60px;' class="row-fluid"> 
+            <!-- A CSV containing one URL or Manufacturer ID per line -->
+            <p style='padding-left: 108px;'>Text file containing one URL per line</p>
+        </div>
+        <div class='row-fluid'>
+            <span style="float: left; margin-top: 5px;margin-right: 5px;">Batch:</span>
+                <div id="customer_dr" style="float: left;" class="customer_dropdown"></div>
+
+                <?php echo form_dropdown('batches', $batches_list, array(), ' style="width: 145px;margin-left:60px;float: left;"'); ?>
+
+                <script>
+                    
+                    function doconfirm()
+                    {
+                        var batch_name = $('select[name="batches"]').find('option:selected').text();
+                        job=confirm("You are about to delete batch "+batch_name+". Are you sure you want to delete this batch?");
+                        if(job!=true)
+                        {
+                            return false;
+                        } else {
+                            var oDropdown = $("#customer_dr").msDropdown().data("dd");
+                            $.post(base_url + 'index.php/research/delete_batch', {
+                                'batch_name': batch_name
+                            }, function(data) {
+                                oDropdown.setIndexByValue('All customers');
+                                $('select[name="batches"] option').each(function(){
+                                    if($(this).text() == batch_name){
+                                        $(this).remove();
+                                    }
+                                });
+                                $('.info').append('<p class="alert-success">The batch was successfully deleted</p>').fadeOut(10000);
+                            }, 'json');
+                        }
+                    }
+                    function doupload()
+                    {
+                        var batch_name = $('select[name="batches"]').find('option:selected').text();
+                        if(batch_name == ''){
+                            job=confirm("You are about to upload a batch but no batch is selected. The uploaded URLs will be crawled but not associated with any specific batch. Are you sure you want to proceed?");
+                            if(job!=true)
+                            {
+                                return false;
+                            }else{
+                                $('#fileupload').trigger('click');
+                            }
+                        }else{
+                            $('#fileupload').trigger('click');
+                        }
+                        return false;
+                    }
+                </script>
+                <button class="btn btn-danger" type="button" style="margin-left: 20px;float: left;" onclick="doconfirm()">Delete</button>
+                <button class="btn ml_10" id="rename_batch" ><i class="icon-white icon-ok"></i>&nbsp;Rename</button>
         </div>
         <div class="row-fluid mt_20">
             <!--textarea id="urls" class="span10" style="min-height: 111px"></textarea-->
             <div class="search_area uneditable-input span9" onClick="this.contentEditable='true';" style="cursor: text; min-height: 111px; overflow : auto; float: left;" id="urls"></div>
-            <button class="btn ml_10" id="add_to_batch" ><i class="icon-white icon-ok"></i>&nbsp;Add to batch</button>
-            <button class="btn ml_10 mt_10" id="rename_batch" ><i class="icon-white icon-ok"></i>&nbsp;Rename</button>
-            <button class="btn btn-danger ml_10 mt_10" id="delete_from_batch"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
+            <div class='span3' style='width: 150px;'>
+                <button class="btn ml_10" id="add_to_batch" ><i class="icon-white icon-ok"></i>&nbsp;Add to batch</button>
+                <button class="btn btn-danger ml_10 mt_10" id="delete_from_batch"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
+            </div>
         </div>
-        <div class="row-fluid mt_20">
+        <div style='display: none' class="row-fluid mt_20">
             <div class="controls span7">
                 <button class="btn btn-success ml_10" id="import_from_sitemap"><i class="icon-white icon-ok"></i>&nbsp;Import Sitemap</button>
                 <div class="info ml_10" id="import_sitemap"></div>
