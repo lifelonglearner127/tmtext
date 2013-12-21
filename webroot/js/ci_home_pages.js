@@ -415,19 +415,16 @@ function sendRecipientCategorySnapsReport(email) {
  // }
 
  function viewCustomBatches() {
- //        $( ".left_nav_content li a, .right_nav_content li a" ).trigger( "click" );
-         getCustomerDropdown();
+  getCustomerDropdown();
  	if($("#dep_rep_preview_list_modal").is(":visible")) {
  		$("#dep_rep_preview_list_modal").modal('hide');
  	}
  	$("#custom_batch_create_modal").modal('show').css({
- 								 top: '35%', 
-                 width: $(window).width() * 70 / 100,
-                 height: '80%',
-                 left: '50%',
-                 'margin-left': function() {
-                     return -($(window).width() * 75 / 200);
-                 }});
+     	 width: "940px",
+     	 left: '60%',
+     'margin-left': function() {
+         return -($(window).width() * 75 / 200);
+     }});
  	var rec = $.post(base_url + 'index.php/batches/index', {}, function(data) {
  		$("#custom_batch_create_modal").html(data);
  	});

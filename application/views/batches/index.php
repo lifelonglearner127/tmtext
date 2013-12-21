@@ -9,8 +9,9 @@
     <div id="batchesDiv">
         <div class="span12 mb_10">
             <div class="span11" style="width:100%;">
-                <span  style="float: left;margin-top: 5px;">New batch:</span> 
-                <input type="text"  style="width:180px;float: left;margin-left: 10px;" name="new_batch">
+                <div id="customer_dr" style="float: left;" class="customer_dropdown"></div>
+                <span  style="float: left;margin-top: 5px; font-size: 18px; margin-left: 60px;">New batch:</span> 
+                <input type="text"  style="width:270px;float: left;margin-left: 10px;" name="new_batch">
                 <button id="new_batch" class="btn" type="button" style="margin-left:5px;float: left;">Create</button>
             </div>
         </div>
@@ -23,7 +24,7 @@
 
         <div class="row-fluid mt_10">
             <div class="admin_system_content" style='height: 40px;'>
-                <div class="controls span7">
+                <div class="controls span7" style='margin-left: 212px;'>
                     <button class="btn btn-success" id="csv_import_create_batch" style="display:none"><i class="icon-white icon-ok"></i>&nbsp;Import</button>
                     <span class="btn btn-success pull-left" style="" onclick="doupload();">Upload<i class="icon-plus icon-white"></i></span>
                     <span class="btn btn-success fileinput-button ml_10 pull-left" style="display: none">
@@ -76,13 +77,13 @@
                 </script>
             </div>
         </div>
-        <div style='margin-bottom: 60px;' class="row-fluid"> 
+        <div style='margin-bottom: 30px;' class="row-fluid"> 
             <!-- A CSV containing one URL or Manufacturer ID per line -->
-            <p style='padding-left: 108px;'>Text file containing one URL per line</p>
+            <p style='padding-left: 310px;'>Text file containing one URL per line</p>
         </div>
         <div class='row-fluid'>
             <span style="float: left; margin-top: 5px;margin-right: 5px;">Batch:</span>
-                <div id="customer_dr" style="float: left;" class="customer_dropdown"></div>
+                <!-- <div id="customer_dr" style="float: left;" class="customer_dropdown"></div> -->
 
                 <?php echo form_dropdown('batches', $batches_list, array(), ' style="width: 145px;margin-left:60px;float: left;"'); ?>
 
@@ -128,7 +129,7 @@
                     }
                 </script>
                 <button class="btn btn-danger" type="button" style="margin-left: 20px;float: left;" onclick="doconfirm()">Delete</button>
-                <button class="btn ml_10" id="rename_batch" ><i class="icon-white icon-ok"></i>&nbsp;Rename</button>
+                <button class="btn ml_10" id="rename_batch" ><i class="icon-white icon-ok"></i>&nbsp;Rename ...</button>
         </div>
         <div class="row-fluid mt_20">
             <!--textarea id="urls" class="span10" style="min-height: 111px"></textarea-->
