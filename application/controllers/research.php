@@ -256,7 +256,7 @@ class Research extends MY_Controller {
             $this->email->initialize($config);
             // -- email config (dev configurations) (end) --
             foreach($receivers as $v) {
-                $this->email->from('bayclimber@gmail.com', "Content Analytics - New Batch");
+                $this->email->from("Content Analytics - New Batch");
                 $this->email->to("$v");
                 $this->email->subject('Content Analytics - New Batch');
                 $data_et['batch'] = $batch;
