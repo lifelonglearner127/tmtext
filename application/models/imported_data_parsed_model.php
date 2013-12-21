@@ -1137,6 +1137,8 @@ class Imported_data_parsed_model extends CI_Model {
             $query = $this->db->get();
             $res = $query->result();
             $parsed_attributes = '';
+            $parsed_meta = '';
+            $htags = '';
             $description = '';
             $long_description = '';
             $url = '';
@@ -1156,6 +1158,8 @@ class Imported_data_parsed_model extends CI_Model {
                     case 'parsed_attributes': $parsed_attributes = unserialize($val->value); break;
                     case 'Product Name': $product_name = $val->value; break;
                     case 'Features': $features = $val->value; break;
+                    case 'parsed_meta': $parsed_meta = $val->value; break;
+                    case 'HTags': $htags = $val->value; break;
                 }//*/
 
                 /*
@@ -1185,6 +1189,8 @@ class Imported_data_parsed_model extends CI_Model {
                 'features' => $features,
                 'parsed_attributes' => $parsed_attributes,
                 'revision' => $revision,
+                'parsed_meta' => $parsed_meta,
+                'htags' => $htags,
                 'model'=>$model));
 
 //            $res = $query->result();
@@ -2473,7 +2479,9 @@ echo "j  = ".$j;
 
             $urls= array();
             $res= array();
+            $selected_customer = '';
             foreach ($rows as $key => $row) {
+                
             //if(!in_array($this->get_base_url($row['url']), $urls))
                 {
                 $urls[]=$this->get_base_url($row['url']);
@@ -2487,33 +2495,21 @@ echo "j  = ".$j;
                 }
                 if ($cus_val !== "")
                 $row['customer'] = $cus_val;
-
+                if($row['mported_data_id'] == $imp_id){
+                    $selected_customer = $row['customer'];
+                }
 
                 $res[]=$row;
             }
 
-//                $cus_val = "";
-//                foreach ($customers_list as $ki => $vi) {
-//                    if (strpos($rows[$key]['url'], "$vi") !== false) {
-//                        $cus_val = $vi;
-//                        break;
-//                    }
-//                }
-//                if ($cus_val !== "")
-//                    $rows[$key]['customer'] = $cus_val;
-//
-//                foreach ($rows as $key1 => $row1) {
-//                    echo $key1."<br>";
-//                    if (($row1['imported_data_id']!=$imp_id) && ($key1 !== $key) &&   ($this->get_base_url($row['url']) == $this->get_base_url($row1['url']))) {
-////                        echo  "ke1 = ".$key1."<br>";
-////                        echo  "ke2 = ".$key."<br>";
-//                        echo  $row1['url']."<br>";
-//                        unset($rows[$key1]);
-//
-//                    }
-//                }
             }
-
+            if($imp_id){
+                foreach($res as $k =>$val){
+                    if($val['customer']== $selected_customer && $val['imported_data_id']!= $imp_id){
+                        unset($res[$k]);
+                    }
+                }
+            }
             sort($res);
 
             return $res;
