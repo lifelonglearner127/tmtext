@@ -52,6 +52,10 @@ class SearchSpider(BaseSpider):
 	#				threshold - parameter for selecting results (the lower the value the more permissive the selection)
 	def __init__(self, product_name = None, product_url = None, product_urls_file = None, walmart_ids_file = None, \
 		output = 1, threshold = 1.0, outfile = "search_results.txt", outfile2 = "not_matched.txt", fast = 0, use_proxy = False, by_id = False):
+
+		# call specific init for each derived class
+		self.init_sub()
+
 		self.product_url = product_url
 		self.product_name = product_name
 		self.output = int(output)
@@ -63,9 +67,6 @@ class SearchSpider(BaseSpider):
 		self.fast = fast
 		self.use_proxy = use_proxy
 		self.by_id = by_id
-
-		# call specific init for each derived class
-		self.init_sub()
 
 	def build_search_pages(self, search_query):
 		# build list of urls = search pages for each site
@@ -283,6 +284,12 @@ class SearchSpider(BaseSpider):
 				else:
 					self.log("Manufacturer site not supported (" + self.target_site + ") or not able to extract brand from product name (" + product_name + ")\n", level=log.ERROR)
 					#raise CloseSpider("Manufacturer site not supported (" + self.target_site + ") or not able to extract brand from product name (" + product_name + ")\n")
+					item = SearchItem()
+					item['origin_url'] = response.url
+					item['product_name'] = product_name
+					if product_model:
+						item['product_model'] = product_model
+					yield item
 					return
 
 

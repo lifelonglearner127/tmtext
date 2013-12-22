@@ -87,6 +87,7 @@ class URLsPipeline(object):
 			fields.append(item['product_url'])
 			# write unmatched products to second file
 		elif int(spider.output) == 1:
+			#self.file2.write(item['origin_url'] + "," + item['product_name'] + "\n")
 			self.file2.write(item['origin_url'] + "\n")
 		if 'product_images' in item:
 			fields.append(str(item['product_images']))

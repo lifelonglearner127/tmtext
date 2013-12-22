@@ -27,7 +27,7 @@ class ManufacturerSpider(SearchSpider):
 		#TODO: find a better way for this
 		self.threshold = 0.8
 		self.fast = 0
-		self.output = 2
+		#self.output = 2
 
 		self.sites_to_parse_methods = {"sony" : self.parseResults_sony, \
 										"samsung" : self.parseResults_samsung}
