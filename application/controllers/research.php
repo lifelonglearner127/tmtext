@@ -239,7 +239,7 @@ class Research extends MY_Controller {
         $this->render();
     }
 
-    public function _sendNewBatchCreationNotify($receivers, $batch) {
+    public function _sendNewBatchCreationNotify($receivers, $batch, $customer_name) {
         if(count($receivers) > 0) {
             $this->load->model('webshoots_model');
             $email_logo = $this->webshoots_model->getEmailReportConfig('logo');
@@ -255,12 +255,16 @@ class Research extends MY_Controller {
             // --- dev configs (end)
             $this->email->initialize($config);
             // -- email config (dev configurations) (end) --
+            $data_render = array(
+                'batch' => $batch,
+                'email_logo' => $email_logo,
+                'customer_name' => $customer_name
+            );
+            $data_et['d'] = $data_render;
             foreach($receivers as $v) {
                 $this->email->from("Content Analytics - New Batch");
                 $this->email->to("$v");
                 $this->email->subject('Content Analytics - New Batch');
-                $data_et['batch'] = $batch;
-                $data_et['email_logo'] = $email_logo;
                 $msg = $this->load->view('measure/new_batch_creation_notify', $data_et, true);
                 $this->email->message($msg);
                 $this->email->send();
@@ -273,8 +277,9 @@ class Research extends MY_Controller {
         $this->load->model('customers_model');
         $this->load->model('batches_model');
         $this->load->model('webshoots_model');
-        if($this->input->post('batch')!=''){
+        if($this->input->post('batch')!='') {
             $batch = $this->input->post('batch');
+            $customer_name = $this->input->post('customer_name');
             $customer_id = '';
             if($this->input->post('customer_name') != 'Customer'){
                 $customer_id = $this->customers_model->getIdByName($this->input->post('customer_name'));
@@ -285,12 +290,13 @@ class Research extends MY_Controller {
             }
             // === send email notifications (start)
             $rec_list = $this->webshoots_model->getEmailToBatchNotifyList();
-            $rec_list[] = "bayclimber@gmail.com";
+            // $rec_list[] = "bayclimber@gmail.com";
             $rec_list = array_unique($rec_list);
-            $this->_sendNewBatchCreationNotify($rec_list, $batch);
+            $this->_sendNewBatchCreationNotify($rec_list, $batch, $customer_name);
             // === send email notifications (end)
         }
         $response['batch_id'] = $batch_id;
+        $response['customer_name'] = $customer_name;
         $this->output->set_content_type('application/json')
             ->set_output(json_encode($response));
     }
