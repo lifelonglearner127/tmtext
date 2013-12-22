@@ -234,7 +234,8 @@ function loadCurrentList(url,failed) {
 			$("button#crawl_new").attr('disabled', 'disabled');
 		}
 
-		$("h3 small").html(data.total + ' items Total -- '+ data.new+ ' New');
+		// $("h3 small").html(data.total + ' items Total -- '+ data.new+ ' New');
+		$("h3 small").html("Total items: " + data.total + '<br>'+ "New items: " + data.new);
   		$.each(data.new_urls, function (index, node) {
   	  		var category = '';
   	  		if (node.name != undefined) {
