@@ -326,12 +326,12 @@ function afterAutocomplete(loadData){
     }
 
 jQuery(document).ready(function($) {
-    $(document).ajaxStart(function(){
+    /* $(document).ajaxStart(function(){
         $('html').addClass('busy');
     });
     $(document).ajaxStop(function(){
             $('html').removeClass('busy');
-        });
+        }); */
 
     function getWebsiteDropdown(){
         setTimeout(function() {

@@ -412,6 +412,13 @@ $(document).ready(function () {
     });
 
     $(document).on("click", '.research_arrow', function() {
+		var elem = $(this);
+		
+		if (elem.closest('.hideBox').length)		
+			$('.filter_expand_btn_wrapper').hide();					
+		else		
+			$('.filter_expand_btn_wrapper').show();					
+		
         if($(this).hasClass('changed') && last_edition != ''){
             $('#main').empty();
             $('#main').html(last_edition);
