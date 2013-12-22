@@ -276,9 +276,14 @@ class SearchSpider(BaseSpider):
 			# can only go on if site is supported
 			# (use dummy query)
 			if self.target_site not in self.build_search_pages("").keys():
-				self.log("Manufacturer site not supported (" + self.target_site + ") or not able to extract brand from product name (" + product_name + ")\n", level=log.ERROR)
-				#raise CloseSpider("Manufacturer site not supported (" + self.target_site + ") or not able to extract brand from product name (" + product_name + ")\n")
-				return
+
+				product_brands_extracted = set(self.build_search_pages("").keys()).intersection(set(product_name_tokenized))
+				if product_brands_extracted:
+					self.target_site = product_brands_extracted.pop()
+				else:
+					self.log("Manufacturer site not supported (" + self.target_site + ") or not able to extract brand from product name (" + product_name + ")\n", level=log.ERROR)
+					#raise CloseSpider("Manufacturer site not supported (" + self.target_site + ") or not able to extract brand from product name (" + product_name + ")\n")
+					return
 
 
 		# 1) Search by model number

@@ -34,7 +34,8 @@ class ManufacturerSpider(SearchSpider):
 
 	# pass to site-specific parseResults method
 	def parseResults(self, response):
-		return self.sites_to_parse_methods[self.target_site](response)
+		if self.target_site in self.sites_to_parse_methods:
+			return self.sites_to_parse_methods[self.target_site](response)
 
 
 	# parse samsung results page
