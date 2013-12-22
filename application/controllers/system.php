@@ -31,6 +31,15 @@ class System extends MY_Controller {
 		$this->render();
 	}
 
+	public function new_batch_nf_list_modal() {
+		$this->load->model('webshoots_model');
+		$rec_list = $this->webshoots_model->getEmailToBatchNotifyList();
+		$data = array(
+			'rec_list' => $rec_list
+		);
+		$this->load->view('system/new_batch_nf_list_modal', $data);
+	}
+
 	public function add_email_to_batch_notify_list() {
 		$this->load->model('webshoots_model');
 		$rc = $this->input->post('rc');

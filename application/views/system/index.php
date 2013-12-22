@@ -64,6 +64,13 @@
 		return false;
 	}
 
+	function createNewBatchNfListModal() {
+		$.post(base_url + 'index.php/system/new_batch_nf_list_modal', function(data) {
+			$("#new_batch_nf_list_modal").html(data);
+			$("#new_batch_nf_list_modal").modal('show');
+		});
+	}
+
 </script>
 	<div class="tabbable">
 		<ul class="nav nav-tabs jq-system-tabs">
@@ -298,9 +305,11 @@
 		    <div class="control-group">
 			    <div class="controls">
 				    <button type="submit" onclick="return addEmailToBatchNotifyList()" class="btn btn-success"><i class="icon-white icon-ok"></i>&nbsp;Add</button>
-				    <button type="button" class="btn ml_20">Show Recepients</button>
+				    <button type="button" onclick="createNewBatchNfListModal()" class="btn ml_20">Show Recepients</button>
 			    </div>
 		    </div>
 		</div>
 	</form>
 	<!-- ADD ADMIN NOTIFICATORS (END) -->
+
+	<div class="modal hide fade ci_hp_modals" id='new_batch_nf_list_modal'></div>
