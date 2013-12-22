@@ -578,11 +578,11 @@
 <!--                </div>-->
                 <div id="comare_table"></div>
                 <div id="assess_tbl_show_case" class="assess_tbl_show_case">
-                    <a id="assess_tbl_show_case_details" data-case="details" title="Details" href="#details">Details</a> |
+                    <a id="assess_tbl_show_case_details" data-case="details" title="Details" href="#details" class="active_link">Details</a> |
                     <a id="assess_tbl_show_case_details_compare" data-case="details_compare" title="Details_compare" href="#compare">Compare</a> |
                     <a id="assess_tbl_show_case_graph" data-case="graph" title="Graph" href="#graph">Charts</a> |
                     <a id="assess_tbl_show_case_view" data-case="view" title="Board View" href="#board_view">Board View</a> |
-                    <a id="assess_tbl_show_case_recommendations" data-case="recommendations" title="Recommendations" href="#recommendations"  class="active_link">Recommendations</a>
+                    <a id="assess_tbl_show_case_recommendations" data-case="recommendations" title="Recommendations" href="#recommendations">Recommendations</a>
                 </div>
                 <!-- <div id="assess_tbl_show_case" class="assess_tbl_show_case">
                     <a id="assess_tbl_show_case_recommendations" data-case="recommendations" title="Recommendations" href="#recommendations"  class="active_link">Recommendations</a> |
