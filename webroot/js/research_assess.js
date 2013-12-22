@@ -1283,8 +1283,7 @@ $(function() {
             first_aaData = aoData;
 			console.log(sSource);
             $.getJSON(sSource, aoData, function(json) {
-                if(json){
-
+                if(json) {
                 
                 if (json.ExtraData != undefined) {
 					console.log('dataTable callback: fnServerData');
@@ -4885,6 +4884,7 @@ $('#tableScrollWrapper').css("overflow-y", "hidden");
 $( "div[id^=tblAssess_length], div[id^=assess_tbl_show_case], div[class^=dataTables_filter], div[id^=tblAssess_processing]" ).wrapAll( "<div class='fg-toolbar ui-toolbar ui-widget-header ui-corner-tl ui-corner-tr ui-helper-clearfix'></div>" );
 $( "#tblAssess_info, #tblAssess_paginate" ).wrapAll( "<div class='fg-toolbar ui-toolbar ui-widget-header ui-corner-bl ui-corner-br ui-helper-clearfix'></div>" );
 $('#assess_tbl_show_case_recommendations').click(function() {
+    console.log("RECOMENDATIONS");
 	$('table#tblAssess').floatThead({
 		scrollContainer: function($table) {
 			return $('#tblAssess').closest('.wrapper');
