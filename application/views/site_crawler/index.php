@@ -101,7 +101,7 @@
       </script>
 
 
-			<h3 class="span3 current_list_title" style="margin-left:0;">Crawl List: <br/><small nowrap></small></h3>
+			<h3 class="span3 current_list_title" style="margin-left:0;">Crawl List <br/><small nowrap></small></h3>
 
                    <div style="float:left;font-size: 18px;padding-top: 20px;">Batch: </div>
                 <select name="batch" class="span4 pull-left mt_15" style="width: 125px;" id="batches">
@@ -147,7 +147,7 @@
 			</div>
 
 
-			<h3>Add to List:</h3>
+			<h3>Add to List</h3>
 			<div class="row-fluid">
 				<div class="search_area uneditable-input span10" onClick="this.contentEditable='false';" style="cursor: text; width: 765px; height: 180px; overflow : auto;" id="Add_List">
 				</div>
