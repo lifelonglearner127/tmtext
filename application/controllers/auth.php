@@ -235,11 +235,13 @@ class Auth extends MY_Controller {
                 $url = '';
                 foreach($checked as $key => $value){
                     if($key == $group[0]["default_controller"]){
-                        $url = $group[0]["default_controller"];
+                        // $url = $group[0]["default_controller"]; // I.L
+                    		$url = "assess"; // I.L
                     }
                 }
                 if($url!=''){
-                    redirect($url.'/index', 'refresh');
+                    // redirect($url.'/index', 'refresh'); // I.L
+                	redirect($url.'/products', 'refresh'); // I.L
                 } else{
                     foreach($checked as $key => $value){
                         redirect($key.'/index', 'refresh');
