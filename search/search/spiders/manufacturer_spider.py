@@ -29,7 +29,8 @@ class ManufacturerSpider(SearchSpider):
 		self.fast = 0
 		self.output = 2
 
-		self.sites_to_parse_methods = {"sony" : self.parseResults_sony}
+		self.sites_to_parse_methods = {"sony" : self.parseResults_sony, \
+										"samsung" : self.parseResults_samsung}
 
 	# pass to site-specific parseResults method
 	def parseResults(self, response):
@@ -39,6 +40,54 @@ class ManufacturerSpider(SearchSpider):
 	# parse samsung results page
 	def parseResults_samsung(self, response):
 		hxs = HtmlXPathSelector(response)
+
+		if 'items' in response.meta:
+			items = response.meta['items']
+		else:
+			items = set()
+
+		# add product URLs to be parsed to this list
+		if 'search_results' not in response.meta:
+			product_urls = set()
+		else:
+			product_urls = response.meta['search_results']
+
+
+		#TODO: implement support for multiple results pages?
+		results = hxs.select("//ul[@class='product-info']")
+
+		# if we find any results to this it means we are already on a product page
+		if results:
+			product_urls.add(response.url)
+			# it also means it's an exact match, so stop search here
+			response.meta['pending_requests'] = []
+			# # also temporarily lower threshold
+			# self.threshold = 0.2
+
+		else:
+			# try to see if this is a results page then
+			results = hxs.select("//h5[@class='ws-product-title fn']")
+			for result in results:
+				product_url = result.select("parent::node()//@href").extract()[0]
+				product_urls.add(product_url)
+
+		if product_urls and ('pending_requests' not in response.meta or not response.meta['pending_requests']):
+			request = Request(product_urls.pop(), callback = self.parse_product_samsung, meta = response.meta)
+			request.meta['items'] = items
+
+			# this will be the new product_urls list with the first item popped
+			request.meta['search_results'] = product_urls
+
+			return request
+
+		# if there were no results, the request will never get back to reduceResults
+		else:
+			response.meta['items'] = items
+			response.meta['parsed'] = True
+			response.meta['search_results'] = product_urls
+			# only send the response we have as an argument, no need to make a new request
+			return self.reduceResults(response)
+
 		
 
 	# parse sony results page, extract info for all products returned by search (keep them in "meta")
@@ -62,6 +111,7 @@ class ManufacturerSpider(SearchSpider):
 
 		# if we find any results to this it means we are already on a product page
 		if results:
+			#TODO: only works when queries with product model, but in original form, that is, with caps
 			product_urls.add(response.url)
 			# it also means it's an exact match, so stop search here
 			response.meta['pending_requests'] = []
@@ -69,11 +119,13 @@ class ManufacturerSpider(SearchSpider):
 			# self.threshold = 0.2
 
 		else:
-			# try to see if this is a results page then
-			results = hxs.select("//h5[@class='ws-product-title fn']")
-			for result in results:
-				product_url = result.select("parent::node()//@href").extract()[0]
-				product_urls.add(product_url)
+			# #TODO
+			# # try to see if this is a results page then
+			# results = 
+			# for result in results:
+			# 	product_url = result.select("parent::node()//@href").extract()[0]
+			# 	product_urls.add(product_url)
+			pass
 
 		if product_urls and ('pending_requests' not in response.meta or not response.meta['pending_requests']):
 			request = Request(product_urls.pop(), callback = self.parse_product_sony, meta = response.meta)
@@ -91,6 +143,62 @@ class ManufacturerSpider(SearchSpider):
 			response.meta['search_results'] = product_urls
 			# only send the response we have as an argument, no need to make a new request
 			return self.reduceResults(response)
+
+
+		# parse product page on samsung.com
+	def parse_product_samsung(self, response):
+
+		hxs = HtmlXPathSelector(response)
+
+		items = response.meta['items']
+
+		#site = response.meta['origin_site']
+		origin_url = response.meta['origin_url']
+
+		# create item
+		item = SearchItem()
+		item['product_url'] = response.url
+		item['origin_url'] = origin_url
+		# hardcode brand to sony
+		item['product_brand'] = 'samsung'
+
+		# extract product name, brand, model, etc; add to items
+		product_info = hxs.select("//ul[@class='product-info']")
+		product_name = product_info.select("/meta[@itemprop='name']/@content")
+		if not product_name:
+			self.log("Error: No product name: " + str(response.url), level=log.INFO)
+		else:
+			item['product_name'] = product_name.extract()[0]
+		product_model = product_info.select("/meta[@itemprop='model']/@content")
+		if product_model:
+			item['product_model'] = product_model.extract()[0]
+
+		#TODO
+		# item['product_images'] = 
+		# #TODO: to check
+		# item['product_videos'] = l
+
+		items.add(item)
+
+
+		# if there are any more results to be parsed, send a request back to this method with the next product to be parsed
+		product_urls = response.meta['search_results']
+
+		if product_urls:
+			request = Request(product_urls.pop(), callback = self.parse_product_samsung, meta = response.meta)
+			request.meta['items'] = items
+			# eliminate next product from pending list (this will be the new list with the first item popped)
+			request.meta['search_results'] = product_urls
+
+			return request
+		else:
+			# otherwise, we are done, send a the response back to reduceResults (no need to make a new request)
+
+			response.meta['parsed'] = True
+			response.meta['items'] = items
+
+			return self.reduceResults(response)
+
 
 	# parse product page on sony.com
 	def parse_product_sony(self, response):
