@@ -1,3 +1,6 @@
+.clean_summary_search_field .icon-remove {
+   background: url("../img/gi_custom_remove_gray_v2.png") !important; 
+}
 /* BOARD ITEM MODAL PREVIEW (START) */
 .n_visible {
     display: none;
