@@ -99,15 +99,6 @@ class SearchSpider(BaseSpider):
 	# parse input and build list of URLs to find matches for, send them to parseURL
 	def parse(self, response):
 
-
-		# if not self.target_site:
-		# 	sys.stderr.write("You need to specify a target site.\nUsage:" + \
-		# 	" scrapy crawl search -a product_urls_file='<filename>' -a target_site='<site>' [-a output='<option(1/2)>'] [-a threshold=value] [a outfile='<filename>'] [-a fast=1]")
-		# 	raise CloseSpider("\n" + \
-		# 	"You need to specify a target site.\nUsage:" + \
-		# 	" scrapy crawl search -a product_urls_file='<filename>' -a target_site='<site>' [-a output='<option(1/2)>'] [-a threshold=value] [a outfile='<filename>'] [-a fast=1]")
-
-		# if we have product names, pass them to parseResults
 		if self.product_name:
 
 			# can inly use this option if self.target_site has been initialized (usually true for spiders for retailers sites, not true for manufacturer's sites)
