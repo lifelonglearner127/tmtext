@@ -115,7 +115,7 @@
 			<button id="crawl_batch" class="btn new_btn btn-success mt_15 ml_10">Crawl</button>
 			<button id="re_crawl_batch" class="btn new_btn btn-success mt_15 ml_10">Re-Crawl</button>
       <div id="search_crawl_div" style="width: 750px;padding-top: 15px;" >
-          <div style="float:left;font-size: 18px;">URL:</div>
+          <div style="float:left;font-size: 18px; margin-top: 7px;">URL:</div>
          <div style="float: left;"> <input type="text" class="span2 pull-left ml_10" style="width:250px;margin-left: 33px !important;" name="search_crawl_data" ></div>
           <button id="apply_search_data" class="btn new_btn btn-success ml_10"><i class="icon-white icon-ok"></i>&nbsp;Apply</button>
           <button id="clear_search_data" class="btn new_btn btn-success  ml_10"><i class="icon-white icon-ok"></i>&nbsp;Clear</button>
@@ -235,7 +235,7 @@ function loadCurrentList(url,failed) {
 		}
 
 		// $("h3 small").html(data.total + ' items Total -- '+ data.new+ ' New');
-		$("h3 small").html("Total items: " + data.total + '<br>'+ "New items: " + data.new);
+		$("h3 small").html("<span style='display: block'>Total items: " + data.total + '</span>'+ "<span style='display: block; margin-top: 5px;'>New items: " + data.new + "</span>");
   		$.each(data.new_urls, function (index, node) {
   	  		var category = '';
   	  		if (node.name != undefined) {
