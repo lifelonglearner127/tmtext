@@ -748,3 +748,13 @@ a.jq-assess {
 	position: relative;
 	top: 8px;
 }
+.grip{
+	width:20px;
+	height:30px;
+	margin-top:-3px;
+	
+	margin-left:-5px;
+	position:relative;
+	z-index:88;
+	cursor:e-resize;
+}

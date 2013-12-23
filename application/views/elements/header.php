@@ -23,7 +23,8 @@
     <link href="<?php echo base_url();?>css/anythingslider.css" rel="stylesheet">
     <link href='//fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
 	<link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/styles.css" />
-
+	<link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/jquery.resizableColumns.css" />
+	
 	<!--[if lt IE 9]>
 		<script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
 	<![endif]-->
@@ -60,7 +61,7 @@
     <script type="text/javascript" src="<?php echo base_url();?>js/jquery-templ.js"></script>
     <script type="text/javascript" src="<?php echo base_url();?>js/jquery.validate.min.js"></script>
     <script type="text/javascript" src="<?php echo base_url();?>js/jquery.dataTables.min.js"></script>
-	<script src="<?php echo base_url();?>js/ColReorderWithResize.js"></script>
+	<script src="<?php echo base_url();?>js/ColReorder.js"></script>	
 	<script src="<?php echo base_url();?>js/jquery.floatThead.min.js"></script>
 <script type="text/javascript" src="http://code.highcharts.com/stock/highstock.js"></script>
 	<script src="http://code.highcharts.com/modules/exporting.js"></script>

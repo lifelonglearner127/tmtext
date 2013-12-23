@@ -1350,7 +1350,40 @@ $(function() {
             }).done(function(data){
                 if(data.length > 0){
                     console.log('1');
+					
                     $('table#tblAssess').floatThead('reflow');
+			/*
+			var onSampleResized = function(e){
+			var columns = $(e.currentTarget).find("th");
+			var msg = "columns widths: ";
+			columns.each(function(){ msg += $(this).width() + "px; "; })
+			$("#sample2Txt").html(msg);
+			};	
+			$("#tblAssess").colResizable({
+				liveDrag:true, 
+				gripInnerHtml:"<div class='grip'></div>", 
+				draggingClass:"dragging", 
+				onResize:onSampleResized});
+				*/
+			
+			
+			  $("#tblAssess").resizableColumns({
+				store: store
+			  });
+			  console.log("resize on");
+            if($("table[id^=tblAssess]")){
+				if($("a#assess_tbl_show_case_details_compare[class^=active_link]")){
+					if($("#tblAssess th[class*=1][style*='border-left-width: 2px']:not([class*=_1])")){$("#tblAssess th[class*=1][style*='border-left-width: 2px']:not([class*=_1])").css("border-left", "1px solid #ccc");}
+					$("#tblAssess th[class*=1]:not([class*=_1]):first").css("border-left", "2px solid #ccc");
+					$("#tblAssess tr").each(function(){
+						if($(this).find("td[class*=1][style*='border-left-width: 2px']:not([class*=_1])"))
+						{$(this).find("td[class*=1]:not([class*=_1])").css("border-left", "1px solid #ccc");}
+						$(this).find("td[class*=1]:not([class*=_1]):first").css("border-left", "2px solid #ccc");
+						
+					});
+				}
+				console.log("borders on");
+			}
                     var str = '';
                     var showcount = 12;
                     if(compare_batch_id != '0' && compare_batch_id !='all'){
@@ -3116,20 +3149,7 @@ function prevSibilfunc(curentSibil){
         if(first_click){
         
         if ($("#research_assess_compare_batches_batch").val() == 'all' || $("#research_assess_compare_batches_batch_competitor").val() == 'all') {
-            console.log(1);
-            if($("table[id^=tblAssess]")){
-				if($("a#assess_tbl_show_case_details_compare[class^=active_link]")){
-					if($("#tblAssess th[class*=1][style*='border-left-width: 2px']:not([class*=_1])")){$("#tblAssess th[class*=1][style*='border-left-width: 2px']:not([class*=_1])").css("border-left", "1px solid #ccc");}
-					$("#tblAssess th[class*=1]:not([class*=_1]):first").css("border-left", "2px solid #ccc");
-					$("#tblAssess tr").each(function(){
-						if($(this).find("td[class*=1][style*='border-left-width: 2px']:not([class*=_1])"))
-						{$(this).find("td[class*=1]:not([class*=_1])").css("border-left", "1px solid #ccc");}
-						$(this).find("td[class*=1]:not([class*=_1]):first").css("border-left", "2px solid #ccc");
-						
-					});
-				}
-				
-			}
+            console.log(1);			
             createTable();
             serevr_side = false;
             return;
@@ -4885,12 +4905,17 @@ $( "div[id^=tblAssess_length], div[id^=assess_tbl_show_case], div[class^=dataTab
 $( "#tblAssess_info, #tblAssess_paginate" ).wrapAll( "<div class='fg-toolbar ui-toolbar ui-widget-header ui-corner-bl ui-corner-br ui-helper-clearfix'></div>" );
 $('#assess_tbl_show_case_recommendations').click(function() {
     console.log("RECOMENDATIONS");
+	$("#tblAssess").resizableColumns({
+				store: store
+	});
 	$('table#tblAssess').floatThead({
 		scrollContainer: function($table) {
 			return $('#tblAssess').closest('.wrapper');
 		}
 	});
-	$('table#tblAssess').floatThead('reflow');
+	
+	
+			  $('table#tblAssess').floatThead('reflow');
 });
 $('#assess_tbl_show_case_details_compare').click(function() {
 	$('table#tblAssess').floatThead({
@@ -4901,6 +4926,7 @@ $('#assess_tbl_show_case_details_compare').click(function() {
 	$("li[class*=boxes] div[class*=ui-icon-gripsmall-diagonal-se]").css("display", "none");
 	$("li[class*=boxes] div[class*=ui-resizable-e]").css("display", "none");
 	darkHeaders($(this));
+	
 });
 $('#assess_tbl_show_case_report').click(function() {
 	$('table#tblAssess').floatThead({
@@ -4917,6 +4943,9 @@ $('#assess_tbl_show_case_details').click(function() {
 		}
 	});
 	$('table#tblAssess').floatThead('reflow');
+	$("#tblAssess").resizableColumns({
+				store: store
+			  });
 	if($("table[id^=tblAssess] th[style*='border-left-width: 2px;'], td[style*='border-left-width: 2px;']")){
 			$("table[id^=tblAssess] th[style*='border-left-width: 2px;'], td[style*='border-left-width: 2px;']").css("border-left-width", "1px");
 			
@@ -4928,6 +4957,15 @@ $('#assess_tbl_show_case_details').click(function() {
 		});}
 	$('table#tblAssess').floatThead('reflow');
 });
+var width = $("#tblAssess th").width();
+$("#tblAssess th").mouseup(function(){
+   if($(this).width() != width){
+      width = $(this).width();
+       console.log(width);
+	   $('table#tblAssess').floatThead('reflow');
+   }
+});
+
 $('#research_assess_update').click(function() {
 	darkHeaders($(this));
 });
