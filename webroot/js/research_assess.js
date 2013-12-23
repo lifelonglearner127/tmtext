@@ -2264,12 +2264,13 @@ var generate_url_check = GetURLParameter('generate_url_check');
 	$(document).on('click', '.update_filter_btn', function(e) {
 		$('#research_assess_update').click();
 	});
+        var options = { path: '/', expires: 30 };
         function onDenisty(){
             var tkstatus = $.cookie('tkstatus');
             if(typeof(tkstatus)!=='undefined'){
                 $.removeCookie('tkstatus');
             }
-            $.cookie('tkstatus','denisty');
+            $.cookie('tkstatus','denisty',options);
             if($('#tk-denisty').prop('checked')!==true){
                 $('#tk-frequency').prop('checked',false);
                 $('#tk-denisty').prop('checked',true);
@@ -2285,7 +2286,7 @@ var generate_url_check = GetURLParameter('generate_url_check');
             if(typeof(tkstatus)!=='undefined'){
                 $.removeCookie('tkstatus');
             }
-            $.cookie('tkstatus','frequency');
+            $.cookie('tkstatus','frequency',options);
             if($('#tk-frequency').prop('checked')!==true){
                 $('#tk-denisty').prop('checked',false);
                 $('#tk-frequency').prop('checked',true);
@@ -2307,7 +2308,7 @@ var generate_url_check = GetURLParameter('generate_url_check');
                 }
             }
             else{
-                $.cookie('tkstatus','denisty');
+                $.cookie('tkstatus','denisty',options);
             }
         }
         function loadSetTK(){
@@ -2318,7 +2319,7 @@ var generate_url_check = GetURLParameter('generate_url_check');
         }
         var table_loaded=false;
         $(document).ready(function(){
-            table_loaded = setInterval(loadSetTK,2000);
+            table_loaded = setInterval(loadSetTK,10);
         });
 
     $(document).on('change', '#assessDetailsDialog_chkIncludeInReport', function() {
